@@ -3,7 +3,6 @@ package test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashSet;
@@ -207,7 +206,7 @@ public class QuasiNodeTest {
                     connected = false;
                 }
             }
-            if(consecutivePings >= 5) {
+            if(consecutivePings >= 3) {
                 connected = true;
                 rt.onConnected(this);
                 return true;
@@ -231,6 +230,7 @@ public class QuasiNodeTest {
         // Set up a UdpSocketManager
         usm = new UdpSocketManager(myPort);
         usm.setDispatcher(new MyDispatcher());
+        usm.setDropProbability(10);
         rt.doInitialConnectAll();
         // Setup datastore
         fs = new FreenetStore("datastore-"+myPort, "headerstore-"+myPort, 1024);
@@ -383,13 +383,19 @@ public class QuasiNodeTest {
             prb = new PartiallyReceivedBlock(32, 1024);
             BlockReceiver br;
             br = new BlockReceiver(usm, peer, id, prb);
-            byte[] data;
-            try {
-                data = br.receive();
-            } catch (RetrievalException e1) {
-                Logger.error(QuasiNodeTest.class, "Failed to receive", e1);
-                return null;
+            byte[] data = null;
+            for(int i=0;i<5;i++) {
+                try {
+                    data = br.receive();
+                    break;
+                } catch (RetrievalException e1) {
+                    if(e1.getReason() == RetrievalException.SENDER_DIED) continue;
+                    Logger.error(QuasiNodeTest.class, "Failed to receive", e1);
+                    return null;
+                }
             }
+            if(data == null)
+                Logger.error(PreQuasiNodeTest.class, "Could not receive data");
             System.err.println("Received "+data.length+" bytes");
             // Now decode it
             try {

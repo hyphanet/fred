@@ -57,10 +57,11 @@ public class PreQuasiNodeTest {
         Logger.minor(TransferBlockTest.class, "My port: "+myPort+", his port: "+hisPort);
         // Set up a UdpSocketManager
         usm = new UdpSocketManager(myPort);
+        usm.setDropProbability(5);
         usm.setDispatcher(new PingingReceivingDispatcher());
         otherSide = new Peer(InetAddress.getByName("127.0.0.1"), hisPort);
         int consecutivePings = 0;
-        while(consecutivePings < 5) {
+        while(consecutivePings < 3) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -200,13 +201,19 @@ public class PreQuasiNodeTest {
             prb = new PartiallyReceivedBlock(32, 1024);
             BlockReceiver br;
             br = new BlockReceiver(usm, otherSide, id, prb);
-            byte[] data;
-            try {
-                data = br.receive();
-            } catch (RetrievalException e1) {
-                Logger.error(PreQuasiNodeTest.class, "Failed to receive", e1);
-                return null;
+            byte[] data = null;
+            for(int i=0;i<5;i++) {
+                try {
+                    data = br.receive();
+                    break;
+                } catch (RetrievalException e1) {
+                    if(e1.getReason() == RetrievalException.SENDER_DIED) continue;
+                    Logger.error(PreQuasiNodeTest.class, "Failed to receive", e1);
+                    return null;
+                }
             }
+            if(data == null)
+                Logger.error(PreQuasiNodeTest.class, "Could not receive data");
             System.err.println("Received "+data.length+" bytes");
             // Now decode it
             try {
