@@ -1,5 +1,7 @@
 package freenet.keys;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -7,8 +9,6 @@ import java.io.RandomAccessFile;
 import freenet.io.WritableToDataOutputStream;
 import freenet.support.Base64;
 import freenet.support.Fields;
-import freenet.support.HexUtil;
-import freenet.support.Logger;
 
 /**
  * @author amphibian
@@ -32,20 +32,20 @@ public class NodeCHK extends Key implements WritableToDataOutputStream {
     byte[] routingKey;
     public static final short TYPE = 0x0302;
 
-    public void writeToDataOutputStream(DataOutputStream stream) throws IOException {
-        stream.write(routingKey);
+    public final void writeToDataOutputStream(DataOutputStream stream) throws IOException {
+        write(stream);
     }
 
     public String toString() {
         return super.toString() + "@"+Base64.encode(routingKey)+":"+Integer.toHexString(hash);
     }
 
-    public void write(RandomAccessFile _index) throws IOException {
+    public final void write(DataOutput _index) throws IOException {
         _index.writeShort(TYPE);
         _index.write(routingKey);
     }
     
-    public static Key read(RandomAccessFile raf) throws IOException {
+    public static Key read(DataInput raf) throws IOException {
         byte[] buf = new byte[KEY_LENGTH];
         raf.readFully(buf);
         return new NodeCHK(buf);

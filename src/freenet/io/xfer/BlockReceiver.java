@@ -46,12 +46,12 @@ public class BlockReceiver {
 	public static final int MAX_SEND_INTERVAL = 500;
 	PartiallyReceivedBlock _prb;
 	Peer _sender;
-	int _uid;
+	long _uid;
 	UdpSocketManager _usm;
 	/** packet : Integer -> reportTime : Long * */
 	HashMap _recentlyReportedMissingPackets = new HashMap();
 
-	public BlockReceiver(UdpSocketManager usm, Peer sender, int uid, PartiallyReceivedBlock prb) {
+	public BlockReceiver(UdpSocketManager usm, Peer sender, long uid, PartiallyReceivedBlock prb) {
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;

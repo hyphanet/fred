@@ -25,7 +25,7 @@ import freenet.support.Logger;
 
 public class MessageType {
 
-    public static final String VERSION = "$Id: MessageType.java,v 1.1 2005/01/29 19:12:10 amphibian Exp $";
+    public static final String VERSION = "$Id: MessageType.java,v 1.2 2005/02/12 16:00:06 amphibian Exp $";
 
 	private static HashMap _specs = new HashMap();
 
@@ -65,7 +65,11 @@ public class MessageType {
 		if (fieldValue == null) {
 			return false;
 		}
-		return _fields.get(fieldName).equals(fieldValue.getClass());
+		Class defClass = (Class)(_fields.get(fieldName));
+		Class valueClass = fieldValue.getClass();
+		if(defClass == valueClass) return true;
+		if(defClass.isAssignableFrom(valueClass)) return true;
+		return false;
 	}
 
 	public Class typeOf(String field) {

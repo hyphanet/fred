@@ -20,6 +20,7 @@
 package freenet.io.comm;
 
 import freenet.*;
+import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.support.*;
 
@@ -60,6 +61,8 @@ public class DMT {
 	public static final String KEY = "key";
 	public static final String CHK_HEADER = "chkHeader";
 	public static final String FREENET_URI = "freenetURI";
+	public static final String FREENET_ROUTING_KEY = "freenetRoutingKey";
+    public static final String TEST_CHK_HEADERS = "testCHKHeaders";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -116,10 +119,10 @@ public class DMT {
 	}
 
 	public static MessageType rejectDueToLoop = new MessageType("rejectDueToLoop") {{ 
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 	}};
 	
-	public static final Message createRejectDueToLoop(int uid) {
+	public static final Message createRejectDueToLoop(long uid) {
 		Message msg = new Message(rejectDueToLoop);
 		msg.set(UID, uid);
 		return msg;
@@ -127,12 +130,12 @@ public class DMT {
 	
 	// Assimilation
 	public static final MessageType joinRequest = new MessageType("joinRequest") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addField(JOINER, Peer.class);
 		addField(TTL, Integer.class);
 	}};
 	
-	public static final Message createJoinRequest(int uid, Peer joiner, int ttl) {
+	public static final Message createJoinRequest(long uid, Peer joiner, int ttl) {
 		Message msg = new Message(joinRequest);
 		msg.set(UID, uid);
 		msg.set(JOINER, joiner);
@@ -141,21 +144,21 @@ public class DMT {
 	}
 	
 	public static final MessageType joinRequestAck = new MessageType("joinRequestAck") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 	}};
 	
-	public static final Message createJoinRequestAck(int uid) {
+	public static final Message createJoinRequestAck(long uid) {
 		Message msg = new Message(joinRequestAck);
 		msg.set(UID, uid);
 		return msg;
 	}
 	
 	public static final MessageType joinResponse = new MessageType("joinResponse") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addLinkedListField(PEERS, Peer.class);
 	}};
 	
-	public static final Message createJoinResponse(int uid, List peers) {
+	public static final Message createJoinResponse(long uid, List peers) {
 		Message msg = new Message(joinResponse);
 		msg.set(UID, uid);
 		msg.set(PEERS, peers);
@@ -174,7 +177,7 @@ public class DMT {
 	
 	// Data search
 	public static final MessageType requestData = new MessageType("requestData") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addField(URL, String.class);
 		addLinkedListField(FORWARDERS, Peer.class);
 		addField(FILE_LENGTH, Long.class);
@@ -183,7 +186,7 @@ public class DMT {
 		addField(TTL, Integer.class);
 	}};
 	
-	public static final Message createRequestData(int uid, String url, List forwarders, long fileLength, String lastModified, int chunkNo, int ttl) {
+	public static final Message createRequestData(long uid, String url, List forwarders, long fileLength, String lastModified, int chunkNo, int ttl) {
 		Message msg = new Message(requestData);
 		msg.set(UID, uid);
 		msg.set(URL, url);
@@ -196,22 +199,22 @@ public class DMT {
 	}
 
 	public static final MessageType acknowledgeRequest = new MessageType("acknowledgeRequest") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 	}};
 	
-	public static final Message createAcknowledgeRequest(int uid) {
+	public static final Message createAcknowledgeRequest(long uid) {
 		Message msg = new Message(acknowledgeRequest);
 		msg.set(UID, uid);
 		return msg;
 	}
 	
 	public static final MessageType requestSuccessful = new MessageType("requestSuccessful") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addField(DATA_SOURCE, Peer.class);
 		addField(CACHED, Boolean.class);
 	}};
 
-	public static final Message createRequestSuccessful(int uid, Peer dataSource, boolean cached) {
+	public static final Message createRequestSuccessful(long uid, Peer dataSource, boolean cached) {
 		Message msg = new Message(requestSuccessful);
 		msg.set(UID, uid);
 		msg.set(DATA_SOURCE, dataSource);
@@ -220,12 +223,12 @@ public class DMT {
 	}
 
 	public static final MessageType requestFailed = new MessageType("requestFailed") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addField(REASON, Integer.class);
 		addField(DESCRIPTION, String.class);
 	}};
 	
-	public static final Message createRequestFailed(int uid, int reason, String description) {
+	public static final Message createRequestFailed(long uid, int reason, String description) {
 		Message msg = new Message(requestFailed);
 		msg.set(UID, uid);
 		msg.set(REASON, reason);
@@ -235,7 +238,7 @@ public class DMT {
 	
 	// Hash search
 	public static final MessageType requestHash = new MessageType("requestHash") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addField(URL, String.class);
 		addField(FILE_LENGTH, Long.class);
 		addField(LAST_MODIFIED, String.class);
@@ -243,7 +246,7 @@ public class DMT {
 		addField(TTL, Integer.class);
 	}};
 	
-	public static final Message createRequestHash(int uid, String url, long fileLength, String lastModified, int chunkNo, int ttl) {
+	public static final Message createRequestHash(long uid, String url, long fileLength, String lastModified, int chunkNo, int ttl) {
 		Message msg = new Message(requestHash);
 		msg.set(UID, uid);
 		msg.set(URL, url);
@@ -255,10 +258,10 @@ public class DMT {
 	}
 	
 	public static final MessageType requestHashAck = new MessageType("requestHashAck") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 	}};
 	
-	public static final Message createRequestHashAck(int uid) {
+	public static final Message createRequestHashAck(long uid) {
 		Message msg = new Message(requestHashAck);
 		msg.set(UID, uid);
 		return msg;
@@ -266,7 +269,7 @@ public class DMT {
 	
 	// Corruption notification
 	public static final MessageType corruptionNotification = new MessageType("corruptionNotification") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addField(URL, String.class);
 		addField(FILE_LENGTH, Long.class);
 		addField(LAST_MODIFIED, String.class);
@@ -274,7 +277,7 @@ public class DMT {
 		addField(IS_HASH, Boolean.class);
 	}};
 	
-	public static final Message createCorruptionNotification(int uid, String url, long fileLength, 
+	public static final Message createCorruptionNotification(long uid, String url, long fileLength, 
 	    String lastModified, int chunkNo, boolean isHash) {
 		Message msg = new Message(corruptionNotification);
 		msg.set(UID, uid);
@@ -288,13 +291,13 @@ public class DMT {
 
 	// New data transmission messages
 	public static final MessageType packetTransmit = new MessageType("packetTransmit") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addField(PACKET_NO, Integer.class);
 		addField(SENT, BitArray.class);
 		addField(DATA, Buffer.class);
 	}};
 	
-	public static final Message createPacketTransmit(int uid, int packetNo, BitArray sent, Buffer data) {
+	public static final Message createPacketTransmit(long uid, int packetNo, BitArray sent, Buffer data) {
 		Message msg = new Message(packetTransmit);
 		msg.set(UID, uid);
 		msg.set(PACKET_NO, packetNo);
@@ -304,21 +307,21 @@ public class DMT {
 	}
 	
 	public static final MessageType allSent = new MessageType("allSent") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 	}};
 	
-	public static final Message createAllSent(int uid) {
+	public static final Message createAllSent(long uid) {
 		Message msg = new Message(allSent);
 		msg.set(UID, uid);
 		return msg;
 	}
 	
 	public static final MessageType missingPacketNotification = new MessageType("missingPacketNotification") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addLinkedListField(MISSING, Integer.class);
 	}};
 	
-	public static final Message createMissingPacketNotification(int uid, LinkedList missing) {
+	public static final Message createMissingPacketNotification(long uid, LinkedList missing) {
 		Message msg = new Message(missingPacketNotification);
 		msg.set(UID, uid);
 		msg.set(MISSING, missing);
@@ -326,20 +329,20 @@ public class DMT {
 	}
 	
 	public static final MessageType allReceived = new MessageType("allReceived") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 	}};
-	public static final Message createAllReceived(int uid) {
+	public static final Message createAllReceived(long uid) {
 		Message msg = new Message(allReceived);
 		msg.set(UID, uid);
 		return msg;
 	}
 	
 	public static final MessageType sendAborted = new MessageType("sendAborted") {{
-		addField(UID, Integer.class);
+		addField(UID, Long.class);
 		addField(REASON, String.class);
 	}};
 
-	public static final Message createSendAborted(int uid, String reason) {
+	public static final Message createSendAborted(long uid, String reason) {
 		Message msg = new Message(sendAborted);
 		msg.set(UID, uid);
 		msg.set(REASON, reason);
@@ -347,38 +350,32 @@ public class DMT {
 	}
 
 	public static final MessageType testTransferSend = new MessageType("testTransferSend") {{
-	    addField(UID, Integer.class);
+	    addField(UID, Long.class);
 	}};
 	
-	public static final Message createTestTransferSend(int uid) {
+	public static final Message createTestTransferSend(long uid) {
 	    Message msg = new Message(testTransferSend);
 	    msg.set(UID, uid);
 	    return msg;
 	}
 
 	public static final MessageType testTransferSendAck = new MessageType("testTransferSendAck") {{
-	    addField(UID, Integer.class);
+	    addField(UID, Long.class);
 	}};
 	
-	public static final Message createTestTransferSendAck(int uid) {
+	public static final Message createTestTransferSendAck(long uid) {
 	    Message msg = new Message(testTransferSendAck);
 	    msg.set(UID, uid);
 	    return msg;
 	}
 	
 	public static final MessageType testSendCHK = new MessageType("testSendCHK") {{
-	    addField(UID, Integer.class);
+	    addField(UID, Long.class);
 	    addField(FREENET_URI, String.class);
 	    addField(CHK_HEADER, Buffer.class);
 	}};
 	
-    /**
-     * @param uid
-     * @param nodeKey
-     * @param header
-     * @return
-     */
-    public static Message createTestSendCHK(int uid, String uri, Buffer header) {
+    public static Message createTestSendCHK(long uid, String uri, Buffer header) {
         Message msg = new Message(testSendCHK);
         msg.set(UID, uid);
         msg.set(FREENET_URI, uri);
@@ -386,18 +383,71 @@ public class DMT {
         return msg;
     }
 
+    public static final MessageType testRequest = new MessageType("testRequest") {{
+        addField(UID, Long.class);
+        addField(FREENET_ROUTING_KEY, Key.class);
+    }};
+    
+    public static Message createTestRequest(NodeCHK nodeCHK, long id) {
+        Message msg = new Message(testRequest);
+        msg.set(UID, id);
+        msg.set(FREENET_ROUTING_KEY, nodeCHK);
+        return msg;
+    }
+
+    public static final MessageType testDataNotFound = new MessageType("testDataNotFound") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createTestDataNotFound(long uid) {
+        Message msg = new Message(testDataNotFound);
+        msg.set(UID, uid);
+        return msg;
+    }
+    
+    public static final MessageType testDataReply = new MessageType("testDataReply") {{
+        addField(UID, Long.class);
+        addField(TEST_CHK_HEADERS, Buffer.class);
+    }};
+    
+    public static final Message createTestDataReply(long uid, byte[] headers) {
+        Message msg = new Message(testDataReply);
+        msg.set(UID, uid);
+        msg.set(TEST_CHK_HEADERS, new Buffer(headers));
+        return msg;
+    }
+    
     public static final MessageType testSendCHKAck = new MessageType("testSendCHKAck") {{
-        addField(UID, Integer.class);
+        addField(UID, Long.class);
         addField(FREENET_URI, String.class);
     }};
-
-    public static Message createTestSendCHKAck(int uid, String key) {
+    public static Message createTestSendCHKAck(long uid, String key) {
         Message msg = new Message(testSendCHKAck);
         msg.set(UID, uid);
         msg.set(FREENET_URI, key);
         return msg;
     }
     
+	public static final MessageType testDataReplyAck = new MessageType("testDataReplyAck") {{
+	    addField(UID, Long.class);
+	}};
+	
+    public static Message createTestDataReplyAck(long id) {
+        Message msg = new Message(testDataReplyAck);
+        msg.set(UID, id);
+        return msg;
+    }
+
+    public static MessageType testDataNotFoundAck = new MessageType("testDataNotFoundAck") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createTestDataNotFoundAck(long id) {
+        Message msg = new Message(testDataNotFoundAck);
+        msg.set(UID, id);
+        return msg;
+    }
+
 	public static void init() { }
 
 }

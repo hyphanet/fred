@@ -43,13 +43,13 @@ public class BlockTransmitter {
 	UdpSocketManager _usm;
 	Peer _destination;
 	boolean _sendComplete = false;
-	int _uid;
+	long _uid;
 	PartiallyReceivedBlock _prb;
 	LinkedList _unsent;
 	Thread _receiverThread, _senderThread;
 	BitArray _sentPackets;
 
-	public BlockTransmitter(UdpSocketManager usm, Peer destination, int uid, PartiallyReceivedBlock source) {
+	public BlockTransmitter(UdpSocketManager usm, Peer destination, long uid, PartiallyReceivedBlock source) {
 		_usm = usm;
 		_destination = destination;
 		_uid = uid;

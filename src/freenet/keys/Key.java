@@ -1,5 +1,7 @@
 package freenet.keys;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -18,14 +20,14 @@ public abstract class Key {
      * Take up exactly 22 bytes.
      * @param _index
      */
-    public abstract void write(RandomAccessFile _index) throws IOException;
+    public abstract void write(DataOutput _index) throws IOException;
 
     /**
      * Read a Key from a RandomAccessFile
      * @param raf The file to read from.
      * @return a Key, or throw an exception, or return null if the key is not parsable.
      */
-    public static Key read(RandomAccessFile raf) throws IOException {
+    public static Key read(DataInput raf) throws IOException {
         short type = raf.readShort();
         if(type == NodeCHK.TYPE) {
             return NodeCHK.read(raf);

@@ -48,12 +48,12 @@ public class TransferBlockTest {
      */
     public static class Receiver implements Runnable {
 
-        int uid;
+        long uid;
         String uriS;
         FreenetURI uri;
         byte[] header;
         
-        public Receiver(int uid, String uriS, byte[] header) throws MalformedURLException {
+        public Receiver(long uid, String uriS, byte[] header) throws MalformedURLException {
             this.uid = uid;
             this.header = header;
             this.uriS = uriS;
@@ -119,7 +119,7 @@ public class TransferBlockTest {
                 return true;
             }
             if(m.getSpec() == DMT.testSendCHK) {
-                int uid = m.getInt(DMT.UID);
+                long uid = m.getLong(DMT.UID);
                 String uri = m.getString(DMT.FREENET_URI);
                 Buffer buf = (Buffer)m.getObject(DMT.CHK_HEADER);
                 byte[] header = buf.getData();
@@ -149,7 +149,7 @@ public class TransferBlockTest {
     }
 
     /**
-     * 10 consecutive pings for handshaking.
+     * 5 consecutive pings for handshaking.
      * Then repeatedly:
      * - Read a line from stdin.
      * - Encode it to a CHK
@@ -214,7 +214,7 @@ public class TransferBlockTest {
             byte[] header = block.getHeader();
             byte[] buf = block.getData();
             // Get a UID
-            int uid = r.nextInt();
+            long uid = r.nextLong();
             Logger.minor(TransferBlockTest.class, "UID: "+uid);
             // Now send it to the other node
             Message sendKey = DMT.createTestSendCHK(uid, uri.toString(), new Buffer(header));
