@@ -1,0 +1,8 @@
+/bin
+/build
+/build-test
+/freenet-*
+/junitvmwatcher*
+/lib
+*.swp
+.*

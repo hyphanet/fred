@@ -1,0 +1,7 @@
+This is the 0.7 rewrite of Freenet. This is largely rewritten from scratch, 
+although it pulls in a load of code from Dijjer.
+
+Major changes:
+- Freenet now uses UDP
+- Freenet now uses 32kB fixed block sizes
+- Many more...
