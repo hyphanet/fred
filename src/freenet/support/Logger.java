@@ -78,7 +78,7 @@ public abstract class Logger {
      *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUGGING.
      **/
     public abstract void log(Object source, String message, int priority);
-
+    
     /** 
      * Log a message with an exception.
      * @param o   The source object where this message was generated.

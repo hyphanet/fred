@@ -341,6 +341,26 @@ public class DMT {
 		msg.set(REASON, reason);
 		return msg;
 	}
+
+	public static final MessageType testTransferSend = new MessageType("testTransferSend") {{
+	    addField(UID, Integer.class);
+	}};
+	
+	public static final Message createTestTransferSend(int uid) {
+	    Message msg = new Message(testTransferSend);
+	    msg.set(UID, uid);
+	    return msg;
+	}
+
+	public static final MessageType testTransferSendAck = new MessageType("testTransferSendAck") {{
+	    addField(UID, Integer.class);
+	}};
+	
+	public static final Message createTestTransferSendAck(int uid) {
+	    Message msg = new Message(testTransferSendAck);
+	    msg.set(UID, uid);
+	    return msg;
+	}
 	
 	public static void init() { }
 
