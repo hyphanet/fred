@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+<!-- ant build file for Freenet -->
+
+<project name="Freenet" default="dist" basedir=".">
+  <description>
+     This file builds freenet...
+     Possible targets: compile, dist (default), clean
+  </description>
+
+  <!-- set global properties for this build -->
+  <property name="src" location="src"/>
+  <property name="build" location="build"/>
+ 
+    <!-- ================================================== -->
+  <target name="compile">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build}"/>
+
+    <javac srcdir="${src}" destdir="${build}">
+<!-- following a very temporary list of files to be build -->
+      <include name="test/**.java"/>
+      <include name="org/**.java"/>
+      <include name="freenet/support/**.java"/>
+      <include name="freenet/store/**.java"/>
+<!--freenet/store/FreenetStore-->
+<!--      <include name="freenet/keys/CHKEncodeException.java"/>-->
+<!--      <include name="freenet/keys/CHKDecodeException.java"/>-->
+      <include name="freenet/keys/**.java"/>
+      <include name="freenet/crypt/UnsupportedCipherException.java"/>
+      <include name="freenet/crypt/ciphers/Rijndael.java"/>
+      <include name="freenet/crypt/PCF*.java"/>
+<!--      <include name="freenet/support/**.java"/>-->
+    </javac>
+  </target>
+
+
+    <!-- ================================================== -->
+  <target name="dist" depends="compile"
+      description="generate the distribution" >
+    <!-- Create the distribution directory -->
+    <!--<mkdir dir="."/>-->
+    <!-- Put everything in ${build} into the freenet-${DSTAMP}.jar file -->
+    <jar jarfile="freenet-${DSTAMP}.jar" basedir="${build}">
+      <manifest>
+         <attribute name="Main-Class" value="test/DatastoreTest"/>
+         <attribute name="Built-By" value="${user.name}"/>
+	 <section name="common">
+	   <attribute name="Specification-Title" value="Example"/>
+	   <attribute name="Specification-Version" value="0.7pre"/>
+	   <attribute name="Specification-Vendor" value="freenetproject.org"/>
+	   <attribute name="Implementation-Title" value="Freenet"/>
+	   <attribute name="Implementation-Version" value="0.7pre ${TODAY}"/> 
+	   <attribute name="Implementation-Vendor" value="Freenetproject.org"/>
+	 </section>
+       </manifest>
+    </jar>    
+  </target>
+
+    <!-- ================================================== -->
+    <target name="clean" description="Delete class files and docs dir.">
+        <delete dir="${build}"/>
+        <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
+    </target>
+
+</project>
