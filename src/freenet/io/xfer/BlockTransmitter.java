@@ -57,10 +57,11 @@ public class BlockTransmitter {
 		_sentPackets = new BitArray(_prb.getNumPackets());
 	}
 
-public boolean send() {
+	public boolean send() {
 		final PacketThrottle throttle = PacketThrottle.getThrottle(_destination, _prb._packetSize);
 		_receiverThread = Thread.currentThread();
 		_senderThread = new Thread() {
+		    
 			public void run() {
 				int sentSinceLastPing = 0;
 				while (!_sendComplete) {
@@ -125,10 +126,12 @@ public boolean send() {
 				throttle.notifyOfPacketLoss(missing.size());
 				for (Iterator i = missing.iterator(); i.hasNext();) {
 					Integer packetNo = (Integer) i.next();
-					_unsent.addFirst(packetNo);
-					_sentPackets.setBit(packetNo.intValue(), false);
-					synchronized(_senderThread) {
-						_senderThread.notify();
+					if (_prb.isReceived(packetNo.intValue())) {
+					    _unsent.addFirst(packetNo);
+					    _sentPackets.setBit(packetNo.intValue(), false);
+					    synchronized(_senderThread) {
+					        _senderThread.notify();
+					    }
 					}
 				}
 			} else if (msg.getSpec().equals(DMT.allReceived)) {

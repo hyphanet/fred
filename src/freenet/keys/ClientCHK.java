@@ -10,6 +10,8 @@ import freenet.support.Base64;
  */
 public class ClientCHK {
     
+    NodeCHK nodeKey;
+    
     /**
      * @param routingKey The routing key. This is the overall hash of the
      * header and content of the key.
@@ -66,7 +68,9 @@ public class ClientCHK {
      * routingKey and lose everything else.
      */
     public NodeCHK getNodeCHK() {
-        return new NodeCHK(routingKey);
+        if(nodeKey == null)
+            nodeKey = new NodeCHK(routingKey);
+        return nodeKey;
     }
 
     /**
