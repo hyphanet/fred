@@ -6,7 +6,6 @@ import java.io.IOException;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
-import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
@@ -37,7 +36,7 @@ public class FreenetStore {
      * Retrieve a block.
      * @return null if there is no such block stored, otherwise the block.
      */
-    public CHKBlock fetch(NodeCHK chk) throws IOException, CHKVerifyException {
+    public CHKBlock fetch(NodeCHK chk) throws IOException {
         byte[] data = dataStore.getDataForBlock(chk);
         if(data == null) {
             if(headersStore.getDataForBlock(chk) != null) {
@@ -65,7 +64,14 @@ public class FreenetStore {
 //        Logger.minor(this, "Raw headers: "+headers.length+" bytes, hash "+Fields.hashCode(headers));
 //        Logger.minor(this, "Headers: "+headerLen+" bytes, hash "+Fields.hashCode(headers));
 //        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
-        return new CHKBlock(data, buf, chk);
+        try {
+            return new CHKBlock(data, buf, chk);
+        } catch (CHKVerifyException e) {
+            Logger.normal(this, "Does not verify, deleting: "+chk);
+            dataStore.delete(chk);
+            headersStore.delete(chk);
+            return null;
+        }
     }
 
     /**

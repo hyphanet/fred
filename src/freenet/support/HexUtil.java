@@ -15,7 +15,7 @@ import java.util.BitSet;
  * @author syoung
  */
 public class HexUtil {
-	private static boolean logDEBUG =Logger.logger.shouldLog(Logger.DEBUG,HexUtil.class);
+	private static boolean logDEBUG =Logger.logger.instanceShouldLog(Logger.DEBUG,HexUtil.class);
 	private HexUtil() {		
 	}	
 	

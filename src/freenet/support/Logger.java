@@ -72,6 +72,10 @@ public abstract class Logger {
 	    logger.log(o, s, MINOR);
 	}
 	
+    public static void minor(Class class1, String string, Throwable t) {
+        logger.log(class1, string, t, MINOR);
+    }
+    
 	public static void normal(Object o, String s) {
 	    logger.log(o, s, NORMAL);
 	}
@@ -142,9 +146,13 @@ public abstract class Logger {
     public abstract void log(Class c, String message, Throwable e,
                     int priority);
 	
-	public abstract boolean shouldLog(int priority, Class c);
+	public abstract boolean instanceShouldLog(int priority, Class c);
+	
+	public static boolean shouldLog(int priority, Class c) {
+	    return logger.instanceShouldLog(priority, c);
+	}
 
-	public abstract boolean shouldLog(int prio, Object o);
+	public abstract boolean instanceShouldLog(int prio, Object o);
 	
 	/**
 	 * Changes the priority threshold.

@@ -26,13 +26,14 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.2 2005/03/09 20:12:45 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.3 2005/03/16 22:11:00 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	private LinkedList _filters = new LinkedList();
 	private LinkedList _unclaimed = new LinkedList();
 	private int _unclaimedPos = 0;
 	private int _dropProbability = 0;
+	private LowLevelFilter lowLevelFilter;
 	/** RNG for debugging, used with _dropProbability.
 	 * NOT CRYPTO SAFE. DO NOT USE FOR THINGS THAT NEED CRYPTO SAFE RNG!
 	 */
@@ -68,8 +69,22 @@ public class UdpSocketManager extends Thread {
 			// Check for timedout _filters
 			removeTimedOutFilters();
 			// Check for matched _filters
-			if (packet != null) {
-				checkFilters(packet);
+			if(packet != null) {
+			    Peer peer = new Peer(packet.getAddress(), packet.getPort());
+				if(lowLevelFilter != null)
+				    lowLevelFilter.process(packet.getData(), packet.getOffset(), 
+				            packet.getLength(), peer);
+			    else {
+			        Message m = null;
+			        try {
+			            m = Message.decodeFromPacket(packet.getData(), packet.getOffset(),
+			                    packet.getLength(), peer);
+			        } catch (Throwable t) {
+			            Logger.error(this, "Could not decode packet: "+t, t);
+			        }
+			        if(m != null)
+			            checkFilters(m);
+			    }
 			}
 		}
 		synchronized (this) {
@@ -161,21 +176,6 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 	
-	private void checkFilters(DatagramPacket packet) {
-		Message m = null;
-		try {
-			m = Message.decodeFromPacket(packet);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Logger.error(this, "Couldn't parse packet from " + packet.getAddress());
-			return;
-		}
-		if (m == null) {
-			return;
-		}
-		checkFilters(m);
-	}
-
 	public Message waitFor(MessageFilter filter) {
 		long startTime = System.currentTimeMillis();
 		Message ret = null;
@@ -288,6 +288,10 @@ public class UdpSocketManager extends Thread {
 		_dispatcher = d;
 	}
 
+	public void setLowLevelFilter(LowLevelFilter f) {
+	    lowLevelFilter = f;
+	}
+	
 	public String toString() {
 		return _sock.getLocalAddress() + ":" + _sock.getLocalPort();
 	}

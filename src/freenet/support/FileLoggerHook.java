@@ -579,7 +579,7 @@ public class FileLoggerHook extends LoggerHook {
 	}
 
 	public void log(Object o, Class c, String msg, Throwable e, int priority) {
-		if (!shouldLog(priority, c))
+		if (!instanceShouldLog(priority, c))
 			return;
 
 		if (closed)

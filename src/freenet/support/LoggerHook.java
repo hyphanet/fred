@@ -56,7 +56,7 @@ public abstract class LoggerHook extends Logger {
      *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUGGING.
      **/
     public void log(Object source, String message, int priority) {
-        if (!shouldLog(priority,source)) return;
+        if (!instanceShouldLog(priority,source)) return;
         log(source, source == null ? null : source.getClass(), 
             message, null, priority);
     }
@@ -72,7 +72,7 @@ public abstract class LoggerHook extends Logger {
      */
     public void log(Object o, String message, Throwable e, 
                     int priority) {
-        if (!shouldLog(priority,o)) return;
+        if (!instanceShouldLog(priority,o)) return;
         log(o, o == null ? null : o.getClass(), message, e, priority);
     }
 
@@ -84,13 +84,13 @@ public abstract class LoggerHook extends Logger {
      *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUGGING.
      */
     public void log(Class c, String message, int priority) {
-        if (!shouldLog(priority,c)) return;
+        if (!instanceShouldLog(priority,c)) return;
         log(null, c, message, null, priority);
     }
 
 
 	public void log(Class c, String message, Throwable e, int priority) {
-		if (!shouldLog(priority, c))
+		if (!instanceShouldLog(priority, c))
 			return;
 		log(null, c, message, e, priority);
 	}
@@ -170,7 +170,7 @@ public abstract class LoggerHook extends Logger {
         }
     }
 
-	public boolean shouldLog(int priority, Class c) {
+	public boolean instanceShouldLog(int priority, Class c) {
 		int thresh = threshold;
 		if (c != null && detailedThresholds.length > 0) {
 			String cname = c.getName();
@@ -184,8 +184,8 @@ public abstract class LoggerHook extends Logger {
 		return priority >= thresh;
 	}
 
-	public final boolean shouldLog(int prio, Object o) {
-		return shouldLog(prio, o == null ? null : o.getClass());
+	public final boolean instanceShouldLog(int prio, Object o) {
+		return instanceShouldLog(prio, o == null ? null : o.getClass());
 	}
 	
 

@@ -33,39 +33,49 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.2 2005/03/09 20:12:45 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.3 2005/03/16 22:11:00 amphibian Exp $";
 
 	private final MessageType _spec;
 	private final Peer _source;
 	private final HashMap _payload = new HashMap();
 
-	public static Message decodeFromPacket(DatagramPacket packet) throws IOException {
+	public static Message decodeFromPacket(byte[] buf, int offset, int length, Peer peer) {
 		DataInputStream dis
-		    = new DataInputStream(new ByteArrayInputStream(packet.getData(),
-		        packet.getOffset(), packet.getLength()));
-		MessageType mspec = MessageType.getSpec(new Integer(dis.readInt()));
-		if (mspec == null) {
-			return null;
+	    = new DataInputStream(new ByteArrayInputStream(buf,
+	        offset, length));
+		MessageType mspec;
+        try {
+            mspec = MessageType.getSpec(new Integer(dis.readInt()));
+        } catch (IOException e1) {
+            Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
+            return null;
+        }
+        if (mspec == null) {
+		    return null;
 		}
 		if(mspec.isInternalOnly())
 		    return null; // silently discard internal-only messages
-		Message m = new Message(mspec, new Peer(packet.getAddress(), packet.getPort()));
+		Message m = new Message(mspec, peer);
 		try {
-		for (Iterator i = mspec.getOrderedFields().iterator(); i.hasNext();) {
-			String name = (String) i.next();
-			Class type = (Class) mspec.getFields().get(name);
-			if (type.equals(LinkedList.class)) { // Special handling for LinkedList to deal with element type
-				m.set(name, Serializer.readListFromDataInputStream((Class) mspec.getLinkedListTypes().get(name), dis));
-			} else {
-				m.set(name, Serializer.readFromDataInputStream(type, dis));
-			}
-		}
+		    for (Iterator i = mspec.getOrderedFields().iterator(); i.hasNext();) {
+		        String name = (String) i.next();
+		        Class type = (Class) mspec.getFields().get(name);
+		        if (type.equals(LinkedList.class)) { // Special handling for LinkedList to deal with element type
+		            m.set(name, Serializer.readListFromDataInputStream((Class) mspec.getLinkedListTypes().get(name), dis));
+		        } else {
+		            m.set(name, Serializer.readFromDataInputStream(type, dis));
+		        }
+		    }
 		} catch (EOFException e) {
-			Logger.normal(Message.class,"Message packet ends prematurely while deserialising "+mspec.getName());
+		    Logger.normal(Message.class,"Message packet ends prematurely while deserialising "+mspec.getName());
+		    return null;
+		} catch (IOException e) {
+		    Logger.error(Message.class, "WTF?: "+e+" reading from buffer stream", e);
+		    return null;
 		}
 		return m;
 	}
-
+	
 	public Message(MessageType spec) {
 		this(spec, null);
 	}

@@ -37,11 +37,11 @@ public class VoidLogger extends Logger
 		return 0;
 	}
 
-	public boolean shouldLog(int priority, Class c) {
+	public boolean instanceShouldLog(int priority, Class c) {
 		return false;
 	}
 
-	public boolean shouldLog(int prio, Object o) {
+	public boolean instanceShouldLog(int prio, Object o) {
 		return false;
 	}
 

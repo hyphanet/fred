@@ -74,7 +74,7 @@ public class DLES {
 
     public BigInteger[] encrypt(DSAPublicKey pub, byte[] M,
 				Random r) {
-	boolean logDEBUG = Core.logger.shouldLog(Logger.DEBUG,this);
+	boolean logDEBUG = Core.logger.instanceShouldLog(Logger.DEBUG,this);
 	DSAGroup gr=pub.getGroup();
 	BigInteger [] C=new BigInteger[3];
 

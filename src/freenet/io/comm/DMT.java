@@ -65,6 +65,7 @@ public class DMT {
     public static final String TEST_CHK_HEADERS = "testCHKHeaders";
     public static final String HTL = "hopsToLive";
     public static final String SUCCESS = "success";
+    public static final String SOURCE_PEER = "sourcePeer";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -478,6 +479,41 @@ public class DMT {
         msg.set(UID, id);
         msg.set(SUCCESS, success);
         msg.set(REASON, reason);
+        return msg;
+    }
+
+    // FNP messages
+    public static MessageType FNPDataRequest = new MessageType("FNPDataRequest") {{
+        addField(UID, Long.class);
+        addField(HTL, Integer.class);
+        addField(FREENET_ROUTING_KEY, NodeCHK.class);
+    }};
+    
+    public static Message createFNPDataRequest(long id, int htl, NodeCHK key) {
+        Message msg = new Message(FNPDataRequest);
+        msg.set(UID, id);
+        msg.set(HTL, htl);
+        msg.set(FREENET_ROUTING_KEY, key);
+        return msg;
+    }
+    
+    public static MessageType FNPRejectLoop = new MessageType("FNPRejectLoop") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createFNPRejectLoop(long id) {
+        Message msg = new Message(FNPRejectLoop);
+        msg.set(UID, id);
+        return msg;
+    }
+    
+    public static MessageType FNPRejectOverload = new MessageType("FNPRejectOverload") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createFNPRejectOverload(long id) {
+        Message msg = new Message(FNPRejectOverload);
+        msg.set(UID, id);
         return msg;
     }
     
