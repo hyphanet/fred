@@ -84,7 +84,7 @@ public class FredConfig {
      * directly within this directory are associated with it - node.listenPort
      * belongs to node, but node.blah.xyz does not.
      */
-    void register(Object callback, Config defaults, String dirName) {
+    void register(Configgable callback, Config defaults, String dirName) {
         Subconfig sc = new Subconfig(defaults, callback);
         subconfigs.put(dirName.toLowerCase(), sc);
         update(dirName, sc);
@@ -92,6 +92,8 @@ public class FredConfig {
     
     /**
      * Update a given Subconfig and call all the callbacks.
+     * If a callback throws an IllegalArgumentException, log it at ERROR,
+     * and possibly on the UAM.
      * @param dirName The name of the Subconfig
      * @param sc The Subconfig itself.
      */

@@ -26,7 +26,7 @@ import freenet.support.config.RandomPortOption;
  * 
  * A Freenet node.
  */
-public class Node implements SimpleClientInterface, Dispatcher {
+public class Node implements SimpleClientInterface, Dispatcher, Configgable {
 
     final FredConfig fc;
     final UserAlertManager uam;
@@ -37,6 +37,9 @@ public class Node implements SimpleClientInterface, Dispatcher {
     final RandomSource rand;
     FreenetStore store;
     ChainManager chains;
+    boolean finishedInitCallbacks = false;
+    long storeSize = -1; // until set
+    String storeFilename = null;
     
     /**
      * Create Node.
@@ -54,6 +57,8 @@ public class Node implements SimpleClientInterface, Dispatcher {
         // FIXME: real routing!
         pm = new PeerManager(new RandomRouterFactory(rand));
         pm.setNode(this);
+        
+        store = new ConfiggableFreenetStore(fc);
     }
     
     // Config definitions
@@ -63,6 +68,7 @@ public class Node implements SimpleClientInterface, Dispatcher {
         // Add options
         config.addOption(new RandomPortOption("listenPort", 1, 101));
         // Detail for user
+        
 		// listenPort
 		config.argDesc("listenPort", "<port no.>");
 		config.shortDesc("listenPort", "incoming FNP port");
@@ -72,6 +78,7 @@ public class Node implements SimpleClientInterface, Dispatcher {
 
     // Config callbacks
     
+    // listenPort is used immediately
     public int getListenPort() {
         return myPort;
     }
@@ -219,5 +226,13 @@ public class Node implements SimpleClientInterface, Dispatcher {
     public boolean wantConnections() {
         // FIXME: we don't always! Implement!
         return true;
+    }
+
+    /* (non-Javadoc)
+     * @see freenet.node.Configgable#finishedInitCallbacks()
+     */
+    public void finishedInitCallbacks() {
+        // TODO Auto-generated method stub
+        
     }
 }
