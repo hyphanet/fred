@@ -20,6 +20,7 @@
 package freenet.io.comm;
 
 import freenet.*;
+import freenet.keys.NodeCHK;
 import freenet.support.*;
 
 import java.util.*;
@@ -56,6 +57,9 @@ public class DMT {
 	public static final String HASH = "hash";
 	public static final String SENT = "sent";
 	public static final String MISSING = "missing";
+	public static final String KEY = "key";
+	public static final String CHK_HEADER = "chkHeader";
+	public static final String FREENET_URI = "freenetURI";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -362,6 +366,38 @@ public class DMT {
 	    return msg;
 	}
 	
+	public static final MessageType testSendCHK = new MessageType("testSendCHK") {{
+	    addField(UID, Integer.class);
+	    addField(FREENET_URI, String.class);
+	    addField(CHK_HEADER, Buffer.class);
+	}};
+	
+    /**
+     * @param uid
+     * @param nodeKey
+     * @param header
+     * @return
+     */
+    public static Message createTestSendCHK(int uid, String uri, Buffer header) {
+        Message msg = new Message(testSendCHK);
+        msg.set(UID, uid);
+        msg.set(FREENET_URI, uri);
+        msg.set(CHK_HEADER, header);
+        return msg;
+    }
+
+    public static final MessageType testSendCHKAck = new MessageType("testSendCHKAck") {{
+        addField(UID, Integer.class);
+        addField(FREENET_URI, String.class);
+    }};
+
+    public static Message createTestSendCHKAck(int uid, String key) {
+        Message msg = new Message(testSendCHKAck);
+        msg.set(UID, uid);
+        msg.set(FREENET_URI, key);
+        return msg;
+    }
+    
 	public static void init() { }
 
 }

@@ -20,11 +20,12 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.support.HexUtil;
 
 /**
- * Ping test.
- * Just me getting used to the Dijjer-derived messaging system really.
+ * Transfer of random data with a SHA-1 checksum.
  * Takes two parameters: ourPort and hisPort.
- * Sends a ping message every second.
- * Prints out whenever we receive a ping message.
+ * Sends a ping message every second until we get 10, for handshaking.
+ * Then sends a random block.
+ * Also receives and handles.
+ * SHA-1 is printed on both ends for verification.
  * @author amphibian
  */
 public class TransferSendTest {
