@@ -63,6 +63,8 @@ public class DMT {
 	public static final String FREENET_URI = "freenetURI";
 	public static final String FREENET_ROUTING_KEY = "freenetRoutingKey";
     public static final String TEST_CHK_HEADERS = "testCHKHeaders";
+    public static final String HTL = "hopsToLive";
+    public static final String SUCCESS = "success";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -386,12 +388,14 @@ public class DMT {
     public static final MessageType testRequest = new MessageType("testRequest") {{
         addField(UID, Long.class);
         addField(FREENET_ROUTING_KEY, Key.class);
+        addField(HTL, Integer.class);
     }};
     
-    public static Message createTestRequest(NodeCHK nodeCHK, long id) {
+    public static Message createTestRequest(NodeCHK nodeCHK, long id, int htl) {
         Message msg = new Message(testRequest);
         msg.set(UID, id);
         msg.set(FREENET_ROUTING_KEY, nodeCHK);
+        msg.set(HTL, htl);
         return msg;
     }
 
@@ -441,13 +445,42 @@ public class DMT {
     public static MessageType testDataNotFoundAck = new MessageType("testDataNotFoundAck") {{
         addField(UID, Long.class);
     }};
-    
     public static Message createTestDataNotFoundAck(long id) {
         Message msg = new Message(testDataNotFoundAck);
         msg.set(UID, id);
         return msg;
     }
+    
+    // Internal only messages
+    
+    public static MessageType testReceiveCompleted = new MessageType("testReceiveCompleted", true) {{
+        addField(UID, Long.class);
+        addField(SUCCESS, Boolean.class);
+        addField(REASON, String.class);
+    }};
+    
+    public static Message createTestReceiveCompleted(long id, boolean success, String reason) {
+        Message msg = new Message(testReceiveCompleted);
+        msg.set(UID, id);
+        msg.set(SUCCESS, success);
+        msg.set(REASON, reason);
+        return msg;
+    }
+    
+    public static MessageType testSendCompleted = new MessageType("testSendCompleted", true) {{
+        addField(UID, Long.class);
+        addField(SUCCESS, Boolean.class);
+        addField(REASON, String.class);
+    }};
 
+    public static Message createTestSendCompleted(long id, boolean success, String reason) {
+        Message msg = new Message(testSendCompleted);
+        msg.set(UID, id);
+        msg.set(SUCCESS, success);
+        msg.set(REASON, reason);
+        return msg;
+    }
+    
 	public static void init() { }
 
 }

@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.1 2005/01/29 19:12:10 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.2 2005/03/09 20:12:45 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	private LinkedList _filters = new LinkedList();
@@ -121,19 +121,8 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 
-	private void checkFilters(DatagramPacket packet) {
+	public void checkFilters(Message m) {
 		boolean matched = false;
-		Message m = null;
-		try {
-			m = Message.decodeFromPacket(packet);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Logger.error(this, "Couldn't parse packet from " + packet.getAddress());
-			return;
-		}
-		if (m == null) {
-			return;
-		}
 		if (!(m.getSpec().equals(DMT.packetTransmit))) {
 			if (m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) {
 				Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getLocalPort() + " <- "
@@ -171,6 +160,21 @@ public class UdpSocketManager extends Thread {
 			}
 		}
 	}
+	
+	private void checkFilters(DatagramPacket packet) {
+		Message m = null;
+		try {
+			m = Message.decodeFromPacket(packet);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Logger.error(this, "Couldn't parse packet from " + packet.getAddress());
+			return;
+		}
+		if (m == null) {
+			return;
+		}
+		checkFilters(m);
+	}
 
 	public Message waitFor(MessageFilter filter) {
 		long startTime = System.currentTimeMillis();
@@ -182,6 +186,7 @@ public class UdpSocketManager extends Thread {
 				if (filter.match(m)) {
 					i.remove();
 					ret = m;
+					Logger.debug(this, "Matching from _unclaimed");
 				}
 			}
 		}
@@ -192,12 +197,14 @@ public class UdpSocketManager extends Thread {
 				while (true) {
 					if (!i.hasNext()) {
 						i.add(filter);
+						Logger.debug(this, "Added at end");
 						break;
 					}
 					MessageFilter mf = (MessageFilter) i.next();
 					if (mf.getTimeout() > filter.getTimeout()) {
 						i.previous();
 						i.add(filter);
+						Logger.debug(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
 						break;
 					}
 				}
@@ -206,13 +213,18 @@ public class UdpSocketManager extends Thread {
 				try {
 					// Precaution against filter getting matched between being added to _filters and
 					// here - bug discovered by Mason
-					if (!filter.matched()) {
-						filter.wait();
+				    while(!filter.matched()) {
+				        long wait = filter.getTimeout()-System.currentTimeMillis();
+				        if(wait > 0)
+				            filter.wait(wait);
+				        else break;
 					}
 				} catch (InterruptedException e) {
 				}
+				ret = filter.getMessage();
+				filter.clearMatched();
 			}
-			ret = filter.getMessage();
+			Logger.debug(this, "Returning "+ret+" from "+filter);
 		}
 		// Probably get rid...
 //		if (Dijjer.getDijjer().getDumpMessageWaitTimes() != null) {
@@ -220,10 +232,16 @@ public class UdpSocketManager extends Thread {
 //					+ (System.currentTimeMillis() - startTime));
 //			Dijjer.getDijjer().getDumpMessageWaitTimes().flush();
 //		}
+		long endTime = System.currentTimeMillis();
+		Logger.debug(this, "Returning in "+(endTime-startTime)+"ms");
 		return ret;
 	}
 
 	public void send(Peer destination, Message m) {
+	    if(m.getSpec().isInternalOnly()) {
+	        Logger.error(this, "Trying to send internal-only message "+m+" of spec "+m.getSpec(), new Exception("debug"));
+	        return;
+	    }
 		if (_dropProbability > 0) {
 			if (dropRandom.nextInt() % _dropProbability == 0) {
 				Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPort() + " : " + m);

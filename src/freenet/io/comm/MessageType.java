@@ -25,7 +25,7 @@ import freenet.support.Logger;
 
 public class MessageType {
 
-    public static final String VERSION = "$Id: MessageType.java,v 1.2 2005/02/12 16:00:06 amphibian Exp $";
+    public static final String VERSION = "$Id: MessageType.java,v 1.3 2005/03/09 20:12:37 amphibian Exp $";
 
 	private static HashMap _specs = new HashMap();
 
@@ -33,13 +33,19 @@ public class MessageType {
 	private final LinkedList _orderedFields = new LinkedList();
 	private final HashMap _fields = new HashMap();
 	private final HashMap _linkedListTypes = new HashMap();
+	private final boolean internalOnly;
 
 	static {
 		DMT.init();
 	}
 
 	public MessageType(String name) {
+	    this(name, false);
+	}
+	
+	public MessageType(String name, boolean internal) {
 		_name = name;
+		internalOnly = internal;
 		Integer id = new Integer(name.hashCode());
 		if (_specs.containsKey(id)) {
 			throw new RuntimeException("A message type by the name of " + name + " already exists!");
@@ -106,4 +112,13 @@ public class MessageType {
 	public Map getLinkedListTypes() {
 		return _linkedListTypes;
 	}
+
+    /**
+     * @return True if this message is internal-only.
+     * If this is the case, any incoming messages in UDP form of this
+     * spec will be silently discarded.
+     */
+    public boolean isInternalOnly() {
+        return internalOnly;
+    }
 }

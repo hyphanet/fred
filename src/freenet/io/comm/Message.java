@@ -33,7 +33,7 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.1 2005/01/29 19:12:10 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.2 2005/03/09 20:12:45 amphibian Exp $";
 
 	private final MessageType _spec;
 	private final Peer _source;
@@ -47,6 +47,8 @@ public class Message {
 		if (mspec == null) {
 			return null;
 		}
+		if(mspec.isInternalOnly())
+		    return null; // silently discard internal-only messages
 		Message m = new Message(mspec, new Peer(packet.getAddress(), packet.getPort()));
 		try {
 		for (Iterator i = mspec.getOrderedFields().iterator(); i.hasNext();) {
@@ -168,6 +170,10 @@ public class Message {
 		return _source;
 	}
 
+	public boolean isInternal() {
+	    return _source == null;
+	}
+	
 	public MessageType getSpec() {
 		return _spec;
 	}

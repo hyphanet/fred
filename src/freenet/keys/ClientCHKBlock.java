@@ -115,10 +115,12 @@ public class ClientCHKBlock extends CHKBlock {
         md256.reset();
         // IV = E(H(crypto key))
         byte[] plainIV = md256.digest(encKey);
-        header = new byte[plainIV.length+2];
-        System.arraycopy(plainIV, 0, header, 0, plainIV.length);
-        header[plainIV.length] = (byte)(sourceData.length >> 8);
-        header[plainIV.length+1] = (byte)(sourceData.length & 0xff);
+        header = new byte[plainIV.length+2+2];
+        header[0] = (byte)(CHKBlock.HASH_SHA1 >> 8);
+        header[1] = (byte)(CHKBlock.HASH_SHA1 & 0xff);
+        System.arraycopy(plainIV, 0, header, 2, plainIV.length);
+        header[plainIV.length+2] = (byte)(sourceData.length >> 8);
+        header[plainIV.length+3] = (byte)(sourceData.length & 0xff);
         // GRRR, java 1.4 does not have any symmetric crypto
         // despite exposing asymmetric and hashes!
         
@@ -132,7 +134,7 @@ public class ClientCHKBlock extends CHKBlock {
         }
         cipher.initialize(encKey);
         PCFBMode pcfb = new PCFBMode(cipher);
-        pcfb.blockEncipher(header, 0, header.length);
+        pcfb.blockEncipher(header, 2, header.length-2);
         pcfb.blockEncipher(data, 0, data.length);
         
         // Now calculate the final hash

@@ -56,6 +56,10 @@ public abstract class Logger {
         logger.log(o, s, t, DEBUG);
     }
     
+	public static void error(Class c, String s) {
+	    logger.log(c, s, ERROR);
+	}
+	
 	public static void error(Object o, String s) {
 	    logger.log(o, s, ERROR);
 	}
@@ -174,9 +178,5 @@ public abstract class Logger {
     public static void fatal(Object cause, int retcode, String message) {
         error(cause, message);
         System.exit(retcode);
-    }
-
-    public static void error(Object o, String message, IOException e) {
-        logger.log(o, message, e, ERROR);
     }
 }

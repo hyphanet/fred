@@ -23,8 +23,10 @@ public class CHKBlock {
 
     final byte[] data;
     final byte[] header;
+    final short hashIdentifier;
     final NodeCHK chk;
     protected static final int MAX_LENGTH_BEFORE_COMPRESSION = 1024 * 1024;
+    final static int HASH_SHA1 = 1;
     
     public String toString() {
         return super.toString()+": chk="+chk;
@@ -51,6 +53,8 @@ public class CHKBlock {
     public CHKBlock(byte[] data2, byte[] header2, NodeCHK chk, boolean verify) throws CHKVerifyException {
         data = data2;
         header = header2;
+        if(header.length < 2) throw new IllegalArgumentException("Too short: "+header.length);
+        hashIdentifier = (short)(((header[0] & 0xff) << 8) + (header[1] & 0xff));
         this.chk = chk;
 //        Logger.debug(CHKBlock.class, "Data length: "+data.length+", header length: "+header.length);
         // FIXME: enable
@@ -58,6 +62,8 @@ public class CHKBlock {
         
         // Minimal verification
         // Check the hash
+        if(hashIdentifier != HASH_SHA1)
+            throw new CHKVerifyException("Hash not SHA-1");
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-1");
@@ -92,8 +98,8 @@ public class CHKBlock {
         }
         cipher.initialize(key.cryptoKey);
         PCFBMode pcfb = new PCFBMode(cipher);
-        byte[] hbuf = new byte[header.length];
-        System.arraycopy(header, 0, hbuf, 0, header.length);
+        byte[] hbuf = new byte[header.length-2];
+        System.arraycopy(header, 2, hbuf, 0, header.length-2);
         byte[] dbuf = new byte[data.length];
         System.arraycopy(data, 0, dbuf, 0, data.length);
         pcfb.blockDecipher(hbuf, 0, hbuf.length);

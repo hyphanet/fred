@@ -356,7 +356,7 @@ public class QuasiNodeTest {
         Logger.minor(QuasiNodeTest.class, "Routing to "+pn);
         Peer peer = pn.peer;
         long id = r.nextLong();
-        Message request = DMT.createTestRequest(nodeCHK, id);
+        Message request = DMT.createTestRequest(nodeCHK, id, -1);
         usm.send(peer, request);
         // Wait for response
         Message reply = usm.waitFor(MessageFilter.create().setTimeout(5000).setType(DMT.testDataReply).setField(DMT.UID, id).setSource(peer).

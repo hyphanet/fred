@@ -21,6 +21,8 @@ package freenet.io.comm;
 
 import java.util.*;
 
+import freenet.support.Logger;
+
 /**
  * @author ian
  *
@@ -29,7 +31,7 @@ import java.util.*;
  */
 public class MessageFilter {
 
-    public static final String VERSION = "$Id: MessageFilter.java,v 1.2 2005/02/12 16:00:07 amphibian Exp $";
+    public static final String VERSION = "$Id: MessageFilter.java,v 1.3 2005/03/09 20:12:44 amphibian Exp $";
 
     private static final int DEFAULT_TIMEOUT = 10000;
     private boolean _matched = false;
@@ -148,6 +150,7 @@ public class MessageFilter {
     }
 
     public void setMessage(Message message) {
+        Logger.debug(this, "setMessage("+message+") on "+this, new Exception("debug"));
         _message = message;
     }
 
@@ -161,5 +164,10 @@ public class MessageFilter {
 
     public String toString() {
     	return _type.getName();
+    }
+
+    public void clearMatched() {
+        _matched = false;
+        _message = null;
     }
 }

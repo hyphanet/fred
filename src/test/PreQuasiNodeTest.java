@@ -174,7 +174,7 @@ public class PreQuasiNodeTest {
         if(block != null) return block;
         // Otherwise...
         long id = r.nextLong();
-        Message request = DMT.createTestRequest(nodeCHK, id);
+        Message request = DMT.createTestRequest(nodeCHK, id, -1);
         usm.send(otherSide, request);
         // Wait for response
         Message reply = usm.waitFor(MessageFilter.create().setTimeout(5000).setType(DMT.testDataReply).setField(DMT.UID, id).
