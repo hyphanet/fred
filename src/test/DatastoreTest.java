@@ -32,7 +32,7 @@ public class DatastoreTest {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         while(true) {
             String line = reader.readLine();
-            if(line.startsWith("GET:")) {
+            if(line.toUpperCase().startsWith("GET:")) {
                 // Should have a key next
                 String key = line.substring("GET:".length());
                 while(key.length() > 0 && key.charAt(0) == ' ')
@@ -63,10 +63,10 @@ public class DatastoreTest {
                     System.out.println("Decoded data:\n");
                     System.out.println(new String(decoded));
                 }
-            } else if(line.startsWith("QUIT")) {
+            } else if(line.toUpperCase().startsWith("QUIT")) {
                 System.out.println("Goodbye.");
                 System.exit(0);
-            } else if(line.startsWith("PUT:")) {
+            } else if(line.toUpperCase().startsWith("PUT:")) {
                 line = line.substring("PUT:".length());
                 while(line.length() > 0 && line.charAt(0) == ' ')
                     line = line.substring(1);
