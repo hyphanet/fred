@@ -1,13 +1,8 @@
 package freenet.keys;
 
-import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.Random;
-import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
@@ -16,28 +11,41 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 
+
 /**
  * @author amphibian
  * 
- * Client CHK, plus the actual data. Used for encoding a block of data into
- * a CHK, or decoding a fetched block into something usable by the client.
- * Can provide the client URI, not just the node level routing key.
+ * Client CHKBlock - provides functions for decoding, holds a key.
  */
-public class ClientCHKBlock {
+public class ClientCHKBlock extends CHKBlock {
 
     ClientCHK key;
-    byte[] data;
-    byte[] header;
-    private static final int MAX_LENGTH_BEFORE_COMPRESSION = 1024 * 1024;
     
-    static public ClientCHKBlock encode(byte[] sourceData) throws CHKEncodeException {
-        return new ClientCHKBlock(sourceData);
+    public String toString() {
+        return super.toString()+",key="+key;
     }
     
     /**
-     * Encode a block of data to a ClientCHKBlock.
+     * Construct from data retrieved, and a key.
+     * Do not do full decode. Verify what can be verified without doing
+     * a full decode.
+     * @param k The client key.
+     * @param header2 The header.
+     * @param data2 The data.
      */
-    ClientCHKBlock(byte[] sourceData) throws CHKEncodeException {
+    ClientCHKBlock(byte[] data, byte[] header, ClientCHK key2, boolean verify) throws CHKVerifyException {
+        super(data, header, key2.getNodeCHK(), verify);
+        this.key = key2;
+    }
+
+    /**
+     * Encode a block of data to a CHKBlock.
+     */
+
+    static public ClientCHKBlock encode(byte[] sourceData) throws CHKEncodeException {
+        byte[] data;
+        byte[] header;
+        ClientCHK key;
         // Try to compress it - even if it fits into the block,
         // because compressing it improves its entropy.
         boolean compressed = false;
@@ -136,131 +144,19 @@ public class ClientCHKBlock {
         // Now convert it into a ClientCHK
         key = new ClientCHK(finalHash, encKey, compressed, false, ClientCHK.ALGO_AES_PCFB_256);
         System.err.println("Created "+key);
+        
+        try {
+            return new ClientCHKBlock(data, header, key, false);
+        } catch (CHKVerifyException e3) {
+            //WTF?
+            throw new Error(e3);
+        }
     }
 
     /**
      * @return The ClientCHK for this key.
      */
-    public ClientCHK getKey() {
+    public ClientCHK getClientKey() {
         return key;
-    }
-
-    /**
-     * @return The header for this key. DO NOT MODIFY THIS DATA!
-     */
-    public byte[] getHeader() {
-        return header;
-    }
-
-    /**
-     * @return The actual data for this key. DO NOT MODIFY THIS DATA!
-     */
-    public byte[] getData() {
-        return data;
-    }
-
-    /**
-     * Construct from data retrieved, and a key.
-     * Do not do full decode. Verify what can be verified without doing
-     * a full decode.
-     * @param k The client key.
-     * @param header2 The header.
-     * @param data2 The data.
-     */
-    public ClientCHKBlock(ClientCHK k, byte[] header2, byte[] data2) throws CHKVerifyException {
-        key = k;
-        header = header2;
-        data = data2;
-        // Minimal verification
-        // Check the hash
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
-        
-        md.update(header);
-        md.update(data);
-        byte[] hash = md.digest();
-        byte[] check = k.routingKey;
-        if(!java.util.Arrays.equals(hash, check)) {
-            throw new CHKVerifyException("Hash does not verify");
-        }
-        // Otherwise it checks out
-    }
-    
-    /**
-     * Decode the CHK and recover the original data
-     * @return the original data
-     */
-    public byte[] decode() throws CHKDecodeException {
-        // Overall hash already verified, so first job is to decrypt.
-        System.err.println("Decoding "+key);
-        if(key.cryptoAlgorithm != ClientCHK.ALGO_AES_PCFB_256)
-            throw new UnsupportedOperationException();
-        BlockCipher cipher;
-        try {
-            cipher = new Rijndael(256);
-        } catch (UnsupportedCipherException e) {
-            // FIXME - log this properly
-            throw new Error(e);
-        }
-        cipher.initialize(key.cryptoKey);
-        PCFBMode pcfb = new PCFBMode(cipher);
-        byte[] hbuf = new byte[header.length];
-        System.arraycopy(header, 0, hbuf, 0, header.length);
-        byte[] dbuf = new byte[data.length];
-        System.arraycopy(data, 0, dbuf, 0, data.length);
-        pcfb.blockDecipher(hbuf, 0, hbuf.length);
-        pcfb.blockDecipher(dbuf, 0, dbuf.length);
-        // Check: Decryption key == hash of data (not including header)
-        MessageDigest md256;
-        try {
-            md256 = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e1) {
-            // FIXME: log this properly?
-            throw new Error(e1);
-        }
-        byte[] dkey = md256.digest(dbuf);
-        if(!java.util.Arrays.equals(dkey, key.cryptoKey)) {
-            throw new CHKDecodeException("Check failed: decrypt key == H(data)");
-        }
-        // Check: IV == hash of decryption key
-        byte[] predIV = md256.digest(dkey);
-        // Extract the IV
-        byte[] iv = new byte[32];
-        System.arraycopy(hbuf, 0, iv, 0, 32);
-        if(!Arrays.equals(iv, predIV))
-            throw new CHKDecodeException("Check failed: Decrypted IV == H(decryption key)");
-        // Checks complete
-        int size = ((hbuf[32] & 0xff) << 8) + (hbuf[33] & 0xff);
-        if(size > 32768 || size < 0)
-            throw new CHKDecodeException("Invalid size: "+size);
-        if(key.compressed) {
-            if(size < 4) throw new CHKDecodeException("No bytes to decompress");
-            // Decompress
-            // First get the length
-            int len = ((((dbuf[0] & 0xff) << 8) + (dbuf[1] & 0xff)) << 8) +
-            	(dbuf[2] & 0xff);
-            System.err.println("Decompressed length: "+len);
-            if(len > MAX_LENGTH_BEFORE_COMPRESSION)
-                throw new CHKDecodeException("Invalid precompressed size: "+len);
-            byte[] output = new byte[len];
-            Inflater decompressor = new Inflater();
-            decompressor.setInput(dbuf, 3, size-3);
-            try {
-                int resultLength = decompressor.inflate(output);
-                if(resultLength != len)
-                    throw new CHKDecodeException("Wanted "+len+" but got "+resultLength+" bytes from decompression");
-            } catch (DataFormatException e2) {
-                throw new CHKDecodeException(e2);
-            }
-            return output;
-        }
-        byte[] output = new byte[size];
-        // No particular reason to check the padding, is there?
-        System.arraycopy(dbuf, 0, output, 0, size);
-        return output;
     }
 }

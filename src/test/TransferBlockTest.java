@@ -22,9 +22,11 @@ import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
+import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Buffer;
+import freenet.support.Logger;
 
 /**
  * Read from stdin, encode to a new style CHK, send to other node.
@@ -70,8 +72,7 @@ public class TransferBlockTest {
             try {
                 data = br.receive();
             } catch (RetrievalException e1) {
-                System.err.println("Failed to receive: "+e1);
-                e1.printStackTrace();
+                Logger.error(this, "Failed to receive", e1);
                 return;
             }
             System.err.println("Received "+data.length+" bytes");
@@ -79,29 +80,30 @@ public class TransferBlockTest {
             try {
                 k = new ClientCHK(uri);
             } catch (MalformedURLException e3) {
-                System.err.println("Caught "+e3);
-                e3.printStackTrace();
+                Logger.error(this, "Invalid URL sent by other side", e3);
                 return;
             }
             // Now decode it
-            ClientCHKBlock block;
+            CHKBlock block;
             try {
-                block = new ClientCHKBlock(k, header, data);
+                block = new CHKBlock(data, header, k.getNodeCHK());
             } catch (CHKVerifyException e) {
-                System.err.println("Couldn't verify: "+e);
-                e.printStackTrace();
+                Logger.error(this, "Couldn't verify", e);
                 return;
             }
+            long tStart = System.currentTimeMillis();
             byte[] decoded;
             try {
-                decoded = block.decode();
+                decoded = block.decode(k);
             } catch (CHKDecodeException e2) {
-                System.err.println("Couldn't decode: "+e2);
-                e2.printStackTrace();
+                Logger.error(this, "Couldn't decode sent data", e2);
                 return;
             }
-            System.err.println("Decoded: "+decoded.length+" bytes");
-            System.err.println("Decoded data:\n"+new String(decoded));
+            long tEnd = System.currentTimeMillis();
+            Logger.minor(this, "Time taken to decode: "+(tEnd-tStart)+"ms");
+            Logger.minor(this, "Decoded: "+decoded.length+" bytes");
+            Logger.normal(this, "Decoded data:\n"+new String(decoded));
+            System.out.println("Decoded data:\n"+new String(decoded));
         }
     }
     /**
@@ -121,7 +123,7 @@ public class TransferBlockTest {
                 String uri = m.getString(DMT.FREENET_URI);
                 Buffer buf = (Buffer)m.getObject(DMT.CHK_HEADER);
                 byte[] header = buf.getData();
-                System.err.println("Got send request, uid: "+uid+", key: "+uri);
+                Logger.minor(this, "Got send request, uid: "+uid+", key: "+uri);
                 // Receive the actual data
                 Receiver r;
                 try {
@@ -158,9 +160,10 @@ public class TransferBlockTest {
             System.err.println("Syntax: PingTest <myPort> <hisPort>");
             System.exit(1);
         }
+        Logger.setupStdoutLogging(Logger.DEBUG, "");
         int myPort = Integer.parseInt(args[0]);
         int hisPort = Integer.parseInt(args[1]);
-        System.out.println("My port: "+myPort+", his port: "+hisPort);
+        Logger.minor(TransferBlockTest.class, "My port: "+myPort+", his port: "+hisPort);
         // Set up a UdpSocketManager
         usm = new UdpSocketManager(myPort);
         usm.setDispatcher(new PingingReceivingDispatcher());
@@ -171,21 +174,22 @@ public class TransferBlockTest {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
             }
-            System.err.println("Sending ping");
+            Logger.normal(TransferBlockTest.class, "Sending ping");
             usm.send(otherSide, DMT.createPing());
             Message m = usm.waitFor(MessageFilter.create().setTimeout(1000).setType(DMT.pong).setSource(otherSide));
             if(m != null) {
                 consecutivePings++;
-                System.err.println("Got pong: "+m);
+                Logger.normal(TransferBlockTest.class, "Got pong: "+m);
             } else consecutivePings = 0;
         }
-        System.err.println("Got "+consecutivePings+" consecutive pings");
+        Logger.normal(TransferBlockTest.class, "Got "+consecutivePings+" consecutive pings");
         
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         
         Random r = new Random();
         
         while(true) {
+            // Interface - goes to stdout, not log
             System.out.println();
             System.out.println("World's slowest UDP chat client");
             System.out.println("-------------------------------");
@@ -197,34 +201,37 @@ public class TransferBlockTest {
                 message += read;
                 message += '\n';
             }
-            System.out.println("Read: "+message);
+            Logger.debug(TransferBlockTest.class, "Read: "+message);
             // Encode to a CHK
             byte[] temp = message.getBytes();
 
             ClientCHKBlock block = ClientCHKBlock.encode(temp);
-            ClientCHK chk = block.getKey();
+            ClientCHK chk = block.getClientKey();
             FreenetURI uri = 
                 chk.getURI();
+            // Interface, arguably
             System.out.println("URI: "+uri);
             byte[] header = block.getHeader();
             byte[] buf = block.getData();
             // Get a UID
             int uid = r.nextInt();
-            System.out.println("UID: "+uid);
+            Logger.minor(TransferBlockTest.class, "UID: "+uid);
             // Now send it to the other node
             Message sendKey = DMT.createTestSendCHK(uid, uri.toString(), new Buffer(header));
             usm.send(otherSide, sendKey);
             // Wait for ack
             Message m = usm.waitFor(MessageFilter.create().setType(DMT.testSendCHKAck));
             if(m == null) {
+                // Interface?
                 System.err.println("Did not receive ACK");
                 return;
             }
-            System.out.println("Got ack: "+m);
+            Logger.minor(TransferBlockTest.class, "Got ack: "+m);
             PartiallyReceivedBlock prb = new PartiallyReceivedBlock(32, 1024, buf);
             BlockTransmitter bt = new BlockTransmitter(usm, otherSide, uid, prb);
             bt.send();
-            System.out.println("Sent");
+            // Definitely interface.
+            System.out.println("Sent.");
         }
     }
 }

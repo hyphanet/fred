@@ -31,13 +31,37 @@ public abstract class Logger {
 	 * Single global LoggerHook.
 	 */
 	static Logger logger = new VoidLogger();
+	
+	public static void setupStdoutLogging(int level, String detail) {
+	    setupChain();
+	    logger.setThreshold(level);
+	    logger.setDetailedThresholds(detail);
+	    FileLoggerHook fh;
+	    fh = new FileLoggerHook(System.out, "d (c, t, p): m", "", level);
+	    if(detail != null)
+	        fh.setDetailedThresholds(detail);
+	    ((LoggerHookChain) logger).addHook(fh);
+	    fh.start();
+	}
 
-	public static void debug(Object o, String s) {
+    private static void setupChain() {
+        logger = new LoggerHookChain();
+    }
+
+    public static void debug(Object o, String s) {
 	    logger.log(o, s, DEBUG);
 	}
 	
+    public static void debug(Object o, String s, Throwable t) {
+        logger.log(o, s, t, DEBUG);
+    }
+    
 	public static void error(Object o, String s) {
 	    logger.log(o, s, ERROR);
+	}
+	
+	public static void error(Object o, String s, Throwable e) {
+	    logger.log(o, s, e, ERROR);
 	}
 	
 	public static void minor(Object o, String s) {
@@ -46,6 +70,10 @@ public abstract class Logger {
 	
 	public static void normal(Object o, String s) {
 	    logger.log(o, s, NORMAL);
+	}
+	
+	public static void normal(Class c, String s) {
+	    logger.log(c, s, NORMAL);
 	}
 	
 	/**
