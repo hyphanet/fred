@@ -1,9 +1,15 @@
 package freenet.keys;
 
+import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
+
+import org.spaceroots.mantissa.random.MersenneTwister;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
@@ -22,6 +28,7 @@ public class ClientCHKBlock {
     ClientCHK key;
     byte[] data;
     byte[] header;
+    private static final int MAX_LENGTH_BEFORE_COMPRESSION = 1024 * 1024;
     
     static public ClientCHKBlock encode(byte[] sourceData) throws CHKEncodeException {
         return new ClientCHKBlock(sourceData);
@@ -31,6 +38,33 @@ public class ClientCHKBlock {
      * Encode a block of data to a ClientCHKBlock.
      */
     ClientCHKBlock(byte[] sourceData) throws CHKEncodeException {
+        // Try to compress it - even if it fits into the block,
+        // because compressing it improves its entropy.
+        boolean compressed = false;
+        if(sourceData.length > MAX_LENGTH_BEFORE_COMPRESSION)
+            throw new CHKEncodeException("Too big");
+        if(sourceData.length > 0) {
+            int sourceLength = sourceData.length;
+            byte[] cbuf = new byte[32768+1024];
+            Deflater compressor = new Deflater();
+            compressor.setInput(sourceData);
+            compressor.finish();
+            int compressedLength = compressor.deflate(cbuf);
+            System.err.println("Raw length: "+sourceData.length);
+            System.err.println("Compressed length: "+compressedLength);
+            if(compressedLength+2 < sourceData.length) {
+                // Yay
+                sourceData = new byte[compressedLength+3];
+                System.arraycopy(cbuf, 0, sourceData, 3, compressedLength);
+                sourceData[0] = (byte) ((sourceLength >> 16) & 0xff);
+                sourceData[1] = (byte) ((sourceLength >> 8) & 0xff);
+                sourceData[2] = (byte) ((sourceLength) & 0xff);
+                compressed = true;
+            }
+        }
+        if(sourceData.length > 32768) {
+            throw new CHKEncodeException("Too big");
+        }
         MessageDigest md160;
         try {
             md160 = MessageDigest.getInstance("SHA-1");
@@ -39,37 +73,6 @@ public class ClientCHKBlock {
             // more user-friendly message...
             throw new Error(e2);
         }
-        // FIXME: gzip support
-        if(sourceData.length > 32768) {
-            throw new CHKEncodeException("Too big");
-        }
-        // First pad it
-        if(sourceData.length < 32768) {
-            // Hash the data
-            md160.digest(new byte[] { 0 });
-            if(sourceData.length > 0)
-            	md160.update(sourceData);
-            byte[] digest = md160.digest();
-            // FIXME: use Mersenne Twistors
-            long seed;
-            seed = (digest[0] & 0xff);
-            seed = seed << 8 + (digest[1] & 0xff);
-            seed = seed << 8 + (digest[2] & 0xff);
-            seed = seed << 8 + (digest[3] & 0xff);
-            seed = seed << 8 + (digest[4] & 0xff);
-            seed = seed << 8 + (digest[5] & 0xff);
-            seed = seed << 8 + (digest[6] & 0xff);
-            seed = seed << 8 + (digest[7] & 0xff);
-            Random r = new Random(seed);
-            data = new byte[32768];
-            System.arraycopy(sourceData, 0, data, 0, sourceData.length);
-            byte[] randomBytes = new byte[32768-sourceData.length];
-            r.nextBytes(randomBytes);
-            System.arraycopy(randomBytes, 0, data, sourceData.length, 32768-sourceData.length);
-        } else {
-        	data = sourceData;
-        }
-        // Now make the header
         MessageDigest md256;
         try {
             md256 = MessageDigest.getInstance("SHA-256");
@@ -77,6 +80,31 @@ public class ClientCHKBlock {
             // FIXME: log this properly?
             throw new Error(e1);
         }
+        // First pad it
+        if(sourceData.length < 32768) {
+            // Hash the data
+            if(sourceData.length > 0)
+            	md256.update(sourceData);
+            byte[] digest = md256.digest();
+            // Turn digest into a seed array for the MT
+            int[] seed = new int[8]; // 32/4=8
+            for(int i=0;i<8;i++) {
+                int x = digest[i*4] & 0xff;
+                x = x << 8 + (digest[i*4+1] & 0xff);
+                x = x << 8 + (digest[i*4+2] & 0xff);
+                x = x << 8 + (digest[i*4+3] & 0xff);
+                seed[i] = x;
+            }
+            MersenneTwister mt = new MersenneTwister(seed);
+            data = new byte[32768];
+            System.arraycopy(sourceData, 0, data, 0, sourceData.length);
+            byte[] randomBytes = new byte[32768-sourceData.length];
+            mt.nextBytes(randomBytes);
+            System.arraycopy(randomBytes, 0, data, sourceData.length, 32768-sourceData.length);
+        } else {
+        	data = sourceData;
+        }
+        // Now make the header
         byte[] encKey = md256.digest(data);
         md256.reset();
         // IV = E(H(crypto key))
@@ -106,7 +134,8 @@ public class ClientCHKBlock {
         byte[] finalHash = md160.digest(data);
         
         // Now convert it into a ClientCHK
-        key = new ClientCHK(finalHash, encKey, false, false, ClientCHK.ALGO_AES_PCFB_256);
+        key = new ClientCHK(finalHash, encKey, compressed, false, ClientCHK.ALGO_AES_PCFB_256);
+        System.err.println("Created "+key);
     }
 
     /**
@@ -167,6 +196,7 @@ public class ClientCHKBlock {
      */
     public byte[] decode() throws CHKDecodeException {
         // Overall hash already verified, so first job is to decrypt.
+        System.err.println("Decoding "+key);
         if(key.cryptoAlgorithm != ClientCHK.ALGO_AES_PCFB_256)
             throw new UnsupportedOperationException();
         BlockCipher cipher;
@@ -207,6 +237,27 @@ public class ClientCHKBlock {
         int size = ((hbuf[32] & 0xff) << 8) + (hbuf[33] & 0xff);
         if(size > 32768 || size < 0)
             throw new CHKDecodeException("Invalid size: "+size);
+        if(key.compressed) {
+            if(size < 4) throw new CHKDecodeException("No bytes to decompress");
+            // Decompress
+            // First get the length
+            int len = ((((dbuf[0] & 0xff) << 8) + (dbuf[1] & 0xff)) << 8) +
+            	(dbuf[2] & 0xff);
+            System.err.println("Decompressed length: "+len);
+            if(len > MAX_LENGTH_BEFORE_COMPRESSION)
+                throw new CHKDecodeException("Invalid precompressed size: "+len);
+            byte[] output = new byte[len];
+            Inflater decompressor = new Inflater();
+            decompressor.setInput(dbuf, 3, size-3);
+            try {
+                int resultLength = decompressor.inflate(output);
+                if(resultLength != len)
+                    throw new CHKDecodeException("Wanted "+len+" but got "+resultLength+" bytes from decompression");
+            } catch (DataFormatException e2) {
+                throw new CHKDecodeException(e2);
+            }
+            return output;
+        }
         byte[] output = new byte[size];
         // No particular reason to check the padding, is there?
         System.arraycopy(dbuf, 0, output, 0, size);

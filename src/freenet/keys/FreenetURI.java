@@ -47,18 +47,18 @@ public class FreenetURI {
 
 	private String keyType, docName;
 	private String[] metaStr;
-	private byte[] routingKey, cryptoKey;
+	private byte[] routingKey, cryptoKey, extra;
 
 	public FreenetURI(String keyType, String docName) {
-		this(keyType, docName, (String[]) null, null, null);
+		this(keyType, docName, (String[]) null, null, null, null);
 	}
 
 	public FreenetURI(
 		String keyType,
 		String docName,
 		byte[] routingKey,
-		byte[] cryptoKey) {
-		this(keyType, docName, (String[]) null, routingKey, cryptoKey);
+		byte[] cryptoKey, byte[] extra2) {
+		this(keyType, docName, (String[]) null, routingKey, cryptoKey, extra2);
 	}
 
 	public FreenetURI(
@@ -72,7 +72,8 @@ public class FreenetURI {
 			docName,
 			(metaStr == null ? (String[]) null : new String[] { metaStr }),
 			routingKey,
-			cryptoKey);
+			cryptoKey,
+			null);
 
 	}
 
@@ -81,12 +82,13 @@ public class FreenetURI {
 		String docName,
 		String[] metaStr,
 		byte[] routingKey,
-		byte[] cryptoKey) {
+		byte[] cryptoKey, byte[] extra2) {
 		this.keyType = keyType.trim().toUpperCase();
 		this.docName = docName;
 		this.metaStr = metaStr;
 		this.routingKey = routingKey;
 		this.cryptoKey = cryptoKey;
+		this.extra = extra2;
 	}
 
 	public FreenetURI(String URI) throws MalformedURLException {
@@ -146,13 +148,11 @@ public class FreenetURI {
 
 			// Can be cryptokey or name-value pair.
 			String t = st.nextToken();
-			if (t.indexOf('=') == -1) {
-				cryptoKey = Base64.decode(t);
-				if (!st.hasMoreTokens()) {
-					return;
-				}
-				t = st.nextToken();
+			cryptoKey = Base64.decode(t);
+			if (!st.hasMoreTokens()) {
+				return;
 			}
+			extra = Base64.decode(st.nextToken());
 
 		} catch (IllegalBase64Exception e) {
 			throw new MalformedURLException("Invalid Base64 quantity: " + e);
@@ -162,12 +162,14 @@ public class FreenetURI {
 	public void decompose() {
 		String r = routingKey == null ? "none" : HexUtil.bytesToHex(routingKey);
 		String k = cryptoKey == null ? "none" : HexUtil.bytesToHex(cryptoKey);
+		String e = extra == null ? "none" : HexUtil.bytesToHex(extra);
 		System.out.println("" + this);
 		System.out.println("Key type   : " + keyType);
 		System.out.println("Routing key: " + r);
 		System.out.println("Crypto key : " + k);
+		System.out.println("Extra      : " + e);
 		System.out.println(
-			"Doc name   : " + (docName == null ? "none" : docName));
+		        "Doc name   : " + (docName == null ? "none" : docName));
 		System.out.print("Meta strings: ");
 		if (metaStr == null) {
 			System.err.println("none");
@@ -257,7 +259,8 @@ public class FreenetURI {
 			name,
 			metaStr,
 			routingKey,
-			cryptoKey);
+			cryptoKey,
+			extra);
 
 	}
 
@@ -267,7 +270,8 @@ public class FreenetURI {
 			docName,
 			newMetaStr,
 			routingKey,
-			cryptoKey);
+			cryptoKey,
+			extra);
 	}
 
 	protected static String urlDecode(String s) {
@@ -316,6 +320,8 @@ public class FreenetURI {
 				b.append(Base64.encode(routingKey));
 			if (cryptoKey != null)
 				b.append(',').append(Base64.encode(cryptoKey));
+			if (extra != null)
+			    b.append(',').append(Base64.encode(extra));
 			if (docName != null)
 				b.append('/');
 		}
@@ -333,4 +339,8 @@ public class FreenetURI {
 	public static void main(String[] args) throws Exception {
 		(new FreenetURI(args[0])).decompose();
 	}
+
+    public byte[] getExtra() {
+        return extra;
+    }
 }

@@ -1,5 +1,9 @@
 package freenet.keys;
 
+import java.net.MalformedURLException;
+
+import freenet.support.Base64;
+
 /**
  * Client level CHK. Can be converted into a FreenetURI, can be used to decrypt
  * a ClientCHKBlock, can be produced by a ClientCHKBlock. 
@@ -30,16 +34,17 @@ public class ClientCHK {
     /**
      * Create from a URI.
      */
-    public ClientCHK(FreenetURI uri) {
+    public ClientCHK(FreenetURI uri) throws MalformedURLException {
         if(!uri.getKeyType().equals("CHK"))
             throw new IllegalArgumentException("Not CHK");
         routingKey = uri.getRoutingKey();
         cryptoKey = uri.getCryptoKey();
-        // FIXME: flags
-        compressed = false;
-        controlDocument = false;
-        // FIXME: crypto algorithm
-        cryptoAlgorithm = ALGO_AES_PCFB_256;
+        byte[] extra = uri.getExtra();
+        if(extra == null || extra.length < 3)
+            throw new MalformedURLException();
+        cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
+        compressed = (extra[2] & 0x01) > 0;
+        controlDocument = (extra[2] & 0x02) > 0;
     }
 
     byte[] routingKey;
@@ -47,6 +52,12 @@ public class ClientCHK {
     boolean compressed;
     boolean controlDocument;
     short cryptoAlgorithm;
+    
+    public String toString() {
+        return super.toString()+":"+Base64.encode(routingKey)+","+
+        	Base64.encode(cryptoKey)+","+compressed+","+controlDocument+
+        	","+cryptoAlgorithm;
+    }
     
     static final short ALGO_AES_PCFB_256 = 1;
 
@@ -62,6 +73,11 @@ public class ClientCHK {
      * @return URI form of this key.
      */
     public FreenetURI getURI() {
-        return new FreenetURI("CHK", "", routingKey, cryptoKey);
+        byte[] extra = new byte[3];
+        extra[0] = (byte)((cryptoAlgorithm >> 8) & 0xff);
+        extra[1] = (byte)(cryptoAlgorithm & 0xff);
+        extra[2] = 
+            (byte)((compressed ? 1 : 0) + (controlDocument ? 2 : 0));
+        return new FreenetURI("CHK", "", routingKey, cryptoKey, extra);
     }
 }

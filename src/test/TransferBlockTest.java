@@ -5,19 +5,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
+import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
 import freenet.io.comm.Message;
+import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.UdpSocketManager;
-import freenet.io.comm.DMT;
-import freenet.io.comm.MessageFilter;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
@@ -27,9 +24,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
-import freenet.keys.NodeCHK;
 import freenet.support.Buffer;
-import freenet.support.HexUtil;
 
 /**
  * Read from stdin, encode to a new style CHK, send to other node.
@@ -80,7 +75,14 @@ public class TransferBlockTest {
                 return;
             }
             System.err.println("Received "+data.length+" bytes");
-            ClientCHK k = new ClientCHK(uri);
+            ClientCHK k;
+            try {
+                k = new ClientCHK(uri);
+            } catch (MalformedURLException e3) {
+                System.err.println("Caught "+e3);
+                e3.printStackTrace();
+                return;
+            }
             // Now decode it
             ClientCHKBlock block;
             try {
@@ -187,11 +189,17 @@ public class TransferBlockTest {
             System.out.println();
             System.out.println("World's slowest UDP chat client");
             System.out.println("-------------------------------");
-            System.out.println("Please enter line to send.");
-            String read = reader.readLine();
-            System.out.println("Read: "+read);
+            System.out.println("Please enter message to send, terminate with . on a line by itself.");
+            String message = "";
+            while(true) {
+                String read = reader.readLine();
+                if(read.equals(".")) break;
+                message += read;
+                message += '\n';
+            }
+            System.out.println("Read: "+message);
             // Encode to a CHK
-            byte[] temp = read.getBytes();
+            byte[] temp = message.getBytes();
 
             ClientCHKBlock block = ClientCHKBlock.encode(temp);
             ClientCHK chk = block.getKey();
