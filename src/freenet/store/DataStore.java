@@ -27,7 +27,7 @@ import java.util.*;
 
 public class DataStore extends Store {
 
-    public static final String VERSION = "$Id: DataStore.java,v 1.1 2005/02/10 00:12:06 amphibian Exp $";    
+    public static final String VERSION = "$Id: DataStore.java,v 1.2 2005/02/10 00:44:25 amphibian Exp $";    
 
 	private RandomAccessFile _index;
 	private final int blockSize;
@@ -50,7 +50,6 @@ public class DataStore extends Store {
 
 		while (_index.getFilePointer() < _index.length()) {
 
-		    int record = _index.readInt();
 		    Key k = Key.read(_index);
 		    long atime = _index.readLong();
 			DataBlock dataBlock = new DataBlock(recordNum,
@@ -79,25 +78,20 @@ public class DataStore extends Store {
 	}
 
 	public synchronized void addDataAsBlock(Key key, byte[] data) throws IOException {
-		Logger.debug(this, "Map: "+getKeyMap().size());
 		if (getKeyMap().containsKey(key)) {
-		    Logger.debug(this, "Contains key already");
 			return;
 		}
 
 		if (_index.length() / DataBlock.SIZE_ON_DISK < getMaxBlocks()) {
-		    Logger.debug(this, "Small store");
 			int recnum = (int) (_index.length() / DataBlock.SIZE_ON_DISK);
 			createAndOverwrite(recnum, key, data);
 		} else {
-		    Logger.debug(this, "Large store");
 			DataBlock oldest = (DataBlock) getAccessTimeList().getFirst();
 			deleteBlock(oldest, false);
 
 			int recNo = oldest.getRecordNumber();
 			createAndOverwrite(recNo, key, data);
 		}
-		Logger.debug(this, "Map: "+getKeyMap().size());
 	}
 
 	/**
@@ -136,7 +130,6 @@ public class DataStore extends Store {
 
 		key.write(_index);
 		getKeyMap().put(key, b);
-		Logger.minor(this, "Written: "+key+" -> "+b);
 
 		_index.writeLong(b.getLastAccessTime());
 		getAccessTimeList().addLast(b);
@@ -149,10 +142,8 @@ public class DataStore extends Store {
 	public synchronized byte[] getDataForBlock(Key key) throws IOException {
 		DataBlock b = getBlockByKey(key);
 		if (b == null) {
-		    Logger.minor(this, "Couldn't find in store");
 			return null;
 		} else {
-		    Logger.minor(this, "Reading...");
 			return readData(b);
 		}
 	}
@@ -177,8 +168,6 @@ public class DataStore extends Store {
 
 	
 	private DataBlock getBlockByKey(Key key) {
-	    Logger.debug(this, "Map: "+getKeyMap().size());
-	    Logger.debug(this, "Contains "+key+"?: "+getKeyMap().containsKey(key));
 		return (DataBlock) getKeyMap().get(key);
 	}
 
@@ -192,7 +181,7 @@ public class DataStore extends Store {
 
 	class DataBlock extends Block {
 
-	    public static final String VERSION = "$Id: DataStore.java,v 1.1 2005/02/10 00:12:06 amphibian Exp $";
+	    public static final String VERSION = "$Id: DataStore.java,v 1.2 2005/02/10 00:44:25 amphibian Exp $";
 
 		private static final short KEY_SIZE = Key.KEY_SIZE_ON_DISK;
 		private static final short ACCESS_TIME_SIZE = 8;

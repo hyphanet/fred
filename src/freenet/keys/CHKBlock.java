@@ -10,6 +10,7 @@ import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.Logger;
 
 /**
  * @author amphibian
@@ -51,6 +52,7 @@ public class CHKBlock {
         data = data2;
         header = header2;
         this.chk = chk;
+//        Logger.debug(CHKBlock.class, "Data length: "+data.length+", header length: "+header.length);
         // FIXME: enable
         //if(!verify) return;
         
@@ -79,7 +81,6 @@ public class CHKBlock {
      */
     public byte[] decode(ClientCHK key) throws CHKDecodeException {
         // Overall hash already verified, so first job is to decrypt.
-        System.err.println("Decoding "+key);
         if(key.cryptoAlgorithm != ClientCHK.ALGO_AES_PCFB_256)
             throw new UnsupportedOperationException();
         BlockCipher cipher;
@@ -126,7 +127,6 @@ public class CHKBlock {
             // First get the length
             int len = ((((dbuf[0] & 0xff) << 8) + (dbuf[1] & 0xff)) << 8) +
             	(dbuf[2] & 0xff);
-            System.err.println("Decompressed length: "+len);
             if(len > MAX_LENGTH_BEFORE_COMPRESSION)
                 throw new CHKDecodeException("Invalid precompressed size: "+len);
             byte[] output = new byte[len];

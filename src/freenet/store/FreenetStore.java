@@ -6,6 +6,7 @@ import java.io.IOException;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
@@ -37,14 +38,12 @@ public class FreenetStore {
      * @return null if there is no such block stored, otherwise the block.
      */
     public CHKBlock fetch(NodeCHK chk) throws IOException, CHKVerifyException {
-    	Logger.minor(this, "Fetching "+chk);
         byte[] data = dataStore.getDataForBlock(chk);
         if(data == null) {
             if(headersStore.getDataForBlock(chk) != null) {
                 Logger.normal(this, "Deleting: "+chk+" headers, no data");
                 headersStore.delete(chk);
             }
-            Logger.minor(this, "Not found");
             return null;
         }
         byte[] headers = headersStore.getDataForBlock(chk);
@@ -63,6 +62,9 @@ public class FreenetStore {
         }
         byte[] buf = new byte[headerLen];
         System.arraycopy(headers, 2, buf, 0, headerLen);
+//        Logger.minor(this, "Raw headers: "+headers.length+" bytes, hash "+Fields.hashCode(headers));
+//        Logger.minor(this, "Headers: "+headerLen+" bytes, hash "+Fields.hashCode(headers));
+//        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
         return new CHKBlock(data, buf, chk);
     }
 
@@ -70,7 +72,6 @@ public class FreenetStore {
      * Store a block.
      */
     public void put(CHKBlock block) throws IOException {
-    	Logger.minor(this, "Putting "+block);
         byte[] data = block.getData();
         byte[] headers = block.getHeader();
         int hlen = headers.length;
@@ -81,8 +82,10 @@ public class FreenetStore {
         hbuf[0] = (byte)(hlen >> 8);
         hbuf[1] = (byte)(hlen & 0xff);
         System.arraycopy(headers, 0, hbuf, 2, hlen);
+//        Logger.minor(this, "Raw headers: "+hbuf.length+" bytes, hash "+Fields.hashCode(hbuf));
+//        Logger.minor(this, "Headers: "+hlen+" bytes, hash "+Fields.hashCode(headers));
+//        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
         dataStore.addDataAsBlock(block.getKey(), data);
         headersStore.addDataAsBlock(block.getKey(), hbuf);
-        Logger.minor(this, "Written as "+block.getKey());
     }
 }

@@ -52,13 +52,10 @@ public class NodeCHK extends Key implements WritableToDataOutputStream {
     }
 
     public int hashCode() {
-        System.out.println("Hash code is "+hash);
-        new Exception().printStackTrace();
         return hash;
     }
 
     public boolean equals(Object key) {
-        Logger.debug(this, "Doing equals("+key+")", new Exception());
         if(key instanceof NodeCHK) {
             NodeCHK chk = (NodeCHK) key;
             return java.util.Arrays.equals(chk.routingKey, routingKey);

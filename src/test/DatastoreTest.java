@@ -60,7 +60,7 @@ public class DatastoreTest {
                         Logger.error(DatastoreTest.class, "Cannot decode: "+e, e);
                         continue;
                     }
-                    System.out.println("Decoded data:\n\n");
+                    System.out.println("Decoded data:\n");
                     System.out.println(new String(decoded));
                 }
             } else if(line.startsWith("QUIT")) {

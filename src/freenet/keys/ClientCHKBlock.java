@@ -58,8 +58,6 @@ public class ClientCHKBlock extends CHKBlock {
             compressor.setInput(sourceData);
             compressor.finish();
             int compressedLength = compressor.deflate(cbuf);
-            System.err.println("Raw length: "+sourceData.length);
-            System.err.println("Compressed length: "+compressedLength);
             if(compressedLength+2 < sourceData.length) {
                 // Yay
                 sourceData = new byte[compressedLength+3];
@@ -143,7 +141,6 @@ public class ClientCHKBlock extends CHKBlock {
         
         // Now convert it into a ClientCHK
         key = new ClientCHK(finalHash, encKey, compressed, false, ClientCHK.ALGO_AES_PCFB_256);
-        System.err.println("Created "+key);
         
         try {
             return new ClientCHKBlock(data, header, key, false);
