@@ -27,19 +27,19 @@ public class ConfiggableFreenetStore implements FreenetStore, Configgable {
         config.shortDesc("size", "Size of the datastore in bytes.");
         config.longDesc("size", "Size of the datastore in bytes. You can use multipliers kKmMgGtTpPeE.");
         
-        config.argDesc("dataStoreFilename", "Filename");
-        config.shortDesc("dataStoreFilename", "Filename of the datastore file.");
-        
-        config.argDesc("headerStoreFilename", "Filename");
-        config.shortDesc("headerStoreFilename", "Filename of the header store.");
+        config.argDesc("storeBaseFilename", "Filename");
+        config.shortDesc("storeBaseFilename", "Base filename of the datastore files.");
+        config.longDesc("storeBaseFilename", "Base filename of the datastore files. There "+
+                "will be several store files, they will start with this filename.");
     }
     
-    long storeSizeInBlocks = -1;
     BaseFreenetStore store;
-    File datastoreFilename;
+    long storeSizeInBlocks = -1;
+    String baseFilename;
     RandomAccessFile datastoreFile;
-    File headerstoreFilename;
+    RandomAccessFile datastoreIndexFile;
     RandomAccessFile headerstoreFile;
+    RandomAccessFile headerstoreIndexFile;
     
     /**
      * Create a ConfiggableFreenetStore. Registers itself on the FredConfig,
@@ -48,6 +48,9 @@ public class ConfiggableFreenetStore implements FreenetStore, Configgable {
      */
     public ConfiggableFreenetStore(FredConfig fc) {
         fc.register(this, config, "node.store");
+        // All the setters will have been called by fc.register(...)
+        // Now create the store
+        store = new BaseFreenetStore(datastoreFile, headerstoreFile, storeSizeInBlocks);
     }
 
     // Callbacks from FredConfig
@@ -56,20 +59,10 @@ public class ConfiggableFreenetStore implements FreenetStore, Configgable {
         long sizeInBlocks = size/32768;
         if(size <= 0) throw new IllegalArgumentException("Invalid store size "+size);
         storeSizeInBlocks = sizeInBlocks;
-        if(store == null)
-            tryCreateStore();
-        else
+        if(store != null)
             store.setCapacity(storeSizeInBlocks);
     }
     
-    /**
-     * If possible, create the datastore.
-     */
-    private void tryCreateStore() {
-        // TODO Auto-generated method stub
-        
-    }
-
     public long getSize() {
         if(store != null)
             return store.getCapacity() * 32768;
@@ -84,9 +77,7 @@ public class ConfiggableFreenetStore implements FreenetStore, Configgable {
             RandomAccessFile raf = new RandomAccessFile(dsFilename, "rw");
             datastoreFilename = dsFilename;
             datastoreFile = raf;
-            if(store == null)
-                tryCreateStore();
-            else
+            if(store != null)
                 store.setDatastoreFile(raf, datastoreFilename);
         } catch (FileNotFoundException e) {
             throw new ConfiggableException("Could not open suggested datastore file "+filename+": "+e);
@@ -107,9 +98,7 @@ public class ConfiggableFreenetStore implements FreenetStore, Configgable {
             RandomAccessFile raf = new RandomAccessFile(hsFilename, "rw");
             headerstoreFilename = hsFilename;
             headerstoreFile = raf;
-            if(store == null)
-                tryCreateStore();
-            else
+            if(store != null)
                 store.setHeaderstoreFile(raf, headerstoreFilename);
         } catch (FileNotFoundException e) {
             throw new ConfiggableException("Could not open suggested headerstore file "+filename+": "+e);

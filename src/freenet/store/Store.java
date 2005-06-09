@@ -26,7 +26,7 @@ import freenet.keys.Key;
 
 public abstract class Store {
 
-	public static final String VERSION = "$Id: Store.java,v 1.1 2005/02/10 00:12:06 amphibian Exp $";
+	public static final String VERSION = "$Id: Store.java,v 1.2 2005/06/09 15:58:30 amphibian Exp $";
 
 	private final RandomAccessFile _blockStore;
 	private final long _maxBlocks;
@@ -36,6 +36,11 @@ public abstract class Store {
 	private final HashMap _keyMap = new HashMap();
 	private final Vector _recordNumberList = new Vector();
 
+	protected Store(RandomAccessFile blockStoreFile, long maxBlocks) throws Exception {
+	    _blockStore = blockStoreFile;
+	    _maxBlocks = maxBlocks;
+	}
+	
 	protected Store(File blockStoreFile, long maxBlocks) throws Exception {
 		if (!blockStoreFile.exists()) {
 			blockStoreFile.createNewFile();

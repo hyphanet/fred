@@ -27,11 +27,18 @@ import java.util.*;
 
 public class DataStore extends Store {
 
-    public static final String VERSION = "$Id: DataStore.java,v 1.2 2005/02/10 00:44:25 amphibian Exp $";    
+    public static final String VERSION = "$Id: DataStore.java,v 1.3 2005/06/09 15:58:30 amphibian Exp $";    
 
 	private RandomAccessFile _index;
 	private final int blockSize;
 
+	public DataStore(RandomAccessFile indexFile, RandomAccessFile dataFile, int blockSize, long maxBlocks) throws Exception {
+	    super(dataFile, maxBlocks);
+	    _index = indexFile;
+	    this.blockSize = blockSize;
+	    readStore();
+	}
+	
 	public DataStore(File index, File data, int blockSize, long maxBlocks) throws Exception {
 		super(data, maxBlocks);
 		_index = new RandomAccessFile(index, "rw");
@@ -181,7 +188,7 @@ public class DataStore extends Store {
 
 	class DataBlock extends Block {
 
-	    public static final String VERSION = "$Id: DataStore.java,v 1.2 2005/02/10 00:44:25 amphibian Exp $";
+	    public static final String VERSION = "$Id: DataStore.java,v 1.3 2005/06/09 15:58:30 amphibian Exp $";
 
 		private static final short KEY_SIZE = Key.KEY_SIZE_ON_DISK;
 		private static final short ACCESS_TIME_SIZE = 8;

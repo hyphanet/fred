@@ -13,7 +13,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Properties;
 
-import freenet.Core;
 import freenet.support.Logger;
 
 /*
@@ -322,7 +321,7 @@ public class Yarrow extends RandomSource {
 							Object key = enu.nextElement();
 							Integer v = (Integer) entropySeen.get(key);
 							if (DEBUG)
-								Core.logger.log(this, "Key: <" + key + "> " + v, Logger.NORMAL);
+								Logger.normal(this, "Key: <" + key + "> " + v);
 							if (v.intValue() > SLOW_THRESHOLD) {
 								kc++;
 								if (kc >= SLOW_K) {

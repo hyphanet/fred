@@ -22,6 +22,12 @@ public class BaseFreenetStore implements FreenetStore {
     static final int DATA_BLOCK_SIZE = 32*1024;
     static final int HEADER_BLOCK_SIZE = 512;
     
+    public BaseFreenetStore(RandomAccessFile storeFile, RandomAccessFile storeIndexFile, 
+            RandomAccessFile headerStoreFile, RandomAccessFile headerStoreIndexFile, long maxBlocks) throws Exception {
+        dataStore = new DataStore(storeFile, storeIndexFile, DATA_BLOCK_SIZE, maxBlocks);
+        headersStore = new DataStore(headerStoreFile, headerStoreIndexFile, DATA_BLOCK_SIZE, maxBlocks);
+    }
+    
     /**
      * @param storeFilename The name of the file containing the store.
      * @param headerStoreFilename The name of the file containing the headers store.
