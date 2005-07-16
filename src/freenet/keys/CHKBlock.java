@@ -10,7 +10,6 @@ import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.support.Logger;
 
 /**
  * @author amphibian

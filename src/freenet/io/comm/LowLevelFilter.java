@@ -7,7 +7,8 @@ public interface LowLevelFilter {
 
     /**
      * Process an incoming packet. This method should call
-     * USM.checkFilters() if necessary to dispatch a message.
+     * USM.decodePacket() and USM.checkFilters() if necessary to 
+     * decode and dispatch messages.
      * @param buf The buffer to read from.
      * @param offset The offset to start reading from.
      * @param length The length in bytes to read.
@@ -15,4 +16,13 @@ public interface LowLevelFilter {
      */
     void process(byte[] buf, int offset, int length, Peer peer);
 
+    /**
+     * Process an outgoing packet. Takes a byte[], returns
+     * a byte[]. This is then sent in the usual way.
+     * @param buf The buffer to read from.
+     * @param offset The offset to start reading from.
+     * @param length The length in bytes to read.
+     * @param peer The peer the message will be sent to.
+     */
+    byte[] processOutgoing(byte[] buf, int offset, int length, Peer peer);
 }

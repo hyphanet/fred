@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.3 2005/03/16 22:11:00 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.4 2005/07/16 12:00:33 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	private LinkedList _filters = new LinkedList();
@@ -71,17 +71,13 @@ public class UdpSocketManager extends Thread {
 			// Check for matched _filters
 			if(packet != null) {
 			    Peer peer = new Peer(packet.getAddress(), packet.getPort());
-				if(lowLevelFilter != null)
-				    lowLevelFilter.process(packet.getData(), packet.getOffset(), 
-				            packet.getLength(), peer);
+			    byte[] data = packet.getData();
+			    int offset = packet.getOffset();
+			    int length = packet.getLength();
+			    if(lowLevelFilter != null)
+			        lowLevelFilter.process(data, offset, length, peer);
 			    else {
-			        Message m = null;
-			        try {
-			            m = Message.decodeFromPacket(packet.getData(), packet.getOffset(),
-			                    packet.getLength(), peer);
-			        } catch (Throwable t) {
-			            Logger.error(this, "Could not decode packet: "+t, t);
-			        }
+			        Message m = decodePacket(data, offset, length, peer);
 			        if(m != null)
 			            checkFilters(m);
 			    }
@@ -93,7 +89,24 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 
-	private DatagramPacket getPacket() {
+	/**
+	 * Decode a packet from data and a peer.
+	 * Can be called by LowLevelFilter's.
+     * @param data
+     * @param offset
+     * @param length
+     * @param peer
+     */
+    public Message decodePacket(byte[] data, int offset, int length, Peer peer) {
+        try {
+            return Message.decodeFromPacket(data, offset, length, peer);
+        } catch (Throwable t) {
+            Logger.error(this, "Could not decode packet: "+t, t);
+            return null;
+        }
+    }
+
+    private DatagramPacket getPacket() {
 		try {
 			// We make it timeout every 100ms so that we can check for
 			// _filters which have timed out, this
@@ -136,6 +149,11 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 
+	/**
+	 * Dispatch a message to a waiting filter, or feed it to the
+	 * Dispatcher if none are found.
+	 * @param m The Message to dispatch.
+	 */
 	public void checkFilters(Message m) {
 		boolean matched = false;
 		if (!(m.getSpec().equals(DMT.packetTransmit))) {
@@ -255,7 +273,7 @@ public class UdpSocketManager extends Thread {
 			Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
 					+ " : " + m);
 		}
-		DatagramPacket packet = m.encodeToPacket();
+		DatagramPacket packet = m.encodeToPacket(lowLevelFilter, destination);
 		packet.setAddress(destination.getAddress());
 		packet.setPort(destination.getPort());
 		try {

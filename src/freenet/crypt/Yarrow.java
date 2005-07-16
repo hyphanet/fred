@@ -8,11 +8,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.InetAddress;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Properties;
 
+import freenet.Core;
 import freenet.support.Logger;
 
 /*
@@ -52,6 +55,7 @@ public class Yarrow extends RandomSource {
 	 */
 	private static final boolean DEBUG = false;
 	private static final int Pg = 10;
+	private final SecureRandom sr;
 
 	private final File seedfile; //A file to which seed data should be dumped periodically
 
@@ -64,16 +68,49 @@ public class Yarrow extends RandomSource {
 	}
 
 	public Yarrow(File seed, String digest, String cipher,boolean updateSeed) {
+	    SecureRandom s;
+	    try {
+            s = SecureRandom.getInstance("SHA1PRNG");
+        } catch (NoSuchAlgorithmException e) {
+            s = null;
+        }
+        sr = s;
 		accumulator_init(digest);
 		reseed_init(digest);
 		generator_init(cipher);
 		entropy_init(seed);
+		seedFromExternalStuff();
 		if (updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways 
 			seedfile = seed;
 		else
 			seedfile = null;
 	}
 
+	public void seedFromExternalStuff() {
+	    // SecureRandom hopefully acts as a proxy for CAPI on Windows
+	    byte[] buf = sr.generateSeed(20);
+	    consumeBytes(buf);
+	    buf = sr.generateSeed(20);
+	    consumeBytes(buf);
+	    if(File.separatorChar == '/') {
+	        // Read some bits from /dev/random
+	        try {
+	            FileInputStream fis = new FileInputStream("/dev/random");
+	            DataInputStream dis = new DataInputStream(fis);
+	            dis.readFully(buf);
+	            consumeBytes(buf);
+	            dis.readFully(buf);
+	            consumeBytes(buf);
+	        } catch (Throwable t) {
+	            Logger.normal(this, "Can't read /dev/random: "+t, t);
+	        }
+	        
+	    }
+	    // A few more bits
+	    consumeString(Long.toHexString(Runtime.getRuntime().freeMemory()));
+	    consumeString(Long.toHexString(Runtime.getRuntime().totalMemory()));
+	}
+	
 	private void entropy_init(File seed) {
 		Properties sys = System.getProperties();
 		EntropySource startupEntropy = new EntropySource();
@@ -321,7 +358,7 @@ public class Yarrow extends RandomSource {
 							Object key = enu.nextElement();
 							Integer v = (Integer) entropySeen.get(key);
 							if (DEBUG)
-								Logger.normal(this, "Key: <" + key + "> " + v);
+								Core.logger.log(this, "Key: <" + key + "> " + v, Logger.NORMAL);
 							if (v.intValue() > SLOW_THRESHOLD) {
 								kc++;
 								if (kc >= SLOW_K) {
@@ -577,4 +614,16 @@ public class Yarrow extends RandomSource {
 		}
 		fast_select = !fast_select;
 	}
+
+    public String getCheckpointName() {
+        return "Yarrow random number generator checkpoint";
+    }
+
+    public long nextCheckpoint() {
+        return System.currentTimeMillis() + 60*60*1000;
+    }
+
+    public void checkpoint() {
+        seedFromExternalStuff();
+    }
 }

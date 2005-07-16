@@ -1,6 +1,7 @@
 package freenet.store;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -21,6 +22,11 @@ public class BaseFreenetStore implements FreenetStore {
     
     static final int DATA_BLOCK_SIZE = 32*1024;
     static final int HEADER_BLOCK_SIZE = 512;
+    
+    public BaseFreenetStore(String filename, long maxBlocks) throws FileNotFoundException, Exception {
+        this(new RandomAccessFile(filename+"-store","rw"), new RandomAccessFile(filename+"-storeindex","rw"),
+                new RandomAccessFile(filename+"-header","rw"), new RandomAccessFile(filename+"-headerindex","rw"), maxBlocks);
+    }
     
     public BaseFreenetStore(RandomAccessFile storeFile, RandomAccessFile storeIndexFile, 
             RandomAccessFile headerStoreFile, RandomAccessFile headerStoreIndexFile, long maxBlocks) throws Exception {
@@ -100,61 +106,5 @@ public class BaseFreenetStore implements FreenetStore {
 //        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
         dataStore.addDataAsBlock(block.getKey(), data);
         headersStore.addDataAsBlock(block.getKey(), hbuf);
-    }
-
-    /**
-     * Resize the datastore.
-     * @param storeSizeInBlocks The new capacity, in blocks.
-     */
-    public void setCapacity(long storeSizeInBlocks) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    /**
-     * Retrieve the current capacity of the store.
-     * @return The current capacity of the store, in blocks.
-     */
-    public int getCapacity() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    /**
-     * Move the datastore file.
-     * @param raf The file to move it to, open as a RandomAccessFile.
-     * @param datastoreFilename The filename to move it to.
-     */
-    public void setDatastoreFile(RandomAccessFile raf, File datastoreFilename) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    /**
-     * Get the current datastore filename.
-     * @return The current datastore filename.
-     */
-    public File getDatastoreFilename() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /**
-     * Set the header-store file.
-     * @param raf
-     * @param headerstoreFilename
-     */
-    public void setHeaderstoreFile(RandomAccessFile raf, File headerstoreFilename) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    /**
-     * Get the header-store filename.
-     * @return
-     */
-    public File getHeaderstoreFilename() {
-        // TODO Auto-generated method stub
-        return null;
     }
 }

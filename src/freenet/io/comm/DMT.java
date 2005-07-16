@@ -65,7 +65,7 @@ public class DMT {
     public static final String TEST_CHK_HEADERS = "testCHKHeaders";
     public static final String HTL = "hopsToLive";
     public static final String SUCCESS = "success";
-    public static final String SOURCE_PEER = "sourcePeer";
+    public static final String FNP_SOURCE_PEERNODE = "sourcePeerNode";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{

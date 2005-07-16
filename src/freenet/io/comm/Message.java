@@ -33,7 +33,7 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.3 2005/03/16 22:11:00 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.4 2005/07/16 12:00:33 amphibian Exp $";
 
 	private final MessageType _spec;
 	private final Peer _source;
@@ -143,7 +143,7 @@ public class Message {
 		_payload.put(key, value);
 	}
 
-	public DatagramPacket encodeToPacket() {
+	public DatagramPacket encodeToPacket(LowLevelFilter f, Peer destination) {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
@@ -159,7 +159,8 @@ public class Message {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return new DatagramPacket(baos.toByteArray(), baos.size());
+		byte[] buf = f.processOutgoing(baos.toByteArray(), 0, baos.size(), destination);
+		return new DatagramPacket(buf, buf.length);
 	}
 
 	public String toString() {
