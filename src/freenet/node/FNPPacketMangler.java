@@ -227,8 +227,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         for(int i=0;i<ackCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
-            int realSeqNo = setNumber - (1 + offset);
-            pn.acknowledgedPacket(ackSeqNo);
+            int realSeqNo = seqNumber - (1 + offset);
+            pn.acknowledgedPacket(realSeqNo);
         }
         
         int retransmitCount = decrypted[ptr++] & 0xff;
@@ -236,7 +236,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         for(int i=0;i<retransmitCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
-            int realSeqNo = setNumber - (1 + offset);
+            int realSeqNo = seqNumber - (1 + offset);
             pn.resendPacket(realSeqNo);
         }
         
@@ -245,7 +245,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         for(int i=0;i<forgottenCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
-            int realSeqNo = setNumber - (1 + offset);
+            int realSeqNo = seqNumber - (1 + offset);
             pn.destForgotPacket(realSeqNo);
         }
         
