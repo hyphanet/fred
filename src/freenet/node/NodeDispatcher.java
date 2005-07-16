@@ -17,6 +17,9 @@ import freenet.io.comm.Message;
  * InsertRequests
  * 
  * Probably a few others; those are the important bits.
+ * 
+ * Note that if in response to these we have to send a packet,
+ * IT MUST BE DONE OFF-THREAD. Because sends will normally block.
  */
 public class NodeDispatcher implements Dispatcher {
 
