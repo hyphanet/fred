@@ -1,10 +1,14 @@
 package freenet.node;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 
 import freenet.crypt.BlockCipher;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
@@ -17,7 +21,7 @@ import freenet.support.Logger;
  */
 public class NodePeer implements PeerContext {
     
-    NodePeer(Location loc, Peer contact, Node n) {
+    NodePeer(Location loc, Peer contact, byte[] nodeIdentity, Node n, PacketSender ps) {
         currentLocation = loc;
         peer = contact;
         sentPacketsBySequenceNumber = new HashMap();
@@ -25,10 +29,28 @@ public class NodePeer implements PeerContext {
         resendRequestQueue = new LinkedList();
         node = n;
         usm = node.usm;
+        // FIXME!! Session key should be set up via PK negotiation
+        // (This code here is a hack, it does not provide any real
+        // security)!
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e);
+        }
+        this.nodeIdentity = nodeIdentity;
+        byte[] key = md.digest(nodeIdentity);
+        sessionCipher = new Rijndael();
+        sessionCipher.initialize(key);
+        this.packetSender = ps;
     }
     
     /** Keyspace location */
     private Location currentLocation;
+
+    /** Node identity - for now just a block of data, like on Node.
+     * Will later be a real public key. */
+    private byte[] nodeIdentity;
     
     /** Contact information - FIXME should be a NodeReference??? */
     private Peer peer;
@@ -36,6 +58,8 @@ public class NodePeer implements PeerContext {
     private final UdpSocketManager usm;
     
     private final Node node;
+
+    private final PacketSender packetSender;
     
     /**
      * Get the current Location, which represents our current 
@@ -116,9 +140,9 @@ public class NodePeer implements PeerContext {
         byte[] payload = (byte[])sentPacketsBySequenceNumber.get(i);
         // Send it
         
-        // FIXME: do this off thread
-        
-        node.packetMangler.processOutgoing(payload, 0, payload.length, this);
+        synchronized(packetSender) {
+            packetSender.queueForImmediateSend(payload, this);
+        }
     }
     
     /**
@@ -158,7 +182,7 @@ public class NodePeer implements PeerContext {
     /**
      * @param seqNumber
      */
-    public void receivedPacket(int seqNumber) {
+    public synchronized void receivedPacket(int seqNumber) {
         if(seqNumber > lastReceivedPacketSeqNumber)
             lastReceivedPacketSeqNumber = seqNumber;
         // First ack it
@@ -246,6 +270,8 @@ public class NodePeer implements PeerContext {
         /** Time at which this item becomes sendable. Initially -1,
          * meaning it can be sent immediately. When we send a 
          * resend request, this is reset to t+500ms.
+         * 
+         * Constraint: urgentTime is always greater than activeTime.
          */
         long activeTime;
         
@@ -253,6 +279,18 @@ public class NodePeer implements PeerContext {
             long now = System.currentTimeMillis();
             activeTime = now + 500;
             urgentTime = activeTime + 200;
+            // Reset to back of list
+            // This is only removed when we actually receive the packet
+            // But for now it will sleep
+            resendRequestQueue.remove(this);
+            resendRequestQueue.addLast(this);
+        }
+        
+        QueuedResend(int packetNumber) {
+            this.packetNumber = packetNumber;
+            long now = System.currentTimeMillis();
+            activeTime = -1; // active immediately
+            urgentTime = now + 200; // urgent in 200ms
         }
     }
     
@@ -262,6 +300,51 @@ public class NodePeer implements PeerContext {
      * yet received. PAIs are removed when we receive the packet.
      */
     final LinkedList resendRequestQueue;
+
+    /**
+     * Add a request for a packet to be resent to the queue.
+     * @param seqNumber The packet number of the packet that needs
+     * to be resent.
+     */
+    private synchronized void queueResendRequest(int seqNumber) {
+        QueuedResend qr = new QueuedResend(seqNumber);
+        // Add to queue in the right place
+        
+        if(resendRequestQueue.isEmpty())
+            resendRequestQueue.addLast(qr);
+        else {
+            long lastUrgentTime = Long.MAX_VALUE;
+            for(ListIterator i = resendRequestQueue.listIterator(resendRequestQueue.size());i.hasPrevious();) {
+                QueuedResend q = (QueuedResend) (i.previous());
+                long thisUrgentTime = q.urgentTime;
+                if(thisUrgentTime > lastUrgentTime)
+                    throw new IllegalStateException("Inconsistent resendRequestQueue: urgentTime increasing! on "+this);
+                lastUrgentTime = thisUrgentTime;
+                if(thisUrgentTime < qr.urgentTime) {
+                    i.add(qr);
+                    return;
+                }
+            }
+            resendRequestQueue.addFirst(qr);
+        }
+        // We do not need to notify the subthread as it will never
+        // sleep for more than 200ms, so it will pick up on the
+        // need to send something then.
+    }
+
+    /**
+     * Remove a queued request for a packet to be resent.
+     * @param seqNumber The packet number of the packet that needs
+     * to be resent.
+     */
+    private synchronized void removeResendRequest(int seqNumber) {
+        for(ListIterator i=resendRequestQueue.listIterator();i.hasNext();) {
+            QueuedResend q = (QueuedResend) (i.next());
+            if(q.packetNumber == seqNumber) {
+                i.remove();
+            }
+        }
+    }
 
     // FIXME: this needs to be set somewhere
     BlockCipher sessionCipher;

@@ -295,7 +295,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
     }
 
-    /**
+    /*
+     * Note that buf may be null. If so we send a packet with just
+     * acks and rerequests.
      * Because of NodePeer.sentPacket(), this must copy the plaintext
      * before encrypting it.
      */

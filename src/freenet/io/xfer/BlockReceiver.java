@@ -25,6 +25,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.UdpSocketManager;
 import freenet.support.BitArray;
@@ -45,13 +46,13 @@ public class BlockReceiver {
 	public static final int MAX_CONSECUTIVE_MISSING_PACKET_REPORTS = 4;
 	public static final int MAX_SEND_INTERVAL = 500;
 	PartiallyReceivedBlock _prb;
-	Peer _sender;
+	PeerContext _sender;
 	long _uid;
 	UdpSocketManager _usm;
 	/** packet : Integer -> reportTime : Long * */
 	HashMap _recentlyReportedMissingPackets = new HashMap();
 
-	public BlockReceiver(UdpSocketManager usm, Peer sender, long uid, PartiallyReceivedBlock prb) {
+	public BlockReceiver(UdpSocketManager usm, PeerContext sender, long uid, PartiallyReceivedBlock prb) {
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;

@@ -25,6 +25,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
 import freenet.support.BitArray;
 import freenet.support.Logger;
@@ -41,7 +42,7 @@ public class BlockTransmitter {
 	public static final int PING_EVERY = 8;
 	
 	UdpSocketManager _usm;
-	Peer _destination;
+	PeerContext _destination;
 	boolean _sendComplete = false;
 	long _uid;
 	PartiallyReceivedBlock _prb;
@@ -49,7 +50,7 @@ public class BlockTransmitter {
 	Thread _receiverThread, _senderThread;
 	BitArray _sentPackets;
 
-	public BlockTransmitter(UdpSocketManager usm, Peer destination, long uid, PartiallyReceivedBlock source) {
+	public BlockTransmitter(UdpSocketManager usm, PeerContext destination, long uid, PartiallyReceivedBlock source) {
 		_usm = usm;
 		_destination = destination;
 		_uid = uid;
@@ -58,7 +59,7 @@ public class BlockTransmitter {
 	}
 
 	public boolean send() {
-		final PacketThrottle throttle = PacketThrottle.getThrottle(_destination, _prb._packetSize);
+		final PacketThrottle throttle = PacketThrottle.getThrottle(_destination.getPeer(), _prb._packetSize);
 		_receiverThread = Thread.currentThread();
 		_senderThread = new Thread() {
 		    

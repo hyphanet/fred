@@ -33,6 +33,7 @@ public class Node implements SimpleClient {
     final RandomSource random; // strong RNG
     final UdpSocketManager usm;
     final FNPPacketMangler packetMangler;
+    final PacketSender ps;
     private static final int EXIT_STORE_FILE_NOT_FOUND = 1;
     private static final int EXIT_STORE_IOEXCEPTION = 2;
     private static final int EXIT_STORE_OTHER = 3;
@@ -76,6 +77,7 @@ public class Node implements SimpleClient {
         }
         lm = new LocationManager(myLoc);
         writeLocation();
+        ps = new PacketSender(this);
         peers = new PeerManager();
         // FIXME: HACK
         String s = "testnode-"+portNumber;
