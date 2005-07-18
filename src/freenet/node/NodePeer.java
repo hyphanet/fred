@@ -5,8 +5,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import freenet.crypt.BlockCipher;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
+import freenet.io.comm.UdpSocketManager;
+import freenet.support.Logger;
 
 /**
  * @author amphibian
@@ -28,6 +31,8 @@ public class NodePeer {
     
     /** Contact information - FIXME should be a NodeReference??? */
     private Peer peer;
+    
+    private final UdpSocketManager usm;
     
     /**
      * Get the current Location, which represents our current 
@@ -96,6 +101,23 @@ public class NodePeer {
     }
 
     /**
+     * Resend a packet
+     * @param packetNumber The sequence number of the packet to resend.
+     */
+    public void resendPacket(int packetNumber) {
+        Integer i = new Integer(packetNumber);
+        if(!sentPacketsBySequenceNumber.containsKey(i)) {
+            Logger.error(this, "Cannot resend packet "+packetNumber+" on "+this);
+            return;
+        }
+        byte[] payload = (byte[])sentPacketsBySequenceNumber.get(i);
+        // Send it
+        
+        // TODO Auto-generated method stub
+        
+    }
+    
+    /**
      * Called when we receive a packet acknowledgement.
      * Delete the packet from the cache, and update the upper
      * and lower sequence number bounds.
@@ -133,6 +155,8 @@ public class NodePeer {
      * @param seqNumber
      */
     public void receivedPacket(int seqNumber) {
+        if(seqNumber > lastReceivedPacketSeqNumber)
+            lastReceivedPacketSeqNumber = seqNumber;
         // First ack it
         queueAck(seqNumber);
         // Resend requests
@@ -234,5 +258,23 @@ public class NodePeer {
      * yet received. PAIs are removed when we receive the packet.
      */
     final LinkedList resendRequestQueue;
+
+    // FIXME: this needs to be set somewhere
+    BlockCipher sessionCipher;
     
+    /**
+     * Get the session key
+     */
+    public BlockCipher getSessionCipher() {
+        return sessionCipher;
+    }
+
+    /**
+     * @return The highest sequence number of all packets we have
+     * received so far.
+     */
+    public int lastReceivedSequenceNumber() {
+        return lastReceivedPacketSeqNumber;
+    }
+
 }

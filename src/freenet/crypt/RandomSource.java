@@ -35,8 +35,29 @@ public abstract class RandomSource extends Random {
      * Accepts entropy data from a source
      */
     public abstract int acceptEntropy(EntropySource source, long data, int entropyGuess);
+    /**
+     * Accepts entropy in the form of timing data from a source
+     */
     public abstract int acceptTimerEntropy(EntropySource timer);
+    
+    /**
+     * Accept entropy from a source with a bias
+     * @param bias Value by which we multiply the entropy before counting it.
+     * Must be <= 1.0.
+     */
+    public abstract int acceptTimerEntropy(EntropySource fnpTimingSource, double bias);
 
+    /**
+     * Accepts larger amounts of entropy data from a source, with a bias
+     * @param myPacketDataSource The source from which the data has come.
+     * @param buf The buffer to read bytes from.
+     * @param offset The offset to start reading from.
+     * @param length The number of bytes to read.
+     * @param bias The bias. Value by which we multiply the entropy before counting it.
+     * Must be <= 1.0.
+     */
+    public abstract int acceptEntropyBytes(EntropySource myPacketDataSource, byte[] buf, int offset, int length, double bias);
+    
     /**
      * If entropy estimation is supported, this method will block
      * until the specified number of bits of entropy are available.  If

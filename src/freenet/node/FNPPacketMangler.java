@@ -4,6 +4,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import freenet.crypt.BlockCipher;
+import freenet.crypt.EntropySource;
 import freenet.crypt.PCFBMode;
 import freenet.io.comm.DMT;
 import freenet.io.comm.LowLevelFilter;
@@ -27,6 +28,8 @@ public class FNPPacketMangler implements LowLevelFilter {
     final PeerManager pm;
     final UdpSocketManager usm;
     static final int MAX_PACKETS_IN_FLIGHT = 256; 
+    static final EntropySource fnpTimingSource = new EntropySource();
+    static final EntropySource myPacketDataSource = new EntropySource();
     
     public FNPPacketMangler(Node node) {
         this.node = node;
@@ -53,8 +56,10 @@ public class FNPPacketMangler implements LowLevelFilter {
      * Decrypt and authenticate packet.
      * Then feed it to USM.checkFilters.
      * Packets generated should have a NodePeer on them.
+     * Note that the buffer can be modified by this method.
      */
     public void process(byte[] buf, int offset, int length, Peer peer) {
+        node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
         if(length < 41) {
             Logger.error(this, "Packet from "+peer+" too short "+length+" bytes");
         }
@@ -89,31 +94,17 @@ public class FNPPacketMangler implements LowLevelFilter {
      * check this against the encrypted hash.
      */
     private boolean tryProcess(byte[] buf, int offset, int length, NodePeer pn) {
-        /** First block:
+        /**
+         * E_pcbc_session(H(seq+random+data)) E_pcfb_session(seq+random+data)
          * 
-         * E_session_ecb(
-         *         4 bytes:  sequence number XOR first 4 bytes of node identity
-         *         12 bytes: first 12 bytes of H(data)
-         * )
+         * So first two blocks are the hash, PCBC encoded (meaning the
+         * first one is ECB, and the second one is ECB XORed with the 
+         * ciphertext and plaintext of the first block).
          */
         BlockCipher sessionCipher = pn.getSessionCipher();
         int blockSize = sessionCipher.getBlockSize() >> 3;
         if(sessionCipher.getKeySize() != sessionCipher.getBlockSize()*2)
             throw new IllegalStateException("Block size must be half key size");
-        byte[] temp = new byte[blockSize];
-        System.arraycopy(buf, offset, temp, 0, blockSize);
-        sessionCipher.decipher(temp, temp);
-        int seqNumber = (((temp[3] & 0xff) << 8 + (temp[2] & 0xff)) << 8 + 
-                (temp[1] & 0xff)) << 8 + (temp[0] & 0xff);
-        int partNodeFingerprint = pn.getNodeFingerprintInt();
-        seqNumber ^= partNodeFingerprint;
-        // Now is it credible?
-        // As long as it's within +/- 256, this is valid.
-        int targetSeqNumber = pn.lastReceivedSequenceNumber();
-        if(Math.abs(targetSeqNumber - seqNumber) > MAX_PACKETS_IN_FLIGHT)
-            return false;
-        
-        // Plausible, so...
         
         MessageDigest md;
         try {
@@ -122,57 +113,76 @@ public class FNPPacketMangler implements LowLevelFilter {
             throw new Error(e);
         }
         
-        byte[] hashBuf = new byte[md.getDigestLength()];
-        if(md.getDigestLength() != 2*blockSize)
+        int digestLength = md.getDigestLength();
+        
+        if(digestLength != 2*blockSize)
             throw new IllegalStateException("Block size must be half digest length!");
+
+        byte[] packetHash = new byte[digestLength];
+        System.arraycopy(buf, offset, packetHash, 0, digestLength);
         
-        // Copy the first part of the hash into the buffer
-        System.arraycopy(temp, 4, hashBuf, 0, temp.length-4);
-        int filledTo = temp.length-4;
+        // Decrypt the sequence number and see if it's plausible
+        // Verify the hash later
         
-        // Second block is PCBC'd. I.e. after encryption we XORed it
-        // with the ciphertext AND the plaintext of the first block.
-        byte[] xor = new byte[blockSize];
-        // Put the plaintext in
-        System.arraycopy(temp, 0, xor, 0, blockSize);
-        // Now xor with the ciphertext
-        for(int i=0;i<blockSize;i++)
-            xor[i] ^= buf[offset+i];
-        // Now extract the ciphertext of the second block
-        for(int i=0;i<blockSize;i++)
-            xor[i] ^= buf[offset+i+blockSize];
-        // Now decode the second block
-        sessionCipher.decipher(xor, xor);
-        // Now fill in the next chunk of the hash
-        System.arraycopy(xor, 0, hashBuf, filledTo, blockSize);
-        // Almost full - 1 hash = 2 blocks, so we're 4 bytes short
-        
-        // Now extract the last 4 bytes
-        for(int i=0;i<4;i++)
-            hashBuf[filledTo+blockSize+i] = 
-                (byte) (buf[offset+i+(blockSize*2)] ^ hashBuf[i]);
-        
-        // Yay, we have the full hash
-        
-        // So lets decrypt the data
-        
-        byte[] decrypted = new byte[length - (blockSize*2 + 4)];
-        
-        System.arraycopy(buf, offset+(blockSize*2)+4, decrypted, 0, length-((blockSize*2)+4));
         PCFBMode pcfb;
-        byte[] iv = new byte[blockSize];
-        System.arraycopy(buf, offset, iv, 0, blockSize*2);
-        pcfb = new PCFBMode(sessionCipher,iv);
-        pcfb.blockDecipher(decrypted, 0, decrypted.length);
+        pcfb = new PCFBMode(sessionCipher);
+        // Set IV to the hash, after it is encrypted
+        pcfb.reset(packetHash);
         
-        // Decrypted the data, yay
+        pcfb.blockDecipher(buf, offset+digestLength, 4);
+        
+        int seqNumber = (((buf[offset+digestLength+3] & 0xff) << 8
+                + (buf[offset+digestLength+2] & 0xff)) << 8 + 
+                (buf[offset+digestLength+1] & 0xff)) << 8 +
+                (buf[offset+digestLength] & 0xff);
+        
+        // Now is it credible?
+        // As long as it's within +/- 256, this is valid.
+        int targetSeqNumber = pn.lastReceivedSequenceNumber();
+        if(Math.abs(targetSeqNumber - seqNumber) > MAX_PACKETS_IN_FLIGHT)
+            return false;
+        
+        // Plausible, so lets decrypt the rest of the data
+        
+        pcfb.blockDecipher(buf, offset+digestLength+4,
+                length-(offset+digestLength+4));
+        
+        md.update(buf, offset+digestLength, length-
+                (offset+digestLength));
+        byte[] realHash = md.digest();
+
+        // Now decrypt the original hash
+        
+        // First block
+        byte[] temp = new byte[blockSize];
+        System.arraycopy(buf, offset, temp, 0, blockSize);
+        sessionCipher.decipher(temp, temp);
+        System.arraycopy(temp, 0, packetHash, 0, blockSize);
+        
+        // Second block
+        System.arraycopy(buf, offset+blockSize, temp, 0, blockSize);
+        // Un-PCBC
+        for(int i=0;i<blockSize;i++) {
+            temp[i] ^= (buf[offset+i] ^ packetHash[i]);
+        }
+        sessionCipher.decipher(temp, temp);
+        System.arraycopy(temp, 0, packetHash, blockSize, blockSize);
         
         // Check the hash
-        byte[] hash = md.digest(decrypted);
-        if(!java.util.Arrays.equals(hash, hashBuf)) {
-            Logger.error(this, "Incorrect hash for packet probably from "+pn);
+        if(!java.util.Arrays.equals(packetHash, realHash)) {
+            Logger.error(this, "Packet possibly from "+pn+" hash does not match");
             return false;
         }
+        
+        // We are finished with the original buffer
+        // So we can use it for temp space
+        for(int i=0;i<md.getDigestLength();i++) {
+            buf[offset+i] ^= packetHash[i];
+        }
+        node.random.acceptEntropyBytes(myPacketDataSource, buf, offset, md.getDigestLength(), 0.5);
+        
+        byte[] decrypted = new byte[length-digestLength];
+        System.arraycopy(buf, offset+digestLength, decrypted, 0, length-digestLength);
         
         // Lots more to do yet!
         processDecryptedData(decrypted, seqNumber, pn);
@@ -215,6 +225,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         int ptr = 0;
         
         int version = decrypted[ptr++];
+        if(ptr > decrypted.length) {
+            Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+            return;
+        }
         if(version != 0) {
             Logger.error(this,"Packet from "+pn+" decrypted but invalid version: "+version);
             return;
@@ -227,6 +241,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         for(int i=0;i<ackCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
+            if(ptr > decrypted.length) {
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+                return;
+            }
             int realSeqNo = seqNumber - (1 + offset);
             pn.acknowledgedPacket(realSeqNo);
         }
@@ -236,6 +254,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         for(int i=0;i<retransmitCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
+            if(ptr > decrypted.length) {
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+            }
             int realSeqNo = seqNumber - (1 + offset);
             pn.resendPacket(realSeqNo);
         }
@@ -245,6 +266,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         for(int i=0;i<forgottenCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
+            if(ptr > decrypted.length) {
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+            }
             int realSeqNo = seqNumber - (1 + offset);
             pn.destForgotPacket(realSeqNo);
         }
@@ -252,6 +276,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         int messages = decrypted[ptr++] & 0xff;
         
         for(int i=0;i<messages;i++) {
+            if(ptr+1 > decrypted.length) {
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+            }
             int length = ((decrypted[ptr++] & 0xff) << 8) +
             	(decrypted[ptr++] & 0xff);
             if(length > decrypted.length - ptr) {
