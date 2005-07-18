@@ -1,13 +1,12 @@
 package freenet.node;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 
 import freenet.crypt.BlockCipher;
-import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
 import freenet.support.Logger;
 
@@ -16,14 +15,16 @@ import freenet.support.Logger;
  * 
  * Another node.
  */
-public class NodePeer {
+public class NodePeer implements PeerContext {
     
-    NodePeer(Location loc, Peer contact) {
+    NodePeer(Location loc, Peer contact, Node n) {
         currentLocation = loc;
         peer = contact;
         sentPacketsBySequenceNumber = new HashMap();
-        ackQueue = new HashSet();
-        resendRequestQueue = new HashSet();
+        ackQueue = new LinkedList();
+        resendRequestQueue = new LinkedList();
+        node = n;
+        usm = node.usm;
     }
     
     /** Keyspace location */
@@ -33,6 +34,8 @@ public class NodePeer {
     private Peer peer;
     
     private final UdpSocketManager usm;
+    
+    private final Node node;
     
     /**
      * Get the current Location, which represents our current 
@@ -113,8 +116,9 @@ public class NodePeer {
         byte[] payload = (byte[])sentPacketsBySequenceNumber.get(i);
         // Send it
         
-        // TODO Auto-generated method stub
+        // FIXME: do this off thread
         
+        node.packetMangler.processOutgoing(payload, 0, payload.length, this);
     }
     
     /**

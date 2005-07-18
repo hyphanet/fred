@@ -33,13 +33,13 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.4 2005/07/16 12:00:33 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.5 2005/07/18 15:26:37 amphibian Exp $";
 
 	private final MessageType _spec;
-	private final Peer _source;
+	private final PeerContext _source;
 	private final HashMap _payload = new HashMap();
 
-	public static Message decodeFromPacket(byte[] buf, int offset, int length, Peer peer) {
+	public static Message decodeFromPacket(byte[] buf, int offset, int length, PeerContext peer) {
 		DataInputStream dis
 	    = new DataInputStream(new ByteArrayInputStream(buf,
 	        offset, length));
@@ -80,7 +80,7 @@ public class Message {
 		this(spec, null);
 	}
 
-	private Message(MessageType spec, Peer source) {
+	private Message(MessageType spec, PeerContext source) {
 		_spec = spec;
 		_source = source;
 	}
@@ -143,7 +143,7 @@ public class Message {
 		_payload.put(key, value);
 	}
 
-	public DatagramPacket encodeToPacket(LowLevelFilter f, Peer destination) {
+	public byte[] encodeToPacket(LowLevelFilter f, PeerContext destination) {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
@@ -159,8 +159,7 @@ public class Message {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		byte[] buf = f.processOutgoing(baos.toByteArray(), 0, baos.size(), destination);
-		return new DatagramPacket(buf, buf.length);
+		return baos.toByteArray();
 	}
 
 	public String toString() {
@@ -177,7 +176,7 @@ public class Message {
 		return ret.toString();
 	}
 
-	public Peer getSource() {
+	public PeerContext getSource() {
 		return _source;
 	}
 

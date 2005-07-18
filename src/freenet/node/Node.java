@@ -32,6 +32,7 @@ public class Node implements SimpleClient {
     final PeerManager peers; // my peers
     final RandomSource random; // strong RNG
     final UdpSocketManager usm;
+    final FNPPacketMangler packetMangler;
     private static final int EXIT_STORE_FILE_NOT_FOUND = 1;
     private static final int EXIT_STORE_IOEXCEPTION = 2;
     private static final int EXIT_STORE_OTHER = 3;
@@ -82,7 +83,7 @@ public class Node implements SimpleClient {
         try {
             usm = new UdpSocketManager(portNumber);
             usm.setDispatcher(new NodeDispatcher());
-            usm.setLowLevelFilter(new FNPPacketMangler(this));
+            usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
         } catch (SocketException e2) {
             Logger.error(this, "Could not listen for traffic: "+e2, e2);
             System.exit(EXIT_USM_DIED);

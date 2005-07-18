@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.4 2005/07/16 12:00:33 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.5 2005/07/18 15:26:37 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	private LinkedList _filters = new LinkedList();
@@ -77,7 +77,8 @@ public class UdpSocketManager extends Thread {
 			    if(lowLevelFilter != null)
 			        lowLevelFilter.process(data, offset, length, peer);
 			    else {
-			        Message m = decodePacket(data, offset, length, peer);
+			        // Create a bogus context since no filter
+			        Message m = decodePacket(data, offset, length, new DummyPeerContext(peer));
 			        if(m != null)
 			            checkFilters(m);
 			    }
@@ -97,7 +98,7 @@ public class UdpSocketManager extends Thread {
      * @param length
      * @param peer
      */
-    public Message decodePacket(byte[] data, int offset, int length, Peer peer) {
+    public Message decodePacket(byte[] data, int offset, int length, PeerContext peer) {
         try {
             return Message.decodeFromPacket(data, offset, length, peer);
         } catch (Throwable t) {
@@ -255,14 +256,14 @@ public class UdpSocketManager extends Thread {
 		return ret;
 	}
 
-	public void send(Peer destination, Message m) {
+	public void send(PeerContext destination, Message m) {
 	    if(m.getSpec().isInternalOnly()) {
 	        Logger.error(this, "Trying to send internal-only message "+m+" of spec "+m.getSpec(), new Exception("debug"));
 	        return;
 	    }
 		if (_dropProbability > 0) {
 			if (dropRandom.nextInt() % _dropProbability == 0) {
-				Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPort() + " : " + m);
+				Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPeer().getPort() + " : " + m);
 				return;
 			}
 		}
@@ -273,7 +274,22 @@ public class UdpSocketManager extends Thread {
 			Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
 					+ " : " + m);
 		}
-		DatagramPacket packet = m.encodeToPacket(lowLevelFilter, destination);
+		byte[] blockToSend = m.encodeToPacket(lowLevelFilter, destination);
+		if(lowLevelFilter != null) {
+		    lowLevelFilter.processOutgoing(blockToSend, 0, blockToSend.length, destination);
+		} else {
+		    sendPacket(blockToSend, destination.getPeer());
+		}
+	}
+
+	/**
+	 * Send a block of encoded bytes to a peer. This is called by
+	 * send, and by LowLevelFilter.processOutgoing(..).
+     * @param blockToSend The data block to send.
+     * @param destination The peer to send it to.
+     */
+    private void sendPacket(byte[] blockToSend, Peer destination) {
+		DatagramPacket packet = new DatagramPacket(blockToSend, blockToSend.length);
 		packet.setAddress(destination.getAddress());
 		packet.setPort(destination.getPort());
 		try {
@@ -281,9 +297,9 @@ public class UdpSocketManager extends Thread {
 		} catch (IOException e) {
 			Logger.error(this, "Error while sending packet to " + destination, e);
 		}
-	}
+    }
 
-	public void close(boolean exit) {
+    public void close(boolean exit) {
 		_active = false;
 		synchronized (this) {
 			while (!_isDone) {

@@ -12,17 +12,21 @@ public interface LowLevelFilter {
      * @param buf The buffer to read from.
      * @param offset The offset to start reading from.
      * @param length The length in bytes to read.
-     * @param peer The peer which sent us the packet.
+     * @param peer The peer which sent us the packet. We only know
+     * the Peer because it's incoming; we are supposed to create
+     * or find PeerContext's for the Message's.
      */
     void process(byte[] buf, int offset, int length, Peer peer);
 
     /**
-     * Process an outgoing packet. Takes a byte[], returns
-     * a byte[]. This is then sent in the usual way.
+     * Process an outgoing packet. Takes a byte[], which is an
+     * encoded message. Then does whatever encryption or other
+     * things need doing, and calls UdpSocketManager.sendPacket(...)
+     * to send the processed data.
      * @param buf The buffer to read from.
      * @param offset The offset to start reading from.
      * @param length The length in bytes to read.
-     * @param peer The peer the message will be sent to.
+     * @param peer The PeerContext the messages will be sent to.
      */
-    byte[] processOutgoing(byte[] buf, int offset, int length, Peer peer);
+    byte[] processOutgoing(byte[] buf, int offset, int length, PeerContext peer);
 }

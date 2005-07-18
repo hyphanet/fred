@@ -10,6 +10,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.LowLevelFilter;
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
+import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
 import freenet.support.Logger;
 
@@ -285,7 +286,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Message longer than remaining space: "+length);
                 return;
             }
-            Message m = usm.decodePacket(decrypted, ptr, length, pn.getPeer());
+            Message m = usm.decodePacket(decrypted, ptr, length, pn);
             if(m != null) {
                 m.set(DMT.FNP_SOURCE_PEERNODE, pn);
                 Logger.minor(this, "Dispatching packet: "+m);
@@ -294,7 +295,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
     }
 
-    public byte[] processOutgoing(byte[] buf, int offset, int length, Peer peer) {
+    /**
+     * Because of NodePeer.sentPacket(), this must copy the plaintext
+     * before encrypting it.
+     */
+    public byte[] processOutgoing(byte[] buf, int offset, int length, PeerContext peer) {
         // TODO Auto-generated method stub
         return null;
     }
