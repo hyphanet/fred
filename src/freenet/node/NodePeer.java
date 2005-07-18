@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.ciphers.Rijndael;
@@ -209,9 +210,6 @@ public class NodePeer implements PeerContext {
      */
     final LinkedList ackQueue;
     
-    /** Time at which the first queued packet will become urgent. */
-    long nextUrgentTime = -1;
-
     class PacketActionItem { // anyone got a better name?
         /** Packet sequence number */
         int packetNumber;
@@ -246,12 +244,6 @@ public class NodePeer implements PeerContext {
         if(alreadyQueuedAck(packetNumber)) return;
         QueuedAck ack = new QueuedAck(packetNumber);
         // Oldest are first, youngest are last
-        if(ackQueue.isEmpty()) {
-            if(nextUrgentTime < 0)
-                nextUrgentTime = ack.urgentTime;
-            else
-                nextUrgentTime = Math.min(ack.urgentTime, nextUrgentTime);
-        }
         ackQueue.addLast(ack);
     }
     
@@ -279,11 +271,9 @@ public class NodePeer implements PeerContext {
             long now = System.currentTimeMillis();
             activeTime = now + 500;
             urgentTime = activeTime + 200;
-            // Reset to back of list
             // This is only removed when we actually receive the packet
             // But for now it will sleep
-            resendRequestQueue.remove(this);
-            resendRequestQueue.addLast(this);
+            // Don't need to change position in list as it won't change as we send all of them at once
         }
         
         QueuedResend(int packetNumber) {
@@ -346,7 +336,6 @@ public class NodePeer implements PeerContext {
         }
     }
 
-    // FIXME: this needs to be set somewhere
     BlockCipher sessionCipher;
     
     /**
@@ -364,4 +353,83 @@ public class NodePeer implements PeerContext {
         return lastReceivedPacketSeqNumber;
     }
 
+    /**
+     * @return
+     */
+    public long getNextUrgentTime() {
+        long nextUrgentTime = Long.MAX_VALUE;
+        // Two queues to consider
+        if(!ackQueue.isEmpty()) {
+            PacketActionItem item = (PacketActionItem) ackQueue.getFirst();
+            long urgentTime = item.urgentTime;
+            if(urgentTime < nextUrgentTime)
+                nextUrgentTime = urgentTime;
+        }
+        if(!resendRequestQueue.isEmpty()) {
+            PacketActionItem item = (PacketActionItem) resendRequestQueue.getFirst();
+            long urgentTime = item.urgentTime;
+            if(urgentTime < nextUrgentTime)
+                nextUrgentTime = urgentTime;
+        }
+        return nextUrgentTime;
+    }
+
+    /**
+     * Destination forgot a packet we wanted it to resend.
+     * Grrr!
+     * @param realSeqNo
+     */
+    public void destForgotPacket(int seqNo) {
+        Logger.normal(this, "Destination forgot packet: "+seqNo);
+        removeResendRequest(seqNo);
+    }
+
+    /**
+     * Allocate an outgoing packet number.
+     * Block if necessary to keep it inside the sliding window.
+     * We cannot send packet 256 until packet 0 has been ACKed.
+     */
+    public int allocateOutgoingPacketNumber() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    /**
+     * Remove all acks from the queue and return their packet numbers
+     * as an array.
+     * @return
+     */
+    public synchronized int[] grabAcks() {
+        int[] acks = new int[ackQueue.size()];
+        int x = 0;
+        for(Iterator i=ackQueue.iterator();i.hasNext();) {
+            QueuedAck qa = (QueuedAck) (i.next());
+            int packetNumber = qa.packetNumber;
+            acks[x++] = packetNumber;
+        }
+        ackQueue.clear();
+        return acks;
+    }
+
+    /**
+     * Get all active pending resend requests from the queue, and 
+     * update their active and urgent times.
+     * @return
+     */
+    public synchronized int[] grabResendRequests() {
+        // Only return them if they are urgent
+        int[] temp = new int[resendRequestQueue.size()];
+        int x = 0;
+        long now = System.currentTimeMillis();
+        for(Iterator i=resendRequestQueue.iterator();i.hasNext();) {
+            QueuedResend qa = (QueuedResend) (i.next());
+            if(qa.activeTime > now) continue;
+            int packetNumber = qa.packetNumber;
+            temp[x++] = packetNumber;
+            qa.sent();
+        }
+        int[] reqs = new int[x];
+        System.arraycopy(temp, 0, reqs, 0, x);
+        return reqs;
+    }
 }

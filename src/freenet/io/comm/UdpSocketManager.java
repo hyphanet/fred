@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.5 2005/07/18 15:26:37 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.6 2005/07/18 20:05:14 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	private LinkedList _filters = new LinkedList();
@@ -288,7 +288,7 @@ public class UdpSocketManager extends Thread {
      * @param blockToSend The data block to send.
      * @param destination The peer to send it to.
      */
-    private void sendPacket(byte[] blockToSend, Peer destination) {
+    public void sendPacket(byte[] blockToSend, Peer destination) {
 		DatagramPacket packet = new DatagramPacket(blockToSend, blockToSend.length);
 		packet.setAddress(destination.getAddress());
 		packet.setPort(destination.getPort());

@@ -31,14 +31,14 @@ public class PacketSender implements Runnable {
             }
             if(packet != null) {
                 // Send the packet
-                node.packetMangler.processOutgoing(packet.buf, 0, packet.buf.length, packet.pn);
+                node.packetMangler.processOutgoingPreformatted(packet.buf, 0, packet.buf.length, packet.pn);
             } else {
                 long now = System.currentTimeMillis();
                 long firstRemainingUrgentTime = Long.MAX_VALUE;
                 // Anything urgently need sending?
                 for(int i=0;i<node.peers.connectedPeers.length;i++) {
                     NodePeer pn = node.peers.connectedPeers[i];
-                    long urgentTime = pn.nextUrgentTime;
+                    long urgentTime = pn.getNextUrgentTime();
                     if(urgentTime <= now) {
                         node.packetMangler.processOutgoing(null, 0, 0, pn);
                     } else {

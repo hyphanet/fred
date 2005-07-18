@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -31,6 +32,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     static final int MAX_PACKETS_IN_FLIGHT = 256; 
     static final EntropySource fnpTimingSource = new EntropySource();
     static final EntropySource myPacketDataSource = new EntropySource();
+    static final int RANDOM_BYTES_LENGTH = 12;
     
     public FNPPacketMangler(Node node) {
         this.node = node;
@@ -223,7 +225,7 @@ public class FNPPacketMangler implements LowLevelFilter {
          */ 
         
         // Use ptr to simplify code
-        int ptr = 0;
+        int ptr = RANDOM_BYTES_LENGTH;
         
         int version = decrypted[ptr++];
         if(ptr > decrypted.length) {
@@ -295,15 +297,143 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
     }
 
-    /*
-     * Note that buf may be null. If so we send a packet with just
-     * acks and rerequests.
-     * Because of NodePeer.sentPacket(), this must copy the plaintext
-     * before encrypting it.
+    /**
+     * Build a packet and send it. From a Message recently converted into byte[],
+     * but with no outer formatting.
      */
-    public byte[] processOutgoing(byte[] buf, int offset, int length, PeerContext peer) {
-        // TODO Auto-generated method stub
-        return null;
+    public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) {
+        byte[] newBuf = new byte[length+3];
+        newBuf[0] = 1;
+        newBuf[1] = (byte)(length >> 8);
+        newBuf[2] = (byte)length;
+        System.arraycopy(buf, offset, newBuf, 3, length);
+        processOutgoingPreformatted(newBuf, 0, newBuf.length, peer);
+    }
+
+    /**
+     * Encrypt a packet, prepend packet acks and packet resend requests, and send it. 
+     * The provided data is ready-formatted, meaning that it already has the message 
+     * length's and message counts.
+     * @param buf Buffer to read data from.
+     * @param offset Point at which to start reading.
+     * @param length Number of bytes to read.
+     * @param peer Peer to send the message to.
+     */
+    public void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerContext peer) {
+        if(!(peer instanceof NodePeer))
+            throw new ClassCastException();
+        NodePeer pn = (NodePeer) peer;
+        // Allocate a sequence number
+        int seqNumber = pn.allocateOutgoingPacketNumber();
+        
+        int[] acks = pn.grabAcks();
+        int[] resendRequests = pn.grabResendRequests();
+        // We do not support forgotten packets at present
+        
+        int packetLength = acks.length + resendRequests.length + 3 + 1 + length + 4 + RANDOM_BYTES_LENGTH;
+
+        byte[] plaintext = new byte[packetLength];
+        
+        int ptr = 0;
+
+        plaintext[ptr++] = (byte)(seqNumber >> 24);
+        plaintext[ptr++] = (byte)(seqNumber >> 16);
+        plaintext[ptr++] = (byte)(seqNumber >> 8);
+        plaintext[ptr++] = (byte)seqNumber;
+        
+        byte[] randomJunk = new byte[RANDOM_BYTES_LENGTH];
+        
+        node.random.nextBytes(randomJunk);
+        System.arraycopy(randomJunk, 0, plaintext, ptr, RANDOM_BYTES_LENGTH);
+        ptr += RANDOM_BYTES_LENGTH;
+        
+        plaintext[ptr++] = 0; // version number
+        plaintext[ptr++] = (byte) acks.length;
+        for(int i=0;i<acks.length;i++) {
+            int ackSeq = acks[i];
+            int offsetSeq = seqNumber - (1 + ackSeq);
+            if(offsetSeq > 255 || offsetSeq < 0)
+                throw new IllegalStateException("bad ack offset "+offsetSeq);
+            plaintext[ptr++] = (byte)offsetSeq;
+        }
+        
+        plaintext[ptr++] = (byte) resendRequests.length;
+        for(int i=0;i<resendRequests.length;i++) {
+            int reqSeq = acks[i];
+            int offsetSeq = seqNumber - (1 + reqSeq);
+            if(offsetSeq > 255 || offsetSeq < 0)
+                throw new IllegalStateException("bad resend request offset "+offsetSeq);
+            plaintext[ptr++] = (byte)offsetSeq;
+        }
+        
+        // No forgotten packets
+        plaintext[ptr++] = 0;
+
+        System.arraycopy(buf, offset, plaintext, ptr, length);
+        
+        processOutgoingFullyFormatted(plaintext, pn);
+
+        byte[] saveable = new byte[length];
+        System.arraycopy(buf, offset, saveable, 0, length);
+        pn.sentPacket(saveable, seqNumber);
+    }
+
+    /**
+     * Encrypt and send a packet.
+     * @param plaintext The packet's plaintext, including all formatting,
+     * including acks and resend requests. Is clobbered.
+     */
+    private void processOutgoingFullyFormatted(byte[] plaintext, NodePeer pn) {
+        BlockCipher sessionCipher = pn.getSessionCipher();
+        int blockSize = sessionCipher.getBlockSize() >> 3;
+        if(sessionCipher.getKeySize() != sessionCipher.getBlockSize()*2)
+            throw new IllegalStateException("Block size must be half key size");
+        
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e);
+        }
+        
+        int digestLength = md.getDigestLength();
+        
+        if(digestLength != 2*blockSize)
+            throw new IllegalStateException("Block size must be half digest length!");
+        
+        byte[] output = new byte[plaintext.length + digestLength];
+        
+        md.update(plaintext);
+        
+        byte[] digestTemp;
+        
+        digestTemp = md.digest();
+
+        // Put plaintext in output
+        System.arraycopy(digestTemp, 0, output, 0, digestLength);
+        
+        // Encrypt digestTemp
+        sessionCipher.encipher(digestTemp, digestTemp);
+        
+        // The first block is exactly as it should be
+        // The second block gets XORed with the ciphertext and
+        // the plaintext
+        
+        for(int i=0;i<blockSize;i++)
+            digestTemp[blockSize+i] ^=
+                (output[i] /* plaintext */ ^ digestTemp[i] /* ciphetext */);
+        
+        // Now copy it back
+        System.arraycopy(digestTemp, 0, output, 0, digestLength);
+        // Yay, we have an encrypted hash
+        
+        PCFBMode pcfb = new PCFBMode(sessionCipher, digestTemp);
+        pcfb.blockEncipher(output, digestLength, plaintext.length);
+        
+        // We have a packet
+        // Send it
+        
+        usm.sendPacket(output, pn.getPeer());
     }
 
 }

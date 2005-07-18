@@ -28,5 +28,5 @@ public interface LowLevelFilter {
      * @param length The length in bytes to read.
      * @param peer The PeerContext the messages will be sent to.
      */
-    byte[] processOutgoing(byte[] buf, int offset, int length, PeerContext peer);
+    void processOutgoing(byte[] buf, int offset, int length, PeerContext peer);
 }
