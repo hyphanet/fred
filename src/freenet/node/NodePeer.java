@@ -6,14 +6,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
-import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
+import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * @author amphibian
@@ -31,8 +33,7 @@ public class NodePeer implements PeerContext {
         node = n;
         usm = node.usm;
         // FIXME!! Session key should be set up via PK negotiation
-        // (This code here is a hack, it does not provide any real
-        // security)!
+        // Hack here: sesskey = H(identity1) XOR H(identity2)
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-256");
@@ -41,11 +42,52 @@ public class NodePeer implements PeerContext {
         }
         this.nodeIdentity = nodeIdentity;
         byte[] key = md.digest(nodeIdentity);
+        byte[] okey = node.identityHash;
+        for(int i=0;i<key.length;i++)
+            key[i] ^= okey[i];
         sessionCipher = new Rijndael();
         sessionCipher.initialize(key);
         this.packetSender = ps;
     }
     
+    /**
+     * @param fs
+     */
+    public NodePeer(SimpleFieldSet fs, Node node) throws FSParseException, PeerParseException {
+        this.node = node;
+        this.packetSender = node.ps;
+        // Read the rest from the FieldSet
+        String loc = fs.get("location");
+        currentLocation = new Location(loc);
+        // FIXME: identity should be a PK
+        String nodeID = fs.get("identity");
+        nodeIdentity = HexUtil.hexToBytes(nodeID);
+        String physical = fs.get("physical.udp");
+        // Parse - FIXME use the old NodeReference code?
+        // FIXME support multiple transports??
+        peer = new Peer(physical);
+        usm = node.usm;
+        sentPacketsBySequenceNumber = new HashMap();
+        ackQueue = new LinkedList();
+        resendRequestQueue = new LinkedList();
+        
+        // FIXME!! Session key should be set up via PK negotiation
+        // Hack here: sesskey = H(identity1) XOR H(identity2)
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e);
+        }
+        this.nodeIdentity = nodeIdentity;
+        byte[] key = md.digest(nodeIdentity);
+        byte[] okey = node.identityHash;
+        for(int i=0;i<key.length;i++)
+            key[i] ^= okey[i];
+        sessionCipher = new Rijndael();
+        sessionCipher.initialize(key);
+    }
+
     /** Keyspace location */
     private Location currentLocation;
 
@@ -159,14 +201,17 @@ public class NodePeer implements PeerContext {
             if(sentPacketsBySequenceNumber.size() == 0) {
                 lowestSequenceNumberStillCached = -1;
                 highestSequenceNumberStillCached = -1;
+                notifyAll();
             } else {
                 if(realSeqNo == lowestSequenceNumberStillCached) {
                     while(!sentPacketsBySequenceNumber.containsKey(new Integer(lowestSequenceNumberStillCached)))
                         lowestSequenceNumberStillCached++;
+                    notifyAll();
                 }
                 if(realSeqNo == highestSequenceNumberStillCached) {
                     while(!sentPacketsBySequenceNumber.containsKey(new Integer(highestSequenceNumberStillCached)))
                         highestSequenceNumberStillCached--;
+                    notifyAll();
                 }
                 if(lowestSequenceNumberStillCached < 0 || highestSequenceNumberStillCached < 0)
                     throw new IllegalStateException();
@@ -384,14 +429,30 @@ public class NodePeer implements PeerContext {
         removeResendRequest(seqNo);
     }
 
+    int outgoingPacketNumber = 0;
+    
     /**
      * Allocate an outgoing packet number.
      * Block if necessary to keep it inside the sliding window.
      * We cannot send packet 256 until packet 0 has been ACKed.
      */
-    public int allocateOutgoingPacketNumber() {
-        // TODO Auto-generated method stub
-        return 0;
+    public synchronized int allocateOutgoingPacketNumber() {
+        int thisPacketNumber = outgoingPacketNumber++;
+        	
+        if(lowestSequenceNumberStillCached > 0 && 
+                thisPacketNumber - lowestSequenceNumberStillCached >= 256) {
+            Logger.normal(this, "Blocking until receive ack for packet "+
+                    lowestSequenceNumberStillCached+" on "+this);
+            while(lowestSequenceNumberStillCached > 0 &&
+                    thisPacketNumber - lowestSequenceNumberStillCached >= 256) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+            }
+        }
+        return thisPacketNumber;
     }
 
     /**
@@ -431,5 +492,13 @@ public class NodePeer implements PeerContext {
         int[] reqs = new int[x];
         System.arraycopy(temp, 0, reqs, 0, x);
         return reqs;
+    }
+
+    /**
+     * IP on the other side appears to have changed...
+     * @param peer2
+     */
+    public void changedIP(Peer peer2) {
+        peer = peer2;
     }
 }

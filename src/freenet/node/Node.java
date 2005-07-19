@@ -9,6 +9,8 @@ package freenet.node;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.SocketException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
@@ -28,6 +30,7 @@ public class Node implements SimpleClient {
     final int portNumber;
     final FreenetStore datastore;
     final byte[] myIdentity; // FIXME: simple identity block; should be unique
+    final byte[] identityHash;
     final LocationManager lm;
     final PeerManager peers; // my peers
     final RandomSource random; // strong RNG
@@ -78,10 +81,17 @@ public class Node implements SimpleClient {
         lm = new LocationManager(myLoc);
         writeLocation();
         ps = new PacketSender(this);
-        peers = new PeerManager();
+        peers = new PeerManager(this, "peers");
         // FIXME: HACK
         String s = "testnode-"+portNumber;
         myIdentity = s.getBytes();
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e);
+        }
+        identityHash = md.digest(myIdentity);
         try {
             usm = new UdpSocketManager(portNumber);
             usm.setDispatcher(new NodeDispatcher());

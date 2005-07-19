@@ -23,6 +23,14 @@ public class Location {
         loc = location;
     }
 
+    public Location(String init) throws FSParseException {
+        try {
+            loc = Double.parseDouble(init);
+        } catch (NumberFormatException e) {
+            throw new FSParseException(e);
+        }
+    }
+
     public double getValue() {
         return loc;
     }

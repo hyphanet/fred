@@ -84,7 +84,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         // FIXME: but it lets us get the infrastructure largely right
         for(int i=0;i<pm.myPeers.length;i++) {
             pn = pm.myPeers[i];
-            if(tryProcess(buf, offset, length, pn)) return;
+            if(tryProcess(buf, offset, length, pn)) {
+                // IP address change
+                pn.changedIP(peer);
+                return;
+            }
         }
         Logger.error(this,"Unmatchable packet from "+peer);
     }
