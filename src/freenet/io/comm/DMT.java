@@ -66,6 +66,7 @@ public class DMT {
     public static final String HTL = "hopsToLive";
     public static final String SUCCESS = "success";
     public static final String FNP_SOURCE_PEERNODE = "sourcePeerNode";
+    public static final String PING_SEQNO = "pingSequenceNumber";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -514,6 +515,26 @@ public class DMT {
     public static Message createFNPRejectOverload(long id) {
         Message msg = new Message(FNPRejectOverload);
         msg.set(UID, id);
+        return msg;
+    }
+    
+    public static MessageType FNPPing = new MessageType("FNPPing") {{
+        addField(PING_SEQNO, Integer.class);
+    }};
+    
+    public static Message createFNPPing(int seqNo) {
+        Message msg = new Message(FNPPing);
+        msg.set(PING_SEQNO, seqNo);
+        return msg;
+    }
+
+    public static MessageType FNPPong = new MessageType("FNPPong") {{
+        addField(PING_SEQNO, Integer.class);
+    }};
+    
+    public static Message createFNPPong(int seqNo) {
+        Message msg = new Message(FNPPong);
+        msg.set(PING_SEQNO, seqNo);
         return msg;
     }
     

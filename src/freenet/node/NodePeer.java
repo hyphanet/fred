@@ -8,7 +8,11 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 
 import freenet.crypt.BlockCipher;
+import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
+import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
@@ -30,6 +34,7 @@ public class NodePeer implements PeerContext {
         sentPacketsBySequenceNumber = new HashMap();
         ackQueue = new LinkedList();
         resendRequestQueue = new LinkedList();
+        ackRequestQueue = new LinkedList();
         node = n;
         usm = node.usm;
         // FIXME!! Session key should be set up via PK negotiation
@@ -45,7 +50,11 @@ public class NodePeer implements PeerContext {
         byte[] okey = node.identityHash;
         for(int i=0;i<key.length;i++)
             key[i] ^= okey[i];
-        sessionCipher = new Rijndael();
+        try {
+            sessionCipher = new Rijndael(256,128);
+        } catch (UnsupportedCipherException e1) {
+            throw new Error(e1);
+        }
         sessionCipher.initialize(key);
         this.packetSender = ps;
     }
@@ -70,6 +79,7 @@ public class NodePeer implements PeerContext {
         sentPacketsBySequenceNumber = new HashMap();
         ackQueue = new LinkedList();
         resendRequestQueue = new LinkedList();
+        ackRequestQueue = new LinkedList();
         
         // FIXME!! Session key should be set up via PK negotiation
         // Hack here: sesskey = H(identity1) XOR H(identity2)
@@ -79,15 +89,31 @@ public class NodePeer implements PeerContext {
         } catch (NoSuchAlgorithmException e) {
             throw new Error(e);
         }
-        this.nodeIdentity = nodeIdentity;
         byte[] key = md.digest(nodeIdentity);
         byte[] okey = node.identityHash;
         for(int i=0;i<key.length;i++)
             key[i] ^= okey[i];
-        sessionCipher = new Rijndael();
+        Logger.minor(this, "Session key: "+HexUtil.bytesToHex(key));
+        try {
+            sessionCipher = new Rijndael(256,128);
+        } catch (UnsupportedCipherException e1) {
+            throw new Error(e1);
+        }
         sessionCipher.initialize(key);
     }
 
+    public String toString() {
+        // Excessive??
+        return super.toString() + ": contact="+peer+", identity="+
+        	HexUtil.bytesToHex(nodeIdentity)+", loc="+currentLocation.getValue()+
+        	", cached: "+lowestSequenceNumberStillCached+"-"+
+        	highestSequenceNumberStillCached+" ("+
+        	sentPacketsBySequenceNumber.size()+"), lastRecv: "+
+        	lastReceivedPacketSeqNumber+", ackQueue: "+ackQueue.size()+
+        	", resendQueue: "+resendRequestQueue.size()+
+        	", outgoingPacketNo: "+outgoingPacketNumber;
+    }
+    
     /** Keyspace location */
     private Location currentLocation;
 
@@ -168,6 +194,8 @@ public class NodePeer implements PeerContext {
             highestSequenceNumberStillCached = seqNumber;
         if(lowestSequenceNumberStillCached < 0)
             lowestSequenceNumberStillCached = seqNumber;
+        // If not received ack in 500ms, send an AckRequest
+        queueAckRequest(seqNumber, false);
     }
 
     /**
@@ -184,7 +212,7 @@ public class NodePeer implements PeerContext {
         // Send it
         
         synchronized(packetSender) {
-            packetSender.queueForImmediateSend(payload, this);
+            packetSender.queueForImmediateSend(payload, packetNumber, this);
         }
     }
     
@@ -196,6 +224,7 @@ public class NodePeer implements PeerContext {
      */
     public synchronized void acknowledgedPacket(int realSeqNo) {
         Integer i = new Integer(realSeqNo);
+        removeAckRequest(realSeqNo);
         if(sentPacketsBySequenceNumber.containsKey(i)) {
             sentPacketsBySequenceNumber.remove(i);
             if(sentPacketsBySequenceNumber.size() == 0) {
@@ -303,7 +332,7 @@ public class NodePeer implements PeerContext {
         return false;
     }
 
-    class QueuedResend extends PacketActionItem {
+    abstract class BaseQueuedResend extends PacketActionItem {
         /** Time at which this item becomes sendable. Initially -1,
          * meaning it can be sent immediately. When we send a 
          * resend request, this is reset to t+500ms.
@@ -321,11 +350,40 @@ public class NodePeer implements PeerContext {
             // Don't need to change position in list as it won't change as we send all of them at once
         }
         
-        QueuedResend(int packetNumber) {
+        BaseQueuedResend(int packetNumber) {
             this.packetNumber = packetNumber;
             long now = System.currentTimeMillis();
-            activeTime = -1; // active immediately
-            urgentTime = now + 200; // urgent in 200ms
+            activeTime = initialActiveTime(); // active immediately
+            urgentTime = activeTime + 200; // urgent in 200ms
+        }
+        
+        abstract long initialActiveTime();
+        
+    }
+    
+    class QueuedResendRequest extends BaseQueuedResend {
+        long initialActiveTime() {
+            // Can send immediately
+            return System.currentTimeMillis();
+        }
+        
+        QueuedResendRequest(int packetNumber) {
+            super(packetNumber);
+        }
+    }
+    
+    class QueuedAckRequest extends BaseQueuedResend {
+        long initialActiveTime() {
+            // 500ms after sending packet, send ackrequest
+            return System.currentTimeMillis() + 500;
+        }
+        
+        QueuedAckRequest(int packetNumber, boolean sendSoon) {
+            super(packetNumber);
+            if(sendSoon) {
+                activeTime -= 500;
+                urgentTime -= 500;
+            }
         }
     }
     
@@ -342,7 +400,7 @@ public class NodePeer implements PeerContext {
      * to be resent.
      */
     private synchronized void queueResendRequest(int seqNumber) {
-        QueuedResend qr = new QueuedResend(seqNumber);
+        QueuedResendRequest qr = new QueuedResendRequest(seqNumber);
         // Add to queue in the right place
         
         if(resendRequestQueue.isEmpty())
@@ -350,7 +408,7 @@ public class NodePeer implements PeerContext {
         else {
             long lastUrgentTime = Long.MAX_VALUE;
             for(ListIterator i = resendRequestQueue.listIterator(resendRequestQueue.size());i.hasPrevious();) {
-                QueuedResend q = (QueuedResend) (i.previous());
+                QueuedResendRequest q = (QueuedResendRequest) (i.previous());
                 long thisUrgentTime = q.urgentTime;
                 if(thisUrgentTime > lastUrgentTime)
                     throw new IllegalStateException("Inconsistent resendRequestQueue: urgentTime increasing! on "+this);
@@ -374,13 +432,70 @@ public class NodePeer implements PeerContext {
      */
     private synchronized void removeResendRequest(int seqNumber) {
         for(ListIterator i=resendRequestQueue.listIterator();i.hasNext();) {
-            QueuedResend q = (QueuedResend) (i.next());
+            QueuedResendRequest q = (QueuedResendRequest) (i.next());
             if(q.packetNumber == seqNumber) {
                 i.remove();
             }
         }
     }
 
+    private synchronized boolean queuedResendRequest(int seqNumber) {
+        for(ListIterator i=resendRequestQueue.listIterator();i.hasNext();) {
+            QueuedResendRequest q = (QueuedResendRequest) (i.next());
+            if(q.packetNumber == seqNumber) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // AckRequests
+    
+    /**
+     * In order of urgency. QueuedAckRequest's are added when we send
+     * a packet, and removed when it is acked.
+     */
+    final LinkedList ackRequestQueue;
+    
+    private synchronized void queueAckRequest(int seqNumber, boolean sendSoon) {
+        Logger.minor(this, "Queueing ack request: "+seqNumber);
+        QueuedAckRequest qa = new QueuedAckRequest(seqNumber, sendSoon);
+        // Add to queue in the right place
+        
+        if(ackRequestQueue.isEmpty())
+            ackRequestQueue.addLast(qa);
+        else {
+            long lastUrgentTime = Long.MAX_VALUE;
+            for(ListIterator i = ackRequestQueue.listIterator(ackRequestQueue.size());i.hasPrevious();) {
+                QueuedAckRequest q = (QueuedAckRequest) (i.previous());
+                long thisUrgentTime = q.urgentTime;
+                if(thisUrgentTime > lastUrgentTime)
+                    throw new IllegalStateException("Inconsistent ackRequestQueue: urgentTime increasing! on "+this);
+                lastUrgentTime = thisUrgentTime;
+                if(thisUrgentTime < qa.urgentTime) {
+                    i.add(qa);
+                    return;
+                }
+            }
+            ackRequestQueue.addFirst(qa);
+        }
+        // We do not need to notify the subthread as it will never
+        // sleep for more than 200ms, so it will pick up on the
+        // need to send something then.
+    }
+    
+    private synchronized void removeAckRequest(int seqNumber) {
+        for(ListIterator i=ackRequestQueue.listIterator();i.hasNext();) {
+            QueuedAckRequest q = (QueuedAckRequest) (i.next());
+            if(q.packetNumber == seqNumber) {
+                i.remove();
+            }
+        }
+    }
+
+    
+    
+    
     BlockCipher sessionCipher;
     
     /**
@@ -412,6 +527,12 @@ public class NodePeer implements PeerContext {
         }
         if(!resendRequestQueue.isEmpty()) {
             PacketActionItem item = (PacketActionItem) resendRequestQueue.getFirst();
+            long urgentTime = item.urgentTime;
+            if(urgentTime < nextUrgentTime)
+                nextUrgentTime = urgentTime;
+        }
+        if(!ackRequestQueue.isEmpty()) {
+            PacketActionItem item = (PacketActionItem) ackRequestQueue.getFirst();
             long urgentTime = item.urgentTime;
             if(urgentTime < nextUrgentTime)
                 nextUrgentTime = urgentTime;
@@ -483,7 +604,7 @@ public class NodePeer implements PeerContext {
         int x = 0;
         long now = System.currentTimeMillis();
         for(Iterator i=resendRequestQueue.iterator();i.hasNext();) {
-            QueuedResend qa = (QueuedResend) (i.next());
+            QueuedResendRequest qa = (QueuedResendRequest) (i.next());
             if(qa.activeTime > now) continue;
             int packetNumber = qa.packetNumber;
             temp[x++] = packetNumber;
@@ -494,11 +615,82 @@ public class NodePeer implements PeerContext {
         return reqs;
     }
 
+
+    /**
+     * Get all active pending ack requests from the queue, and
+     * update their active and urgent times.
+     * @return
+     */
+    public int[] grabAckRequests() {
+        // Only return them if they are urgent
+        int[] temp = new int[ackRequestQueue.size()];
+        int x = 0;
+        long now = System.currentTimeMillis();
+        for(Iterator i=ackRequestQueue.iterator();i.hasNext();) {
+            QueuedAckRequest qa = (QueuedAckRequest) (i.next());
+            if(qa.activeTime > now) continue;
+            int packetNumber = qa.packetNumber;
+            temp[x++] = packetNumber;
+            qa.sent();
+        }
+        int[] reqs = new int[x];
+        System.arraycopy(temp, 0, reqs, 0, x);
+        return reqs;
+    }
+    
     /**
      * IP on the other side appears to have changed...
      * @param peer2
      */
     public void changedIP(Peer peer2) {
         peer = peer2;
+    }
+
+    /**
+     * Ping this node.
+     * @return True if we received a reply inside 1000ms.
+     */
+    public boolean ping(int pingID) {
+        Message ping = DMT.createFNPPing(pingID);
+        usm.send(this, ping);
+        Message msg = 
+            usm.waitFor(MessageFilter.create().setTimeout(1000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID));
+        return msg != null;
+    }
+
+    /**
+     * Send a Message immediately but off-thread.
+     * @param reply The Message to send.
+     * @param target The node to send it to.
+     */
+    public void sendAsync(Message reply) {
+        byte[] buf = node.packetMangler.preformat(reply, this);
+        packetSender.queueForImmediateSend(buf, -1, this);
+    }
+
+    /**
+     * If we receive an AckRequest, we should send the ack again.
+     * That is, if we sent it in the first place...
+     * @param realSeqNo The packet number.
+     *
+     */
+    public void receivedAckRequest(int realSeqNo) {
+        // Did we send the ack in the first place?
+        if(realSeqNo > lastReceivedPacketSeqNumber) {
+            Logger.error(this,"Other side asked for re-ack on "+realSeqNo+
+                    " but last sent was "+lastReceivedPacketSeqNumber);
+            return;
+        }
+        if(queuedResendRequest(realSeqNo)) {
+            // We will get them to resend it first
+            Logger.minor(this, "Other side asked for re-ack on "+realSeqNo+
+                    " but we haven't received it yet");
+            return;
+        }
+        queueAck(realSeqNo);
+    }
+
+    public synchronized int getLastOutgoingSeqNumber() {
+        return outgoingPacketNumber;
     }
 }

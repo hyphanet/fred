@@ -1,5 +1,7 @@
 package freenet.node;
 
+import freenet.crypt.RandomSource;
+
 /**
  * @author amphibian
  * 
@@ -12,6 +14,10 @@ class LocationManager {
         this.loc = loc;
     }
     
+    public LocationManager(RandomSource r) {
+        loc = Location.randomInitialLocation(r);
+    }
+
     Location loc;
 
     /**
@@ -19,6 +25,13 @@ class LocationManager {
      */
     public Location getLocation() {
         return loc;
+    }
+
+    /**
+     * @param l
+     */
+    public void setLocation(Location l) {
+        this.loc = l;
     }
     
 }

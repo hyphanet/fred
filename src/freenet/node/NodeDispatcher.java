@@ -1,5 +1,6 @@
 package freenet.node;
 
+import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
 import freenet.io.comm.Message;
 
@@ -24,6 +25,12 @@ import freenet.io.comm.Message;
 public class NodeDispatcher implements Dispatcher {
 
     public boolean handleMessage(Message m) {
+        if(m.getSpec() == DMT.FNPPing) {
+            // Send an FNPPong
+            Message reply = DMT.createFNPPong(m.getInt(DMT.PING_SEQNO));
+            ((NodePeer)m.getSource()).sendAsync(reply);
+            return true;
+        }
         // TODO Auto-generated method stub
         return false;
     }

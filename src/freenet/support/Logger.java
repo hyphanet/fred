@@ -72,12 +72,20 @@ public abstract class Logger {
 	    logger.log(o, s, MINOR);
 	}
 	
+	public static void minor(Object o, String s, Throwable t) {
+	    logger.log(o, s, t, MINOR);
+	}
+	
     public static void minor(Class class1, String string, Throwable t) {
         logger.log(class1, string, t, MINOR);
     }
     
 	public static void normal(Object o, String s) {
 	    logger.log(o, s, NORMAL);
+	}
+	
+	public static void normal(Object o, String s, Throwable t) {
+	    logger.log(o, s, t, NORMAL);
 	}
 	
 	public static void normal(Class c, String s) {

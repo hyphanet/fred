@@ -11,14 +11,16 @@ import java.util.LinkedList;
  */
 public class PacketSender implements Runnable {
     
-    LinkedList resendPackets;
-    Thread myThread;
-    Node node;
+    final LinkedList resendPackets;
+    final Thread myThread;
+    final Node node;
     
     PacketSender(Node node) {
+        resendPackets = new LinkedList();
+        this.node = node;
         myThread = new Thread(this);
-        myThread.start();
         myThread.setDaemon(true);
+        myThread.start();
     }
 
     public void run() {
@@ -31,12 +33,14 @@ public class PacketSender implements Runnable {
             }
             if(packet != null) {
                 // Send the packet
-                node.packetMangler.processOutgoingPreformatted(packet.buf, 0, packet.buf.length, packet.pn);
+                node.packetMangler.processOutgoingPreformatted(packet.buf, 0, packet.buf.length, packet.pn, packet.packetNumber);
             } else {
                 long now = System.currentTimeMillis();
                 long firstRemainingUrgentTime = Long.MAX_VALUE;
                 // Anything urgently need sending?
-                for(int i=0;i<node.peers.connectedPeers.length;i++) {
+                PeerManager pm = node.peers;
+                if(pm == null) continue;
+                for(int i=0;i<pm.connectedPeers.length;i++) {
                     NodePeer pn = node.peers.connectedPeers[i];
                     long urgentTime = pn.getNextUrgentTime();
                     if(urgentTime <= now) {
@@ -57,20 +61,25 @@ public class PacketSender implements Runnable {
     }
 
     class ResendPacketItem {
-        public ResendPacketItem(byte[] payload, NodePeer peer) {
+        public ResendPacketItem(byte[] payload, int packetNumber, NodePeer peer) {
             pn = peer;
             buf = payload;
+            this.packetNumber = packetNumber;
         }
         final NodePeer pn;
         final byte[] buf;
+        final int packetNumber;
     }
     
     /**
-     * @param payload
-     * @param peer
+     * Queue a packet to send.
+     * @param payload The message payload (one or more messages in the relevant format
+     * including number of messages and respective lengths).
+     * @param packetNumber If >0, then send the packet as this packetNumber.
+     * @param peer The node to send it to.
      */
-    public void queueForImmediateSend(byte[] payload, NodePeer peer) {
-        ResendPacketItem pi = new ResendPacketItem(payload, peer);
+    public void queueForImmediateSend(byte[] payload, int packetNumber, NodePeer peer) {
+        ResendPacketItem pi = new ResendPacketItem(payload, packetNumber, peer);
         synchronized(this) {
             resendPackets.addLast(pi);
             myThread.interrupt();

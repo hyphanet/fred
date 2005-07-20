@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.InetAddress;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -15,7 +16,6 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Properties;
 
-import freenet.Core;
 import freenet.support.Logger;
 
 /*
@@ -75,9 +75,14 @@ public class Yarrow extends RandomSource {
             s = null;
         }
         sr = s;
-		accumulator_init(digest);
-		reseed_init(digest);
-		generator_init(cipher);
+        try {
+            accumulator_init(digest);
+            reseed_init(digest);
+            generator_init(cipher);
+        } catch (NoSuchAlgorithmException e) {
+            Logger.error(this, "Could not init pools trying to getInstance("+digest+"): "+e, e);
+            System.exit(freenet.node.Node.EXIT_YARROW_INIT_FAILED);
+        }
 		entropy_init(seed);
 		seedFromExternalStuff();
 		if (updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways 
@@ -294,29 +299,49 @@ public class Yarrow extends RandomSource {
 	/**
 	 * 5.2 Entropy Accumulator
 	 */
-	private Digest fast_pool, slow_pool;
+	private MessageDigest fast_pool, slow_pool;
 	private int fast_entropy, slow_entropy, digestSize;
 	private boolean fast_select;
 	private byte[] long_buffer = new byte[8];
 	private Hashtable entropySeen;
 
-	private void accumulator_init(String digest) {
-		fast_pool = Util.getDigestByName(digest);
-		slow_pool = Util.getDigestByName(digest);
-		digestSize = fast_pool.digestSize();
+	private void accumulator_init(String digest) throws NoSuchAlgorithmException {
+        fast_pool = MessageDigest.getInstance(digest);
+ 		slow_pool = MessageDigest.getInstance(digest);
+		digestSize = fast_pool.getDigestLength()<<3;
 		entropySeen = new Hashtable();
 	}
 
+	public int acceptEntropy(EntropySource source, long data, int entropyGuess) {
+		return acceptEntropy(source, data, entropyGuess, 1.0);
+	}
+	
+    public int acceptEntropyBytes(EntropySource source, byte[] buf, int offset, 
+            int length, double bias) {
+        int totalRealEntropy = 0;
+        for(int i=0;i<length;i+=8) {
+            long thingy = 0;
+            int bytes = 0;
+            for(int j=0;j<Math.min(length,i+8);j++) {
+                thingy = (thingy << 8) + buf[j];
+                bytes++;
+            }
+            totalRealEntropy += acceptEntropy(source, thingy, bytes*8, bias);
+        }
+        return totalRealEntropy;
+    }
+    
 	public int acceptEntropy(
 		EntropySource source,
 		long data,
-		int entropyGuess) {
+		int entropyGuess,
+		double bias) {
 		return accept_entropy(
 			data,
 			source,
-			Math.min(
+			(int) (bias * Math.min(
 				32,
-				Math.min(estimateEntropy(source, data), entropyGuess)));
+				Math.min(estimateEntropy(source, data), entropyGuess))));
 	}
 
 	private int accept_entropy(long data, EntropySource source, int actualEntropy) {
@@ -325,7 +350,7 @@ public class Yarrow extends RandomSource {
 
 		synchronized (this) {
 			fast_select = !fast_select;
-			Digest pool = (fast_select ? fast_pool : slow_pool);
+			MessageDigest pool = (fast_select ? fast_pool : slow_pool);
 			pool.update((byte) data);
 			pool.update((byte) (data >> 8));
 			pool.update((byte) (data >> 16));
@@ -358,7 +383,7 @@ public class Yarrow extends RandomSource {
 							Object key = enu.nextElement();
 							Integer v = (Integer) entropySeen.get(key);
 							if (DEBUG)
-								Core.logger.log(this, "Key: <" + key + "> " + v, Logger.NORMAL);
+								Logger.normal(this, "Key: <" + key + "> " + v);
 							if (v.intValue() > SLOW_THRESHOLD) {
 								kc++;
 								if (kc >= SLOW_K) {
@@ -430,8 +455,12 @@ public class Yarrow extends RandomSource {
 	}
 
 	public int acceptTimerEntropy(EntropySource timer) {
+	    return acceptTimerEntropy(timer, 1.0);
+	}
+	
+	public int acceptTimerEntropy(EntropySource timer, double bias) {
 		long now = System.currentTimeMillis();
-		return acceptEntropy(timer, now - timer.lastVal, 32);
+		return acceptEntropy(timer, now - timer.lastVal, 32, bias);
 	}
 
 	/**
@@ -446,10 +475,10 @@ public class Yarrow extends RandomSource {
 	 * 5.3 Reseed mechanism
 	 */
 	private static final int Pt = 5;
-	private Digest reseed_ctx;
+	private MessageDigest reseed_ctx;
 
-	private void reseed_init(String digest) {
-		reseed_ctx = Util.getDigestByName(digest);
+	private void reseed_init(String digest) throws NoSuchAlgorithmException {
+		reseed_ctx = MessageDigest.getInstance(digest);
 	}
 
 	private void fast_pool_reseed() {
@@ -466,7 +495,7 @@ public class Yarrow extends RandomSource {
 		// vPt=vi
 		Util.makeKey(vi, tmp, 0, tmp.length);
 		rekey(tmp);
-		Arrays.fill(v0, (byte) 0); //TODO: Why is this neccesary? /Iakin
+		Arrays.fill(v0, (byte) 0); // blank out for security
 		fast_entropy = 0;
 	}
 

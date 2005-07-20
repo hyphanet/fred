@@ -13,7 +13,6 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.crypt.ciphers.Twofish;
 import freenet.support.HexUtil;
 import freenet.support.Loader;
-import freenet.support.UTF8;
 import net.i2p.util.NativeBigInteger;
 
 
@@ -156,7 +155,7 @@ public class Util {
 	 */
 	public static byte[] hashString(Digest d, String s) {
 		try {
-			byte[] sbytes = UTF8.encode(s);
+			byte[] sbytes = s.getBytes("UTF-8");
 			d.update(sbytes, 0, sbytes.length);
 			return d.digest();
 		} catch (Exception e) {

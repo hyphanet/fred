@@ -36,6 +36,8 @@ public class PeerManager {
      * @param string
      */
     public PeerManager(Node node, String filename) {
+        myPeers = new NodePeer[0];
+        connectedPeers = new NodePeer[0];
         this.node = node;
         try {
             // Try to read the node list from disk
@@ -78,8 +80,6 @@ public class PeerManager {
         } catch (FileNotFoundException e) {
             Logger.error(this, "Peers file not found: "+filename);
         }
-        
-        // TODO Auto-generated constructor stub
     }
 
     /**
@@ -90,8 +90,10 @@ public class PeerManager {
         // FIXME!
         NodePeer[] newMyPeers = new NodePeer[myPeers.length+1];
         System.arraycopy(myPeers, 0, newMyPeers, 0, myPeers.length);
+        newMyPeers[myPeers.length] = pn;
         NodePeer[] newConnectedPeers = new NodePeer[connectedPeers.length+1];
         System.arraycopy(connectedPeers, 0, newConnectedPeers, 0, connectedPeers.length);
+        newConnectedPeers[connectedPeers.length] = pn;
         myPeers = newMyPeers;
         connectedPeers = newConnectedPeers;
     }
@@ -125,5 +127,13 @@ public class PeerManager {
                 return myPeers[i];
         }
         return null;
+    }
+
+    /**
+     * Connect to a node provided the fieldset representing it.
+     */
+    public void connect(SimpleFieldSet noderef) throws FSParseException, PeerParseException {
+        NodePeer pn = new NodePeer(noderef, node);
+        addPeer(pn);
     }
 }

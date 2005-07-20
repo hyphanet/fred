@@ -67,11 +67,15 @@ public class Rijndael implements BlockCipher {
 	}
     }
 
-    public final void encipher(byte[] block, byte[] result) {
+    public synchronized final void encipher(byte[] block, byte[] result) {
+        if(block.length != blocksize/8)
+            throw new IllegalArgumentException();
 	Rijndael_Algorithm.blockEncrypt(block, result, 0, sessionKey);
     }
 
-    public final void decipher(byte[] block, byte[] result) {
+    public synchronized final void decipher(byte[] block, byte[] result) {
+        if(block.length != blocksize/8)
+            throw new IllegalArgumentException();
 	Rijndael_Algorithm.blockDecrypt(block, result, 0, sessionKey);
     }
 
