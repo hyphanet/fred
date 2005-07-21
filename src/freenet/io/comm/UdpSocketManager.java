@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.6 2005/07/18 20:05:14 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.7 2005/07/21 11:47:53 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	private LinkedList _filters = new LinkedList();
@@ -261,12 +261,6 @@ public class UdpSocketManager extends Thread {
 	        Logger.error(this, "Trying to send internal-only message "+m+" of spec "+m.getSpec(), new Exception("debug"));
 	        return;
 	    }
-		if (_dropProbability > 0) {
-			if (dropRandom.nextInt() % _dropProbability == 0) {
-				Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPeer().getPort() + " : " + m);
-				return;
-			}
-		}
 		if (m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) {
 			Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
 					+ " : " + m);
@@ -289,6 +283,12 @@ public class UdpSocketManager extends Thread {
      * @param destination The peer to send it to.
      */
     public void sendPacket(byte[] blockToSend, Peer destination) {
+		if (_dropProbability > 0) {
+			if (dropRandom.nextInt() % _dropProbability == 0) {
+				Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPort());
+				return;
+			}
+		}
 		DatagramPacket packet = new DatagramPacket(blockToSend, blockToSend.length);
 		packet.setAddress(destination.getAddress());
 		packet.setPort(destination.getPort());

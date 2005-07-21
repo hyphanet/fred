@@ -57,6 +57,9 @@ public class NodePeer implements PeerContext {
         }
         sessionCipher.initialize(key);
         this.packetSender = ps;
+        // FIXME: this is a debugging aid, maybe we should keep it?
+        outgoingPacketNumber = node.random.nextInt(10000);
+        Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
     }
     
     /**
@@ -100,6 +103,9 @@ public class NodePeer implements PeerContext {
             throw new Error(e1);
         }
         sessionCipher.initialize(key);
+        // FIXME: this is a debugging aid, maybe we should keep it?
+        outgoingPacketNumber = node.random.nextInt(10000);
+        Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
     }
 
     public String toString() {
@@ -223,6 +229,7 @@ public class NodePeer implements PeerContext {
      * @param realSeqNo
      */
     public synchronized void acknowledgedPacket(int realSeqNo) {
+        Logger.minor(this, "Ack received: "+realSeqNo);
         Integer i = new Integer(realSeqNo);
         removeAckRequest(realSeqNo);
         if(sentPacketsBySequenceNumber.containsKey(i)) {
@@ -258,17 +265,22 @@ public class NodePeer implements PeerContext {
      * @param seqNumber
      */
     public synchronized void receivedPacket(int seqNumber) {
-        if(seqNumber > lastReceivedPacketSeqNumber)
-            lastReceivedPacketSeqNumber = seqNumber;
+        Logger.minor(this, "RECEIVED PACKET "+seqNumber);
         // First ack it
         queueAck(seqNumber);
+        receivedPacketNumber(seqNumber);
         // Resend requests
-        if(seqNumber < lastReceivedPacketSeqNumber) {
-            removeResendRequest(seqNumber);
-        } else {
+        removeResendRequest(seqNumber);
+    }
+
+    /**
+     * Add some resend requests if necessary
+     */
+    private synchronized void receivedPacketNumber(int seqNumber) {
+        if(seqNumber > lastReceivedPacketSeqNumber) {
             int oldSeqNo = lastReceivedPacketSeqNumber;
             lastReceivedPacketSeqNumber = seqNumber;
-            if(seqNumber - oldSeqNo > 1) {
+            if(oldSeqNo != -1 && seqNumber - oldSeqNo > 1) {
                 // Missed some packets out
                 for(int i=oldSeqNo;i<seqNumber;i++) {
                     queueResendRequest(i);
@@ -276,7 +288,7 @@ public class NodePeer implements PeerContext {
             }
         }
     }
-
+    
     /** Packet numbers that need to be acknowledged by us.
      * In order of urgency. PAIs are removed from this list
      * when the ack is sent, and are added when we receive a 
@@ -400,6 +412,8 @@ public class NodePeer implements PeerContext {
      * to be resent.
      */
     private synchronized void queueResendRequest(int seqNumber) {
+        Logger.minor(this, "Queueing resend request for "+seqNumber+" on "+this);
+        if(queuedResendRequest(seqNumber)) return;
         QueuedResendRequest qr = new QueuedResendRequest(seqNumber);
         // Add to queue in the right place
         
@@ -459,6 +473,7 @@ public class NodePeer implements PeerContext {
     
     private synchronized void queueAckRequest(int seqNumber, boolean sendSoon) {
         Logger.minor(this, "Queueing ack request: "+seqNumber);
+        if(queuedAckRequest(seqNumber)) return;
         QueuedAckRequest qa = new QueuedAckRequest(seqNumber, sendSoon);
         // Add to queue in the right place
         
@@ -493,6 +508,16 @@ public class NodePeer implements PeerContext {
         }
     }
 
+    private synchronized boolean queuedAckRequest(int seqNumber) {
+        for(ListIterator i=ackRequestQueue.listIterator();i.hasNext();) {
+            QueuedAckRequest q = (QueuedAckRequest) (i.next());
+            if(q.packetNumber == seqNumber) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     
     
     
@@ -550,7 +575,8 @@ public class NodePeer implements PeerContext {
         removeResendRequest(seqNo);
     }
 
-    int outgoingPacketNumber = 0;
+    // FIXME: this is just here to make it easy to debug
+    int outgoingPacketNumber;
     
     /**
      * Allocate an outgoing packet number.
@@ -648,13 +674,14 @@ public class NodePeer implements PeerContext {
 
     /**
      * Ping this node.
-     * @return True if we received a reply inside 1000ms.
+     * @return True if we received a reply inside 2000ms.
+     * (If we have heavy packet loss, it can take that long to resend).
      */
     public boolean ping(int pingID) {
         Message ping = DMT.createFNPPing(pingID);
         usm.send(this, ping);
         Message msg = 
-            usm.waitFor(MessageFilter.create().setTimeout(1000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID));
+            usm.waitFor(MessageFilter.create().setTimeout(2000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID));
         return msg != null;
     }
 
@@ -674,11 +701,19 @@ public class NodePeer implements PeerContext {
      * @param realSeqNo The packet number.
      *
      */
-    public void receivedAckRequest(int realSeqNo) {
+    public synchronized void receivedAckRequest(int realSeqNo) {
         // Did we send the ack in the first place?
         if(realSeqNo > lastReceivedPacketSeqNumber) {
-            Logger.error(this,"Other side asked for re-ack on "+realSeqNo+
-                    " but last sent was "+lastReceivedPacketSeqNumber);
+            if(realSeqNo - lastReceivedPacketSeqNumber < 256
+                    || lastReceivedPacketSeqNumber == -1) {
+                // They sent it, haven't had an ack yet
+                queueResendRequest(realSeqNo);
+                // Resend any in between too, and update lastReceivePacketSeqNumber
+                receivedPacketNumber(realSeqNo);
+            } else {
+                Logger.error(this,"Other side asked for re-ack on "+realSeqNo+
+                        " but last sent was "+lastReceivedPacketSeqNumber);
+            }
             return;
         }
         if(queuedResendRequest(realSeqNo)) {

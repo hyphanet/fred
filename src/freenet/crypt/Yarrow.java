@@ -89,6 +89,12 @@ public class Yarrow extends RandomSource {
 			seedfile = seed;
 		else
 			seedfile = null;
+		/**
+		 * If we don't reseed at this point, we will be predictable,
+		 * because the startup entropy won't cause a reseed.
+		 */
+		fast_pool_reseed();
+		slow_pool_reseed();
 	}
 
 	public void seedFromExternalStuff() {
@@ -141,10 +147,13 @@ public class Yarrow extends RandomSource {
 	protected void readStartupEntropy(EntropySource startupEntropy) {
 		// Consume the current time
 		acceptEntropy(startupEntropy, System.currentTimeMillis(), 0);
+		//Logger.minor(this, "Time: "+System.currentTimeMillis()+" on "+this);
 		// Free memory
 		acceptEntropy(startupEntropy, Runtime.getRuntime().freeMemory(), 0);
+		//Logger.minor(this, "Free memory: "+Runtime.getRuntime().freeMemory()+" on "+this);
 		// Total memory
 		acceptEntropy(startupEntropy, Runtime.getRuntime().totalMemory(), 0);
+		//Logger.minor(this, "Total memory: "+Runtime.getRuntime().totalMemory()+" on "+this);
 	}
 
 	/**
@@ -223,8 +232,10 @@ public class Yarrow extends RandomSource {
 	// Fetches count bytes of randomness into the shared buffer, returning
 	// an offset to the bytes
 	private synchronized int getBytes(int count) {
+	    //Logger.minor(this, toString()+".getBytes("+count+") - fetch_counter="+fetch_counter);
 
 		if (fetch_counter + count > output_buffer.length) {
+		    //Logger.minor(this, toString()+": Regenerating output");
 			fetch_counter = 0;
 			generateOutput();
 			return getBytes(count);
@@ -232,6 +243,7 @@ public class Yarrow extends RandomSource {
 
 		int rv = fetch_counter;
 		fetch_counter += count;
+		//Logger.minor(this, "fetch_counter now "+fetch_counter+" on "+this);
 		return rv;
 	}
 
@@ -278,6 +290,7 @@ public class Yarrow extends RandomSource {
 	// So don't try to simplify it... Thanks. :)
 	// When this was not synchronized, we were getting repeats...
 	protected synchronized int next(int bits) {
+	    //Logger.minor(this,"In "+this+" next("+bits+")");
 		int[] parameters = bitTable[bits];
 		int offset = getBytes(parameters[0]);
 

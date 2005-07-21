@@ -32,15 +32,20 @@ public class RealNodePingTest {
         // Ping
         NodePeer pn = node1.peers.myPeers[0];
         int pingID = 0;
+        node1.usm.setDropProbability(4);
         while(true) {
-            boolean success = pn.ping(pingID++);
+            Logger.minor(RealNodePingTest.class, "Sending PING "+pingID);
+            boolean success = pn.ping(pingID);
             if(success)
                 Logger.normal(RealNodePingTest.class, "PING "+pingID+" successful");
+            else
+                Logger.normal(RealNodePingTest.class, "PING FAILED: "+pingID);
             try {
                 Thread.sleep(10000);
             } catch (InterruptedException e) {
                 // Shouldn't happen
             }
+            pingID++;
         }
     }
 }

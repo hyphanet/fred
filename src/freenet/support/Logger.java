@@ -37,7 +37,7 @@ public abstract class Logger {
 	    logger.setThreshold(level);
 	    logger.setDetailedThresholds(detail);
 	    FileLoggerHook fh;
-	    fh = new FileLoggerHook(System.out, "d (c, t, p): m", "", level);
+	    fh = new FileLoggerHook(System.out, "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", level);
 	    if(detail != null)
 	        fh.setDetailedThresholds(detail);
 	    ((LoggerHookChain) logger).addHook(fh);

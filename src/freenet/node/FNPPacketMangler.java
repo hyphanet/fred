@@ -101,7 +101,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * decrypt and authenticate it.
      */
     private boolean tryProcess(byte[] buf, int offset, int length, NodePeer pn) {
-        //Logger.minor(this,"Entering tryProcess: "+buf+","+offset+","+length+","+pn);
+        Logger.minor(this,"Entering tryProcess: "+buf+","+offset+","+length+","+pn);
         /**
          * E_pcbc_session(H(seq+random+data)) E_pcfb_session(seq+random+data)
          * 
@@ -148,19 +148,20 @@ public class FNPPacketMangler implements LowLevelFilter {
                 + (seqBuf[1] & 0xff)) << 8) + 
                 (seqBuf[2] & 0xff)) << 8) +
                 (seqBuf[3] & 0xff);
-        
-        //Logger.minor(this, "Sequence number: "+seqNumber+"="+Integer.toHexString(seqNumber));
+
+        int targetSeqNumber = pn.lastReceivedSequenceNumber();
+        Logger.minor(this, "Target seq: "+targetSeqNumber);
+        Logger.minor(this, "Sequence number: "+seqNumber+"="+Integer.toHexString(seqNumber));
 
         if(seqNumber == -1) {
             // Ack/resendreq-only packet
         } else {
             // Now is it credible?
             // As long as it's within +/- 256, this is valid.
-            int targetSeqNumber = pn.lastReceivedSequenceNumber();
-            if(Math.abs(targetSeqNumber - seqNumber) > MAX_PACKETS_IN_FLIGHT)
+            if(targetSeqNumber != -1 && Math.abs(targetSeqNumber - seqNumber) > MAX_PACKETS_IN_FLIGHT)
                 return false;
         }
-        //Logger.minor(this, "Sequence number received: "+seqNumber);
+        Logger.minor(this, "Sequence number received: "+seqNumber);
         
         // Plausible, so lets decrypt the rest of the data
         
@@ -280,14 +281,14 @@ public class FNPPacketMangler implements LowLevelFilter {
                     (decrypted[ptr+2] & 0xff)) << 8) + (decrypted[ptr+3] & 0xff);
         ptr+=4;
         
-        //Logger.minor(this, "Reference sequence number: "+referenceSeqNumber);
+        Logger.minor(this, "Reference sequence number: "+referenceSeqNumber);
 
         // No sequence number == don't ack
         if(seqNumber != -1)
             pn.receivedPacket(seqNumber);
         
         int ackCount = decrypted[ptr++] & 0xff;
-        //Logger.minor(this, "Acks: "+ackCount);
+        Logger.minor(this, "Acks: "+ackCount);
         
         for(int i=0;i<ackCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
@@ -296,12 +297,12 @@ public class FNPPacketMangler implements LowLevelFilter {
                 return;
             }
             int realSeqNo = referenceSeqNumber - offset;
-            //Logger.minor(this, "ACK: "+realSeqNo);
+            Logger.minor(this, "ACK: "+realSeqNo);
             pn.acknowledgedPacket(realSeqNo);
         }
         
         int retransmitCount = decrypted[ptr++] & 0xff;
-        //Logger.minor(this, "Retransmit requests: "+retransmitCount);
+        Logger.minor(this, "Retransmit requests: "+retransmitCount);
         
         for(int i=0;i<retransmitCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
@@ -309,7 +310,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
             }
             int realSeqNo = referenceSeqNumber - offset;
-            //Logger.minor(this, "RetransmitRequest: "+realSeqNo);
+            Logger.minor(this, "RetransmitRequest: "+realSeqNo);
             pn.resendPacket(realSeqNo);
         }
 
@@ -323,7 +324,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
             }
             int realSeqNo = realSeqNumber - offset;
-            //Logger.minor(this, "AckRequest: "+realSeqNo);
+            Logger.minor(this, "AckRequest: "+realSeqNo);
             pn.receivedAckRequest(realSeqNo);
         }
         
@@ -487,11 +488,13 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.minor(this, "Resend req: "+reqSeq);
             int offsetSeq = otherSideSeqNumber - reqSeq;
             if(offsetSeq > 255 || offsetSeq < 0)
-                throw new IllegalStateException("bad resend request offset "+offsetSeq);
+                throw new IllegalStateException("bad resend request offset "+offsetSeq+
+                        " - reqSeq="+reqSeq+", otherSideSeqNumber="+otherSideSeqNumber);
             plaintext[ptr++] = (byte)offsetSeq;
         }
 
         plaintext[ptr++] = (byte) ackRequests.length;
+        Logger.minor(this, "Ackrequests: "+ackRequests.length);
         for(int i=0;i<ackRequests.length;i++) {
             int ackReqSeq = ackRequests[i];
             Logger.minor(this, "Ack request "+i+": "+ackReqSeq);
@@ -508,7 +511,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         plaintext[ptr++] = 0;
 
         System.arraycopy(buf, offset, plaintext, ptr, length);
-        
+
+        Logger.minor(this, "Sending...");
         processOutgoingFullyFormatted(plaintext, pn);
 
         if(seqNumber != -1) {
@@ -516,6 +520,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             System.arraycopy(buf, offset, saveable, 0, length);
             pn.sentPacket(saveable, seqNumber);
         }
+        Logger.minor(this, "Sent packet");
     }
 
     /**

@@ -2,6 +2,8 @@ package freenet.node;
 
 import java.util.LinkedList;
 
+import freenet.support.Logger;
+
 /**
  * @author amphibian
  * 
@@ -18,13 +20,14 @@ public class PacketSender implements Runnable {
     PacketSender(Node node) {
         resendPackets = new LinkedList();
         this.node = node;
-        myThread = new Thread(this);
+        myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
         myThread.start();
     }
 
     public void run() {
         while(true) {
+            try {
             ResendPacketItem packet = null;
             synchronized(this) {
                 if(!resendPackets.isEmpty()) {
@@ -56,6 +59,9 @@ public class PacketSender implements Runnable {
                     // Ignore, just wake up. Probably we got interrupt()ed
                     // because a new packet came in.
                 }
+            }
+            } catch (Throwable t) {
+                Logger.error(this, "Caught "+t, t);
             }
         }
     }
