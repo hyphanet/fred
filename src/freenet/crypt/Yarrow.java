@@ -7,6 +7,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -105,8 +106,9 @@ public class Yarrow extends RandomSource {
 	    consumeBytes(buf);
 	    if(File.separatorChar == '/') {
 	        // Read some bits from /dev/random
+	        FileInputStream fis = null;
 	        try {
-	            FileInputStream fis = new FileInputStream("/dev/random");
+	            fis = new FileInputStream("/dev/random");
 	            DataInputStream dis = new DataInputStream(fis);
 	            dis.readFully(buf);
 	            consumeBytes(buf);
@@ -114,8 +116,33 @@ public class Yarrow extends RandomSource {
 	            consumeBytes(buf);
 	        } catch (Throwable t) {
 	            Logger.normal(this, "Can't read /dev/random: "+t, t);
+	        } finally {
+	            if(fis != null) try {
+	                fis.close();
+	            } catch (IOException e) {
+	                // Ignore
+	            }
 	        }
-	        
+	        fis = null;
+	        File hwrng = new File("/dev/hwrng");
+	        if(hwrng.exists() && hwrng.canRead()) {
+	            try {
+	                fis = new FileInputStream(hwrng);
+	                DataInputStream dis = new DataInputStream(fis);
+	                dis.readFully(buf);
+	                consumeBytes(buf);
+	                dis.readFully(buf);
+	                consumeBytes(buf);
+	            } catch (Throwable t) {
+	                Logger.normal(this, "Can't read /dev/hwrng even though exists and is readable: "+t, t);
+	            } finally {
+		            if(fis != null) try {
+		                fis.close();
+		            } catch (IOException e) {
+		                // Ignore
+		            }
+	            }
+	        }
 	    }
 	    // A few more bits
 	    consumeString(Long.toHexString(Runtime.getRuntime().freeMemory()));
