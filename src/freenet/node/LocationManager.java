@@ -52,8 +52,9 @@ class LocationManager {
      * Start a thread to send FNPSwapRequests every second when
      * we are not locked.
      */
-    public void startSender(Node n) {
+    public void startSender(Node n, int swapRequestSendInterval) {
         this.node = n;
+        sender.setInterval(swapRequestSendInterval);
         Thread t = new Thread(sender, "SwapRequest sender");
         t.setDaemon(true);
         t.start();
@@ -65,12 +66,14 @@ class LocationManager {
      */
     public class SwapRequestSender implements Runnable {
 
+        int sendInterval = 2000;
+        
         public void run() {
             while(true) {
                 try {
                     try {
                         // Average 1100, min 600, max 1600
-                        Thread.sleep(600+r.nextInt(100000));
+                        Thread.sleep(600+r.nextInt(sendInterval));
                     } catch (InterruptedException e) {
                         // Ignore
                     }
@@ -81,6 +84,10 @@ class LocationManager {
                     Logger.error(this, "Caught "+t, t);
                 }
             }
+        }
+
+        public void setInterval(int swapRequestSendInterval) {
+            sendInterval = swapRequestSendInterval;
         }
     }
     

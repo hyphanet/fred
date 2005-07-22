@@ -6,7 +6,6 @@ import java.security.NoSuchAlgorithmException;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.EntropySource;
 import freenet.crypt.PCFBMode;
-import freenet.io.comm.DMT;
 import freenet.io.comm.LowLevelFilter;
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer;

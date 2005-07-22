@@ -28,8 +28,8 @@ public class RealNodePingTest {
         // Connect
         node1.peers.connect(node2ref);
         node2.peers.connect(node1ref);
-        node1.start();
-        node2.start();
+        node1.start(-1);
+        node2.start(-1);
         // Ping
         NodePeer pn = node1.peers.myPeers[0];
         int pingID = 0;

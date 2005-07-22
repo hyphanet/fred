@@ -18,7 +18,7 @@ public class RealNodeRoutingTest {
     static final int NUMBER_OF_NODES = 200;
     
     public static void main(String[] args) throws FSParseException, PeerParseException {
-        Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.LocationManager:debug");
+        Logger.setupStdoutLogging(Logger.MINOR, "freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal");
         System.out.println("Routing test using real nodes:");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
@@ -58,7 +58,7 @@ public class RealNodeRoutingTest {
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
         for(int i=0;i<NUMBER_OF_NODES;i++)
-            nodes[i].start();
+            nodes[i].start(200*1000);
         
         // Now sit back and watch the fireworks!
         int cycleNumber = 0;

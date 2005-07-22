@@ -137,7 +137,7 @@ public class Node implements SimpleClient {
         Logger.setupStdoutLogging(Logger.MINOR, "");
         Yarrow yarrow = new Yarrow();
         Node n = new Node(port, yarrow);
-        n.start();
+        n.start(2000);
         new TextModeClientInterface(n);
     }
     
@@ -191,8 +191,9 @@ public class Node implements SimpleClient {
         }
     }
 
-    void start() {
-        lm.startSender(this);
+    void start(int sendIntervalOverride) {
+        if(sendIntervalOverride != -1)
+            lm.startSender(this, sendIntervalOverride);
     }
     
     /* (non-Javadoc)

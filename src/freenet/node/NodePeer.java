@@ -58,7 +58,7 @@ public class NodePeer implements PeerContext {
         sessionCipher.initialize(key);
         this.packetSender = ps;
         // FIXME: this is a debugging aid, maybe we should keep it?
-        outgoingPacketNumber = node.random.nextInt(10000);
+        outgoingPacketNumber = node.random.nextInt(100000);
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
     }
     
@@ -104,7 +104,7 @@ public class NodePeer implements PeerContext {
         }
         sessionCipher.initialize(key);
         // FIXME: this is a debugging aid, maybe we should keep it?
-        outgoingPacketNumber = node.random.nextInt(10000);
+        outgoingPacketNumber = node.random.nextInt(100000);
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
     }
 
