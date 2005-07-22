@@ -197,7 +197,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         // Check the hash
         if(!java.util.Arrays.equals(packetHash, realHash)) {
-            Logger.error(this, "Packet possibly from "+pn+" hash does not match:\npacketHash="+
+            Logger.minor(this, "Packet possibly from "+pn+" hash does not match:\npacketHash="+
                     HexUtil.bytesToHex(packetHash)+"\n  realHash="+HexUtil.bytesToHex(realHash)+" ("+(length-digestLength)+" bytes payload)");
             return false;
         }
@@ -257,6 +257,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             return;
         }
 
+        /** Highest sequence number sent - not the same as this packet's seq number */
         int realSeqNumber = seqNumber;
         
         if(seqNumber == -1) {
@@ -268,6 +269,12 @@ public class FNPPacketMangler implements LowLevelFilter {
                 ((((((decrypted[ptr+0] & 0xff) << 8) + (decrypted[ptr+1] & 0xff)) << 8) + 
                         (decrypted[ptr+2] & 0xff)) << 8) + (decrypted[ptr+3] & 0xff);
             ptr+=4;
+        } else {
+            if(ptr > decrypted.length) {
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+                return;
+            }
+            realSeqNumber = seqNumber + (decrypted[ptr++] & 0xff);
         }
         
         //Logger.minor(this, "Reference seq number: "+HexUtil.bytesToHex(decrypted, ptr, 4));
@@ -409,8 +416,10 @@ public class FNPPacketMangler implements LowLevelFilter {
      * Means this is a resend of a dropped packet.
      */
     public void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerContext peer, int packetNumber) {
-        if(!(peer instanceof NodePeer))
+        if(!(peer instanceof NodePeer)) {
+            Logger.error(this, "Fed non-NodePeer PeerContext: "+peer);
             throw new ClassCastException();
+        }
         NodePeer pn = (NodePeer) peer;
         
         // We do not support forgotten packets at present
@@ -427,7 +436,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 seqNumber = pn.allocateOutgoingPacketNumber();
         }
         
-        Logger.minor(this, "Sequence number: "+seqNumber);
+        Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+pn.getPeer());
         
         int[] acks = pn.grabAcks();
         int[] resendRequests = pn.grabResendRequests();
@@ -435,6 +444,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         int packetLength = acks.length + resendRequests.length + ackRequests.length + 4 + 1 + length + 4 + 4 + RANDOM_BYTES_LENGTH;
         if(packetNumber == -1) packetLength += 4;
+        else packetLength++;
 
         byte[] plaintext = new byte[packetLength];
         
@@ -452,7 +462,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         ptr += RANDOM_BYTES_LENGTH;
         
         plaintext[ptr++] = 0; // version number
-        
+
+        /** The last sent sequence number, so that we can refer to packets
+         * sent after this packet was originally sent (it may be a resend) */
         int realSeqNumber = seqNumber;
         
         if(seqNumber == -1) {
@@ -461,10 +473,13 @@ public class FNPPacketMangler implements LowLevelFilter {
             plaintext[ptr++] = (byte)(realSeqNumber >> 16);
             plaintext[ptr++] = (byte)(realSeqNumber >> 8);
             plaintext[ptr++] = (byte)realSeqNumber;
+        } else {
+            realSeqNumber = pn.getLastOutgoingSeqNumber();
+            plaintext[ptr++] = (byte)(realSeqNumber - seqNumber);
         }
         
         int otherSideSeqNumber = pn.lastReceivedSequenceNumber();
-        //Logger.minor(this, "otherSideSeqNumber: "+otherSideSeqNumber);
+        Logger.minor(this, "otherSideSeqNumber: "+otherSideSeqNumber);
         
         plaintext[ptr++] = (byte)(otherSideSeqNumber >> 24);
         plaintext[ptr++] = (byte)(otherSideSeqNumber >> 16);

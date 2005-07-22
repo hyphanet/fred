@@ -34,7 +34,7 @@ import java.util.*;
  */
 public class Serializer {
 
-    public static final String VERSION = "$Id: Serializer.java,v 1.2 2005/02/12 16:00:07 amphibian Exp $";
+    public static final String VERSION = "$Id: Serializer.java,v 1.3 2005/07/22 12:15:45 amphibian Exp $";
 
 	public static List readListFromDataInputStream(Class elementType, DataInputStream dis) throws IOException {
 		LinkedList ret = new LinkedList();
@@ -56,6 +56,8 @@ public class Serializer {
 			return new Integer(dis.readInt());
 		} else if (type.equals(Long.class)) {
 			return new Long(dis.readLong());
+		} else if (type.equals(Double.class)) {
+		    return new Double(dis.readDouble());
 		} else if (type.equals(String.class)) {
 			int length = dis.readInt();
 			StringBuffer sb = new StringBuffer(length);
@@ -65,6 +67,8 @@ public class Serializer {
 			return sb.toString();
 		} else if (type.equals(Buffer.class)) {
 			return new Buffer(dis);
+		} else if (type.equals(ShortBuffer.class)) {
+		    return new ShortBuffer(dis);
 //		} else if (type.equals(VeryLongInteger.class)) {
 //			return new VeryLongInteger(dis);
 		} else if (type.equals(Peer.class)) {
@@ -90,6 +94,8 @@ public class Serializer {
 			dos.writeInt(((Integer) object).intValue());
 		} else if (type.equals(Long.class)) {
 			dos.writeLong(((Long) object).longValue());
+		} else if (type.equals(Double.class)) {
+		    dos.writeDouble(((Double) object).doubleValue());
 		} else if (type.equals(String.class)) {
 			String s = (String) object;
 			dos.writeInt(s.length());

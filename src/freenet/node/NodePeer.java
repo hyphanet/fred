@@ -59,7 +59,7 @@ public class NodePeer implements PeerContext {
         this.packetSender = ps;
         // FIXME: this is a debugging aid, maybe we should keep it?
         outgoingPacketNumber = node.random.nextInt(10000);
-        Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
+        //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
     }
     
     /**
@@ -96,7 +96,7 @@ public class NodePeer implements PeerContext {
         byte[] okey = node.identityHash;
         for(int i=0;i<key.length;i++)
             key[i] ^= okey[i];
-        Logger.minor(this, "Session key: "+HexUtil.bytesToHex(key));
+        //Logger.minor(this, "Session key: "+HexUtil.bytesToHex(key));
         try {
             sessionCipher = new Rijndael(256,128);
         } catch (UnsupportedCipherException e1) {
@@ -105,7 +105,7 @@ public class NodePeer implements PeerContext {
         sessionCipher.initialize(key);
         // FIXME: this is a debugging aid, maybe we should keep it?
         outgoingPacketNumber = node.random.nextInt(10000);
-        Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
+        //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
     }
 
     public String toString() {
@@ -282,7 +282,7 @@ public class NodePeer implements PeerContext {
             lastReceivedPacketSeqNumber = seqNumber;
             if(oldSeqNo != -1 && seqNumber - oldSeqNo > 1) {
                 // Missed some packets out
-                for(int i=oldSeqNo;i<seqNumber;i++) {
+                for(int i=oldSeqNo+1;i<seqNumber;i++) {
                     queueResendRequest(i);
                 }
             }
@@ -327,6 +327,7 @@ public class NodePeer implements PeerContext {
      * @param packetNumber The packet number to acknowledge.
      */
     private void queueAck(int packetNumber) {
+        Logger.minor(this, "Queueing ack "+packetNumber);
         if(alreadyQueuedAck(packetNumber)) return;
         QueuedAck ack = new QueuedAck(packetNumber);
         // Oldest are first, youngest are last
@@ -727,5 +728,21 @@ public class NodePeer implements PeerContext {
 
     public synchronized int getLastOutgoingSeqNumber() {
         return outgoingPacketNumber;
+    }
+
+    public void updateLocation(double newLoc) {
+        currentLocation.setValue(newLoc);
+    }
+
+    public byte[] getNodeIdentity() {
+        return nodeIdentity;
+    }
+
+    /**
+     * @return
+     */
+    public boolean shouldRejectSwapRequest() {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

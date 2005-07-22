@@ -436,4 +436,38 @@ public abstract class Fields {
 		return sb.toString();
     }
 
+    /**
+     * Convert an array of longs to an array of bytes, using a 
+     * consistent endianness.
+     */
+    public static byte[] longsToBytes(long[] longs) {
+        byte[] buf = new byte[longs.length * 8];
+        for(int i=0;i<longs.length;i++) {
+            long x = longs[i];
+            for(int j=0;j<8;j++) {
+                buf[i*8+j] = (byte)x;
+                x >>= 8;
+            }
+        }
+        return buf;
+    }
+    
+    /**
+     * Convert an array of bytes to an array of longs.
+     * @param buf
+     * @return
+     */
+    public static long[] bytesToLongs(byte[] buf) {
+        if(buf.length % 8 != 0) throw new IllegalArgumentException();
+        long[] longs = new long[buf.length/8];
+        for(int i=0;i<longs.length;i++) {
+            long x = 0;
+            for(int j=7;j>=0;j--) {
+                long y = (buf[i*8+j] & 0xff);
+                x = (x << 8) + y;
+            }
+            longs[i] = x;
+        }
+        return longs;
+    }
 }

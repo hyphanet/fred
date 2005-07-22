@@ -135,11 +135,13 @@ public class Node implements SimpleClient {
         int port = Integer.parseInt(args[0]);
         System.out.println("Port number: "+port);
         Logger.setupStdoutLogging(Logger.MINOR, "");
-        Node n = new Node(port);
+        Yarrow yarrow = new Yarrow();
+        Node n = new Node(port, yarrow);
+        n.start();
         new TextModeClientInterface(n);
     }
     
-    Node(int port) {
+    Node(int port, RandomSource rand) {
         portNumber = port;
         try {
             datastore = new BaseFreenetStore("freenet-"+portNumber,1024);
@@ -156,7 +158,7 @@ public class Node implements SimpleClient {
             System.exit(EXIT_STORE_OTHER);
             throw new Error();
         }
-        random = new Yarrow();
+        random = rand;
 
 		lm = new LocationManager(random);
 
@@ -176,11 +178,11 @@ public class Node implements SimpleClient {
         }
         
         ps = new PacketSender(this);
-        peers = new PeerManager(this, "peers");
+        peers = new PeerManager(this, "peers-"+portNumber);
         
         try {
             usm = new UdpSocketManager(portNumber);
-            usm.setDispatcher(new NodeDispatcher());
+            usm.setDispatcher(new NodeDispatcher(this));
             usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
         } catch (SocketException e2) {
             Logger.error(this, "Could not listen for traffic: "+e2, e2);
@@ -189,6 +191,10 @@ public class Node implements SimpleClient {
         }
     }
 
+    void start() {
+        lm.startSender(this);
+    }
+    
     /* (non-Javadoc)
      * @see freenet.node.SimpleClient#getCHK(freenet.keys.ClientCHK)
      */
@@ -213,7 +219,7 @@ public class Node implements SimpleClient {
         SimpleFieldSet fs = new SimpleFieldSet();
         InetAddress addr;
         try {
-            addr = InetAddress.getLocalHost();
+            addr = InetAddress.getByName("127.0.0.1");
         } catch (UnknownHostException e) {
             Logger.error(this, "Caught "+e+" trying to get localhost!");
             return null;

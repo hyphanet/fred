@@ -32,7 +32,7 @@ import freenet.io.WritableToDataOutputStream;
  */
 public class Peer implements WritableToDataOutputStream {
 
-    public static final String VERSION = "$Id: Peer.java,v 1.2 2005/07/19 16:55:51 amphibian Exp $";
+    public static final String VERSION = "$Id: Peer.java,v 1.3 2005/07/22 12:15:45 amphibian Exp $";
 
 	private final InetAddress _address;
 	private final int _port;
@@ -110,7 +110,7 @@ public class Peer implements WritableToDataOutputStream {
 	}
 
 	public String toString() {
-		return (_address != null ? _address.getHostName() : "null") + ":" + _port;
+		return (_address != null ? _address.getHostAddress() : "null") + ":" + _port;
 	}
 
 	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {

@@ -24,14 +24,40 @@ import freenet.io.comm.Message;
  */
 public class NodeDispatcher implements Dispatcher {
 
+    final Node node;
+    
+    NodeDispatcher(Node node) {
+        this.node = node;
+    }
+    
     public boolean handleMessage(Message m) {
+        NodePeer source = (NodePeer)m.getSource();
         if(m.getSpec() == DMT.FNPPing) {
             // Send an FNPPong
             Message reply = DMT.createFNPPong(m.getInt(DMT.PING_SEQNO));
             ((NodePeer)m.getSource()).sendAsync(reply);
             return true;
         }
-        // TODO Auto-generated method stub
+        if(m.getSpec() == DMT.FNPLocChangeNotification) {
+            double newLoc = m.getDouble(DMT.LOCATION);
+            source.updateLocation(newLoc);
+            return true;
+        }
+        if(m.getSpec() == DMT.FNPSwapRequest) {
+            return node.lm.handleSwapRequest(m);
+        }
+        if(m.getSpec() == DMT.FNPSwapReply) {
+            return node.lm.handleSwapReply(m);
+        }
+        if(m.getSpec() == DMT.FNPSwapRejected) {
+            return node.lm.handleSwapRejected(m);
+        }
+        if(m.getSpec() == DMT.FNPSwapCommit) {
+            return node.lm.handleSwapCommit(m);
+        }
+        if(m.getSpec() == DMT.FNPSwapComplete) {
+            return node.lm.handleSwapComplete(m);
+        }
         return false;
     }
 

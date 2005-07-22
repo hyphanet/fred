@@ -6,7 +6,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 
+import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.support.Logger;
@@ -86,6 +88,9 @@ public class PeerManager {
      * @param pn
      */
     private synchronized void addPeer(NodePeer pn) {
+        for(int i=0;i<myPeers.length;i++) {
+            if(myPeers[i] == pn) return;
+        }
         // Add it to both, since we have no connect/disconnect protocol
         // FIXME!
         NodePeer[] newMyPeers = new NodePeer[myPeers.length+1];
@@ -134,6 +139,53 @@ public class PeerManager {
      */
     public void connect(SimpleFieldSet noderef) throws FSParseException, PeerParseException {
         NodePeer pn = new NodePeer(noderef, node);
+        for(int i=0;i<myPeers.length;i++) {
+            if(Arrays.equals(myPeers[i].getNodeIdentity(), pn.getNodeIdentity())) return;
+        }
         addPeer(pn);
+    }
+
+    /**
+     * @return An array of the current locations (as doubles) of all
+     * our connected peers.
+     */
+    public double[] getPeerLocationDoubles() {
+        double[] locs;
+        NodePeer[] conns = connectedPeers;
+        locs = new double[connectedPeers.length];
+        for(int i=0;i<conns.length;i++)
+            locs[i] = conns[i].getLocation().getValue();
+        // Wipe out any information contained in the order
+        java.util.Arrays.sort(locs);
+        return locs;
+    }
+
+    /**
+     * @return A random connected peer.
+     * FIXME: should this take performance into account?
+     */
+    public synchronized NodePeer getRandomPeer() {
+        if(connectedPeers.length == 0) return null;
+        return connectedPeers[node.random.nextInt(connectedPeers.length)];
+    }
+
+    /**
+     * Asynchronously send this message to every connected peer.
+     */
+    public void localBroadcast(Message msg) {
+        NodePeer[] peers = connectedPeers; // avoid synchronization
+        for(int i=0;i<peers.length;i++) {
+            peers[i].sendAsync(msg);
+        }
+    }
+
+    public NodePeer getRandomPeer(NodePeer pn) {
+        NodePeer[] peers = connectedPeers;
+        if(peers.length < 2) return null;
+        while(true) {
+            NodePeer p = connectedPeers[node.random.nextInt(connectedPeers.length)];
+            if(p == pn) continue;
+            return p;
+        }
     }
 }

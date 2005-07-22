@@ -67,6 +67,7 @@ public class DMT {
     public static final String SUCCESS = "success";
     public static final String FNP_SOURCE_PEERNODE = "sourcePeerNode";
     public static final String PING_SEQNO = "pingSequenceNumber";
+    public static final String LOCATION = "location";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -535,6 +536,76 @@ public class DMT {
     public static Message createFNPPong(int seqNo) {
         Message msg = new Message(FNPPong);
         msg.set(PING_SEQNO, seqNo);
+        return msg;
+    }
+    
+    public static MessageType FNPSwapRequest = new MessageType("FNPSwapRequest") {{
+        addField(UID, Long.class);
+        addField(HASH, ShortBuffer.class);
+        addField(HTL, Integer.class);
+    }};
+    
+    public static Message createFNPSwapRequest(long uid, byte[] buf, int htl) {
+        Message msg = new Message(FNPSwapRequest);
+        msg.set(UID, uid);
+        msg.set(HASH, new ShortBuffer(buf));
+        msg.set(HTL, htl);
+        return msg;
+    }
+    
+    public static MessageType FNPSwapRejected = new MessageType("FNPSwapRejected") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createFNPSwapRejected(long uid) {
+        Message msg = new Message(FNPSwapRejected);
+        msg.set(UID, uid);
+        return msg;
+    }
+    
+    public static MessageType FNPSwapReply = new MessageType("FNPSwapReply") {{
+        addField(UID, Long.class);
+        addField(HASH, ShortBuffer.class);
+    }};
+    
+    public static Message createFNPSwapReply(long uid, byte[] buf) {
+        Message msg = new Message(FNPSwapReply);
+        msg.set(UID, uid);
+        msg.set(HASH, new ShortBuffer(buf));
+        return msg;
+    }
+
+    public static MessageType FNPSwapCommit = new MessageType("FNPSwapCommit") {{
+        addField(UID, Long.class);
+        addField(DATA, ShortBuffer.class);
+    }};
+    
+    public static Message createFNPSwapCommit(long uid, byte[] buf) {
+        Message msg = new Message(FNPSwapCommit);
+        msg.set(UID, uid);
+        msg.set(DATA, new ShortBuffer(buf));
+        return msg;
+    }
+    
+    public static MessageType FNPSwapComplete = new MessageType("FNPSwapComplete") {{
+        addField(UID, Long.class);
+        addField(DATA, ShortBuffer.class);
+    }};
+    
+    public static Message createFNPSwapComplete(long uid, byte[] buf) {
+        Message msg = new Message(FNPSwapComplete);
+        msg.set(UID, uid);
+        msg.set(DATA, new ShortBuffer(buf));
+        return msg;
+    }
+
+    public static MessageType FNPLocChangeNotification = new MessageType("FNPLocationChangeNotification") {{
+        addField(LOCATION, Double.class);
+    }};
+    
+    public static Message createFNPLocChangeNotification(double newLoc) {
+        Message msg = new Message(FNPLocChangeNotification);
+        msg.set(LOCATION, newLoc);
         return msg;
     }
     

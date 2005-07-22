@@ -16,6 +16,7 @@ public class PacketSender implements Runnable {
     final LinkedList resendPackets;
     final Thread myThread;
     final Node node;
+    long lastClearedOldSwapChains;
     
     PacketSender(Node node) {
         resendPackets = new LinkedList();
@@ -52,6 +53,10 @@ public class PacketSender implements Runnable {
                         if(firstRemainingUrgentTime > urgentTime)
                             urgentTime = firstRemainingUrgentTime;
                     }
+                }
+                if(lastClearedOldSwapChains - now > 10000) {
+                    node.lm.clearOldSwapChains();
+                    lastClearedOldSwapChains = now;
                 }
                 try {
                     Thread.sleep(Math.min(firstRemainingUrgentTime, 200));

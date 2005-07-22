@@ -66,4 +66,10 @@ public class Location {
         w.write(Double.toString(loc)+"\n");
         fos.close();
     }
+
+    public void setValue(double newLoc) {
+        if(loc < 0.0 || loc > 1.0)
+            throw new IllegalArgumentException();
+        this.loc = newLoc;
+    }
 }

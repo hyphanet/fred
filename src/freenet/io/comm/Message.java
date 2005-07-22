@@ -33,7 +33,7 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.5 2005/07/18 15:26:37 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.6 2005/07/22 12:15:45 amphibian Exp $";
 
 	private final MessageType _spec;
 	private final PeerContext _source;
@@ -105,6 +105,10 @@ public class Message {
 		return ((Long) _payload.get(key)).longValue();
 	}
 
+	public double getDouble(String key) {
+	    return ((Double) _payload.get(key)).doubleValue();
+	}
+	
 	public String getString(String key) {
 		return (String)_payload.get(key);
 	}
@@ -133,6 +137,10 @@ public class Message {
 		set(key, new Long(l));
 	}
 
+    public void set(String key, double d) {
+        set(key, new Double(d));
+    }
+    
 	public void set(String key, Object value) {
 		if (!_spec.checkType(key, value)) {
 			if (value == null) {
