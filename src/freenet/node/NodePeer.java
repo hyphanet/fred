@@ -210,6 +210,9 @@ public class NodePeer implements PeerContext {
             highestSequenceNumberStillCached = seqNumber;
         if(lowestSequenceNumberStillCached < 0)
             lowestSequenceNumberStillCached = seqNumber;
+        // Sometimes messages are sent slightly out of order
+        if(seqNumber > 0 && lowestSequenceNumberStillCached > seqNumber)
+            lowestSequenceNumberStillCached = seqNumber;
         // If not received ack in 500ms, send an AckRequest
         queueAckRequest(seqNumber, false);
     }
@@ -250,8 +253,18 @@ public class NodePeer implements PeerContext {
                 notifyAll();
             } else {
                 if(realSeqNo == lowestSequenceNumberStillCached) {
-                    while(!sentPacketsBySequenceNumber.containsKey(new Integer(lowestSequenceNumberStillCached)))
+                    int origValue = lowestSequenceNumberStillCached;
+                    while(!sentPacketsBySequenceNumber.containsKey(new Integer(lowestSequenceNumberStillCached))) {
                         lowestSequenceNumberStillCached++;
+                        if(lowestSequenceNumberStillCached > origValue+256) {
+                            Logger.error(this, "Inconsistent? lowestSequenceNumberStillCached was "+origValue+
+                                    ", sentPackets.size()="+sentPacketsBySequenceNumber.size()+
+                                    " but went through 256 indexes without finding cached value in ackPacket("+realSeqNo+")");
+                            for(Iterator it=sentPacketsBySequenceNumber.keySet().iterator();it.hasNext();) {
+                                Logger.error(this, "Got: "+it.next());
+                            }
+                        }
+                    }
                     notifyAll();
                 }
                 if(realSeqNo == highestSequenceNumberStillCached) {
