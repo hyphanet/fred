@@ -268,8 +268,17 @@ public class NodePeer implements PeerContext {
                     notifyAll();
                 }
                 if(realSeqNo == highestSequenceNumberStillCached) {
-                    while(!sentPacketsBySequenceNumber.containsKey(new Integer(highestSequenceNumberStillCached)))
+                    while(!sentPacketsBySequenceNumber.containsKey(new Integer(highestSequenceNumberStillCached))) {
                         highestSequenceNumberStillCached--;
+                        if(highestSequenceNumberStillCached < (realSeqNo-512)) {
+                            Logger.error(this, "Inconsistent? highestSequenceNumberStillCached was "+realSeqNo+
+                                    ", sentPackets.size()="+sentPacketsBySequenceNumber.size()+
+                                    " but went through 512 indexes without finding cached value in ackPacket("+realSeqNo+")");
+                            for(Iterator it=sentPacketsBySequenceNumber.keySet().iterator();it.hasNext();) {
+                                Logger.error(this, "Got: "+it.next());
+                            }
+                        }
+                    }
                     notifyAll();
                 }
                 if(lowestSequenceNumberStillCached < 0 || highestSequenceNumberStillCached < 0)
