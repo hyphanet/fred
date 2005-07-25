@@ -23,6 +23,7 @@ class LocationManager {
     static final int TIMEOUT = 60*1000;
     final RandomSource r;
     final SwapRequestSender sender;
+    SwapRequestInterval interval;
     Node node;
     
     public LocationManager(RandomSource r) {
@@ -52,9 +53,9 @@ class LocationManager {
      * Start a thread to send FNPSwapRequests every second when
      * we are not locked.
      */
-    public void startSender(Node n, int swapRequestSendInterval) {
+    public void startSender(Node n, SwapRequestInterval interval) {
         this.node = n;
-        sender.setInterval(swapRequestSendInterval);
+        this.interval = interval;
         Thread t = new Thread(sender, "SwapRequest sender");
         t.setDaemon(true);
         t.start();
@@ -73,7 +74,7 @@ class LocationManager {
                 try {
                     try {
                         // Average 1100, min 600, max 1600
-                        Thread.sleep(600+r.nextInt(sendInterval));
+                        Thread.sleep(600+(int)(r.nextDouble() * interval.getValue()));
                     } catch (InterruptedException e) {
                         // Ignore
                     }
@@ -84,10 +85,6 @@ class LocationManager {
                     Logger.error(this, "Caught "+t, t);
                 }
             }
-        }
-
-        public void setInterval(int swapRequestSendInterval) {
-            sendInterval = swapRequestSendInterval;
         }
     }
     
@@ -143,7 +140,8 @@ class LocationManager {
             }
             
             // Looks okay, lets get on with it
-            recentlyForwardedIDs.put(luid, new RecentlyForwardedItem(uid, pn, null));
+            // Only one ID because we are only receiving
+            addForwardedItem(uid, uid, pn, null);
             
             // Create my side
             
@@ -280,7 +278,8 @@ class LocationManager {
                     // Nowhere to send
                     return;
                 }
-                recentlyForwardedIDs.put(luid, new RecentlyForwardedItem(uid, null, pn));
+                // Only 1 ID because we are sending; we won't receive
+                addForwardedItem(uid, uid, null, pn);
 
                 Logger.minor(this, "Sending SwapRequest "+uid+" to "+pn);
                 
@@ -318,6 +317,8 @@ class LocationManager {
                 node.usm.send(pn, confirm);
                 
                 filter = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT);
+                
+                Logger.minor(this, "Waiting for SwapComplete: uid = "+uid);
                 
                 reply = node.usm.waitFor(filter);
                 
@@ -478,22 +479,22 @@ class LocationManager {
         double A = 1.0;
         for(int i=0;i<friendLocs.length;i++) {
             if(friendLocs[i] == myLoc) continue;
-            A *= Math.abs(friendLocs[i] - myLoc);
+            A *= PeerManager.distance(friendLocs[i], myLoc);
         }
         for(int i=0;i<hisFriendLocs.length;i++) {
             if(hisFriendLocs[i] == hisLoc) continue;
-            A *= Math.abs(hisFriendLocs[i] - hisLoc);
+            A *= PeerManager.distance(hisFriendLocs[i], hisLoc);
         }
         
         // B = the same, with our two values swapped
         double B = 1.0;
         for(int i=0;i<friendLocs.length;i++) {
             if(friendLocs[i] == hisLoc) continue;
-            B *= Math.abs(friendLocs[i] - hisLoc);
+            B *= PeerManager.distance(friendLocs[i], hisLoc);
         }
         for(int i=0;i<hisFriendLocs.length;i++) {
             if(hisFriendLocs[i] == myLoc) continue;
-            B *= Math.abs(hisFriendLocs[i] - myLoc);
+            B *= PeerManager.distance(hisFriendLocs[i], myLoc);
         }
         
         //Logger.normal(this, "A="+A+" B="+B);
@@ -517,14 +518,16 @@ class LocationManager {
     final Hashtable recentlyForwardedIDs;
     
     class RecentlyForwardedItem {
-        long id; // unnecessary?
+        long incomingID; // unnecessary?
+        long outgoingID;
         long addedTime;
         long lastMessageTime; // can delete when no messages for 2*TIMEOUT
         NodePeer requestSender;
         NodePeer routedTo;
         
-        RecentlyForwardedItem(long id, NodePeer from, NodePeer to) {
-            this.id = id;
+        RecentlyForwardedItem(long id, long outgoingID, NodePeer from, NodePeer to) {
+            this.incomingID = id;
+            this.outgoingID = outgoingID;
             requestSender = from;
             routedTo = to;
             addedTime = System.currentTimeMillis();
@@ -541,15 +544,11 @@ class LocationManager {
         NodePeer pn = (NodePeer)m.getSource();
         long uid = m.getLong(DMT.UID);
         Long luid = new Long(uid);
-        if(recentlyForwardedIDs.containsKey(luid)) {
-            // Loop?
-            RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
-            Logger.minor(this, "Rejected due to loop: "+uid);
-            Message reject = DMT.createFNPSwapRejected(uid);
-            pn.sendAsync(reject);
-            swapsRejectedLoop++;
-            return true;
-        }
+        long oid = uid+1;
+        // Don't check for loops
+        // We have two separate IDs so we can deal with two visits
+        // separately. This is because we want it to be as random 
+        // as possible.
         if(pn.shouldRejectSwapRequest()) {
             Logger.minor(this, "Advised to reject SwapRequest by NodePeer - rate limit");
             // Reject
@@ -590,6 +589,7 @@ class LocationManager {
             }
         } else {
             m.set(DMT.HTL, htl);
+            m.set(DMT.UID, oid);
             Logger.minor(this, "Forwarding... "+uid);
             // Forward
             NodePeer randomPeer = node.peers.getRandomPeer(pn);
@@ -601,10 +601,16 @@ class LocationManager {
                 return true;
             }
             Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
-            recentlyForwardedIDs.put(luid, new RecentlyForwardedItem(uid, pn, randomPeer));
+            addForwardedItem(uid, oid, pn, randomPeer);
             node.usm.send(randomPeer, m);
             return true;
         }
+    }
+
+    private void addForwardedItem(long uid, long oid, NodePeer pn, NodePeer randomPeer) {
+        RecentlyForwardedItem item = new RecentlyForwardedItem(uid, oid, pn, randomPeer);
+        recentlyForwardedIDs.put(new Long(uid), item);
+        recentlyForwardedIDs.put(new Long(oid), item);
     }
 
     /**
@@ -615,6 +621,10 @@ class LocationManager {
         long uid = m.getLong(DMT.UID);
         Long luid = new Long(uid);
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
+        if(item == null) {
+            Logger.error(this, "Unrecognized SwapReply: ID "+uid);
+            return false;
+        }
         if(item.requestSender == null) return false;
         if(item == null) {
             Logger.minor(this, "SwapReply from "+m.getSource()+" on chain originated locally "+uid);
@@ -626,6 +636,8 @@ class LocationManager {
             return true;
         }
         item.lastMessageTime = System.currentTimeMillis();
+        // Returning to source - use incomingID
+        m.set(DMT.UID, item.incomingID);
         Logger.minor(this, "Forwarding SwapReply "+uid+" from "+m.getSource()+" to "+item.requestSender);
         item.requestSender.sendAsync(m);
         return true;
@@ -650,6 +662,8 @@ class LocationManager {
         recentlyForwardedIDs.remove(luid);
         item.lastMessageTime = System.currentTimeMillis();
         Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+m.getSource()+" to "+item.requestSender);
+        // Returning to source - use incomingID
+        m.set(DMT.UID, item.incomingID);
         item.requestSender.sendAsync(m);
         return true;
     }
@@ -670,7 +684,9 @@ class LocationManager {
             return true;
         }
         item.lastMessageTime = System.currentTimeMillis();
-        Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+m.getSource()+" to "+item.routedTo);
+        Logger.minor(this, "Forwarding SwapCommit "+uid+","+item.outgoingID+" from "+m.getSource()+" to "+item.routedTo);
+        // Sending onwards - use outgoing ID
+        m.set(DMT.UID, item.outgoingID);
         item.routedTo.sendAsync(m);
         return true;
     }
@@ -681,16 +697,25 @@ class LocationManager {
      */
     public boolean handleSwapComplete(Message m) {
         long uid = m.getLong(DMT.UID);
+        Logger.minor(this, "handleSwapComplete("+uid+")");
         Long luid = new Long(uid);
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
-        if(item == null) return false;
-        if(item.requestSender == null) return false;
+        if(item == null) {
+            Logger.minor(this, "Item not found: "+uid+": "+m);
+            return false;
+        }
+        if(item.requestSender == null) {
+            Logger.minor(this, "Not matched "+uid+": "+m);
+            return false;
+        }
         if(m.getSource() != item.routedTo) {
             Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+m.getSource()+
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
         }
-        Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+m.getSource()+" to "+item.requestSender);
+        Logger.minor(this, "Forwarding SwapComplete "+uid+" from "+m.getSource()+" to "+item.requestSender);
+        // Returning to source - use incomingID
+        m.set(DMT.UID, item.incomingID);
         item.requestSender.sendAsync(m);
         item.lastMessageTime = System.currentTimeMillis();
         recentlyForwardedIDs.remove(luid);
@@ -704,7 +729,8 @@ class LocationManager {
             items = (RecentlyForwardedItem[]) recentlyForwardedIDs.values().toArray(items);
             for(int i=0;i<items.length;i++) {
                 if(now - items[i].lastMessageTime > (TIMEOUT*2)) {
-                    recentlyForwardedIDs.remove(new Long(items[i].id));
+                    recentlyForwardedIDs.remove(new Long(items[i].incomingID));
+                    recentlyForwardedIDs.remove(new Long(items[i].outgoingID));
                 }
             }
         }

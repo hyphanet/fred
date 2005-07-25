@@ -68,6 +68,11 @@ public class DMT {
     public static final String FNP_SOURCE_PEERNODE = "sourcePeerNode";
     public static final String PING_SEQNO = "pingSequenceNumber";
     public static final String LOCATION = "location";
+    public static final String TARGET_LOCATION = "targetLocation";
+    public static final String TYPE = "type";
+    public static final String PAYLOAD = "payload";
+    public static final String COUNTER = "counter";
+    public static final String RETURN_LOCATION = "returnLocation";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -606,6 +611,42 @@ public class DMT {
     public static Message createFNPLocChangeNotification(double newLoc) {
         Message msg = new Message(FNPLocChangeNotification);
         msg.set(LOCATION, newLoc);
+        return msg;
+    }
+
+    public static MessageType FNPRoutedPing = new MessageType("FNPRoutedPing") {{
+        addRoutedToNodeMessageFields();
+        addField(COUNTER, Integer.class);
+        addField(RETURN_LOCATION, Double.class);
+    }};
+    
+    public static Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter, double returnLocation) {
+        Message msg = new Message(FNPRoutedPing);
+        msg.setRoutedToNodeFields(uid, targetLocation, htl);
+        msg.set(COUNTER, counter);
+        msg.set(RETURN_LOCATION, returnLocation);
+        return msg;
+    }
+    
+    public static MessageType FNPRoutedPong = new MessageType("FNPRoutedPong") {{
+        addRoutedToNodeMessageFields();
+        addField(COUNTER, Integer.class);
+    }};
+
+    public static Message createFNPRoutedPong(long uid, double targetLocation, short htl, int counter) {
+        Message msg = new Message(FNPRoutedPong);
+        msg.setRoutedToNodeFields(uid, targetLocation, htl);
+        msg.set(COUNTER, counter);
+        return msg;
+    }
+    
+    public static MessageType FNPRoutedRejected = new MessageType("FNPRoutedRejected") {{
+        addField(UID, Long.class);
+    }};
+
+    public static Message createFNPRoutedRejected(long uid) {
+        Message msg = new Message(FNPRoutedRejected);
+        msg.set(UID, uid);
         return msg;
     }
     

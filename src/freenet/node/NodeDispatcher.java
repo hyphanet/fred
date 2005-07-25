@@ -1,8 +1,13 @@
 package freenet.node;
 
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.LinkedList;
+
 import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
 import freenet.io.comm.Message;
+import freenet.support.Logger;
 
 /**
  * @author amphibian
@@ -32,6 +37,7 @@ public class NodeDispatcher implements Dispatcher {
     
     public boolean handleMessage(Message m) {
         NodePeer source = (NodePeer)m.getSource();
+        Logger.minor(this, "Dispatching "+m);
         if(m.getSpec() == DMT.FNPPing) {
             // Send an FNPPong
             Message reply = DMT.createFNPPong(m.getInt(DMT.PING_SEQNO));
@@ -58,7 +64,141 @@ public class NodeDispatcher implements Dispatcher {
         if(m.getSpec() == DMT.FNPSwapComplete) {
             return node.lm.handleSwapComplete(m);
         }
+        if(m.getSpec() == DMT.FNPRoutedPing ||
+                m.getSpec() == DMT.FNPRoutedPong) {
+            return handleRouted(m);
+        }
+        if(m.getSpec() == DMT.FNPRoutedRejected) {
+            return handleRoutedRejected(m);
+        }
         return false;
     }
 
+    final Hashtable routedContexts = new Hashtable();
+    
+    class RoutedContext {
+        long createdTime;
+        long accessTime;
+        NodePeer source;
+        HashSet routedTo;
+        Message msg;
+        
+        RoutedContext(Message msg) {
+            createdTime = accessTime = System.currentTimeMillis();
+            source = (NodePeer)msg.getSource();
+            routedTo = new HashSet();
+            this.msg = msg;
+        }
+        
+        void addSent(NodePeer n) {
+            routedTo.add(n);
+        }
+    }
+    
+    /**
+     * Handle an FNPRoutedRejected message.
+     */
+    private boolean handleRoutedRejected(Message m) {
+        long id = m.getLong(DMT.UID);
+        Long lid = new Long(id);
+        RoutedContext rc = (RoutedContext) routedContexts.get(lid);
+        if(rc == null) {
+            // Gah
+            Logger.error(this, "Unrecognized FNPRoutedRejected");
+            return false; // locally originated??
+        }
+        // Try routing to the next node
+        forward(rc.msg, id, rc.source, rc.msg.getShort(DMT.HTL), rc.msg.getDouble(DMT.TARGET_LOCATION), rc);
+        return true;
+    }
+
+    /**
+     * Handle a routed-to-a-specific-node message.
+     * @param m
+     * @return False if we want the message put back on the queue.
+     */
+    boolean handleRouted(Message m) {
+        Logger.minor(this, "handleRouted("+m+")");
+        if(m.getSource() != null && (!(m.getSource() instanceof NodePeer))) {
+            Logger.error(this, "Routed message but source "+m.getSource()+" not a NodePeer!");
+            return true;
+        }
+        long id = m.getLong(DMT.UID);
+        Long lid = new Long(id);
+        RoutedContext ctx = new RoutedContext(m);
+        routedContexts.put(lid, ctx);
+        double targetLoc = m.getDouble(DMT.TARGET_LOCATION);
+        NodePeer pn = (NodePeer) (m.getSource());
+        short htl = m.getShort(DMT.HTL);
+        if(pn != null)
+            htl = pn.decrementHTL(htl);
+        // pn == null => originated locally, keep full htl
+        double target = m.getDouble(DMT.TARGET_LOCATION);
+        Logger.minor(this, "id "+id+" from "+pn+" htl "+htl+" target "+target);
+        if(node.lm.getLocation().getValue() == target) {
+            Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.portNumber);
+            // Handle locally
+            // Message type specific processing
+            dispatchRoutedMessage(m, id);
+            return true;
+        } else if(htl == 0) {
+            Message reject = DMT.createFNPRoutedRejected(id);
+            if(pn != null)
+                pn.sendAsync(reject);
+            return true;
+        } else {
+            return forward(m, id, pn, htl, target, ctx);
+        }
+    }
+
+    private boolean forward(Message m, long id, NodePeer pn, short htl, double target, RoutedContext ctx) {
+        Logger.minor(this, "Should forward");
+        // Forward
+        m = preForward(m, htl);
+        NodePeer next = node.peers.closerPeer(pn, ctx.routedTo, target);
+        Logger.minor(this, "Next: "+next+" message: "+m);
+        if(next != null) {
+            Logger.minor(this, "Forwarding "+m.getSpec()+" to "+next.getPeer().getPort());
+            ctx.addSent(next);
+            next.sendAsync(m);
+        } else {
+            Logger.minor(this, "Reached dead end for "+m.getSpec()+" on "+node.portNumber);
+            // Reached a dead end...
+            Message reject = DMT.createFNPRoutedRejected(id);
+            if(pn != null)
+                pn.sendAsync(reject);
+        }
+        return true;
+    }
+
+    /**
+     * Prepare a routed-to-node message for forwarding.
+     */
+    private Message preForward(Message m, short newHTL) {
+        m.set(DMT.HTL, newHTL); // update htl
+        if(m.getSpec() == DMT.FNPRoutedPing) {
+            int x = m.getInt(DMT.COUNTER);
+            x++;
+            m.set(DMT.COUNTER, x);
+        }
+        return m;
+    }
+
+    /**
+     * Deal with a routed-to-node message that landed on this node.
+     * This is where message-type-specific code executes. 
+     * @param m
+     * @return
+     */
+    private boolean dispatchRoutedMessage(Message m, long id) {
+        if(m.getSpec() == DMT.FNPRoutedPing) {
+            Logger.minor(this, "RoutedPing reached other side!");
+            int x = m.getInt(DMT.COUNTER);
+            double returnLoc = m.getDouble(DMT.RETURN_LOCATION);
+            Message reply = DMT.createFNPRoutedPong(id, returnLoc, Node.MAX_HTL, x);
+            handleRouted(reply);
+            return true;
+        }
+        return false;
+    }
 }

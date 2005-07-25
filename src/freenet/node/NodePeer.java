@@ -20,6 +20,8 @@ import freenet.io.comm.UdpSocketManager;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.math.RunningAverage;
+import freenet.support.math.TimeDecayingRunningAverage;
 
 /**
  * @author amphibian
@@ -60,6 +62,10 @@ public class NodePeer implements PeerContext {
         // FIXME: this is a debugging aid, maybe we should keep it?
         outgoingPacketNumber = node.random.nextInt(100000);
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
+        // 10 extra hops on average at the start (for cover)
+        decrementAtMax = node.random.nextDouble() <= 0.1;
+        // 5 extra hops on average at the end (to prevent probing and similar attacks)
+        decrementAtMin = node.random.nextDouble() <= 0.25;
     }
     
     /**
@@ -106,6 +112,10 @@ public class NodePeer implements PeerContext {
         // FIXME: this is a debugging aid, maybe we should keep it?
         outgoingPacketNumber = node.random.nextInt(100000);
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
+        // 10 extra hops on average at the start (for cover)
+        decrementAtMax = node.random.nextDouble() <= 0.1;
+        // 5 extra hops on average at the end (to prevent probing and similar attacks)
+        decrementAtMin = node.random.nextDouble() <= 0.25;
     }
 
     public String toString() {
@@ -738,11 +748,60 @@ public class NodePeer implements PeerContext {
         return nodeIdentity;
     }
 
-    /**
-     * @return
-     */
-    public boolean shouldRejectSwapRequest() {
-        // TODO Auto-generated method stub
+    RunningAverage swapRequestTimes =
+        new TimeDecayingRunningAverage(1000.0, 600*1000, 0, 600*1000);
+    
+    long lastRejectedSwapRequest = -1;
+
+    // 900ms
+    static final long MIN_INTERVAL_BETWEEN_SWAP_REQUESTS = 900;
+    
+    public synchronized boolean shouldRejectSwapRequest() {
+        long now = System.currentTimeMillis();
+        if(lastRejectedSwapRequest > 0) {
+            long timeSinceLastTime = now - lastRejectedSwapRequest;
+            swapRequestTimes.report(timeSinceLastTime);
+            double averageInterval = swapRequestTimes.currentValue();
+            if(averageInterval < MIN_INTERVAL_BETWEEN_SWAP_REQUESTS) {
+                double p = 
+                    (MIN_INTERVAL_BETWEEN_SWAP_REQUESTS - averageInterval) /
+                    MIN_INTERVAL_BETWEEN_SWAP_REQUESTS;
+                return node.random.nextDouble() < p;
+            } else return false;
+                
+        }
+        lastRejectedSwapRequest = now;
         return false;
+    }
+
+    /** Should we decrement HTL when it is 1? This is set once per node
+     * because otherwise correlation attacks are much easier.
+     */
+    final boolean decrementAtMin;
+    
+    /**
+     * Should we decrement HTL when it is at the maximum?
+     */
+    final boolean decrementAtMax;
+    
+    /**
+     * Decrement the HTL (or not), in accordance with our 
+     * probabilistic HTL rules.
+     * @param htl The old HTL.
+     * @return The new HTL.
+     */
+    public short decrementHTL(short htl) {
+        if(htl > Node.MAX_HTL) htl = Node.MAX_HTL;
+        if(htl <= 0) htl = 1;
+        if(htl == Node.MAX_HTL) {
+            if(decrementAtMax) htl--;
+            return htl;
+        }
+        if(htl == 1) {
+            if(decrementAtMin) htl--;
+            return htl;
+        }
+        htl--;
+        return htl;
     }
 }

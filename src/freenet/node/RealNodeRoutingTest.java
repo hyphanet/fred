@@ -57,8 +57,11 @@ public class RealNodeRoutingTest {
 
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
+        SwapRequestInterval sri =
+            new CPUAdjustingSwapRequestInterval(((500*1000*NUMBER_OF_NODES)/200), 50);
+        
         for(int i=0;i<NUMBER_OF_NODES;i++)
-            nodes[i].start(200*1000);
+            nodes[i].start(sri);
         
         // Now sit back and watch the fireworks!
         int cycleNumber = 0;
@@ -87,6 +90,25 @@ public class RealNodeRoutingTest {
             Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (rate limit): "+LocationManager.swapsRejectedRateLimit);
             Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (loop): "+LocationManager.swapsRejectedLoop);
             lastSwaps = newSwaps;
+            // Do some (routed) test-pings
+            for(int i=0;i<10;i++) {
+                try {
+                Node randomNode = nodes[random.nextInt(NUMBER_OF_NODES)];
+                Node randomNode2 = randomNode;
+                while(randomNode2 == randomNode)
+                    randomNode2 = nodes[random.nextInt(NUMBER_OF_NODES)];
+                Logger.normal(RealNodeRoutingTest.class, "Pinging "+randomNode2.portNumber+" from "+randomNode.portNumber);
+                double loc2 = randomNode2.lm.getLocation().getValue();
+                int hopsTaken = randomNode.routedPing(loc2);
+                if(hopsTaken < 0) {
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping FAILED from "+randomNode.portNumber+" to "+randomNode2.portNumber);
+                } else {
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping success: "+hopsTaken+" "+randomNode.portNumber+" to "+randomNode2.portNumber);
+                }
+                } catch (Throwable t) {
+                    Logger.error(RealNodeRoutingTest.class, "Caught "+t, t);
+                }
+            }
         }
     }
 }

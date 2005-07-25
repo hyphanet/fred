@@ -159,6 +159,10 @@ public abstract class Logger {
 	public static boolean shouldLog(int priority, Class c) {
 	    return logger.instanceShouldLog(priority, c);
 	}
+	
+	public static boolean shouldLog(int priority, Object o) {
+	    return shouldLog(priority, o.getClass());
+	}
 
 	public abstract boolean instanceShouldLog(int prio, Object o);
 	

@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.HashSet;
 
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
@@ -187,5 +188,56 @@ public class PeerManager {
             if(p == pn) continue;
             return p;
         }
+    }
+
+    /**
+     * Find the peer which is closest to the target location
+     */
+    public NodePeer closestPeer(double loc) {
+        NodePeer[] peers = connectedPeers;
+        double bestDiff = 1.0;
+        NodePeer best = null;
+        for(int i=0;i<peers.length;i++) {
+            NodePeer p = peers[i];
+            double diff = distance(p.getLocation().getValue(), loc);
+            if(diff < bestDiff) {
+                best = p;
+                bestDiff = diff;
+            }
+        }
+        return best;
+    }
+
+    /**
+     * Distance between two locations.
+     */
+    static double distance(double d, double loc) {
+        // Circular keyspace
+        double dist = Math.abs(d-loc);
+        double altdist = Math.abs(1+d-loc);
+        return Math.min(dist, altdist);
+    }
+
+    /**
+     * Find the peer, if any, which is closer to the target location
+     * than we are, and than the provided nodes is.
+     */
+    public NodePeer closerPeer(NodePeer pn, HashSet routedTo, double loc) {
+        NodePeer[] peers = connectedPeers;
+        double bestDiff = 1.0;
+        double minDiff = distance(node.lm.getLocation().getValue(), loc);
+        NodePeer best = null;
+        for(int i=0;i<peers.length;i++) {
+            NodePeer p = peers[i];
+            if(routedTo.contains(p)) continue;
+            if(p == pn) continue;
+            double diff = distance(p.getLocation().getValue(), loc);
+            if(diff > minDiff) continue;
+            if(diff < bestDiff) {
+                best = p;
+                bestDiff = diff;
+            }
+        }
+        return best;
     }
 }

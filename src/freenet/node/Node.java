@@ -22,6 +22,9 @@ import java.security.NoSuchAlgorithmException;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
+import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
+import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
@@ -49,6 +52,8 @@ public class Node implements SimpleClient {
     final UdpSocketManager usm;
     final FNPPacketMangler packetMangler;
     final PacketSender ps;
+    final NodeDispatcher dispatcher;
+    static final short MAX_HTL = 20;
     private static final int EXIT_STORE_FILE_NOT_FOUND = 1;
     private static final int EXIT_STORE_IOEXCEPTION = 2;
     private static final int EXIT_STORE_OTHER = 3;
@@ -137,7 +142,7 @@ public class Node implements SimpleClient {
         Logger.setupStdoutLogging(Logger.MINOR, "");
         Yarrow yarrow = new Yarrow();
         Node n = new Node(port, yarrow);
-        n.start(2000);
+        n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
     }
     
@@ -182,7 +187,7 @@ public class Node implements SimpleClient {
         
         try {
             usm = new UdpSocketManager(portNumber);
-            usm.setDispatcher(new NodeDispatcher(this));
+            usm.setDispatcher(dispatcher=new NodeDispatcher(this));
             usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
         } catch (SocketException e2) {
             Logger.error(this, "Could not listen for traffic: "+e2, e2);
@@ -191,9 +196,9 @@ public class Node implements SimpleClient {
         }
     }
 
-    void start(int sendIntervalOverride) {
-        if(sendIntervalOverride != -1)
-            lm.startSender(this, sendIntervalOverride);
+    void start(SwapRequestInterval interval) {
+        if(interval != null)
+            lm.startSender(this, interval);
     }
     
     /* (non-Javadoc)
@@ -229,5 +234,34 @@ public class Node implements SimpleClient {
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         return fs;
+    }
+
+    /**
+     * Do a routed ping of another node on the network by its location.
+     * @param loc2 The location of the other node to ping. It must match
+     * exactly.
+     * @return The number of hops it took to find the node, if it was found.
+     * Otherwise -1.
+     */
+    public int routedPing(double loc2) {
+        long uid = random.nextLong();
+        int initialX = random.nextInt();
+        NodePeer pn = peers.closestPeer(loc2);
+        if(pn == null) {
+            Logger.error(this, "Nowhere to send routed ping on "+this);
+            return -1;
+        }
+        Logger.normal(this, "Ping to "+loc2+": "+portNumber+" -> "+pn.getPeer().getPort());
+        Message m = DMT.createFNPRoutedPing(uid, loc2, MAX_HTL, initialX, lm.getLocation().getValue());
+        Logger.normal(this, "Message: "+m);
+        
+        dispatcher.handleRouted(m);
+        // FIXME: might be rejected
+        MessageFilter mf1 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedPong).setTimeout(5000);
+        MessageFilter mf2 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedRejected).setTimeout(5000);
+        m = usm.waitFor(mf1.or(mf2));
+        if(m == null) return -1;
+        if(m.getSpec() == DMT.FNPRoutedRejected) return -1;
+        return m.getInt(DMT.COUNTER) - initialX;
     }
 }

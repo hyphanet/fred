@@ -33,7 +33,7 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.6 2005/07/22 12:15:45 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.7 2005/07/25 17:15:23 amphibian Exp $";
 
 	private final MessageType _spec;
 	private final PeerContext _source;
@@ -215,4 +215,13 @@ public class Message {
 			super(message);
 		}
 	}
+
+    /**
+     * Set fields for a routed-to-a-specific-node message.
+     */
+    public void setRoutedToNodeFields(long uid, double targetLocation, short htl) {
+        set(DMT.UID, uid);
+        set(DMT.TARGET_LOCATION, targetLocation);
+        set(DMT.HTL, htl);
+    }
 }

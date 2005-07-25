@@ -25,7 +25,7 @@ import freenet.support.Logger;
 
 public class MessageType {
 
-    public static final String VERSION = "$Id: MessageType.java,v 1.3 2005/03/09 20:12:37 amphibian Exp $";
+    public static final String VERSION = "$Id: MessageType.java,v 1.4 2005/07/25 17:15:22 amphibian Exp $";
 
 	private static HashMap _specs = new HashMap();
 
@@ -65,6 +65,12 @@ public class MessageType {
 	public void addField(String name, Class type) {
 		_fields.put(name, type);
 		_orderedFields.addLast(name);
+	}
+	
+	public void addRoutedToNodeMessageFields() {
+        addField(DMT.UID, Long.class);
+        addField(DMT.TARGET_LOCATION, Double.class);
+        addField(DMT.HTL, Short.class);
 	}
 
 	public boolean checkType(String fieldName, Object fieldValue) {

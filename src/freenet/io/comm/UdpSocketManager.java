@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.8 2005/07/22 12:15:46 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.9 2005/07/25 17:15:23 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	private LinkedList _filters = new LinkedList();
@@ -182,7 +182,11 @@ public class UdpSocketManager extends Thread {
 		}
 		// Feed unmatched messages to the dispatcher
 		if (!matched && (_dispatcher != null)) {
-			matched = _dispatcher.handleMessage(m);
+		    try {
+		        matched = _dispatcher.handleMessage(m);
+		    } catch (Throwable t) {
+		        Logger.error(this, "Dispatcher threw "+t, t);
+		    }
 		}
 		// Keep the last few _unclaimed messages around in case the intended receiver isn't receiving yet
 		if (!matched) {
