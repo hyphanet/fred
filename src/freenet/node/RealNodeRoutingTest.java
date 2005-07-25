@@ -1,7 +1,6 @@
 package freenet.node;
 
 import freenet.crypt.DummyRandomSource;
-import freenet.crypt.Yarrow;
 import freenet.io.comm.PeerParseException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -15,10 +14,10 @@ import freenet.support.SimpleFieldSet;
  */
 public class RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 200;
+    static final int NUMBER_OF_NODES = 100;
     
     public static void main(String[] args) throws FSParseException, PeerParseException {
-        Logger.setupStdoutLogging(Logger.MINOR, "freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal");
+        Logger.setupStdoutLogging(Logger.MINOR, "freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug");
         System.out.println("Routing test using real nodes:");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();

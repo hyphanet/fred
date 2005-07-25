@@ -526,14 +526,15 @@ public class FNPPacketMangler implements LowLevelFilter {
 
         System.arraycopy(buf, offset, plaintext, ptr, length);
 
-        Logger.minor(this, "Sending...");
-        processOutgoingFullyFormatted(plaintext, pn);
-
         if(seqNumber != -1) {
             byte[] saveable = new byte[length];
             System.arraycopy(buf, offset, saveable, 0, length);
             pn.sentPacket(saveable, seqNumber);
         }
+        
+        Logger.minor(this, "Sending...");
+
+        processOutgoingFullyFormatted(plaintext, pn);
         Logger.minor(this, "Sent packet");
     }
 

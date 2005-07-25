@@ -26,9 +26,10 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.9 2005/07/25 17:15:23 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.10 2005/07/25 19:18:20 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
+	/** _filters serves as lock for both */
 	private LinkedList _filters = new LinkedList();
 	private LinkedList _unclaimed = new LinkedList();
 	private int _unclaimedPos = 0;
@@ -190,12 +191,48 @@ public class UdpSocketManager extends Thread {
 		}
 		// Keep the last few _unclaimed messages around in case the intended receiver isn't receiving yet
 		if (!matched) {
-			synchronized (_unclaimed) {
-				while (_unclaimed.size() > 500) {
-					Message removed = (Message)_unclaimed.removeFirst();
-					Logger.error(this, "Unclaimed: "+removed);
+		    Logger.normal(this, "Unclaimed: "+m);
+		    /** Check filters and then add to _unmatched is ATOMIC
+		     * It has to be atomic, because otherwise we can get a
+		     * race condition that results in timeouts on MFs.
+		     * 
+		     * Specifically:
+		     * - Thread A receives packet
+		     * - Thread A checks filters. It doesn't match any.
+		     * - Thread A feeds to Dispatcher.
+		     * - Thread B creates filter.
+		     * - Thread B checks _unmatched.
+		     * - Thread B adds filter.
+		     * - Thread B sleeps.
+		     * - Thread A returns from Dispatcher. Which didn't match.
+		     * - Thread A adds to _unmatched.
+		     * 
+		     * OOPS!
+		     * The only way to fix this is to have checking the
+		     * filters and unmatched be a single atomic operation.
+		     * Another race is possible if we merely recheck the
+		     * filters after we return from dispatcher, for example.
+		     */
+			synchronized (_filters) {
+				for (ListIterator i = _filters.listIterator(); i.hasNext();) {
+					MessageFilter f = (MessageFilter) i.next();
+					if (f.match(m)) {
+						matched = true;
+						f.setMessage(m);
+						synchronized (f) {
+							i.remove();
+							f.notify();
+						}
+						break; // Only one match permitted per message
+					}
 				}
-				_unclaimed.addLast(m);
+				if(!matched) {
+				    while (_unclaimed.size() > 500) {
+				        Message removed = (Message)_unclaimed.removeFirst();
+				        Logger.error(this, "Unclaimed: "+removed);
+				    }
+				    _unclaimed.addLast(m);
+				}
 			}
 		}
 	}
@@ -204,7 +241,8 @@ public class UdpSocketManager extends Thread {
 		long startTime = System.currentTimeMillis();
 		Message ret = null;
 		// Check to see whether the filter matches any of the recently _unclaimed messages
-		synchronized (_unclaimed) {
+		synchronized (_filters) {
+			Logger.debug(this, "Checking _unclaimed");
 			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
 				Message m = (Message) i.next();
 				if (filter.match(m)) {
@@ -213,10 +251,9 @@ public class UdpSocketManager extends Thread {
 					Logger.debug(this, "Matching from _unclaimed");
 				}
 			}
-		}
-		if (ret == null) {
-			// Insert filter into filter list in order of timeout
-			synchronized (_filters) {
+			Logger.debug(this, "Not in _unclaimed");
+			if (ret == null) {
+			    // Insert filter into filter list in order of timeout
 				ListIterator i = _filters.listIterator();
 				while (true) {
 					if (!i.hasNext()) {
@@ -233,6 +270,12 @@ public class UdpSocketManager extends Thread {
 					}
 				}
 			}
+		}
+		// Unlock to wait on filter
+		// Waiting on the filter won't release the outer lock
+		// So we have to release it here
+		if(ret == null) {	
+			Logger.debug(this, "Waiting...");
 			synchronized (filter) {
 				try {
 					// Precaution against filter getting matched between being added to _filters and
