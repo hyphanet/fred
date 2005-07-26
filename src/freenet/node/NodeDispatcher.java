@@ -127,7 +127,6 @@ public class NodeDispatcher implements Dispatcher {
         Long lid = new Long(id);
         RoutedContext ctx = new RoutedContext(m);
         routedContexts.put(lid, ctx);
-        double targetLoc = m.getDouble(DMT.TARGET_LOCATION);
         NodePeer pn = (NodePeer) (m.getSource());
         short htl = m.getShort(DMT.HTL);
         if(pn != null)
