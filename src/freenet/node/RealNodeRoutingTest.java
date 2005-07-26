@@ -66,6 +66,8 @@ public class RealNodeRoutingTest {
         int cycleNumber = 0;
         int lastSwaps = 0;
         int lastNoSwaps = 0;
+        int failures = 0;
+        int successes = 0;
         while(true) {
             cycleNumber++;
             try {
@@ -101,9 +103,13 @@ public class RealNodeRoutingTest {
                 double loc2 = randomNode2.lm.getLocation().getValue();
                 int hopsTaken = randomNode.routedPing(loc2);
                 if(hopsTaken < 0) {
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping FAILED from "+randomNode.portNumber+" to "+randomNode2.portNumber);
+                    failures++;
+                    double ratio = (double)successes / ((double)(failures+successes));
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping FAILED from "+randomNode.portNumber+" to "+randomNode2.portNumber+" ("+ratio+")");
                 } else {
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping success: "+hopsTaken+" "+randomNode.portNumber+" to "+randomNode2.portNumber);
+                    successes++;
+                    double ratio = (double)successes / ((double)(failures+successes));
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping success: "+hopsTaken+" "+randomNode.portNumber+" to "+randomNode2.portNumber+" ("+ratio+")");
                 }
                 } catch (Throwable t) {
                     Logger.error(RealNodeRoutingTest.class, "Caught "+t, t);

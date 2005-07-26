@@ -573,8 +573,8 @@ public class NodePeer implements PeerContext {
     
     class QueuedResendRequest extends BaseQueuedResend {
         long initialActiveTime() {
-            // Can send immediately
-            return System.currentTimeMillis();
+            // Active in 200ms - might have been sent out of order
+            return System.currentTimeMillis() + 200;
         }
         
         QueuedResendRequest(int packetNumber) {
@@ -604,12 +604,16 @@ public class NodePeer implements PeerContext {
      */
     final LinkedList resendRequestQueue;
 
+    int lastResendRequestSeqNumber = -1;
+    
     /**
      * Add a request for a packet to be resent to the queue.
      * @param seqNumber The packet number of the packet that needs
      * to be resent.
      */
     private synchronized void queueResendRequest(int seqNumber) {
+        if(lastResendRequestSeqNumber < seqNumber)
+            lastResendRequestSeqNumber = seqNumber;
         Logger.minor(this, "Queueing resend request for "+seqNumber+" on "+this);
         if(queuedResendRequest(seqNumber)) return;
         QueuedResendRequest qr = new QueuedResendRequest(seqNumber);
@@ -733,7 +737,7 @@ public class NodePeer implements PeerContext {
      * received so far.
      */
     public int lastReceivedSequenceNumber() {
-        return packetsReceived.highest();
+        return Math.max(packetsReceived.highest(), lastResendRequestSeqNumber);
     }
 
     /**
@@ -744,12 +748,16 @@ public class NodePeer implements PeerContext {
         // Two queues to consider
         if(!ackQueue.isEmpty()) {
             PacketActionItem item = (PacketActionItem) ackQueue.getFirst();
+            if(item == null)
+                throw new NullPointerException("item is null from ackQueue which has "+ackQueue.size()+" elements");
             long urgentTime = item.urgentTime;
             if(urgentTime < nextUrgentTime)
                 nextUrgentTime = urgentTime;
         }
         if(!resendRequestQueue.isEmpty()) {
             PacketActionItem item = (PacketActionItem) resendRequestQueue.getFirst();
+            if(item == null)
+                throw new NullPointerException("item is null from resendRequestQueue which has "+resendRequestQueue.size()+" elements");
             long urgentTime = item.urgentTime;
             if(urgentTime < nextUrgentTime)
                 nextUrgentTime = urgentTime;

@@ -104,26 +104,26 @@ public class PeerManager {
         connectedPeers = newConnectedPeers;
     }
 
-    NodePeer route(double targetLocation, RoutingContext ctx) {
-        double minDist = 1.1;
-        NodePeer best = null;
-        for(int i=0;i<connectedPeers.length;i++) {
-            NodePeer p = connectedPeers[i];
-            if(ctx.alreadyRoutedTo(p)) continue;
-            double loc = p.getLocation().getValue();
-            double dist = Math.abs(loc - targetLocation);
-            if(dist < minDist) {
-                minDist = dist;
-                best = p;
-            }
-        }
-        return best;
-    }
-    
-    NodePeer route(Location target, RoutingContext ctx) {
-        return route(target.getValue(), ctx);
-    }
-
+//    NodePeer route(double targetLocation, RoutingContext ctx) {
+//        double minDist = 1.1;
+//        NodePeer best = null;
+//        for(int i=0;i<connectedPeers.length;i++) {
+//            NodePeer p = connectedPeers[i];
+//            if(ctx.alreadyRoutedTo(p)) continue;
+//            double loc = p.getLocation().getValue();
+//            double dist = Math.abs(loc - targetLocation);
+//            if(dist < minDist) {
+//                minDist = dist;
+//                best = p;
+//            }
+//        }
+//        return best;
+//    }
+//    
+//    NodePeer route(Location target, RoutingContext ctx) {
+//        return route(target.getValue(), ctx);
+//    }
+//
     /**
      * Find the node with the given Peer address.
      */
@@ -214,7 +214,9 @@ public class PeerManager {
     static double distance(double d, double loc) {
         // Circular keyspace
         double dist = Math.abs(d-loc);
-        double altdist = Math.abs(1+d-loc);
+        double min = Math.min(d, loc);
+        double max = Math.max(d, loc);
+        double altdist = Math.abs(1.0+min-max);
         return Math.min(dist, altdist);
     }
 
