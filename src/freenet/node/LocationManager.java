@@ -74,13 +74,12 @@ class LocationManager {
                 try {
                     long startTime = System.currentTimeMillis();
                     while(true) {
-                        // Average 1100, min 600, max 1600
                         double sleepTime = interval.getValue();
                         sleepTime *= r.nextDouble();
-                        sleepTime = Math.max(sleepTime, Integer.MAX_VALUE);
+                        sleepTime = Math.min(sleepTime, Integer.MAX_VALUE);
                         long endTime = startTime + (int)sleepTime;
                         try {
-                            Thread.sleep((int)sleepTime);
+                            Thread.sleep(Math.min((int)sleepTime, 1000));
                         } catch (InterruptedException e) {
                             // Ignore
                         }
