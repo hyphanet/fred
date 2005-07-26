@@ -743,7 +743,7 @@ public class NodePeer implements PeerContext {
     /**
      * @return
      */
-    public long getNextUrgentTime() {
+    public synchronized long getNextUrgentTime() {
         long nextUrgentTime = Long.MAX_VALUE;
         // Two queues to consider
         if(!ackQueue.isEmpty()) {
