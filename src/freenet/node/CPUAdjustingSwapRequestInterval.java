@@ -13,6 +13,9 @@ public class CPUAdjustingSwapRequestInterval implements SwapRequestInterval, Run
     double currentValue;
     int targetCPUUsage;
     CPUUsageMonitor m;
+    final double mulPerSecond = 1.05;
+    final double max = Double.MAX_VALUE / 1.05;
+    final double min = Double.MIN_VALUE;
     
     CPUAdjustingSwapRequestInterval(double initialValue, int targetCPUUsage) {
         currentValue = initialValue;
@@ -37,17 +40,21 @@ public class CPUAdjustingSwapRequestInterval implements SwapRequestInterval, Run
             }
             int cpuUsage = m.getCPUUsage();
             long endSleepTime = System.currentTimeMillis();
-            double mul = 1.05;
-            mul = Math.pow(mul, ((double)(endSleepTime-now))/1000);
+            double mul = Math.pow(mulPerSecond, ((double)(endSleepTime-now))/1000);
             if(cpuUsage == -1) {
                 Logger.error(this, "Cannot auto-adjust based on CPU usage");
                 return;
             }
             synchronized(this) {
-                if(cpuUsage > targetCPUUsage)
-                    currentValue *= mul; // 5% slower per second
-                else if(cpuUsage < targetCPUUsage)
-                    currentValue /= mul; // 5% faster per second
+                if(cpuUsage > targetCPUUsage) {
+                    if(currentValue < max)
+                        currentValue *= mul; // 5% slower per second
+                } else if(cpuUsage < targetCPUUsage) {
+                    if(currentValue > min)
+                        currentValue /= mul; // 5% faster per second
+                }
+                if(currentValue < min) currentValue = min;
+                if(currentValue > max) currentValue = max;
             }
             Logger.minor(this, "CPU usage: "+cpuUsage+" target "+targetCPUUsage+" current value: "+currentValue);
         }

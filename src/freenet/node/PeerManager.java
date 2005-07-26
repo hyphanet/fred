@@ -58,6 +58,12 @@ public class PeerManager {
                             throw (EOFException)e1;
                         Logger.error(this, "Could not read peers file: "+e1, e1);
                         return;
+                    } finally {
+                        try {
+                            br.close();
+                        } catch (IOException e3) {
+                            // Ignore
+                        }
                     }
                     NodePeer pn;
                     try {
@@ -73,12 +79,6 @@ public class PeerManager {
                 }
             } catch (EOFException e) {
                 // End of file, fine
-            }
-            try {
-                br.close();
-            } catch (IOException e1) {
-                Logger.error(this, "Can't close: "+e1);
-                // WTF?
             }
         } catch (FileNotFoundException e) {
             Logger.error(this, "Peers file not found: "+filename);

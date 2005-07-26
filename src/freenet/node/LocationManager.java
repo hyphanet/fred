@@ -72,11 +72,19 @@ class LocationManager {
         public void run() {
             while(true) {
                 try {
-                    try {
+                    long startTime = System.currentTimeMillis();
+                    while(true) {
                         // Average 1100, min 600, max 1600
-                        Thread.sleep(600+(int)(r.nextDouble() * interval.getValue()));
-                    } catch (InterruptedException e) {
-                        // Ignore
+                        double sleepTime = interval.getValue();
+                        sleepTime *= r.nextDouble();
+                        sleepTime = Math.max(sleepTime, Integer.MAX_VALUE);
+                        long endTime = startTime + (int)sleepTime;
+                        try {
+                            Thread.sleep((int)sleepTime);
+                        } catch (InterruptedException e) {
+                            // Ignore
+                        }
+                        if(System.currentTimeMillis() >= endTime) break;
                     }
                     // Don't send one if we are locked
                     if(locked) continue;
@@ -402,6 +410,7 @@ class LocationManager {
     public static int swapsRejectedNowhereToGo;
     public static int swapsRejectedRateLimit;
     public static int swapsRejectedLoop;
+    public static int swapsRejectedRecognizedID;
     
     long lockedTime;
     
@@ -545,10 +554,20 @@ class LocationManager {
         long uid = m.getLong(DMT.UID);
         Long luid = new Long(uid);
         long oid = uid+1;
-        // Don't check for loops
         // We have two separate IDs so we can deal with two visits
         // separately. This is because we want it to be as random 
         // as possible.
+        // This means we can and should check for the same ID being
+        // sent twice.
+        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
+        if(item != null) {
+            Logger.minor(this, "Rejecting - same ID as previous request");
+            // Reject
+            Message reject = DMT.createFNPSwapRejected(uid);
+            pn.sendAsync(reject);
+            swapsRejectedRecognizedID++;
+            return true;
+        }
         if(pn.shouldRejectSwapRequest()) {
             Logger.minor(this, "Advised to reject SwapRequest by NodePeer - rate limit");
             // Reject

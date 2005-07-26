@@ -201,6 +201,12 @@ public class FNPPacketMangler implements LowLevelFilter {
             return false;
         }
         
+        if(seqNumber != -1 && pn.alreadyReceived(seqNumber)) {
+            pn.queueAck(seqNumber);
+            Logger.normal(this, "Received packet twice: "+seqNumber);
+            return true;
+        }
+        
         for(int i=0;i<md.getDigestLength();i++) {
             packetHash[i] ^= buf[offset+i];
         }

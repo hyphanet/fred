@@ -30,6 +30,173 @@ import freenet.support.math.TimeDecayingRunningAverage;
  */
 public class NodePeer implements PeerContext {
     
+    /**
+     * Tracks which packet numbers we have received.
+     * Implemented as a sorted list since this is simplest and
+     * it's unlikely it will be very long in practice. The 512-
+     * packet window provides a practical limit.
+     */
+    public class ReceivedPackets {
+        
+        LinkedList ranges;
+        int lowestSeqNumber;
+        int highestSeqNumber;
+        
+        ReceivedPackets() {
+            ranges = new LinkedList();
+            lowestSeqNumber = -1;
+            highestSeqNumber = -1;
+        }
+        
+        class Range {
+            int start; // inclusive
+            int end;   // inclusive
+            
+            public String toString() {
+                return "Range:"+start+"->"+end;
+            }
+        }
+        
+        /**
+         * We received a packet!
+         * @param seqNumber The number of the packet.
+         * @return True if we stored the packet. False if it is out
+         * of range of the current window.
+         */
+        public synchronized boolean got(int seqNumber) {
+            if(seqNumber < 0) throw new IllegalArgumentException();
+            if(ranges.isEmpty()) {
+                Range r = new Range();
+                r.start = r.end = lowestSeqNumber = highestSeqNumber = seqNumber;
+                ranges.addFirst(r);
+                return true;
+            } else {
+                ListIterator li = ranges.listIterator();
+                Range r = (Range)li.next();
+                int firstSeq = r.end;
+                if(seqNumber - firstSeq > 512) {
+                    // Delete first item
+                    li.remove();
+                    r = (Range)li.next();
+                    lowestSeqNumber = r.start;
+                }
+                while(true) {
+                    if(seqNumber == r.start-1) {
+                        r.start--;
+                        if(li.hasPrevious()) {
+                            Range r1 = (Range) li.previous();
+                            if(r1.end == seqNumber-1) {
+                                r.start = r1.start;
+                                li.remove();
+                            }
+                        } else {
+                            lowestSeqNumber = seqNumber;
+                        }
+                        return true;
+                    }
+                    if(seqNumber < r.start-1) {
+                        if(highestSeqNumber - seqNumber > 512) {
+                            // Out of window, don't store
+                            return false;
+                        }
+                        Range r1 = new Range();
+                        r1.start = r1.end = seqNumber;
+                        li.previous(); // move cursor back
+                        if(!li.hasPrevious()) // inserting at start??
+                            lowestSeqNumber = seqNumber;
+                        li.add(r1);
+                        return true;
+                    }
+                    if(seqNumber >= r.start && seqNumber <= r.end) {
+                        // Duh
+                        return true;
+                    }
+                    if(seqNumber == r.end+1) {
+                        r.end++;
+                        if(li.hasNext()) {
+                            Range r1 = (Range) li.next();
+                            if(r1.start == seqNumber+1) {
+                                r.end = r1.end;
+                                li.remove();
+                            }
+                        } else {
+                            highestSeqNumber = seqNumber;
+                        }
+                        return true;
+                    }
+                    if(seqNumber > r.end+1) {
+                        if(!li.hasNext()) {
+                            // This is the end of the list
+                            Range r1 = new Range();
+                            r1.start = r1.end = highestSeqNumber = seqNumber;
+                            li.add(r1);
+                            return true;
+                        }
+                    }
+                    r = (Range) li.next();
+                }
+            }
+        }
+
+        /**
+         * Have we received packet #seqNumber??
+         * @param seqNumber
+         * @return
+         */
+        public synchronized boolean contains(int seqNumber) {
+            if(seqNumber > highestSeqNumber)
+                return false;
+            if(seqNumber == highestSeqNumber)
+                return true;
+            if(seqNumber <= lowestSeqNumber)
+                return true;
+            if(highestSeqNumber - seqNumber > 512)
+                return true; // Assume we have since out of window
+            Iterator i = ranges.iterator();
+            Range last = null;
+            for(;i.hasNext();) {
+                Range r = (Range)i.next();
+                if(r.start > r.end) {
+                    Logger.error(this, "Bad Range: "+r);
+                }
+                if(last != null && r.start < last.end) {
+                    Logger.error(this, "This range: "+r+" but last was: "+last);
+                }
+                if(r.start <= seqNumber && r.end >= seqNumber)
+                    return true;
+            }
+            return false;
+        }
+
+        /**
+         * @return The highest packet number seen so far.
+         */
+        public int highest() {
+            return highestSeqNumber;
+        }
+        
+        public String toString() {
+            StringBuffer sb = new StringBuffer();
+            sb.append(super.toString());
+            sb.append(": max=");
+            sb.append(highestSeqNumber);
+            sb.append(", min=");
+            sb.append(lowestSeqNumber);
+            sb.append(", ranges=");
+            synchronized(this) {
+                Iterator i = ranges.iterator();
+                while(i.hasNext()) {
+                    Range r = (Range) i.next();
+                    sb.append(r.start);
+                    sb.append('-');
+                    sb.append(r.end);
+                    if(i.hasNext()) sb.append(',');
+                }
+            }
+            return sb.toString();
+        }
+    }
+    
     NodePeer(Location loc, Peer contact, byte[] nodeIdentity, Node n, PacketSender ps) {
         currentLocation = loc;
         peer = contact;
@@ -124,8 +291,8 @@ public class NodePeer implements PeerContext {
         	HexUtil.bytesToHex(nodeIdentity)+", loc="+currentLocation.getValue()+
         	", cached: "+lowestSequenceNumberStillCached+"-"+
         	highestSequenceNumberStillCached+" ("+
-        	sentPacketsBySequenceNumber.size()+"), lastRecv: "+
-        	lastReceivedPacketSeqNumber+", ackQueue: "+ackQueue.size()+
+        	sentPacketsBySequenceNumber.size()+"), packetsRecv: "+
+        	packetsReceived+", ackQueue: "+ackQueue.size()+
         	", resendQueue: "+resendRequestQueue.size()+
         	", outgoingPacketNo: "+outgoingPacketNumber;
     }
@@ -205,6 +372,7 @@ public class NodePeer implements PeerContext {
      * @param seqNumber The sequence number of the packet.
      */
     public synchronized void sentPacket(byte[] messagesPayload, int seqNumber) {
+        Logger.minor(this, "sentPacket("+seqNumber);
         sentPacketsBySequenceNumber.put(new Integer(seqNumber), messagesPayload);
         if(seqNumber > highestSequenceNumberStillCached)
             highestSequenceNumberStillCached = seqNumber;
@@ -287,34 +455,31 @@ public class NodePeer implements PeerContext {
         }
     }
     
-    /**
-     * Sequence number of last received packet, not including
-     * retransmitted packets.
-     */
-    int lastReceivedPacketSeqNumber = -1;
-
+    ReceivedPackets packetsReceived = new ReceivedPackets();
+    
     /**
      * @param seqNumber
      */
     public synchronized void receivedPacket(int seqNumber) {
         Logger.minor(this, "RECEIVED PACKET "+seqNumber);
+        if(seqNumber == -1) return;
         // First ack it
         queueAck(seqNumber);
         receivedPacketNumber(seqNumber);
         // Resend requests
         removeResendRequest(seqNumber);
+        packetsReceived.got(seqNumber);
     }
 
     /**
      * Add some resend requests if necessary
      */
     private synchronized void receivedPacketNumber(int seqNumber) {
-        if(seqNumber > lastReceivedPacketSeqNumber) {
-            int oldSeqNo = lastReceivedPacketSeqNumber;
-            lastReceivedPacketSeqNumber = seqNumber;
-            if(oldSeqNo != -1 && seqNumber - oldSeqNo > 1) {
+        int max = packetsReceived.highest();
+        if(seqNumber > max) {
+            if(max != -1 && seqNumber - max > 1) {
                 // Missed some packets out
-                for(int i=oldSeqNo+1;i<seqNumber;i++) {
+                for(int i=max+1;i<seqNumber;i++) {
                     queueResendRequest(i);
                 }
             }
@@ -358,7 +523,7 @@ public class NodePeer implements PeerContext {
      * send a packet just for the ack's.
      * @param packetNumber The packet number to acknowledge.
      */
-    private void queueAck(int packetNumber) {
+    void queueAck(int packetNumber) {
         Logger.minor(this, "Queueing ack "+packetNumber);
         if(alreadyQueuedAck(packetNumber)) return;
         QueuedAck ack = new QueuedAck(packetNumber);
@@ -568,7 +733,7 @@ public class NodePeer implements PeerContext {
      * received so far.
      */
     public int lastReceivedSequenceNumber() {
-        return lastReceivedPacketSeqNumber;
+        return packetsReceived.highest();
     }
 
     /**
@@ -591,6 +756,8 @@ public class NodePeer implements PeerContext {
         }
         if(!ackRequestQueue.isEmpty()) {
             PacketActionItem item = (PacketActionItem) ackRequestQueue.getFirst();
+            if(item == null)
+                throw new NullPointerException("item is null from ackRequestQueue which has "+ackRequestQueue.size()+" elements");
             long urgentTime = item.urgentTime;
             if(urgentTime < nextUrgentTime)
                 nextUrgentTime = urgentTime;
@@ -736,16 +903,16 @@ public class NodePeer implements PeerContext {
      */
     public synchronized void receivedAckRequest(int realSeqNo) {
         // Did we send the ack in the first place?
-        if(realSeqNo > lastReceivedPacketSeqNumber) {
-            if(realSeqNo - lastReceivedPacketSeqNumber < 256
-                    || lastReceivedPacketSeqNumber == -1) {
+        if(realSeqNo > lastReceivedSequenceNumber()) {
+            if(realSeqNo - lastReceivedSequenceNumber() < 256
+                    || lastReceivedSequenceNumber() == -1) {
                 // They sent it, haven't had an ack yet
                 queueResendRequest(realSeqNo);
                 // Resend any in between too, and update lastReceivePacketSeqNumber
                 receivedPacketNumber(realSeqNo);
             } else {
                 Logger.error(this,"Other side asked for re-ack on "+realSeqNo+
-                        " but last sent was "+lastReceivedPacketSeqNumber);
+                        " but last sent was "+lastReceivedSequenceNumber());
             }
             return;
         }
@@ -825,5 +992,16 @@ public class NodePeer implements PeerContext {
         }
         htl--;
         return htl;
+    }
+
+    /**
+     * Have we received a packet with this sequence number from
+     * this peer before?
+     * @param seqNumber The packet number to check.
+     * @return True if we have already received a packet with this
+     * sequence number.
+     */
+    public boolean alreadyReceived(int seqNumber) {
+        return packetsReceived.contains(seqNumber);
     }
 }

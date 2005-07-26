@@ -14,7 +14,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 100;
+    static final int NUMBER_OF_NODES = 200;
     
     public static void main(String[] args) throws FSParseException, PeerParseException {
         Logger.setupStdoutLogging(Logger.MINOR, "freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug");
@@ -88,6 +88,7 @@ public class RealNodeRoutingTest {
             Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (nowhere to go): "+LocationManager.swapsRejectedNowhereToGo);
             Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (rate limit): "+LocationManager.swapsRejectedRateLimit);
             Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (loop): "+LocationManager.swapsRejectedLoop);
+            Logger.normal(RealNodeRoutingTest.class, "Swaps rejected (recognized ID):" +LocationManager.swapsRejectedRecognizedID);
             lastSwaps = newSwaps;
             // Do some (routed) test-pings
             for(int i=0;i<10;i++) {
