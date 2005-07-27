@@ -17,9 +17,11 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 25;
+    static final int NUMBER_OF_NODES = 500;
     
     public static void main(String[] args) throws FSParseException, PeerParseException {
+        NodePeer.disableProbabilisticHTLs = true;
+        Node.MAX_HTL = 10;
         Logger.setupStdoutLogging(Logger.MINOR, "freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug");
         System.out.println("Routing test using real nodes:");
         System.out.println();
@@ -99,6 +101,10 @@ public class RealNodeRoutingTest {
             lastSwaps = newSwaps;
             // Do some (routed) test-pings
             for(int i=0;i<10;i++) {
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e1) {
+                }
                 try {
                 Node randomNode = nodes[random.nextInt(NUMBER_OF_NODES)];
                 Node randomNode2 = randomNode;

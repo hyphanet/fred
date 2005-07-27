@@ -80,7 +80,7 @@ class LocationManager {
                         sleepTime = Math.min(sleepTime, Integer.MAX_VALUE);
                         long endTime = startTime + (int)sleepTime;
                         try {
-                            Thread.sleep(Math.min((int)sleepTime, 1000));
+                            Thread.sleep(Math.min((int)sleepTime, 10000));
                         } catch (InterruptedException e) {
                             // Ignore
                         }

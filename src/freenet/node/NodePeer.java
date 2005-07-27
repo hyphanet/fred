@@ -30,6 +30,8 @@ import freenet.support.math.TimeDecayingRunningAverage;
  */
 public class NodePeer implements PeerContext {
     
+    static boolean disableProbabilisticHTLs = false;
+    
     /**
      * Tracks which packet numbers we have received.
      * Implemented as a sorted list since this is simplest and
@@ -230,9 +232,11 @@ public class NodePeer implements PeerContext {
         outgoingPacketNumber = node.random.nextInt(100000);
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
         // 10 extra hops on average at the start (for cover)
-        decrementAtMax = node.random.nextDouble() <= 0.1;
+        decrementAtMax =
+            disableProbabilisticHTLs ? true : node.random.nextDouble() <= 0.1;
         // 5 extra hops on average at the end (to prevent probing and similar attacks)
-        decrementAtMin = node.random.nextDouble() <= 0.25;
+        decrementAtMin =
+            disableProbabilisticHTLs ? true : node.random.nextDouble() <= 0.25;
     }
     
     /**
@@ -280,9 +284,11 @@ public class NodePeer implements PeerContext {
         outgoingPacketNumber = node.random.nextInt(100000);
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
         // 10 extra hops on average at the start (for cover)
-        decrementAtMax = node.random.nextDouble() <= 0.1;
+        decrementAtMax =
+            disableProbabilisticHTLs ? true : node.random.nextDouble() <= 0.1;
         // 5 extra hops on average at the end (to prevent probing and similar attacks)
-        decrementAtMin = node.random.nextDouble() <= 0.25;
+        decrementAtMin =
+            disableProbabilisticHTLs ? true : node.random.nextDouble() <= 0.25;
     }
 
     public String toString() {
@@ -392,7 +398,11 @@ public class NodePeer implements PeerContext {
     public void resendPacket(int packetNumber) {
         Integer i = new Integer(packetNumber);
         if(!sentPacketsBySequenceNumber.containsKey(i)) {
-            Logger.error(this, "Cannot resend packet "+packetNumber+" on "+this);
+            int outgoing = getLastOutgoingSeqNumber();
+            if(outgoing - packetNumber < 16) // FIXME calculate from rate of sending packets
+                Logger.minor(this, "Cannot resend packet "+packetNumber+" on "+this);
+            else
+                Logger.error(this, "Cannot resend packet "+packetNumber+" on "+this);
             return;
         }
         byte[] payload = (byte[])sentPacketsBySequenceNumber.get(i);
@@ -830,6 +840,7 @@ public class NodePeer implements PeerContext {
      */
     public synchronized int allocateOutgoingPacketNumber() {
         int thisPacketNumber = outgoingPacketNumber++;
+        Logger.minor(this, "Allocated "+thisPacketNumber);
         	
         if(lowestSequenceNumberStillCached > 0 && 
                 thisPacketNumber - lowestSequenceNumberStillCached >= 256) {
@@ -875,13 +886,17 @@ public class NodePeer implements PeerContext {
         int x = 0;
         long now = System.currentTimeMillis();
         checkLists();
+        LinkedList stuffAtEnd = new LinkedList();
         for(Iterator i=resendRequestQueue.iterator();i.hasNext();) {
             QueuedResendRequest qa = (QueuedResendRequest) (i.next());
             if(qa.activeTime > now) continue;
             int packetNumber = qa.packetNumber;
             temp[x++] = packetNumber;
             qa.sent();
+            i.remove();
+            stuffAtEnd.addLast(qa);
         }
+        resendRequestQueue.addAll(stuffAtEnd);
         checkLists();
         int[] reqs = new int[x];
         System.arraycopy(temp, 0, reqs, 0, x);
@@ -901,13 +916,17 @@ public class NodePeer implements PeerContext {
         long now = System.currentTimeMillis();
         Logger.minor(this, "Grabbing ackRequests");
         checkLists();
-        for(Iterator i=ackRequestQueue.iterator();i.hasNext();) {
+        LinkedList stuffAtEnd = new LinkedList();
+        for(ListIterator i=ackRequestQueue.listIterator();i.hasNext();) {
             QueuedAckRequest qa = (QueuedAckRequest) (i.next());
             if(qa.activeTime > now) continue;
             int packetNumber = qa.packetNumber;
             temp[x++] = packetNumber;
             qa.sent();
+            i.remove();
+            stuffAtEnd.addLast(qa);
         }
+        ackRequestQueue.addAll(stuffAtEnd);
         checkLists();
         int[] reqs = new int[x];
         System.arraycopy(temp, 0, reqs, 0, x);

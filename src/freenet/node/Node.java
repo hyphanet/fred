@@ -67,7 +67,7 @@ public class Node implements SimpleClient {
     final FNPPacketMangler packetMangler;
     final PacketSender ps;
     final NodeDispatcher dispatcher;
-    static final short MAX_HTL = 20;
+    static short MAX_HTL = 20;
     private static final int EXIT_STORE_FILE_NOT_FOUND = 1;
     private static final int EXIT_STORE_IOEXCEPTION = 2;
     private static final int EXIT_STORE_OTHER = 3;

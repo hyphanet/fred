@@ -125,11 +125,13 @@ public class NodeDispatcher implements Dispatcher {
             Logger.error(this, "Unrecognized FNPRoutedRejected");
             return false; // locally originated??
         }
-        short htl = (short)(rc.lastHtl-1);
+        short htl = rc.lastHtl;
+        if(rc.source != null)
+            htl = rc.source.decrementHTL(htl);
         short ohtl = m.getShort(DMT.HTL);
         if(ohtl < htl) htl = ohtl;
         // Try routing to the next node
-        forward(rc.msg, id, rc.source, ohtl, rc.msg.getDouble(DMT.TARGET_LOCATION), rc);
+        forward(rc.msg, id, rc.source, htl, rc.msg.getDouble(DMT.TARGET_LOCATION), rc);
         return true;
     }
 
@@ -146,7 +148,9 @@ public class NodeDispatcher implements Dispatcher {
         }
         long id = m.getLong(DMT.UID);
         Long lid = new Long(id);
+        NodePeer pn = (NodePeer) (m.getSource());
         short htl = m.getShort(DMT.HTL);
+        if(pn != null) htl = pn.decrementHTL(htl);
         RoutedContext ctx;
         ctx = (RoutedContext)routedContexts.get(lid);
         if(ctx != null) {
@@ -155,9 +159,6 @@ public class NodeDispatcher implements Dispatcher {
         }
         ctx = new RoutedContext(m);
         routedContexts.put(lid, ctx);
-        NodePeer pn = (NodePeer) (m.getSource());
-        if(pn != null)
-            htl = pn.decrementHTL(htl);
         // pn == null => originated locally, keep full htl
         double target = m.getDouble(DMT.TARGET_LOCATION);
         Logger.minor(this, "id "+id+" from "+pn+" htl "+htl+" target "+target);
