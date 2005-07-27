@@ -5,6 +5,8 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import freenet.io.WritableToDataOutputStream;
 import freenet.support.Base64;
@@ -19,12 +21,14 @@ import freenet.support.Fields;
 public class NodeCHK extends Key implements WritableToDataOutputStream {
 
     final int hash;
+    double cachedNormalizedDouble;
     
     public NodeCHK(byte[] routingKey2) {
         routingKey = routingKey2;
         if(routingKey2.length != KEY_LENGTH)
             throw new IllegalArgumentException("Wrong length: "+routingKey2.length+" should be "+KEY_LENGTH);
         hash = Fields.hashCode(routingKey);
+        cachedNormalizedDouble = -1;
     }
 
     static final int KEY_LENGTH = 20;
@@ -61,5 +65,29 @@ public class NodeCHK extends Key implements WritableToDataOutputStream {
             return java.util.Arrays.equals(chk.routingKey, routingKey);
         }
         return false;
+    }
+
+    /**
+     * @return The key, hashed, converted to a double in the range
+     * 0.0 to 1.0.
+     */
+    public synchronized double toNormalizedDouble() {
+        if(cachedNormalizedDouble > 0) return cachedNormalizedDouble;
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e);
+        }
+        md.update(routingKey);
+        md.update((byte)(TYPE >> 8));
+        md.update((byte)TYPE);
+        byte[] digest = md.digest();
+        long asLong = Math.abs(Fields.bytesToLong(digest));
+        // Math.abs can actually return negative...
+        if(asLong == Long.MIN_VALUE)
+            asLong = Long.MAX_VALUE;
+        cachedNormalizedDouble = ((double)asLong)/((double)Long.MAX_VALUE);
+        return cachedNormalizedDouble;
     }
 }

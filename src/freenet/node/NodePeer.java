@@ -679,6 +679,7 @@ public class NodePeer implements PeerContext {
         QueuedAckRequest qa = new QueuedAckRequest(seqNumber, sendSoon);
         // Add to queue in the right place
         
+        checkLists();
         if(ackRequestQueue.isEmpty())
             ackRequestQueue.addLast(qa);
         else {
@@ -690,17 +691,53 @@ public class NodePeer implements PeerContext {
                     throw new IllegalStateException("Inconsistent ackRequestQueue: urgentTime increasing! on "+this);
                 lastUrgentTime = thisUrgentTime;
                 if(thisUrgentTime < qa.urgentTime) {
+                    i.next();
                     i.add(qa);
+                    checkLists();
                     return;
                 }
             }
             ackRequestQueue.addFirst(qa);
         }
+        checkLists();
         // We do not need to notify the subthread as it will never
         // sleep for more than 200ms, so it will pick up on the
         // need to send something then.
     }
     
+    private synchronized void checkLists() {
+        checkAckRequests();
+        checkResendRequests();
+    }
+    
+    private synchronized void checkAckRequests() {
+        QueuedAckRequest prev = null;
+        Logger.minor(this, "checkAckRequests");
+        for(Iterator i = ackRequestQueue.listIterator();i.hasNext();) {
+            QueuedAckRequest qa = (QueuedAckRequest) (i.next());
+            Logger.minor(this, ""+qa.packetNumber+": active="+qa.activeTime+", urgent="+qa.urgentTime);
+            if(prev != null) {
+                if(qa.urgentTime < prev.urgentTime) {
+                    Logger.error(this, "Inconsistent ackRequest queue: Prev: "+prev.urgentTime+", next: "+qa.urgentTime);
+                }
+            }
+            prev = qa;
+        }
+    }
+    
+    private synchronized void checkResendRequests() {
+        QueuedResendRequest prev = null;
+        for(Iterator i = resendRequestQueue.listIterator();i.hasNext();) {
+            QueuedResendRequest qa = (QueuedResendRequest) (i.next());
+            if(prev != null) {
+                if(qa.urgentTime < prev.urgentTime) {
+                    Logger.error(this, "Inconsistent resendRequest queue: Prev: "+prev.urgentTime+", next: "+qa.urgentTime);
+                }
+            }
+            prev = qa;
+        }
+    }
+
     private synchronized void removeAckRequest(int seqNumber) {
         for(ListIterator i=ackRequestQueue.listIterator();i.hasNext();) {
             QueuedAckRequest q = (QueuedAckRequest) (i.next());
@@ -837,6 +874,7 @@ public class NodePeer implements PeerContext {
         int[] temp = new int[resendRequestQueue.size()];
         int x = 0;
         long now = System.currentTimeMillis();
+        checkLists();
         for(Iterator i=resendRequestQueue.iterator();i.hasNext();) {
             QueuedResendRequest qa = (QueuedResendRequest) (i.next());
             if(qa.activeTime > now) continue;
@@ -844,6 +882,7 @@ public class NodePeer implements PeerContext {
             temp[x++] = packetNumber;
             qa.sent();
         }
+        checkLists();
         int[] reqs = new int[x];
         System.arraycopy(temp, 0, reqs, 0, x);
         return reqs;
@@ -855,11 +894,13 @@ public class NodePeer implements PeerContext {
      * update their active and urgent times.
      * @return
      */
-    public int[] grabAckRequests() {
+    public synchronized int[] grabAckRequests() {
         // Only return them if they are urgent
         int[] temp = new int[ackRequestQueue.size()];
         int x = 0;
         long now = System.currentTimeMillis();
+        Logger.minor(this, "Grabbing ackRequests");
+        checkLists();
         for(Iterator i=ackRequestQueue.iterator();i.hasNext();) {
             QueuedAckRequest qa = (QueuedAckRequest) (i.next());
             if(qa.activeTime > now) continue;
@@ -867,6 +908,7 @@ public class NodePeer implements PeerContext {
             temp[x++] = packetNumber;
             qa.sent();
         }
+        checkLists();
         int[] reqs = new int[x];
         System.arraycopy(temp, 0, reqs, 0, x);
         return reqs;
@@ -1011,5 +1053,12 @@ public class NodePeer implements PeerContext {
      */
     public boolean alreadyReceived(int seqNumber) {
         return packetsReceived.contains(seqNumber);
+    }
+
+    /**
+     * Blocking send of a message.
+     */
+    public void send(Message m) {
+        node.usm.send(this, m);
     }
 }

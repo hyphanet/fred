@@ -492,11 +492,11 @@ public class DMT {
     // FNP messages
     public static MessageType FNPDataRequest = new MessageType("FNPDataRequest") {{
         addField(UID, Long.class);
-        addField(HTL, Integer.class);
+        addField(HTL, Short.class);
         addField(FREENET_ROUTING_KEY, NodeCHK.class);
     }};
     
-    public static Message createFNPDataRequest(long id, int htl, NodeCHK key) {
+    public static Message createFNPDataRequest(long id, short htl, NodeCHK key) {
         Message msg = new Message(FNPDataRequest);
         msg.set(UID, id);
         msg.set(HTL, htl);
@@ -504,6 +504,7 @@ public class DMT {
         return msg;
     }
     
+    // Hit our tail, try a different node.
     public static MessageType FNPRejectLoop = new MessageType("FNPRejectLoop") {{
         addField(UID, Long.class);
     }};
@@ -514,6 +515,8 @@ public class DMT {
         return msg;
     }
     
+    // Too many requests for present capacity. Fail, propagate back
+    // to source, and reduce send rate.
     public static MessageType FNPRejectOverload = new MessageType("FNPRejectOverload") {{
         addField(UID, Long.class);
     }};
@@ -521,6 +524,48 @@ public class DMT {
     public static Message createFNPRejectOverload(long id) {
         Message msg = new Message(FNPRejectOverload);
         msg.set(UID, id);
+        return msg;
+    }
+
+    public static MessageType FNPAccepted = new MessageType("FNPAccepted") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createFNPAccepted(long id) {
+        Message msg = new Message(FNPAccepted);
+        msg.set(UID, id);
+        return msg;
+    }
+    
+    public static MessageType FNPDataNotFound = new MessageType("FNPDataNotFound") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createFNPDataNotFound(long id) {
+        Message msg = new Message(FNPDataNotFound);
+        msg.set(UID, id);
+        return msg;
+    }
+    
+    public static MessageType FNPDataFound = new MessageType("FNPDataFound") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createFNPDataFound(long id) {
+        Message msg = new Message(FNPDataFound);
+        msg.set(UID, id);
+        return msg;
+    }
+    
+    public static MessageType FNPRouteNotFound = new MessageType("FNPRouteNotFound") {{
+        addField(UID, Long.class);
+        addField(HTL, Short.class);
+    }};
+    
+    public static Message createFNPRouteNotFound(long id, short htl) {
+        Message msg = new Message(FNPRouteNotFound);
+        msg.set(UID, id);
+        msg.set(HTL, htl);
         return msg;
     }
     
@@ -617,36 +662,36 @@ public class DMT {
     public static MessageType FNPRoutedPing = new MessageType("FNPRoutedPing") {{
         addRoutedToNodeMessageFields();
         addField(COUNTER, Integer.class);
-        addField(RETURN_LOCATION, Double.class);
     }};
     
-    public static Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter, double returnLocation) {
+    public static Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter) {
         Message msg = new Message(FNPRoutedPing);
         msg.setRoutedToNodeFields(uid, targetLocation, htl);
         msg.set(COUNTER, counter);
-        msg.set(RETURN_LOCATION, returnLocation);
         return msg;
     }
     
     public static MessageType FNPRoutedPong = new MessageType("FNPRoutedPong") {{
-        addRoutedToNodeMessageFields();
+        addField(UID, Long.class);
         addField(COUNTER, Integer.class);
     }};
 
-    public static Message createFNPRoutedPong(long uid, double targetLocation, short htl, int counter) {
+    public static Message createFNPRoutedPong(long uid, int counter) {
         Message msg = new Message(FNPRoutedPong);
-        msg.setRoutedToNodeFields(uid, targetLocation, htl);
+        msg.set(UID, uid);
         msg.set(COUNTER, counter);
         return msg;
     }
     
     public static MessageType FNPRoutedRejected = new MessageType("FNPRoutedRejected") {{
         addField(UID, Long.class);
+        addField(HTL, Short.class);
     }};
 
-    public static Message createFNPRoutedRejected(long uid) {
+    public static Message createFNPRoutedRejected(long uid, short htl) {
         Message msg = new Message(FNPRoutedRejected);
         msg.set(UID, uid);
+        msg.set(HTL, htl);
         return msg;
     }
     

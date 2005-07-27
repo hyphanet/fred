@@ -64,14 +64,30 @@ public class NodeDispatcher implements Dispatcher {
         if(m.getSpec() == DMT.FNPSwapComplete) {
             return node.lm.handleSwapComplete(m);
         }
-        if(m.getSpec() == DMT.FNPRoutedPing ||
-                m.getSpec() == DMT.FNPRoutedPong) {
+        if(m.getSpec() == DMT.FNPRoutedPing) {
             return handleRouted(m);
+        }
+        if(m.getSpec() == DMT.FNPRoutedPong) {
+            return handleRoutedReply(m);
         }
         if(m.getSpec() == DMT.FNPRoutedRejected) {
             return handleRoutedRejected(m);
         }
+        if(m.getSpec() == DMT.FNPDataRequest) {
+            return handleDataRequest(m);
+        }
         return false;
+    }
+
+    /**
+     * Handle an incoming FNPDataRequest.
+     */
+    private boolean handleDataRequest(Message m) {
+        RequestHandler rh = new RequestHandler(m, node);
+        Thread t = new Thread(rh);
+        t.setDaemon(true);
+        t.start();
+        return true;
     }
 
     final Hashtable routedContexts = new Hashtable();
@@ -82,12 +98,14 @@ public class NodeDispatcher implements Dispatcher {
         NodePeer source;
         HashSet routedTo;
         Message msg;
+        short lastHtl;
         
         RoutedContext(Message msg) {
             createdTime = accessTime = System.currentTimeMillis();
             source = (NodePeer)msg.getSource();
             routedTo = new HashSet();
             this.msg = msg;
+            lastHtl = msg.getShort(DMT.HTL);
         }
         
         void addSent(NodePeer n) {
@@ -107,8 +125,11 @@ public class NodeDispatcher implements Dispatcher {
             Logger.error(this, "Unrecognized FNPRoutedRejected");
             return false; // locally originated??
         }
+        short htl = (short)(rc.lastHtl-1);
+        short ohtl = m.getShort(DMT.HTL);
+        if(ohtl < htl) htl = ohtl;
         // Try routing to the next node
-        forward(rc.msg, id, rc.source, rc.msg.getShort(DMT.HTL), rc.msg.getDouble(DMT.TARGET_LOCATION), rc);
+        forward(rc.msg, id, rc.source, ohtl, rc.msg.getDouble(DMT.TARGET_LOCATION), rc);
         return true;
     }
 
@@ -125,10 +146,16 @@ public class NodeDispatcher implements Dispatcher {
         }
         long id = m.getLong(DMT.UID);
         Long lid = new Long(id);
-        RoutedContext ctx = new RoutedContext(m);
+        short htl = m.getShort(DMT.HTL);
+        RoutedContext ctx;
+        ctx = (RoutedContext)routedContexts.get(lid);
+        if(ctx != null) {
+            ((NodePeer)m.getSource()).sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)));
+            return true;
+        }
+        ctx = new RoutedContext(m);
         routedContexts.put(lid, ctx);
         NodePeer pn = (NodePeer) (m.getSource());
-        short htl = m.getShort(DMT.HTL);
         if(pn != null)
             htl = pn.decrementHTL(htl);
         // pn == null => originated locally, keep full htl
@@ -138,10 +165,10 @@ public class NodeDispatcher implements Dispatcher {
             Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.portNumber);
             // Handle locally
             // Message type specific processing
-            dispatchRoutedMessage(m, id);
+            dispatchRoutedMessage(m, pn, id);
             return true;
         } else if(htl == 0) {
-            Message reject = DMT.createFNPRoutedRejected(id);
+            Message reject = DMT.createFNPRoutedRejected(id, (short)0);
             if(pn != null)
                 pn.sendAsync(reject);
             return true;
@@ -150,11 +177,26 @@ public class NodeDispatcher implements Dispatcher {
         }
     }
 
+    boolean handleRoutedReply(Message m) {
+        long id = m.getLong(DMT.UID);
+        Logger.minor(this, "Got reply: "+m);
+        Long lid = new Long(id);
+        RoutedContext ctx = (RoutedContext) routedContexts.get(lid);
+        if(ctx == null) {
+            Logger.error(this, "Unrecognized routed reply: "+m);
+            return false;
+        }
+        NodePeer pn = ctx.source;
+        if(pn == null) return false;
+        pn.sendAsync(m);
+        return true;
+    }
+    
     private boolean forward(Message m, long id, NodePeer pn, short htl, double target, RoutedContext ctx) {
         Logger.minor(this, "Should forward");
         // Forward
         m = preForward(m, htl);
-        NodePeer next = node.peers.closerPeer(pn, ctx.routedTo, target);
+        NodePeer next = node.peers.closerPeer(pn, ctx.routedTo, target, pn == null);
         Logger.minor(this, "Next: "+next+" message: "+m);
         if(next != null) {
             Logger.minor(this, "Forwarding "+m.getSpec()+" to "+next.getPeer().getPort());
@@ -163,7 +205,7 @@ public class NodeDispatcher implements Dispatcher {
         } else {
             Logger.minor(this, "Reached dead end for "+m.getSpec()+" on "+node.portNumber);
             // Reached a dead end...
-            Message reject = DMT.createFNPRoutedRejected(id);
+            Message reject = DMT.createFNPRoutedRejected(id, htl);
             if(pn != null)
                 pn.sendAsync(reject);
         }
@@ -189,13 +231,12 @@ public class NodeDispatcher implements Dispatcher {
      * @param m
      * @return
      */
-    private boolean dispatchRoutedMessage(Message m, long id) {
+    private boolean dispatchRoutedMessage(Message m, NodePeer src, long id) {
         if(m.getSpec() == DMT.FNPRoutedPing) {
             Logger.minor(this, "RoutedPing reached other side!");
             int x = m.getInt(DMT.COUNTER);
-            double returnLoc = m.getDouble(DMT.RETURN_LOCATION);
-            Message reply = DMT.createFNPRoutedPong(id, returnLoc, Node.MAX_HTL, x);
-            handleRouted(reply);
+            Message reply = DMT.createFNPRoutedPong(id, x);
+            src.sendAsync(reply);
             return true;
         }
         return false;

@@ -19,6 +19,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
@@ -28,8 +29,10 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
+import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.NodeCHK;
 import freenet.store.BaseFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.HexUtil;
@@ -41,9 +44,20 @@ import freenet.support.SimpleFieldSet;
  */
 public class Node implements SimpleClient {
     
+    public static final int PACKETS_IN_BLOCK = 32;
+    public static final int PACKET_SIZE = 1024;
+    
     // FIXME: abstract out address stuff? Possibly to something like NodeReference?
     final int portNumber;
-    final FreenetStore datastore;
+    
+    /** These 3 are private because must be protected by synchronized(this) */
+    /** The datastore */
+    private final FreenetStore datastore;
+    /** RequestSender's currently running, by KeyHTLPair */
+    private final HashMap requestSenders;
+    /** RequestSender's currently transferring, by key */
+    private final HashMap transferringRequestSenders;
+    
     byte[] myIdentity; // FIXME: simple identity block; should be unique
     byte[] identityHash;
     final LocationManager lm;
@@ -59,7 +73,7 @@ public class Node implements SimpleClient {
     private static final int EXIT_STORE_OTHER = 3;
     private static final int EXIT_USM_DIED = 4;
     public static final int EXIT_YARROW_INIT_FAILED = 5;
-
+    
     /**
      * Read all storable settings (identity etc) from the node file.
      * @param filename The name of the file to read from.
@@ -164,6 +178,8 @@ public class Node implements SimpleClient {
             throw new Error();
         }
         random = rand;
+        requestSenders = new HashMap();
+        transferringRequestSenders = new HashMap();
 
 		lm = new LocationManager(random);
 
@@ -246,22 +262,120 @@ public class Node implements SimpleClient {
     public int routedPing(double loc2) {
         long uid = random.nextLong();
         int initialX = random.nextInt();
-        NodePeer pn = peers.closestPeer(loc2);
-        if(pn == null) {
-            Logger.error(this, "Nowhere to send routed ping on "+this);
-            return -1;
-        }
-        Logger.normal(this, "Ping to "+loc2+": "+portNumber+" -> "+pn.getPeer().getPort());
-        Message m = DMT.createFNPRoutedPing(uid, loc2, MAX_HTL, initialX, lm.getLocation().getValue());
+        Message m = DMT.createFNPRoutedPing(uid, loc2, MAX_HTL, initialX);
         Logger.normal(this, "Message: "+m);
         
         dispatcher.handleRouted(m);
         // FIXME: might be rejected
         MessageFilter mf1 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedPong).setTimeout(5000);
-        MessageFilter mf2 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedRejected).setTimeout(5000);
-        m = usm.waitFor(mf1.or(mf2));
+        //MessageFilter mf2 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedRejected).setTimeout(5000);
+        // Ignore Rejected - let it be retried on other peers
+        m = usm.waitFor(mf1/*.or(mf2)*/);
         if(m == null) return -1;
         if(m.getSpec() == DMT.FNPRoutedRejected) return -1;
         return m.getInt(DMT.COUNTER) - initialX;
+    }
+
+    /**
+     * Check the datastore, then if the key is not in the store,
+     * check whether another node is requesting the same key at
+     * the same HTL, and if all else fails, create a new 
+     * RequestSender for the key/htl.
+     * @return A CHKBlock if the data is in the store, otherwise
+     * a RequestSender, unless the HTL is 0, in which case NULL.
+     * RequestSender.
+     */
+    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, NodePeer source) {
+        // In store?
+        CHKBlock chk = null;
+        try {
+            chk = datastore.fetch(key);
+        } catch (IOException e) {
+            Logger.error(this, "Error accessing store: "+e, e);
+        }
+        if(chk != null) return null;
+        
+        // Transfer coalescing - match key only as HTL irrelevant
+        RequestSender sender = (RequestSender) transferringRequestSenders.get(key);
+        if(sender != null) return sender;
+
+        // HTL == 0 => Don't search further
+        if(htl == 0) return null;
+        
+        // Request coalescing
+        KeyHTLPair kh = new KeyHTLPair(key, htl);
+        sender = (RequestSender) requestSenders.get(kh);
+        if(sender != null) return sender;
+        
+        RequestSender rs = new RequestSender(key, htl, uid, this, source);
+        requestSenders.put(kh, rs);
+        return rs;
+    }
+    
+    class KeyHTLPair {
+        final NodeCHK key;
+        final short htl;
+        KeyHTLPair(NodeCHK key, short htl) {
+            this.key = key;
+            this.htl = htl;
+        }
+        
+        public boolean equals(Object o) {
+            if(o instanceof KeyHTLPair) {
+                KeyHTLPair p = (KeyHTLPair) o;
+                return (p.key == key && p.htl == htl);
+            } else return false;
+        }
+        
+        public int hashCode() {
+            return key.hashCode() ^ htl;
+        }
+    }
+
+    /**
+     * Add a RequestSender to our HashSet.
+     */
+    public synchronized void addSender(NodeCHK key, short htl, RequestSender sender) {
+        KeyHTLPair kh = new KeyHTLPair(key, htl);
+        requestSenders.put(kh, sender);
+    }
+
+    /**
+     * Add a transferring RequestSender.
+     */
+    public synchronized void addTransferringSender(NodeCHK key, RequestSender sender) {
+        transferringRequestSenders.put(key, sender);
+    }
+
+    /**
+     * Store a datum.
+     */
+    public synchronized void store(CHKBlock block) {
+        try {
+            datastore.put(block);
+        } catch (IOException e) {
+            Logger.error(this, "Cannot store data: "+e, e);
+        }
+    }
+
+    /**
+     * Remove a sender from the set of currently transferring senders.
+     */
+    public synchronized void removeTransferringSender(NodeCHK key, RequestSender sender) {
+        RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
+        if(rs != sender) {
+            Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+" in removeTransferringSender");
+        }
+    }
+
+    /**
+     * Remove a RequestSender from the map.
+     */
+    public synchronized void removeSender(NodeCHK key, short htl, RequestSender sender) {
+        KeyHTLPair kh = new KeyHTLPair(key, htl);
+        RequestSender rs = (RequestSender) requestSenders.remove(kh);
+        if(rs != sender) {
+            Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+","+htl+" in removeSender");
+        }
     }
 }

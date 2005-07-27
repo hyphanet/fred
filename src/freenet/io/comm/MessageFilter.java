@@ -31,13 +31,13 @@ import freenet.support.Logger;
  */
 public class MessageFilter {
 
-    public static final String VERSION = "$Id: MessageFilter.java,v 1.3 2005/03/09 20:12:44 amphibian Exp $";
+    public static final String VERSION = "$Id: MessageFilter.java,v 1.4 2005/07/27 18:02:04 amphibian Exp $";
 
     private static final int DEFAULT_TIMEOUT = 10000;
     private boolean _matched = false;
 	private MessageType _type;
     private HashMap _fields = new HashMap();
-    private Peer _source;
+    private PeerContext _source;
     private long _timeout;
     private int _initialTimeout;
     private MessageFilter _or = null;
@@ -69,7 +69,7 @@ public class MessageFilter {
 		return this;
 	}
 
-	public MessageFilter setSource(Peer source) {
+	public MessageFilter setSource(PeerContext source) {
 		_source = source;
 		return this;
 	}

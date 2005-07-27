@@ -4,6 +4,9 @@ import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
+import freenet.support.math.RunningAverage;
+import freenet.support.math.SimpleRunningAverage;
 
 /**
  * @author amphibian
@@ -14,7 +17,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 200;
+    static final int NUMBER_OF_NODES = 25;
     
     public static void main(String[] args) throws FSParseException, PeerParseException {
         Logger.setupStdoutLogging(Logger.MINOR, "freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug");
@@ -68,6 +71,8 @@ public class RealNodeRoutingTest {
         int lastNoSwaps = 0;
         int failures = 0;
         int successes = 0;
+        RunningAverage avg = new SimpleRunningAverage(100, 0.0);
+        RunningAverage avg2 = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 100);
         while(true) {
             cycleNumber++;
             try {
@@ -104,12 +109,16 @@ public class RealNodeRoutingTest {
                 int hopsTaken = randomNode.routedPing(loc2);
                 if(hopsTaken < 0) {
                     failures++;
+                    avg.report(0.0);
+                    avg2.report(0.0);
                     double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping FAILED from "+randomNode.portNumber+" to "+randomNode2.portNumber+" ("+ratio+")");
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping FAILED from "+randomNode.portNumber+" to "+randomNode2.portNumber+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+")");
                 } else {
                     successes++;
+                    avg.report(1.0);
+                    avg2.report(1.0);
                     double ratio = (double)successes / ((double)(failures+successes));
-                    Logger.normal(RealNodeRoutingTest.class, "Routed ping success: "+hopsTaken+" "+randomNode.portNumber+" to "+randomNode2.portNumber+" ("+ratio+")");
+                    Logger.normal(RealNodeRoutingTest.class, "Routed ping success: "+hopsTaken+" "+randomNode.portNumber+" to "+randomNode2.portNumber+" (long:"+ratio+", short:"+avg.currentValue()+", vague:"+avg2.currentValue()+")");
                 }
                 } catch (Throwable t) {
                     Logger.error(RealNodeRoutingTest.class, "Caught "+t, t);

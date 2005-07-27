@@ -222,19 +222,21 @@ public class PeerManager {
 
     /**
      * Find the peer, if any, which is closer to the target location
-     * than we are, and than the provided nodes is.
+     * than we are, and is not included in the provided set.
      */
-    public NodePeer closerPeer(NodePeer pn, HashSet routedTo, double loc) {
+    public NodePeer closerPeer(NodePeer pn, HashSet routedTo, double loc, boolean ignoreSelf) {
         NodePeer[] peers = connectedPeers;
         double bestDiff = 1.0;
-        double minDiff = distance(node.lm.getLocation().getValue(), loc);
+        double minDiff = 0.0;
+        if(!ignoreSelf)
+            minDiff = distance(node.lm.getLocation().getValue(), loc);
         NodePeer best = null;
         for(int i=0;i<peers.length;i++) {
             NodePeer p = peers[i];
             if(routedTo.contains(p)) continue;
             if(p == pn) continue;
             double diff = distance(p.getLocation().getValue(), loc);
-            if(diff > minDiff) continue;
+            if((!ignoreSelf) && diff > minDiff) continue;
             if(diff < bestDiff) {
                 best = p;
                 bestDiff = diff;

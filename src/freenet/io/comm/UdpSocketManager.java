@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.10 2005/07/25 19:18:20 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.11 2005/07/27 18:02:04 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -177,6 +177,7 @@ public class UdpSocketManager extends Thread {
 						i.remove();
 						f.notify();
 					}
+					Logger.minor(this, "Matched");
 					break; // Only one match permitted per message
 				}
 			}
@@ -184,6 +185,7 @@ public class UdpSocketManager extends Thread {
 		// Feed unmatched messages to the dispatcher
 		if (!matched && (_dispatcher != null)) {
 		    try {
+		        Logger.minor(this, "Feeding to dispatcher: "+m);
 		        matched = _dispatcher.handleMessage(m);
 		    } catch (Throwable t) {
 		        Logger.error(this, "Dispatcher threw "+t, t);
@@ -280,12 +282,14 @@ public class UdpSocketManager extends Thread {
 				try {
 					// Precaution against filter getting matched between being added to _filters and
 					// here - bug discovered by Mason
-				    while(!filter.matched()) {
+				    boolean fmatched = false;
+				    while(!(fmatched = filter.matched())) {
 				        long wait = filter.getTimeout()-System.currentTimeMillis();
 				        if(wait > 0)
 				            filter.wait(wait);
 				        else break;
 					}
+				    Logger.minor(this, "Matched: "+fmatched);
 				} catch (InterruptedException e) {
 				}
 				ret = filter.getMessage();
