@@ -22,7 +22,7 @@ public class RealNodeRoutingTest {
     public static void main(String[] args) throws FSParseException, PeerParseException {
         NodePeer.disableProbabilisticHTLs = true;
         Node.MAX_HTL = 10;
-        Logger.setupStdoutLogging(Logger.MINOR, "freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug");
+        Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
         System.out.println("Routing test using real nodes:");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();

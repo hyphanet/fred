@@ -30,6 +30,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
 import freenet.keys.CHKBlock;
+import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.NodeCHK;
@@ -46,6 +47,8 @@ public class Node implements SimpleClient {
     
     public static final int PACKETS_IN_BLOCK = 32;
     public static final int PACKET_SIZE = 1024;
+    public static final double DECREMENT_AT_MIN_PROB = 0.2;
+    public static final double DECREMENT_AT_MAX_PROB = 0.1;
     
     // FIXME: abstract out address stuff? Possibly to something like NodeReference?
     final int portNumber;
@@ -210,6 +213,8 @@ public class Node implements SimpleClient {
             System.exit(EXIT_USM_DIED);
             throw new Error();
         }
+        decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
+        decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
     }
 
     void start(SwapRequestInterval interval) {
@@ -217,12 +222,29 @@ public class Node implements SimpleClient {
             lm.startSender(this, interval);
     }
     
-    /* (non-Javadoc)
-     * @see freenet.node.SimpleClient#getCHK(freenet.keys.ClientCHK)
+    /**
+     * Really trivially simple client interface.
+     * Either it succeeds or it doesn't.
      */
     public ClientCHKBlock getCHK(ClientCHK key) {
-        // TODO Auto-generated method stub
-        return null;
+        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null);
+        if(o instanceof CHKBlock) {
+            try {
+                return new ClientCHKBlock((CHKBlock)o, key);
+            } catch (CHKVerifyException e) {
+                return null;
+            }
+        }
+        if(o == null) return null;
+        RequestSender rs = (RequestSender)o;
+        rs.waitUntilFinished();
+        if(rs.getStatus() == RequestSender.SUCCESS) {
+            try {
+                return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
+            } catch (CHKVerifyException e) {
+                return null;
+            }
+        } else return null;
     }
 
     /* (non-Javadoc)
@@ -377,5 +399,30 @@ public class Node implements SimpleClient {
         if(rs != sender) {
             Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+","+htl+" in removeSender");
         }
+    }
+
+    final boolean decrementAtMax;
+    final boolean decrementAtMin;
+    
+    /**
+     * Decrement the HTL according to the policy of the given
+     * NodePeer if it is non-null, or do something else if it is
+     * null.
+     */
+    public short decrementHTL(NodePeer source, short htl) {
+        if(source != null)
+            return source.decrementHTL(htl);
+        // Otherwise...
+        if(htl >= MAX_HTL) htl = MAX_HTL;
+        if(htl <= 0) htl = 1;
+        if(htl == MAX_HTL) {
+            if(decrementAtMax) htl--;
+            return htl;
+        }
+        if(htl == 1) {
+            if(decrementAtMin) htl--;
+            return htl;
+        }
+        return --htl;
     }
 }

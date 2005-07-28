@@ -110,8 +110,8 @@ public class FNPPacketMangler implements LowLevelFilter {
          */
         BlockCipher sessionCipher = pn.getSessionCipher();
         int blockSize = sessionCipher.getBlockSize() >> 3;
-        if(sessionCipher.getKeySize() != sessionCipher.getBlockSize()*2)
-            throw new IllegalStateException("Block size must be half key size");
+        if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
+            throw new IllegalStateException("Block size must be equal to key size");
         
         MessageDigest md;
         try {
@@ -122,8 +122,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         int digestLength = md.getDigestLength();
         
-        if(digestLength != 2*blockSize)
-            throw new IllegalStateException("Block size must be half digest length!");
+        if(digestLength != blockSize)
+            throw new IllegalStateException("Block size must be digest length!");
 
         byte[] packetHash = new byte[digestLength];
         System.arraycopy(buf, offset, packetHash, 0, digestLength);
@@ -177,22 +177,10 @@ public class FNPPacketMangler implements LowLevelFilter {
 
         // Now decrypt the original hash
         
-        // First block
         byte[] temp = new byte[blockSize];
         System.arraycopy(buf, offset, temp, 0, blockSize);
         sessionCipher.decipher(temp, temp);
         System.arraycopy(temp, 0, packetHash, 0, blockSize);
-        
-        // Second block
-        System.arraycopy(buf, offset+blockSize, temp, 0, blockSize);
-        // Un-PCBC
-        for(int i=0;i<blockSize;i++) {
-            temp[i] ^= (buf[offset+i] ^ packetHash[i]);
-        }
-        //Logger.minor(this, "Encrypted second block of hash: "+HexUtil.bytesToHex(temp));
-        sessionCipher.decipher(temp, temp);
-        //Logger.minor(this, "Decrypted second block of hash: "+HexUtil.bytesToHex(temp));
-        System.arraycopy(temp, 0, packetHash, blockSize, blockSize);
         
         // Check the hash
         if(!java.util.Arrays.equals(packetHash, realHash)) {
@@ -552,7 +540,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     private void processOutgoingFullyFormatted(byte[] plaintext, NodePeer pn) {
         BlockCipher sessionCipher = pn.getSessionCipher();
         int blockSize = sessionCipher.getBlockSize() >> 3;
-        if(sessionCipher.getKeySize() != sessionCipher.getBlockSize()*2)
+        if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
             throw new IllegalStateException("Block size must be half key size: blockSize="+
                     sessionCipher.getBlockSize()+", keySize="+sessionCipher.getKeySize());
         
@@ -565,8 +553,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         int digestLength = md.getDigestLength();
         
-        if(digestLength != 2*blockSize)
-            throw new IllegalStateException("Block size must be half digest length!");
+        if(digestLength != blockSize)
+            throw new IllegalStateException("Block size must be digest length!");
         
         byte[] output = new byte[plaintext.length + digestLength];
         System.arraycopy(plaintext, 0, output, digestLength, plaintext.length);
@@ -584,25 +572,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         // Put plaintext in output
         System.arraycopy(digestTemp, 0, output, 0, digestLength);
         
-        byte[] temp = new byte[blockSize];
+        sessionCipher.encipher(digestTemp, digestTemp);
         
-        System.arraycopy(digestTemp, 0, temp, 0, blockSize);
-        sessionCipher.encipher(temp, temp);
-        System.arraycopy(temp, 0, digestTemp, 0, blockSize);
-        System.arraycopy(digestTemp, blockSize, temp, 0, blockSize);
-        sessionCipher.encipher(temp, temp);
-        System.arraycopy(temp, 0, digestTemp, blockSize, blockSize);
-        
-        //Logger.minor(this, "\nPre-CBC:   "+HexUtil.bytesToHex(digestTemp));
-        
-        // The first block is exactly as it should be
-        // The second block gets XORed with the ciphertext and
-        // the plaintext
-        
-        for(int i=0;i<blockSize;i++)
-            digestTemp[blockSize+i] ^=
-                (output[i] /* plaintext */ ^ digestTemp[i] /* ciphetext */);
-
         // Now copy it back
         System.arraycopy(digestTemp, 0, output, 0, digestLength);
         // Yay, we have an encrypted hash

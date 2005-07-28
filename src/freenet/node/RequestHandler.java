@@ -65,7 +65,7 @@ public class RequestHandler implements Runnable {
         	    return;
             }
             
-            int status = rs.status;
+            int status = rs.getStatus();
             
             switch(status) {
             	case RequestSender.NOT_FINISHED:
@@ -81,7 +81,7 @@ public class RequestHandler implements Runnable {
             		return;
             	case RequestSender.ROUTE_NOT_FOUND:
             	    // Tell source
-            	    Message rnf = DMT.createFNPRouteNotFound(uid, rs.htl);
+            	    Message rnf = DMT.createFNPRouteNotFound(uid, rs.getHTL());
             		source.sendAsync(rnf);
             		return;
             	case RequestSender.SUCCESS:

@@ -167,10 +167,10 @@ class LocationManager {
             
             Message m = DMT.createFNPSwapReply(uid, myHash);
             
-            node.usm.send(pn, m);
-            
             MessageFilter filter =
-                MessageFilter.create().setType(DMT.FNPSwapCommit).setField(DMT.UID, uid).setTimeout(TIMEOUT);
+                MessageFilter.create().setType(DMT.FNPSwapCommit).setField(DMT.UID, uid).setTimeout(TIMEOUT).setSource(pn);
+            
+            node.usm.send(pn, m);
             
             Message commit = node.usm.waitFor(filter);
             
@@ -292,9 +292,9 @@ class LocationManager {
                 Logger.minor(this, "Sending SwapRequest "+uid+" to "+pn);
                 
                 MessageFilter filter1 =
-                    MessageFilter.create().setType(DMT.FNPSwapRejected).setField(DMT.UID, uid);
+                    MessageFilter.create().setType(DMT.FNPSwapRejected).setField(DMT.UID, uid).setSource(pn);
                 MessageFilter filter2 =
-                    MessageFilter.create().setType(DMT.FNPSwapReply).setField(DMT.UID, uid);
+                    MessageFilter.create().setType(DMT.FNPSwapReply).setField(DMT.UID, uid).setSource(pn);
                 MessageFilter filter = filter1.or(filter2);
                 // 60 seconds
                 filter.setTimeout(TIMEOUT);
@@ -322,9 +322,9 @@ class LocationManager {
                 
                 Message confirm = DMT.createFNPSwapCommit(uid, myValue);
                 
-                node.usm.send(pn, confirm);
+                filter = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT).setSource(pn);
                 
-                filter = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT);
+                node.usm.send(pn, confirm);
                 
                 Logger.minor(this, "Waiting for SwapComplete: uid = "+uid);
                 

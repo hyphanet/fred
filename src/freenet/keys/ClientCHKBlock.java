@@ -29,13 +29,20 @@ public class ClientCHKBlock extends CHKBlock {
      * Construct from data retrieved, and a key.
      * Do not do full decode. Verify what can be verified without doing
      * a full decode.
-     * @param k The client key.
-     * @param header2 The header.
-     * @param data2 The data.
+     * @param key2 The client key.
+     * @param header The header.
+     * @param data The data.
      */
-    ClientCHKBlock(byte[] data, byte[] header, ClientCHK key2, boolean verify) throws CHKVerifyException {
+    public ClientCHKBlock(byte[] data, byte[] header, ClientCHK key2, boolean verify) throws CHKVerifyException {
         super(data, header, key2.getNodeCHK(), verify);
         this.key = key2;
+    }
+
+    /**
+     * Construct from a CHKBlock and a key.
+     */
+    public ClientCHKBlock(CHKBlock block, ClientCHK key2) throws CHKVerifyException {
+        this(block.getData(), block.getHeader(), key2, true);
     }
 
     /**

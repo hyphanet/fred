@@ -35,18 +35,19 @@ public class RequestSender implements Runnable {
     // Basics
     final NodeCHK key;
     final double target;
-    short htl;
+    private short htl;
     final long uid;
     final Node node;
     /** The source of this request if any - purely so we can avoid routing to it */
     final NodePeer source;
-    PartiallyReceivedBlock prb = null;
+    private PartiallyReceivedBlock prb = null;
+    private byte[] headers;
     
     // Terminal status
     // Always set finished AFTER setting the reason flag
-    boolean finished = false;
+    private boolean finished = false;
     
-    int status = -1;
+    private int status = -1;
     static final int NOT_FINISHED = -1;
     static final int SUCCESS = 0;
     static final int ROUTE_NOT_FOUND = 1;
@@ -55,7 +56,7 @@ public class RequestSender implements Runnable {
     static final int TRANSFER_FAILED = 4;
     static final int VERIFY_FAILURE = 5;
     
-    boolean transferring = false;
+    private boolean transferring = false;
     
     public RequestSender(NodeCHK key, short htl, long uid, Node n, 
             NodePeer source) {
@@ -74,6 +75,13 @@ public class RequestSender implements Runnable {
         HashSet nodesRoutedTo = new HashSet();
         try {
         while(true) {
+            if(htl == 0) {
+                // RNF
+                // Would be DNF if arrived with no HTL
+                // But here we've already routed it and that's been rejected.
+                finish(ROUTE_NOT_FOUND);
+                return;
+            }
             // Route it
             NodePeer next;
             // Can backtrack, so only route to nodes closer than we are to target.
@@ -115,6 +123,7 @@ public class RequestSender implements Runnable {
             }
             
             if(msg.getSpec() == DMT.FNPRejectLoop) {
+                htl = node.decrementHTL(source, htl);
                 // Find another node to route to
                 continue;
             }
@@ -152,7 +161,7 @@ public class RequestSender implements Runnable {
             if(msg.getSpec() == DMT.FNPRouteNotFound) {
                 // Backtrack within available hops
                 short newHtl = msg.getShort(DMT.HTL);
-                htl = next.decrementHTL(htl);
+                htl = node.decrementHTL(source, htl);
                 if(newHtl < htl) htl = newHtl;
                 continue;
             }
@@ -166,7 +175,7 @@ public class RequestSender implements Runnable {
             
             // First get headers
             
-            byte[] headers = ((ShortBuffer)msg.getObject(DMT.CHK_HEADER)).getData();
+            headers = ((ShortBuffer)msg.getObject(DMT.CHK_HEADER)).getData();
             
             // FIXME: Validate headers
 
@@ -237,11 +246,39 @@ public class RequestSender implements Runnable {
         }
     }
     
+    /**
+     * Wait until we have a terminal status code.
+     */
+    public void waitUntilFinished() {
+        synchronized(this) {
+            while(true) {
+                if(status != NOT_FINISHED) return;
+                try {
+                    wait(10000);
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+            }            
+        }
+    }
+    
     private void finish(int code) {
         status = code;
         finished = true;
         synchronized(this) {
             notifyAll();
         }
+    }
+
+    public byte[] getHeaders() {
+        return headers;
+    }
+
+    public int getStatus() {
+        return status;
+    }
+
+    public short getHTL() {
+        return htl;
     }
 }

@@ -222,7 +222,7 @@ public class NodePeer implements PeerContext {
         for(int i=0;i<key.length;i++)
             key[i] ^= okey[i];
         try {
-            sessionCipher = new Rijndael(256,128);
+            sessionCipher = new Rijndael(256,256);
         } catch (UnsupportedCipherException e1) {
             throw new Error(e1);
         }
@@ -233,10 +233,10 @@ public class NodePeer implements PeerContext {
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
         // 10 extra hops on average at the start (for cover)
         decrementAtMax =
-            disableProbabilisticHTLs ? true : node.random.nextDouble() <= 0.1;
+            disableProbabilisticHTLs ? true : node.random.nextDouble() <= Node.DECREMENT_AT_MAX_PROB;
         // 5 extra hops on average at the end (to prevent probing and similar attacks)
         decrementAtMin =
-            disableProbabilisticHTLs ? true : node.random.nextDouble() <= 0.25;
+            disableProbabilisticHTLs ? true : node.random.nextDouble() <= Node.DECREMENT_AT_MIN_PROB;
     }
     
     /**
@@ -275,7 +275,7 @@ public class NodePeer implements PeerContext {
             key[i] ^= okey[i];
         //Logger.minor(this, "Session key: "+HexUtil.bytesToHex(key));
         try {
-            sessionCipher = new Rijndael(256,128);
+            sessionCipher = new Rijndael(256,256);
         } catch (UnsupportedCipherException e1) {
             throw new Error(e1);
         }
@@ -285,10 +285,10 @@ public class NodePeer implements PeerContext {
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
         // 10 extra hops on average at the start (for cover)
         decrementAtMax =
-            disableProbabilisticHTLs ? true : node.random.nextDouble() <= 0.1;
+            disableProbabilisticHTLs ? true : node.random.nextDouble() <= Node.DECREMENT_AT_MAX_PROB;
         // 5 extra hops on average at the end (to prevent probing and similar attacks)
         decrementAtMin =
-            disableProbabilisticHTLs ? true : node.random.nextDouble() <= 0.25;
+            disableProbabilisticHTLs ? true : node.random.nextDouble() <= Node.DECREMENT_AT_MIN_PROB;
     }
 
     public String toString() {
@@ -942,7 +942,7 @@ public class NodePeer implements PeerContext {
     }
 
     /**
-     * Ping this node.
+     * Low-level ping this node.
      * @return True if we received a reply inside 2000ms.
      * (If we have heavy packet loss, it can take that long to resend).
      */
