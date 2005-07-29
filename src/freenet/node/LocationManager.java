@@ -79,8 +79,11 @@ class LocationManager {
                         sleepTime *= nextRandom;
                         sleepTime = Math.min(sleepTime, Integer.MAX_VALUE);
                         long endTime = startTime + (int)sleepTime;
+                        long now = System.currentTimeMillis();
+                        long diff = endTime - now;
                         try {
-                            Thread.sleep(Math.min((int)sleepTime, 10000));
+                            if(diff > 0)
+                                Thread.sleep(Math.min((int)diff, 10000));
                         } catch (InterruptedException e) {
                             // Ignore
                         }

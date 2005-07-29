@@ -25,6 +25,9 @@ public class CPUUsageMonitor {
 
         long spare;
 
+        boolean reportedFailedProcOpen = false;
+        boolean reportedFailedProcParse = false;
+        
         boolean read(File f) {
             String firstline;
             try {
@@ -34,28 +37,48 @@ public class CPUUsageMonitor {
                 firstline = br.readLine();
                 ris.close();
             } catch (IOException e) {
+                if(!reportedFailedProcOpen)
+                    Logger.error(this, "Failed to open /proc/stat: "+e, e);
+                reportedFailedProcOpen = true;
                 return false;
             }
             Logger.debug(this, "Read first line: " + firstline);
             if (!firstline.startsWith("cpu")) return false;
-            long[] data = new long[4];
-            for (int i = 0; i < 4; i++) {
-                firstline = firstline.substring("cpu".length()).trim();
-                firstline = firstline + ' ';
-                int x = firstline.indexOf(' ');
-                if (x == -1) return false;
-                String firstbit = firstline.substring(0, x);
+            firstline = firstline.substring("cpu".length()).trim();
+            String[] split = firstline.split(" ");
+
+            long[] numbers = new long[split.length];
+            for(int i=0;i<split.length;i++) {
                 try {
-                    data[i] = Long.parseLong(firstbit);
+                    numbers[i] = Long.parseLong(split[i]);
                 } catch (NumberFormatException e) {
+                    if(!reportedFailedProcParse)
+                        Logger.error(this, "Failed to parse /proc: "+e, e);
+                    reportedFailedProcParse = true;
                     return false;
                 }
-                firstline = firstline.substring(x);
             }
-            user = data[0];
-            nice = data[1];
-            system = data[2];
-            spare = data[3];
+            
+            if(split.length == 4) {
+                // Linux 2.4/2.2
+                user = numbers[0];
+                nice = numbers[1];
+                system = numbers[2];
+                spare = numbers[3];
+            } else if(split.length == 8) {
+                // Linux 2.6
+                // user, nice, system, idle, iowait, irq, softirq, steal
+                // No idea what steal is and it's 0 on my box anyway
+                user = numbers[0];
+                system = numbers[2] + numbers[5] + numbers[6];
+                nice = numbers[1];
+                spare = numbers[3] + numbers[4];
+            } else {
+                if(!reportedFailedProcParse)
+                    Logger.error(this, "Failed to parse /proc: unrecognized number of elements: "+split.length);
+                reportedFailedProcParse = true;
+                return false;
+            }
             Logger.debug(this, "Read from file: user " + user + " nice " + nice
                     + " system " + system + " spare " + spare);
             return true;

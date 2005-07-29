@@ -14,9 +14,8 @@ import freenet.crypt.ciphers.Rijndael;
 /**
  * @author amphibian
  * 
- * Client CHK, plus the actual data. Used for encoding a block of data into
- * a CHK, or decoding a fetched block into something usable by the client.
- * Can provide the client URI, not just the node level routing key.
+ * CHK plus data. When fed a ClientCHK, can decode into the original
+ * data for a client.
  */
 public class CHKBlock {
 

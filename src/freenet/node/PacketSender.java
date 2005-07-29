@@ -59,7 +59,10 @@ public class PacketSender implements Runnable {
                     lastClearedOldSwapChains = now;
                 }
                 try {
-                    Thread.sleep(Math.min(firstRemainingUrgentTime, 200));
+                    // 200ms max sleep
+                    long sleepTime = Math.min(firstRemainingUrgentTime - now, 200);
+                    if(sleepTime > 0)
+                        Thread.sleep(sleepTime);
                 } catch (InterruptedException e) {
                     // Ignore, just wake up. Probably we got interrupt()ed
                     // because a new packet came in.
