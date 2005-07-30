@@ -169,27 +169,6 @@ public class InsertHandler implements Runnable {
                 return;
             }
             
-            if(status == InsertSender.REPLIED_WITH_DATA) {
-                // We need to return the data to the source.
-                // If we have the data, send that; if we don't,
-                // forward what the InsertSender is receiving.
-                PartiallyReceivedBlock senderPRB;
-                byte[] replyHeaders;
-                block = node.fetchFromStore(key);
-                if(block != null) {
-                    senderPRB = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getData());
-                    replyHeaders = block.getHeader();
-                } else {
-                    senderPRB = sender.getDataReplyPRB();
-                    replyHeaders = sender.getDataReplyHeaders();
-                }
-                msg = DMT.createFNPDataFound(uid, replyHeaders);
-                source.send(msg);
-                BlockTransmitter bt = new BlockTransmitter(node.usm, source, uid, senderPRB);
-                bt.send(); // Don't care whether it works
-                return;
-            }
-            
             if(status == InsertSender.ROUTE_NOT_FOUND) {
                 msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 source.send(msg);

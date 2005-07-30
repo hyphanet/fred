@@ -6,13 +6,12 @@ import java.util.Iterator;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
-import freenet.io.comm.RetrievalException;
-import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
+import freenet.keys.CHKBlock;
+import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
-import freenet.support.ShortBuffer;
 
 public class InsertSender implements Runnable {
 
@@ -43,10 +42,6 @@ public class InsertSender implements Runnable {
     final byte[] headers; // received BEFORE creation => we handle Accepted elsewhere
     final PartiallyReceivedBlock prb;
     final boolean fromStore;
-    /** Used if we receive data as result of a DataReply */
-    private PartiallyReceivedBlock dataReplyPRB = null;
-    private byte[] dataReplyHeaders = null;
-    private Throwable dataReplyReceiveThrew = null;
     private boolean receiveFailed = false;
     
     private int status = -1;
@@ -54,7 +49,6 @@ public class InsertSender implements Runnable {
     static final int SUCCESS = 0;
     static final int ROUTE_NOT_FOUND = 1;
     static final int REJECTED_OVERLOAD = 2;
-    static final int REPLIED_WITH_DATA = 3;
     
     public void run() {
         
@@ -97,12 +91,11 @@ public class InsertSender implements Runnable {
             MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
             MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
             MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
-            MessageFilter mfDataFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPDataFound);
             
             // mfRejectedOverload must be the last thing in the or
             // So its or pointer remains null
             // Otherwise we need to recreate it below
-            MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload.or(mfDataFound)));
+            MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
             mfRejectedOverload.clearOr();
             
             // Send to next node
@@ -131,11 +124,6 @@ public class InsertSender implements Runnable {
                 return;
             }
             
-            if(msg.getSpec() == DMT.FNPDataFound) {
-                // Could happen early
-                // FIXME what now??
-            }
-            
             // Otherwise must be an Accepted
             
             // Send them the data.
@@ -144,13 +132,8 @@ public class InsertSender implements Runnable {
             BlockTransmitter bt;
             Message dataInsert;
             PartiallyReceivedBlock prbNow;
-            if(dataReplyPRB != null) {
-                prbNow = dataReplyPRB;
-                dataInsert = DMT.createFNPDataInsert(uid, dataReplyHeaders);
-            } else {
-                prbNow = prb;
-                dataInsert = DMT.createFNPDataInsert(uid, headers);
-            }
+            prbNow = prb;
+            dataInsert = DMT.createFNPDataInsert(uid, headers);
             bt = new BlockTransmitter(node.usm, next, uid, prbNow);
             /** What are we waiting for now??:
              * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
@@ -164,22 +147,21 @@ public class InsertSender implements Runnable {
             
             MessageFilter mfRNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPRouteNotFound);
             MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPInsertReply);
-            mfDataFound.setTimeout(PUT_TIMEOUT);
             mfRejectedOverload.setTimeout(PUT_TIMEOUT);
             MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPRouteNotFound);
             MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPDataInsertRejected);
             
-            mf = mfRNF.or(mfDataFound.or(mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfRejectedOverload.setTimeout(PUT_TIMEOUT))))));
+            mf = mfRNF.or(mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfRejectedOverload.setTimeout(PUT_TIMEOUT)))));
             
-            if(receiveFailed) return; // don't need to set status as killed by InsertHandler
+            if(receiveFailed) return;
             next.send(dataInsert);
 
-            if(receiveFailed) return; // don't need to set status as killed by InsertHandler
+            if(receiveFailed) return;
             bt.send();
             
-            if(receiveFailed) return; // don't need to set status as killed by InsertHandler
+            if(receiveFailed) return;
             msg = node.usm.waitFor(mf);
-            if(receiveFailed) return; // don't need to set status as killed by InsertHandler
+            if(receiveFailed) return;
             
             if(msg == null) {
                 // Timeout :(
@@ -205,66 +187,36 @@ public class InsertSender implements Runnable {
                 continue;
             }
             
-            if(msg.getSpec() == DMT.FNPDataFound) {
-                // Target node already has the data!
-                // Shouldn't happen for CHKs; unnecessary
-                if(myKey instanceof NodeCHK) {
-                    Logger.error(this, "Received "+msg+" for "+myKey);
-                }
-                if(dataReplyHeaders != null) {
-                    // Already receiving it from another node!
-                    // FIXME what now??
-                }
-                // Receive the data
-                dataReplyHeaders = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
-                dataReplyPRB = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-                final BlockReceiver br = new BlockReceiver(node.usm, next, uid, dataReplyPRB);
-                // Who do we want to send it to?
-                // We want to send it to the client
-                // We want to send it to any nodes which have RNFed
-                
-                // Start an async receive for the data into the PRB
-                // Don't care about status; that's the client's problem
-                Runnable r = new Runnable() { 
-                    public void run() { 
-                        try {
-                            br.receive();
-                        } catch (RetrievalException e) {
-                            dataReplyReceiveThrew = e;
-                            // Already aborted
-                        } catch (Throwable t) {
-                            dataReplyReceiveThrew = t;
-                            dataReplyPRB.abort(RetrievalException.UNKNOWN, "Caught "+t);
-                        }
-                        // If it succeeds, PRB will know it has completed.
-                    }
-                };
-                Thread t1 = new Thread(r);
-                t1.setDaemon(true);
-                t1.start();
-
-                // Nodes we have already started a data send to can
-                // have the old version of the data
-                // REDFLAG Should we send them the new version? Would
-                // be a PITA, and doesn't seem vital...
-                
-                // Tell the client so he gets the data
-                finish(REPLIED_WITH_DATA);
-                // Continue to insert
-            }
-            
             if(msg.getSpec() == DMT.FNPDataInsertRejected) {
                 short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
                 
                 if(reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
                     if(fromStore) {
                         // That's odd...
-                        Logger.error(this, "Verify failed on next node for DataInsert but we were sending from the store!");
+                        Logger.error(this, "Verify failed on next node "+next+" for DataInsert but we were sending from the store!");
                     } else {
-                        // Is the data invalid?
-                        // FIXME
+                        try {
+                            // Check the data
+                            new CHKBlock(prb.getBlock(), headers, myKey);
+                            Logger.error(this, "Verify failed on "+next+" but data was valid!");
+                        } catch (CHKVerifyException e) {
+                            Logger.normal(this, "Verify failed because data was invalid");
+                        }
                     }
-                } // FIXME other reasons
+                } else if(reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
+                    if(receiveFailed) {
+                        Logger.minor(this, "Failed to receive data, so failed to send data");
+                    } else {
+                        if(prb.allReceived()) {
+                            Logger.error(this, "Received all data but send failed to "+next);
+                        } else {
+                            if(prb.isAborted()) {
+                                Logger.normal(this, "Send failed: aborted: "+prb.getAbortReason()+": "+prb.getAbortDescription());
+                            } else
+                                Logger.normal(this, "Send failed; have not yet received all data but not aborted: "+next);
+                        }
+                    }
+                }
                 
                 Logger.error(this, "DataInsert rejected! Reason="+DMT.getDataInsertRejectedReason(reason));
                 
@@ -293,10 +245,6 @@ public class InsertSender implements Runnable {
     }
     
     private void finish(int code) {
-        if(status == REPLIED_WITH_DATA) {
-            // Ignore errors
-            return;
-        }
         status = code;
         synchronized(this) {
             notifyAll();
@@ -307,14 +255,6 @@ public class InsertSender implements Runnable {
         return status;
     }
     
-    public PartiallyReceivedBlock getDataReplyPRB() {
-        return dataReplyPRB;
-    }
-
-    public byte[] getDataReplyHeaders() {
-        return dataReplyHeaders;
-    }
-
     public short getHTL() {
         return htl;
     }
@@ -324,10 +264,6 @@ public class InsertSender implements Runnable {
      * failed.
      */
     public void receiveFailed() {
-        if(dataReplyHeaders != null) {
-            // Ignore because receiving not sending
-            return;
-        }
         receiveFailed = true;
     }
 }
