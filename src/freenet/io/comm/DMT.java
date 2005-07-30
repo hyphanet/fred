@@ -21,7 +21,7 @@ package freenet.io.comm;
 
 import freenet.*;
 import freenet.keys.Key;
-import freenet.keys.NodeCHK;
+import freenet.keys.Key;
 import freenet.support.*;
 
 import java.util.*;
@@ -401,10 +401,10 @@ public class DMT {
         addField(HTL, Integer.class);
     }};
     
-    public static Message createTestRequest(NodeCHK nodeCHK, long id, int htl) {
+    public static Message createTestRequest(Key Key, long id, int htl) {
         Message msg = new Message(testRequest);
         msg.set(UID, id);
-        msg.set(FREENET_ROUTING_KEY, nodeCHK);
+        msg.set(FREENET_ROUTING_KEY, Key);
         msg.set(HTL, htl);
         return msg;
     }
@@ -495,10 +495,10 @@ public class DMT {
     public static MessageType FNPDataRequest = new MessageType("FNPDataRequest") {{
         addField(UID, Long.class);
         addField(HTL, Short.class);
-        addField(FREENET_ROUTING_KEY, NodeCHK.class);
+        addField(FREENET_ROUTING_KEY, Key.class);
     }};
     
-    public static Message createFNPDataRequest(long id, short htl, NodeCHK key) {
+    public static Message createFNPDataRequest(long id, short htl, Key key) {
         Message msg = new Message(FNPDataRequest);
         msg.set(UID, id);
         msg.set(HTL, htl);
@@ -576,10 +576,10 @@ public class DMT {
     public static MessageType FNPInsertRequest = new MessageType("FNPInsertRequest") {{
         addField(UID, Long.class);
         addField(HTL, Short.class);
-        addField(FREENET_ROUTING_KEY, NodeCHK.class);
+        addField(FREENET_ROUTING_KEY, Key.class);
     }};
     
-    public static Message createFNPInsertRequest(long id, short htl, NodeCHK key) {
+    public static Message createFNPInsertRequest(long id, short htl, Key key) {
         Message msg = new Message(FNPInsertRequest);
         msg.set(UID, id);
         msg.set(HTL, htl);

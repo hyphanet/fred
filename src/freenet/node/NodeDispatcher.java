@@ -97,11 +97,15 @@ public class NodeDispatcher implements Dispatcher {
     
     private boolean handleInsertRequest(Message m) {
         long id = m.getLong(DMT.UID);
-        if(!node.lockUID(id)) return false;
+        if(!node.lockUID(id)) {
+            Logger.minor(this, "Could not lock ID "+id);
+            return false;
+        }
         InsertHandler rh = new InsertHandler(m, id, node);
         Thread t = new Thread(rh);
         t.setDaemon(true);
         t.start();
+        Logger.minor(this, "Started InsertHandler for "+id);
         return true;
     }
 

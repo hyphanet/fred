@@ -10,6 +10,7 @@ import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 
@@ -43,32 +44,12 @@ public class InsertHandler implements Runnable {
         this.uid = id;
         this.source = (NodePeer) req.getSource();
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
-        // FIXME check whether there is a collision on the ID...
-        // somehow :|
+        htl = req.getShort(DMT.HTL);
     }
     
     public void run() {
         try {
         runThread = Thread.currentThread();
-        
-        CHKBlock block = node.fetchFromStore(key);
-        
-        if(block != null) {
-            // We already have the data
-            Message reply = DMT.createFNPDataFound(uid, block.getHeader());
-            source.send(reply);
-            PartiallyReceivedBlock tempPRB = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getData());
-            BlockTransmitter bt = new BlockTransmitter(node.usm, source, uid, tempPRB);
-            bt.send();
-            node.makeInsertSender(key, htl, uid, source, block.getHeader(), tempPRB, true);
-            return;
-        }
-        
-        if(htl == 0) {
-            canCommit = true;
-            finish();
-            return;
-        }
         
         // FIXME implement rate limiting or something!
         // Send Accepted
@@ -81,6 +62,8 @@ public class InsertHandler implements Runnable {
         mf = MessageFilter.create().setType(DMT.FNPDataInsert).setField(DMT.UID, uid).setSource(source).setTimeout(DATA_INSERT_TIMEOUT);
         
         Message msg = node.usm.waitFor(mf);
+        
+        Logger.minor(this, "Received "+msg);
         
         if(msg == null) {
             Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
@@ -96,27 +79,9 @@ public class InsertHandler implements Runnable {
         // Now create an InsertSender, or use an existing one, or
         // discover that the data is in the store.
 
-        block = node.fetchFromStore(key);
-        
-        if(block != null) {
-            // Make a sender to forward the data
-            prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getData());
-            node.makeInsertSender(key, htl, uid, source, headers, prb, true);
-            // Abort send
-            prb.abort(RetrievalException.ALREADY_CACHED, "We already have the data");
-            // Send the data to the source
-            Message reply = DMT.createFNPDataFound(uid, block.getHeader());
-            source.send(reply);
-            PartiallyReceivedBlock tempPRB = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getData());
-            BlockTransmitter bt = new BlockTransmitter(node.usm, source, uid, tempPRB);
-            bt.send();
-            // There is already a Sender; it will do its job
-            return;
-        }
-
-        // Not in store, create an InsertSender
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-        sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false);
+        if(htl > 0)
+            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false);
         br = new BlockReceiver(node.usm, source, uid, prb);
         
         // Receive the data, off thread
@@ -126,6 +91,12 @@ public class InsertHandler implements Runnable {
         t.setDaemon(true);
         t.start();
 
+        if(htl == 0) {
+            canCommit = true;
+            finish();
+            return;
+        }
+        
         // Wait...
         // What do we want to wait for?
         // If the data receive completes, that's very nice,
@@ -187,7 +158,10 @@ public class InsertHandler implements Runnable {
                 return;
             }
         }
+        } catch (Throwable t) {
+            Logger.error(this, "Caught "+t, t);
         } finally {
+            Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
             node.unlockUID(uid);
         }
     }
@@ -204,9 +178,10 @@ public class InsertHandler implements Runnable {
             if(!canCommit) return;
             if(!prb.allReceived()) return;
             try {
-                CHKBlock block = new CHKBlock(headers, prb.getBlock(), key);
+                CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
                 node.store(block);
             } catch (CHKVerifyException e) {
+                Logger.error(this, "Verify failed in InsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
                 toSend = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_VERIFY_FAILED);
             }
         }
@@ -222,14 +197,16 @@ public class InsertHandler implements Runnable {
         public void run() {
             try {
                 br.receive();
+                finish();
             } catch (RetrievalException e) {
                 receiveFailed = true;
                 runThread.interrupt();
                 Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
                 source.send(msg);
                 return;
+            } catch (Throwable t) {
+                Logger.error(this, "Caught "+t, t);
             }
-            finish();
         }
 
     }

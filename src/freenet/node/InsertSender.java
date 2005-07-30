@@ -26,6 +26,9 @@ public class InsertSender implements Runnable {
         this.node = node;
         this.prb = prb;
         this.fromStore = fromStore;
+        Thread t = new Thread(this, "InsertSender for UID "+uid);
+        t.setDaemon(true);
+        t.start();
     }
     
     // Constants
@@ -51,7 +54,8 @@ public class InsertSender implements Runnable {
     static final int REJECTED_OVERLOAD = 2;
     
     public void run() {
-        
+        short origHTL = htl;
+        try {
         Message req = DMT.createFNPInsertRequest(uid, htl, myKey);
         
         HashSet nodesRoutedTo = new HashSet();
@@ -196,13 +200,18 @@ public class InsertSender implements Runnable {
                         Logger.error(this, "Verify failed on next node "+next+" for DataInsert but we were sending from the store!");
                     } else {
                         try {
-                            // Check the data
-                            new CHKBlock(prb.getBlock(), headers, myKey);
-                            Logger.error(this, "Verify failed on "+next+" but data was valid!");
+                            if(!prb.allReceived())
+                                Logger.error(this, "Did not receive all packets but next node says invalid anyway!");
+                            else {
+                                // Check the data
+                                new CHKBlock(prb.getBlock(), headers, myKey);
+                                Logger.error(this, "Verify failed on "+next+" but data was valid!");
+                            }
                         } catch (CHKVerifyException e) {
                             Logger.normal(this, "Verify failed because data was invalid");
                         }
                     }
+                    continue; // What else can we do?
                 } else if(reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
                     if(receiveFailed) {
                         Logger.minor(this, "Failed to receive data, so failed to send data");
@@ -216,6 +225,7 @@ public class InsertSender implements Runnable {
                                 Logger.normal(this, "Send failed; have not yet received all data but not aborted: "+next);
                         }
                     }
+                    continue;
                 }
                 
                 Logger.error(this, "DataInsert rejected! Reason="+DMT.getDataInsertRejectedReason(reason));
@@ -225,6 +235,11 @@ public class InsertSender implements Runnable {
             // Otherwise should be an InsertReply
             // Our task is complete
             finish(SUCCESS);
+        }
+        } catch (Throwable t) {
+            Logger.error(this, "Caught "+t, t);
+        } finally {
+        	node.removeInsertSender(myKey, origHTL, this);
         }
     }
 

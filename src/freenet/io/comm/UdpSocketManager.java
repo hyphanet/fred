@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.11 2005/07/27 18:02:04 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.12 2005/07/30 21:30:18 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -193,7 +193,7 @@ public class UdpSocketManager extends Thread {
 		}
 		// Keep the last few _unclaimed messages around in case the intended receiver isn't receiving yet
 		if (!matched) {
-		    Logger.normal(this, "Unclaimed: "+m);
+		    Logger.minor(this, "Unclaimed: "+m);
 		    /** Check filters and then add to _unmatched is ATOMIC
 		     * It has to be atomic, because otherwise we can get a
 		     * race condition that results in timeouts on MFs.

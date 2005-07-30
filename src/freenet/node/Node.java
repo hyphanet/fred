@@ -255,12 +255,18 @@ public class Node implements SimpleClient {
         } else return null;
     }
 
-    /* (non-Javadoc)
-     * @see freenet.node.SimpleClient#putCHK(freenet.keys.ClientCHKBlock)
-     */
-    public void putCHK(ClientCHKBlock key) {
-        // TODO Auto-generated method stub
-        
+    public void putCHK(ClientCHKBlock block) {
+        byte[] data = block.getData();
+        byte[] headers = block.getHeader();
+        PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
+        InsertSender is = makeInsertSender(block.getClientKey().getNodeCHK(), 
+                MAX_HTL, random.nextLong(), null, headers, prb, false);
+        is.waitUntilFinished();
+        if(is.getStatus() == InsertSender.SUCCESS) {
+            Logger.normal(this, "Succeeded inserting "+block);
+        } else {
+            Logger.error(this, "Failed inserting "+block+" : "+is.getStatus());
+        }
     }
 
     /**
@@ -415,6 +421,17 @@ public class Node implements SimpleClient {
         RequestSender rs = (RequestSender) requestSenders.remove(kh);
         if(rs != sender) {
             Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+","+htl+" in removeSender");
+        }
+    }
+
+    /**
+     * Remove an InsertSender from the map.
+     */
+    public void removeInsertSender(NodeCHK key, short htl, InsertSender sender) {
+        KeyHTLPair kh = new KeyHTLPair(key, htl);
+        InsertSender is = (InsertSender) insertSenders.remove(kh);
+        if(is != sender) {
+            Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeSender");
         }
     }
 

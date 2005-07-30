@@ -8,6 +8,7 @@ import java.io.RandomAccessFile;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
@@ -31,7 +32,7 @@ public class BaseFreenetStore implements FreenetStore {
     public BaseFreenetStore(RandomAccessFile storeFile, RandomAccessFile storeIndexFile, 
             RandomAccessFile headerStoreFile, RandomAccessFile headerStoreIndexFile, long maxBlocks) throws Exception {
         dataStore = new DataStore(storeFile, storeIndexFile, DATA_BLOCK_SIZE, maxBlocks);
-        headersStore = new DataStore(headerStoreFile, headerStoreIndexFile, DATA_BLOCK_SIZE, maxBlocks);
+        headersStore = new DataStore(headerStoreFile, headerStoreIndexFile, HEADER_BLOCK_SIZE, maxBlocks);
     }
     
     /**
@@ -74,9 +75,9 @@ public class BaseFreenetStore implements FreenetStore {
         }
         byte[] buf = new byte[headerLen];
         System.arraycopy(headers, 2, buf, 0, headerLen);
-//        Logger.minor(this, "Raw headers: "+headers.length+" bytes, hash "+Fields.hashCode(headers));
-//        Logger.minor(this, "Headers: "+headerLen+" bytes, hash "+Fields.hashCode(headers));
-//        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+        Logger.minor(this, "Raw headers: "+headers.length+" bytes, hash "+Fields.hashCode(headers));
+        Logger.minor(this, "Headers: "+headerLen+" bytes, hash "+Fields.hashCode(headers));
+        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
         try {
             return new CHKBlock(data, buf, chk);
         } catch (CHKVerifyException e) {
@@ -101,9 +102,9 @@ public class BaseFreenetStore implements FreenetStore {
         hbuf[0] = (byte)(hlen >> 8);
         hbuf[1] = (byte)(hlen & 0xff);
         System.arraycopy(headers, 0, hbuf, 2, hlen);
-//        Logger.minor(this, "Raw headers: "+hbuf.length+" bytes, hash "+Fields.hashCode(hbuf));
-//        Logger.minor(this, "Headers: "+hlen+" bytes, hash "+Fields.hashCode(headers));
-//        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+        Logger.minor(this, "Raw headers: "+hbuf.length+" bytes, hash "+Fields.hashCode(hbuf));
+        Logger.minor(this, "Headers: "+hlen+" bytes, hash "+Fields.hashCode(headers));
+        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
         dataStore.addDataAsBlock(block.getKey(), data);
         headersStore.addDataAsBlock(block.getKey(), hbuf);
     }

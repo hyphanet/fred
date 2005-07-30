@@ -6,6 +6,7 @@ import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.NodeCHK;
+import freenet.support.Logger;
 
 /**
  * Handle an incoming request. Does not do the actual fetching; that
@@ -101,6 +102,8 @@ public class RequestHandler implements Runnable {
             	    throw new IllegalStateException("Unknown status code "+status);
             }
         }
+        } catch (Throwable t) {
+            Logger.error(this, "Caught "+t, t);
         } finally {
             node.unlockUID(uid);
         }

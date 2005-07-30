@@ -66,6 +66,9 @@ public class RequestSender implements Runnable {
         this.node = n;
         this.source = source;
         target = key.toNormalizedDouble();
+        Thread t = new Thread(this, "RequestSender for UID "+uid);
+        t.setDaemon(true);
+        t.start();
     }
     
     public void run() {
