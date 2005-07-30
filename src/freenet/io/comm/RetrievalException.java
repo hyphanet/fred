@@ -36,10 +36,11 @@ public class RetrievalException extends Exception {
 	public static final int RANGE_UNSUPPORTED = 4;
 	public static final int SENDER_DIED = 5;
 	public static final int TIMED_OUT = 4;
+    public static final int ALREADY_CACHED = 6;
 	
 	int _reason;
 	String _cause = null;
-	
+
 	public RetrievalException(int reason) {
 		_reason = reason;
 	}

@@ -83,6 +83,7 @@ public class NodeDispatcher implements Dispatcher {
      * Handle an incoming FNPDataRequest.
      */
     private boolean handleDataRequest(Message m) {
+        // FIXME check IDs
         RequestHandler rh = new RequestHandler(m, node);
         Thread t = new Thread(rh);
         t.setDaemon(true);

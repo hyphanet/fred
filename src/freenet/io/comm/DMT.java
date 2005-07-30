@@ -73,6 +73,8 @@ public class DMT {
     public static final String PAYLOAD = "payload";
     public static final String COUNTER = "counter";
     public static final String RETURN_LOCATION = "returnLocation";
+    public static final String BLOCK_HEADERS = "blockHeaders";
+    public static final String DATA_INSERT_REJECTED_REASON = "dataInsertRejectedReason";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -505,24 +507,24 @@ public class DMT {
     }
     
     // Hit our tail, try a different node.
-    public static MessageType FNPRejectLoop = new MessageType("FNPRejectLoop") {{
+    public static MessageType FNPRejectedLoop = new MessageType("FNPRejectLoop") {{
         addField(UID, Long.class);
     }};
     
-    public static Message createFNPRejectLoop(long id) {
-        Message msg = new Message(FNPRejectLoop);
+    public static Message createFNPRejectedLoop(long id) {
+        Message msg = new Message(FNPRejectedLoop);
         msg.set(UID, id);
         return msg;
     }
     
     // Too many requests for present capacity. Fail, propagate back
     // to source, and reduce send rate.
-    public static MessageType FNPRejectOverload = new MessageType("FNPRejectOverload") {{
+    public static MessageType FNPRejectedOverload = new MessageType("FNPRejectOverload") {{
         addField(UID, Long.class);
     }};
     
-    public static Message createFNPRejectOverload(long id) {
-        Message msg = new Message(FNPRejectOverload);
+    public static Message createFNPRejectedOverload(long id) {
+        Message msg = new Message(FNPRejectedOverload);
         msg.set(UID, id);
         return msg;
     }
@@ -549,11 +551,13 @@ public class DMT {
     
     public static MessageType FNPDataFound = new MessageType("FNPDataFound") {{
         addField(UID, Long.class);
+        addField(BLOCK_HEADERS, ShortBuffer.class);
     }};
     
-    public static Message createFNPDataFound(long id) {
+    public static Message createFNPDataFound(long id, byte[] buf) {
         Message msg = new Message(FNPDataFound);
         msg.set(UID, id);
+        msg.set(BLOCK_HEADERS, new ShortBuffer(buf));
         return msg;
     }
     
@@ -567,6 +571,75 @@ public class DMT {
         msg.set(UID, id);
         msg.set(HTL, htl);
         return msg;
+    }
+    
+    public static MessageType FNPInsertRequest = new MessageType("FNPInsertRequest") {{
+        addField(UID, Long.class);
+        addField(HTL, Short.class);
+        addField(FREENET_ROUTING_KEY, NodeCHK.class);
+    }};
+    
+    public static Message createFNPInsertRequest(long id, short htl, NodeCHK key) {
+        Message msg = new Message(FNPInsertRequest);
+        msg.set(UID, id);
+        msg.set(HTL, htl);
+        msg.set(FREENET_ROUTING_KEY, key);
+        return msg;
+    }
+    
+    public static MessageType FNPInsertReply = new MessageType("FNPInsertReply") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createFNPInsertReply(long id) {
+        Message msg = new Message(FNPInsertReply);
+        msg.set(UID, id);
+        return msg;
+    }
+    
+    public static MessageType FNPDataInsert = new MessageType("FNPDataInsert") {{
+        addField(UID, Long.class);
+        addField(BLOCK_HEADERS, ShortBuffer.class);
+    }};
+    
+    public static Message createFNPDataInsert(long uid, byte[] headers) {
+        Message msg = new Message(FNPDataInsert);
+        msg.set(UID, uid);
+        msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+        return msg;
+    }
+
+    public static MessageType FNPRejectedTimeout = new MessageType("FNPTooSlow") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static Message createFNPRejectedTimeout(long uid) {
+        Message msg = new Message(FNPRejectedTimeout);
+        msg.set(UID, uid);
+        return msg;
+    }
+    
+    public static MessageType FNPDataInsertRejected = new MessageType("FNPDataInsertRejected") {{
+        addField(UID, Long.class);
+        addField(DATA_INSERT_REJECTED_REASON, Short.class);
+    }};
+    
+    public static Message createFNPDataInsertRejected(long uid, short reason) {
+        Message msg = new Message(FNPDataInsertRejected);
+        msg.set(UID, uid);
+        msg.set(DATA_INSERT_REJECTED_REASON, reason);
+        return msg;
+    }
+
+    public static short DATA_INSERT_REJECTED_VERIFY_FAILED = 1;
+    public static short DATA_INSERT_REJECTED_RECEIVE_FAILED = 2;
+    
+    public static String getDataInsertRejectedReason(short reason) {
+        if(reason == DATA_INSERT_REJECTED_VERIFY_FAILED)
+            return "Verify failed";
+        else if(reason == DATA_INSERT_REJECTED_RECEIVE_FAILED)
+            return "Receive failed";
+        return "Unknown reason code: "+reason;
     }
     
     public static MessageType FNPPing = new MessageType("FNPPing") {{

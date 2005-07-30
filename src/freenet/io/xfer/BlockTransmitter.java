@@ -151,4 +151,15 @@ public class BlockTransmitter {
 		}
 		return ret;
 	}
+
+    /**
+     * Send the data, off-thread.
+     */
+    public void sendAsync() {
+        Runnable r = new Runnable() {
+            public void run() { send(); } };
+        Thread t = new Thread(r);
+        t.setDaemon(true);
+        t.start();
+    }
 }

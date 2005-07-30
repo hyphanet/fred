@@ -103,8 +103,8 @@ public class RequestSender implements Runnable {
              */
             
             MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
-            MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectLoop);
-            MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectOverload);
+            MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
+            MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
 
             // mfRejectedOverload must be the last thing in the or
             // So its or pointer remains null
@@ -122,13 +122,13 @@ public class RequestSender implements Runnable {
                 return;
             }
             
-            if(msg.getSpec() == DMT.FNPRejectLoop) {
+            if(msg.getSpec() == DMT.FNPRejectedLoop) {
                 htl = node.decrementHTL(source, htl);
                 // Find another node to route to
                 continue;
             }
             
-            if(msg.getSpec() == DMT.FNPRejectOverload) {
+            if(msg.getSpec() == DMT.FNPRejectedOverload) {
                 // Failed. Propagate back to source.
                 // Source will reduce send rate.
                 finish(REJECTED_OVERLOAD);
@@ -166,7 +166,7 @@ public class RequestSender implements Runnable {
                 continue;
             }
             
-            if(msg.getSpec() == DMT.FNPRejectOverload) {
+            if(msg.getSpec() == DMT.FNPRejectedOverload) {
                 finish(REJECTED_OVERLOAD);
                 return;
             }
@@ -175,7 +175,7 @@ public class RequestSender implements Runnable {
             
             // First get headers
             
-            headers = ((ShortBuffer)msg.getObject(DMT.CHK_HEADER)).getData();
+            headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
             
             // FIXME: Validate headers
 

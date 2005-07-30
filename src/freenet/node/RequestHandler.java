@@ -36,6 +36,8 @@ public class RequestHandler implements Runnable {
         Object o = node.makeRequestSender(key, htl, uid, source);
         if(o instanceof CHKBlock) {
             CHKBlock block = (CHKBlock) o;
+            Message df = DMT.createFNPDataFound(uid, block.getHeader());
+            source.send(df);
             PartiallyReceivedBlock prb =
                 new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getData());
             BlockTransmitter bt =
@@ -58,6 +60,8 @@ public class RequestHandler implements Runnable {
             rs.waitUntilStatusChange();
             
             if(rs.transferStarted()) {
+                Message df = DMT.createFNPDataFound(uid, rs.getHeaders());
+                source.send(df);
                 PartiallyReceivedBlock prb = rs.getPRB();
             	BlockTransmitter bt =
             	    new BlockTransmitter(node.usm, source, uid, prb);
@@ -76,7 +80,7 @@ public class RequestHandler implements Runnable {
             		return;
             	case RequestSender.REJECTED_OVERLOAD:
             	    // Propagate back to source who needs to reduce send rate
-            	    Message reject = DMT.createFNPRejectOverload(uid);
+            	    Message reject = DMT.createFNPRejectedOverload(uid);
             		source.sendAsync(reject);
             		return;
             	case RequestSender.ROUTE_NOT_FOUND:

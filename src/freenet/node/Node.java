@@ -29,6 +29,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
+import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
@@ -60,6 +61,8 @@ public class Node implements SimpleClient {
     private final HashMap requestSenders;
     /** RequestSender's currently transferring, by key */
     private final HashMap transferringRequestSenders;
+    /** InsertSender's currently running, by KeyHTLPair */
+    private final HashMap insertSenders;
     
     byte[] myIdentity; // FIXME: simple identity block; should be unique
     byte[] identityHash;
@@ -183,6 +186,7 @@ public class Node implements SimpleClient {
         random = rand;
         requestSenders = new HashMap();
         transferringRequestSenders = new HashMap();
+        insertSenders = new HashMap();
 
 		lm = new LocationManager(random);
 
@@ -380,6 +384,15 @@ public class Node implements SimpleClient {
         }
     }
 
+    public synchronized CHKBlock fetchFromStore(NodeCHK key) {
+        try {
+            return datastore.fetch(key);
+        } catch (IOException e) {
+            Logger.error(this, "Cannot fetch: "+e, e);
+            return null;
+        }
+    }
+    
     /**
      * Remove a sender from the set of currently transferring senders.
      */
@@ -424,5 +437,26 @@ public class Node implements SimpleClient {
             return htl;
         }
         return --htl;
+    }
+
+    /**
+     * Fetch or create an InsertSender for a given key/htl.
+     * @param key The key to be inserted.
+     * @param htl The current HTL. We can't coalesce inserts across
+     * HTL's.
+     * @param uid The UID of the caller's request chain, or a new
+     * one. This is obviously not used if there is already an 
+     * InsertSender running.
+     * @param source The node that sent the InsertRequest, or null
+     * if it originated locally.
+     */
+    public synchronized InsertSender makeInsertSender(NodeCHK key, short htl, long uid, NodePeer source,
+            byte[] headers, PartiallyReceivedBlock prb, boolean fromStore) {
+        KeyHTLPair kh = new KeyHTLPair(key, htl);
+        InsertSender is = (InsertSender) insertSenders.get(kh);
+        if(is != null) return is;
+        is = new InsertSender(key, uid, headers, htl, source, this, prb, fromStore);
+        insertSenders.put(kh, is);
+        return is;
     }
 }

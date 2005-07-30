@@ -31,7 +31,7 @@ import freenet.support.Logger;
  */
 public class MessageFilter {
 
-    public static final String VERSION = "$Id: MessageFilter.java,v 1.4 2005/07/27 18:02:04 amphibian Exp $";
+    public static final String VERSION = "$Id: MessageFilter.java,v 1.5 2005/07/30 16:41:12 amphibian Exp $";
 
     private static final int DEFAULT_TIMEOUT = 10000;
     private boolean _matched = false;
@@ -169,5 +169,9 @@ public class MessageFilter {
     public void clearMatched() {
         _matched = false;
         _message = null;
+    }
+
+    public void clearOr() {
+        _or = null;
     }
 }
