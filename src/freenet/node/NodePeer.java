@@ -17,6 +17,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
+import freenet.io.xfer.PacketThrottle;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -237,6 +238,7 @@ public class NodePeer implements PeerContext {
         // 5 extra hops on average at the end (to prevent probing and similar attacks)
         decrementAtMin =
             disableProbabilisticHTLs ? true : node.random.nextDouble() <= Node.DECREMENT_AT_MIN_PROB;
+        throttle = PacketThrottle.getThrottle(peer, Node.PACKET_SIZE);
     }
     
     /**
@@ -289,6 +291,7 @@ public class NodePeer implements PeerContext {
         // 5 extra hops on average at the end (to prevent probing and similar attacks)
         decrementAtMin =
             disableProbabilisticHTLs ? true : node.random.nextDouble() <= Node.DECREMENT_AT_MIN_PROB;
+        throttle = PacketThrottle.getThrottle(peer, Node.PACKET_SIZE);
     }
 
     public String toString() {
@@ -302,6 +305,9 @@ public class NodePeer implements PeerContext {
         	", resendQueue: "+resendRequestQueue.size()+
         	", outgoingPacketNo: "+outgoingPacketNumber;
     }
+    
+    /** Throttle for big packets */
+    private final PacketThrottle throttle;
     
     /** Keyspace location */
     private Location currentLocation;
@@ -406,6 +412,8 @@ public class NodePeer implements PeerContext {
             return;
         }
         byte[] payload = (byte[])sentPacketsBySequenceNumber.get(i);
+        if(payload.length > Node.PACKET_SIZE)
+            throttle.notifyOfPacketLost();
         // Send it
         
         synchronized(packetSender) {
@@ -424,7 +432,11 @@ public class NodePeer implements PeerContext {
         Integer i = new Integer(realSeqNo);
         removeAckRequest(realSeqNo);
         if(sentPacketsBySequenceNumber.containsKey(i)) {
-            sentPacketsBySequenceNumber.remove(i);
+            byte[] buf = 
+                (byte[]) sentPacketsBySequenceNumber.remove(i);
+            if(buf.length > Node.PACKET_SIZE) {
+                throttle.notifyOfPacketAcknowledged();
+            }
             if(sentPacketsBySequenceNumber.size() == 0) {
                 lowestSequenceNumberStillCached = -1;
                 highestSequenceNumberStillCached = -1;

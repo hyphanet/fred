@@ -76,6 +76,9 @@ public class NodeDispatcher implements Dispatcher {
         if(m.getSpec() == DMT.FNPDataRequest) {
             return handleDataRequest(m);
         }
+        if(m.getSpec() == DMT.FNPInsertRequest) {
+            return handleInsertRequest(m);
+        }
         return false;
     }
 
@@ -83,8 +86,19 @@ public class NodeDispatcher implements Dispatcher {
      * Handle an incoming FNPDataRequest.
      */
     private boolean handleDataRequest(Message m) {
-        // FIXME check IDs
-        RequestHandler rh = new RequestHandler(m, node);
+        long id = m.getLong(DMT.UID);
+        if(!node.lockUID(id)) return false;
+        RequestHandler rh = new RequestHandler(m, id, node);
+        Thread t = new Thread(rh);
+        t.setDaemon(true);
+        t.start();
+        return true;
+    }
+    
+    private boolean handleInsertRequest(Message m) {
+        long id = m.getLong(DMT.UID);
+        if(!node.lockUID(id)) return false;
+        InsertHandler rh = new InsertHandler(m, id, node);
         Thread t = new Thread(rh);
         t.setDaemon(true);
         t.start();

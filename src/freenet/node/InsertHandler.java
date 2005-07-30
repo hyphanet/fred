@@ -37,10 +37,10 @@ public class InsertHandler implements Runnable {
     
     PartiallyReceivedBlock prb;
     
-    InsertHandler(Message req, Node node) {
+    InsertHandler(Message req, long id, Node node) {
         this.req = req;
         this.node = node;
-        this.uid = req.getLong(DMT.UID);
+        this.uid = id;
         this.source = (NodePeer) req.getSource();
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         // FIXME check whether there is a collision on the ID...
@@ -48,6 +48,7 @@ public class InsertHandler implements Runnable {
     }
     
     public void run() {
+        try {
         runThread = Thread.currentThread();
         
         CHKBlock block = node.fetchFromStore(key);
@@ -185,6 +186,9 @@ public class InsertHandler implements Runnable {
                 finish();
                 return;
             }
+        }
+        } finally {
+            node.unlockUID(uid);
         }
     }
 

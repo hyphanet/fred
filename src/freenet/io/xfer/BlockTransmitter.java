@@ -89,7 +89,6 @@ public class BlockTransmitter {
 							sentSinceLastPing = 0;
 							_usm.send(BlockTransmitter.this._destination, DMT.createPing());
 						}
-						throttle.notifyOfPacketSent();
 				}
 			}
 		};
@@ -124,7 +123,6 @@ public class BlockTransmitter {
 				}
 			} else if (msg.getSpec().equals(DMT.missingPacketNotification)) {
 				LinkedList missing = (LinkedList) msg.getObject(DMT.MISSING);
-				throttle.notifyOfPacketLoss(missing.size());
 				for (Iterator i = missing.iterator(); i.hasNext();) {
 					Integer packetNo = (Integer) i.next();
 					if (_prb.isReceived(packetNo.intValue())) {

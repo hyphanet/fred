@@ -24,7 +24,6 @@ import java.util.LinkedList;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
-import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.UdpSocketManager;
@@ -34,9 +33,6 @@ import freenet.support.Logger;
 
 /**
  * @author ian
- * 
- * To change the template for this generated type comment go to Window - Preferences - Java - Code Generation - Code and
- * Comments
  */
 public class BlockReceiver {
 

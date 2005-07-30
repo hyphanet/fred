@@ -20,6 +20,7 @@ import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
@@ -63,6 +64,8 @@ public class Node implements SimpleClient {
     private final HashMap transferringRequestSenders;
     /** InsertSender's currently running, by KeyHTLPair */
     private final HashMap insertSenders;
+    
+    private final HashSet runningUIDs;
     
     byte[] myIdentity; // FIXME: simple identity block; should be unique
     byte[] identityHash;
@@ -187,6 +190,7 @@ public class Node implements SimpleClient {
         requestSenders = new HashMap();
         transferringRequestSenders = new HashMap();
         insertSenders = new HashMap();
+        runningUIDs = new HashSet();
 
 		lm = new LocationManager(random);
 
@@ -458,5 +462,22 @@ public class Node implements SimpleClient {
         is = new InsertSender(key, uid, headers, htl, source, this, prb, fromStore);
         insertSenders.put(kh, is);
         return is;
+    }
+    
+    public boolean lockUID(long uid) {
+        Long l = new Long(uid);
+        synchronized(runningUIDs) {
+            if(runningUIDs.contains(l)) return false;
+            runningUIDs.add(l);
+            return true;
+        }
+    }
+    
+    public void unlockUID(long uid) {
+        Long l = new Long(uid);
+        synchronized(runningUIDs) {
+            if(!runningUIDs.remove(l))
+                throw new IllegalStateException("Could not unlock "+uid+"!");
+        }
     }
 }

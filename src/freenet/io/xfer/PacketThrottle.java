@@ -29,7 +29,7 @@ public class PacketThrottle {
 	protected static final float PACKET_TRANSMIT_INCREMENT = (4 * (1 - (PACKET_DROP_DECREASE_MULTIPLE * PACKET_DROP_DECREASE_MULTIPLE))) / 3;
 	protected static final long MAX_DELAY = 1000;
 	protected static final long MIN_DELAY = 100;
-	public static final String VERSION = "$Id: PacketThrottle.java,v 1.1 2005/01/29 22:17:26 amphibian Exp $";
+	public static final String VERSION = "$Id: PacketThrottle.java,v 1.2 2005/07/30 18:52:37 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
 	private static Map _throttles = new HashMap();
 	private static Map _lastThrottleUse = new HashMap();
@@ -63,17 +63,17 @@ public class PacketThrottle {
 		_roundTripTime = Math.max(rtt, 10);
 	}
 
-	public void notifyOfPacketSent() {
-		_simulatedWindowSize += PACKET_TRANSMIT_INCREMENT;
+    public void notifyOfPacketLost() {
+		_droppedPackets++;
 		_totalPackets++;
-	}
+		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+    }
 
-	public void notifyOfPacketLoss(int numLost) {
-		_droppedPackets += numLost;
-		_simulatedWindowSize -= (PACKET_TRANSMIT_INCREMENT * numLost);
-		_simulatedWindowSize *= Math.pow(PACKET_DROP_DECREASE_MULTIPLE, numLost);
-	}
-
+    public void notifyOfPacketAcknowledged() {
+        _totalPackets++;
+        _simulatedWindowSize += PACKET_TRANSMIT_INCREMENT;
+    }
+    
 	public long getDelay() {
 		float winSizeForMinPacketDelay = (_roundTripTime / MIN_DELAY);
 		if (_simulatedWindowSize > winSizeForMinPacketDelay) {

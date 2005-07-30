@@ -16,14 +16,16 @@ public class RequestHandler implements Runnable {
 
     final Message req;
     final Node node;
+    final long uid;
     
-    public RequestHandler(Message m, Node n) {
+    public RequestHandler(Message m, long id, Node n) {
         req = m;
         node = n;
+        uid = id;
     }
 
     public void run() {
-        long uid = req.getLong(DMT.UID);
+        try {
         short htl = req.getShort(DMT.HTL);
         NodePeer source = (NodePeer) req.getSource();
         htl = source.decrementHTL(htl);
@@ -98,6 +100,9 @@ public class RequestHandler implements Runnable {
             	default:
             	    throw new IllegalStateException("Unknown status code "+status);
             }
+        }
+        } finally {
+            node.unlockUID(uid);
         }
     }
 
