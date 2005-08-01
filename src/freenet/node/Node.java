@@ -171,13 +171,21 @@ public class Node implements SimpleClient {
         logger.start();
         Logger.error(Node.class, "Testing...");
         Yarrow yarrow = new Yarrow();
-        Node n = new Node(port, yarrow);
+        InetAddress overrideIP = null;
+        if(args.length > 1) {
+            overrideIP = InetAddress.getByName(args[1]);
+            System.err.println("Overriding IP detection: "+overrideIP.getHostAddress());
+        }
+        Node n = new Node(port, yarrow, overrideIP);
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
     }
     
-    Node(int port, RandomSource rand) {
+    // FIXME - the whole overrideIP thing is a hack to avoid config
+    // Implement the config!
+    Node(int port, RandomSource rand, InetAddress overrideIP) {
         portNumber = port;
+        this.overrideIPAddress = overrideIP;
         try {
             datastore = new BaseFreenetStore("freenet-"+portNumber,1024);
         } catch (FileNotFoundException e1) {
@@ -292,18 +300,33 @@ public class Node implements SimpleClient {
      */
     public SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet();
-        InetAddress addr;
+        fs.put("physical.udp", getPrimaryIPAddress().getHostAddress()+":"+portNumber);
+        fs.put("identity", HexUtil.bytesToHex(myIdentity));
+        fs.put("location", Double.toString(lm.getLocation().getValue()));
+        return fs;
+    }
+
+    InetAddress overrideIPAddress;
+    
+    /**
+     * @return Our current main IP address.
+     * FIXME - we should support more than 1, and we should do the
+     * detection properly with NetworkInterface, and we should use
+     * third parties if available and UP&P if available.
+     */
+    private InetAddress getPrimaryIPAddress() {
+        if(overrideIPAddress != null) {
+            Logger.minor(this, "Returning overridden address: "+overrideIPAddress);
+            return overrideIPAddress;
+        }
+        Logger.minor(this, "IP address not overridden");
         try {
             // FIXME we should detect this properly
-            addr = InetAddress.getLocalHost();
+            return InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
             Logger.error(this, "Caught "+e+" trying to get localhost!");
             return null;
         }
-        fs.put("physical.udp", addr.getHostAddress()+":"+portNumber);
-        fs.put("identity", HexUtil.bytesToHex(myIdentity));
-        fs.put("location", Double.toString(lm.getLocation().getValue()));
-        return fs;
     }
 
     /**

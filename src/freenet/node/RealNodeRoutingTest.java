@@ -29,7 +29,7 @@ public class RealNodeRoutingTest {
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] = new Node(5000+i, random);
+            nodes[i] = new Node(5000+i, random, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];

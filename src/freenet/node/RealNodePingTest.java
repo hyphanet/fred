@@ -21,8 +21,8 @@ public class RealNodePingTest {
         Logger.setupStdoutLogging(Logger.MINOR, "");
         Yarrow yarrow = new Yarrow();
         // Create 2 nodes
-        Node node1 = new Node(5001, yarrow);
-        Node node2 = new Node(5002, yarrow);
+        Node node1 = new Node(5001, yarrow, null);
+        Node node2 = new Node(5002, yarrow, null);
         SimpleFieldSet node1ref = node1.exportFieldSet();
         SimpleFieldSet node2ref = node2.exportFieldSet();
         // Connect
