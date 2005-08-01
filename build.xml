@@ -20,18 +20,10 @@
 
     <javac srcdir="${src}" destdir="${build}">
 <!-- following a very temporary list of files to be build -->
-      <include name="test/**.java"/>
       <include name="org/**.java"/>
-      <include name="freenet/support/**.java"/>
-      <include name="freenet/store/**.java"/>
-<!--freenet/store/FreenetStore-->
-<!--      <include name="freenet/keys/CHKEncodeException.java"/>-->
-<!--      <include name="freenet/keys/CHKDecodeException.java"/>-->
-      <include name="freenet/keys/**.java"/>
-      <include name="freenet/crypt/UnsupportedCipherException.java"/>
-      <include name="freenet/crypt/ciphers/Rijndael.java"/>
-      <include name="freenet/crypt/PCF*.java"/>
-<!--      <include name="freenet/support/**.java"/>-->
+      <include name="freenet/**/*.java"/>
+      <include name="net/i2p/util/*.java"/>
+      <exclude name="org/**/MersenneTwisterTest.java"/>
     </javac>
   </target>
 

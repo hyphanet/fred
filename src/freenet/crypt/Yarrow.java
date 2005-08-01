@@ -624,15 +624,15 @@ public class Yarrow extends RandomSource {
 				r.nextBytes(b);
 				System.out.write(b);
 			}
-		} else if (args[0].equals("stream")) {
-			RandFile f = new RandFile(args[1]);
-			EntropySource rf = new EntropySource();
-			byte[] buffer = new byte[131072];
-			while (true) {
-				r.acceptEntropy(rf, f.nextLong(), 32);
-				r.nextBytes(buffer);
-				System.out.write(buffer);
-			}
+//		} else if (args[0].equals("stream")) {
+//			RandFile f = new RandFile(args[1]);
+//			EntropySource rf = new EntropySource();
+//			byte[] buffer = new byte[131072];
+//			while (true) {
+//				r.acceptEntropy(rf, f.nextLong(), 32);
+//				r.nextBytes(buffer);
+//				System.out.write(buffer);
+//			}
 		} else if (args[0].equalsIgnoreCase("bitstream")) {
 			while (true) {
 				int v = r.nextInt();
