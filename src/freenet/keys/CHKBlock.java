@@ -89,7 +89,7 @@ public class CHKBlock {
             throw new UnsupportedOperationException();
         BlockCipher cipher;
         try {
-            cipher = new Rijndael(256);
+            cipher = new Rijndael(256, 256);
         } catch (UnsupportedCipherException e) {
             // FIXME - log this properly
             throw new Error(e);

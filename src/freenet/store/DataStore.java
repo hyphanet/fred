@@ -27,7 +27,7 @@ import java.util.*;
 
 public class DataStore extends Store {
 
-    public static final String VERSION = "$Id: DataStore.java,v 1.3 2005/06/09 15:58:30 amphibian Exp $";    
+    public static final String VERSION = "$Id: DataStore.java,v 1.4 2005/08/01 19:20:12 amphibian Exp $";    
 
 	private RandomAccessFile _index;
 	private final int blockSize;
@@ -86,6 +86,7 @@ public class DataStore extends Store {
 
 	public synchronized void addDataAsBlock(Key key, byte[] data) throws IOException {
 		if (getKeyMap().containsKey(key)) {
+		    Logger.minor(this, "Already have key: "+key);
 			return;
 		}
 
@@ -132,6 +133,7 @@ public class DataStore extends Store {
 	 * (but *not* deleting that block from RAM)
 	 */
 	private void createAndOverwrite(int recnum, Key key, byte[] data) throws IOException {
+	    Logger.minor(this, "createAndOverwrite("+recnum+","+key+")");
 		DataBlock b = new DataBlock(recnum, key, System.currentTimeMillis());
 		_index.seek(recnum * DataBlock.SIZE_ON_DISK);
 
@@ -151,6 +153,7 @@ public class DataStore extends Store {
 		if (b == null) {
 			return null;
 		} else {
+		    Logger.minor(this, "Reading block: "+b.getRecordNumber());
 			return readData(b);
 		}
 	}
@@ -188,7 +191,7 @@ public class DataStore extends Store {
 
 	class DataBlock extends Block {
 
-	    public static final String VERSION = "$Id: DataStore.java,v 1.3 2005/06/09 15:58:30 amphibian Exp $";
+	    public static final String VERSION = "$Id: DataStore.java,v 1.4 2005/08/01 19:20:12 amphibian Exp $";
 
 		private static final short KEY_SIZE = Key.KEY_SIZE_ON_DISK;
 		private static final short ACCESS_TIME_SIZE = 8;

@@ -44,7 +44,7 @@ public abstract class Logger {
 	    fh.start();
 	}
 
-    private static void setupChain() {
+    public static void setupChain() {
         logger = new LoggerHookChain();
     }
 
@@ -198,5 +198,13 @@ public abstract class Logger {
     public static void fatal(Object cause, int retcode, String message) {
         error(cause, message);
         System.exit(retcode);
+    }
+
+    public static void globalAddHook(LoggerHook logger2) {
+        ((LoggerHookChain)logger).addHook(logger2);
+    }
+
+    public static void globalSetThreshold(int i) {
+        logger.setThreshold(i);
     }
 }

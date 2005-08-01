@@ -26,7 +26,7 @@ public class InsertSender implements Runnable {
         this.node = node;
         this.prb = prb;
         this.fromStore = fromStore;
-        Thread t = new Thread(this, "InsertSender for UID "+uid);
+        Thread t = new Thread(this, "InsertSender for UID "+uid+" on "+node.portNumber);
         t.setDaemon(true);
         t.start();
     }
@@ -56,26 +56,17 @@ public class InsertSender implements Runnable {
     public void run() {
         short origHTL = htl;
         try {
-        Message req = DMT.createFNPInsertRequest(uid, htl, myKey);
-        
         HashSet nodesRoutedTo = new HashSet();
-        HashSet nodesToSendDataTo = null;
         
         while(true) {
+            Message req = DMT.createFNPInsertRequest(uid, htl, myKey);
+            
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
             
             if(htl == 0) {
-                // Send the data on to nodesToSendDataTo
-                if(nodesToSendDataTo != null) {
-                    for(Iterator i=nodesToSendDataTo.iterator();i.hasNext();) {
-                        NodePeer pn = (NodePeer) i.next();
-                        BlockTransmitter bt = new BlockTransmitter(node.usm, pn, uid, prb);
-                        bt.sendAsync();
-                    }
-                }
-                
                 // Send an InsertReply back
                 finish(SUCCESS);
+                return;
             }
             
             // Route it
@@ -183,8 +174,6 @@ public class InsertSender implements Runnable {
             
             if(msg.getSpec() == DMT.FNPRouteNotFound) {
                 // Still gets the data - but not yet
-                if(nodesToSendDataTo == null) nodesToSendDataTo = new HashSet();
-                nodesToSendDataTo.add(next);
                 short newHtl = msg.getShort(DMT.HTL);
                 htl = node.decrementHTL(source, htl);
                 if(htl > newHtl) htl = newHtl;
@@ -235,6 +224,7 @@ public class InsertSender implements Runnable {
             // Otherwise should be an InsertReply
             // Our task is complete
             finish(SUCCESS);
+            return;
         }
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
@@ -260,6 +250,7 @@ public class InsertSender implements Runnable {
     }
     
     private void finish(int code) {
+        Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
         status = code;
         synchronized(this) {
             notifyAll();

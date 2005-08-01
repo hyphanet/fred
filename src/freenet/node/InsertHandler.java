@@ -150,9 +150,6 @@ public class InsertHandler implements Runnable {
             }
             
             if(status == InsertSender.SUCCESS) {
-                // Succeeded! Yay!
-                msg = DMT.createFNPInsertReply(uid);
-                source.send(msg);
                 canCommit = true;
                 finish();
                 return;
@@ -185,8 +182,13 @@ public class InsertHandler implements Runnable {
                 toSend = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_VERIFY_FAILED);
             }
         }
-        if(toSend != null)
+        if(toSend != null) {
             source.sendAsync(toSend);
+        } else {
+            // Succeeded! Yay!
+            Message msg = DMT.createFNPInsertReply(uid);
+            source.send(msg);
+        }
     }
     
     /** Has the receive failed? If so, there's not much more that can be done... */
@@ -195,14 +197,17 @@ public class InsertHandler implements Runnable {
     public class DataReceiver implements Runnable {
 
         public void run() {
+            Logger.minor(this, "Receiving data for "+InsertHandler.this);
             try {
                 br.receive();
+                Logger.minor(this, "Received data for "+InsertHandler.this);
                 finish();
             } catch (RetrievalException e) {
                 receiveFailed = true;
                 runThread.interrupt();
                 Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
                 source.send(msg);
+                Logger.minor(this, "Failed to retrieve: "+e, e);
                 return;
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);

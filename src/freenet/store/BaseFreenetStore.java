@@ -50,7 +50,7 @@ public class BaseFreenetStore implements FreenetStore {
      * Retrieve a block.
      * @return null if there is no such block stored, otherwise the block.
      */
-    public CHKBlock fetch(NodeCHK chk) throws IOException {
+    public synchronized CHKBlock fetch(NodeCHK chk) throws IOException {
         byte[] data = dataStore.getDataForBlock(chk);
         if(data == null) {
             if(headersStore.getDataForBlock(chk) != null) {
@@ -75,8 +75,9 @@ public class BaseFreenetStore implements FreenetStore {
         }
         byte[] buf = new byte[headerLen];
         System.arraycopy(headers, 2, buf, 0, headerLen);
+        Logger.minor(this, "Get key: "+chk);
         Logger.minor(this, "Raw headers: "+headers.length+" bytes, hash "+Fields.hashCode(headers));
-        Logger.minor(this, "Headers: "+headerLen+" bytes, hash "+Fields.hashCode(headers));
+        Logger.minor(this, "Headers: "+headerLen+" bytes, hash "+Fields.hashCode(buf));
         Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
         try {
             return new CHKBlock(data, buf, chk);
@@ -91,7 +92,7 @@ public class BaseFreenetStore implements FreenetStore {
     /**
      * Store a block.
      */
-    public void put(CHKBlock block) throws IOException {
+    public synchronized void put(CHKBlock block) throws IOException {
         byte[] data = block.getData();
         byte[] headers = block.getHeader();
         int hlen = headers.length;
@@ -102,6 +103,7 @@ public class BaseFreenetStore implements FreenetStore {
         hbuf[0] = (byte)(hlen >> 8);
         hbuf[1] = (byte)(hlen & 0xff);
         System.arraycopy(headers, 0, hbuf, 2, hlen);
+        Logger.minor(this, "Put key: "+block.getKey());
         Logger.minor(this, "Raw headers: "+hbuf.length+" bytes, hash "+Fields.hashCode(hbuf));
         Logger.minor(this, "Headers: "+hlen+" bytes, hash "+Fields.hashCode(headers));
         Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));

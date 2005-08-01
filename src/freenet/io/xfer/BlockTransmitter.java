@@ -118,7 +118,7 @@ public class BlockTransmitter {
 			if (msg == null) {
 				if (getNumSent() == _prb.getNumPackets()) {
 					_sendComplete = true;
-					Logger.normal(this, "Terminating send as we haven't heard from receiver in "+SEND_TIMEOUT+"ms.");
+					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+SEND_TIMEOUT+"ms.");
 					return false;
 				}
 			} else if (msg.getSpec().equals(DMT.missingPacketNotification)) {

@@ -54,6 +54,7 @@ public class TextModeClientInterface implements Runnable {
                 System.err.println("Bye... ("+e+")");
                 return;
             }
+            if(line == null) line = "QUIT";
             if(line.startsWith("GET:")) {
                 // Should have a key next
                 String key = line.substring("GET:".length());

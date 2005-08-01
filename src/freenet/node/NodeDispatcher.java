@@ -102,7 +102,7 @@ public class NodeDispatcher implements Dispatcher {
             return false;
         }
         InsertHandler rh = new InsertHandler(m, id, node);
-        Thread t = new Thread(rh);
+        Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.portNumber);
         t.setDaemon(true);
         t.start();
         Logger.minor(this, "Started InsertHandler for "+id);

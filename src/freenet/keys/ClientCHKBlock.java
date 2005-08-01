@@ -134,7 +134,7 @@ public class ClientCHKBlock extends CHKBlock {
         // Now encrypt the header, then the data, using the same PCFB instance
         BlockCipher cipher;
         try {
-            cipher = new Rijndael(256);
+            cipher = new Rijndael(256, 256);
         } catch (UnsupportedCipherException e) {
             // FIXME - log this properly
             throw new Error(e);

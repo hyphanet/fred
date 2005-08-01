@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.12 2005/07/30 21:30:18 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.13 2005/08/01 19:20:12 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -231,7 +231,7 @@ public class UdpSocketManager extends Thread {
 				if(!matched) {
 				    while (_unclaimed.size() > 500) {
 				        Message removed = (Message)_unclaimed.removeFirst();
-				        Logger.error(this, "Unclaimed: "+removed);
+				        Logger.normal(this, "Unclaimed: "+removed);
 				    }
 				    _unclaimed.addLast(m);
 				}
@@ -396,4 +396,8 @@ public class UdpSocketManager extends Thread {
 	{
 		_usm = new UdpSocketManager(externalListenPort);
 	}
+
+    public int getPortNumber() {
+        return _sock.getLocalPort();
+    }
 }

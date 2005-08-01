@@ -38,8 +38,10 @@ import freenet.keys.ClientCHKBlock;
 import freenet.keys.NodeCHK;
 import freenet.store.BaseFreenetStore;
 import freenet.store.FreenetStore;
+import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.LoggerHookChain;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -134,7 +136,7 @@ public class Node implements SimpleClient {
         File orig = new File(filename);
         File backup = new File(backupFilename);
         orig.renameTo(backup);
-        FileOutputStream fos = new FileOutputStream(backup);
+        FileOutputStream fos = new FileOutputStream(filename);
         OutputStreamWriter osr = new OutputStreamWriter(fos);
         fs.writeTo(osr);
         osr.close();
@@ -159,10 +161,15 @@ public class Node implements SimpleClient {
      * Read the port number from the arguments.
      * Then create a node.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         int port = Integer.parseInt(args[0]);
         System.out.println("Port number: "+port);
-        Logger.setupStdoutLogging(Logger.MINOR, "");
+        FileLoggerHook logger = new FileLoggerHook("freenet-"+port+".log", "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true);
+        Logger.setupChain();
+        Logger.globalSetThreshold(Logger.MINOR);
+        Logger.globalAddHook(logger);
+        logger.start();
+        Logger.error(Node.class, "Testing...");
         Yarrow yarrow = new Yarrow();
         Node n = new Node(port, yarrow);
         n.start(new StaticSwapRequestInterval(2000));
@@ -240,6 +247,7 @@ public class Node implements SimpleClient {
             try {
                 return new ClientCHKBlock((CHKBlock)o, key);
             } catch (CHKVerifyException e) {
+                Logger.error(this, "Does not verify: "+e, e);
                 return null;
             }
         }
@@ -250,6 +258,7 @@ public class Node implements SimpleClient {
             try {
                 return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
             } catch (CHKVerifyException e) {
+                Logger.error(this, "Does not verify: "+e, e);
                 return null;
             }
         } else return null;
@@ -259,8 +268,16 @@ public class Node implements SimpleClient {
         byte[] data = block.getData();
         byte[] headers = block.getHeader();
         PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
-        InsertSender is = makeInsertSender(block.getClientKey().getNodeCHK(), 
-                MAX_HTL, random.nextLong(), null, headers, prb, false);
+        InsertSender is;
+        synchronized(this) {
+            try {
+                datastore.put(block);
+            } catch (IOException e) {
+                Logger.error(this, "Datastore failure: "+e, e);
+            }
+            is = makeInsertSender(block.getClientKey().getNodeCHK(), 
+                    MAX_HTL, random.nextLong(), null, headers, prb, false);
+        }
         is.waitUntilFinished();
         if(is.getStatus() == InsertSender.SUCCESS) {
             Logger.normal(this, "Succeeded inserting "+block);
@@ -277,7 +294,8 @@ public class Node implements SimpleClient {
         SimpleFieldSet fs = new SimpleFieldSet();
         InetAddress addr;
         try {
-            addr = InetAddress.getByName("127.0.0.1");
+            // FIXME we should detect this properly
+            addr = InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
             Logger.error(this, "Caught "+e+" trying to get localhost!");
             return null;
@@ -322,6 +340,7 @@ public class Node implements SimpleClient {
      * RequestSender.
      */
     public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, NodePeer source) {
+        Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
         // In store?
         CHKBlock chk = null;
         try {
@@ -329,23 +348,34 @@ public class Node implements SimpleClient {
         } catch (IOException e) {
             Logger.error(this, "Error accessing store: "+e, e);
         }
-        if(chk != null) return null;
+        if(chk != null) return chk;
+        Logger.minor(this, "Not in store locally");
         
         // Transfer coalescing - match key only as HTL irrelevant
         RequestSender sender = (RequestSender) transferringRequestSenders.get(key);
-        if(sender != null) return sender;
+        if(sender != null) {
+            Logger.minor(this, "Data already being transferred: "+sender);
+            return sender;
+        }
 
         // HTL == 0 => Don't search further
-        if(htl == 0) return null;
+        if(htl == 0) {
+            Logger.minor(this, "No HTL");
+            return null;
+        }
         
         // Request coalescing
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         sender = (RequestSender) requestSenders.get(kh);
-        if(sender != null) return sender;
+        if(sender != null) {
+            Logger.minor(this, "Found sender: "+sender);
+            return sender;
+        }
         
-        RequestSender rs = new RequestSender(key, htl, uid, this, source);
-        requestSenders.put(kh, rs);
-        return rs;
+        sender = new RequestSender(key, htl, uid, this, source);
+        requestSenders.put(kh, sender);
+        Logger.minor(this, "Created new sender: "+sender);
+        return sender;
     }
     
     class KeyHTLPair {

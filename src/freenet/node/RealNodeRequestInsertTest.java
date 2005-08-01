@@ -7,6 +7,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -24,7 +25,7 @@ public class RealNodeRequestInsertTest {
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException {
         NodePeer.disableProbabilisticHTLs = true;
         Node.MAX_HTL = 5;
-        Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node:minor,freenet.node.Location:normal,freenet.node.FNP:normal,freenet.node.NodePeer:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
+        Logger.setupStdoutLogging(Logger.NORMAL, "freenet.store:minor,freenet.node:minor,freenet.node.Location:normal,freenet.node.FNP:normal,freenet.node.NodePeer:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
@@ -142,6 +143,7 @@ public class RealNodeRequestInsertTest {
             System.out.println();
             int requestNumber = 0;
             RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
+            String baseString = "" + System.currentTimeMillis() + " ";
             while(true) {
                 try {
                 requestNumber++;
@@ -149,19 +151,24 @@ public class RealNodeRequestInsertTest {
                     Thread.sleep(5000);
                 } catch (InterruptedException e1) {
                 }
-                String dataString = Integer.toString(requestNumber);
-                Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\"");
+                String dataString = baseString + requestNumber;
+                // Pick random node to insert to
+                int node1 = random.nextInt(NUMBER_OF_NODES);
+                Node randomNode = nodes[random.nextInt(NUMBER_OF_NODES)];
+                Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\" to "+node1);
                 byte[] data = dataString.getBytes();
                 ClientCHKBlock block;
                 block = ClientCHKBlock.encode(data);
                 ClientCHK chk = block.getClientKey();
+                byte[] encData = block.getData();
+                byte[] encHeaders = block.getHeader();
+                ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
+                Logger.error(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.decode(chk)));
                 Logger.error(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
                 Logger.error(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeader()));
-                // Pick random node to insert to
-                int node1 = random.nextInt(NUMBER_OF_NODES);
-                Node randomNode = nodes[random.nextInt(NUMBER_OF_NODES)];
                 randomNode.putCHK(block);
                 Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
+                Logger.error(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
                 // Pick random node to request from
                 int node2;
                 do {
@@ -173,12 +180,12 @@ public class RealNodeRequestInsertTest {
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch FAILED from "+node2);
                     requestsAvg.report(0.0);
                 } else {
-                    byte[] results = block.getData();
+                    byte[] results = block.decode(chk);
                     requestsAvg.report(1.0);
                     if(Arrays.equals(results, data)) {
-                        Logger.error(RealNodeRequestInsertTest.class, "Succeeded: "+new String(results));
+                        Logger.error(RealNodeRequestInsertTest.class, "Fetch succeeded: "+new String(results));
                     } else {
-                        Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!");
+                        Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                     }
                 }
                 } catch (Throwable t) {
