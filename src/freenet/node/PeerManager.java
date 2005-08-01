@@ -98,6 +98,7 @@ public class PeerManager {
         newConnectedPeers[connectedPeers.length] = pn;
         myPeers = newMyPeers;
         connectedPeers = newConnectedPeers;
+        Logger.normal(this, "Added "+pn);
     }
 
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
