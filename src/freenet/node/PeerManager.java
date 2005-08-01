@@ -51,20 +51,7 @@ public class PeerManager {
                 while(true) {
                     // Read a single NodePeer
                     SimpleFieldSet fs;
-                    try {
-                        fs = new SimpleFieldSet(br);
-                    } catch (IOException e1) {
-                        if(e1 instanceof EOFException)
-                            throw (EOFException)e1;
-                        Logger.error(this, "Could not read peers file: "+e1, e1);
-                        return;
-                    } finally {
-                        try {
-                            br.close();
-                        } catch (IOException e3) {
-                            // Ignore
-                        }
-                    }
+                    fs = new SimpleFieldSet(br);
                     NodePeer pn;
                     try {
                         pn = new NodePeer(fs, node);
@@ -79,6 +66,15 @@ public class PeerManager {
                 }
             } catch (EOFException e) {
                 // End of file, fine
+            } catch (IOException e1) {
+                Logger.error(this, "Could not read peers file: "+e1, e1);
+                return;
+            } finally {
+                try {
+                    br.close();
+                } catch (IOException e3) {
+                    // Ignore
+                }
             }
         } catch (FileNotFoundException e) {
             Logger.error(this, "Peers file not found: "+filename);
