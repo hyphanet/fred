@@ -83,7 +83,7 @@ public class SimpleFieldSet {
             String value = (String) entry.getValue();
             w.write(key+"="+value+"\n");
         }
-        w.write("End");
+        w.write("End\n");
     }
     
     public String toString() {

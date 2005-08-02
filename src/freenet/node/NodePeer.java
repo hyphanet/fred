@@ -641,6 +641,7 @@ public class NodePeer implements PeerContext {
         QueuedResendRequest qr = new QueuedResendRequest(seqNumber);
         // Add to queue in the right place
         
+        checkLists();
         if(resendRequestQueue.isEmpty())
             resendRequestQueue.addLast(qr);
         else {
@@ -652,7 +653,9 @@ public class NodePeer implements PeerContext {
                     throw new IllegalStateException("Inconsistent resendRequestQueue: urgentTime increasing! on "+this);
                 lastUrgentTime = thisUrgentTime;
                 if(thisUrgentTime < qr.urgentTime) {
+                    i.next();
                     i.add(qr);
+                    checkLists();
                     return;
                 }
             }
@@ -721,7 +724,6 @@ public class NodePeer implements PeerContext {
             }
             ackRequestQueue.addFirst(qa);
         }
-        checkLists();
         // We do not need to notify the subthread as it will never
         // sleep for more than 200ms, so it will pick up on the
         // need to send something then.
@@ -749,14 +751,28 @@ public class NodePeer implements PeerContext {
     
     private synchronized void checkResendRequests() {
         QueuedResendRequest prev = null;
-        for(Iterator i = resendRequestQueue.listIterator();i.hasNext();) {
+        for(ListIterator i = resendRequestQueue.listIterator();i.hasNext();) {
             QueuedResendRequest qa = (QueuedResendRequest) (i.next());
             if(prev != null) {
                 if(qa.urgentTime < prev.urgentTime) {
-                    Logger.error(this, "Inconsistent resendRequest queue: Prev: "+prev.urgentTime+", next: "+qa.urgentTime);
+                    Logger.error(this, "Inconsistent resendRequest queue: Prev: "+prev.urgentTime+", next: "+qa.urgentTime, new Exception("debugme"));
+                    // Swap them over
+                    i.add(prev);
+                    assertTrue(i.previous() == qa); // returns qa
+                    assertTrue(i.previous() == prev); // return prev
+                    i.remove(); // remove prev
+                    assertTrue(i.next() == qa); /// returns qa
+                    assertTrue(i.next() == prev); // returns prev
                 }
             }
             prev = qa;
+        }
+    }
+
+    // FIXME can we centralize this? Does java provide something?
+    static void assertTrue(boolean b) {
+        if(b == false) {
+            throw new IllegalStateException("Assertion failed!");
         }
     }
 
