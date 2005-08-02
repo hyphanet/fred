@@ -125,7 +125,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             md.update(node.myIdentity);
             byte[] X = md.digest();
             Logger.minor(this, "X="+HexUtil.bytesToHex(X));
-        
+            
             // Now just try to find a node such that H(X XOR H(alice ID)) == targetHash
             
             if(opn != null) {
@@ -138,7 +138,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             // Try *all* peers
             for(int i=0;i<pm.myPeers.length;i++) {
                 pn = pm.myPeers[i];
-                if(pn == pm.myPeers[i]) continue;
+                if(pn == opn) continue;
                 if(tryProcessHandshakePhase1(X, targetHash, pn, md)) {
                     // IP address change; phase 2 will notify
                     sendHandshakeReply(opn, random, peer, md);
@@ -156,7 +156,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 // Try *all* peers
                 for(int i=0;i<pm.myPeers.length;i++) {
                     pn = pm.myPeers[i];
-                    if(pn == pm.myPeers[i]) continue;
+                    if(pn == opn) continue;
                     if(tryProcessHandshakePhase2(buf, offset, length, opn, peer, md))
                         return;
                 }
