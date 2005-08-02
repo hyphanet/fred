@@ -141,7 +141,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 if(pn == opn) continue;
                 if(tryProcessHandshakePhase1(X, targetHash, pn, md)) {
                     // IP address change; phase 2 will notify
-                    sendHandshakeReply(opn, random, peer, md);
+                    sendHandshakeReply(pn, random, peer, md);
                     return;
                 }
             }
