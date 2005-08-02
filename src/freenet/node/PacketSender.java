@@ -54,6 +54,15 @@ public class PacketSender implements Runnable {
                             urgentTime = firstRemainingUrgentTime;
                     }
                 }
+                // Do we need to send any handshake requests?
+                for(int i=0;i<pm.connectedPeers.length;i++) {
+                    NodePeer pn = node.peers.connectedPeers[i];
+                    if(node.packetMangler != null) {
+                        if(pn.shouldSendHandshake()) {
+                            node.packetMangler.sendHandshake(pn);
+                        }
+                    }
+                }
                 if(lastClearedOldSwapChains - now > 10000) {
                     node.lm.clearOldSwapChains();
                     lastClearedOldSwapChains = now;

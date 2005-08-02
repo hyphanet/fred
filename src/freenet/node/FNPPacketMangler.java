@@ -1,7 +1,9 @@
 package freenet.node;
 
+import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.EntropySource;
@@ -32,11 +34,20 @@ public class FNPPacketMangler implements LowLevelFilter {
     static final EntropySource fnpTimingSource = new EntropySource();
     static final EntropySource myPacketDataSource = new EntropySource();
     static final int RANDOM_BYTES_LENGTH = 12;
+    final int HASH_LENGTH;
     
     public FNPPacketMangler(Node node) {
         this.node = node;
         this.pm = node.peers;
         this.usm = node.usm;
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e);
+        }
+        
+        HASH_LENGTH = md.getDigestLength();
     }
 
     /**
@@ -62,10 +73,8 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     public void process(byte[] buf, int offset, int length, Peer peer) {
         node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
-        if(length < 41) {
-            Logger.error(this, "Packet from "+peer+" too short "+length+" bytes");
-        }
-        
+        Logger.minor(this, "Packet length "+length);
+
         /**
          * Look up the Peer.
          * If we know it, check the packet with that key.
@@ -73,26 +82,195 @@ public class FNPPacketMangler implements LowLevelFilter {
          * occasionally change their IP addresses).
          */
         NodePeer opn = pm.getByPeer(peer);
-        if(opn != null) {
-            if(tryProcess(buf, offset, length, opn)) return;
-        }
         NodePeer pn;
-        // FIXME: trying all peers, should try only connected peers
-        // FIXME: this is because we aren't doing key negotiation yet
-        // FIXME: we are simply assigning a symmetric key to a node
-        // FIXME: note that this provides no real security
-        // FIXME: but it lets us get the infrastructure largely right
-        for(int i=0;i<pm.myPeers.length;i++) {
-            pn = pm.myPeers[i];
-            if(pn == opn) continue;
-            if(tryProcess(buf, offset, length, pn)) {
-                // IP address change
-                pn.changedIP(peer);
-                return;
+        
+        if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
+            
+            if(opn != null) {
+                if(tryProcess(buf, offset, length, opn)) return;
+            }
+            // FIXME: trying all peers, should try only connected peers
+            // FIXME: this is because we aren't doing key negotiation yet
+            // FIXME: we are simply assigning a symmetric key to a node
+            // FIXME: note that this provides no real security
+            // FIXME: but it lets us get the infrastructure largely right
+            for(int i=0;i<pm.myPeers.length;i++) {
+                pn = pm.myPeers[i];
+                if(pn == opn) continue;
+                if(tryProcess(buf, offset, length, pn)) {
+                    // IP address change
+                    pn.changedIP(peer);
+                    return;
+                }
             }
         }
+
+        // If it doesn't match as a data packet, maybe it's a handshake packet?
+        if(length < HASH_LENGTH) {
+            Logger.error(this,"Unmatchable packet from "+peer+" - not matched, and too short to be phase 1 handshake");
+            return;
+        }
+
+        MessageDigest md = getDigest();
+        
+        if(length >= HASH_LENGTH + HANDSHAKE_RANDOM_LENGTH) {
+            
+            // Try phase 1
+            
+            byte[] random = new byte[HANDSHAKE_RANDOM_LENGTH];
+            System.arraycopy(buf, 0, random, 0, HANDSHAKE_RANDOM_LENGTH);
+            byte[] targetHash = new byte[HASH_LENGTH];
+            System.arraycopy(buf, HANDSHAKE_RANDOM_LENGTH, targetHash, 0, HASH_LENGTH);
+            md.update(random);
+            md.update(node.myIdentity);
+            byte[] X = md.digest();
+            Logger.minor(this, "X="+HexUtil.bytesToHex(X));
+        
+            // Now just try to find a node such that H(X XOR H(alice ID)) == targetHash
+            
+            if(opn != null) {
+                if(tryProcessHandshakePhase1(X, targetHash, opn, md)) {
+                    sendHandshakeReply(opn, random, peer, md);
+                    return;
+                }
+            }
+            
+            // Try *all* peers
+            for(int i=0;i<pm.myPeers.length;i++) {
+                pn = pm.myPeers[i];
+                if(pn == pm.myPeers[i]) continue;
+                if(tryProcessHandshakePhase1(X, targetHash, pn, md)) {
+                    // IP address change; phase 2 will notify
+                    sendHandshakeReply(opn, random, peer, md);
+                    return;
+                }
+            }
+        }
+        
+        if(length >= HASH_LENGTH) {
+            // Phase 2
+            if(opn != null) {
+                if(tryProcessHandshakePhase2(buf, offset, length, opn, peer, md))
+                    // Will set IP, seq# etc
+                    return;
+                // Try *all* peers
+                for(int i=0;i<pm.myPeers.length;i++) {
+                    pn = pm.myPeers[i];
+                    if(pn == pm.myPeers[i]) continue;
+                    if(tryProcessHandshakePhase2(buf, offset, length, opn, peer, md))
+                        return;
+                }
+            }
+        }
+        
+        // Phase 2?
+            
         Logger.error(this,"Unmatchable packet from "+peer);
     }
+
+    private boolean tryProcessHandshakePhase2(byte[] buf, int offset, int length, NodePeer opn, Peer peer, MessageDigest md) {
+        // Decrypt hash first
+        byte[] decryptedHash = new byte[HASH_LENGTH];
+        System.arraycopy(buf, offset, decryptedHash, 0, HASH_LENGTH);
+        opn.sessionCipher.decipher(decryptedHash, decryptedHash);
+        // Now try to reproduce it
+        byte[][] lastSentRandoms = opn.getLastSentHandshakeRandoms();
+        for(int i=0;i<lastSentRandoms.length;i++) {
+            byte[] r = lastSentRandoms[i];
+            if(r == null) continue;
+            md.update(r);
+            md.update(opn.getNodeIdentity());
+            md.update(node.myIdentity);
+            if(Arrays.equals(md.digest(), decryptedHash)) {
+                // Successful handshake!
+                opn.handshakeSucceeded();
+                opn.changedIP(peer);
+                return true;
+            }
+        }
+        // Didn't match
+        return false;
+    }
+
+    /**
+     * Send a handshake reply.
+     */
+    private void sendHandshakeReply(NodePeer opn, byte[] random, Peer peer, MessageDigest md) {
+        Logger.normal(this, "Sending handshake reply to "+peer+" for "+opn);
+        md.update(random);
+        md.update(node.myIdentity);
+        md.update(opn.getNodeIdentity());
+        byte[] result = md.digest();
+        opn.sessionCipher.encipher(result, result);
+        usm.sendPacket(result, peer);
+        opn.maybeShouldSendHandshake();
+    }
+
+    /**
+     * Create a new SHA-256 MessageDigest
+     */
+    private MessageDigest getDigest() {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new Error(e);
+        }
+    }
+
+    /**
+     * Does H(X + (Alice's ID)) == targetHash? If so, send a
+     * handshake reply.
+     * @param opn The node to check
+     * @param md A cleared MessageDigest to use.
+     */
+    private boolean tryProcessHandshakePhase1(byte[] x, byte[] targetHash, NodePeer opn, MessageDigest md) {
+        Logger.normal(this, "Processing handshake phase 1 possibly from "+opn);
+        md.update(x);
+        md.update(opn.getNodeIdentity());
+        if(Arrays.equals(md.digest(), targetHash)) {
+            Logger.normal(this, "Was definitely from "+opn);
+            return true;
+        }
+        Logger.normal(this, "Not from "+opn);
+        return false;
+    }
+
+    /**
+     * Send a handshake packet to a node.
+     */
+    public void sendHandshake(NodePeer pn) {
+        Logger.normal(this, "Sending handshake packet to "+pn);
+        MessageDigest md = getDigest();
+        byte[] random = new byte[HANDSHAKE_RANDOM_LENGTH];
+        node.random.nextBytes(random);
+        md.update(random);
+        md.update(pn.getNodeIdentity());
+        byte[] temp = md.digest();
+        Logger.minor(this, "Sending X="+HexUtil.bytesToHex(temp));
+        md.update(temp);
+        md.update(node.myIdentity);
+        byte[] sendPacket = new byte[HANDSHAKE_RANDOM_LENGTH + HASH_LENGTH];
+        System.arraycopy(random, 0, sendPacket, 0, random.length);
+        try {
+            md.digest(sendPacket, random.length, HASH_LENGTH);
+        } catch (DigestException e) {
+            throw new Error(e);
+        }
+        pn.sentHandshakeRandom(random);
+        usm.sendPacket(sendPacket, pn.getPeer());
+    }
+
+    static final int HANDSHAKE_RANDOM_LENGTH = 12;
+    
+    /*
+     * Packet format:
+     * Phase 1:
+     * Alice -> Bob: R_alice H(H(R_alice + (Bob's ID) ) + (Alice's ID) )
+     * Phase 2:
+     * Alice -> Bob: E_session ( R_alice + R_bob + seq# + <4 bytes random> )
+     * Either can have any amount of padding.
+     */
+    
 
     /**
      * Try to process an incoming packet with a given PeerNode.
@@ -113,20 +291,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
             throw new IllegalStateException("Block size must be equal to key size");
         
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
-        
-        int digestLength = md.getDigestLength();
-        
-        if(digestLength != blockSize)
+        if(HASH_LENGTH != blockSize)
             throw new IllegalStateException("Block size must be digest length!");
 
-        byte[] packetHash = new byte[digestLength];
-        System.arraycopy(buf, offset, packetHash, 0, digestLength);
+        byte[] packetHash = new byte[HASH_LENGTH];
+        System.arraycopy(buf, offset, packetHash, 0, HASH_LENGTH);
         
         // Decrypt the sequence number and see if it's plausible
         // Verify the hash later
@@ -138,7 +307,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         //Logger.minor(this,"IV:\n"+HexUtil.bytesToHex(packetHash));
         
         byte[] seqBuf = new byte[4];
-        System.arraycopy(buf, offset+digestLength, seqBuf, 0, 4);
+        System.arraycopy(buf, offset+HASH_LENGTH, seqBuf, 0, 4);
         //Logger.minor(this, "Encypted sequence number: "+HexUtil.bytesToHex(seqBuf));
         pcfb.blockDecipher(seqBuf, 0, 4);
         //Logger.minor(this, "Decrypted sequence number: "+HexUtil.bytesToHex(seqBuf));
@@ -164,13 +333,14 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         // Plausible, so lets decrypt the rest of the data
         
-        byte[] plaintext = new byte[length-(4+digestLength)];
-        System.arraycopy(buf, offset+digestLength+4, plaintext, 0, length-(digestLength+4));
+        byte[] plaintext = new byte[length-(4+HASH_LENGTH)];
+        System.arraycopy(buf, offset+HASH_LENGTH+4, plaintext, 0, length-(HASH_LENGTH+4));
         
-        pcfb.blockDecipher(plaintext, 0, length-(digestLength+4));
+        pcfb.blockDecipher(plaintext, 0, length-(HASH_LENGTH+4));
         
         //Logger.minor(this, "Plaintext:\n"+HexUtil.bytesToHex(plaintext));
         
+        MessageDigest md = getDigest();
         md.update(seqBuf);
         md.update(plaintext);
         byte[] realHash = md.digest();
@@ -185,7 +355,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         // Check the hash
         if(!java.util.Arrays.equals(packetHash, realHash)) {
             Logger.minor(this, "Packet possibly from "+pn+" hash does not match:\npacketHash="+
-                    HexUtil.bytesToHex(packetHash)+"\n  realHash="+HexUtil.bytesToHex(realHash)+" ("+(length-digestLength)+" bytes payload)");
+                    HexUtil.bytesToHex(packetHash)+"\n  realHash="+HexUtil.bytesToHex(realHash)+" ("+(length-HASH_LENGTH)+" bytes payload)");
             return false;
         }
         
@@ -415,6 +585,13 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         NodePeer pn = (NodePeer) peer;
         
+        if(!pn.isConnected()) {
+            // Drop it
+            // FIXME: queue? I don't think we can at this level... Queue at the processOutgoing level?
+            Logger.normal(this, "Dropping packet: Not connected yet");
+            return;
+        }
+        
         // We do not support forgotten packets at present
         
         // Allocate a sequence number
@@ -592,5 +769,4 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         usm.sendPacket(output, pn.getPeer());
     }
-
 }

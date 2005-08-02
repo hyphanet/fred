@@ -51,6 +51,12 @@ public class NodePeer implements PeerContext {
             highestSeqNumber = -1;
         }
         
+        public void clear() {
+            lowestSeqNumber = -1;
+            highestSeqNumber = -1;
+            ranges.clear();
+        }
+        
         class Range {
             int start; // inclusive
             int end;   // inclusive
@@ -229,8 +235,7 @@ public class NodePeer implements PeerContext {
         }
         sessionCipher.initialize(key);
         this.packetSender = ps;
-        // FIXME: this is a debugging aid, maybe we should keep it?
-        outgoingPacketNumber = node.random.nextInt(100000);
+        resetOutgoingPacketNumber();
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
         // 10 extra hops on average at the start (for cover)
         decrementAtMax =
@@ -239,8 +244,14 @@ public class NodePeer implements PeerContext {
         decrementAtMin =
             disableProbabilisticHTLs ? true : node.random.nextDouble() <= Node.DECREMENT_AT_MIN_PROB;
         throttle = PacketThrottle.getThrottle(peer, Node.PACKET_SIZE);
+        shouldHandshake = true;
     }
     
+    private void resetOutgoingPacketNumber() {
+        // FIXME: this is a debugging aid, maybe we should keep it?
+        outgoingPacketNumber = node.random.nextInt(100000);
+    }
+
     /**
      * @param fs
      */
@@ -282,8 +293,7 @@ public class NodePeer implements PeerContext {
             throw new Error(e1);
         }
         sessionCipher.initialize(key);
-        // FIXME: this is a debugging aid, maybe we should keep it?
-        outgoingPacketNumber = node.random.nextInt(100000);
+        resetOutgoingPacketNumber();
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
         // 10 extra hops on average at the start (for cover)
         decrementAtMax =
@@ -292,8 +302,29 @@ public class NodePeer implements PeerContext {
         decrementAtMin =
             disableProbabilisticHTLs ? true : node.random.nextDouble() <= Node.DECREMENT_AT_MIN_PROB;
         throttle = PacketThrottle.getThrottle(peer, Node.PACKET_SIZE);
+        shouldHandshake = true;
     }
 
+    boolean shouldHandshake;
+    
+    /**
+     * Reset after a handshake succeeded
+     */
+    public void handshakeSucceeded() {
+        Logger.normal(this, "Successful handshake with "+this);
+        shouldHandshake = false;
+        lastHandshakeSucceeded = System.currentTimeMillis();
+        sentPacketsBySequenceNumber.clear();
+        lowestSequenceNumberStillCached = -1;
+        highestSequenceNumberStillCached = -1;
+        packetsReceived.clear();
+        ackQueue.clear();
+        resendRequestQueue.clear();
+        ackRequestQueue.clear();
+        lastResendRequestSeqNumber = -1;
+        resetOutgoingPacketNumber();
+    }
+    
     public String toString() {
         // Excessive??
         return super.toString() + ": contact="+peer+", identity="+
@@ -1107,5 +1138,55 @@ public class NodePeer implements PeerContext {
      */
     public void send(Message m) {
         node.usm.send(this, m);
+    }
+
+    long lastSentHandshake = -1;
+    long nextSendHandshake = -1;
+    static final int HANDSHAKE_BASE_INTERVAL = 2500;
+    static final int HANDSHAKE_RANDOM_MAX = 2500;
+    
+    public boolean shouldSendHandshake() {
+        if(!shouldHandshake) return false; 
+        long now = System.currentTimeMillis();
+        if(nextSendHandshake < now) {
+            lastSentHandshake = now;
+            nextSendHandshake = now + HANDSHAKE_BASE_INTERVAL + node.random.nextInt(HANDSHAKE_RANDOM_MAX);
+            return true;
+        } else return false;
+    }
+
+    byte[][] randoms = new byte[3][];
+    int randomPtr = 0;
+    
+    public void sentHandshakeRandom(byte[] random) {
+        randoms[randomPtr] = random;
+        randomPtr++;
+        if(randomPtr >= randoms.length) randomPtr = 0;
+    }
+
+    public byte[][] getLastSentHandshakeRandoms() {
+        return randoms;
+    }
+    
+    public boolean shouldHandshake() {
+        return shouldHandshake;
+    }
+
+    public boolean isConnected() {
+        return !shouldHandshake;
+    }
+
+    long lastHandshakeSucceeded = -1;
+    
+    /**
+     * If haven't succeeded in last 10 seconds, start sending handshake requests.
+     * FIXME this is totally arbitrary and won't work under
+     * severe packet loss. Will be removed when we have full
+     * PK connection setup.
+     */
+    public void maybeShouldSendHandshake() {
+        if(System.currentTimeMillis() - lastHandshakeSucceeded > 10000) {
+            shouldHandshake = true;
+        }
     }
 }
