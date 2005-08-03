@@ -241,7 +241,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.normal(this, "Was definitely from "+opn);
             return true;
         }
-        Logger.normal(this, "Not from "+opn);
+        Logger.minor(this, "Not from "+opn);
         return false;
     }
 
