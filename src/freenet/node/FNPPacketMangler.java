@@ -737,6 +737,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         BlockCipher sessionCipher = pn.outputSessionCipher;
         if(sessionCipher == null) {
             Logger.error(this, "Dropping packet send - have not handshaked yet");
+            return;
         }
         int blockSize = sessionCipher.getBlockSize() >> 3;
         if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())

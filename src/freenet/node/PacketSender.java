@@ -55,12 +55,19 @@ public class PacketSender implements Runnable {
                     }
                 }
                 // Do we need to send any handshake requests?
-                for(int i=0;i<pm.connectedPeers.length;i++) {
-                    NodePeer pn = node.peers.connectedPeers[i];
+                for(int i=0;i<pm.myPeers.length;i++) {
+                    NodePeer pn = node.peers.myPeers[i];
                     if(node.packetMangler != null) {
                         if(pn.shouldSendHandshake()) {
                             node.packetMangler.sendHandshake(pn);
                         }
+                    }
+                }
+                // Check for dead nodes
+                for(int i=0;i<pm.connectedPeers.length;i++) {
+                    NodePeer pn = node.peers.connectedPeers[i];
+                    if(now - pn.lastReceivedPacketTime > Node.MAX_PEER_INACTIVITY) {
+                        pn.shouldHandshake = true;
                     }
                 }
                 // Do we need to send any keepalive packets?
@@ -69,7 +76,7 @@ public class PacketSender implements Runnable {
                         NodePeer pn = node.peers.connectedPeers[i];
                         if(pn.isConnected()) {
                             synchronized(pn.getPacketSendLock()) {
-                                if(now - pn.lastSentPacketTime > 30000) {
+                                if(now - pn.lastSentPacketTime > Node.KEEPALIVE_INTERVAL) {
                                     node.packetMangler.processOutgoing(null, 0, 0, pn);
                                 }
                             }
@@ -86,7 +93,7 @@ public class PacketSender implements Runnable {
                     if(sleepTime > 0)
                         Thread.sleep(sleepTime);
                 } catch (InterruptedException e) {
-                    // Ignore, just wake up. Probably we got interrupt()ed
+                    // Ignore, just wake up. Probably we got interrupted
                     // because a new packet came in.
                 }
             }

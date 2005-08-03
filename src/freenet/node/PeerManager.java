@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Vector;
 
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
@@ -88,19 +89,38 @@ public class PeerManager {
         for(int i=0;i<myPeers.length;i++) {
             if(myPeers[i] == pn) return;
         }
-        // Add it to both, since we have no connect/disconnect protocol
-        // FIXME!
         NodePeer[] newMyPeers = new NodePeer[myPeers.length+1];
         System.arraycopy(myPeers, 0, newMyPeers, 0, myPeers.length);
         newMyPeers[myPeers.length] = pn;
-        NodePeer[] newConnectedPeers = new NodePeer[connectedPeers.length+1];
-        System.arraycopy(connectedPeers, 0, newConnectedPeers, 0, connectedPeers.length);
-        newConnectedPeers[connectedPeers.length] = pn;
         myPeers = newMyPeers;
-        connectedPeers = newConnectedPeers;
         Logger.normal(this, "Added "+pn);
     }
 
+    public synchronized void addConnectedPeer(NodePeer pn) {
+        for(int i=0;i<connectedPeers.length;i++) {
+            if(connectedPeers[i] == pn) {
+                Logger.minor(this, "Already connected: "+pn);
+                return;
+            }
+        }
+        boolean inMyPeers = false;
+        for(int i=0;i<myPeers.length;i++) {
+            if(myPeers[i] == pn) {
+                inMyPeers = true;
+                break;
+            }
+        }
+        if(!inMyPeers) {
+            Logger.error(this, "Connecting to "+pn+" but not in peers!");
+            addPeer(pn);
+        }
+        Logger.minor(this, "Connecting: "+pn);
+        NodePeer[] newConnectedPeers = new NodePeer[connectedPeers.length+1];
+        System.arraycopy(connectedPeers, 0, newConnectedPeers, 0, connectedPeers.length);
+        newConnectedPeers[connectedPeers.length] = pn;
+        connectedPeers = newConnectedPeers;
+    }
+    
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
 //        double minDist = 1.1;
 //        NodePeer best = null;
@@ -151,20 +171,52 @@ public class PeerManager {
         double[] locs;
         NodePeer[] conns = connectedPeers;
         locs = new double[connectedPeers.length];
-        for(int i=0;i<conns.length;i++)
-            locs[i] = conns[i].getLocation().getValue();
+        int x = 0;
+        for(int i=0;i<conns.length;i++) {
+            if(conns[i].isConnected())
+                locs[x++] = conns[i].getLocation().getValue();
+        }
         // Wipe out any information contained in the order
-        java.util.Arrays.sort(locs);
-        return locs;
+        java.util.Arrays.sort(locs, 0, x);
+        if(x != locs.length) {
+            double[] newLocs = new double[x];
+            System.arraycopy(locs, 0, newLocs, 0, x);
+            return newLocs;
+        } else return locs;
     }
 
     /**
      * @return A random connected peer.
      * FIXME: should this take performance into account?
+     * DO NOT remove the "synchronized". See below for why.
      */
-    public synchronized NodePeer getRandomPeer() {
+    public synchronized NodePeer getRandomPeer(NodePeer exclude) {
         if(connectedPeers.length == 0) return null;
-        return connectedPeers[node.random.nextInt(connectedPeers.length)];
+        for(int i=0;i<5;i++) {
+            NodePeer pn = connectedPeers[node.random.nextInt(connectedPeers.length)];
+            if(pn == exclude) continue;
+            if(pn.isConnected()) return pn;
+        }
+        // None of them worked
+        // Move the un-connected ones out
+        // This is safe as they will add themselves when they
+        // reconnect, and they can't do it yet as we are synchronized.
+        Vector v = new Vector(connectedPeers.length);
+        for(int i=0;i<connectedPeers.length;i++) {
+            NodePeer pn = connectedPeers[i];
+            if(pn == exclude) continue;
+            if(pn.isConnected()) {
+                v.add(pn);
+            }
+        }
+        int lengthWithoutExcluded = v.size();
+        if(exclude != null && exclude.isConnected())
+            v.add(exclude);
+        NodePeer[] newConnectedPeers = new NodePeer[v.size()];
+        newConnectedPeers = (NodePeer[]) v.toArray(newConnectedPeers);
+        connectedPeers = newConnectedPeers;
+        if(lengthWithoutExcluded == 0) return null;
+        return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
     }
 
     /**
@@ -173,18 +225,13 @@ public class PeerManager {
     public void localBroadcast(Message msg) {
         NodePeer[] peers = connectedPeers; // avoid synchronization
         for(int i=0;i<peers.length;i++) {
-            peers[i].sendAsync(msg);
+            if(peers[i].isConnected())
+                peers[i].sendAsync(msg);
         }
     }
 
-    public NodePeer getRandomPeer(NodePeer pn) {
-        NodePeer[] peers = connectedPeers;
-        if(peers.length < 2) return null;
-        while(true) {
-            NodePeer p = connectedPeers[node.random.nextInt(connectedPeers.length)];
-            if(p == pn) continue;
-            return p;
-        }
+    public NodePeer getRandomPeer() {
+        return getRandomPeer(null);
     }
 
     /**
@@ -196,6 +243,7 @@ public class PeerManager {
         NodePeer best = null;
         for(int i=0;i<peers.length;i++) {
             NodePeer p = peers[i];
+            if(!p.isConnected()) continue;
             double diff = distance(p.getLocation().getValue(), loc);
             if(diff < bestDiff) {
                 best = p;
@@ -232,6 +280,7 @@ public class PeerManager {
             NodePeer p = peers[i];
             if(routedTo.contains(p)) continue;
             if(p == pn) continue;
+            if(!p.isConnected()) continue;
             double diff = distance(p.getLocation().getValue(), loc);
             if((!ignoreSelf) && diff > minDiff) continue;
             if(diff < bestDiff) {

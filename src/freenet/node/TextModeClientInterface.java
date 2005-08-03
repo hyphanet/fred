@@ -44,6 +44,7 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("Freenet 0.7 Trivial Node Test Interface");
         System.out.println("---------------------------------------");
         System.out.println();
+        System.out.println("Build "+Version.buildNumber);
         System.out.println("Enter one of the following commands:");
         System.out.println("GET:<Freenet key> - fetch a key");
         System.out.println("PUT:\n<text, until a . on a line by itself> - We will insert the document and return the key.");

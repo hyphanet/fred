@@ -77,6 +77,10 @@ public class Node implements SimpleClient {
     final UdpSocketManager usm;
     final FNPPacketMangler packetMangler;
     final PacketSender ps;
+    // Send keepalives every 30 seconds
+    public static final long KEEPALIVE_INTERVAL = 30000;
+    // If no activity for 90 seconds, node is dead
+    public static final long MAX_PEER_INACTIVITY = 90000;
     final NodeDispatcher dispatcher;
     static short MAX_HTL = 20;
     private static final int EXIT_STORE_FILE_NOT_FOUND = 1;
@@ -269,7 +273,10 @@ public class Node implements SimpleClient {
                 Logger.error(this, "Does not verify: "+e, e);
                 return null;
             }
-        } else return null;
+        } else {
+            Logger.normal(this, "getCHK failed: "+rs.getStatus());
+            return null;
+        }
     }
 
     public void putCHK(ClientCHKBlock block) {
@@ -303,6 +310,7 @@ public class Node implements SimpleClient {
         fs.put("physical.udp", getPrimaryIPAddress().getHostAddress()+":"+portNumber);
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
+        fs.put("version", Version.getVersionString());
         Logger.minor(this, "My reference: "+fs);
         return fs;
     }

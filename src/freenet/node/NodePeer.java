@@ -35,6 +35,9 @@ public class NodePeer implements PeerContext {
 
     /** Time we last sent a packet - actual time it left the node */
     public long lastSentPacketTime;
+
+    /** Time we last received a packet */
+    public long lastReceivedPacketTime;
     
     /**
      * Tracks which packet numbers we have received.
@@ -330,7 +333,7 @@ public class NodePeer implements PeerContext {
         }
         inputSessionCipher.initialize(cipherKey);
         shouldHandshake = false;
-        lastHandshakeSucceeded = System.currentTimeMillis();
+        lastReceivedPacketTime = lastHandshakeSucceeded = System.currentTimeMillis();
         sentPacketsBySequenceNumber.clear();
         lowestSequenceNumberStillCached = -1;
         highestSequenceNumberStillCached = -1;
@@ -340,6 +343,9 @@ public class NodePeer implements PeerContext {
         ackRequestQueue.clear();
         lastResendRequestSeqNumber = -1;
         resetOutgoingPacketNumber();
+        // It is not vital to remove self when we stop working.
+        // We must however set the not-working flag.
+        node.peers.addConnectedPeer(this);
         Logger.normal(this, "Successful handshake finished with "+this);
     }
     
@@ -549,6 +555,7 @@ public class NodePeer implements PeerContext {
      * @param seqNumber
      */
     public synchronized void receivedPacket(int seqNumber) {
+        lastReceivedPacketTime = System.currentTimeMillis();
         Logger.minor(this, "RECEIVED PACKET "+seqNumber);
         if(seqNumber == -1) return;
         // First ack it
@@ -1176,8 +1183,8 @@ public class NodePeer implements PeerContext {
 
     long lastSentHandshake = -1;
     long nextSendHandshake = -1;
-    static final int HANDSHAKE_BASE_INTERVAL = 2500;
-    static final int HANDSHAKE_RANDOM_MAX = 2500;
+    static final int HANDSHAKE_BASE_INTERVAL = 5000;
+    static final int HANDSHAKE_RANDOM_MAX = 5000;
     
     public boolean shouldSendHandshake() {
         if(!shouldHandshake) return false; 
@@ -1220,6 +1227,7 @@ public class NodePeer implements PeerContext {
      */
     public void maybeShouldSendHandshake() {
         if(System.currentTimeMillis() - lastHandshakeSucceeded > 10000) {
+            Logger.minor(this, "Should handshake");
             shouldHandshake = true;
         }
     }
