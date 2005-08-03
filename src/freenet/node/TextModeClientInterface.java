@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -47,6 +48,8 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("GET:<Freenet key> - fetch a key");
         System.out.println("PUT:\n<text, until a . on a line by itself> - We will insert the document and return the key.");
         System.out.println("PUT:<text> - put a single line of text to a CHK and return the key.");
+        System.out.println("PUTFILE:<filename> - put a file from disk.");
+        System.out.println("GETFILE:<filename> - fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
         System.out.println("QUIT - exit the program");
         // Read command, and data
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -92,6 +95,63 @@ public class TextModeClientInterface implements Runnable {
                     }
                     System.out.println("Decoded data:\n");
                     System.out.println(new String(decoded));
+                }
+            } else if(line.startsWith("GETFILE:")) {
+                // Should have a key next
+                String key = line.substring("GETFILE:".length());
+                while(key.length() > 0 && key.charAt(0) == ' ')
+                    key = key.substring(1);
+                while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
+                    key = key.substring(0, key.length()-2);
+                Logger.normal(this, "Key: "+key);
+                FreenetURI uri;
+                ClientCHK chk;
+                try {
+                    uri = new FreenetURI(key);
+                    chk = new ClientCHK(uri);
+                } catch (MalformedURLException e2) {
+                    System.err.println("Malformed URI: "+key+" : "+e2);
+                    continue;
+                }
+                CHKBlock block;
+                // Fetch, possibly from other node.
+                block = n.getCHK(chk);
+                if(block == null) {
+                    System.out.println("Not found in store: "+chk.getURI());
+                } else {
+                    // Decode it
+                    byte[] decoded;
+                    try {
+                        decoded = block.decode(chk);
+                    } catch (CHKDecodeException e) {
+                        Logger.error(this, "Cannot decode: "+e, e);
+                        continue;
+                    }
+                    // Now calculate filename
+                    String fnam = uri.getDocName();
+                    fnam = sanitize(fnam);
+                    if(fnam.length() == 0) {
+                        fnam = "freenet-download-"+System.currentTimeMillis();
+                    }
+                    if(new File(fnam).exists()) {
+                        System.out.println("File exists already: "+fnam);
+                        fnam = "freenet-"+System.currentTimeMillis()+fnam;
+                    }
+                    FileOutputStream fos = null;
+                    try {
+                        fos = new FileOutputStream(fnam);
+                        fos.write(decoded);
+                        fos.close();
+                    } catch (IOException e) {
+                        System.out.println("Could not write file: caught "+e);
+                        e.printStackTrace();
+                    } finally {
+                        if(fos != null) try {
+                            fos.close();
+                        } catch (IOException e1) {
+                            // Ignore
+                        }
+                    }
                 }
             } else if(line.startsWith("QUIT")) {
                 System.out.println("Goodbye.");
@@ -152,6 +212,7 @@ public class TextModeClientInterface implements Runnable {
                     int length = (int)f.length();
                     byte[] data = new byte[length];
                     dis.readFully(data);
+                    dis.close();
                     System.out.println("Inserting...");
                     ClientCHKBlock block;
                     try {
@@ -163,6 +224,7 @@ public class TextModeClientInterface implements Runnable {
                     ClientCHK chk = block.getClientKey();
                     FreenetURI uri = 
                         chk.getURI();
+                    uri = uri.setDocName(f.getName());
                     n.putCHK(block);
                     System.out.println("URI: "+uri);
                 } catch (FileNotFoundException e1) {
@@ -178,6 +240,16 @@ public class TextModeClientInterface implements Runnable {
                 
             }
         }
+    }
+
+    private String sanitize(String fnam) {
+        StringBuffer sb = new StringBuffer(fnam.length());
+        for(int i=0;i<fnam.length();i++) {
+            char c = fnam.charAt(i);
+            if(Character.isLetterOrDigit(c) || c == '-' || c == '.')
+                sb.append(c);
+        }
+        return sb.toString();
     }
     
     
