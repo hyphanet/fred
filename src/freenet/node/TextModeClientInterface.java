@@ -142,6 +142,7 @@ public class TextModeClientInterface implements Runnable {
                         fos = new FileOutputStream(fnam);
                         fos.write(decoded);
                         fos.close();
+                        System.out.println("Written to "+fnam);
                     } catch (IOException e) {
                         System.out.println("Could not write file: caught "+e);
                         e.printStackTrace();
