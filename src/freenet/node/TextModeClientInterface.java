@@ -1,6 +1,10 @@
 package freenet.node;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
@@ -133,6 +137,43 @@ public class TextModeClientInterface implements Runnable {
                 n.putCHK(block);
                 // Definitely interface
                 System.out.println("URI: "+uri);
+            } else if(line.startsWith("PUTFILE:")) {
+                // Just insert to local store
+                line = line.substring("PUTFILE:".length());
+                while(line.length() > 0 && line.charAt(0) == ' ')
+                    line = line.substring(1);
+                while(line.length() > 0 && line.charAt(line.length()-1) == ' ')
+                    line = line.substring(0, line.length()-2);
+                File f = new File(line);
+                System.out.println("Attempting to read file "+line);
+                try {
+                    FileInputStream fis = new FileInputStream(line);
+                    DataInputStream dis = new DataInputStream(fis);
+                    int length = (int)f.length();
+                    byte[] data = new byte[length];
+                    dis.readFully(data);
+                    System.out.println("Inserting...");
+                    ClientCHKBlock block;
+                    try {
+                        block = ClientCHKBlock.encode(data);
+                    } catch (CHKEncodeException e) {
+                        Logger.error(this, "Couldn't encode: "+e, e);
+                        continue;
+                    }
+                    ClientCHK chk = block.getClientKey();
+                    FreenetURI uri = 
+                        chk.getURI();
+                    n.putCHK(block);
+                    System.out.println("URI: "+uri);
+                } catch (FileNotFoundException e1) {
+                    System.out.println("File not found");
+                } catch (IOException e) {
+                    System.out.println("Could not read: "+e);
+                    e.printStackTrace();
+                } catch (Throwable t) {
+                    System.out.println("Threw: "+t);
+                    t.printStackTrace();
+                }
             } else {
                 
             }

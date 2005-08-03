@@ -73,7 +73,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     public void process(byte[] buf, int offset, int length, Peer peer) {
         node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
-        Logger.minor(this, "Packet length "+length);
+        Logger.minor(this, "Packet length "+length+" from "+peer);
 
         /**
          * Look up the Peer.
@@ -87,7 +87,14 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
             
             if(opn != null) {
-                if(tryProcess(buf, offset, length, opn)) return;
+                if(tryProcess(buf, offset, length, opn, false, false)) return;
+                /*
+                 * It is possible that one side goes down, and the other side
+                 * doesn't realize so keeps sending packets. Then we handshake.
+                 * Then we discard the old NodePeer state. If this happens we
+                 * need to silently discard any packets with the old key.
+                 */
+                if(tryProcess(buf, offset, length, opn, true, true)) return;
             }
             // FIXME: trying all peers, should try only connected peers
             // FIXME: this is because we aren't doing key negotiation yet
@@ -97,11 +104,13 @@ public class FNPPacketMangler implements LowLevelFilter {
             for(int i=0;i<pm.myPeers.length;i++) {
                 pn = pm.myPeers[i];
                 if(pn == opn) continue;
-                if(tryProcess(buf, offset, length, pn)) {
+                if(tryProcess(buf, offset, length, pn, false, false)) {
                     // IP address change
                     pn.changedIP(peer);
                     return;
                 }
+                // Dump any old packets - see above
+                if(tryProcess(buf, offset, length, pn, true, true)) return;
             }
         }
 
@@ -172,7 +181,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         // Decrypt hash first
         byte[] decryptedHash = new byte[HASH_LENGTH];
         System.arraycopy(buf, offset, decryptedHash, 0, HASH_LENGTH);
-        opn.sessionCipher.decipher(decryptedHash, decryptedHash);
+        opn.baseCipher.decipher(decryptedHash, decryptedHash);
         // Now try to reproduce it
         byte[][] lastSentRandoms = opn.getLastSentHandshakeRandoms();
         for(int i=0;i<lastSentRandoms.length;i++) {
@@ -183,7 +192,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             md.update(node.myIdentity);
             if(Arrays.equals(md.digest(), decryptedHash)) {
                 // Successful handshake!
-                opn.handshakeSucceeded();
+                opn.handshakeSucceeded(decryptedHash);
                 opn.changedIP(peer);
                 return true;
             }
@@ -201,7 +210,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         md.update(node.myIdentity);
         md.update(opn.getNodeIdentity());
         byte[] result = md.digest();
-        opn.sessionCipher.encipher(result, result);
+        opn.setupOutputCipher(result);
+        opn.baseCipher.encipher(result, result);
         usm.sendPacket(result, peer);
         opn.maybeShouldSendHandshake();
     }
@@ -277,8 +287,8 @@ public class FNPPacketMangler implements LowLevelFilter {
      * We need to know where the packet has come from in order to
      * decrypt and authenticate it.
      */
-    private boolean tryProcess(byte[] buf, int offset, int length, NodePeer pn) {
-        Logger.minor(this,"Entering tryProcess: "+buf+","+offset+","+length+","+pn);
+    private boolean tryProcess(byte[] buf, int offset, int length, NodePeer pn, boolean useOldCipher, boolean discardContents) {
+        Logger.minor(this,"Entering tryProcess: "+buf+","+offset+","+length+","+pn+","+useOldCipher+","+discardContents);
         /**
          * E_pcbc_session(H(seq+random+data)) E_pcfb_session(seq+random+data)
          * 
@@ -286,7 +296,11 @@ public class FNPPacketMangler implements LowLevelFilter {
          * first one is ECB, and the second one is ECB XORed with the 
          * ciphertext and plaintext of the first block).
          */
-        BlockCipher sessionCipher = pn.getSessionCipher();
+        BlockCipher sessionCipher = useOldCipher ? pn.oldInputSessionCipher : pn.inputSessionCipher;
+        if(sessionCipher == null) {
+            Logger.minor(this, "No cipher");
+            return false;
+        }
         int blockSize = sessionCipher.getBlockSize() >> 3;
         if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
             throw new IllegalStateException("Block size must be equal to key size");
@@ -370,8 +384,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         node.random.acceptEntropyBytes(myPacketDataSource, packetHash, 0, md.getDigestLength(), 0.5);
         
-        // Lots more to do yet!
-        processDecryptedData(plaintext, seqNumber, pn);
+        if(!discardContents) {
+            // Lots more to do yet!
+            processDecryptedData(plaintext, seqNumber, pn);
+        }
         return true;
     }
 
@@ -715,7 +731,10 @@ public class FNPPacketMangler implements LowLevelFilter {
      * including acks and resend requests. Is clobbered.
      */
     private void processOutgoingFullyFormatted(byte[] plaintext, NodePeer pn) {
-        BlockCipher sessionCipher = pn.getSessionCipher();
+        BlockCipher sessionCipher = pn.outputSessionCipher;
+        if(sessionCipher == null) {
+            Logger.error(this, "Dropping packet send - have not handshaked yet");
+        }
         int blockSize = sessionCipher.getBlockSize() >> 3;
         if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
             throw new IllegalStateException("Block size must be half key size: blockSize="+
@@ -765,7 +784,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         // We have a packet
         // Send it
         
-        Logger.minor(this,"Sending packet to "+pn);
+        Logger.minor(this,"Sending packet length "+output.length+" to "+pn);
         
         usm.sendPacket(output, pn.getPeer());
     }

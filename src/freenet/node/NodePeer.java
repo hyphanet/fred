@@ -228,12 +228,13 @@ public class NodePeer implements PeerContext {
         byte[] okey = node.identityHash;
         for(int i=0;i<key.length;i++)
             key[i] ^= okey[i];
+        baseCipherKey = key;
         try {
-            sessionCipher = new Rijndael(256,256);
+            baseCipher = new Rijndael(256,256);
         } catch (UnsupportedCipherException e1) {
             throw new Error(e1);
         }
-        sessionCipher.initialize(key);
+        baseCipher.initialize(baseCipherKey);
         this.packetSender = ps;
         resetOutgoingPacketNumber();
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
@@ -286,13 +287,14 @@ public class NodePeer implements PeerContext {
         byte[] okey = node.identityHash;
         for(int i=0;i<key.length;i++)
             key[i] ^= okey[i];
+        baseCipherKey = key;
         //Logger.minor(this, "Session key: "+HexUtil.bytesToHex(key));
         try {
-            sessionCipher = new Rijndael(256,256);
+            baseCipher = new Rijndael(256,256);
         } catch (UnsupportedCipherException e1) {
             throw new Error(e1);
         }
-        sessionCipher.initialize(key);
+        baseCipher.initialize(baseCipherKey);
         resetOutgoingPacketNumber();
         //Logger.minor(this, "outgoingPacketNumber initialized to "+outgoingPacketNumber);
         // 10 extra hops on average at the start (for cover)
@@ -310,8 +312,20 @@ public class NodePeer implements PeerContext {
     /**
      * Reset after a handshake succeeded
      */
-    public void handshakeSucceeded() {
+    public synchronized void handshakeSucceeded(byte[] decryptedHash) {
         Logger.normal(this, "Successful handshake with "+this);
+        // Setup session key
+        cipherKey = new byte[node.packetMangler.HASH_LENGTH];
+        for(int i=0;i<cipherKey.length;i++) {
+            cipherKey[i] = (byte) (baseCipherKey[i] ^ decryptedHash[i]);
+        }
+        oldInputSessionCipher = inputSessionCipher;
+        try {
+            inputSessionCipher = new Rijndael(256,256);
+        } catch (UnsupportedCipherException e1) {
+            throw new Error(e1);
+        }
+        inputSessionCipher.initialize(cipherKey);
         shouldHandshake = false;
         lastHandshakeSucceeded = System.currentTimeMillis();
         sentPacketsBySequenceNumber.clear();
@@ -323,6 +337,24 @@ public class NodePeer implements PeerContext {
         ackRequestQueue.clear();
         lastResendRequestSeqNumber = -1;
         resetOutgoingPacketNumber();
+        Logger.normal(this, "Successful handshake finished with "+this);
+    }
+    
+    /**
+     * @param result
+     */
+    public void setupOutputCipher(byte[] result) {
+        // Setup session key
+        byte[] outputCipherKey = new byte[node.packetMangler.HASH_LENGTH];
+        for(int i=0;i<outputCipherKey.length;i++) {
+            outputCipherKey[i] = (byte) (baseCipherKey[i] ^ result[i]);
+        }
+        try {
+            outputSessionCipher = new Rijndael(256,256);
+        } catch (UnsupportedCipherException e1) {
+            throw new Error(e1);
+        }
+        outputSessionCipher.initialize(outputCipherKey);
     }
     
     public String toString() {
@@ -827,17 +859,16 @@ public class NodePeer implements PeerContext {
     }
     
     
+    // FIXME remove when we have full PK neg 
+    BlockCipher baseCipher;
+    final byte[] baseCipherKey;
     
+    byte[] cipherKey;
+    BlockCipher inputSessionCipher;
+    BlockCipher outputSessionCipher;
+    /** The previous session cipher */
+    BlockCipher oldInputSessionCipher;
     
-    BlockCipher sessionCipher;
-    
-    /**
-     * Get the session key
-     */
-    public BlockCipher getSessionCipher() {
-        return sessionCipher;
-    }
-
     /**
      * @return The highest sequence number of all packets we have
      * received so far.

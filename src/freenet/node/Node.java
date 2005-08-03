@@ -303,6 +303,7 @@ public class Node implements SimpleClient {
         fs.put("physical.udp", getPrimaryIPAddress().getHostAddress()+":"+portNumber);
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
+        Logger.minor(this, "My reference: "+fs);
         return fs;
     }
 
