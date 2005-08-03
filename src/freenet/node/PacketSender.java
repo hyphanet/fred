@@ -63,6 +63,15 @@ public class PacketSender implements Runnable {
                         }
                     }
                 }
+                // Do we need to send any keepalive packets?
+                for(int i=0;i<pm.connectedPeers.length;i++) {
+                    NodePeer pn = node.peers.connectedPeers[i];
+                    synchronized(pn.getPacketSendLock()) {
+                        if(now - pn.lastSentPacketTime > 30000) {
+                            node.packetMangler.processOutgoing(null, 0, 0, pn);
+                        }
+                    }
+	            }
                 if(lastClearedOldSwapChains - now > 10000) {
                     node.lm.clearOldSwapChains();
                     lastClearedOldSwapChains = now;

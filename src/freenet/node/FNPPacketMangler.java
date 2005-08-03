@@ -601,6 +601,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         NodePeer pn = (NodePeer) peer;
         
+        synchronized(pn.getPacketSendLock()) {
+        
         if(!pn.isConnected()) {
             // Drop it
             // FIXME: queue? I don't think we can at this level... Queue at the processOutgoing level?
@@ -723,6 +725,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 
         processOutgoingFullyFormatted(plaintext, pn);
         Logger.minor(this, "Sent packet");
+        }
     }
 
     /**
@@ -787,5 +790,6 @@ public class FNPPacketMangler implements LowLevelFilter {
         Logger.minor(this,"Sending packet length "+output.length+" to "+pn);
         
         usm.sendPacket(output, pn.getPeer());
+        pn.lastSentPacketTime = System.currentTimeMillis();
     }
 }

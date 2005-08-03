@@ -32,6 +32,9 @@ import freenet.support.math.TimeDecayingRunningAverage;
 public class NodePeer implements PeerContext {
     
     static boolean disableProbabilisticHTLs = false;
+
+    /** Time we last sent a packet - actual time it left the node */
+    public long lastSentPacketTime;
     
     /**
      * Tracks which packet numbers we have received.
@@ -1219,5 +1222,11 @@ public class NodePeer implements PeerContext {
         if(System.currentTimeMillis() - lastHandshakeSucceeded > 10000) {
             shouldHandshake = true;
         }
+    }
+
+    Object packetSendLock = new Object();
+    
+    public Object getPacketSendLock() {
+        return packetSendLock;
     }
 }
