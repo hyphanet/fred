@@ -219,6 +219,7 @@ public class TextModeClientInterface implements Runnable {
                     try {
                         block = ClientCHKBlock.encode(data);
                     } catch (CHKEncodeException e) {
+                        System.out.println("Couldn't encode: "+e.getMessage());
                         Logger.error(this, "Couldn't encode: "+e, e);
                         continue;
                     }
