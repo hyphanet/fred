@@ -22,6 +22,7 @@ public class UpdatableSortedLinkedList {
             list.push(i);
             return;
         }
+        if(i.compareTo(list.tail()) == 0) return;
         if(i.compareTo(list.tail()) > 0) {
             list.push(i);
             return;
@@ -50,7 +51,7 @@ public class UpdatableSortedLinkedList {
     }
     
     public synchronized void update(UpdatableSortedLinkedListItem i) {
-        if(i == list.tail()) return;
+        if(i.compareTo(list.tail()) == 0) return;
         if(i.compareTo(list.tail()) > 0) {
             list.remove(i);
             list.push(i);

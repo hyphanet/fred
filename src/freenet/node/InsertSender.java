@@ -78,6 +78,7 @@ public class InsertSender implements Runnable {
                 finish(ROUTE_NOT_FOUND);
                 return;
             }
+            Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
             // Wait for ack or reject... will come before even a locally generated DataReply
@@ -146,12 +147,15 @@ public class InsertSender implements Runnable {
             MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPDataInsertRejected);
             
             mf = mfRNF.or(mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfRejectedOverload.setTimeout(PUT_TIMEOUT)))));
-            
+
+            Logger.minor(this, "Sending DataInsert");
             if(receiveFailed) return;
             next.send(dataInsert);
 
+            Logger.minor(this, "Sending data");
             if(receiveFailed) return;
             bt.send();
+            Logger.minor(this, "Sent data");
             
             if(receiveFailed) return;
             msg = node.usm.waitFor(mf);
@@ -167,11 +171,13 @@ public class InsertSender implements Runnable {
             }
             
             if(msg.getSpec() == DMT.FNPRejectedOverload) {
+                Logger.minor(this, "Rejected due to overload");
                 finish(REJECTED_OVERLOAD);
                 return;
             }
             
             if(msg.getSpec() == DMT.FNPRouteNotFound) {
+                Logger.minor(this, "Rejected: RNF");
                 // Still gets the data - but not yet
                 short newHtl = msg.getShort(DMT.HTL);
                 htl = node.decrementHTL(source, htl);
@@ -181,6 +187,7 @@ public class InsertSender implements Runnable {
             
             if(msg.getSpec() == DMT.FNPDataInsertRejected) {
                 short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
+                Logger.minor(this, "DataInsertRejected: "+reason);
                 
                 if(reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
                     if(fromStore) {

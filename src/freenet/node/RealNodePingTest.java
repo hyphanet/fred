@@ -19,7 +19,7 @@ import freenet.support.SimpleFieldSet;
  */
 public class RealNodePingTest {
 
-    public static void main(String[] args) throws FSParseException, PeerParseException {
+    public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException {
         Logger.setupStdoutLogging(Logger.MINOR, "");
         Yarrow yarrow = new Yarrow();
         DiffieHellman.init(yarrow);
@@ -37,7 +37,8 @@ public class RealNodePingTest {
         // Ping
         PeerNode pn = node1.peers.myPeers[0];
         int pingID = 0;
-        node1.usm.setDropProbability(4);
+        Thread.sleep(20000);
+        //node1.usm.setDropProbability(4);
         while(true) {
             Logger.minor(RealNodePingTest.class, "Sending PING "+pingID);
             boolean success;
