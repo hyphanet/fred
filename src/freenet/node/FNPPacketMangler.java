@@ -1,20 +1,26 @@
 package freenet.node;
 
-import java.security.DigestException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
+import net.i2p.util.NativeBigInteger;
+
 import freenet.crypt.BlockCipher;
+import freenet.crypt.DiffieHellman;
+import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.EntropySource;
 import freenet.crypt.PCFBMode;
+import freenet.io.comm.*;
 import freenet.io.comm.LowLevelFilter;
 import freenet.io.comm.Message;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.WouldBlockException;
 
 /**
  * @author amphibian
@@ -68,7 +74,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     /**
      * Decrypt and authenticate packet.
      * Then feed it to USM.checkFilters.
-     * Packets generated should have a NodePeer on them.
+     * Packets generated should have a PeerNode on them.
      * Note that the buffer can be modified by this method.
      */
     public void process(byte[] buf, int offset, int length, Peer peer) {
@@ -81,139 +87,325 @@ public class FNPPacketMangler implements LowLevelFilter {
          * Otherwise try all of them (on the theory that nodes 
          * occasionally change their IP addresses).
          */
-        NodePeer opn = pm.getByPeer(peer);
-        NodePeer pn;
+        PeerNode opn = pm.getByPeer(peer);
+        PeerNode pn;
         
         if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
             
             if(opn != null) {
-                if(tryProcess(buf, offset, length, opn, false, false)) return;
-                /*
-                 * It is possible that one side goes down, and the other side
-                 * doesn't realize so keeps sending packets. Then we handshake.
-                 * Then we discard the old NodePeer state. If this happens we
-                 * need to silently discard any packets with the old key.
-                 */
-                if(tryProcess(buf, offset, length, opn, true, true)) return;
+                if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker())) return;
+                // Try with old key
+                if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker())) return;
+                // Try for auth packets
+                if(tryProcessAuth(buf, offset, length, opn, peer)) return;
             }
-            // FIXME: trying all peers, should try only connected peers
-            // FIXME: this is because we aren't doing key negotiation yet
-            // FIXME: we are simply assigning a symmetric key to a node
-            // FIXME: note that this provides no real security
-            // FIXME: but it lets us get the infrastructure largely right
-            for(int i=0;i<pm.myPeers.length;i++) {
+            for(int i=0;i<pm.connectedPeers.length;i++) {
                 pn = pm.myPeers[i];
                 if(pn == opn) continue;
-                if(tryProcess(buf, offset, length, pn, false, false)) {
+                if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker())) {
                     // IP address change
                     pn.changedIP(peer);
                     return;
                 }
-                // Dump any old packets - see above
-                if(tryProcess(buf, offset, length, pn, true, true)) return;
+                if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker())) return;
+                if(tryProcessAuth(buf, offset, length, opn, peer)) return;
             }
         }
-
-        // If it doesn't match as a data packet, maybe it's a handshake packet?
-        if(length < HASH_LENGTH) {
-            Logger.error(this,"Unmatchable packet from "+peer+" - not matched, and too short to be phase 1 handshake");
-            return;
-        }
-
-        MessageDigest md = getDigest();
-        
-        if(length >= HASH_LENGTH + HANDSHAKE_RANDOM_LENGTH) {
-            
-            // Try phase 1
-            
-            byte[] random = new byte[HANDSHAKE_RANDOM_LENGTH];
-            System.arraycopy(buf, 0, random, 0, HANDSHAKE_RANDOM_LENGTH);
-            byte[] targetHash = new byte[HASH_LENGTH];
-            System.arraycopy(buf, HANDSHAKE_RANDOM_LENGTH, targetHash, 0, HASH_LENGTH);
-            md.update(random);
-            md.update(node.myIdentity);
-            byte[] X = md.digest();
-            Logger.minor(this, "X="+HexUtil.bytesToHex(X));
-            
-            // Now just try to find a node such that H(X XOR H(alice ID)) == targetHash
-            
-            if(opn != null) {
-                if(tryProcessHandshakePhase1(X, targetHash, opn, md)) {
-                    sendHandshakeReply(opn, random, peer, md);
-                    return;
-                }
-            }
-            
-            // Try *all* peers
-            for(int i=0;i<pm.myPeers.length;i++) {
-                pn = pm.myPeers[i];
-                if(pn == opn) continue;
-                if(tryProcessHandshakePhase1(X, targetHash, pn, md)) {
-                    // IP address change; phase 2 will notify
-                    sendHandshakeReply(pn, random, peer, md);
-                    return;
-                }
-            }
-        }
-        
-        if(length >= HASH_LENGTH) {
-            // Phase 2
-            if(opn != null) {
-                if(tryProcessHandshakePhase2(buf, offset, length, opn, peer, md))
-                    // Will set IP, seq# etc
-                    return;
-                // Try *all* peers
-                for(int i=0;i<pm.myPeers.length;i++) {
-                    pn = pm.myPeers[i];
-                    if(pn == opn) continue;
-                    if(tryProcessHandshakePhase2(buf, offset, length, opn, peer, md))
-                        return;
-                }
-            }
-        }
-        
-        // Phase 2?
-            
         Logger.error(this,"Unmatchable packet from "+peer);
     }
 
-    private boolean tryProcessHandshakePhase2(byte[] buf, int offset, int length, NodePeer opn, Peer peer, MessageDigest md) {
-        // Decrypt hash first
-        byte[] decryptedHash = new byte[HASH_LENGTH];
-        System.arraycopy(buf, offset, decryptedHash, 0, HASH_LENGTH);
-        opn.baseCipher.decipher(decryptedHash, decryptedHash);
-        // Now try to reproduce it
-        byte[][] lastSentRandoms = opn.getLastSentHandshakeRandoms();
-        for(int i=0;i<lastSentRandoms.length;i++) {
-            byte[] r = lastSentRandoms[i];
-            if(r == null) continue;
-            md.update(r);
-            md.update(opn.getNodeIdentity());
-            md.update(node.myIdentity);
-            if(Arrays.equals(md.digest(), decryptedHash)) {
-                // Successful handshake!
-                opn.handshakeSucceeded(decryptedHash);
-                opn.changedIP(peer);
-                return true;
-            }
+    /**
+     * Is this a negotiation packet? If so, process it.
+     * @param buf The buffer to read bytes from
+     * @param offset The offset at which to start reading
+     * @param length The number of bytes to read
+     * @param opn The PeerNode we think is responsible
+     * @param peer The Peer to send a reply to
+     * @return True if we handled a negotiation packet, false otherwise.
+     */
+    private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode opn, Peer peer) {
+        BlockCipher authKey = node.getAuthCipher();
+        // Does the packet match IV E( H(data) data ) ?
+        PCFBMode pcfb = new PCFBMode(authKey);
+        int ivLength = pcfb.lengthIV();
+        MessageDigest md = getDigest();
+        int digestLength = md.getDigestLength();
+        if(length < digestLength + ivLength + 4) {
+            Logger.minor(this, "Too short");
+            return false;
         }
-        // Didn't match
-        return false;
+        // IV at the beginning
+        pcfb.reset(buf, offset);
+        // Then the hash, then the data
+        // => Data starts at ivLength + digestLength
+        // Decrypt the hash
+        byte[] hash = new byte[digestLength];
+        System.arraycopy(buf, offset+ivLength, hash, 0, digestLength);
+        pcfb.blockDecipher(hash, 0, hash.length);
+        
+        int dataStart = ivLength + digestLength + offset+1;
+        
+        int dataLength = pcfb.decipher(buf[dataStart-1]) & 0xff;
+        
+        // Decrypt the data
+        byte[] payload = new byte[dataLength];
+        System.arraycopy(buf, dataStart, payload, 0, dataLength);
+        pcfb.blockDecipher(payload, 0, payload.length);
+        
+        md.update(payload);
+        byte[] realHash = md.digest();
+        
+        if(Arrays.equals(realHash, hash)) {
+            // Got one
+            processDecryptedAuth(payload, opn, peer);
+            return true;
+        } else {
+            Logger.minor(this, "Incorrect hash (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
+            return false;
+        }
     }
 
     /**
-     * Send a handshake reply.
+     * Process a decrypted, authenticated auth packet.
+     * @param payload The packet payload, after it has been decrypted.
      */
-    private void sendHandshakeReply(NodePeer opn, byte[] random, Peer peer, MessageDigest md) {
-        Logger.normal(this, "Sending handshake reply to "+peer+" for "+opn);
-        md.update(random);
-        md.update(node.myIdentity);
-        md.update(opn.getNodeIdentity());
-        byte[] result = md.digest();
-        opn.setupOutputCipher(result);
-        opn.baseCipher.encipher(result, result);
-        usm.sendPacket(result, peer);
-        opn.maybeShouldSendHandshake();
+    private void processDecryptedAuth(byte[] payload, PeerNode pn, Peer replyTo) {
+        /* Format:
+         * 1 byte - version number (0)
+         * 1 byte - negotiation type (0 = simple DH, will not be supported when implement JFKi)
+         * 1 byte - packet type (0-3)
+         */
+        int version = payload[0];
+        if(version != 0) {
+            Logger.error(this, "Decrypted auth packet but invalid version: "+version);
+            return;
+        }
+        int negType = payload[1];
+        if(negType != 0) {
+            Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
+            return;
+        }
+        int packetType = payload[2];
+        if(packetType < 0 || packetType > 3) {
+            Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
+            return;
+        }
+        // We keep one DiffieHellmanContext per node ONLY
+        /*
+         * Now, to the real meat
+         * Alice, Bob share a base, g, and a modulus, p
+         * Alice generates a random number r, and: 1: Alice -> Bob: a=g^r
+         * Bob receives this and generates his own random number, s, and: 2: Bob -> Alice: b=g^s
+         * Alice receives this, calculates K = b^r, and: 3: Alice -> Bob: E_K ( H(data) data )
+         *    where data = [ Alice's startup number ]
+         * Bob does exactly the same as Alice for packet 4.
+         * 
+         * At this point we are done.
+         */
+        if(packetType == 0) {
+            // We are Bob
+            // We need to:
+            // - Record Alice's a
+            // - Generate our own s and b
+            // - Send a type 1 packet back to Alice containing this
+            
+            DiffieHellmanContext ctx = 
+                processDHZeroOrOne(0, payload, pn);
+            if(ctx == null) return;
+            // Send reply
+            sendFirstHalfDHPacket(1, ctx.getOurExponential(), pn, replyTo);
+            // Send a type 1, they will reply with a type 2
+        } else if(packetType == 1) {
+            // We are Alice
+            DiffieHellmanContext ctx = 
+                processDHZeroOrOne(1, payload, pn);
+            if(ctx == null) return;
+            sendDHCompletion(2, ctx.getCipher(), pn, replyTo);
+            // Send a type 2
+        } else if(packetType == 2) {
+            // We are Bob
+            // Receiving a completion packet
+            // Verify the packet, then complete
+            // Format: IV E_K ( H(data) data )
+            // Where data = [ long: bob's startup number ]
+            DiffieHellmanContext ctx = 
+                processDHTwoOrThree(2, payload, pn, replyTo);
+            if(ctx != null)
+                sendDHCompletion(3, ctx.getCipher(), pn, replyTo);
+        } else if(packetType == 3) {
+            // We are Alice
+            processDHTwoOrThree(3, payload, pn, replyTo);
+        }
+    }
+
+    /**
+     * Send a DH completion message.
+     * @param phase The packet phase number. Either 2 or 3.
+     * @param cipher The negotiated cipher.
+     * @param pn The PeerNode which we are talking to.
+     * @param replyTo The Peer to which to send the packet (not necessarily the same
+     * as the one on pn as the IP may have changed).
+     */
+    private void sendDHCompletion(int phase, BlockCipher cipher, PeerNode pn, Peer replyTo) {
+        /** Format:
+         * IV
+         * Hash
+         * Data
+         * 
+         * Where Data = our bootID
+         * Very similar to the surrounding wrapper in fact.
+         */
+        PCFBMode pcfb = new PCFBMode(cipher);
+        byte[] iv = new byte[pcfb.lengthIV()];
+        
+        byte[] data = Fields.longToBytes(node.bootID);
+        
+        MessageDigest md = getDigest();
+        
+        byte[] hash = md.digest(data);
+        
+        pcfb.blockEncipher(hash, 0, hash.length);
+        pcfb.blockEncipher(data, 0, data.length);
+        
+        byte[] output = new byte[iv.length+hash.length+data.length];
+        System.arraycopy(iv, 0, output, 0, iv.length);
+        System.arraycopy(hash, 0, output, iv.length, hash.length);
+        System.arraycopy(data, 0, output, iv.length + hash.length, data.length);
+        
+        sendAuthPacket(0, 0, phase, output, pn, replyTo);
+    }
+
+    /**
+     * Send a first-half (phase 0 or 1) DH negotiation packet to the node.
+     * @param phase The phase of the message to be sent (0 or 1).
+     * @param integer
+     * @param replyTo
+     */
+    private void sendFirstHalfDHPacket(int phase, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
+        Logger.minor(this, "Sending ("+phase+") "+integer.toHexString());
+        byte[] data = integer.toByteArray();
+        int targetLength = DiffieHellman.modulusLengthInBytes();
+        if(data.length != targetLength) {
+            byte[] newData = new byte[targetLength];
+            if(data.length == targetLength+1 && data[0] == 0) {
+                // Sign bit
+                System.arraycopy(data, 1, newData, 0, targetLength);
+            } else if(data.length < targetLength) {
+                System.arraycopy(data, 0, newData, targetLength-data.length, data.length);
+            } else {
+                throw new IllegalStateException("Too long!");
+            }
+            data = newData;
+        }
+        Logger.minor(this, "Processed: "+HexUtil.bytesToHex(data));
+        sendAuthPacket(0, 0, phase, data, pn, replyTo);
+    }
+
+    /**
+     * Send an auth packet.
+     */
+    private void sendAuthPacket(int version, int negType, int phase, byte[] data, PeerNode pn, Peer replyTo) {
+        byte[] output = new byte[data.length+3];
+        output[0] = (byte) version;
+        output[1] = (byte) negType;
+        output[2] = (byte) phase;
+        System.arraycopy(data, 0, output, 3, data.length);
+        Logger.minor(this, "Sending auth packet to "+replyTo+" - version="+version+" negType="+negType+" phase="+phase+" data.length="+data.length+" for "+pn);
+        sendAuthPacket(output, pn, replyTo);
+    }
+
+    /**
+     * Send an auth packet (we have constructed the payload, now hash it, pad it, encrypt it).
+     */
+    private void sendAuthPacket(byte[] output, PeerNode pn, Peer replyTo) {
+        int length = output.length;
+        if(length > 255) {
+            throw new IllegalStateException("Cannot send auth packet: too long: "+length);
+        }
+        BlockCipher cipher = pn.getAuthKey();
+        PCFBMode pcfb = new PCFBMode(cipher);
+        byte[] iv = new byte[pcfb.lengthIV()];
+        node.random.nextBytes(iv);
+        MessageDigest md = getDigest();
+        byte[] hash = md.digest(output);
+        Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
+        byte[] data = new byte[iv.length + hash.length + 1 /* length byte */ + output.length];
+        pcfb.reset(iv);
+        System.arraycopy(iv, 0, data, 0, iv.length);
+        pcfb.blockEncipher(hash, 0, hash.length);
+        System.arraycopy(hash, 0, data, iv.length, hash.length);
+        data[hash.length+iv.length] = (byte) pcfb.encipher((byte)length);
+        pcfb.blockEncipher(output, 0, output.length);
+        System.arraycopy(output, 0, data, hash.length+iv.length+1, output.length);
+        usm.sendPacket(data, replyTo);
+        Logger.minor(this, "Sending auth packet to "+replyTo+" - size "+data.length+" data length: "+output.length);
+    }
+
+    /**
+     * @param i
+     * @param payload
+     * @param pn
+     * @param replyTo
+     * @return
+     */
+    private DiffieHellmanContext processDHTwoOrThree(int i, byte[] payload, PeerNode pn, Peer replyTo) {
+        DiffieHellmanContext ctx = pn.getDHContext();
+        BlockCipher encKey = ctx.getCipher();
+        PCFBMode pcfb = new PCFBMode(encKey);
+        int ivLength = pcfb.lengthIV();
+        if(payload.length-3 < HASH_LENGTH + ivLength + 8) {
+            Logger.error(this, "Too short phase "+i+" packet from "+replyTo+" probably from "+pn);
+            return null;
+        }
+        pcfb.reset(payload, 3); // IV
+        byte[] hash = new byte[HASH_LENGTH];
+        System.arraycopy(payload, 3+ivLength, hash, 0, HASH_LENGTH);
+        pcfb.blockDecipher(hash, 0, HASH_LENGTH);
+        int dataLength = payload.length - (ivLength + HASH_LENGTH);
+        if(dataLength < 0 || 3 + dataLength + ivLength + HASH_LENGTH > payload.length) {
+            Logger.error(this, "Decrypted data length: "+dataLength+" but payload.length "+payload.length+" (others: "+(ivLength + HASH_LENGTH+3)+")");
+            return null;
+        }
+        byte[] data = new byte[dataLength];
+        System.arraycopy(payload, 3+ivLength+HASH_LENGTH, data, 0, dataLength);
+        pcfb.blockDecipher(data, 0, dataLength);
+        // Check the hash
+        MessageDigest md = getDigest();
+        byte[] realHash = md.digest(data);
+        if(Arrays.equals(realHash, hash)) {
+            // Success!
+            long bootID = Fields.bytesToLong(data);
+            pn.completedHandshake(bootID, encKey, replyTo);
+            return ctx;
+        } else {
+            Logger.error(this, "Failed to complete handshake (2) on "+pn+" for "+replyTo);
+            return null;
+        }
+    }
+
+    /**
+     * Process a phase-0 or phase-1 Diffie-Hellman packet.
+     * @return a DiffieHellmanContext if we succeeded, otherwise null.
+     */
+    private DiffieHellmanContext processDHZeroOrOne(int phase, byte[] payload, PeerNode pn) {
+        
+        // First, get the BigInteger
+        int length = DiffieHellman.modulusLengthInBytes();
+        if(payload.length < length + 3) {
+            Logger.error(this, "Packet too short: "+payload.length+" after decryption in DH("+phase+"), should be "+(length + 3));
+            return null;
+        }
+        byte[] aAsBytes = new byte[length];
+        System.arraycopy(payload, 3, aAsBytes, 0, length);
+        NativeBigInteger a = new NativeBigInteger(1, aAsBytes);
+        DiffieHellmanContext ctx = DiffieHellman.generateContext();
+        ctx.setOtherSideExponential(a);
+        Logger.minor(this, "His exponential: "+a.toHexString());
+        // Don't calculate the key until we need it
+        pn.setDHContext(ctx);
+        // REDFLAG: This is of course easily DoS'ed if you know the node.
+        // We will fix this by means of JFKi.
+        return ctx;
     }
 
     /**
@@ -228,67 +420,14 @@ public class FNPPacketMangler implements LowLevelFilter {
     }
 
     /**
-     * Does H(X + (Alice's ID)) == targetHash? If so, send a
-     * handshake reply.
-     * @param opn The node to check
-     * @param md A cleared MessageDigest to use.
-     */
-    private boolean tryProcessHandshakePhase1(byte[] x, byte[] targetHash, NodePeer opn, MessageDigest md) {
-        Logger.normal(this, "Processing handshake phase 1 possibly from "+opn);
-        md.update(x);
-        md.update(opn.getNodeIdentity());
-        if(Arrays.equals(md.digest(), targetHash)) {
-            Logger.normal(this, "Was definitely from "+opn);
-            return true;
-        }
-        Logger.minor(this, "Not from "+opn);
-        return false;
-    }
-
-    /**
-     * Send a handshake packet to a node.
-     */
-    public void sendHandshake(NodePeer pn) {
-        Logger.normal(this, "Sending handshake packet to "+pn);
-        MessageDigest md = getDigest();
-        byte[] random = new byte[HANDSHAKE_RANDOM_LENGTH];
-        node.random.nextBytes(random);
-        md.update(random);
-        md.update(pn.getNodeIdentity());
-        byte[] temp = md.digest();
-        Logger.minor(this, "Sending X="+HexUtil.bytesToHex(temp));
-        md.update(temp);
-        md.update(node.myIdentity);
-        byte[] sendPacket = new byte[HANDSHAKE_RANDOM_LENGTH + HASH_LENGTH];
-        System.arraycopy(random, 0, sendPacket, 0, random.length);
-        try {
-            md.digest(sendPacket, random.length, HASH_LENGTH);
-        } catch (DigestException e) {
-            throw new Error(e);
-        }
-        pn.sentHandshakeRandom(random);
-        usm.sendPacket(sendPacket, pn.getPeer());
-    }
-
-    static final int HANDSHAKE_RANDOM_LENGTH = 12;
-    
-    /*
-     * Packet format:
-     * Phase 1:
-     * Alice -> Bob: R_alice H(H(R_alice + (Bob's ID) ) + (Alice's ID) )
-     * Phase 2:
-     * Alice -> Bob: E_session ( R_alice + R_bob + seq# + <4 bytes random> )
-     * Either can have any amount of padding.
-     */
-    
-
-    /**
      * Try to process an incoming packet with a given PeerNode.
      * We need to know where the packet has come from in order to
      * decrypt and authenticate it.
      */
-    private boolean tryProcess(byte[] buf, int offset, int length, NodePeer pn, boolean useOldCipher, boolean discardContents) {
-        Logger.minor(this,"Entering tryProcess: "+buf+","+offset+","+length+","+pn+","+useOldCipher+","+discardContents);
+    private boolean tryProcess(byte[] buf, int offset, int length, KeyTracker tracker) {
+        // Need to be able to call with tracker == null to simplify code above 
+        if(tracker == null) return false;
+        Logger.minor(this,"Entering tryProcess: "+buf+","+offset+","+length+","+tracker);
         /**
          * E_pcbc_session(H(seq+random+data)) E_pcfb_session(seq+random+data)
          * 
@@ -296,7 +435,7 @@ public class FNPPacketMangler implements LowLevelFilter {
          * first one is ECB, and the second one is ECB XORed with the 
          * ciphertext and plaintext of the first block).
          */
-        BlockCipher sessionCipher = useOldCipher ? pn.oldInputSessionCipher : pn.inputSessionCipher;
+        BlockCipher sessionCipher = tracker.sessionCipher;
         if(sessionCipher == null) {
             Logger.minor(this, "No cipher");
             return false;
@@ -331,7 +470,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 (seqBuf[2] & 0xff)) << 8) +
                 (seqBuf[3] & 0xff);
 
-        int targetSeqNumber = pn.lastReceivedSequenceNumber();
+        int targetSeqNumber = tracker.highestReceivedIncomingSeqNumber();
         Logger.minor(this, "Target seq: "+targetSeqNumber);
         Logger.minor(this, "Sequence number: "+seqNumber+"="+Integer.toHexString(seqNumber));
 
@@ -368,13 +507,13 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         // Check the hash
         if(!java.util.Arrays.equals(packetHash, realHash)) {
-            Logger.minor(this, "Packet possibly from "+pn+" hash does not match:\npacketHash="+
+            Logger.minor(this, "Packet possibly from "+tracker+" hash does not match:\npacketHash="+
                     HexUtil.bytesToHex(packetHash)+"\n  realHash="+HexUtil.bytesToHex(realHash)+" ("+(length-HASH_LENGTH)+" bytes payload)");
             return false;
         }
         
-        if(seqNumber != -1 && pn.alreadyReceived(seqNumber)) {
-            pn.queueAck(seqNumber);
+        if(seqNumber != -1 && tracker.alreadyReceived(seqNumber)) {
+            tracker.queueAck(seqNumber);
             Logger.normal(this, "Received packet twice: "+seqNumber);
             return true;
         }
@@ -384,20 +523,18 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         node.random.acceptEntropyBytes(myPacketDataSource, packetHash, 0, md.getDigestLength(), 0.5);
         
-        if(!discardContents) {
-            // Lots more to do yet!
-            processDecryptedData(plaintext, seqNumber, pn);
-        }
+        // Lots more to do yet!
+        processDecryptedData(plaintext, seqNumber, tracker);
         return true;
     }
 
     /**
      * Process an incoming packet, once it has been decrypted.
-     * @param decrypted
-     * @param seqNumber
-     * @param pn
+     * @param decrypted The packet's contents.
+     * @param seqNumber The detected sequence number of the packet.
+     * @param tracker The KeyTracker responsible for the key used to encrypt the packet.
      */
-    private void processDecryptedData(byte[] decrypted, int seqNumber, NodePeer pn) {
+    private void processDecryptedData(byte[] decrypted, int seqNumber, KeyTracker tracker) {
         /**
          * Decoded format:
          * 1 byte - version number (0)
@@ -428,11 +565,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         int version = decrypted[ptr++];
         if(ptr > decrypted.length) {
-            Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+            Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             return;
         }
         if(version != 0) {
-            Logger.error(this,"Packet from "+pn+" decrypted but invalid version: "+version);
+            Logger.error(this,"Packet from "+tracker+" decrypted but invalid version: "+version);
             return;
         }
 
@@ -441,7 +578,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         if(seqNumber == -1) {
             if(ptr+4 > decrypted.length) {
-                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
                 return;
             }
             realSeqNumber =
@@ -450,7 +587,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             ptr+=4;
         } else {
             if(ptr > decrypted.length) {
-                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
                 return;
             }
             realSeqNumber = seqNumber + (decrypted[ptr++] & 0xff);
@@ -459,7 +596,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         //Logger.minor(this, "Reference seq number: "+HexUtil.bytesToHex(decrypted, ptr, 4));
         
         if(ptr+4 > decrypted.length) {
-            Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+            Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             return;
         }
         int referenceSeqNumber = 
@@ -469,9 +606,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         Logger.minor(this, "Reference sequence number: "+referenceSeqNumber);
 
-        // No sequence number == don't ack
-        if(seqNumber != -1)
-            pn.receivedPacket(seqNumber);
+        tracker.receivedPacket(seqNumber);
         
         int ackCount = decrypted[ptr++] & 0xff;
         Logger.minor(this, "Acks: "+ackCount);
@@ -479,12 +614,12 @@ public class FNPPacketMangler implements LowLevelFilter {
         for(int i=0;i<ackCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
             if(ptr > decrypted.length) {
-                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
                 return;
             }
             int realSeqNo = referenceSeqNumber - offset;
             Logger.minor(this, "ACK: "+realSeqNo);
-            pn.acknowledgedPacket(realSeqNo);
+            tracker.acknowledgedPacket(realSeqNo);
         }
         
         int retransmitCount = decrypted[ptr++] & 0xff;
@@ -493,11 +628,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         for(int i=0;i<retransmitCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
             if(ptr > decrypted.length) {
-                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             }
             int realSeqNo = referenceSeqNumber - offset;
             Logger.minor(this, "RetransmitRequest: "+realSeqNo);
-            pn.resendPacket(realSeqNo);
+            tracker.resendPacket(realSeqNo);
         }
 
         int ackRequestsCount = decrypted[ptr++] & 0xff;
@@ -507,11 +642,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         for(int i=0;i<ackRequestsCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
             if(ptr > decrypted.length) {
-                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             }
             int realSeqNo = realSeqNumber - offset;
             Logger.minor(this, "AckRequest: "+realSeqNo);
-            pn.receivedAckRequest(realSeqNo);
+            tracker.receivedAckRequest(realSeqNo);
         }
         
         int forgottenCount = decrypted[ptr++] & 0xff;
@@ -520,10 +655,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         for(int i=0;i<forgottenCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
             if(ptr > decrypted.length) {
-                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             }
             int realSeqNo = realSeqNumber - offset;
-            pn.destForgotPacket(realSeqNo);
+            tracker.destForgotPacket(realSeqNo);
         }
 
         if(seqNumber == -1) return;
@@ -533,7 +668,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         for(int i=0;i<messages;i++) {
             if(ptr+1 > decrypted.length) {
-                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+pn);
+                Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             }
             int length = ((decrypted[ptr++] & 0xff) << 8) +
             	(decrypted[ptr++] & 0xff);
@@ -541,7 +676,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Message longer than remaining space: "+length);
                 return;
             }
-            Message m = usm.decodePacket(decrypted, ptr, length, pn);
+            Message m = usm.decodePacket(decrypted, ptr, length, tracker.pn);
             ptr+=length;
             if(m != null) {
                 //Logger.minor(this, "Dispatching packet: "+m);
@@ -551,20 +686,135 @@ public class FNPPacketMangler implements LowLevelFilter {
     }
 
     /**
+     * Build a packet and send it, from a whole bunch of messages.
+     */
+    public void processOutgoing(Message[] messages, PeerNode pn, boolean neverWaitForPacketNumber) throws NotConnectedException, WouldBlockException {
+        byte[][] messageData = new byte[messages.length][];
+        int length = 1;
+        for(int i=0;i<messageData.length;i++) {
+            messageData[i] = messages[i].encodeToPacket(this, pn);
+            length += (messageData[i].length + 2);
+        }
+        while(true) {
+            if(length < node.usm.getMaxPacketSize() &&
+                    messages.length < 256) {
+                innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber);
+            } else {
+                length = 1;
+                int count = 0;
+                int lastIndex = 0;
+                for(int i=0;i<messages.length;i++) {
+                    int thisLength = (messageData[i].length + 2);
+                    int newLength = length + thisLength;
+                    if(thisLength > node.usm.getMaxPacketSize()) {
+                        Logger.error(this, "Message exceeds packet size: "+messages[i]);
+                        // Send the last lot, then send this
+                    }
+                    count++;
+                    if(newLength > node.usm.getMaxPacketSize() || count > 255) {
+                        innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber);
+                        lastIndex = i;
+                        length = (messageData[i].length + 2);
+                        count = 1;
+                    } else length = newLength;
+                }
+            }
+        }
+    }
+    
+    /**
+     * Send some messages.
+     * @param messageData An array block of messages.
+     * @param start Index to start reading the array.
+     * @param length Number of messages to read.
+     * @param bufferLength Size of the buffer to write into.
+     * @param pn Node to send the messages to.
+     */
+    private void innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, PeerNode pn, boolean neverWaitForPacketNumber) throws NotConnectedException, WouldBlockException {
+        byte[] buf = new byte[bufferLength];
+        buf[0] = (byte)length;
+        int loc = 1;
+        for(int i=start;i<(start+length);i++) {
+            byte[] data = messageData[i];
+            int len = data.length;
+            buf[loc++] = (byte)(len >> 8);
+            buf[loc++] = (byte)len;
+            System.arraycopy(data, 0, buf, loc, len);
+            loc += len;
+        }
+        processOutgoingPreformatted(buf, 0, bufferLength, pn, neverWaitForPacketNumber);
+    }
+
+    /**
      * Build a packet and send it. From a Message recently converted into byte[],
      * but with no outer formatting.
      */
-    public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) {
-        byte[] newBuf = preformat(buf, offset, length, peer);
-        processOutgoingPreformatted(newBuf, 0, newBuf.length, peer);
+    public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException {
+        if(!(peer instanceof PeerNode))
+            throw new IllegalArgumentException();
+        PeerNode pn = (PeerNode)peer;
+        byte[] newBuf = preformat(buf, offset, length);
+        processOutgoingPreformatted(newBuf, 0, newBuf.length, pn, -1);
     }
 
-    public byte[] preformat(Message msg, NodePeer pn) {
-        byte[] buf = msg.encodeToPacket(this, pn);
-        return preformat(buf, 0, buf.length, pn);
+
+    /**
+     * Build a packet and send it. From a Message recently converted into byte[],
+     * but with no outer formatting.
+     */
+    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker) throws KeyChangedException, NotConnectedException {
+        byte[] newBuf = preformat(buf, offset, length);
+        processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1);
     }
     
-    public byte[] preformat(byte[] buf, int offset, int length, PeerContext peer) {
+    /**
+     * Send a packet using the current key. Retry if it fails solely because
+     * the key changes.
+     */
+    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, int k) throws NotConnectedException {
+        while(true) {
+            try {
+                KeyTracker tracker = peer.getCurrentKeyTracker();
+                if(tracker == null) {
+                    Logger.normal(this, "Dropping packet: Not connected yet");
+                    throw new NotConnectedException();
+                }
+                processOutgoingPreformatted(buf, offset, length, tracker, k);
+                return;
+            } catch (KeyChangedException e) {
+                // Go around again
+            }
+        }
+    }
+
+    /**
+     * Send a packet using the current key. Retry if it fails solely because
+     * the key changes.
+     */
+    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, boolean neverWaitForPacketNumber) throws NotConnectedException, WouldBlockException {
+        while(true) {
+            try {
+                KeyTracker tracker = peer.getCurrentKeyTracker();
+                if(tracker == null) {
+                    Logger.normal(this, "Dropping packet: Not connected yet");
+                    throw new NotConnectedException();
+                }
+                int seqNo = neverWaitForPacketNumber ? tracker.allocateOutgoingPacketNumberNeverBlock() :
+                    tracker.allocateOutgoingPacketNumber();
+                processOutgoingPreformatted(buf, offset, length, tracker, seqNo);
+                return;
+            } catch (KeyChangedException e) {
+                // Go around again
+            }
+        }
+    }
+
+    public byte[] preformat(Message msg, PeerNode pn) {
+        byte[] buf = msg.encodeToPacket(this, pn);
+        return preformat(buf, 0, buf.length);
+    }
+    
+    public byte[] preformat(byte[] buf, int offset, int length) {
         byte[] newBuf;
         if(buf != null) {
             newBuf = new byte[length+3];
@@ -579,10 +829,6 @@ public class FNPPacketMangler implements LowLevelFilter {
         return newBuf;
     }
     
-    public void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerContext peer) {
-        processOutgoingPreformatted(buf, offset, length, peer, -1);
-    }
-    
     /**
      * Encrypt a packet, prepend packet acks and packet resend requests, and send it. 
      * The provided data is ready-formatted, meaning that it already has the message 
@@ -590,24 +836,16 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param buf Buffer to read data from.
      * @param offset Point at which to start reading.
      * @param length Number of bytes to read.
-     * @param peer Peer to send the message to.
+     * @param tracker The KeyTracker to use to encrypt the packet and send it to the
+     * associated PeerNode.
      * @param packetNumber If specified, force use of this particular packet number.
      * Means this is a resend of a dropped packet.
+     * @throws NotConnectedException If the node is not connected.
+     * @throws KeyChangedException If the primary key changes while we are trying to send this packet.
      */
-    public void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerContext peer, int packetNumber) {
-        if(!(peer instanceof NodePeer)) {
-            Logger.error(this, "Fed non-NodePeer PeerContext: "+peer);
-            throw new ClassCastException();
-        }
-        NodePeer pn = (NodePeer) peer;
-        
-        synchronized(pn.getPacketSendLock()) {
-        
-        if(!pn.isConnected()) {
-            // Drop it
-            // FIXME: queue? I don't think we can at this level... Queue at the processOutgoing level?
-            Logger.normal(this, "Dropping packet: Not connected yet");
-            return;
+    public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber) throws KeyChangedException, NotConnectedException {
+        if(tracker == null || (!tracker.pn.isConnected())) {
+            throw new NotConnectedException();
         }
         
         // We do not support forgotten packets at present
@@ -621,14 +859,14 @@ public class FNPPacketMangler implements LowLevelFilter {
                 // Ack/resendreq only packet
                 seqNumber = -1;
             else
-                seqNumber = pn.allocateOutgoingPacketNumber();
+                seqNumber = tracker.allocateOutgoingPacketNumber();
         }
         
-        Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+pn.getPeer());
+        Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());
         
-        int[] acks = pn.grabAcks();
-        int[] resendRequests = pn.grabResendRequests();
-        int[] ackRequests = pn.grabAckRequests();
+        int[] acks = tracker.grabAcks();
+        int[] resendRequests = tracker.grabResendRequests();
+        int[] ackRequests = tracker.grabAckRequests();
         
         int packetLength = acks.length + resendRequests.length + ackRequests.length + 4 + 1 + length + 4 + 4 + RANDOM_BYTES_LENGTH;
         if(packetNumber == -1) packetLength += 4;
@@ -656,17 +894,17 @@ public class FNPPacketMangler implements LowLevelFilter {
         int realSeqNumber = seqNumber;
         
         if(seqNumber == -1) {
-            realSeqNumber = pn.getLastOutgoingSeqNumber();
+            realSeqNumber = tracker.getLastOutgoingSeqNumber();
             plaintext[ptr++] = (byte)(realSeqNumber >> 24);
             plaintext[ptr++] = (byte)(realSeqNumber >> 16);
             plaintext[ptr++] = (byte)(realSeqNumber >> 8);
             plaintext[ptr++] = (byte)realSeqNumber;
         } else {
-            realSeqNumber = pn.getLastOutgoingSeqNumber();
+            realSeqNumber = tracker.getLastOutgoingSeqNumber();
             plaintext[ptr++] = (byte)(realSeqNumber - seqNumber);
         }
         
-        int otherSideSeqNumber = pn.lastReceivedSequenceNumber();
+        int otherSideSeqNumber = tracker.highestReceivedIncomingSeqNumber();
         Logger.minor(this, "otherSideSeqNumber: "+otherSideSeqNumber);
         
         plaintext[ptr++] = (byte)(otherSideSeqNumber >> 24);
@@ -718,14 +956,13 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(seqNumber != -1) {
             byte[] saveable = new byte[length];
             System.arraycopy(buf, offset, saveable, 0, length);
-            pn.sentPacket(saveable, seqNumber);
+            tracker.sentPacket(saveable, seqNumber);
         }
         
         Logger.minor(this, "Sending...");
 
-        processOutgoingFullyFormatted(plaintext, pn);
+        processOutgoingFullyFormatted(plaintext, tracker);
         Logger.minor(this, "Sent packet");
-        }
     }
 
     /**
@@ -733,8 +970,8 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param plaintext The packet's plaintext, including all formatting,
      * including acks and resend requests. Is clobbered.
      */
-    private void processOutgoingFullyFormatted(byte[] plaintext, NodePeer pn) {
-        BlockCipher sessionCipher = pn.outputSessionCipher;
+    private void processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt) {
+        BlockCipher sessionCipher = kt.sessionCipher;
         if(sessionCipher == null) {
             Logger.error(this, "Dropping packet send - have not handshaked yet");
             return;
@@ -788,9 +1025,26 @@ public class FNPPacketMangler implements LowLevelFilter {
         // We have a packet
         // Send it
         
-        Logger.minor(this,"Sending packet length "+output.length+" to "+pn);
+        Logger.minor(this,"Sending packet of length "+output.length+" to "+kt.pn);
         
-        usm.sendPacket(output, pn.getPeer());
-        pn.lastSentPacketTime = System.currentTimeMillis();
+        usm.sendPacket(output, kt.pn.getPeer());
+        kt.pn.sentPacket();
+    }
+
+    /**
+     * Send a handshake, if possible, to the node.
+     * @param pn
+     */
+    public void sendHandshake(PeerNode pn) {
+        DiffieHellmanContext ctx;
+        synchronized(pn) {
+            if(!pn.shouldSendHandshake()) {
+                return;
+            } else {
+                ctx = DiffieHellman.generateContext();
+                pn.setDHContext(ctx);
+            }
+        }
+        sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, pn.getPeer());
     }
 }

@@ -37,6 +37,16 @@ public class PCFBMode {
         System.arraycopy(iv, 0, feedback_register, 0, feedback_register.length);
         registerPointer = feedback_register.length;
     }
+    
+    /**
+     * Resets the PCFBMode to an initial IV
+     * @param iv The buffer containing the IV.
+     * @param offset The offset to start reading the IV at.
+     */
+    public final void reset(byte[] iv, int offset) {
+        System.arraycopy(iv, offset, feedback_register, 0, feedback_register.length);
+        registerPointer = feedback_register.length;
+    }
 
     /**
      * Writes the initialization vector to the stream.  Though the IV

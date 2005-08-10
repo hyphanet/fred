@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.util.Arrays;
 
+import freenet.crypt.DiffieHellman;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.CHKEncodeException;
@@ -23,12 +24,13 @@ public class RealNodeRequestInsertTest {
     static final int NUMBER_OF_NODES = 10;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException {
-        NodePeer.disableProbabilisticHTLs = true;
+        PeerNode.disableProbabilisticHTLs = true;
         Node.MAX_HTL = 5;
         Logger.setupStdoutLogging(Logger.NORMAL, "freenet.store:minor,freenet.node:minor,freenet.node.Location:normal,freenet.node.FNP:normal,freenet.node.NodePeer:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
+        DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         for(int i=0;i<NUMBER_OF_NODES;i++) {

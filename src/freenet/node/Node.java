@@ -22,8 +22,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import freenet.crypt.BlockCipher;
+import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
+import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.Yarrow;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
@@ -41,7 +45,6 @@ import freenet.store.FreenetStore;
 import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.LoggerHookChain;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -53,6 +56,19 @@ public class Node implements SimpleClient {
     public static final int PACKET_SIZE = 1024;
     public static final double DECREMENT_AT_MIN_PROB = 0.2;
     public static final double DECREMENT_AT_MAX_PROB = 0.1;
+    // Send keepalives every 30 seconds
+    public static final int KEEPALIVE_INTERVAL = 30000;
+    // If no activity for 90 seconds, node is dead
+    public static final int MAX_PEER_INACTIVITY = 90000;
+    // 5 seconds minimum between handshakes
+    public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = 5000;
+    // Plus another 5 seconds randomized
+    public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = 5000;
+    // 900ms
+    static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
+    static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
+    /** Time after which a handshake is assumed to have failed. */
+    public static final int HANDSHAKE_TIMEOUT = 5000;
     
     // FIXME: abstract out address stuff? Possibly to something like NodeReference?
     final int portNumber;
@@ -71,16 +87,14 @@ public class Node implements SimpleClient {
     
     byte[] myIdentity; // FIXME: simple identity block; should be unique
     byte[] identityHash;
+    byte[] setupKey;
+    BlockCipher setupCipher;
     final LocationManager lm;
     final PeerManager peers; // my peers
     final RandomSource random; // strong RNG
     final UdpSocketManager usm;
     final FNPPacketMangler packetMangler;
     final PacketSender ps;
-    // Send keepalives every 30 seconds
-    public static final long KEEPALIVE_INTERVAL = 30000;
-    // If no activity for 90 seconds, node is dead
-    public static final long MAX_PEER_INACTIVITY = 90000;
     final NodeDispatcher dispatcher;
     static short MAX_HTL = 20;
     private static final int EXIT_STORE_FILE_NOT_FOUND = 1;
@@ -88,6 +102,7 @@ public class Node implements SimpleClient {
     private static final int EXIT_STORE_OTHER = 3;
     private static final int EXIT_USM_DIED = 4;
     public static final int EXIT_YARROW_INIT_FAILED = 5;
+    public final long bootID;
     
     /**
      * Read all storable settings (identity etc) from the node file.
@@ -115,6 +130,8 @@ public class Node implements SimpleClient {
                     myOldPeer.getPort()+" should be "+portNumber);
         // FIXME: we ignore the IP for now, and hardcode it to localhost
         String identity = fs.get("identity");
+        if(identity == null)
+            throw new IOException();
         myIdentity = HexUtil.hexToBytes(identity);
         MessageDigest md;
         try {
@@ -133,6 +150,16 @@ public class Node implements SimpleClient {
             throw e1;
         }
         lm.setLocation(l);
+        String setupKeyString = fs.get("setupKey");
+        if(setupKeyString == null)
+            throw new IOException();
+        setupKey = HexUtil.hexToBytes(setupKeyString);
+        try {
+            setupCipher = new Rijndael(256,256);
+        } catch (UnsupportedCipherException e1) {
+            throw new Error(e1);
+        }
+        setupCipher.initialize(setupKey);
     }
 
     private void writeNodeFile(String filename, String backupFilename) throws IOException {
@@ -159,6 +186,8 @@ public class Node implements SimpleClient {
         }
         identityHash = md.digest(myIdentity);
     	// Don't need to set location it's already randomized
+        setupKey = new byte[SYMMETRIC_KEY_LENGTH];
+        r.nextBytes(setupKey);
     }
 
     /**
@@ -175,6 +204,7 @@ public class Node implements SimpleClient {
         logger.start();
         Logger.error(Node.class, "Testing...");
         Yarrow yarrow = new Yarrow();
+        DiffieHellman.init(yarrow);
         InetAddress overrideIP = null;
         if(args.length > 1) {
             overrideIP = InetAddress.getByName(args[1]);
@@ -242,11 +272,13 @@ public class Node implements SimpleClient {
         }
         decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
         decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
+        bootID = random.nextLong();
     }
 
     void start(SwapRequestInterval interval) {
         if(interval != null)
             lm.startSender(this, interval);
+        ps.start();
     }
     
     /**
@@ -311,6 +343,7 @@ public class Node implements SimpleClient {
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());
+        fs.put("setupKey", HexUtil.bytesToHex(setupKey));
         Logger.minor(this, "My reference: "+fs);
         return fs;
     }
@@ -371,7 +404,7 @@ public class Node implements SimpleClient {
      * a RequestSender, unless the HTL is 0, in which case NULL.
      * RequestSender.
      */
-    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, NodePeer source) {
+    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, PeerNode source) {
         Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
         // In store?
         CHKBlock chk = null;
@@ -505,7 +538,7 @@ public class Node implements SimpleClient {
      * NodePeer if it is non-null, or do something else if it is
      * null.
      */
-    public short decrementHTL(NodePeer source, short htl) {
+    public short decrementHTL(PeerNode source, short htl) {
         if(source != null)
             return source.decrementHTL(htl);
         // Otherwise...
@@ -533,7 +566,7 @@ public class Node implements SimpleClient {
      * @param source The node that sent the InsertRequest, or null
      * if it originated locally.
      */
-    public synchronized InsertSender makeInsertSender(NodeCHK key, short htl, long uid, NodePeer source,
+    public synchronized InsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
             byte[] headers, PartiallyReceivedBlock prb, boolean fromStore) {
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         InsertSender is = (InsertSender) insertSenders.get(kh);
@@ -558,5 +591,9 @@ public class Node implements SimpleClient {
             if(!runningUIDs.remove(l))
                 throw new IllegalStateException("Could not unlock "+uid+"!");
         }
+    }
+
+    public BlockCipher getAuthCipher() {
+        return setupCipher;
     }
 }

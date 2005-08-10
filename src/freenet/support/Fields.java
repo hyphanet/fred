@@ -483,4 +483,13 @@ public abstract class Fields {
         }
         return x;
     }
+
+    public static byte[] longToBytes(long x) {
+        byte[] buf = new byte[8];
+        for(int j=0;j<8;j++) {
+            buf[j] = (byte)x;
+            x >>= 8;
+        }
+        return buf;
+    }
 }

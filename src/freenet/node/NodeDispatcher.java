@@ -2,7 +2,6 @@ package freenet.node;
 
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.LinkedList;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
@@ -36,12 +35,12 @@ public class NodeDispatcher implements Dispatcher {
     }
     
     public boolean handleMessage(Message m) {
-        NodePeer source = (NodePeer)m.getSource();
+        PeerNode source = (PeerNode)m.getSource();
         Logger.minor(this, "Dispatching "+m);
         if(m.getSpec() == DMT.FNPPing) {
             // Send an FNPPong
             Message reply = DMT.createFNPPong(m.getInt(DMT.PING_SEQNO));
-            ((NodePeer)m.getSource()).sendAsync(reply);
+            ((PeerNode)m.getSource()).sendAsync(reply);
             return true;
         }
         if(m.getSpec() == DMT.FNPLocChangeNotification) {
@@ -114,20 +113,20 @@ public class NodeDispatcher implements Dispatcher {
     class RoutedContext {
         long createdTime;
         long accessTime;
-        NodePeer source;
+        PeerNode source;
         HashSet routedTo;
         Message msg;
         short lastHtl;
         
         RoutedContext(Message msg) {
             createdTime = accessTime = System.currentTimeMillis();
-            source = (NodePeer)msg.getSource();
+            source = (PeerNode)msg.getSource();
             routedTo = new HashSet();
             this.msg = msg;
             lastHtl = msg.getShort(DMT.HTL);
         }
         
-        void addSent(NodePeer n) {
+        void addSent(PeerNode n) {
             routedTo.add(n);
         }
     }
@@ -161,19 +160,19 @@ public class NodeDispatcher implements Dispatcher {
      */
     boolean handleRouted(Message m) {
         Logger.minor(this, "handleRouted("+m+")");
-        if(m.getSource() != null && (!(m.getSource() instanceof NodePeer))) {
-            Logger.error(this, "Routed message but source "+m.getSource()+" not a NodePeer!");
+        if(m.getSource() != null && (!(m.getSource() instanceof PeerNode))) {
+            Logger.error(this, "Routed message but source "+m.getSource()+" not a PeerNode!");
             return true;
         }
         long id = m.getLong(DMT.UID);
         Long lid = new Long(id);
-        NodePeer pn = (NodePeer) (m.getSource());
+        PeerNode pn = (PeerNode) (m.getSource());
         short htl = m.getShort(DMT.HTL);
         if(pn != null) htl = pn.decrementHTL(htl);
         RoutedContext ctx;
         ctx = (RoutedContext)routedContexts.get(lid);
         if(ctx != null) {
-            ((NodePeer)m.getSource()).sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)));
+            ((PeerNode)m.getSource()).sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)));
             return true;
         }
         ctx = new RoutedContext(m);
@@ -206,17 +205,17 @@ public class NodeDispatcher implements Dispatcher {
             Logger.error(this, "Unrecognized routed reply: "+m);
             return false;
         }
-        NodePeer pn = ctx.source;
+        PeerNode pn = ctx.source;
         if(pn == null) return false;
         pn.sendAsync(m);
         return true;
     }
     
-    private boolean forward(Message m, long id, NodePeer pn, short htl, double target, RoutedContext ctx) {
+    private boolean forward(Message m, long id, PeerNode pn, short htl, double target, RoutedContext ctx) {
         Logger.minor(this, "Should forward");
         // Forward
         m = preForward(m, htl);
-        NodePeer next = node.peers.closerPeer(pn, ctx.routedTo, target, pn == null);
+        PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, target, pn == null);
         Logger.minor(this, "Next: "+next+" message: "+m);
         if(next != null) {
             Logger.minor(this, "Forwarding "+m.getSpec()+" to "+next.getPeer().getPort());
@@ -251,7 +250,7 @@ public class NodeDispatcher implements Dispatcher {
      * @param m
      * @return
      */
-    private boolean dispatchRoutedMessage(Message m, NodePeer src, long id) {
+    private boolean dispatchRoutedMessage(Message m, PeerNode src, long id) {
         if(m.getSpec() == DMT.FNPRoutedPing) {
             Logger.minor(this, "RoutedPing reached other side!");
             int x = m.getInt(DMT.COUNTER);

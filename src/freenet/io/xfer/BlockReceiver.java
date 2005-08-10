@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.UdpSocketManager;
@@ -57,6 +58,7 @@ public class BlockReceiver {
 
 	public byte[] receive() throws RetrievalException {
 		int consecutiveMissingPacketReports = 0;
+		try {
 		while (!_prb.allReceived()) {
 			Message m1 = _usm.waitFor(MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit)
 					.setField(DMT.UID, _uid).or(MessageFilter.create().setType(DMT.allSent).setField(DMT.UID, _uid))
@@ -124,5 +126,8 @@ public class BlockReceiver {
 		}
 		_usm.send(_sender, DMT.createAllReceived(_uid));
 		return _prb.getBlock();
+		} catch(NotConnectedException e) {
+		    throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
+		}
 	}
 }

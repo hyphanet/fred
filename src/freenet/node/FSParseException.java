@@ -9,5 +9,9 @@ public class FSParseException extends Exception {
     public FSParseException(Exception e) {
         super(e);
     }
+    
+    public FSParseException(String msg) {
+        super(msg);
+    }
 
 }

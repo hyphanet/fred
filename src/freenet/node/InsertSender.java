@@ -1,7 +1,6 @@
 package freenet.node;
 
 import java.util.HashSet;
-import java.util.Iterator;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
@@ -16,7 +15,7 @@ import freenet.support.Logger;
 public class InsertSender implements Runnable {
 
     InsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
-            NodePeer source, Node node, PartiallyReceivedBlock prb, boolean fromStore) {
+            PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
         this.uid = uid;
@@ -40,7 +39,7 @@ public class InsertSender implements Runnable {
     final double target;
     final long uid;
     short htl;
-    final NodePeer source;
+    final PeerNode source;
     final Node node;
     final byte[] headers; // received BEFORE creation => we handle Accepted elsewhere
     final PartiallyReceivedBlock prb;
@@ -70,7 +69,7 @@ public class InsertSender implements Runnable {
             }
             
             // Route it
-            NodePeer next;
+            PeerNode next;
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(source, nodesRoutedTo, target, source == null);
             

@@ -28,7 +28,7 @@ public class RequestHandler implements Runnable {
     public void run() {
         try {
         short htl = req.getShort(DMT.HTL);
-        NodePeer source = (NodePeer) req.getSource();
+        PeerNode source = (PeerNode) req.getSource();
         htl = source.decrementHTL(htl);
         // FIXME should be more generic when implement SSKs
         NodeCHK key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);

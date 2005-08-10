@@ -30,18 +30,20 @@ public class PeerManager {
     final Node node;
     
     /** All the peers we want to connect to */
-    NodePeer[] myPeers;
+    PeerNode[] myPeers;
     
     /** All the peers we are actually connected to */
-    NodePeer[] connectedPeers;
+    PeerNode[] connectedPeers;
     
     /**
+     * Create a PeerManager by reading a list of peers from
+     * a file.
      * @param node
-     * @param string
+     * @param filename
      */
     public PeerManager(Node node, String filename) {
-        myPeers = new NodePeer[0];
-        connectedPeers = new NodePeer[0];
+        myPeers = new PeerNode[0];
+        connectedPeers = new PeerNode[0];
         this.node = node;
         try {
             // Try to read the node list from disk
@@ -53,9 +55,9 @@ public class PeerManager {
                     // Read a single NodePeer
                     SimpleFieldSet fs;
                     fs = new SimpleFieldSet(br);
-                    NodePeer pn;
+                    PeerNode pn;
                     try {
-                        pn = new NodePeer(fs, node);
+                        pn = new PeerNode(fs, node);
                     } catch (FSParseException e2) {
                         Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
                         continue;
@@ -85,18 +87,18 @@ public class PeerManager {
     /**
      * @param pn
      */
-    private synchronized void addPeer(NodePeer pn) {
+    private synchronized void addPeer(PeerNode pn) {
         for(int i=0;i<myPeers.length;i++) {
             if(myPeers[i] == pn) return;
         }
-        NodePeer[] newMyPeers = new NodePeer[myPeers.length+1];
+        PeerNode[] newMyPeers = new PeerNode[myPeers.length+1];
         System.arraycopy(myPeers, 0, newMyPeers, 0, myPeers.length);
         newMyPeers[myPeers.length] = pn;
         myPeers = newMyPeers;
         Logger.normal(this, "Added "+pn);
     }
 
-    public synchronized void addConnectedPeer(NodePeer pn) {
+    public synchronized void addConnectedPeer(PeerNode pn) {
         for(int i=0;i<connectedPeers.length;i++) {
             if(connectedPeers[i] == pn) {
                 Logger.minor(this, "Already connected: "+pn);
@@ -115,7 +117,7 @@ public class PeerManager {
             addPeer(pn);
         }
         Logger.minor(this, "Connecting: "+pn);
-        NodePeer[] newConnectedPeers = new NodePeer[connectedPeers.length+1];
+        PeerNode[] newConnectedPeers = new PeerNode[connectedPeers.length+1];
         System.arraycopy(connectedPeers, 0, newConnectedPeers, 0, connectedPeers.length);
         newConnectedPeers[connectedPeers.length] = pn;
         connectedPeers = newConnectedPeers;
@@ -144,7 +146,7 @@ public class PeerManager {
     /**
      * Find the node with the given Peer address.
      */
-    public NodePeer getByPeer(Peer peer) {
+    public PeerNode getByPeer(Peer peer) {
         for(int i=0;i<myPeers.length;i++) {
             if(myPeers[i].getPeer().equals(peer))
                 return myPeers[i];
@@ -156,9 +158,9 @@ public class PeerManager {
      * Connect to a node provided the fieldset representing it.
      */
     public void connect(SimpleFieldSet noderef) throws FSParseException, PeerParseException {
-        NodePeer pn = new NodePeer(noderef, node);
+        PeerNode pn = new PeerNode(noderef, node);
         for(int i=0;i<myPeers.length;i++) {
-            if(Arrays.equals(myPeers[i].getNodeIdentity(), pn.getNodeIdentity())) return;
+            if(Arrays.equals(myPeers[i].identity, pn.identity)) return;
         }
         addPeer(pn);
     }
@@ -169,7 +171,7 @@ public class PeerManager {
      */
     public double[] getPeerLocationDoubles() {
         double[] locs;
-        NodePeer[] conns = connectedPeers;
+        PeerNode[] conns = connectedPeers;
         locs = new double[connectedPeers.length];
         int x = 0;
         for(int i=0;i<conns.length;i++) {
@@ -190,10 +192,10 @@ public class PeerManager {
      * FIXME: should this take performance into account?
      * DO NOT remove the "synchronized". See below for why.
      */
-    public synchronized NodePeer getRandomPeer(NodePeer exclude) {
+    public synchronized PeerNode getRandomPeer(PeerNode exclude) {
         if(connectedPeers.length == 0) return null;
         for(int i=0;i<5;i++) {
-            NodePeer pn = connectedPeers[node.random.nextInt(connectedPeers.length)];
+            PeerNode pn = connectedPeers[node.random.nextInt(connectedPeers.length)];
             if(pn == exclude) continue;
             if(pn.isConnected()) return pn;
         }
@@ -203,7 +205,7 @@ public class PeerManager {
         // reconnect, and they can't do it yet as we are synchronized.
         Vector v = new Vector(connectedPeers.length);
         for(int i=0;i<connectedPeers.length;i++) {
-            NodePeer pn = connectedPeers[i];
+            PeerNode pn = connectedPeers[i];
             if(pn == exclude) continue;
             if(pn.isConnected()) {
                 v.add(pn);
@@ -212,8 +214,8 @@ public class PeerManager {
         int lengthWithoutExcluded = v.size();
         if(exclude != null && exclude.isConnected())
             v.add(exclude);
-        NodePeer[] newConnectedPeers = new NodePeer[v.size()];
-        newConnectedPeers = (NodePeer[]) v.toArray(newConnectedPeers);
+        PeerNode[] newConnectedPeers = new PeerNode[v.size()];
+        newConnectedPeers = (PeerNode[]) v.toArray(newConnectedPeers);
         connectedPeers = newConnectedPeers;
         if(lengthWithoutExcluded == 0) return null;
         return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
@@ -223,26 +225,26 @@ public class PeerManager {
      * Asynchronously send this message to every connected peer.
      */
     public void localBroadcast(Message msg) {
-        NodePeer[] peers = connectedPeers; // avoid synchronization
+        PeerNode[] peers = connectedPeers; // avoid synchronization
         for(int i=0;i<peers.length;i++) {
             if(peers[i].isConnected())
                 peers[i].sendAsync(msg);
         }
     }
 
-    public NodePeer getRandomPeer() {
+    public PeerNode getRandomPeer() {
         return getRandomPeer(null);
     }
 
     /**
      * Find the peer which is closest to the target location
      */
-    public NodePeer closestPeer(double loc) {
-        NodePeer[] peers = connectedPeers;
+    public PeerNode closestPeer(double loc) {
+        PeerNode[] peers = connectedPeers;
         double bestDiff = 1.0;
-        NodePeer best = null;
+        PeerNode best = null;
         for(int i=0;i<peers.length;i++) {
-            NodePeer p = peers[i];
+            PeerNode p = peers[i];
             if(!p.isConnected()) continue;
             double diff = distance(p.getLocation().getValue(), loc);
             if(diff < bestDiff) {
@@ -269,15 +271,15 @@ public class PeerManager {
      * Find the peer, if any, which is closer to the target location
      * than we are, and is not included in the provided set.
      */
-    public NodePeer closerPeer(NodePeer pn, HashSet routedTo, double loc, boolean ignoreSelf) {
-        NodePeer[] peers = connectedPeers;
+    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, double loc, boolean ignoreSelf) {
+        PeerNode[] peers = connectedPeers;
         double bestDiff = 1.0;
         double minDiff = 0.0;
         if(!ignoreSelf)
             minDiff = distance(node.lm.getLocation().getValue(), loc);
-        NodePeer best = null;
+        PeerNode best = null;
         for(int i=0;i<peers.length;i++) {
-            NodePeer p = peers[i];
+            PeerNode p = peers[i];
             if(routedTo.contains(p)) continue;
             if(p == pn) continue;
             if(!p.isConnected()) continue;

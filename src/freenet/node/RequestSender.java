@@ -39,7 +39,7 @@ public class RequestSender implements Runnable {
     final long uid;
     final Node node;
     /** The source of this request if any - purely so we can avoid routing to it */
-    final NodePeer source;
+    final PeerNode source;
     private PartiallyReceivedBlock prb = null;
     private byte[] headers;
     
@@ -59,7 +59,7 @@ public class RequestSender implements Runnable {
     private boolean transferring = false;
     
     public RequestSender(NodeCHK key, short htl, long uid, Node n, 
-            NodePeer source) {
+            PeerNode source) {
         this.key = key;
         this.htl = htl;
         this.uid = uid;
@@ -86,7 +86,7 @@ public class RequestSender implements Runnable {
                 return;
             }
             // Route it
-            NodePeer next;
+            PeerNode next;
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(source, nodesRoutedTo, target, source == null);
             

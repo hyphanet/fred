@@ -219,7 +219,7 @@ public class NativeBigInteger extends BigInteger {
         if (_nativeOk)
             return new NativeBigInteger(nativeModPow(toByteArray(), exponent.toByteArray(), m.toByteArray()));
         else
-            return super.modPow(exponent, m);
+            return new NativeBigInteger(super.modPow(exponent, m));
     }
     public byte[] toByteArray(){
     	if(cachedBa == null) //Since we are immutable it is safe to never update the cached ba after it has initially been generated

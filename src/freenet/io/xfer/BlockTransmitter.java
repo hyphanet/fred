@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
@@ -81,6 +82,7 @@ public class BlockTransmitter {
 						} catch (InterruptedException e) {  }
 						int packetNo = ((Integer) _unsent.removeFirst()).intValue();
 						_sentPackets.setBit(packetNo, true);
+						try {
 						_usm.send(BlockTransmitter.this._destination, DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)));
 						
 						// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
@@ -88,6 +90,10 @@ public class BlockTransmitter {
 						if (sentSinceLastPing >= PING_EVERY) {
 							sentSinceLastPing = 0;
 							_usm.send(BlockTransmitter.this._destination, DMT.createPing());
+						}
+						} catch (NotConnectedException e) {
+						    Logger.normal(this, "Terminating send: "+e);
+						    _sendComplete = true;
 						}
 				}
 			}
@@ -104,7 +110,11 @@ public class BlockTransmitter {
 			}
 
 			public void receiveAborted(int reason, String description) {
-				_usm.send(_destination, DMT.createSendAborted(reason, description));
+				try {
+                    _usm.send(_destination, DMT.createSendAborted(reason, description));
+                } catch (NotConnectedException e) {
+                    Logger.minor(this, "Receive aborted and receiver is not connected");
+                }
 			} });
 
 		_senderThread.start();
@@ -136,6 +146,9 @@ public class BlockTransmitter {
 			} else if (msg.getSpec().equals(DMT.allReceived)) {
 				_sendComplete = true;
 				return true;
+			} else if(_sendComplete) {
+			    // Terminated abnormally
+			    return false;
 			}
 		}		
 	}

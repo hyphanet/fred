@@ -1,6 +1,8 @@
 package freenet.node;
 
+import freenet.crypt.DiffieHellman;
 import freenet.crypt.Yarrow;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -20,6 +22,7 @@ public class RealNodePingTest {
     public static void main(String[] args) throws FSParseException, PeerParseException {
         Logger.setupStdoutLogging(Logger.MINOR, "");
         Yarrow yarrow = new Yarrow();
+        DiffieHellman.init(yarrow);
         // Create 2 nodes
         Node node1 = new Node(5001, yarrow, null);
         Node node2 = new Node(5002, yarrow, null);
@@ -32,12 +35,18 @@ public class RealNodePingTest {
         node1.start(null);
         node2.start(null);
         // Ping
-        NodePeer pn = node1.peers.myPeers[0];
+        PeerNode pn = node1.peers.myPeers[0];
         int pingID = 0;
         node1.usm.setDropProbability(4);
         while(true) {
             Logger.minor(RealNodePingTest.class, "Sending PING "+pingID);
-            boolean success = pn.ping(pingID);
+            boolean success;
+            try {
+                success = pn.ping(pingID);
+            } catch (NotConnectedException e1) {
+                Logger.normal(RealNodePingTest.class, "Not connected");
+                continue;
+            }
             if(success)
                 Logger.normal(RealNodePingTest.class, "PING "+pingID+" successful");
             else

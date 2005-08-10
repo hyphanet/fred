@@ -3,9 +3,9 @@ package freenet.node;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BlockReceiver;
-import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -28,7 +28,7 @@ public class InsertHandler implements Runnable {
     final Message req;
     final Node node;
     final long uid;
-    final NodePeer source;
+    final PeerNode source;
     final NodeCHK key;
     private short htl;
     private InsertSender sender;
@@ -42,7 +42,7 @@ public class InsertHandler implements Runnable {
         this.req = req;
         this.node = node;
         this.uid = id;
-        this.source = (NodePeer) req.getSource();
+        this.source = (PeerNode) req.getSource();
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
     }
@@ -187,7 +187,12 @@ public class InsertHandler implements Runnable {
         } else {
             // Succeeded! Yay!
             Message msg = DMT.createFNPInsertReply(uid);
-            source.send(msg);
+            try {
+                source.send(msg);
+            } catch (NotConnectedException e) {
+                // Ugh
+                Logger.normal(this, "Finished InsertHandler but can't tell original node!: "+e);
+            }
         }
     }
     
@@ -206,7 +211,11 @@ public class InsertHandler implements Runnable {
                 receiveFailed = true;
                 runThread.interrupt();
                 Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED);
-                source.send(msg);
+                try {
+                    source.send(msg);
+                } catch (NotConnectedException ex) {
+                    Logger.error(this, "Can't send "+msg+" to "+source+": "+ex);
+                }
                 Logger.minor(this, "Failed to retrieve: "+e, e);
                 return;
             } catch (Throwable t) {

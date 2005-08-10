@@ -21,7 +21,7 @@ public class RoutingContext {
     /**
      * Have we already routed to this peer?
      */
-    public boolean alreadyRoutedTo(NodePeer p) {
+    public boolean alreadyRoutedTo(PeerNode p) {
         return peersRoutedTo.contains(p);
     }
 

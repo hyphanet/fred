@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.util.LinkedList;
 
+import freenet.io.comm.Message;
 import freenet.support.Logger;
 
 /**
@@ -23,110 +24,109 @@ public class PacketSender implements Runnable {
         this.node = node;
         myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
-        myThread.start();
     }
 
+    void start() {
+        myThread.start();
+    }
+    
     public void run() {
         while(true) {
             try {
-            ResendPacketItem packet = null;
-            synchronized(this) {
-                if(!resendPackets.isEmpty()) {
-                    packet = (ResendPacketItem)resendPackets.removeFirst();
-                }
-            }
-            if(packet != null) {
-                // Send the packet
-                node.packetMangler.processOutgoingPreformatted(packet.buf, 0, packet.buf.length, packet.pn, packet.packetNumber);
-            } else {
+                ResendPacketItem item = null;
+                do {
+                    synchronized(this) {
+                        if(!resendPackets.isEmpty())
+                            item = (ResendPacketItem) resendPackets.removeFirst();
+                        else break;
+                    }
+                    node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.pn, item.packetNumber);
+                } while(item != null);
                 long now = System.currentTimeMillis();
-                long firstRemainingUrgentTime = Long.MAX_VALUE;
-                // Anything urgently need sending?
                 PeerManager pm = node.peers;
-                if(pm == null) continue;
-                for(int i=0;i<pm.connectedPeers.length;i++) {
-                    NodePeer pn = node.peers.connectedPeers[i];
-                    long urgentTime = pn.getNextUrgentTime();
-                    if(urgentTime <= now) {
-                        node.packetMangler.processOutgoing(null, 0, 0, pn);
+                PeerNode[] nodes = pm.myPeers;
+                long nextActionTime = Long.MAX_VALUE;
+                for(int i=0;i<nodes.length;i++) {
+                    PeerNode pn = nodes[i];
+                    if(pn.isConnected()) {
+                        // Is the node dead?
+                        if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
+                            pn.disconnected();
+                        }
+
+                        // Any messages to send?
+                        Message[] messages = pn.grabQueuedMessages();
+                        if(messages != null) {
+                            // Send packets, right now, blocking, including any active notifications
+                            node.packetMangler.processOutgoing(messages, pn, true);
+                            continue;
+                        }
+                        
+                        // Any urgent notifications to send?
+                        long urgentTime = pn.getNextUrgentTime();
+                        if(urgentTime <= now) {
+                            // Send them
+                            pn.sendAnyUrgentNotifications();
+                        } else {
+                            nextActionTime = Math.min(nextActionTime, urgentTime);
+                        }
+                        
+                        // Need to send a keepalive packet?
+                        if(now - pn.lastSentPacketTime() > Node.KEEPALIVE_INTERVAL) {
+                            node.packetMangler.processOutgoing(null, 0, 0, pn);
+                        }
                     } else {
-                        if(firstRemainingUrgentTime > urgentTime)
-                            urgentTime = firstRemainingUrgentTime;
-                    }
-                }
-                // Do we need to send any handshake requests?
-                for(int i=0;i<pm.myPeers.length;i++) {
-                    NodePeer pn = node.peers.myPeers[i];
-                    if(node.packetMangler != null) {
-                        if(pn.shouldSendHandshake()) {
+                        // Not connected
+                        // Send handshake if necessary
+                        if(pn.shouldSendHandshake())
                             node.packetMangler.sendHandshake(pn);
-                        }
                     }
-                }
-                // Check for dead nodes
-                for(int i=0;i<pm.connectedPeers.length;i++) {
-                    NodePeer pn = node.peers.connectedPeers[i];
-                    if(now - pn.lastReceivedPacketTime > Node.MAX_PEER_INACTIVITY) {
-                        pn.shouldHandshake = true;
-                    }
-                }
-                // Do we need to send any keepalive packets?
-                if(node.packetMangler != null) {
-                    for(int i=0;i<pm.connectedPeers.length;i++) {
-                        NodePeer pn = node.peers.connectedPeers[i];
-                        if(pn.isConnected()) {
-                            synchronized(pn.getPacketSendLock()) {
-                                if(now - pn.lastSentPacketTime > Node.KEEPALIVE_INTERVAL) {
-                                    node.packetMangler.processOutgoing(null, 0, 0, pn);
-                                }
-                            }
-                        }
-                    }
-                }
+            	}
+            	
                 if(lastClearedOldSwapChains - now > 10000) {
                     node.lm.clearOldSwapChains();
                     lastClearedOldSwapChains = now;
                 }
-                try {
-                    // 200ms max sleep
-                    long sleepTime = Math.min(firstRemainingUrgentTime - now, 200);
-                    if(sleepTime > 0)
-                        Thread.sleep(sleepTime);
-                } catch (InterruptedException e) {
-                    // Ignore, just wake up. Probably we got interrupted
-                    // because a new packet came in.
+                // Send may have taken some time
+                now = System.currentTimeMillis();
+                long sleepTime = nextActionTime - now;
+                // 200ms maximum sleep time
+                sleepTime = Math.min(sleepTime, 200);
+                
+                if(sleepTime > 0) {
+                    try {
+                        synchronized(this) {
+                            wait(sleepTime);
+                        }
+                    } catch (InterruptedException e) {
+                        // Ignore, just wake up. Probably we got interrupt()ed
+                        // because a new packet came in.
+                    }
                 }
-            }
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);
             }
         }
     }
 
+    void queueResendPacket(byte[] payload, int packetNumber, KeyTracker k) {
+        ResendPacketItem item = new ResendPacketItem(payload, packetNumber, k);
+        synchronized(this) {
+            resendPackets.add(item);
+            notifyAll();
+        }
+    }
+    
     class ResendPacketItem {
-        public ResendPacketItem(byte[] payload, int packetNumber, NodePeer peer) {
-            pn = peer;
+        public ResendPacketItem(byte[] payload, int packetNumber, KeyTracker k) {
+            pn = k.pn;
+            kt = k;
             buf = payload;
             this.packetNumber = packetNumber;
         }
-        final NodePeer pn;
+        final PeerNode pn;
+        final KeyTracker kt;
         final byte[] buf;
         final int packetNumber;
     }
-    
-    /**
-     * Queue a packet to send.
-     * @param payload The message payload (one or more messages in the relevant format
-     * including number of messages and respective lengths).
-     * @param packetNumber If >0, then send the packet as this packetNumber.
-     * @param peer The node to send it to.
-     */
-    public void queueForImmediateSend(byte[] payload, int packetNumber, NodePeer peer) {
-        ResendPacketItem pi = new ResendPacketItem(payload, packetNumber, peer);
-        synchronized(this) {
-            resendPackets.addLast(pi);
-            myThread.interrupt();
-        }
-    }
-
 }

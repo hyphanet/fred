@@ -1,5 +1,6 @@
 package freenet.node;
 
+import freenet.crypt.DiffieHellman;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.support.Logger;
@@ -20,12 +21,13 @@ public class RealNodeRoutingTest {
     static final int NUMBER_OF_NODES = 150;
     
     public static void main(String[] args) throws FSParseException, PeerParseException {
-        NodePeer.disableProbabilisticHTLs = true;
+        PeerNode.disableProbabilisticHTLs = true;
         Node.MAX_HTL = 6;
         Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
         System.out.println("Routing test using real nodes:");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
+        DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         for(int i=0;i<NUMBER_OF_NODES;i++) {

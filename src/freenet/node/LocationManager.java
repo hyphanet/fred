@@ -8,6 +8,7 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
+import freenet.io.comm.NotConnectedException;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -117,11 +118,11 @@ class LocationManager {
     public class IncomingSwapRequestHandler implements Runnable {
 
         Message origMessage;
-        NodePeer pn;
+        PeerNode pn;
         long uid;
         Long luid;
         
-        IncomingSwapRequestHandler(Message msg, NodePeer pn) {
+        IncomingSwapRequestHandler(Message msg, PeerNode pn) {
             this.origMessage = msg;
             this.pn = pn;
             uid = origMessage.getLong(DMT.UID);
@@ -284,7 +285,7 @@ class LocationManager {
                 
                 Message m = DMT.createFNPSwapRequest(uid, myHash, 6);
                 
-                NodePeer pn = node.peers.getRandomPeer();
+                PeerNode pn = node.peers.getRandomPeer();
                 if(pn == null) {
                     // Nowhere to send
                     return;
@@ -534,10 +535,10 @@ class LocationManager {
         long outgoingID;
         long addedTime;
         long lastMessageTime; // can delete when no messages for 2*TIMEOUT
-        NodePeer requestSender;
-        NodePeer routedTo;
+        PeerNode requestSender;
+        PeerNode routedTo;
         
-        RecentlyForwardedItem(long id, long outgoingID, NodePeer from, NodePeer to) {
+        RecentlyForwardedItem(long id, long outgoingID, PeerNode from, PeerNode to) {
             this.incomingID = id;
             this.outgoingID = outgoingID;
             requestSender = from;
@@ -553,7 +554,7 @@ class LocationManager {
      * to be handled otherwise.
      */
     public boolean handleSwapRequest(Message m) {
-        NodePeer pn = (NodePeer)m.getSource();
+        PeerNode pn = (PeerNode)m.getSource();
         long uid = m.getLong(DMT.UID);
         Long luid = new Long(uid);
         long oid = uid+1;
@@ -572,7 +573,7 @@ class LocationManager {
             return true;
         }
         if(pn.shouldRejectSwapRequest()) {
-            Logger.minor(this, "Advised to reject SwapRequest by NodePeer - rate limit");
+            Logger.minor(this, "Advised to reject SwapRequest by PeerNode - rate limit");
             // Reject
             Message reject = DMT.createFNPSwapRejected(uid);
             pn.sendAsync(reject);
@@ -613,23 +614,29 @@ class LocationManager {
             m.set(DMT.HTL, htl);
             m.set(DMT.UID, oid);
             Logger.minor(this, "Forwarding... "+uid);
-            // Forward
-            NodePeer randomPeer = node.peers.getRandomPeer(pn);
-            if(randomPeer == null) {
-                Logger.minor(this, "Late reject "+uid);
-                Message reject = DMT.createFNPSwapRejected(uid);
-                pn.sendAsync(reject);
-                swapsRejectedNowhereToGo++;
-                return true;
+            while(true) {
+                try {
+                    // Forward
+                    PeerNode randomPeer = node.peers.getRandomPeer(pn);
+                    if(randomPeer == null) {
+                        Logger.minor(this, "Late reject "+uid);
+                        Message reject = DMT.createFNPSwapRejected(uid);
+                        pn.sendAsync(reject);
+                        swapsRejectedNowhereToGo++;
+                        return true;
+                    }
+                    Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
+                    addForwardedItem(uid, oid, pn, randomPeer);
+                    node.usm.send(randomPeer, m);
+                    return true;
+                } catch (NotConnectedException e) {
+                    // Try again
+                }
             }
-            Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
-            addForwardedItem(uid, oid, pn, randomPeer);
-            node.usm.send(randomPeer, m);
-            return true;
         }
     }
 
-    private void addForwardedItem(long uid, long oid, NodePeer pn, NodePeer randomPeer) {
+    private void addForwardedItem(long uid, long oid, PeerNode pn, PeerNode randomPeer) {
         RecentlyForwardedItem item = new RecentlyForwardedItem(uid, oid, pn, randomPeer);
         recentlyForwardedIDs.put(new Long(uid), item);
         recentlyForwardedIDs.put(new Long(oid), item);

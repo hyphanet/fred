@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.13 2005/08/01 19:20:12 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.14 2005/08/10 12:34:05 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -308,7 +308,11 @@ public class UdpSocketManager extends Thread {
 		return ret;
 	}
 
-	public void send(PeerContext destination, Message m) {
+	/**
+	 * Send a Message to a PeerContext.
+	 * @throws NotConnectedException If we are not currently connected to the node.
+	 */
+	public void send(PeerContext destination, Message m) throws NotConnectedException {
 	    if(m.getSpec().isInternalOnly()) {
 	        Logger.error(this, "Trying to send internal-only message "+m+" of spec "+m.getSpec(), new Exception("debug"));
 	        return;
@@ -399,5 +403,12 @@ public class UdpSocketManager extends Thread {
 
     public int getPortNumber() {
         return _sock.getLocalPort();
+    }
+
+    /**
+     * @return The maximum packet size supported by this SocketManager.
+     */
+    public int getMaxPacketSize() {
+        return 1400; // REDFLAG: Reasonable?
     }
 }

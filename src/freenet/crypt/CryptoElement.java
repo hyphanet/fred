@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public interface CryptoElement {
 
-    public void write(OutputStream o) throws IOException;
+    //public void write(OutputStream o) throws IOException;
 
     public String writeAsField();
 
