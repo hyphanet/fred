@@ -86,10 +86,11 @@ public class Node implements SimpleClient {
     private final HashSet runningUIDs;
     
     byte[] myIdentity; // FIXME: simple identity block; should be unique
+    /** Hash of identity. Used as setup key. */
     byte[] identityHash;
-    byte[] setupKey;
+    /** Hash of hash of identity i.e. hash of setup key. */
+    byte[] identityHashHash; 
     String myName;
-    BlockCipher setupCipher;
     final LocationManager lm;
     final PeerManager peers; // my peers
     final RandomSource random; // strong RNG
@@ -141,6 +142,7 @@ public class Node implements SimpleClient {
             throw new Error(e);
         }
         identityHash = md.digest(myIdentity);
+        identityHashHash = md.digest(identityHash);
 	    String loc = fs.get("location");
 	    Location l;
         try {
@@ -151,16 +153,6 @@ public class Node implements SimpleClient {
             throw e1;
         }
         lm.setLocation(l);
-        String setupKeyString = fs.get("setupKey");
-        if(setupKeyString == null)
-            throw new IOException();
-        setupKey = HexUtil.hexToBytes(setupKeyString);
-        try {
-            setupCipher = new Rijndael(256,256);
-        } catch (UnsupportedCipherException e1) {
-            throw new Error(e1);
-        }
-        setupCipher.initialize(setupKey);
         myName = fs.get("myName");
         if(myName == null) {
             myName = newName();
@@ -168,11 +160,7 @@ public class Node implements SimpleClient {
     }
 
     private String newName() {
-        try {
-            return "Node on "+InetAddress.getLocalHost().getCanonicalHostName();
-        } catch (UnknownHostException e) {
-            return "Node created around "+System.currentTimeMillis();
-        }
+        return "Node created around "+System.currentTimeMillis();
     }
 
     private void writeNodeFile(String filename, String backupFilename) throws IOException {
@@ -187,6 +175,7 @@ public class Node implements SimpleClient {
     }
 
     private void initNodeFileSettings(RandomSource r) {
+        Logger.normal(this, "Creating new node file from scratch");
         // Don't need to set portNumber
         // FIXME use a real IP!
     	myIdentity = new byte[32];
@@ -198,9 +187,7 @@ public class Node implements SimpleClient {
             throw new Error(e);
         }
         identityHash = md.digest(myIdentity);
-    	// Don't need to set location it's already randomized
-        setupKey = new byte[SYMMETRIC_KEY_LENGTH];
-        r.nextBytes(setupKey);
+        identityHashHash = md.digest(identityHash);
         myName = newName();
     }
 
@@ -357,7 +344,6 @@ public class Node implements SimpleClient {
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());
-        fs.put("setupKey", HexUtil.bytesToHex(setupKey));
         fs.put("myName", myName);
         Logger.minor(this, "My reference: "+fs);
         return fs;
@@ -607,10 +593,6 @@ public class Node implements SimpleClient {
             if(!runningUIDs.remove(l))
                 throw new IllegalStateException("Could not unlock "+uid+"!");
         }
-    }
-
-    public BlockCipher getAuthCipher() {
-        return setupCipher;
     }
 
     /**

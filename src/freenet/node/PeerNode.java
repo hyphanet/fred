@@ -1,5 +1,7 @@
 package freenet.node;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
@@ -83,6 +85,9 @@ public class PeerNode implements PeerContext {
      */
     final byte[] identity;
     
+    /** Hash of node identity. Used as setup key. */
+    final byte[] identityHash;
+    
     /** The Node we serve */
     final Node node;
     
@@ -111,14 +116,21 @@ public class PeerNode implements PeerContext {
     /** Version of the node */
     private String version;
     
-    /** Setup key - this is a shared secret used to ensure privacy in
-     * connection negotiations. It is known only by nodes which have the
-     * node reference, so a passive eavesdropper who doesn't know us will
-     * see random data. */
-    private final byte[] setupKey;
-
-    /** Setup cipher - see setupKey for description. */
-    private final BlockCipher setupCipher;
+    /** Incoming setup key. Used to decrypt incoming auth packets.
+     * Specifically: K_node XOR H(setupKey).
+     */
+    final byte[] incomingSetupKey;
+    
+    /** Outgoing setup key. Used to encrypt outgoing auth packets.
+     * Specifically: setupKey XOR H(K_node).
+     */
+    final byte[] outgoingSetupKey;
+    
+    /** Incoming setup cipher (see above) */
+    final BlockCipher incomingSetupCipher;
+    
+    /** Outgoing setup cipher (see above) */
+    final BlockCipher outgoingSetupCipher;
     
     /** The context object for the currently running negotiation. */
     private DiffieHellmanContext ctx;
@@ -149,6 +161,16 @@ public class PeerNode implements PeerContext {
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
         }
+        
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e2) {
+            throw new Error(e2);
+        }
+        
+        if(identity == null) throw new FSParseException("No identity");
+        identityHash = md.digest(identity);
         version = fs.get("version");
         String locationString = fs.get("location");
         if(locationString == null) throw new FSParseException("No location");
@@ -156,22 +178,34 @@ public class PeerNode implements PeerContext {
         String physical = fs.get("physical.udp");
         if(physical == null) throw new FSParseException("No physical.udp");
         peer = new Peer(physical);
-        String setupKeyString = fs.get("setupKey");
-        if(setupKeyString == null) throw new FSParseException("No setup key");
         String name = fs.get("myName");
         if(name == null) name = "unknown at "+System.currentTimeMillis();
         myName = name;
+        
+        // Setup incoming and outgoing setup ciphers
+        byte[] nodeKey = node.identityHash;
+        byte[] nodeKeyHash = node.identityHashHash;
+        byte[] setupKeyHash = md.digest(identityHash);
+        
+        int digestLength = md.getDigestLength();
+        incomingSetupKey = new byte[digestLength];
+        for(int i=0;i<incomingSetupKey.length;i++)
+            incomingSetupKey[i] = (byte) (nodeKey[i] ^ setupKeyHash[i]);
+        outgoingSetupKey = new byte[digestLength];
+        for(int i=0;i<outgoingSetupKey.length;i++)
+            outgoingSetupKey[i] = (byte) (nodeKeyHash[i] ^ identityHash[i]);
+        Logger.minor(this, "Keys:\nIdentity:  "+HexUtil.bytesToHex(node.myIdentity)+
+                                "\nThisIdent: "+HexUtil.bytesToHex(identity)+
+        		                "\nNode:      "+HexUtil.bytesToHex(nodeKey)+
+                                "\nNode hash: "+HexUtil.bytesToHex(nodeKeyHash)+
+                                "\nThis:      "+HexUtil.bytesToHex(identityHash)+
+                                "\nThis hash: "+HexUtil.bytesToHex(setupKeyHash));
+        
         try {
-            setupKey = HexUtil.hexToBytes(setupKeyString);
-        } catch (NumberFormatException e) {
-            throw new FSParseException(e);
-        }
-        if(setupKey.length != Node.SYMMETRIC_KEY_LENGTH) {
-            throw new FSParseException("Setup key too short");
-        }
-        try {
-            setupCipher = new Rijndael(256,256);
-            setupCipher.initialize(setupKey);
+            incomingSetupCipher = new Rijndael(256,256);
+            incomingSetupCipher.initialize(incomingSetupKey);
+            outgoingSetupCipher = new Rijndael(256,256);
+            outgoingSetupCipher.initialize(outgoingSetupKey);
         } catch (UnsupportedCipherException e1) {
             Logger.error(this, "Caught: "+e1);
             throw new Error(e1);
@@ -315,6 +349,8 @@ public class PeerNode implements PeerContext {
      * @param now The current time.
      */
     public boolean hasLiveHandshake(long now) {
+        if(ctx != null)
+            Logger.minor(this, "Last used: "+(now - ctx.lastUsedTime()));
         return !(ctx == null || now - ctx.lastUsedTime() > 2*Node.HANDSHAKE_TIMEOUT);
     }
 
@@ -460,20 +496,13 @@ public class PeerNode implements PeerContext {
         randomizeMaxTimeBetweenPacketSends();
     }
 
-    /**
-     * @return
-     */
-    public BlockCipher getAuthKey() {
-        return setupCipher;
-    }
-
     public DiffieHellmanContext getDHContext() {
         return ctx;
     }
 
     public void setDHContext(DiffieHellmanContext ctx2) {
         this.ctx = ctx2;
-        Logger.minor(this, "setDHContext("+ctx2+")");
+        Logger.minor(this, "setDHContext("+ctx2+") on "+this);
     }
 
     /**

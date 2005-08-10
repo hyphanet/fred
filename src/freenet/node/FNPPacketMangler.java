@@ -96,7 +96,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker())) return;
                 // Try with old key
                 if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker())) return;
-                // Try for auth packets
+                // Might be an auth packet
                 if(tryProcessAuth(buf, offset, length, opn, peer)) return;
             }
             for(int i=0;i<pm.connectedPeers.length;i++) {
@@ -124,14 +124,15 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @return True if we handled a negotiation packet, false otherwise.
      */
     private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode opn, Peer peer) {
-        BlockCipher authKey = node.getAuthCipher();
+        BlockCipher authKey = opn.incomingSetupCipher;
+        Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey));
         // Does the packet match IV E( H(data) data ) ?
         PCFBMode pcfb = new PCFBMode(authKey);
         int ivLength = pcfb.lengthIV();
         MessageDigest md = getDigest();
         int digestLength = md.getDigestLength();
         if(length < digestLength + ivLength + 4) {
-            Logger.minor(this, "Too short");
+            Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
             return false;
         }
         // IV at the beginning
@@ -160,7 +161,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             processDecryptedAuth(payload, opn, peer);
             return true;
         } else {
-            Logger.minor(this, "Incorrect hash (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
+            Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
             return false;
         }
     }
@@ -170,6 +171,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param payload The packet payload, after it has been decrypted.
      */
     private void processDecryptedAuth(byte[] payload, PeerNode pn, Peer replyTo) {
+        Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn);
         /* Format:
          * 1 byte - version number (0)
          * 1 byte - negotiation type (0 = simple DH, will not be supported when implement JFKi)
@@ -322,7 +324,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(length > 255) {
             throw new IllegalStateException("Cannot send auth packet: too long: "+length);
         }
-        BlockCipher cipher = pn.getAuthKey();
+        BlockCipher cipher = pn.outgoingSetupCipher;
+        Logger.minor(this, "Outgoing cipher: "+HexUtil.bytesToHex(pn.outgoingSetupKey));
         PCFBMode pcfb = new PCFBMode(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
         node.random.nextBytes(iv);
@@ -394,7 +397,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     private DiffieHellmanContext processDHZeroOrOne(int phase, byte[] payload, PeerNode pn) {
         
         if(phase == 0 && pn.hasLiveHandshake(System.currentTimeMillis())) {
-            Logger.minor(this, "Rejecting phase "+phase+" handshake - already running one");
+            Logger.minor(this, "Rejecting phase "+phase+" handshake on "+pn+" - already running one");
             return null;
         }
         
@@ -1049,6 +1052,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param pn
      */
     public void sendHandshake(PeerNode pn) {
+        Logger.minor(this, "Possibly sending handshake to "+pn);
         DiffieHellmanContext ctx;
         synchronized(pn) {
             if(!pn.shouldSendHandshake()) {

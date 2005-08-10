@@ -50,6 +50,7 @@ public class UpdatableSortedLinkedList {
     }
     
     public synchronized void update(UpdatableSortedLinkedListItem i) {
+        if(i == list.tail()) return;
         if(i.compareTo(list.tail()) > 0) {
             list.remove(i);
             list.push(i);
