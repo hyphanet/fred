@@ -108,7 +108,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                     return;
                 }
                 if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker())) return;
-                if(tryProcessAuth(buf, offset, length, opn, peer)) return;
+                if(tryProcessAuth(buf, offset, length, pn, peer)) return;
             }
         }
         Logger.error(this,"Unmatchable packet from "+peer);
