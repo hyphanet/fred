@@ -88,6 +88,7 @@ public class Node implements SimpleClient {
     byte[] myIdentity; // FIXME: simple identity block; should be unique
     byte[] identityHash;
     byte[] setupKey;
+    String myName;
     BlockCipher setupCipher;
     final LocationManager lm;
     final PeerManager peers; // my peers
@@ -160,6 +161,18 @@ public class Node implements SimpleClient {
             throw new Error(e1);
         }
         setupCipher.initialize(setupKey);
+        myName = fs.get("myName");
+        if(myName == null) {
+            myName = newName();
+        }
+    }
+
+    private String newName() {
+        try {
+            return "Node on "+InetAddress.getLocalHost().getCanonicalHostName();
+        } catch (UnknownHostException e) {
+            return "Node created around "+System.currentTimeMillis();
+        }
     }
 
     private void writeNodeFile(String filename, String backupFilename) throws IOException {
@@ -188,6 +201,7 @@ public class Node implements SimpleClient {
     	// Don't need to set location it's already randomized
         setupKey = new byte[SYMMETRIC_KEY_LENGTH];
         r.nextBytes(setupKey);
+        myName = newName();
     }
 
     /**
@@ -344,6 +358,7 @@ public class Node implements SimpleClient {
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());
         fs.put("setupKey", HexUtil.bytesToHex(setupKey));
+        fs.put("myName", myName);
         Logger.minor(this, "My reference: "+fs);
         return fs;
     }

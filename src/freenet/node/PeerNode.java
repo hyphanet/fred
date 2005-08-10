@@ -41,6 +41,9 @@ public class PeerNode implements PeerContext {
     /** My low-level address for SocketManager purposes */
     private Peer peer;
     
+    /** Name of this node */
+    final String myName;
+    
     /** Packets sent/received on the current preferred key */
     private KeyTracker currentTracker;
     
@@ -155,6 +158,9 @@ public class PeerNode implements PeerContext {
         peer = new Peer(physical);
         String setupKeyString = fs.get("setupKey");
         if(setupKeyString == null) throw new FSParseException("No setup key");
+        String name = fs.get("myName");
+        if(name == null) name = "unknown at "+System.currentTimeMillis();
+        myName = name;
         try {
             setupKey = HexUtil.hexToBytes(setupKeyString);
         } catch (NumberFormatException e) {
@@ -537,6 +543,6 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
         return getPeer().toString()+" "+
-        	(isConnected ? "CONNECTED" : "DISCONNECTED");
+        	(isConnected ? "CONNECTED" : "DISCONNECTED") + " "+myName;
     }
 }
