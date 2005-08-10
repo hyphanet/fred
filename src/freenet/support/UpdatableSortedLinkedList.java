@@ -18,6 +18,10 @@ public class UpdatableSortedLinkedList {
     private final DoublyLinkedList list;
     
     public synchronized void add(UpdatableSortedLinkedListItem i) {
+        if(list.isEmpty()) {
+            list.push(i);
+            return;
+        }
         if(i.compareTo(list.tail()) > 0) {
             list.push(i);
             return;
