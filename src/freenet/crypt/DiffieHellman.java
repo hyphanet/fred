@@ -38,7 +38,6 @@ public class DiffieHellman {
 
 	static {
 		precalcThread = new PrecalcBufferFill();
-		precalcThread.start();
 	}
 
 	private static class PrecalcBufferFill extends Thread {
@@ -80,6 +79,7 @@ public class DiffieHellman {
 
 	public static void init(Random random) {
 	    r = random;
+		precalcThread.start();
 	}
 
 	/** Will ask the precalc thread to refill the buffer if neccessary */

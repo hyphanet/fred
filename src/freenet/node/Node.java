@@ -66,7 +66,7 @@ public class Node implements SimpleClient {
     public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = 5000;
     // 900ms
     static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
-    static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
+    public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
     /** Time after which a handshake is assumed to have failed. */
     public static final int HANDSHAKE_TIMEOUT = 5000;
     
@@ -223,8 +223,8 @@ public class Node implements SimpleClient {
             overrideIP = InetAddress.getByName(args[1]);
             System.err.println("Overriding IP detection: "+overrideIP.getHostAddress());
         }
-        Node n = new Node(port, yarrow, overrideIP);
         DiffieHellman.init(yarrow);
+        Node n = new Node(port, yarrow, overrideIP);
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
     }

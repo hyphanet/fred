@@ -93,6 +93,7 @@ public class TextModeClientInterface implements Runnable {
                         decoded = block.decode(chk);
                     } catch (CHKDecodeException e) {
                         Logger.error(this, "Cannot decode: "+e, e);
+                        System.out.println("Cannot decode: "+e.getMessage());
                         continue;
                     }
                     System.out.println("Decoded data:\n");
@@ -127,6 +128,7 @@ public class TextModeClientInterface implements Runnable {
                         decoded = block.decode(chk);
                     } catch (CHKDecodeException e) {
                         Logger.error(this, "Cannot decode: "+e, e);
+                        System.out.println("Cannot decode: "+e.getMessage());
                         continue;
                     }
                     // Now calculate filename

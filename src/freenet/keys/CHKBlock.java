@@ -10,6 +10,7 @@ import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.node.Node;
 
 /**
  * @author amphibian
@@ -94,6 +95,9 @@ public class CHKBlock {
             // FIXME - log this properly
             throw new Error(e);
         }
+        byte[] cryptoKey = key.cryptoKey;
+        if(cryptoKey.length < Node.SYMMETRIC_KEY_LENGTH)
+            throw new CHKDecodeException("Crypto key too short");
         cipher.initialize(key.cryptoKey);
         PCFBMode pcfb = new PCFBMode(cipher);
         byte[] hbuf = new byte[header.length-2];
