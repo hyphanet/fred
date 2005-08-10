@@ -78,6 +78,7 @@ public class RequestSender implements Runnable {
         HashSet nodesRoutedTo = new HashSet();
         try {
         while(true) {
+            Logger.minor(this, "htl="+htl);
             if(htl == 0) {
                 // RNF
                 // Would be DNF if arrived with no HTL
@@ -266,6 +267,7 @@ public class RequestSender implements Runnable {
     }
     
     private void finish(int code) {
+        Logger.minor(this, "finish("+code+")");
         status = code;
         finished = true;
         synchronized(this) {

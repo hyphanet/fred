@@ -46,6 +46,7 @@ public class LimitedRangeIntByteArrayMap {
      * of range.
      */
     public synchronized boolean add(int index, byte[] data) {
+        Logger.minor(this, "Add "+index, new Exception("debug"));
         if(maxValue == -1) {
             minValue = index;
             maxValue = index;
@@ -71,6 +72,7 @@ public class LimitedRangeIntByteArrayMap {
      * If it throws, it probably won't.
      */
     public synchronized void lock(int index) throws InterruptedException {
+        Logger.minor(this, "Lock("+index+")");
         if(index - minValue < maxRange) return;
         while(true) {
             wait();
@@ -85,10 +87,12 @@ public class LimitedRangeIntByteArrayMap {
      */
     public synchronized void lockNeverBlock(int index) throws WouldBlockException {
         if(index - minValue < maxRange) return;
+        Logger.minor(this, "lockNeverBlock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
         throw new WouldBlockException();
     }
     
     public synchronized void remove(int index) {
+        Logger.minor(this, "Removing "+index+" - min="+minValue+" max="+maxValue);
         if(contents.remove(new Integer(index)) != null) {
             if(index > minValue && index < maxValue) return;
             if(contents.size() == 0) {
@@ -96,7 +100,7 @@ public class LimitedRangeIntByteArrayMap {
                 return;
             }
             if(index == maxValue) {
-                for(int i=maxValue;i>minValue;i--) {
+                for(int i=maxValue;i>=minValue;i--) {
                     Integer ii = new Integer(i);
                     if(contents.containsKey(ii)) {
                         maxValue = i;
@@ -107,7 +111,7 @@ public class LimitedRangeIntByteArrayMap {
                 throw new IllegalStateException("Still here! (a)");
             }
             if(index == minValue) {
-                for(int i=minValue;i<maxValue;i++) {
+                for(int i=minValue;i<=maxValue;i++) {
                     Integer ii = new Integer(i);
                     if(contents.containsKey(ii)) {
                         minValue = i;

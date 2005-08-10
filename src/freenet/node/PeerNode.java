@@ -192,7 +192,7 @@ public class PeerNode implements PeerContext {
         
         decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
         decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
-        sendHandshakeTime = -1;
+        sentHandshake(); // set sendHandshakeTime
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
@@ -242,7 +242,7 @@ public class PeerNode implements PeerContext {
     /**
      * @return The last time we received a packet.
      */
-    public long lastReceivedPacketTime() {
+    public synchronized long lastReceivedPacketTime() {
         return timeLastReceivedPacket;
     }
 
@@ -275,8 +275,14 @@ public class PeerNode implements PeerContext {
      * Long.MAX_VALUE if we have no pending ack request/acks/etc.
      */
     public long getNextUrgentTime() {
-        return Math.min(currentTracker.getNextUrgentTime(),
-                previousTracker.getNextUrgentTime());
+        long t = Long.MAX_VALUE;
+        KeyTracker kt = currentTracker;
+        if(kt != null)
+            t = Math.min(t, kt.getNextUrgentTime());
+        kt = previousTracker;
+        if(kt != null)
+            t = Math.min(t, kt.getNextUrgentTime());
+        return t;
     }
 
     /**
@@ -302,7 +308,7 @@ public class PeerNode implements PeerContext {
      * Does the node have a live handshake in progress?
      * @param now The current time.
      */
-    private boolean hasLiveHandshake(long now) {
+    public boolean hasLiveHandshake(long now) {
         return !(ctx == null || now - ctx.lastUsedTime() > 2*Node.HANDSHAKE_TIMEOUT);
     }
 
@@ -435,7 +441,7 @@ public class PeerNode implements PeerContext {
     /**
      * Update timeLastReceivedPacket
      */
-    void receivedPacket() {
+    synchronized void receivedPacket() {
         timeLastReceivedPacket = System.currentTimeMillis();
         randomizeMaxTimeBetweenPacketReceives();
     }
@@ -461,6 +467,7 @@ public class PeerNode implements PeerContext {
 
     public void setDHContext(DiffieHellmanContext ctx2) {
         this.ctx = ctx2;
+        Logger.minor(this, "setDHContext("+ctx2+")");
     }
 
     /**
@@ -476,15 +483,21 @@ public class PeerNode implements PeerContext {
         changedIP(replyTo);
         previousTracker = currentTracker;
         currentTracker = newTracker;
-        previousTracker.deprecated();
+        if(previousTracker != null)
+            previousTracker.deprecated();
         
+        isConnected = true;
         if(thisBootID != this.bootID) {
             // Wipe old KeyTracker
             previousTracker = null;
+            this.bootID = thisBootID;
         } // else it's a rekey
         Logger.normal(this, "Completed handshake with "+this+" on "+replyTo);
         ctx = null;
+        receivedPacket();
+        node.peers.addConnectedPeer(this);
         Message msg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
+        
         sendAsync(msg);
     }
 
@@ -492,6 +505,7 @@ public class PeerNode implements PeerContext {
      * Send a payload-less packet on either key if necessary.
      */
     public void sendAnyUrgentNotifications() {
+        Logger.minor(this, "sendAnyUrgentNotifications");
         long now = System.currentTimeMillis();
         KeyTracker tracker = currentTracker;
         if(tracker != null) {

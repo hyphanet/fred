@@ -350,6 +350,10 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private DiffieHellmanContext processDHTwoOrThree(int i, byte[] payload, PeerNode pn, Peer replyTo) {
         DiffieHellmanContext ctx = pn.getDHContext();
+        if(!ctx.canGetCipher()) {
+            Logger.error(this, "Cannot get cipher");
+            return null;
+        }
         BlockCipher encKey = ctx.getCipher();
         PCFBMode pcfb = new PCFBMode(encKey);
         int ivLength = pcfb.lengthIV();
@@ -361,8 +365,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         byte[] hash = new byte[HASH_LENGTH];
         System.arraycopy(payload, 3+ivLength, hash, 0, HASH_LENGTH);
         pcfb.blockDecipher(hash, 0, HASH_LENGTH);
-        int dataLength = payload.length - (ivLength + HASH_LENGTH);
-        if(dataLength < 0 || 3 + dataLength + ivLength + HASH_LENGTH > payload.length) {
+        int dataLength = payload.length - (ivLength + HASH_LENGTH + 3);
+        if(dataLength < 0) {
             Logger.error(this, "Decrypted data length: "+dataLength+" but payload.length "+payload.length+" (others: "+(ivLength + HASH_LENGTH+3)+")");
             return null;
         }
@@ -389,6 +393,11 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private DiffieHellmanContext processDHZeroOrOne(int phase, byte[] payload, PeerNode pn) {
         
+        if(phase == 0 && pn.hasLiveHandshake(System.currentTimeMillis())) {
+            Logger.minor(this, "Rejecting phase "+phase+" handshake - already running one");
+            return null;
+        }
+        
         // First, get the BigInteger
         int length = DiffieHellman.modulusLengthInBytes();
         if(payload.length < length + 3) {
@@ -398,11 +407,16 @@ public class FNPPacketMangler implements LowLevelFilter {
         byte[] aAsBytes = new byte[length];
         System.arraycopy(payload, 3, aAsBytes, 0, length);
         NativeBigInteger a = new NativeBigInteger(1, aAsBytes);
-        DiffieHellmanContext ctx = DiffieHellman.generateContext();
+        DiffieHellmanContext ctx;
+        if(phase == 1) {
+            ctx = pn.getDHContext();
+        } else {
+            ctx = DiffieHellman.generateContext();
+            // Don't calculate the key until we need it
+            pn.setDHContext(ctx);
+        }
         ctx.setOtherSideExponential(a);
         Logger.minor(this, "His exponential: "+a.toHexString());
-        // Don't calculate the key until we need it
-        pn.setDHContext(ctx);
         // REDFLAG: This is of course easily DoS'ed if you know the node.
         // We will fix this by means of JFKi.
         return ctx;
@@ -695,29 +709,27 @@ public class FNPPacketMangler implements LowLevelFilter {
             messageData[i] = messages[i].encodeToPacket(this, pn);
             length += (messageData[i].length + 2);
         }
-        while(true) {
-            if(length < node.usm.getMaxPacketSize() &&
-                    messages.length < 256) {
-                innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber);
-            } else {
-                length = 1;
-                int count = 0;
-                int lastIndex = 0;
-                for(int i=0;i<messages.length;i++) {
-                    int thisLength = (messageData[i].length + 2);
-                    int newLength = length + thisLength;
-                    if(thisLength > node.usm.getMaxPacketSize()) {
-                        Logger.error(this, "Message exceeds packet size: "+messages[i]);
-                        // Send the last lot, then send this
-                    }
-                    count++;
-                    if(newLength > node.usm.getMaxPacketSize() || count > 255) {
-                        innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber);
-                        lastIndex = i;
-                        length = (messageData[i].length + 2);
-                        count = 1;
-                    } else length = newLength;
+        if(length < node.usm.getMaxPacketSize() &&
+                messages.length < 256) {
+            innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber);
+        } else {
+            length = 1;
+            int count = 0;
+            int lastIndex = 0;
+            for(int i=0;i<messages.length;i++) {
+                int thisLength = (messageData[i].length + 2);
+                int newLength = length + thisLength;
+                if(thisLength > node.usm.getMaxPacketSize()) {
+                    Logger.error(this, "Message exceeds packet size: "+messages[i]);
+                    // Send the last lot, then send this
                 }
+                count++;
+                if(newLength > node.usm.getMaxPacketSize() || count > 255) {
+                    innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber);
+                    lastIndex = i;
+                    length = (messageData[i].length + 2);
+                    count = 1;
+                } else length = newLength;
             }
         }
     }
@@ -731,6 +743,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param pn Node to send the messages to.
      */
     private void innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, PeerNode pn, boolean neverWaitForPacketNumber) throws NotConnectedException, WouldBlockException {
+        Logger.minor(this, "innerProcessOutgoing(...,"+start+","+length+","+bufferLength);
         byte[] buf = new byte[bufferLength];
         buf[0] = (byte)length;
         int loc = 1;

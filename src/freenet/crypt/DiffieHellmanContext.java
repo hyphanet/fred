@@ -21,6 +21,20 @@ public class DiffieHellmanContext {
     // Generated or set later
     NativeBigInteger peerExponential;
     BlockCipher cipher;
+
+	public String toString() {
+	    StringBuffer sb = new StringBuffer();
+	    sb.append(super.toString());
+	    sb.append(": myExponent=");
+	    sb.append(myExponent.toHexString());
+	    sb.append(", myExponential=");
+	    sb.append(myExponential.toHexString());
+	    if(peerExponential != null) {
+	        sb.append(", peerExponential=");
+	        sb.append(peerExponential.toHexString());
+	    }
+	    return sb.toString();
+	}
     
     public DiffieHellmanContext(NativeBigInteger myExponent, NativeBigInteger myExponential, DHGroup group) {
         this.myExponent = myExponent;
@@ -38,6 +52,7 @@ public class DiffieHellmanContext {
         lastUsedTime = System.currentTimeMillis();
         if(cipher != null) return cipher;
         // Calculate key
+        Logger.normal(this, "My exponent: "+myExponent.toHexString()+", my exponential: "+myExponential.toHexString()+", peer's exponential: "+peerExponential.toHexString());
         NativeBigInteger sharedSecret =
             (NativeBigInteger) peerExponential.modPow(myExponent, group.getP());
         MessageDigest md;
@@ -47,7 +62,6 @@ public class DiffieHellmanContext {
             throw new Error(e);
         }
         byte[] digest = md.digest(sharedSecret.toByteArray());
-        Logger.normal(this, "My exponent: "+myExponent.toHexString()+", my exponential: "+myExponential.toHexString()+", peer's exponential: "+peerExponential.toHexString());
         Logger.normal(this, "Key="+HexUtil.bytesToHex(digest));
         try {
             cipher = new Rijndael(256, 256);
@@ -72,5 +86,13 @@ public class DiffieHellmanContext {
      */
     public long lastUsedTime() {
         return lastUsedTime;
+    }
+
+    /**
+     * @return True if getCipher() will work. If this returns false, getCipher() will
+     * probably NPE.
+     */
+    public boolean canGetCipher() {
+        return peerExponential != null;
     }
 }

@@ -278,11 +278,15 @@ public class PeerManager {
         if(!ignoreSelf)
             minDiff = distance(node.lm.getLocation().getValue(), loc);
         PeerNode best = null;
+        PeerNode any = null;
+        int count = 0;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
             if(routedTo.contains(p)) continue;
             if(p == pn) continue;
             if(!p.isConnected()) continue;
+            count++;
+            any = p;
             double diff = distance(p.getLocation().getValue(), loc);
             if((!ignoreSelf) && diff > minDiff) continue;
             if(diff < bestDiff) {
@@ -290,6 +294,7 @@ public class PeerManager {
                 bestDiff = diff;
             }
         }
+        if(count == 1) return any;
         return best;
     }
 }

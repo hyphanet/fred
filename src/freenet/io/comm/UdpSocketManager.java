@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.14 2005/08/10 12:34:05 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.15 2005/08/10 14:23:04 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -75,8 +75,13 @@ public class UdpSocketManager extends Thread {
 			    byte[] data = packet.getData();
 			    int offset = packet.getOffset();
 			    int length = packet.getLength();
-			    if(lowLevelFilter != null)
-			        lowLevelFilter.process(data, offset, length, peer);
+			    if(lowLevelFilter != null) {
+			        try {
+			            lowLevelFilter.process(data, offset, length, peer);
+			        } catch (Throwable t) {
+			            Logger.error(this, "Caught "+t+" from "+lowLevelFilter, t);
+			        }
+			    }
 			    else {
 			        // Create a bogus context since no filter
 			        Message m = decodePacket(data, offset, length, new DummyPeerContext(peer));

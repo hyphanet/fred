@@ -9,7 +9,12 @@ import java.util.HashMap;
  */
 public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLinkedList {
 
-    HashMap map;
+    final HashMap map;
+
+    public UpdatableSortedLinkedListWithForeignIndex() {
+        super();
+        map = new HashMap();
+    }
     
     public synchronized void add(UpdatableSortedLinkedListItem item) {
         if(!(item instanceof IndexableUpdatableSortedLinkedListItem)) {

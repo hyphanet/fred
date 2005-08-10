@@ -73,6 +73,7 @@ public class PacketSender implements Runnable {
                         
                         // Need to send a keepalive packet?
                         if(now - pn.lastSentPacketTime() > Node.KEEPALIVE_INTERVAL) {
+                            Logger.minor(this, "Sending keepalive");
                             node.packetMangler.processOutgoing(null, 0, 0, pn);
                         }
                     } else {
