@@ -204,13 +204,13 @@ public class Node implements SimpleClient {
         logger.start();
         Logger.error(Node.class, "Testing...");
         Yarrow yarrow = new Yarrow();
-        DiffieHellman.init(yarrow);
         InetAddress overrideIP = null;
         if(args.length > 1) {
             overrideIP = InetAddress.getByName(args[1]);
             System.err.println("Overriding IP detection: "+overrideIP.getHostAddress());
         }
         Node n = new Node(port, yarrow, overrideIP);
+        DiffieHellman.init(yarrow);
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
     }
@@ -596,5 +596,12 @@ public class Node implements SimpleClient {
 
     public BlockCipher getAuthCipher() {
         return setupCipher;
+    }
+
+    /**
+     * @return Some status information.
+     */
+    public String getStatus() {
+        return peers.getStatus();
     }
 }

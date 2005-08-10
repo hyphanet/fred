@@ -534,4 +534,9 @@ public class PeerNode implements PeerContext {
             }
         }
     }
+
+    public String getStatus() {
+        return getPeer().toString()+" "+
+        	(isConnected ? "CONNECTED" : "DISCONNECTED");
+    }
 }

@@ -46,7 +46,7 @@ public class LimitedRangeIntByteArrayMap {
      * of range.
      */
     public synchronized boolean add(int index, byte[] data) {
-        Logger.minor(this, "Add "+index, new Exception("debug"));
+        Logger.minor(this, "Add "+index);
         if(maxValue == -1) {
             minValue = index;
             maxValue = index;

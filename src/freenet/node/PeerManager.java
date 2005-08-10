@@ -297,4 +297,18 @@ public class PeerManager {
         if(count == 1) return any;
         return best;
     }
+
+    /**
+     * @return Some status information
+     */
+    public String getStatus() {
+        StringBuffer sb = new StringBuffer();
+        PeerNode[] peers = myPeers;
+        for(int i=0;i<myPeers.length;i++) {
+            PeerNode pn = myPeers[i];
+            sb.append(pn.getStatus());
+            sb.append("\n");
+        }
+        return sb.toString();
+    }
 }

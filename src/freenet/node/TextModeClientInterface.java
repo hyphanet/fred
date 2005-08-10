@@ -51,6 +51,7 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("PUT:<text> - put a single line of text to a CHK and return the key.");
         System.out.println("PUTFILE:<filename> - put a file from disk.");
         System.out.println("GETFILE:<filename> - fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
+        System.out.println("STATUS - display some status information on the node.");
         System.out.println("QUIT - exit the program");
         // Read command, and data
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -239,6 +240,8 @@ public class TextModeClientInterface implements Runnable {
                     System.out.println("Threw: "+t);
                     t.printStackTrace();
                 }
+            } else if(line.startsWith("STATUS")) {
+                System.out.println(n.getStatus());
             } else {
                 
             }
