@@ -568,6 +568,7 @@ public class Node implements SimpleClient {
      */
     public synchronized InsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
             byte[] headers, PartiallyReceivedBlock prb, boolean fromStore) {
+        Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         InsertSender is = (InsertSender) insertSenders.get(kh);
         if(is != null) return is;
