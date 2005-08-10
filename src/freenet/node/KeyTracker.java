@@ -131,6 +131,10 @@ public class KeyTracker {
         /** Time at which this packet's ack or resend request becomes urgent
          * and can trigger an otherwise empty packet to be sent. */
         long urgentTime;
+        
+        public String toString() {
+            return super.toString()+": packet "+packetNumber+" urgent@"+urgentTime;
+        }
     }
     
     class QueuedAck extends PacketActionItem implements DoublyLinkedList.Item {

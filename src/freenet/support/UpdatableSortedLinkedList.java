@@ -41,6 +41,7 @@ public class UpdatableSortedLinkedList {
                 list.insertNext(prev, i);
                 return;
             }
+            Logger.minor(this, "Not matching "+cur+" "+prev);
             prev = cur;
         }
         throw new IllegalStateException("impossible");
