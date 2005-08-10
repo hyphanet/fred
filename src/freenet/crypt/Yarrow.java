@@ -82,10 +82,10 @@ public class Yarrow extends RandomSource {
             generator_init(cipher);
         } catch (NoSuchAlgorithmException e) {
             Logger.error(this, "Could not init pools trying to getInstance("+digest+"): "+e, e);
-            System.exit(freenet.node.Node.EXIT_YARROW_INIT_FAILED);
+            System.exit(17);
         }
 		entropy_init(seed);
-		seedFromExternalStuff();
+		seedFromExternalStuff(false);
 		if (updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways 
 			seedfile = seed;
 		else
@@ -98,58 +98,77 @@ public class Yarrow extends RandomSource {
 		slow_pool_reseed();
 	}
 
-	public void seedFromExternalStuff() {
+	public void seedFromExternalStuff(boolean canBlock) {
 	    // SecureRandom hopefully acts as a proxy for CAPI on Windows
 	    byte[] buf = sr.generateSeed(20);
 	    consumeBytes(buf);
 	    buf = sr.generateSeed(20);
 	    consumeBytes(buf);
 	    if(File.separatorChar == '/') {
-	        // Read some bits from /dev/random
 	        FileInputStream fis = null;
+	        File hwrng = new File("/dev/hwrng");
+	        if(hwrng.exists() && hwrng.canRead()) {
+		        try {
+		            fis = new FileInputStream(hwrng);
+		            DataInputStream dis = new DataInputStream(fis);
+		            dis.readFully(buf);
+		            consumeBytes(buf);
+		            dis.readFully(buf);
+		            consumeBytes(buf);
+		        } catch (Throwable t) {
+		            Logger.normal(this, "Can't read /dev/hwrng even though exists and is readable: "+t, t);
+		        } finally {
+		            if(fis != null) try {
+		                fis.close();
+		            } catch (IOException e) {
+		                // Ignore
+		            }
+		        }
+	        }
+	        // Read some bits from /dev/urandom
 	        try {
-	            fis = new FileInputStream("/dev/random");
+	            fis = new FileInputStream("/dev/urandom");
 	            DataInputStream dis = new DataInputStream(fis);
 	            dis.readFully(buf);
 	            consumeBytes(buf);
 	            dis.readFully(buf);
 	            consumeBytes(buf);
 	        } catch (Throwable t) {
-	            Logger.normal(this, "Can't read /dev/random: "+t, t);
+	            Logger.normal(this, "Can't read /dev/urandom: "+t, t);
 	        } finally {
 	            if(fis != null) try {
-	                fis.close();
-	            } catch (IOException e) {
-	                // Ignore
-	            }
+                    fis.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
 	        }
-	        fis = null;
-	        File hwrng = new File("/dev/hwrng");
-	        if(hwrng.exists() && hwrng.canRead()) {
+	        if(canBlock) {
+	            // Read some bits from /dev/random
 	            try {
-	                fis = new FileInputStream(hwrng);
+	                fis = new FileInputStream("/dev/random");
 	                DataInputStream dis = new DataInputStream(fis);
 	                dis.readFully(buf);
 	                consumeBytes(buf);
 	                dis.readFully(buf);
 	                consumeBytes(buf);
 	            } catch (Throwable t) {
-	                Logger.normal(this, "Can't read /dev/hwrng even though exists and is readable: "+t, t);
+	                Logger.normal(this, "Can't read /dev/random: "+t, t);
 	            } finally {
-		            if(fis != null) try {
-		                fis.close();
-		            } catch (IOException e) {
-		                // Ignore
-		            }
+	                if(fis != null) try {
+	                    fis.close();
+	                } catch (IOException e) {
+	                    // Ignore
+	                }
 	            }
 	        }
+	        fis = null;
 	    }
 	    // A few more bits
 	    consumeString(Long.toHexString(Runtime.getRuntime().freeMemory()));
 	    consumeString(Long.toHexString(Runtime.getRuntime().totalMemory()));
 	}
 	
-	private void entropy_init(File seed) {
+    private void entropy_init(File seed) {
 		Properties sys = System.getProperties();
 		EntropySource startupEntropy = new EntropySource();
 
@@ -174,13 +193,10 @@ public class Yarrow extends RandomSource {
 	protected void readStartupEntropy(EntropySource startupEntropy) {
 		// Consume the current time
 		acceptEntropy(startupEntropy, System.currentTimeMillis(), 0);
-		//Logger.minor(this, "Time: "+System.currentTimeMillis()+" on "+this);
 		// Free memory
 		acceptEntropy(startupEntropy, Runtime.getRuntime().freeMemory(), 0);
-		//Logger.minor(this, "Free memory: "+Runtime.getRuntime().freeMemory()+" on "+this);
 		// Total memory
 		acceptEntropy(startupEntropy, Runtime.getRuntime().totalMemory(), 0);
-		//Logger.minor(this, "Total memory: "+Runtime.getRuntime().totalMemory()+" on "+this);
 	}
 
 	/**
@@ -259,10 +275,8 @@ public class Yarrow extends RandomSource {
 	// Fetches count bytes of randomness into the shared buffer, returning
 	// an offset to the bytes
 	private synchronized int getBytes(int count) {
-	    //Logger.minor(this, toString()+".getBytes("+count+") - fetch_counter="+fetch_counter);
 
 		if (fetch_counter + count > output_buffer.length) {
-		    //Logger.minor(this, toString()+": Regenerating output");
 			fetch_counter = 0;
 			generateOutput();
 			return getBytes(count);
@@ -270,7 +284,6 @@ public class Yarrow extends RandomSource {
 
 		int rv = fetch_counter;
 		fetch_counter += count;
-		//Logger.minor(this, "fetch_counter now "+fetch_counter+" on "+this);
 		return rv;
 	}
 
@@ -317,7 +330,6 @@ public class Yarrow extends RandomSource {
 	// So don't try to simplify it... Thanks. :)
 	// When this was not synchronized, we were getting repeats...
 	protected synchronized int next(int bits) {
-	    //Logger.minor(this,"In "+this+" next("+bits+")");
 		int[] parameters = bitTable[bits];
 		int offset = getBytes(parameters[0]);
 
@@ -693,6 +705,6 @@ public class Yarrow extends RandomSource {
     }
 
     public void checkpoint() {
-        seedFromExternalStuff();
+        seedFromExternalStuff(true);
     }
 }
