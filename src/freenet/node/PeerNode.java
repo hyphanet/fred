@@ -1,9 +1,17 @@
 package freenet.node;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DiffieHellmanContext;
@@ -44,7 +52,7 @@ public class PeerNode implements PeerContext {
     private Peer peer;
     
     /** Name of this node */
-    final String myName;
+    String myName;
     
     /** Packets sent/received on the current preferred key */
     private KeyTracker currentTracker;
@@ -139,6 +147,9 @@ public class PeerNode implements PeerContext {
      * at startup.
      */
     private long bootID;
+
+    /** If true, this means last time we tried, we got a bogus noderef */
+    private boolean bogusNoderef;
     
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
@@ -179,7 +190,7 @@ public class PeerNode implements PeerContext {
         if(physical == null) throw new FSParseException("No physical.udp");
         peer = new Peer(physical);
         String name = fs.get("myName");
-        if(name == null) name = "unknown at "+System.currentTimeMillis();
+        if(name == null) throw new FSParseException("No name");
         myName = name;
         
         // Setup incoming and outgoing setup ciphers
@@ -369,8 +380,14 @@ public class PeerNode implements PeerContext {
      * sent.
      */
     public void sentHandshake() {
-        sendHandshakeTime = System.currentTimeMillis() + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-        	+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+        long now = System.currentTimeMillis();
+        if(invalidVersion()) {
+            sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
+            	+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+        } else {
+            sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
+        		+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+        }
     }
 
     /**
@@ -519,11 +536,29 @@ public class PeerNode implements PeerContext {
      * Called when we have completed a handshake, and have a new session key.
      * Creates a new tracker and demotes the old one. Deletes the old one if
      * the bootID isn't recognized.
-     * @param bootID
+     * @param thisBootID The boot ID of the peer we have just connected to
+     * @param data Byte array from which to read the new noderef
+     * @param offset Offset to start reading at
+     * @param length Number of bytes to read
      * @param encKey
      * @param replyTo
      */
-    public synchronized void completedHandshake(long thisBootID, BlockCipher encKey, Peer replyTo) {
+    public synchronized void completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encKey, Peer replyTo) {
+        bogusNoderef = false;
+        try {
+            // First, the new noderef
+            processNewNoderef(data, offset, length);
+        } catch (FSParseException e1) {
+            bogusNoderef = true;
+            Logger.error(this, "Failed to parse new noderef for "+this+": "+e1, e1);
+            // Treat as invalid version
+        }
+        if(invalidVersion()) {
+            Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
+            // Update the next time to check
+            sentHandshake();
+            return;
+        }
         KeyTracker newTracker = new KeyTracker(this, encKey);
         changedIP(replyTo);
         previousTracker = currentTracker;
@@ -548,6 +583,92 @@ public class PeerNode implements PeerContext {
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake but disconnected!!!", new Exception("error"));
         }
+    }
+
+    private boolean invalidVersion() {
+        return bogusNoderef || (!Version.checkGoodVersion(version));
+    }
+
+    /**
+     * Process a new nodereference, in compressed form.
+     * The identity must not change, or we throw.
+     */
+    private void processNewNoderef(byte[] data, int offset, int length) throws FSParseException {
+        if(length == 0) throw new FSParseException("Too short");
+        // Firstly, is it compressed?
+        if(data[offset] == 1) {
+            // Gzipped
+            Inflater i = new Inflater();
+            i.setInput(data, offset+1, length-1);
+            byte[] output = new byte[4096];
+            int outputPointer = 0;
+            while(true) {
+                try {
+                    int x = i.inflate(output, outputPointer, output.length-outputPointer);
+                    if(x == output.length-outputPointer) {
+                        // More to decompress!
+                        byte[] newOutput = new byte[output.length*2];
+                        System.arraycopy(output, 0, newOutput, 0, output.length);
+                        continue;
+                    } else {
+                        // Finished
+                        data = output;
+                        offset = 0;
+                        length = outputPointer + x;
+                        break;
+                    }
+                } catch (DataFormatException e) {
+                    throw new FSParseException("Invalid compressed data");
+                }
+            }
+        }
+        // Now decode it
+        ByteArrayInputStream bais = new ByteArrayInputStream(data, offset+1, length-1);
+        InputStreamReader isr;
+        try {
+            isr = new InputStreamReader(bais, "UTF-8");
+        } catch (UnsupportedEncodingException e1) {
+            throw new Error(e1);
+        }
+        BufferedReader br = new BufferedReader(isr);
+        SimpleFieldSet fs;
+        try {
+            fs = new SimpleFieldSet(br);
+        } catch (IOException e) {
+            Logger.error(this, "Impossible: e", e);
+            return;
+        }
+        processNewNoderef(fs);
+    }
+
+    /**
+     * Process a new nodereference, as a SimpleFieldSet.
+     */
+    private void processNewNoderef(SimpleFieldSet fs) throws FSParseException {
+        Logger.minor(this, "Parsing: "+fs);
+        String identityString = fs.get("identity");
+        try {
+            byte[] newIdentity = HexUtil.hexToBytes(identityString);
+            if(!Arrays.equals(newIdentity, identity))
+                throw new FSParseException("Identity changed!!");
+        } catch (NumberFormatException e) {
+            throw new FSParseException(e);
+        }
+        String newVersion = fs.get("version");
+        if(newVersion == null) throw new FSParseException("No version");
+        String locationString = fs.get("location");
+        if(locationString == null) throw new FSParseException("No location");
+        currentLocation = new Location(locationString);
+        String physical = fs.get("physical.udp");
+        if(physical == null) throw new FSParseException("No physical.udp");
+        try {
+            peer = new Peer(physical);
+        } catch (PeerParseException e1) {
+            throw new FSParseException(e1);
+        }
+        String name = fs.get("myName");
+        if(name == null) throw new FSParseException("No name");
+        myName = name;
     }
 
     /**

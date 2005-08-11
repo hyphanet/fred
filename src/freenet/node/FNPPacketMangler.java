@@ -144,11 +144,17 @@ public class FNPPacketMangler implements LowLevelFilter {
         System.arraycopy(buf, offset+ivLength, hash, 0, digestLength);
         pcfb.blockDecipher(hash, 0, hash.length);
         
-        int dataStart = ivLength + digestLength + offset+1;
+        int dataStart = ivLength + digestLength + offset+2;
         
-        int dataLength = pcfb.decipher(buf[dataStart-1]) & 0xff;
-        
+        int byte1 = ((pcfb.decipher(buf[dataStart-2])) & 0xff);
+        int byte2 = ((pcfb.decipher(buf[dataStart-1])) & 0xff);
+        int dataLength = (byte1 << 8) + byte2;
+        if(dataLength > length - (ivLength+hash.length+2)) {
+            Logger.minor(this, "Invalid data length");
+            return false;
+        }
         // Decrypt the data
+        Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+")");
         byte[] payload = new byte[dataLength];
         System.arraycopy(buf, dataStart, payload, 0, dataLength);
         pcfb.blockDecipher(payload, 0, payload.length);
@@ -178,7 +184,7 @@ public class FNPPacketMangler implements LowLevelFilter {
          * 1 byte - packet type (0-3)
          */
         int version = payload[0];
-        if(version != 0) {
+        if(version != 1) {
             Logger.error(this, "Decrypted auth packet but invalid version: "+version);
             return;
         }
@@ -260,7 +266,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         PCFBMode pcfb = new PCFBMode(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
         
-        byte[] data = Fields.longToBytes(node.bootID);
+        byte[] myRef = node.myRefCompressed();
+        byte[] data = new byte[myRef.length + 8];
+        System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
+        System.arraycopy(myRef, 0, data, 8, myRef.length);
         
         MessageDigest md = getDigest();
         
@@ -274,7 +283,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         System.arraycopy(hash, 0, output, iv.length, hash.length);
         System.arraycopy(data, 0, output, iv.length + hash.length, data.length);
         
-        sendAuthPacket(0, 0, phase, output, pn, replyTo);
+        sendAuthPacket(1, 0, phase, output, pn, replyTo);
     }
 
     /**
@@ -300,7 +309,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             data = newData;
         }
         Logger.minor(this, "Processed: "+HexUtil.bytesToHex(data));
-        sendAuthPacket(0, 0, phase, data, pn, replyTo);
+        sendAuthPacket(1, 0, phase, data, pn, replyTo);
     }
 
     /**
@@ -321,7 +330,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private void sendAuthPacket(byte[] output, PeerNode pn, Peer replyTo) {
         int length = output.length;
-        if(length > 255) {
+        if(length > node.usm.getMaxPacketSize()) {
             throw new IllegalStateException("Cannot send auth packet: too long: "+length);
         }
         BlockCipher cipher = pn.outgoingSetupCipher;
@@ -332,14 +341,16 @@ public class FNPPacketMangler implements LowLevelFilter {
         MessageDigest md = getDigest();
         byte[] hash = md.digest(output);
         Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
-        byte[] data = new byte[iv.length + hash.length + 1 /* length byte */ + output.length];
+        byte[] data = new byte[iv.length + hash.length + 2 /* length */ + output.length];
         pcfb.reset(iv);
         System.arraycopy(iv, 0, data, 0, iv.length);
         pcfb.blockEncipher(hash, 0, hash.length);
         System.arraycopy(hash, 0, data, iv.length, hash.length);
-        data[hash.length+iv.length] = (byte) pcfb.encipher((byte)length);
+        Logger.minor(this, "Payload length: "+length);
+        data[hash.length+iv.length] = (byte) pcfb.encipher((byte)(length>>8));
+        data[hash.length+iv.length+1] = (byte) pcfb.encipher((byte)length);
         pcfb.blockEncipher(output, 0, output.length);
-        System.arraycopy(output, 0, data, hash.length+iv.length+1, output.length);
+        System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
         usm.sendPacket(data, replyTo);
         Logger.minor(this, "Sending auth packet to "+replyTo+" - size "+data.length+" data length: "+output.length);
     }
@@ -382,7 +393,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(Arrays.equals(realHash, hash)) {
             // Success!
             long bootID = Fields.bytesToLong(data);
-            pn.completedHandshake(bootID, encKey, replyTo);
+            pn.completedHandshake(bootID, data, 8, data.length-8, encKey, replyTo);
             return ctx;
         } else {
             Logger.error(this, "Failed to complete handshake (2) on "+pn+" for "+replyTo);

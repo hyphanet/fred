@@ -7,6 +7,7 @@
 package freenet.node;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -65,6 +66,9 @@ public class Node implements SimpleClient {
     // Inter-handshake time must be at least 2x handshake timeout
     public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2;
     public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT;
+    public static final int MIN_TIME_BETWEEN_VERSION_PROBES = 15*60*1000;
+    public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = 15*60*1000;
+
     // 900ms
     static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
     public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
@@ -599,5 +603,30 @@ public class Node implements SimpleClient {
      */
     public String getStatus() {
         return peers.getStatus();
+    }
+
+    /**
+     * @return Our reference, compressed
+     */
+    public byte[] myRefCompressed() {
+        SimpleFieldSet fs = exportFieldSet();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        OutputStreamWriter osw = new OutputStreamWriter(baos);
+        try {
+            fs.writeTo(osw);
+        } catch (IOException e) {
+            throw new Error(e);
+        }
+        try {
+            osw.flush();
+        } catch (IOException e1) {
+            throw new Error(e1);
+        }
+        byte[] buf = baos.toByteArray();
+        byte[] obuf = new byte[buf.length + 1];
+        obuf[0] = 0;
+        System.arraycopy(buf, 0, obuf, 1, buf.length);
+        return obuf;
+        // FIXME support compression when noderefs get big enough for it to be useful
     }
 }

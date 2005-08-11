@@ -139,7 +139,7 @@ public class TextModeClientInterface implements Runnable {
                     }
                     if(new File(fnam).exists()) {
                         System.out.println("File exists already: "+fnam);
-                        fnam = "freenet-"+System.currentTimeMillis()+fnam;
+                        fnam = "freenet-"+System.currentTimeMillis()+"-"+fnam;
                     }
                     FileOutputStream fos = null;
                     try {
