@@ -88,10 +88,12 @@ public class KeyTracker {
 
     /**
      * Set the deprecated flag to indicate that we are now
-     * no longer the primary key.
+     * no longer the primary key. And wake up any threads trying to lock
+     * a packet number; they can be sent with the new KT.
      */
     public void deprecated() {
         isDeprecated = true;
+        sentPacketsContents.interrupt();
     }
     
     /**
@@ -118,6 +120,7 @@ public class KeyTracker {
      * @param seqNumber The number of the packet to be acked.
      */
     public void queueAck(int seqNumber) {
+        Logger.minor(this, "Queueing ack for "+seqNumber);
         QueuedAck qa = new QueuedAck(seqNumber);
         synchronized(ackQueue) {
             ackQueue.push(qa);
@@ -490,6 +493,7 @@ public class KeyTracker {
             for(Enumeration e=ackQueue.elements();e.hasMoreElements();) {
                 QueuedAck ack = (QueuedAck)e.nextElement();
                 acks[i++] = ack.packetNumber;
+                Logger.minor(this, "Grabbing ack "+ack.packetNumber);
                 ack.sent();
             }
         }

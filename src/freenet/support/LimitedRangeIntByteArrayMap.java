@@ -18,12 +18,15 @@ public class LimitedRangeIntByteArrayMap {
     private int minValue;
     private int maxValue;
     private final int maxRange;
+    /** If this changes, all waiting lock()s must terminate */
+    private volatile boolean flag;
     
     public LimitedRangeIntByteArrayMap(int maxRange) {
         this.maxRange = maxRange;
         contents = new HashMap();
         minValue = -1;
         maxValue = -1;
+        flag = false;
     }
     
     public int minValue() {
@@ -65,6 +68,15 @@ public class LimitedRangeIntByteArrayMap {
         notifyAll();
         return true;
     }
+    
+    /**
+     * Toggle the flag, and notify all waiting lock()s. They will then throw
+     * InterruptedException's.
+     */
+    public synchronized void interrupt() {
+        flag = !flag;
+        notifyAll();
+    }
 
     /**
      * Wait until add(index, whatever) would return true.
@@ -72,11 +84,13 @@ public class LimitedRangeIntByteArrayMap {
      * If it throws, it probably won't.
      */
     public synchronized void lock(int index) throws InterruptedException {
-        Logger.minor(this, "Lock("+index+")");
+        boolean oldFlag = flag;
         if(minValue == -1) return;
         if(index - minValue < maxRange) return;
+        Logger.normal(this, toString()+" lock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
         while(true) {
             wait();
+            if(flag != oldFlag) throw new InterruptedException();
             if(index - minValue < maxRange) return;
         }
     }
@@ -89,7 +103,7 @@ public class LimitedRangeIntByteArrayMap {
     public synchronized void lockNeverBlock(int index) throws WouldBlockException {
         if(minValue == -1) return;
         if(index - minValue < maxRange) return;
-        Logger.normal(this, "WOULD BLOCK: lockNeverBlock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
+        Logger.normal(this, toString()+ " WOULD BLOCK: lockNeverBlock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
         throw new WouldBlockException();
     }
     
