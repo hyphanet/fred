@@ -542,7 +542,7 @@ public class KeyTracker {
             realLength = 0;
             for(int i=0;i<length;i++) {
                 QueuedResendRequest qrr = (QueuedResendRequest)items[i];
-                if(qrr.activeTime > now) {
+                if(qrr.activeTime <= now) {
                     packetNumbers[realLength++] = qrr.packetNumber;
                     qrr.sent();
                 }
@@ -568,7 +568,7 @@ public class KeyTracker {
             realLength = 0;
             for(int i=0;i<length;i++) {
                 QueuedAckRequest qrr = (QueuedAckRequest)items[i];
-                if(qrr.activeTime > now) {
+                if(qrr.activeTime <= now) {
                     packetNumbers[realLength++] = qrr.packetNumber;
                     qrr.sent();
                 }
