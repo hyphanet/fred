@@ -375,19 +375,22 @@ public class PeerNode implements PeerContext {
         return !(ctx == null || now - ctx.lastUsedTime() > Node.HANDSHAKE_TIMEOUT);
     }
 
+    boolean firstHandshake = true;
+    
     /**
      * Call this method when a handshake request has been
      * sent.
      */
     public void sentHandshake() {
         long now = System.currentTimeMillis();
-        if(invalidVersion()) {
+        if(invalidVersion() && !firstHandshake) {
             sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
             	+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
         } else {
             sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
         		+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
         }
+        firstHandshake = false;
     }
 
     /**
