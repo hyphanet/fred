@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Vector;
@@ -36,6 +38,8 @@ public class PeerManager {
     /** All the peers we are actually connected to */
     PeerNode[] connectedPeers;
     
+    final String filename;
+    
     /**
      * Create a PeerManager by reading a list of peers from
      * a file.
@@ -43,6 +47,7 @@ public class PeerManager {
      * @param filename
      */
     public PeerManager(Node node, String filename) {
+        this.filename = filename;
         myPeers = new PeerNode[0];
         connectedPeers = new PeerNode[0];
         this.node = node;
@@ -314,5 +319,39 @@ public class PeerManager {
             sb.append("\n");
         }
         return sb.toString();
+    }
+
+    /**
+     * Write the peers file to disk
+     */
+    void writePeers() {
+        FileOutputStream fos;
+        String f = filename+".bak";
+        try {
+            fos = new FileOutputStream(f);
+        } catch (FileNotFoundException e2) {
+            Logger.error(this, "Cannot write peers to disk: Cannot create "+f+" - "+e2, e2);
+            return;
+        }
+        OutputStreamWriter w = new OutputStreamWriter(fos);
+        PeerNode[] peers = myPeers;
+        for(int i=0;i<peers.length;i++) {
+            try {
+                peers[i].write(w);
+            } catch (IOException e) {
+                try {
+                    fos.close();
+                } catch (IOException e1) {
+                    Logger.error(this, "Cannot close file!: "+e1, e1);
+                }
+                Logger.error(this, "Cannot write peers to disk: "+e, e);
+                return;
+            }
+        }
+        try {
+            w.close();
+        } catch (IOException e) {
+            Logger.error(this, "Cannot close file!: "+e, e);
+        }
     }
 }

@@ -72,4 +72,11 @@ public class Location {
             throw new IllegalArgumentException();
         this.loc = newLoc;
     }
+    
+    public boolean equals(Object o) {
+        if(o instanceof Location) {
+            return ((Location)o).loc == loc;
+        }
+        return false;
+    }
 }

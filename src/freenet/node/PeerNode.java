@@ -4,7 +4,9 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -451,6 +453,7 @@ public class PeerNode implements PeerContext {
      */
     public void updateLocation(double newLoc) {
         currentLocation.setValue(newLoc);
+        node.peers.writePeers();
     }
 
     /**
@@ -649,6 +652,7 @@ public class PeerNode implements PeerContext {
      */
     private void processNewNoderef(SimpleFieldSet fs) throws FSParseException {
         Logger.minor(this, "Parsing: "+fs);
+        boolean changedAnything = false;
         String identityString = fs.get("identity");
         try {
             byte[] newIdentity = HexUtil.hexToBytes(identityString);
@@ -659,19 +663,27 @@ public class PeerNode implements PeerContext {
         }
         String newVersion = fs.get("version");
         if(newVersion == null) throw new FSParseException("No version");
+        if(!newVersion.equals(version))
+            changedAnything = true;
         String locationString = fs.get("location");
         if(locationString == null) throw new FSParseException("No location");
-        currentLocation = new Location(locationString);
+        Location loc = new Location(locationString);
+        if(!loc.equals(currentLocation)) changedAnything = true;
+        currentLocation = loc;
         String physical = fs.get("physical.udp");
         if(physical == null) throw new FSParseException("No physical.udp");
         try {
-            peer = new Peer(physical);
+            Peer p = new Peer(physical);
+            if(!p.equals(peer)) changedAnything = true;
+            peer = p;
         } catch (PeerParseException e1) {
             throw new FSParseException(e1);
         }
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
+        if(!name.equals(myName)) changedAnything = true;
         myName = name;
+        if(changedAnything) node.peers.writePeers();
     }
 
     /**
@@ -711,5 +723,26 @@ public class PeerNode implements PeerContext {
     public String getStatus() {
         return getPeer().toString()+" "+
         	(isConnected ? "CONNECTED" : "DISCONNECTED") + " "+myName;
+    }
+
+    /**
+     * Write our noderef to disk
+     */
+    public void write(Writer w) throws IOException {
+        SimpleFieldSet fs = exportFieldSet();
+        fs.writeTo(w);
+    }
+
+    /**
+     * Export our noderef as a SimpleFieldSet
+     */
+    private SimpleFieldSet exportFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet();
+        fs.put("physical.udp", peer.toString());
+        fs.put("identity", HexUtil.bytesToHex(identity));
+        fs.put("location", Double.toString(currentLocation.getValue()));
+        fs.put("version", version);
+        fs.put("myName", myName);
+        return fs;
     }
 }

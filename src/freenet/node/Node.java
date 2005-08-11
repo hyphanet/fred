@@ -277,6 +277,7 @@ public class Node implements SimpleClient {
         decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
         decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
         bootID = random.nextLong();
+        peers.writePeers();
     }
 
     void start(SwapRequestInterval interval) {
