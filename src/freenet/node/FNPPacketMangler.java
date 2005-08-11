@@ -150,7 +150,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         int byte2 = ((pcfb.decipher(buf[dataStart-1])) & 0xff);
         int dataLength = (byte1 << 8) + byte2;
         if(dataLength > length - (ivLength+hash.length+2)) {
-            Logger.minor(this, "Invalid data length");
+            Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
             return false;
         }
         // Decrypt the data

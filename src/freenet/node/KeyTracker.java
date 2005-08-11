@@ -349,6 +349,28 @@ public class KeyTracker {
     }
 
     /**
+     * Queue an ack request
+     * @param packetNumber the packet serial number to queue a
+     * resend request for
+     */
+    private void queueAckRequest(int packetNumber) {
+        if(queuedAckRequest(packetNumber)) {
+            Logger.minor(this, "Not queueing ack request for "+packetNumber+" - already queued");
+            return;
+        }
+        Logger.minor(this, "Queueing ack request for "+packetNumber);
+        QueuedAckRequest qrr = new QueuedAckRequest(packetNumber, false);
+        ackRequestQueue.add(qrr);
+    }
+
+    /**
+     * Is an ack request queued for this packet number?
+     */
+    private boolean queuedAckRequest(int packetNumber) {
+        return ackRequestQueue.containsKey(new Integer(packetNumber));
+    }
+
+    /**
      * Is a resend request queued for this packet number?
      */
     private boolean queuedResendRequest(int packetNumber) {
@@ -600,5 +622,6 @@ public class KeyTracker {
      */
     public void sentPacket(byte[] data, int seqNumber) {
         sentPacketsContents.add(seqNumber, data);
+        queueAckRequest(seqNumber);
     }
 }
