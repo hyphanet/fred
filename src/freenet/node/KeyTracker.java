@@ -624,4 +624,13 @@ public class KeyTracker {
         sentPacketsContents.add(seqNumber, data);
         queueAckRequest(seqNumber);
     }
+
+    public void completelyDeprecated(KeyTracker newTracker) {
+        // Anything to resend?
+        byte[][] toResend = sentPacketsContents.grabAll();
+        for(int i=0;i<toResend.length;i++) {
+            byte[] buf = toResend[i];
+            pn.node.ps.queueResendPacket(buf, -1, newTracker);
+        }
+    }
 }

@@ -574,7 +574,8 @@ public class PeerNode implements PeerContext {
         
         isConnected = true;
         if(thisBootID != this.bootID) {
-            // Wipe old KeyTracker
+            if(previousTracker != null)
+                previousTracker.completelyDeprecated(newTracker);
             previousTracker = null;
             this.bootID = thisBootID;
         } // else it's a rekey

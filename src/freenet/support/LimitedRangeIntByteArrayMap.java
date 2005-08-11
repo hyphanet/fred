@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * @author amphibian
@@ -139,5 +140,21 @@ public class LimitedRangeIntByteArrayMap {
             }
             throw new IllegalStateException("impossible");
         }
+    }
+
+    /**
+     * @return The contents of each packet sent, then clear.
+     */
+    public synchronized byte[][] grabAll() {
+        int len = contents.size();
+        byte[][] output = new byte[len][];
+        Iterator i = contents.values().iterator();
+        int count = 0;
+        while(i.hasNext()) {
+            output[count++] = (byte[])i.next();
+        }
+        contents.clear();
+        maxValue = minValue = -1;
+        return output;
     }
 }

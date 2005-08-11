@@ -58,16 +58,16 @@ public class Node implements SimpleClient {
     public static final double DECREMENT_AT_MIN_PROB = 0.2;
     public static final double DECREMENT_AT_MAX_PROB = 0.1;
     // Send keepalives every 30 seconds
-    public static final int KEEPALIVE_INTERVAL = 30000;
+    public static final int KEEPALIVE_INTERVAL = 15000;
     // If no activity for 90 seconds, node is dead
-    public static final int MAX_PEER_INACTIVITY = 90000;
+    public static final int MAX_PEER_INACTIVITY = 45000;
     /** Time after which a handshake is assumed to have failed. */
     public static final int HANDSHAKE_TIMEOUT = 5000;
     // Inter-handshake time must be at least 2x handshake timeout
-    public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2;
+    public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // 10 secs
     public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT;
-    public static final int MIN_TIME_BETWEEN_VERSION_PROBES = 15*60*1000;
-    public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = 15*60*1000;
+    public static final int MIN_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*3;
+    public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*3; // up to 30 secs between attempts
 
     // 900ms
     static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
