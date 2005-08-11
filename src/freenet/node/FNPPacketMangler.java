@@ -721,6 +721,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         int length = 1;
         for(int i=0;i<messageData.length;i++) {
             messageData[i] = messages[i].encodeToPacket(this, pn);
+            Logger.minor(this, "Sending: "+messages[i]+" length "+messageData[i].length);
             length += (messageData[i].length + 2);
         }
         if(length < node.usm.getMaxPacketSize() &&
