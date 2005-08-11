@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.Vector;
 
 import freenet.io.comm.Message;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.support.Logger;
@@ -227,8 +228,11 @@ public class PeerManager {
     public void localBroadcast(Message msg) {
         PeerNode[] peers = connectedPeers; // avoid synchronization
         for(int i=0;i<peers.length;i++) {
-            if(peers[i].isConnected())
+            if(peers[i].isConnected()) try {
                 peers[i].sendAsync(msg);
+            } catch (NotConnectedException e) {
+                // Ignore
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
 import freenet.io.comm.Message;
+import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
 
 /**
@@ -40,7 +41,11 @@ public class NodeDispatcher implements Dispatcher {
         if(m.getSpec() == DMT.FNPPing) {
             // Send an FNPPong
             Message reply = DMT.createFNPPong(m.getInt(DMT.PING_SEQNO));
-            ((PeerNode)m.getSource()).sendAsync(reply);
+            try {
+                ((PeerNode)m.getSource()).sendAsync(reply);
+            } catch (NotConnectedException e) {
+                Logger.minor(this, "Lost connection replying to "+m);
+            }
             return true;
         }
         if(m.getSpec() == DMT.FNPLocChangeNotification) {
@@ -172,7 +177,11 @@ public class NodeDispatcher implements Dispatcher {
         RoutedContext ctx;
         ctx = (RoutedContext)routedContexts.get(lid);
         if(ctx != null) {
-            ((PeerNode)m.getSource()).sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)));
+            try {
+                ((PeerNode)m.getSource()).sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)));
+            } catch (NotConnectedException e) {
+                Logger.minor(this, "Lost connection rejecting "+m);
+            }
             return true;
         }
         ctx = new RoutedContext(m);
@@ -188,8 +197,11 @@ public class NodeDispatcher implements Dispatcher {
             return true;
         } else if(htl == 0) {
             Message reject = DMT.createFNPRoutedRejected(id, (short)0);
-            if(pn != null)
+            if(pn != null) try {
                 pn.sendAsync(reject);
+            } catch (NotConnectedException e) {
+                Logger.minor(this, "Lost connection rejecting "+m);
+            }
             return true;
         } else {
             return forward(m, id, pn, htl, target, ctx);
@@ -207,7 +219,11 @@ public class NodeDispatcher implements Dispatcher {
         }
         PeerNode pn = ctx.source;
         if(pn == null) return false;
-        pn.sendAsync(m);
+        try {
+            pn.sendAsync(m);
+        } catch (NotConnectedException e) {
+            Logger.minor(this, "Lost connection forwarding "+m+" to "+pn);
+        }
         return true;
     }
     
@@ -215,20 +231,29 @@ public class NodeDispatcher implements Dispatcher {
         Logger.minor(this, "Should forward");
         // Forward
         m = preForward(m, htl);
-        PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, target, pn == null);
-        Logger.minor(this, "Next: "+next+" message: "+m);
-        if(next != null) {
-            Logger.minor(this, "Forwarding "+m.getSpec()+" to "+next.getPeer().getPort());
-            ctx.addSent(next);
-            next.sendAsync(m);
-        } else {
-            Logger.minor(this, "Reached dead end for "+m.getSpec()+" on "+node.portNumber);
-            // Reached a dead end...
-            Message reject = DMT.createFNPRoutedRejected(id, htl);
-            if(pn != null)
-                pn.sendAsync(reject);
+        while(true) {
+            PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, target, pn == null);
+            Logger.minor(this, "Next: "+next+" message: "+m);
+            if(next != null) {
+                Logger.minor(this, "Forwarding "+m.getSpec()+" to "+next.getPeer().getPort());
+                ctx.addSent(next);
+                try {
+                    next.sendAsync(m);
+                } catch (NotConnectedException e) {
+                    continue;
+                }
+            } else {
+                Logger.minor(this, "Reached dead end for "+m.getSpec()+" on "+node.portNumber);
+                // Reached a dead end...
+                Message reject = DMT.createFNPRoutedRejected(id, htl);
+                if(pn != null) try {
+                    pn.sendAsync(reject);
+                } catch (NotConnectedException e) {
+                    continue;
+                }
+            }
+            return true;
         }
-        return true;
     }
 
     /**
@@ -255,7 +280,11 @@ public class NodeDispatcher implements Dispatcher {
             Logger.minor(this, "RoutedPing reached other side!");
             int x = m.getInt(DMT.COUNTER);
             Message reply = DMT.createFNPRoutedPong(id, x);
-            src.sendAsync(reply);
+            try {
+                src.sendAsync(reply);
+            } catch (NotConnectedException e) {
+                Logger.minor(this, "Lost connection replying to "+m+" in dispatchRoutedMessage");
+            }
             return true;
         }
         return false;

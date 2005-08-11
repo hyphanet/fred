@@ -272,7 +272,8 @@ public class PeerNode implements PeerContext {
      * Send a message, off-thread, to this node.
      * @param msg The message to be sent.
      */
-    public void sendAsync(Message msg) {
+    public void sendAsync(Message msg) throws NotConnectedException {
+        if(!isConnected) throw new NotConnectedException();
         messagesToSendNow.addLast(msg);
         synchronized(node.ps) {
             node.ps.notifyAll();
@@ -533,7 +534,11 @@ public class PeerNode implements PeerContext {
         node.peers.addConnectedPeer(this);
         Message msg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
         
-        sendAsync(msg);
+        try {
+            sendAsync(msg);
+        } catch (NotConnectedException e) {
+            Logger.error(this, "Completed handshake but disconnected!!!", new Exception("error"));
+        }
     }
 
     /**

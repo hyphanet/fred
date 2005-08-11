@@ -183,7 +183,12 @@ public class InsertHandler implements Runnable {
             }
         }
         if(toSend != null) {
-            source.sendAsync(toSend);
+            try {
+                source.sendAsync(toSend);
+            } catch (NotConnectedException e) {
+                // :(
+                Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");
+            }
         } else {
             // Succeeded! Yay!
             Message msg = DMT.createFNPInsertReply(uid);
