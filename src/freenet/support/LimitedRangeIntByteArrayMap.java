@@ -49,7 +49,7 @@ public class LimitedRangeIntByteArrayMap {
      * of range.
      */
     public synchronized boolean add(int index, byte[] data) {
-        Logger.minor(this, "Add "+index);
+        Logger.minor(this, toString()+" add "+index);
         if(maxValue == -1) {
             minValue = index;
             maxValue = index;

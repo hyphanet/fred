@@ -470,11 +470,10 @@ public class KeyTracker {
         int packetNumber;
         if(!pn.isConnected()) throw new NotConnectedException();
         synchronized(this) {
-            packetNumber = nextPacketNumber++;
-        }
-        if(isDeprecated) throw new KeyChangedException();
-        while(true) {
+            packetNumber = nextPacketNumber+1;
+            if(isDeprecated) throw new KeyChangedException();
             sentPacketsContents.lockNeverBlock(packetNumber);
+            nextPacketNumber = packetNumber;
             return packetNumber;
         }
     }
