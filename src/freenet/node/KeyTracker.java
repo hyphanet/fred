@@ -84,6 +84,7 @@ public class KeyTracker {
         packetsToResend = new HashSet();
         packetNumbersReceived = new ReceivedPacketNumbers(512);
         isDeprecated = false;
+        nextPacketNumber = pn.node.random.nextInt(100*1000);
     }
 
     /**
@@ -323,6 +324,7 @@ public class KeyTracker {
         int max = packetNumbersReceived.highest();
         if(seqNumber > max) {
             if(max != -1 && seqNumber - max > 1) {
+                Logger.minor(this, "Queueing resends from "+max+" to "+seqNumber);
                 // Missed some packets out
                 for(int i=max+1;i<seqNumber;i++) {
                     queueResendRequest(i);
@@ -341,6 +343,7 @@ public class KeyTracker {
             Logger.minor(this, "Not queueing resend request for "+packetNumber+" - already queued");
             return;
         }
+        Logger.minor(this, "Queueing resend request for "+packetNumber);
         QueuedResendRequest qrr = new QueuedResendRequest(packetNumber);
         resendRequestQueue.add(qrr);
     }
@@ -379,7 +382,7 @@ public class KeyTracker {
             pn.node.ps.queueResendPacket(resendData, seqNumber, this);
         } else {
             Logger.error(this, "Asking me to resend packet "+seqNumber+
-                    " which we haven't sent yet or which they have already acked");
+            	" which we haven't sent yet or which they have already acked");
         }
     }
 
@@ -447,9 +450,10 @@ public class KeyTracker {
         int packetNumber;
         if(!pn.isConnected()) throw new NotConnectedException();
         synchronized(this) {
+            if(isDeprecated) throw new KeyChangedException();
             packetNumber = nextPacketNumber++;
+            Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumber");
         }
-        if(isDeprecated) throw new KeyChangedException();
         while(true) {
             try {
                 sentPacketsContents.lock(packetNumber);
@@ -470,10 +474,11 @@ public class KeyTracker {
         int packetNumber;
         if(!pn.isConnected()) throw new NotConnectedException();
         synchronized(this) {
-            packetNumber = nextPacketNumber+1;
+            packetNumber = nextPacketNumber;
             if(isDeprecated) throw new KeyChangedException();
             sentPacketsContents.lockNeverBlock(packetNumber);
-            nextPacketNumber = packetNumber;
+            nextPacketNumber = packetNumber+1;
+            Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumberNeverBlock");
             return packetNumber;
         }
     }
