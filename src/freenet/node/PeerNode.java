@@ -725,6 +725,10 @@ public class PeerNode implements PeerContext {
         return getPeer().toString()+" "+
         	(isConnected ? "CONNECTED" : "DISCONNECTED") + " "+myName;
     }
+	
+    public String getVersion(){
+	    return version;
+    }
 
     /**
      * Write our noderef to disk

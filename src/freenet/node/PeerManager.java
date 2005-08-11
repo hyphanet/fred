@@ -317,6 +317,7 @@ public class PeerManager {
         for(int i=0;i<myPeers.length;i++) {
             PeerNode pn = myPeers[i];
             sb.append(pn.getStatus());
+            sb.append(" -"+pn.getVersion());
             sb.append("\n");
         }
         return sb.toString();
