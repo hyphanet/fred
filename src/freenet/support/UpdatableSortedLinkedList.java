@@ -63,9 +63,18 @@ public class UpdatableSortedLinkedList {
             list.unshift(i);
             return;
         }
+        if(list.head() == list.tail()) {
+            Logger.error(this, "Only 1 element: "+list.head()+" and updating "+i+" on "+this, new Exception("error"));
+            add(i);
+            return;
+        }
         // Forwards or backwards?
         UpdatableSortedLinkedListItem next = (UpdatableSortedLinkedListItem) list.next(i);
         UpdatableSortedLinkedListItem prev = (UpdatableSortedLinkedListItem) list.prev(i);
+        if(next == null || prev == null) {
+            Logger.error(this, "next="+next+" prev="+prev+" for update("+i+") on "+this, new Exception("error"));
+            return;
+        }
         if(next.compareTo(i) > 0 && prev.compareTo(i) < 0) 
             return; // already exactly where it should be
         if(next != null && i.compareTo(next) > 0) {
