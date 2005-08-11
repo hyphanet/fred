@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -321,10 +322,13 @@ public class PeerManager {
         return sb.toString();
     }
 
+    final Object writePeersSync = new Object();
+    
     /**
      * Write the peers file to disk
      */
     void writePeers() {
+        synchronized(writePeersSync) {
         FileOutputStream fos;
         String f = filename+".bak";
         try {
@@ -352,6 +356,10 @@ public class PeerManager {
             w.close();
         } catch (IOException e) {
             Logger.error(this, "Cannot close file!: "+e, e);
+        }
+        if(!new File(f).renameTo(new File(filename))) {
+            Logger.error(this, "Could not rename "+f+" to "+filename+" writing peers");
+        }
         }
     }
 }

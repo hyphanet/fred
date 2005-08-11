@@ -665,6 +665,7 @@ public class PeerNode implements PeerContext {
         if(newVersion == null) throw new FSParseException("No version");
         if(!newVersion.equals(version))
             changedAnything = true;
+        version = newVersion;
         String locationString = fs.get("location");
         if(locationString == null) throw new FSParseException("No location");
         Location loc = new Location(locationString);
