@@ -18,6 +18,7 @@ public class UpdatableSortedLinkedList {
     private final DoublyLinkedList list;
     
     public synchronized void add(UpdatableSortedLinkedListItem i) {
+        Logger.minor(this, "Add("+i+") on "+this);
         if(list.isEmpty()) {
             list.push(i);
             return;
@@ -48,10 +49,12 @@ public class UpdatableSortedLinkedList {
     }
 
     public synchronized void remove(UpdatableSortedLinkedListItem i) {
+        Logger.minor(this, "Remove("+i+") on "+this);
         list.remove(i);
     }
     
     public synchronized void update(UpdatableSortedLinkedListItem i) {
+        Logger.minor(this, "Update("+i+") on "+this);
         if(i.compareTo(list.tail()) == 0) return;
         if(i.compareTo(list.tail()) > 0) {
             list.remove(i);

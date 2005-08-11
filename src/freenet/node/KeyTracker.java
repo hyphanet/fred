@@ -255,9 +255,9 @@ public class KeyTracker {
         
         void sent() {
             synchronized(resendRequestQueue) {
+                super.sent();
                 resendRequestQueue.update(this);
             }
-            super.sent();
         }
     }
     
@@ -277,9 +277,9 @@ public class KeyTracker {
         
         void sent() {
             synchronized(ackRequestQueue) {
+                super.sent();
                 ackRequestQueue.update(this);
             }
-            super.sent();
         }
     }
     
