@@ -309,6 +309,15 @@ public class PeerNode implements PeerContext {
             return messages;
         }
     }
+    
+    public void requeueMessages(Message[] messages) {
+        // Will usually indicate serious problems
+        Logger.error(this, "Requeueing "+messages.length+" messages!");
+        synchronized(messagesToSendNow) {
+            for(int i=0;i<messages.length;i++)
+                messagesToSendNow.add(messages[i]);
+        }
+    }
 
     /**
      * @return The time at which we must send a packet, even if

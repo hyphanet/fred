@@ -4,6 +4,7 @@ import java.util.LinkedList;
 
 import freenet.io.comm.Message;
 import freenet.support.Logger;
+import freenet.support.WouldBlockException;
 
 /**
  * @author amphibian
@@ -55,11 +56,17 @@ public class PacketSender implements Runnable {
                         }
 
                         // Any messages to send?
-                        Message[] messages = pn.grabQueuedMessages();
-                        if(messages != null) {
-                            // Send packets, right now, blocking, including any active notifications
-                            node.packetMangler.processOutgoing(messages, pn, true);
-                            continue;
+                        Message[] messages = null;
+                        try {
+                            messages = pn.grabQueuedMessages();
+                            if(messages != null) {
+                                // Send packets, right now, blocking, including any active notifications
+                                node.packetMangler.processOutgoing(messages, pn, true);
+                                continue;
+                            }
+                        } catch (WouldBlockException e) {
+                            if(messages != null)
+                                pn.requeueMessages(messages);
                         }
                         
                         // Any urgent notifications to send?
@@ -105,7 +112,7 @@ public class PacketSender implements Runnable {
                     }
                 }
             } catch (Throwable t) {
-                Logger.error(this, "Caught "+t, t);
+                Logger.error(this, "Caught in PacketSender: "+t, t);
             }
         }
     }

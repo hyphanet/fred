@@ -73,6 +73,7 @@ public class LimitedRangeIntByteArrayMap {
      */
     public synchronized void lock(int index) throws InterruptedException {
         Logger.minor(this, "Lock("+index+")");
+        if(minValue == -1) return;
         if(index - minValue < maxRange) return;
         while(true) {
             wait();
@@ -86,8 +87,9 @@ public class LimitedRangeIntByteArrayMap {
      * If it throws, it probably won't.
      */
     public synchronized void lockNeverBlock(int index) throws WouldBlockException {
+        if(minValue == -1) return;
         if(index - minValue < maxRange) return;
-        Logger.minor(this, "lockNeverBlock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
+        Logger.normal(this, "WOULD BLOCK: lockNeverBlock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
         throw new WouldBlockException();
     }
     
