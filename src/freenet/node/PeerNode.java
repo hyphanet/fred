@@ -352,7 +352,7 @@ public class PeerNode implements PeerContext {
     public boolean hasLiveHandshake(long now) {
         if(ctx != null)
             Logger.minor(this, "Last used: "+(now - ctx.lastUsedTime()));
-        return !(ctx == null || now - ctx.lastUsedTime() > 2*Node.HANDSHAKE_TIMEOUT);
+        return !(ctx == null || now - ctx.lastUsedTime() > Node.HANDSHAKE_TIMEOUT);
     }
 
     /**

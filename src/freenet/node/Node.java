@@ -60,15 +60,14 @@ public class Node implements SimpleClient {
     public static final int KEEPALIVE_INTERVAL = 30000;
     // If no activity for 90 seconds, node is dead
     public static final int MAX_PEER_INACTIVITY = 90000;
-    // 5 seconds minimum between handshakes
-    public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = 5000;
-    // Plus another 5 seconds randomized
-    public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = 5000;
+    /** Time after which a handshake is assumed to have failed. */
+    public static final int HANDSHAKE_TIMEOUT = 5000;
+    // Inter-handshake time must be at least 2x handshake timeout
+    public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2;
+    public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT;
     // 900ms
     static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
     public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
-    /** Time after which a handshake is assumed to have failed. */
-    public static final int HANDSHAKE_TIMEOUT = 5000;
     
     // FIXME: abstract out address stuff? Possibly to something like NodeReference?
     final int portNumber;
