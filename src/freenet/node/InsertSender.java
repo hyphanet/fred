@@ -278,4 +278,19 @@ public class InsertSender implements Runnable {
     public void receiveFailed() {
         receiveFailed = true;
     }
+
+    /**
+     * @return The current status as a string
+     */
+    public String getStatusString() {
+        if(status == SUCCESS)
+            return "SUCCESS";
+        if(status == ROUTE_NOT_FOUND)
+            return "ROUTE NOT FOUND";
+        if(status == REJECTED_OVERLOAD)
+            return "REJECTED: OVERLOAD";
+        if(status == NOT_FINISHED)
+            return "NOT FINISHED";
+        return "UNKNOWN STATUS CODE: "+status;
+    }
 }

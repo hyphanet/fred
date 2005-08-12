@@ -111,7 +111,10 @@ public class FNPPacketMangler implements LowLevelFilter {
                 if(tryProcessAuth(buf, offset, length, pn, peer)) return;
             }
         }
-        Logger.error(this,"Unmatchable packet from "+peer);
+        if(opn != null && !opn.isConnected())
+            Logger.minor(this,"Unmatchable packet from "+peer);
+        else
+            Logger.error(this,"Unmatchable packet from "+peer);
     }
 
     /**
@@ -1081,5 +1084,6 @@ public class FNPPacketMangler implements LowLevelFilter {
             }
         }
         sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, pn.getPeer());
+        pn.sentHandshake();
     }
 }

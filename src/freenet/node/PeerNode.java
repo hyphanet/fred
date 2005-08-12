@@ -245,7 +245,6 @@ public class PeerNode implements PeerContext {
         
         decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
         decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
-        sentHandshake(); // set sendHandshakeTime
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
@@ -563,6 +562,7 @@ public class PeerNode implements PeerContext {
             Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
             // Update the next time to check
             sentHandshake();
+            isConnected = false;
             return;
         }
         KeyTracker newTracker = new KeyTracker(this, encKey);
