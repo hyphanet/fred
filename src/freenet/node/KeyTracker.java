@@ -403,8 +403,13 @@ public class KeyTracker {
         if(resendData != null) {
             pn.node.ps.queueResendPacket(resendData, seqNumber, this);
         } else {
-            Logger.error(this, "Asking me to resend packet "+seqNumber+
-            	" which we haven't sent yet or which they have already acked");
+            String msg = "Asking me to resend packet "+seqNumber+
+        		" which we haven't sent yet or which they have already acked";
+            // Can have a race condition
+            if(seqNumber < nextPacketNumber && seqNumber > nextPacketNumber-16)
+                Logger.minor(this, msg);
+            else
+                Logger.error(this, msg);
         }
     }
 
