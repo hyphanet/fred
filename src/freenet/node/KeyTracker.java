@@ -549,7 +549,10 @@ public class KeyTracker {
                 QueuedResendRequest qrr = (QueuedResendRequest)items[i];
                 if(qrr.activeTime <= now) {
                     packetNumbers[realLength++] = qrr.packetNumber;
+                    Logger.minor(this, "Grabbing resend request: "+qrr.packetNumber);
                     qrr.sent();
+                } else {
+                    Logger.minor(this, "Rejecting resend request: "+qrr.packetNumber+" - in future by "+(now-qrr.activeTime)+"ms");
                 }
             }
         }

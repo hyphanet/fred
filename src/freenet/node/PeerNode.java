@@ -324,7 +324,7 @@ public class PeerNode implements PeerContext {
     
     public void requeueMessages(Message[] messages) {
         // Will usually indicate serious problems
-        Logger.error(this, "Requeueing "+messages.length+" messages!");
+        Logger.error(this, "Requeueing "+messages.length+" messages on "+this);
         synchronized(messagesToSendNow) {
             for(int i=0;i<messages.length;i++)
                 messagesToSendNow.add(messages[i]);
