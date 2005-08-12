@@ -149,12 +149,12 @@ public class FNPPacketMangler implements LowLevelFilter {
         int byte1 = ((pcfb.decipher(buf[dataStart-2])) & 0xff);
         int byte2 = ((pcfb.decipher(buf[dataStart-1])) & 0xff);
         int dataLength = (byte1 << 8) + byte2;
+        Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+")");
         if(dataLength > length - (ivLength+hash.length+2)) {
             Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
             return false;
         }
         // Decrypt the data
-        Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+")");
         byte[] payload = new byte[dataLength];
         System.arraycopy(buf, dataStart, payload, 0, dataLength);
         pcfb.blockDecipher(payload, 0, payload.length);
@@ -237,12 +237,10 @@ public class FNPPacketMangler implements LowLevelFilter {
             // Format: IV E_K ( H(data) data )
             // Where data = [ long: bob's startup number ]
             DiffieHellmanContext ctx = 
-                processDHTwoOrThree(2, payload, pn, replyTo);
-            if(ctx != null)
-                sendDHCompletion(3, ctx.getCipher(), pn, replyTo);
+                processDHTwoOrThree(2, payload, pn, replyTo, true);
         } else if(packetType == 3) {
             // We are Alice
-            processDHTwoOrThree(3, payload, pn, replyTo);
+            processDHTwoOrThree(3, payload, pn, replyTo, false);
         }
     }
 
@@ -362,7 +360,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param replyTo
      * @return
      */
-    private DiffieHellmanContext processDHTwoOrThree(int i, byte[] payload, PeerNode pn, Peer replyTo) {
+    private DiffieHellmanContext processDHTwoOrThree(int i, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
         DiffieHellmanContext ctx = pn.getDHContext();
         if(!ctx.canGetCipher()) {
             Logger.error(this, "Cannot get cipher");
@@ -393,6 +391,14 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(Arrays.equals(realHash, hash)) {
             // Success!
             long bootID = Fields.bytesToLong(data);
+            // Send the completion before parsing the data, because this is easiest
+            // Doesn't really matter - if it fails, we get loads of errors anyway...
+            // Only downside is that the other side might still think we are connected for a while.
+            // But this should be extremely rare.
+            // REDFLAG?
+            // We need to send the completion before the PN sends any packets, that's all...
+            if(sendCompletion)
+                sendDHCompletion(3, ctx.getCipher(), pn, replyTo);
             pn.completedHandshake(bootID, data, 8, data.length-8, encKey, replyTo);
             return ctx;
         } else {
@@ -972,7 +978,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             int offsetSeq = realSeqNumber - ackReqSeq;
             if(offsetSeq > 255 || offsetSeq < 0)
                 throw new IllegalStateException("bad ack requests offset: "+offsetSeq+
-                        " - ackReqSeq="+ackReqSeq+", packetNumber="+packetNumber);
+                        " - ackReqSeq="+ackReqSeq+", packetNumber="+realSeqNumber);
             plaintext[ptr++] = (byte)offsetSeq;
         }
         
