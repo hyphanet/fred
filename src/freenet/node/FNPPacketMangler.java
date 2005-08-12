@@ -108,6 +108,12 @@ public class FNPPacketMangler implements LowLevelFilter {
                     return;
                 }
                 if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker())) return;
+            }
+        }
+        if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
+            for(int i=0;i<pm.myPeers.length;i++) {
+                pn = pm.myPeers[i];
+                if(pn == opn) continue;
                 if(tryProcessAuth(buf, offset, length, pn, peer)) return;
             }
         }
