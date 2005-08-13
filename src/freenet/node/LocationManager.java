@@ -595,7 +595,7 @@ class LocationManager {
             Logger.minor(this, "Accepting?... "+uid);
             // Accept - handle locally
             if(!lock()) {
-                Logger.minor(this, "Can't obtain lock on "+uid);
+                Logger.minor(this, "Can't obtain lock on "+uid+" - rejecting to "+pn);
                 // Reject
                 Message reject = DMT.createFNPSwapRejected(uid);
                 try {

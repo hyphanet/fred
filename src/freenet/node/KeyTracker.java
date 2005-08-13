@@ -137,7 +137,7 @@ public class KeyTracker {
         long urgentTime;
         
         public String toString() {
-            return super.toString()+": packet "+packetNumber+" urgent@"+urgentTime;
+            return super.toString()+": packet "+packetNumber+" urgent@"+urgentTime+"("+(System.currentTimeMillis()-urgentTime)+")";
         }
     }
     
@@ -479,7 +479,7 @@ public class KeyTracker {
         synchronized(this) {
             if(isDeprecated) throw new KeyChangedException();
             packetNumber = nextPacketNumber++;
-            Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumber");
+            Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumber for "+this);
         }
         while(true) {
             try {
@@ -505,7 +505,7 @@ public class KeyTracker {
             if(isDeprecated) throw new KeyChangedException();
             sentPacketsContents.lockNeverBlock(packetNumber);
             nextPacketNumber = packetNumber+1;
-            Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumberNeverBlock");
+            Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumberNeverBlock for "+this);
             return packetNumber;
         }
     }
@@ -524,7 +524,7 @@ public class KeyTracker {
             for(Enumeration e=ackQueue.elements();e.hasMoreElements();) {
                 QueuedAck ack = (QueuedAck)e.nextElement();
                 acks[i++] = ack.packetNumber;
-                Logger.minor(this, "Grabbing ack "+ack.packetNumber);
+                Logger.minor(this, "Grabbing ack "+ack.packetNumber+" from "+this);
                 ack.sent();
             }
         }
@@ -549,10 +549,10 @@ public class KeyTracker {
                 QueuedResendRequest qrr = (QueuedResendRequest)items[i];
                 if(qrr.activeTime <= now) {
                     packetNumbers[realLength++] = qrr.packetNumber;
-                    Logger.minor(this, "Grabbing resend request: "+qrr.packetNumber);
+                    Logger.minor(this, "Grabbing resend request: "+qrr.packetNumber+" from "+this);
                     qrr.sent();
                 } else {
-                    Logger.minor(this, "Rejecting resend request: "+qrr.packetNumber+" - in future by "+(now-qrr.activeTime)+"ms");
+                    Logger.minor(this, "Rejecting resend request: "+qrr.packetNumber+" - in future by "+(qrr.activeTime-now)+"ms for "+this);
                 }
             }
         }
@@ -561,9 +561,6 @@ public class KeyTracker {
         return trimmedPacketNumbers;
     }
 
-    /**
-     * @return
-     */
     public int[] grabAckRequests() {
         UpdatableSortedLinkedListItem[] items;
         int[] packetNumbers;
@@ -578,7 +575,10 @@ public class KeyTracker {
                 QueuedAckRequest qrr = (QueuedAckRequest)items[i];
                 if(qrr.activeTime <= now) {
                     packetNumbers[realLength++] = qrr.packetNumber;
+                    Logger.minor(this, "Grabbing ack request "+qrr.packetNumber+" from "+this);
                     qrr.sent();
+                } else {
+                    Logger.minor(this, "Ignoring ack request "+qrr.packetNumber+" - will become active in "+(qrr.activeTime-now)+" ms on "+this);
                 }
             }
         }

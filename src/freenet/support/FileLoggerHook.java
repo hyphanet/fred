@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 import java.util.Vector;
 
 /**
@@ -539,6 +540,7 @@ public class FileLoggerHook extends LoggerHook {
 		} else
 			df = DateFormat.getDateTimeInstance();
 
+		df.setTimeZone(TimeZone.getTimeZone("UTC"));
 		if (fmt == null || fmt.length() == 0)
 			fmt = "d:c:h:t:p:m";
 		char[] f = fmt.toCharArray();
