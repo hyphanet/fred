@@ -359,6 +359,7 @@ public class PeerManager {
             Logger.error(this, "Cannot close file!: "+e, e);
         }
         if(!new File(f).renameTo(new File(filename))) {
+            
             Logger.error(this, "Could not rename "+f+" to "+filename+" writing peers");
         }
         }

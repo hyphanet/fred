@@ -93,6 +93,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
             
             if(opn != null) {
+                Logger.minor(this, "Trying exact match");
                 if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker())) return;
                 // Try with old key
                 if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker())) return;
@@ -107,7 +108,11 @@ public class FNPPacketMangler implements LowLevelFilter {
                     pn.changedIP(peer);
                     return;
                 }
-                if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker())) return;
+                if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker())) {
+                    // IP address change
+                    pn.changedIP(peer);
+                    return;
+                }
             }
         }
         if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
@@ -469,7 +474,10 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private boolean tryProcess(byte[] buf, int offset, int length, KeyTracker tracker) {
         // Need to be able to call with tracker == null to simplify code above 
-        if(tracker == null) return false;
+        if(tracker == null) {
+            Logger.minor(this, "Tracker == null");
+            return false;
+        }
         Logger.minor(this,"Entering tryProcess: "+buf+","+offset+","+length+","+tracker);
         /**
          * E_pcbc_session(H(seq+random+data)) E_pcfb_session(seq+random+data)
