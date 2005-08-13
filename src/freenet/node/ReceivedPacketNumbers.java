@@ -134,7 +134,7 @@ public class ReceivedPacketNumbers {
             return false;
         if(seqNumber == highestSeqNumber)
             return true;
-        if(seqNumber <= lowestSeqNumber)
+        if(seqNumber == lowestSeqNumber)
             return true;
         if(highestSeqNumber - seqNumber > horizon)
             return true; // Assume we have since out of window
