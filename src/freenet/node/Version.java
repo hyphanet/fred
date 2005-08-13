@@ -20,7 +20,7 @@ public abstract class Version {
 	public static String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	public static final int buildNumber = 68;
+	public static final int buildNumber = 69;
 
 	/** Oldest build of Fred we will talk to */
 	public static final int lastGoodBuild = 68;
@@ -43,7 +43,7 @@ public abstract class Version {
 	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG,Version.class);
 	static {
 		StringTokenizer cvsId =
-			new StringTokenizer("$Id: Version.java,v 1.66 2005/08/13 18:33:12 amphibian Exp $");
+			new StringTokenizer("$Id: Version.java,v 1.67 2005/08/13 19:29:04 amphibian Exp $");
 		cvsId.nextToken();
 		cvsId.nextToken();
 		cvsRevision = cvsId.nextToken();

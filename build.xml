@@ -18,7 +18,7 @@
     <!-- Create the build directory structure used by compile -->
     <mkdir dir="${build}"/>
 
-    <javac srcdir="${src}" destdir="${build}">
+    <javac srcdir="${src}" destdir="${build}" source="1.4" target="1.4" debug="on" optimize="on">
 <!-- following a very temporary list of files to be build -->
       <include name="org/**.java"/>
       <include name="freenet/**/*.java"/>

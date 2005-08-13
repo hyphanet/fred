@@ -4,14 +4,12 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.ListIterator;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -286,7 +284,9 @@ public class PeerNode implements PeerContext {
      */
     public void sendAsync(Message msg) throws NotConnectedException {
         if(!isConnected) throw new NotConnectedException();
-        messagesToSendNow.addLast(msg);
+        synchronized(messagesToSendNow) {
+            messagesToSendNow.addLast(msg);
+        }
         synchronized(node.ps) {
             node.ps.notifyAll();
         }
