@@ -128,6 +128,7 @@ public class UpdatableSortedLinkedList {
         int i=0;
         for(Enumeration e = list.elements();e.hasMoreElements();) {
             output[i++] = (UpdatableSortedLinkedListItem)e.nextElement();
+            Logger.minor(this, "["+(i-1)+"] = "+output[i-1]);
         }
         return output;
     }

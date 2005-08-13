@@ -235,6 +235,8 @@ public class KeyTracker {
             BaseQueuedResend r = (BaseQueuedResend)o;
             if(urgentTime > r.urgentTime) return 1;
             if(urgentTime < r.urgentTime) return -1;
+            if(packetNumber > r.packetNumber) return 1;
+            if(packetNumber < r.packetNumber) return -1;
             return 0;
         }
         
