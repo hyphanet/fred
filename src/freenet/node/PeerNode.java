@@ -591,6 +591,7 @@ public class PeerNode implements PeerContext {
                 currentTracker.completelyDeprecated(newTracker);
             currentTracker = null;
             this.bootID = thisBootID;
+            isConnected = false;
         } // else it's a rekey
         
         if(unverified) {
@@ -779,7 +780,7 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
         return getPeer().toString()+" "+
-        	(isConnected ? "CONNECTED" : "DISCONNECTED") + " "+myName;
+        	(isConnected ? "CONNECTED" : "DISCONNECTED") + " "+myName+" "+currentLocation.getValue();
     }
 	
     public String getVersion(){

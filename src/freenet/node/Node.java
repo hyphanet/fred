@@ -23,12 +23,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import freenet.crypt.BlockCipher;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
-import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.Yarrow;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
@@ -58,9 +55,9 @@ public class Node implements SimpleClient {
     public static final double DECREMENT_AT_MIN_PROB = 0.2;
     public static final double DECREMENT_AT_MAX_PROB = 0.1;
     // Send keepalives every 30 seconds
-    public static final int KEEPALIVE_INTERVAL = 15000;
+    public static final int KEEPALIVE_INTERVAL = 7500;
     // If no activity for 90 seconds, node is dead
-    public static final int MAX_PEER_INACTIVITY = 45000;
+    public static final int MAX_PEER_INACTIVITY = 30000;
     /** Time after which a handshake is assumed to have failed. */
     public static final int HANDSHAKE_TIMEOUT = 5000;
     // Inter-handshake time must be at least 2x handshake timeout
