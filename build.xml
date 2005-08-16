@@ -18,7 +18,8 @@
     <!-- Create the build directory structure used by compile -->
     <mkdir dir="${build}"/>
 
-    <javac srcdir="${src}" destdir="${build}" source="1.4" target="1.4" debug="on" optimize="on">
+<!-- FIXME: remove the debug and replace with optimize -->
+    <javac srcdir="${src}" destdir="${build}" debug="on" optimize="off">
 <!-- following a very temporary list of files to be build -->
       <include name="org/**.java"/>
       <include name="freenet/**/*.java"/>
@@ -36,7 +37,7 @@
     <!-- Put everything in ${build} into the freenet-${DSTAMP}.jar file -->
     <jar jarfile="freenet-${DSTAMP}.jar" basedir="${build}">
       <manifest>
-         <attribute name="Main-Class" value="test/DatastoreTest"/>
+      <attribute name="Main-Class" value="freenet/node/Node"/>
          <attribute name="Built-By" value="${user.name}"/>
 	 <section name="common">
 	   <attribute name="Specification-Title" value="Example"/>
