@@ -587,6 +587,9 @@ public class PeerNode implements PeerContext {
             if(previousTracker != null)
                 previousTracker.completelyDeprecated(newTracker);
             previousTracker = null;
+            if(currentTracker != null)
+                currentTracker.completelyDeprecated(newTracker);
+            currentTracker = null;
             this.bootID = thisBootID;
         } // else it's a rekey
         
@@ -602,7 +605,7 @@ public class PeerNode implements PeerContext {
             isConnected = true;
             ctx = null;
         }
-        Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" bootID: "+thisBootID);
+        Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID);
         receivedPacket();
         node.peers.addConnectedPeer(this);
         if(!unverified)
