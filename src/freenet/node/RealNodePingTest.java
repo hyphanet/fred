@@ -24,8 +24,8 @@ public class RealNodePingTest {
         Yarrow yarrow = new Yarrow();
         DiffieHellman.init(yarrow);
         // Create 2 nodes
-        Node node1 = new Node(5001, yarrow, null);
-        Node node2 = new Node(5002, yarrow, null);
+        Node node1 = new Node(5001, yarrow, null, "pingtest-");
+        Node node2 = new Node(5002, yarrow, null, "pingtest-");
         SimpleFieldSet node1ref = node1.exportFieldSet();
         SimpleFieldSet node2ref = node2.exportFieldSet();
         // Connect

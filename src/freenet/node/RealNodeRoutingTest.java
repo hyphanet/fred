@@ -1,5 +1,7 @@
 package freenet.node;
 
+import java.io.File;
+
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
@@ -26,12 +28,14 @@ public class RealNodeRoutingTest {
         Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
         System.out.println("Routing test using real nodes:");
         System.out.println();
+        String wd = "realNodeRequestInsertTest";
+        new File(wd).mkdir();
         DummyRandomSource random = new DummyRandomSource();
         DiffieHellman.init(random);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] = new Node(5000+i, random, null);
+            nodes[i] = new Node(5000+i, random, null, wd+File.separator);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];

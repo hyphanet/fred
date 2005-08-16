@@ -1,5 +1,6 @@
 package freenet.node;
 
+import java.io.File;
 import java.util.Arrays;
 
 import freenet.crypt.DiffieHellman;
@@ -25,6 +26,9 @@ public class RealNodeRequestInsertTest {
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException {
         PeerNode.disableProbabilisticHTLs = true;
+        String wd = "realNodeRequestInsertTest";
+        new File(wd).mkdir();
+        // Don't clobber nearby nodes!
         Node.MAX_HTL = 5;
         Logger.setupStdoutLogging(Logger.DEBUG, "freenet.store:minor,freenet.node.Location:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
         Logger.globalSetThreshold(Logger.DEBUG);
@@ -35,7 +39,7 @@ public class RealNodeRequestInsertTest {
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] = new Node(5000+i, random, null);
+            nodes[i] = new Node(5000+i, random, null, wd+File.separator);
             nodes[i].usm.setDropProbability(20); // 5%
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }

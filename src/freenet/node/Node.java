@@ -101,6 +101,7 @@ public class Node implements SimpleClient {
     final FNPPacketMangler packetMangler;
     final PacketSender ps;
     final NodeDispatcher dispatcher;
+    final String filenamesPrefix;
     static short MAX_HTL = 20;
     private static final int EXIT_STORE_FILE_NOT_FOUND = 1;
     private static final int EXIT_STORE_IOEXCEPTION = 2;
@@ -214,18 +215,20 @@ public class Node implements SimpleClient {
             System.err.println("Overriding IP detection: "+overrideIP.getHostAddress());
         }
         DiffieHellman.init(yarrow);
-        Node n = new Node(port, yarrow, overrideIP);
+        Node n = new Node(port, yarrow, overrideIP, "");
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
     }
     
     // FIXME - the whole overrideIP thing is a hack to avoid config
     // Implement the config!
-    Node(int port, RandomSource rand, InetAddress overrideIP) {
+    Node(int port, RandomSource rand, InetAddress overrideIP, String prefix) {
         portNumber = port;
+        if(prefix == null) prefix = "";
+        filenamesPrefix = prefix;
         this.overrideIPAddress = overrideIP;
         try {
-            datastore = new BaseFreenetStore("freenet-"+portNumber,1024);
+            datastore = new BaseFreenetStore(prefix+"freenet-"+portNumber,1024);
         } catch (FileNotFoundException e1) {
             Logger.error(this, "Could not open datastore: "+e1, e1);
             System.exit(EXIT_STORE_FILE_NOT_FOUND);
@@ -248,22 +251,22 @@ public class Node implements SimpleClient {
 		lm = new LocationManager(random);
 
         try {
-        	readNodeFile("node-"+portNumber);
+        	readNodeFile(prefix+"node-"+portNumber);
         } catch (IOException e) {
             try {
-                readNodeFile("node-"+portNumber+".bak");
+                readNodeFile(prefix+"node-"+portNumber+".bak");
             } catch (IOException e1) {
                 initNodeFileSettings(random);
             }
         }
         try {
-            writeNodeFile("node-"+portNumber, "node-"+portNumber+".bak");
+            writeNodeFile(prefix+"node-"+portNumber, prefix+"node-"+portNumber+".bak");
         } catch (IOException e) {
             Logger.error(this, "Cannot write node file!: "+e+" : "+"node-"+portNumber);
         }
         
         ps = new PacketSender(this);
-        peers = new PeerManager(this, "peers-"+portNumber);
+        peers = new PeerManager(this, prefix+"peers-"+portNumber);
         
         try {
             usm = new UdpSocketManager(portNumber);
