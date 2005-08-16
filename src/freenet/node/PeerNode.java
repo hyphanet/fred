@@ -104,7 +104,7 @@ public class PeerNode implements PeerContext {
     /** The Node we serve */
     final Node node;
     
-    /** Messages to send ASAP */
+    /** MessageItem's to send ASAP */
     private final LinkedList messagesToSendNow;
     
     /** When did we last receive a SwapRequest? */
@@ -287,10 +287,11 @@ public class PeerNode implements PeerContext {
      * Send a message, off-thread, to this node.
      * @param msg The message to be sent.
      */
-    public void sendAsync(Message msg) throws NotConnectedException {
+    public void sendAsync(Message msg, AsyncMessageCallback cb) throws NotConnectedException {
         if(!isConnected) throw new NotConnectedException();
+        MessageItem item = new MessageItem(msg, cb);
         synchronized(messagesToSendNow) {
-            messagesToSendNow.addLast(msg);
+            messagesToSendNow.addLast(item);
         }
         synchronized(node.ps) {
             node.ps.notifyAll();
@@ -309,7 +310,15 @@ public class PeerNode implements PeerContext {
      */
     public void disconnected() {
         Logger.minor(this, "Disconnected "+this);
-        isConnected = false;
+        synchronized(this) {
+            isConnected = false;
+            if(currentTracker != null)
+                currentTracker.disconnected();
+            if(previousTracker != null)
+                previousTracker.disconnected();
+            if(unverifiedTracker != null)
+                unverifiedTracker.disconnected();
+        }
     }
 
     /**
@@ -317,17 +326,17 @@ public class PeerNode implements PeerContext {
      * @return Null if no messages are queued, or an array of
      * Message's.
      */
-    public Message[] grabQueuedMessages() {
+    public MessageItem[] grabQueuedMessageItems() {
         synchronized(messagesToSendNow) {
             if(messagesToSendNow.size() == 0) return null;
-            Message[] messages = new Message[messagesToSendNow.size()];
-            messages = (Message[])messagesToSendNow.toArray(messages);
+            MessageItem[] messages = new MessageItem[messagesToSendNow.size()];
+            messages = (MessageItem[])messagesToSendNow.toArray(messages);
             messagesToSendNow.clear();
             return messages;
         }
     }
     
-    public void requeueMessages(Message[] messages) {
+    public void requeueMessageItems(MessageItem[] messages) {
         // Will usually indicate serious problems
         Logger.error(this, "Requeueing "+messages.length+" messages on "+this);
         synchronized(messagesToSendNow) {
@@ -620,7 +629,7 @@ public class PeerNode implements PeerContext {
         Message msg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
         
         try {
-            sendAsync(msg);
+            sendAsync(msg, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake but disconnected!!!", new Exception("error"));
         }

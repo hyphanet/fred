@@ -3,6 +3,8 @@ package freenet.support;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import freenet.node.AsyncMessageCallback;
+
 /**
  * @author amphibian
  * 
@@ -40,8 +42,18 @@ public class LimitedRangeIntByteArrayMap {
     
     public synchronized byte[] get(int index) {
         Integer i = new Integer(index);
-        byte[] data = (byte[]) contents.get(i);
-        return data;
+        LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        if(wrapper != null)
+            return wrapper.data;
+        else return null;
+    }
+    
+    public synchronized AsyncMessageCallback[] getCallbacks(int index) {
+        Integer i = new Integer(index);
+        LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        if(wrapper != null)
+            return wrapper.callbacks;
+        else return null;
     }
     
     /**
@@ -49,7 +61,7 @@ public class LimitedRangeIntByteArrayMap {
      * @return True if we succeeded, false if the index was out
      * of range.
      */
-    public synchronized boolean add(int index, byte[] data) {
+    public synchronized boolean add(int index, byte[] data, AsyncMessageCallback[] callbacks) {
         Logger.minor(this, toString()+" add "+index);
         if(maxValue == -1) {
             minValue = index;
@@ -65,7 +77,7 @@ public class LimitedRangeIntByteArrayMap {
                 return false;
             minValue = index;
         }
-        contents.put(new Integer(index), data);
+        contents.put(new Integer(index), new LimitedRangeIntByteArrayMapElement(index, data, callbacks));
         notifyAll();
         return true;
     }
@@ -145,7 +157,7 @@ public class LimitedRangeIntByteArrayMap {
     /**
      * @return The contents of each packet sent, then clear.
      */
-    public synchronized byte[][] grabAll() {
+    public synchronized byte[][] grabAllBytes() {
         int len = contents.size();
         byte[][] output = new byte[len][];
         Iterator i = contents.values().iterator();
@@ -153,8 +165,27 @@ public class LimitedRangeIntByteArrayMap {
         while(i.hasNext()) {
             output[count++] = (byte[])i.next();
         }
-        contents.clear();
-        maxValue = minValue = -1;
+        clear();
         return output;
+    }
+    
+    public synchronized LimitedRangeIntByteArrayMapElement[] grabAll() {
+        int len = contents.size();
+        LimitedRangeIntByteArrayMapElement[] output = new LimitedRangeIntByteArrayMapElement[len];
+        Iterator i = contents.values().iterator();
+        int count = 0;
+        while(i.hasNext()) {
+            output[count++] = (LimitedRangeIntByteArrayMapElement)i.next();
+        }
+        clear();
+        return output;
+    }
+    
+    /**
+     * Empty the structure.
+     */
+    private void clear() {
+        contents.clear();
+        minValue = maxValue = -1;
     }
 }

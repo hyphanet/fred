@@ -68,7 +68,7 @@ public class InsertHandler implements Runnable {
         if(msg == null) {
             Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
             Message tooSlow = DMT.createFNPRejectedTimeout(uid);
-            source.sendAsync(tooSlow);
+            source.sendAsync(tooSlow, null);
             return;
         }
         
@@ -184,7 +184,7 @@ public class InsertHandler implements Runnable {
         }
         if(toSend != null) {
             try {
-                source.sendAsync(toSend);
+                source.sendAsync(toSend, null);
             } catch (NotConnectedException e) {
                 // :(
                 Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");

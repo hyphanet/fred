@@ -42,7 +42,7 @@ public class PacketSender implements Runnable {
                         else break;
                     }
                     if(item.pn.isConnected())
-                        node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.pn, item.packetNumber);
+                        node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.pn, item.packetNumber, item.callbacks);
                 } while(item != null);
                 long now = System.currentTimeMillis();
                 PeerManager pm = node.peers;
@@ -57,9 +57,9 @@ public class PacketSender implements Runnable {
                         }
 
                         // Any messages to send?
-                        Message[] messages = null;
+                        MessageItem[] messages = null;
                         try {
-                            messages = pn.grabQueuedMessages();
+                            messages = pn.grabQueuedMessageItems();
                             if(messages != null) {
                                 // Send packets, right now, blocking, including any active notifications
                                 node.packetMangler.processOutgoing(messages, pn, true);
@@ -67,7 +67,7 @@ public class PacketSender implements Runnable {
                             }
                         } catch (WouldBlockException e) {
                             if(messages != null)
-                                pn.requeueMessages(messages);
+                                pn.requeueMessageItems(messages);
                         }
                         
                         // Any urgent notifications to send?
@@ -118,8 +118,8 @@ public class PacketSender implements Runnable {
         }
     }
 
-    void queueResendPacket(byte[] payload, int packetNumber, KeyTracker k) {
-        ResendPacketItem item = new ResendPacketItem(payload, packetNumber, k);
+    void queueResendPacket(byte[] payload, int packetNumber, KeyTracker k, AsyncMessageCallback[] callbacks) {
+        ResendPacketItem item = new ResendPacketItem(payload, packetNumber, k, callbacks);
         synchronized(this) {
             resendPackets.add(item);
             notifyAll();
@@ -127,15 +127,17 @@ public class PacketSender implements Runnable {
     }
     
     class ResendPacketItem {
-        public ResendPacketItem(byte[] payload, int packetNumber, KeyTracker k) {
+        public ResendPacketItem(byte[] payload, int packetNumber, KeyTracker k, AsyncMessageCallback[] callbacks) {
             pn = k.pn;
             kt = k;
             buf = payload;
             this.packetNumber = packetNumber;
+            this.callbacks = callbacks;
         }
         final PeerNode pn;
         final KeyTracker kt;
         final byte[] buf;
         final int packetNumber;
+        final AsyncMessageCallback[] callbacks;        
     }
 }

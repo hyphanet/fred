@@ -235,6 +235,7 @@ class LocationManager {
                 Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 swaps++;
                 announceLocChange();
+                node.writeNodeFile();
             } else {
                 Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 noSwaps++;
@@ -383,6 +384,7 @@ class LocationManager {
                     Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                     swaps++;
                     announceLocChange();
+                    node.writeNodeFile();
                 } else {
                     Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                     noSwaps++;
@@ -569,7 +571,7 @@ class LocationManager {
             // Reject
             Message reject = DMT.createFNPSwapRejected(uid);
             try {
-                pn.sendAsync(reject);
+                pn.sendAsync(reject, null);
             } catch (NotConnectedException e) {
                 Logger.minor(this, "Lost connection to "+pn+" rejecting SwapRequest");
             }
@@ -581,7 +583,7 @@ class LocationManager {
             // Reject
             Message reject = DMT.createFNPSwapRejected(uid);
             try {
-                pn.sendAsync(reject);
+                pn.sendAsync(reject, null);
             } catch (NotConnectedException e) {
                 Logger.minor(this, "Lost connection rejecting SwapRequest from "+pn);
             }
@@ -599,7 +601,7 @@ class LocationManager {
                 // Reject
                 Message reject = DMT.createFNPSwapRejected(uid);
                 try {
-                    pn.sendAsync(reject);
+                    pn.sendAsync(reject, null);
                 } catch (NotConnectedException e1) {
                     Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
                 }
@@ -633,17 +635,13 @@ class LocationManager {
                     if(randomPeer == null) {
                         Logger.minor(this, "Late reject "+uid);
                         Message reject = DMT.createFNPSwapRejected(uid);
-                        pn.sendAsync(reject);
+                        pn.sendAsync(reject, null);
                         swapsRejectedNowhereToGo++;
                         return true;
                     }
                     Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
                     addForwardedItem(uid, oid, pn, randomPeer);
-                    randomPeer.sendAsync(m);
-                    // FIXME: could be disconnected before sent, in which case
-                    // we will timeout. Should catch this with some sort of
-                    // send failure handler callback. However this will be very
-                    // rare.
+                    randomPeer.sendAsync(m, new SendMessageOnErrorCallback(DMT.createFNPSwapRejected(uid), pn));
                     // Note that we MUST NOT send this blocking as we are on the
                     // receiver thread.
                     return true;
@@ -687,7 +685,7 @@ class LocationManager {
         m.set(DMT.UID, item.incomingID);
         Logger.minor(this, "Forwarding SwapReply "+uid+" from "+m.getSource()+" to "+item.requestSender);
         try {
-            item.requestSender.sendAsync(m);
+            item.requestSender.sendAsync(m, null);
         } catch (NotConnectedException e) {
             Logger.minor(this, "Lost connection forwarding SwapReply "+uid+" to "+item.requestSender);
         }
@@ -697,7 +695,6 @@ class LocationManager {
     /**
      * Handle an unmatched FNPSwapRejected
      * @return True if we recognized and forwarded this message.
-     * FIXME: Implement backtracking.
      */
     public boolean handleSwapRejected(Message m) {
         long uid = m.getLong(DMT.UID);
@@ -716,7 +713,7 @@ class LocationManager {
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
-            item.requestSender.sendAsync(m);
+            item.requestSender.sendAsync(m, null);
         } catch (NotConnectedException e) {
             Logger.minor(this, "Lost connection forwarding SwapRejected "+uid+" to "+item.requestSender);
         }
@@ -743,7 +740,7 @@ class LocationManager {
         // Sending onwards - use outgoing ID
         m.set(DMT.UID, item.outgoingID);
         try {
-            item.routedTo.sendAsync(m);
+            item.routedTo.sendAsync(m, new SendMessageOnErrorCallback(DMT.createFNPSwapRejected(item.incomingID), item.requestSender));
         } catch (NotConnectedException e) {
             Logger.minor(this, "Lost connection forwarding SwapCommit "+uid+" to "+item.routedTo);
         }
@@ -776,7 +773,7 @@ class LocationManager {
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
-            item.requestSender.sendAsync(m);
+            item.requestSender.sendAsync(m, null);
         } catch (NotConnectedException e) {
             Logger.normal(this, "Lost connection forwarding SwapComplete "+uid+" to "+item.requestSender);
         }

@@ -9,6 +9,7 @@ import freenet.support.DoublyLinkedList;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.IndexableUpdatableSortedLinkedListItem;
 import freenet.support.LimitedRangeIntByteArrayMap;
+import freenet.support.LimitedRangeIntByteArrayMapElement;
 import freenet.support.Logger;
 import freenet.support.UpdatableSortedLinkedListItem;
 import freenet.support.UpdatableSortedLinkedListWithForeignIndex;
@@ -388,8 +389,16 @@ public class KeyTracker {
      * @param realSeqNo
      */
     public void acknowledgedPacket(int realSeqNo) {
-        removeAckRequest(realSeqNo);
-        sentPacketsContents.remove(realSeqNo);
+        AsyncMessageCallback[] callbacks;
+        synchronized(this) {
+            removeAckRequest(realSeqNo);
+            callbacks = sentPacketsContents.getCallbacks(realSeqNo);
+            sentPacketsContents.remove(realSeqNo);
+        }
+        if(callbacks != null) {
+            for(int i=0;i<callbacks.length;i++)
+                callbacks[i].acknowledged();
+        }
     }
 
     /**
@@ -407,7 +416,8 @@ public class KeyTracker {
     public void resendPacket(int seqNumber) {
         byte[] resendData = sentPacketsContents.get(seqNumber);
         if(resendData != null) {
-            pn.node.ps.queueResendPacket(resendData, seqNumber, this);
+            // Don't pass the callbacks in - it already has a serial number
+            pn.node.ps.queueResendPacket(resendData, seqNumber, this, null);
         } else {
             String msg = "Asking me to resend packet "+seqNumber+
         		" which we haven't sent yet or which they have already acked";
@@ -634,17 +644,42 @@ public class KeyTracker {
      * @param data The data we have just sent (payload only, decrypted). 
      * @param seqNumber The packet number.
      */
-    public void sentPacket(byte[] data, int seqNumber) {
-        sentPacketsContents.add(seqNumber, data);
+    public void sentPacket(byte[] data, int seqNumber, AsyncMessageCallback[] callbacks) {
+        sentPacketsContents.add(seqNumber, data, callbacks);
         queueAckRequest(seqNumber);
     }
 
     public void completelyDeprecated(KeyTracker newTracker) {
-        // Anything to resend?
-        byte[][] toResend = sentPacketsContents.grabAll();
-        for(int i=0;i<toResend.length;i++) {
-            byte[] buf = toResend[i];
-            pn.node.ps.queueResendPacket(buf, -1, newTracker);
+        LimitedRangeIntByteArrayMapElement[] elements;
+        synchronized(sentPacketsContents) {
+            // Anything to resend?
+            elements = sentPacketsContents.grabAll();
+        }
+        for(int i=0;i<elements.length;i++) {
+            LimitedRangeIntByteArrayMapElement element = elements[i];
+            byte[] buf = element.data;
+            AsyncMessageCallback[] callbacks = element.callbacks;
+            // Ignore packet#
+            if(newTracker != null)
+                pn.node.ps.queueResendPacket(buf, -1, newTracker, callbacks);
+        }
+    }
+
+    /**
+     * Called when the node appears to have been disconnected.
+     * Dump all sent messages.
+     */
+    public void disconnected() {
+        LimitedRangeIntByteArrayMapElement[] elements;
+        synchronized(sentPacketsContents) {
+            // Anything to resend?
+            elements = sentPacketsContents.grabAll();
+        }
+        for(int i=0;i<elements.length;i++) {
+            LimitedRangeIntByteArrayMapElement element = elements[i];
+            AsyncMessageCallback[] callbacks = element.callbacks;
+            for(int j=0;j<callbacks.length;j++)
+                callbacks[j].disconnected();
         }
     }
 }

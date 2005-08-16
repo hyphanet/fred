@@ -759,17 +759,27 @@ public class FNPPacketMangler implements LowLevelFilter {
     /**
      * Build a packet and send it, from a whole bunch of messages.
      */
-    public void processOutgoing(Message[] messages, PeerNode pn, boolean neverWaitForPacketNumber) throws NotConnectedException, WouldBlockException {
+    public void processOutgoing(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber) throws NotConnectedException, WouldBlockException {
         byte[][] messageData = new byte[messages.length][];
         int length = 1;
+        int callbacksCount = 0;
         for(int i=0;i<messageData.length;i++) {
-            messageData[i] = messages[i].encodeToPacket(this, pn);
-            Logger.minor(this, "Sending: "+messages[i]+" length "+messageData[i].length);
+            Message m = messages[i].msg;
+            if(messages[i].cb != null) callbacksCount++;
+            messageData[i] = m.encodeToPacket(this, pn);
+            Logger.minor(this, "Sending: "+m+" length "+messageData[i].length);
             length += (messageData[i].length + 2);
         }
+        AsyncMessageCallback callbacks[] = new AsyncMessageCallback[callbacksCount];
+        int x=0;
+        for(int i=0;i<messages.length;i++) {
+            if(messages[i].cb != null)
+                callbacks[x++] = messages[i].cb;
+        }
+        
         if(length < node.usm.getMaxPacketSize() &&
                 messages.length < 256) {
-            innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber);
+            innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber, callbacks);
         } else {
             length = 1;
             int count = 0;
@@ -783,7 +793,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 }
                 count++;
                 if(newLength > node.usm.getMaxPacketSize() || count > 255) {
-                    innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber);
+                    innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks);
                     lastIndex = i;
                     length = (messageData[i].length + 2);
                     count = 1;
@@ -800,7 +810,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param bufferLength Size of the buffer to write into.
      * @param pn Node to send the messages to.
      */
-    private void innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, PeerNode pn, boolean neverWaitForPacketNumber) throws NotConnectedException, WouldBlockException {
+    private void innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, PeerNode pn, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks) throws NotConnectedException, WouldBlockException {
         Logger.minor(this, "innerProcessOutgoing(...,"+start+","+length+","+bufferLength);
         byte[] buf = new byte[bufferLength];
         buf[0] = (byte)length;
@@ -813,7 +823,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             System.arraycopy(data, 0, buf, loc, len);
             loc += len;
         }
-        processOutgoingPreformatted(buf, 0, bufferLength, pn, neverWaitForPacketNumber);
+        processOutgoingPreformatted(buf, 0, bufferLength, pn, neverWaitForPacketNumber, callbacks);
     }
 
     /**
@@ -825,7 +835,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             throw new IllegalArgumentException();
         PeerNode pn = (PeerNode)peer;
         byte[] newBuf = preformat(buf, offset, length);
-        processOutgoingPreformatted(newBuf, 0, newBuf.length, pn, -1);
+        processOutgoingPreformatted(newBuf, 0, newBuf.length, pn, -1, null);
     }
 
 
@@ -835,14 +845,14 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker) throws KeyChangedException, NotConnectedException {
         byte[] newBuf = preformat(buf, offset, length);
-        processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1);
+        processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1, null);
     }
     
     /**
      * Send a packet using the current key. Retry if it fails solely because
      * the key changes.
      */
-    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, int k) throws NotConnectedException {
+    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, int k, AsyncMessageCallback[] callbacks) throws NotConnectedException {
         while(true) {
             try {
                 KeyTracker tracker = peer.getCurrentKeyTracker();
@@ -850,7 +860,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                     Logger.normal(this, "Dropping packet: Not connected yet");
                     throw new NotConnectedException();
                 }
-                processOutgoingPreformatted(buf, offset, length, tracker, k);
+                processOutgoingPreformatted(buf, offset, length, tracker, k, callbacks);
                 return;
             } catch (KeyChangedException e) {
                 // Go around again
@@ -862,7 +872,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * Send a packet using the current key. Retry if it fails solely because
      * the key changes.
      */
-    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, boolean neverWaitForPacketNumber) throws NotConnectedException, WouldBlockException {
+    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks) throws NotConnectedException, WouldBlockException {
         while(true) {
             try {
                 KeyTracker tracker = peer.getCurrentKeyTracker();
@@ -872,7 +882,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 }
                 int seqNo = neverWaitForPacketNumber ? tracker.allocateOutgoingPacketNumberNeverBlock() :
                     tracker.allocateOutgoingPacketNumber();
-                processOutgoingPreformatted(buf, offset, length, tracker, seqNo);
+                processOutgoingPreformatted(buf, offset, length, tracker, seqNo, callbacks);
                 return;
             } catch (KeyChangedException e) {
                 // Go around again
@@ -914,7 +924,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws NotConnectedException If the node is not connected.
      * @throws KeyChangedException If the primary key changes while we are trying to send this packet.
      */
-    public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber) throws KeyChangedException, NotConnectedException {
+    public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException {
         if(tracker == null || (!tracker.pn.isConnected())) {
             throw new NotConnectedException();
         }
@@ -1027,12 +1037,12 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(seqNumber != -1) {
             byte[] saveable = new byte[length];
             System.arraycopy(buf, offset, saveable, 0, length);
-            tracker.sentPacket(saveable, seqNumber);
+            tracker.sentPacket(saveable, seqNumber, callbacks);
         }
         
         Logger.minor(this, "Sending...");
 
-        processOutgoingFullyFormatted(plaintext, tracker);
+        processOutgoingFullyFormatted(plaintext, tracker, callbacks);
         Logger.minor(this, "Sent packet");
     }
 
@@ -1041,7 +1051,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param plaintext The packet's plaintext, including all formatting,
      * including acks and resend requests. Is clobbered.
      */
-    private void processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt) {
+    private void processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt, AsyncMessageCallback[] callbacks) {
         BlockCipher sessionCipher = kt.sessionCipher;
         if(Logger.shouldLog(Logger.DEBUG, this))
             Logger.debug(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));

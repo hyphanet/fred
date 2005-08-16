@@ -164,6 +164,14 @@ public class Node implements SimpleClient {
         return "Node created around "+System.currentTimeMillis();
     }
 
+    public void writeNodeFile() {
+        try {
+            writeNodeFile(filenamesPrefix+"node-"+portNumber, filenamesPrefix+"node-"+portNumber+".bak");
+        } catch (IOException e) {
+            Logger.error(this, "Cannot write node file!: "+e+" : "+"node-"+portNumber);
+        }
+    }
+    
     private void writeNodeFile(String filename, String backupFilename) throws IOException {
         SimpleFieldSet fs = exportFieldSet();
         File orig = new File(filename);
@@ -256,11 +264,7 @@ public class Node implements SimpleClient {
                 initNodeFileSettings(random);
             }
         }
-        try {
-            writeNodeFile(prefix+"node-"+portNumber, prefix+"node-"+portNumber+".bak");
-        } catch (IOException e) {
-            Logger.error(this, "Cannot write node file!: "+e+" : "+"node-"+portNumber);
-        }
+        writeNodeFile();
         
         ps = new PacketSender(this);
         peers = new PeerManager(this, prefix+"peers-"+portNumber);
