@@ -19,7 +19,7 @@
     <mkdir dir="${build}"/>
 
 <!-- FIXME: remove the debug and replace with optimize -->
-    <javac srcdir="${src}" destdir="${build}" debug="on" optimize="off">
+    <javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
 <!-- following a very temporary list of files to be build -->
       <include name="org/**.java"/>
       <include name="freenet/**/*.java"/>
