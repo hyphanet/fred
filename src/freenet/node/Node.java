@@ -62,7 +62,7 @@ public class Node implements SimpleClient {
     // If no activity for 90 seconds, node is dead
     public static final int MAX_PEER_INACTIVITY = 45000;
     /** Time after which a handshake is assumed to have failed. */
-    public static final int HANDSHAKE_TIMEOUT = 3000;
+    public static final int HANDSHAKE_TIMEOUT = 5000;
     // Inter-handshake time must be at least 2x handshake timeout
     public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // 10 secs
     public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT;

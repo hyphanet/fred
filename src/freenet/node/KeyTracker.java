@@ -34,6 +34,9 @@ public class KeyTracker {
      * incoming ones. */
     public final BlockCipher sessionCipher;
     
+    /** Key for above cipher, so far for debugging */
+    public final byte[] sessionKey;
+    
     /** Packets we have sent to the node, minus those that have
      * been acknowledged. */
     private final LimitedRangeIntByteArrayMap sentPacketsContents;
@@ -73,9 +76,10 @@ public class KeyTracker {
     private int nextPacketNumber;
     
     /** Everything is clear to start with */
-    KeyTracker(PeerNode pn, BlockCipher cipher) {
+    KeyTracker(PeerNode pn, BlockCipher cipher, byte[] sessionKey) {
         this.pn = pn;
         this.sessionCipher = cipher;
+        this.sessionKey = sessionKey;
         ackQueue = new DoublyLinkedListImpl();
         highestSeenIncomingSerialNumber = -1;
         sentPacketsContents = new LimitedRangeIntByteArrayMap(256);

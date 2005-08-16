@@ -20,6 +20,7 @@ public class DiffieHellmanContext {
     
     // Generated or set later
     NativeBigInteger peerExponential;
+    byte[] key;
     BlockCipher cipher;
 
 	public String toString() {
@@ -51,6 +52,20 @@ public class DiffieHellmanContext {
     public synchronized BlockCipher getCipher() {
         lastUsedTime = System.currentTimeMillis();
         if(cipher != null) return cipher;
+        getKey();
+        try {
+            cipher = new Rijndael(256, 256);
+        } catch (UnsupportedCipherException e1) {
+            throw new Error(e1);
+        }
+        cipher.initialize(key);
+        return cipher;
+    }
+
+    public synchronized byte[] getKey() {
+        lastUsedTime = System.currentTimeMillis();
+        if(key != null) return key;
+        
         // Calculate key
         Logger.normal(this, "My exponent: "+myExponent.toHexString()+", my exponential: "+myExponential.toHexString()+", peer's exponential: "+peerExponential.toHexString());
         NativeBigInteger sharedSecret =
@@ -61,17 +76,11 @@ public class DiffieHellmanContext {
         } catch (NoSuchAlgorithmException e) {
             throw new Error(e);
         }
-        byte[] digest = md.digest(sharedSecret.toByteArray());
-        Logger.normal(this, "Key="+HexUtil.bytesToHex(digest));
-        try {
-            cipher = new Rijndael(256, 256);
-        } catch (UnsupportedCipherException e1) {
-            throw new Error(e1);
-        }
-        cipher.initialize(digest);
-        return cipher;
+        key = md.digest(sharedSecret.toByteArray());
+        Logger.normal(this, "Key="+HexUtil.bytesToHex(key));
+        return key;
     }
-
+    
     public synchronized void setOtherSideExponential(NativeBigInteger a) {
         lastUsedTime = System.currentTimeMillis();
         if(peerExponential != null) throw new IllegalStateException("Assigned other side exponential twice");

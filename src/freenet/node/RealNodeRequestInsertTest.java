@@ -26,7 +26,8 @@ public class RealNodeRequestInsertTest {
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException {
         PeerNode.disableProbabilisticHTLs = true;
         Node.MAX_HTL = 5;
-        Logger.setupStdoutLogging(Logger.NORMAL, "freenet.store:minor,freenet.node:minor,freenet.node.Location:normal,freenet.node.FNP:normal,freenet.node.NodePeer:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
+        Logger.setupStdoutLogging(Logger.DEBUG, "freenet.store:minor,freenet.node.Location:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
+        Logger.globalSetThreshold(Logger.DEBUG);
         System.out.println("Insert/retrieve test");
         System.out.println();
         DummyRandomSource random = new DummyRandomSource();
@@ -35,6 +36,7 @@ public class RealNodeRequestInsertTest {
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = new Node(5000+i, random, null);
+            nodes[i].usm.setDropProbability(20); // 5%
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];

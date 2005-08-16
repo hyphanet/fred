@@ -90,16 +90,21 @@ public class FNPPacketMangler implements LowLevelFilter {
         PeerNode opn = pm.getByPeer(peer);
         PeerNode pn;
         
-        if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
-            
-            if(opn != null) {
-                Logger.minor(this, "Trying exact match");
+        if(opn != null) {
+            Logger.minor(this, "Trying exact match");
+            if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
                 if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker())) return;
                 // Try with old key
                 if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker())) return;
+                // Try with unverified key
+                if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker())) return;
+            }
+            if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2) {
                 // Might be an auth packet
                 if(tryProcessAuth(buf, offset, length, opn, peer)) return;
             }
+        }
+        if(length > HASH_LENGTH + RANDOM_BYTES_LENGTH + 4 + 6) {
             for(int i=0;i<pm.connectedPeers.length;i++) {
                 pn = pm.myPeers[i];
                 if(pn == opn) continue;
@@ -109,6 +114,11 @@ public class FNPPacketMangler implements LowLevelFilter {
                     return;
                 }
                 if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker())) {
+                    // IP address change
+                    pn.changedIP(peer);
+                    return;
+                }
+                if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker())) {
                     // IP address change
                     pn.changedIP(peer);
                     return;
@@ -212,6 +222,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
             return;
         }
+        Logger.minor(this, "Version="+version+", negType="+negType+", packetType="+packetType);
         // We keep one DiffieHellmanContext per node ONLY
         /*
          * Now, to the real meat
@@ -250,8 +261,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             // Verify the packet, then complete
             // Format: IV E_K ( H(data) data )
             // Where data = [ long: bob's startup number ]
-            DiffieHellmanContext ctx = 
-                processDHTwoOrThree(2, payload, pn, replyTo, true);
+            processDHTwoOrThree(2, payload, pn, replyTo, true);
         } else if(packetType == 3) {
             // We are Alice
             processDHTwoOrThree(3, payload, pn, replyTo, false);
@@ -380,8 +390,9 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.error(this, "Cannot get cipher");
             return null;
         }
-        BlockCipher encKey = ctx.getCipher();
-        PCFBMode pcfb = new PCFBMode(encKey);
+        byte[] encKey = ctx.getKey();
+        BlockCipher cipher = ctx.getCipher();
+        PCFBMode pcfb = new PCFBMode(cipher);
         int ivLength = pcfb.lengthIV();
         if(payload.length-3 < HASH_LENGTH + ivLength + 8) {
             Logger.error(this, "Too short phase "+i+" packet from "+replyTo+" probably from "+pn);
@@ -413,7 +424,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             // We need to send the completion before the PN sends any packets, that's all...
             if(sendCompletion)
                 sendDHCompletion(3, ctx.getCipher(), pn, replyTo);
-            pn.completedHandshake(bootID, data, 8, data.length-8, encKey, replyTo);
+            pn.completedHandshake(bootID, data, 8, data.length-8, cipher, encKey, replyTo, i == 2);
             return ctx;
         } else {
             Logger.error(this, "Failed to complete handshake (2) on "+pn+" for "+replyTo);
@@ -444,6 +455,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         DiffieHellmanContext ctx;
         if(phase == 1) {
             ctx = pn.getDHContext();
+            if(ctx == null) {
+                Logger.error(this, "Could not get context for phase 1 handshake from "+pn);
+                return null;
+            }
         } else {
             ctx = DiffieHellman.generateContext();
             // Don't calculate the key until we need it
@@ -473,7 +488,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * decrypt and authenticate it.
      */
     private boolean tryProcess(byte[] buf, int offset, int length, KeyTracker tracker) {
-        // Need to be able to call with tracker == null to simplify code above 
+        // Need to be able to call with tracker == null to simplify code above
         if(tracker == null) {
             Logger.minor(this, "Tracker == null");
             return false;
@@ -491,6 +506,8 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.minor(this, "No cipher");
             return false;
         }
+        if(Logger.shouldLog(Logger.DEBUG, this))
+            Logger.debug(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
         int blockSize = sessionCipher.getBlockSize() >> 3;
         if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
             throw new IllegalStateException("Block size must be equal to key size");
@@ -562,6 +579,9 @@ public class FNPPacketMangler implements LowLevelFilter {
                     HexUtil.bytesToHex(packetHash)+"\n  realHash="+HexUtil.bytesToHex(realHash)+" ("+(length-HASH_LENGTH)+" bytes payload)");
             return false;
         }
+        
+        // Verify
+        tracker.pn.verified(tracker);
         
         if(seqNumber != -1 && tracker.alreadyReceived(seqNumber)) {
             tracker.queueAck(seqNumber);
@@ -1023,6 +1043,8 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private void processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt) {
         BlockCipher sessionCipher = kt.sessionCipher;
+        if(Logger.shouldLog(Logger.DEBUG, this))
+            Logger.debug(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
         if(sessionCipher == null) {
             Logger.error(this, "Dropping packet send - have not handshaked yet");
             return;

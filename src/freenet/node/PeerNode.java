@@ -60,6 +60,11 @@ public class PeerNode implements PeerContext {
     /** Previous key - has a separate packet number space */
     private KeyTracker previousTracker;
     
+    /** Unverified tracker - will be promoted to currentTracker if
+     * we receive packets on it
+     */
+    private KeyTracker unverifiedTracker;
+    
     /** When did we last send a packet? */
     private long timeLastSentPacket;
     
@@ -371,9 +376,10 @@ public class PeerNode implements PeerContext {
      * @param now The current time.
      */
     public boolean hasLiveHandshake(long now) {
-        if(ctx != null)
-            Logger.minor(this, "Last used: "+(now - ctx.lastUsedTime()));
-        return !(ctx == null || now - ctx.lastUsedTime() > Node.HANDSHAKE_TIMEOUT);
+        DiffieHellmanContext c = ctx;
+        if(c != null)
+            Logger.minor(this, "Last used: "+(now - c.lastUsedTime()));
+        return !(c == null || now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT);
     }
 
     boolean firstHandshake = true;
@@ -499,6 +505,15 @@ public class PeerNode implements PeerContext {
     public KeyTracker getPreviousKeyTracker() {
         return previousTracker;
     }
+    
+    /**
+     * @return The unverified KeyTracker, if any, or null if we
+     * don't have one. The caller MUST call verified(KT) if a
+     * decrypt succeeds with this KT.
+     */
+    public KeyTracker getUnverifiedKeyTracker() {
+        return unverifiedTracker;
+    }
 
     /**
      * @return short version of toString()
@@ -548,7 +563,7 @@ public class PeerNode implements PeerContext {
      * @param encKey
      * @param replyTo
      */
-    public synchronized void completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encKey, Peer replyTo) {
+    public synchronized void completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
         bogusNoderef = false;
         try {
             // First, the new noderef
@@ -565,25 +580,39 @@ public class PeerNode implements PeerContext {
             isConnected = false;
             return;
         }
-        KeyTracker newTracker = new KeyTracker(this, encKey);
+        KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
         changedIP(replyTo);
-        previousTracker = currentTracker;
-        currentTracker = newTracker;
-        if(previousTracker != null)
-            previousTracker.deprecated();
-        
-        isConnected = true;
         if(thisBootID != this.bootID) {
-            Logger.minor(this, "Changed boot ID");
+            Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID);
             if(previousTracker != null)
                 previousTracker.completelyDeprecated(newTracker);
             previousTracker = null;
             this.bootID = thisBootID;
         } // else it's a rekey
+        
+        if(unverified) {
+            unverifiedTracker = newTracker;
+            ctx.getCipher(); // update timestamp
+        } else {
+            previousTracker = currentTracker;
+            currentTracker = newTracker;
+            unverifiedTracker = null;
+            if(previousTracker != null)
+                previousTracker.deprecated();
+            isConnected = true;
+            ctx = null;
+        }
         Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" bootID: "+thisBootID);
-        ctx = null;
         receivedPacket();
         node.peers.addConnectedPeer(this);
+        if(!unverified)
+            sendInitialMessages();
+    }
+
+    /**
+     * Send any high level messages that need to be sent on connect.
+     */
+    private void sendInitialMessages() {
         Message msg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
         
         try {
@@ -593,6 +622,28 @@ public class PeerNode implements PeerContext {
         }
     }
 
+    /**
+     * Called when a packet is successfully decrypted on a given
+     * KeyTracker for this node. Will promote the unverifiedTracker
+     * if necessary.
+     */
+    public synchronized void verified(KeyTracker tracker) {
+        if(tracker == unverifiedTracker) {
+            Logger.minor(this, "Promoting unverified tracker "+tracker);
+            if(previousTracker != null) {
+                previousTracker.completelyDeprecated(tracker);
+            }
+            previousTracker = currentTracker;
+            if(previousTracker != null)
+                previousTracker.deprecated();
+            currentTracker = unverifiedTracker;
+            unverifiedTracker = null;
+            isConnected = true;
+            ctx = null;
+            sendInitialMessages();
+        }
+    }
+    
     private boolean invalidVersion() {
         return bogusNoderef || (!Version.checkGoodVersion(version));
     }
