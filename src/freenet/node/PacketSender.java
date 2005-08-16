@@ -41,7 +41,8 @@ public class PacketSender implements Runnable {
                             item = (ResendPacketItem) resendPackets.removeFirst();
                         else break;
                     }
-                    node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.pn, item.packetNumber);
+                    if(item.pn.isConnected())
+                        node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.pn, item.packetNumber);
                 } while(item != null);
                 long now = System.currentTimeMillis();
                 PeerManager pm = node.peers;
