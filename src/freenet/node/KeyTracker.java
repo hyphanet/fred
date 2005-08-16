@@ -678,8 +678,10 @@ public class KeyTracker {
         for(int i=0;i<elements.length;i++) {
             LimitedRangeIntByteArrayMapElement element = elements[i];
             AsyncMessageCallback[] callbacks = element.callbacks;
-            for(int j=0;j<callbacks.length;j++)
-                callbacks[j].disconnected();
+            if(callbacks != null) {
+                for(int j=0;j<callbacks.length;j++)
+                    callbacks[j].disconnected();
+            }
         }
     }
 }
