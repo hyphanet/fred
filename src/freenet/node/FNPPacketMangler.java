@@ -784,19 +784,25 @@ public class FNPPacketMangler implements LowLevelFilter {
             length = 1;
             int count = 0;
             int lastIndex = 0;
-            for(int i=0;i<messages.length;i++) {
-                int thisLength = (messageData[i].length + 2);
+            for(int i=0;i<=messages.length;i++) {
+                int thisLength;
+                if(i == messages.length) thisLength = 0;
+                else thisLength = (messageData[i].length + 2);
                 int newLength = length + thisLength;
                 if(thisLength > node.usm.getMaxPacketSize()) {
                     Logger.error(this, "Message exceeds packet size: "+messages[i]);
                     // Send the last lot, then send this
                 }
                 count++;
-                if(newLength > node.usm.getMaxPacketSize() || count > 255) {
-                    innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks);
+                if(newLength > node.usm.getMaxPacketSize() || count > 255 || i == messages.length) {
+                    // lastIndex up to the message right before this one
+                    // e.g. lastIndex = 0, i = 1, we just send message 0
+                    if(lastIndex != i)
+                        innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks);
                     lastIndex = i;
-                    length = (messageData[i].length + 2);
-                    count = 1;
+                    if(i != messages.length)
+                        length = 1 + (messageData[i].length + 2);
+                    count = 0;
                 } else length = newLength;
             }
         }
@@ -811,7 +817,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param pn Node to send the messages to.
      */
     private void innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, PeerNode pn, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks) throws NotConnectedException, WouldBlockException {
-        Logger.minor(this, "innerProcessOutgoing(...,"+start+","+length+","+bufferLength);
+        Logger.minor(this, "innerProcessOutgoing(...,"+start+","+length+","+bufferLength+")");
         byte[] buf = new byte[bufferLength];
         buf[0] = (byte)length;
         int loc = 1;
