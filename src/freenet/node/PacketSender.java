@@ -119,7 +119,7 @@ public class PacketSender implements Runnable {
     }
 
     void queueResendPacket(byte[] payload, int packetNumber, KeyTracker k, AsyncMessageCallback[] callbacks) {
-        Logger.minor(this, "Queueing resend packet: "+packetNumber+" for "+k+" with "+callbacks.length+" callbacks");
+        Logger.minor(this, "Queueing resend packet: "+packetNumber+" for "+k+" with "+(callbacks == null ? 0 : callbacks.length)+" callbacks");
         ResendPacketItem item = new ResendPacketItem(payload, packetNumber, k, callbacks);
         synchronized(this) {
             resendPackets.add(item);
