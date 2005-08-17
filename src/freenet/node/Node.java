@@ -55,9 +55,9 @@ public class Node implements SimpleClient {
     public static final double DECREMENT_AT_MIN_PROB = 0.2;
     public static final double DECREMENT_AT_MAX_PROB = 0.1;
     // Send keepalives every 30 seconds
-    public static final int KEEPALIVE_INTERVAL = 7500;
+    public static final int KEEPALIVE_INTERVAL = 2500;
     // If no activity for 90 seconds, node is dead
-    public static final int MAX_PEER_INACTIVITY = 30000;
+    public static final int MAX_PEER_INACTIVITY = 15000;
     /** Time after which a handshake is assumed to have failed. */
     public static final int HANDSHAKE_TIMEOUT = 5000;
     // Inter-handshake time must be at least 2x handshake timeout
