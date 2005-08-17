@@ -767,7 +767,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             Message m = messages[i].msg;
             if(messages[i].cb != null) callbacksCount++;
             messageData[i] = m.encodeToPacket(this, pn);
-            Logger.minor(this, "Sending: "+m+" length "+messageData[i].length);
+            Logger.minor(this, "Sending: "+m+" length "+messageData[i].length+" cb "+messages[i].cb);
             length += (messageData[i].length + 2);
         }
         AsyncMessageCallback callbacks[] = new AsyncMessageCallback[callbacksCount];

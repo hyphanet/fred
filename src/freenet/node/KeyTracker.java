@@ -650,6 +650,7 @@ public class KeyTracker {
     }
 
     public void completelyDeprecated(KeyTracker newTracker) {
+        Logger.minor(this, "Completely deprecated: "+newTracker);
         LimitedRangeIntByteArrayMapElement[] elements;
         synchronized(sentPacketsContents) {
             // Anything to resend?
@@ -660,8 +661,7 @@ public class KeyTracker {
             byte[] buf = element.data;
             AsyncMessageCallback[] callbacks = element.callbacks;
             // Ignore packet#
-            if(newTracker != null)
-                pn.node.ps.queueResendPacket(buf, -1, newTracker, callbacks);
+            pn.node.ps.queueResendPacket(buf, -1, newTracker, callbacks);
         }
     }
 
