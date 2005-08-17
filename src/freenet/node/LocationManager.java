@@ -2,7 +2,9 @@ package freenet.node;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Vector;
 
 import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
@@ -21,6 +23,20 @@ import freenet.support.ShortBuffer;
  */
 class LocationManager {
 
+    public class MyCallback extends SendMessageOnErrorCallback {
+        
+        RecentlyForwardedItem item;
+
+        public MyCallback(Message message, PeerNode pn, RecentlyForwardedItem item) {
+            super(message, pn);
+            this.item = item;
+        }
+
+        public void acknowledged() {
+            item.successfullyForwarded = true;
+        }
+    }
+    
     static final int TIMEOUT = 60*1000;
     final RandomSource r;
     final SwapRequestSender sender;
@@ -539,6 +555,8 @@ class LocationManager {
         long lastMessageTime; // can delete when no messages for 2*TIMEOUT
         PeerNode requestSender;
         PeerNode routedTo;
+        // Set when a request is accepted. Unset when we send one.
+        boolean successfullyForwarded;
         
         RecentlyForwardedItem(long id, long outgoingID, PeerNode from, PeerNode to) {
             this.incomingID = id;
@@ -639,9 +657,10 @@ class LocationManager {
                         swapsRejectedNowhereToGo++;
                         return true;
                     }
+                    item.successfullyForwarded = false;
                     Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
                     addForwardedItem(uid, oid, pn, randomPeer);
-                    randomPeer.sendAsync(m, new SendMessageOnErrorCallback(DMT.createFNPSwapRejected(uid), pn));
+                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(uid), pn, item));
                     // Note that we MUST NOT send this blocking as we are on the
                     // receiver thread.
                     return true;
@@ -792,6 +811,35 @@ class LocationManager {
                     recentlyForwardedIDs.remove(new Long(items[i].incomingID));
                     recentlyForwardedIDs.remove(new Long(items[i].outgoingID));
                 }
+            }
+        }
+    }
+
+    /**
+     * We lost the connection to a node, or it was restarted.
+     */
+    public void lostOrRestartedNode(PeerNode pn) {
+        Vector v = new Vector();
+        synchronized(recentlyForwardedIDs) {
+            Enumeration e = recentlyForwardedIDs.keys();
+            while(e.hasMoreElements()) {
+                Long l = (Long)e.nextElement();
+                RecentlyForwardedItem item = (RecentlyForwardedItem)recentlyForwardedIDs.get(l);
+                if(item.routedTo != pn) continue;
+                if(item.successfullyForwarded) {
+                    recentlyForwardedIDs.remove(l);
+                    v.add(item);
+                }
+            }
+        }
+        for(int i=0;i<v.size();i++) {
+            RecentlyForwardedItem item = (RecentlyForwardedItem) v.get(i);
+            // Just reject it to avoid locking problems etc
+            Message msg = DMT.createFNPSwapRejected(item.incomingID);
+            try {
+                item.requestSender.sendAsync(msg, null);
+            } catch (NotConnectedException e1) {
+                Logger.normal(this, "Both sender and receiver disconnected for "+item);
             }
         }
     }

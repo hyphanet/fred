@@ -320,6 +320,7 @@ public class PeerNode implements PeerContext {
             if(unverifiedTracker != null)
                 unverifiedTracker.disconnected();
         }
+        node.lm.lostOrRestartedNode(this);
     }
 
     /**
@@ -602,6 +603,7 @@ public class PeerNode implements PeerContext {
             currentTracker = null;
             this.bootID = thisBootID;
             isConnected = false;
+            node.lm.lostOrRestartedNode(this);
         } // else it's a rekey
         
         if(unverified) {
