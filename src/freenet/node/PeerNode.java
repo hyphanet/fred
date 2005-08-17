@@ -156,6 +156,9 @@ public class PeerNode implements PeerContext {
     /** If true, this means last time we tried, we got a bogus noderef */
     private boolean bogusNoderef;
     
+    /** The time at which we last completed a connection setup. */
+    private long connectedTime;
+    
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following
@@ -594,6 +597,7 @@ public class PeerNode implements PeerContext {
         KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
         changedIP(replyTo);
         if(thisBootID != this.bootID) {
+            connectedTime = System.currentTimeMillis();
             Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID);
             if(previousTracker != null)
                 previousTracker.completelyDeprecated(newTracker);
@@ -818,5 +822,12 @@ public class PeerNode implements PeerContext {
         fs.put("version", version);
         fs.put("myName", myName);
         return fs;
+    }
+
+    /**
+     * @return The time at which we last connected (or reconnected).
+     */
+    public long timeLastConnected() {
+        return connectedTime;
     }
 }

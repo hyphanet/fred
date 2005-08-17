@@ -657,9 +657,9 @@ class LocationManager {
                         swapsRejectedNowhereToGo++;
                         return true;
                     }
-                    item.successfullyForwarded = false;
                     Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
-                    addForwardedItem(uid, oid, pn, randomPeer);
+                    item = addForwardedItem(uid, oid, pn, randomPeer);
+                    item.successfullyForwarded = false;
                     randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(uid), pn, item));
                     // Note that we MUST NOT send this blocking as we are on the
                     // receiver thread.
@@ -671,10 +671,11 @@ class LocationManager {
         }
     }
 
-    private void addForwardedItem(long uid, long oid, PeerNode pn, PeerNode randomPeer) {
+    private RecentlyForwardedItem addForwardedItem(long uid, long oid, PeerNode pn, PeerNode randomPeer) {
         RecentlyForwardedItem item = new RecentlyForwardedItem(uid, oid, pn, randomPeer);
         recentlyForwardedIDs.put(new Long(uid), item);
         recentlyForwardedIDs.put(new Long(oid), item);
+        return item;
     }
 
     /**

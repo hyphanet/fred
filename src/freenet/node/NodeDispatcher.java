@@ -108,6 +108,7 @@ public class NodeDispatcher implements Dispatcher {
     }
     
     private boolean handleInsertRequest(Message m) {
+        long now = System.currentTimeMillis();
         long id = m.getLong(DMT.UID);
         if(node.recentlyCompleted(id)) {
             Message rejected = DMT.createFNPRejectedLoop(id);
@@ -121,7 +122,7 @@ public class NodeDispatcher implements Dispatcher {
             Logger.minor(this, "Could not lock ID "+id);
             return false;
         }
-        InsertHandler rh = new InsertHandler(m, id, node);
+        InsertHandler rh = new InsertHandler(m, id, node, now);
         Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.portNumber);
         t.setDaemon(true);
         t.start();

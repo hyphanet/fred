@@ -30,6 +30,7 @@ public class InsertHandler implements Runnable {
     final long uid;
     final PeerNode source;
     final NodeCHK key;
+    final long startTime;
     private short htl;
     private InsertSender sender;
     private byte[] headers;
@@ -38,11 +39,12 @@ public class InsertHandler implements Runnable {
     
     PartiallyReceivedBlock prb;
     
-    InsertHandler(Message req, long id, Node node) {
+    InsertHandler(Message req, long id, Node node, long startTime) {
         this.req = req;
         this.node = node;
         this.uid = id;
         this.source = (PeerNode) req.getSource();
+        this.startTime = startTime;
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
     }
@@ -66,7 +68,8 @@ public class InsertHandler implements Runnable {
         Logger.minor(this, "Received "+msg);
         
         if(msg == null) {
-            Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
+            if(source.isConnected() && startTime > (source.timeLastConnected()+Node.HANDSHAKE_TIMEOUT*4))
+                Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
             Message tooSlow = DMT.createFNPRejectedTimeout(uid);
             source.sendAsync(tooSlow, null);
             return;
