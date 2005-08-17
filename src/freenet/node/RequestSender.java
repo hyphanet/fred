@@ -221,7 +221,10 @@ public class RequestSender implements Runnable {
         }
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
-        } finally { node.removeSender(key, origHTL, this); }
+        } finally {
+            node.completed(uid);
+            node.removeSender(key, origHTL, this);
+        }
     }
 
     public PartiallyReceivedBlock getPRB() {

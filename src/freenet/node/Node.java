@@ -22,6 +22,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
@@ -42,6 +43,7 @@ import freenet.store.BaseFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
+import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -229,6 +231,7 @@ public class Node implements SimpleClient {
     // Implement the config!
     Node(int port, RandomSource rand, InetAddress overrideIP, String prefix) {
         portNumber = port;
+        recentlyCompletedIDs = new LRUQueue();
         if(prefix == null) prefix = "";
         filenamesPrefix = prefix;
         this.overrideIPAddress = overrideIP;
@@ -474,6 +477,10 @@ public class Node implements SimpleClient {
         public int hashCode() {
             return key.hashCode() ^ htl;
         }
+        
+        public String toString() {
+            return key.toString()+":"+htl;
+        }
     }
 
     /**
@@ -539,7 +546,7 @@ public class Node implements SimpleClient {
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         InsertSender is = (InsertSender) insertSenders.remove(kh);
         if(is != sender) {
-            Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeSender");
+            Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeInsertSender");
         }
     }
 
@@ -586,6 +593,7 @@ public class Node implements SimpleClient {
         InsertSender is = (InsertSender) insertSenders.get(kh);
         if(is != null) return is;
         is = new InsertSender(key, uid, headers, htl, source, this, prb, fromStore);
+        Logger.minor(this, is.toString()+" for "+kh.toString());
         insertSenders.put(kh, is);
         return is;
     }
@@ -637,5 +645,24 @@ public class Node implements SimpleClient {
         System.arraycopy(buf, 0, obuf, 1, buf.length);
         return obuf;
         // FIXME support compression when noderefs get big enough for it to be useful
+    }
+
+    final LRUQueue recentlyCompletedIDs;
+    static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
+    
+    /**
+     * Has a request completed with this ID recently?
+     */
+    public synchronized boolean recentlyCompleted(long id) {
+        return recentlyCompletedIDs.contains(new Long(id));
+    }
+    
+    /**
+     * A request completed (regardless of success).
+     */
+    public synchronized void completed(long id) {
+        recentlyCompletedIDs.push(new Long(id));
+        while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
+            recentlyCompletedIDs.pop();
     }
 }

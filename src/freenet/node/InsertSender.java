@@ -235,6 +235,7 @@ public class InsertSender implements Runnable {
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
+            node.completed(uid);
         	node.removeInsertSender(myKey, origHTL, this);
         }
     }

@@ -91,6 +91,14 @@ public class NodeDispatcher implements Dispatcher {
      */
     private boolean handleDataRequest(Message m) {
         long id = m.getLong(DMT.UID);
+        if(node.recentlyCompleted(id)) {
+            Message rejected = DMT.createFNPRejectedLoop(id);
+            try {
+                ((PeerNode)(m.getSource())).sendAsync(rejected, null);
+            } catch (NotConnectedException e) {
+                Logger.normal(this, "Rejecting insert request: "+e);
+            }
+        }
         if(!node.lockUID(id)) return false;
         RequestHandler rh = new RequestHandler(m, id, node);
         Thread t = new Thread(rh);
@@ -101,6 +109,14 @@ public class NodeDispatcher implements Dispatcher {
     
     private boolean handleInsertRequest(Message m) {
         long id = m.getLong(DMT.UID);
+        if(node.recentlyCompleted(id)) {
+            Message rejected = DMT.createFNPRejectedLoop(id);
+            try {
+                ((PeerNode)(m.getSource())).sendAsync(rejected, null);
+            } catch (NotConnectedException e) {
+                Logger.normal(this, "Rejecting insert request: "+e);
+            }
+        }
         if(!node.lockUID(id)) {
             Logger.minor(this, "Could not lock ID "+id);
             return false;
