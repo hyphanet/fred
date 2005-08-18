@@ -120,8 +120,14 @@ public class NodeDispatcher implements Dispatcher {
             return true;
         }
         if(!node.lockUID(id)) {
-            Logger.minor(this, "Could not lock ID "+id);
-            return false;
+            Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
+            Message rejected = DMT.createFNPRejectedLoop(id);
+            try {
+                ((PeerNode)(m.getSource())).sendAsync(rejected, null);
+            } catch (NotConnectedException e) {
+                Logger.normal(this, "Rejecting insert request: "+e);
+            }
+            return true;
         }
         InsertHandler rh = new InsertHandler(m, id, node, now);
         Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.portNumber);
