@@ -362,7 +362,7 @@ class LocationManager {
                 Message reply = node.usm.waitFor(filter);
 
                 if(reply == null) {
-                    if(pn.isConnected() && System.currentTimeMillis() - pn.timeLastConnected() > Node.HANDSHAKE_TIMEOUT*2) {
+                    if(pn.isConnected() && System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2) {
                         // Timed out! Abort...
                         Logger.error(this, "Timed out waiting for SwapRejected/SwapReply on "+uid);
                     }
