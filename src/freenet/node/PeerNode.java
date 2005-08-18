@@ -281,8 +281,10 @@ public class PeerNode implements PeerContext {
     
     /**
      * Is this node currently connected?
+     * Synchronized so that we don't return until after e.g.
+     * completedHandshake has returned in PacketSender.
      */
-    public boolean isConnected() {
+    public synchronized boolean isConnected() {
         return isConnected;
     }
 
@@ -599,14 +601,19 @@ public class PeerNode implements PeerContext {
         if(thisBootID != this.bootID) {
             connectedTime = System.currentTimeMillis();
             Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID);
-            if(previousTracker != null)
-                previousTracker.completelyDeprecated(newTracker);
-            previousTracker = null;
-            if(currentTracker != null)
-                currentTracker.completelyDeprecated(newTracker);
-            currentTracker = null;
-            this.bootID = thisBootID;
             isConnected = false;
+            if(previousTracker != null) {
+                KeyTracker old = previousTracker;
+                previousTracker = null;
+                old.completelyDeprecated(newTracker);
+            }
+            previousTracker = null;
+            if(currentTracker != null) {
+                KeyTracker old = currentTracker;
+                currentTracker = null;
+                old.completelyDeprecated(newTracker);
+            }
+            this.bootID = thisBootID;
             node.lm.lostOrRestartedNode(this);
         } // else it's a rekey
         

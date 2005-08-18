@@ -661,6 +661,7 @@ public class KeyTracker {
             byte[] buf = element.data;
             AsyncMessageCallback[] callbacks = element.callbacks;
             // Ignore packet#
+            Logger.minor(this, "Queueing resend of what was once "+element.packetNumber);
             pn.node.ps.queueResendPacket(buf, -1, newTracker, callbacks);
         }
     }
