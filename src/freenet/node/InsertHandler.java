@@ -192,7 +192,7 @@ public class InsertHandler implements Runnable {
                 // :(
                 Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");
             }
-        } else {
+        } else if(sender.getStatus() == InsertSender.SUCCESS) {
             // Succeeded! Yay!
             Message msg = DMT.createFNPInsertReply(uid);
             try {

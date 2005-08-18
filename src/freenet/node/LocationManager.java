@@ -32,6 +32,11 @@ class LocationManager {
             this.item = item;
         }
 
+        public void disconnected() {
+            super.disconnected();
+            recentlyForwardedIDs.remove(new Long(item.incomingID));
+        }
+        
         public void acknowledged() {
             item.successfullyForwarded = true;
         }
@@ -737,6 +742,7 @@ class LocationManager {
         } catch (NotConnectedException e) {
             Logger.minor(this, "Lost connection forwarding SwapRejected "+uid+" to "+item.requestSender);
         }
+        recentlyForwardedIDs.remove(luid);
         return true;
     }
     
