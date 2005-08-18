@@ -79,4 +79,11 @@ public class Location {
         }
         return false;
     }
+
+    /**
+     * Randomize the location.
+     */
+    public synchronized void randomize(RandomSource r) {
+        loc = r.nextDouble();
+    }
 }

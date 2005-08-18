@@ -113,6 +113,37 @@ class LocationManager {
                     }
                     // Don't send one if we are locked
                     if(locked) continue;
+                    if(lock()) {
+                        try {
+                            boolean myFlag = false;
+                            double myLoc = loc.getValue();
+                            PeerNode[] peers = node.peers.connectedPeers;
+                            for(int i=0;i<peers.length;i++) {
+                                PeerNode pn = peers[i];
+                                if(pn.isConnected()) {
+                                    double ploc = pn.getLocation().getValue();
+                                    if(ploc == myLoc) {
+                                        myFlag = true;
+                                        // Log an ERROR
+                                        // As this is an ERROR, it results from either a bug or malicious action.
+                                        // If it happens very frequently, it indicates either an attack or a serious bug.
+                                        Logger.error(this, "Randomizing location: my loc="+myLoc+" but loc="+ploc+" for "+pn);
+                                        break;
+                                    }
+                                }
+                            }
+                            if(myFlag) {
+                                loc.randomize(node.random);
+                                announceLocChange();
+                                node.writeNodeFile();
+                            }
+                        } finally {
+                            unlock();
+                        }
+                    } else {
+                        continue;
+                    }
+                    // Check the 
                     startSwapRequest();
                 } catch (Throwable t) {
                     Logger.error(this, "Caught "+t, t);
