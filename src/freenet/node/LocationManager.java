@@ -201,7 +201,7 @@ class LocationManager {
             
             if(commit == null) {
                 // Timed out. Abort
-                Logger.error(this, "Timed out waiting for SwapCommit on "+uid);
+                Logger.error(this, "Timed out waiting for SwapCommit on "+uid+" - this can happen occasionally due to connection closes, if it happens often, there may be a serious problem");
                 return;
             }
             
@@ -331,8 +331,10 @@ class LocationManager {
                 Message reply = node.usm.waitFor(filter);
 
                 if(reply == null) {
-                    // Timed out! Abort...
-                    Logger.error(this, "Timed out waiting for SwapRejected/SwapReply on "+uid);
+                    if(pn.isConnected() && System.currentTimeMillis() - pn.timeLastConnected() > Node.HANDSHAKE_TIMEOUT*2) {
+                        // Timed out! Abort...
+                        Logger.error(this, "Timed out waiting for SwapRejected/SwapReply on "+uid);
+                    }
                     return;
                 }
                 
@@ -843,6 +845,7 @@ class LocationManager {
             RecentlyForwardedItem item = (RecentlyForwardedItem) v.get(i);
             // Just reject it to avoid locking problems etc
             Message msg = DMT.createFNPSwapRejected(item.incomingID);
+            Logger.minor(this, "Rejecting in lostOrRestartedNode: "+item.incomingID+ " from "+item.requestSender);
             try {
                 item.requestSender.sendAsync(msg, null);
             } catch (NotConnectedException e1) {
