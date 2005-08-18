@@ -35,7 +35,7 @@
     <!-- Create the distribution directory -->
     <!--<mkdir dir="."/>-->
     <!-- Put everything in ${build} into the freenet-${DSTAMP}.jar file -->
-    <jar jarfile="freenet-${DSTAMP}.jar" basedir="${build}">
+    <jar jarfile="freenet-cvs-snapshot.jar" basedir="${build}">
       <manifest>
       <attribute name="Main-Class" value="freenet/node/Node"/>
          <attribute name="Built-By" value="${user.name}"/>
