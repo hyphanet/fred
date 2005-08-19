@@ -390,8 +390,10 @@ class LocationManager {
                 reply = node.usm.waitFor(filter);
                 
                 if(reply == null) {
-                	// Hrrrm!
-                    Logger.error(this, "Timed out waiting for SwapComplete - malicious node?? on "+uid);
+                    if(pn.isConnected() && System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2) {
+                        // Hrrrm!
+                        Logger.error(this, "Timed out waiting for SwapComplete - malicious node?? on "+uid);
+                    }
                     return;
                 }
                 
@@ -685,26 +687,32 @@ class LocationManager {
             m.set(DMT.UID, oid);
             Logger.minor(this, "Forwarding... "+uid);
             while(true) {
-                try {
-                    // Forward
-                    PeerNode randomPeer = node.peers.getRandomPeer(pn);
-                    if(randomPeer == null) {
-                        Logger.minor(this, "Late reject "+uid);
-                        Message reject = DMT.createFNPSwapRejected(uid);
+                // Forward
+                PeerNode randomPeer = node.peers.getRandomPeer(pn);
+                if(randomPeer == null) {
+                    Logger.minor(this, "Late reject "+uid);
+                    Message reject = DMT.createFNPSwapRejected(uid);
+                    try {
                         pn.sendAsync(reject, null);
-                        swapsRejectedNowhereToGo++;
-                        return true;
+                    } catch (NotConnectedException e1) {
+                        Logger.normal(this, "Late reject but disconnected from sender: "+pn);
                     }
-                    Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
-                    item = addForwardedItem(uid, oid, pn, randomPeer);
-                    item.successfullyForwarded = false;
-                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(uid), pn, item));
+                    swapsRejectedNowhereToGo++;
+                    return true;
+                }
+                Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
+                item = addForwardedItem(uid, oid, pn, randomPeer);
+                item.successfullyForwarded = false;
+                try {
+                    // Forward the request.
                     // Note that we MUST NOT send this blocking as we are on the
                     // receiver thread.
-                    return true;
+                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(uid), pn, item));
                 } catch (NotConnectedException e) {
-                    // Try again
+                    // Try a different node
+                    continue;
                 }
+                return true;
             }
         }
     }

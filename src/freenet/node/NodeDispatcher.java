@@ -273,7 +273,8 @@ public class NodeDispatcher implements Dispatcher {
                 if(pn != null) try {
                     pn.sendAsync(reject, null);
                 } catch (NotConnectedException e) {
-                    continue;
+                    Logger.error(this, "Cannot send reject message back to source "+pn);
+                    return true;
                 }
             }
             return true;

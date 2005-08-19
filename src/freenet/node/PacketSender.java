@@ -54,6 +54,7 @@ public class PacketSender implements Runnable {
                         // Is the node dead?
                         if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
                             pn.disconnected();
+                            continue;
                         }
 
                         // Any messages to send?

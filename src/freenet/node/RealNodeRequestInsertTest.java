@@ -9,6 +9,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.node.PeerNode;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -146,14 +147,15 @@ public class RealNodeRequestInsertTest {
             if(pings > 10 && avg.currentValue() > 0.98 && ((double)successes / ((double)(failures+successes)) > 0.98)) {
                 break;
             }
-            System.out.println();
-            System.out.println("Ping average > 98%, lets do some inserts/requests");
-            System.out.println();
-            int requestNumber = 0;
-            RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
-            String baseString = "" + System.currentTimeMillis() + " ";
-            while(true) {
-                try {
+        }
+        System.out.println();
+        System.out.println("Ping average > 98%, lets do some inserts/requests");
+        System.out.println();
+        int requestNumber = 0;
+        RunningAverage requestsAvg = new SimpleRunningAverage(100, 0.0);
+        String baseString = "" + System.currentTimeMillis() + " ";
+        while(true) {
+            try {
                 requestNumber++;
                 try {
                     Thread.sleep(5000);
@@ -196,9 +198,8 @@ public class RealNodeRequestInsertTest {
                         Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                     }
                 }
-                } catch (Throwable t) {
-                    Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
-                }
+            } catch (Throwable t) {
+                Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
             }
         }
     }
