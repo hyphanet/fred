@@ -387,7 +387,9 @@ public class FNPPacketMangler implements LowLevelFilter {
     private DiffieHellmanContext processDHTwoOrThree(int i, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
         DiffieHellmanContext ctx = pn.getDHContext();
         if(!ctx.canGetCipher()) {
-            Logger.error(this, "Cannot get cipher");
+            if(shouldLogErrorInHandshake()) {
+                Logger.error(this, "Cannot get cipher");
+            }
             return null;
         }
         byte[] encKey = ctx.getKey();
@@ -430,6 +432,17 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.error(this, "Failed to complete handshake (2) on "+pn+" for "+replyTo);
             return null;
         }
+    }
+
+    /**
+     * Should we log an error for an event that could easily be
+     * caused by a handshake across a restart boundary?
+     */
+    private boolean shouldLogErrorInHandshake() {
+        long now = System.currentTimeMillis();
+        if(now - node.startupTime < Node.HANDSHAKE_TIMEOUT*2)
+            return false;
+        return true;
     }
 
     /**

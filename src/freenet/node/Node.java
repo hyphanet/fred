@@ -108,6 +108,7 @@ public class Node implements SimpleClient {
     private static final int EXIT_USM_DIED = 4;
     public static final int EXIT_YARROW_INIT_FAILED = 5;
     public final long bootID;
+    public final long startupTime;
     
     /**
      * Read all storable settings (identity etc) from the node file.
@@ -231,6 +232,7 @@ public class Node implements SimpleClient {
     // Implement the config!
     Node(int port, RandomSource rand, InetAddress overrideIP, String prefix) {
         portNumber = port;
+        startupTime = System.currentTimeMillis();
         recentlyCompletedIDs = new LRUQueue();
         if(prefix == null) prefix = "";
         filenamesPrefix = prefix;
