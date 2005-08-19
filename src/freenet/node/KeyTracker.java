@@ -584,36 +584,28 @@ public class KeyTracker {
         int[] packetNumbers;
         int realLength;
         long now = System.currentTimeMillis();
-        synchronized(ackRequestQueue) {
-            items = ackRequestQueue.toArray();
-            int length = items.length;
-            packetNumbers = new int[length];
-            realLength = 0;
-            for(int i=0;i<length;i++) {
-                QueuedAckRequest qrr = (QueuedAckRequest)items[i];
-                if(qrr.activeTime <= now) {
-                    packetNumbers[realLength++] = qrr.packetNumber;
-                    Logger.minor(this, "Grabbing ack request "+qrr.packetNumber+" from "+this);
-                    qrr.sent();
-                } else {
-                    Logger.minor(this, "Ignoring ack request "+qrr.packetNumber+" - will become active in "+(qrr.activeTime-now)+" ms on "+this);
-                }
-            }
-        }
         synchronized(this) {
-            for(int i=0;i<realLength;i++) {
-                if(i >= realLength) break;
-                int packetNumber = packetNumbers[i];
-                if(sentPacketsContents.get(packetNumber) == null) {
-                    Logger.error(this, "Asking to ack packet which has already been acked: "+packetNumber);
-                    if(i != realLength-1) {
-                        System.arraycopy(packetNumbers, i+1, packetNumbers, i, realLength-(i+1));
+            synchronized(ackRequestQueue) {
+                items = ackRequestQueue.toArray();
+                int length = items.length;
+                packetNumbers = new int[length];
+                realLength = 0;
+                for(int i=0;i<length;i++) {
+                    QueuedAckRequest qrr = (QueuedAckRequest)items[i];
+                    int packetNumber = qrr.packetNumber;
+                    if(qrr.activeTime <= now) {
+                        if(sentPacketsContents.get(packetNumber) == null) {
+                            Logger.error(this, "Asking to ack packet which has already been acked: "+packetNumber);
+                            continue;
+                        }
+                        packetNumbers[realLength++] = packetNumber;
+                        Logger.minor(this, "Grabbing ack request "+packetNumber+" from "+this);
+                        qrr.sent();
+                    } else {
+                        Logger.minor(this, "Ignoring ack request "+packetNumber+" - will become active in "+(qrr.activeTime-now)+" ms on "+this);
                     }
-                    realLength--;
-                    ackRequestQueue.removeByKey(new Integer(packetNumber));
                 }
             }
-                
         }
         int[] trimmedPacketNumbers = new int[realLength];
         System.arraycopy(packetNumbers, 0, trimmedPacketNumbers, 0, realLength);
