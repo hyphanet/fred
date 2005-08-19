@@ -595,7 +595,8 @@ public class KeyTracker {
                     int packetNumber = qrr.packetNumber;
                     if(qrr.activeTime <= now) {
                         if(sentPacketsContents.get(packetNumber) == null) {
-                            Logger.error(this, "Asking to ack packet which has already been acked: "+packetNumber);
+                            Logger.error(this, "Asking to ack packet which has already been acked: "+packetNumber+" on "+this+".grabAckRequests");
+                            ackRequestQueue.remove(qrr);
                             continue;
                         }
                         packetNumbers[realLength++] = packetNumber;

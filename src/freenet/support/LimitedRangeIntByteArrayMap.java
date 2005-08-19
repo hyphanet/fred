@@ -77,6 +77,7 @@ public class LimitedRangeIntByteArrayMap {
                 return false;
             minValue = index;
         }
+        if(data == null) throw new NullPointerException();
         contents.put(new Integer(index), new LimitedRangeIntByteArrayMapElement(index, data, callbacks));
         notifyAll();
         return true;

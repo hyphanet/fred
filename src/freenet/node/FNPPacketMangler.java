@@ -469,7 +469,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(phase == 1) {
             ctx = pn.getDHContext();
             if(ctx == null) {
-                Logger.error(this, "Could not get context for phase 1 handshake from "+pn);
+                if(shouldLogErrorInHandshake())
+                    Logger.error(this, "Could not get context for phase 1 handshake from "+pn);
                 return null;
             }
         } else {
