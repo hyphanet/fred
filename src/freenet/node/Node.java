@@ -214,7 +214,7 @@ public class Node implements SimpleClient {
         Logger.globalSetThreshold(Logger.MINOR);
         Logger.globalAddHook(logger);
         logger.start();
-        Logger.error(Node.class, "Testing...");
+        Logger.normal(Node.class, "Creating node...");
         Yarrow yarrow = new Yarrow();
         InetAddress overrideIP = null;
         if(args.length > 1) {
