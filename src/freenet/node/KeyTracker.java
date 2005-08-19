@@ -361,13 +361,15 @@ public class KeyTracker {
      * resend request for
      */
     private void queueAckRequest(int packetNumber) {
-        if(queuedAckRequest(packetNumber)) {
-            Logger.minor(this, "Not queueing ack request for "+packetNumber+" - already queued");
-            return;
+        synchronized(ackRequestQueue) {
+            if(queuedAckRequest(packetNumber)) {
+                Logger.minor(this, "Not queueing ack request for "+packetNumber+" - already queued");
+                return;
+            }
+            Logger.minor(this, "Queueing ack request for "+packetNumber);
+            QueuedAckRequest qrr = new QueuedAckRequest(packetNumber, false);
+            ackRequestQueue.add(qrr);
         }
-        Logger.minor(this, "Queueing ack request for "+packetNumber);
-        QueuedAckRequest qrr = new QueuedAckRequest(packetNumber, false);
-        ackRequestQueue.add(qrr);
     }
 
     /**
@@ -597,6 +599,21 @@ public class KeyTracker {
                     Logger.minor(this, "Ignoring ack request "+qrr.packetNumber+" - will become active in "+(qrr.activeTime-now)+" ms on "+this);
                 }
             }
+        }
+        synchronized(this) {
+            for(int i=0;i<realLength;i++) {
+                if(i >= realLength) break;
+                int packetNumber = packetNumbers[i];
+                if(sentPacketsContents.get(packetNumber) == null) {
+                    Logger.error(this, "Asking to ack packet which has already been acked: "+packetNumber);
+                    if(i != realLength-1) {
+                        System.arraycopy(packetNumbers, i+1, packetNumbers, i, realLength-(i+1));
+                    }
+                    realLength--;
+                    ackRequestQueue.removeByKey(new Integer(packetNumber));
+                }
+            }
+                
         }
         int[] trimmedPacketNumbers = new int[realLength];
         System.arraycopy(packetNumbers, 0, trimmedPacketNumbers, 0, realLength);

@@ -6,6 +6,8 @@ import java.util.HashMap;
  * UpdatableSortedLinkedList plus a hashtable. Each item has
  * an indexItem(), which we use to track them. This is completely
  * independant of their sort order, hence "foreign".
+ * Note that this class, unlike its parent, does not permit 
+ * duplicates.
  */
 public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLinkedList {
 
@@ -21,6 +23,11 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
             throw new IllegalArgumentException();
         }
         IndexableUpdatableSortedLinkedListItem i = (IndexableUpdatableSortedLinkedListItem)item;
+        if(map.get(i.indexValue()) != null) {
+            // Ignore duplicate
+            Logger.error(this, "Ignoring duplicate: "+i+" was already present: "+map.get(i.indexValue()));
+            return;
+        }
         super.add(i);
         map.put(i.indexValue(), item);
     }
