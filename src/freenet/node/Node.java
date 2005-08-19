@@ -328,6 +328,9 @@ public class Node implements SimpleClient {
         byte[] headers = block.getHeader();
         PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
         InsertSender is;
+        long uid = random.nextLong();
+        if(!lockUID(uid))
+            Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
         synchronized(this) {
             try {
                 datastore.put(block);
@@ -335,7 +338,7 @@ public class Node implements SimpleClient {
                 Logger.error(this, "Datastore failure: "+e, e);
             }
             is = makeInsertSender(block.getClientKey().getNodeCHK(), 
-                    MAX_HTL, random.nextLong(), null, headers, prb, false);
+                    MAX_HTL, uid, null, headers, prb, false);
         }
         is.waitUntilFinished();
         if(is.getStatus() == InsertSender.SUCCESS) {
@@ -470,7 +473,7 @@ public class Node implements SimpleClient {
         public boolean equals(Object o) {
             if(o instanceof KeyHTLPair) {
                 KeyHTLPair p = (KeyHTLPair) o;
-                return (p.key == key && p.htl == htl);
+                return (p.key.equals(key) && p.htl == htl);
             } else return false;
         }
         
