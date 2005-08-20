@@ -773,7 +773,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     /**
      * Build a packet and send it, from a whole bunch of messages.
      */
-    public void processOutgoing(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber) throws NotConnectedException, WouldBlockException {
+    public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber) {
         byte[][] messageData = new byte[messages.length][];
         int length = 1;
         int callbacksCount = 0;
@@ -793,7 +793,19 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         if(length < node.usm.getMaxPacketSize() &&
                 messages.length < 256) {
-            innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber, callbacks);
+            try {
+                innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber, callbacks);
+            } catch (NotConnectedException e) {
+                Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                // Requeue
+                pn.requeueMessageItems(messages, 0, messages.length);
+                return;
+            } catch (WouldBlockException e) {
+                Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                // Requeue
+                pn.requeueMessageItems(messages, 0, messages.length);
+                return;
+            }
         } else {
             length = 1;
             int count = 0;
@@ -811,8 +823,21 @@ public class FNPPacketMangler implements LowLevelFilter {
                 if(newLength > node.usm.getMaxPacketSize() || count > 255 || i == messages.length) {
                     // lastIndex up to the message right before this one
                     // e.g. lastIndex = 0, i = 1, we just send message 0
-                    if(lastIndex != i)
-                        innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks);
+                    if(lastIndex != i) {
+                        try {
+                            innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks);
+                        } catch (NotConnectedException e) {
+                            Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
+                            // Requeue
+                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex);
+                            return;
+                        } catch (WouldBlockException e) {
+                            Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
+                            // Requeue
+                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex);
+                            return;
+                        }
+                    }
                     lastIndex = i;
                     if(i != messages.length)
                         length = 1 + (messageData[i].length + 2);

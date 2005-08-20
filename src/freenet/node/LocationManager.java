@@ -34,7 +34,7 @@ class LocationManager {
 
         public void disconnected() {
             super.disconnected();
-            recentlyForwardedIDs.remove(new Long(item.incomingID));
+            removeRecentlyForwardedItem(item);
         }
         
         public void acknowledged() {
@@ -173,10 +173,12 @@ class LocationManager {
         PeerNode pn;
         long uid;
         Long luid;
+        RecentlyForwardedItem item;
         
-        IncomingSwapRequestHandler(Message msg, PeerNode pn) {
+        IncomingSwapRequestHandler(Message msg, PeerNode pn, RecentlyForwardedItem item) {
             this.origMessage = msg;
             this.pn = pn;
+            this.item = item;
             uid = origMessage.getLong(DMT.UID);
             luid = new Long(uid);
         }
@@ -296,7 +298,7 @@ class LocationManager {
             Logger.error(this, "Caught "+t, t);
         } finally {
             unlock();
-            recentlyForwardedIDs.remove(luid);
+            removeRecentlyForwardedItem(item);
         }
         }
     }
@@ -308,6 +310,8 @@ class LocationManager {
      * Etc.
      */
     public class OutgoingSwapRequestHandler implements Runnable {
+        
+        RecentlyForwardedItem item;
         
         public void run() {
             long uid = r.nextLong();
@@ -344,7 +348,7 @@ class LocationManager {
                     return;
                 }
                 // Only 1 ID because we are sending; we won't receive
-                addForwardedItem(uid, uid, null, pn);
+                item = addForwardedItem(uid, uid, null, pn);
 
                 Logger.minor(this, "Sending SwapRequest "+uid+" to "+pn);
                 
@@ -449,7 +453,8 @@ class LocationManager {
                 Logger.error(this, "Caught "+t, t);
             } finally {
                 unlock();
-                recentlyForwardedIDs.remove(luid);
+                if(item != null)
+                    removeRecentlyForwardedItem(item);
             }
         }
 
@@ -669,7 +674,7 @@ class LocationManager {
             try {
                 // Locked, do it
                 IncomingSwapRequestHandler isrh =
-                    new IncomingSwapRequestHandler(m, pn);
+                    new IncomingSwapRequestHandler(m, pn, item);
                 Logger.minor(this, "Handling... "+uid);
                 Thread t = new Thread(isrh, "Incoming swap request handler for port "+node.portNumber);
                 t.setDaemon(true);
@@ -773,7 +778,7 @@ class LocationManager {
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
         }
-        recentlyForwardedIDs.remove(luid);
+        removeRecentlyForwardedItem(item);
         item.lastMessageTime = System.currentTimeMillis();
         Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+m.getSource()+" to "+item.requestSender);
         // Returning to source - use incomingID
@@ -783,7 +788,6 @@ class LocationManager {
         } catch (NotConnectedException e) {
             Logger.minor(this, "Lost connection forwarding SwapRejected "+uid+" to "+item.requestSender);
         }
-        recentlyForwardedIDs.remove(luid);
         return true;
     }
     
@@ -845,7 +849,7 @@ class LocationManager {
             Logger.normal(this, "Lost connection forwarding SwapComplete "+uid+" to "+item.requestSender);
         }
         item.lastMessageTime = System.currentTimeMillis();
-        recentlyForwardedIDs.remove(luid);
+        removeRecentlyForwardedItem(item);
         return true;
     }
 
@@ -856,8 +860,7 @@ class LocationManager {
             items = (RecentlyForwardedItem[]) recentlyForwardedIDs.values().toArray(items);
             for(int i=0;i<items.length;i++) {
                 if(now - items[i].lastMessageTime > (TIMEOUT*2)) {
-                    recentlyForwardedIDs.remove(new Long(items[i].incomingID));
-                    recentlyForwardedIDs.remove(new Long(items[i].outgoingID));
+                    removeRecentlyForwardedItem(items[i]);
                 }
             }
         }
@@ -875,11 +878,12 @@ class LocationManager {
                 RecentlyForwardedItem item = (RecentlyForwardedItem)recentlyForwardedIDs.get(l);
                 if(item.routedTo != pn) continue;
                 if(item.successfullyForwarded) {
-                    recentlyForwardedIDs.remove(l);
+                    removeRecentlyForwardedItem(item);
                     v.add(item);
                 }
             }
         }
+        Logger.normal(this, "lostOrRestartedNode dumping "+v.size()+" swap requests");
         for(int i=0;i<v.size();i++) {
             RecentlyForwardedItem item = (RecentlyForwardedItem) v.get(i);
             // Just reject it to avoid locking problems etc
@@ -891,5 +895,11 @@ class LocationManager {
                 Logger.normal(this, "Both sender and receiver disconnected for "+item);
             }
         }
+    }
+    
+    private void removeRecentlyForwardedItem(RecentlyForwardedItem item) {
+        Logger.minor(this, "Removing: "+item);
+        recentlyForwardedIDs.remove(new Long(item.incomingID));
+        recentlyForwardedIDs.remove(new Long(item.outgoingID));
     }
 }

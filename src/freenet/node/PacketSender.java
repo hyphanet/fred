@@ -2,7 +2,6 @@ package freenet.node;
 
 import java.util.LinkedList;
 
-import freenet.io.comm.Message;
 import freenet.support.Logger;
 import freenet.support.WouldBlockException;
 
@@ -59,18 +58,12 @@ public class PacketSender implements Runnable {
 
                         // Any messages to send?
                         MessageItem[] messages = null;
-                        try {
-                            messages = pn.grabQueuedMessageItems();
-                            if(messages != null) {
-                                // Send packets, right now, blocking, including any active notifications
-                                node.packetMangler.processOutgoing(messages, pn, true);
-                                continue;
-                            }
-                        } catch (WouldBlockException e) {
-                            if(messages != null)
-                                pn.requeueMessageItems(messages);
+                        messages = pn.grabQueuedMessageItems();
+                        if(messages != null) {
+                            // Send packets, right now, blocking, including any active notifications
+                            node.packetMangler.processOutgoingOrRequeue(messages, pn, true);
+                            continue;
                         }
-                        
                         // Any urgent notifications to send?
                         long urgentTime = pn.getNextUrgentTime();
                         if(urgentTime <= now) {
@@ -93,7 +86,7 @@ public class PacketSender implements Runnable {
                     }
             	}
             	
-                if(lastClearedOldSwapChains - now > 10000) {
+                if(now - lastClearedOldSwapChains > 10000) {
                     node.lm.clearOldSwapChains();
                     lastClearedOldSwapChains = now;
                 }

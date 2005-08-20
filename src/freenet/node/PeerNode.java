@@ -343,11 +343,11 @@ public class PeerNode implements PeerContext {
         }
     }
     
-    public void requeueMessageItems(MessageItem[] messages) {
+    public void requeueMessageItems(MessageItem[] messages, int offset, int length) {
         // Will usually indicate serious problems
         Logger.error(this, "Requeueing "+messages.length+" messages on "+this);
         synchronized(messagesToSendNow) {
-            for(int i=0;i<messages.length;i++)
+            for(int i=offset;i<offset+length;i++)
                 messagesToSendNow.add(messages[i]);
         }
     }
