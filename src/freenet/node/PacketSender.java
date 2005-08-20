@@ -3,7 +3,6 @@ package freenet.node;
 import java.util.LinkedList;
 
 import freenet.support.Logger;
-import freenet.support.WouldBlockException;
 
 /**
  * @author amphibian

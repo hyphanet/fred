@@ -45,19 +45,18 @@ public class CHKBlock {
         return data;
     }
 
-    public CHKBlock(byte[] data2, byte[] header2, NodeCHK chk) throws CHKVerifyException {
-        this(data2, header2, chk, true);
+    public CHKBlock(byte[] data2, byte[] header2, NodeCHK key) throws CHKVerifyException {
+        this(data2, header2, key, true);
     }
     
-    public CHKBlock(byte[] data2, byte[] header2, NodeCHK chk, boolean verify) throws CHKVerifyException {
+    public CHKBlock(byte[] data2, byte[] header2, NodeCHK key, boolean verify) throws CHKVerifyException {
         data = data2;
         header = header2;
         if(header.length < 2) throw new IllegalArgumentException("Too short: "+header.length);
         hashIdentifier = (short)(((header[0] & 0xff) << 8) + (header[1] & 0xff));
-        this.chk = chk;
+        this.chk = key;
 //        Logger.debug(CHKBlock.class, "Data length: "+data.length+", header length: "+header.length);
-        // FIXME: enable
-        //if(!verify) return;
+        if(!verify) return;
         
         // Minimal verification
         // Check the hash
@@ -104,6 +103,7 @@ public class CHKBlock {
         System.arraycopy(header, 2, hbuf, 0, header.length-2);
         byte[] dbuf = new byte[data.length];
         System.arraycopy(data, 0, dbuf, 0, data.length);
+        // Decipher header first - functions as IV
         pcfb.blockDecipher(hbuf, 0, hbuf.length);
         pcfb.blockDecipher(dbuf, 0, dbuf.length);
         // Check: Decryption key == hash of data (not including header)

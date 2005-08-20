@@ -2,12 +2,11 @@ package freenet.crypt;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.StringTokenizer;
 
-import freenet.support.HexUtil;
 import net.i2p.util.NativeBigInteger;
+import freenet.support.HexUtil;
 
 /**
  * Holds a Diffie-Hellman key-exchange group

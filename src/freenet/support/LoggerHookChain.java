@@ -1,6 +1,4 @@
 package freenet.support;
-import java.util.Enumeration;
-import java.util.Vector;
 
 /**
  * A class that takes logging messages and distributes them to LoggerHooks.
@@ -8,8 +6,10 @@ import java.util.Vector;
  * don't create loops).
  */
 public class LoggerHookChain extends LoggerHook {
-  
-    private Vector hooks;
+
+    // Best performance, least synchronization.
+    // We will only very rarely add or remove hooks
+    private LoggerHook[] hooks;
 
     /**
      * Create a logger. Threshhold set to NORMAL.
@@ -25,11 +25,11 @@ public class LoggerHookChain extends LoggerHook {
      */
     public LoggerHookChain(int threshold) {
         super(threshold);
-        hooks = new Vector();
+        hooks = new LoggerHook[0];
     }
     public LoggerHookChain(String threshold) {
     	super(threshold);
-        hooks = new Vector();
+        hooks = new LoggerHook[0];
     }
   
 
@@ -39,33 +39,51 @@ public class LoggerHookChain extends LoggerHook {
      * @implements LoggerHook.log()
      */
     public void log(Object o, Class c, String msg, Throwable e, int priority){
-        for(Enumeration en = hooks.elements(); en.hasMoreElements();) {
-            ((LoggerHook) en.nextElement()).log(o,c,msg,e,priority);
+        LoggerHook[] myHooks = hooks;
+        for(int i=0;i<myHooks.length;i++) {
+            myHooks[i].log(o,c,msg,e,priority);
         }
     }
 
     /**
      * Add a hook which will be called every time a message is logged
      */
-    public void addHook(LoggerHook lh) {
-        hooks.addElement(lh);
+    public synchronized void addHook(LoggerHook lh) {
+        LoggerHook[] newHooks = new LoggerHook[hooks.length+1];
+        System.arraycopy(newHooks, 0, hooks, 0, hooks.length);
+        newHooks[hooks.length] = lh;
+        hooks = newHooks;
     }
 
     /**
      * Remove a hook from the logger.
      */
-    public void removeHook(LoggerHook lh) {
-        hooks.removeElement(lh);
-        hooks.trimToSize();
+    public synchronized void removeHook(LoggerHook lh) {
+        LoggerHook[] newHooks = new LoggerHook[hooks.length-1];
+        int x=0;
+        boolean removed = false;
+        for(int i=0;i<hooks.length;i++) {
+            if(hooks[i] == lh) {
+                removed = true;
+            } else {
+                newHooks[x++] = hooks[i];
+            }
+        }
+        if(!removed) return;
+        if(x == newHooks.length) {
+            hooks = newHooks;
+        } else {
+            LoggerHook[] finalHooks = new LoggerHook[x];
+            System.arraycopy(newHooks, 0, finalHooks, 0, x);
+            hooks = finalHooks;
+        }
     }
 
     /**
      * Returns all the current hooks.
      */
     public LoggerHook[] getHooks() {
-        LoggerHook[] r = new LoggerHook[hooks.size()];
-        hooks.copyInto(r);
-        return r;
+        return hooks;
     }
 
     public long minFlags()
@@ -85,15 +103,15 @@ public class LoggerHookChain extends LoggerHook {
 
 	public void setDetailedThresholds(String details) {
 		super.setDetailedThresholds(details);
-		LoggerHook[] hooks = getHooks();
-		for (int i = 0; i < hooks.length; i++)
-			hooks[i].setDetailedThresholds(details);
+		LoggerHook[] h = getHooks();
+		for (int i = 0; i < h.length; i++)
+			h[i].setDetailedThresholds(details);
 	}
 	public void setThreshold(int thresh) {
 		super.setThreshold(thresh);
-		LoggerHook[] hooks = getHooks();
-		for (int i = 0; i < hooks.length; i++)
-			hooks[i].setThreshold(thresh);
+		LoggerHook[] h = getHooks();
+		for (int i = 0; i < h.length; i++)
+			h[i].setThreshold(thresh);
 	}
 }
 

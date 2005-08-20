@@ -64,10 +64,11 @@ public class BaseFreenetStore implements FreenetStore {
             // No headers, delete
             Logger.normal(this, "Deleting: "+chk+" data, no headers");
             dataStore.delete(chk);
+            return null;
         }
         // Decode
         int headerLen = ((headers[0] & 0xff) << 8) + (headers[1] & 0xff);
-        if(headerLen > HEADER_BLOCK_SIZE-2 || headerLen < 0) {
+        if(headerLen > HEADER_BLOCK_SIZE-2) {
             Logger.normal(this, "Invalid header data on "+chk+", deleting");
             dataStore.delete(chk);
             headersStore.delete(chk);

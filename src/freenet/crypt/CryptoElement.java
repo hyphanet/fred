@@ -1,6 +1,4 @@
 package freenet.crypt;
-import java.io.OutputStream;
-import java.io.IOException;
 
 /**
  * This is a highest level interface for all crypto objects.

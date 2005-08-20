@@ -19,12 +19,13 @@
 
 package freenet.io.comm;
 
-import freenet.*;
-import freenet.keys.Key;
-import freenet.keys.Key;
-import freenet.support.*;
+import java.util.LinkedList;
+import java.util.List;
 
-import java.util.*;
+import freenet.keys.Key;
+import freenet.support.BitArray;
+import freenet.support.Buffer;
+import freenet.support.ShortBuffer;
 
 
 /**
@@ -95,9 +96,9 @@ public class DMT {
 		addField(SEND_TIME, Long.class);
 	}};
 
-	public static final Message createPong(Message ping) {
-		if (ping.isSet(SEND_TIME)) {
-			return createPong(ping.getLong(SEND_TIME));
+	public static final Message createPong(Message recvPing) {
+		if (recvPing.isSet(SEND_TIME)) {
+			return createPong(recvPing.getLong(SEND_TIME));
 		} else {
 			return createPong(500);
 		}

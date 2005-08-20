@@ -172,7 +172,7 @@ public abstract class LoggerHook extends Logger {
 
 	public boolean instanceShouldLog(int priority, Class c) {
 		int thresh = threshold;
-		if (c != null && detailedThresholds.length > 0) {
+		if (c != null && detailedThresholds.length != 0) {
 			String cname = c.getName();
 			for (int i = 0; i < detailedThresholds.length; i++) {
 				DetailedThreshold dt = detailedThresholds[i];

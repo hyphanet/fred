@@ -16,17 +16,17 @@ public interface BlockCipher {
      * Initializes the cipher context with the given key.  This might entail
      * performing pre-encryption calculation of subkeys, S-Boxes, etc.
      */
-    public void initialize(byte[] key);
+    void initialize(byte[] key);
     
     /**
      * Returns the key size, in bits, of the given block-cipher
      */
-    public int getKeySize();
+    int getKeySize();
 
     /**
      * Returns the block size, in bits, of the given block-cipher
      */
-    public int getBlockSize();
+    int getBlockSize();
 
     /**
      * Enciphers the contents of <b>block</b> where block must be equal
@@ -37,7 +37,7 @@ public interface BlockCipher {
      * Warning: It is not a guarantee that <b>block</b> will not be over-
      * written in the course of the algorithm
      */
-    public void encipher(byte[] block, byte[] result);
+    void encipher(byte[] block, byte[] result);
 
     /**
      * Deciphers the contents of <b>block</b> where block must be equal
@@ -48,8 +48,6 @@ public interface BlockCipher {
      * Warning: It is not a guarantee that <b>block</b> will not be over-
      * written in the course of the algorithm
      */
-    public void decipher(byte[] block, byte[] result);
+    void decipher(byte[] block, byte[] result);
 
 }
-
-    

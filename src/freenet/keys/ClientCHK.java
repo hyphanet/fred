@@ -45,8 +45,8 @@ public class ClientCHK {
         if(extra == null || extra.length < 3)
             throw new MalformedURLException();
         cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
-        compressed = (extra[2] & 0x01) > 0;
-        controlDocument = (extra[2] & 0x02) > 0;
+        compressed = (extra[2] & 0x01) == 1;
+        controlDocument = (extra[2] & 0x02) == 1;
     }
 
     byte[] routingKey;

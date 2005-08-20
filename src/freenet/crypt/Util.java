@@ -63,9 +63,9 @@ public class Util {
 		for (int i = 0; i < (ints.length << 2); i += 4) {
 			ints[ic++] =
 				bytes[i]
-					+ bytes[i + 1] << 8
-					+ bytes[i + 2] << 16
-					+ bytes[i + 3] << 24;
+					+ (bytes[i + 1] << 8)
+					+ (bytes[i + 2] << 16)
+					+ (bytes[i + 3] << 24);
 		}
 	}
 
@@ -310,50 +310,9 @@ public class Util {
 	 */
 	public static int log2(long n) {
 		int log2 = 0;
-		while (log2 < 63 && 1 << log2 < n)
+		while (log2 < 63 && 1L << log2 < n)
 			++log2;
 		return log2;
-	}
-
-	/**
-	 * Writes a "rolling-hash pad" of paddingLen bytes to the given output
-	 * stream, using the provided, _initialized_ Digest. H1 = the hash value of
-	 * the digest as provided H2 = the hash value of the digest after updating w/
-	 * the bytes of H1 Hn+1 = the hash value of the digest after updating w/
-	 * the bytes of Hn Padding = H1,H1,H2,H1,H2,H3 etc. until enough bytes are
-	 * generated.
-	 * 
-	 * @param out
-	 *            an output stream to write the padding to
-	 * @param paddingLen
-	 *            the number of padding bytes to generate and write
-	 * @param ctx
-	 *            an SHA1 initialized with the bytes of the data that is being
-	 *            padded. Need an SHA1 because it MUST support
-	 *            digest(false,...).
-	 */
-	public static void rollingHashPad(
-		OutputStream out,
-		long paddingLen,
-		SHA1 ctx)
-		throws IOException {
-
-		byte[] hashbuf = new byte[ctx.digestSize() >> 3];
-		ByteArrayOutputStream pad = new ByteArrayOutputStream();
-
-		while (paddingLen > 0) {
-			ctx.digest(false, hashbuf, 0);
-			ctx.update(hashbuf, 0, hashbuf.length);
-			pad.write(hashbuf, 0, hashbuf.length);
-			if (paddingLen < pad.size()) {
-				byte[] tmp = pad.toByteArray();
-				out.write(tmp, 0, (int) paddingLen);
-				paddingLen = 0;
-			} else {
-				pad.writeTo(out);
-				paddingLen -= pad.size();
-			}
-		}
 	}
 
 	public static void readFully(InputStream in, byte[] b) throws IOException {

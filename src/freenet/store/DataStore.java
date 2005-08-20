@@ -27,7 +27,7 @@ import java.util.*;
 
 public class DataStore extends Store {
 
-    public static final String VERSION = "$Id: DataStore.java,v 1.4 2005/08/01 19:20:12 amphibian Exp $";    
+    public static final String VERSION = "$Id: DataStore.java,v 1.5 2005/08/20 21:21:21 amphibian Exp $";    
 
 	private RandomAccessFile _index;
 	private final int blockSize;
@@ -107,18 +107,18 @@ public class DataStore extends Store {
 	 * old on-disk data for this record.
 	 *
 	 */
-	public void setRecordNumber(int newRecNo, DataBlock dataBlock) throws IOException {
+	protected void setRecordNumber(int newRecNo, DataBlock dataBlock) throws IOException {
 		if (newRecNo == dataBlock.getRecordNumber()) {
 			return;
 		}
-		_index.seek(newRecNo * DataBlock.SIZE_ON_DISK);
+		_index.seek((long)newRecNo * DataBlock.SIZE_ON_DISK);
 		dataBlock.getKey().write(_index);
 		_index.writeLong(dataBlock.getLastAccessTime());
 
 		byte[] ba = new byte[blockSize];
 		getBlockStore().seek(dataBlock.positionInDataFile());
 		getBlockStore().readFully(ba);
-		getBlockStore().seek(newRecNo * blockSize);
+		getBlockStore().seek((long)newRecNo * blockSize);
 		getBlockStore().write(ba);
 
 		getRecordNumberList().remove(dataBlock.getRecordNumber());
@@ -135,7 +135,7 @@ public class DataStore extends Store {
 	private void createAndOverwrite(int recnum, Key key, byte[] data) throws IOException {
 	    Logger.minor(this, "createAndOverwrite("+recnum+","+key+")");
 		DataBlock b = new DataBlock(recnum, key, System.currentTimeMillis());
-		_index.seek(recnum * DataBlock.SIZE_ON_DISK);
+		_index.seek((long)recnum * DataBlock.SIZE_ON_DISK);
 
 		key.write(_index);
 		getKeyMap().put(key, b);
@@ -143,7 +143,7 @@ public class DataStore extends Store {
 		_index.writeLong(b.getLastAccessTime());
 		getAccessTimeList().addLast(b);
 
-		getBlockStore().seek(recnum * blockSize);
+		getBlockStore().seek((long)recnum * blockSize);
 		getBlockStore().write(data);
 		getRecordNumberList().add(recnum, b);
 	}
@@ -191,7 +191,7 @@ public class DataStore extends Store {
 
 	class DataBlock extends Block {
 
-	    public static final String VERSION = "$Id: DataStore.java,v 1.4 2005/08/01 19:20:12 amphibian Exp $";
+	    public static final String VERSION = "$Id: DataStore.java,v 1.5 2005/08/20 21:21:21 amphibian Exp $";
 
 		private static final short KEY_SIZE = Key.KEY_SIZE_ON_DISK;
 		private static final short ACCESS_TIME_SIZE = 8;

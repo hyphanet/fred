@@ -594,11 +594,11 @@ class LocationManager {
     final Hashtable recentlyForwardedIDs;
     
     class RecentlyForwardedItem {
-        long incomingID; // unnecessary?
-        long outgoingID;
-        long addedTime;
+        final long incomingID; // unnecessary?
+        final long outgoingID;
+        final long addedTime;
         long lastMessageTime; // can delete when no messages for 2*TIMEOUT
-        PeerNode requestSender;
+        final PeerNode requestSender;
         PeerNode routedTo;
         // Set when a request is accepted. Unset when we send one.
         boolean successfullyForwarded;

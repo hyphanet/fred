@@ -42,7 +42,7 @@ public class PartiallyReceivedBlock {
 
 	public PartiallyReceivedBlock(int packets, int packetSize, byte[] data) {
 		if (data.length != packets * packetSize) {
-			throw new RuntimeException("Length of data ("+_data.length+") doesn't match packet number and size");
+			throw new RuntimeException("Length of data ("+data.length+") doesn't match packet number and size");
 		}
 		_data = data;
 		_received = new boolean[packets];

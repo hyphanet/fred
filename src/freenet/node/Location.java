@@ -17,14 +17,15 @@ import freenet.crypt.RandomSource;
  */
 public class Location {
     private double loc;
+    private int hashCode;
     
     private Location(double location) {
-        loc = location;
+        setValue(location);
     }
 
     public Location(String init) throws FSParseException {
         try {
-            loc = Double.parseDouble(init);
+            setValue(Double.parseDouble(init));
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
         }
@@ -71,6 +72,8 @@ public class Location {
         if(loc < 0.0 || loc > 1.0)
             throw new IllegalArgumentException();
         this.loc = newLoc;
+        long l = Double.doubleToLongBits(newLoc);
+        hashCode = ((int) l >>> 32) ^ ((int)l);
     }
     
     public boolean equals(Object o) {
@@ -79,11 +82,15 @@ public class Location {
         }
         return false;
     }
+    
+    public int hashCode() {
+        return hashCode;
+    }
 
     /**
      * Randomize the location.
      */
     public synchronized void randomize(RandomSource r) {
-        loc = r.nextDouble();
+        setValue(r.nextDouble());
     }
 }

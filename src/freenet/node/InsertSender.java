@@ -243,17 +243,15 @@ public class InsertSender implements Runnable {
     /**
      * Wait until we have a terminal status code.
      */
-    public void waitUntilFinished() {
-        synchronized(this) {
-            while(true) {
-                if(status != NOT_FINISHED) return;
-                try {
-                    wait(10000);
-                } catch (InterruptedException e) {
-                    // Ignore
-                }
-            }            
-        }
+    public synchronized void waitUntilFinished() {
+        while(true) {
+            if(status != NOT_FINISHED) return;
+            try {
+                wait(10000);
+            } catch (InterruptedException e) {
+                // Ignore
+            }
+        }            
     }
     
     private void finish(int code) {

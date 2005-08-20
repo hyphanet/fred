@@ -19,7 +19,7 @@ import freenet.crypt.ciphers.Rijndael;
  */
 public class ClientCHKBlock extends CHKBlock {
 
-    ClientCHK key;
+    final ClientCHK key;
     
     public String toString() {
         return super.toString()+",key="+key;
@@ -58,7 +58,7 @@ public class ClientCHKBlock extends CHKBlock {
         boolean compressed = false;
         if(sourceData.length > MAX_LENGTH_BEFORE_COMPRESSION)
             throw new CHKEncodeException("Too big");
-        if(sourceData.length > 0) {
+        if(sourceData.length != 0) {
             int sourceLength = sourceData.length;
             byte[] cbuf = new byte[32768+1024];
             Deflater compressor = new Deflater();
@@ -94,18 +94,18 @@ public class ClientCHKBlock extends CHKBlock {
             throw new Error(e1);
         }
         // First pad it
-        if(sourceData.length < 32768) {
+        if(sourceData.length != 32768) {
             // Hash the data
-            if(sourceData.length > 0)
+            if(sourceData.length != 0)
             	md256.update(sourceData);
             byte[] digest = md256.digest();
             // Turn digest into a seed array for the MT
             int[] seed = new int[8]; // 32/4=8
             for(int i=0;i<8;i++) {
                 int x = digest[i*4] & 0xff;
-                x = x << 8 + (digest[i*4+1] & 0xff);
-                x = x << 8 + (digest[i*4+2] & 0xff);
-                x = x << 8 + (digest[i*4+3] & 0xff);
+                x = (x << 8) + (digest[i*4+1] & 0xff);
+                x = (x << 8) + (digest[i*4+2] & 0xff);
+                x = (x << 8) + (digest[i*4+3] & 0xff);
                 seed[i] = x;
             }
             MersenneTwister mt = new MersenneTwister(seed);

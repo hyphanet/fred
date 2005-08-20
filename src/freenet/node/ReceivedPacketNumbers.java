@@ -34,7 +34,7 @@ public class ReceivedPacketNumbers {
         ranges.clear();
     }
     
-    class Range {
+    private class Range {
         int start; // inclusive
         int end;   // inclusive
         

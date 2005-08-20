@@ -3,7 +3,6 @@ package freenet.keys;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /**
  * @author amphibian
@@ -34,6 +33,4 @@ public abstract class Key {
         }
         throw new IOException("Unrecognized format: "+type);
     }
-    
-    public abstract int hashCode();
 }
