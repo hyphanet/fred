@@ -40,7 +40,7 @@ public class PacketSender implements Runnable {
                         else break;
                     }
                     if(item.pn.isConnected())
-                        node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.pn, item.packetNumber, item.callbacks);
+                        node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks);
                 } while(item != null);
                 long now = System.currentTimeMillis();
                 PeerManager pm = node.peers;

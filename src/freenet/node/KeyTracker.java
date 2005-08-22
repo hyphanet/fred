@@ -366,7 +366,7 @@ public class KeyTracker {
                 Logger.minor(this, "Not queueing ack request for "+packetNumber+" - already queued");
                 return;
             }
-            Logger.minor(this, "Queueing ack request for "+packetNumber);
+            Logger.minor(this, "Queueing ack request for "+packetNumber+" on "+this);
             QueuedAckRequest qrr = new QueuedAckRequest(packetNumber, false);
             ackRequestQueue.add(qrr);
         }
