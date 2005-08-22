@@ -672,6 +672,7 @@ class LocationManager {
                 return true;
             }
             try {
+                item = addForwardedItem(uid, oid, pn, null);
                 // Locked, do it
                 IncomingSwapRequestHandler isrh =
                     new IncomingSwapRequestHandler(m, pn, item);
@@ -746,6 +747,10 @@ class LocationManager {
             Logger.minor(this, "SwapReply from "+m.getSource()+" on chain originated locally "+uid);
             return false;
         }
+        if(item.routedTo == null) {
+            Logger.error(this, "Got SwapReply on "+uid+" but routedTo is null!");
+            return false;
+        }
         if(m.getSource() != item.routedTo) {
             Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+m.getSource()+
                     " should be "+item.routedTo+" to "+item.requestSender);
@@ -773,6 +778,10 @@ class LocationManager {
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
         if(item == null) return false;
         if(item.requestSender == null) return false;
+        if(item.routedTo == null) {
+            Logger.error(this, "Got SwapRejected on "+uid+" but routedTo is null!");
+            return false;
+        }
         if(m.getSource() != item.routedTo) {
             Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+m.getSource()+
                     " should be "+item.routedTo+" to "+item.requestSender);
@@ -833,6 +842,10 @@ class LocationManager {
         }
         if(item.requestSender == null) {
             Logger.minor(this, "Not matched "+uid+": "+m);
+            return false;
+        }
+        if(item.routedTo == null) {
+            Logger.error(this, "Got SwapComplete on "+uid+" but routedTo == null! (meaning we accepted it, presumably)");
             return false;
         }
         if(m.getSource() != item.routedTo) {
@@ -899,6 +912,9 @@ class LocationManager {
     
     private void removeRecentlyForwardedItem(RecentlyForwardedItem item) {
         Logger.minor(this, "Removing: "+item);
+        if(item == null) {
+            Logger.error(this, "removeRecentlyForwardedItem(null)", new Exception("error"));
+        }
         recentlyForwardedIDs.remove(new Long(item.incomingID));
         recentlyForwardedIDs.remove(new Long(item.outgoingID));
     }
