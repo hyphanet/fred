@@ -694,7 +694,9 @@ public class KeyTracker {
      * Dump all sent messages.
      */
     public void disconnected() {
+        isDeprecated = true;
         LimitedRangeIntByteArrayMapElement[] elements;
+        // Clear everything, call the callbacks
         synchronized(sentPacketsContents) {
             // Anything to resend?
             elements = sentPacketsContents.grabAll();
@@ -706,6 +708,14 @@ public class KeyTracker {
                 for(int j=0;j<callbacks.length;j++)
                     callbacks[j].disconnected();
             }
+        }
+        synchronized(ackQueue) {
+            ackQueue.clear();
+        }
+        resendRequestQueue.clear();
+        ackRequestQueue.clear();
+        synchronized(packetsToResend) {
+            packetsToResend.clear();
         }
     }
 

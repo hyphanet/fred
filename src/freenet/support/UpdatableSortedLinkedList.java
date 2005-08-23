@@ -163,4 +163,8 @@ public class UpdatableSortedLinkedList {
     public synchronized UpdatableSortedLinkedListItem getLowest() {
         return (UpdatableSortedLinkedListItem) list.head();
     }
+    
+    public synchronized void clear() {
+        list.clear();
+    }
 }

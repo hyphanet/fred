@@ -315,7 +315,7 @@ public class PeerNode implements PeerContext {
      * Disconnected e.g. due to not receiving a packet for ages.
      */
     public void disconnected() {
-        Logger.minor(this, "Disconnected "+this);
+        Logger.normal(this, "Disconnected "+this);
         synchronized(this) {
             isConnected = false;
             if(currentTracker != null)
@@ -804,8 +804,8 @@ public class PeerNode implements PeerContext {
     }
 
     public String getStatus() {
-        return getPeer().toString()+" "+
-        	(isConnected ? "CONNECTED" : "DISCONNECTED") + " "+myName+" "+currentLocation.getValue();
+        return 
+        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion();
     }
 	
     public String getVersion(){

@@ -314,11 +314,15 @@ public class PeerManager {
     public String getStatus() {
         StringBuffer sb = new StringBuffer();
         PeerNode[] peers = myPeers;
+        String[] status = new String[peers.length];
         for(int i=0;i<myPeers.length;i++) {
             PeerNode pn = myPeers[i];
-            sb.append(pn.getStatus());
-            sb.append(" -"+pn.getVersion());
-            sb.append("\n");
+            status[i] = pn.getStatus();
+        }
+        Arrays.sort(status);
+        for(int i=0;i<status.length;i++) {
+            sb.append(status[i]);
+            sb.append('\n');
         }
         return sb.toString();
     }
