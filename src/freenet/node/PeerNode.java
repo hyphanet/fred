@@ -295,7 +295,7 @@ public class PeerNode implements PeerContext {
     public void sendAsync(Message msg, AsyncMessageCallback cb) throws NotConnectedException {
         Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected) throw new NotConnectedException();
-        MessageItem item = new MessageItem(msg, cb);
+        MessageItem item = new MessageItem(msg, new AsyncMessageCallback[] {cb});
         synchronized(messagesToSendNow) {
             messagesToSendNow.addLast(item);
         }
@@ -343,12 +343,14 @@ public class PeerNode implements PeerContext {
         }
     }
     
-    public void requeueMessageItems(MessageItem[] messages, int offset, int length) {
+    public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog) {
         // Will usually indicate serious problems
-        Logger.error(this, "Requeueing "+messages.length+" messages on "+this);
+        if(!dontLog)
+            Logger.error(this, "Requeueing "+messages.length+" messages on "+this);
         synchronized(messagesToSendNow) {
             for(int i=offset;i<offset+length;i++)
-                messagesToSendNow.add(messages[i]);
+                if(messages[i] != null)
+                    messagesToSendNow.add(messages[i]);
         }
     }
 
@@ -500,10 +502,10 @@ public class PeerNode implements PeerContext {
 
     /**
      * IP on the other side appears to have changed...
-     * @param peer The new address of the peer.
+     * @param newPeer The new address of the peer.
      */
-    public void changedIP(Peer peer) {
-        this.peer = peer;
+    public void changedIP(Peer newPeer) {
+        this.peer = newPeer;
     }
 
     /**
@@ -836,5 +838,40 @@ public class PeerNode implements PeerContext {
      */
     public long timeLastConnected() {
         return connectedTime;
+    }
+
+    /**
+     * Requeue ResendPacketItem[]s if they are not sent.
+     * @param resendItems
+     */
+    public synchronized void requeueResendItems(ResendPacketItem[] resendItems) {
+        for(int i=0;i<resendItems.length;i++) {
+            ResendPacketItem item = resendItems[i];
+            if(item.pn != this)
+                throw new IllegalArgumentException("item.pn != this!");
+            KeyTracker kt = currentTracker;
+            if(kt != null && item.kt == kt) {
+                kt.resendPacket(item.packetNumber);
+                continue;
+            }
+            kt = previousTracker;
+            if(kt != null && item.kt == kt) {
+                kt.resendPacket(item.packetNumber);
+                continue;
+            }
+            kt = unverifiedTracker;
+            if(kt != null && item.kt == kt) {
+                kt.resendPacket(item.packetNumber);
+                continue;
+            }
+            // Doesn't match any of these, need to resend the data
+            kt = currentTracker == null ? unverifiedTracker : currentTracker;
+            if(kt == null) {
+                Logger.error(this, "No tracker to resend packet "+item.packetNumber+" on");
+                continue;
+            }
+            MessageItem mi = new MessageItem(item.buf, item.callbacks);
+            requeueMessageItems(new MessageItem[] {mi}, 0, 1, true);
+        }
     }
 }

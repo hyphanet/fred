@@ -2,6 +2,8 @@ package freenet.node;
 
 import java.util.LinkedList;
 
+import freenet.io.comm.NotConnectedException;
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
@@ -32,16 +34,6 @@ public class PacketSender implements Runnable {
     public void run() {
         while(true) {
             try {
-                ResendPacketItem item = null;
-                do {
-                    synchronized(this) {
-                        if(!resendPackets.isEmpty())
-                            item = (ResendPacketItem) resendPackets.removeFirst();
-                        else break;
-                    }
-                    if(item.pn.isConnected())
-                        node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks);
-                } while(item != null);
                 long now = System.currentTimeMillis();
                 PeerManager pm = node.peers;
                 PeerNode[] nodes = pm.myPeers;
@@ -63,6 +55,33 @@ public class PacketSender implements Runnable {
                             node.packetMangler.processOutgoingOrRequeue(messages, pn, true);
                             continue;
                         }
+                        
+                        // Any packets to resend?
+                        for(int j=0;j<2;i++) {
+                            KeyTracker kt;
+                            if(j == 0) kt = pn.getCurrentKeyTracker();
+                            else if(j == 1) kt = pn.getPreviousKeyTracker();
+                            else break; // impossible
+                            if(kt == null) continue;
+                            ResendPacketItem[] resendItems = kt.grabResendPackets();
+                            if(resendItems == null) continue;
+                            for(int k=0;k<resendItems.length;k++) {
+                                ResendPacketItem item = resendItems[k];
+                                try {
+                                    node.packetMangler.processOutgoing(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks);
+                                } catch (KeyChangedException e) {
+                                    Logger.error(this, "Caught "+e+" resending packets to "+kt);
+                                    pn.requeueResendItems(resendItems);
+                                    break;
+                                } catch (NotConnectedException e) {
+                                    Logger.normal(this, "Caught "+e+" resending packets to "+kt);
+                                    pn.requeueResendItems(resendItems);
+                                    break;
+                                }
+                            }
+                            
+                        }
+                        
                         // Any urgent notifications to send?
                         long urgentTime = pn.getNextUrgentTime();
                         if(urgentTime <= now) {
@@ -111,27 +130,10 @@ public class PacketSender implements Runnable {
         }
     }
 
-    void queueResendPacket(byte[] payload, int packetNumber, KeyTracker k, AsyncMessageCallback[] callbacks) {
-        Logger.minor(this, "Queueing resend packet: "+packetNumber+" for "+k+" with "+(callbacks == null ? 0 : callbacks.length)+" callbacks");
-        ResendPacketItem item = new ResendPacketItem(payload, packetNumber, k, callbacks);
+    void queuedResendPacket() {
+        // Wake up if needed
         synchronized(this) {
-            resendPackets.add(item);
             notifyAll();
         }
-    }
-    
-    class ResendPacketItem {
-        public ResendPacketItem(byte[] payload, int packetNumber, KeyTracker k, AsyncMessageCallback[] callbacks) {
-            pn = k.pn;
-            kt = k;
-            buf = payload;
-            this.packetNumber = packetNumber;
-            this.callbacks = callbacks;
-        }
-        final PeerNode pn;
-        final KeyTracker kt;
-        final byte[] buf;
-        final int packetNumber;
-        final AsyncMessageCallback[] callbacks;        
     }
 }

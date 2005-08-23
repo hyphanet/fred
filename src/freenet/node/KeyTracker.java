@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import freenet.crypt.BlockCipher;
 import freenet.io.comm.NotConnectedException;
@@ -66,7 +67,7 @@ public class KeyTracker {
     private final UpdatableSortedLinkedListWithForeignIndex ackRequestQueue;
     
     /** Numbered packets that we need to send to the other side
-     * because they asked for them. */
+     * because they asked for them. Just contains the numbers. */
     private final HashSet packetsToResend;
     
     /** Ranges of packet numbers we have received from the other
@@ -418,8 +419,10 @@ public class KeyTracker {
     public void resendPacket(int seqNumber) {
         byte[] resendData = sentPacketsContents.get(seqNumber);
         if(resendData != null) {
-            // Don't pass the callbacks in - it already has a serial number
-            pn.node.ps.queueResendPacket(resendData, seqNumber, this, null);
+            synchronized(packetsToResend) {
+                packetsToResend.add(new Integer(seqNumber));
+            }
+            pn.node.ps.queuedResendPacket();
         } else {
             String msg = "Asking me to resend packet "+seqNumber+
         		" which we haven't sent yet or which they have already acked";
@@ -660,20 +663,24 @@ public class KeyTracker {
     }
 
     public void completelyDeprecated(KeyTracker newTracker) {
-        Logger.minor(this, "Completely deprecated: "+newTracker);
+        Logger.minor(this, "Completely deprecated: "+this+" in favour of "+newTracker);
+        isDeprecated = true;
         LimitedRangeIntByteArrayMapElement[] elements;
         synchronized(sentPacketsContents) {
             // Anything to resend?
             elements = sentPacketsContents.grabAll();
         }
+        MessageItem[] messages = new MessageItem[elements.length];
         for(int i=0;i<elements.length;i++) {
             LimitedRangeIntByteArrayMapElement element = elements[i];
             byte[] buf = element.data;
             AsyncMessageCallback[] callbacks = element.callbacks;
             // Ignore packet#
             Logger.minor(this, "Queueing resend of what was once "+element.packetNumber);
-            pn.node.ps.queueResendPacket(buf, -1, newTracker, callbacks);
+            messages[i] = new MessageItem(buf, callbacks);
         }
+        pn.requeueMessageItems(messages, 0, messages.length, true);
+        pn.node.ps.queuedResendPacket();
     }
 
     /**
@@ -694,5 +701,35 @@ public class KeyTracker {
                     callbacks[j].disconnected();
             }
         }
+    }
+
+    /**
+     * @return An array of packets that need to be resent, if any.
+     * Otherwise null.
+     */
+    public ResendPacketItem[] grabResendPackets() {
+        int[] numbers;
+        synchronized(packetsToResend) {
+            int len = packetsToResend.size();
+            numbers = new int[len];
+            int i=0;
+            for(Iterator it=packetsToResend.iterator();it.hasNext();) {
+                int packetNo = ((Integer)it.next()).intValue();
+                numbers[i++] = packetNo;
+            }
+            packetsToResend.clear();
+        }
+        ResendPacketItem[] items = new ResendPacketItem[numbers.length];
+        for(int i=0;i<numbers.length;i++) {
+            int packetNo = numbers[i];
+            byte[] buf = sentPacketsContents.get(packetNo);
+            if(buf == null) {
+                Logger.minor(this, "Contents null for "+packetNo+" in grabResendPackets on "+this);
+                continue; // acked already?
+            }
+            AsyncMessageCallback[] callbacks = sentPacketsContents.getCallbacks(packetNo);
+            items[i] = new ResendPacketItem(buf, packetNo, this, callbacks);
+        }
+        return items;
     }
 }

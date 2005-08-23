@@ -778,17 +778,19 @@ public class FNPPacketMangler implements LowLevelFilter {
         int length = 1;
         int callbacksCount = 0;
         for(int i=0;i<messageData.length;i++) {
-            Message m = messages[i].msg;
-            if(messages[i].cb != null) callbacksCount++;
-            messageData[i] = m.encodeToPacket(this, pn);
-            Logger.minor(this, "Sending: "+m+" length "+messageData[i].length+" cb "+messages[i].cb);
+            MessageItem mi = messages[i];
+            messageData[i] = mi.getData(this, pn);
+            if(messages[i].cb != null) callbacksCount += messages[i].cb.length;
+            Logger.minor(this, "Sending: "+mi+" length "+messageData[i].length+" cb "+messages[i].cb);
             length += (messageData[i].length + 2);
         }
         AsyncMessageCallback callbacks[] = new AsyncMessageCallback[callbacksCount];
         int x=0;
         for(int i=0;i<messages.length;i++) {
-            if(messages[i].cb != null)
-                callbacks[x++] = messages[i].cb;
+            if(messages[i].cb != null) {
+                System.arraycopy(messages[i].cb, 0, callbacks, x, messages[i].cb.length);
+                x += messages[i].cb.length;
+            }
         }
         
         if(length < node.usm.getMaxPacketSize() &&
@@ -798,12 +800,12 @@ public class FNPPacketMangler implements LowLevelFilter {
             } catch (NotConnectedException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
                 // Requeue
-                pn.requeueMessageItems(messages, 0, messages.length);
+                pn.requeueMessageItems(messages, 0, messages.length, false);
                 return;
             } catch (WouldBlockException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
                 // Requeue
-                pn.requeueMessageItems(messages, 0, messages.length);
+                pn.requeueMessageItems(messages, 0, messages.length, false);
                 return;
             }
         } else {
@@ -829,12 +831,12 @@ public class FNPPacketMangler implements LowLevelFilter {
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
                             // Requeue
-                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex);
+                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
                             return;
                         } catch (WouldBlockException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
                             // Requeue
-                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex);
+                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
                             return;
                         }
                     }
@@ -891,6 +893,15 @@ public class FNPPacketMangler implements LowLevelFilter {
     public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker) throws KeyChangedException, NotConnectedException {
         byte[] newBuf = preformat(buf, offset, length);
         processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1, null);
+    }
+    
+
+    /**
+     * Send a packet, with a packet number.
+     */
+    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker, int packetNo, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException {
+        byte[] newBuf = preformat(buf, offset, length);
+        processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, packetNo, callbacks);
     }
     
     /**
@@ -970,6 +981,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws KeyChangedException If the primary key changes while we are trying to send this packet.
      */
     public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException {
+        Logger.minor(this, "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+","+length+","+tracker+","+packetNumber+","+(callbacks == null ? "null" : (callbacks.length+(callbacks.length >= 1 ? callbacks[0].toString() : ""))));
         if(tracker == null || (!tracker.pn.isConnected())) {
             throw new NotConnectedException();
         }
