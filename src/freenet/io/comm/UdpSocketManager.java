@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.18 2005/08/23 22:59:13 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.19 2005/08/23 23:01:26 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -248,7 +248,7 @@ public class UdpSocketManager extends Thread {
 	public void onDisconnect(PeerContext ctx) {
 	    synchronized(_filters) {
 			ListIterator i = _filters.listIterator();
-			while (true) {
+			while (i.hasNext()) {
 			    MessageFilter f = (MessageFilter) i.next();
 			    if(f.matchesDroppedConnection() && f._source == ctx) {
 			        f.onDroppedConnection(ctx);
