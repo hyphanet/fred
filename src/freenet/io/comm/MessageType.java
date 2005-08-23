@@ -25,7 +25,7 @@ import freenet.support.Logger;
 
 public class MessageType {
 
-    public static final String VERSION = "$Id: MessageType.java,v 1.4 2005/07/25 17:15:22 amphibian Exp $";
+    public static final String VERSION = "$Id: MessageType.java,v 1.5 2005/08/23 15:46:57 amphibian Exp $";
 
 	private static HashMap _specs = new HashMap();
 
@@ -97,7 +97,7 @@ public class MessageType {
 
 	public static MessageType getSpec(Integer specID) {
 		if (!_specs.containsKey(specID)) {
-			Logger.normal(MessageType.class, "Unrecognised message type received (" + specID + ")");
+			Logger.error(MessageType.class, "Unrecognised message type received (" + specID + ")");
 			return null;
 		}
 		return (MessageType) _specs.get(specID);
