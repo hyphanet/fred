@@ -779,6 +779,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         byte[][] messageData = new byte[messages.length][];
         int length = 1;
         int callbacksCount = 0;
+        int x = 0;
         for(int i=0;i<messageData.length;i++) {
             MessageItem mi = messages[i];
             if(mi.formatted) {
@@ -807,16 +808,27 @@ public class FNPPacketMangler implements LowLevelFilter {
                     // Requeue
                     pn.requeueMessageItems(messages, i, messages.length-i, false);
                     return;
+                } catch (Throwable e) {
+                    Logger.error(this, "Caught "+e+" while sending messages, requeueing");
+                    // Requeue
+                    pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    return;
+                    
                 }
             } else {
-                messageData[i] = mi.getData(this, pn);
+                messageData[x++] = mi.getData(this, pn);
                 if(mi.cb != null) callbacksCount += mi.cb.length;
                 Logger.minor(this, "Sending: "+mi+" length "+messageData[i].length+" cb "+mi.cb);
                 length += (messageData[i].length + 2);
             }
         }
+        if(x != messageData.length) {
+            byte[][] newMessageData = new byte[x][];
+            System.arraycopy(messageData, 0, newMessageData, 0, x);
+            messageData = newMessageData;
+        }
         AsyncMessageCallback callbacks[] = new AsyncMessageCallback[callbacksCount];
-        int x=0;
+        x=0;
         for(int i=0;i<messages.length;i++) {
             if(messages[i].formatted) continue;
             if(messages[i].cb != null) {
@@ -840,6 +852,12 @@ public class FNPPacketMangler implements LowLevelFilter {
                 // Requeue
                 pn.requeueMessageItems(messages, 0, messages.length, false);
                 return;
+            } catch (Throwable e) {
+                Logger.error(this, "Caught "+e+" while sending messages, requeueing");
+                // Requeue
+                pn.requeueMessageItems(messages, 0, messages.length, false);
+                return;
+                
             }
         } else {
             length = 1;
@@ -868,6 +886,11 @@ public class FNPPacketMangler implements LowLevelFilter {
                             return;
                         } catch (WouldBlockException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
+                            // Requeue
+                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
+                            return;
+                        } catch (Throwable e) {
+                            Logger.error(this, "Caught "+e+" while sending messages, requeueing remaining messages");
                             // Requeue
                             pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
                             return;
