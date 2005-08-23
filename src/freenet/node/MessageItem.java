@@ -8,19 +8,25 @@ public class MessageItem {
     final Message msg;
     byte[] buf;
     final AsyncMessageCallback[] cb;
+    /** If true, the buffer may contain several messages, and is formatted
+     * for sending as a single packet.
+     */
+    final boolean formatted;
     
     public MessageItem(Message msg2, AsyncMessageCallback[] cb2) {
         this.msg = msg2;
         this.cb = cb2;
         buf = null;
+        formatted = false;
     }
 
-    public MessageItem(byte[] data, AsyncMessageCallback[] cb2) {
+    public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted) {
         this.cb = cb2;
         this.msg = null;
         this.buf = data;
+        this.formatted = formatted;
     }
-    
+
     /**
      * Return the data contents of this MessageItem.
      */

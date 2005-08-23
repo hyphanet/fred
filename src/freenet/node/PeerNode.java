@@ -870,7 +870,7 @@ public class PeerNode implements PeerContext {
                 Logger.error(this, "No tracker to resend packet "+item.packetNumber+" on");
                 continue;
             }
-            MessageItem mi = new MessageItem(item.buf, item.callbacks);
+            MessageItem mi = new MessageItem(item.buf, item.callbacks, true);
             requeueMessageItems(new MessageItem[] {mi}, 0, 1, true);
         }
     }

@@ -779,14 +779,44 @@ public class FNPPacketMangler implements LowLevelFilter {
         int callbacksCount = 0;
         for(int i=0;i<messageData.length;i++) {
             MessageItem mi = messages[i];
-            messageData[i] = mi.getData(this, pn);
-            if(mi.cb != null) callbacksCount += mi.cb.length;
-            Logger.minor(this, "Sending: "+mi+" length "+messageData[i].length+" cb "+mi.cb);
-            length += (messageData[i].length + 2);
+            if(mi.formatted) {
+                try {
+                    byte[] buf = mi.getData(this, pn);
+                    KeyTracker kt = pn.getCurrentKeyTracker();
+                    if(kt == null) {
+                        Logger.minor(this, "kt = null");
+                        pn.requeueMessageItems(messages, i, messages.length-i, false);
+                        return;
+                    }
+                    int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
+                    this.processOutgoingPreformatted(buf, 0, buf.length, pn.getCurrentKeyTracker(), packetNumber, mi.cb);
+                } catch (NotConnectedException e) {
+                    Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                    // Requeue
+                    pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    return;
+                } catch (WouldBlockException e) {
+                    Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                    // Requeue
+                    pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    return;
+                } catch (KeyChangedException e) {
+                    Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                    // Requeue
+                    pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    return;
+                }
+            } else {
+                messageData[i] = mi.getData(this, pn);
+                if(mi.cb != null) callbacksCount += mi.cb.length;
+                Logger.minor(this, "Sending: "+mi+" length "+messageData[i].length+" cb "+mi.cb);
+                length += (messageData[i].length + 2);
+            }
         }
         AsyncMessageCallback callbacks[] = new AsyncMessageCallback[callbacksCount];
         int x=0;
         for(int i=0;i<messages.length;i++) {
+            if(messages[i].formatted) continue;
             if(messages[i].cb != null) {
                 System.arraycopy(messages[i].cb, 0, callbacks, x, messages[i].cb.length);
                 x += messages[i].cb.length;
