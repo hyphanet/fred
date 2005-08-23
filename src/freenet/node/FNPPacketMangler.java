@@ -752,7 +752,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         int messages = decrypted[ptr++] & 0xff;
         
         for(int i=0;i<messages;i++) {
-            if(ptr+1 > decrypted.length) {
+            if(ptr+1 >= decrypted.length) {
                 Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             }
             int length = ((decrypted[ptr++] & 0xff) << 8) +
@@ -761,6 +761,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Message longer than remaining space: "+length);
                 return;
             }
+            Logger.minor(this, "Message "+i+" length "+length);
             Message m = usm.decodePacket(decrypted, ptr, length, tracker.pn);
             ptr+=length;
             if(m != null) {
