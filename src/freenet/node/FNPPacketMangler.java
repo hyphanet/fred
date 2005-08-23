@@ -818,7 +818,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             } else {
                 messageData[x++] = mi.getData(this, pn);
                 if(mi.cb != null) callbacksCount += mi.cb.length;
-                Logger.minor(this, "Sending: "+mi+" length "+messageData[x].length+" cb "+mi.cb);
+                Logger.minor(this, "Sending: "+mi+" length "+messageData[x-1].length+" cb "+mi.cb);
                 length += (messageData[i].length + 2);
             }
         }
