@@ -1253,6 +1253,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     }
 
     public boolean isDisconnected(PeerContext context) {
+        if(context == null) return false;
         return !((PeerNode)context).isConnected();
     }
 }

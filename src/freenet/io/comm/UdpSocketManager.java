@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.16 2005/08/23 22:48:28 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.17 2005/08/23 22:53:38 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -261,7 +261,8 @@ public class UdpSocketManager extends Thread {
 	public Message waitFor(MessageFilter filter) throws DisconnectedException {
 		long startTime = System.currentTimeMillis();
 		Message ret = null;
-		if(lowLevelFilter != null && filter.matchesDroppedConnection() &&
+		if(lowLevelFilter != null && filter._source != null && 
+		        filter.matchesDroppedConnection() &&
 		        lowLevelFilter.isDisconnected(filter._source))
 		    throw new DisconnectedException();
 		// Check to see whether the filter matches any of the recently _unclaimed messages
