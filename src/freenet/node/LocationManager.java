@@ -384,8 +384,10 @@ class LocationManager {
                 byte[] hisHash = ((ShortBuffer)reply.getObject(DMT.HASH)).getData();
                 
                 Message confirm = DMT.createFNPSwapCommit(uid, myValue);
-                
-                filter = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT).setSource(pn);
+
+                filter1.clearOr();
+                MessageFilter filter3 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPSwapComplete).setTimeout(TIMEOUT).setSource(pn);
+                filter = filter1.or(filter3);
                 
                 node.usm.send(pn, confirm);
                 
@@ -398,6 +400,11 @@ class LocationManager {
                         // Hrrrm!
                         Logger.error(this, "Timed out waiting for SwapComplete - malicious node?? on "+uid);
                     }
+                    return;
+                }
+                
+                if(reply.getSpec() == DMT.FNPSwapRejected) {
+                    Logger.error(this, "Got SwapRejected while waiting for SwapComplete. This can happen occasionally because of badly timed disconnects, but if it happens frequently it indicates a bug or an attack");
                     return;
                 }
                 
