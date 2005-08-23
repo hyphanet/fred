@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.15 2005/08/10 14:23:04 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.16 2005/08/23 22:48:28 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -244,9 +244,26 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 	
-	public Message waitFor(MessageFilter filter) {
+	/** LowLevelFilter should call this when a node is disconnected. */
+	public void onDisconnect(PeerContext ctx) {
+	    synchronized(_filters) {
+			ListIterator i = _filters.listIterator();
+			while (true) {
+			    MessageFilter f = (MessageFilter) i.next();
+			    if(f.matchesDroppedConnection() && f._source == ctx) {
+			        f.onDroppedConnection(ctx);
+			        if(f.droppedConnection() != null) f.notifyAll();
+			    }
+			}
+	    }
+	}
+	
+	public Message waitFor(MessageFilter filter) throws DisconnectedException {
 		long startTime = System.currentTimeMillis();
 		Message ret = null;
+		if(lowLevelFilter != null && filter.matchesDroppedConnection() &&
+		        lowLevelFilter.isDisconnected(filter._source))
+		    throw new DisconnectedException();
 		// Check to see whether the filter matches any of the recently _unclaimed messages
 		synchronized (_filters) {
 			Logger.debug(this, "Checking _unclaimed");
@@ -288,12 +305,14 @@ public class UdpSocketManager extends Thread {
 					// Precaution against filter getting matched between being added to _filters and
 					// here - bug discovered by Mason
 				    boolean fmatched = false;
-				    while(!(fmatched = filter.matched())) {
+				    while(!(fmatched = filter.matched() || filter.droppedConnection() != null)) {
 				        long wait = filter.getTimeout()-System.currentTimeMillis();
 				        if(wait > 0)
 				            filter.wait(wait);
 				        else break;
 					}
+				    if(filter.droppedConnection() != null)
+				        throw new DisconnectedException();
 				    Logger.minor(this, "Matched: "+fmatched);
 				} catch (InterruptedException e) {
 				}

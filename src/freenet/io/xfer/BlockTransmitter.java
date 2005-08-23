@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
@@ -124,7 +125,14 @@ public class BlockTransmitter {
 				_sendComplete = true;
 				return false;
 			}
-			Message msg = _usm.waitFor(MessageFilter.create().setTimeout(SEND_TIMEOUT).setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).or(MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid)));
+			Message msg;
+			try {
+                msg = _usm.waitFor(MessageFilter.create().setTimeout(SEND_TIMEOUT).setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).or(MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid)));
+            } catch (DisconnectedException e) {
+                Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
+                _sendComplete = true;
+                return false;
+            }
 			if (msg == null) {
 				if (getNumSent() == _prb.getNumPackets()) {
 					_sendComplete = true;

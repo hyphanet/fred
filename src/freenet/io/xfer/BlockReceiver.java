@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
@@ -60,10 +61,16 @@ public class BlockReceiver {
 		int consecutiveMissingPacketReports = 0;
 		try {
 		while (!_prb.allReceived()) {
-			Message m1 = _usm.waitFor(MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit)
-					.setField(DMT.UID, _uid).or(MessageFilter.create().setType(DMT.allSent).setField(DMT.UID, _uid))
-					.or(MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid)));
-			if ((m1 != null) && m1.getSpec().equals(DMT.sendAborted)) {
+			Message m1;
+            try {
+                m1 = _usm.waitFor(MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit)
+                		.setField(DMT.UID, _uid).or(MessageFilter.create().setType(DMT.allSent).setField(DMT.UID, _uid))
+                		.or(MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid)));
+            } catch (DisconnectedException e1) {
+                Logger.normal(this, "Disconnected during receive: "+_uid+" from "+_sender);
+                throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
+            }
+            if ((m1 != null) && m1.getSpec().equals(DMT.sendAborted)) {
 				_prb.abort(m1.getInt(DMT.REASON), m1.getString(DMT.DESCRIPTION));
 				throw new RetrievalException(m1.getInt(DMT.REASON), m1.getString(DMT.DESCRIPTION));
 			}

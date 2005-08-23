@@ -18,6 +18,7 @@ import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
@@ -316,6 +317,7 @@ public class PeerNode implements PeerContext {
      */
     public void disconnected() {
         Logger.normal(this, "Disconnected "+this);
+        node.usm.onDisconnect(this);
         synchronized(this) {
             isConnected = false;
             if(currentTracker != null)
@@ -433,8 +435,12 @@ public class PeerNode implements PeerContext {
     public boolean ping(int pingID) throws NotConnectedException {
         Message ping = DMT.createFNPPing(pingID);
         node.usm.send(this, ping);
-        Message msg = 
-            node.usm.waitFor(MessageFilter.create().setTimeout(2000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID));
+        Message msg;
+        try {
+            msg = node.usm.waitFor(MessageFilter.create().setTimeout(2000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID));
+        } catch (DisconnectedException e) {
+            throw new NotConnectedException("Disconnected while waiting for pong");
+        }
         return msg != null;
     }
     

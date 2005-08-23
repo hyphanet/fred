@@ -1,6 +1,7 @@
 package freenet.node;
 
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
@@ -23,7 +24,7 @@ import freenet.support.ShortBuffer;
 public class InsertHandler implements Runnable {
 
 
-    static final int DATA_INSERT_TIMEOUT = 5000;
+    static final int DATA_INSERT_TIMEOUT = 10000;
     
     final Message req;
     final Node node;
@@ -63,7 +64,13 @@ public class InsertHandler implements Runnable {
         MessageFilter mf;
         mf = MessageFilter.create().setType(DMT.FNPDataInsert).setField(DMT.UID, uid).setSource(source).setTimeout(DATA_INSERT_TIMEOUT);
         
-        Message msg = node.usm.waitFor(mf);
+        Message msg;
+        try {
+            msg = node.usm.waitFor(mf);
+        } catch (DisconnectedException e) {
+            Logger.normal(this, "Disconnected while waiting for DataInsert on "+uid);
+            return;
+        }
         
         Logger.minor(this, "Received "+msg);
         

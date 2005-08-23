@@ -8,4 +8,12 @@ package freenet.io.comm;
  */
 public class NotConnectedException extends Exception {
 
+    public NotConnectedException(String string) {
+        super(string);
+    }
+
+    public NotConnectedException() {
+        super();
+    }
+
 }

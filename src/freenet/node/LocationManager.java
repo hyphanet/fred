@@ -8,6 +8,7 @@ import java.util.Vector;
 
 import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
@@ -230,7 +231,13 @@ class LocationManager {
             
             node.usm.send(pn, m);
             
-            Message commit = node.usm.waitFor(filter);
+            Message commit;
+            try {
+                commit = node.usm.waitFor(filter);
+            } catch (DisconnectedException e) {
+                Logger.minor(this, "Disconnected from "+pn+" while waiting for SwapCommit");
+                return;
+            }
             
             if(commit == null) {
                 // Timed out. Abort
@@ -363,7 +370,13 @@ class LocationManager {
                 node.usm.send(pn, m);
                 
                 Logger.minor(this, "Waiting for SwapReply/SwapRejected on "+uid);
-                Message reply = node.usm.waitFor(filter);
+                Message reply;
+                try {
+                    reply = node.usm.waitFor(filter);
+                } catch (DisconnectedException e) {
+                    Logger.minor(this, "Disconnected while waiting for SwapReply/SwapRejected for "+uid);
+                    return;
+                }
 
                 if(reply == null) {
                     if(pn.isConnected() && System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2) {
@@ -392,8 +405,13 @@ class LocationManager {
                 node.usm.send(pn, confirm);
                 
                 Logger.minor(this, "Waiting for SwapComplete: uid = "+uid);
-                
-                reply = node.usm.waitFor(filter);
+
+                try {
+                    reply = node.usm.waitFor(filter);
+                } catch (DisconnectedException e) {
+                    Logger.minor(this, "Disconnected waiting for SwapComplete on "+uid);
+                    return;
+                }
                 
                 if(reply == null) {
                     if(pn.isConnected() && System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2) {

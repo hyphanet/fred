@@ -31,20 +31,23 @@ import freenet.support.Logger;
  */
 public class MessageFilter {
 
-    public static final String VERSION = "$Id: MessageFilter.java,v 1.5 2005/07/30 16:41:12 amphibian Exp $";
+    public static final String VERSION = "$Id: MessageFilter.java,v 1.6 2005/08/23 22:48:28 amphibian Exp $";
 
     private static final int DEFAULT_TIMEOUT = 10000;
     private boolean _matched = false;
+    private PeerContext _droppedConnection;
 	private MessageType _type;
     private HashMap _fields = new HashMap();
-    private PeerContext _source;
+    PeerContext _source;
     private long _timeout;
     private int _initialTimeout;
     private MessageFilter _or = null;
     private Message _message;
+    private boolean _matchesDroppedConnections;
 
     private MessageFilter() {
         setTimeout(DEFAULT_TIMEOUT);
+        _matchesDroppedConnections = true; // on by default
     }
 
     public static MessageFilter create() {
@@ -109,6 +112,11 @@ public class MessageFilter {
 		return this;
 	}
 
+	public MessageFilter setMatchesDroppedConnection(boolean m) {
+	    _matchesDroppedConnections = m;
+	    return this;
+	}
+	
 	public boolean match(Message m) {
 		if ((_or != null) && (_or.match(m))) {
 			_matched = true;
@@ -139,6 +147,10 @@ public class MessageFilter {
 
 	public boolean matched() {
 		return _matched;
+	}
+
+	public PeerContext droppedConnection() {
+	    return _droppedConnection;
 	}
 	
 	public boolean timedOut() {
@@ -173,5 +185,15 @@ public class MessageFilter {
 
     public void clearOr() {
         _or = null;
+    }
+    
+    public boolean matchesDroppedConnection() {
+        return _matchesDroppedConnections;
+    }
+    
+    public void onDroppedConnection(PeerContext ctx) {
+        if(_matchesDroppedConnections && _source == ctx) {
+            _droppedConnection = ctx;
+        }
     }
 }

@@ -721,7 +721,7 @@ public class KeyTracker {
 
     /**
      * @return An array of packets that need to be resent, if any.
-     * Otherwise null.
+     * Some of the elements may be null. Otherwise null.
      */
     public ResendPacketItem[] grabResendPackets() {
         int[] numbers;

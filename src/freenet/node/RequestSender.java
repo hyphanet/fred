@@ -3,6 +3,7 @@ package freenet.node;
 import java.util.HashSet;
 
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.RetrievalException;
@@ -117,7 +118,13 @@ public class RequestSender implements Runnable {
             
             next.send(req);
             
-            Message msg = node.usm.waitFor(mf);
+            Message msg;
+            try {
+                msg = node.usm.waitFor(mf);
+            } catch (DisconnectedException e) {
+                Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
+                continue;
+            }
             
             if(msg == null) {
                 // Timeout
@@ -148,8 +155,13 @@ public class RequestSender implements Runnable {
             MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
             mfRejectedOverload = mfRejectedOverload.setTimeout(FETCH_TIMEOUT);
             mf = mfDNF.or(mfDF.or(mfRouteNotFound.or(mfRejectedOverload)));
-            
-            msg = node.usm.waitFor(mf);
+
+            try {
+                msg = node.usm.waitFor(mf);
+            } catch (DisconnectedException e) {
+                Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
+                continue;
+            }
             
             if(msg == null) {
                 // Timeout. Treat as FNPRejectOverload.

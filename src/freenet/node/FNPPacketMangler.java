@@ -816,10 +816,11 @@ public class FNPPacketMangler implements LowLevelFilter {
                     
                 }
             } else {
-                messageData[x++] = mi.getData(this, pn);
+                byte[] data = mi.getData(this, pn);
+                messageData[x++] = data;
                 if(mi.cb != null) callbacksCount += mi.cb.length;
-                Logger.minor(this, "Sending: "+mi+" length "+messageData[x-1].length+" cb "+mi.cb);
-                length += (messageData[i].length + 2);
+                Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+mi.cb);
+                length += (data.length + 2);
             }
         }
         if(x != messageData.length) {
@@ -1249,5 +1250,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, pn.getPeer());
         pn.sentHandshake();
+    }
+
+    public boolean isDisconnected(PeerContext context) {
+        return !((PeerNode)context).isConnected();
     }
 }

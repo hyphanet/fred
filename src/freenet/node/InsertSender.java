@@ -3,6 +3,7 @@ package freenet.node;
 import java.util.HashSet;
 
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.xfer.BlockTransmitter;
@@ -31,7 +32,7 @@ public class InsertSender implements Runnable {
     }
     
     // Constants
-    static final int ACCEPTED_TIMEOUT = 5000;
+    static final int ACCEPTED_TIMEOUT = 10000;
     static final int PUT_TIMEOUT = 120000;
 
     // Basics
@@ -98,7 +99,13 @@ public class InsertSender implements Runnable {
             next.send(req);
             
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
-            Message msg = node.usm.waitFor(mf);
+            Message msg;
+            try {
+                msg = node.usm.waitFor(mf);
+            } catch (DisconnectedException e) {
+                Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted");
+                continue;
+            }
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
             
             if(msg == null) {
@@ -158,7 +165,12 @@ public class InsertSender implements Runnable {
             Logger.minor(this, "Sent data");
             
             if(receiveFailed) return;
-            msg = node.usm.waitFor(mf);
+            try {
+                msg = node.usm.waitFor(mf);
+            } catch (DisconnectedException e) {
+                Logger.normal(this, "Disconnected from "+next+" while waiting for InsertReply on "+this);
+                continue;
+            }
             if(receiveFailed) return;
             
             if(msg == null) {

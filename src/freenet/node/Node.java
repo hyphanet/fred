@@ -28,6 +28,7 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
+import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
@@ -408,9 +409,14 @@ public class Node implements SimpleClient {
         dispatcher.handleRouted(m);
         // FIXME: might be rejected
         MessageFilter mf1 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedPong).setTimeout(5000);
-        //MessageFilter mf2 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedRejected).setTimeout(5000);
-        // Ignore Rejected - let it be retried on other peers
-        m = usm.waitFor(mf1/*.or(mf2)*/);
+        try {
+            //MessageFilter mf2 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedRejected).setTimeout(5000);
+            // Ignore Rejected - let it be retried on other peers
+            m = usm.waitFor(mf1/*.or(mf2)*/);
+        } catch (DisconnectedException e) {
+            Logger.normal(this, "Disconnected in waiting for pong");
+            return -1;
+        }
         if(m == null) return -1;
         if(m.getSpec() == DMT.FNPRoutedRejected) return -1;
         return m.getInt(DMT.COUNTER) - initialX;

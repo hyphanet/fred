@@ -38,7 +38,7 @@ public class ClientCHK {
      */
     public ClientCHK(FreenetURI uri) throws MalformedURLException {
         if(!uri.getKeyType().equals("CHK"))
-            throw new IllegalArgumentException("Not CHK");
+            throw new MalformedURLException("Not CHK");
         routingKey = uri.getRoutingKey();
         cryptoKey = uri.getCryptoKey();
         byte[] extra = uri.getExtra();

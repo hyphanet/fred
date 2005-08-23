@@ -30,4 +30,9 @@ public interface LowLevelFilter {
      * @param peer The PeerContext the messages will be sent to.
      */
     void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException;
+
+    /**
+     * Is the given connection closed?
+     */
+    boolean isDisconnected(PeerContext context);
 }

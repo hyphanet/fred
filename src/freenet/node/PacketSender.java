@@ -68,6 +68,7 @@ public class PacketSender implements Runnable {
                             if(resendItems == null) continue;
                             for(int k=0;k<resendItems.length;k++) {
                                 ResendPacketItem item = resendItems[k];
+                                if(item == null) continue;
                                 try {
                                     Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
                                     node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks);
