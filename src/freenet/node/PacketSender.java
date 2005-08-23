@@ -47,6 +47,7 @@ public class PacketSender implements Runnable {
                             continue;
                         }
 
+                        if(node.packetMangler == null) continue;
                         // Any messages to send?
                         MessageItem[] messages = null;
                         messages = pn.grabQueuedMessageItems();
@@ -55,7 +56,7 @@ public class PacketSender implements Runnable {
                             node.packetMangler.processOutgoingOrRequeue(messages, pn, true);
                             continue;
                         }
-                        
+
                         // Any packets to resend?
                         for(int j=0;j<2;j++) {
                             KeyTracker kt;
@@ -68,7 +69,8 @@ public class PacketSender implements Runnable {
                             for(int k=0;k<resendItems.length;k++) {
                                 ResendPacketItem item = resendItems[k];
                                 try {
-                                    node.packetMangler.processOutgoing(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks);
+                                    Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
+                                    node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks);
                                 } catch (KeyChangedException e) {
                                     Logger.error(this, "Caught "+e+" resending packets to "+kt);
                                     pn.requeueResendItems(resendItems);

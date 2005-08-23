@@ -775,6 +775,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * Build a packet and send it, from a whole bunch of messages.
      */
     public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber) {
+        Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn+" ("+neverWaitForPacketNumber+")");
         byte[][] messageData = new byte[messages.length][];
         int length = 1;
         int callbacksCount = 0;
