@@ -33,7 +33,7 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.7 2005/07/25 17:15:23 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.8 2005/08/23 16:27:57 amphibian Exp $";
 
 	private final MessageType _spec;
 	private final PeerContext _source;
@@ -155,6 +155,7 @@ public class Message {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
+	    Logger.minor(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
