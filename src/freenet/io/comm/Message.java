@@ -23,6 +23,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.Serializer;
 
@@ -33,7 +34,7 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.8 2005/08/23 16:27:57 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.9 2005/08/23 16:51:34 amphibian Exp $";
 
 	private final MessageType _spec;
 	private final PeerContext _source;
@@ -168,7 +169,9 @@ public class Message {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		return baos.toByteArray();
+		byte[] buf = baos.toByteArray();
+		Logger.minor(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
+		return buf;
 	}
 
 	public String toString() {

@@ -398,13 +398,17 @@ public abstract class Fields {
 	// could add stuff like IntegerComparator, LongComparator etc.
 	// if we need it
 
+	public static final int hashCode(byte[] b) {
+	    return hashCode(b, 0, b.length);
+	}
+	
 	/**
 	 * A generic hashcode suited for byte arrays that are more or less random.
 	 */
-	public static final int hashCode(byte[] b) {
+	public static final int hashCode(byte[] b, int ptr, int length) {
 		int h = 0;
-		for (int i = b.length - 1; i >= 0; --i) {
-			int x = b[i] & 0xff;
+		for (int i = length - 1; i >= 0; --i) {
+			int x = b[ptr+i] & 0xff;
 			h ^= x << ((i & 3) << 3);
 		}
 		return h;

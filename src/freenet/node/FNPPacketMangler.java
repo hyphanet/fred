@@ -761,7 +761,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Message longer than remaining space: "+length);
                 return;
             }
-            Logger.minor(this, "Message "+i+" length "+length);
+            Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
             Message m = usm.decodePacket(decrypted, ptr, length, tracker.pn);
             ptr+=length;
             if(m != null) {
