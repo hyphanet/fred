@@ -658,6 +658,12 @@ public class KeyTracker {
      * @param seqNumber The packet number.
      */
     public void sentPacket(byte[] data, int seqNumber, AsyncMessageCallback[] callbacks) {
+        if(callbacks != null) {
+            for(int i=0;i<callbacks.length;i++) {
+                if(callbacks[i] == null)
+                    throw new NullPointerException();
+            }
+        }
         sentPacketsContents.add(seqNumber, data, callbacks);
         queueAckRequest(seqNumber);
     }

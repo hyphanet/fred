@@ -295,7 +295,7 @@ public class PeerNode implements PeerContext {
     public void sendAsync(Message msg, AsyncMessageCallback cb) throws NotConnectedException {
         Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected) throw new NotConnectedException();
-        MessageItem item = new MessageItem(msg, new AsyncMessageCallback[] {cb});
+        MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb});
         synchronized(messagesToSendNow) {
             messagesToSendNow.addLast(item);
         }

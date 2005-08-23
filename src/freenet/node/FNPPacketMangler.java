@@ -780,8 +780,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         for(int i=0;i<messageData.length;i++) {
             MessageItem mi = messages[i];
             messageData[i] = mi.getData(this, pn);
-            if(messages[i].cb != null) callbacksCount += messages[i].cb.length;
-            Logger.minor(this, "Sending: "+mi+" length "+messageData[i].length+" cb "+messages[i].cb);
+            if(mi.cb != null) callbacksCount += mi.cb.length;
+            Logger.minor(this, "Sending: "+mi+" length "+messageData[i].length+" cb "+mi.cb);
             length += (messageData[i].length + 2);
         }
         AsyncMessageCallback callbacks[] = new AsyncMessageCallback[callbacksCount];
@@ -792,6 +792,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 x += messages[i].cb.length;
             }
         }
+        if(x != callbacksCount) throw new IllegalStateException();
         
         if(length < node.usm.getMaxPacketSize() &&
                 messages.length < 256) {
@@ -981,7 +982,12 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws KeyChangedException If the primary key changes while we are trying to send this packet.
      */
     public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException {
-        Logger.minor(this, "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+","+length+","+tracker+","+packetNumber+","+(callbacks == null ? "null" : (callbacks.length+(callbacks.length >= 1 ? callbacks[0].toString() : ""))));
+        if(Logger.shouldLog(Logger.MINOR, this)) {
+            String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+","+length+","+tracker+","+packetNumber+",";
+            if(callbacks == null) log += "null";
+            else log += (""+callbacks.length+(callbacks.length >= 1 ? String.valueOf(callbacks[0]) : ""));
+            Logger.minor(this, log);
+        }
         if(tracker == null || (!tracker.pn.isConnected())) {
             throw new NotConnectedException();
         }
