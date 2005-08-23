@@ -57,7 +57,7 @@ public class PacketSender implements Runnable {
                         }
                         
                         // Any packets to resend?
-                        for(int j=0;j<2;i++) {
+                        for(int j=0;j<2;j++) {
                             KeyTracker kt;
                             if(j == 0) kt = pn.getCurrentKeyTracker();
                             else if(j == 1) kt = pn.getPreviousKeyTracker();
