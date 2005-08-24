@@ -48,6 +48,7 @@ class LocationManager {
     final SwapRequestSender sender;
     SwapRequestInterval interval;
     Node node;
+    long timeLastSuccessfullySwapped;
     
     public LocationManager(RandomSource r) {
         loc = Location.randomInitialLocation(r);
@@ -115,31 +116,33 @@ class LocationManager {
                     // Don't send one if we are locked
                     if(locked) continue;
                     if(lock()) {
-                        try {
-                            boolean myFlag = false;
-                            double myLoc = loc.getValue();
-                            PeerNode[] peers = node.peers.connectedPeers;
-                            for(int i=0;i<peers.length;i++) {
-                                PeerNode pn = peers[i];
-                                if(pn.isConnected()) {
-                                    double ploc = pn.getLocation().getValue();
-                                    if(ploc == myLoc) {
-                                        myFlag = true;
-                                        // Log an ERROR
-                                        // As this is an ERROR, it results from either a bug or malicious action.
-                                        // If it happens very frequently, it indicates either an attack or a serious bug.
-                                        Logger.error(this, "Randomizing location: my loc="+myLoc+" but loc="+ploc+" for "+pn);
-                                        break;
+                        if(System.currentTimeMillis() - timeLastSuccessfullySwapped > 10*1000) {
+                            try {
+                                boolean myFlag = false;
+                                double myLoc = loc.getValue();
+                                PeerNode[] peers = node.peers.connectedPeers;
+                                for(int i=0;i<peers.length;i++) {
+                                    PeerNode pn = peers[i];
+                                    if(pn.isConnected()) {
+                                        double ploc = pn.getLocation().getValue();
+                                        if(ploc == myLoc) {
+                                            myFlag = true;
+                                            // Log an ERROR
+                                            // As this is an ERROR, it results from either a bug or malicious action.
+                                            // If it happens very frequently, it indicates either an attack or a serious bug.
+                                            Logger.error(this, "Randomizing location: my loc="+myLoc+" but loc="+ploc+" for "+pn);
+                                            break;
+                                        }
                                     }
                                 }
+                                if(myFlag) {
+                                    loc.randomize(node.random);
+                                    announceLocChange();
+                                    node.writeNodeFile();
+                                }
+                            } finally {
+                                unlock();
                             }
-                            if(myFlag) {
-                                loc.randomize(node.random);
-                                announceLocChange();
-                                node.writeNodeFile();
-                            }
-                        } finally {
-                            unlock();
                         }
                     } else {
                         continue;
@@ -291,6 +294,7 @@ class LocationManager {
             node.usm.send(pn, confirm);
             
             if(shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom)) {
+                timeLastSuccessfullySwapped = System.currentTimeMillis();
                 // Swap
                 loc.setValue(hisLoc);
                 Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
@@ -464,6 +468,7 @@ class LocationManager {
                 }
                 
                 if(shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom)) {
+                    timeLastSuccessfullySwapped = System.currentTimeMillis();
                     // Swap
                     loc.setValue(hisLoc);
                     Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);

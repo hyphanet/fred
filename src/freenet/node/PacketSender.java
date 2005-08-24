@@ -121,9 +121,11 @@ public class PacketSender implements Runnable {
                 // 200ms maximum sleep time
                 sleepTime = Math.min(sleepTime, 200);
                 
-                if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {
-                    Logger.error(this, "Have not received any packets from any node in last "+Node.ALARM_TIME/1000+" seconds");
-                    lastReportedNoPackets = now;
+                if(now - node.startupTime > 60*1000*5) {
+                    if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {
+                        Logger.error(this, "Have not received any packets from any node in last "+Node.ALARM_TIME/1000+" seconds");
+                        lastReportedNoPackets = now;
+                    }
                 }
                 
                 if(sleepTime > 0) {
