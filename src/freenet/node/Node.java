@@ -294,6 +294,7 @@ public class Node implements SimpleClient {
         if(interval != null)
             lm.startSender(this, interval);
         ps.start();
+        usm.start();
     }
     
     /**

@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.19 2005/08/23 23:01:26 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.20 2005/08/24 10:20:52 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -61,7 +61,6 @@ public class UdpSocketManager extends Thread {
 		}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = new Random();
-		start();
 	}
 
 	public void run() { // Listen for packets
