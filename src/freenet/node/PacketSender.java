@@ -19,6 +19,7 @@ public class PacketSender implements Runnable {
     final Thread myThread;
     final Node node;
     long lastClearedOldSwapChains;
+    long lastReportedNoPackets;
     
     PacketSender(Node node) {
         resendPackets = new LinkedList();
@@ -33,6 +34,7 @@ public class PacketSender implements Runnable {
     
     public void run() {
         while(true) {
+            long lastReceivedPacketFromAnyNode = lastReportedNoPackets;
             try {
                 long now = System.currentTimeMillis();
                 PeerManager pm = node.peers;
@@ -40,6 +42,8 @@ public class PacketSender implements Runnable {
                 long nextActionTime = Long.MAX_VALUE;
                 for(int i=0;i<nodes.length;i++) {
                     PeerNode pn = nodes[i];
+                    lastReceivedPacketFromAnyNode =
+                        Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
                     if(pn.isConnected()) {
                         // Is the node dead?
                         if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
@@ -116,6 +120,11 @@ public class PacketSender implements Runnable {
                 long sleepTime = nextActionTime - now;
                 // 200ms maximum sleep time
                 sleepTime = Math.min(sleepTime, 200);
+                
+                if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {
+                    Logger.error(this, "Have not received any packets from any node in last "+Node.ALARM_TIME/1000+" seconds");
+                    lastReportedNoPackets = now;
+                }
                 
                 if(sleepTime > 0) {
                     try {

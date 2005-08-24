@@ -326,6 +326,10 @@ public class PeerNode implements PeerContext {
                 previousTracker.disconnected();
             if(unverifiedTracker != null)
                 unverifiedTracker.disconnected();
+            // Must null out to make other side prove it can
+            // *receive* from us as well as send *to* us before
+            // sending any more packets.
+            currentTracker = previousTracker = unverifiedTracker = null;
         }
         node.lm.lostOrRestartedNode(this);
     }
@@ -555,6 +559,9 @@ public class PeerNode implements PeerContext {
      * Update timeLastReceivedPacket
      */
     synchronized void receivedPacket() {
+        if(isConnected == false && unverifiedTracker == null) {
+            Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
+        }
         timeLastReceivedPacket = System.currentTimeMillis();
         randomizeMaxTimeBetweenPacketReceives();
     }
@@ -586,8 +593,9 @@ public class PeerNode implements PeerContext {
      * @param length Number of bytes to read
      * @param encKey
      * @param replyTo
+     * @return True unless we rejected the handshake, or it failed to parse.
      */
-    public synchronized void completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
+    public synchronized boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
         bogusNoderef = false;
         try {
             // First, the new noderef
@@ -602,7 +610,7 @@ public class PeerNode implements PeerContext {
             // Update the next time to check
             sentHandshake();
             isConnected = false;
-            return;
+            return false;
         }
         KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
         changedIP(replyTo);
@@ -640,10 +648,22 @@ public class PeerNode implements PeerContext {
         Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID);
         receivedPacket();
         node.peers.addConnectedPeer(this);
-        if(!unverified)
-            sendInitialMessages();
+        sentInitialMessages = false;
+        return true;
     }
 
+    boolean sentInitialMessages = false;
+    
+    void maybeSendInitialMessages() {
+        synchronized(this) {
+            if(sentInitialMessages) return;
+            if(currentTracker != null)
+                sentInitialMessages = true;
+            else return;
+        }
+        sendInitialMessages();
+    }
+    
     /**
      * Send any high level messages that need to be sent on connect.
      */
@@ -675,7 +695,7 @@ public class PeerNode implements PeerContext {
             unverifiedTracker = null;
             isConnected = true;
             ctx = null;
-            sendInitialMessages();
+            maybeSendInitialMessages();
         }
     }
     

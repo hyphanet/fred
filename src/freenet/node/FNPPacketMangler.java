@@ -424,9 +424,11 @@ public class FNPPacketMangler implements LowLevelFilter {
             // But this should be extremely rare.
             // REDFLAG?
             // We need to send the completion before the PN sends any packets, that's all...
-            if(sendCompletion)
-                sendDHCompletion(3, ctx.getCipher(), pn, replyTo);
-            pn.completedHandshake(bootID, data, 8, data.length-8, cipher, encKey, replyTo, i == 2);
+            if(pn.completedHandshake(bootID, data, 8, data.length-8, cipher, encKey, replyTo, i == 2)) {
+                if(sendCompletion)
+                    sendDHCompletion(3, ctx.getCipher(), pn, replyTo);
+                pn.maybeSendInitialMessages();
+            }
             return ctx;
         } else {
             Logger.error(this, "Failed to complete handshake (2) on "+pn+" for "+replyTo);

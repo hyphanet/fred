@@ -22,6 +22,8 @@ public class DiffieHellmanContext {
     NativeBigInteger peerExponential;
     byte[] key;
     BlockCipher cipher;
+    
+    boolean logMINOR;
 
 	public String toString() {
 	    StringBuffer sb = new StringBuffer();
@@ -42,6 +44,7 @@ public class DiffieHellmanContext {
         this.myExponential = myExponential;
         this.group = group;
         lastUsedTime = System.currentTimeMillis();
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
     public NativeBigInteger getOurExponential() {
@@ -67,7 +70,8 @@ public class DiffieHellmanContext {
         if(key != null) return key;
         
         // Calculate key
-        Logger.normal(this, "My exponent: "+myExponent.toHexString()+", my exponential: "+myExponential.toHexString()+", peer's exponential: "+peerExponential.toHexString());
+        if(logMINOR)
+            Logger.minor(this, "My exponent: "+myExponent.toHexString()+", my exponential: "+myExponential.toHexString()+", peer's exponential: "+peerExponential.toHexString());
         NativeBigInteger sharedSecret =
             (NativeBigInteger) peerExponential.modPow(myExponent, group.getP());
         MessageDigest md;
@@ -77,7 +81,8 @@ public class DiffieHellmanContext {
             throw new Error(e);
         }
         key = md.digest(sharedSecret.toByteArray());
-        Logger.normal(this, "Key="+HexUtil.bytesToHex(key));
+        if(logMINOR)
+            Logger.minor(this, "Key="+HexUtil.bytesToHex(key));
         return key;
     }
     

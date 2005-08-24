@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.20 2005/08/24 10:20:52 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.21 2005/08/24 15:03:01 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -65,6 +65,7 @@ public class UdpSocketManager extends Thread {
 
 	public void run() { // Listen for packets
 		while (_active) {
+		    try {
 			DatagramPacket packet = getPacket();
 			// Check for timedout _filters
 			removeTimedOutFilters();
@@ -88,6 +89,9 @@ public class UdpSocketManager extends Thread {
 			            checkFilters(m);
 			    }
 			}
+		    } catch (Throwable t) {
+		        Logger.error(this, "Caught "+t, t);
+		    }
 		}
 		synchronized (this) {
 			_isDone = true;
