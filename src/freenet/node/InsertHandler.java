@@ -50,6 +50,10 @@ public class InsertHandler implements Runnable {
         htl = req.getShort(DMT.HTL);
     }
     
+    public String toString() {
+        return super.toString()+" for "+uid;
+    }
+    
     public void run() {
         try {
         runThread = Thread.currentThread();

@@ -26,7 +26,7 @@ import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
 
-	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.21 2005/08/24 15:03:01 amphibian Exp $";
+	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.22 2005/08/25 17:28:19 amphibian Exp $";
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -383,7 +383,7 @@ public class UdpSocketManager extends Thread {
 		try {
 			_sock.send(packet);
 		} catch (IOException e) {
-			Logger.error(this, "Error while sending packet to " + destination, e);
+			Logger.error(this, "Error while sending packet to " + destination+": "+e, e);
 		}
     }
 

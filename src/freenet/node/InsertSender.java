@@ -13,7 +13,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 
-public class InsertSender implements Runnable {
+public final class InsertSender implements Runnable {
 
     InsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore) {
@@ -52,6 +52,10 @@ public class InsertSender implements Runnable {
     static final int SUCCESS = 0;
     static final int ROUTE_NOT_FOUND = 1;
     static final int REJECTED_OVERLOAD = 2;
+    
+    public String toString() {
+        return super.toString()+" for "+uid;
+    }
     
     public void run() {
         short origHTL = htl;
@@ -122,6 +126,7 @@ public class InsertSender implements Runnable {
             
             if(msg.getSpec() == DMT.FNPRejectedOverload) {
                 // Overload... hmmmm - propagate error back to source
+                Logger.error(this, "Propagating "+msg+" back to source on "+this);
                 finish(REJECTED_OVERLOAD);
                 return;
             }

@@ -137,7 +137,7 @@ if (GLOBAL_DEBUG) System.err.println(">>> " + NAME + ": Default properties now s
         String s = getProperty("Trace." + label);
         if (s == null)
             return false;
-        return new Boolean(s).booleanValue();
+        return Boolean.valueOf(s).booleanValue();
     }
 
     /**

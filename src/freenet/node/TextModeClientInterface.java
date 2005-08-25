@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,7 +35,7 @@ public class TextModeClientInterface implements Runnable {
     TextModeClientInterface(Node n) {
         this.n = n;
         this.r = n.random;
-        new Thread(this).run();
+        new Thread(this).start();
     }
     
     /**
@@ -56,7 +57,13 @@ public class TextModeClientInterface implements Runnable {
         // Read command, and data
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         while(true) {
-            processLine(reader);
+            try {
+                processLine(reader);
+            } catch (Throwable t) {
+                Logger.error(this, "Caught "+t, t);
+                System.out.println("Caught: "+t);
+                t.printStackTrace();
+            }
         }
     }
 
@@ -86,7 +93,7 @@ public class TextModeClientInterface implements Runnable {
                 uri = new FreenetURI(key);
                 chk = new ClientCHK(uri);
             } catch (MalformedURLException e2) {
-                System.err.println("Malformed URI: "+key+" : "+e2);
+                System.out.println("Malformed URI: "+key+" : "+e2);
                 return;
             }
             CHKBlock block;
@@ -186,6 +193,7 @@ public class TextModeClientInterface implements Runnable {
                 while(true) {
                     try {
                         line = reader.readLine();
+                        if(line == null) throw new EOFException();
                     } catch (IOException e1) {
                         System.err.println("Bye... ("+e1+")");
                         return;

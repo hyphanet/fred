@@ -146,13 +146,13 @@ public class CPUID {
 			return getCPUVendorID();
 		}
 		public boolean hasMMX(){
-			return (getCPUFlags() & 0x800000) == 1; //Bit 23
+			return (getCPUFlags() & 0x800000) != 0; //Bit 23
 		}
 		public boolean hasSSE(){
-			return (getCPUFlags() & 0x2000000) == 1; //Bit 25
+			return (getCPUFlags() & 0x2000000) != 0; //Bit 25
 		}
 		public boolean hasSSE2(){
-			return (getCPUFlags() & 0x4000000) == 1; //Bit 26
+			return (getCPUFlags() & 0x4000000) != 0; //Bit 26
 		}
 	}
 	protected static class AMDInfoImpl extends CPUIDCPUInfo implements AMDCPUInfo

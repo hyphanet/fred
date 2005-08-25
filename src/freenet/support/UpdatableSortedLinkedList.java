@@ -91,7 +91,7 @@ public class UpdatableSortedLinkedList {
                 if(next == null) {
                     throw new NullPointerException("impossible - we checked");
                 }
-                if(i.compareTo(next) < 0 && (prev == null || i.compareTo(prev) > 0)) {
+                if(i.compareTo(next) < 0 && i.compareTo(prev) > 0) {
                     list.remove(i);
                     list.insertNext(prev, i);
                     return;

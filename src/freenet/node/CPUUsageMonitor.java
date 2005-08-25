@@ -1,6 +1,7 @@
 package freenet.node;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -30,16 +31,23 @@ public class CPUUsageMonitor {
         
         boolean read(File f) {
             String firstline;
+            FileInputStream fis = null;
             try {
-                FileInputStream fis = new FileInputStream(f);
+                fis = new FileInputStream(f);
                 InputStreamReader ris = new InputStreamReader(fis);
                 BufferedReader br = new BufferedReader(ris);
                 firstline = br.readLine();
+                if(firstline == null) throw new EOFException();
                 ris.close();
             } catch (IOException e) {
                 if(!reportedFailedProcOpen)
                     Logger.error(this, "Failed to open /proc/stat: "+e, e);
                 reportedFailedProcOpen = true;
+                if(fis != null) try {
+                    fis.close();
+                } catch (IOException e1) {
+                    Logger.error(this, "Failed to close /proc/stat: "+e, e);
+                }
                 return false;
             }
             Logger.debug(this, "Read first line: " + firstline);

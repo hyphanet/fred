@@ -34,7 +34,7 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.9 2005/08/23 16:51:34 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.10 2005/08/25 17:28:19 amphibian Exp $";
 
 	private final MessageType _spec;
 	private final PeerContext _source;
@@ -119,7 +119,7 @@ public class Message {
 	}
 
 	public void set(String key, boolean b) {
-		set(key, new Boolean(b));
+		set(key, Boolean.valueOf(b));
 	}
 
 	public void set(String key, byte b) {

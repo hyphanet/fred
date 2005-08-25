@@ -115,6 +115,8 @@ public class NativeBigInteger extends BigInteger {
 
     private final static String sCPUType; //The CPU Type to optimize for (one of the above strings)
     
+    private static final long serialVersionUID = 0xc5392a97bb283dd2L;
+    
     static {
     	sCPUType = resolveCPUType();
    		loadNative();

@@ -65,7 +65,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 
     static final int MAGIC = 0x5ff4ac92;
     
-    public Object clone() {
+    public final Object clone() {
         return new TimeDecayingRunningAverage(this);
     }
     
@@ -197,7 +197,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         throw new UnsupportedOperationException();
     }
 
-    public void writeDataTo(DataOutputStream out) throws IOException {
+    public synchronized void writeDataTo(DataOutputStream out) throws IOException {
         out.writeInt(MAGIC);
         out.writeInt(1);
         out.writeDouble(weightedTotal);

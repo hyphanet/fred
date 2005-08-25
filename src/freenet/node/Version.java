@@ -17,13 +17,13 @@ public abstract class Version {
 	public static final String nodeVersion = "0.7";
 
 	/** The protocol version supported */
-	public static String protocolVersion = "1.0";
+	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	public static final int buildNumber = 122;
+	public static final int buildNumber = 126;
 
 	/** Oldest build of Fred we will talk to */
-	public static final int lastGoodBuild = 122;
+	public static final int lastGoodBuild = 126;
 
 	/** The highest reported build of fred */
 	public static int highestSeenBuild = buildNumber;
@@ -32,7 +32,7 @@ public abstract class Version {
 	public static final String stableNodeVersion = "0.7";
 
 	/** The stable protocol version supported */
-	public static String stableProtocolVersion = "STABLE-1.0";
+	public static final String stableProtocolVersion = "STABLE-0.7";
 
 	/** Oldest stable build of Fred we will talk to */
 	public static final int lastGoodStableBuild = 1;
@@ -43,7 +43,7 @@ public abstract class Version {
 	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG,Version.class);
 	static {
 		StringTokenizer cvsId =
-			new StringTokenizer("$Id: Version.java,v 1.120 2005/08/24 18:13:38 amphibian Exp $");
+			new StringTokenizer("$Id: Version.java,v 1.121 2005/08/25 17:28:19 amphibian Exp $");
 		cvsId.nextToken();
 		cvsId.nextToken();
 		cvsRevision = cvsId.nextToken();

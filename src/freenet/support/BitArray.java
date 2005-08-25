@@ -25,15 +25,15 @@ import freenet.io.WritableToDataOutputStream;
 
 public class BitArray implements WritableToDataOutputStream {
 
-    public static final String VERSION = "$Id: BitArray.java,v 1.1 2005/01/29 19:12:10 amphibian Exp $";
+    public static final String VERSION = "$Id: BitArray.java,v 1.2 2005/08/25 17:28:19 amphibian Exp $";
 
 	private final int _size;
 	private final byte[] _bits;
 
 	public BitArray(DataInputStream dis) throws IOException {
 		_size = dis.readInt();
-		_bits = new byte[(int) (_size / 8) + (_size % 8 == 0 ? 0 : 1)];
-		dis.read(_bits);
+		_bits = new byte[(_size / 8) + (_size % 8 == 0 ? 0 : 1)];
+		dis.readFully(_bits);
 	}
 
 	public BitArray(int size) {
@@ -96,5 +96,9 @@ public class BitArray implements WritableToDataOutputStream {
 			}
 		}
 		return true;
+	}
+	
+	public int hashCode() {
+	    return Fields.hashCode(_bits);
 	}
 }

@@ -29,7 +29,7 @@ import freenet.io.WritableToDataOutputStream;
  */
 public class ShortBuffer implements WritableToDataOutputStream {
 
-    public static final String VERSION = "$Id: ShortBuffer.java,v 1.1 2005/07/22 12:15:45 amphibian Exp $";
+    public static final String VERSION = "$Id: ShortBuffer.java,v 1.2 2005/08/25 17:28:19 amphibian Exp $";
 
 	private final byte[] _data;
 	private final int _start;
@@ -45,7 +45,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 		_data = new byte[dis.readShort()];
 		_length = (short)_data.length;
 		_start = 0;
-		dis.read(_data);
+		dis.readFully(_data);
 	}
 
 	/**
@@ -70,7 +70,9 @@ public class ShortBuffer implements WritableToDataOutputStream {
 	}
 
 	/**
-	 * Retrieve a byte array containing the data in this buffer
+	 * Retrieve a byte array containing the data in this buffer.
+	 * May be copied, so don't rely on it being the internal
+	 * buffer.
 	 *
 	 * @return The byte array
 	 */
@@ -143,6 +145,10 @@ public class ShortBuffer implements WritableToDataOutputStream {
 		return true;
 	}
 
+	public int hashCode() {
+	    return Fields.hashCode(_data) ^ _start ^ (_length << 16);
+	}
+	
 	public int getLength() {
 		return _length;
 	}

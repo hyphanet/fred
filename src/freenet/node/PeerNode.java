@@ -47,7 +47,7 @@ public class PeerNode implements PeerContext {
     /** For debugging/testing, set this to true to stop the
      * probabilistic decrement at the edges of the HTLs.
      */
-    public static boolean disableProbabilisticHTLs = false;
+    static boolean disableProbabilisticHTLs = false;
 
     /** My low-level address for SocketManager purposes */
     private Peer peer;
@@ -365,7 +365,7 @@ public class PeerNode implements PeerContext {
      * it means it will only contains ack requests etc., or
      * Long.MAX_VALUE if we have no pending ack request/acks/etc.
      */
-    public long getNextUrgentTime() {
+    public synchronized long getNextUrgentTime() {
         long t = Long.MAX_VALUE;
         KeyTracker kt = currentTracker;
         if(kt != null)
@@ -412,7 +412,7 @@ public class PeerNode implements PeerContext {
      * Call this method when a handshake request has been
      * sent.
      */
-    public void sentHandshake() {
+    public synchronized void sentHandshake() {
         long now = System.currentTimeMillis();
         if(invalidVersion() && !firstHandshake) {
             sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
@@ -635,7 +635,8 @@ public class PeerNode implements PeerContext {
         
         if(unverified) {
             unverifiedTracker = newTracker;
-            ctx.getCipher(); // update timestamp
+            ctx = null;
+            sentHandshake();
         } else {
             previousTracker = currentTracker;
             currentTracker = newTracker;
@@ -699,7 +700,7 @@ public class PeerNode implements PeerContext {
         }
     }
     
-    private boolean invalidVersion() {
+    private synchronized boolean invalidVersion() {
         return bogusNoderef || (!Version.checkGoodVersion(version));
     }
 
@@ -801,7 +802,12 @@ public class PeerNode implements PeerContext {
     public void sendAnyUrgentNotifications() {
         Logger.minor(this, "sendAnyUrgentNotifications");
         long now = System.currentTimeMillis();
-        KeyTracker tracker = currentTracker;
+        KeyTracker cur, prev;
+        synchronized(this) {
+            cur = currentTracker;
+            prev = previousTracker;
+        }
+        KeyTracker tracker = cur;
         if(tracker != null) {
             long t = tracker.getNextUrgentTime();
             if(t < now) {
@@ -814,7 +820,7 @@ public class PeerNode implements PeerContext {
                 }
             }
         }
-        tracker = previousTracker;
+        tracker = prev;
         if(tracker != null) {
             long t = tracker.getNextUrgentTime();
             if(t < now) {

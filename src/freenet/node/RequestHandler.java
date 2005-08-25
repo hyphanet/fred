@@ -19,6 +19,10 @@ public class RequestHandler implements Runnable {
     final Node node;
     final long uid;
     
+    public String toString() {
+        return super.toString()+" for "+uid;
+    }
+    
     public RequestHandler(Message m, long id, Node n) {
         req = m;
         node = n;

@@ -260,7 +260,7 @@ public class FileLoggerHook extends LoggerHook {
 		}
 
 		// Check every minute
-		final int maxSleepTime = 60 * 1000;
+		static final int maxSleepTime = 60 * 1000;
 		/**
 		 * @param b
 		 *            the bytes to write, null to flush

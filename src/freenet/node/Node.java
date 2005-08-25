@@ -473,7 +473,7 @@ public class Node implements SimpleClient {
         return sender;
     }
     
-    class KeyHTLPair {
+    static class KeyHTLPair {
         final NodeCHK key;
         final short htl;
         KeyHTLPair(NodeCHK key, short htl) {
@@ -605,7 +605,10 @@ public class Node implements SimpleClient {
         Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         InsertSender is = (InsertSender) insertSenders.get(kh);
-        if(is != null) return is;
+        if(is != null) {
+            Logger.minor(this, "Found "+is+" for "+kh);
+            return is;
+        }
         is = new InsertSender(key, uid, headers, htl, source, this, prb, fromStore);
         Logger.minor(this, is.toString()+" for "+kh.toString());
         insertSenders.put(kh, is);

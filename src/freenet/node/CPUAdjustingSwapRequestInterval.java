@@ -8,14 +8,14 @@ import freenet.support.Logger;
  * Start at a given default value, adjust up or down according to
  * CPU usage for a given target % usage.
  */
-public class CPUAdjustingSwapRequestInterval implements SwapRequestInterval, Runnable {
+public final class CPUAdjustingSwapRequestInterval implements SwapRequestInterval, Runnable {
 
     double currentValue;
     int targetCPUUsage;
     CPUUsageMonitor m;
-    final double mulPerSecond = 1.05;
-    final double max = Double.MAX_VALUE / 1.05;
-    final double min = Double.MIN_VALUE;
+    static final double mulPerSecond = 1.05;
+    static final double max = Double.MAX_VALUE / mulPerSecond;
+    static final double min = Double.MIN_VALUE;
     
     CPUAdjustingSwapRequestInterval(double initialValue, int targetCPUUsage) {
         currentValue = initialValue;
@@ -56,8 +56,8 @@ public class CPUAdjustingSwapRequestInterval implements SwapRequestInterval, Run
                     }
                     if(currentValue < min) currentValue = min;
                     if(currentValue > max) currentValue = max;
+                    Logger.minor(this, "CPU usage: "+cpuUsage+" target "+targetCPUUsage+" current value: "+currentValue);
                 }
-                Logger.minor(this, "CPU usage: "+cpuUsage+" target "+targetCPUUsage+" current value: "+currentValue);
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t+" in "+this, t);
             }

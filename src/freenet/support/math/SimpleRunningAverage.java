@@ -17,14 +17,14 @@ public class SimpleRunningAverage implements RunningAverage {
     final double initValue;
     private boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
-    public Object clone() {
+    public final Object clone() {
         return new SimpleRunningAverage(this);
     }
     
     /**
      * Clear the SRA
      */
-    public void clear() {
+    public synchronized void clear() {
         nextSlotPtr = 0;
         curLen = 0;
         totalReports = 0;
@@ -100,7 +100,7 @@ public class SimpleRunningAverage implements RunningAverage {
         return totalReports;
     }
 
-    public double minReportForValue(double targetValue) {
+    public synchronized double minReportForValue(double targetValue) {
         if(curLen < refs.length) {
             /** Don't need to remove any values before reporting,
              * so is slightly simpler.

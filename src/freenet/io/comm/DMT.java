@@ -131,7 +131,7 @@ public class DMT {
 		return msg;
 	}
 
-	public static MessageType rejectDueToLoop = new MessageType("rejectDueToLoop") {{ 
+	public static final MessageType rejectDueToLoop = new MessageType("rejectDueToLoop") {{ 
 		addField(UID, Long.class);
 	}};
 	
@@ -388,7 +388,7 @@ public class DMT {
 	    addField(CHK_HEADER, Buffer.class);
 	}};
 	
-    public static Message createTestSendCHK(long uid, String uri, Buffer header) {
+    public static final Message createTestSendCHK(long uid, String uri, Buffer header) {
         Message msg = new Message(testSendCHK);
         msg.set(UID, uid);
         msg.set(FREENET_URI, uri);
@@ -402,7 +402,7 @@ public class DMT {
         addField(HTL, Integer.class);
     }};
     
-    public static Message createTestRequest(Key Key, long id, int htl) {
+    public static final Message createTestRequest(Key Key, long id, int htl) {
         Message msg = new Message(testRequest);
         msg.set(UID, id);
         msg.set(FREENET_ROUTING_KEY, Key);
@@ -414,7 +414,7 @@ public class DMT {
         addField(UID, Long.class);
     }};
     
-    public static Message createTestDataNotFound(long uid) {
+    public static final Message createTestDataNotFound(long uid) {
         Message msg = new Message(testDataNotFound);
         msg.set(UID, uid);
         return msg;
@@ -436,7 +436,7 @@ public class DMT {
         addField(UID, Long.class);
         addField(FREENET_URI, String.class);
     }};
-    public static Message createTestSendCHKAck(long uid, String key) {
+    public static final Message createTestSendCHKAck(long uid, String key) {
         Message msg = new Message(testSendCHKAck);
         msg.set(UID, uid);
         msg.set(FREENET_URI, key);
@@ -447,16 +447,16 @@ public class DMT {
 	    addField(UID, Long.class);
 	}};
 	
-    public static Message createTestDataReplyAck(long id) {
+    public static final Message createTestDataReplyAck(long id) {
         Message msg = new Message(testDataReplyAck);
         msg.set(UID, id);
         return msg;
     }
 
-    public static MessageType testDataNotFoundAck = new MessageType("testDataNotFoundAck") {{
+    public static final MessageType testDataNotFoundAck = new MessageType("testDataNotFoundAck") {{
         addField(UID, Long.class);
     }};
-    public static Message createTestDataNotFoundAck(long id) {
+    public static final Message createTestDataNotFoundAck(long id) {
         Message msg = new Message(testDataNotFoundAck);
         msg.set(UID, id);
         return msg;
@@ -464,13 +464,13 @@ public class DMT {
     
     // Internal only messages
     
-    public static MessageType testReceiveCompleted = new MessageType("testReceiveCompleted", true) {{
+    public static final MessageType testReceiveCompleted = new MessageType("testReceiveCompleted", true) {{
         addField(UID, Long.class);
         addField(SUCCESS, Boolean.class);
         addField(REASON, String.class);
     }};
     
-    public static Message createTestReceiveCompleted(long id, boolean success, String reason) {
+    public static final Message createTestReceiveCompleted(long id, boolean success, String reason) {
         Message msg = new Message(testReceiveCompleted);
         msg.set(UID, id);
         msg.set(SUCCESS, success);
@@ -478,13 +478,13 @@ public class DMT {
         return msg;
     }
     
-    public static MessageType testSendCompleted = new MessageType("testSendCompleted", true) {{
+    public static final MessageType testSendCompleted = new MessageType("testSendCompleted", true) {{
         addField(UID, Long.class);
         addField(SUCCESS, Boolean.class);
         addField(REASON, String.class);
     }};
 
-    public static Message createTestSendCompleted(long id, boolean success, String reason) {
+    public static final Message createTestSendCompleted(long id, boolean success, String reason) {
         Message msg = new Message(testSendCompleted);
         msg.set(UID, id);
         msg.set(SUCCESS, success);
@@ -493,13 +493,13 @@ public class DMT {
     }
 
     // FNP messages
-    public static MessageType FNPDataRequest = new MessageType("FNPDataRequest") {{
+    public static final MessageType FNPDataRequest = new MessageType("FNPDataRequest") {{
         addField(UID, Long.class);
         addField(HTL, Short.class);
         addField(FREENET_ROUTING_KEY, Key.class);
     }};
     
-    public static Message createFNPDataRequest(long id, short htl, Key key) {
+    public static final Message createFNPDataRequest(long id, short htl, Key key) {
         Message msg = new Message(FNPDataRequest);
         msg.set(UID, id);
         msg.set(HTL, htl);
@@ -508,11 +508,11 @@ public class DMT {
     }
     
     // Hit our tail, try a different node.
-    public static MessageType FNPRejectedLoop = new MessageType("FNPRejectLoop") {{
+    public static final MessageType FNPRejectedLoop = new MessageType("FNPRejectLoop") {{
         addField(UID, Long.class);
     }};
     
-    public static Message createFNPRejectedLoop(long id) {
+    public static final Message createFNPRejectedLoop(long id) {
         Message msg = new Message(FNPRejectedLoop);
         msg.set(UID, id);
         return msg;
@@ -520,67 +520,67 @@ public class DMT {
     
     // Too many requests for present capacity. Fail, propagate back
     // to source, and reduce send rate.
-    public static MessageType FNPRejectedOverload = new MessageType("FNPRejectOverload") {{
+    public static final MessageType FNPRejectedOverload = new MessageType("FNPRejectOverload") {{
         addField(UID, Long.class);
     }};
     
-    public static Message createFNPRejectedOverload(long id) {
+    public static final Message createFNPRejectedOverload(long id) {
         Message msg = new Message(FNPRejectedOverload);
         msg.set(UID, id);
         return msg;
     }
 
-    public static MessageType FNPAccepted = new MessageType("FNPAccepted") {{
+    public static final MessageType FNPAccepted = new MessageType("FNPAccepted") {{
         addField(UID, Long.class);
     }};
     
-    public static Message createFNPAccepted(long id) {
+    public static final Message createFNPAccepted(long id) {
         Message msg = new Message(FNPAccepted);
         msg.set(UID, id);
         return msg;
     }
     
-    public static MessageType FNPDataNotFound = new MessageType("FNPDataNotFound") {{
+    public static final MessageType FNPDataNotFound = new MessageType("FNPDataNotFound") {{
         addField(UID, Long.class);
     }};
     
-    public static Message createFNPDataNotFound(long id) {
+    public static final Message createFNPDataNotFound(long id) {
         Message msg = new Message(FNPDataNotFound);
         msg.set(UID, id);
         return msg;
     }
     
-    public static MessageType FNPDataFound = new MessageType("FNPDataFound") {{
+    public static final MessageType FNPDataFound = new MessageType("FNPDataFound") {{
         addField(UID, Long.class);
         addField(BLOCK_HEADERS, ShortBuffer.class);
     }};
     
-    public static Message createFNPDataFound(long id, byte[] buf) {
+    public static final Message createFNPDataFound(long id, byte[] buf) {
         Message msg = new Message(FNPDataFound);
         msg.set(UID, id);
         msg.set(BLOCK_HEADERS, new ShortBuffer(buf));
         return msg;
     }
     
-    public static MessageType FNPRouteNotFound = new MessageType("FNPRouteNotFound") {{
+    public static final MessageType FNPRouteNotFound = new MessageType("FNPRouteNotFound") {{
         addField(UID, Long.class);
         addField(HTL, Short.class);
     }};
     
-    public static Message createFNPRouteNotFound(long id, short htl) {
+    public static final Message createFNPRouteNotFound(long id, short htl) {
         Message msg = new Message(FNPRouteNotFound);
         msg.set(UID, id);
         msg.set(HTL, htl);
         return msg;
     }
     
-    public static MessageType FNPInsertRequest = new MessageType("FNPInsertRequest") {{
+    public static final MessageType FNPInsertRequest = new MessageType("FNPInsertRequest") {{
         addField(UID, Long.class);
         addField(HTL, Short.class);
         addField(FREENET_ROUTING_KEY, Key.class);
     }};
     
-    public static Message createFNPInsertRequest(long id, short htl, Key key) {
+    public static final Message createFNPInsertRequest(long id, short htl, Key key) {
         Message msg = new Message(FNPInsertRequest);
         msg.set(UID, id);
         msg.set(HTL, htl);
@@ -588,54 +588,54 @@ public class DMT {
         return msg;
     }
     
-    public static MessageType FNPInsertReply = new MessageType("FNPInsertReply") {{
+    public static final MessageType FNPInsertReply = new MessageType("FNPInsertReply") {{
         addField(UID, Long.class);
     }};
     
-    public static Message createFNPInsertReply(long id) {
+    public static final Message createFNPInsertReply(long id) {
         Message msg = new Message(FNPInsertReply);
         msg.set(UID, id);
         return msg;
     }
     
-    public static MessageType FNPDataInsert = new MessageType("FNPDataInsert") {{
+    public static final MessageType FNPDataInsert = new MessageType("FNPDataInsert") {{
         addField(UID, Long.class);
         addField(BLOCK_HEADERS, ShortBuffer.class);
     }};
     
-    public static Message createFNPDataInsert(long uid, byte[] headers) {
+    public static final Message createFNPDataInsert(long uid, byte[] headers) {
         Message msg = new Message(FNPDataInsert);
         msg.set(UID, uid);
         msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
         return msg;
     }
 
-    public static MessageType FNPRejectedTimeout = new MessageType("FNPTooSlow") {{
+    public static final MessageType FNPRejectedTimeout = new MessageType("FNPTooSlow") {{
         addField(UID, Long.class);
     }};
     
-    public static Message createFNPRejectedTimeout(long uid) {
+    public static final Message createFNPRejectedTimeout(long uid) {
         Message msg = new Message(FNPRejectedTimeout);
         msg.set(UID, uid);
         return msg;
     }
     
-    public static MessageType FNPDataInsertRejected = new MessageType("FNPDataInsertRejected") {{
+    public static final MessageType FNPDataInsertRejected = new MessageType("FNPDataInsertRejected") {{
         addField(UID, Long.class);
         addField(DATA_INSERT_REJECTED_REASON, Short.class);
     }};
     
-    public static Message createFNPDataInsertRejected(long uid, short reason) {
+    public static final Message createFNPDataInsertRejected(long uid, short reason) {
         Message msg = new Message(FNPDataInsertRejected);
         msg.set(UID, uid);
         msg.set(DATA_INSERT_REJECTED_REASON, reason);
         return msg;
     }
 
-    public static short DATA_INSERT_REJECTED_VERIFY_FAILED = 1;
-    public static short DATA_INSERT_REJECTED_RECEIVE_FAILED = 2;
+    public static final short DATA_INSERT_REJECTED_VERIFY_FAILED = 1;
+    public static final short DATA_INSERT_REJECTED_RECEIVE_FAILED = 2;
     
-    public static String getDataInsertRejectedReason(short reason) {
+    public static final String getDataInsertRejectedReason(short reason) {
         if(reason == DATA_INSERT_REJECTED_VERIFY_FAILED)
             return "Verify failed";
         else if(reason == DATA_INSERT_REJECTED_RECEIVE_FAILED)
@@ -643,33 +643,33 @@ public class DMT {
         return "Unknown reason code: "+reason;
     }
     
-    public static MessageType FNPPing = new MessageType("FNPPing") {{
+    public static final MessageType FNPPing = new MessageType("FNPPing") {{
         addField(PING_SEQNO, Integer.class);
     }};
     
-    public static Message createFNPPing(int seqNo) {
+    public static final Message createFNPPing(int seqNo) {
         Message msg = new Message(FNPPing);
         msg.set(PING_SEQNO, seqNo);
         return msg;
     }
 
-    public static MessageType FNPPong = new MessageType("FNPPong") {{
+    public static final MessageType FNPPong = new MessageType("FNPPong") {{
         addField(PING_SEQNO, Integer.class);
     }};
     
-    public static Message createFNPPong(int seqNo) {
+    public static final Message createFNPPong(int seqNo) {
         Message msg = new Message(FNPPong);
         msg.set(PING_SEQNO, seqNo);
         return msg;
     }
     
-    public static MessageType FNPSwapRequest = new MessageType("FNPSwapRequest") {{
+    public static final MessageType FNPSwapRequest = new MessageType("FNPSwapRequest") {{
         addField(UID, Long.class);
         addField(HASH, ShortBuffer.class);
         addField(HTL, Integer.class);
     }};
     
-    public static Message createFNPSwapRequest(long uid, byte[] buf, int htl) {
+    public static final Message createFNPSwapRequest(long uid, byte[] buf, int htl) {
         Message msg = new Message(FNPSwapRequest);
         msg.set(UID, uid);
         msg.set(HASH, new ShortBuffer(buf));
@@ -677,92 +677,92 @@ public class DMT {
         return msg;
     }
     
-    public static MessageType FNPSwapRejected = new MessageType("FNPSwapRejected") {{
+    public static final MessageType FNPSwapRejected = new MessageType("FNPSwapRejected") {{
         addField(UID, Long.class);
     }};
     
-    public static Message createFNPSwapRejected(long uid) {
+    public static final Message createFNPSwapRejected(long uid) {
         Message msg = new Message(FNPSwapRejected);
         msg.set(UID, uid);
         return msg;
     }
     
-    public static MessageType FNPSwapReply = new MessageType("FNPSwapReply") {{
+    public static final MessageType FNPSwapReply = new MessageType("FNPSwapReply") {{
         addField(UID, Long.class);
         addField(HASH, ShortBuffer.class);
     }};
     
-    public static Message createFNPSwapReply(long uid, byte[] buf) {
+    public static final Message createFNPSwapReply(long uid, byte[] buf) {
         Message msg = new Message(FNPSwapReply);
         msg.set(UID, uid);
         msg.set(HASH, new ShortBuffer(buf));
         return msg;
     }
 
-    public static MessageType FNPSwapCommit = new MessageType("FNPSwapCommit") {{
+    public static final MessageType FNPSwapCommit = new MessageType("FNPSwapCommit") {{
         addField(UID, Long.class);
         addField(DATA, ShortBuffer.class);
     }};
     
-    public static Message createFNPSwapCommit(long uid, byte[] buf) {
+    public static final Message createFNPSwapCommit(long uid, byte[] buf) {
         Message msg = new Message(FNPSwapCommit);
         msg.set(UID, uid);
         msg.set(DATA, new ShortBuffer(buf));
         return msg;
     }
     
-    public static MessageType FNPSwapComplete = new MessageType("FNPSwapComplete") {{
+    public static final MessageType FNPSwapComplete = new MessageType("FNPSwapComplete") {{
         addField(UID, Long.class);
         addField(DATA, ShortBuffer.class);
     }};
     
-    public static Message createFNPSwapComplete(long uid, byte[] buf) {
+    public static final Message createFNPSwapComplete(long uid, byte[] buf) {
         Message msg = new Message(FNPSwapComplete);
         msg.set(UID, uid);
         msg.set(DATA, new ShortBuffer(buf));
         return msg;
     }
 
-    public static MessageType FNPLocChangeNotification = new MessageType("FNPLocationChangeNotification") {{
+    public static final MessageType FNPLocChangeNotification = new MessageType("FNPLocationChangeNotification") {{
         addField(LOCATION, Double.class);
     }};
     
-    public static Message createFNPLocChangeNotification(double newLoc) {
+    public static final Message createFNPLocChangeNotification(double newLoc) {
         Message msg = new Message(FNPLocChangeNotification);
         msg.set(LOCATION, newLoc);
         return msg;
     }
 
-    public static MessageType FNPRoutedPing = new MessageType("FNPRoutedPing") {{
+    public static final MessageType FNPRoutedPing = new MessageType("FNPRoutedPing") {{
         addRoutedToNodeMessageFields();
         addField(COUNTER, Integer.class);
     }};
     
-    public static Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter) {
+    public static final Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter) {
         Message msg = new Message(FNPRoutedPing);
         msg.setRoutedToNodeFields(uid, targetLocation, htl);
         msg.set(COUNTER, counter);
         return msg;
     }
     
-    public static MessageType FNPRoutedPong = new MessageType("FNPRoutedPong") {{
+    public static final MessageType FNPRoutedPong = new MessageType("FNPRoutedPong") {{
         addField(UID, Long.class);
         addField(COUNTER, Integer.class);
     }};
 
-    public static Message createFNPRoutedPong(long uid, int counter) {
+    public static final Message createFNPRoutedPong(long uid, int counter) {
         Message msg = new Message(FNPRoutedPong);
         msg.set(UID, uid);
         msg.set(COUNTER, counter);
         return msg;
     }
     
-    public static MessageType FNPRoutedRejected = new MessageType("FNPRoutedRejected") {{
+    public static final MessageType FNPRoutedRejected = new MessageType("FNPRoutedRejected") {{
         addField(UID, Long.class);
         addField(HTL, Short.class);
     }};
 
-    public static Message createFNPRoutedRejected(long uid, short htl) {
+    public static final Message createFNPRoutedRejected(long uid, short htl) {
         Message msg = new Message(FNPRoutedRejected);
         msg.set(UID, uid);
         msg.set(HTL, htl);

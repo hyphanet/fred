@@ -114,9 +114,8 @@ class LocationManager {
                         if(System.currentTimeMillis() >= endTime) break;
                     }
                     // Don't send one if we are locked
-                    if(locked) continue;
                     if(lock()) {
-                        if(System.currentTimeMillis() - timeLastSuccessfullySwapped > 10*1000) {
+                        if(System.currentTimeMillis() - timeLastSuccessfullySwapped > 30*1000) {
                             try {
                                 boolean myFlag = false;
                                 double myLoc = loc.getValue();
@@ -564,23 +563,25 @@ class LocationManager {
         // all multiplied together
 
         // Dump
+
+        StringBuffer sb = new StringBuffer();
         
-        String s = "my: "+myLoc+", his: "+hisLoc+", myFriends: "+
-        friendLocs.length+", hisFriends: "+hisFriendLocs.length+" mine:\n";
+        sb.append("my: ").append(myLoc).append(", his: ").append(hisLoc).append(", myFriends: ");
+        sb.append(friendLocs.length).append(", hisFriends: ").append(hisFriendLocs.length).append(" mine:\n");
         
         for(int i=0;i<friendLocs.length;i++) {
-            s += Double.toString(friendLocs[i]);
-            s += " ";
+            sb.append(friendLocs[i]);
+            sb.append(" ");
         }
 
-        s += "\nhis:\n";
+        sb.append("\nhis:\n");
         
         for(int i=0;i<hisFriendLocs.length;i++) {
-            s += Double.toString(hisFriendLocs[i]);
-            s += " ";
+            sb.append(hisFriendLocs[i]);
+            sb.append(" ");
         }
 
-        Logger.minor(this, s);
+        Logger.minor(this, sb.toString());
         
         double A = 1.0;
         for(int i=0;i<friendLocs.length;i++) {
@@ -623,7 +624,7 @@ class LocationManager {
     
     final Hashtable recentlyForwardedIDs;
     
-    class RecentlyForwardedItem {
+    static class RecentlyForwardedItem {
         final long incomingID; // unnecessary?
         final long outgoingID;
         final long addedTime;
@@ -772,8 +773,7 @@ class LocationManager {
             Logger.error(this, "Unrecognized SwapReply: ID "+uid);
             return false;
         }
-        if(item.requestSender == null) return false;
-        if(item == null) {
+        if(item.requestSender == null) {
             Logger.minor(this, "SwapReply from "+m.getSource()+" on chain originated locally "+uid);
             return false;
         }

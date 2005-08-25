@@ -49,7 +49,7 @@ public class PartiallyReceivedBlock {
 		for (int x=0; x<_received.length; x++) {
 			_received[x] = true;
 		}
-		_receivedCount = _packets;
+		_receivedCount = packets;
 		_packets = packets;
 		_packetSize = packetSize;
 	}

@@ -139,7 +139,7 @@ public class NodeDispatcher implements Dispatcher {
 
     final Hashtable routedContexts = new Hashtable();
     
-    class RoutedContext {
+    static class RoutedContext {
         long createdTime;
         long accessTime;
         PeerNode source;

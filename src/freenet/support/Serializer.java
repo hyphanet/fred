@@ -34,7 +34,7 @@ import java.util.*;
  */
 public class Serializer {
 
-    public static final String VERSION = "$Id: Serializer.java,v 1.3 2005/07/22 12:15:45 amphibian Exp $";
+    public static final String VERSION = "$Id: Serializer.java,v 1.4 2005/08/25 17:28:19 amphibian Exp $";
 
 	public static List readListFromDataInputStream(Class elementType, DataInputStream dis) throws IOException {
 		LinkedList ret = new LinkedList();
@@ -47,7 +47,7 @@ public class Serializer {
 
 	public static Object readFromDataInputStream(Class type, DataInputStream dis) throws IOException {
 		if (type.equals(Boolean.class)) {
-			return new Boolean(dis.read() == 1);
+			return Boolean.valueOf(dis.read() == 1);
 		} else if (type.equals(Byte.class)) {
 			return new Byte((byte) dis.read());
 		} else if (type.equals(Short.class)) {

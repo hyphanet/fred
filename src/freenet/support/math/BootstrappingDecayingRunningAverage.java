@@ -21,7 +21,7 @@ import freenet.support.Logger;
 public class BootstrappingDecayingRunningAverage implements
         RunningAverage {
 
-    public Object clone() {
+    public final Object clone() {
         return new BootstrappingDecayingRunningAverage(this);
     }
     
@@ -92,7 +92,8 @@ public class BootstrappingDecayingRunningAverage implements
 
     int SERIAL_MAGIC = 0xdd60ee7f;
     
-    public void writeDataTo(DataOutputStream out) throws IOException {
+    // Preferable to call with a buffered stream!
+    public synchronized void writeDataTo(DataOutputStream out) throws IOException {
         out.writeInt(SERIAL_MAGIC);
         out.writeInt(1);
         out.writeInt(maxReports);

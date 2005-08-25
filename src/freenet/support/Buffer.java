@@ -31,7 +31,7 @@ import freenet.io.WritableToDataOutputStream;
  */
 public class Buffer implements WritableToDataOutputStream {
 
-    public static final String VERSION = "$Id: Buffer.java,v 1.1 2005/01/29 19:12:10 amphibian Exp $";
+    public static final String VERSION = "$Id: Buffer.java,v 1.2 2005/08/25 17:28:19 amphibian Exp $";
 
 	private final byte[] _data;
 	private final int _start;
@@ -47,7 +47,7 @@ public class Buffer implements WritableToDataOutputStream {
 		_data = new byte[dis.readInt()];
 		_length = _data.length;
 		_start = 0;
-		dis.read(_data);
+		dis.readFully(_data);
 	}
 
 	/**
@@ -68,7 +68,9 @@ public class Buffer implements WritableToDataOutputStream {
 	}
 
 	/**
-	 * Retrieve a byte array containing the data in this buffer
+	 * Retrieve a byte array containing the data in this buffer.
+	 * Will be copied if the data does not fill the whole array,
+	 * so please don't rely on it being the internal buffer.
 	 *
 	 * @return The byte array
 	 */
@@ -141,6 +143,10 @@ public class Buffer implements WritableToDataOutputStream {
 		return true;
 	}
 
+	public int hashCode() {
+	    return Fields.hashCode(_data) ^ _start ^ _length;
+	}
+	
 	public int getLength() {
 		return _length;
 	}

@@ -82,7 +82,7 @@ public class Yarrow extends RandomSource {
             generator_init(cipher);
         } catch (NoSuchAlgorithmException e) {
             Logger.error(this, "Could not init pools trying to getInstance("+digest+"): "+e, e);
-            System.exit(17);
+            throw new RuntimeException("Cannot initialize Yarrow!: "+e, e);
         }
 		entropy_init(seed);
 		seedFromExternalStuff(false);
@@ -183,6 +183,7 @@ public class Yarrow extends RandomSource {
 		try {
 			consumeString(InetAddress.getLocalHost().toString());
 		} catch (Exception e) {
+		    // Ignore
 		}
 
 		readStartupEntropy(startupEntropy);

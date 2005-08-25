@@ -15,7 +15,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     protected int size;
     protected Item _headptr, _tailptr;
 
-    public Object clone() {
+    public final Object clone() {
         return new DoublyLinkedListImpl(this);
     }
     
@@ -391,6 +391,8 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     public static class Item implements DoublyLinkedList.Item {
         private DoublyLinkedList.Item next, prev;
         public Object clone() {
+            if(getClass() != Item.class)
+                throw new RuntimeException("Must implement clone() for "+getClass());
             return new Item();
         }
         public final DoublyLinkedList.Item getNext() {

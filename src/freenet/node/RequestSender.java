@@ -27,7 +27,7 @@ import freenet.support.ShortBuffer;
  * transferring senders when starts transferring, and remove from it
  * when finishes transferring.
  */
-public class RequestSender implements Runnable {
+public final class RequestSender implements Runnable {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
@@ -58,6 +58,10 @@ public class RequestSender implements Runnable {
     static final int VERIFY_FAILURE = 5;
     
     private boolean transferring = false;
+    
+    public String toString() {
+        return super.toString()+" for "+uid;
+    }
     
     public RequestSender(NodeCHK key, short htl, long uid, Node n, 
             PeerNode source) {

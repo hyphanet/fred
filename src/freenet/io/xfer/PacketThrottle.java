@@ -29,7 +29,7 @@ public class PacketThrottle {
 	protected static final float PACKET_TRANSMIT_INCREMENT = (4 * (1 - (PACKET_DROP_DECREASE_MULTIPLE * PACKET_DROP_DECREASE_MULTIPLE))) / 3;
 	protected static final long MAX_DELAY = 1000;
 	protected static final long MIN_DELAY = 100;
-	public static final String VERSION = "$Id: PacketThrottle.java,v 1.2 2005/07/30 18:52:37 amphibian Exp $";
+	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
 	private static Map _throttles = new HashMap();
 	private static Map _lastThrottleUse = new HashMap();
@@ -75,7 +75,7 @@ public class PacketThrottle {
     }
     
 	public long getDelay() {
-		float winSizeForMinPacketDelay = (_roundTripTime / MIN_DELAY);
+		float winSizeForMinPacketDelay = ((float)_roundTripTime / MIN_DELAY);
 		if (_simulatedWindowSize > winSizeForMinPacketDelay) {
 			_simulatedWindowSize = winSizeForMinPacketDelay;
 		}
@@ -83,11 +83,11 @@ public class PacketThrottle {
 			_simulatedWindowSize = 1;
 		}
 		// return (long) (_roundTripTime / _simulatedWindowSize);
-		return Math.max(MIN_DELAY, (long) ((float) _roundTripTime / _simulatedWindowSize));
+		return Math.max(MIN_DELAY, (long) (_roundTripTime / _simulatedWindowSize));
 	}
 
 	public String toString() {
-		return Float.toString((((PACKET_SIZE * 1000 / getDelay())) / 1024)) + " k/sec, (w: "
+		return Double.toString((((PACKET_SIZE * 1000.0 / getDelay())) / 1024)) + " k/sec, (w: "
 				+ _simulatedWindowSize + ", r:" + _roundTripTime + ", d:"
 				+ (((float) _droppedPackets / (float) _totalPackets)) + ")";
 	}

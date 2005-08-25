@@ -83,7 +83,7 @@ public class PeerManager {
                 try {
                     br.close();
                 } catch (IOException e3) {
-                    // Ignore
+                    Logger.error(this, "Ignoring "+e3+" caught reading "+filename, e3);
                 }
             }
         } catch (FileNotFoundException e) {
