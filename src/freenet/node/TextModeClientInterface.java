@@ -386,12 +386,10 @@ public class TextModeClientInterface implements Runnable {
         try {
             pn = new PeerNode(fs, n);
         } catch (FSParseException e1) {
-            System.err.println("Did not parse: "+e1);
-            e1.printStackTrace();
+            System.err.println("Did not parse: "+e1.getMessage());
             return;
         } catch (PeerParseException e1) {
-            System.err.println("Did not parse: "+e1);
-            e1.printStackTrace();
+            System.err.println("Did not parse: "+e1.getMessage());
             return;
         }
         if(n.peers.addPeer(pn))
