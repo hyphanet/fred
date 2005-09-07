@@ -68,7 +68,7 @@ public class SimpleFieldSet {
                 map.put(before, after);
             } else {
                 if(line.equals("End")) return;
-                throw new IOException("Unknown end-marker: "+line);
+                throw new IOException("Unknown end-marker: \""+line+"\"");
             }
             
         }

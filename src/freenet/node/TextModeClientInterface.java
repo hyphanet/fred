@@ -194,19 +194,7 @@ public class TextModeClientInterface implements Runnable {
                 content = line;
             } else {
                 // Multiple line insert
-                StringBuffer sb = new StringBuffer(1000);
-                while(true) {
-                    try {
-                        line = reader.readLine();
-                        if(line == null) throw new EOFException();
-                    } catch (IOException e1) {
-                        System.err.println("Bye... ("+e1+")");
-                        return;
-                    }
-                    if(line.equals(".")) break;
-                    sb.append(line).append('\n');
-                }
-                content = sb.toString();
+                content = readLines(reader, false);
             }
             // Insert
             byte[] data = content.getBytes();
@@ -292,19 +280,8 @@ public class TextModeClientInterface implements Runnable {
                     e.printStackTrace(System.err);
                 }
             } else {
-                StringBuffer sb = new StringBuffer(1000);
-                while(true) {
-                    try {
-                        line = reader.readLine();
-                        if(line == null) throw new EOFException();
-                    } catch (IOException e1) {
-                        System.err.println("Bye... ("+e1+")");
-                        return;
-                    }
-                    if(line.equals(".")) break;
-                    sb.append(line).append('\n');
-                }
-                String content = sb.toString();
+                String content = readLines(reader, true);
+                if(content == null) return;
                 connect(content);
             }
         } else if(line.startsWith("NAME:")) {
@@ -319,6 +296,76 @@ public class TextModeClientInterface implements Runnable {
         } else {
             
         }
+    }
+
+    /**
+     * @return A block of text, input from stdin, ending with a
+     * . on a line by itself. Does some mangling for a fieldset if 
+     * isFieldSet. 
+     */
+    private String readLines(BufferedReader reader, boolean isFieldSet) {
+        StringBuffer sb = new StringBuffer(1000);
+        boolean breakflag = false;
+        while(true) {
+            String line;
+            try {
+                line = reader.readLine();
+                if(line == null) throw new EOFException();
+            } catch (IOException e1) {
+                System.err.println("Bye... ("+e1+")");
+                return null;
+            }
+            if(line.equals(".")) break;
+            if(isFieldSet) {
+                // Mangling
+                // First trim
+                line = line.trim();
+                if(line.equals("End")) {
+                    breakflag = true;
+                } else {
+                    if(line.endsWith("End") && 
+                            Character.isWhitespace(line.charAt(line.length()-("End".length()+1)))) {
+                        line = "End";
+                        breakflag = true;
+                    } else {
+                        int idx = line.indexOf('=');
+                        if(idx < 0) {
+                            System.err.println("No = and no End in line: "+line);
+                            breakflag = true;
+                        } else {
+                            if(idx > 0) {
+                                String after;
+                                if(idx == line.length()-1)
+                                    after = "";
+                                else
+                                    after = line.substring(idx+1);
+                                String before = line.substring(0, idx);
+                                before = before.trim();
+                                int x = 0;
+                                for(int j=before.length()-1;j>=0;j--) {
+                                    char c = before.charAt(j);
+                                    if(c == '.' || Character.isLetterOrDigit(c)) {
+                                        // Valid character for field
+                                    } else {
+                                        x=j+1;
+                                        break;
+                                    }
+                                }
+                                before = before.substring(x);
+                                line = before + '=' + line.substring(idx+1);
+                                System.out.println(line);
+                            } else {
+                                System.err.println("Invalid empty field name");
+                                breakflag = true;
+                            }
+                        }
+                    }
+                }
+            }
+            sb.append(line).append('\n');
+            if(breakflag) break;
+        }
+        return sb.toString();
     }
 
     /**

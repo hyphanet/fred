@@ -26,6 +26,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.io.xfer.PacketThrottle;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -101,6 +102,9 @@ public class PeerNode implements PeerContext {
     
     /** Hash of node identity. Used as setup key. */
     final byte[] identityHash;
+    
+    /** Integer hash of node identity. Used as hashCode(). */
+    final int hashCode;
     
     /** The Node we serve */
     final Node node;
@@ -191,6 +195,7 @@ public class PeerNode implements PeerContext {
         
         if(identity == null) throw new FSParseException("No identity");
         identityHash = md.digest(identity);
+        hashCode = Fields.hashCode(identityHash);
         version = fs.get("version");
         String locationString = fs.get("location");
         if(locationString == null) throw new FSParseException("No location");
@@ -905,5 +910,17 @@ public class PeerNode implements PeerContext {
             MessageItem mi = new MessageItem(item.buf, item.callbacks, true);
             requeueMessageItems(new MessageItem[] {mi}, 0, 1, true);
         }
+    }
+    
+    public boolean equals(Object o) {
+        if(o == this) return true;
+        if(o instanceof PeerNode) {
+            PeerNode pn = (PeerNode) o;
+            return Arrays.equals(pn.identity, identity);
+        } else return false;
+    }
+    
+    public int hashCode() {
+        return hashCode;
     }
 }

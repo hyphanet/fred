@@ -93,7 +93,7 @@ public class PeerManager {
 
     public synchronized boolean addPeer(PeerNode pn) {
         for(int i=0;i<myPeers.length;i++) {
-            if(myPeers[i] == pn) return false;
+            if(myPeers[i].equals(pn)) return false;
         }
         PeerNode[] newMyPeers = new PeerNode[myPeers.length+1];
         System.arraycopy(myPeers, 0, newMyPeers, 0, myPeers.length);
