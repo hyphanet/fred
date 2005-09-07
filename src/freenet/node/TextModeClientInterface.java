@@ -280,7 +280,7 @@ public class TextModeClientInterface implements Runnable {
                 File f = new File(key);
                 System.out.println("Attempting to read file "+key);
                 try {
-                    FileInputStream fis = new FileInputStream(line);
+                    FileInputStream fis = new FileInputStream(key);
                     DataInputStream dis = new DataInputStream(fis);
                     int length = (int)f.length();
                     byte[] data = new byte[length];
