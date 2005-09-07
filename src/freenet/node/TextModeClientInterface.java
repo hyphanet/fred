@@ -55,7 +55,7 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("PUTFILE:<filename> - put a file from disk.");
         System.out.println("GETFILE:<filename> - fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
         System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
-        System.out.println("CONNECT:\n<text, until a . on a line by itself> - enter a noderef directly.");
+        System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
         System.out.println("NAME:<new node name> - change the node's name.");
         System.out.println("STATUS - display some status information on the node including its reference and connections.");
         System.out.println("QUIT - exit the program");
@@ -282,6 +282,7 @@ public class TextModeClientInterface implements Runnable {
             } else {
                 String content = readLines(reader, true);
                 if(content == null) return;
+                if(content.equals("")) return;
                 connect(content);
             }
         } else if(line.startsWith("NAME:")) {
@@ -315,7 +316,7 @@ public class TextModeClientInterface implements Runnable {
                 System.err.println("Bye... ("+e1+")");
                 return null;
             }
-            if(line.equals(".")) break;
+            if((!isFieldSet) && line.equals(".")) break;
             if(isFieldSet) {
                 // Mangling
                 // First trim
@@ -331,7 +332,7 @@ public class TextModeClientInterface implements Runnable {
                         int idx = line.indexOf('=');
                         if(idx < 0) {
                             System.err.println("No = and no End in line: "+line);
-                            breakflag = true;
+                            return "";
                         } else {
                             if(idx > 0) {
                                 String after;
@@ -352,8 +353,8 @@ public class TextModeClientInterface implements Runnable {
                                     }
                                 }
                                 before = before.substring(x);
-                                line = before + '=' + line.substring(idx+1);
-                                System.out.println(line);
+                                line = before + '=' + after;
+                                //System.out.println(line);
                             } else {
                                 System.err.println("Invalid empty field name");
                                 breakflag = true;
@@ -373,6 +374,7 @@ public class TextModeClientInterface implements Runnable {
      */
     private void connect(String content) {
         SimpleFieldSet fs;
+        System.out.println("Connecting to:\n"+content);
         try {
             fs = new SimpleFieldSet(content);
         } catch (IOException e) {
