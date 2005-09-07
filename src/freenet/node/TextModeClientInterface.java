@@ -277,8 +277,8 @@ public class TextModeClientInterface implements Runnable {
             if(key.length() > 0) {
                 // Filename
                 System.out.println("Trying to connect to noderef in "+key);
-                File f = new File(line);
-                System.out.println("Attempting to read file "+line);
+                File f = new File(key);
+                System.out.println("Attempting to read file "+key);
                 try {
                     FileInputStream fis = new FileInputStream(line);
                     DataInputStream dis = new DataInputStream(fis);
