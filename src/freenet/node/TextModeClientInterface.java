@@ -84,7 +84,8 @@ public class TextModeClientInterface implements Runnable {
             return;
         }
         if(line == null) line = "QUIT";
-        if(line.startsWith("GET:")) {
+        String uline = line.toLowerCase();
+        if(uline.startsWith("GET:")) {
             // Should have a key next
             String key = line.substring("GET:".length());
             while(key.length() > 0 && key.charAt(0) == ' ')
@@ -119,7 +120,7 @@ public class TextModeClientInterface implements Runnable {
                 System.out.println("Decoded data:\n");
                 System.out.println(new String(decoded));
             }
-        } else if(line.startsWith("GETFILE:")) {
+        } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
             String key = line.substring("GETFILE:".length());
             while(key.length() > 0 && key.charAt(0) == ' ')
@@ -178,10 +179,10 @@ public class TextModeClientInterface implements Runnable {
                     }
                 }
             }
-        } else if(line.startsWith("QUIT")) {
+        } else if(uline.startsWith("QUIT")) {
             System.out.println("Goodbye.");
             System.exit(0);
-        } else if(line.startsWith("PUT:")) {
+        } else if(uline.startsWith("PUT:")) {
             // Just insert to local store
             line = line.substring("PUT:".length());
             while(line.length() > 0 && line.charAt(0) == ' ')
@@ -211,7 +212,7 @@ public class TextModeClientInterface implements Runnable {
             n.putCHK(block);
             // Definitely interface
             System.out.println("URI: "+uri);
-        } else if(line.startsWith("PUTFILE:")) {
+        } else if(uline.startsWith("PUTFILE:")) {
             // Just insert to local store
             line = line.substring("PUTFILE:".length());
             while(line.length() > 0 && line.charAt(0) == ' ')
@@ -251,12 +252,12 @@ public class TextModeClientInterface implements Runnable {
                 System.out.println("Threw: "+t);
                 t.printStackTrace();
             }
-        } else if(line.startsWith("STATUS")) {
+        } else if(uline.startsWith("STATUS")) {
             SimpleFieldSet fs = n.exportFieldSet();
             System.out.println(fs.toString());
             System.out.println();
             System.out.println(n.getStatus());
-        } else if(line.startsWith("CONNECT:")) {
+        } else if(uline.startsWith("CONNECT:")) {
             String key = line.substring("CONNECT:".length());
             while(key.length() > 0 && key.charAt(0) == ' ')
                 key = key.substring(1);
@@ -285,7 +286,7 @@ public class TextModeClientInterface implements Runnable {
                 if(content.equals("")) return;
                 connect(content);
             }
-        } else if(line.startsWith("NAME:")) {
+        } else if(uline.startsWith("NAME:")) {
             System.out.println("Node name currently: "+n.myName);
             String key = line.substring("NAME:".length());
             while(key.length() > 0 && key.charAt(0) == ' ')
