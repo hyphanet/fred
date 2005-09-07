@@ -683,4 +683,9 @@ public class Node implements SimpleClient {
         while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
             recentlyCompletedIDs.pop();
     }
+
+    public synchronized void setName(String key) {
+        myName = key;
+        writeNodeFile();
+    }
 }

@@ -56,7 +56,8 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("GETFILE:<filename> - fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
         System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
         System.out.println("CONNECT:\n<text, until a . on a line by itself> - enter a noderef directly.");
-        System.out.println("STATUS - display some status information on the node.");
+        System.out.println("NAME:<new node name> - change the node's name.");
+        System.out.println("STATUS - display some status information on the node including its reference and connections.");
         System.out.println("QUIT - exit the program");
         // Read command, and data
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -263,6 +264,9 @@ public class TextModeClientInterface implements Runnable {
                 t.printStackTrace();
             }
         } else if(line.startsWith("STATUS")) {
+            SimpleFieldSet fs = n.exportFieldSet();
+            System.out.println(fs.toString());
+            System.out.println();
             System.out.println(n.getStatus());
         } else if(line.startsWith("CONNECT:")) {
             String key = line.substring("CONNECT:".length());
@@ -303,6 +307,15 @@ public class TextModeClientInterface implements Runnable {
                 String content = sb.toString();
                 connect(content);
             }
+        } else if(line.startsWith("NAME:")) {
+            System.out.println("Node name currently: "+n.myName);
+            String key = line.substring("NAME:".length());
+            while(key.length() > 0 && key.charAt(0) == ' ')
+                key = key.substring(1);
+            while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
+                key = key.substring(0, key.length()-2);
+            System.out.println("New name: "+key);
+            n.setName(key);
         } else {
             
         }
