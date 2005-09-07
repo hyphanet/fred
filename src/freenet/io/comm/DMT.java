@@ -580,14 +580,16 @@ public class DMT {
     public static final MessageType FNPInsertRequest = new MessageType("FNPInsertRequest") {{
         addField(UID, Long.class);
         addField(HTL, Short.class);
+        addField(NEAREST_LOCATION, Double.class);
         addField(FREENET_ROUTING_KEY, Key.class);
     }};
     
-    public static final Message createFNPInsertRequest(long id, short htl, Key key) {
+    public static final Message createFNPInsertRequest(long id, short htl, Key key, double nearestLoc) {
         Message msg = new Message(FNPInsertRequest);
         msg.set(UID, id);
         msg.set(HTL, htl);
         msg.set(FREENET_ROUTING_KEY, key);
+        msg.set(NEAREST_LOCATION, nearestLoc);
         return msg;
     }
     

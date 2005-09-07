@@ -78,7 +78,7 @@ public final class InsertSender implements Runnable {
             // Can backtrack, so only route to nodes closer than we are to target.
             double nextValue;
             synchronized(node.peers) {
-                next = node.peers.closerPeer(source, nodesRoutedTo, target, source == null);
+                next = node.peers.closerPeer(source, nodesRoutedTo, target, true);
                 if(next != null)
                     nextValue = next.getLocation().getValue();
                 else
@@ -98,7 +98,7 @@ public final class InsertSender implements Runnable {
                 htl = node.decrementHTL(source, htl);
             }
             
-            Message req = DMT.createFNPInsertRequest(uid, htl, myKey);
+            Message req = DMT.createFNPInsertRequest(uid, htl, myKey, closestLocation);
             
             // Wait for ack or reject... will come before even a locally generated DataReply
             

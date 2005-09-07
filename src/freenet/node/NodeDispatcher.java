@@ -256,7 +256,7 @@ public class NodeDispatcher implements Dispatcher {
         // Forward
         m = preForward(m, htl);
         while(true) {
-            PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, target, pn == null);
+            PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, target, true);
             Logger.minor(this, "Next: "+next+" message: "+m);
             if(next != null) {
                 Logger.minor(this, "Forwarding "+m.getSpec()+" to "+next.getPeer().getPort());
