@@ -69,6 +69,7 @@ public class DMT {
     public static final String FNP_SOURCE_PEERNODE = "sourcePeerNode";
     public static final String PING_SEQNO = "pingSequenceNumber";
     public static final String LOCATION = "location";
+    public static final String NEAREST_LOCATION = "nearestLocation";
     public static final String TARGET_LOCATION = "targetLocation";
     public static final String TYPE = "type";
     public static final String PAYLOAD = "payload";
@@ -496,14 +497,16 @@ public class DMT {
     public static final MessageType FNPDataRequest = new MessageType("FNPDataRequest") {{
         addField(UID, Long.class);
         addField(HTL, Short.class);
+        addField(NEAREST_LOCATION, Double.class);
         addField(FREENET_ROUTING_KEY, Key.class);
     }};
     
-    public static final Message createFNPDataRequest(long id, short htl, Key key) {
+    public static final Message createFNPDataRequest(long id, short htl, Key key, double nearestLocation) {
         Message msg = new Message(FNPDataRequest);
         msg.set(UID, id);
         msg.set(HTL, htl);
         msg.set(FREENET_ROUTING_KEY, key);
+        msg.set(NEAREST_LOCATION, nearestLocation);
         return msg;
     }
     

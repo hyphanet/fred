@@ -91,18 +91,16 @@ public class PeerManager {
         }
     }
 
-    /**
-     * @param pn
-     */
-    private synchronized void addPeer(PeerNode pn) {
+    public synchronized boolean addPeer(PeerNode pn) {
         for(int i=0;i<myPeers.length;i++) {
-            if(myPeers[i] == pn) return;
+            if(myPeers[i] == pn) return false;
         }
         PeerNode[] newMyPeers = new PeerNode[myPeers.length+1];
         System.arraycopy(myPeers, 0, newMyPeers, 0, myPeers.length);
         newMyPeers[myPeers.length] = pn;
         myPeers = newMyPeers;
         Logger.normal(this, "Added "+pn);
+        return true;
     }
 
     public synchronized void addConnectedPeer(PeerNode pn) {

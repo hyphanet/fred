@@ -104,7 +104,7 @@ public class Node implements SimpleClient {
     final PacketSender ps;
     final NodeDispatcher dispatcher;
     final String filenamesPrefix;
-    static short MAX_HTL = 20;
+    static short MAX_HTL = 10;
     private static final int EXIT_STORE_FILE_NOT_FOUND = 1;
     private static final int EXIT_STORE_IOEXCEPTION = 2;
     private static final int EXIT_STORE_OTHER = 3;
@@ -304,7 +304,7 @@ public class Node implements SimpleClient {
      * Either it succeeds or it doesn't.
      */
     public ClientCHKBlock getCHK(ClientCHK key) {
-        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null);
+        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null, lm.loc.getValue());
         if(o instanceof CHKBlock) {
             try {
                 return new ClientCHKBlock((CHKBlock)o, key);
@@ -344,7 +344,7 @@ public class Node implements SimpleClient {
                 Logger.error(this, "Datastore failure: "+e, e);
             }
             is = makeInsertSender(block.getClientKey().getNodeCHK(), 
-                    MAX_HTL, uid, null, headers, prb, false);
+                    MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue());
         }
         is.waitUntilFinished();
         if(is.getStatus() == InsertSender.SUCCESS) {
@@ -430,11 +430,12 @@ public class Node implements SimpleClient {
      * check whether another node is requesting the same key at
      * the same HTL, and if all else fails, create a new 
      * RequestSender for the key/htl.
+     * @param closestLocation The closest location to the key so far.
      * @return A CHKBlock if the data is in the store, otherwise
      * a RequestSender, unless the HTL is 0, in which case NULL.
      * RequestSender.
      */
-    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, PeerNode source) {
+    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, PeerNode source, double closestLocation) {
         Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
         // In store?
         CHKBlock chk = null;
@@ -467,7 +468,7 @@ public class Node implements SimpleClient {
             return sender;
         }
         
-        sender = new RequestSender(key, htl, uid, this, source);
+        sender = new RequestSender(key, htl, uid, this, closestLocation, source);
         requestSenders.put(kh, sender);
         Logger.minor(this, "Created new sender: "+sender);
         return sender;
@@ -601,7 +602,7 @@ public class Node implements SimpleClient {
      * if it originated locally.
      */
     public synchronized InsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-            byte[] headers, PartiallyReceivedBlock prb, boolean fromStore) {
+            byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc) {
         Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         InsertSender is = (InsertSender) insertSenders.get(kh);
@@ -609,7 +610,7 @@ public class Node implements SimpleClient {
             Logger.minor(this, "Found "+is+" for "+kh);
             return is;
         }
-        is = new InsertSender(key, uid, headers, htl, source, this, prb, fromStore);
+        is = new InsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
         Logger.minor(this, is.toString()+" for "+kh.toString());
         insertSenders.put(kh, is);
         return is;

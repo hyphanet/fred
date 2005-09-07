@@ -39,6 +39,7 @@ public final class RequestSender implements Runnable {
     private short htl;
     final long uid;
     final Node node;
+    private double nearestLoc;
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
     private PartiallyReceivedBlock prb = null;
@@ -63,13 +64,15 @@ public final class RequestSender implements Runnable {
         return super.toString()+" for "+uid;
     }
     
-    public RequestSender(NodeCHK key, short htl, long uid, Node n, 
+    public RequestSender(NodeCHK key, short htl, long uid, Node n, double nearestLoc, 
             PeerNode source) {
         this.key = key;
         this.htl = htl;
         this.uid = uid;
         this.node = n;
         this.source = source;
+        this.nearestLoc = nearestLoc;
+        
         target = key.toNormalizedDouble();
         Thread t = new Thread(this, "RequestSender for UID "+uid);
         t.setDaemon(true);
@@ -78,7 +81,6 @@ public final class RequestSender implements Runnable {
     
     public void run() {
         short origHTL = htl;
-        Message req = DMT.createFNPDataRequest(uid, htl, key);
         node.addSender(key, htl, this);
         HashSet nodesRoutedTo = new HashSet();
         try {
@@ -91,17 +93,32 @@ public final class RequestSender implements Runnable {
                 finish(ROUTE_NOT_FOUND);
                 return;
             }
+            
             // Route it
             PeerNode next;
-            // Can backtrack, so only route to nodes closer than we are to target.
-            next = node.peers.closerPeer(source, nodesRoutedTo, target, source == null);
+            double nextValue;
+            synchronized(node.peers) {
+                next = node.peers.closerPeer(source, nodesRoutedTo, target, source == null);
+                if(next != null)
+                    nextValue = next.getLocation().getValue();
+                else
+                    nextValue = -1.0;
+            }
             
             if(next == null) {
-                // RNF
+                // Backtrack
                 finish(ROUTE_NOT_FOUND);
                 return;
             }
+            Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
+            
+            if(Math.abs(target - nextValue) > Math.abs(target - nearestLoc)) {
+                Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc);
+                htl = node.decrementHTL(source, htl);
+            }
+            
+            Message req = DMT.createFNPDataRequest(uid, htl, key, nearestLoc);
             
             /**
              * What are we waiting for?
@@ -138,7 +155,6 @@ public final class RequestSender implements Runnable {
             }
             
             if(msg.getSpec() == DMT.FNPRejectedLoop) {
-                htl = node.decrementHTL(source, htl);
                 // Find another node to route to
                 continue;
             }
@@ -181,7 +197,6 @@ public final class RequestSender implements Runnable {
             if(msg.getSpec() == DMT.FNPRouteNotFound) {
                 // Backtrack within available hops
                 short newHtl = msg.getShort(DMT.HTL);
-                htl = node.decrementHTL(source, htl);
                 if(newHtl < htl) htl = newHtl;
                 continue;
             }

@@ -3,6 +3,7 @@ package freenet.support;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.HashMap;
@@ -30,6 +31,17 @@ public class SimpleFieldSet {
      */
     public SimpleFieldSet() {
         map = new HashMap();
+    }
+
+    /**
+     * Construct from a string.
+     * @throws IOException if the string is too short or invalid.
+     */
+    public SimpleFieldSet(String content) throws IOException {
+        map = new HashMap();
+        StringReader sr = new StringReader(content);
+        BufferedReader br = new BufferedReader(sr);
+	    read(br);
     }
 
     /**

@@ -16,7 +16,7 @@ import freenet.support.Logger;
 public final class InsertSender implements Runnable {
 
     InsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
-            PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore) {
+            PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore, double closestLocation) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
         this.uid = uid;
@@ -26,6 +26,7 @@ public final class InsertSender implements Runnable {
         this.node = node;
         this.prb = prb;
         this.fromStore = fromStore;
+        this.closestLocation = closestLocation;
         Thread t = new Thread(this, "InsertSender for UID "+uid+" on "+node.portNumber);
         t.setDaemon(true);
         t.start();
@@ -46,6 +47,7 @@ public final class InsertSender implements Runnable {
     final PartiallyReceivedBlock prb;
     final boolean fromStore;
     private boolean receiveFailed = false;
+    final double closestLocation;
     
     private int status = -1;
     static final int NOT_FINISHED = -1;
@@ -63,8 +65,6 @@ public final class InsertSender implements Runnable {
         HashSet nodesRoutedTo = new HashSet();
         
         while(true) {
-            Message req = DMT.createFNPInsertRequest(uid, htl, myKey);
-            
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
             
             if(htl == 0) {
@@ -76,7 +76,14 @@ public final class InsertSender implements Runnable {
             // Route it
             PeerNode next;
             // Can backtrack, so only route to nodes closer than we are to target.
-            next = node.peers.closerPeer(source, nodesRoutedTo, target, source == null);
+            double nextValue;
+            synchronized(node.peers) {
+                next = node.peers.closerPeer(source, nodesRoutedTo, target, source == null);
+                if(next != null)
+                    nextValue = next.getLocation().getValue();
+                else
+                    nextValue = -1.0;
+            }
             
             if(next == null) {
                 // Backtrack
@@ -85,6 +92,13 @@ public final class InsertSender implements Runnable {
             }
             Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
+            
+            if(Math.abs(target - nextValue) > Math.abs(target - closestLocation)) {
+                Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
+                htl = node.decrementHTL(source, htl);
+            }
+            
+            Message req = DMT.createFNPInsertRequest(uid, htl, myKey);
             
             // Wait for ack or reject... will come before even a locally generated DataReply
             
@@ -114,13 +128,11 @@ public final class InsertSender implements Runnable {
             
             if(msg == null) {
                 // No response, move on
-                htl = node.decrementHTL(source, htl);
                 continue;
             }
             
             if(msg.getSpec() == DMT.FNPRejectedLoop) {
                 // Loop - we don't want to send the data to this one
-                htl = node.decrementHTL(source, htl);
                 continue;
             }
             
@@ -197,7 +209,6 @@ public final class InsertSender implements Runnable {
                 Logger.minor(this, "Rejected: RNF");
                 // Still gets the data - but not yet
                 short newHtl = msg.getShort(DMT.HTL);
-                htl = node.decrementHTL(source, htl);
                 if(htl > newHtl) htl = newHtl;
                 continue;
             }

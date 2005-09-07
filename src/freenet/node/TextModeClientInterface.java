@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 
 import freenet.crypt.RandomSource;
+import freenet.io.comm.PeerParseException;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
@@ -19,6 +20,7 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * @author amphibian
@@ -52,6 +54,8 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("PUT:<text> - put a single line of text to a CHK and return the key.");
         System.out.println("PUTFILE:<filename> - put a file from disk.");
         System.out.println("GETFILE:<filename> - fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
+        System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
+        System.out.println("CONNECT:\n<text, until a . on a line by itself> - enter a noderef directly.");
         System.out.println("STATUS - display some status information on the node.");
         System.out.println("QUIT - exit the program");
         // Read command, and data
@@ -260,9 +264,76 @@ public class TextModeClientInterface implements Runnable {
             }
         } else if(line.startsWith("STATUS")) {
             System.out.println(n.getStatus());
+        } else if(line.startsWith("CONNECT:")) {
+            String key = line.substring("CONNECT:".length());
+            while(key.length() > 0 && key.charAt(0) == ' ')
+                key = key.substring(1);
+            while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
+                key = key.substring(0, key.length()-2);
+            if(key.length() > 0) {
+                // Filename
+                System.out.println("Trying to connect to noderef in "+key);
+                File f = new File(line);
+                System.out.println("Attempting to read file "+line);
+                try {
+                    FileInputStream fis = new FileInputStream(line);
+                    DataInputStream dis = new DataInputStream(fis);
+                    int length = (int)f.length();
+                    byte[] data = new byte[length];
+                    dis.readFully(data);
+                    dis.close();
+                    connect(new String(data));
+                } catch (IOException e) {
+                    System.err.println("Could not read file: "+e);
+                    e.printStackTrace(System.err);
+                }
+            } else {
+                StringBuffer sb = new StringBuffer(1000);
+                while(true) {
+                    try {
+                        line = reader.readLine();
+                        if(line == null) throw new EOFException();
+                    } catch (IOException e1) {
+                        System.err.println("Bye... ("+e1+")");
+                        return;
+                    }
+                    if(line.equals(".")) break;
+                    sb.append(line).append('\n');
+                }
+                String content = sb.toString();
+                connect(content);
+            }
         } else {
             
         }
+    }
+
+    /**
+     * Connect to a node, given its reference.
+     */
+    private void connect(String content) {
+        SimpleFieldSet fs;
+        try {
+            fs = new SimpleFieldSet(content);
+        } catch (IOException e) {
+            System.err.println("Did not parse: "+e);
+            e.printStackTrace();
+            return;
+        }
+        PeerNode pn;
+        try {
+            pn = new PeerNode(fs, n);
+        } catch (FSParseException e1) {
+            System.err.println("Did not parse: "+e1);
+            e1.printStackTrace();
+            return;
+        } catch (PeerParseException e1) {
+            System.err.println("Did not parse: "+e1);
+            e1.printStackTrace();
+            return;
+        }
+        if(n.peers.addPeer(pn))
+            System.out.println("Added peer: "+pn);
     }
 
     private String sanitize(String fnam) {

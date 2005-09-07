@@ -32,6 +32,7 @@ public class InsertHandler implements Runnable {
     final PeerNode source;
     final NodeCHK key;
     final long startTime;
+    private double closestLoc;
     private short htl;
     private InsertSender sender;
     private byte[] headers;
@@ -48,6 +49,11 @@ public class InsertHandler implements Runnable {
         this.startTime = startTime;
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
+        closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
+        double targetLoc = key.toNormalizedDouble();
+        double myLoc = node.lm.getLocation().getValue();
+        if(Math.abs(targetLoc - myLoc) < Math.abs(targetLoc - closestLoc))
+            closestLoc = myLoc;
     }
     
     public String toString() {
@@ -95,7 +101,7 @@ public class InsertHandler implements Runnable {
 
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
-            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false);
+            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, closestLoc);
         br = new BlockReceiver(node.usm, source, uid, prb);
         
         // Receive the data, off thread

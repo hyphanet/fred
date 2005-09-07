@@ -18,6 +18,10 @@ public class RequestHandler implements Runnable {
     final Message req;
     final Node node;
     final long uid;
+    private short htl;
+    final PeerNode source;
+    private double closestLoc;
+    final NodeCHK key;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -27,20 +31,25 @@ public class RequestHandler implements Runnable {
         req = m;
         node = n;
         uid = id;
+        htl = req.getShort(DMT.HTL);
+        source = (PeerNode) req.getSource();
+        closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
+        double myLoc = n.lm.getLocation().getValue();
+        // FIXME should be more generic when implement SSKs
+        key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
+        double keyLoc = key.toNormalizedDouble();
+        if(Math.abs(keyLoc - myLoc) < Math.abs(keyLoc - closestLoc))
+            closestLoc = myLoc;
     }
 
     public void run() {
         try {
-        short htl = req.getShort(DMT.HTL);
-        PeerNode source = (PeerNode) req.getSource();
         htl = source.decrementHTL(htl);
-        // FIXME should be more generic when implement SSKs
-        NodeCHK key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         
         Message accepted = DMT.createFNPAccepted(uid);
         source.send(accepted);
         
-        Object o = node.makeRequestSender(key, htl, uid, source);
+        Object o = node.makeRequestSender(key, htl, uid, source, closestLoc);
         if(o instanceof CHKBlock) {
             CHKBlock block = (CHKBlock) o;
             Message df = DMT.createFNPDataFound(uid, block.getHeader());
