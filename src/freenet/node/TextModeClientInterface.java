@@ -9,7 +9,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.util.Hashtable;
 
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
@@ -18,6 +20,7 @@ import freenet.keys.CHKDecodeException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.ClientPublishStreamKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -31,12 +34,14 @@ import freenet.support.SimpleFieldSet;
  */
 public class TextModeClientInterface implements Runnable {
 
-    RandomSource r;
-    Node n;
+    final RandomSource r;
+    final Node n;
+    final Hashtable streams;
     
     TextModeClientInterface(Node n) {
         this.n = n;
         this.r = n.random;
+        streams = new Hashtable();
         new Thread(this).start();
     }
     
@@ -54,6 +59,9 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("PUT:<text> - put a single line of text to a CHK and return the key.");
         System.out.println("PUTFILE:<filename> - put a file from disk.");
         System.out.println("GETFILE:<filename> - fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
+        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
+        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
+        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
         System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
         System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
         System.out.println("NAME:<new node name> - change the node's name.");
@@ -75,7 +83,7 @@ public class TextModeClientInterface implements Runnable {
     /**
      * 
      */
-    private void processLine(BufferedReader reader) {
+    private void processLine(BufferedReader reader) throws UnsupportedEncodingException {
         String line;
         try {
             line = reader.readLine();
@@ -84,7 +92,7 @@ public class TextModeClientInterface implements Runnable {
             return;
         }
         if(line == null) line = "QUIT";
-        String uline = line.toLowerCase();
+        String uline = line.toUpperCase();
         if(uline.startsWith("GET:")) {
             // Should have a key next
             String key = line.substring("GET:".length());
@@ -252,6 +260,53 @@ public class TextModeClientInterface implements Runnable {
                 System.out.println("Threw: "+t);
                 t.printStackTrace();
             }
+        } else if(line.startsWith("PUBLISH:")) {
+            line = line.substring("PUBLISH:".length());
+            line = line.trim();
+            System.out.println("Stream name: "+line);
+            ClientPublishStreamKey key = n.createPublishStream();
+            FreenetURI streamKey = key.getURI();
+            streamKey = streamKey.setDocName(line);
+            System.out.println("Stream key: "+streamKey);
+            streams.put(line, key);
+        } else if(line.startsWith("PUSH:")) {
+            // PUSH:<name>:<text>
+            line = line.substring("PUSH:".length());
+            line = line.trim();
+            int index = line.indexOf(':');
+            if(index == -1) {
+                System.err.println("What do you want me to publish?");
+                return;
+            }
+            String name = line.substring(0, index);
+            ClientPublishStreamKey key = (ClientPublishStreamKey) streams.get(name);
+            if(key == null) {
+                System.err.println("Could not find stream called "+name);
+            } else {
+                String content;
+                if(line.length() > index+1) {
+                    content = line.substring(index+1);
+                } else {
+                    content = readLines(reader, false);
+                }
+                System.out.println("Publishing to "+key);
+                System.out.println("Data to publish:\n"+content);
+                n.publish(key, content.getBytes("UTF-8"));
+            }
+        } else if(uline.startsWith("SUBSCRIBE:")) {
+            line = line.substring("SUBSCRIBE:".length());
+            line = line.trim();
+            try {
+                FreenetURI uri = new FreenetURI(line);
+                ClientPublishStreamKey key = new ClientPublishStreamKey(uri);
+                n.subscribe(key, new MySubscriptionCallback(uri.getDocName()));
+                System.out.println("Subscribed.");
+            } catch (MalformedURLException e1) {
+                System.err.println("Invalid URI: "+e1.getMessage());
+                e1.printStackTrace();
+                return;
+            }
+            
         } else if(uline.startsWith("STATUS")) {
             SimpleFieldSet fs = n.exportFieldSet();
             System.out.println(fs.toString());
@@ -407,7 +462,34 @@ public class TextModeClientInterface implements Runnable {
         }
         return sb.toString();
     }
-    
-    
+
+    /**
+     * 
+     * SubscriptionCallback that dumps output to stdout.
+     */
+    public class MySubscriptionCallback implements SubscriptionCallback {
+
+        final String name;
+        
+        public MySubscriptionCallback(String string) {
+            name = string;
+        }
+
+        public void got(long packetNumber, byte[] data) {
+            System.out.println(name+":"+packetNumber+":"+new String(data));
+        }
+
+        public void lostConnection() {
+            System.out.println(name+":LOST CONNECTION");
+        }
+
+        public void restarted() {
+            System.out.println(name+":RESTARTED");
+        }
+
+        public void connected() {
+            System.out.println(name+":CONNECTED");
+        }
+    }
 
 }

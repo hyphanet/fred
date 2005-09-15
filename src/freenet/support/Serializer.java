@@ -22,6 +22,7 @@ package freenet.support;
 import freenet.io.*;
 import freenet.io.comm.*;
 import freenet.keys.Key;
+import freenet.keys.PublishStreamKey;
 
 import java.io.*;
 import java.util.*;
@@ -34,7 +35,7 @@ import java.util.*;
  */
 public class Serializer {
 
-    public static final String VERSION = "$Id: Serializer.java,v 1.4 2005/08/25 17:28:19 amphibian Exp $";
+    public static final String VERSION = "$Id: Serializer.java,v 1.5 2005/09/15 18:16:04 amphibian Exp $";
 
 	public static List readListFromDataInputStream(Class elementType, DataInputStream dis) throws IOException {
 		LinkedList ret = new LinkedList();
@@ -77,6 +78,8 @@ public class Serializer {
 			return new BitArray(dis);
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
+		} else if (type.equals(PublishStreamKey.class)) {
+		    return PublishStreamKey.read(dis, true);
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}

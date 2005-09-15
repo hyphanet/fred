@@ -4,7 +4,6 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -18,7 +17,7 @@ import freenet.support.Fields;
  * Node-level CHK. Does not have enough information to decode the payload.
  * But can verify that it is intact. Just has the routingKey.
  */
-public class NodeCHK extends Key implements WritableToDataOutputStream {
+public class NodeCHK extends Key {
 
     final int hash;
     double cachedNormalizedDouble;

@@ -6,6 +6,7 @@ import java.util.Hashtable;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
 import freenet.io.comm.Message;
+import freenet.io.comm.MessageType;
 import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
 
@@ -48,42 +49,49 @@ public class NodeDispatcher implements Dispatcher {
             }
             return true;
         }
-        if(m.getSpec() == DMT.FNPLocChangeNotification) {
+        MessageType spec = m.getSpec();
+        if(spec == DMT.FNPLocChangeNotification) {
             double newLoc = m.getDouble(DMT.LOCATION);
             source.updateLocation(newLoc);
             return true;
-        }
-        if(m.getSpec() == DMT.FNPSwapRequest) {
+        } else if(spec == DMT.FNPSwapRequest) {
             return node.lm.handleSwapRequest(m);
-        }
-        if(m.getSpec() == DMT.FNPSwapReply) {
+        } else if(spec == DMT.FNPSwapReply) {
             return node.lm.handleSwapReply(m);
-        }
-        if(m.getSpec() == DMT.FNPSwapRejected) {
+        } else if(spec == DMT.FNPSwapRejected) {
             return node.lm.handleSwapRejected(m);
-        }
-        if(m.getSpec() == DMT.FNPSwapCommit) {
+        } else if(spec == DMT.FNPSwapCommit) {
             return node.lm.handleSwapCommit(m);
-        }
-        if(m.getSpec() == DMT.FNPSwapComplete) {
+        } else if(spec == DMT.FNPSwapComplete) {
             return node.lm.handleSwapComplete(m);
-        }
-        if(m.getSpec() == DMT.FNPRoutedPing) {
+        } else if(spec == DMT.FNPRoutedPing) {
             return handleRouted(m);
-        }
-        if(m.getSpec() == DMT.FNPRoutedPong) {
+        } else if(spec == DMT.FNPRoutedPong) {
             return handleRoutedReply(m);
-        }
-        if(m.getSpec() == DMT.FNPRoutedRejected) {
+        } else if(spec == DMT.FNPRoutedRejected) {
             return handleRoutedRejected(m);
-        }
-        if(m.getSpec() == DMT.FNPDataRequest) {
+        } else if(spec == DMT.FNPDataRequest) {
             return handleDataRequest(m);
-        }
-        if(m.getSpec() == DMT.FNPInsertRequest) {
+        } else if(spec == DMT.FNPInsertRequest) {
             return handleInsertRequest(m);
+        } else if(spec == DMT.FNPPublishData) {
+            return handlePublishData(m);
         }
+//        } // SubscribeData, SubscribeRestarted etc handled by SubscribeSender.
         return false;
+    }
+
+    /**
+     * Handle an FNPPublishData message.
+     * @return False to put it back onto the queue.
+     */
+    private boolean handlePublishData(Message m) {
+        // Create a PublishSender. This will do all the work.
+        // FIXME maybe we should check whether we've sent the packet before?
+        // It's not really a viable DoS but it is good practice...
+        PublishHandlerSender ps =
+            node.makePublishHandlerSender(m);
+        return true;
     }
 
     /**

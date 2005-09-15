@@ -34,7 +34,7 @@ import freenet.support.Serializer;
  */
 public class Message {
 
-    public static final String VERSION = "$Id: Message.java,v 1.10 2005/08/25 17:28:19 amphibian Exp $";
+    public static final String VERSION = "$Id: Message.java,v 1.11 2005/09/15 18:16:04 amphibian Exp $";
 
 	private final MessageType _spec;
 	private final PeerContext _source;
@@ -68,7 +68,7 @@ public class Message {
 		        }
 		    }
 		} catch (EOFException e) {
-		    Logger.normal(Message.class,"Message packet ends prematurely while deserialising "+mspec.getName());
+		    Logger.normal(Message.class,"Message packet ends prematurely while deserialising "+mspec.getName(), e);
 		    return null;
 		} catch (IOException e) {
 		    Logger.error(Message.class, "WTF?: "+e+" reading from buffer stream", e);

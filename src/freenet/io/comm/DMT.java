@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import freenet.keys.Key;
+import freenet.keys.PublishStreamKey;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.ShortBuffer;
@@ -77,6 +78,7 @@ public class DMT {
     public static final String RETURN_LOCATION = "returnLocation";
     public static final String BLOCK_HEADERS = "blockHeaders";
     public static final String DATA_INSERT_REJECTED_REASON = "dataInsertRejectedReason";
+    public static final String STREAM_SEQNO = "streamSequenceNumber";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -774,6 +776,62 @@ public class DMT {
         return msg;
     }
     
+    public static final MessageType FNPPublishData = new MessageType("FNPPublishData") {{
+        addField(UID, Long.class);
+        addField(HTL, Short.class);
+        addField(DATA, ShortBuffer.class);
+        addField(KEY, PublishStreamKey.class);
+        addField(STREAM_SEQNO, Long.class);
+        addField(NEAREST_LOCATION, Double.class);
+    }};
+    
+    public static final Message createFNPPublishData(short htl, byte[] data, PublishStreamKey key, long seqNo, long id, double nearestLoc) {
+        Message msg = new Message(FNPPublishData);
+        msg.set(HTL, htl);
+        msg.set(KEY, key);
+        msg.set(DATA, new ShortBuffer(data));
+        msg.set(STREAM_SEQNO, seqNo);
+        msg.set(UID, id);
+        msg.set(NEAREST_LOCATION, nearestLoc);
+        return msg;
+    }
+    
+    public static final MessageType FNPPublishDataSucceeded = new MessageType("FNPPublishDataSucceeded") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static final Message createFNPPublishDataSucceeded(long id) {
+        Message msg = new Message(FNPPublishDataSucceeded);
+        msg.set(UID, id);
+        return msg;
+    }
+    
+    public static final MessageType FNPPublishDataInvalid = new MessageType("FNPPublishDataInvalid") {{
+        addField(UID, Long.class);
+    }};
+    
+    public static final Message createFNPPublishDataInvalid(long id) {
+        Message msg = new Message(FNPPublishDataInvalid);
+        msg.set(UID, id);
+        return msg;
+    }
+    
+//    public static final MessageType FNPSubscribeRequest = new MessageType("FNPSubscribeRequest") {{
+//        addField(UID, Long.class);
+//        addField(HTL, Short.class);
+//        addField(KEY, PublishStreamKey.class);
+//        addField(STREAM_SEQNO, Long.class);
+//    }};
+//    
+//    public static final Message createFNPSubscribeRequest(long uid, short htl, PublishStreamKey key, long seqNo) {
+//        Message msg = new Message(FNPSubscribeRequest);
+//        msg.set(UID, uid);
+//        msg.set(HTL, htl);
+//        msg.set(KEY, key);
+//        msg.set(STREAM_SEQNO, seqNo);
+//        return msg;
+//    }
+//    
 	public static void init() { }
 
 }
