@@ -234,7 +234,7 @@ public class PublishHandlerSender implements Runnable {
                 
                 msg = null;
                 try {
-                    node.usm.waitFor(mf);
+                    msg = node.usm.waitFor(mf);
                 } catch (DisconnectedException e3) {
                     Logger.error(this, "Disconnected from next: "+next+" while waiting for completion on "+this);
                     continue; // can cause load multiplication, hence the error; what else are we supposed to do though?
@@ -242,7 +242,7 @@ public class PublishHandlerSender implements Runnable {
                 
                 if(msg == null || msg.getSpec() == DMT.FNPRejectedOverload) {
                     // Timeout
-                    Logger.error(this, "Timeout waiting for completion of "+this);
+                    Logger.error(this, "Timeout waiting for completion of "+this+" : "+msg);
                     // Propagate back to source; fatal
                     if(source != null) {
                         Message m = DMT.createFNPRejectedOverload(uid);
