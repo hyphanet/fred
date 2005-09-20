@@ -47,6 +47,7 @@ public class SubscriptionManager {
         // Each pretends it is the root
         ClientSubscriptionHandler csh;
         boolean add = false;
+        Logger.minor(this, "Subscribing locally to "+key);
         synchronized(this) {
             csh = (ClientSubscriptionHandler) clientSubscriptionsByKey.get(key);
             if(csh == null) {
@@ -112,7 +113,7 @@ public class SubscriptionManager {
             sub = (SubscriptionHandler) subscriptionsByKey.get(key);
         }
         if(sub == null) {
-            Logger.normal(this, "Dropped sub packet from "+source+" on "+key);
+            Logger.normal(this, "Dropped sub packet from "+source+" on "+key+" - not subscribed");
             return;
         }
         sub.processPacket(packetNumber, packetData, source);

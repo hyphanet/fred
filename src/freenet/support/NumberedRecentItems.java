@@ -147,8 +147,8 @@ public class NumberedRecentItems {
         }
     }
     
-    public synchronized NumberedItem[] getAfter(int target) {
-        int x = Arrays.binarySearch(items, new Integer(target), myComparator);
+    public synchronized NumberedItem[] getAfter(long target) {
+        int x = Arrays.binarySearch(items, new Long(target), myComparator);
         if(x == items.length-1) return null;
         if(x >= 0) {
             NumberedItem[] out = new NumberedItem[items.length-x-1];

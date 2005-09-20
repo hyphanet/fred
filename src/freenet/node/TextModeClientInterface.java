@@ -9,7 +9,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
@@ -37,11 +39,13 @@ public class TextModeClientInterface implements Runnable {
     final RandomSource r;
     final Node n;
     final Hashtable streams;
+    private Writer subscribedDataStream;
     
     TextModeClientInterface(Node n) {
         this.n = n;
         this.r = n.random;
         streams = new Hashtable();
+        subscribedDataStream = new OutputStreamWriter(System.out);
         new Thread(this).start();
     }
     
@@ -65,6 +69,7 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
         System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
         System.out.println("NAME:<new node name> - change the node's name.");
+        System.out.println("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.");
         System.out.println("STATUS - display some status information on the node including its reference and connections.");
         System.out.println("QUIT - exit the program");
         // Read command, and data
@@ -93,6 +98,7 @@ public class TextModeClientInterface implements Runnable {
         }
         if(line == null) line = "QUIT";
         String uline = line.toUpperCase();
+        Logger.minor(this, "Command: "+line);
         if(uline.startsWith("GET:")) {
             // Should have a key next
             String key = line.substring("GET:".length());
@@ -300,7 +306,7 @@ public class TextModeClientInterface implements Runnable {
                 FreenetURI uri = new FreenetURI(line);
                 ClientPublishStreamKey key = new ClientPublishStreamKey(uri);
                 n.subscribe(key, new MySubscriptionCallback(uri.getDocName()));
-                System.out.println("Subscribed.");
+                System.out.println("Subscribed to "+uri.getDocName()+".");
             } catch (MalformedURLException e1) {
                 System.err.println("Invalid URI: "+e1.getMessage());
                 e1.printStackTrace();
@@ -341,6 +347,20 @@ public class TextModeClientInterface implements Runnable {
                 if(content.equals("")) return;
                 connect(content);
             }
+        } else if(uline.startsWith("SUBFILE:")) {
+            String filename = line.substring("SUBFILE:".length()).trim();
+            System.out.println("Writing all received subscription data to "+filename);
+            try {
+                FileOutputStream fos = new FileOutputStream(filename, true);
+                OutputStreamWriter w = new OutputStreamWriter(fos);
+                // Test it
+                w.write("Opened at "+System.currentTimeMillis()+" for writing subscribed data\n");
+                subscribedDataStream = w;
+                w.flush();
+            } catch (IOException e) {
+                System.err.println("Could not use file: "+e.getMessage());
+            }
+            
         } else if(uline.startsWith("NAME:")) {
             System.out.println("Node name currently: "+n.myName);
             String key = line.substring("NAME:".length());
@@ -466,6 +486,7 @@ public class TextModeClientInterface implements Runnable {
     /**
      * 
      * SubscriptionCallback that dumps output to stdout.
+     * FIXME this might block if stdout is redirected and disk is full...
      */
     public class MySubscriptionCallback implements SubscriptionCallback {
 
@@ -476,19 +497,47 @@ public class TextModeClientInterface implements Runnable {
         }
 
         public void got(long packetNumber, byte[] data) {
-            System.out.println(name+":"+packetNumber+":"+new String(data));
+            try {
+                subscribedDataStream.write(name+":"+packetNumber+":"+new String(data)+"\n");
+                subscribedDataStream.flush();
+            } catch (IOException e) {
+                String s = "Error writing to subscriptions output file - disk full? "+e.getMessage();
+                Logger.error(this, s);
+                System.err.println(s);
+            }
         }
 
         public void lostConnection() {
-            System.out.println(name+":LOST CONNECTION");
+            try {
+                subscribedDataStream.write(name+":LOST CONNECTION\n");
+                subscribedDataStream.flush();
+            } catch (IOException e) {
+                String s = "Error writing to subscriptions output file - disk full? "+e.getMessage();
+                Logger.error(this, s);
+                System.err.println(s);
+            }
         }
 
         public void restarted() {
-            System.out.println(name+":RESTARTED");
+            try {
+                subscribedDataStream.write(name+":RESTARTED\n");
+                subscribedDataStream.flush();
+            } catch (IOException e) {
+                String s = "Error writing to subscriptions output file - disk full? "+e.getMessage();
+                Logger.error(this, s);
+                System.err.println(s);
+            }
         }
 
         public void connected() {
-            System.out.println(name+":CONNECTED");
+            try {
+                subscribedDataStream.write(name+":CONNECTED\n");
+                subscribedDataStream.flush();
+            } catch (IOException e) {
+                String s = "Error writing to subscriptions output file - disk full? "+e.getMessage();
+                Logger.error(this, s);
+                System.err.println(s);
+            }
         }
     }
 

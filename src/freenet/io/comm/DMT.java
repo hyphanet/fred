@@ -796,6 +796,20 @@ public class DMT {
         return msg;
     }
     
+    public static final MessageType FNPSubscribeData = new MessageType("FNPSubscribeData") {{
+        addField(DATA, ShortBuffer.class);
+        addField(KEY, PublishStreamKey.class);
+        addField(STREAM_SEQNO, Long.class);
+    }};
+    
+    public static final Message createFNPSubscribeData(PublishStreamKey key, long seqNo, byte[] data) {
+        Message msg = new Message(FNPSubscribeData);
+        msg.set(KEY, key);
+        msg.set(STREAM_SEQNO, seqNo);
+        msg.set(DATA, new ShortBuffer(data));
+        return msg;
+    }
+    
     public static final MessageType FNPPublishDataSucceeded = new MessageType("FNPPublishDataSucceeded") {{
         addField(UID, Long.class);
     }};
