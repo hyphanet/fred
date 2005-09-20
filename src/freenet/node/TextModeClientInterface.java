@@ -40,6 +40,7 @@ public class TextModeClientInterface implements Runnable {
     final Node n;
     final Hashtable streams;
     private Writer subscribedDataStream;
+    private String lastSendStreamName;
     
     TextModeClientInterface(Node n) {
         this.n = n;
@@ -70,6 +71,7 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
         System.out.println("NAME:<new node name> - change the node's name.");
         System.out.println("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.");
+        System.out.println("SAY:<text> - send text to the last created/pushed stream");
         System.out.println("STATUS - display some status information on the node including its reference and connections.");
         System.out.println("QUIT - exit the program");
         // Read command, and data
@@ -274,6 +276,7 @@ public class TextModeClientInterface implements Runnable {
             FreenetURI streamKey = key.getURI();
             streamKey = streamKey.setDocName(line);
             System.out.println("Stream key: "+streamKey);
+            lastSendStreamName = line;
             streams.put(line, key);
         } else if(line.startsWith("PUSH:")) {
             // PUSH:<name>:<text>
@@ -298,6 +301,7 @@ public class TextModeClientInterface implements Runnable {
                 System.out.println("Publishing to "+key);
                 System.out.println("Data to publish:\n"+content);
                 n.publish(key, content.getBytes("UTF-8"));
+                lastSendStreamName = name;
             }
         } else if(uline.startsWith("SUBSCRIBE:")) {
             line = line.substring("SUBSCRIBE:".length());
@@ -370,6 +374,18 @@ public class TextModeClientInterface implements Runnable {
                 key = key.substring(0, key.length()-2);
             System.out.println("New name: "+key);
             n.setName(key);
+        } else if(uline.startsWith("SAY ") || uline.startsWith("SAY:")) {
+            String toSay = line.substring("SAY:".length()).trim();
+            if(lastSendStreamName != null) {
+                ClientPublishStreamKey key = (ClientPublishStreamKey) streams.get(lastSendStreamName);
+                if(key == null) {
+                    System.err.println("Could not find stream called "+lastSendStreamName);
+                } else {
+                    System.out.println("Publishing to "+key);
+                    System.out.println("Data to publish:\n"+toSay);
+                    n.publish(key, toSay.getBytes("UTF-8"));
+                }
+            }
         } else {
             
         }
