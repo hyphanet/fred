@@ -50,17 +50,16 @@ public class PacketSender implements Runnable {
                             pn.disconnected();
                             continue;
                         }
-
-                        if(node.packetMangler == null) continue;
-                        // Any messages to send?
-                        MessageItem[] messages = null;
-                        messages = pn.grabQueuedMessageItems();
-                        if(messages != null) {
-                            // Send packets, right now, blocking, including any active notifications
-                            node.packetMangler.processOutgoingOrRequeue(messages, pn, true);
-                            continue;
+                        
+                        // Any urgent notifications to send?
+                        long urgentTime = pn.getNextUrgentTime();
+                        if(urgentTime <= now) {
+                            // Send them
+                            pn.sendAnyUrgentNotifications();
+                        } else {
+                            nextActionTime = Math.min(nextActionTime, urgentTime);
                         }
-
+                        
                         // Any packets to resend?
                         for(int j=0;j<2;j++) {
                             KeyTracker kt;
@@ -88,14 +87,15 @@ public class PacketSender implements Runnable {
                             }
                             
                         }
-                        
-                        // Any urgent notifications to send?
-                        long urgentTime = pn.getNextUrgentTime();
-                        if(urgentTime <= now) {
-                            // Send them
-                            pn.sendAnyUrgentNotifications();
-                        } else {
-                            nextActionTime = Math.min(nextActionTime, urgentTime);
+
+                        if(node.packetMangler == null) continue;
+                        // Any messages to send?
+                        MessageItem[] messages = null;
+                        messages = pn.grabQueuedMessageItems();
+                        if(messages != null) {
+                            // Send packets, right now, blocking, including any active notifications
+                            node.packetMangler.processOutgoingOrRequeue(messages, pn, true);
+                            continue;
                         }
                         
                         // Need to send a keepalive packet?
