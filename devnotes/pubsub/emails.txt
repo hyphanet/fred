@@ -1,0 +1,572 @@
+To: tech@freenetproject.org
+From: Matthew Toseland <toad@amphibian.dyndns.org>
+Cc: ian@freenetproject.org
+Subject: [Tech] Publish/subscribe redux
+X-BeenThere: tech@freenetproject.org
+X-Mailman-Version: 2.1.5
+Reply-To: tech@freenetproject.org
+List-Id: tech.freenetproject.org
+List-Unsubscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=unsubscribe>
+List-Archive: <http://emu.freenetproject.org/pipermail/tech>
+List-Post: <mailto:tech@freenetproject.org>
+List-Help: <mailto:tech-request@freenetproject.org?subject=help>
+List-Subscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=subscribe>
+
+<snip signature>
+
+[21:02] <toad_> high bandwidth streams => vulnerable to bottlenecks =>
+striping, ideally use passive requests
+[21:02] <toad_> medium bandwidth, low latency streams => passive
+requests are bad, preferable to use a single path
+[21:03] <toad_> low bandwidth streams => either way is equally
+reasonable
+[21:03] <toad_> given that we won't be implementing 1:1 streams for some
+time, i don't know how important the middle case is
+
+linyos is concerned about bottlenecks. If we channel everything through
+one key, then that makes a bottleneck - if the node is slow, or if any
+node on the insert chain is slow, then it is a problem.
+
+Conclusions:
+- It is likely that the current approach of imposing arbitrary limits
+  will not work. We need to have the actual data in the datastore, with
+  LRU. This means, ultimately, implementing pub/sub over passive
+  requests - there are two approaches:
+  a) Spread spectrum - we subscribe to SSK@.../1, SSK@.../2, /3 etc.
+     This is more or less immune to "bottleneck" effects. But it is not
+     very efficient.
+  b) TUK-based - we send a passive request for a TUK, with a flag to
+     indicate that the passive request not be deleted when it fires. It
+     will then fire when new data comes in. This is more efficient than
+     the above because we do not need to maintain a large pool of
+     passive requests for future keys. But it is vulnerable to
+     bottleneck effects.
+- We have not promised anyone that we will implement TUKs for 0.7.0, and
+  we should not do so unless it is necessary.
+- If the current code on pub/sub is useful, we should get it working for
+  0.7.0. IMHO it isn't directly, but the thinking that went into it is.
+  That can be reused at a later date.
+- It is possible to implement both fast and slow streams over passive
+  requests and SSKs.
+- Passive requests have many of the same issues that publish/subscribe
+  has. There are however simple (but crude) solutions. The obvious one
+  being if we lose our parent node, instead of rerouting we just
+  forcibly disconnect all our dependants. They will then retry.
+  Coalescing can work exactly as in regular requests to ensure that the
+  passive-request tree does not get into loops.
+  
+Therefore:
+- We should shelve the whole publish/subscribe project for the time
+  being.
+- We should implement the basic functionality of freenet - splitfiles,
+  SSKs, FCPv2, etc.
+- Passive requests, possibly TUKs, publish/subscribe streams etc. should
+  go into a future release. IMHO this should be 0.8.0. Premix routing
+  and 1:1 streams (in cooperation with I2P or otherwise) should go into
+  0.9.0. :)
+--
+Matthew J Toseland - toad@amphibian.dyndns.org
+Freenet Project Official Codemonkey - http://freenetproject.org/
+ICTHUS - Nothing is impossible. Our Boss says so.
+
+-------------------------------------------------------------------------
+PREVIOUSLY
+-------------------------------------------------------------------------
+
+To: tech@freenetproject.org
+From: Matthew Toseland <toad@amphibian.dyndns.org>
+Subject: [Tech] Pub/sub = passive requests + TUKs
+X-BeenThere: tech@freenetproject.org
+X-Mailman-Version: 2.1.5
+Reply-To: tech@freenetproject.org
+List-Id: tech.freenetproject.org
+List-Unsubscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=unsubscribe>
+List-Archive: <http://emu.freenetproject.org/pipermail/tech>
+List-Post: <mailto:tech@freenetproject.org>
+List-Help: <mailto:tech-request@freenetproject.org?subject=help>
+List-Subscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=subscribe>
+
+Suppose:
+- We have a separate store for SSKs. They have 1kB of payload, plus the
+  headers.
+- SSKs are versioned, with a timestamp. I.e. they become TUKs. Requests
+  can optionally propagate far enough to fetch all values. There can be
+  any number of SSKs with the same key and different version numbers /
+  datestamps. Requests can ask for either a single specific version, the
+  most recent version, or everything since a given revision. Only the
+  data blocks which are actually returned are promoted in the cache.
+- To subscribe to a stream, I send a request out for the key I want,
+  with the minimum acceptable version number/datestamp, plus three flags:
+  - Passive request - If the data is not found, keep a tag on each node
+    on the chain, and if it ever passes through any of the nodes on the
+    chain, pass it back to me.
+  - TUK - Return the most recent version of the SSK.
+  - Subscribe - Requires the other two. Means the tag persists.
+    Obviously it will be deleted if the originator rejects the data, or
+    unsubscribes.
+
+Now, how would this actually work?
+
+Each node we are connected to can have up to 1000 subscriptions. Each
+subscription is for a key - this can be an SSK or a CHK - and if it is
+an SSK, it can have the "persist" flag. If it does not have this flag,
+or this flag is false, then when the data is found, the subscription is
+removed. If we no do not have enough subscription quota left for a given
+subscription, for that node, or for ourselves with another node, we
+reject the request attempting to add the subscription with a
+RejectOverload. Nodes can unsubscribe. Each subscription can have an
+expiry date (actually, perhaps we should impose one).
+
+Passive requests can only be created by actual requests with the passive
+request flag. The request will be routed as normal, until HTL runs out
+(or it finds the data if the TUK flag is not enabled).
+
+Now, how do we make this scale?:
+1. If the TUK flag is off, and the request reaches a node which has the
+data, we return it, and the request ends. No passive requests are
+installed.
+2. If any request for a TUK, even if not passive, reaches a node which
+already has a valid subscription at a higher or equal HTL for the key,
+then the request ends at that point, and returns the data that node has.
+If the passive-request flag is enabled, then passive request tags are
+added up to that node, and that node adds one for the node connecting to
+it if necessary.
+3. What to do about looping and coalescing? One option is to not
+coalesce at all with running requests, and either forward the request
+as-is or reject it... more in my next email...
+--
+Matthew J Toseland - toad@amphibian.dyndns.org
+Freenet Project Official Codemonkey - http://freenetproject.org/
+ICTHUS - Nothing is impossible. Our Boss says so.
+
+
+To: tech@freenetproject.org
+Subject: Re: [Tech] Pub/sub = passive requests + TUKs
+From: Matthew Toseland <toad@amphibian.dyndns.org>
+X-BeenThere: tech@freenetproject.org
+X-Mailman-Version: 2.1.5
+Reply-To: tech@freenetproject.org
+List-Id: tech.freenetproject.org
+List-Unsubscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=unsubscribe>
+List-Archive: <http://emu.freenetproject.org/pipermail/tech>
+List-Post: <mailto:tech@freenetproject.org>
+List-Help: <mailto:tech-request@freenetproject.org?subject=help>
+List-Subscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=subscribe>
+
+On Thu, Oct 20, 2005 at 06:54:42PM +0100, Matthew Toseland wrote:
+> Suppose:
+> - We have a separate store for SSKs. They have 1kB of payload, plus the
+>   headers.
+> - SSKs are versioned, with a timestamp. I.e. they become TUKs. Requests
+>   can optionally propagate far enough to fetch all values. There can be
+>   any number of SSKs with the same key and different version numbers /
+>   datestamps. Requests can ask for either a single specific version, the
+>   most recent version, or everything since a given revision. Only the
+>   data blocks which are actually returned are promoted in the cache.
+> - To subscribe to a stream, I send a request out for the key I want,
+>   with the minimum acceptable version number/datestamp, plus three flags:
+>   - Passive request - If the data is not found, keep a tag on each node
+>     on the chain, and if it ever passes through any of the nodes on the
+>     chain, pass it back to me.
+>   - TUK - Return the most recent version of the SSK.
+>   - Subscribe - Requires the other two. Means the tag persists.
+>     Obviously it will be deleted if the originator rejects the data, or
+>     unsubscribes.
+>
+> Now, how would this actually work?
+>
+> Each node we are connected to can have up to 1000 subscriptions. Each
+> subscription is for a key - this can be an SSK or a CHK - and if it is
+> an SSK, it can have the "persist" flag. If it does not have this flag,
+> or this flag is false, then when the data is found, the subscription is
+> removed. If we no do not have enough subscription quota left for a given
+> subscription, for that node, or for ourselves with another node, we
+> reject the request attempting to add the subscription with a
+> RejectOverload. Nodes can unsubscribe. Each subscription can have an
+> expiry date (actually, perhaps we should impose one).
+>
+> Passive requests can only be created by actual requests with the passive
+> request flag. The request will be routed as normal, until HTL runs out
+> (or it finds the data if the TUK flag is not enabled).
+>
+> Now, how do we make this scale?:
+> 1. If the TUK flag is off, and the request reaches a node which has the
+> data, we return it, and the request ends. No passive requests are
+> installed.
+> 2. If any request for a TUK, even if not passive, reaches a node which
+> already has a valid subscription at a higher or equal HTL for the key,
+> then the request ends at that point, and returns the data that node has.
+> If the passive-request flag is enabled, then passive request tags are
+> added up to that node, and that node adds one for the node connecting to
+> it if necessary.
+> 3. What to do about looping and coalescing? One option is to not
+> coalesce at all with running requests, and either forward the request
+> as-is or reject it... more in my next email...
+
+As far as looping and coalescing goes: We can coalesce the requests
+exactly as proposed for regular requests. So the request will not get
+stuck by eating its own tail. As long as the network isn't totally
+degenerate this shouldn't be a big problem. Also, if we do hit our own
+tail, we could have a "lightweight subscribe" which isn't refcounted,
+but passes packets both ways to strengthen the network.
+
+As far as resubscription and renewals go, there are two options really:
+1. Try to get the network to maintain the subscriptions itself;
+automatic resubscription etc.
+2. Make the client resubscribe itself every so often. We would have to
+let some of their requests through...
+3. Don't bother. Switch streams from time to time at the client level.
+The problem with this is that we will still have to deal with situations
+such as the parent of a node being disconnected.
+
+
+--
+Matthew J Toseland - toad@amphibian.dyndns.org
+Freenet Project Official Codemonkey - http://freenetproject.org/
+ICTHUS - Nothing is impossible. Our Boss says so.
+
+
+To: tech@freenetproject.org
+Subject: Re: [Tech] Pub/sub = passive requests + TUKs
+From: Matthew Toseland <toad@amphibian.dyndns.org>
+X-BeenThere: tech@freenetproject.org
+X-Mailman-Version: 2.1.5
+Reply-To: tech@freenetproject.org
+List-Id: tech.freenetproject.org
+List-Unsubscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=unsubscribe>
+List-Archive: <http://emu.freenetproject.org/pipermail/tech>
+List-Post: <mailto:tech@freenetproject.org>
+List-Help: <mailto:tech-request@freenetproject.org?subject=help>
+List-Subscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=subscribe>
+
+On Thu, Oct 20, 2005 at 07:46:46PM +0100, Matthew Toseland wrote:
+> On Thu, Oct 20, 2005 at 06:54:42PM +0100, Matthew Toseland wrote:
+> > Suppose:
+> > - We have a separate store for SSKs. They have 1kB of payload, plus the
+> >   headers.
+> > - SSKs are versioned, with a timestamp. I.e. they become TUKs. Requests
+> >   can optionally propagate far enough to fetch all values. There can be
+> >   any number of SSKs with the same key and different version numbers /
+> >   datestamps. Requests can ask for either a single specific version, the
+> >   most recent version, or everything since a given revision. Only the
+> >   data blocks which are actually returned are promoted in the cache.
+> > - To subscribe to a stream, I send a request out for the key I want,
+> >   with the minimum acceptable version number/datestamp, plus three flags:
+> >   - Passive request - If the data is not found, keep a tag on each node
+> >     on the chain, and if it ever passes through any of the nodes on the
+> >     chain, pass it back to me.
+> >   - TUK - Return the most recent version of the SSK.
+> >   - Subscribe - Requires the other two. Means the tag persists.
+> >     Obviously it will be deleted if the originator rejects the data, or
+> >     unsubscribes.
+> >
+> > Now, how would this actually work?
+> >
+> > Each node we are connected to can have up to 1000 subscriptions. Each
+> > subscription is for a key - this can be an SSK or a CHK - and if it is
+> > an SSK, it can have the "persist" flag. If it does not have this flag,
+> > or this flag is false, then when the data is found, the subscription is
+> > removed. If we no do not have enough subscription quota left for a given
+> > subscription, for that node, or for ourselves with another node, we
+> > reject the request attempting to add the subscription with a
+> > RejectOverload. Nodes can unsubscribe. Each subscription can have an
+> > expiry date (actually, perhaps we should impose one).
+> >
+> > Passive requests can only be created by actual requests with the passive
+> > request flag. The request will be routed as normal, until HTL runs out
+> > (or it finds the data if the TUK flag is not enabled).
+> >
+> > Now, how do we make this scale?:
+> > 1. If the TUK flag is off, and the request reaches a node which has the
+> > data, we return it, and the request ends. No passive requests are
+> > installed.
+> > 2. If any request for a TUK, even if not passive, reaches a node which
+> > already has a valid subscription at a higher or equal HTL for the key,
+> > then the request ends at that point, and returns the data that node has.
+> > If the passive-request flag is enabled, then passive request tags are
+> > added up to that node, and that node adds one for the node connecting to
+> > it if necessary.
+> > 3. What to do about looping and coalescing? One option is to not
+> > coalesce at all with running requests, and either forward the request
+> > as-is or reject it... more in my next email...
+>
+> As far as looping and coalescing goes: We can coalesce the requests
+> exactly as proposed for regular requests. So the request will not get
+> stuck by eating its own tail. As long as the network isn't totally
+> degenerate this shouldn't be a big problem. Also, if we do hit our own
+> tail, we could have a "lightweight subscribe" which isn't refcounted,
+> but passes packets both ways to strengthen the network.
+>
+> As far as resubscription and renewals go, there are two options really:
+> 1. Try to get the network to maintain the subscriptions itself;
+> automatic resubscription etc.
+> 2. Make the client resubscribe itself every so often. We would have to
+> let some of their requests through...
+> 3. Don't bother. Switch streams from time to time at the client level.
+> The problem with this is that we will still have to deal with situations
+> such as the parent of a node being disconnected.
+
+Which we can do by simply telling our clients/dependants to resubscribe!
+--
+Matthew J Toseland - toad@amphibian.dyndns.org
+Freenet Project Official Codemonkey - http://freenetproject.org/
+ICTHUS - Nothing is impossible. Our Boss says so.
+
+
+To: tech@freenetproject.org
+Subject: Re: [Tech] Pub/sub = passive requests + TUKs
+From: Matthew Toseland <toad@amphibian.dyndns.org>
+X-BeenThere: tech@freenetproject.org
+X-Mailman-Version: 2.1.5
+Reply-To: tech@freenetproject.org
+List-Id: tech.freenetproject.org
+List-Unsubscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=unsubscribe>
+List-Archive: <http://emu.freenetproject.org/pipermail/tech>
+List-Post: <mailto:tech@freenetproject.org>
+List-Help: <mailto:tech-request@freenetproject.org?subject=help>
+List-Subscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=subscribe>
+
+On Thu, Oct 20, 2005 at 07:56:56PM +0100, Matthew Toseland wrote:
+> On Thu, Oct 20, 2005 at 07:46:46PM +0100, Matthew Toseland wrote:
+> > On Thu, Oct 20, 2005 at 06:54:42PM +0100, Matthew Toseland wrote:
+> > > Suppose:
+> > > - We have a separate store for SSKs. They have 1kB of payload, plus the
+> > >   headers.
+> > > - SSKs are versioned, with a timestamp. I.e. they become TUKs. Requests
+> > >   can optionally propagate far enough to fetch all values. There can be
+> > >   any number of SSKs with the same key and different version numbers /
+> > >   datestamps. Requests can ask for either a single specific version, the
+> > >   most recent version, or everything since a given revision. Only the
+> > >   data blocks which are actually returned are promoted in the cache.
+> > > - To subscribe to a stream, I send a request out for the key I want,
+> > >   with the minimum acceptable version number/datestamp, plus three flags:
+> > >   - Passive request - If the data is not found, keep a tag on each node
+> > >     on the chain, and if it ever passes through any of the nodes on the
+> > >     chain, pass it back to me.
+> > >   - TUK - Return the most recent version of the SSK.
+> > >   - Subscribe - Requires the other two. Means the tag persists.
+> > >     Obviously it will be deleted if the originator rejects the data, or
+> > >     unsubscribes.
+> > >
+> > > Now, how would this actually work?
+> > >
+> > > Each node we are connected to can have up to 1000 subscriptions. Each
+> > > subscription is for a key - this can be an SSK or a CHK - and if it is
+> > > an SSK, it can have the "persist" flag. If it does not have this flag,
+> > > or this flag is false, then when the data is found, the subscription is
+> > > removed. If we no do not have enough subscription quota left for a given
+> > > subscription, for that node, or for ourselves with another node, we
+> > > reject the request attempting to add the subscription with a
+> > > RejectOverload. Nodes can unsubscribe. Each subscription can have an
+> > > expiry date (actually, perhaps we should impose one).
+> > >
+> > > Passive requests can only be created by actual requests with the passive
+> > > request flag. The request will be routed as normal, until HTL runs out
+> > > (or it finds the data if the TUK flag is not enabled).
+> > >
+> > > Now, how do we make this scale?:
+> > > 1. If the TUK flag is off, and the request reaches a node which has the
+> > > data, we return it, and the request ends. No passive requests are
+> > > installed.
+> > > 2. If any request for a TUK, even if not passive, reaches a node which
+> > > already has a valid subscription at a higher or equal HTL for the key,
+> > > then the request ends at that point, and returns the data that node has.
+> > > If the passive-request flag is enabled, then passive request tags are
+> > > added up to that node, and that node adds one for the node connecting to
+> > > it if necessary.
+> > > 3. What to do about looping and coalescing? One option is to not
+> > > coalesce at all with running requests, and either forward the request
+> > > as-is or reject it... more in my next email...
+> >
+> > As far as looping and coalescing goes: We can coalesce the requests
+> > exactly as proposed for regular requests. So the request will not get
+> > stuck by eating its own tail. As long as the network isn't totally
+> > degenerate this shouldn't be a big problem. Also, if we do hit our own
+> > tail, we could have a "lightweight subscribe" which isn't refcounted,
+> > but passes packets both ways to strengthen the network.
+> >
+> > As far as resubscription and renewals go, there are two options really:
+> > 1. Try to get the network to maintain the subscriptions itself;
+> > automatic resubscription etc.
+> > 2. Make the client resubscribe itself every so often. We would have to
+> > let some of their requests through...
+> > 3. Don't bother. Switch streams from time to time at the client level.
+> > The problem with this is that we will still have to deal with situations
+> > such as the parent of a node being disconnected.
+>
+> Which we can do by simply telling our clients/dependants to resubscribe!
+
+So the choice is this: either
+a) When something breaks, everyone has to resubscribe, or
+b) When something breaks, we tell all dependant nodes to let our
+requests through, and resubscribe ourself.
+
+Either way there has to be a concept of "tree" - the node which we
+expect to get messages from (the node we routed to). We don't have to
+adhere strictly to this in passing data packets onwards, but it does
+have to exist. Therefore, we will have a concept of "root", and of "root
+location". So a certain amount of what has been planned has to be kept.
+A lot of it, in fact, but the data storage is different, and we can have
+very many streams.
+
+So:
+
+If we lose our parent:
+- Simple way: We forcibly unsubscribe all our dependants. Their clients
+  will resubscribe.
+- Hard way: We send a SubscribeRestarted to all our dependants. Then we
+  send a request out, similar to the one we have previously received,
+  seeking the key. It has a key-must-be-better-than property, as do
+  regular requests (they use it in combination with HTL); this is unset,
+  or rather it is set far away from the target.
+--
+Matthew J Toseland - toad@amphibian.dyndns.org
+Freenet Project Official Codemonkey - http://freenetproject.org/
+ICTHUS - Nothing is impossible. Our Boss says so.
+
+
+To: tech@freenetproject.org
+Subject: Re: [Tech] Pub/sub = passive requests + TUKs
+From: Matthew Toseland <toad@amphibian.dyndns.org>
+X-BeenThere: tech@freenetproject.org
+X-Mailman-Version: 2.1.5
+Reply-To: tech@freenetproject.org
+List-Id: tech.freenetproject.org
+List-Unsubscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=unsubscribe>
+List-Archive: <http://emu.freenetproject.org/pipermail/tech>
+List-Post: <mailto:tech@freenetproject.org>
+List-Help: <mailto:tech-request@freenetproject.org?subject=help>
+List-Subscribe: <http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech>,
+        <mailto:tech-request@freenetproject.org?subject=subscribe>
+
+[20:16] <toad_> linyos: can you very briefly summarize the reason for
+not just limiting it to a low number of streams and caching them in RAM?
+[20:17] <linyos> yes, that should not be done because it limits you to a
+low number of streams.
+[20:18] <toad_> but also, we will want to implement TUKs and passive
+requests at some point
+[20:18] <linyos> users will probably be very enthusiastic about keeping
+tons of streams open.
+
+On Thu, Oct 20, 2005 at 08:17:04PM +0100, Matthew Toseland wrote:
+> On Thu, Oct 20, 2005 at 07:56:56PM +0100, Matthew Toseland wrote:
+> > On Thu, Oct 20, 2005 at 07:46:46PM +0100, Matthew Toseland wrote:
+> > > On Thu, Oct 20, 2005 at 06:54:42PM +0100, Matthew Toseland wrote:
+> > > > Suppose:
+> > > > - We have a separate store for SSKs. They have 1kB of payload, plus the
+> > > >   headers.
+> > > > - SSKs are versioned, with a timestamp. I.e. they become TUKs. Requests
+> > > >   can optionally propagate far enough to fetch all values. There can be
+> > > >   any number of SSKs with the same key and different version numbers /
+> > > >   datestamps. Requests can ask for either a single specific version, the
+> > > >   most recent version, or everything since a given revision. Only the
+> > > >   data blocks which are actually returned are promoted in the cache.
+> > > > - To subscribe to a stream, I send a request out for the key I want,
+> > > >   with the minimum acceptable version number/datestamp, plus three
++flags:
+> > > >   - Passive request - If the data is not found, keep a tag on each node
+> > > >     on the chain, and if it ever passes through any of the nodes on the
+> > > >     chain, pass it back to me.
+> > > >   - TUK - Return the most recent version of the SSK.
+> > > >   - Subscribe - Requires the other two. Means the tag persists.
+> > > >     Obviously it will be deleted if the originator rejects the data, or
+> > > >     unsubscribes.
+> > > >
+> > > > Now, how would this actually work?
+> > > >
+> > > > Each node we are connected to can have up to 1000 subscriptions. Each
+> > > > subscription is for a key - this can be an SSK or a CHK - and if it is
+> > > > an SSK, it can have the "persist" flag. If it does not have this flag,
+> > > > or this flag is false, then when the data is found, the subscription is
+> > > > removed. If we no do not have enough subscription quota left for a given
+> > > > subscription, for that node, or for ourselves with another node, we
+> > > > reject the request attempting to add the subscription with a
+> > > > RejectOverload. Nodes can unsubscribe. Each subscription can have an
+> > > > expiry date (actually, perhaps we should impose one).
+> > > >
+> > > > Passive requests can only be created by actual requests with the passive
+> > > > request flag. The request will be routed as normal, until HTL runs out
+> > > > (or it finds the data if the TUK flag is not enabled).
+> > > >
+> > > > Now, how do we make this scale?:
+> > > > 1. If the TUK flag is off, and the request reaches a node which has the
+> > > > data, we return it, and the request ends. No passive requests are
+> > > > installed.
+> > > > 2. If any request for a TUK, even if not passive, reaches a node which
+> > > > already has a valid subscription at a higher or equal HTL for the key,
+> > > > then the request ends at that point, and returns the data that node has.
+> > > > If the passive-request flag is enabled, then passive request tags are
+> > > > added up to that node, and that node adds one for the node connecting to
+> > > > it if necessary.
+> > > > 3. What to do about looping and coalescing? One option is to not
+> > > > coalesce at all with running requests, and either forward the request
+> > > > as-is or reject it... more in my next email...
+> > >
+> > > As far as looping and coalescing goes: We can coalesce the requests
+> > > exactly as proposed for regular requests. So the request will not get
+> > > stuck by eating its own tail. As long as the network isn't totally
+> > > degenerate this shouldn't be a big problem. Also, if we do hit our own
+> > > tail, we could have a "lightweight subscribe" which isn't refcounted,
+> > > but passes packets both ways to strengthen the network.
+> > >
+> > > As far as resubscription and renewals go, there are two options really:
+> > > 1. Try to get the network to maintain the subscriptions itself;
+> > > automatic resubscription etc.
+> > > 2. Make the client resubscribe itself every so often. We would have to
+> > > let some of their requests through...
+> > > 3. Don't bother. Switch streams from time to time at the client level.
+> > > The problem with this is that we will still have to deal with situations
+> > > such as the parent of a node being disconnected.
+> >
+> > Which we can do by simply telling our clients/dependants to resubscribe!
+>
+> So the choice is this: either
+> a) When something breaks, everyone has to resubscribe, or
+> b) When something breaks, we tell all dependant nodes to let our
+> requests through, and resubscribe ourself.
+>
+> Either way there has to be a concept of "tree" - the node which we
+> expect to get messages from (the node we routed to). We don't have to
+> adhere strictly to this in passing data packets onwards, but it does
+> have to exist. Therefore, we will have a concept of "root", and of "root
+> location". So a certain amount of what has been planned has to be kept.
+> A lot of it, in fact, but the data storage is different, and we can have
+> very many streams.
+>
+> So:
+>
+> If we lose our parent:
+> - Simple way: We forcibly unsubscribe all our dependants. Their clients
+>   will resubscribe.
+> - Hard way: We send a SubscribeRestarted to all our dependants. Then we
+>   send a request out, similar to the one we have previously received,
+>   seeking the key. It has a key-must-be-better-than property, as do
+>   regular requests (they use it in combination with HTL); this is unset,
+>   or rather it is set far away from the target.
+> --
+> Matthew J Toseland - toad@amphibian.dyndns.org
+> Freenet Project Official Codemonkey - http://freenetproject.org/
+> ICTHUS - Nothing is impossible. Our Boss says so.
+
+
+
+> _______________________________________________
+> Tech mailing list
+> Tech@freenetproject.org
+> http://emu.freenetproject.org/cgi-bin/mailman/listinfo/tech
+
+--
+Matthew J Toseland - toad@amphibian.dyndns.org
+Freenet Project Official Codemonkey - http://freenetproject.org/
+ICTHUS - Nothing is impossible. Our Boss says so.
