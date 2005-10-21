@@ -89,8 +89,6 @@ public class Node implements SimpleClient {
     private final HashMap transferringRequestSenders;
     /** InsertSender's currently running, by KeyHTLPair */
     private final HashMap insertSenders;
-    /** Subscriptions */
-    final SubscriptionManager subscriptions;
     
     /** Locally published stream contexts */
     private final Hashtable localStreamContexts;
@@ -283,7 +281,6 @@ public class Node implements SimpleClient {
         
         ps = new PacketSender(this);
         peers = new PeerManager(this, prefix+"peers-"+portNumber);
-        subscriptions = new SubscriptionManager(this);
         
         try {
             usm = new UdpSocketManager(portNumber);
@@ -696,70 +693,5 @@ public class Node implements SimpleClient {
     public synchronized void setName(String key) {
         myName = key;
         writeNodeFile();
-    }
-    
-    /** Create a publish stream and create context needed to insert data on it. */
-    public ClientPublishStreamKey createPublishStream() {
-        ClientPublishStreamKey key = 
-            ClientPublishStreamKey.createRandom(random);
-        makePublishContext(key);
-        return key;
-    }
-    
-    private PublishContext makePublishContext(ClientPublishStreamKey key) {
-        synchronized(localStreamContexts) {
-            PublishContext ctx = (PublishContext) localStreamContexts.get(key);
-            if(ctx == null) {
-                // Which it usually does
-                ctx = new PublishContext(key, this);
-                localStreamContexts.put(key, ctx);
-                return ctx;
-            } else {
-                Logger.error(this, "Reusing existing publish context for "+key);
-                // Reuse
-                return ctx;
-            }
-        }
-    }
-
-    public PublishHandlerSender makePublishHandlerSender(Message m) {
-        long id = m.getLong(DMT.UID);
-        Long lid = new Long(id);
-        boolean reject = false;
-        try {
-            synchronized(this) {
-                if(recentlyCompletedIDs.contains(lid))
-                    reject = true;
-                else if(runningUIDs.contains(lid))
-                    reject = true;
-                else runningUIDs.add(lid);
-            }
-            if(reject) {
-                try {
-                    Message msg = DMT.createFNPRejectedLoop(id);
-                    ((PeerNode)m.getSource()).sendAsync(msg, null);
-                } catch (NotConnectedException e) {
-                    Logger.normal(this, "Lost connection refusing PublishData: "+id);
-                }
-                return null;
-            } else {
-                return new PublishHandlerSender(m, this);
-            }
-        } catch (Throwable t) {
-            synchronized(this) {
-                runningUIDs.remove(lid);
-                recentlyCompletedIDs.remove(lid);
-            }
-            Logger.error(this, "Caught "+t+" handling PublishData "+id, t);
-            return null;
-        }
-    }
-    
-    public void publish(ClientPublishStreamKey key, byte[] data) {
-        makePublishContext(key).publish(data);
-    }
-
-    public ClientSubscription subscribe(ClientPublishStreamKey key, SubscriptionCallback cb) {
-        return subscriptions.localSubscribe(key, cb);
     }
 }

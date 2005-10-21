@@ -268,55 +268,6 @@ public class TextModeClientInterface implements Runnable {
                 System.out.println("Threw: "+t);
                 t.printStackTrace();
             }
-        } else if(line.startsWith("PUBLISH:")) {
-            line = line.substring("PUBLISH:".length());
-            line = line.trim();
-            System.out.println("Stream name: "+line);
-            ClientPublishStreamKey key = n.createPublishStream();
-            FreenetURI streamKey = key.getURI();
-            streamKey = streamKey.setDocName(line);
-            System.out.println("Stream key: "+streamKey);
-            lastSendStreamName = line;
-            streams.put(line, key);
-        } else if(line.startsWith("PUSH:")) {
-            // PUSH:<name>:<text>
-            line = line.substring("PUSH:".length());
-            line = line.trim();
-            int index = line.indexOf(':');
-            if(index == -1) {
-                System.err.println("What do you want me to publish?");
-                return;
-            }
-            String name = line.substring(0, index);
-            ClientPublishStreamKey key = (ClientPublishStreamKey) streams.get(name);
-            if(key == null) {
-                System.err.println("Could not find stream called "+name);
-            } else {
-                String content;
-                if(line.length() > index+1) {
-                    content = line.substring(index+1);
-                } else {
-                    content = readLines(reader, false);
-                }
-                System.out.println("Publishing to "+key);
-                System.out.println("Data to publish:\n"+content);
-                n.publish(key, content.getBytes("UTF-8"));
-                lastSendStreamName = name;
-            }
-        } else if(uline.startsWith("SUBSCRIBE:")) {
-            line = line.substring("SUBSCRIBE:".length());
-            line = line.trim();
-            try {
-                FreenetURI uri = new FreenetURI(line);
-                ClientPublishStreamKey key = new ClientPublishStreamKey(uri);
-                n.subscribe(key, new MySubscriptionCallback(uri.getDocName()));
-                System.out.println("Subscribed to "+uri.getDocName()+".");
-            } catch (MalformedURLException e1) {
-                System.err.println("Invalid URI: "+e1.getMessage());
-                e1.printStackTrace();
-                return;
-            }
-            
         } else if(uline.startsWith("STATUS")) {
             SimpleFieldSet fs = n.exportFieldSet();
             System.out.println(fs.toString());
@@ -351,20 +302,6 @@ public class TextModeClientInterface implements Runnable {
                 if(content.equals("")) return;
                 connect(content);
             }
-        } else if(uline.startsWith("SUBFILE:")) {
-            String filename = line.substring("SUBFILE:".length()).trim();
-            System.out.println("Writing all received subscription data to "+filename);
-            try {
-                FileOutputStream fos = new FileOutputStream(filename, true);
-                OutputStreamWriter w = new OutputStreamWriter(fos);
-                // Test it
-                w.write("Opened at "+System.currentTimeMillis()+" for writing subscribed data\n");
-                subscribedDataStream = w;
-                w.flush();
-            } catch (IOException e) {
-                System.err.println("Could not use file: "+e.getMessage());
-            }
-            
         } else if(uline.startsWith("NAME:")) {
             System.out.println("Node name currently: "+n.myName);
             String key = line.substring("NAME:".length());
@@ -374,18 +311,6 @@ public class TextModeClientInterface implements Runnable {
                 key = key.substring(0, key.length()-2);
             System.out.println("New name: "+key);
             n.setName(key);
-        } else if(uline.startsWith("SAY ") || uline.startsWith("SAY:")) {
-            String toSay = line.substring("SAY:".length()).trim();
-            if(lastSendStreamName != null) {
-                ClientPublishStreamKey key = (ClientPublishStreamKey) streams.get(lastSendStreamName);
-                if(key == null) {
-                    System.err.println("Could not find stream called "+lastSendStreamName);
-                } else {
-                    System.out.println("Publishing to "+key);
-                    System.out.println("Data to publish:\n"+toSay);
-                    n.publish(key, toSay.getBytes("UTF-8"));
-                }
-            }
         } else {
             
         }
@@ -498,63 +423,4 @@ public class TextModeClientInterface implements Runnable {
         }
         return sb.toString();
     }
-
-    /**
-     * 
-     * SubscriptionCallback that dumps output to stdout.
-     * FIXME this might block if stdout is redirected and disk is full...
-     */
-    public class MySubscriptionCallback implements SubscriptionCallback {
-
-        final String name;
-        
-        public MySubscriptionCallback(String string) {
-            name = string;
-        }
-
-        public void got(long packetNumber, byte[] data) {
-            try {
-                subscribedDataStream.write(name+":"+packetNumber+":"+new String(data)+"\n");
-                subscribedDataStream.flush();
-            } catch (IOException e) {
-                String s = "Error writing to subscriptions output file - disk full? "+e.getMessage();
-                Logger.error(this, s);
-                System.err.println(s);
-            }
-        }
-
-        public void lostConnection() {
-            try {
-                subscribedDataStream.write(name+":LOST CONNECTION\n");
-                subscribedDataStream.flush();
-            } catch (IOException e) {
-                String s = "Error writing to subscriptions output file - disk full? "+e.getMessage();
-                Logger.error(this, s);
-                System.err.println(s);
-            }
-        }
-
-        public void restarted() {
-            try {
-                subscribedDataStream.write(name+":RESTARTED\n");
-                subscribedDataStream.flush();
-            } catch (IOException e) {
-                String s = "Error writing to subscriptions output file - disk full? "+e.getMessage();
-                Logger.error(this, s);
-                System.err.println(s);
-            }
-        }
-
-        public void connected() {
-            try {
-                subscribedDataStream.write(name+":CONNECTED\n");
-                subscribedDataStream.flush();
-            } catch (IOException e) {
-                String s = "Error writing to subscriptions output file - disk full? "+e.getMessage();
-                Logger.error(this, s);
-                System.err.println(s);
-            }
-        }
-    }
-
 }

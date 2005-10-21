@@ -23,23 +23,4 @@ public interface SimpleClient {
      * Insert a key.
      */
     public void putCHK(ClientCHKBlock key);
-
-    /**
-     * Create a publish/subscribe stream key. Create any context
-     * needed to insert it.
-     */
-    public ClientPublishStreamKey createPublishStream();
-    
-    /**
-     * Publish a block of data to a publish/subscribe key.
-     */
-    public void publish(ClientPublishStreamKey key, byte[] data);
-
-    /**
-     * Subscribe to a stream.
-     * @param key The stream key.
-     * @param cb Callback to notify when we get data.
-     * @return True if the subscribe succeeded.
-     */
-    public ClientSubscription subscribe(ClientPublishStreamKey key, SubscriptionCallback cb);
 }

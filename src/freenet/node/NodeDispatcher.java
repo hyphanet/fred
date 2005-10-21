@@ -74,24 +74,8 @@ public class NodeDispatcher implements Dispatcher {
             return handleDataRequest(m);
         } else if(spec == DMT.FNPInsertRequest) {
             return handleInsertRequest(m);
-        } else if(spec == DMT.FNPPublishData) {
-            return handlePublishData(m);
         }
-//        } // SubscribeData, SubscribeRestarted etc handled by SubscribeSender.
         return false;
-    }
-
-    /**
-     * Handle an FNPPublishData message.
-     * @return False to put it back onto the queue.
-     */
-    private boolean handlePublishData(Message m) {
-        // Create a PublishSender. This will do all the work.
-        // FIXME maybe we should check whether we've sent the packet before?
-        // It's not really a viable DoS but it is good practice...
-        PublishHandlerSender ps =
-            node.makePublishHandlerSender(m);
-        return true;
     }
 
     /**
