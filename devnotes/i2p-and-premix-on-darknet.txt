@@ -1,0 +1,1776 @@
+[18:48] <toad_> ok, i'll stick around
+[18:48] <toad_> he seemed to be saying that you can route *within* the restricted routes bloc, without going through the open network...
+[18:48] <toad_> i'm curious how that could possibly work except in the most trivial cases
+[18:49] <vulpine> <bar> ah, right. i haven't delved into 2.0 yet myself, so i can't give you any hints :)
+[18:50] --> norfolk13 has joined this channel. (n=Miranda@cpe-67-11-239-250.satx.res.rr.com)
+[18:50] <toad_> right... i'll have a look at the website again...
+[18:52] <toad_> http://www.i2p.net/todo#fullRestrictedRoutes
+[18:52] <vulpine> <dexter> ahh finally,  i remebered why anonymous cash is useful
+[18:52] <toad_> dexter: apart from the jim bell assassination protocol? :)
+[18:53] <vulpine> <dexter> yep  no death is involved
+[18:53] <vulpine> <dexter> not a legal purpose,  but anyways
+[18:54] <vulpine> <dexter> for cardsharing groups
+[18:54] <toad_> okay that para doesn't tell me much...
+[18:54] <toad_> there was a larger explanation somewhere...
+[18:54] <vulpine> <frosk> is it normal for a "OK (NAT)" router to have (sometimes very) few active peers? i currently have 20/172, after hours of uptime
+[18:56] <vulpine> <bar> frosk: i have noticed the same when behind a certain NAT
+[18:56] <toad_> http://dev.i2p.net/cgi-bin/cvsweb.cgi/i2p/router/doc/techintro.html?rev=HEAD#future.restricted
+[18:57] <vulpine> * Complication has reached only halfway into the flamewar
+[18:58] <toad_> well, i'm half inclined to let it go; we have different goals. but otoh, i think it would be worthwhile to thrash out the details of restricted routes and how that compares to 0.7's darknet routing
+[18:58] <toad_> if we do come up with some major compatibilities, then we can go to ian together
+[18:59] <vulpine> <Complication> toad: jrandom was around, about an hour ago, but then my router (a shitty Celeron 300) decided to keel over, and I don't know what's happened since
+[19:00] <vulpine> <Complication> Only present for the past someteen minutes
+[19:02] <toad_> i don't suppose you can run skype over i2p? :)
+[19:03] <vulpine> <susi23> tunneling udp through tcp (ssh) means, that you need a lot of tcp tunnels (start with 20)
+[19:03] <vulpine> <Complication> There's one guy who's working on some form of voice mail, but skype? Seems very unlikely.
+[19:03] <vulpine> <susi23> for higher latency you will need even more tunnels, perhaps 100? :)
+[19:03] <vulpine> <Complication> Does Skype use UDP?
+[19:03] <vulpine> <dust_> aum seem to be working on some voice app
+[19:04] <vulpine> <dust_> don't know any details
+[19:04] <vulpine> <susi23> with 20 tcp tunnels you can easily play quake through that tunnel
+[19:05] <vulpine> <Complication> If it uses UDP, then it might be possible to modify (to use SSU instead) but this would be coding.
+[19:05] <vulpine> <Complication> Protocols which work relatively seamlessly over I2P are generally TCP-based (IRC, HTTP, SSH).
+[19:06] <vulpine> <Complication> With the reservation that IRC needs filtering to prevent leakage of sensitive details...
+[19:07] <toad_> yeah, of course
+[19:07] <vulpine> <Complication> ...and HTTP needs various other stuff (to make it usable for browsing eepsites, and outproxying).
+[19:07] <vulpine> <Complication> SSH seems to run on a plain raw tunnel, though.
+[19:07] <vulpine> * Complication is running SSH between two I2P nodes
+[19:07] <vulpine> <Complication> (got tired of people trying to brute-force passwords on a daily basis)
+[19:08] <toad_> heh
+[19:08] <toad_> you filter HTML nowadays then?
+[19:08] <-- MikeW has left this server. ()
+[19:09] <vulpine> <Complication> Well, the HTTP proxy (or eepproxy) sort of: 1) filters headers 2) resolves hostnames ("myhost.i2p") into destination keys 3) seamlessly connects to those destkeys
+[19:09] <norfolk13> i'm back, and yes I did register with freenode this time...
+[19:10] <vulpine> <Complication> ...(and connects to specified outproxies (e.g. "squid.i2p") when it doesn't look like an I2P URL.
+[19:10] <toad_> ah ok
+[19:10] <toad_> so you're expected to tell your browser to use the proxy exclusively
+[19:10] <vulpine> <Complication> So yep, having eepsites browsable does require a notable bit of filtering.
+[19:11] <toad_> oh?
+[19:11] <toad_> does it filter the html content to e.g. take out external links?
+[19:11] <vulpine> <Complication> It's a widespread and sane practise, I think.
+[19:11] <vulpine> <Complication> Pointing it exclusively to 127.0.0.1:4444
+[19:11] <toad_> or do you expect people to keep a separate browser for i2p which has the proxy set?
+[19:11] <vulpine> <Complication> I keep separate browsers
+[19:12] <vulpine> <Complication> Browser 1: fixed proxy, for I2P and outproxying via I2P
+[19:12] <vulpine> <bar> i use the firefox switchproxy extension
+[19:12] <vulpine> <Complication> Browser 2: browsing the web via TOR
+[19:12] <jme___> cant it be done automatically ?
+[19:12] <vulpine> <Complication> (TOR has generally been faster, hence the duality)
+[19:13] <vulpine> <Complication> But alas, they seem to have leecher overload recently.
+[19:13] <jme___> the switch stuff i mean
+[19:13] <jme___> i dont see why it could not be done automatically
+[19:13] <vulpine> <susi23> the more comfort you get, the less secure it is
+[19:13] <vulpine> <Complication> jme: switching between which alternatives?
+[19:13] <-- JanglingBells has left this server. (SendQ exceeded)
+[19:14] <vulpine> <Complication> Between I2P and direct: would be foolish.
+[19:14] <jme___> i mean you set your browser to a gateway
+[19:14] <norfolk13> I just want to let you know that i use one browser for tor, no proxy and i2p, it's firefox with xyzproxy plugin that changes the settings with one click
+[19:14] <vulpine> <Complication> Between I2P and TOR: privoxy can do this.
+[19:14] <jme___> and the gateway forward to the proper direction
+[19:14] <vulpine> <susi23> if you automatically seperate i2p and non i2p stuff in one proxy, its easily exploitable <img src="http://nsa.gov/iwatchyou.gif"/>
+[19:14] <jme___> hmm i see
+[19:15] <vulpine> <susi23> you you need an intelligent proxy which takes the referer into account of its decision
+[19:15] <jme___> so i guess an explicit switch thru a browser plugin in the best for users
+[19:15] <vulpine> <susi23> distinct browsers would be best
+[19:16] <jme___> ok you guys do want you want
+[19:16] <toad_> http://nsa.gov/this/fool/visited/pigporn.i2p/picture56007.png
+[19:16] <vulpine> <jrandom> ah here you are toad
+[19:16] <vulpine> * jrandom should have looked at this window instead of replying to ian ;)
+[19:16] <toad_> jrandom: hi
+[19:17] <toad_> jrandom: can we talk?
+[19:17] <vulpine> <jrandom> sure, h/o
+[19:17] <toad_> actually, 2 minutes, justasec
+[19:18] --> Eol has joined this channel. (n=Eol@tor/session/x-a7b8ff964146d1a7)
+[19:20] <vulpine> <dust_> wow i've never seen this much traffic through my node before 35k in/out
+[19:21] <toad_> ok
+[19:22] <toad_> jrandom: hi
+[19:22] <toad_> definitions:
+[19:22] <toad_> A - group of "open" i2p nodes. harvestable.
+[19:23] <toad_> in the Free World
+[19:23] <vulpine> <jrandom> right
+[19:23] <toad_> Bf - group of darknet (client router?) nodes. not harvestable. can connect to A
+[19:23] <toad_> Bc - group of darknet (client router?) nodes in oppressive regime. can connect to Bf and C. CANNOT directly connect to A
+[19:24] <toad_> C - end nodes in oppressive regime
+[19:24] <vulpine> <jrandom> 'k
+[19:24] <toad_> well, is the distinction necessary? maybe not
+[19:24] <toad_> B is not harvestable, right?
+[19:24] <toad_> so I suppose we can simplify B... anyway
+[19:25] <toad_> one way or the other
+[19:25] <vulpine> <jrandom> depends on the adversary, really, and whether Bf talks to all of A or just trusted A
+[19:25] <toad_> C1 wants to talk to C2
+[19:25] <vulpine> <jrandom> ah, right, the "wacky situation" i explained
+[19:25] <toad_> as I understand it, we create a tunnel C1 -> B1 -> C2
+[19:25] <vulpine> <jrandom> that is one topology
+[19:25] <toad_> except that we can't actually do that since we can't route (much) within B
+[19:26] <toad_> so mostly it will be C1 -> B1 -> A1 -> B2 -> C2
+[19:26] <toad_> no?
+[19:26] <vulpine> <jrandom> here's another topology:
+[19:26] <toad_> if both C1 and C2 are directly connected to B1, we can go direct - but only if we know about it
+[19:26] * toad_ listens...
+[19:27] <toad_> btw what's a PET?
+[19:27] <vulpine> <jrandom> C1 --> B1 --> B2 --> B3 (outbound tunnel endpoint) ------> B4 (inbound tunnel gateway) --> B5 --> B6 --> C2
+[19:27] <vulpine> <jrandom> Privacy Enhancing Technology
+[19:27] <reliver> sus23, using firefox (old web) and galeon (for i2p) here, side by side, is great :-)
+[19:27] <reliver> susi23, using firefox (old web) and galeon (for i2p) here, side by side, is great :-)
+[19:27] <vulpine> <susi23> brave :)
+[19:28] <vulpine> <jrandom> toad: B1 is directly connected to C1, but C1's profiles of B2 and B3 are great
+[19:28] <vulpine> <jrandom> Same for B4-B6 & C2 (except reversed in the obvious places)
+[19:28] <toad_> hmmm
+[19:28] <vulpine> <jrandom> now, how does C1 know C2's inbound tunnel gateway is B4?  depends, a few ways
+[19:29] <toad_> so what is this at the top level? what onion did C create in the first place, and what are the tunnels?
+[19:29] <toad_> C1 -> B1 -> C2 ?
+[19:29] <vulpine> <jrandom> top level? onion?  hmm lemmie explain in more detail
+[19:29] <toad_> ok
+[19:30] <vulpine> <jrandom> is the question how did C1 or C2 build the B1--B2--B3 or B4--B5--B6 tunnels, or how does C1 use them?
+[19:30] <toad_> basically the point here, i think, is that i2p can't route much within B, whereas freenet/dark can (this isn't necessarily a matter of bashing one another, it might be constructive
+[19:30] <toad_> hmmm
+[19:30] <toad_> well
+[19:30] <vulpine> <jrandom> aye, i'm not too concerned with B and C right now, my immediate task is A
+[19:30] <toad_> C1 wants to talk to C2, it goes C1 -> B3 -> B6 -> C2 ?
+[19:30] <vulpine> <jrandom> (so please, feel free to bash away)
+[19:31] <toad_> then C1 -> B3 is a tunnel, B3 -> B6 is a tunnel?
+[19:31] <vulpine> <jrandom> no, clients only send messages through tunnels
+[19:31] <toad_> both of which existed previously?
+[19:31] <toad_> ahhh ok
+[19:31] <vulpine> <jrandom> ah right, ok.  yes
+[19:31] <toad_> well we have two kinds of tunnels
+[19:31] <vulpine> <jrandom> inbound and outbound :)
+[19:31] <toad_> we have the ones constructed as an onion by C1
+[19:32] <toad_> and we have the ones which were constructed as part of restricted routes
+[19:32] <toad_> right?
+[19:32] <toad_> exploratory tunnels, they're called ?
+[19:32] <vulpine> <jrandom> its probably easiest to forget about the "exploratory" vs. "client" tunnels for the moment (doesn't affect routing)
+[19:33] <toad_> okay
+[19:33] <toad_> C1 does not have a pre-existing tunnel to C2
+[19:33] <vulpine> <jrandom> ok, want to run through how C1 builds the B1--B2--B3 tunnel, or C2 builds the B4--B5--B6 tunnel?
+[19:33] <toad_> what does it do?
+[19:33] <vulpine> <jrandom> correct
+[19:33] <vulpine> <jrandom> and never, ever builds a full tunnel from C1 to C2
+[19:33] <toad_> oh i see
+[19:33] <vulpine> <jrandom> all comm goes through the tunnels :)
+[19:34] <vulpine> <jrandom> B3 has to find B4
+[19:34] <toad_> C2 has an inbound tunnel from B4
+[19:34] <vulpine> <jrandom> right
+[19:34] <toad_> C1 knows this because it's in C2's reference
+[19:34] <vulpine> <jrandom> right
+[19:34] <toad_> C1 has an outbound tunnel to B3
+[19:34] <toad_> okay
+[19:34] <toad_> how does B3 find B4?
+[19:34] <vulpine> <jrandom> right
+[19:34] <vulpine> <jrandom> dunno, depends ;)
+[19:35] <vulpine> <susi23> (magic ;)
+[19:35] <vulpine> <jrandom> if B3 and B4 know how to talk to each other, cool
+[19:35] <toad_> well, i'm guessing it doesn't use freenet 0.7/dark routing ;)
+[19:35] <vulpine> <jrandom> if they don't, well, then B3 has to look for B4's tunnels
+[19:35] <toad_> if B3 and B4 are already connected directly, that's fine
+[19:35] <toad_> if there's a tunnel pre-existing, that's equally cool
+[19:35] <toad_> but usually there won't be
+[19:35] <vulpine> <jrandom> or if they're run by the same organization
+[19:35] <vulpine> <jrandom> no, you don't need a preexisting tunnel
+[19:36] <toad_> what's the significance of both being run by the same org?
+[19:36] <vulpine> <tethra> in soviet russia, google searches you.
+[19:36] <vulpine> <Complication> (just when discussion becomes interesting, the Celeron decides to get grumpy)
+[19:36] <vulpine> * Complication reniced Java rather heavily
+[19:36] <toad_> you saying if they're part of the same org, then that org makes tunnels between all its nodes?
+[19:36] <vulpine> <jrandom> if they're run by the same org, they probably know how to talk to each other
+[19:36] <vulpine> <susi23> complication: should I log it for you? :)
+[19:36] <toad_> jrandom: why?
+[19:36] <vulpine> <modulus> toad: because orgs are like that.
+[19:36] <vulpine> <Complication> susi23: nah, I hope that renice -10 should do
+[19:36] <vulpine> <jrandom> dunno, seems reasonable
+[19:37] <toad_> jrandom: well maybe, but how does that work at the i2p level?
+[19:37] <vulpine> <jrandom> e.g. rsf would organize their 50 servers to work well
+[19:37] <toad_> my suggestion is that you don't actually HAVE a routing algorithm for this
+[19:37] <toad_> and in practice, either you'll always go through A, or you'll make one up
+[19:38] <vulpine> <jrandom> if B3 can reach either B4 directly, or one of B4's inbound gateways, B3 can talk to B4
+[19:38] <vulpine> <jrandom> B4 may have inbound gateways in both A and B.
+[19:38] <toad_> right, but for that to work in practice means B4 needs a LOT of inbound gateways
+[19:38] <vulpine> <jrandom> but yeah, on the whole, not much effort has been done on the "what if there were no A routers" front
+[19:38] <toad_> okay
+[19:38] <toad_> hypothetical
+[19:39] <vulpine> <jrandom> (i'll be dead by then anyway)
+[19:39] <vulpine> <modulus> hehe
+[19:39] <toad_> you don't think i2p 2.0 will be out while you are alive?
+[19:39] <toad_> i hope freenet 2.0 will be...
+[19:39] <toad_> it might be in 25 years time though! :)
+[19:39] <toad_> hypothetical anyway
+[19:39] <toad_> you drop in freenet 0.7 darknet routing for that section of the network
+[19:40] <vulpine> <jrandom> i don't want to commit to a date, but the info in techintro.html shows that 2.0 will technically be really really easy.  probably 1 week of work (and 8 weeks of debugging)
+[19:40] <toad_> then what?
+[19:40] <toad_> what benefits do we get?
+[19:40] <vulpine> <jrandom> hmm, that would be interesting
+[19:40] <vulpine> <modulus> toad: how is freenet going these days? any better?
+[19:40] <toad_> we can run the freenet data storage network in parallel to i2p's forwarding services as well
+[19:40] <vulpine> <modulus> spirit of genuine inquiry here, i haven't looked up freenet for years.
+[19:40] <toad_> and we get free premix routing
+[19:41] <vulpine> <jrandom> aye
+[19:41] <toad_> although on a darknet it's hard (casually talking about tunnels above will not make them easy!)
+[19:41] <vulpine> <jrandom> there's no reason to say the B3-->B4 search can't use something like Freenet's routing algorithm
+[19:41] <vulpine> <jrandom> hehe true enough
+[19:41] <toad_> well it's easy to make a start but making it really secure against various correlation attacks means building a cellular system probably, and there are a few issues with that but it should be possible
+[19:42] <toad_> modulus: we're currently at the beginning of a major rewrite
+[19:42] <toad_> modulus: it will have both 1:1 and broadcast streams, as well as insert/retrieve
+[19:42] <vulpine> <modulus> <joke>I did ask what was NEW</joke> :-)
+[19:42] <toad_> therefore there's been a lot of talk about duplication of effort
+[19:42] <vulpine> <modulus> aha
+[19:42] <vulpine> <jrandom> !stab modulus
+[19:42] <vulpine> <modulus> with i2p i assume?
+[19:42] <toad_> right, there's a lot of talk about overlap with i2p
+[19:42] <vulpine> <jrandom> the 'disk' as 'stream' is really interesting
+[19:43] <toad_> if there really is overlap, then i need to build a solid case to convince ian that we should cooperate substantially
+[19:43] <vulpine> <jrandom> syndie is a ghetto datastore replicator, i'd love to see how it could work with the streams idea
+[19:43] <toad_> if there isn't, i need to be satisfied about that fact
+[19:43] <vulpine> <modulus> so, 1:1 streams i assume mean 1 user sends data to 1 user
+[19:43] <toad_> modulus: yeah
+[19:43] <vulpine> <modulus> and broadcast i imagine is multicastish isn spirit'
+[19:43] <toad_> yep
+[19:43] <toad_> sorta 1 way tcp multicast
+[19:43] <toad_> with a bit of caching and local retransmission
+[19:43] <vulpine> <jrandom> toad_: your idea is a good one.  what wouldn't work about using freenet routing for the B3-->B4?
+[19:44] <toad_> (only 1 hop)
+[19:44] <toad_> jrandom: lets see...
+[19:44] <toad_> node to node routing is not 100% reliable with the new algorithm
+[19:44] <toad_> we were thinking of having some sort of rendezvous to make it totally reliable
+[19:44] <vulpine> <susi23> what do B3 and B4 know of each other?
+[19:44] <toad_> that might cause some extra hops
+[19:44] <vulpine> <jrandom> right, failures happen, c'est la vie
+[19:44] <vulpine> <jrandom> ah, interesting
+[19:44] <toad_> the trivial case is we just route to the last known location (not the same as identity!) of the target node
+[19:44] <vulpine> <jrandom> susi23: good question.  potentially nothing but their identities
+[19:45] <toad_> and then span out a bit if we can't find it
+[19:45] <toad_> the harder idea would be that each node has a chain of nodes with pointers to it
+[19:45] <toad_> and you route towards that
+[19:45] <toad_> that should be very reliable as long as it's used from time to time
+[19:45] <vulpine> <jrandom> pointers?
+[19:45] <toad_> yeah...
+[19:45] <toad_> like passive requests?
+[19:45] <vulpine> <susi23> where is the difference to the existing in/out i2p tunnel gateways?
+[19:45] <toad_> i explain...
+[19:45] <toad_> well
+[19:45] <toad_> yeah
+[19:46] <toad_> you could just call them in-gateways
+[19:46] <toad_> you have several nodes which have in-gateways
+[19:46] <vulpine> <polecat> The only problem with darknets is, the smaller the darknet, the harder to conceal original data producer. There's a reason we want everyone and their mother on i2p.
+[19:46] <vulpine> <modulus> polecat: let's hope that's the only problem.
+[19:46] <toad_> polecat: yep; scalable darknets are therefore interesting, if possible
+[19:46] <toad_> jrandom:
+[19:46] <vulpine> <jrandom> polecat: this is only for people in hostile regime, really
+[19:46] <vulpine> <Complication> polecat: mind you, we want their grandparents too :P
+[19:46] <toad_> you do what's essentially an insert
+[19:47] <toad_> except that instead of putting an actual item of data on each node, you put a tunnel pointing back to the original node
+[19:47] <toad_> the insert goes by a key which is equal to the node's identity
+[19:47] <toad_> then you can route from B3 to B4 by that key
+[19:47] <toad_> and you will, unless something goes seriously wrong, get to it
+[19:47] <toad_> although it might take a few hops
+[19:48] <vulpine> <jrandom> by "put a tunnel", what does that mean - find a path?
+[19:48] * toad_ thinks 7 is plausible for a large network
+[19:48] <vulpine> <jrandom> or does that mean "send data"?
+[19:48] <toad_> jrandom: it means leave a tunnel gateway on that node
+[19:48] <toad_> for the target node
+[19:48] <toad_> if a connection request arrives, then it will be forwarded back up the chain
+[19:48] <toad_> to the target node
+[19:49] <vulpine> <jrandom> ah, ok, so build a pathway
+[19:49] <toad_> if routing is working well, then it will be very few hops, because it will be routed to the node itself
+[19:49] <vulpine> <jrandom> kind of like ants, except with logic ;)
+[19:49] <toad_> well it won't i suppose
+[19:49] <vulpine> <modulus> hehe, laying a path
+[19:49] <toad_> yeah it's a path
+[19:49] <toad_> it will be a few hops long
+[19:49] <toad_> and the routing-to-the-path will be a few hops
+[19:49] <toad_> it sucks, but if you have udp, it's not too bad
+[19:49] <vulpine> <modulus> where does the path end and why is this not an anonimity risk?
+[19:50] <toad_> modulus: hmm?
+[19:50] <vulpine> <jrandom> modulus: the path ends at the i2p-style tunnel gateway
+[19:50] <vulpine> <modulus> if you follow the path does it lead you to the original node in a discoverable way?
+[19:50] <vulpine> <jrandom> (and i2p-style tunnel endpoint)
+[19:50] <toad_> yeah, the path is a dumb gateway essentially
+[19:50] <vulpine> <jrandom> what if B is not a small world?
+[19:50] <toad_> modulus: it's telescoping. you can't probe the path, you can only send the data down it
+[19:50] <vulpine> <jrandom> and, what if its fragmented.
+[19:51] <toad_> jrandom: then you can't route anyway :)
+[19:51] <vulpine> <modulus> right, so say I'm N and build a path n1..n5. m wants to talk to me and knows i'm find()able at n3. he sends to n3. n3 sends down the path n2 -> n1 -> N?
+[19:51] <vulpine> <jrandom> heh true enough
+[19:51] <toad_> if it's fragmented, you have serious bandwidth problems
+[19:51] <vulpine> <jrandom> but why would someone even hope that B is small world?
+[19:51] <toad_> if it's hierarchical, you can implement another (simple) algorithm
+[19:51] <toad_> jrandom: because it's a trust network
+[19:52] <toad_> B isn't open, therefore it must be a trust network
+[19:52] <toad_> actually i wouldn't make a distinction between B and C really in this topology
+[19:52] <toad_> social networks are definitely small world; trust networks are HOPED to be small world :|
+[19:52] <vulpine> <jrandom> hmm, but RSF has its own trust network, and so does VOA, etc
+[19:53] <vulpine> <polecat> RSF?  VOA?
+[19:53] <vulpine> <jrandom> in the real world, RSF's trust network may reach VOA, but their nodes in B may not
+[19:53] <vulpine> <jrandom> polecat: reporters san frontiers, voice of america
+[19:53] <toad_> true enough, and VOA will never even talk to you, because they use Tor, and in any case they want to have something that goes to their own servers
+[19:53] <toad_> so they can censor it
+[19:53] <vulpine> <jrandom> heh
+[19:54] <vulpine> <jrandom> yeah, i was in talks with them last winter
+[19:54] <vulpine> <modulus> really?
+[19:54] <vulpine> <jrandom> (even wrote 'em a pretty diagram ;)
+[19:54] <toad_> like with the Anonymizer contract in Iran
+[19:54] <vulpine> <jrandom> modulus: anyone who supports anonymity is fine by me.
+[19:54] <toad_> yeah, ian talked to them the year before iirc
+[19:54] <vulpine> <modulus> oh well
+[19:54] <vulpine> <modulus> i guess there are worse devils
+[19:54] <vulpine> <jrandom> true that.
+[19:55] <toad_> jrandom: well, if a network is hierarchical, there are obvious routing algorithms
+[19:55] <vulpine> <jrandom> i don't know too much about the folks who will actually be in B, but what I do know makes me unsure they'll be able to form a small world without going to A.  but in any case, technically, if there were a small world B, that would work fine
+[19:56] <toad_> if it is a trust net, especially if it is large, it probably is small world
+[19:56] <toad_> you might want to have pluggable routing algorithms
+[19:56] <vulpine> <modulus> OpenPGP has a strong set, but is othrewise not really too smallworldy.
+[19:56] <vulpine> <jrandom> but the trust network sans A may not be small world.  but having pluggable routing algorithms is a good idea
+[19:56] <toad_> lots of social networks are small world-ish
+[19:56] <vulpine> <jrandom> it'd actually be quite trivial to add
+[19:57] <toad_> well, A isn't anything
+[19:57] <toad_> A is open
+[19:57] <vulpine> <jrandom> on the OutboundTunnelEndpoint, it can say "can you do i2p-style to the next hop?  if so, do so, else, do freenet-style to the next hop"
+[19:57] <toad_> now can you see why I don't want to use a DHT in our darknet? :)
+[19:57] <vulpine> <jrandom> (net.i2p.router.tunnel.OutboundTunnelEndpoint that is)
+[19:58] <toad_> jrandom: that sounds about right, yes
+[19:58] <vulpine> <jrandom> well, there are lots of ways to do a DHT
+[19:58] <toad_> obviously the freenet-style hop can fail
+[19:58] <vulpine> <jrandom> and not all DHTs are iterative, many are telescoping
+[19:58] <toad_> true
+[19:58] <vulpine> <jrandom> toad_: so can i2p-style (congestion, disconnect, etc)
+[19:58] <toad_> but how many run over a pure trusted links network?
+[19:59] <vulpine> <jrandom> (i2p's dht is like a telescoping iterative dht... iteratively telescoping ;)
+[19:59] <vulpine> <jrandom> dunno
+[19:59] <toad_> my understanding is that a DHT *has to* create its own connections
+[19:59] <vulpine> <jrandom> there are a few fixed links iirc
+[19:59] <toad_> we did consider going for a DHT which could have fixed links
+[19:59] <toad_> that would have reduced our vulnerability to harvesting
+[19:59] <vulpine> <jrandom> yes, but those connections don't need to be /transport layer/
+[20:00] <toad_> but then ian came up with the insight that social networks are small world
+[20:00] <toad_> and oskar worked out a routing algorithm for it
+[20:00] <vulpine> <jrandom> word
+[20:00] <toad_> jrandom: hrrrm
+[20:01] <vulpine> <jrandom> e.g i2p's netDb is queried through tunnels
+[20:01] <toad_> obviously you can run a DHT on top of a general anonymization service
+[20:01] <vulpine> <jrandom> on top of the streams, yeah
+[20:01] <toad_> whether you want to is another question
+[20:01] <toad_> it depends on your application
+[20:01] <vulpine> <jrandom> (i think thats the freenet term for it, right?)
+[20:01] <vulpine> <jrandom> heh, true, it does depend
+[20:01] <toad_> 1:1 streams, TCP-like functionality
+[20:01] <toad_> yeah
+[20:01] <toad_> pipenet
+[20:02] <toad_> whatever you want to call it :)
+[20:02] <toad_> so the suggestion is:
+[20:02] <vulpine> <jrandom> tbh, for the high latency high anonymity comm, i'm more inclined to the store & forward style systems
+[20:02] <toad_> hmm?
+[20:02] <vulpine> <jrandom> (ignore last message from me, i'll listen to the suggestion :)
+[20:02] <toad_> okay
+[20:02] <toad_> the suggestion is:
+[20:02] <toad_> we have a class of node which does not directly participate in the i2p netdb
+[20:03] <toad_> it only connects at the transport layer to trusted peers
+[20:03] <toad_> it can use i2p tunnels at that level
+[20:03] <toad_> and it can route to create new tunnels between these tunnels, using the darknet routing algorithm
+[20:03] <toad_> (this will require the ongoing exchange of swap traffic to establish the routing locations)
+[20:04] <toad_> we can implement freenet's store functionality easily enough on such a network in parallel to the pipenet
+[20:04] <toad_> HOWEVER
+[20:04] <toad_> i don't know how it would work on the open network
+[20:04] <vulpine> <jrandom> hmm, not all peers in B/C trust each other though
+[20:05] <toad_> i'm trying to come up with a reasonably concrete proposal which we can then evaluate pro's and con's
+[20:05] <toad_> indeed
+[20:05] <toad_> if there is no path from C to C, you have to go through A - if there IS an A
+[20:05] <toad_> if not, you're screwed anyway
+[20:05] <vulpine> <jrandom> right, open network... i'm not sure, why wouldn't you use i2p for A?
+[20:05] <toad_> well you would
+[20:05] <toad_> i'm just concerned as to how exactly we would implement freenet's datastore functionality
+[20:06] <toad_> obviously if you DO have A, you could keep a metric for A and a metric for stuff routed through freenet directly
+[20:06] <toad_> and only use freenet if A is too slow
+[20:06] <vulpine> <jrandom> it could use the same trust/small world relationship, except instead of using IP+port, it uses destinations
+[20:06] <toad_> (which is likely in many scenarios)
+[20:06] <vulpine> <jrandom> right exactly
+[20:07] <toad_> well, a metric for each of your tunnels to A, and an overall metric for the freenet generic pseudo-tunnel
+[20:07] <toad_> jrandom: well, we don't need each node to be behind a tunnel
+[20:07] <toad_> we DO need to use a tunnel for the first few hops (~= premix routing)
+[20:07] <vulpine> <jrandom> tunnels can be 0 hop
+[20:07] <toad_> right
+[20:07] <vulpine> <jrandom> (free premix, remember :)
+[20:08] <toad_> and then you'd have a routing table, i suppose, independant of i2p's current peers list
+[20:08] <vulpine> <jrandom> exatly
+[20:08] <vulpine> <jrandom> that routing table would be of freenet node destinations
+[20:08] <toad_> most of which would be 0-hop tunnels
+[20:08] <vulpine> <jrandom> right
+[20:09] <toad_> and we do the proposed combination of LRU and new-fangled-darknet-routing, which we are expecting to use on freenet/open 0.7
+[20:09] <vulpine> <jrandom> sounds great
+[20:09] <toad_> okay, what are the advantages, precisely?
+[20:10] <toad_> free premix on opennet
+[20:10] <toad_> assuming we trust your mixnet impl :)
+[20:10] <vulpine> <jrandom> all of the ones listed in my last email, plus the ability to do routing in B/C when there is no alternative
+[20:10] <vulpine> <jrandom> heh, right :)
+[20:10] <vulpine> <jrandom> (of course, if you don't trust it, help is welcome :)
+[20:10] <toad_> that's the "how do you not give away tunnel formation?" issue
+[20:10] <vulpine> <jrandom> ah, see the techintro.html doc
+[20:10] <toad_> i understand there is some ground to think that's solvable
+[20:10] <vulpine> <jrandom> and tunnels-alt.html
+[20:11] <toad_> yeah, i'll read it
+[20:11] <vulpine> <jrandom> cool
+[20:11] <toad_> where's tunnels-alt.html?
+[20:11] <toad_> secondly, we get free premix on darknet - but we still have to deal with all the security issues we've struggled with
+[20:12] <vulpine> <jrandom> ah sorry, http://dev.i2p.net/cgi-bin/cvsweb.cgi/i2p/router/doc/tunnel-alt.html?rev=HEAD
+[20:12] <toad_> IMHO the only way to get secure premix on a darknet is to divide it into cells, pick three random peers from within the cell, ... and SOMEHOW try to figure out a way to prevent bogus nodes from affecting it...
+[20:12] <toad_> some collective algorithm
+[20:13] <vulpine> <jrandom> oh, right, its going to be Fucking Hard to work in hostile regimes.
+[20:14] <vulpine> <jrandom> well, thats kind of how we do it - split the peers into tiers, then pick randomly within that tier
+[20:14] <vulpine> <jrandom> but there /are/ a whole lot of peer selection and ordering strategies available
+[20:14] <vulpine> <jrandom> the good news is that we can use different ones in different places
+[20:14] <vulpine> <jrandom> e.g. "client" tunnels use a different one from "exploratory" tunnels (explained in the tunnel-alt.html)
+[20:15] <vulpine> <jrandom> we can then let some clients say "oh, i want strategy X for my freenet node"
+[20:15] <vulpine> <jrandom> s/clients/people/
+[20:15] <vulpine> <jrandom> (damn you geek speak!)
+[20:16] <vulpine> <tethra> haha
+[20:16] <vulpine> <tethra> ;)
+[20:23] <toad_> sorry
+[20:23] <toad_> ian called
+[20:23] <toad_> where were we?
+[20:23] <toad_> well
+[20:23] <toad_> we ran into a few problems when designing premix routing strategies
+[20:25] <toad_> possibly THE big one was that if you want a "straight" path i.e. directly connected, you a) have to publish a big part of the network topology and b) have to trust nodes when they tell you about possibly fictitious nodes behind them
+[20:25] <toad_> ping jrandom
+[20:25] <vulpine> <jrandom> aye
+[20:25] <vulpine> <jrandom> reading
+[20:26] <vulpine> <jrandom> what you describe is like what the internet went through when it moved!from!uu!c!p!to@direct.addresses
+[20:26] <toad_> oh i was saying about cells... something i thought up recently was: you have 100 nodes in a cell (say; they can either expand or split, but not normally shrink). to add a node, you have to have 3 connections to existing nodes in the cell
+[20:27] <toad_> and node ops are required to take reasonable efforts to ensure that they don't trust the same person twice under two different identities
+[20:27] <jme___> have to trust nodes when they tell you about possibly fictitious nodes behind them <- (not sure it is relevant, just reacting to the remark) if the topology record is authenticated by each router, and each router flood (ala ospf) all the records thru the network, there is no need to trust
+[20:27] <toad_> this means that as long as your attacker only has one node, he can only fake up to 1/4 of the network
+[20:27] <vulpine> <jrandom> toad_: is that the danezis' expander trees net?
+[20:27] <toad_> well, that's the suspicion - that it would distort the small world topology and break things
+[20:28] <jme___> if there is a single path thru the whole network of honnest router, the topology record will arrive to the destination
+[20:28] <toad_> jme___: well, in a darknet, you don't want to broadcast people's IP addresses...
+[20:29] <jme___> toad, you dont need to include any kind of address like that.
+[20:29] <jme___> i mean it is irrelevant to the way you spread the records
+[20:30] <toad_> jrandom: ian's basic concern is what do we get out of it; why should we dump a big piece of code relating to the messaging layer etc
+[20:30] <jme___> but clearly i havent following the matter, so i may very well be offtopic :)
+[20:30] <jme___> so i will shutup now :)
+[20:30] <toad_> jrandom: i have no idea re danezis expander trees; the idea would be that a cell is a subset of the overall network
+[20:30] <toad_> but within it you can do premix routing
+[20:30] <vulpine> <jrandom> free premix routing, free maintained comm layer (since i'll be coding on it), larger anonymity set
+[20:31] <toad_> you have to have reasonable confidence that your 3 hops won't all be fake nodes run by the same evil person
+[20:31] <vulpine> <jrandom> and functionality
+[20:31] <toad_> well then lets talk about premix routing
+[20:31] <vulpine> <jrandom> true
+[20:31] <toad_> premix routing on open network is easy
+[20:31] <toad_> we can have a conventional I2P node, and a routing table... it's trivial
+[20:31] <vulpine> <jrandom> right
+[20:31] <toad_> premix routing on darknet, that's far more interesting, and harder
+[20:32] <vulpine> <jrandom> well, you just use an i2p node and a routing table, and let i2p do the premixing
+[20:32] <toad_> doing it really securely should probably be a major research topic...
+[20:32] <toad_> well, how would it work on darknet?
+[20:33] <vulpine> <jrandom> thats the B3-->B4 question
+[20:33] <toad_> no
+[20:33] <toad_> that's C1 to B3
+[20:33] <toad_> we can do B3 to B4, that's freenet routing
+[20:33] <vulpine> <jrandom> no, C1-->B1-->B2-->B3 is the normal i2p tunnel routing
+[20:33] <toad_> (we'll be doing that more or less anyway, if we don't cooperate, with 1:1 tunnels)
+[20:34] <toad_> well yeah but how does that work on restricted routing?
+[20:34] <vulpine> <jrandom> didn't i post a big 8 paragraph explanation?
+[20:34] <toad_> on open i2p, you pick a few nodes which have served you well in the past
+[20:34] <vulpine> <jrandom> (in the last day or so)
+[20:34] <toad_> and then they connect direct to each other
+[20:35] <toad_> jrandom: did you? hmmm
+[20:35] <vulpine> <jrandom> i would tell you what subject, but my mailbox is full of the same one ;)
+[20:35] <vulpine> <jrandom> lemmie check gmane
+[20:36] <vulpine> * Complication is 75% through with the gmane thread :)
+[20:38] <vulpine> * Rawn checks his mailbox to pull freenet mails back out of spam... ^^
+[20:38] <toad_> :)
+[20:39] <vulpine> <Complication> That's one big patch of text you people have written down there :D
+[20:40] <vulpine> <Complication> Sidenote: oddly enough renicing Java onto the same level with system daemons has so far kept me logged in
+[20:40] <vulpine> <jrandom> http://permalink.gmane.org/gmane.network.freenet.technical/2202
+[20:41] <vulpine> <modulus> Rawn: hahaha, evil.
+[20:41] <vulpine> <jrandom> and the replies with Michael
+[20:41] <vulpine> <jrandom> interesting Complication
+[20:42] <vulpine> <jrandom> (ok, it was 7 paragraphs, not 8, and one was a 2 word paragraph, so just 6, but it felt like 8 writing it :)
+[20:42] <toad_> okay
+[20:42] * toad_ reads...
+[20:42] <toad_> we create an outbound tunnel
+[20:43] <vulpine> <jrandom> thats C1-->B1-->B2-->B3
+[20:43] <vulpine> <jrandom> done.
+[20:43] <toad_> C1 -> B1 -> B2 -> B3
+[20:43] <toad_> well, it's not that easy on restricted routes
+[20:43] <vulpine> <jrandom> sure it is, see that url
+[20:43] <toad_> this is source routed, right?
+[20:43] <vulpine> <jrandom> right
+[20:44] <vulpine> <jrandom> (for outbound tunnels, dest routed for inbound)
+[20:44] <toad_> yeah
+[20:44] <toad_> but
+[20:44] <toad_> if your darknet has a typical node order of 10
+[20:44] <toad_> then you can only use those 10 B's!
+[20:44] <toad_> which will *seriously* suck
+[20:45] <vulpine> <jrandom> thats fine if you trust them
+[20:45] <vulpine> <jrandom> and C trusts B nodes that it trusts
+[20:45] <toad_> hmm?
+[20:45] <toad_> C trusts B nodes that B's directly connected trust? or what?
+[20:46] <vulpine> <jrandom> what are you hiding from them?  C1 == reporter, B[0-9] RSF nodes
+[20:46] <vulpine> <jrandom> ah, the unrelated B nodes
+[20:46] <toad_> well
+[20:46] <-- jme___ has left this channel. ()
+[20:46] <toad_> C1 is connected to B1...B10
+[20:46] <toad_> so the naive option would be C1 -> B3 -> B7 -> B1
+[20:46] <vulpine> <jrandom> if they're connected, they're trusted, in C
+[20:46] <toad_> or whatever randomly chosen nodes
+[20:47] <vulpine> <jrandom> though that doesn't really make sense
+[20:47] <toad_> hmm?
+[20:47] <toad_> there isn't much diff between B and C in this scenario
+[20:47] <toad_> lets assume there is no A
+[20:47] <toad_> then B ~= C
+[20:48] <vulpine> <jrandom> i can't reason about that
+[20:48] <vulpine> <jrandom> well, i can, but i'll have no grounding ;)
+[20:48] <-- jmg_ has left this server. (Read error: 104 (Connection reset by peer))
+[20:48] <toad_> well
+[20:48] <toad_> lets say C1 wants to create a tunnel
+[20:48] <toad_> outbound tunnel
+[20:48] <toad_> within B
+[20:48] <toad_> to which C2 will connect to
+[20:48] --> jmg_ has joined this channel. (n=me@member-norwich-community.norwich.edu)
+[20:48] <toad_> it may also create tunnels out to A
+[20:49] <toad_> but this is a within-the-darknet tunnel
+[20:50] <toad_> given that we trust them, we are creating the tunnel because they don't need to know that we originated this tunnel, and because the target in-tunnel needs to be connected to from somewhere other than us
+[20:50] <toad_> the fact that they are directly connected severely cuts our anonymity set
+[20:51] <toad_> the fact that their only commonality may be us means that it might be a freenet-routing connection between them for each hop
+[20:51] <toad_> i.e. lots of hops
+[20:51] <toad_> can you see my problem?
+[20:51] <vulpine> <jrandom> we = which node, and them = which nodes?
+[20:51] <toad_> we = C1
+[20:51] <vulpine> <jrandom> C1 == we?
+[20:51] <vulpine> <jrandom> them = B* & C2?
+[20:52] <toad_> ian originally suggested we publish the topology and just make a chain from C1 to B1 to B2 to B3, where each time we have a direct connection
+[20:52] <toad_> yep
+[20:52] <toad_> well, them = B* in this case
+[20:52] <toad_> we're only considering the out-tunnel
+[20:52] <toad_> not C2's in-tunnel
+[20:52] <vulpine> <jrandom> right, you know my thoughts on publishing the topology ;)
+[20:53] <toad_> yeah, it's not exactly ideal
+[20:53] <vulpine> <jrandom> well, ok, not considering C2
+[20:53] <toad_> lets see...
+[20:53] <toad_> hopefully the nodes which are directly connected to us are fairly close together
+[20:53] <vulpine> <jrandom> well, what threats is C1 facing?
+[20:53] <toad_> well
+[20:53] <toad_> firstly one of the B's might not be as trustworthy as we had thought
+[20:54] <vulpine> <jrandom> then C1 is busted
+[20:54] <toad_> secondly, C2 might find out who was sending the tunnel
+[20:54] <vulpine> <jrandom> since participation in the network is illicit
+[20:54] <toad_> well, he's busted anyway yes
+[20:54] <toad_> but there may be a fine for participating in the network and a death sentence for publishing certain material
+[20:55] <toad_> that's likely to be the situation in china anyway
+[20:55] <vulpine> <jrandom> being busted is not the worst possible - being identified and then more closely watched, to further infiltrate, is
+[20:55] <toad_> right
+[20:55] <vulpine> <jrandom> (well, in addition to death/torture, etc)
+[20:55] <toad_> this is why we have a tunnel
+[20:55] <vulpine> <jrandom> who does C1 talk to?  only trusted nodes, right?
+[20:55] <toad_> yeah
+[20:55] <toad_> B1...B10
+[20:55] <toad_> he trusts them
+[20:56] <toad_> it's quite possible that a node might only trust 3 nodes
+[20:56] <vulpine> <jrandom> ok, so we know they're screwed if he is wrong.  so lets assume he isn't
+[20:56] <toad_> less than that and it'd be useless to the network, and busted anyway
+[20:56] <toad_> well
+[20:56] <vulpine> <jrandom> lets just assume he knows B1.  its actually better if he only knows one
+[20:57] <toad_> hmmm okay
+[20:57] <vulpine> <jrandom> (less predecessors)
+[20:57] <toad_> he IS busted if B1 is dishonest, as any knowledge of the network beyond B1 is from B1
+[20:57] <vulpine> <jrandom> right
+[20:57] <toad_> so
+[20:57] <toad_> if he only knows B1, how does he anonymize his tunnel to C2's entry point?
+[20:58] <vulpine> <jrandom> if B1 is dishonest and he knows other people, he's busted too
+[20:58] <toad_> hmm?
+[20:58] <vulpine> <jrandom> he trusts B1, and gets referenes to a whole bunch of peers
+[20:58] <vulpine> <jrandom> if (C1 talks to B1) and B1 is hostile, C1 is busted.  If (C1 talks to B1-10) and B1 is hostile, C1 is busted.
+[20:59] <vulpine> <jrandom> the cardinality of the Bs that C1 talks to has no bearing, if one is hostile
+[20:59] <toad_> 2 threats - 1. dishonest peers (cancer nodes) directly connected - hence out-tunnel. 2. corrupt in-tunnel for the target - need to anonymize before get to the in-tunnel
+[20:59] <toad_> yes
+[20:59] <toad_> but
+[20:59] <toad_> if we CAN do premix routing i.e. make an out-tunnel, then we can severely limit the damage caused
+[21:00] <vulpine> <jrandom> ok, so we'll ignore the threat of being identified as a partiipant?
+[21:00] <toad_> well, it's an issue, but there's nothing we can do about it beyond only connecting to people we trust
+[21:00] <toad_> brb
+[21:00] <vulpine> <jrandom> the damange is only limited if the peer contacted isn't hostile.
+[21:00] <vulpine> <jrandom> 'k
+[21:00] <vulpine> * jrandom goes back to the flamewar ;)
+[21:00] <vulpine> <jrandom> (i'll be watching this window too)
+[21:01] <vulpine> <modulus> haha
+[21:01] <vulpine> <modulus> two-front flamewar, delicious :-)
+[21:02] <toad_> back
+[21:02] <toad_> ok
+[21:02] <vulpine> <jrandom> 'k cool
+[21:03] <toad_> there's a month in prison for running a node, and a death sentence for publishing the Uber Secret Party Papers
+[21:04] <toad_> only connecting to people we trust, and not passing around IP addresses of others in the darknet, is the way to address the former threat
+[21:04] <vulpine> <jrandom> if i were the person with uber secret party papers, i wouldn't touch a computer
+[21:04] <toad_> well quite, but SOMEBODY has to put them out at some point
+[21:04] <vulpine> <susi23> (wimp ;)
+[21:04] <toad_> not necessarily the original source
+[21:04] <vulpine> <jrandom> right, if i were to put them out, i'd do so through physical means
+[21:04] <toad_> well yeah but uploading them could get seriously fast distribution
+[21:05] <toad_> then you redistribute on the ground physically
+[21:05] <vulpine> <jrandom> i'd be a militant, and i wouldn't need a large scale system
+[21:05] <toad_> heh
+[21:05] <vulpine> <jrandom> so would sattelite, broadcast by foreign nations
+[21:05] <toad_> yeah well, we'll discuss our different plans for revolution another time
+[21:05] <vulpine> <modulus> wimps survive ;-)
+[21:05] <vulpine> <jrandom> hehe ok ok
+[21:05] <toad_> lets just say that it's a more serious offence to be caught publishing X than to just run a node
+[21:05] <toad_> you have an out-tunnel for one of two purposes
+[21:06] <toad_> one is to do a freenet publish
+[21:06] <toad_> the other is to connect to an in-tunnel
+[21:06] <toad_> s/publish/publish or request
+[21:06] <vulpine> <jrandom> shut up comrade ;)
+[21:06] <vulpine> <jrandom> 'k right toad
+[21:06] <toad_> both are relevant in this instance, since we are trying to look into whether some sort of merger is useful
+[21:06] <toad_> the security issues are probably more obvious with a freenet insert
+[21:07] <toad_> C1 trusts B1...B10, and builds a chain, ending in B1
+[21:07] <toad_> B1 knows then, what the data is (potentially)
+[21:07] <vulpine> <jrandom> tbh toad, technically we can work through it, but my heart isn't in it if it assumes no A
+[21:07] <toad_> and he knows that it came from C1, B4, or any of his other peers
+[21:08] <vulpine> <jrandom> i really do appreciate your willingness to work through this, regardless
+[21:08] <toad_> what's tbh?
+[21:08] <vulpine> <modulus> to be honest
+[21:08] <vulpine> <jrandom> to be honest
+[21:08] <toad_> well.. it assumes that there may be a low-bandwidth connection to A
+[21:08] <toad_> is that reasonable?
+[21:08] <toad_> it SHOULD be viable in the total absence of A
+[21:09] <toad_> but it's designed to work well as a hybrid (our own darknet is designed to work as a hybrid)
+[21:09] <vulpine> <jrandom> lets look at the use cases in C
+[21:09] <toad_> okay, what do you mean by that?
+[21:09] <toad_> use cases...
+[21:09] <vulpine> <jrandom> use cases in C: talk to another person in C about something illicit
+[21:09] <vulpine> <jrandom> another use case: read something from A
+[21:10] <toad_> there will be a period during which a darknet is viable running over the regular internet, in a somewhat hostile regime, where known nodes are blocked
+[21:10] <vulpine> <jrandom> another use case: publish something to A
+[21:10] <toad_> right
+[21:10] <vulpine> <susi23> (all this "small trusted network" sounds like you want to set up a number of bbs or use uucp :)
+[21:10] <toad_> or publish something on freenet
+[21:10] <vulpine> <jrandom> for the 'known nodes are blocked', connelly's description works fine.  i2p 2.0.
+[21:10] <vulpine> <modulus> hehe, encrypt UUCP
+[21:10] <vulpine> <jrandom> at least, from an anonymity perspective
+[21:10] <vulpine> <susi23> pgp?
+[21:10] <toad_> jrandom: well, the problem then is that restricted routes doesn't actually have a routing algorithm
+[21:10] <vulpine> <jrandom> it'd need a high latency data store, for some cool functionality
+[21:11] <vulpine> <jrandom> susi23: i agree, but the question is if you need that to scale, how would you do it
+[21:11] <toad_> if the network is small or hierarchical, that's not a big deal
+[21:11] <vulpine> <jrandom> toad_: what connelly describes doesn't need anything beyond what connelly describes
+[21:11] <toad_> if it's medium sized, you could certainly make use of our routing algo
+[21:11] <vulpine> <susi23> using old fashioned tech, step by step
+[21:11] <vulpine> <susi23> (or cell by cell, however)
+[21:12] <vulpine> <jrandom> the network == A or C or A+B+C
+[21:12] <vulpine> <jrandom> (that should have a question mark)
+[21:12] <vulpine> <susi23> (although I believe that trust model is not realstic at all)
+[21:13] <toad_> jrandom: that wasn't my impression earlier; restricted routes CAN work as long as there is high bandwidth connectivity to A
+[21:13] <vulpine> <jrandom> susi23: assume it for the purposes of the discussion
+[21:13] <vulpine> <modulus> no automated trust model i've seen is realistic. but that's a limitation of the medium.
+[21:13] <toad_> susi23: well, restricted routes require trust also
+[21:13] <toad_> modulus: "automated trust model" meaning...?
+[21:13] <vulpine> <jrandom> toad_: high bandwidth isn't necessary, merely that scarcity is taken care of
+[21:13] <toad_> modulus: the proposal in both cases is to make use of real trust
+[21:13] <vulpine> <modulus> a trust model where a program makes the choice based on an algorithm and it is not done dynamically by a person.
+[21:14] <toad_> modulus: i agree, they're all rubbish :)
+[21:14] <reliver> the ed2k trust model works beautifully.
+[21:14] <vulpine> <jrandom> toad_: if a reporter (C) uses their contact with RSF (B), C will not abuse B's connectivity
+[21:14] <toad_> hmmm
+[21:14] <toad_> i suppose, if you only want to move tiny amounts of data from time to time
+[21:14] <vulpine> <jrandom> B will also know what resources C[0-K] is using, if they're using them through B[0-J] (where B[0-J] is run by RSF)
+[21:15] <toad_> and your network is very small
+[21:15] <vulpine> <jrandom> C doesn't need filesharing
+[21:15] <vulpine> <jrandom> "the network == A or C or A+B+C"?
+[21:15] <toad_> well it depends how you define your problem
+[21:15] <vulpine> <jrandom> if A+B+C, then A+B+C doesn't need to be small
+[21:15] <toad_> if we are specifically talking about RSF, they probably would want to have minimal transfers
+[21:15] <toad_> sorry
+[21:16] <vulpine> <jrandom> problem: help people :)
+[21:16] <toad_> i mean you need routing unless sizeof ( C + B_hostile_env ) is small
+[21:16] <vulpine> <modulus> well, people who are serious are not likely to need high bw, at most moving PDFs slowly should be fine for them, and otherwise plaintext quickly.
+[21:16] <toad_> yeah
+[21:16] <toad_> well
+[21:16] <toad_> we're not talking about the mythical ten people who will overthrow the government
+[21:17] <vulpine> <modulus> damn, i had hope :-)
+[21:17] <vulpine> <jrandom> ok, I think the C+B_hostile_env is reasonably small, since its (in my head) highly fragmented
+[21:17] <toad_> we are talking about bringing the free internet, the truth, the news, the ability to freely blog, etc, to the masses
+[21:17] <vulpine> <jrandom> e.g. chinese dissident knows some people, and one of them knows someone in the UK
+[21:17] <toad_> newsflash: ten people will not overthrow the government
+[21:17] <vulpine> <jrandom> toad_: lets not talk strategy on that front
+[21:17] <vulpine> <modulus> basically I think that the PRC is likely to do a lot of work in catching the proverbial "party papers" publisher, but not the run-of-the-mill blogger.
+[21:18] <toad_> well, it affects your overall strategy
+[21:18] <toad_> i mean
+[21:18] <toad_> it affects your technical direction
+[21:18] <toad_> what service do you want to provide?
+[21:18] <vulpine> <jrandom> i'm not willing to discuss my strategy for revolutionary activity.
+[21:18] <vulpine> <susi23> :)
+[21:18] <vulpine> <modulus> boring.
+[21:18] <vulpine> <jrandom> (sorry, no offense, visibility too high)
+[21:19] <toad_> I want to provide a drop in replacement for the internet, essentially
+[21:19] <toad_> there may well be bandwidth issues
+[21:19] <vulpine> <jrandom> service i want to provide: cover traffic for people who /need/ anonymity
+[21:19] <toad_> and the apps will be different
+[21:19] <vulpine> <jrandom> (and a way for them to blend)
+[21:19] <toad_> but i'm not willing to say "Real Dissidents will only need 10kB/day of transit"
+[21:19] <vulpine> <modulus> hmm. i think that some of that solution space is already taken by things like the anticensorware software, and maybe trying to fill the spaces that are already covered lead to overengineering?
+[21:19] <vulpine> <jrandom> have you read the red/green/blue paper?
+[21:20] <toad_> and yes, we do need cover traffic
+[21:20] <toad_> in the west
+[21:20] <toad_> and on the darknet
+[21:20] <toad_> in the west, that would certainly include Large Files
+[21:20] <toad_> it might well in the Rest
+[21:20] <vulpine> <susi23> (i2p-bt! :)
+[21:21] <toad_> jrandom: what paper?
+[21:21] <vulpine> <jrandom> http://www.cl.cam.ac.uk/users/gd216/redblue.pdf
+[21:22] <toad_> jrandom: ahhh, that one
+[21:22] <toad_> not all the way through, i should
+[21:22] <toad_> well
+[21:22] <vulpine> <jrandom> the relevence i see with that one is that not everything needs anonymity, or the costs involved
+[21:22] <toad_> the question is, do we have anything we can do together that would be mutually beneficial?
+[21:23] <vulpine> <jrandom> (and we need to give people that choice)
+[21:23] <toad_> jrandom: that's the problem, yes
+[21:23] <toad_> jrandom: that's the problem with cover traffic
+[21:23] <toad_> if nobody except dissidents need anonymity... you can find the dissidents more easily
+[21:23] <toad_> much more easily!
+[21:23] <vulpine> <jrandom> aye
+[21:24] <vulpine> <jrandom> (barring stego, and you know my thoughts there ;)
+[21:24] <toad_> :)
+[21:24] <toad_> jrandom: if stego is meaningless, what is the point exactly of restricted routes?
+[21:24] <vulpine> <jrandom> weaker adversaries
+[21:24] <toad_> jrandom: restricted routes and darknet freenet are tackling exactly the same problem
+[21:24] <vulpine> <jrandom> (and trasnient cons)
+[21:25] <toad_> i don't have a problem with non-permanent connections if needed for advanced stego, in the medium term
+[21:25] <vulpine> <jrandom> (weaker adversaries, in that restricted routes are good for some additional threats, but not those that require stego)
+[21:25] <toad_> it's not that relevant at the moment
+[21:25] <toad_> well
+[21:25] <toad_> lets ignore issues of stego
+[21:26] <toad_> restricted routes is good for the kind of adversary who will only do the easy things to try to discourage the people
+[21:26] <vulpine> <jrandom> right
+[21:26] <toad_> e.g. the chinese censors, as long as the politicians don't get pissed off
+[21:26] <vulpine> <jrandom> and for the adversaries who can't even do that
+[21:26] <toad_> sooner or later the politicians will get pissed off
+[21:26] <toad_> but while they haven't, we can provide a service which can't be EASILY blocked (i.e. harvested)
+[21:27] <toad_> we can do this through restricted routes i2p or through darknet freenet
+[21:27] <toad_> darknet freenet has the advantage that it can scale, and specifically, it can provide a way for i2p to create tunnels within a medium sized restricted routes darknet
+[21:27] <vulpine> <jrandom> right
+[21:27] <toad_> therefore there is some opportunity for cooperation
+[21:27] <toad_> or so i reason
+[21:27] <vulpine> <jrandom> heh, and i2p has the advantage that it can scale (in A) ;)
+[21:27] <toad_> yep
+[21:27] <toad_> i2p can scale in A
+[21:28] <toad_> that's not a problem
+[21:28] <toad_> so can freenet, in A
+[21:28] <vulpine> <jrandom> at the very least, there is some room for cooperation:
+[21:28] * toad_ listens
+[21:29] <vulpine> <jrandom> baseline: if there were a way to use freenet-like censorship resistance / data distribution without needing freenet's comm (e.g. just use a bunch of i2p destinations in a routing table), that would Rule.
+[21:29] <vulpine> <jrandom> additional baseline: in A, freenet can use i2p for free premix
+[21:29] <toad_> right
+[21:30] <toad_> there is some advantage for cooperation in A-space
+[21:30] <toad_> i2p can do premix routing for freenet, and freenet can use i2p 0-hop tunnel destinations
+[21:30] <toad_> that's relatively straightforward, it's just a question of pro's and con's, specifically transport tradeoffs and so on
+[21:31] <vulpine> <jrandom> right right.  in B/C space, if B/C is a small world, there may be a good way for i2p to use freenet style routing
+[21:31] <toad_> in B/C, freenet can provide i2p - for small-world darknets - with a scalable routing algorithm
+[21:31] <toad_> right
+[21:31] <toad_> this might be via a plugin
+[21:31] <toad_> but it would require very close cooperation even if so
+[21:31] <vulpine> <jrandom> otoh, in B/C space, if B/C is not small world, but fragmented, i2p can provide freenet with connectivity
+[21:31] <toad_> this is THE big hole in i2p 2.0
+[21:32] <toad_> jrandom: explain?
+[21:32] <vulpine> <jrandom> its only a hole if you think B/C exists as a small world.  i dont think it does - i think its insanely fragmented.  but its ok, we can disagree and see how that goes
+[21:32] <toad_> well
+[21:33] <toad_> i suspect there will be substantial, small-world B/C networks
+[21:33] <toad_> that's the principle on which our current efforts are based anyway
+[21:33] <vulpine> <jrandom> ok, i2p doesn't really play into that space
+[21:33] <vulpine> <jrandom> people in those scenarios could use i2p over freenet
+[21:33] <vulpine> <jrandom> (right?)
+[21:34] <vulpine> <jrandom> and in scenarios which aren't small-world B/C networks, they could use freenet over i2p
+[21:34] <toad_> i think we can agree that it is POSSIBLE that the chinese censors would try to harvest and block, just at the civil service level, without enough political will to do the sort of surveillance required to bust freenet/i2p
+[21:34] <vulpine> <jrandom> (turtles, all the way down!)
+[21:34] <vulpine> <Complication> (This time I had the privilege to *see* my Celeron bite the dust. Also grabbed some logs from the period where job lag was breaking 20 seconds.)
+[21:35] <vulpine> <jrandom> toad_: as an aside, how do you know the session bytes are blocked - could "all non HTTP/HTTPS/SSH/SSL/TLS/SMTP/etc" are blocked?
+[21:35] <vulpine> <jrandom> ah nice, thanks Complication!
+[21:35] <vulpine> <Complication> (will relay later, I'll probably shuttle them to my other machine first)
+[21:35] <vulpine> <jrandom> toad_: agreed wrt censors
+[21:35] <toad_> jrandom: if i remember correctly, freenet 0.7 gets through
+[21:35] <vulpine> <jrandom> ah ok cool
+[21:36] <vulpine> * jrandom was just wondering that last night
+[21:36] <toad_> on a lower level, freenet and i2p on B/C will require roughly the same connection code
+[21:37] <toad_> i.e. authenticated DH, probably JFKi
+[21:37] <vulpine> <jrandom> have you seen http://dev.i2p.net/cgi-bin/cvsweb.cgi/i2p/router/doc/udp.png?rev=HEAD ?
+[21:37] <toad_> (encrypted with a key known only to people who know the node)
+[21:37] * toad_ has a look... i opened it earlier...
+[21:38] <vulpine> <jrandom> hah neat, jfki is actually what SSU does :)
+[21:38] <toad_> well encrypted JFKi, so you can't pick it up so easily on traffic analysis
+[21:38] <toad_> what's SSU?
+[21:38] <toad_> i haven't actually implemented it yet, that's an interesting point
+[21:38] <vulpine> <jrandom> (well, perhaps vaguely)
+[21:39] <toad_> but we DO have our own message system which ian is rather attached to
+[21:39] <vulpine> <jrandom> SSU is our UDP transport protocol - Semireliable Secure UDP - http://dev.i2p.net/cgi-bin/cvsweb.cgi/i2p/router/doc/udp.html?rev=HEAD
+[21:39] <toad_> oh and we have a retransmission system
+[21:40] <toad_> packets aren't ordered, but they do have packet numbers, and they can be retransmitted
+[21:40] <vulpine> <jrandom> take a look at those last two links for SSU, and let me know where it fits in with your layers
+[21:40] <vulpine> <jrandom> the png is probably the easiest to get a quick glance
+[21:40] <vulpine> <jrandom> (that diagram is as implemented and deployed)
+[21:41] <toad_> hmmmm
+[21:42] <toad_> whats "semireliable"? what does that mean?
+[21:43] <vulpine> <jrandom> it means if you're sending M1 and M2 to a peer, and M1 has three fragments, you don't fail completely if M1 doesn't get through
+[21:43] <vulpine> <jrandom> but it does try to retransmit as necessary
+[21:43] <vulpine> <jrandom> but it doesn't offer TCP's reliability
+[21:43] <toad_> hmmm
+[21:43] <vulpine> <jrandom> (e.g. if M1 fails, close con)
+[21:43] <vulpine> <jrandom> so it only tries a little
+[21:44] <toad_> we try to offer a reasonable level of reliability because it's very hard to implement packet loss handling at a higher level
+[21:44] <vulpine> <jrandom> its pretty heavily SACKed and streamlined (latest release today offers pretty good 'semi')
+[21:44] <vulpine> <jrandom> right, same with us - we don't want tunnels dropping messages unnecessarily
+[21:45] <vulpine> <jrandom> (though we can, but its slower)
+[21:45] <vulpine> <jrandom> e.g. a streaming lib timeout @ 8 seconds, rather than an SSU timeout at 600ms
+[21:46] <toad_> well, we'd have to look into that in detail later... i would require that the packets look random, including the introductions, with no common bytes
+[21:46] <vulpine> <jrandom> SSU currently fires off a up to 10 retransmissions of a message before giving up (or until the messag eexpires)
+[21:46] <vulpine> <jrandom> right, that it does
+[21:46] <toad_> :)
+[21:46] <vulpine> <jrandom> (see udp.html)
+[21:46] <vulpine> <jrandom> though random only at the data level
+[21:46] <vulpine> <jrandom> flow and size is a different story
+[21:47] <toad_> otherwise i don't think it'd be a big problem; we use different approaches for a few things, but they achieve the same result
+[21:47] <vulpine> <jrandom> (and timing)
+[21:47] <toad_> well yeah
+[21:47] <toad_> we don't address that at all at the moment
+[21:47] <vulpine> <Vincent> Hello.
+[21:47] <toad_> apart from some somewhat arbitrary randomization of timeouts at various levels
+[21:47] <toad_> hi
+[21:47] <vulpine> <jrandom> heya Vincent
+[21:48] <vulpine> <jrandom> yeah, randomized timeouts are good for avoiding synchronization, but wouldn't really offer good anonymity
+[21:48] <toad_> jrandom: what did you say about freenet running over i2p on non-small-world networks? what sort of networks did you have in mind?
+[21:48] <toad_> well, if you pick a real random distribution, they can be quite nice
+[21:48] <toad_> of course we don't at present
+[21:48] <vulpine> <jrandom> (the real world isn't that random)
+[21:49] <vulpine> <Vincent> What benefit would exist for Freenet to run over i2p?
+[21:49] <toad_> yeah
+[21:49] <toad_> Vincent: free premix routing
+[21:49] <toad_> free JFKi authentication
+[21:49] <toad_> more users
+[21:49] <toad_> we're trying to work out the rest
+[21:49] <vulpine> <jrandom> but, freenet over i2p on non-small-world: i2p would work fine in non-small world, right?  freenet over i2p would let you have global reachability
+[21:49] <toad_> well
+[21:49] <vulpine> <susi23> (reading freenet published eepsites offline :)
+[21:50] <toad_> if the network is small enough for i2p to not need a real routing algorithm...
+[21:50] <vulpine> <jrandom> (well, reading through a bit further, ssu doesn't offer jfki exactly, just some vague similarities.  need to read the spec)
+[21:50] <vulpine> <jrandom> exatly susi23
+[21:50] <toad_> then it doesn't matter that it's not small world
+[21:50] <vulpine> <jrandom> right toad_, thats what i'm referring to - where the fragment of B is small enough to work fine with i2p
+[21:50] <vulpine> <Vincent> Hmm, what about overhead?
+[21:51] <vulpine> <susi23> (but I thought we get syndi for this :P)
+[21:51] <toad_> Vincent: the advantage for i2p is that it i2p can do large restricted routes networks, as long as they are small-world
+[21:51] <vulpine> <jrandom> toad_: the value there is while freenet in that small non-small-world B would work, freenet over i2p in that small non-small world B would let those peers participate in the global data store
+[21:51] <toad_> jrandom: well, if it's that small we might as well have each node connect to each node, plus a few in A, is that the idea?
+[21:51] <vulpine> <Vincent> Oh, is this an inherent routing problem with i2p's implementation?
+[21:52] <vulpine> <jrandom> Vincent: only if you think the west will fall ;)
+[21:52] <vulpine> <jrandom> toad_: something like that (what connelly was describing)
+[21:52] <vulpine> <Vincent> Sorry?
+[21:53] <toad_> well, or if you want to provide for large darknets with relatively small or insecure connections to the west
+[21:53] <vulpine> <jrandom> susi23: i'd love for syndie to have a solid automated syndication system, which a freenet data store could provide
+[21:53] <toad_> jrandom: hrrm
+[21:53] <toad_> lets see...
+[21:53] <toad_> we have a mesh of 25 nodes
+[21:53] <toad_> ALL of them connect ultimately to ONE node
+[21:53] <toad_> that one node connects out to the West, possibly indirectly
+[21:53] <vulpine> <jrandom> why one?
+[21:53] <vulpine> <jrandom> or is that the thought experiment
+[21:54] <vulpine> <jrandom> 'k
+[21:54] <toad_> what you are saying is, instead of having freenet nodes on each, and then one on the proxy node, we could have multi-hop nodes in the routing table on the 25 nodes?
+[21:54] <toad_> multi-hop nodes (in A)
+[21:54] <vulpine> <jrandom> thats... well, not really what i was saying
+[21:54] <toad_> no
+[21:54] <toad_> what were you saying then?
+[21:55] <toad_> i get i2p over freenet
+[21:55] <toad_> i'm not sure i quite get freenet over i2p
+[21:55] <toad_> apart from the obvious
+[21:55] <toad_> (freenet over i2p in A is trivial and gets free premix)
+[21:55] <vulpine> <jrandom> the peers in that mesh of nodes would be able to run freenet over i2p, as if they were in A, not in C
+[21:55] <toad_> hmmm okay
+[21:56] <toad_> so if we are on a largish small world network, we use 0-hop tunnels, and darknet mode
+[21:56] <toad_> we talk to our peers only
+[21:56] <vulpine> <jrandom> being able to effectively 'be in A' is Really Good
+[21:56] <vulpine> <jrandom> right?
+[21:56] <toad_> otoh, if we are on what amounts to a small outcrop of A, we use multi-hop tunnels
+[21:56] <toad_> and pretend to be in A
+[21:57] <toad_> well, the gateway capacity is finite either way
+[21:57] <vulpine> <jrandom> certainly, these people would not run frost ;)
+[21:57] <toad_> actually there are ways to make frost FAR more efficient in 0.7 :)
+[21:58] <vulpine> <jrandom> that doesn't take much toad ;)
+[21:58] <toad_> but if they try downloading BIG files, it will take a loooooong time
+[21:58] <toad_> jrandom: ;)
+[21:58] <vulpine> <jrandom> right
+[21:59] <toad_> okay, what i don't quite see, is why you don't just run a node on the gateway, and have the others connect to it?
+[21:59] <toad_> the node on the gateway will be close to real A nodes
+[21:59] <vulpine> <jrandom> i don't know.  well, technically, i have an answer, but its fixable.
+[21:59] <toad_> actually...
+[21:59] <vulpine> <jrandom> e.g. fproxy.i2p / fproxy.tino.i2p are exactly what you describe
+[22:00] <toad_> the answer is that it would SUCK
+[22:00] <vulpine> <jrandom> we premix to an fproxy
+[22:00] <vulpine> <jrandom> the technical reason why it isn't ideal, is fcp isn't really anonymity sensitive right now
+[22:00] <toad_> we don't really want it routing requests to an outcrop
+[22:00] <vulpine> <jrandom> heh why is that?
+[22:00] <toad_> well, freenet 0.7 routing is difficult to make performance sensitive
+[22:01] <vulpine> <jrandom> freenet wouldn't handle that sort of migration?
+[22:01] <toad_> we *can*, and we will
+[22:01] <toad_> but it's not ideal
+[22:01] <vulpine> <jrandom> ah
+[22:01] <vulpine> <jrandom> nothing ever is :/
+[22:01] <toad_> if we KNOW that a certain group of nodes is just an outcrop, then we may as well keep them off the network - or give them fake access to it
+[22:01] <toad_> hmmm
+[22:01] <toad_> i'm not sure
+[22:02] <vulpine> * jrandom neither, but you're right, there are those two ways those 25 users could access the global A-style freenet data store
+[22:02] <toad_> freenet 0.7's routing algorithm is essentially "go where the current Location's tell you to"
+[22:03] <toad_> well
+[22:03] <toad_> they can access it by sending requests to the gateway node as transients i suppose
+[22:03] <toad_> if it knows they suck it can just not route any requests to them
+[22:03] <toad_> of course that means they don't have much anonymity
+[22:03] <vulpine> <jrandom> either that, or as you suggest, just access the gateay node through a premix
+[22:03] <toad_> ahhh
+[22:04] <toad_> hmmm
+[22:04] <toad_> so we have 25 nodes behind 1 proxy node
+[22:04] <toad_> they are a trustnet
+[22:04] <vulpine> <jrandom> freenet 0.7 really wont be able to deal with peers who suck?
+[22:04] <vulpine> <jrandom> right
+[22:04] <toad_> but they're not really part of the small world network
+[22:04] <toad_> they can premix to the proxy node
+[22:04] <vulpine> <jrandom> right, that one node is
+[22:04] <toad_> or to each other...
+[22:04] <vulpine> <jrandom> they're really just clients, kind of
+[22:04] <toad_> they don't get requests from outside, so have limited anonymity
+[22:05] <vulpine> <jrandom> well, their anonymity is what i2p provides
+[22:05] <toad_> hmmm
+[22:05] <toad_> well, if we make them part of A, yes
+[22:05] <toad_> but that all has to go over the gateway
+[22:05] <toad_> and there'll be a lot of duplication
+[22:05] <toad_> if they make their own requests... i see
+[22:05] <toad_> yes
+[22:05] <vulpine> <jrandom> right, probably easier to just use fproxy.i2p style
+[22:06] <toad_> we make them part of A in order to provide anonymity for their own requests
+[22:06] <toad_> except that they have no anonymity against a malicious gateway ANYWAY
+[22:06] <vulpine> <jrandom> them == the 25 peers, or their gateway?
+[22:06] <toad_> the 25 peers
+[22:06] <vulpine> <modulus> good night all.
+[22:07] <toad_> g'night
+[22:07] <vulpine> <jrandom> 'night modulus
+[22:07] <reliver> sleep well.
+[22:07] <vulpine> <jrandom> toad_: if they're running i2p to premix in, i'm starting to see that they don't need to have any relationship with that proxy
+[22:07] <toad_> jrandom: well, it ends up proxying their traffic even if it's i2p traffic
+[22:07] <vulpine> <jrandom> toad_: its really an M of N situation, where K of M offer a public fproxy/fcp/etc
+[22:08] <toad_> => if it's malicious it can MITM them and give them totally bogus A's
+[22:08] <vulpine> <jrandom> (M == nodes w/ a freenet data store, N == nodes reachable on the network)
+[22:08] <toad_> and capture all their traffic
+[22:08] <vulpine> <jrandom> no
+[22:08] <toad_> no?
+[22:08] <vulpine> <jrandom> their proxy to the freenet data does not have to be their trusted 'B' peer
+[22:09] <vulpine> <jrandom> it can be any node on the network with a freenet data store that lets them access it
+[22:09] <vulpine> <jrandom> literally like fproxy.i2p
+[22:09] <toad_> yeah, but they only know about the rest of the network through B
+[22:09] <toad_> unless they get out of band comms
+[22:09] <vulpine> <jrandom> (which is an eepsite pointing at an fproxy instance)
+[22:10] <toad_> it's just that if we do freenet-over-i2p some of the time, and i2p-over-freenet other times, we're going to end up with changeover issues
+[22:10] <vulpine> <jrandom> right
+[22:10] <vulpine> <jrandom> its the situation connelly described
+[22:11] <toad_> if we have a small, potentially small world, trust network, that is expected to grow, what do we do with it?
+[22:12] <vulpine> <jrandom> throw a party, bring some beer?
+[22:12] <toad_> presumably we run normal freenet/dark routing on it, and let the user decide whether he wants to tunnel out to A or within the local network, or just go for a random N hops
+[22:12] <toad_> ?
+[22:12] <vulpine> <jrandom> where are those groups of people - A or C?
+[22:12] <toad_> before his requests start
+[22:12] <toad_> sorry
+[22:13] <toad_> we have a small, potentially small world trust network. it's C/B.
+[22:13] <toad_> it's expected to grow
+[22:13] <toad_> two questions: 1. how do we run freenet on it? 2. what do we do with user requests? (premixing)?
+[22:13] <vulpine> <jrandom> 1) does that small world network want to talk to the rest of the world
+[22:13] <vulpine> <jrandom> 2) do they have a way to do so?
+[22:13] <toad_> lets assume they have at least one connection to the Wider World
+[22:14] <toad_> while it is small, it makes sense for user requests to get i2p-premix-routed out as far as possible
+[22:15] <toad_> well, maybe...
+[22:15] <vulpine> <jrandom> if it grows, they should freenet-route to the peer who can i2p-premix-route to the rest of the world (right?)
+[22:15] <toad_> a large small world network with few connections to the rest of the world would want to host i2p...
+[22:16] <toad_> jrandom: yeah..
+[22:16] <toad_> if you want to set up a 1:1 tunnel with somebody on the outside, you freenet-route to the outproxy, presumably
+[22:17] <toad_> well
+[22:17] <toad_> if you want to set up a 1:1 tunnel with a node
+[22:17] <toad_> any node
+[22:17] <toad_> you know it somehow
+[22:17] <vulpine> <jrandom> so, freenet route in large small world networks, or internally within the small world network.  i2p route in other cases?
+[22:17] <toad_> you freenet-route from your tunnel exit to his tunnel entry
+[22:17] <vulpine> <jrandom> right
+[22:18] <toad_> hrrrrrrrm
+[22:18] * toad_ has a thought...
+[22:18] <toad_> if we have 1000 nodes in a darknet
+[22:18] <toad_> then 5 nodes connecting out to a larger opennet
+[22:18] <-- hadees has left this server. (Read error: 110 (Connection timed out))
+[22:18] <toad_> and we freenet route to a key
+[22:18] <toad_> there is no particular reason to expect us to reach the outside world
+[22:18] <toad_> we will simply reach the closest node internally to the target
+[22:18] <vulpine> <jrandom> why is that?
+[22:19] <toad_> because we greedy route
+[22:19] <vulpine> <jrandom> ah right
+[22:19] <vulpine> <jrandom> so they'd have to route to the gateway's key
+[22:19] <toad_> hmmmm
+[22:19] <vulpine> <jrandom> or, do they know the gateway?
+[22:19] <toad_> this is going to be a fundamental problem with a freenet 0.7 dark/light hybrid...
+[22:19] <toad_> even in the absence of i2p
+[22:20] <toad_> i'm going to have to leave for dinner soon
+[22:20] <toad_> but i think we're making some useful progress here
+[22:20] <toad_> lets see
+[22:20] <toad_> ian said something about tiered routing
+[22:20] <vulpine> <jrandom> aye, agreed
+[22:20] <toad_> OH
+[22:21] <toad_> combine tiered routing with i2p!
+[22:21] <toad_> tiered routing: first we route to quick nodes until we can't route any further
+[22:21] <vulpine> <jrandom> tiered routing?
+[22:21] <toad_> then we route to slow nodes until we can't route any further
+[22:21] <toad_> then we route to ALL (i.e. lousy) nodes until we can't route any further
+[22:22] <toad_> now, suppose we have multi-hop tunnels through i2p to nodes on the outside?
+[22:22] <vulpine> <jrandom> what does "can't route any further" mean?
+[22:22] <toad_> jrandom: we greedy route, right?
+[22:22] <vulpine> <jrandom> having explored all peers?
+[22:22] <toad_> we are aiming for key 37
+[22:22] <toad_> we go to 50, then 33, then 36, then 37
+[22:22] <toad_> etc
+[22:22] <toad_> these are numbers attached to nodes - node "locations"
+[22:23] <vulpine> <jrandom> ah.  and those locations are fixed for a node?
+[22:23] <toad_> if we can't route any further - we haven't found the target, and we are not getting any closer to it, and we have ran out of HTL (which is decremented whenever we get further away from the target, and reset to max whenever we get closer)...
+[22:23] <toad_> jrandom: no, but in the long term they should be stable
+[22:24] <toad_> they are determined by oskar's location swapping algorithm
+[22:24] <toad_> initially they are random
+[22:24] <toad_> they get swapped around to produce a network that "works"
+[22:24] <toad_> according to some wierd magic he's come up with from the mathematical world
+[22:24] <vulpine> <jrandom> well, 50, 33, 36, 38, 36.5, 37.5, 36.75, 37.25, etc...?
+[22:24] <toad_> yeah, that's the idea
+[22:24] <vulpine> <jrandom> so you go on until no more peers along the way expose something closer?
+[22:24] <toad_> we allow a certain amount of backtracking; htl mediates this
+[22:24] <toad_> yup
+[22:25] <vulpine> <jrandom> could 38, 37, and 36 have the '37'?
+[22:25] <vulpine> <jrandom> or would that be random, and only 37 has it
+[22:25] <toad_> so we will probably need to explicitly expose the fact somehow that this is a sub-darknet...
+[22:25] <toad_> yes, they could... we cache the same way as in 0.5
+[22:25] <toad_> more or less
+[22:25] <toad_> depends what we are looking for
+[22:26] <toad_> somehow we need to figure out that we are a sub-darknet; we have few links with the big darknet; and then we need to arrange for tunnels out to the larger darknet
+[22:26] <vulpine> <jrandom> ok, if 37 is offline, but 38 may have it, do you keep digging through 37.000125?
+[22:26] <toad_> okay i'm sure there's something here
+[22:26] <toad_> but i have to go to dinner
+[22:26] <vulpine> <jrandom> 'k cool
+[22:26] <vulpine> * jrandom doesnt understand it all, but sounds promising
+[00:05] <toad_> jrandom/jrandom_ here?
+[00:05] <toad_> i don't mind if not; i'll go to bed otherwise :)
+[00:06] <vulpine> <jrandom> heya toad
+[00:07] <toad_> hi jrandom !
+[00:07] <toad_> that thought i had just as i left...
+[00:07] <vulpine> <jrandom> how was dinner?
+[00:08] <toad_> i sent an email about it to tech
+[00:08] <vulpine> <jrandom> aye saw the post
+[00:08] <toad_> dinner was pleasant enough, we watched an ep of Robin of Sherwood afterwards
+[00:08] <vulpine> <jrandom> with fragmentation, things get funky - its the same issue we discussed with CPA
+[00:08] <toad_> that's why it took so long
+[00:08] <toad_> CPA?
+[00:08] <toad_> CPAlgoRoutingTable?
+[00:08] <vulpine> <jrandom> ah, havent seen that
+[00:08] <vulpine> <jrandom> yeah
+[00:08] <vulpine> * jrandom doesn't like saying CP in referene to freenet ;)
+[00:09] <toad_> it's really good, if you like trees, and medieval freedom fighters, and a somewhat pagan-dualist spirituality/legend...
+[00:09] <toad_> and clannad music
+[00:09] <vulpine> <jrandom> hah word
+[00:09] <toad_> jrandom: :)
+[00:09] <toad_> how did CPA fragment?
+[00:10] <vulpine> <jrandom> i used to live with a bunch of traveling minstrels...
+[00:10] <vulpine> <jrandom> (man, they were crazy)
+[00:10] <toad_> :)
+[00:10] <toad_> jrandom: what do you mean about CPA fragmentation?
+[00:10] <toad_> i mean, CPA was everyone-to-everyone, wasn't it?
+[00:11] <vulpine> <jrandom> h/o, i've visualized the problem, lemmie describe
+[00:12] <vulpine> <Vincent> You used to live with a bunch of traveling minstrels?
+[00:12] <vulpine> <tethra> heheh
+[00:12] <toad_> that'll probably help Them to track you down more than anything you've said so far!
+[00:13] <vulpine> <jrandom> the fragmentation in CPA was due to moving specialization - given two nodes with simlar keys, when one node in the middle picks one over the other, that starts a trend /away/ from an existing specialized node (the other one).  thats inherent in the horizon.  the way to fix it would have been to inject the search randomly into different regions (sizeof region == horizon)
+[00:13] <vulpine> <Vincent> While it's likely that most traveling minstrels are mentally unbalanced, I think something could be said for someone choosing to live with 'travelling minstrels'.
+[00:13] <toad_> oh
+[00:13] <toad_> yeah
+[00:14] <vulpine> <jrandom> you shoulda met the carnies i lived with another time Vincent ;)
+[00:14] <toad_> that may be a bit of a pointer re the new frag problem
+[00:14] <vulpine> * Vincent grins
+[00:14] <toad_> the problem is, if there are very few links to the other darknet, random displacement won't get you there
+[00:14] <vulpine> <Vincent> A ploy to waste the CIA's resources - you never lived with no travelling minstrels!
+[00:15] <vulpine> <jrandom> right.  its kind of like zooko's post regarding kademlia (re: self healing)
+[00:15] <toad_> hmmm
+[00:15] <vulpine> <jrandom> ((the way around the self healing issue zooko saw however was to keep stats on integration, and favor more integrated peers, to heal it))
+[00:15] <toad_> you sorta have to have a way for it to figure out that it's fragmented, and where the break is... without breaking anonymity, and ideally without publishing the topology... :(
+[00:16] <vulpine> <jrandom> that might help your situation - weighting the searches towards the bridge after a time to heal the rift?
+[00:16] <toad_> i don't know, there must be some way to measure the bottlenecks in a distributed manner
+[00:16] <vulpine> <jrandom> keeping statistics on integration does tell you if its fragmented, but it wouldn't work in a restrited routes topology
+[00:17] <vulpine> <jrandom> (since you can't integrate further - the links are what the links are)
+[00:17] <vulpine> <jrandom> otoh it'll detect it..
+[00:17] <toad_> "500 nodes within 5 hops if we take this peer, 500 if we take that peer, with 70% overlap... but if we take THAT peer, 600 nodes with ZERO overlap on the first lot"
+[00:17] <toad_> well
+[00:17] <toad_> you CAN integrate better on a freenet-routing level
+[00:18] <toad_> all you have to do is have some crosslinks
+[00:18] <toad_> tunnels
+[00:18] <toad_> between a node at 0.7543 and a node in the other darknet at a close location
+[00:18] <toad_> hmmm, actually
+[00:18] <toad_> i think...
+[00:18] <toad_> one way of detecting it would be to just find long tunnels between nodes of similar values
+[00:19] <toad_> that doesn't actually help, as i have no idea how to do that :|
+[00:20] <vulpine> <jrandom> the way we track integration is keeping track of who tells us about new peers that we can then verify the existance of
+[00:20] <vulpine> <jrandom> you can do the same to detect and heal
+[00:20] <toad_> hmmm
+[00:20] <toad_> not sure what you mean
+[00:20] <vulpine> <jrandom> you're right in that you've got more work to do, firing off the long tunnel search, but it'll get you in the direction
+[00:21] <vulpine> <jrandom> if peer 0.75 tells you about a whole bunch of peers that you've never heard of, either they're full of shit, or they've got links to a different fragment
+[00:21] <vulpine> <jrandom> (the former is very possible, so you've got to be careful)
+[00:22] <toad_> hmmm
+[00:22] <toad_> ah
+[00:22] <toad_> new node is added
+[00:22] <vulpine> <jrandom> you then explore their subsection further by firing off exploratory tunnels near them, hoping to hook a fish
+[00:22] <toad_> he broadcasts this fact for a couple of hops
+[00:22] <toad_> if you hear about him from several nodes, he's well integrated
+[00:23] <toad_> otoh, if for many new nodes you only hear about them from one node, ...?
+[00:23] <vulpine> <jrandom> hmm, not necessarily in a useful way though
+[00:23] <vulpine> <jrandom> he is well integrated with peers you're well integrated with.  that doesn't help
+[00:23] <toad_> it might be 5 hops to the added node in the middle of the other darknet...
+[00:23] <toad_> hmmm yeah
+[00:23] <toad_> well
+[00:23] <vulpine> <jrandom> you want to find peers well integrated with those you are not well integrated with
+[00:24] <toad_> the easiest thing would be to publish the network topology :)
+[00:24] <vulpine> <jrandom> heh
+[00:24] <toad_> that WOULD suck though
+[00:24] <vulpine> <jrandom> do you understand the technique i'm describing?
+[00:25] <toad_> it would certainly be manipulated by cancer nodes, although that should be identifiable
+[00:25] <vulpine> <jrandom> perhaps it doesn't translate well into freenet routing
+[00:25] <toad_> not really no
+[00:25] <toad_> ... or darknets? :)
+[00:25] <vulpine> <jrandom> heh well, thats another flamewar ;)
+[00:25] <vulpine> <jrandom> ok, let me explain it in regards to i2p first - start with the concrete and then we can extrapolate
+[00:26] <toad_> yeah ok
+[00:26] <vulpine> <jrandom> within i2p, when we're tooling around, we get references to new peers (as part of a search for a key, or a router, etc).
+[00:27] <vulpine> <jrandom> if we then are able to contact that new peer (not directly, of course), we mark the peer who told us about that new peer as being "integrated".
+[00:27] <toad_> okay so it's not an actual announcement
+[00:27] <toad_> AHHHH
+[00:27] <toad_> ok
+[00:27] <toad_> that does make sense with freenet (open) routing
+[00:27] <vulpine> <jrandom> we do some mumbo jumbo across that, summarizing the different amounts and types of integration, and determine which ones tell us the most of new peers
+[00:27] <toad_> yep, that meshes well with path folding
+[00:28] <vulpine> <jrandom> aye, thought so
+[00:28] <toad_> otoh an attacker could certainly keep on generating new bogus nodes just to look good :)
+[00:28] <vulpine> <jrandom> now, getting it in restrited routes is a bit tricky
+[00:28] <vulpine> <jrandom> you definitely need to verify the validity of those new refs
+[00:28] <toad_> of course on freenet and probably on i2p as well, that's a powerful attack in any case
+[00:29] <vulpine> <jrandom> (or a bug... which i ran into last fall ;)
+[00:29] <toad_> if i wanted to bust open freenet, i'd get a T3 line, a /16 of IP addresses, a terabyte of disk space, hack the node to pretend to be a very large number of nodes, and constantly refer nodes to my other fake nodes
+[00:29] <toad_> very soon i have taken over the routing table of most nodes on the network
+[00:30] <vulpine> <jrandom> aye :/
+[00:30] <vulpine> <Vincent> Charming.
+[00:30] <vulpine> <jrandom> thats 0.5, but not 0.7 though, right?
+[00:30] <toad_> that would probably work with i2p too :|
+[00:30] <toad_> well not the darknet
+[00:30] <Eol> and doable sadly
+[00:30] <vulpine> <jrandom> eh, i2p doesn't pick the fast peers
+[00:30] <vulpine> <jrandom> we just need peers that don't suck, and have the capacity
+[00:30] <toad_> it'd work on the opennet, unless you had such a big network that it's hard to make ubernodes
+[00:30] <vulpine> <jrandom> (and we locally rank 'em)
+[00:30] <toad_> jrandom: and you can't overwhelm it with new nodes?
+[00:31] <toad_> "don't suck" defined how?
+[00:31] <vulpine> <jrandom> defined by the router's peer profiling
+[00:31] <toad_> well, you don't have to perform badly to attack the network
+[00:31] <toad_> once you control it, you can monitor
+[00:31] <vulpine> <jrandom> it keeps stats on the performance, reliability, capacity, and b0rk factor
+[00:31] <toad_> or MITM
+[00:32] <vulpine> <Vincent> Just wait until DARPA comes out with a p2p anti-terrorism tool.
+[00:32] <toad_> fair enough... you give new nodes a chance, right?
+[00:32] <vulpine> <jrandom> right - Tor is vulnerable to it (there was some discussion on or-talk the other day about almost all traffic going through 2 peers in the netherlands)
+[00:32] <toad_> but not at the expense of established nodes?
+[00:32] <vulpine> <jrandom> the chance is the difference between "exploratory" and "client" tunnels
+[00:32] <vulpine> <jrandom> (client tunnels use "fast & high capacity", while exploratory uses "not failing")
+[00:33] <toad_> okay
+[00:33] <toad_> is it possible to map this to a darknet?
+[00:33] <vulpine> <tethra> what're the exploratory tunnels actually for?
+[00:33] <vulpine> <tethra> forgive my ignorance :/
+[00:34] <vulpine> * tethra needs a glossary ;)
+[00:34] <vulpine> <jrandom> tethra: http://dev.i2p.net/cgi-bin/cvsweb.cgi/i2p/router/doc/tunnel-alt.html?rev=HEAD
+[00:34] <vulpine> <jrandom> (my fault, the website sucks)
+[00:34] <vulpine> <jrandom> toad_: i think you can map what peers can tell you about new things
+[00:34] <toad_> hmmm i think i have a useful definition
+[00:35] <toad_> a pair of nodes straddle the border iff
+[00:35] <toad_> for almost all location values, you can find enough nodes within HTL
+[00:35] <vulpine> * tethra reads
+[00:35] <toad_> but the found nodes are almost always completely different on both sides
+[00:35] <toad_> s/both/each
+[00:36] <vulpine> <jrandom> why the second clause (...within the HTL)
+[00:36] <toad_> once you find one tunnel straddling the border, you can narrow it down
+[00:36] <toad_> ummm, because you don't want searches to go on forever?
+[00:36] <vulpine> <jrandom> oh, right, but the "find enough"
+[00:37] <vulpine> <jrandom> if i'm at the border of a small area and you're at the border of a big one, you'll find a whole lot more nodes than i will
+[00:37] <toad_> well, we don't care if it's a small outcrop
+[00:37] <toad_> do we?
+[00:37] <toad_> maybe we do
+[00:37] <vulpine> <jrandom> sure, don't want it to stop after just 5 hops
+[00:38] <toad_> so...
+[00:38] <toad_> we make random tunnels from time to time
+[00:38] <toad_> then we cross-check
+[00:38] <toad_> we search for 3 or 4 random locations from each side, in pairs
+[00:39] <toad_> the results don't have to match exactly, but we search again with the results
+[00:39] [Notice] -lilo- [Global Notice] Hi all. Just to make sure everyone knows, we are reasonably-certain your passwords have not been compromised, but password changes are a very prudent precaution at this point. Thanks!
+[00:39] <toad_> if the result of one is found on the other, on most attempts, we're probably not straddling a frag border
+[00:40] <toad_> if we DO straddle the border, we use that fact to set up some tunnels (at minimum priority for performance-routing - they are only tried when we are really desperate)
+[00:40] <toad_> of course this does mean malicious nodes could divert some traffic by key...
+[00:40] <toad_> but they could only do it at the lowest priority...
+[00:41] <toad_> so it probably isn't an issue, as all non-tunnels will be at higher prios
+[00:41] <toad_> something to put on the wiki anyway
+[00:41] <toad_> i should make a page on fragmentation and put this discussion there
+[00:41] <toad_> but there are more immediate issues
+[00:42] <toad_> specifically:
+[00:42] <toad_> what can freenet gain from i2p, and what can i2p gain from freenet, and is it worth the amount of work that would be involved, and what level should it be on, and how to convince ian
+[00:43] <vulpine> <jrandom> aint no trivial tasks in that list
+[00:43] <toad_> :(
+[00:43] <toad_> would you be interested in some sort of parallel development? we build a fork of i2p, which would be pre-2.0
+[00:43] <vulpine> <jrandom> i know what i2p can gain from freenet, even outside the B/C darknet stuff, but its probably too much to ask
+[00:43] <toad_> while mainline dev continues
+[00:44] <toad_> i mean mainline i2p dev?
+[00:44] <toad_> jrandom: proper darknet support, and a distributed datastore
+[00:44] <vulpine> <jrandom> freenet could trivially use i2p for premix, whenever necessary, right though?
+[00:44] [Notice] -lilo- [Global Notice] Specifically, for your information, services passwords are hashed, and no direct access to our database files was involved in the attack. So any possible compromise would be in the form of changed passwords. Thank you!
+[00:44] <toad_> freenet could certainly use i2p for premix in A
+[00:45] <toad_> premix in B/C is hard, and I could certainly use the help that would come from joint development of that functionality
+[00:45] <vulpine> <jrandom> right, though while i'm not sure if the type of darknets you describe exist, a distributed data store would be Really Cool.
+[00:45] <vulpine> <jrandom> definitely hard, but i'll help where i can
+[00:45] <toad_> well, they don't now, because there aren't any apps for them :)
+[00:45] <vulpine> <jrandom> hehe
+[00:46] <toad_> how satisfied are you with SSU's connection setup protocol? you said it was like JFKi, but then changed your mind?
+[00:46] <vulpine> <jrandom> i changed my mind in that i don't know enough about it, and there seem to be some details that don't map exactly
+[00:47] <toad_> ok
+[00:47] <vulpine> <jrandom> SSU works pretty well, encrypts all of the bytes, including the initial handshake, and can deal with loss pretty well
+[00:47] <toad_> you agree that unless there's a really good reason not to use it, JFKi (with an encryption wrapper) is probably the right way to go
+[00:47] <toad_> ?
+[00:47] <vulpine> <jrandom> (the encryption key before the DH exchange is the publicly known one attached to the ip+port pair - you need to know all three to talk to them)
+[00:48] <toad_> indeed, that's how we do it too
+[00:48] <vulpine> <jrandom> i dont know enough about jfki
+[00:48] <toad_> well, read the paper sometime, it takes a bit of getting your head around but is really cool
+[00:48] <vulpine> <jrandom> though what i did read looks kind of sketchy, with only one side authenticating
+[00:48] <toad_> http://www1.cs.columbia.edu/~angelos/Papers/jfk-ccs.pdf
+[00:48] <vulpine> <jrandom> aye, shall do
+[00:48] <vulpine> <jrandom> gracias
+[00:49] <toad_> i believe both sides auth
+[00:49] <toad_> if they don't, please tell me!
+[00:49] <vulpine> <jrandom> not according to the ietf doc i skimmed, JFKi auths initiator, JFKr auths receiver
+[00:49] <toad_> no
+[00:49] <vulpine> <jrandom> but as i said, i just skimmed it
+[00:49] <vulpine> <jrandom> so i'm officially talking out of my ass
+[00:50] <toad_> JFKi gives initiator plausible deniability, JFKr gives receiver
+[00:50] <toad_> i think
+[00:50] <toad_> err
+[00:50] <toad_> well
+[00:50] <vulpine> <jrandom> ah, its OTResque?
+[00:50] <toad_> it gives it protection against active probing to determine the identity of the [ initiator | receiver ]
+[00:50] <toad_> this is pointless if we wrap it in a symmetric cipher :)
+[00:50] <vulpine> <jrandom> oh
+[00:50] <vulpine> <jrandom> right :)
+[00:51] <toad_> obviously on a darknet application you'd adjust it so that you need BOTH identities to get the wrapper key
+[00:51] <vulpine> <jrandom> in SSU, the only way to talk to them is to have their routerInfo (which has their IP + port + current introduction key)
+[00:51] <toad_> or you use one in each direction
+[00:51] <vulpine> <jrandom> right right
+[00:52] <toad_> okay
+[00:52] <toad_> so
+[00:52] <toad_> we have to:
+[00:52] <toad_> produce a clear case for using i2p in freenet and letting freenet provide major RR-related functions to i2p; quite possibly cross-bundling or even cross-dev
+[00:53] <toad_> as a specific sub-case we need to look at the messaging layer
+[00:53] <toad_> freenet's transport/encryption/auth layer is incomplete
+[00:53] <toad_> OTOH we have a (reasonably) mature messaging layer from dijjer
+[00:53] <toad_> which imho is moderately nice
+[00:53] <vulpine> <jrandom> clear case for using i2p in freenet is easy in A
+[00:53] <toad_> indeed
+[00:53] <vulpine> <jrandom> cool
+[00:54] <toad_> i've also spent a lot of time on the encryption/retransmission/etc layer
+[00:54] <toad_> i'm happy to throw that out, _if_ the replacement does everything we want
+[00:54] <vulpine> <jrandom> right, no need to do so if it doesn't.  i dont know that it does either
+[00:55] <toad_> also i'd like you to point me in the general direction re any-to-any-mixnets-don't-suck-due-to-connection-set-up :)
+[00:55] <vulpine> <jrandom> as we discussed in the spring i think, piecemeal integration is kind of odd, but there are a few places where it clearly makes sense
+[00:55] <toad_> err s/connection/tunnel
+[00:55] <toad_> indeed
+[00:55] <vulpine> <jrandom> you mean, other than i2p?  ;)
+[00:55] <toad_> having said that, it would definitely be preferable not to have to have a separate port for freenet!
+[00:56] <toad_> jrandom: i mean, the issue with opennet premix was that tunnel setup would give away the originator
+[00:56] <vulpine> <jrandom> aye, now if we can convince people to deal with both jvms ;)
+[00:56] <toad_> both jvms?
+[00:56] <vulpine> <jrandom> oh, for that see the tunnel-alt.html
+[00:57] <toad_> okay
+[00:57] <vulpine> <jrandom> well, they could both run in the same jvm, of course
+[00:57] <toad_> yep
+[00:57] <toad_> it is critical to keep memory usage as low as is reasonably possible
+[00:58] <toad_> even now
+[00:58] <vulpine> <jrandom> what are your thoughts about how much work it'd be to run freenet w/ a routing table of destinations?  ballpark, nothing specific
+[00:58] <vulpine> <jrandom> aye, memory usage was one of the main reasons for dropping threads
+[00:58] <vulpine> <jrandom> (and context switches)
+[00:58] <toad_> no biggie, as long as we can convert the messaging layer
+[00:59] <toad_> dropping threads?
+[00:59] <toad_> surely you have some threads? :)
+[01:00] <vulpine> <jrandom> heh, yeah, of course, but only seda-style
+[01:00] <vulpine> <jrandom> there aren't any "do some stuff for a while" threads
+[01:00] <toad_> well, 0.7 as is is heavily threaded, but i am trying to make it so it can be easily switched over to continuations when we eventually need to
+[01:01] <toad_> at which point it'd be very few threads
+[01:01] <vulpine> <jrandom> cool
+[01:01] <toad_> i also have plans to use that for just about everything including http apps
+[01:01] <vulpine> <jrandom> yeah, freenet nodes don't need to have a high degree, while some i2p nodes may (depending upon capacity)
+[01:01] <vulpine> <jrandom> ooh cool.  i was reading about some nio servlet containers
+[01:01] <toad_> i have a pseudo-servlet interface that combined with continuations and possibly NIO could be VERY cool
+[01:02] <toad_> well the basic NIO-servlet principle is "cache everything"
+[01:02] <vulpine> <jrandom> neat
+[01:02] <toad_> but that's NOT the only way to do it
+[01:02] <vulpine> <Tealc> can i use .7 freenet right now ?
+[01:02] <toad_> the other way to do it is to use continuations
+[01:02] <toad_> and have a block-and-write function
+[01:02] <toad_> Tealc: only a very rudimentary 0.7
+[01:02] --> aum has joined this channel. (n=aum@60-234-156-82.bitstream.orcon.net.nz)
+[01:02] <toad_> Tealc: it's in the middle of a rewrite, that's why this conversation is even possible
+[01:03] <vulpine> <jrandom> we had one one when freenet moved to nio, another time when dijjer came up, and now for the darknet ;)
+[01:03] <vulpine> * tethra misses the entire conversation and then asks "what conversion? :o"
+[01:03] <vulpine> <Tealc> will 0.7 still use a distributed data store ?
+[01:03] <toad_> continuations = you extend a certain object, the top level function is called by the continuations engine, and you have one or more final functions provided by the object which can block
+[01:04] <toad_> blocking = pushes the local vars, returns from the function and does something else
+[01:04] <vulpine> <jrandom> reflection is the slowest API in java
+[01:04] <toad_> until it's time to come back
+[01:04] <toad_> this only uses reflection once per function i think... it does dynamic code rewriting
+[01:04] <toad_> which i'm sure is slow
+[01:04] <toad_> but it doesn't need to do it more than once
+[01:05] <vulpine> <jrandom> if the state machines are simpler, its easier to just go pure event driven, but i understand threading has nicities
+[01:05] <toad_> well yeah, most of the time state machines aren't simpler, that's the problem
+[01:05] <vulpine> <jrandom> yeah :/
+[01:05] <toad_> Tealc: yes, but it will provide other rather i2p-like functions
+[01:05] <toad_> Tealc: that was the reason for this recent flamewar
+[01:06] <vulpine> <jrandom> and a good flame out every once in a while is good for the soul ;)
+[01:06] <toad_> okay...
+[01:06] <toad_> freenet/open isn't actually completely finalized in design yet, we were doing the darknet first
+[01:06] <toad_> free premix for freenet/open is nice, but it's not really immediately relevant
+[01:07] <vulpine> <jrandom> yeah, not till you need it
+[01:07] <vulpine> <Tealc> what is 'freenet/open' mean ?
+[01:07] <toad_> Tealc: the new freenet will support both opennet and darknet
+[01:07] <vulpine> <jrandom> Tealc: what you think of as normal freenet
+[01:07] <toad_> darknet is a trust-network - friend-to-friend
+[01:07] <toad_> which hopefully is scalable to a global darknet
+[01:07] <toad_> it is not harvestable - you can't easily find large numbers of nodes
+[01:07] <vulpine> <jrandom> (read 100+ messages to find out more)
+[01:07] <toad_> this makes it very resistant to attack
+[01:08] <vulpine> <Tealc> i hope this new version returns me a key in fproxy after i'm finished inserting material
+[01:08] <toad_> Tealc: or read the DEFCON presentation slides on http://freenetproject.org/
+[01:08] <toad_> Tealc: :)
+[01:08] <vulpine> <jrandom> zer vill be no bugz!
+[01:08] <toad_> jrandom: lets have a look at cost - what does your message API look like? where is it?
+[01:09] <toad_> and how easy would it be to just use ours on opaque messages?
+[01:09] <vulpine> <jrandom> client message API, or transport message API?
+[01:09] <vulpine> <Vincent> jrandom/toad: How do you plan to defend against a DARPA-developed 'anti-terrorism' p2p client which would allow the DoD/NSA/CIA/MI-6/MI-5/insert TLA/ ready access to millions of 'patriotic' desktops in the search for harvesting nodes for National Security?
+[01:09] <toad_> client message API probably...
+[01:09] <toad_> Vincent: :)
+[01:10] <toad_> Vincent: how do you plan to defend against mandatory TCPA in the name of national security and copyright protection?
+[01:10] <vulpine> <jrandom> http://dev.i2p.net/javadoc/net/i2p/client/package-summary.html
+[01:10] <vulpine> <tethra> TCPA makes baby jesus cry
+[01:10] <vulpine> <tethra> :(
+[01:10] <vulpine> <Vincent> Guns.
+[01:11] <vulpine> <Vincent> Social engineering and other manner of excessive force.
+[01:11] <vulpine> <jrandom> Vincent: i2p doesn't care about harvesting, it isn't a steganographic network.
+[01:11] <toad_> jrandom: so the messages are opaque blocks of byte[]?
+[01:12] <vulpine> <Vincent> jrandom: Hmm, then how do you plan to defend against DARPA-funded DDoS clients?
+[01:12] <toad_> Vincent: an unpopular, relatively impoverished minority cannot overthrow the government
+[01:12] <vulpine> <jrandom> yes, end to end encrypted.  i do however, strongly, strongly, recommend using the I2PSocket api
+[01:12] <vulpine> <Vincent> toad_: I said 'social engineering' didn't I?
+[01:12] <vulpine> <jrandom> http://dev.i2p.net/javadoc/net/i2p/client/streaming/package-summary.html <-- I2PSocket api
+[01:13] <toad_> yeah, but i don't need ordered delivery
+[01:13] <vulpine> <jrandom> (it does neat stuff, like let you get an HTTP response in a single RTT)
+[01:13] <vulpine> <Vincent> My freedom depends on changing the desires of others.
+[01:13] <vulpine> <jrandom> it costs nothing
+[01:13] <toad_> Vincent: I agree
+[01:13] <toad_> ordered delivery always costs
+[01:13] <toad_> why else move to UDP? well, apart from hole punching
+[01:13] <vulpine> <jrandom> high degree transport
+[01:14] <toad_> huh?
+[01:14] <toad_> you moved to UDP to avoid having to implement NIO, in other words?!
+[01:14] <vulpine> <jrandom> the ability to talk to lots of people at once
+[01:14] <vulpine> <jrandom> nah, nio still requires substantial cost per peer
+[01:14] <toad_> how so?
+[01:14] <vulpine> <jrandom> we moved to udp to avoid tcp
+[01:15] <vulpine> <Vincent> The people may like what they like, but I quite frankly don't very well care if they like what they like, they better, in ironic 'authoritarian anarchist' manner, learn to like other things.
+[01:15] <toad_> well, what's the basic problem with TCP? routers?
+[01:15] <toad_> Vincent: LOL
+[01:15] <vulpine> <jrandom> the OS's TCP stack requires resources, as do the NATs/firewalls.  (TCP is also reliable, and we don't need, or want, reliable)
+[01:15] <toad_> well yeah the problem with TCP is indeed routers
+[01:16] <vulpine> <jrandom> well, depends on your need.  if you have 5000 TCP threads blocking on a write, your OS does your scheduling
+[01:16] <toad_> well, one of the design decisions in 0.7 was that we have no need in general of ordered delivery, and where we occasionally do need it we can implement it at a higher level
+[01:16] <vulpine> <jrandom> the OS doesn't know anything about the application's scheduling needs.
+[01:16] <toad_> OTOH we DO need reasonably reliable delivery
+[01:17] <vulpine> <jrandom> heheh Vincent
+[01:18] <vulpine> <jrandom> toad_: what you're looking for is "persistency" at the ARQ level - different algorithms existin depending upon how reasonably 'reasonably' is
+[01:18] <toad_> jrandom: possibly, so...?
+[01:18] <vulpine> <Vincent> ;-)
+[01:19] <toad_> we can certainly layer our messaging system on top of an API that delivers opaque byte[]'s anyway
+[01:19] <toad_> we'd have to, to do what we do
+[01:19] <toad_> any client which sends nontrivial structured out of order data would have to
+[01:19] <toad_> so that's no big problem
+[01:19] <vulpine> <jrandom> true, but doing so will probably overload the router, as it doesn't expose congestion information that way
+[01:20] <toad_> sorry, what's true?
+[01:20] <vulpine> <jrandom> if you use I2PSocket, which costs nothing to setup, you get congestion control
+[01:20] <vulpine> <Vincent> So, assuming that DARPA comes out with an anti-terrorism DDoS p2p client, what sort of response can be expected from i2p?
+[01:20] <toad_> well yeah, we have our own congestion control at the moment
+[01:20] <toad_> but I AM NOT INTERESTED IN ORDERED DELIVERY
+[01:20] <toad_> i'll *never* be able to sell THAT to ian
+[01:21] <vulpine> <jrandom> understood
+[01:21] <toad_> he thinks, and not entirely unjustifiably, that in-order delivery has a significant latency cost
+[01:21] <toad_> per hop
+[01:21] <vulpine> <jrandom> I2PSession.sendMessage(to, byte[]) works
+[01:21] <vulpine> <Vincent> I have a feeling that i2p may make Mr Bush and, to a greater extent, the US Army a tad worried.
+[01:21] <toad_> isn't there some other way to expose congestion control?
+[01:21] <vulpine> <jrandom> if the size of the messages are small, its probably ok
+[01:22] <toad_> we'd be sending packet sized messages
+[01:22] <vulpine> <jrandom> we could fire up a new event in I2CP, yeah
+[01:22] <toad_> but lots of them
+[01:22] <vulpine> <jrandom> oh, packet, as in, 500-1500 bytes?
+[01:22] <toad_> yeah
+[01:22] <toad_> whatever fits after overheads
+[01:22] <toad_> probably 1300 bytes or so
+[01:22] <toad_> some of them smaller, obviously
+[01:22] <vulpine> <jrandom> man, you'll so want streaming, as batching saves the day, hardcore
+[01:23] <vulpine> <jrandom> but, 'k, thats a fight for another day
+[01:23] <toad_> batching?
+[01:23] <toad_> we do our own message coalescing... but if you're doing the crypto, we can send you small messages if you can usefully juggle them
+[01:24] <toad_> we don't HAVE to stick them together at that layer, if i2p can do that that's cool
+[01:24] <toad_> but some of them will be over 1kB
+[01:25] <vulpine> <jrandom> it was coallescing/batching, right.  up to 4, 8, or even 32KB is probably ok, but larger gets you less reliability
+[01:25] <vulpine> <jrandom> coallescing would be very good, as the streaming lib does it for you, but I2PSession.sendMessage does not
+[01:25] <toad_> anything over 1400 bytes gets you a significant reduction in reliability
+[01:26] <toad_> well, if we can just hand off an entire block, that'd be fine :)
+[01:26] <vulpine> <jrandom> SSU's packet size is 2-300 bytes, on average
+[01:26] <toad_> (a block is 32kB)
+[01:26] <vulpine> <jrandom> sending a full block though means you need to hope none of the fragments get lost (i2p internally fragments it, at the tunnel layer [if > 0 hops] and at the SSU layer [if size > data packet])
+[01:27] <toad_> yeah
+[01:27] <vulpine> <jrandom> I2PSession.sendMessage doesn't retry at the end to end level at all, nor do tunnels, but SSU does
+[01:27] <toad_> that's why we'd probably do our own transfer... or maybe there's a way to use a piece of the streaming code for it
+[01:28] <toad_> without massive setup overheads
+[01:28] <vulpine> <jrandom> the streaming lib has 0 setup overhead
+[01:28] <vulpine> <jrandom> literally, a send & response takes 2 packets
+[01:28] <vulpine> <jrandom> one sent, one response
+[01:28] <vulpine> <jrandom> (and behind the scenes, afterwards, the original sender sends back one final ack)
+[01:28] <toad_> no setup?
+[01:28] <vulpine> <jrandom> no setup.
+[01:28] <toad_> hmmm
+[01:29] <toad_> so the sender creates a send
+[01:29] <toad_> simultaneously the receiver is expected to start a receive
+[01:29] <toad_> (because they've coordinated this through messages, or whatever)
+[01:29] <vulpine> <jrandom> puts the data in, flags it as SYN/FIN.  receiver sends back SYN/FIN/ACK w/ response
+[01:29] <toad_> and it just works, if nothing is dropped?
+[01:29] <vulpine> <jrandom> right.  if something is dropped, they retransmit as necessary
+[01:29] <vulpine> <jrandom> up to a configurable time
+[01:30] <toad_> you don't have a tcp-like 3 packet setup?
+[01:30] <vulpine> <jrandom> no, we piggyback everything we can to cut down rtt
+[01:30] <toad_> okay, that is rather nice
+[01:30] <vulpine> <jrandom> or, to cut down round trips, since our rtt is high
+[01:31] <toad_> transfers have some sort of id the client can set?
+[01:31] <toad_> or at least read?
+[01:31] <vulpine> <jrandom> right
+[01:31] <toad_> well, we do have issues with congestion control
+[01:32] <toad_> and reliable packet delivery
+[01:32] <vulpine> <jrandom> we can tweak the streaming lib to meet your needs, since its all user space
+[01:32] <vulpine> <jrandom> or, of course, you can have your own streaming lib with your own optimizations
+[01:32] <toad_> do you have a working bandwidth limiter?
+[01:32] <vulpine> <jrandom> its a fascist
+[01:33] <toad_> the streaming lib does congestion control anyway
+[01:33] <vulpine> <jrandom> two tiered token buckets
+[01:33] <toad_> so the bulk of the traffic is automatically limited
+[01:33] <toad_> 0.7 at present doesn't even try to limit non-data packets
+[01:33] <toad_> so that's actually not a problem at all
+[01:33] <vulpine> <jrandom> well, ssu does congestion control too, they work at different timeframes though
+[01:33] <-- MikeW has left this server. ()
+[01:33] <toad_> right
+[01:33] <toad_> so the message/transport layer is actually pretty clear cut
+[01:33] <toad_> pretty solid
+[01:34] <vulpine> <jrandom> (streaming lib RTO ~ 8s, ssu congestion control ~ .6-2s, bw limiter ~ .1s
+[01:34] <toad_> the only thing i'd worry about is that the transport layer setup isn't really suitable for darknets, since it's designed for anonymous connect
+[01:34] <toad_> sorry, what's RTO?
+[01:34] <vulpine> <jrandom> retransmit timeout
+[01:34] <vulpine> <jrandom> (default, of course, it varies upon performance)
+[01:35] <toad_> what does that have to do with congestion control?
+[01:35] <vulpine> <jrandom> SSU does authenticate both sides
+[01:35] <vulpine> <jrandom> RTO is the heart of TCP
+[01:35] <toad_> well yeah but they don't have to know each other in advance do they?
+[01:36] <vulpine> <jrandom> SSU needs to know the receiver's info (since its included with their ip+port+intro key).  the receiver doesn't necessarily need to know the initiator's, but they could require that
+[01:38] <toad_> hmmm
+[01:38] <toad_> well, in any case you can't probe unless you know ip+port+setup key
+[01:38] <toad_> so it's not a problem
+[01:38] <vulpine> <jrandom> exactly
+[01:39] <vulpine> <jrandom> and if you know that, you know their router ident anyway
+[01:39] <vulpine> <jrandom> (as we ship them as part of the same unit, though freenet/dark wouldn't need to)
+[01:39] <vulpine> <jrandom> ((dunno if thats relevent though))
+[01:39] <toad_> ok
+[01:40] <toad_> one possible problem is retransmission
+[01:40] <toad_> we need low-level messages to be delivered fairly reliably
+[01:40] <toad_> what's your reliability estimate?
+[01:40] <toad_> do i need to layer retransmission on top of the low level APIs?
+[01:40] <vulpine> <jrandom> ssu is very reliable - its fully SACKed
+[01:41] <vulpine> <jrandom> low level apis, the I2PSocket/I2PSession, or the ssu layer?
+[01:41] <toad_> SSU
+[01:41] <toad_> we're talking 0 hop tunnels here (mostly)
+[01:41] <toad_> what's the S in SACK?
+[01:41] <vulpine> <jrandom> 0 hop tunnels would still want to use the streaming lib for rto
+[01:42] <vulpine> <jrandom> Selective ACK (dealing with partial fragment reception, so the whole thing doesn't get retransmitted)
+[01:42] <toad_> well, we'll use the streaming lib for bulk data transfers
+[01:42] <toad_> hmmm
+[01:42] <vulpine> <jrandom> SSU is fairly resiliant, so for 0hop & I2PSession, it'd be sufficient (up to 10s for retries)
+[01:42] <toad_> so SSU knows how big the original was?
+[01:42] <toad_> interesting layering
+[01:43] <vulpine> <jrandom> SSU deals with I2NPMessage
+[01:43] <vulpine> <jrandom> the byte[] gets wrapped into a garlic (end to end crypto) as a GarlicMessage (extends I2NPMessage)
+[01:43] <vulpine> <jrandom> SSU fragments the I2NPMessage into UDPPackets (generally)
+[01:44] <vulpine> * jrandom had to do a lot of tweaking to control the gc churn
+[01:44] <toad_> :|
+[01:44] <vulpine> <jrandom> its fine now, but doing everything as objects can get crazy at hight throughput
+[01:44] <toad_> so SACK means if you get some of a block but not all of it, you tell the other side?
+[01:45] <toad_> what if the block fits in a single fragment, and you don't get it at all?
+[01:45] <toad_> what if the ack is lost in flight? etc
+[01:45] <vulpine> <jrandom> SSU only tells the receiver that there's a new I2NPMessage once its fully received
+[01:45] <vulpine> <jrandom> we do the Right Thing for retransmission/ack/etc
+[01:45] <toad_> ok
+[01:46] <vulpine> <jrandom> (if its lost, it gets retransmitted @ RTO if not acked.  if partial is lost, at rto it sends only the fragment that needs to, if its SACKed)
+[01:46] <toad_> so basically short of solar flares and OutOfMemoryError, the data will be received if the peer is connected
+[01:46] <vulpine> <jrandom> yeah, it does its best
+[01:47] <toad_> i don't mind dumping huge gobs of code as long as it means we cut down on maintenance :)
+[01:47] <toad_> and as long as it does what we need it to
+[01:47] <vulpine> <jrandom> (live net metric of one of my routers: 2.5% of packets transmitted had one or more fragments transmit twice)
+[01:48] <vulpine> <jrandom> aye, maintenance is hell, i do my best to delete what i can :)
+[01:48] <toad_> okay, that's opennet
+[01:48] <vulpine> <Complication> Sorry to disturb the long (and interesting, I've been reading with one eye) conversation... just wanted to mention I logged two more less-than-usual errors. One "Signature failed", one "Error receiving fragmented message". Available at: http://pastebin.com/394074
+[01:48] <vulpine> * Complication waves everyone good night, and fades away to lurk
+[01:48] <vulpine> <jrandom> ah cool, thanks Complication, 'night
+[01:48] <toad_> i'll have to figure out our side of the opennet, which basically amounts to path folding/LRU plus 0.7's whacky routing
+[01:49] <toad_> premix routing is easy... we just tell I2P to mixnet to our chosen node
+[01:49] <vulpine> <jrandom> 'zactly
+[01:49] <toad_> of course that assumes that I2P's choice of nodes is sane
+[01:49] <vulpine> <jrandom> right
+[01:49] <toad_> which we have to assume on the opennet; things are more interesting on the darknet
+[01:50] <vulpine> <jrandom> aye
+[01:50] <toad_> now, the darknet
+[01:50] <toad_> we need to ship 0.7 with darknet support
+[01:51] <toad_> if we are using restricted routes support with i2p, that means a minimal restricted routes mechanism needs to be coded by that point
+[01:51] <toad_> earlier you said it'd be around 1 week's coding?
+[01:51] <vulpine> <jrandom> yeah, and 8 testing
+[01:51] <toad_> :)
+[01:51] <toad_> we can help with testing :)
+[01:52] <toad_> and debugging, once i understand what's going on
+[01:52] <vulpine> <jrandom> w3wt :)
+[01:52] <toad_> which will probably take at least a week!
+[01:52] <vulpine> <jrandom> hehe :)
+[01:52] <toad_> it must be possible for it to run and not explode in a no-A situation
+[01:53] <vulpine> <jrandom> basically, to do restricted routes we just need to adjust the peer selection algorithm (there's a tiny plugin i use for different ones), flag the router not to publish itself, and flag the transport for peers it contacts not to share any info about that peer
+[01:53] <toad_> okay
+[01:54] <toad_> so that really isn't a lot of work?
+[01:54] <vulpine> <jrandom> i'm not sure how well it'd fly in the no-A, perhaps it'd be best to consider that a degenerate case, where it'd use all freenet-routing and no i2p-routing
+[01:54] <vulpine> <jrandom> no, its not much work at all
+[01:54] <toad_> well it'd use i2p-routing where it can
+[01:54] <toad_> i.e. where exploratory etc tunnels happen to be usable
+[01:54] <toad_> for whatever we are doing
+[01:54] <toad_> right?
+[01:55] <toad_> i'm still not sure i understand all the tunnels... :|
+[01:55] <toad_> so if you've got a pure darknet of 10 peers, it can probably do without freenet routing entirely
+[01:55] <vulpine> <jrandom> nah, i wouldn't suggest using i2p-routing on an entirely restricted route net, as the security assumptions are different, which affects the impact of picking different peers
+[01:56] <toad_> hmmm
+[01:56] <vulpine> <jrandom> i mean, something odd could be tweaked, but it wouldn't derive its anon from the existing free route mixnet theory
+[01:57] <toad_> brb
+[02:00] <toad_> back
+[02:01] <toad_> jrandom: okay, exactly what does i2p need for its "routing" ?
+[02:01] <toad_> we need to select N peers for our out-tunnel
+[02:01] <toad_> and N peers for our in-tunnel
+[02:01] <toad_> is that about it?
+[02:02] <toad_> and obviously we need a hybrid system to work too
+[02:02] <vulpine> <jrandom> i2p needs the K peers in each of it tunnels (may overlap, depending upon the user's threat model), but it also needs the N which it draws K from to be substantial (remember the local view attack paper i bounced you)
+[02:02] <toad_> i.e. where you can get to A, but it may be slow
+[02:03] <toad_> hmmm
+[02:03] <toad_> yeah
+[02:03] <toad_> that was my suspicion earlier
+[02:03] <toad_> when you said we could just tunnel through our local peers
+[02:03] <vulpine> <jrandom> right, small world B/C has one criteria, but non-small world B/C acts just like peers on A
+[02:03] <vulpine> <jrandom> right right
+[02:04] <vulpine> <jrandom> its a question of the trust
+[02:04] <toad_> well, we may have a small-world large B/C network which has a low bandwidth connection to a wider A network
+[02:04] <vulpine> <jrandom> routing through two of your trusted neighbors doesn't help
+[02:04] <toad_> hmm?
+[02:04] <vulpine> <jrandom> right, yeah such a small world, large b/c would definitely need freenet routing
+[02:05] <toad_> .... but it would also need to take into account the possibility of getting to A, and rationally evaluate that
+[02:05] <toad_> so we might be talking about significant work on routing here
+[02:05] <vulpine> <jrandom> well, lemmie see...
+[02:06] <vulpine> <jrandom> the peers on B w/ access to peers in A (direct or indirect) would just act like normal freenet peers using i2p routing, except they'd also do freenet routing with the B/C peers
+[02:06] <vulpine> <jrandom> then the issue becomes one of healing that rift
+[02:06] <vulpine> <jrandom> (from the B/C peers' perspective)
+[02:06] <toad_> hmmm
+[02:06] <vulpine> <jrandom> s/healing/using appropriately/
+[02:06] <vulpine> <jrandom> right?
+[02:06] <toad_> well
+[02:07] <toad_> B's with direct access to peers in A can obviously route freenet requests directly out that way as easily as to nodes in the darknet
+[02:07] <toad_> now, as far as tunnels go...
+[02:07] <toad_> they can create tunnels into the darknet or out to the Wide World
+[02:08] <vulpine> <jrandom> as would the peers near those B's with direct access to A, since they can use tunnels through 'em (like the small not necessarily small-world B/C)
+[02:08] <toad_> yeah
+[02:09] <vulpine> <jrandom> ooh i think we may have a name clash... when you say tunnel, you mean i2p tunnel, right?  and stream is a freenet pathway?  or are they both tunnel?
+[02:09] <toad_> i suggest that whether to go out or in is a policy decision which we may want to ask the user about...
+[02:09] <vulpine> <jrandom> (thats fine and all, just want to make sure)
+[02:09] <toad_> i mean an i2p tunnel here
+[02:09] <toad_> a freenet request is what is usually routed
+[02:10] <vulpine> <jrandom> ok, hmm.  why would they build an i2p tunnel into the middle of a big B/C?
+[02:10] <vulpine> <jrandom> wouldn't they want to build a freenet path?
+[02:10] <toad_> ummm, for premix?
+[02:10] <toad_> their out-tunnel?
+[02:11] <toad_> freenet on its own doesn't provide very strong anonymity against attackers who can do correlation attacks (our variant of long term internal traffic analysis)
+[02:11] <vulpine> <jrandom> ah, hmm, i'm not sure about the premix anon in restricted routes.  i read a paper on it a while back, but didn't take into consideration the only restricted scenario
+[02:11] <toad_> that's the local view paper?
+[02:12] <toad_> wasn't that from the pov of a global passive traffic analyser?
+[02:12] <vulpine> <jrandom> nah, though that one is relevent too.  no, this was a few years back
+[02:12] <toad_> i know there are restricted route mixnets based on e.g. expander graphs
+[02:12] <vulpine> <jrandom> local view doesn't need global passive, he scaled it down a bit
+[02:13] <vulpine> <jrandom> right, that one
+[02:13] <toad_> well a sufficiently-global passive :)
+[02:13] <vulpine> <jrandom> heh ;)
+[02:14] <vulpine> <jrandom> ok, i can dig into it further, i'm not ready to say the i2p-routing would offer the premix you need in that essentially closed restricted route net
+[02:14] <toad_> well... first off, we can deal with traffic analysis another day; we can pad, we can do whatever, and it's probably illegal to run a node anyway
+[02:15] <toad_> there was a "secondly", but i can't remember it, it probably wasn't important
+[02:15] <toad_> well
+[02:15] <vulpine> <jrandom> right, and first we've got to have small small-worlds before we have big small worlds :)
+[02:15] <toad_> on a small small-world network with access to A, what do we do?
+[02:15] <toad_> is that easier?
+[02:16] <vulpine> <jrandom> yeah, assume you're part of A and i2p-style tunnel route
+[02:17] <toad_> there are simple (and dubious; correlation attacks based on fractional traffic level for a given resource etc, also to nodes pretending to hide many nodes) ways to provide a large set of N to choose from
+[02:17] <toad_> i.e. a large anonymity set
+[02:17] <toad_> the obvious one is for each node in your freenet RT to give you 3 hops worth of nodes with identities and connection details, cross-signed, behind it
+[02:17] <toad_> then you pick 3 nodes
+[02:18] <toad_> and for each one you pick a random node behind it
+[02:18] <toad_> one of these nodes might be evil, but 3 is highly unlikely, as duplicates are very hard on a trust network
+[02:18] <toad_> and you get a better anonymity set
+[02:19] <toad_> for traffic analysis, and for the node you are connecting to/when your request leaves the out-tunnel/etc
+[02:19] <toad_> of course it will cost a few hops
+[02:19] <toad_> there are attacks relating to the proportion of traffic for a given resource that comes to a given node that you can do on that
+[02:19] <vulpine> <jrandom> there's promise in that.  there are details to hash through, but there's promise
+[02:19] <toad_> ideally you want some sort of cell structure, where there's equal probability of choosing any node in the cell
+[02:20] <toad_> the problem _then_ is that you need to eliminate bogus nodes
+[02:20] <vulpine> <jrandom> yeah
+[02:20] <toad_> ... without distorting the small-world topology by encouraging people to make links they wouldn't otherwise do to satisfy cell trust requirements
+[02:20] <vulpine> <jrandom> the key to getting a handle on that is a solid definition of bogus
+[02:21] <toad_> well, if we naively assume there is one human attacker
+[02:21] <toad_> then bogus node = nodes run by him, after the first one
+[02:21] <toad_> we assume that if you trust a node enough to connect to it, you have taken reasonable steps to ensure that it's run by a unique human amongst your RT
+[02:21] <toad_> that means you can do a lot
+[02:22] <toad_> e.g.
+[02:22] <toad_> you can require that in order for a node to be a member of your cell, it has 3 connections to nodes within your cell
+[02:22] <toad_> then the attacker can only pollute 1/4 of the cell at most
+[02:22] <toad_> because of overlap
+[02:22] <toad_> he can't connect twice to any node
+[02:23] <toad_> so if you pick 5 hops within the cell, you have only a 1/4^5 = 1/1000 chance of hitting only evil nodes and therefore being busted
+[02:24] <toad_> of course if there is collusion - if he and his friends are evil - it's rather harder
+[02:24] <vulpine> <jrandom> much.  and if the 25% are actively attacking, even more
+[02:25] <vulpine> <jrandom> e.g. refusing tunnel requests through noncolluding peers
+[02:25] <vulpine> <jrandom> passive == sit & watch, active == do mean stuff
+[02:25] <toad_> well, that should be detectable
+[02:25] <toad_> refusing tunnel requests in general is a big issue
+[02:25] <vulpine> <jrandom> failures happen
+[02:25] <toad_> how do you deal with it?
+[02:26] <toad_> sure
+[02:26] <toad_> does i2p do or need any measures to deal with maliciously refusing tunnel requests?
+[02:26] <vulpine> <jrandom> if there peer is overloaded already, or if they're under a surge of activity, there are different probabilities of refusing to participate.  if the next hop is unreachable, it refused to participate
+[02:27] <vulpine> <jrandom> not for the 'only forward to hostile peers', beyond the different peer selection algorithms
+[02:27] <toad_> obviously failures happen... but it ought to be possible to detect if a node refuses more from one node than from another
+[02:27] <vulpine> <jrandom> the peer refusing doesn't know which peer is asking them
+[02:28] <toad_> eh?
+[02:28] <toad_> not ultimately no
+[02:28] <vulpine> <jrandom> you could keep track of how it handles exploratory tunnels (which pick random peers)
+[02:28] <toad_> but they know who is forwarding it
+[02:28] <toad_> which is what matters
+[02:28] <toad_> oh, but there is also who it would be forwarded _to_
+[02:28] <toad_> ah
+[02:28] <toad_> hmmm
+[02:28] <vulpine> <jrandom> the peer who is forwarding it has no bearing on who its for, since its through an exploratory tunnel (which picks random peers)
+[02:29] <toad_> what's an exploratory tunnel for?
+[02:29] <vulpine> <jrandom> otoh, tracking who handles exploratory tunnels w/ different peers is A) lots of data to profile B) needs lots of samples
+[02:30] <vulpine> <jrandom> exploratory tunnels are primarily for sending and receiving tunnel management messages, and for netDb messages
+[02:30] <vulpine> <jrandom> secondarily, they help us test out new peers
+[02:30] <vulpine> <jrandom> (they're the iterated randomization of our hill climb)
+[02:30] <toad_> suppose...
+[02:31] <toad_> when we try to establish a tunnel, if a node rejects us we require it to give us a signed message indicating this rejection
+[02:31] <toad_> (if it doesn't we expel it)
+[02:31] <vulpine> <jrandom> we do
+[02:31] <toad_> we can then prove that it rejected a tunnel message
+[02:31] <vulpine> <jrandom> they not only do that, but tell us generally the cause of rejetion
+[02:31] <toad_> we can also reveal the key to show where it was destined
+[02:32] <vulpine> <jrandom> well, atm it doesn't do a provable signature, the requestor can lie and say a requestee rejected
+[02:32] <toad_> and we can also hide a sequence number to show we aren't lying about it mostly succeeding (i think)
+[02:33] <vulpine> <jrandom> but, reveal to whom?  some sort of consensus/voting system?
+[02:33] <toad_> well, within a cell we will have to know the topology
+[02:33] <toad_> so we can tell the other nodes in the cell
+[02:34] <vulpine> <jrandom> ah
+[02:34] <vulpine> <jrandom> there is so much i dont know about how this works
+[02:34] <toad_> if the node always rejects our tunnel requests, but accepts others (i don't suppose we could make rejection on overload conditional on broadcasting an i-am-overloaded-fuck-off message?)...
+[02:34] <toad_> and we can prove it
+[02:34] <toad_> then we can kill it
+[02:34] <toad_> and we can do the same thing with if it always rejects tunnel requests TO a particular node
+[02:35] <toad_> i don't know if this would be any use on the open network; it rather depends on the cellular structure
+[02:35] <vulpine> <jrandom> well, in a cell thats a manageable size (where a broadcast is feasible), there's a lot to be done
+[02:35] <toad_> but it ought to work on the closed network
+[02:35] <toad_> well, we keep the size of cells down
+[02:35] <vulpine> <jrandom> yeah
+[02:36] <toad_> if they get too big, they split in two
+[02:36] <toad_> like amoebas :)
+[02:36] <vulpine> <jrandom> heh cool
+[02:36] <toad_> so we have say 100 nodes in a cell at most
+[02:37] <toad_> that might actually work... i've struggled with premix routing on darknets for the last many many months, but that seems plausible
+[02:37] <toad_> of course if you have colluding attackers it's a lot harder
+[02:37] <toad_> well it isn't really
+[02:37] <toad_> if they can't actively collude, then it's just down to the numbers
+[02:38] <toad_> which admittedly could be pretty depressing
+[02:38] <vulpine> <jrandom> do they need to premix outside of their cell, or is their premix N the cell?
+[02:38] <toad_> premix N would be the cell
+[02:38] <toad_> then you either start the request, or go out to A, or whatever
+[02:39] <vulpine> <jrandom> hrm
+[02:39] <vulpine> <jrandom> at that small N, tarzan may make sense
+[02:39] <vulpine> <jrandom> (tarzan style mimics, that is)
+[02:39] <toad_> you could certainly onion out to A afterwards...
+[02:39] <toad_> what's a tarzan style mimic?
+[02:40] <toad_> i don't know, it might be possible to have cells a bit larger
+[02:40] <toad_> but we would need some degree of broadcasting
+[02:40] <vulpine> <jrandom> well, the premix is to hide from peers /in/ the cell what they're doing?  or to look like any of the peers in the cell from an adversary outside the cell
+[02:40] <toad_> we need at least for every node in the cell to know the status of every node in the cell (boolean; whether it's up or down)
+[02:41] <vulpine> <jrandom> tarzan builds "mimics" for its real pathways, transmitting the same data pattern out into no where
+[02:41] <toad_> both; to provide protection for your friends (from the temptation to treachery), and to provide an anonymity set for your potentially malicious distant neighbours
+[02:42] <vulpine> <jrandom> (at |cell| 100, might a DC net work?)
+[02:42] <toad_> jrandom: that works if your traffic pattern is totally predictable...
+[02:42] <toad_> DC net?
+[02:42] <vulpine> <jrandom> dining cryptographers.  hard anon, but doesn't scale
+[02:42] <toad_> hmmm
+[02:42] <toad_> i doubt it
+[02:42] <toad_> DC dramatically cuts your bandwidth, doesn't it?
+[02:43] <vulpine> <jrandom> its got efficiency issues, yeah ;)
+[02:43] <toad_> like by a factor of N
+[02:43] <vulpine> <jrandom> but perhaps it could DC .1% (the % used for premixing)
+[02:43] <vulpine> <jrandom> leaving 99.9% for non-DC (non-premixed)
+[02:43] <toad_> hmm?
+[02:44] <vulpine> <jrandom> premix just gets a query into and out of the freenet style search area, right?
+[02:44] <toad_> yeah
+[02:44] <vulpine> <jrandom> so the freenet style search wouldn't be part of that DC, but the premix messages would
+[02:45] <toad_> i wonder if we could have largish cells... we need to keep everyone up to date on everyone's status; we need to keep the topology in ram; and we need to tell the nodes directly connected to a node about its failures
+[02:45] <toad_> jrandom: yeah but what about the data return?
+[02:45] <toad_> oh also we have the issue that smaller cell -> greater chance of everyone knowing each other -> more likely to catch impostor making bogus nodes
+[02:46] <toad_> or do we?
+[02:46] <vulpine> <jrandom> (data return == premix out of the freenet style search)
+[02:47] <toad_> degenerate case: we have a mesh of 90 evil nodes, connected to 5 non-evil nodes
+[02:47] <vulpine> <jrandom> they're fucked anyway, kick down their doors ;)
+[02:47] <toad_> well, we can prevent that from happening
+[02:47] <toad_> the requirement above could prevent that, unless you're unlucky enough to join an entirely-evil or 99%-evil cell to start with
+[02:48] <toad_> (the req. being must-have-3-direct-neighbours-on-cell)
+[02:48] <toad_> combined with the general vigilance policy (you must know them well enough to know they're probably not the same person!)
+[02:49] <vulpine> <jrandom> hmm, i dont know enough to know the best way, havent looked at cellular structures recently.
+[02:50] <toad_> well that's my current thinking for premix routing on a darknet
+[02:50] <vulpine> <jrandom> there is a lot of promise there
+[02:51] <toad_> it may be we have to keep the size down, in which case less raw anonymity...
+[02:51] <vulpine> <jrandom> well, small cells leaves open some interesting strong anon tools
+[02:52] <toad_> we also have to talk about services provided over freenet i.e. storage, streams, multicast streams
+[02:52] <toad_> jrandom: for example? DC?
+[02:52] --> hadees has joined this channel. (n=hadees@cpe-66-68-117-148.austin.res.rr.com)
+[02:52] <toad_> DC is cool, but it's absurdly expensive... and i'm not sure it's worth it for such a small group
+[02:52] <toad_> i mean you can just go arrest all of them
+[02:52] <toad_> if it's that important
+[02:52] <vulpine> <jrandom> yeah, there are some interesting dc construtions for merging trees of dc cells
+[02:53] <toad_> hmmm, that sounds interesting
+[02:53] <toad_> you around tomorrow?
+[02:53] <toad_> i should be going to bed
+[02:53] <vulpine> <jrandom> all day, every day ;)
+[02:53] <toad_> :)
+[02:53] <vulpine> <jrandom> ok, 'night toad, ttyl
+[02:53] <toad_> also we might possibly have intercellular structures
+[02:53] <toad_> but i think cells are the way to go anyway
+[02:53] <toad_> bbl

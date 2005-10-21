@@ -1,0 +1,762 @@
+_> :)
+[15:26] <linyos> great minds think alike.
+[15:26] <linyos> i thought of that too.
+[15:27] <linyos> though not so much for wiring money across the darknet graph as for paying for services (like message-forwarding)
+[15:27] <toad_> ah
+[15:29] <toad_> well yes there is that too but personally i think that introducing markets in bandwidth is suicide as bandwidth doesn't really fit into the traditional scarcity model, and more importantly creating a market like that will generally grossly distort routing and destroy and possible scalability properties... better to provide *basic* forwarding services as a quid-pro-quo part of being on the network... it's vital to your anonymity anyway
+[15:29] <toad_> now, if you want higher level services, like buying webspace on the real internet, that DOES require payment
+[15:30] <toad_> also, a lot of the security problems go away if the currency is an internal one which is not inherently exchangeable, e.g. LETS
+[15:30] <toad_> you shift them to the inevitable exchange traders, of course
+[15:30] <linyos> right
+[15:30] <toad_> but that's not your problem as long as you have a lot of stuff going on internally
+[15:31] <toad_> actually it's quite interesting from a LETS angle as LETS has never been able to scale, nor is it intended to... mostly because it's a trust system. but the interesting thing here is that we have a distributed, scalable trust system...
+[15:32] * toad_ thinks it's worth playing with, one day, after we've shipped freenet 1.0 ;)
+[15:32] <toad_> linyos: just curious, which statement is the "right" to?
+[15:33] <linyos> that people would buy and sell them for other assets if at all possible.
+[15:34] <toad_> yeah, there will always be exchange services on any nontrivial internal currency
+[15:34] <linyos> unless you design the system to preclude it.
+[15:34] <linyos> which is surely possible.
+[15:34] <toad_> but imho it makes sense for an internal currency _not_ to be by nature an external one, for various reasons
+[15:35] <toad_> linyos: it is?
+[15:36] <linyos> you caught me, i can't prove that.
+[15:36] <linyos> just a guess.
+[15:36] <toad_> i doubt it very much
+[15:37] <toad_> anything which isn't completely a toy currency (e.g. the ena on frost) will be exchangeable, it's just a matter of how easy it is to do that
+[15:37] <linyos> well, suppose the host that earned the money has to spend it itself.
+[15:38] <linyos> i guess you could sell extra-network connections to your in-network host.
+[15:38] <-- sleon|work has left this server. (Remote closed the connection)
+[15:39] <linyos> ie, ssh to my node and for ten bucks you can make requests with all the funny-money i've earned.
+[15:39] <linyos> bbiab.
+[15:39] <toad_> :)
+[15:39] <toad_> hmmm
+[15:40] <toad_> should I implement CoalesceNotify for requests/inserts first, or should I continue with pub/sub?
+[15:43] <toad_> hmmm i see...
+[16:17] <-- Ash-Fox has left this server. (Remote closed the connection)
+[16:18] --> Danar has joined this channel. (n=user@tor/session/x-781f4d1bf5d423ca)
+[16:18] <-- FallingBuzzard has left this channel. ()
+[16:19] <Danar> the faq & wiki say to open freenet.conf, but don't say where it is, and i can't seem to find it
+[16:19] --> Ash-Fox has joined this channel. (i=UNKNOWN@ecq35.neoplus.adsl.tpnet.pl)
+[16:20] <Danar> what's wrong with the debian package?
+[16:32] <nextgens> hi
+[16:32] * nextgens will have an inet. connection at home soon :)
+[16:37] <sandos> good =)
+[16:37] <sandos> I couldnt do without one.. :
+[16:38] <nextgens> I managed to ... but I agree; that's hard ;)
+[17:01] --> NullAcht15 has joined this channel. (n=NullAcht@dslb-082-083-249-079.pools.arcor-ip.net)
+[17:05] <Danar> what's wrong with the debian package?
+[17:07] <linyos> i don't know, but there is no reason not to use the latest snapshot, anyway.
+[17:10] <nextgens> Danar: they are 3 years old ;)
+[17:13] --> Sugadude has joined this channel. (n=Sugadude@tor/session/x-561652a36c2ac246)
+[17:13] --> FallingBuzzard has joined this channel. (n=FallingB@66.151.22.70)
+[17:14] --> Romster2 has joined this channel. (n=Romster@tor/session/x-937bf78089dc33e3)
+[17:15] <Danar> i see
+[17:15] <Danar> the faq & wiki say to open freenet.conf, but don't say where it is, and i can't seem to find it
+[17:16] <Sugadude> Danar: On windows it's where you installed Freenet and it's called freenet.ini
+[17:16] <Danar> why doesn't someone contact the package maintainer?
+[17:16] <toad_> the current freenet only runs on the proprietary sun java :|
+[17:16] <Danar> Sugadude, i know. :p
+[17:16] <-- FallingBuzzard has left this channel. ()
+[17:16] <toad_> of course that shouldn't stop it from going into Contrib...
+[17:17] * Sugadude missed most of the conversation, sorry. :P
+[17:17] <Danar> Sugadude, i need to know where freenet.conf is
+[17:17] <Danar> ;)
+[17:18] <Sugadude> I would guess it's where you installed freenet.
+[17:18] <toad_> Danar: are you using the debian package?
+[17:18] <Danar> yeah... :/
+[17:18] <toad_> if so, it's in /etc/freenet/freenet*
+[17:18] <toad_> however, i recommend you purge the debian package
+[17:18] <toad_> and install from scratch
+[17:19] <Sugadude> Is Freenet in Debian stable? Is it version 50x? ;)
+[17:19] <greycat> NEVER EVER EVER use the Freenet .deb packages.
+[17:19] <greycat> Ever.
+[17:19] <Danar> i had installed the testing version
+[17:19] <Sugadude> Yeah, so it's probably Freenet 51x. :)
+[17:20] <Danar> then what's the point of having the package? why doesn't someone contact the maintainer? or become the maintainer or something?
+[17:21] <Sugadude> Danar: You're more than welcome to.
+[17:21] <linyos> hm, no freenet package in ubuntu
+[17:22] <Danar> well thanks
+[17:22] <-- Danar has left this server. ("Client exiting")
+[17:22] <Sugadude> linyos: Just add the main debian repository manually.
+[17:22] <toad_> really, there ought to be a real debian package...
+[17:22] --> Hory has joined this channel. (n=Miranda@82.78.27.85)
+[17:22] <toad_> even if it's in contrib and depends on the proprietary sun packages
+[17:22] <toad_> other packages do this
+[17:22] <toad_> hi Hory
+[17:23] <Hory> hi
+[17:26] <linyos> i wonder if you could beat the linux kernel into routing IP packets over ipsec-encrypted darknet tunnels.
+[17:27] <toad_> probably
+[17:27] <toad_> that's just VPN really
+[17:28] <toad_> there is an interface for userspace networking devices...
+[17:28] <linyos> i mean implement greedy small-world routing in there
+[17:29] <toad_> ahhh
+[17:29] <linyos> or something
+[17:29] <toad_> that would be cool
+[17:29] <toad_> it would probably still have to be partly userspace
+[17:29] <toad_> okay, where was i?
+[17:30] <toad_> if A sends a subscribe request to B
+[17:30] <toad_> and B forwards it
+[17:30] <toad_> and B gets several more subscribers
+[17:31] <toad_> then from their point of view, B really ought to send a SubscribeRestarted...
+[17:31] <toad_> but if it does, it could eat its tail
+[17:31] <toad_> ... except that it won't, because it's preserving the ID
+[17:32] <toad_> pub/sub is wierd
+[17:32] <Sugadude> Sounds like Indian mythology to me. ;)
+[17:33] <toad_> so.... what.... we ensure we can't bite our own tail, by preserving the UID, and when we change it, we send CoalesceNotify back along the subscribe request chain - only to the nodes actually involved in the chain
+[17:33] <toad_> the ORIGINAL chain
+[17:34] <toad_> so we can end up subscribing to or through one of our dependants who coalesced with us
+[17:34] <toad_> just not to one which is already on the chain......
+[17:34] <toad_> hrrrrrrrrrm
+[17:34] <toad_> Sugadude: ;)
+[17:35] <toad_> now, does THAT work?
+[17:36] <toad_> are loops even a problem? well, if they lead us down a suboptimal route and we end up not going to the real root, then yes, they are...
+[17:37] * Sugadude shakes his magic 8 ball. "Outlook uncertain"
+[17:37] <toad_> yeah
+[17:37] <toad_> if we send nodes a CoalesceNotify when they join our previously existing request, we will end up propagating it...
+[17:37] <toad_> across the tree, eventually
+[17:37] <toad_> that is bad
+[17:38] <toad_> if we make the joiners state distinct from the original's state, that's the way forward... maybe
+[17:39] <toad_> but then we can still deadlock
+[17:39] <toad_> A joins B, B joins C, C joins A
+[17:39] <toad_> bang
+[17:39] <toad_> deadlock
+[17:40] <Sugadude> "A joins B, B joins C, C joins A". A,B,C start a support group and invite D to join. ;P
+[17:40] <toad_> we can have each request go all the way individually... but that doesn't scale
+[17:41] <toad_> we can have each node reject (terminally, exponential backoff on client) subscribe requests while it is itself subscribing...
+[17:41] <toad_> that was ian's suggestion
+[17:41] <toad_> and it looks the simplest thing
+[17:42] <toad_> okay so how would restarts work in such a scenario?
+[17:42] <toad_> same as planned really...
+[17:43] <toad_> i don't think there is a big distinction between subscribe and resubscribe... just by a few nodes joining a subscribe, it becomes effectively a resubscribe...
+[17:50] <linyos> hmm, a malicious node could break the broadcast-subgraph in two, couldn't it?
+[17:51] <toad_> a malicious node could do a lot in the current pub/sub architecture, which is basically a tree
+[17:51] <toad_> if we don't use the tree to reduce bandwidth use, we can reduce the vulnerability
+[17:51] <toad_> i.e. if we relay messages to our parent and our dependants equally
+[17:52] <toad_> rather than going up the tree so that the root can decide on collisions
+[17:52] <linyos> tricky business.
+[17:52] <toad_> there are two advantages to using the tree that way - one is that we have an authoritative decision maker for collisions. the other is that we reduce bandwidth usage significantly if the graph isn't very treeish
+[17:53] <toad_> but then it should be quite treeish
+[17:53] <toad_> so it may not be an issue
+[17:53] <toad_> likewise, as long as we only relay a given ID once, we don't really need a collision dispute resolution mechanism
+[17:54] <toad_> although that does mean that you can't easily detect collisions from the client end...
+[17:54] <toad_> s/easily/reliably
+[17:55] <toad_> i suppose we can just say that it is not guaranteed to be reliable in the presence of multiple writers, and client authors must take this into account
+[17:55] <linyos> why would you want multiple writers?
+[17:55] <linyos> just use one stream for each writer.
+[17:55] <linyos> subscribe to them all.
+[17:55] <linyos> aggregate at client end.
+[17:56] <toad_> well
+[17:56] <Sugadude> One stream to bring them, One stream to control them, One stream to bind them.... Oh wait, wrong movie? ;)
+[17:56] <toad_> the original reason i thought about that was that clients may not know the latest sequence number
+[17:56] <toad_> that's not a problem if the sender subscribes well before he sends
+[17:57] <toad_> the idea was that frost etc might benefit from one stream per channel, if you know the key you can post...
+[17:57] <toad_> if you have separate streams for each client, you'll have a LOT of streams, and that means each one must be fairly low bandwidth
+[17:58] <toad_> but yeah, lets turn this upside down
+[18:00] <linyos> for message boards you really want one stream per client anyway.
+[18:01] <linyos> for security reasons---you can kick out malicious/compromised clients.
+[18:01] <linyos> imho, better to just make sure the system scales to thousands of streams.
+[18:01] <toad_> yeah, any shared bus is vulnerable
+[18:02] <toad_> well
+[18:02] <toad_> we have to keep some packets
+[18:02] <toad_> in order to deal with the inevitable breakages
+[18:02] <toad_> we have to cache the last N packets for some N
+[18:02] <toad_> packets will probably be around 1kB
+[18:03] <linyos> write them to the disk if breakages are infrequent.
+[18:03] <toad_> so if we have a limit of 4096 streams, and cache 8 packets for each stream, we get 32MB of data to cache
+[18:03] <toad_> which sucks!
+[18:04] <linyos> yeah, that is pretty harsh when you really want to scale.
+[18:05] <toad_> well, lets say we cache it on disk
+[18:05] <linyos> can't you just forget them after a while?
+[18:06] <toad_> streams, or packets?
+[18:06] <linyos> i mean, if the tree is broken and you're receiving yet more incoming packets, you can't just queue them indefinitely.
+[18:06] <toad_> i don't think LRU on streams is going to work well
+[18:07] <toad_> well, if we are using this for non-real-time apps like RSS, it'd be very nice if we could cache them
+[18:07] <toad_> so if i turn my node off for 2 hours to play quake, then reconnect, i still get the updates i've missed
+[18:07] <toad_> anyway, i'm not totally averse to a disk-based cache
+[18:07] <linyos> when do you stop?
+[18:08] <toad_> hmm?
+[18:08] <toad_> i don't see why we shouldn't use a disk based cache
+[18:08] <linyos> i mean, the publisher must know how long his messages will be cached, right?
+[18:09] <linyos> ie, "up to ten messages", or "for up to two hours"
+[18:09] <toad_> i don't see that setting an arbitrary time period after which stuff is dropped would predictably reduce space usage
+[18:09] <toad_> we need it to *PREDICTABLY* reduce space usage for it to be useful, don't we?
+[18:10] <linyos> i'm out of my depth here.
+[18:10] <toad_> well
+[18:11] <toad_> the proposal is we keep the last 32 packets
+[18:11] <toad_> or 8 packets
+[18:11] <toad_> or N packets
+[18:11] <toad_> for each stream
+[18:11] <toad_> for as long as we are involved in that stream
+[18:11] <linyos> so that?
+[18:11] <toad_> we unsubscribe if nobody is subcribed to the stream
+[18:11] <toad_> including local subscriber clients
+[18:12] <linyos> so people can still access recent messages that they missed because they rebooted or something?
+[18:12] <toad_> so that if nodes/people disconnect, we can bring them up to date
+[18:12] <linyos> ok.
+[18:12] <toad_> right
+[18:13] <linyos> why not insert each message as a normal file then?
+[18:13] <toad_> hmm?
+[18:13] <linyos> then they can stay around as long as people keep downloading them.
+[18:13] <toad_> too big, for a start
+[18:13] <toad_> well lets explore it
+[18:13] <toad_> the practical issue is that for a lot of apps 32kB is ridiculously huge
+[18:14] <toad_> but say we changed the block size to 4kB
+[18:14] <toad_> we still couldn't do IRC with it... but suppose we don't care about IRC
+[18:15] <linyos> or just make them a special case and insert them variable-length?
+[18:15] <toad_> well, say we have 1kB SSK's
+[18:15] <toad_> that is, the signature stuff, plus 1kB of data
+[18:15] <toad_> kept in a separate store to CHKs
+[18:15] <linyos> yeah.
+[18:15] <toad_> then we have what amounts to the combination of passive requests and TUKs
+[18:16] <toad_> i.e. SSKs are versioned, and you can do a passive request which does not expire when it returns data
+[18:17] <toad_> passive requests are coalesced, to the extent that if a node sends a passive request, and it already has one, it doesn't need to forward it further
+[18:19] <linyos> in principle you are doing two things in pub/sub: one, you are _notifying_ all the subscribers that another message is available. two, you are actually pushing it to them.
+[18:20] <toad_> right
+[18:20] <toad_> in freenet, we generally don't want to do the first without the second
+[18:20] <toad_> as a matter of principle
+[18:21] <linyos> fair enough. anyway, i think LRU is exactly what you want for this purpose, ie for keeping around recent messages for catching-up
+[18:22] <toad_> okay
+[18:22] <toad_> suppose we do that...
+[18:22] <toad_> what about the actual subscriptions? the passive requests?
+[18:24] <linyos> the publisher simply publishes each message as he does now, except that he can also concurrently insert it normally under the same key.
+[18:24] <toad_> it's the same thing
+[18:24] <linyos> if he so chooses in order that his subscribers can catch-up
+[18:24] <toad_> the publisher inserts the message under a versioned SSK
+[18:24] <toad_> okay, here's a problem...
+[18:25] <toad_> oh
+[18:25] <toad_> i see
+[18:25] <linyos> sure, i'm just saying the two systems are logically separate
+[18:25] <linyos> pub/sub and block cache
+[18:25] <toad_> we CAN do LRU...
+[18:25] <toad_> a request for "everything since revision 98713" will only promote blocks since that point
+[18:28] <toad_> ok
+[18:28] <toad_> brb
+[18:28] <linyos> it is conceivable that some stream publishers would not want their messages cached for security reasons
+[18:29] <linyos> and that others would have more efficient, application-specific ways of catching up.
+[18:31] <toad_> ok, where was i?
+[18:32] <toad_> w 
+[18:32] <toad_> we can eliminate the TUK scalability problem (which is "we don't want everyone going all the way on every TUK request") by not forwarding a TUK request if we are already subscribed to that TUK
+[18:32] <toad_> because if we are, we already have the current version
+[18:33] <toad_> well we might have a small probability of forwarding it in the name of housekeeping
+[18:33] <toad_> we definitely do not want LRU on the actual subscriptions
+[18:34] <toad_> on the actual subs, we'd have a maximum number of keys subscribed to per node, and we'd obviously stay subbed as long as at least one node is subbed to the key in question
+[18:35] <toad_> now, how do we do the actual subscribe?
+[18:35] <toad_> we send a regular request out for the key, and it is routed until HTL runs out
+[18:35] <toad_> whether or not it finds the data, because of the flags set, it sets up a passive request chain
+[18:36] <toad_> so far so good... now for the hard part - coalescing
+[18:37] <toad_> if the request finds a node with an existing subscription to the key, with sufficient HTL on it, it stops on that node
+[18:38] <toad_> if the request finds a node already running a similar request, it does nothing... it just continues the request
+[18:38] <toad_> this is inefficient, and we should find some way to avoid sending the actual data blocks more than once
+[18:38] <toad_> but it does prevent all the various nightmares w.r.t. loops
+[18:45] <linyos> the thing is that it's got to scale like crazy. since people are going to have tons of streams all over the place.
+[18:45] <toad_> right...
+[18:46] <linyos> ideally it's just a matter of keeping a little record in your stream state table
+[18:46] * toad_ is trying to write up a proposal... please read it when i've posted it...
+[18:48] <toad_> well
+[18:49] <toad_> the basic problem with scalability is that we don't want most requests to go right to the end node
+[18:49] <toad_> right?
+[18:49] <toad_> popular streams should be cached nearer to the source, and subscribed to nearer to the source
+[18:50] <toad_> 2. If any request for a TUK, even if not passive, reaches a node which
+[18:50] <toad_> already has a valid subscription at a higher or equal HTL for the key,
+[18:50] <toad_> then the request ends at that point, and returns the data that node has.
+[18:50] <toad_> If the passive-request flag is enabled, then passive request tags are
+[18:50] <toad_> added up to that node, and that node adds one for the node connecting to
+[18:50] <toad_> it if necessary.
+[18:50] <toad_> what if the most recent data has been dropped?
+[18:51] <linyos> yeah, that is another problem. i was thinking about scalability as regards the cost of maintaining idle streams.
+[18:51] <toad_> should we have a small probability of sending the request onwards?
+[18:51] <linyos> dealing with them once they start blasting tons of messages is also hard...
+[18:51] <toad_> partly for the reason that the network may have reconfigured itself...
+[18:52] <toad_> well
+[18:52] <toad_> do we want to a) have an expiry date/time on each passive request, and force the clients to resubscribe every so often, or b) have the network occasionally resubscribe?
+[18:53] <linyos> toad_: i'll have to study your mail before we're back on the same page.
+[18:53] <toad_> ok
+[18:53] <toad_> will send it soon
+[18:54] <toad_> Subject: [Tech] Pub/sub = passive requests + TUKs
+[18:54] <toad_> please read :)
+[18:55] <toad_> the hard bit probably is what to do about looping and coalescing
+[18:57] <toad_> linyos: you know what TUKs and passive requests are, right?
+[18:57] <toad_> that email may not be very comprehensible otherwise
+[18:59] <toad_> so the basic remaining problems are: coalescing, loop prevention, and expiry/renewal/resubscription (when something changes, or routinely)
+[19:00] <toad_> linyos: ping
+[19:01] <-- Romster has left this server. (Connection reset by peer)
+[19:01] <-- Sugadude has left this server. (Remote closed the connection)
+[19:01] <toad_> loop prevention is not a problem unless we have coalescing
+[19:01] --> Romster has joined this channel. (n=Romster@tor/session/x-25dc686d1fb1a531)
+[19:01] <toad_> if we do coalescing on requests as planned, then:
+[19:02] <toad_> we can't run into our own tail, because our tail knows all our ID's
+[19:02] <linyos> i know what a passive request is, but no idea about TUKs
+[19:02] <toad_> on the other hand, that could be very restricting...
+[19:02] <toad_> linyos: TUKs == updatable keys
+[19:03] <linyos> ok, that's what i guessed.
+[19:03] <toad_> an SSK with a version number or datestamp
+[19:03] <toad_> you can fetch the most recent version
+[19:03] <toad_> this is one of the most requested features
+[19:03] <toad_> and it gels with pub/sub
+[19:03] <linyos> when the publisher inserts a new version, how do we know that it actually reaches the passive request graph?
+[19:04] <toad_> we don't
+[19:04] <toad_> in the proposed topology
+[19:04] <-- TheBishop_ has left this server. (Read error: 113 (No route to host))
+[19:04] <toad_> but we don't know that for sure in classic pub/sub either, as there may be no subscribers, or there may be catastrophic network fragmentation
+[19:05] <toad_> okay, if the network isn't completely degenerate, then running into our own tail won't be catastrophic
+[19:05] <toad_> in fact, we could exploit it to give the graph more redundancy :)
+[19:06] <toad_> if we run into our own tail, we give it a special kind of non-refcounted subscription, meaning essentially that if you get a packet, send us it, but don't let this prevent you from dropping the subscription
+[19:06] <toad_> (since if it was refcounted, it would create a dependancy loop)
+[19:07] <toad_> (which would be BAD!)
+[19:07] --> Sugadude has joined this channel. (n=Sugadude@tor/session/x-fe3d50601157f088)
+[19:07] <linyos> so essentially the idea is to cast this big net that catches inserts.
+[19:07] <toad_> or requests
+[19:07] <toad_> but yes
+[19:08] <toad_> it's a conglomeration of request chains; they all point in the same direction, towards the key
+[19:08] <toad_> so it should be fairly treeish, and it should be connected
+[19:09] <toad_> and unlike structures with a root, there should be enough redundancy to prevent the obvious attacks
+[19:10] <toad_> so in summary as regards coalescing... we do it exactly the same way we do it on ordinary requests; with CoalesceNotify messages to prevent us biting our own tail
+[19:11] <toad_> somehow these need to be passed out to all the requestors
+[19:11] <linyos> in a TUK, all the updates are routed to the same place?
+[19:11] <toad_> but that's going to get done anyway
+[19:11] <toad_> linyos: all the updates have the same routing key
+[19:11] <linyos> how do the updates happen.
+[19:11] <linyos> isn't that bad? not scalable?
+[19:11] <toad_> linyos: hrrm?
+[19:11] <toad_> what/
+[19:11] <toad_> what not scalable?
+[19:11] <toad_> all the updates having the same key not scalable? why?
+[19:12] <linyos> i mean, suppose that somebody inserts updates at a huge rate
+[19:12] <linyos> for some high-bandwidth application
+[19:12] <toad_> as a flood?
+[19:12] <linyos> and they all hammer one part of the keyspace
+[19:12] <linyos> no, just because their application uses tons of data
+[19:13] <toad_> well, they may hit flood defences
+[19:13] <toad_> if they don't, and nobody reads their data, it will eventually drop out
+[19:13] <toad_> what's the problem here?
+[19:13] <linyos> i'm just talking about the bandwidth
+[19:13] <toad_> well, if nobody is listening it will just take up the insert bandwidth
+[19:13] <linyos> the nodes at the end of the request routing path would have to carry the full bandwidth of the stream
+[19:14] <linyos> which could be enormous for some applications
+[19:14] <toad_> well yeah, so don't code such applications :)
+[19:14] <toad_> the links between the nodes won't bear it; most of them are limited to 20kB/sec or less
+[19:14] <toad_> so he'll get RejectedOverload
+[19:14] <toad_> for many of his inserts
+[19:14] <toad_> which is fatal
+[19:14] <linyos> right.
+[19:15] <toad_> which is a subtle hint to SLOW THE FUDGE DOWN
+[19:15] <linyos> but if the inserts went to different parts of the keyspace that would not be a problem.
+[19:15] <toad_> well maybe
+[19:15] <linyos> he might have 50 neighbor nodes in the darknet and they could handle the 100MB/s
+[19:15] <toad_> but he'd still need a big link himself
+[19:15] <toad_> meaning he's not very anonymous
+[19:15] <linyos> but not if you aim them all down the same request path.
+[19:15] <toad_> anyway he could just stripe across 10 streams
+[19:15] <linyos> i guess he could split it up.
+[19:16] <linyos> my point is only that aiming all the updates down the same request path creates another kind of scalability problem.
+[19:16] <toad_> FEC encode it, then split it up into 18 streams where you can reconstruct it from any 10 :)
+[19:16] <toad_> "it" being his illegal video stream :)
+[19:17] <linyos> hmm, what if one of the nodes in the request path was really slow? that could break even modestly sized streams.
+[19:17] <linyos> i do not like that...
+[19:18] <toad_> that will break lots of things
+[19:18] <toad_> e.g. requests
+[19:18] <linyos> not really, since it never becomes a bottleneck.
+[19:20] <toad_> you think?
+[19:20] <toad_> anyway if you want to shove a LOT of data, you use the 1kB SSKs as redirects
+[19:20] <toad_> to your real data which is in 32kB CHKs which are scattered across the network
+[19:21] <linyos> i guess, though that does not help if a node in the chain is really overloaded and drops packets like crazy.
+[19:22] <linyos> or is malicious, even.
+[19:22] <toad_> which chain? the chain to the stream?
+[19:22] <linyos> the insertion chain.
+[19:22] <toad_> well if it's malicious, maybe we can detect it and kill it
+[19:22] <toad_> the insertion chain for the SSK stream
+[19:22] <linyos> all the inserts go through the same 10 nodes.
+[19:22] <linyos> yeah.
+[19:23] <toad_> so what you're saying is that it is vulnerable to selective dropping
+[19:23] <toad_> if the cancer node happens to be on the path
+[19:23] <toad_> well, so are ordinary inserts
+[19:23] <toad_> it's more viable with multiple blocks on the same key, of course...
+[19:24] <toad_> i don't see how TUKs, updatable keys or any sort of stream could work any other way though
+[19:24] <toad_> you have to be able to route to them
+[19:24] <linyos> my main worry is just that the insertion path will often happen to include some really slow dog of a node. and then you will not be able to stream much data at all.
+[19:24] <toad_> so parallelize
+[19:24] <toad_> if you really need to stream a lot of data
+[19:24] <toad_> which usually you don't
+[19:25] <linyos> audio/video links?
+[19:25] <linyos> seem like a common thing to do.
+[19:25] <toad_> video would definitely have to be parallelized
+[19:25] <toad_> audio too probably
+[19:25] --> Eol has joined this channel. (n=Eol@tor/session/x-94f512933bd62f63)
+[19:25] <toad_> but we are talking multicast streams here
+[19:25] <toad_> in 0.8 we will use i2p to do 1:1 streams
+[19:26] <toad_> well hopefully
+[19:26] <toad_> ian would say we will use tor to do 1:1 streams, because he knows the guy at tor better than he knows jrandom; i say vice versa; IMHO there are significant technical advantages to i2p, but we'll see
+[19:27] <toad_> anyway
+[19:27] <toad_> there simply is no other option; for anything like this to work, there HAS to be rendezvous at a key
+[19:27] <toad_> that key may change from time to tiem
+[19:28] <linyos> now that i think about it, i don't like the idea of pushing streams through chains of nodes in the first place, since you are limited by the weakest link. better to use the chain to signal "next message available", which requires negligible bandwidth, and then to insert and request each message through the network at large.
+[19:28] <toad_> but it has to stay at one key for a while, unless you want major jumping around overhead/latency/etc
+[19:28] <toad_> linyos: well in that case...
+[19:28] <toad_> audio streams don't require a new-data-available indicator at all
+[19:28] <toad_> unless they're doing half duplex
+[19:28] <toad_> what does is things like RSS
+[19:29] <toad_> frost messages
+[19:29] <toad_> etc
+[19:29] --> FallingBuzzard has joined this channel. (n=FallingB@c-24-12-230-255.hsd1.il.comcast.net)
+[19:29] <toad_> also 1kB is intentionally small
+[19:29] <toad_> much smaller and the signature starts to become a major overhead
+[19:29] <toad_> so we're arguing over usage here
+[19:29] <linyos> yeah, constant-message-rate applications would be best done through SSKs
+[19:30] <toad_> wel
+[19:30] <toad_> well
+[19:30] <toad_> we are talking about SSKs here
+[19:30] <toad_> all we do:
+[19:30] <toad_> we stuff the 1kB with CHKs
+[19:30] <toad_> (URLs of CHKs)
+[19:30] <toad_> we overlap them
+[19:30] <toad_> so if you miss a packet, you pick them up in the next one
+[19:30] <toad_> lets say we have a 96kbps stream
+[19:31] <toad_> that's loads for voice and arguably enough for music
+[19:31] <toad_> that's 12kB/sec
+[19:31] <toad_> we divide it up into blocks of 128kB
+[19:31] <toad_> each block goes into 6 CHKs of 32kB each (4 data + 2 check)
+[19:31] <linyos> ooh, i have a big reason why you want to use streams for signalling and not data transmission.
+[19:31] <toad_> a CHK URI is maybe 100 bytes
+[19:31] <toad_> so we can put 10 of them in each 1kB block
+[19:32] <linyos> signalling is so cheap, you can have lots of redundant paths.
+[19:32] <linyos> and hence more reliability when a node falls off a cliff.
+[19:32] <toad_> linyos: that's a nice one
+[19:32] <toad_> well i think we can do them in.. hmmm, yeah, it's going to be maybe 67 bytes
+[19:32] <toad_> so
+[19:32] --> TheBishop_ has joined this channel. (n=bishop@port-212-202-175-197.dynamic.qsc.de)
+[19:32] <toad_> 15 in a 1kB block
+[19:33] <toad_> that's 2.5 groups
+[19:33] <toad_> so we carry signaling, including redirects
+[19:33] <toad_> in the SSK stream
+[19:33] <toad_> and then fetch the actual data from CHKs, which are distributed
+[19:34] <linyos> a CHK is 100 bytes???
+[19:34] <toad_> frost messages will sometimes fit into a 1kB SSK, and sometimes will have a redirect
+[19:34] <linyos> you only need 100 bits...
+[19:34] <toad_> linyos: 32 bytes routing key, 32 bytes decryption key
+[19:34] <toad_> maybe 3 bytes for everything else
+[19:34] <toad_> 32 bytes = 256 bits
+[19:34] <toad_> anything less would be grossly irresponsible IMHO
+[19:36] <linyos> oh, that includes encryption.
+[19:36] <toad_> yes
+[19:36] <toad_> and yes you can cheat
+[19:36] <linyos> really you want to do that on the client side.
+[19:36] <toad_> but we haven't really formalized that into a client API yet :)
+[19:36] <toad_> if you cheat, it can be a fixed decrypt key, and fixed extra bits
+[19:36] <toad_> so 32 bytes
+[19:37] <toad_> => you can fit 32 of them in 1024 bytes (just)
+[19:37] <toad_> 31 in practice, you'd want SOME control bytes
+[19:38] <linyos> that's fair enough. 32 bytes is a big hash, but who am i to argue hash-security.
+[19:38] <toad_> well, SHA1 is looking very dodgy
+[19:39] <toad_> okay
+[19:39] <toad_> usage is important
+[19:39] <toad_> but we also have to figure out how exactly it's going to work
+[19:39] <toad_> two options for renewal/resubscription
+[19:40] <toad_> one is we let the client do it periodically
+[19:40] <toad_> the other is we do it ourselves
+[19:40] <toad_> actually a third option would be not to do it at all
+[19:40] <toad_> which may sound crazy initially, but if we have the client-node automatically switch to a new stream every so often...
+[19:40] <toad_> ooooh
+[19:41] <toad_> that could radically simplify things
+[19:41] <toad_> ... or could it?
+[19:41] <toad_> hmmm, maybe not
+[19:41] <toad_> if a subscribed node loses its parent, it's still screwed
+[19:41] <toad_> it has to resubscribe
+[19:41] <toad_> it may have dependants who might send it the data
+[19:42] <toad_> but in general, it is quite possible that that was a critical link...
+[19:42] <toad_> we could mirror it across two or more streams, but that would suck... lots of bandwidth usage
+[19:43] <toad_> (since there will be many streams)
+[19:45] <linyos> tricky business indeed.
+[19:53] <toad_> well
+[19:55] <toad_> how about this: we expect clients to rotate streams, AND if we lose our parent node, we simply tell all our strictly-dependant nodes that it's gone
+[19:55] <toad_> they are then expected to retry, possibly with random time offsets
+[19:56] <toad_> (we have removed all our subscribers)
+[19:56] <FallingBuzzard> Could you require every node to setup a primary and secondary path for the stream but only transfer the data over the primary
+[19:57] <FallingBuzzard> Maybe send keep-alive messages over the secondary
+[19:57] <toad_> hmmm
+[19:57] <toad_> sounds strange, since if they are routed right they will usually converge
+[19:57] <FallingBuzzard> Randomly disconnect the primary after setting up a 3rd path
+[19:58] <FallingBuzzard> You only have to route around the node immediately in front of you
+[19:58] <FallingBuzzard> There would be a path A - B - C - D and a path A - C - D and a path A - B - D
+[19:59] <toad_> FallingBuzzard: for what purpose?
+[19:59] <FallingBuzzard> If C falls off a clif
+[19:59] <FallingBuzzard> cliff
+[19:59] <FallingBuzzard> The secondary path would automatically be routed around any single node that disappears
+[20:00] <FallingBuzzard> Still screwed if a big part of the network is disrupted
+[20:00] <FallingBuzzard> All D has to know is that his primary path is from C and his secondary is from B
+[20:01] <FallingBuzzard> If C stops working, request data from the path that goes to B
+[20:01] <FallingBuzzard> Leapfrog protocol
+[20:02] <linyos> i'm sure some way will be found to make the interceptor-nets pretty resilient.
+[20:02] <linyos> but don't ask me, at least not today...
+[20:02] <toad_> okay, we definitely have to have a tree of some sort
+[20:02] <toad_> each node has the parent node
+[20:03] <toad_> the node which it routed to, or would have routed to, when it routed the request
+[20:03] <toad_> it may have dependant nodes
+[20:03] <toad_> and it may have peers with which it exchanges packets on that stream even though they aren't strict dependants for purposes of refcounting
+[20:03] <toad_> but it will have a parent
+[20:03] <toad_> unless it is root
+[20:05] <linyos> having only one parent node seems too fragile. three would be better
+[20:05] <toad_> well, that function is served by nondependant peers
+[20:05] <toad_> data is not necessarily moved only in one direction on the tree
+[20:05] <toad_> but we DO have to have a parent
+[20:06] <toad_> and ultimately a root node
+[20:07] <toad_> because we have to be able to notify our dependants that we are rerouting, or that we cannot reroute and they need to look elsewhere
+[20:08] <toad_> and if we do reroute, we need to be able to identify that we have reached a node which isn't on the same tree as we are
+[20:08] <toad_> or rather, isn't below us
+[20:09] <linyos> yow, can't we make oskar solve this one or something???
+[20:09] <FallingBuzzard> Just ask the node that we are getting the data from who they are getting it from
+[20:09] * linyos throws up his hands in despair
+[20:09] <toad_> FallingBuzzard: you can't do that on a darknet
+[20:09] <toad_> FallingBuzzard: they can give you the location, but they can't connect you to it
+[20:10] <FallingBuzzard> hmmmm
+[20:10] <FallingBuzzard> If you have # hops, you can determine if the node is not lower than you are
+[20:10] <toad_> unless it's on a different branch of the tree
+[20:10] <toad_> which is exactly what you want
+[20:11] <FallingBuzzard> So look somewhere else with htl > x
+[20:11] <toad_> well
+[20:11] <toad_> lets keep it simple... if we lose our parent, we kill all our dependants
+[20:11] <toad_> this is somewhat high overhead
+[20:11] <toad_> but at least it's simple :|
+[20:15] --> elly_ has joined this channel. (i=elly@ool-457856bb.dyn.optonline.net)
+[20:15] <toad_> hi elly_ 
+[20:16] <elly_> hey toad_
+[20:16] <toad_> linyos: can you very briefly summarize the reason for not just limiting it to a low number of streams and caching them in RAM?
+[20:17] <linyos> yes, that should not be done because it limits you to a low number of streams.
+[20:18] <toad_> but also, we will want to implement TUKs and passive requests at some point
+[20:18] <linyos> users will probably be very enthusiastic about keeping tons of streams open.
+[20:18] <elly_> I'll implement YOUR streams! hurhurhur
+[20:19] <linyos> also, who says the number of messages you cache will be sufficient?
+[20:20] <linyos> or necessary in the first place (ie, real-time audio-video streams)
+[20:23] <elly_> woah
+[20:23] <-- Elly has left this server. (Connection timed out)
+[20:23] <elly_> audio/video streams
+[20:23] *** elly_ is now known as Elly.
+[20:23] <Elly> oops
+[20:23] *** Elly is now known as elly_.
+[20:23] <elly_> I'll brb
+[20:23] <-- elly_ has left this server. ("Leaving")
+[20:26] <toad_> okay
+[20:26] <toad_> the simplest, not necessarily the most efficient, solution
+[20:27] <toad_> we subscribe via a request with the relevant flags enabled
+[20:27] <toad_> if the parent node is disconnected, we forcibly disconnect all our dependants
+[20:28] <toad_> if the parent node changes its location, or if a swap results in a node having a location closer to the target than the parent node does, we forcibly disconnect all our dependants
+[20:28] <toad_> and we do so anyway, randomly, lets say every 6 hours
+[20:29] <toad_> if the clients don't like this, they can use two parallel streams
+[20:29] <toad_> we have no resubscription logic whatsoever
+[20:29] <linyos> the two streams would likely soon converge though.
+[20:30] <toad_> not if they use different keys
+[20:30] <linyos> oh, ok.
+[20:31] <toad_> the more-complex alternative:
+[20:31] <toad_> when we would have dumped our dependants:
+[20:31] <linyos> well, if the stream breaks, the subscribers can just request the next message manually
+[20:31] <linyos> while they resubscribe
+[20:31] <toad_> we send all of them a SubscribeRestarted; this is relayed to all indirect dependants
+[20:31] <linyos> so what's the big deal...
+[20:32] <toad_> then we send a request out, with ID equal to the RESUBSCRIBE_ID on the SR
+[20:32] <toad_> that ID is generated randomly when we send the SR's out
+[20:33] --> Elly has joined this channel. (i=elly@ool-457856bb.dyn.optonline.net)
+[20:33] <toad_> that request can go anywhere (except for biting its own tail), but it can only succeed if the root location is closer to the target than its own location...
+[20:33] <toad_> hmmm
+[20:33] <toad_> i'm not sure how that would work with it being a regular request...
+[20:33] <toad_> well a more or less regular request
+[20:35] <toad_> .... for each subscription, we know the root location
+[20:35] <toad_> => we can accept it locally if the root loc is compatible with the request; if we accept it locally, we don't need to forward it any further
+[20:36] <toad_> of course, we could just use non-persistent one-off passive requests...
+[20:37] <toad_> this would avoid bottleneck problems, and therefore scale to very high bandwidth streams
+[20:37] <toad_> and it would reduce the average lifetime of a request and therefore make the upstream-resubscribe less necessary
+[20:37] <Elly> hooooly shit
+[20:37] <toad_> Elly: hmm?
+[20:37] <Elly> an 2.8ghz paxville at 100% load uses 428W
+[20:38] <toad_> Elly: what's a paxville?
+[20:38] <toad_> not a cpu, i assume?
+[20:38] <toad_> no cooling system on earth could handle that from a single chip... well maybe they exist, but they aren't exactly cheap
+[20:38] <linyos> yeah, just waiting for the next N messages is an option.
+[20:39] <Elly> yes
+[20:39] <Elly> a CPU
+[20:39] <Elly> it's Intel's new Xeon
+[20:39] <toad_> linyos: that may be best, combined with the dumb-stupid option above (force everyone to resubscribe at the first hint of danger)
+[20:39] <toad_> Elly: 4 core?
+[20:39] <Elly> dual-core @ 2.8ghz
+[20:39] <Elly> = 428W
+[20:39] <toad_> yikes
+[20:39] <Elly> and you're wrong about the cooling :)
+[20:39] <Elly> it has a HUGE-ASS heatsink
+[20:39] <toad_> Elly: I doubt it; are you sure that's just the chip?
+[20:40] <linyos> agreed
+[20:40] <toad_> a heatsink on its own will not do it, you're gonna need some nice 20cm fans on the box and straight-through airflow
+[20:40] <toad_> then maybe you won't need a fan/watercooler/peltier on the chip...
+[20:40] <Elly> that too
+[20:40] <Elly> it's designed for rackmount
+[20:40] <toad_> i doubt you could do it in 1U
+[20:40] <toad_> 4U probably; 2U maybe
+[20:40] <Elly> the thing is
+[20:41] <Elly> the paxville is outperformed in every single benchmark by the 2.4ghz Opteron
+[20:41] <toad_> you absolutely need straight through airflow, i don't know how that works in a rackmount
+[20:41] <Elly> which uses 301W at 100% load
+[20:41] <Elly> it's designed for that
+[20:41] <Elly> all heatsinks are horizontal
+[20:41] <toad_> Elly: there's a 2.4G dual-core opteron? cool :)
+[20:41] <toad_> Elly: I'm deeply skeptical on these wattage numbers, it sounds like whole system to me
+[20:41] <Elly> I think so
+[20:41] <Elly> nope
+[20:41] <Elly> CPU alone
+[20:42] <Elly> they even say "These numbers are simply astonishing, even for Intel..."
+[20:42] <toad_> if you say so
+[20:42] <toad_> linyos: you think just implementing non-persistent passive requests would do it then?
+[20:42] <toad_> of course, then you don't get the TUK tie-in...
+[20:43] <linyos> that is sort of neat, four of those and some disks would blow a 15A breaker.
+[20:43] <toad_> which sucks
+[20:43] <Elly> heh
+[20:43] <linyos> toad_: yeah, i'm all for that.
+[20:43] <Elly> for digital video rendering
+[20:43] <Elly> the slowest opteron (1.8GHz) soundly beat the best paxville
+[20:44] <linyos> the only drawback is that you have to make a steady stream of passive requests, but requests ought to be cheap anyway.
+[20:44] <Elly> ditto for LAME
+[20:44] <toad_> linyos: you don't get the TUK tie-in
+[20:45] --> sandos_ has joined this channel. (n=sandos@tor/session/x-ecf53864bc267727)
+[20:45] <linyos> that too, yeah.
+[20:45] <toad_> now, we could make a policy decision that TUKs are evil, and not to implement them, and implement a TUK replacement in the node which just uses series numbers and passive requests...
+[20:46] <toad_> (i.e. transparent edition sites at the FCP level ;) )
+[20:47] <linyos> or code them up later, whatever
+[20:47] <toad_> well yeah but it'd be wierd to have both
+[20:47] <toad_> whenever we did implement TUKs, we'd implement the above mechanism
+[20:48] <toad_> as people would surely want to subscribe to the next edition
+[20:48] <-- sandos has left this server. (No route to host)
+[20:48] *** sandos_ is now known as sandos.
+[20:48] <linyos> why? passive requests = "i'm waiting for X!!!"; TUKs = "give me the latest version of Y right now!!!"
+[20:49] <toad_> well yeah but we would also want "give me the next edition of X when it comes in"
+[20:49] <linyos> so you just compute X for "next edition" and make a passive request.
+[20:49] <linyos> right?
+[20:50] <toad_> well, X isn't a DBR
+[20:50] <toad_> it's a TUK
+[20:50] <toad_> meaning it always goes to the same key
+[20:50] <toad_> (which also means that you can hijack it somewhat more easily)
+[20:51] <linyos> you don't need TUKs to do what i described, namely putting in a passive request for the next edition of X
+[20:51] <toad_> yes
+[20:51] <linyos> hmm
+[20:51] <toad_> but if X _is_ a TUK site...
+[20:51] <toad_> then you have to put a passive request in for the TUK
+[20:52] <toad_> which is essentially the mechanism we have just described
+[20:53] <linyos> the problem is: how do you find out the index of the current edition? you need TUKs for that.
+[20:53] <toad_> also it may be rather inefficient to do real-time data transfer over a spread-spectrum system like you prefer...
+[20:53] <toad_> linyos: well yeah, if you force TUKs to only contain an integer
+[20:53] <toad_> which is rather whacky
+[20:54] <toad_> otoh you can make them carry anything up to the global portion of an irc channel if you do it this way
+[20:55] <toad_> what can we conclude? we shouldn't artificially limit streams => we should tie them in to actual keys
+[20:56] <toad_> there is some connection between streams an 
+[20:56] <toad_> and both passive requests and TUKs
+[20:57] <toad_> linyos: if the TUK can contain a full kilobyte of data, you can put the pointer to the CHK in it
+[20:57] <toad_> linyos: you don't need the edition number
+[20:58] <linyos> then you are stuck streaming from the TUK to get the CHKs, and are subject all the bottleneck/QoS issues that creates
+[20:58] <toad_> well yeah but that's not a big problem with freesites :)
+[20:59] <linyos> sure
+[20:59] <toad_> for streaming video, what would be ideal probably would be passive requests and large-payload SSKs
+[20:59] <toad_> i.e. 32kB SSK's
+[21:00] <linyos> hah, another worry: SSK signature verification could be expensive....
+[21:00] <toad_> but 1kB redirect SSK's might be feasible
+[21:00] <toad_> linyos: yeah, i don't think that is a problem for plausible bandwidth usage
+[21:00] <toad_> i think i checked a while back
+[21:00] <linyos> though i seem to recall there being signature schemes with easy verification.
+[21:00] <linyos> hope so
+[21:02] <toad_> well
+[21:02] <toad_> high bandwidth streams => vulnerable to bottlenecks => striping, ideally use passive requests
+[21:02] <toad_> medium bandwidth, low latency streams => passive requests are bad, preferable to use a single path
+[21:03] <toad_> low bandwidth streams => either way is equally reasonable
+[21:03] <toad_> given that we won't be implementing 1:1 streams for some time, i don't know how important the middle case is
+[21:04] <linyos> why would a single path have better latency than passive requests?
+[21:04] <toad_> wouldn't it?
+[21:04] <toad_> it would have lower overhead...
+[21:05] <linyos> wouldn't the path length from publisher to subscriber be about the same in either case?
+[21:05] <toad_> if passive requests have similar overhead, then there's little reason to directly implement TUKs...
+[21:05] <toad_> well except that it's faster...
+[21:06] <toad_> but it doesn't really scale
+[21:06] <toad_> linyos: yes, it probably would be
+[21:06] <toad_> hmmm I think I see...
+[21:06] <toad_> if we force TUKs to just contain an integer
+[21:07] <toad_> well firstly
+[21:07] <toad_> we implement passive requests
+[21:07] <toad_> and we implement fake TUKs using a spread of requests and a cache
+[21:07] <toad_> and possibly passive requests
+[21:08] <toad_> we make SSKs small to facilitate this
+[21:08] <toad_> THEN
+[21:08] <toad_> we force TUKs to just contain an integer, and use that if available in our fake-TUKs implementation
+[21:08] <linyos> fake TUKs... like, you probe for the latest index?
+[21:08] <toad_> yep
+[21:09] <toad_> the link may have a hint index
+[21:09] <toad_> if it doesn't, you start at 1
+[21:09] <toad_> you double until you stop finding editions
+[21:09] <toad_> you binary search, essentially
+[21:09] <linyos> yeah, binary search
+[21:09] <toad_> although because it may be a bit lossy, you may want to go to either side a bit... search 4 points in each interval instead of 1... whatever
+[21:10] <toad_> of course this will take ages the first time you go to a site unless it has a hint
+[21:10] <toad_> well
+[21:11] <toad_> what is the practical difference between implementing pub/sub streams over passive requests and implementing them as persistent passive requests using TUKs?
+[21:11] <toad_> the latter seems a reasonably trivial extension...
+[21:11] <toad_> lets do both :)
+[21:11] <toad_> just do them the easy way
+[21:11] <linyos> the former avoids weakest-link stream bottlenecks
+[21:12] <toad_> OTOH, it uses more bandwidth on requests
+[21:12] <linyos> true
+[21:12] <toad_> and it DOES increase latency
+[21:12] <linyos> how?
+[21:12] <toad_> well kind of
+[21:12] <toad_> well you have to wait for the request to complete
+[21:13] <linyos> you keep N requests open for the next N messages at all times
+[21:13] <toad_> so you may have similar or better latency, but only if you have 30 seq's into the future
+[21:13] <toad_> right
+[21:13] <toad_> so you have a hell of a lot of requests flying around
+[21:13] <toad_> and sitting waiting too
+[21:14] <toad_> still, i don't know if it's a big deal... how much memory does a hash table of 10,000 smallish objects containing a key take up?
+[21:14] <toad_> a few megs maybe?
+[21:14] <linyos> you probably would see better real-world throughput for anything even moderately heavy.
+[21:14] <toad_> 500 bytes each... 5MB maybe?
+[21:15] <linyos> hashtables are only as big as the sum of the objects they contain
+[21:15] <linyos> (maybe a little more if they are variable-sized objects)
+[21:15] <toad_> linyos: if you could write up that thinking to tech, that might be helpful
+[21:16] <toad_> linyos: this is java we're talking about... :)
+[21:16] <linyos> oh, i bet their built-in Hashtable class is a monster
+[21:16] <toad_> well not necessarily
+[21:17] <toad_> but if you want to write a new one, do comparitive benchmarks on memory usage, be my guest :)
+[21:17] <toad_> well
+[21:17] <toad_> three scenarios
+[21:18] <linyos> whatever, room for optimization if necessary
+[21:18] <toad_> A. RSS. B. IRC (channel, not including privmsgs). C. video stream.
+[21:18] <toad_> in case A, things are so slow that it doesn't matter which way we go
+[21:18] <toad_> it is very easy to put a passive request out for the next two editions, and renew it occasionally
+[21:19] <toad_> in case B... sometimes a request will take a long time, we'll have to retry it lots, it'll go to a routing black hole etc
+[21:19] <toad_> this is bad for passive requests, but it is much worse if our whole stream is tied to that one key
+[21:19] <toad_> although we can just move it
+[21:20] <toad_> we DO need a small block size for case B
+[21:21] <toad_> for case C, ideally we'd have full-size 32kB SSKs and passive requests
+[21:21] <toad_> linyos: comments?
+[21:24] <linyos> with passive requests, you can easily add redundancy.
+[21:24] <linyos> ie, instead of transmitting each IRC message once, you transmit twice
+[21:24] <linyos> ie, in messages N+1 and N+2
+[21:24] <toad_> you can do that just as easily either way
+[21:24] <linyos> sure
+[21:25] <linyos> but that would be the way to avoid unusual-latency problems
+[21:27] <toad_> i think we'll probably end up implementing both...
+[21:27] <toad_> it's basically a tree with passive requests...
+[21:30] <linyos> have passive requests been simulated?
+[21:30] <linyos> typically freenet data gets replicated about a bit before your particular request looks for it
+[21:31] <linyos> but with passive requests, the insert has to hit your interceptor net
+[21:31] <linyos> without being propagated around at all first
+[21:31] <toad_> we could change that
+[21:32] <toad_> have it trigger on the StoreData instead of on the data
+[21:32] <toad_> (if we have StoreData's)
+[21:33] <linyos> it makes no difference
+[21:33] <linyos> since nobody is going to request a message in a stream anyway
+[21:34] <toad_> hmm?
+[21:34] <linyos> i'm being unclear
+[21:34] <linyos> all i mean is that a normal file in freenet tends to be there for a while (like, days or months) before your request gets to ut
+[21:34] <linyos> it
+[21:35] <linyos> that is certainly a different scenario than an insert hoping to hit your passive request tree
+[21:35] <linyos> i don't know if it's well understood
+[21:35] <toad_> well yes
+[21:35] <toad_> but the data will go to where it should, if routing works at all
+[21:35] <toad_> and if it doesn't, we're screwed anyway
+[21:36] <toad_> anyway if greedy routing doesn't work something is seriously wrong!
+[21:36] <linyos> i agree that it's not worth worrying about, just a thought that's all.
+[21:37] --> ldb|away has joined this channel. (i=LombreDu@AGrenoble-152-1-53-142.w83-201.abo.wanadoo.fr)
+[21:38] <-- ldb|away has left this channel. ()
+[21:40] <-- greycat has left this server. ("This time the bullet cold rocked ya / A yellow ribbon instead of a swastika")
+[21:41] <linyos> later
+[21:41] <-- linyos has left this channel. ()

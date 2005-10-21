@@ -1,0 +1,121 @@
+<snip MIME signature>
+
+Ian has agreed that binary metadata is probably the best thing. I
+therefore propose a simple, extensible binary metadata format, primarily
+aimed at implementing splitfiles in the not too distant future. It
+provides limited extension capabilities in the areas of metadata,
+splitfile codecs, document types, and ZIP manifests, and is reasonably
+compact. It allows for various tricks which may be provided for in
+future, such as DBR splitfiles, and piecing together different files in
+a nonredundant splitfile. It allows for splitfiles of any conceivable
+size, metadata of any conceivable size, ZIP manifests and ordinary
+manifests. Limits will be imposed at the client level. Comments?
+
+
+8 bytes - magic number for freenet metadata
+Wasted bytes, just being paranoid.
+
+1 byte - version number
+0 for now.
+
+1 byte - document type
+0 = simple redirect (including splitfiles)
+1 = multi-level metadata (fetch this key, then use it as metadata)
+2 = ordinary manifest
+3 = ZIP manifest
+4 = reserved for use in ZIP manifests, see below
+5+ = available
+
+If multi-level metadata:
+ 1 byte - number of levels (must decrease by 1 on each level!)
+ 1 byte - document type of final metadata
+ 8 bytes - length of final data
+
+For a simple redirect, multi-level metadata, or a ZIP manifest:
+
+2 bytes - flags
+bit 0 = splitfile
+bit 1 = DBR (splitfile + DBR *is* valid)
+bit 2 = no MIME type
+bit 3 = compressed MIME type
+bit 4 = has extra metadata fields
+bit 5 = redirects as full keys (valid even for splitfiles)
+bit 6 = use the chunk lengths in a splitfile (ignored unless algorithm = 0)
+bit 7 = compressed splitfile (might work with normal redirects but there
+is no point as single blocks are transparently gzipped anyway)
+
+If a ZIP manifest:
+2 bytes - archive ID (initially 0 = ZIP. We may in future support 1 =
+tar, with the compressed splitfile bit set, and then a codec specified
+below, for tar.gz, tar.bz2 etc)
+
+If a compressed splitfile:
+2 bytes - codec ID
+Initially we only support gzip (0).
+
+8 bytes - real content length.
+-1 if we don't know, and this is not a splitfile redirect.
+Note no 2GB limit. :)
+
+If has a MIME type:
+If raw:
+1 byte - length (N)
+N bytes - string
+
+If compressed:
+2 bytes - base MIME type ID; index into lookup table; last bit is not
+ part of the lookup index, and defines whether parameters are necessary.
+2 bytes - if parameters are expected, parameters ID (mostly charset= for
+ text/ types; other types may define other parameters)
+
+
+If DBR:
+4 bytes - period, in seconds
+4 bytes - offset, in seconds
+
+If has extra metadata fields:
+2 bytes - number of extra metadata fields
+
+For each:
+2 bytes - metadata field type
+1 byte - length
+N bytes - metadata field specific information
+
+
+For a simple redirect:
+1 byte - length of binary key
+N bytes - if bit 5 above is unset, which is the usual case, a compact
+binary representation of a simple CHK. Otherwise a full binary key,
+which can include anything a FreenetURI can include, and therefore is
+somewhat larger.
+
+For a splitfile redirect:
+2 bytes - algorithm ID
+0 = no redundancy. Invalid unless bit 6 above is set.
+1 = standard onion FEC algorithm
+...
+2 bytes - number of blocks
+2 bytes - number of check blocks
+
+Followed by all the keys involved in the above format.
+
+
+Multi-level metadata follows the above format, except there are no extra
+fields. Multi-level metadata is likely to be primarily used for very
+large splitfiles where the metadata does not fit into a single block.
+A ZIP manifest is exactly the same - the above with no extra fields. The
+file pointed to will contain a file called .metadata, which contains the
+real metadata in manifest format.
+
+Manifests:
+
+4 bytes - number of redirects
+1 byte - length of redirect name
+N bytes - redirect name
+1 byte - document type
+ All types above are valid, plus type 4 = redirect to file in ZIP
+ manifest (if this manifest is in fact inside a ZIP manifest). If one of
+ the above types is specified, then we include data exactly as above. If
+ type 4 is specified:
+1 byte - length of name
+N bytes - name in ZIP file
