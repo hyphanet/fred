@@ -809,3 +809,288 @@ Publish/subscribe:
 - Implement rest of subscribe.
 - Resubscribe (after restart, don't know seqnum), and multiple posters support.
 
+- SubscriptionHandler: When a subscription request fails, run the next one on the queue.
+- SubscriptionHandler: When a subscription request succeeds, send success to each subscriber node.
+- Once we have subscribed, we no longer need the ID and HTL for each node, because ResubscribeRequest is sent at full HTL with its own new, random ID.
+
+
+Changes:
+- SubscriptionHandler:
+-- We have a maximum of one SubscribeSender at a time. We do not have a SubscribeHandler, because SubscriptionHandler takes this function.
+-- We have a queue of pending subscriptions. These are nodes who have asked to subscribe, with different IDs and HTLs, after the first one arrived. If we succeed, we can drop the queue; if we were already connected or if we reset the HTL, we don't have to queue in the first place. If a SubscribeSender fails, we try again with the next element on the queue.
+-- Objects: SubscribeSender (analogous to RequestSender; has status, can be waited on, may have a callback for SubscriptionHandler), QueuedSubscribeRequest (a SubscribeRequest received from a node, with its ID, HTL, etc, is currently suspended - we have told the node we are restarting).
+-- When one fails, we can send another SubscribeRestarted. We should probably impose a maximum time limit on the client end on these.
+
+
+SubscriptionHandler status:
+- Our SubscribeSender.
+SubscribeSender
+- Are we subscribed (including root)?
+If we are not restarting, we are subscribed. There is no failure mode.
+- Are we root?
+- Is upstream restarting, and if so, what is its restart ID?
+- Are we restarting, and if so, what is our restart ID?
+
+
+
+Race condition:
+We connect.
+We are restarting, so we send an FNPSubscribeRestarted.
+We connect. We send an FNPSubscribeSucceeded.
+They get reordered.
+Oops!
+
+Solution:
+- After an FNPSubscribeRestarted, the FNPSubscribeSucceeded must have the same ID as the FNPSubscribeRestarted did.
+- After a subscription, the FNPSubscribeRestarted or FNPSubscribeSucceeded, or FNPSubscribeSucceededNewRoot, must have the same ID as the subscribe request.
+
+Conclusion:
+- SubscribeSucceeded, SubscribeRestarted, SubscribeSucceededNewRoot need an ID.
+
+Except that it shouldn't be the same ID as the resubscribe itself...
+
+One ID for the resubscribe, (the ignore-ID) and one for the success/failure (the completion-ID). ??
+
+
+First we tell everyone we are restarting, with UID X.
+Then we send a ResubscribeRequest out, with UID X.
+This is routed normally, pretending they were not already subscribed.
+When it succeeds, the tree topology can change a bit - the root for the node which was forwarding it becomes the node which it has just subscribed through, and likewise back along the chain. The rest of the tree is still off the restarting node. So it is grafted from the top of the tree down to somewhere below that...
+- Is this inefficient? Will need to look into this later...
+
+
+
+
+
+We definitely want a sequence number on SubscribeRestarted.
+Sometimes we will go from watching somebody else's SR to ourselves SR'ing. And we will need to change the ID, so that his SR doesn't go through our subnodes, because if it does we will ignore it.
+
+
+
+When we first run the subscribe request, an RNF can be a fatal state, from which the SubscribeHandler must recover by starting a new SubscribeSender, probably with new ID, HTL, etc, or by becoming root. But an incoming RNF normally means move on to the next node. That's what we propose to do either way. We have a set of nodes we have routed to; we can try the next one we haven't. If THAT doesn't work, then we do fail, and let the parent decide whether to retry.
+
+
+
+
+SubscribeSender:
+- Must have callbacks to SubscriptionHandler for everything
+- Specifically whenever call setStatus()
+- Then delete setStatus()'s callback, it's no longer necessary. Keep setStatus() though.
+
+
+
+
+
+
+
+
+
+- Implement QueuedSubscribeRequest
+
+
+
+
+Reordering artefacts:
+- A subscribed node must have an accurate, up to date knowledge of the current status (subscribed or restarting) of its parent.
+- But packets may be reordered in transit.
+- Solution?
+
+The obvious solution is to introduce an explicit order...
+
+Another option is to have the data packets carry the current status.
+
+A third would be to ack the status.
+
+
+So:
+- A sends a SubscribeRequest to B
+- B sends Restarted to A
+- B sends Succeeded to A
+- Succeeded arrives before Restarted
+
+
+Solution:
+- A sends SubscribeRequest to B, including ID and initial seq#
+- B sends Restarted to A (seq#+1)
+- B sends Succeeded to A (seq#+2)
+- Succeeded arrives before Restarted
+- A ignores it until it has processed Restarted
+- If a packet is completely missed out, then in all likelihood something is seriously wrong given the low-level retransmission code. We disconnect.
+
+Division of message processing:
+
+SubscribeSender: (searches for and handles parent)
+- Send SubscribeRequest with seq#
+- Wait for response with right seq#
+- If loop, RNF, timeout, etc, move to next node
+- If SubscribeSucceeded, wait for next message (could wait forever)
+- Wait for either next message in sequence, or SubscribeData, from parent.
+
+SubscriptionHandler:
+- SubscribeRequest -> 
+-- Track outgoing seq#
+-- If we are already subscribed, send a SubscribeSucceeded
+-- If we are restarting, send a SubscribeRestarting
+-- If we successfully subscribe, send a SubscribeSucceeded
+-- If we restart, send a SubscribeRestarting
+
+
+
+SubscribeHandler.
+
+
+Node sends a subscribe request.
+Dispatched to SubscriptionHandler.
+SubscriptionHandler creates a SubscribeHandler.
+
+
+
+SubscribeRequest, SubscribeRestarted, SubscribeSucceeded have a seq#
+
+
+
+
+
+
+
+
+
+- Implement SubscribeSender.
+-- It will finish(), which will call a callback on SubscriptionHandler, which will decide whether to create a new one.
+-- Do we need to have a thread running continually tracking a live subscription, after it has succeeded?
+
+
+
+
+
+
+
+
+
+
+
+- Implement SubscriptionHandler.statusChange(...).
+
+
+
+
+
+
+
+
+
+Hmmm.
+The queued requests may have more stringent requirements for their link into the tree.
+
+No, they don't. They are subscribe requests, NOT resubscribe requests. Subscribe requests will succeed if we connect to root, or become root, even if they were closer. This is to avoid local optima causing problems, and to reduce overhead. It may need to be reviewed in future.
+
+
+Should we have a must-beat parameter on ordinary SubscribeRequests?
+
+Probably not a problem - if we do end up with a loop, there will be a restarted from upstream, and then it can send a ResubscribeRequest. The closest-seen-so-far parameter is just for HTL purposes on a SubscribeRequest. No it isn't. If we can't find somebody closer, we fail the request; the CLOSEST node gets to be root, not the LAST node.
+
+So:
+- If we get a SubscribeSucceededNewRoot, it will include the location of the new root. So we know which of our requests have succeeded, and which to fail.
+- If we get a SubscribeSucceeded, 
+
+
+
+
+
+
+
+
+
+
+
+
+What is the role of HTL in SubscribeRequests?
+- If we cannot find a node to subscribe to which is closer to the key than we are within HTL, we are the root.
+- Therefore, we must decrement the HTL as normal.
+- If we are subscribed, and we receive a request with a higher HTL than we have so far seen, we may need to pass it on???
+
+
+How about every time we find a closer node, we reset the HTL? In which case, the new HTL scheme is rather strange...
+
+Wait a minute.
+
+If we have an HTL of 1, that means we can backtrack once before we run out of HTL.
+
+If we think we might be the root, because of routing a request, we fire off another request at max HTL????
+
+
+
+So:
+We route a SubscribeRequest.
+It finds a few nodes which are closer to K than the original. The closest is N. It was passed on from N at HTL 5.
+N gets a DataNotFound - there are no closer nodes than N within 5 backtrack hops.
+N then sends the SubscribeRequest again at full HTL (10).
+If it still gets a DNF, N is the root. If it gets an FNPSubscribeRequestSucceededNewRoot, the new root is downstream.
+
+It may well be possible to DoS this; the whole pubsub scheme has a few weaknesses. In particular you can take root rather easily. But with an ordinary request you can just return DNF quite easily.
+
+
+When we create a SubscriptionHandler, set status to restarting.
+Then immediately start searching, with the HTL provided.
+
+
+Another corner case:
+We have 1 link.
+The SubscribeRequest gets routed to us.
+We don't have anywhere to send it to.
+Does this make us the root? No, it must be an RNF.
+The difference being? DNF == you can find nodes but not close enough nodes. RNF == you can't find ANY nodes.
+
+
+So:
+- We get a SubscribeRequest
+- We create a SubscriptionHandler, because we don't have one already. The status is set to RESTARTING, so if another request comes in, it increments. We immediately add the node which sent the SubscribeRequest to the list of node-subscribers, so that the SubscriptionHandler is not removed. We create a thread, which checks HTL, forwards the request etc. When it completes, it unsets restarting. We track the best-found-so-far values from our subscribers (we have to in order to forward the subscribe request).
+
+-- What if we have multiple SubscribeRequest's going through us, coalesced, with some having different best-seen-node-location values? What if we cannot find a better node to subscribe to? Can we subscribe through the nodes which sent us the requests?
+
+What is the alternative?
+
+We can route the first subscribe request more or less normally.
+But if it fails, and we are not root (he is upstream), and we already have a second subscriber, we are in trouble. Can we just fail them? Hopefully they will get routed to the right place? What if we are the gateway, and we routed back out to the wrong side? Do we need some sort of reversal protocol?
+-- I suppose we should just fail them
+-- What if the first one had lower HTL than the second?
+
+
+
+
+Every time we get closer, we reset HTL to max.
+When we don't, we decrement the HTL
+If htl=0, we return DNF
+If, on a subscription, you receive a DNF and you are the closest node, you are the root.
+
+
+Max HTL of 5??
+Poss. separate max HTL for subscriptions?
+
+
+Use this for requests as well
+
+Can climb out of dead ends.
+
+
+
+if a request comes in while we are running one, we queue it. if we succeed, we ditch the queue. if not, we run the second request.
+
+
+
+
+
+
+
+
+
+
+How to implement?
+- SubscriptionHandler.forceRestart()
+- Need to keep upstreamRestarting up to date
+- SubscriptionHandler has a "restarting" flag. This needs to be set while we are restarting.
+- SubscribeHandler needs to be told when its parent is lost; set up a callback
+- SubscribeSender
+- SubscribeHandler
+- SubscribeManager
+
