@@ -12,7 +12,7 @@ import freenet.keys.ClientPublishStreamKey;
  * 
  * We can build higher layers on top of this.
  */
-public interface SimpleClient {
+public interface SimpleLowLevelClient {
 
     /**
      * Fetch a key. Return null if cannot retrieve it.

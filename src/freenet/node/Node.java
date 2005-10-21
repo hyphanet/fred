@@ -53,7 +53,7 @@ import freenet.support.SimpleFieldSet;
 /**
  * @author amphibian
  */
-public class Node implements SimpleClient {
+public class Node implements SimpleLowLevelClient {
     
     public static final int PACKETS_IN_BLOCK = 32;
     public static final int PACKET_SIZE = 1024;
