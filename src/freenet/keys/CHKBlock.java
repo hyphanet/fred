@@ -18,7 +18,7 @@ import freenet.node.Node;
  * CHK plus data. When fed a ClientCHK, can decode into the original
  * data for a client.
  */
-public class CHKBlock {
+public class CHKBlock implements KeyBlock {
 
     final byte[] data;
     final byte[] header;

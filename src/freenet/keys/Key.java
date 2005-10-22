@@ -9,7 +9,7 @@ import freenet.io.WritableToDataOutputStream;
 /**
  * @author amphibian
  * 
- * Base class for keys.
+ * Base class for node keys.
  */
 public abstract class Key implements WritableToDataOutputStream {
 

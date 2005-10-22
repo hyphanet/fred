@@ -15,7 +15,7 @@ manifests. Limits will be imposed at the client level. Comments?
 8 bytes - magic number for freenet metadata
 Wasted bytes, just being paranoid.
 
-1 byte - version number
+2 bytes - version number
 0 for now.
 
 1 byte - document type
@@ -49,13 +49,15 @@ If a ZIP manifest:
 tar, with the compressed splitfile bit set, and then a codec specified
 below, for tar.gz, tar.bz2 etc)
 
-If a compressed splitfile:
+If a splitfile:
+8 bytes - real content length (uncompressed)
+-1 if we don't know (not allowed on splitfiles unless bit 6 set above)
+Note no 2GB limit. :)
+
+If compressed:
 2 bytes - codec ID
 Initially we only support gzip (0).
-
-8 bytes - real content length.
--1 if we don't know, and this is not a splitfile redirect.
-Note no 2GB limit. :)
+8 bytes - decompressed content length
 
 If has a MIME type:
 If raw:
@@ -83,19 +85,22 @@ N bytes - metadata field specific information
 
 
 For a simple redirect:
+
+If bit 5 is set above:
 1 byte - length of binary key
-N bytes - if bit 5 above is unset, which is the usual case, a compact
-binary representation of a simple CHK. Otherwise a full binary key,
-which can include anything a FreenetURI can include, and therefore is
-somewhat larger.
+N bytes - binary key (this is just a compressed FreenetURI)
+Else:
+<fixed number yet to be determined> bytes - raw binary form of a CHK
 
 For a splitfile redirect:
 2 bytes - algorithm ID
-0 = no redundancy. Invalid unless bit 6 above is set.
+0 = no redundancy. Invalid unless bit 6 or 5 above is set.
 1 = standard onion FEC algorithm
 ...
-2 bytes - number of blocks
-2 bytes - number of check blocks
+4 bytes - number of bytes of parameters
+N bytes - parameters (e.g. number of segments etc)
+4 bytes - number of blocks ( 2 bytes would have the 2GB limit )
+4 bytes - number of check blocks
 
 Followed by all the keys involved in the above format.
 
@@ -112,10 +117,10 @@ Manifests:
 4 bytes - number of redirects
 1 byte - length of redirect name
 N bytes - redirect name
-1 byte - document type
- All types above are valid, plus type 4 = redirect to file in ZIP
- manifest (if this manifest is in fact inside a ZIP manifest). If one of
- the above types is specified, then we include data exactly as above. If
- type 4 is specified:
+4 bytes - length of sub-document
+
+Then follows a document formatted as described above.
+If the manifest is inside a ZIP manifest, then type 4 = redirect to
+file in a ZIP manifest is valid:
 1 byte - length of name
 N bytes - name in ZIP file

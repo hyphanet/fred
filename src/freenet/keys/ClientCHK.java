@@ -8,7 +8,7 @@ import freenet.support.Base64;
  * Client level CHK. Can be converted into a FreenetURI, can be used to decrypt
  * a CHKBlock, can be produced by a CHKBlock. 
  */
-public class ClientCHK {
+public class ClientCHK extends ClientKey {
     
     NodeCHK nodeKey;
     

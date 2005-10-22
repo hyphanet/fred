@@ -1,8 +1,11 @@
 package freenet.node;
 
+import freenet.keys.ClientBlock;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.ClientPublishStreamKey;
+import freenet.keys.KeyBlock;
 
 /**
  * @author amphibian
@@ -17,7 +20,7 @@ public interface SimpleLowLevelClient {
     /**
      * Fetch a key. Return null if cannot retrieve it.
      */
-    public ClientCHKBlock getCHK(ClientCHK key);
+    public KeyBlock getKey(ClientKey key);
 
     /**
      * Insert a key.
