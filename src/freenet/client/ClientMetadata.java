@@ -11,7 +11,27 @@ public class ClientMetadata {
 	/** The document MIME type */
 	private String mimeType;
 
+	ClientMetadata(String mime) {
+		mimeType = mime;
+	}
+
+	/** Create an empty ClientMetadata instance */
+	ClientMetadata() {
+		mimeType = null;
+	}
+	
 	public String getMIMEType() {
+		if(mimeType == null || mimeType.length() == 0)
+			return DEFAULT_MIME_TYPE;
 		return mimeType;
+	}
+
+	/**
+	 * Merge the given ClientMetadata, without overwriting our
+	 * existing information.
+	 */
+	public void mergeNoOverwrite(ClientMetadata clientMetadata) {
+		if(mimeType == null || mimeType.equals(""))
+			mimeType = clientMetadata.mimeType;
 	}
 }

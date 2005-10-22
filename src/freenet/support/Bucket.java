@@ -36,6 +36,12 @@ public interface Bucket {
      */
     public long size();
 
+    /**
+     * Convert the contents of the bucket to a byte array.
+     * Don't use this unless you know the bucket is small!
+     */
+	public byte[] toByteArray();
+
 }
 
 

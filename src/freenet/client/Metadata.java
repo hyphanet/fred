@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import freenet.keys.ClientCHK;
+import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Logger;
@@ -18,9 +20,29 @@ public class Metadata {
 	/** Soft limit, to avoid memory DoS */
 	static final int MAX_SPLITFILE_BLOCKS = 100*1000;
 	
+	public static Metadata construct(byte[] data) throws MetadataParseException {
+		try {
+			return new Metadata(data);
+		} catch (IOException e) {
+			MetadataParseException e1 = new MetadataParseException("Caught "+e);
+			e1.initCause(e);
+			throw e1;
+		}
+	}
+	
+	public static Metadata construct(Bucket data) throws MetadataParseException {
+		try {
+			return new Metadata(data);
+		} catch (IOException e) {
+			MetadataParseException e1 = new MetadataParseException("Caught "+e);
+			e1.initCause(e);
+			throw e1;
+		}
+	}
+	
 	/** Parse some metadata from a byte[] 
 	 * @throws IOException If the data is incomplete, or something wierd happens. */
-	public Metadata(byte[] data) throws IOException {
+	private Metadata(byte[] data) throws IOException {
 		this(new DataInputStream(new ByteArrayInputStream(data)), false, data.length);
 	}
 
@@ -32,7 +54,7 @@ public class Metadata {
 
 	/** Parse some metadata from a DataInputStream
 	 * @throws IOException If an I/O error occurs, or the data is incomplete. */
-	public Metadata(DataInputStream dis, boolean acceptZipInternalRedirects, long length) throws IOException {
+	public Metadata(DataInputStream dis, boolean acceptZipInternalRedirects, long length) throws IOException, MetadataParseException {
 		long magic = dis.readLong();
 		if(magic != FREENET_METADATA_MAGIC)
 			throw new MetadataParseException("Invalid magic "+magic);
@@ -121,6 +143,8 @@ public class Metadata {
 			}
 		}
 		
+		clientMetadata = new ClientMetadata(mimeType);
+		
 		if((!splitfile) && documentType == SIMPLE_REDIRECT || documentType == ZIP_MANIFEST) {
 			simpleRedirectKey = readKey(dis);
 		} else if(splitfile) {
@@ -186,6 +210,12 @@ public class Metadata {
 				dis.readFully(data);
 				manifestEntries.put(name, data);
 			}
+		}
+		
+		if(documentType == ZIP_INTERNAL_REDIRECT) {
+			int len = (dis.readByte() & 0xff);
+			byte[] buf = new byte[len];
+			nameInArchive = new String(buf);
 		}
 	}
 	
@@ -283,4 +313,96 @@ public class Metadata {
 	int manifestEntryCount;
 	/** Manifest entries by name */
 	HashMap manifestEntries;
+	
+	/** ZIP internal redirect: name of file in ZIP */
+	String nameInArchive;
+
+	ClientMetadata clientMetadata;
+	
+	public boolean isSimpleManifest() {
+		return documentType == SIMPLE_MANIFEST;
+	}
+
+	/**
+	 * Get the sub-document in a manifest file with the given name.
+	 * @throws MetadataParseException 
+	 */
+	public Metadata getDocument(String name) throws MetadataParseException {
+		byte[] data = (byte[]) manifestEntries.get(name);
+		if(data == null) return null;
+		return construct(data);
+	}
+
+	/**
+	 * The default document is the one which has an empty name.
+	 * @throws MetadataParseException 
+	 */
+	public Metadata getDefaultDocument() throws MetadataParseException {
+		return getDocument("");
+	}
+
+	/**
+	 * Does the metadata point to a single URI?
+	 */
+	public boolean isSingleFileRedirect() {
+		return ((!splitfile) &&
+				documentType == SIMPLE_REDIRECT || documentType == MULTI_LEVEL_METADATA ||
+				documentType == ZIP_MANIFEST);
+	}
+
+	/**
+	 * Return the single target of this URI.
+	 */
+	public FreenetURI getSingleTarget() {
+		return simpleRedirectKey;
+	}
+
+	/**
+	 * Is this a ZIP manifest?
+	 */
+	public boolean isArchiveManifest() {
+		return documentType == ZIP_MANIFEST;
+	}
+
+	/**
+	 * Is this a ZIP internal redirect?
+	 * @return
+	 */
+	public boolean isArchiveInternalRedirect() {
+		return documentType == ZIP_INTERNAL_REDIRECT;
+	}
+
+	/**
+	 * Return the name of the document referred to in the archive,
+	 * if this is a zip internal redirect.
+	 */
+	public String getZIPInternalName() {
+		return nameInArchive;
+	}
+
+	/**
+	 * Return the client metadata (MIME type etc).
+	 */
+	public ClientMetadata getClientMetadata() {
+		return clientMetadata;
+	}
+
+	/** Is this a splitfile manifest? */
+	public boolean isSplitfile() {
+		return splitfile;
+	}
+
+	/** Is this a simple splitfile? */
+	public boolean isSimpleSplitfile() {
+		return splitfile && documentType == SIMPLE_REDIRECT;
+	}
+
+	public boolean isMultiLevelMetadata() {
+		return documentType == MULTI_LEVEL_METADATA;
+	}
+
+	/** What kind of archive is it? */
+	public short getArchiveType() {
+		return archiveType;
+	}
 }

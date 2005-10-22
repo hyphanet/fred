@@ -16,8 +16,9 @@ public interface HighLevelSimpleClient {
 
 	/**
 	 * Blocking fetch of a URI
+	 * @throws FetchException If there is an error fetching the data
 	 */
-	public FetchResult fetch(FreenetURI uri);
+	public FetchResult fetch(FreenetURI uri) throws FetchException;
 
 	/**
 	 * Blocking insert of a URI

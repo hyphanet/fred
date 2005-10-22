@@ -1,5 +1,7 @@
 package freenet.keys;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 
 import freenet.support.Base64;
@@ -45,10 +47,32 @@ public class ClientCHK extends ClientKey {
         if(extra == null || extra.length < 3)
             throw new MalformedURLException();
         cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
+		if(cryptoAlgorithm != ALGO_AES_PCFB_256)
+			throw new MalformedURLException("Invalid crypto algorithm");
         compressed = (extra[2] & 0x01) != 0;
         controlDocument = (extra[2] & 0x02) != 0;
     }
 
+    /**
+     * Create from a raw binary CHK. This expresses the key information
+     * in as few bytes as possible.
+     * @throws IOException 
+     */
+	private ClientCHK(DataInputStream dis) throws IOException {
+		byte[] extra = new byte[EXTRA_LENGTH];
+		dis.readFully(extra);
+        cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
+		if(cryptoAlgorithm != ALGO_AES_PCFB_256)
+			throw new MalformedURLException("Invalid crypto algorithm");
+        compressed = (extra[2] & 0x01) != 0;
+        controlDocument = (extra[2] & 0x02) != 0;
+		routingKey = new byte[NodeCHK.KEY_LENGTH];
+		dis.readFully(routingKey);
+		cryptoKey = new byte[CRYPTO_KEY_LENGTH];
+		dis.readFully(cryptoKey);
+	}
+
+    
     byte[] routingKey;
     byte[] cryptoKey;
     boolean compressed;
@@ -60,7 +84,9 @@ public class ClientCHK extends ClientKey {
         	Base64.encode(cryptoKey)+","+compressed+","+controlDocument+
         	","+cryptoAlgorithm;
     }
-    
+
+    static final short EXTRA_LENGTH = 3;
+    static final short CRYPTO_KEY_LENGTH = 32;
     static final short ALGO_AES_PCFB_256 = 1;
 
     /**
@@ -84,4 +110,16 @@ public class ClientCHK extends ClientKey {
             (byte)((compressed ? 1 : 0) + (controlDocument ? 2 : 0));
         return new FreenetURI("CHK", "", routingKey, cryptoKey, extra);
     }
+
+    /**
+     * Read a raw binary CHK. This is an ultra-compact representation, for
+     * splitfile metadata etc.
+     */
+	public static ClientCHK readRawBinaryKey(DataInputStream dis) throws IOException {
+		return new ClientCHK(dis);
+	}
+
+	public boolean isMetadata() {
+		return controlDocument;
+	}
 }

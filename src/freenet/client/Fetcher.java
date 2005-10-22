@@ -1,11 +1,12 @@
 package freenet.client;
 
+import java.io.IOException;
+
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.KeyBlock;
-import freenet.node.SimpleLowLevelClient;
 import freenet.support.Bucket;
-import freenet.support.BucketFactory;
+import freenet.support.Logger;
 
 /** Class that does the actual fetching. Does not have to have a user friendly
  * interface!
@@ -14,20 +15,38 @@ class Fetcher {
 
 	final FreenetURI origURI;
 	final FetcherContext ctx;
+	final ArchiveContext archiveContext;
 	
-	public Fetcher(FreenetURI uri, FetcherContext ctx) {
+	public Fetcher(FreenetURI uri, FetcherContext ctx, ArchiveContext archiveContext) {
 		this.origURI = uri;
 		this.ctx = ctx;
+		this.archiveContext = archiveContext;
 	}
 
+	public FetchResult run() throws FetchException {
+		while(true) {
+			try {
+				return realRun();
+			} catch (ArchiveRestartException e) {
+				continue;
+			} catch (MetadataParseException e) {
+				throw new FetchException(e);
+			} catch (ArchiveFailureException e) {
+				if(e.getMessage().equals(ArchiveFailureException.TOO_MANY_LEVELS))
+					throw new FetchException(FetchException.TOO_DEEP_ARCHIVE_RECURSION);
+				throw new FetchException(e);
+			}
+		}
+	}
+	
 	/**
 	 * Run the actual fetch.
 	 * @return The result of the fetch - successful or not.
+	 * @throws FetchException 
+	 * @throws MetadataParseException 
+	 * @throws ArchiveFailureException 
 	 */
-	public FetchResult run(int archiveRecursionLevel) {
-		if(archiveRecursionLevel > ctx.maxArchiveRecursionLevel) {
-			throw new FetchException(FetchException.TOO_DEEP_ARCHIVE_RECURSION);
-		}
+	public FetchResult realRun() throws FetchException, ArchiveRestartException, MetadataParseException, ArchiveFailureException {
 		FreenetURI uri = origURI;
 		ClientKey key = ClientKey.get(origURI);
 		ClientMetadata dm = new ClientMetadata();
@@ -44,13 +63,17 @@ class Fetcher {
 			
 			if(!key.isMetadata()) {
 				// Just return the data
-				return new FetchResult(dm, ctx.bucketFactory.makeImmutableBucket(data));
+				try {
+					return new FetchResult(dm, ctx.bucketFactory.makeImmutableBucket(data));
+				} catch (IOException e) {
+					Logger.error(this, "Could not capture data - disk full?: "+e, e);
+				}
 			}
 			
 			// Else need to parse the metadata
 			// This will throw if it finds an error, including semi-errors
 			// such as too-big-indirect-metadata
-			Metadata metadata = new Metadata(data);
+			Metadata metadata = Metadata.construct(data);
 			
 			while(true) {
 				
@@ -72,17 +95,17 @@ class Fetcher {
 					}
 					continue; // process the new metadata
 				} else if(metadata.isSingleFileRedirect()) {
-					key = metadata.getSingleTarget();
+					key = ClientKey.get(metadata.getSingleTarget());
 					if(metadata.isArchiveManifest()) {
-						zip = ctx.archiveManager.makeHandler(key, archiveRecursionLevel + 1, context);
-						Bucket metadataBucket = zip.getMetadata();
-						metadata = new Metadata(metadataBucket);
+						zip = ctx.archiveManager.makeHandler(key, metadata.getArchiveType());
+						Bucket metadataBucket = zip.getMetadata(archiveContext, ctx);
+						metadata = Metadata.construct(metadataBucket);
 						continue;
 					}
 					metadata = null;
-					dm.mergeNoOverwrite(metadata.getDocumentMetadata());
+					dm.mergeNoOverwrite(metadata.getClientMetadata());
 					continue;
-				} else if(metadata.isZIPInternalRedirect() && zip != null) {
+				} else if(metadata.isArchiveInternalRedirect() && zip != null) {
 					/** This is the whole document:
 					 * Metadata: ZIP manifest -> fetch ZIP file, read .metadata
 					 * .metadata: simple manifest -> look up filename ->
@@ -91,28 +114,26 @@ class Fetcher {
 					 * 
 					 * Now, retreive the data
 					 */
-					Bucket result = zip.get(metadata.getZIPInternalName());
-					dm.mergeNoOverwrite(metadata.getDocumentMetadata());
+					Bucket result = zip.get(metadata.getZIPInternalName(), archiveContext, ctx);
+					dm.mergeNoOverwrite(metadata.getClientMetadata());
 					return new FetchResult(dm, result);
 				} else if(metadata.isSplitfile()) {
 					
 					int j;
 					for(j=0;j<ctx.maxLevels;j++) {
-					
-						// FIXME need to pass in whatever settings SF wants above
-						SplitFetcher sf = new SplitFetcher(metadata, ctx.maxTempLength);
-						Bucket sfResult = sf.run(); // will throw in event of error
+						SplitFetcher sf = new SplitFetcher(metadata, ctx.maxTempLength, archiveContext, ctx);
+						Bucket sfResult = sf.fetch(); // will throw in event of error
 						
 						if(metadata.isSimpleSplitfile()) {
-							return new FetchResult(metadata.getDocumentMetadata(), sfResult);
+							return new FetchResult(metadata.getClientMetadata(), sfResult);
 						} else if(metadata.isMultiLevelMetadata()) {
-							metadata = new Metadata(sfResult);
+							metadata = Metadata.construct(sfResult);
 							if(!metadata.isMultiLevelMetadata())
 								break; // try the new metadata
 						} else if(metadata.isArchiveManifest()) {
-							zip = ctx.archiveManager.getHandler(key, archiveRecursionLevel + 1, context);
-							Bucket metadataBucket = zip.getMetadata();
-							metadata = new Metadata(metadataBucket);
+							zip = ctx.archiveManager.makeHandler(key, metadata.getArchiveType());
+							Bucket metadataBucket = zip.getMetadata(archiveContext, ctx);
+							metadata = Metadata.construct(metadataBucket);
 							break;
 						} else {
 							throw new FetchException(FetchException.UNKNOWN_SPLITFILE_METADATA);
@@ -126,10 +147,8 @@ class Fetcher {
 					throw new FetchException(FetchException.UNKNOWN_METADATA);
 				}
 			} // loop (metadata)
-		} // loop (redirects)
+		}
 		// Too many redirects
-		// FIXME Throw an exception
-		// TODO Auto-generated method stub
-		return null;
+		throw new FetchException(FetchException.TOO_MANY_REDIRECTS);
 	}
 }

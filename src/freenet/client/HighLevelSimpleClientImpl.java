@@ -2,15 +2,23 @@ package freenet.client;
 
 import freenet.keys.FreenetURI;
 import freenet.node.SimpleLowLevelClient;
+import freenet.support.BucketFactory;
 
 public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 
-	private SimpleLowLevelClient client;
+	private final SimpleLowLevelClient client;
+	private final ArchiveManager archiveManager;
+	private final BucketFactory bucketFactory;
 	private long curMaxLength;
 	private long curMaxTempLength;
+	public static final int MAX_REDIRECTS = 10;
+	public static final int MAX_METADATA_LEVELS = 5;
+	public static final int MAX_ARCHIVE_LEVELS = 5;
 	
-	public HighLevelSimpleClientImpl(SimpleLowLevelClient client) {
+	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf) {
 		this.client = client;
+		archiveManager = mgr;
+		bucketFactory = bf;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -21,9 +29,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		curMaxTempLength = maxIntermediateLength;
 	}
 
-	public FetchResult fetch(FreenetURI uri) {
-		Fetcher f = new Fetcher(uri, client, curMaxLength, curMaxTempLength);
-		return f.run(0);
+	public FetchResult fetch(FreenetURI uri) throws FetchException {
+		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxLength, 
+				MAX_REDIRECTS, MAX_METADATA_LEVELS, MAX_ARCHIVE_LEVELS, archiveManager, bucketFactory);
+		Fetcher f = new Fetcher(uri, context, new ArchiveContext());
+		return f.run();
 	}
 
 	public FreenetURI insert(InsertBlock insert) {
