@@ -79,6 +79,12 @@ public class CHKBlock implements KeyBlock {
         // Otherwise it checks out
     }
 
+    public byte[] decode(ClientKey key) throws KeyDecodeException {
+    	if(!(key instanceof ClientCHK))
+    		throw new KeyDecodeException("Not a CHK!: "+key);
+    	return decode((ClientCHK)key);
+    }
+    
     /**
      * Decode the CHK and recover the original data
      * @return the original data

@@ -1,13 +1,19 @@
 package freenet.client;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.LinkedHashMap;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.LRUHashtable;
+import freenet.support.Logger;
 
 /**
  * Cache of recently decoded archives:
@@ -18,14 +24,19 @@ import freenet.support.LRUHashtable;
  */
 public class ArchiveManager {
 
-	ArchiveManager(int maxHandlers, long maxCachedData, File cacheDir) {
+	ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, File cacheDir) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
 		this.maxCachedData = maxCachedData;
 		this.cacheDir = cacheDir;
 		storedData = new LRUHashtable();
+		this.maxArchiveSize = maxArchiveSize;
+		this.maxArchivedFileSize = maxArchivedFileSize;
 	}
 
+	final long maxArchiveSize;
+	final long maxArchivedFileSize;
+	
 	// ArchiveHandler's
 	
 	final int maxArchiveHandlers;
@@ -97,7 +108,7 @@ public class ArchiveManager {
 		MyKey key;
 		boolean finalized;
 		// FIXME implement
-
+		
 		public Bucket dataAsBucket() {
 			// FIXME implement
 		}
@@ -108,4 +119,60 @@ public class ArchiveManager {
 		}
 	}
 
+	/**
+	 * Extract data to cache.
+	 * @param key The key the data was fetched from.
+	 * @param archiveType The archive type. Must be Metadata.ARCHIVE_ZIP.
+	 * @param data The actual data fetched.
+	 * @param archiveContext The context for the whole fetch process.
+	 * @throws ArchiveFailureException 
+	 */
+	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext) throws ArchiveFailureException {
+		if(data.size() > maxArchiveSize)
+			throw new ArchiveFailureException("Archive too big");
+		if(archiveType != Metadata.ARCHIVE_ZIP)
+			throw new ArchiveFailureException("Unknown or unsupported archive algorithm "+archiveType);
+		InputStream is = null;
+		try {
+			is = data.getInputStream();
+			ZipInputStream zis = new ZipInputStream(is);
+			ZipEntry entry =  zis.getNextEntry();
+			byte[] buf = new byte[4096];
+outer:		while(entry != null) {
+				entry = zis.getNextEntry();
+				String name = entry.getName();
+				long size = entry.getSize();
+				if(size > maxArchivedFileSize) {
+					addErrorElement(key, name);
+				} else {
+					// Read the element
+					long realLen = 0;
+					Bucket output = makeTempStoreBucket(size);
+					OutputStream out = output.getOutputStream();
+					int readBytes;
+inner:				while((readBytes = zis.read(buf)) > 0) {
+						out.write(buf, 0, readBytes);
+						readBytes += realLen;
+						if(readBytes > maxArchivedFileSize) {
+							addErrorElement(key, name);
+							out.close();
+							dumpTempStoreBucket(output);
+							continue outer;
+						}
+					}
+					out.close();
+					addStoreElement(key, name, output);
+				}
+			}
+		} catch (IOException e) {
+			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
+		} finally {
+			if(is != null)
+				try {
+					is.close();
+				} catch (IOException e) {
+					Logger.error(this, "Failed to close stream: "+e, e);
+				}
+		}
+	}
 }

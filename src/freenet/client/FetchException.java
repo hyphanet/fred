@@ -30,5 +30,10 @@ public class FetchException extends Exception {
 	static final int INVALID_METADATA = 4;
 	/** Got an ArchiveFailureException */
 	static final int ARCHIVE_FAILURE = 5;
-	
+	/** Failed to decode a block */
+	static final int BLOCK_DECODE_ERROR = 6;
+	/** Too many split metadata levels */
+	static final int TOO_MANY_METADATA_LEVELS = 7;
+	/** Too many archive restarts */
+	static final int TOO_MANY_ARCHIVE_RESTARTS = 8;
 }

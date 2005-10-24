@@ -405,4 +405,11 @@ public class Metadata {
 	public short getArchiveType() {
 		return archiveType;
 	}
+
+	/** Change the document type to a simple redirect. Used by the archive code
+	 * to fetch split ZIP manifests.
+	 */
+	public void setSimpleRedirect() {
+		documentType = SIMPLE_REDIRECT;
+	}
 }

@@ -5,7 +5,7 @@ package freenet.keys;
  * 
  * Exception thrown when decode fails.
  */
-public class CHKDecodeException extends Exception {
+public class CHKDecodeException extends KeyDecodeException {
 
     /**
      * 

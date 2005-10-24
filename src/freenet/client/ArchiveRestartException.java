@@ -7,4 +7,8 @@ package freenet.client;
  */
 public class ArchiveRestartException extends Exception {
 
+	public ArchiveRestartException(String msg) {
+		super(msg);
+	}
+
 }

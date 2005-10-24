@@ -6,6 +6,6 @@ package freenet.keys;
 public interface KeyBlock {
 
 	/** Decode with the key */
-	byte[] decode(ClientKey key);
+	byte[] decode(ClientKey key) throws KeyDecodeException;
 
 }
