@@ -35,7 +35,7 @@ public class LRUHashtable {
     } 
 
     /**
-     *  @return Least recently pushed Object.
+     *  @return Least recently pushed key.
      */
     public final synchronized Object popKey() {
         if ( list.size() > 0 ) {
@@ -45,6 +45,17 @@ public class LRUHashtable {
         }
     }
 
+    /**
+     * @return Least recently pushed value.
+     */
+    public final synchronized Object popValue() {
+        if ( list.size() > 0 ) {
+            return ((QItem)hash.remove(((QItem)list.pop()).obj)).value;
+        } else {
+            return null;
+        }
+    }
+    
     public final int size() {
         return list.size();
     }

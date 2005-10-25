@@ -9,11 +9,19 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import freenet.crypt.PCFBMode;
+import freenet.crypt.RandomSource;
+import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
+import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.PaddedEncryptedBucket;
+import freenet.support.io.FileBucket;
+import freenet.support.io.FileUtil;
 
 /**
  * Cache of recently decoded archives:
@@ -24,7 +32,7 @@ import freenet.support.Logger;
  */
 public class ArchiveManager {
 
-	ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, File cacheDir) {
+	ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, File cacheDir, RandomSource random) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
 		this.maxCachedData = maxCachedData;
@@ -32,10 +40,13 @@ public class ArchiveManager {
 		storedData = new LRUHashtable();
 		this.maxArchiveSize = maxArchiveSize;
 		this.maxArchivedFileSize = maxArchivedFileSize;
+		this.random = random;
 	}
 
+	final RandomSource random;
 	final long maxArchiveSize;
 	final long maxArchivedFileSize;
+	
 	
 	// ArchiveHandler's
 	
@@ -57,6 +68,7 @@ public class ArchiveManager {
 	// Data cache
 	
 	final long maxCachedData;
+	private long cachedData;
 	final File cacheDir;
 	final LRUHashtable storedData;
 
@@ -79,6 +91,8 @@ public class ArchiveManager {
 	public synchronized Bucket getCached(FreenetURI key, String filename) {
 		MyKey k = new MyKey(key, filename);
 		ArchiveStoreElement ase = (ArchiveStoreElement) storedData.get(k);
+		// Promote to top of LRU
+		storedData.push(k, ase);
 		if(ase == null) return null;
 		return ase.dataAsBucket();
 	}
@@ -104,21 +118,85 @@ public class ArchiveManager {
 		}
 	}
 
-	public class ArchiveStoreElement {
+	abstract class ArchiveElement {
 		MyKey key;
-		boolean finalized;
-		// FIXME implement
 		
-		public Bucket dataAsBucket() {
-			// FIXME implement
+		/** Expected to delete any stored data on disk, and decrement cachedData. */
+		public abstract void finalize();
+	}
+	
+	class ArchiveStoreElement extends ArchiveElement {
+		boolean finalized;
+		File myFilename;
+		PaddedEncryptedBucket bucket;
+		FileBucket underBucket;
+		
+		/**
+		 * Create an ArchiveStoreElement from a TempStoreElement.
+		 * @param key2 The key of the archive the file came from.
+		 * @param realName The name of the file in that archive.
+		 * @param temp The TempStoreElement currently storing the data.
+		 */
+		ArchiveStoreElement(FreenetURI key2, String realName, TempStoreElement temp) {
+			this.key = new MyKey(key2, realName);
+			this.finalized = false;
+			this.bucket = temp.bucket;
+			this.underBucket = temp.underBucket;
+			underBucket.setReadOnly();
+			cachedData += spaceUsed();
+		}
+
+		Bucket dataAsBucket() {
+			return bucket;
+		}
+
+		long dataSize() {
+			return bucket.size();
 		}
 		
-		public void finalize() {
-			// FIXME delete file
-			// Can be called early so check
+		long spaceUsed() {
+			return FileUtil.estimateUsage(myFilename, underBucket.size());
+		}
+		
+		public synchronized void finalize() {
+			if(finalized) return;
+			long sz = spaceUsed();
+			underBucket.finalize();
+			finalized = true;
+			cachedData -= sz;
 		}
 	}
 
+	class ArchiveErrorElement extends ArchiveElement {
+
+		String error;
+		
+		public ArchiveErrorElement(FreenetURI key2, String name, String error) {
+			key = new MyKey(key2, name);
+			this.error = error;
+		}
+
+		public void finalize() {
+		}
+		
+	}
+	
+	class TempStoreElement {
+		TempStoreElement(File myFile, FileBucket fb, PaddedEncryptedBucket encryptedBucket) {
+			this.myFilename = myFile;
+			this.underBucket = fb;
+			this.bucket = encryptedBucket;
+		}
+		
+		File myFilename;
+		PaddedEncryptedBucket bucket;
+		FileBucket underBucket;
+		
+		public void finalize() {
+			underBucket.finalize();
+		}
+	}
+	
 	/**
 	 * Extract data to cache.
 	 * @param key The key the data was fetched from.
@@ -143,25 +221,26 @@ outer:		while(entry != null) {
 				String name = entry.getName();
 				long size = entry.getSize();
 				if(size > maxArchivedFileSize) {
-					addErrorElement(key, name);
+					addErrorElement(key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
 				} else {
 					// Read the element
 					long realLen = 0;
-					Bucket output = makeTempStoreBucket(size);
+					TempStoreElement temp = makeTempStoreBucket(size);
+					Bucket output = temp.bucket;
 					OutputStream out = output.getOutputStream();
 					int readBytes;
 inner:				while((readBytes = zis.read(buf)) > 0) {
 						out.write(buf, 0, readBytes);
 						readBytes += realLen;
 						if(readBytes > maxArchivedFileSize) {
-							addErrorElement(key, name);
+							addErrorElement(key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
 							out.close();
-							dumpTempStoreBucket(output);
+							temp.finalize();
 							continue outer;
 						}
 					}
 					out.close();
-					addStoreElement(key, name, output);
+					addStoreElement(key, name, temp);
 				}
 			}
 		} catch (IOException e) {
@@ -173,6 +252,57 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 				} catch (IOException e) {
 					Logger.error(this, "Failed to close stream: "+e, e);
 				}
+		}
+	}
+
+	private void addErrorElement(FreenetURI key, String name, String error) {
+		ArchiveErrorElement element = new ArchiveErrorElement(key, name, error);
+		synchronized(storedData) {
+			storedData.push(element.key, element);
+		}
+	}
+
+	private void addStoreElement(FreenetURI key, String name, TempStoreElement temp) {
+		ArchiveStoreElement element = new ArchiveStoreElement(key, name, temp);
+		synchronized(storedData) {
+			storedData.push(element.key, element);
+			trimStoredData();
+		}
+	}
+
+	/**
+	 * Drop any stored data beyond the limit.
+	 * Call synchronized on storedData.
+	 */
+	private void trimStoredData() {
+		while(cachedData > maxCachedData) {
+			ArchiveElement e = (ArchiveElement) storedData.popValue();
+			e.finalize();
+		}
+	}
+
+	/** 
+	 * Create a file Bucket in the store directory, encrypted using an ethereal key.
+	 * This is not yet associated with a name, so will be deleted when it goes out
+	 * of scope. Not counted towards allocated data as will be short-lived and will not
+	 * go over the maximum size. Will obviously keep its key when we move it to main.
+	 */
+	private TempStoreElement makeTempStoreBucket(long size) {
+		byte[] randomFilename = new byte[16]; // should be plenty
+		random.nextBytes(randomFilename);
+		String filename = HexUtil.bytesToHex(randomFilename);
+		File myFile = new File(cacheDir, filename);
+		FileBucket fb = new FileBucket(myFile, false, true);
+		
+		byte[] cipherKey = new byte[32];
+		random.nextBytes(cipherKey);
+		try {
+			Rijndael aes = new Rijndael(256, 256);
+			PCFBMode pcfb = new PCFBMode(aes);
+			PaddedEncryptedBucket encryptedBucket = new PaddedEncryptedBucket(fb, pcfb, 1024);
+			return new TempStoreElement(myFile, fb, encryptedBucket);
+		} catch (UnsupportedCipherException e) {
+			throw new Error("Unsupported cipher: AES 256/256!", e);
 		}
 	}
 }

@@ -1,6 +1,9 @@
 package freenet.client;
 
+import java.io.IOException;
+
 import freenet.support.Bucket;
+import freenet.support.BucketTools;
 
 /**
  * Class to contain the result of a key fetch.
@@ -38,9 +41,10 @@ public class FetchResult {
 	
 	/** Get the result as a simple byte array, even if we don't have it
 	 * as one. @throws OutOfMemoryError !!
+	 * @throws IOException If it was not possible to read the data.
 	 */
-	public byte[] asByteArray() {
-		return data.toByteArray();
+	public byte[] asByteArray() throws IOException {
+		return BucketTools.toByteArray(data);
 	}
 	
 	/** Get the result as a Bucket */

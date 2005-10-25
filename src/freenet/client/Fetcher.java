@@ -7,6 +7,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.support.Bucket;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
 
 /** Class that does the actual fetching. Does not have to have a user friendly
@@ -73,7 +74,7 @@ class Fetcher {
 			if(!key.isMetadata()) {
 				// Just return the data
 				try {
-					return new FetchResult(dm, ctx.bucketFactory.makeImmutableBucket(data));
+					return new FetchResult(dm, BucketTools.makeImmutableBucket(ctx.bucketFactory, data));
 				} catch (IOException e) {
 					Logger.error(this, "Could not capture data - disk full?: "+e, e);
 				}
