@@ -1,5 +1,7 @@
 package freenet.keys;
 
+import freenet.client.ArchiveHandler;
+
 /**
  * Base class for client keys.
  * Client keys are decodable. Node keys are not.
@@ -15,5 +17,7 @@ public abstract class ClientKey {
 	 * Does the key contain metadata? If not, it contains real data.
 	 */
 	public abstract boolean isMetadata();
+
+	public abstract FreenetURI getURI();
 
 }

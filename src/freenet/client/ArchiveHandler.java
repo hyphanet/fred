@@ -28,8 +28,8 @@ class ArchiveHandler {
 	 * @throws FetchException If the container could not be fetched.
 	 * @throws MetadataParseException If there was an error parsing intermediary metadata.
 	 */
-	public Bucket getMetadata(ArchiveContext archiveContext, FetcherContext fetchContext) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, fetchContext, false);
+	public Bucket getMetadata(ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
+		return get(".metadata", archiveContext, fetchContext, dm, recursionLevel);
 	}
 
 	/**
@@ -42,9 +42,9 @@ class ArchiveHandler {
 	 * @throws FetchException 
 	 * @throws MetadataParseException 
 	 */
-	public synchronized Bucket get(String internalName, ArchiveContext archiveContext, FetcherContext fetchContext, boolean inSplitZipManifest) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
+	public synchronized Bucket get(String internalName, ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 		ArchiveElement element = 
 			manager.makeElement(key, internalName, archiveType);
-		return element.get(archiveContext, fetchContext, inSplitZipManifest);
+		return element.get(fetchContext, dm, recursionLevel, archiveContext);
 	}
 }

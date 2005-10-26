@@ -55,13 +55,13 @@ public class ArchiveManager {
 	final int maxArchiveHandlers;
 	final LRUHashtable archiveHandlers;
 	
-	public synchronized void putCached(ClientKey key, ArchiveHandler zip) {
+	public synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
 		archiveHandlers.push(key, zip);
 		while(archiveHandlers.size() > maxArchiveHandlers)
 			((ArchiveHandler) archiveHandlers.popKey()).finalize();
 	}
 
-	public ArchiveHandler getCached(ClientKey key) {
+	public ArchiveHandler getCached(FreenetURI key) {
 		ArchiveHandler handler = (ArchiveHandler) archiveHandlers.get(key);
 		archiveHandlers.push(key, handler);
 		return handler;
@@ -104,7 +104,7 @@ public class ArchiveManager {
 	 * @param key The key of the archive that we are extracting data from.
 	 * @return An archive handler. 
 	 */
-	public synchronized ArchiveHandler makeHandler(ClientKey key, short archiveType) {
+	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType) {
 		ArchiveHandler handler = getCached(key);
 		if(handler != null) return handler;
 		handler = new ArchiveHandler(this, key, archiveType);

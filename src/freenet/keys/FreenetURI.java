@@ -50,6 +50,30 @@ public class FreenetURI {
 	private String[] metaStr;
 	private byte[] routingKey, cryptoKey, extra;
 
+	public Object clone() {
+		return new FreenetURI(this);
+	}
+	
+	private FreenetURI(FreenetURI uri) {
+		keyType = uri.keyType;
+		docName = uri.docName;
+		metaStr = new String[uri.metaStr.length];
+		for(int i=0;i<metaStr.length;i++)
+			metaStr[i] = uri.metaStr[i];
+		if(uri.routingKey != null) {
+			routingKey = new byte[uri.routingKey.length];
+			System.arraycopy(uri.routingKey, 0, routingKey, 0, routingKey.length);
+		}
+		if(uri.cryptoKey != null) {
+			cryptoKey = new byte[uri.cryptoKey.length];
+			System.arraycopy(uri.cryptoKey, 0, cryptoKey, 0, cryptoKey.length);
+		}
+		if(uri.extra != null) {
+			extra = new byte[uri.extra.length];
+			System.arraycopy(uri.extra, 0, extra, 0, extra.length);
+		}
+	}
+	
 	public FreenetURI(String keyType, String docName) {
 		this(keyType, docName, (String[]) null, null, null, null);
 	}
@@ -229,6 +253,19 @@ public class FreenetURI {
 		return setMetaString(newMetaStr);
 	}
 
+	/**
+	 * Returns a copy of this URI with the given string added as a new meta string.
+	 */
+	public FreenetURI pushMetaString(String name) {
+		if(metaStr == null)
+			metaStr = new String[] { name };
+		else {
+			String[] newMetaStr = new String[metaStr.length+1];
+			System.arraycopy(metaStr, 0, newMetaStr, 0, metaStr.length);
+			return setMetaString(newMetaStr);
+		}
+	}
+	
 	/**
 	 * Returns a copy of this URI with the those meta strings appended.
 	 */
