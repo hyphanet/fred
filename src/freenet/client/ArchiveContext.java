@@ -3,6 +3,7 @@ package freenet.client;
 import java.util.HashSet;
 
 import freenet.keys.ClientKey;
+import freenet.keys.FreenetURI;
 
 /**
  * Object passed down a full fetch, including all the recursion.

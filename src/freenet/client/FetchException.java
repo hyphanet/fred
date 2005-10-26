@@ -36,4 +36,8 @@ public class FetchException extends Exception {
 	static final int TOO_MANY_METADATA_LEVELS = 7;
 	/** Too many archive restarts */
 	static final int TOO_MANY_ARCHIVE_RESTARTS = 8;
+	/** Too deep recursion */
+	static final int TOO_MUCH_RECURSION = 9;
+	/** Tried to access an archive file but not in an archive */
+	static final int NOT_IN_ARCHIVE = 10;
 }

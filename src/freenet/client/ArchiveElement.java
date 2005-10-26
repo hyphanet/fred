@@ -20,7 +20,7 @@ public class ArchiveElement {
 	}
 	
 	final ArchiveManager manager;
-	final FreenetURI key;
+	final ClientKey key;
 	final String filename;
 	final short archiveType;
 	
@@ -33,9 +33,10 @@ public class ArchiveElement {
 	 * @throws FetchException If we could not fetch the key.
 	 * @throws MetadataParseException If the key's metadata was invalid.
 	 */
-	public Bucket get(ArchiveContext archiveContext, FetcherContext fetchContext, boolean inSplitZipManifest) throws ArchiveFailureException, MetadataParseException, FetchException, ArchiveRestartException {
+	public Bucket get(ArchiveContext archiveContext, FetcherContext fetchContext, boolean inSplitZipManifest) 
+	throws ArchiveFailureException, MetadataParseException, FetchException, ArchiveRestartException {
 		
-		archiveContext.doLoopDetection(ckey);
+		archiveContext.doLoopDetection(key);
 		// AFTER the loop check (possible deadlocks)
 		synchronized(this) {
 			// Synchronized during I/O to avoid doing it twice

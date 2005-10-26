@@ -10,21 +10,14 @@ import freenet.support.BucketTools;
  */
 public class FetchResult {
 
-	final boolean succeeded;
 	final ClientMetadata metadata;
 	final Bucket data;
 	
 	public FetchResult(ClientMetadata dm, Bucket fetched) {
 		metadata = dm;
 		data = fetched;
-		succeeded = true;
 	}
 
-	/** Did it succeed? */
-	public boolean succeeded() {
-		return succeeded;
-	}
-	
 	/** If so, get the MIME type */
 	public String getMimeType() {
 		return metadata.getMIMEType();

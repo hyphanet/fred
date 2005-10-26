@@ -1,6 +1,7 @@
 package freenet.client;
 
 import freenet.keys.ClientKey;
+import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 
 /**
@@ -9,10 +10,10 @@ import freenet.support.Bucket;
 class ArchiveHandler {
 
 	private ArchiveManager manager;
-	private ClientKey key;
+	private FreenetURI key;
 	private short archiveType;
 	
-	public ArchiveHandler(ArchiveManager manager, ClientKey key, short archiveType) {
+	public ArchiveHandler(ArchiveManager manager, FreenetURI key, short archiveType) {
 		this.manager = manager;
 		this.key = key;
 		this.archiveType = archiveType;
@@ -24,8 +25,10 @@ class ArchiveHandler {
 
 	/**
 	 * Get the metadata for this ZIP manifest, as a Bucket.
+	 * @throws FetchException If the container could not be fetched.
+	 * @throws MetadataParseException If there was an error parsing intermediary metadata.
 	 */
-	public Bucket getMetadata(ArchiveContext archiveContext, FetcherContext fetchContext) throws ArchiveFailureException, ArchiveRestartException {
+	public Bucket getMetadata(ArchiveContext archiveContext, FetcherContext fetchContext) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 		return get(".metadata", archiveContext, fetchContext, false);
 	}
 
@@ -36,8 +39,10 @@ class ArchiveHandler {
 	 * @param inSplitZipManifest If true, indicates that the key points to a splitfile zip manifest,
 	 * which means that we need to pass a flag to the fetcher to tell it to pretend it was a straight
 	 * splitfile.
+	 * @throws FetchException 
+	 * @throws MetadataParseException 
 	 */
-	public synchronized Bucket get(String internalName, ArchiveContext archiveContext, FetcherContext fetchContext, boolean inSplitZipManifest) throws ArchiveFailureException, ArchiveRestartException {
+	public synchronized Bucket get(String internalName, ArchiveContext archiveContext, FetcherContext fetchContext, boolean inSplitZipManifest) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 		ArchiveElement element = 
 			manager.makeElement(key, internalName, archiveType);
 		return element.get(archiveContext, fetchContext, inSplitZipManifest);

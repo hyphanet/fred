@@ -1,6 +1,7 @@
 package freenet.keys;
 
 import java.net.MalformedURLException;
+import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -343,4 +344,13 @@ public class FreenetURI {
     public byte[] getExtra() {
         return extra;
     }
+
+	public LinkedList listMetaStrings() {
+		LinkedList l = new LinkedList();
+		if(metaStr != null) {
+			for(int i=0;i<metaStr.length;i++)
+				l.addLast(metaStr[i]);
+		}
+		return l;
+	}
 }

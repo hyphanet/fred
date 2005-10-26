@@ -6,7 +6,7 @@ package freenet.keys;
  */
 public abstract class ClientKey {
 
-	public static ClientKey get(FreenetURI origURI) {
+	public static ClientKey getBaseKey(FreenetURI origURI) {
 		// TODO Auto-generated method stub
 		return null;
 	}
