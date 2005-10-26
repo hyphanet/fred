@@ -12,17 +12,15 @@ import freenet.support.Bucket;
  */
 public class ArchiveElement {
 
-	ArchiveElement(ArchiveManager manager, FreenetURI uri, ClientKey ckey, String filename, short archiveType) {
+	ArchiveElement(ArchiveManager manager, FreenetURI uri, String filename, short archiveType) {
 		this.manager = manager;
 		this.key = uri;
-		this.ckey = ckey;
 		this.filename = filename;
 		this.archiveType = archiveType;
 	}
 	
 	final ArchiveManager manager;
 	final FreenetURI key;
-	final ClientKey ckey;
 	final String filename;
 	final short archiveType;
 	

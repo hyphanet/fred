@@ -32,9 +32,11 @@ import freenet.support.io.FileUtil;
  */
 public class ArchiveManager {
 
-	ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, File cacheDir, RandomSource random) {
+	ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, File cacheDir, RandomSource random) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
+		cachedElements = new LRUHashtable();
+		this.maxCachedElements = maxCachedElements;
 		this.maxCachedData = maxCachedData;
 		this.cacheDir = cacheDir;
 		storedData = new LRUHashtable();
@@ -65,6 +67,28 @@ public class ArchiveManager {
 		return handler;
 	}
 
+	// Element cache
+	
+	/** Cache of ArchiveElement's by MyKey */
+	final LRUHashtable cachedElements;
+	/** Maximum number of cached ArchiveElement's */
+	final int maxCachedElements;
+
+	public ArchiveElement makeElement(FreenetURI uri, String internalName, short archiveType) {
+		MyKey key = new MyKey(uri, internalName);
+		synchronized(cachedElements) {
+			ArchiveElement element;
+			element = (ArchiveElement) cachedElements.get(key);
+			if(element != null) {
+				cachedElements.push(key, element);
+				return element;
+			}
+			element = new ArchiveElement(this, uri, internalName, archiveType);
+			cachedElements.push(key, element);
+			return element;
+		}
+	}
+	
 	// Data cache
 	
 	final long maxCachedData;
@@ -90,7 +114,7 @@ public class ArchiveManager {
 
 	public synchronized Bucket getCached(FreenetURI key, String filename) {
 		MyKey k = new MyKey(key, filename);
-		ArchiveStoreElement ase = (ArchiveStoreElement) storedData.get(k);
+		RealArchiveStoreItem ase = (RealArchiveStoreItem) storedData.get(k);
 		// Promote to top of LRU
 		storedData.push(k, ase);
 		if(ase == null) return null;
@@ -118,14 +142,14 @@ public class ArchiveManager {
 		}
 	}
 
-	abstract class ArchiveElement {
+	abstract class ArchiveStoreItem {
 		MyKey key;
 		
 		/** Expected to delete any stored data on disk, and decrement cachedData. */
 		public abstract void finalize();
 	}
 	
-	class ArchiveStoreElement extends ArchiveElement {
+	class RealArchiveStoreItem extends ArchiveStoreItem {
 		boolean finalized;
 		File myFilename;
 		PaddedEncryptedBucket bucket;
@@ -137,7 +161,7 @@ public class ArchiveManager {
 		 * @param realName The name of the file in that archive.
 		 * @param temp The TempStoreElement currently storing the data.
 		 */
-		ArchiveStoreElement(FreenetURI key2, String realName, TempStoreElement temp) {
+		RealArchiveStoreItem(FreenetURI key2, String realName, TempStoreElement temp) {
 			this.key = new MyKey(key2, realName);
 			this.finalized = false;
 			this.bucket = temp.bucket;
@@ -167,11 +191,11 @@ public class ArchiveManager {
 		}
 	}
 
-	class ArchiveErrorElement extends ArchiveElement {
+	class ErrorArchiveStoreItem extends ArchiveStoreItem {
 
 		String error;
 		
-		public ArchiveErrorElement(FreenetURI key2, String name, String error) {
+		public ErrorArchiveStoreItem(FreenetURI key2, String name, String error) {
 			key = new MyKey(key2, name);
 			this.error = error;
 		}
@@ -256,14 +280,14 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 	}
 
 	private void addErrorElement(FreenetURI key, String name, String error) {
-		ArchiveErrorElement element = new ArchiveErrorElement(key, name, error);
+		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(key, name, error);
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 		}
 	}
 
 	private void addStoreElement(FreenetURI key, String name, TempStoreElement temp) {
-		ArchiveStoreElement element = new ArchiveStoreElement(key, name, temp);
+		RealArchiveStoreItem element = new RealArchiveStoreItem(key, name, temp);
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 			trimStoredData();
@@ -276,7 +300,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 	 */
 	private void trimStoredData() {
 		while(cachedData > maxCachedData) {
-			ArchiveElement e = (ArchiveElement) storedData.popValue();
+			ArchiveStoreItem e = (ArchiveStoreItem) storedData.popValue();
 			e.finalize();
 		}
 	}
