@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.LinkedHashMap;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -13,7 +11,6 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.HexUtil;

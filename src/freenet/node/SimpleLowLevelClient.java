@@ -1,10 +1,7 @@
 package freenet.node;
 
-import freenet.keys.ClientBlock;
-import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
-import freenet.keys.ClientPublishStreamKey;
 import freenet.keys.KeyBlock;
 
 /**

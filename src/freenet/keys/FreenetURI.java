@@ -257,13 +257,14 @@ public class FreenetURI {
 	 * Returns a copy of this URI with the given string added as a new meta string.
 	 */
 	public FreenetURI pushMetaString(String name) {
+		String[] newMetaStr;
 		if(metaStr == null)
-			metaStr = new String[] { name };
+			newMetaStr = new String[] { name };
 		else {
-			String[] newMetaStr = new String[metaStr.length+1];
+			newMetaStr = new String[metaStr.length+1];
 			System.arraycopy(metaStr, 0, newMetaStr, 0, metaStr.length);
-			return setMetaString(newMetaStr);
 		}
+		return setMetaString(newMetaStr);
 	}
 	
 	/**

@@ -31,7 +31,6 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
-import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
@@ -40,7 +39,8 @@ import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
-import freenet.keys.ClientPublishStreamKey;
+import freenet.keys.ClientKey;
+import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.store.BaseFreenetStore;
 import freenet.store.FreenetStore;
@@ -303,6 +303,13 @@ public class Node implements SimpleLowLevelClient {
             lm.startSender(this, interval);
         ps.start();
         usm.start();
+    }
+    
+    public KeyBlock getKey(ClientKey key) {
+    	if(key instanceof ClientCHK)
+    		return getCHK((ClientCHK)key);
+    	else
+    		throw new IllegalArgumentException();
     }
     
     /**
