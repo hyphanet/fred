@@ -2,7 +2,6 @@ package freenet.client;
 
 import java.util.HashSet;
 
-import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 
 /**
@@ -15,7 +14,11 @@ public class ArchiveContext {
 	HashSet soFar = new HashSet();
 	int maxArchiveLevels;
 	
-	public synchronized void doLoopDetection(ClientKey key) throws ArchiveFailureException {
+	/**
+	 * Check for a loop.
+	 * The URI provided is expected to be a reasonably unique identifier for the archive.
+	 */
+	public synchronized void doLoopDetection(FreenetURI key) throws ArchiveFailureException {
 		if(!soFar.add(key))
 			throw new ArchiveFailureException("Archive loop detected");
 		if(soFar.size() > maxArchiveLevels)

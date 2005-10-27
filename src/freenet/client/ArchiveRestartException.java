@@ -7,8 +7,9 @@ package freenet.client;
  */
 public class ArchiveRestartException extends Exception {
 
+	private static final long serialVersionUID = -7670838856130773012L;
+
 	public ArchiveRestartException(String msg) {
 		super(msg);
 	}
-
 }

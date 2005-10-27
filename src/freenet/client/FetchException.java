@@ -2,6 +2,8 @@ package freenet.client;
 
 public class FetchException extends Exception {
 
+	private static final long serialVersionUID = -1106716067841151962L;
+	
 	final int mode;
 	
 	public FetchException(int m) {

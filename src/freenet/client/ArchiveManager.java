@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -18,7 +20,6 @@ import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.PaddedEncryptedBucket;
 import freenet.support.io.FileBucket;
-import freenet.support.io.FileUtil;
 
 /**
  * Cache of recently decoded archives:
@@ -55,7 +56,7 @@ public class ArchiveManager {
 	public synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
 		archiveHandlers.push(key, zip);
 		while(archiveHandlers.size() > maxArchiveHandlers)
-			((ArchiveHandler) archiveHandlers.popKey()).finalize();
+			archiveHandlers.popKey(); // dump it
 	}
 
 	public ArchiveHandler getCached(FreenetURI key) {
@@ -71,25 +72,10 @@ public class ArchiveManager {
 	/** Maximum number of cached ArchiveElement's */
 	final int maxCachedElements;
 
-	public ArchiveElement makeElement(FreenetURI uri, String internalName, short archiveType) {
-		MyKey key = new MyKey(uri, internalName);
-		synchronized(cachedElements) {
-			ArchiveElement element;
-			element = (ArchiveElement) cachedElements.get(key);
-			if(element != null) {
-				cachedElements.push(key, element);
-				return element;
-			}
-			element = new ArchiveElement(this, uri, internalName, archiveType);
-			cachedElements.push(key, element);
-			return element;
-		}
-	}
-	
 	// Data cache
 	
 	final long maxCachedData;
-	private long cachedData;
+	long cachedData;
 	final File cacheDir;
 	final LRUHashtable storedData;
 
@@ -104,118 +90,18 @@ public class ArchiveManager {
 	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType) {
 		ArchiveHandler handler = getCached(key);
 		if(handler != null) return handler;
-		handler = new ArchiveHandler(this, key, archiveType);
+		handler = new ArchiveStoreContext(this, key, archiveType);
 		putCached(key, handler);
 		return handler;
 	}
 
 	public synchronized Bucket getCached(FreenetURI key, String filename) {
-		MyKey k = new MyKey(key, filename);
+		ArchiveKey k = new ArchiveKey(key, filename);
 		RealArchiveStoreItem ase = (RealArchiveStoreItem) storedData.get(k);
 		// Promote to top of LRU
 		storedData.push(k, ase);
 		if(ase == null) return null;
 		return ase.dataAsBucket();
-	}
-	
-	public class MyKey {
-		final FreenetURI key;
-		final String filename;
-		
-		public MyKey(FreenetURI key2, String filename2) {
-			key = key2;
-			filename = filename2;
-		}
-
-		public boolean equals(Object o) {
-			if(this == o) return true;
-			if(!(o instanceof MyKey)) return false;
-			MyKey cmp = ((MyKey)o);
-			return (cmp.key.equals(key) && cmp.filename.equals(filename));
-		}
-		
-		public int hashCode() {
-			return key.hashCode() ^ filename.hashCode();
-		}
-	}
-
-	abstract class ArchiveStoreItem {
-		MyKey key;
-		
-		/** Expected to delete any stored data on disk, and decrement cachedData. */
-		public abstract void finalize();
-	}
-	
-	class RealArchiveStoreItem extends ArchiveStoreItem {
-		boolean finalized;
-		File myFilename;
-		PaddedEncryptedBucket bucket;
-		FileBucket underBucket;
-		
-		/**
-		 * Create an ArchiveStoreElement from a TempStoreElement.
-		 * @param key2 The key of the archive the file came from.
-		 * @param realName The name of the file in that archive.
-		 * @param temp The TempStoreElement currently storing the data.
-		 */
-		RealArchiveStoreItem(FreenetURI key2, String realName, TempStoreElement temp) {
-			this.key = new MyKey(key2, realName);
-			this.finalized = false;
-			this.bucket = temp.bucket;
-			this.underBucket = temp.underBucket;
-			underBucket.setReadOnly();
-			cachedData += spaceUsed();
-		}
-
-		Bucket dataAsBucket() {
-			return bucket;
-		}
-
-		long dataSize() {
-			return bucket.size();
-		}
-		
-		long spaceUsed() {
-			return FileUtil.estimateUsage(myFilename, underBucket.size());
-		}
-		
-		public synchronized void finalize() {
-			if(finalized) return;
-			long sz = spaceUsed();
-			underBucket.finalize();
-			finalized = true;
-			cachedData -= sz;
-		}
-	}
-
-	class ErrorArchiveStoreItem extends ArchiveStoreItem {
-
-		String error;
-		
-		public ErrorArchiveStoreItem(FreenetURI key2, String name, String error) {
-			key = new MyKey(key2, name);
-			this.error = error;
-		}
-
-		public void finalize() {
-		}
-		
-	}
-	
-	class TempStoreElement {
-		TempStoreElement(File myFile, FileBucket fb, PaddedEncryptedBucket encryptedBucket) {
-			this.myFilename = myFile;
-			this.underBucket = fb;
-			this.bucket = encryptedBucket;
-		}
-		
-		File myFilename;
-		PaddedEncryptedBucket bucket;
-		FileBucket underBucket;
-		
-		public void finalize() {
-			underBucket.finalize();
-		}
 	}
 	
 	/**
@@ -226,7 +112,23 @@ public class ArchiveManager {
 	 * @param archiveContext The context for the whole fetch process.
 	 * @throws ArchiveFailureException 
 	 */
-	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext) throws ArchiveFailureException {
+	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx) throws ArchiveFailureException {
+		ctx.removeAllCachedItems(); // flush cache anyway
+		long expectedSize = ctx.getLastSize();
+		long archiveSize = data.size();
+		/** Set if we need to throw a RestartedException rather than returning success,
+		 * after we have unpacked everything.
+		 */
+		boolean throwAtExit = false;
+		if(archiveSize != expectedSize) {
+			throwAtExit = true;
+		}
+		byte[] expectedHash = ctx.getLastHash();
+		if(expectedHash != null) {
+			byte[] realHash = BucketTools.hash(data);
+			if(!Arrays.equals(realHash, expectedHash))
+				throwAtExit = true;
+		}
 		if(data.size() > maxArchiveSize)
 			throw new ArchiveFailureException("Archive too big");
 		if(archiveType != Metadata.ARCHIVE_ZIP)
@@ -237,12 +139,18 @@ public class ArchiveManager {
 			ZipInputStream zis = new ZipInputStream(is);
 			ZipEntry entry =  zis.getNextEntry();
 			byte[] buf = new byte[4096];
+			HashSet names = new HashSet();
+			boolean gotMetadata;
 outer:		while(entry != null) {
 				entry = zis.getNextEntry();
 				String name = entry.getName();
+				if(names.contains(name)) {
+					Logger.error(this, "Duplicate key "+name+" in archive "+key);
+					continue;
+				}
 				long size = entry.getSize();
 				if(size > maxArchivedFileSize) {
-					addErrorElement(key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
+					addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
 				} else {
 					// Read the element
 					long realLen = 0;
@@ -254,37 +162,50 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 						out.write(buf, 0, readBytes);
 						readBytes += realLen;
 						if(readBytes > maxArchivedFileSize) {
-							addErrorElement(key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
+							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
 							out.close();
 							temp.finalize();
 							continue outer;
 						}
 					}
 					out.close();
-					addStoreElement(key, name, temp);
+					if(name.equals(".metadata"))
+						gotMetadata = true;
+					addStoreElement(ctx, key, name, temp);
+					names.add(name);
 				}
 			}
+			// If no metadata, generate some
+			if(!gotMetadata) {
+				generateMetadata(ctx, key, names);
+			}
+			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
 		} finally {
-			if(is != null)
+			if(is != null) {
 				try {
 					is.close();
 				} catch (IOException e) {
 					Logger.error(this, "Failed to close stream: "+e, e);
 				}
+			}
 		}
 	}
 
-	private void addErrorElement(FreenetURI key, String name, String error) {
-		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(key, name, error);
+	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
+		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 		}
 	}
 
-	private void addStoreElement(FreenetURI key, String name, TempStoreElement temp) {
-		RealArchiveStoreItem element = new RealArchiveStoreItem(key, name, temp);
+	/**
+	 * Add a store element.
+	 * @return True if this was the metadata element.
+	 */
+	private void addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
+		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 			trimStoredData();
