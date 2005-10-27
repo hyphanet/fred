@@ -47,6 +47,11 @@ public class CipherOutputStream extends FilterOutputStream {
         ctx.blockEncipher(tmp, 0, len);
         out.write(tmp);
     }
+    
+    // FOS will use write(int) to implement this if we don't override it!
+    public void write(byte[] buf) throws IOException {
+    	write(buf, 0, buf.length);
+    }
 }
 
 

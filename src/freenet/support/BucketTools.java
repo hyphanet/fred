@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +10,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +20,8 @@ import java.util.List;
  */
 public class BucketTools {
 
+	static final int BLOCK_SIZE = 4096;
+	
 	/**
 	 * Copy from the input stream of <code>src</code> to the output stream of
 	 * <code>dest</code>.
@@ -31,7 +36,7 @@ public class BucketTools {
 		ReadableByteChannel readChannel = Channels.newChannel(in);
 		WritableByteChannel writeChannel = Channels.newChannel(out);
 
-		ByteBuffer buffer = ByteBuffer.allocateDirect(Core.blockSize);
+		ByteBuffer buffer = ByteBuffer.allocateDirect(BLOCK_SIZE);
 		while (readChannel.read(buffer) != -1) {
 			buffer.flip();
 			writeChannel.write(buffer);
@@ -313,5 +318,29 @@ public class BucketTools {
 		os.write(data);
 		bucket.setReadOnly();
 		return bucket;
+	}
+
+	public static byte[] hash(Bucket data) throws IOException {
+		try {
+			MessageDigest md = MessageDigest.getInstance("SHA-256");
+			InputStream is = data.getInputStream();
+			long bucketLength = data.size();
+			long bytesRead = 0;
+			byte[] buf = new byte[4096];
+			while(bytesRead < bucketLength || bucketLength == -1) {
+				int readBytes = is.read(buf);
+				if(readBytes < 0) break;
+				bytesRead += readBytes;
+				md.update(buf, 0, readBytes);
+			}
+			if(bytesRead < bucketLength && bucketLength > 0)
+				throw new EOFException();
+			if(bytesRead != bucketLength && bucketLength > 0)
+				throw new IOException("Read "+bytesRead+" but bucket length "+bucketLength+"!");
+			return md.digest();
+		} catch (NoSuchAlgorithmException e) {
+			Logger.error(BucketTools.class, "No such digest: SHA-256 !!");
+			throw new Error("No such digest: SHA-256 !!");
+		}
 	}
 }

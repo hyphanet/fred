@@ -4,7 +4,7 @@ import java.io.File;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
-import freenet.support.PaddedEncryptedBucket;
+import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
 
@@ -13,7 +13,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	private final ArchiveManager manager;
 	boolean finalized;
 	File myFilename;
-	PaddedEncryptedBucket bucket;
+	PaddedEphemerallyEncryptedBucket bucket;
 	FileBucket underBucket;
 	
 	/**

@@ -8,7 +8,10 @@ import java.io.*;
 public interface Bucket {
 
     /**
-     * Returns an OutputStream that is used to put data in this Bucket.
+     * Returns an OutputStream that is used to put data in this Bucket, from the 
+     * beginning. It is not possible to append data to a Bucket! This simplifies the
+     * code significantly for some classes. If you need to append, just pass the 
+     * OutputStream around.
      */
     public OutputStream getOutputStream() throws IOException;
 
@@ -23,13 +26,6 @@ public interface Bucket {
      * certain in certain situations.
      */
     public String getName();
-
-    /**
-     * If resetWrite() is called on the object, the next getOutputStream
-     * should overwrite any other data in the bucket from the beginning,
-     * otherwise it should append it.
-     */
-    public void resetWrite() throws IOException;
 
     /**
      * Returns the amount of data currently in this bucket.

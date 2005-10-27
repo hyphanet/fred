@@ -15,10 +15,11 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
+import freenet.support.BucketTools;
 import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
-import freenet.support.PaddedEncryptedBucket;
+import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.io.FileBucket;
 
 /**
@@ -27,6 +28,8 @@ import freenet.support.io.FileBucket;
  * files open due to the limitations of the API)
  * - Keep up to Y bytes (after padding and overheads) of decoded data on disk
  * (the OS is quite capable of determining what to keep in actual RAM)
+ * 
+ * Always take the lock on ArchiveStoreContext before the lock on ArchiveManager, NOT the other way around.
  */
 public class ArchiveManager {
 
@@ -104,15 +107,23 @@ public class ArchiveManager {
 		return ase.dataAsBucket();
 	}
 	
+	public synchronized void removeCachedItem(ArchiveStoreItem item) {
+		storedData.removeKey(item.key);
+	}
+	
 	/**
-	 * Extract data to cache.
+	 * Extract data to cache. Call synchronized on ctx.
 	 * @param key The key the data was fetched from.
 	 * @param archiveType The archive type. Must be Metadata.ARCHIVE_ZIP.
 	 * @param data The actual data fetched.
 	 * @param archiveContext The context for the whole fetch process.
-	 * @throws ArchiveFailureException 
+	 * @param ctx The ArchiveStoreContext for this key.
+	 * @throws ArchiveFailureException If we could not extract the data, or it was too big, etc.
+	 * @throws ArchiveRestartException 
+	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
+	 * changed.
 	 */
-	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx) throws ArchiveFailureException {
+	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx) throws ArchiveFailureException, ArchiveRestartException {
 		ctx.removeAllCachedItems(); // flush cache anyway
 		long expectedSize = ctx.getLastSize();
 		long archiveSize = data.size();
@@ -120,14 +131,21 @@ public class ArchiveManager {
 		 * after we have unpacked everything.
 		 */
 		boolean throwAtExit = false;
-		if(archiveSize != expectedSize) {
+		if(expectedSize != -1 && archiveSize != expectedSize) {
 			throwAtExit = true;
+			ctx.setLastSize(archiveSize);
 		}
 		byte[] expectedHash = ctx.getLastHash();
 		if(expectedHash != null) {
-			byte[] realHash = BucketTools.hash(data);
+			byte[] realHash;
+			try {
+				realHash = BucketTools.hash(data);
+			} catch (IOException e) {
+				throw new ArchiveFailureException("Error reading archive data: "+e, e);
+			}
 			if(!Arrays.equals(realHash, expectedHash))
 				throwAtExit = true;
+			ctx.setLastHash(realHash);
 		}
 		if(data.size() > maxArchiveSize)
 			throw new ArchiveFailureException("Archive too big");
@@ -140,7 +158,7 @@ public class ArchiveManager {
 			ZipEntry entry =  zis.getNextEntry();
 			byte[] buf = new byte[4096];
 			HashSet names = new HashSet();
-			boolean gotMetadata;
+			boolean gotMetadata = false;
 outer:		while(entry != null) {
 				entry = zis.getNextEntry();
 				String name = entry.getName();
@@ -193,6 +211,23 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		}
 	}
 
+	/**
+	 * Generate fake metadata for an archive which doesn't have any.
+	 * @param ctx The context object.
+	 * @param key The key from which the archive we are unpacking was fetched.
+	 * @param names Set of names in the archive.
+	 */
+	private void generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names) {
+		/* What we have to do is to:
+		 * - Construct a filesystem tree of the names.
+		 * - Turn each level of the tree into a Metadata object, including those below it, with
+		 * simple manifests and archive internal redirects.
+		 * - Turn the master Metadata object into binary metadata, with all its subsidiaries.
+		 * - Create a .metadata entry containing this data.
+		 */
+		// TODO implement!
+	}
+
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
 		synchronized(storedData) {
@@ -239,9 +274,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		byte[] cipherKey = new byte[32];
 		random.nextBytes(cipherKey);
 		try {
-			Rijndael aes = new Rijndael(256, 256);
-			PCFBMode pcfb = new PCFBMode(aes);
-			PaddedEncryptedBucket encryptedBucket = new PaddedEncryptedBucket(fb, pcfb, 1024);
+			PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random);
 			return new TempStoreElement(myFile, fb, encryptedBucket);
 		} catch (UnsupportedCipherException e) {
 			throw new Error("Unsupported cipher: AES 256/256!", e);

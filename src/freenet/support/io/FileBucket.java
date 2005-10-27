@@ -21,20 +21,23 @@ public class FileBucket implements Bucket {
 
 	protected File file;
 	protected boolean readOnly;
-	protected boolean restart = true;
 	protected boolean newFile; // hack to get around deletes
 	protected long length;
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
-	protected long fileRestartCounter;
+	
+	private int lastOutputStream;
 
 	protected static String tempDir = null;
 
 	/**
 	 * Creates a new FileBucket.
 	 * 
-	 * @param file
-	 *            The File to read and write to.
+	 * @param file The File to read and write to.
+	 * @param readOnly If true, any attempt to write to the bucket will result in an IOException.
+	 * Can be set later. Irreversible. @see isReadOnly(), setReadOnly()
+	 * @param deleteOnExit If true, delete the file on finalization.
+	 *            
 	 */
 	public FileBucket(File file, boolean readOnly, boolean deleteOnExit) {
 		this.readOnly = readOnly;
@@ -46,7 +49,6 @@ public class FileBucket implements Bucket {
 		// System.err.println("-- FileBucket.ctr(0) -- " +
 		// file.getAbsolutePath());
 		// (new Exception("get stack")).printStackTrace();
-		fileRestartCounter = 0;
 		if(file.exists()) {
 			length = file.length();
 			if(!file.canWrite())
@@ -80,30 +82,19 @@ public class FileBucket implements Bucket {
 		synchronized (this) {
 			if(readOnly)
 				throw new IOException("Bucket is read-only");
-			boolean append = !restart;
-			if (restart)
-				fileRestartCounter++;
-			// we want the length of the file we are currently writing to
 
 			// FIXME: behaviour depends on UNIX semantics, to totally abstract
 			// it out we would have to kill the old write streams here
 			// FIXME: what about existing streams? Will ones on append append
 			// to the new truncated file? Do we want them to? What about
 			// truncated ones? We should kill old streams here, right?
-			restart = false;
-			return newFileBucketOutputStream(
-				file.getPath(),
-				append,
-				fileRestartCounter);
+			return newFileBucketOutputStream(file.getPath(), ++lastOutputStream);
 		}
 	}
 
 	protected FileBucketOutputStream newFileBucketOutputStream(
-		String s,
-		boolean append,
-		long restartCount)
-		throws IOException {
-		return new FileBucketOutputStream(s, append, restartCount);
+		String s, int streamNumber) throws IOException {
+		return new FileBucketOutputStream(s, streamNumber);
 	}
 
 	protected void resetLength() {
@@ -112,50 +103,44 @@ public class FileBucket implements Bucket {
 
 	class FileBucketOutputStream extends FileOutputStream {
 
-		long restartCount;
-		Exception e;
-
+		private int streamNumber;
+		
 		protected FileBucketOutputStream(
-			String s,
-			boolean append,
-			long restartCount)
+			String s, int streamNumber)
 			throws FileNotFoundException {
-			super(s, append);
-			this.restartCount = restartCount;
-			// if we throw, we're screwed anyway
-			if (!append) {
-				resetLength();
-			}
-			if (Logger.shouldLog(Logger.DEBUG, this))
-				e = new Exception("debug");
-		}
-
-		protected void confirmWriteSynchronized() {
-			if (fileRestartCounter > restartCount)
-				throw new IllegalStateException("writing to file after restart");
+			super(s, false);
+			resetLength();
+			this.streamNumber = streamNumber;
 		}
 
 		public void write(byte[] b) throws IOException {
+			if(streamNumber != lastOutputStream)
+				throw new IllegalStateException("Writing to old stream in "+getName());
 			synchronized (FileBucket.this) {
-				confirmWriteSynchronized();
+				if(readOnly)
+					throw new IOException("Bucket is read-only");
 				super.write(b);
 				length += b.length;
 			}
 		}
 
 		public void write(byte[] b, int off, int len) throws IOException {
+			if(streamNumber != lastOutputStream)
+				throw new IllegalStateException("Writing to old stream in "+getName());
 			synchronized (FileBucket.this) {
-				confirmWriteSynchronized();
+				if(readOnly)
+					throw new IOException("Bucket is read-only");
 				super.write(b, off, len);
 				length += len;
 			}
 		}
 
 		public void write(int b) throws IOException {
+			if(streamNumber != lastOutputStream)
+				throw new IllegalStateException("Writing to old stream in "+getName());
 			synchronized (FileBucket.this) {
-				confirmWriteSynchronized();
-				if (fileRestartCounter > restartCount)
-					throw new IllegalStateException("writing to file after restart");
+				if(readOnly)
+					throw new IOException("Bucket is read-only");
 				super.write(b);
 				length++;
 			}
@@ -183,10 +168,6 @@ public class FileBucket implements Bucket {
 	 */
 	public String getName() {
 		return file.getName();
-	}
-
-	public void resetWrite() {
-		restart = true;
 	}
 
 	public long size() {

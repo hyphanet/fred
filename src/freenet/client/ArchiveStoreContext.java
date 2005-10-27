@@ -2,6 +2,7 @@ package freenet.client;
 
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
+import freenet.support.DoublyLinkedListImpl;
 
 /**
  * Tracks all files currently in the cache from a given key.
@@ -9,6 +10,8 @@ import freenet.support.Bucket;
  * then throw an ArchiveRestartedException).
  * Provides fetch methods for Fetcher, which try the cache and then fetch if necessary, 
  * subject to the above.
+ * 
+ * Always take the lock on ArchiveStoreContext before the lock on ArchiveManager, NOT the other way around.
  */
 class ArchiveStoreContext implements ArchiveHandler {
 
@@ -20,6 +23,7 @@ class ArchiveStoreContext implements ArchiveHandler {
 		this.manager = manager;
 		this.key = key;
 		this.archiveType = archiveType;
+		myItems = new DoublyLinkedListImpl();
 	}
 
 	public void finalize() {
@@ -59,8 +63,63 @@ class ArchiveStoreContext implements ArchiveHandler {
 			if(fetchContext == null) return null;
 			Fetcher fetcher = new Fetcher(key, fetchContext, archiveContext);
 			FetchResult result = fetcher.realRun(dm, recursionLevel, key);
-			manager.extractToCache(key, archiveType, result.data, archiveContext);
+			manager.extractToCache(key, archiveType, result.data, archiveContext, this);
 			return manager.getCached(key, internalName);
 		}
 	}
+
+	// Archive size
+	long lastSize = -1;
+	
+	/** Returns the size of the archive last time we fetched it, or -1 */
+	long getLastSize() {
+		return lastSize;
+	}
+	
+	/** Sets the size of the archive - @see getLastSize() */
+	public void setLastSize(long size) {
+		lastSize = size;
+	}
+
+	// Archive hash
+	
+	byte[] lastHash = null;
+	
+	/** Returns the hash of the archive last time we fetched it, or null */
+	public byte[] getLastHash() {
+		return lastHash;
+	}
+
+	/** Sets the hash of the archive - @see getLastHash() */
+	public void setLastHash(byte[] realHash) {
+		lastHash = realHash;
+	}
+	
+	// Index of still-cached ArchiveStoreItems with this key
+	
+	/** Index of still-cached ArchiveStoreItems with this key */
+	final DoublyLinkedListImpl myItems;
+
+	public void removeAllCachedItems() {
+		synchronized(myItems) {
+			ArchiveStoreItem item;
+			while((item = (ArchiveStoreItem) myItems.pop()) != null) {
+				manager.removeCachedItem(item);
+				item.finalize();
+			}
+		}
+	}
+
+	public void addItem(ArchiveStoreItem item) {
+		synchronized(myItems) {
+			myItems.push(item);
+		}
+	}
+
+	public void removeItem(ArchiveStoreItem item) {
+		synchronized(myItems) {
+			myItems.remove(item);
+		}
+	}
+	
 }
