@@ -30,17 +30,13 @@ class ArchiveStoreContext implements ArchiveHandler {
 		// Need to do anything here?
 	}
 
-	/* (non-Javadoc)
-	 * @see freenet.client.ArchiveHandler#getMetadata(freenet.client.ArchiveContext, freenet.client.FetcherContext, freenet.client.ClientMetadata, int)
-	 */
-	public Bucket getMetadata(ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, fetchContext, dm, recursionLevel);
+	public Bucket getMetadata(ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
+			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
+		return get(".metadata", archiveContext, fetchContext, dm, recursionLevel, dontEnterImplicitArchives);
 	}
 
-	/* (non-Javadoc)
-	 * @see freenet.client.ArchiveHandler#get(java.lang.String, freenet.client.ArchiveContext, freenet.client.FetcherContext, freenet.client.ClientMetadata, int)
-	 */
-	public Bucket get(String internalName, ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
+	public Bucket get(String internalName, ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
+			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 
 		// Do loop detection on the archive that we are about to fetch.
 		archiveContext.doLoopDetection(key);
@@ -62,7 +58,7 @@ class ArchiveStoreContext implements ArchiveHandler {
 			
 			if(fetchContext == null) return null;
 			Fetcher fetcher = new Fetcher(key, fetchContext, archiveContext);
-			FetchResult result = fetcher.realRun(dm, recursionLevel, key);
+			FetchResult result = fetcher.realRun(dm, recursionLevel, key, dontEnterImplicitArchives);
 			manager.extractToCache(key, archiveType, result.data, archiveContext, this);
 			return manager.getCached(key, internalName);
 		}

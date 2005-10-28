@@ -13,9 +13,11 @@ public class FetcherContext {
 	final BucketFactory bucketFactory;
 	final int maxRecursionLevel;
 	final int maxArchiveRestarts;
+	final boolean dontEnterImplicitArchives;
 	
 	public FetcherContext(SimpleLowLevelClient client, long curMaxLength, 
 			long curMaxTempLength, int maxRecursionLevel, int maxArchiveRestarts,
+			boolean dontEnterImplicitArchives,
 			ArchiveManager archiveManager, BucketFactory bucketFactory) {
 		this.client = client;
 		this.maxOutputLength = curMaxLength;
@@ -24,6 +26,7 @@ public class FetcherContext {
 		this.bucketFactory = bucketFactory;
 		this.maxRecursionLevel = maxRecursionLevel;
 		this.maxArchiveRestarts = maxArchiveRestarts;
+		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
 	}
 
 }

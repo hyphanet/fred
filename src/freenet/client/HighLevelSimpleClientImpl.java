@@ -13,6 +13,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private long curMaxTempLength;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
+	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
 	
 	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf) {
 		this.client = client;
@@ -30,7 +31,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
 		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxLength, 
-				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, archiveManager, bucketFactory);
+				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, archiveManager, bucketFactory);
 		Fetcher f = new Fetcher(uri, context, new ArchiveContext());
 		return f.run();
 	}

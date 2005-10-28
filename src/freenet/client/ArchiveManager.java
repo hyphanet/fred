@@ -225,6 +225,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		 * - Turn the master Metadata object into binary metadata, with all its subsidiaries.
 		 * - Create a .metadata entry containing this data.
 		 */
+		
 		// TODO implement!
 	}
 
@@ -279,5 +280,16 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		} catch (UnsupportedCipherException e) {
 			throw new Error("Unsupported cipher: AES 256/256!", e);
 		}
+	}
+
+	public static boolean isUsableArchiveType(String type) {
+		return type.equals("application/zip") || type.equals("application/x-zip");
+		// Update when add new archive types
+	}
+
+	public static short getArchiveType(String type) {
+		if(type.equals("application/zip") || type.equals("application/x-zip"))
+			return Metadata.ARCHIVE_ZIP;
+		else throw new IllegalArgumentException(); 
 	}
 }

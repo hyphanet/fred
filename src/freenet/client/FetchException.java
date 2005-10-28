@@ -42,4 +42,6 @@ public class FetchException extends Exception {
 	static final int TOO_MUCH_RECURSION = 9;
 	/** Tried to access an archive file but not in an archive */
 	static final int NOT_IN_ARCHIVE = 10;
+	/** Has more metastrings, can't fulfill them */
+	static final int HAS_MORE_METASTRINGS = 11;
 }
