@@ -12,6 +12,7 @@ class ErrorArchiveStoreItem extends ArchiveStoreItem {
 	}
 
 	public void finalize() {
+		super.finalize();
 	}
 	
 }

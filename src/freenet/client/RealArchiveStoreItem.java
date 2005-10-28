@@ -46,6 +46,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	}
 	
 	public synchronized void finalize() {
+		super.finalize();
 		if(finalized) return;
 		long sz = spaceUsed();
 		underBucket.finalize();
