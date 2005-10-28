@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -216,8 +218,9 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 	 * @param ctx The context object.
 	 * @param key The key from which the archive we are unpacking was fetched.
 	 * @param names Set of names in the archive.
+	 * @throws ArchiveFailureException 
 	 */
-	private void generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names) {
+	private void generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names) throws ArchiveFailureException {
 		/* What we have to do is to:
 		 * - Construct a filesystem tree of the names.
 		 * - Turn each level of the tree into a Metadata object, including those below it, with
@@ -225,8 +228,49 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		 * - Turn the master Metadata object into binary metadata, with all its subsidiaries.
 		 * - Create a .metadata entry containing this data.
 		 */
-		
-		// TODO implement!
+		// Root directory.
+		// String -> either itself, or another HashMap
+		HashMap dir = new HashMap();
+		Iterator i = names.iterator();
+		while(i.hasNext()) {
+			String name = (String) i.next();
+			addToDirectory(dir, name, "");
+		}
+		Metadata metadata = new Metadata(dir);
+		TempStoreElement element = makeTempStoreBucket(-1);
+		OutputStream os = element.bucket.getOutputStream();
+		metadata.writeTo(os);
+		os.close();
+		addStoreElement(ctx, key, ".metadata", element);
+	}
+	
+	private void addToDirectory(HashMap dir, String name, String prefix) throws ArchiveFailureException {
+		int x = name.indexOf('/');
+		if(x < 0) {
+			if(dir.containsKey(name)) {
+				throw new ArchiveFailureException("Invalid archive: contains "+prefix+name+" twice");
+			}
+			dir.put(name, name);
+		} else {
+			String before = name.substring(0, x);
+			String after;
+			if(x == name.length()-1) {
+				// Last char
+				after = "";
+			} else
+				after = name.substring(x+1, name.length());
+			Object o = (Object) dir.get(before);
+			HashMap map;
+			if(o == null) {
+				map = new HashMap();
+				dir.put(before, map);
+			}
+			if(o instanceof String) {
+				throw new ArchiveFailureException("Invalid archive: contains "+name+" as both file and dir");
+			}
+			map = (HashMap) o;
+			addToDirectory(map, after, prefix + before + "/");
+		}
 	}
 
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {

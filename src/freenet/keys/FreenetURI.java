@@ -1,5 +1,8 @@
 package freenet.keys;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
@@ -10,10 +13,13 @@ import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 
 /**
+ * Note that the metadata pairs below are not presently supported. They are supported
+ * by the old (0.5) code however.
+ * 
  * FreenetURI handles parsing and creation of the Freenet URI format, defined
  * as follows:
  * <p>
- * <code>freenet:[KeyType@]RoutingKey[,CryptoKey][,n1=v1,n2=v2,...][/docname][//metastring]</code>
+ * <code>freenet:[KeyType@]RoutingKey,CryptoKey[,n1=v1,n2=v2,...][/docname][//metastring]</code>
  * </p>
  * <p>
  * where KeyType is the TLA of the key (currently SVK, SSK, KSK, or CHK). If
@@ -390,5 +396,46 @@ public class FreenetURI {
 				l.addLast(metaStr[i]);
 		}
 		return l;
+	}
+	
+	static final byte CHK = 1;
+	static final byte SSK = 2;
+	
+	public static FreenetURI fromFullBinaryKey(byte[] buf) throws IOException {
+		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+		DataInputStream dis = new DataInputStream(bais);
+		return fromFullBinaryKey(dis);
+	}
+	
+	public static FreenetURI fromFullBinaryKey(DataInputStream dis) throws IOException {
+		int x = 0;
+		byte type = dis.readByte();
+		String keyType;
+		if(type == CHK)
+			keyType = "CHK";
+		else if(type == SSK)
+			keyType = "SSK";
+		else 
+			throw new MalformedURLException("Unrecognized type "+type);
+		// routingKey is a hash, so is exactly 32 bytes
+		byte[] routingKey = new byte[32];
+		dis.readFully(routingKey);
+		// cryptoKey is a 256 bit AES key, so likewise
+		byte[] cryptoKey = new byte[32];
+		dis.readFully(cryptoKey);
+		// Number of bytes of extra depends on key type
+		int extraLen;
+		if(type == CHK)
+			extraLen = ClientCHK.EXTRA_LENGTH;
+		else
+			throw new UnsupportedOperationException("SSKs not implemented yet!");
+			//extraLen = ClientSSK.EXTRA_LENGTH;
+		byte[] extra = new byte[extraLen];
+		dis.readFully(extra);
+		String docName = dis.readUTF();
+		int count = dis.readByte() & 0xff;
+		String[] metaStrings = new String[count];
+		for(int i=0;i<metaStrings.length;i++) metaStrings[i] = dis.readUTF();
+		return new FreenetURI(keyType, docName, metaStrings, routingKey, cryptoKey, extra);
 	}
 }

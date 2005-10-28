@@ -1,10 +1,12 @@
 package freenet.client;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
@@ -104,7 +106,7 @@ public class Metadata {
 		}
 		
 		if(noMIME) {
-			mimeType = ClientMetadata.DEFAULT_MIME_TYPE;
+			mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
 		} else {
 			if(compressedMIME) {
 				short x = dis.readShort();
@@ -220,17 +222,67 @@ public class Metadata {
 	}
 	
 	/**
-	 * Read a key using the current settings.
+	 * Create a Metadata object for an archive which does not have its own
+	 * metadata.
+	 * @param dir A map of names (string) to either files (same string) or
+	 * directories (more HashMap's)
 	 */
-	private FreenetURI readKey(DataInputStream dis) {
+	Metadata(HashMap dir) {
+		// Simple manifest - contains actual redirects.
+		// Not zip manifest, which is basically a redirect.
+		documentType = SIMPLE_MANIFEST;
+		noMIME = true;
+		mimeType = null;
+		clientMetadata = new ClientMetadata(null);
+		manifestEntries = new HashMap();
+		int count = 0;
+		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
+			String key = (String) i.next();
+			count++;
+			Object o = dir.get(key);
+			Metadata target;
+			if(o instanceof String) {
+				// Zip internal redirect
+				target = new Metadata(ZIP_INTERNAL_REDIRECT, key);
+			} else if(o instanceof HashMap) {
+				target = new Metadata((HashMap)o);
+			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
+			byte[] data = target.writeToByteArray();
+			manifestEntries.put(key, data);
+		}
+		manifestEntryCount = count;
+	}
+
+	public Metadata(byte docType, String arg) {
+		if(docType == ZIP_INTERNAL_REDIRECT) {
+			documentType = docType;
+			// Determine MIME type
+			mimeType = DefaultMIMETypes.guessMIMEType(arg);
+			clientMetadata = new ClientMetadata(mimeType);
+			nameInArchive = arg;
+		} else
+			throw new IllegalArgumentException();
+	}
+
+	private byte[] writeToByteArray() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		writeTo(baos);
+		return baos.toByteArray();
+	}
+
+	/**
+	 * Read a key using the current settings.
+	 * @throws IOException 
+	 */
+	private FreenetURI readKey(DataInputStream dis) throws IOException {
 		// Read URL
 		if(fullKeys) {
-			int length = (dis.readByte() & 0xff);
+			int length = dis.readShort();
 			byte[] buf = new byte[length];
 			dis.readFully(buf);
-			simpleRedirectKey = FreenetURI.fromFullBinaryKey(buf);
+			return FreenetURI.fromFullBinaryKey(buf);
 		} else {
-			simpleRedirectKey = ClientCHK.readRawBinaryKey(dis).getURI();
+			return ClientCHK.readRawBinaryKey(dis).getURI();
 		}
 	}
 

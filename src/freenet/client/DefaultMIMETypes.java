@@ -8,6 +8,9 @@ import java.util.Vector;
  */
 class DefaultMIMETypes {
 	
+	/** Default MIME type - what to set it to if we don't know any better */
+	public static final String DEFAULT_MIME_TYPE = "application/octet-stream";
+	
 	private static Vector mimeTypesByNumber = new Vector();
 	
 	private static HashMap mimeTypesByName = new HashMap();
@@ -26,7 +29,7 @@ class DefaultMIMETypes {
 		Short t = new Short(type);
 		if(extensions != null)
 			for(int i=0;i<extensions.length;i++)
-				mimeTypesByExtension.put(extensions[i], t);
+				mimeTypesByExtension.put(extensions[i].toLowerCase(), t);
 	}
 	
 	protected static synchronized void addMIMEType(short number, String type, String extensions) {
@@ -664,5 +667,17 @@ class DefaultMIMETypes {
 		addMIMEType((short)610, "video/x-sgi-movie", "movie");
 		addMIMEType((short)611, "x-conference/x-cooltalk", "ice");
 		addMIMEType((short)612, "x-world/x-vrml", "vrm vrml wrl");
+	}
+	
+	/** Guess a MIME type from a filename */
+	public static String guessMIMEType(String arg) {
+		int x = arg.indexOf('.');
+		if(x == -1 || x == arg.length()-1)
+			return DEFAULT_MIME_TYPE;
+		String ext = arg.substring(x+1).toLowerCase();
+		Short mimeIndexOb = (Short) mimeTypesByExtension.get(ext);
+		if(mimeIndexOb != null) {
+			return (String) mimeTypesByNumber.get(mimeIndexOb.intValue());
+		} else return DEFAULT_MIME_TYPE;
 	}
 }
