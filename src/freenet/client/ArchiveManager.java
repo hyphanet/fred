@@ -1,5 +1,6 @@
 package freenet.client;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -238,9 +239,13 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		}
 		Metadata metadata = new Metadata(dir);
 		TempStoreElement element = makeTempStoreBucket(-1);
-		OutputStream os = element.bucket.getOutputStream();
-		metadata.writeTo(os);
-		os.close();
+		try {
+			OutputStream os = element.bucket.getOutputStream();
+			metadata.writeTo(new DataOutputStream(os));
+			os.close();
+		} catch (IOException e) {
+			throw new ArchiveFailureException("Failed to create metadata: "+e, e);
+		}
 		addStoreElement(ctx, key, ".metadata", element);
 	}
 	

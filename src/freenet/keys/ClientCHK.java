@@ -1,6 +1,7 @@
 package freenet.keys;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
@@ -72,6 +73,19 @@ public class ClientCHK extends ClientKey {
 		dis.readFully(cryptoKey);
 	}
 
+	/**
+	 * Write an ultra-compact representation.
+	 * @throws IOException If a write failed.
+	 */
+	public void writeRawBinaryKey(DataOutputStream dos) throws IOException {
+		byte[] extra = new byte[EXTRA_LENGTH];
+		extra[0] = (byte) (cryptoAlgorithm >> 8);
+		extra[1] = (byte) cryptoAlgorithm;
+		extra[2] = (byte) ((compressed ? 1 : 0) + (controlDocument ? 2 : 0));
+		dos.write(extra);
+		dos.write(routingKey);
+		dos.write(cryptoKey);
+	}
     
     byte[] routingKey;
     byte[] cryptoKey;

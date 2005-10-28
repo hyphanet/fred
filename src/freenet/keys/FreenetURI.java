@@ -1,7 +1,9 @@
 package freenet.keys;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
@@ -401,13 +403,20 @@ public class FreenetURI {
 	static final byte CHK = 1;
 	static final byte SSK = 2;
 	
+	public static FreenetURI readFullBinaryKeyWithLength(DataInputStream dis) throws IOException {
+		int len = dis.readShort() & 0xffff;
+		byte[] buf = new byte[len];
+		dis.readFully(buf);
+		return fromFullBinaryKey(buf);
+	}
+	
 	public static FreenetURI fromFullBinaryKey(byte[] buf) throws IOException {
 		ByteArrayInputStream bais = new ByteArrayInputStream(buf);
 		DataInputStream dis = new DataInputStream(bais);
-		return fromFullBinaryKey(dis);
+		return readFullBinaryKey(dis);
 	}
 	
-	public static FreenetURI fromFullBinaryKey(DataInputStream dis) throws IOException {
+	public static FreenetURI readFullBinaryKey(DataInputStream dis) throws IOException {
 		int x = 0;
 		byte type = dis.readByte();
 		String keyType;
@@ -437,5 +446,56 @@ public class FreenetURI {
 		String[] metaStrings = new String[count];
 		for(int i=0;i<metaStrings.length;i++) metaStrings[i] = dis.readUTF();
 		return new FreenetURI(keyType, docName, metaStrings, routingKey, cryptoKey, extra);
+	}
+
+	/**
+	 * Write a binary representation of this URI, with a short length, so it can be passed over if necessary.
+	 * @param dos The stream to write to.
+	 * @throws MalformedURLException If the key could not be written because of inconsistencies or other
+	 * problems in the key itself.
+	 * @throws IOException If an error occurred while writing the key.
+	 */
+	public void writeFullBinaryKeyWithLength(DataOutputStream dos) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DataOutputStream ndos = new DataOutputStream(baos);
+		writeFullBinaryKey(ndos);
+		ndos.close();
+		byte[] data = baos.toByteArray();
+		if(data.length > 0xffff)
+			throw new MalformedURLException("Full key too long: "+data.length+" - "+this);
+		dos.writeShort((short)data.length);
+		dos.write(data);
+	}
+
+	/**
+	 * Write a binary representation of this URI.
+	 * @param dos The stream to write to.
+	 * @throws MalformedURLException If the key could not be written because of inconsistencies or other
+	 * problems in the key itself.
+	 * @throws IOException If an error occurred while writing the key.
+	 */
+	private void writeFullBinaryKey(DataOutputStream dos) throws IOException {
+		if(keyType.equals("CHK")) {
+			dos.writeByte(CHK);
+		} else if(keyType.equals("SSK")) {
+			dos.writeByte(SSK);
+		} else
+			throw new MalformedURLException("Cannot write key of type "+keyType+" - do not know how");
+		if(routingKey.length != 32)
+			throw new MalformedURLException("Routing key must be of length 32");
+		if(cryptoKey.length != 32)
+			throw new MalformedURLException("Crypto key must be of length 32");
+		if(keyType.equals("CHK") && extra.length != ClientCHK.EXTRA_LENGTH)
+			throw new MalformedURLException("Wrong number of extra bytes for CHK");
+		if(keyType.equals("SSK"))
+			throw new UnsupportedOperationException("SSK support not yet implemented");
+		dos.write(extra);
+		dos.writeUTF(docName);
+		if(metaStr != null) {
+			dos.writeInt(metaStr.length);
+			for(int i=0;i<metaStr.length;i++)
+				dos.writeUTF(metaStr[i]);
+		} else
+			dos.writeInt(0);
 	}
 }

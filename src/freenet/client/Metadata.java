@@ -3,7 +3,9 @@ package freenet.client;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -125,8 +127,8 @@ public class Metadata {
 				int len = l & 0xff; // positive
 				byte[] toRead = new byte[len];
 				dis.readFully(toRead);
-				// MIME types are all ISO-8859-1, right?
-				mimeType = new String(toRead);
+				// Use UTF-8 for everything, for simplicity
+				mimeType = new String(toRead, "UTF-8");
 			}
 		}
 		
@@ -143,6 +145,7 @@ public class Metadata {
 				dis.readFully(buf);
 				Logger.normal(this, "Ignoring type "+type+" extra-client-metadata field of "+length+" bytes");
 			}
+			extraMetadata = false; // can't parse, can't write
 		}
 		
 		clientMetadata = new ClientMetadata(mimeType);
@@ -199,11 +202,11 @@ public class Metadata {
 			// Don't validate, just keep the data; parse later
 			
 			for(int i=0;i<manifestEntryCount;i++) {
-				int nameLength = (dis.readByte() & 0xff);
+				short nameLength = dis.readShort();
 				byte[] buf = new byte[nameLength];
 				dis.readFully(buf);
 				String name = new String(buf, "UTF-8");
-				int len = dis.readInt();
+				short len = dis.readShort();
 				if(len < 0)
 					throw new MetadataParseException("Invalid manifest entry size: "+len);
 				if(len > length)
@@ -215,9 +218,9 @@ public class Metadata {
 		}
 		
 		if(documentType == ZIP_INTERNAL_REDIRECT) {
-			int len = (dis.readByte() & 0xff);
+			int len = dis.readShort();
 			byte[] buf = new byte[len];
-			nameInArchive = new String(buf);
+			nameInArchive = new String(buf, "UTF-8");
 		}
 	}
 	
@@ -257,35 +260,65 @@ public class Metadata {
 		if(docType == ZIP_INTERNAL_REDIRECT) {
 			documentType = docType;
 			// Determine MIME type
-			mimeType = DefaultMIMETypes.guessMIMEType(arg);
+			setMIMEType(DefaultMIMETypes.guessMIMEType(arg));
 			clientMetadata = new ClientMetadata(mimeType);
 			nameInArchive = arg;
 		} else
 			throw new IllegalArgumentException();
 	}
 
+	private void setMIMEType(String type) {
+		short s = DefaultMIMETypes.byName(type);
+		if(s >= 0) {
+			compressedMIME = true;
+			compressedMIMEValue = s;
+		} else {
+			compressedMIME = false;
+		}
+		mimeType = type;
+	}
+
 	private byte[] writeToByteArray() {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		writeTo(baos);
+		DataOutputStream dos = new DataOutputStream(baos);
+		try {
+			writeTo(dos);
+		} catch (IOException e) {
+			throw new Error("Could not write to byte array: "+e, e);
+		}
 		return baos.toByteArray();
 	}
 
 	/**
 	 * Read a key using the current settings.
 	 * @throws IOException 
+	 * @throws MalformedURLException If the key could not be read due to an error in parsing the key.
+	 * REDFLAG: May want to recover from these in future, hence the short length.
 	 */
 	private FreenetURI readKey(DataInputStream dis) throws IOException {
 		// Read URL
 		if(fullKeys) {
-			int length = dis.readShort();
-			byte[] buf = new byte[length];
-			dis.readFully(buf);
-			return FreenetURI.fromFullBinaryKey(buf);
+			return FreenetURI.readFullBinaryKeyWithLength(dis);
 		} else {
 			return ClientCHK.readRawBinaryKey(dis).getURI();
 		}
 	}
 
+	/**
+	 * Write a key using the current settings.
+	 * @throws IOException 
+	 * @throws MalformedURLException If an error in the key itself prevented it from being written.
+	 */
+	private void writeKey(DataOutputStream dos, FreenetURI freenetURI) throws IOException {
+		if(fullKeys) {
+			freenetURI.writeFullBinaryKeyWithLength(dos);
+		} else {
+			ClientKey key = ClientKey.getBaseKey(freenetURI);
+			if(key instanceof ClientCHK) {
+				((ClientCHK)key).writeRawBinaryKey(dos);
+			} else throw new IllegalArgumentException("Full keys must be enabled to write non-CHKs");
+		}
+	}
 	// Actual parsed data
 	
 	// document type
@@ -301,8 +334,8 @@ public class Metadata {
 	boolean splitfile;
 	/** Is a DBR */
 	boolean dbr;
-	/** No MIME type */
-	boolean noMIME;
+	/** No MIME type; on by default as not all doctypes have MIME */
+	boolean noMIME = true;
 	/** Compressed MIME type */
 	boolean compressedMIME;
 	/** Has extra client-metadata */
@@ -329,7 +362,7 @@ public class Metadata {
 	
 	/** Compressed splitfile codec */
 	short compressionCodec;
-	static final short COMPRESS_GZIP = 0;
+	static final short COMPRESS_GZIP = 0; // for future use
 	static final short COMPRESS_BZIP2 = 1; // FIXME for future use
 	
 	/** The length of the splitfile */
@@ -464,4 +497,99 @@ public class Metadata {
 	public void setSimpleRedirect() {
 		documentType = SIMPLE_REDIRECT;
 	}
+	
+	/** Write the metadata as binary. 
+	 * @throws IOException */
+	public void writeTo(DataOutputStream dos) throws IOException {
+		dos.writeLong(FREENET_METADATA_MAGIC);
+		dos.writeShort(0); // version
+		dos.writeByte(documentType);
+		if(documentType == SIMPLE_REDIRECT || documentType == MULTI_LEVEL_METADATA
+				|| documentType == ZIP_MANIFEST) {
+			short flags = 0;
+			if(splitfile) flags |= FLAGS_SPLITFILE;
+			if(dbr) flags |= FLAGS_DBR;
+			if(noMIME) flags |= FLAGS_NO_MIME;
+			if(compressedMIME) flags |= FLAGS_COMPRESSED_MIME;
+			if(extraMetadata) flags |= FLAGS_EXTRA_METADATA;
+			if(fullKeys) flags |= FLAGS_FULL_KEYS;
+			if(splitUseLengths) flags |= FLAGS_SPLIT_USE_LENGTHS;
+			if(compressed) flags |= FLAGS_COMPRESSED;
+		}
+		
+		if(documentType == ZIP_MANIFEST) {
+			dos.writeShort(archiveType);
+		}
+		
+		if(splitfile) {
+			dos.writeLong(dataLength);
+		}
+		
+		if(compressed) {
+			dos.writeShort(compressionCodec);
+			dos.writeLong(decompressedLength);
+		}
+		
+		if(!noMIME) {
+			if(compressedMIME) {
+				int x = compressedMIMEValue;
+				if(hasCompressedMIMEParams) x |= 32768;
+				dos.writeShort((short)x);
+				if(hasCompressedMIMEParams)
+					dos.writeShort(compressedMIMEParams);
+			} else {
+				byte[] data = mimeType.getBytes("UTF-8");
+				if(data.length > 255) throw new Error("MIME type too long: "+data.length+" bytes: "+mimeType);
+				dos.writeByte((byte)data.length);
+				dos.write(data);
+			}
+		}
+		
+		if(dbr)
+			throw new UnsupportedOperationException("No DBR support yet");
+		
+		if(extraMetadata)
+			throw new UnsupportedOperationException("No extra metadata support yet");
+		
+		if((!splitfile) && documentType == SIMPLE_REDIRECT || documentType == ZIP_MANIFEST) {
+			writeKey(dos, simpleRedirectKey);
+		} else if(splitfile) {
+			dos.writeShort(splitfileAlgorithm);
+			if(splitfileParams != null) {
+				dos.writeInt(splitfileParams.length);
+				dos.write(splitfileParams);
+			} else
+				dos.writeInt(0);
+			
+			dos.writeInt(splitfileBlocks);
+			dos.writeInt(splitfileCheckBlocks);
+			for(int i=0;i<splitfileBlocks;i++)
+				writeKey(dos, splitfileDataKeys[i]);
+			for(int i=0;i<splitfileCheckBlocks;i++)
+				writeKey(dos, splitfileCheckKeys[i]);
+		}
+		
+		if(documentType == SIMPLE_MANIFEST) {
+			dos.writeInt(manifestEntryCount);
+			for(Iterator i=manifestEntries.keySet().iterator();i.hasNext();) {
+				String name = (String) i.next();
+				byte[] nameData = name.getBytes("UTF-8");
+				if(nameData.length > Short.MAX_VALUE) throw new IllegalArgumentException("Manifest name too long");
+				dos.writeShort(nameData.length);
+				dos.write(nameData);
+				byte[] data = (byte[]) manifestEntries.get(name);
+				if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Manifest data too long");
+				dos.writeShort(data.length);
+				dos.write(data);
+			}
+		}
+		
+		if(documentType == ZIP_INTERNAL_REDIRECT) {
+			byte[] data = nameInArchive.getBytes("UTF-8");
+			if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Zip internal redirect name too long");
+			dos.writeShort(data.length);
+			dos.write(data);
+		}
+	}
+
 }
