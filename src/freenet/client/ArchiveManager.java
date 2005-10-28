@@ -110,7 +110,7 @@ public class ArchiveManager {
 		return ase.dataAsBucket();
 	}
 	
-	public synchronized void removeCachedItem(ArchiveStoreItem item) {
+	synchronized void removeCachedItem(ArchiveStoreItem item) {
 		storedData.removeKey(item.key);
 	}
 	

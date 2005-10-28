@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -313,6 +314,9 @@ public class Metadata {
 		if(fullKeys) {
 			freenetURI.writeFullBinaryKeyWithLength(dos);
 		} else {
+			String[] meta = freenetURI.getAllMetaStrings();
+			if(meta != null && meta.length > 0)
+				throw new MalformedURLException("Not a plain CHK");
 			ClientKey key = ClientKey.getBaseKey(freenetURI);
 			if(key instanceof ClientCHK) {
 				((ClientCHK)key).writeRawBinaryKey(dos);

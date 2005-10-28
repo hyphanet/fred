@@ -39,14 +39,11 @@ public class TextModeClientInterface implements Runnable {
     final RandomSource r;
     final Node n;
     final Hashtable streams;
-    private Writer subscribedDataStream;
-    private String lastSendStreamName;
     
     TextModeClientInterface(Node n) {
         this.n = n;
         this.r = n.random;
         streams = new Hashtable();
-        subscribedDataStream = new OutputStreamWriter(System.out);
         new Thread(this).start();
     }
     
