@@ -29,10 +29,13 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		curMaxTempLength = maxIntermediateLength;
 	}
 
+	/**
+	 * Fetch a key. Either returns the data, or throws an exception.
+	 */
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
 		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxLength, 
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, archiveManager, bucketFactory);
-		Fetcher f = new Fetcher(uri, context, new ArchiveContext());
+		Fetcher f = new Fetcher(uri, context);
 		return f.run();
 	}
 

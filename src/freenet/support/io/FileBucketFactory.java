@@ -40,7 +40,7 @@ public class FileBucketFactory implements BucketFactory {
             // e.printStackTrace();
             // System.err.println("----------------------------------------");
         } while (f.exists());
-        Bucket b = new FileBucket(f, false, false);
+        Bucket b = new FileBucket(f, false, true, false);
         files.addElement(f);
         return b;
     }

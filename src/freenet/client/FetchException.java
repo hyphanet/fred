@@ -1,10 +1,19 @@
 package freenet.client;
 
+/**
+ * Generic exception thrown by a Fetcher. All other exceptions are converted to one of
+ * these to tell the client.
+ */
 public class FetchException extends Exception {
 
 	private static final long serialVersionUID = -1106716067841151962L;
 	
 	final int mode;
+	
+	/** Get the failure mode. */
+	public int getMode() {
+		return mode;
+	}
 	
 	public FetchException(int m) {
 		mode = m;
@@ -21,27 +30,29 @@ public class FetchException extends Exception {
 	}
 
 	/** Too many levels of recursion into archives */
-	static final int TOO_DEEP_ARCHIVE_RECURSION = 1;
+	public static final int TOO_DEEP_ARCHIVE_RECURSION = 1;
 	/** Don't know what to do with splitfile */
-	static final int UNKNOWN_SPLITFILE_METADATA = 2;
+	public static final int UNKNOWN_SPLITFILE_METADATA = 2;
 	/** Too many ordinary redirects */
-	static final int TOO_MANY_REDIRECTS = 3;
+	public static final int TOO_MANY_REDIRECTS = 3;
 	/** Don't know what to do with metadata */
-	static final int UNKNOWN_METADATA = 3;
+	public static final int UNKNOWN_METADATA = 3;
 	/** Got a MetadataParseException */
-	static final int INVALID_METADATA = 4;
+	public static final int INVALID_METADATA = 4;
 	/** Got an ArchiveFailureException */
-	static final int ARCHIVE_FAILURE = 5;
+	public static final int ARCHIVE_FAILURE = 5;
 	/** Failed to decode a block */
-	static final int BLOCK_DECODE_ERROR = 6;
+	public static final int BLOCK_DECODE_ERROR = 6;
 	/** Too many split metadata levels */
-	static final int TOO_MANY_METADATA_LEVELS = 7;
+	public static final int TOO_MANY_METADATA_LEVELS = 7;
 	/** Too many archive restarts */
-	static final int TOO_MANY_ARCHIVE_RESTARTS = 8;
+	public static final int TOO_MANY_ARCHIVE_RESTARTS = 8;
 	/** Too deep recursion */
-	static final int TOO_MUCH_RECURSION = 9;
+	public static final int TOO_MUCH_RECURSION = 9;
 	/** Tried to access an archive file but not in an archive */
-	static final int NOT_IN_ARCHIVE = 10;
+	public static final int NOT_IN_ARCHIVE = 10;
 	/** Has more metastrings, can't fulfill them */
-	static final int HAS_MORE_METASTRINGS = 11;
+	public static final int HAS_MORE_METASTRINGS = 11;
+	/** Internal error, probably failed to read from a bucket */
+	public static final int BUCKET_ERROR = 12;
 }

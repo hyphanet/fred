@@ -29,18 +29,28 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		this.finalized = false;
 		this.bucket = temp.bucket;
 		this.underBucket = temp.underBucket;
+		underBucket.dontDeleteOnFinalize();
 		underBucket.setReadOnly();
 		this.manager.cachedData += spaceUsed();
 	}
 
+	/**
+	 * Return the data, as a Bucket, in plaintext.
+	 */
 	Bucket dataAsBucket() {
 		return bucket;
 	}
 
+	/**
+	 * Return the length of the data.
+	 */
 	long dataSize() {
 		return bucket.size();
 	}
-	
+
+	/**
+	 * Return the estimated space used by the data.
+	 */
 	long spaceUsed() {
 		return FileUtil.estimateUsage(myFilename, underBucket.size());
 	}
@@ -52,5 +62,9 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		underBucket.finalize();
 		finalized = true;
 		this.manager.cachedData -= sz;
+	}
+
+	Bucket getDataOrThrow() throws ArchiveFailureException {
+		return dataAsBucket();
 	}
 }

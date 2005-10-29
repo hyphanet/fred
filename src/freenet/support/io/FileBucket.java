@@ -36,14 +36,14 @@ public class FileBucket implements Bucket {
 	 * @param file The File to read and write to.
 	 * @param readOnly If true, any attempt to write to the bucket will result in an IOException.
 	 * Can be set later. Irreversible. @see isReadOnly(), setReadOnly()
-	 * @param deleteOnExit If true, delete the file on finalization.
-	 *            
+	 * @param deleteOnFinalize If true, delete the file on finalization. Reversible.
+	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
 	 */
-	public FileBucket(File file, boolean readOnly, boolean deleteOnExit) {
+	public FileBucket(File file, boolean readOnly, boolean deleteOnFinalize, boolean deleteOnExit) {
 		this.readOnly = readOnly;
 		this.file = file;
-		this.newFile = deleteOnExit;
-		if(newFile)
+		this.newFile = deleteOnFinalize;
+		if(deleteOnExit)
 			file.deleteOnExit();
 		// Useful for finding temp file leaks.
 		// System.err.println("-- FileBucket.ctr(0) -- " +
@@ -292,5 +292,14 @@ public class FileBucket implements Bucket {
 
 	public void setReadOnly() {
 		readOnly = true;
+	}
+
+	/**
+	 * Turn off "delete file on finalize" flag.
+	 * Note that if you have already set delete file on exit, there is little that you
+	 * can do to recover it! Delete file on finalize, on the other hand, is reversible.
+	 */
+	public void dontDeleteOnFinalize() {
+		newFile = false;
 	}
 }

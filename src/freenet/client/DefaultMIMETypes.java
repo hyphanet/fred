@@ -3,6 +3,8 @@ package freenet.client;
 import java.util.HashMap;
 import java.util.Vector;
 
+import freenet.support.Logger;
+
 /**
  * Holds the default MIME types.
  */
@@ -11,47 +13,85 @@ class DefaultMIMETypes {
 	/** Default MIME type - what to set it to if we don't know any better */
 	public static final String DEFAULT_MIME_TYPE = "application/octet-stream";
 	
+	/** MIME types: number -> name */
 	private static Vector mimeTypesByNumber = new Vector();
 	
+	/** MIME types: name -> number */
 	private static HashMap mimeTypesByName = new HashMap();
 	
+	/** MIME types by extension. One extension maps to one MIME type, but not necessarily
+	 * the other way around. */
 	private static HashMap mimeTypesByExtension = new HashMap();
 	
+	/**
+	 * Add a MIME type, without any extensions.
+	 * @param number The number of the MIME type for compression. This *must not change*
+	 * for a given type, or the metadata format will be affected.
+	 * @param type The actual MIME type string. Do not include ;charset= etc; these are
+	 * parameters and there is a separate mechanism for them.
+	 */
 	protected static synchronized void addMIMEType(short number, String type) {
 		String s = (String) mimeTypesByNumber.get(number);
 		if(s != null) throw new IllegalArgumentException("Already used: "+number);
 		mimeTypesByNumber.set(number, type);
 		mimeTypesByName.put(type, new Short(number));
 	}
-	
+
+	/**
+	 * Add a MIME type.
+	 * @param number The number of the MIME type for compression. This *must not change*
+	 * for a given type, or the metadata format will be affected.
+	 * @param type The actual MIME type string. Do not include ;charset= etc; these are
+	 * parameters and there is a separate mechanism for them.
+	 * @param extensions An array of common extensions for files of this type. Must be
+	 * unique for the type.
+	 */
 	protected static synchronized void addMIMEType(short number, String type, String[] extensions) {
 		addMIMEType(number, type);
 		Short t = new Short(type);
 		if(extensions != null)
-			for(int i=0;i<extensions.length;i++)
-				mimeTypesByExtension.put(extensions[i].toLowerCase(), t);
+			for(int i=0;i<extensions.length;i++) {
+				String ext = extensions[i].toLowerCase();
+				if(mimeTypesByExtension.containsKey(ext)) {
+					Logger.error(DefaultMIMETypes.class, "Extension already registered to number "+mimeTypesByExtension.get(ext));
+				} else
+					mimeTypesByExtension.put(ext, t);
+			}
+				
 	}
-	
+
+	/**
+	 * Add a MIME type, with extensions separated by spaces. This is more or less
+	 * the format in /etc/mime-types.
+	 */
 	protected static synchronized void addMIMEType(short number, String type, String extensions) {
 		addMIMEType(number, type, extensions.split(" "));
 	}
-	
+
+	/**
+	 * Get a known MIME type by number.
+	 */
 	public static String byNumber(short x) {
 		if(x > mimeTypesByNumber.size() || x < 0)
 			return null;
 		return (String) mimeTypesByNumber.get(x);
 	}
 	
+	/**
+	 * Get the number of a MIME type, or -1 if it is not in the table of known MIME
+	 * types, in which case it will have to be sent uncompressed.
+	 */
 	public static short byName(String s) {
 		Short x = (Short) mimeTypesByName.get(s);
 		if(x != null) return x.shortValue();
 		else return -1;
 	}
 	
-	// From toad's /etc/mime.types
-	// cat /etc/mime.types | sed "/^$/d;/#/d" | tr --squeeze '\t' ' ' | 
-	// (y=0; while read x; do echo "$x" | 
-	// sed -n "s/^\([^ ]*\)$/addMIMEType\($y, \"\1\"\);/p;s/^\([^ (),]\+\) \(.*\)$/addMIMEType\($y, \"\1\", \"\2\"\);/p;"; y=$((y+1)); done)
+	/* From toad's /etc/mime.types
+	 * cat /etc/mime.types | sed "/^$/d;/#/d" | tr --squeeze '\t' ' ' | 
+	 * (y=0; while read x; do echo "$x" | 
+	 * sed -n "s/^\([^ ]*\)$/addMIMEType\($y, \"\1\"\);/p;s/^\([^ (),]\+\) \(.*\)$/addMIMEType\($y, \"\1\", \"\2\"\);/p;"; y=$((y+1)); done)
+	 */
 	
 	static {
 		addMIMEType((short)0, "application/activemessage");

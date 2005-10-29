@@ -16,16 +16,41 @@ import freenet.support.Logger;
  */
 class Fetcher {
 
+	/** The original URI to be fetched. */
 	final FreenetURI origURI;
+	/** The settings for the fetch e.g. max file size */
 	final FetcherContext ctx;
+	/** The archive context object to be passed down the entire request. This is
+	 * recreated if we get an ArchiveRestartException. It does loop detection, partly
+	 * in order to prevent rare deadlocks.
+	 */
 	ArchiveContext archiveContext;
 	
-	public Fetcher(FreenetURI uri, FetcherContext ctx, ArchiveContext archiveContext) {
-		this.origURI = uri;
-		this.ctx = ctx;
-		this.archiveContext = archiveContext;
+	/**
+	 * Local-only constructor, with ArchiveContext, for recursion via e.g. archives.
+	 */
+	Fetcher(FreenetURI uri, FetcherContext fctx, ArchiveContext actx) {
+		origURI = uri;
+		ctx = fctx;
+		archiveContext = actx;
 	}
 
+	/**
+	 * Create a Fetcher. Public constructor, for when starting a new request chain.
+	 * @param uri The key to fetch.
+	 * @param ctx The settings for the fetch.
+	 */
+	public Fetcher(FreenetURI uri, FetcherContext ctx) {
+		this(uri, ctx, new ArchiveContext());
+	}
+	
+	/**
+	 * Fetch the key. Called by clients.
+	 * @return The key requested's data and client metadata.
+	 * @throws FetchException If we cannot fetch the key for some reason. Various
+	 * other exceptions are used internally; they are converted to a FetchException
+	 * by this driver routine.
+	 */
 	public FetchResult run() throws FetchException {
 		for(int i=0;i<ctx.maxArchiveRestarts;i++) {
 			try {
@@ -46,7 +71,8 @@ class Fetcher {
 	}
 	
 	/**
-	 * Fetch a key.
+	 * Fetch a key, within an overall fetch process. Called by self in recursion, and
+	 * called by driver function @see run() .
 	 * @param dm The client metadata object to accumulate client metadata in.
 	 * @param recursionLevel The recursion level. Incremented every time we enter
 	 * realRun(). If it goes above a certain limit, we throw a FetchException.
@@ -127,7 +153,11 @@ class Fetcher {
 		} else if(metadata.isArchiveManifest()) {
 			container = ctx.archiveManager.makeHandler(thisKey, metadata.getArchiveType());
 			Bucket metadataBucket = container.getMetadata(archiveContext, ctx, dm, recursionLevel, true);
-			metadata = Metadata.construct(metadataBucket);
+			try {
+				metadata = Metadata.construct(metadataBucket);
+			} catch (IOException e) {
+				throw new FetchException(FetchException.BUCKET_ERROR);
+			}
 			return runMetadata(dm, recursionLevel+1, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives);
 		} else if(metadata.isArchiveInternalRedirect()) {
 			if(container == null)
@@ -144,7 +174,11 @@ class Fetcher {
 					// Possible implicit archive inside archive?
 					container = ctx.archiveManager.makeHandler(thisKey, ArchiveManager.getArchiveType(dm.getMIMEType()));
 					Bucket metadataBucket = container.getMetadata(archiveContext, ctx, dm, recursionLevel, true);
-					metadata = Metadata.construct(metadataBucket);
+					try {
+						metadata = Metadata.construct(metadataBucket);
+					} catch (IOException e) {
+						throw new FetchException(FetchException.BUCKET_ERROR);
+					}
 					return runMetadata(dm, recursionLevel+1, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives);
 				}
 				Bucket result = container.get(metadata.getZIPInternalName(), archiveContext, ctx, dm, recursionLevel, true);
@@ -155,7 +189,11 @@ class Fetcher {
 			// Doesn't have to be a splitfile; could be from a ZIP or a plain file.
 			metadata.setSimpleRedirect();
 			FetchResult res = runMetadata(dm, recursionLevel, key, metaStrings, metadata, container, thisKey, true);
-			metadata = Metadata.construct(res.data);
+			try {
+				metadata = Metadata.construct(res.data);
+			} catch (IOException e) {
+				throw new FetchException(FetchException.BUCKET_ERROR);
+			}
 			return runMetadata(dm, recursionLevel, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives);
 		} else if(metadata.isSingleFileRedirect()) {
 			FreenetURI uri = metadata.getSingleTarget();
@@ -168,7 +206,11 @@ class Fetcher {
 					// We might not have to fetch it.
 					container = ctx.archiveManager.makeHandler(uri, ArchiveManager.getArchiveType(dm.getMIMEType()));
 					Bucket metadataBucket = container.getMetadata(archiveContext, ctx, dm, recursionLevel, true);
-					metadata = Metadata.construct(metadataBucket);
+					try {
+						metadata = Metadata.construct(metadataBucket);
+					} catch (IOException e) {
+						throw new FetchException(FetchException.BUCKET_ERROR);
+					}
 					return runMetadata(dm, recursionLevel+1, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives);
 				}
 			}
@@ -181,7 +223,11 @@ class Fetcher {
 				// We know target is not metadata.
 				container = ctx.archiveManager.makeHandler(thisKey, ArchiveManager.getArchiveType(dm.getMIMEType()));
 				Bucket metadataBucket = container.getMetadata(archiveContext, ctx, dm, recursionLevel, true);
-				metadata = Metadata.construct(metadataBucket);
+				try {
+					metadata = Metadata.construct(metadataBucket);
+				} catch (IOException e) {
+					throw new FetchException(FetchException.BUCKET_ERROR);
+				}
 				return runMetadata(dm, recursionLevel+1, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives);
 			}
 			

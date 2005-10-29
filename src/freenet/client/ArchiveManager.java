@@ -28,7 +28,7 @@ import freenet.support.io.FileBucket;
 /**
  * Cache of recently decoded archives:
  * - Keep up to N ArchiveHandler's in RAM (this can be large; we don't keep the
- * files open due to the limitations of the API)
+ * files open due to the limitations of the java.util.zip API)
  * - Keep up to Y bytes (after padding and overheads) of decoded data on disk
  * (the OS is quite capable of determining what to keep in actual RAM)
  * 
@@ -36,6 +36,19 @@ import freenet.support.io.FileBucket;
  */
 public class ArchiveManager {
 
+	/**
+	 * Create an ArchiveManager.
+	 * @param maxHandlers The maximum number of cached ArchiveHandler's.
+	 * @param maxCachedData The maximum size of the cache directory, in bytes.
+	 * @param maxArchiveSize The maximum size of an archive.
+	 * @param maxArchivedFileSize The maximum extracted size of a single file in any
+	 * archive.
+	 * @param maxCachedElements The maximum number of cached elements (an element is a
+	 * file extracted from an archive. It is stored, encrypted and padded, in a single
+	 * file.
+	 * @param cacheDir The directory in which to store cached data.
+	 * @param random A random source for the encryption keys used by stored files.
+	 */
 	ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, File cacheDir, RandomSource random) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
@@ -59,12 +72,14 @@ public class ArchiveManager {
 	final int maxArchiveHandlers;
 	final LRUHashtable archiveHandlers;
 	
-	public synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
+	/** Add an ArchiveHandler by key */
+	private synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
 		archiveHandlers.push(key, zip);
 		while(archiveHandlers.size() > maxArchiveHandlers)
 			archiveHandlers.popKey(); // dump it
 	}
 
+	/** Get an ArchiveHandler by key */
 	public ArchiveHandler getCached(FreenetURI key) {
 		ArchiveHandler handler = (ArchiveHandler) archiveHandlers.get(key);
 		archiveHandlers.push(key, handler);
@@ -80,9 +95,13 @@ public class ArchiveManager {
 
 	// Data cache
 	
+	/** Maximum cached data in bytes */
 	final long maxCachedData;
+	/** Currently cached data in bytes */
 	long cachedData;
+	/** Cache directory */
 	final File cacheDir;
+	/** Map from ArchiveKey to ArchiveStoreElement */
 	final LRUHashtable storedData;
 
 	/**
@@ -91,6 +110,7 @@ public class ArchiveManager {
 	 * It will try to serve from cache, but if that fails, will
 	 * re-fetch.
 	 * @param key The key of the archive that we are extracting data from.
+	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler. 
 	 */
 	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType) {
@@ -101,15 +121,26 @@ public class ArchiveManager {
 		return handler;
 	}
 
-	public synchronized Bucket getCached(FreenetURI key, String filename) {
+	/**
+	 * Get a cached, previously extracted, file from an archive.
+	 * @param key The key used to fetch the archive.
+	 * @param filename The name of the file within the archive.
+	 * @return A Bucket containing the data requested, or null.
+	 * @throws ArchiveFailureException 
+	 */
+	public synchronized Bucket getCached(FreenetURI key, String filename) throws ArchiveFailureException {
 		ArchiveKey k = new ArchiveKey(key, filename);
-		RealArchiveStoreItem ase = (RealArchiveStoreItem) storedData.get(k);
+		ArchiveStoreItem asi = (ArchiveStoreItem) storedData.get(k);
+		if(asi == null) return null;
 		// Promote to top of LRU
-		storedData.push(k, ase);
-		if(ase == null) return null;
-		return ase.dataAsBucket();
+		storedData.push(k, asi);
+		return asi.getDataOrThrow();
 	}
 	
+	/**
+	 * Remove a file from the cache.
+	 * @param item The ArchiveStoreItem to remove.
+	 */
 	synchronized void removeCachedItem(ArchiveStoreItem item) {
 		storedData.removeKey(item.key);
 	}
@@ -278,6 +309,15 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		}
 	}
 
+	/**
+	 * Add an error element to the cache. This happens when a single file in the archive
+	 * is invalid (usually because it is too large).
+	 * @param ctx The ArchiveStoreContext which must be notified about this element's creation.
+	 * @param key The key from which the archive was fetched.
+	 * @param name The name of the file within the archive.
+	 * @param error The error message to be included on the eventual exception thrown,
+	 * if anyone tries to extract the data for this element.
+	 */
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
 		synchronized(storedData) {
@@ -302,7 +342,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 	 * Call synchronized on storedData.
 	 */
 	private void trimStoredData() {
-		while(cachedData > maxCachedData) {
+		while(cachedData > maxCachedData || storedData.size() > maxCachedElements) {
 			ArchiveStoreItem e = (ArchiveStoreItem) storedData.popValue();
 			e.finalize();
 		}
@@ -319,7 +359,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		random.nextBytes(randomFilename);
 		String filename = HexUtil.bytesToHex(randomFilename);
 		File myFile = new File(cacheDir, filename);
-		FileBucket fb = new FileBucket(myFile, false, true);
+		FileBucket fb = new FileBucket(myFile, false, true, false);
 		
 		byte[] cipherKey = new byte[32];
 		random.nextBytes(cipherKey);
@@ -331,11 +371,17 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		}
 	}
 
+	/**
+	 * Is the given MIME type an archive type that we can deal with?
+	 */
 	public static boolean isUsableArchiveType(String type) {
 		return type.equals("application/zip") || type.equals("application/x-zip");
 		// Update when add new archive types
 	}
 
+	/** If the given MIME type is an archive type that we can deal with,
+	 * get its archive type number (see the ARCHIVE_ constants in Metadata).
+	 */
 	public static short getArchiveType(String type) {
 		if(type.equals("application/zip") || type.equals("application/x-zip"))
 			return Metadata.ARCHIVE_ZIP;

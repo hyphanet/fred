@@ -30,11 +30,19 @@ class ArchiveStoreContext implements ArchiveHandler {
 		// Need to do anything here?
 	}
 
+	/**
+	 * Get the metadata for a given archive.
+	 * @return A Bucket containing the metadata, in binary format, for the archive.
+	 */
 	public Bucket getMetadata(ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 		return get(".metadata", archiveContext, fetchContext, dm, recursionLevel, dontEnterImplicitArchives);
 	}
 
+	/**
+	 * Fetch a file in an archive. Will check the cache first, then fetch the archive if
+	 * necessary.
+	 */
 	public Bucket get(String internalName, ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 
@@ -96,6 +104,9 @@ class ArchiveStoreContext implements ArchiveHandler {
 	/** Index of still-cached ArchiveStoreItems with this key */
 	final DoublyLinkedListImpl myItems;
 
+	/**
+	 * Remove all ArchiveStoreItems with this key from the cache.
+	 */
 	public void removeAllCachedItems() {
 		synchronized(myItems) {
 			ArchiveStoreItem item;
@@ -106,12 +117,14 @@ class ArchiveStoreContext implements ArchiveHandler {
 		}
 	}
 
+	/** Notify that a new archive store item with this key has been added to the cache. */
 	public void addItem(ArchiveStoreItem item) {
 		synchronized(myItems) {
 			myItems.push(item);
 		}
 	}
 
+	/** Notify that an archive store item with this key has been expelled from the cache. */
 	public void removeItem(ArchiveStoreItem item) {
 		synchronized(myItems) {
 			myItems.remove(item);

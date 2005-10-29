@@ -17,6 +17,8 @@ public class ClientMetadata {
 		mimeType = null;
 	}
 	
+	/** Get the document MIME type. Will always be a valid MIME type, unless there
+	 * has been an error; if it is unknown, will return application/octet-stream. */
 	public String getMIMEType() {
 		if(mimeType == null || mimeType.length() == 0)
 			return DefaultMIMETypes.DEFAULT_MIME_TYPE;

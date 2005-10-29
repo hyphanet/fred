@@ -3,9 +3,10 @@ package freenet.client;
 import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
 
-/** Context for a Fetcher */
+/** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
 public class FetcherContext {
-	
+
+	/** Low-level client to send low-level requests to. */
 	final SimpleLowLevelClient client;
 	final long maxOutputLength;
 	final long maxTempLength;

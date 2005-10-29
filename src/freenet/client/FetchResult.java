@@ -18,7 +18,8 @@ public class FetchResult {
 		data = fetched;
 	}
 
-	/** If so, get the MIME type */
+	/** Get the MIME type of the fetched data. 
+	 * If unknown, returns application/octet-stream. */
 	public String getMimeType() {
 		return metadata.getMIMEType();
 	}

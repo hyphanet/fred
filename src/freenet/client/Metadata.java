@@ -25,6 +25,10 @@ public class Metadata {
 	/** Soft limit, to avoid memory DoS */
 	static final int MAX_SPLITFILE_BLOCKS = 100*1000;
 	
+	/** Parse a block of bytes into a Metadata structure.
+	 * Constructor method because of need to catch impossible exceptions.
+	 * @throws MetadataParseException If the metadata is invalid.
+	 */
 	public static Metadata construct(byte[] data) throws MetadataParseException {
 		try {
 			return new Metadata(data);
@@ -35,23 +39,22 @@ public class Metadata {
 		}
 	}
 	
-	public static Metadata construct(Bucket data) throws MetadataParseException {
-		try {
-			return new Metadata(data);
-		} catch (IOException e) {
-			MetadataParseException e1 = new MetadataParseException("Caught "+e);
-			e1.initCause(e);
-			throw e1;
-		}
+	/**
+	 * Parse a bucket of data into a Metadata structure.
+	 * @throws MetadataParseException If the parsing failed because of invalid metadata.
+	 * @throws IOException If we could not read the metadata from the bucket.
+	 */
+	public static Metadata construct(Bucket data) throws MetadataParseException, IOException {
+		return new Metadata(data);
 	}
 	
-	/** Parse some metadata from a byte[] 
+	/** Parse some metadata from a byte[]. 
 	 * @throws IOException If the data is incomplete, or something wierd happens. */
 	private Metadata(byte[] data) throws IOException {
 		this(new DataInputStream(new ByteArrayInputStream(data)), false, data.length);
 	}
 
-	/** Parse some metadata from a Bucket 
+	/** Parse some metadata from a Bucket.
 	 * @throws IOException If the data is incomplete, or something wierd happens. */
 	public Metadata(Bucket meta) throws IOException {
 		this(new DataInputStream(meta.getInputStream()), false, meta.size());
@@ -257,6 +260,13 @@ public class Metadata {
 		manifestEntryCount = count;
 	}
 
+	/**
+	 * Create a really simple Metadata object.
+	 * @param docType The document type. Must be something that takes a single argument.
+	 * At the moment this means ZIP_INTERNAL_REDIRECT.
+	 * @param arg The argument; in the case of ZIP_INTERNAL_REDIRECT, the filename in
+	 * the archive to read from.
+	 */
 	public Metadata(byte docType, String arg) {
 		if(docType == ZIP_INTERNAL_REDIRECT) {
 			documentType = docType;
@@ -268,6 +278,9 @@ public class Metadata {
 			throw new IllegalArgumentException();
 	}
 
+	/**
+	 * Set the MIME type to a string. Compresses it if possible for transit.
+	 */
 	private void setMIMEType(String type) {
 		short s = DefaultMIMETypes.byName(type);
 		if(s >= 0) {
@@ -279,7 +292,10 @@ public class Metadata {
 		mimeType = type;
 	}
 
-	private byte[] writeToByteArray() {
+	/**
+	 * Write the data to a byte array.
+	 */
+	byte[] writeToByteArray() {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
@@ -359,7 +375,7 @@ public class Metadata {
 	static final short FLAGS_SPLIT_USE_LENGTHS = 64;
 	static final short FLAGS_COMPRESSED = 128;
 	
-	/** ZIP manifest archive type */
+	/** Container archive type */
 	short archiveType;
 	static final short ARCHIVE_ZIP = 0;
 	static final short ARCHIVE_TAR = 1; // FIXME for future use
@@ -407,7 +423,8 @@ public class Metadata {
 	String nameInArchive;
 
 	ClientMetadata clientMetadata;
-	
+
+	/** Is a manifest? */
 	public boolean isSimpleManifest() {
 		return documentType == SIMPLE_MANIFEST;
 	}
@@ -486,6 +503,7 @@ public class Metadata {
 		return splitfile && documentType == SIMPLE_REDIRECT;
 	}
 
+	/** Is multi-level/indirect metadata? */
 	public boolean isMultiLevelMetadata() {
 		return documentType == MULTI_LEVEL_METADATA;
 	}
@@ -503,7 +521,7 @@ public class Metadata {
 	}
 	
 	/** Write the metadata as binary. 
-	 * @throws IOException */
+	 * @throws IOException If an I/O error occurred while writing the data. */
 	public void writeTo(DataOutputStream dos) throws IOException {
 		dos.writeLong(FREENET_METADATA_MAGIC);
 		dos.writeShort(0); // version
