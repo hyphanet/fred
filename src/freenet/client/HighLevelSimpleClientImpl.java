@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
@@ -11,14 +12,16 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private final BucketFactory bucketFactory;
 	private long curMaxLength;
 	private long curMaxTempLength;
+	private final RandomSource random;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
 	
-	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf) {
+	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r) {
 		this.client = client;
 		archiveManager = mgr;
 		bucketFactory = bf;
+		random = r;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -34,7 +37,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	 */
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
 		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxLength, 
-				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, archiveManager, bucketFactory);
+				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, random, archiveManager, bucketFactory);
 		Fetcher f = new Fetcher(uri, context);
 		return f.run();
 	}

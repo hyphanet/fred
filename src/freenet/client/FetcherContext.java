@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.crypt.RandomSource;
 import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
 
@@ -15,10 +16,11 @@ public class FetcherContext {
 	final int maxRecursionLevel;
 	final int maxArchiveRestarts;
 	final boolean dontEnterImplicitArchives;
+	final RandomSource random;
 	
 	public FetcherContext(SimpleLowLevelClient client, long curMaxLength, 
 			long curMaxTempLength, int maxRecursionLevel, int maxArchiveRestarts,
-			boolean dontEnterImplicitArchives,
+			boolean dontEnterImplicitArchives, RandomSource random,
 			ArchiveManager archiveManager, BucketFactory bucketFactory) {
 		this.client = client;
 		this.maxOutputLength = curMaxLength;
@@ -28,6 +30,7 @@ public class FetcherContext {
 		this.maxRecursionLevel = maxRecursionLevel;
 		this.maxArchiveRestarts = maxArchiveRestarts;
 		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
+		this.random = random;
 	}
 
 }

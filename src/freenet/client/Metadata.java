@@ -614,4 +614,18 @@ public class Metadata {
 		}
 	}
 
+	/**
+	 * Get the splitfile type.
+	 */
+	public short getSplitfileType() {
+		return splitfileAlgorithm;
+	}
+
+	public FreenetURI[] getSplitfileDataKeys() {
+		return splitfileDataKeys;
+	}
+	
+	public FreenetURI[] getSplitfileCheckKeys() {
+		return splitfileCheckKeys;
+	}
 }

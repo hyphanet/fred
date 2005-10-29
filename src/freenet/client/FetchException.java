@@ -1,5 +1,7 @@
 package freenet.client;
 
+import java.io.IOException;
+
 /**
  * Generic exception thrown by a Fetcher. All other exceptions are converted to one of
  * these to tell the client.
@@ -26,6 +28,11 @@ public class FetchException extends Exception {
 
 	public FetchException(ArchiveFailureException e) {
 		mode = ARCHIVE_FAILURE;
+		initCause(e);
+	}
+
+	public FetchException(int mode, IOException e) {
+		this.mode = mode;
 		initCause(e);
 	}
 
