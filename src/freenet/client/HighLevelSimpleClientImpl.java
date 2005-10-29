@@ -16,6 +16,25 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
+	/** Number of threads used by a splitfile fetch */
+	static final int SPLITFILE_THREADS = 20;
+	/** Number of retries allowed per block in a splitfile. Must be at least 1 as 
+	 * on the first try we just check the datastore.
+	 */
+	static final int SPLITFILE_BLOCK_RETRIES = 5;
+	/** Number of retries allowed on non-splitfile fetches. Unlike above, we always
+	 * go to network. */
+	static final int NON_SPLITFILE_RETRIES = 2;
+	/** Whether to fetch splitfiles. Don't turn this off! */
+	static final boolean FETCH_SPLITFILES = true;
+	/** Whether to follow redirects etc. If false, we only fetch a plain block of data. 
+	 * Don't turn this off either! */
+	static final boolean FOLLOW_REDIRECTS = true;
+	/** If set, only check the local datastore, don't send an actual request out.
+	 * Don't turn this off either. */
+	static final boolean LOCAL_REQUESTS_ONLY = false;
+	
+	
 	
 	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r) {
 		this.client = client;
@@ -37,7 +56,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	 */
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
 		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxTempLength, 
-				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, random, archiveManager, bucketFactory);
+				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, 
+				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
+				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
+				random, archiveManager, bucketFactory);
 		Fetcher f = new Fetcher(uri, context);
 		return f.run();
 	}

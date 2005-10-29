@@ -93,7 +93,7 @@ class Fetcher {
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
 		
 		// Do the fetch
-		KeyBlock block = ctx.client.getKey(key);
+		KeyBlock block = ctx.client.getKey(key, ctx.localRequestOnly);
 		
 		byte[] data;
 		try {

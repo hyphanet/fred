@@ -17,7 +17,7 @@ public interface SimpleLowLevelClient {
     /**
      * Fetch a key. Return null if cannot retrieve it.
      */
-    public KeyBlock getKey(ClientKey key);
+    public KeyBlock getKey(ClientKey key, boolean localOnly);
 
     /**
      * Insert a key.

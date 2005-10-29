@@ -52,6 +52,8 @@ public class SplitFetcher {
 	private int unstartedSegmentsCount;
 	/** Override length. If this is positive, truncate the splitfile to this length. */
 	private long overrideLength;
+	/** Accept non-full splitfile chunks? */
+	private boolean splitUseLengths;
 	
 	public SplitFetcher(Metadata metadata, long maxTempLength, ArchiveContext archiveContext, FetcherContext ctx) throws MetadataParseException {
 		actx = archiveContext;
@@ -61,6 +63,7 @@ public class SplitFetcher {
 		splitfileType = metadata.getSplitfileType();
 		splitfileDataBlocks = metadata.getSplitfileDataKeys();
 		splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
+		splitUseLengths = metadata.splitUseLengths;
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
 			blocksPerSegment = -1;
@@ -76,7 +79,7 @@ public class SplitFetcher {
 		} else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
 		segments = new Segment[segmentCount]; // initially null on all entries
 		if(segmentCount == 1) {
-			segments[0] = new Segment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks);
+			segments[0] = new Segment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths);
 		} else {
 			int dataBlocksPtr = 0;
 			int checkBlocksPtr = 0;
@@ -92,7 +95,7 @@ public class SplitFetcher {
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
 				dataBlocksPtr += copyDataBlocks;
 				checkBlocksPtr += copyCheckBlocks;
-				segments[i] = new Segment(splitfileType, dataBlocks, checkBlocks);
+				segments[i] = new Segment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths);
 			}
 		}
 		unstartedSegments = segments;
@@ -143,7 +146,7 @@ public class SplitFetcher {
 	}
 
 	private synchronized void start(Segment start) {
-		start.start(this, actx, fctx, maxTempLength);
+		start.start();
 		int j = 0;
 		for(int i=0;i<unstartedSegmentsCount;i++) {
 			Segment s = unstartedSegments[i];

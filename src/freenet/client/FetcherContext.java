@@ -16,12 +16,20 @@ public class FetcherContext {
 	final int maxRecursionLevel;
 	final int maxArchiveRestarts;
 	final boolean dontEnterImplicitArchives;
+	final int maxSplitfileThreads;
+	final int maxSplitfileBlockRetries;
+	final int maxNonSplitfileRetries;
 	final RandomSource random;
+	final boolean allowSplitfiles;
+	final boolean followRedirects;
+	final boolean localRequestOnly;
 	
 	public FetcherContext(SimpleLowLevelClient client, long curMaxLength, 
 			long curMaxTempLength, int maxRecursionLevel, int maxArchiveRestarts,
-			boolean dontEnterImplicitArchives, RandomSource random,
-			ArchiveManager archiveManager, BucketFactory bucketFactory) {
+			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
+			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
+			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
+			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory) {
 		this.client = client;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -31,6 +39,12 @@ public class FetcherContext {
 		this.maxArchiveRestarts = maxArchiveRestarts;
 		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
 		this.random = random;
+		this.maxSplitfileThreads = maxSplitfileThreads;
+		this.maxSplitfileBlockRetries = maxSplitfileBlockRetries;
+		this.maxNonSplitfileRetries = maxNonSplitfileRetries;
+		this.allowSplitfiles = allowSplitfiles;
+		this.followRedirects = followRedirects;
+		this.localRequestOnly = localRequestOnly;
 	}
 
 }

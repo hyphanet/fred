@@ -343,4 +343,18 @@ public class BucketTools {
 			throw new Error("No such digest: SHA-256 !!");
 		}
 	}
+
+	/** Copy the given quantity of data from the given bucket to the given OutputStream. 
+	 * @throws IOException If there was an error reading from the bucket or writing to the stream. */
+	public static void copyTo(Bucket decodedData, OutputStream os, long truncateLength) throws IOException {
+		if(truncateLength == 0) return;
+		InputStream is = decodedData.getInputStream();
+		byte[] buf = new byte[4096];
+		long moved = 0;
+		while(moved < truncateLength) {
+			int bytes = Math.min(buf.length, (int)(truncateLength - moved));
+			is.read(buf, 0, bytes);
+			os.write(buf, 0, bytes);
+		}
+	}
 }
