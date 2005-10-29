@@ -36,7 +36,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	 * Fetch a key. Either returns the data, or throws an exception.
 	 */
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
-		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxLength, 
+		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxTempLength, 
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, random, archiveManager, bucketFactory);
 		Fetcher f = new Fetcher(uri, context);
 		return f.run();
