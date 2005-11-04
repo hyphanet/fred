@@ -66,7 +66,9 @@ public class Segment implements Runnable {
 					e.printStackTrace();
 				};
 			} finally {
-				runningFetches.remove(this);
+				synchronized(runningFetches) {
+					runningFetches.remove(this);
+				}
 				synchronized(Segment.this) {
 					Segment.this.notify();
 				}
@@ -284,6 +286,15 @@ public class Segment implements Runnable {
 		parentFetcher.decoded(this);
 		
 		// TODO create healing blocks
+	}
+
+	/**
+	 * How many fetches are running?
+	 */
+	private int runningFetches() {
+		synchronized(runningFetches) {
+			return runningFetches.size();
+		}
 	}
 
 	/**
