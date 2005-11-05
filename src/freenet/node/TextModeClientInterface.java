@@ -82,7 +82,7 @@ public class TextModeClientInterface implements Runnable {
     }
 
     /**
-     * 
+     * Process a single command.
      */
     private void processLine(BufferedReader reader) throws UnsupportedEncodingException {
         String line;
@@ -114,7 +114,7 @@ public class TextModeClientInterface implements Runnable {
             }
             CHKBlock block;
             // Fetch, possibly from other node.
-            block = n.getCHK(chk);
+            block = n.getCHK(chk, false);
             if(block == null) {
                 System.out.println("Not found in store: "+chk.getURI());
             } else {
@@ -149,7 +149,7 @@ public class TextModeClientInterface implements Runnable {
             }
             CHKBlock block;
             // Fetch, possibly from other node.
-            block = n.getCHK(chk);
+            block = n.getCHK(chk, false);
             if(block == null) {
                 System.out.println("Not found in store: "+chk.getURI());
             } else {

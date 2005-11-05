@@ -185,7 +185,7 @@ public class RealNodeRequestInsertTest {
                     node2 = random.nextInt(NUMBER_OF_NODES);
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
-                block = fetchNode.getCHK(chk);
+                block = fetchNode.getCHK(chk, false);
                 if(block == null) {
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch FAILED from "+node2);
                     requestsAvg.report(0.0);

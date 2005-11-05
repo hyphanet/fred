@@ -49,7 +49,7 @@ public class RequestHandler implements Runnable {
         Message accepted = DMT.createFNPAccepted(uid);
         source.send(accepted);
         
-        Object o = node.makeRequestSender(key, htl, uid, source, closestLoc);
+        Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, false);
         if(o instanceof CHKBlock) {
             CHKBlock block = (CHKBlock) o;
             Message df = DMT.createFNPDataFound(uid, block.getHeader());
