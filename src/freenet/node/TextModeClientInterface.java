@@ -13,6 +13,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
+import freenet.client.HighLevelSimpleClient;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.CHKBlock;
@@ -35,10 +36,12 @@ public class TextModeClientInterface implements Runnable {
 
     final RandomSource r;
     final Node n;
+    final HighLevelSimpleClient client;
     final Hashtable streams;
     
     TextModeClientInterface(Node n) {
         this.n = n;
+        client = n.makeClient();
         this.r = n.random;
         streams = new Hashtable();
         new Thread(this).start();

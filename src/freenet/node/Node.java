@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 
+import freenet.client.ArchiveManager;
+import freenet.client.HighLevelSimpleClient;
+import freenet.client.HighLevelSimpleClientImpl;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
@@ -44,11 +47,14 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.store.BaseFreenetStore;
 import freenet.store.FreenetStore;
+import freenet.support.BucketFactory;
 import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.TempBucketFactory;
 
 /**
  * @author amphibian
@@ -119,6 +125,10 @@ public class Node implements SimpleLowLevelClient {
     public static final int EXIT_YARROW_INIT_FAILED = 5;
     public final long bootID;
     public final long startupTime;
+    
+    // Client stuff
+    final ArchiveManager archiveManager;
+    final BucketFactory tempBucketFactory;
     
     /**
      * Read all storable settings (identity etc) from the node file.
@@ -298,6 +308,7 @@ public class Node implements SimpleLowLevelClient {
         bootID = random.nextLong();
         localStreamContexts = new Hashtable();
         peers.writePeers();
+        tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory("temp", true));
     }
 
     void start(SwapRequestInterval interval) {
@@ -705,4 +716,8 @@ public class Node implements SimpleLowLevelClient {
         myName = key;
         writeNodeFile();
     }
+
+	public HighLevelSimpleClient makeClient() {
+		return new HighLevelSimpleClientImpl(this, archiveManager, null, random);
+	}
 }

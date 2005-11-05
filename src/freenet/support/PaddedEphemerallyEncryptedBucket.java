@@ -207,4 +207,11 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		readOnly = true;
 	}
 
+	/**
+	 * @return The underlying Bucket.
+	 */
+	public Bucket getUnderlying() {
+		return bucket;
+	}
+
 }
