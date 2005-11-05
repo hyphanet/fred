@@ -137,6 +137,23 @@ public class Segment implements Runnable {
 			// TODO Auto-generated method stub
 			
 		}
+
+		public int getNumber() {
+			return index;
+		}
+
+		public boolean hasData() {
+			return fetchedData != null;
+		}
+
+		public Bucket getData() {
+			return fetchedData;
+		}
+
+		public void setData(Bucket data) {
+			actuallyFetched = false;
+			fetchedData = data;
+		}
 	}
 
 	final short splitfileType;
