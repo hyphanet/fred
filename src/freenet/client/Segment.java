@@ -239,7 +239,7 @@ public class Segment implements Runnable {
 		minRetryLevel = 0;
 		this.recursionLevel = recursionLevel;
 		// FIXME be a bit more flexible here depending on flags
-		blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_MASK);
+		blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK);
 	}
 
 	/**

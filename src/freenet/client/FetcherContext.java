@@ -7,7 +7,9 @@ import freenet.support.BucketFactory;
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
 public class FetcherContext implements Cloneable {
 
-	public static final int SPLITFILE_DEFAULT_MASK = 1;
+	static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
+	static final int SPLITFILE_DEFAULT_MASK = 2;
+	static final int SPLITFILE_USE_LENGTHS_MASK = 3;
 	/** Low-level client to send low-level requests to. */
 	final SimpleLowLevelClient client;
 	final long maxOutputLength;
@@ -24,6 +26,9 @@ public class FetcherContext implements Cloneable {
 	final boolean allowSplitfiles;
 	final boolean followRedirects;
 	final boolean localRequestOnly;
+	/** Whether to allow non-full blocks, or blocks which are not direct CHKs, in splitfiles.
+	 * Set by the splitfile metadata and the mask constructor, so we don't need to pass it in. */
+	final boolean splitfileUseLengths;
 	
 	public FetcherContext(SimpleLowLevelClient client, long curMaxLength, 
 			long curMaxTempLength, int maxRecursionLevel, int maxArchiveRestarts,
@@ -46,10 +51,11 @@ public class FetcherContext implements Cloneable {
 		this.allowSplitfiles = allowSplitfiles;
 		this.followRedirects = followRedirects;
 		this.localRequestOnly = localRequestOnly;
+		this.splitfileUseLengths = false;
 	}
 
 	public FetcherContext(FetcherContext ctx, int maskID) {
-		if(maskID == SPLITFILE_DEFAULT_MASK) {
+		if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxTempLength = ctx.maxTempLength;
@@ -65,6 +71,41 @@ public class FetcherContext implements Cloneable {
 			this.allowSplitfiles = false;
 			this.followRedirects = false;
 			this.localRequestOnly = ctx.localRequestOnly;
+			this.splitfileUseLengths = false;
+		} else if(maskID == SPLITFILE_DEFAULT_MASK) {
+			this.client = ctx.client;
+			this.maxOutputLength = ctx.maxOutputLength;
+			this.maxTempLength = ctx.maxTempLength;
+			this.archiveManager = ctx.archiveManager;
+			this.bucketFactory = ctx.bucketFactory;
+			this.maxRecursionLevel = ctx.maxRecursionLevel;
+			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
+			this.random = ctx.random;
+			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
+			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
+			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
+			this.allowSplitfiles = ctx.allowSplitfiles;
+			this.followRedirects = ctx.followRedirects;
+			this.localRequestOnly = ctx.localRequestOnly;
+			this.splitfileUseLengths = false;
+		} else if(maskID == SPLITFILE_USE_LENGTHS_MASK) {
+			this.client = ctx.client;
+			this.maxOutputLength = ctx.maxOutputLength;
+			this.maxTempLength = ctx.maxTempLength;
+			this.archiveManager = ctx.archiveManager;
+			this.bucketFactory = ctx.bucketFactory;
+			this.maxRecursionLevel = ctx.maxRecursionLevel;
+			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
+			this.random = ctx.random;
+			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
+			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
+			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
+			this.allowSplitfiles = ctx.allowSplitfiles;
+			this.followRedirects = ctx.followRedirects;
+			this.localRequestOnly = ctx.localRequestOnly;
+			this.splitfileUseLengths = true;
 		} else throw new IllegalArgumentException();
 	}
 

@@ -33,6 +33,8 @@ public class NodeCHK extends Key {
     
     byte[] routingKey;
     public static final short TYPE = 0x0302;
+    /** The size of the data */
+	public static final int BLOCK_SIZE = 32768;
 
     public final void writeToDataOutputStream(DataOutputStream stream) throws IOException {
         write(stream);

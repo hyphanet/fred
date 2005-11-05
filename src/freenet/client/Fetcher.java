@@ -231,7 +231,13 @@ class Fetcher {
 				return runMetadata(dm, recursionLevel+1, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives);
 			}
 			
-			SplitFetcher sf = new SplitFetcher(metadata, ctx.maxTempLength, archiveContext, ctx);
+			FetcherContext newCtx;
+			if(metadata.splitUseLengths)
+				newCtx = new FetcherContext(ctx, FetcherContext.SPLITFILE_USE_LENGTHS_MASK);
+			else
+				newCtx = new FetcherContext(ctx, FetcherContext.SPLITFILE_DEFAULT_MASK);
+			
+			SplitFetcher sf = new SplitFetcher(metadata, archiveContext, newCtx);
 			Bucket sfResult = sf.fetch(); // will throw in event of error
 			return new FetchResult(dm, sfResult);
 		} else {

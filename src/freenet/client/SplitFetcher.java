@@ -7,6 +7,7 @@ import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.FECCodeFactory;
 
 import freenet.keys.FreenetURI;
+import freenet.keys.NodeCHK;
 import freenet.support.Bucket;
 
 /**
@@ -55,15 +56,16 @@ public class SplitFetcher {
 	/** Accept non-full splitfile chunks? */
 	private boolean splitUseLengths;
 	
-	public SplitFetcher(Metadata metadata, long maxTempLength, ArchiveContext archiveContext, FetcherContext ctx) throws MetadataParseException {
+	public SplitFetcher(Metadata metadata, ArchiveContext archiveContext, FetcherContext ctx) throws MetadataParseException {
 		actx = archiveContext;
 		fctx = ctx;
 		overrideLength = metadata.dataLength;
-		this.maxTempLength = maxTempLength;
+		this.maxTempLength = ctx.maxTempLength;
 		splitfileType = metadata.getSplitfileType();
 		splitfileDataBlocks = metadata.getSplitfileDataKeys();
 		splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
 		splitUseLengths = metadata.splitUseLengths;
+		int blockLength = splitUseLengths ? -1 : NodeCHK.BLOCK_SIZE;
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
 			blocksPerSegment = -1;
@@ -79,7 +81,7 @@ public class SplitFetcher {
 		} else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
 		segments = new Segment[segmentCount]; // initially null on all entries
 		if(segmentCount == 1) {
-			segments[0] = new Segment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths);
+			segments[0] = new Segment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths, blockLength);
 		} else {
 			int dataBlocksPtr = 0;
 			int checkBlocksPtr = 0;
@@ -95,7 +97,7 @@ public class SplitFetcher {
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
 				dataBlocksPtr += copyDataBlocks;
 				checkBlocksPtr += copyCheckBlocks;
-				segments[i] = new Segment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths);
+				segments[i] = new Segment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths, blockLength);
 			}
 		}
 		unstartedSegments = segments;
