@@ -173,3 +173,9 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 }
+
+	public void decode(BlockStatus[] dataBlockStatus, BlockStatus[] checkBlockStatus, int packetLength) {
+		// TODO Auto-generated method stub
+		
+	}
+}
