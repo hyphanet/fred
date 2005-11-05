@@ -6,13 +6,13 @@ package freenet.keys;
  * Exception thrown when a CHK doesn't verify.
  */
 public class CHKVerifyException extends Exception {
+	static final long serialVersionUID = -1;
 
-    /**
+	/**
      * 
      */
     public CHKVerifyException() {
         super();
-        // TODO Auto-generated constructor stub
     }
 
     /**
@@ -29,7 +29,6 @@ public class CHKVerifyException extends Exception {
      */
     public CHKVerifyException(String message, Throwable cause) {
         super(message, cause);
-        // TODO Auto-generated constructor stub
     }
 
     /**
@@ -37,7 +36,6 @@ public class CHKVerifyException extends Exception {
      */
     public CHKVerifyException(Throwable cause) {
         super(cause);
-        // TODO Auto-generated constructor stub
     }
 
 }

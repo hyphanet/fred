@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import freenet.io.WritableToDataOutputStream;
 import freenet.support.Base64;
 import freenet.support.Fields;
 

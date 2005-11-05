@@ -6,7 +6,7 @@ package freenet.keys;
  * Exception thrown when a CHK encoding fails.
  */
 public class CHKEncodeException extends Exception {
-
+	static final long serialVersionUID = -1;
     public CHKEncodeException() {
         super();
     }
