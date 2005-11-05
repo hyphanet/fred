@@ -69,6 +69,8 @@ import java.util.Random;
 public class MersenneTwister
   extends Random {
 
+	static final long serialVersionUID = -1;
+	
   /** Creates a new random number generator.
    * <p>The instance is initialized using the current time as the
    * seed.</p>

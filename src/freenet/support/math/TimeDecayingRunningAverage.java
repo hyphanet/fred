@@ -63,6 +63,7 @@ import freenet.support.Logger;
  */
 public class TimeDecayingRunningAverage implements RunningAverage {
 
+	static final long serialVersionUID = -1;
     static final int MAGIC = 0x5ff4ac92;
     
     public final Object clone() {

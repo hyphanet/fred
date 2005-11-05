@@ -1,9 +1,5 @@
 package freenet.support;
 
-import java.io.IOException;
-
-import freenet.io.comm.UdpSocketManager;
-
 /**
  * @author Iakin
  

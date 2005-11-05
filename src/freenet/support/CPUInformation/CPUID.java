@@ -94,16 +94,7 @@ public class CPUID {
 		CPUIDResult c = doCPUID(1);
 		return (c.EAX >> 4) & 0xf;
 	}
-	private static int getCPUExtendedModel()
-	{
-		CPUIDResult c = doCPUID(1);
-		return (c.EAX >> 16) & 0xf;
-	}
-	private static int getCPUType()
-	{
-		CPUIDResult c = doCPUID(1);
-		return (c.EAX >> 12) & 0xf;
-	}
+
 	private static int getCPUExtendedFamily()
 	{
 		CPUIDResult c = doCPUID(1);

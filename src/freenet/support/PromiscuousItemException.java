@@ -11,6 +11,8 @@ package freenet.support;
  */
 public class PromiscuousItemException extends RuntimeException {
 
+	static final long serialVersionUID = -1;
+	
     PromiscuousItemException(DoublyLinkedList.Item item) {
         super(item.toString());
     }
