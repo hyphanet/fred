@@ -151,7 +151,6 @@ public class FileLoggerHook extends LoggerHook {
 		public void run() {
 			Object o = null;
 			long thisTime = System.currentTimeMillis();
-			long prevTime;
 			long nextHour = -1;
 			GregorianCalendar gc = null;
 			String filename = null;
@@ -184,8 +183,7 @@ public class FileLoggerHook extends LoggerHook {
 			if (redirectStdErr)
 				System.setErr(lout);
 			while (true) {
-				try {
-					prevTime = thisTime;
+				try {				
 					thisTime = System.currentTimeMillis();
 					if (baseFilename != null) {
 						if (thisTime > nextHour) {
