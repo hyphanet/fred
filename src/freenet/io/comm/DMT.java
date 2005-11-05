@@ -23,7 +23,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import freenet.keys.Key;
-import freenet.keys.PublishStreamKey;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.ShortBuffer;

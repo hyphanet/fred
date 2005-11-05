@@ -20,7 +20,6 @@
 package freenet.io.comm;
 
 import java.io.*;
-import java.net.*;
 import java.util.*;
 
 import freenet.support.Fields;

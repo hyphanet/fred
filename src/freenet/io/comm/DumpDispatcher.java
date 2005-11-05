@@ -9,7 +9,6 @@ public class DumpDispatcher implements Dispatcher {
     }
 
     public boolean handleMessage(Message m) {
-        MessageType mt = m.getSpec();
         System.err.println("Received message: "+m);
         return true;
     }

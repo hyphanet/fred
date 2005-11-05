@@ -5,7 +5,7 @@ package freenet.io.comm;
  * @author amphibian
  */
 public class PeerParseException extends Exception {
-
+	static final long serialVersionUID = -1;
     public PeerParseException(Exception e) {
         super(e);
     }
