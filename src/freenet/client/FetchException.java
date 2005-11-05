@@ -41,7 +41,7 @@ public class FetchException extends Exception {
 	/** Don't know what to do with splitfile */
 	public static final int UNKNOWN_SPLITFILE_METADATA = 2;
 	/** Too many ordinary redirects */
-	public static final int TOO_MANY_REDIRECTS = 3;
+	public static final int TOO_MANY_REDIRECTS = 16;
 	/** Don't know what to do with metadata */
 	public static final int UNKNOWN_METADATA = 3;
 	/** Got a MetadataParseException */
@@ -62,4 +62,10 @@ public class FetchException extends Exception {
 	public static final int HAS_MORE_METASTRINGS = 11;
 	/** Internal error, probably failed to read from a bucket */
 	public static final int BUCKET_ERROR = 12;
+	/** Data not found */
+	public static final int DATA_NOT_FOUND = 13;
+	/** Route not found */
+	public static final int ROUTE_NOT_FOUND = 14;
+	/** Downstream overload */
+	public static final int REJECTED_OVERLOAD = 15;
 }

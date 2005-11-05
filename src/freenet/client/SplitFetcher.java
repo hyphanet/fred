@@ -202,4 +202,19 @@ public class SplitFetcher {
 		return output;
 	}
 
+	public void failedNotEnoughBlocks(Segment segment) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void gotBlocks(Segment segment) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void decoded(Segment segment) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

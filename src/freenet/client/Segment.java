@@ -19,17 +19,25 @@ import freenet.support.Logger;
  */
 public class Segment implements Runnable {
 
-	public class BlockStatus implements Runnable {
+	public class BlockStatus implements Runnable, SplitfileBlock {
 
+		/** Splitfile index - [0,k[ is the data blocks, [k,n[ is the check blocks */
+		final int index;
 		final FreenetURI uri;
 		int completedTries;
+		Bucket fetchedData;
 		
-		public BlockStatus(FreenetURI freenetURI) {
+		public BlockStatus(FreenetURI freenetURI, int index) {
 			uri = freenetURI;
 			completedTries = 0;
+			fetchedData = null;
+			this.index = index;
 		}
 
 		public void startFetch() {
+			if(fetchedData != null) {
+				throw new IllegalStateException("Already have data");
+			}
 			synchronized(runningFetches) {
 				runningFetches.add(this);
 				try {
@@ -50,22 +58,51 @@ public class Segment implements Runnable {
 				// Do the fetch
 				Fetcher f = new Fetcher(uri, blockFetchContext);
 				try {
-					f.realRun(new ClientMetadata(), recursionLevel, uri, 
+					FetchResult fr = f.realRun(new ClientMetadata(), recursionLevel, uri, 
 							(!nonFullBlocksAllowed) || fetcherContext.dontEnterImplicitArchives);
+					fetchedData = fr.data;
 				} catch (MetadataParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					fatalError(e);
 				} catch (FetchException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					int code = e.getMode();
+					switch(code) {
+					case FetchException.ARCHIVE_FAILURE:
+					case FetchException.BLOCK_DECODE_ERROR:
+					case FetchException.HAS_MORE_METASTRINGS:
+					case FetchException.INVALID_METADATA:
+					case FetchException.NOT_IN_ARCHIVE:
+					case FetchException.TOO_DEEP_ARCHIVE_RECURSION:
+					case FetchException.TOO_MANY_ARCHIVE_RESTARTS:
+					case FetchException.TOO_MANY_METADATA_LEVELS:
+					case FetchException.TOO_MANY_REDIRECTS:
+					case FetchException.TOO_MUCH_RECURSION:
+					case FetchException.UNKNOWN_METADATA:
+					case FetchException.UNKNOWN_SPLITFILE_METADATA:
+						// Fatal, probably an error on insert
+						fatalError(e);
+						return;
+					
+					case FetchException.DATA_NOT_FOUND:
+					case FetchException.ROUTE_NOT_FOUND:
+					case FetchException.REJECTED_OVERLOAD:
+						// Non-fatal
+						nonfatalError(e);
+						
+					case FetchException.BUCKET_ERROR:
+						// Maybe fatal
+						nonfatalError(e);
+					}
 				} catch (ArchiveFailureException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					fatalError(e);
 				} catch (ArchiveRestartException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				};
+					fatalError(e);
+				}
 			} finally {
+				completedTries++;
+				// Add before removing from runningFetches, to avoid race
+				synchronized(recentlyCompletedFetches) {
+					recentlyCompletedFetches.add(this);
+				}
 				synchronized(runningFetches) {
 					runningFetches.remove(this);
 				}
@@ -75,6 +112,18 @@ public class Segment implements Runnable {
 			}
 		}
 
+		private void fatalError(Exception e) {
+			Logger.normal(this, "Giving up on block: "+this+": "+e);
+			completedTries = -1;
+		}
+
+		private void nonfatalError(Exception e) {
+			Logger.minor(this, "Non-fatal error on "+this+": "+e);
+		}
+		
+		public boolean succeeded() {
+			return fetchedData != null;
+		}
 	}
 
 	final short splitfileType;
@@ -113,6 +162,8 @@ public class Segment implements Runnable {
 	private final FetcherContext blockFetchContext;
 	/** Recursion level */
 	private final int recursionLevel;
+	/** Number of blocks which got fatal errors */
+	private int fatalErrorCount;
 	
 	/**
 	 * Create a Segment.
@@ -235,7 +286,11 @@ public class Segment implements Runnable {
 		
 			// Now wait for any thread to complete
 			synchronized(this) {
-				wait(10*1000);
+				try {
+					wait(10*1000);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
 			}
 			
 			while(true) {
@@ -244,10 +299,12 @@ public class Segment implements Runnable {
 					block = (BlockStatus) recentlyCompletedFetches.removeFirst();
 				}
 				if(block == null) break;
-				if(block.failed()) {
+				if(!block.succeeded()) {
 					// Retry
 					int retryLevel = block.completedTries;
-					if(retryLevel == maxRetryLevel) {
+					if(retryLevel == maxRetryLevel || retryLevel == -1) {
+						if(retryLevel == -1)
+							fatalErrorCount++;
 						// This block failed
 					} else {
 						Vector levelSet = (Vector) blocksNotTried.get(retryLevel);
@@ -262,7 +319,7 @@ public class Segment implements Runnable {
 					// Can't start a fetch
 					if(runningFetches() == 0) {
 						// Failed
-						parentFetcher.failedNotEnoughBlocks();
+						parentFetcher.failedNotEnoughBlocks(this);
 						return;
 					}
 				}
@@ -275,15 +332,29 @@ public class Segment implements Runnable {
 		}
 		
 		parentFetcher.gotBlocks(this);
-
+		
 		// Now decode
-		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
-			// TODO put the data together
-		} else {
-			// TODO decode via onion
+		
+		try {
+			if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
+				FECCodec codec = FECCodec.getCodec(splitfileType, dataBlocks.length, checkBlocks.length);
+				codec.decode(dataBlockStatus, checkBlockStatus);
+			}
+			
+			Bucket output = fetcherContext.bucketFactory.makeBucket(-1);
+			OutputStream os = output.getOutputStream();
+			for(int i=0;i<dataBlockStatus.length;i++) {
+				BlockStatus status = dataBlockStatus[i];
+				Bucket data = status.fetchedData;
+				BucketTools.copyTo(data, os, Long.MAX_VALUE);
+				fetcherContext.bucketFactory.freeBucket(data);
+			}
+			os.close();
+		} catch (IOException e) {
+			parentFetcher.internalBucketError(this, e);
 		}
 		
-		parentFetcher.decoded(this);
+		parentFetcher.decoded(this, output);
 		
 		// TODO create healing blocks
 	}
@@ -304,11 +375,16 @@ public class Segment implements Runnable {
 	private boolean startFetch() {
 		if(minRetryLevel == maxRetryLevel) return false; // nothing to start
 		// Don't need to synchronize as these are only accessed by main thread
-		Vector v = (Vector) blocksNotTried.get(minRetryLevel);
-		int len = v.size();
-		int idx = fetcherContext.random.nextInt(len);
-		BlockStatus b = (BlockStatus) v.remove(idx);
-		if(v.isEmpty()) minRetryLevel++;
-		b.startFetch();
+		while(true) {
+			if(minRetryLevel >= blocksNotTried.size())
+				return false;
+			Vector v = (Vector) blocksNotTried.get(minRetryLevel);
+			int len = v.size();
+			int idx = fetcherContext.random.nextInt(len);
+			BlockStatus b = (BlockStatus) v.remove(idx);
+			if(v.isEmpty()) minRetryLevel++;
+			b.startFetch();
+			return true;
+		}
 	}
 }
