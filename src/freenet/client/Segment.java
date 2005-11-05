@@ -26,12 +26,14 @@ public class Segment implements Runnable {
 		final FreenetURI uri;
 		int completedTries;
 		Bucket fetchedData;
+		boolean actuallyFetched;
 		
 		public BlockStatus(FreenetURI freenetURI, int index) {
 			uri = freenetURI;
 			completedTries = 0;
 			fetchedData = null;
 			this.index = index;
+			actuallyFetched = false;
 		}
 
 		public void startFetch() {
@@ -60,6 +62,7 @@ public class Segment implements Runnable {
 				try {
 					FetchResult fr = f.realRun(new ClientMetadata(), recursionLevel, uri, 
 							(!nonFullBlocksAllowed) || fetcherContext.dontEnterImplicitArchives);
+					actuallyFetched = true;
 					fetchedData = fr.data;
 				} catch (MetadataParseException e) {
 					fatalError(e);
@@ -123,6 +126,16 @@ public class Segment implements Runnable {
 		
 		public boolean succeeded() {
 			return fetchedData != null;
+		}
+
+		/**
+		 * Queue a healing block for insert.
+		 * Will be implemented using the download manager.
+		 * FIXME: implement!
+		 */
+		public void queueHeal() {
+			// TODO Auto-generated method stub
+			
 		}
 	}
 
@@ -192,11 +205,11 @@ public class Segment implements Runnable {
 		Vector firstSet = new Vector(dataBlocks.length+checkBlocks.length);
 		blocksNotTried.add(0, firstSet);
 		for(int i=0;i<dataBlocks.length;i++) {
-			dataBlockStatus[i] = new BlockStatus(dataBlocks[i]);
+			dataBlockStatus[i] = new BlockStatus(dataBlocks[i], i);
 			firstSet.add(dataBlockStatus[i]);
 		}
 		for(int i=0;i<checkBlocks.length;i++) {
-			checkBlockStatus[i] = new BlockStatus(checkBlocks[i]);
+			checkBlockStatus[i] = new BlockStatus(checkBlocks[i], dataBlockStatus.length + i);
 			firstSet.add(checkBlockStatus[i]);
 		}
 		recentlyCompletedFetches = new LinkedList();
@@ -208,6 +221,10 @@ public class Segment implements Runnable {
 		} else throw new MetadataParseException("Unknown splitfile type "+splitfileType);
 		minRetryLevel = 0;
 		this.recursionLevel = recursionLevel;
+		// FIXME be a bit more flexible here depending on flags
+		blockFetchContext = (FetcherContext) fetcherContext.clone();
+		blockFetchContext.allowSplitfiles = false;
+		blockFetchContext.dontEnterImplicitArchives = true;
 	}
 
 	/**
@@ -335,10 +352,12 @@ public class Segment implements Runnable {
 		
 		// Now decode
 		
+		FECCodec codec = FECCodec.getCodec(splitfileType, dataBlocks.length, checkBlocks.length);
 		try {
 			if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
-				FECCodec codec = FECCodec.getCodec(splitfileType, dataBlocks.length, checkBlocks.length);
-				codec.decode(dataBlockStatus, checkBlockStatus);
+				// FIXME hardcoded block size below.
+				codec.decode(dataBlockStatus, checkBlockStatus, 32768, fetcherContext.bucketFactory);
+				// Now have all the data blocks (not necessarily all the check blocks)
 			}
 			
 			Bucket output = fetcherContext.bucketFactory.makeBucket(-1);
@@ -350,13 +369,28 @@ public class Segment implements Runnable {
 				fetcherContext.bucketFactory.freeBucket(data);
 			}
 			os.close();
+			parentFetcher.decoded(this, output);
 		} catch (IOException e) {
 			parentFetcher.internalBucketError(this, e);
+			return;
 		}
 		
-		parentFetcher.decoded(this, output);
+		// Now heal
 		
-		// TODO create healing blocks
+		// Encode any check blocks we don't have
+		if(codec != null)
+			codec.encode(dataBlockStatus, checkBlockStatus, 32768, fetcherContext.bucketFactory);
+		
+		// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
+		for(int i=0;i<dataBlockStatus.length;i++) {
+			BlockStatus block = dataBlockStatus[i];
+			if(block.actuallyFetched) continue;
+			if(block.completedTries == 0) {
+				// 80% chance of not inserting, if we never tried it
+				if(fetcherContext.random.nextInt(5) == 0) continue;
+			}
+			block.queueHeal();
+		}
 	}
 
 	/**

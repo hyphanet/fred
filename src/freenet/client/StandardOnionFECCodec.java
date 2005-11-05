@@ -1,16 +1,15 @@
 package freenet.client;
 
-import java.io.InputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 
 import com.onionnetworks.fec.DefaultFECCodeFactory;
 import com.onionnetworks.fec.FECCode;
+import com.onionnetworks.util.Buffer;
 
-import freenet.client.Segment.BlockStatus;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
-import freenet.support.Fields;
-import freenet.support.LRUHashBag;
 import freenet.support.LRUHashtable;
 
 /**
@@ -22,6 +21,8 @@ public class StandardOnionFECCodec extends FECCodec {
 	private static int MAX_CACHED_CODECS = 16;
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
 	private static int STRIPE_SIZE = 4096;
+	// REDFLAG: Make this configurable, maybe make it depend on # CPUs
+	private static int PARALLEL_DECODES = 1;
 	
 	private static class MyKey {
 		/** Number of input blocks */
@@ -72,24 +73,46 @@ public class StandardOnionFECCodec extends FECCodec {
 		code = DefaultFECCodeFactory.getDefault().createFECCode(k,n);
 	}
 
-	public void decode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) {
+	private static Object runningDecodesSync = new Object();
+	private static int runningDecodes;
+	
+	public void decode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		// Ensure that there are only K simultaneous running decodes.
+		synchronized(runningDecodesSync) {
+			while(runningDecodes >= PARALLEL_DECODES) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+			runningDecodes++;
+		}
+		try {
+			realDecode(dataBlockStatus, checkBlockStatus, blockLength, bf);
+		} finally {
+			synchronized(runningDecodesSync) {
+				runningDecodes--;
+			}
+		}
 	}
 	
-	public void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) {
+	public void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		if(dataBlockStatus.length + checkBlockStatus.length != n)
 			throw new IllegalArgumentException();
 		if(dataBlockStatus.length != k)
 			throw new IllegalArgumentException();
-		byte[][] packets = new byte[k][];
+		Buffer[] packets = new Buffer[k];
 		Bucket[] buckets = new Bucket[k];
-		InputStream[] readers = new InputStream[k];
+		DataInputStream[] readers = new DataInputStream[k];
 		OutputStream[] writers = new OutputStream[k];
 		int[] toDecode = new int[n-k];
-		int numberToDecode; // can be less than n-k
+		int numberToDecode = 0; // can be less than n-k
+		
+		byte[] realBuffer = new byte[k * STRIPE_SIZE];
 		
 		for(int i=0;i<n;i++)
-			packets[i] = new byte[STRIPE_SIZE];
+			packets[i] = new Buffer(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
 		
 		for(int i=0;i<dataBlockStatus.length;i++) {
 			buckets[i] = dataBlockStatus[i].getData();
@@ -100,7 +123,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				toDecode[numberToDecode++] = i;
 			} else {
 				writers[i] = null;
-				readers[i] = buckets[i].getInputStream();
+				readers[i] = new DataInputStream(buckets[i].getInputStream());
 			}
 		}
 		for(int i=0;i<checkBlockStatus.length;i++) {
@@ -112,7 +135,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				toDecode[numberToDecode++] = i+k;
 			} else {
 				writers[i+k] = null;
-				readers[i+k] = buckets[i+k].getInputStream();
+				readers[i+k] = new DataInputStream(buckets[i+k].getInputStream());
 			}
 		}
 		
@@ -127,18 +150,26 @@ public class StandardOnionFECCodec extends FECCodec {
 		
 		if(numberToDecode > 0) {
 			// Do the (striped) decode
-			for(int offset=0;offset<packetLength;offset+=STRIPE_SIZE) {
+			for(int offset=0;offset<blockLength;offset+=STRIPE_SIZE) {
 				// Read the data in first
 				for(int i=0;i<n;i++) {
 					if(readers[i] != null) {
-						Fields.readFully(readers[i], packets[i]);
+						readers[i].readFully(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
 					}
 				}
 				// Do the decode
-				code.decode(packets, offsets, toDecode, blockLength, true);
+				// Not shuffled
+				code.decode(packets, offsets);
+				// packets now contains an array of decoded blocks, in order
+				// Write the data out
+				for(int i=0;i<n;i++) {
+					writers[i].write(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
+				}
+			}
 		}
-		// TODO Auto-generated method stub
-		
+		for(int i=0;i<k;i++) {
+			writers[i].close();
+			readers[i].close();
+		}
 	}
-
 }

@@ -5,7 +5,7 @@ import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
-public class FetcherContext {
+public class FetcherContext implements Cloneable {
 
 	/** Low-level client to send low-level requests to. */
 	final SimpleLowLevelClient client;
@@ -47,4 +47,14 @@ public class FetcherContext {
 		this.localRequestOnly = localRequestOnly;
 	}
 
+	/** Make public, but just call parent for a field for field copy */
+	public Object clone() {
+		try {
+			return super.clone();
+		} catch (CloneNotSupportedException e) {
+			// Impossible
+			throw new Error(e);
+		}
+	}
+	
 }

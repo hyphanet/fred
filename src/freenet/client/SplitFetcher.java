@@ -212,7 +212,12 @@ public class SplitFetcher {
 		
 	}
 
-	public void decoded(Segment segment) {
+	public void decoded(Segment segment, Bucket output) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void internalBucketError(Segment segment, IOException e) {
 		// TODO Auto-generated method stub
 		
 	}
