@@ -6,7 +6,7 @@ package freenet.crypt;
  * Not a real RNG at all, just a simple PRNG. Use it for e.g. simulations.
  */
 public class DummyRandomSource extends RandomSource {
-
+	static final long serialVersionUID = -1;
     public int acceptEntropy(EntropySource source, long data, int entropyGuess) {
         return 0;
     }

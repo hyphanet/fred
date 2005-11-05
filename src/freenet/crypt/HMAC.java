@@ -83,7 +83,6 @@ public class HMAC {
     }
 
     public static void main(String[] args) {
-	byte[] buffer=new byte[1024];
 	HMAC s=new HMAC(SHA1.getInstance());
 	byte[] key=new byte[20];
 	System.err.println("20x0b, 'Hi There':");

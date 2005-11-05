@@ -12,7 +12,7 @@ import freenet.support.HexUtil;
  * Holds a Diffie-Hellman key-exchange group
  */
 public class DHGroup extends CryptoKey {
-
+	static final long serialVersionUID = -1;
 	public final BigInteger p, g;
 
 	public DHGroup(BigInteger p, BigInteger g) {

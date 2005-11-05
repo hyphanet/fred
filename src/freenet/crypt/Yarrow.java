@@ -50,7 +50,7 @@ import freenet.support.Logger;
  * @author Scott G. Miller <scgmille@indiana.edu>
  */
 public class Yarrow extends RandomSource {
-
+	static final long serialVersionUID = -1;
 	/**
 	 * Security parameters
 	 */
