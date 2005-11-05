@@ -7,6 +7,7 @@ import freenet.support.BucketFactory;
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
 public class FetcherContext implements Cloneable {
 
+	public static final int SPLITFILE_DEFAULT_MASK = 1;
 	/** Low-level client to send low-level requests to. */
 	final SimpleLowLevelClient client;
 	final long maxOutputLength;
@@ -45,6 +46,26 @@ public class FetcherContext implements Cloneable {
 		this.allowSplitfiles = allowSplitfiles;
 		this.followRedirects = followRedirects;
 		this.localRequestOnly = localRequestOnly;
+	}
+
+	public FetcherContext(FetcherContext ctx, int maskID) {
+		if(maskID == SPLITFILE_DEFAULT_MASK) {
+			this.client = ctx.client;
+			this.maxOutputLength = ctx.maxOutputLength;
+			this.maxTempLength = ctx.maxTempLength;
+			this.archiveManager = ctx.archiveManager;
+			this.bucketFactory = ctx.bucketFactory;
+			this.maxRecursionLevel = 0;
+			this.maxArchiveRestarts = 0;
+			this.dontEnterImplicitArchives = true;
+			this.random = ctx.random;
+			this.maxSplitfileThreads = 0;
+			this.maxSplitfileBlockRetries = 0;
+			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
+			this.allowSplitfiles = false;
+			this.followRedirects = false;
+			this.localRequestOnly = ctx.localRequestOnly;
+		} else throw new IllegalArgumentException();
 	}
 
 	/** Make public, but just call parent for a field for field copy */
