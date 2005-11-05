@@ -55,6 +55,8 @@ import freenet.support.SimpleFieldSet;
  */
 public class Node implements SimpleLowLevelClient {
     
+	static final long serialVersionUID = -1;
+	
     public static final int PACKETS_IN_BLOCK = 32;
     public static final int PACKET_SIZE = 1024;
     public static final double DECREMENT_AT_MIN_PROB = 0.2;
@@ -701,4 +703,9 @@ public class Node implements SimpleLowLevelClient {
         myName = key;
         writeNodeFile();
     }
+
+	public KeyBlock getKey(ClientKey key, boolean localOnly) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

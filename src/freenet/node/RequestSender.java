@@ -47,8 +47,7 @@ public final class RequestSender implements Runnable {
     
     // Terminal status
     // Always set finished AFTER setting the reason flag
-    private boolean finished = false;
-    
+
     private int status = -1;
     static final int NOT_FINISHED = -1;
     static final int SUCCESS = 0;
@@ -58,7 +57,7 @@ public final class RequestSender implements Runnable {
     static final int TRANSFER_FAILED = 4;
     static final int VERIFY_FAILURE = 5;
     
-    private boolean transferring = false;
+    
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -213,8 +212,7 @@ public final class RequestSender implements Runnable {
             headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
             
             // FIXME: Validate headers
-
-            transferring = true;
+    
             node.addTransferringSender(key, this);
             try {
             
@@ -246,7 +244,6 @@ public final class RequestSender implements Runnable {
                     return;
                 }
             } finally {
-                transferring = false;
                 node.removeTransferringSender(key, this);
             }
         }
@@ -299,7 +296,7 @@ public final class RequestSender implements Runnable {
     private void finish(int code) {
         Logger.minor(this, "finish("+code+")");
         status = code;
-        finished = true;
+
         synchronized(this) {
             notifyAll();
         }

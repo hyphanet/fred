@@ -5,5 +5,5 @@ package freenet.node;
  * of acquiring a packet number.
  */
 public class KeyChangedException extends Exception {
-
+	static final long serialVersionUID = -1;
 }

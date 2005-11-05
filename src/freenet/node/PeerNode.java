@@ -25,7 +25,6 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
-import freenet.io.xfer.PacketThrottle;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -69,13 +68,7 @@ public class PeerNode implements PeerContext {
     
     /** When did we last send a packet? */
     private long timeLastSentPacket;
-    
-    /** What is the current maximum inter-packet time (this is
-     * randomized to make it hard to profile; it is essentially
-     * a keepalive though).
-     */
-    private long maxTimeBetweenPacketSends;
-    
+       
     /** When did we last receive a packet? */
     private long timeLastReceivedPacket;
     
@@ -89,8 +82,6 @@ public class PeerNode implements PeerContext {
      */
     private boolean isConnected;
 
-    /** Throttle, used by data transfers */
-    private PacketThrottle throttle;
     
     /** Current location in the keyspace */
     private Location currentLocation;
@@ -250,9 +241,7 @@ public class PeerNode implements PeerContext {
         
         // Not connected yet; need to handshake
         isConnected = false;
-        
-        throttle = PacketThrottle.getThrottle(peer, Node.PACKET_SIZE);
-        
+               
         messagesToSendNow = new LinkedList();
         
         decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
@@ -262,7 +251,6 @@ public class PeerNode implements PeerContext {
     private void randomizeMaxTimeBetweenPacketSends() {
         int x = Node.KEEPALIVE_INTERVAL;
         x += node.random.nextInt(x);
-        maxTimeBetweenPacketSends = x;
     }
 
     private void randomizeMaxTimeBetweenPacketReceives() {

@@ -324,8 +324,7 @@ class LocationManager {
         RecentlyForwardedItem item;
         
         public void run() {
-            long uid = r.nextLong();
-            Long luid = new Long(uid);
+            long uid = r.nextLong();            
             if(!lock()) return;
             try {
                 startedSwaps++;

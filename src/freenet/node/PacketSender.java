@@ -3,7 +3,6 @@ package freenet.node;
 import java.util.LinkedList;
 
 import freenet.io.comm.NotConnectedException;
-import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
