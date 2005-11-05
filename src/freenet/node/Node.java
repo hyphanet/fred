@@ -307,9 +307,9 @@ public class Node implements SimpleLowLevelClient {
         usm.start();
     }
     
-    public KeyBlock getKey(ClientKey key) {
+    public KeyBlock getKey(ClientKey key, boolean localOnly) {
     	if(key instanceof ClientCHK)
-    		return getCHK((ClientCHK)key);
+    		return getCHK((ClientCHK)key, localOnly);
     	else
     		throw new IllegalArgumentException();
     }
@@ -318,8 +318,8 @@ public class Node implements SimpleLowLevelClient {
      * Really trivially simple client interface.
      * Either it succeeds or it doesn't.
      */
-    public ClientCHKBlock getCHK(ClientCHK key) {
-        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null, lm.loc.getValue());
+    public ClientCHKBlock getCHK(ClientCHK key, boolean localOnly) {
+        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null, lm.loc.getValue(), localOnly);
         if(o instanceof CHKBlock) {
             try {
                 return new ClientCHKBlock((CHKBlock)o, key);
@@ -446,11 +446,12 @@ public class Node implements SimpleLowLevelClient {
      * the same HTL, and if all else fails, create a new 
      * RequestSender for the key/htl.
      * @param closestLocation The closest location to the key so far.
+     * @param localOnly If true, only check the datastore.
      * @return A CHKBlock if the data is in the store, otherwise
      * a RequestSender, unless the HTL is 0, in which case NULL.
      * RequestSender.
      */
-    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, PeerNode source, double closestLocation) {
+    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly) {
         Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
         // In store?
         CHKBlock chk = null;
@@ -460,6 +461,7 @@ public class Node implements SimpleLowLevelClient {
             Logger.error(this, "Error accessing store: "+e, e);
         }
         if(chk != null) return chk;
+        if(localOnly) return null;
         Logger.minor(this, "Not in store locally");
         
         // Transfer coalescing - match key only as HTL irrelevant
@@ -703,9 +705,4 @@ public class Node implements SimpleLowLevelClient {
         myName = key;
         writeNodeFile();
     }
-
-	public KeyBlock getKey(ClientKey key, boolean localOnly) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }
