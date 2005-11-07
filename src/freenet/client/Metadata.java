@@ -277,6 +277,22 @@ public class Metadata {
 	}
 
 	/**
+	 * Create another kind of simple Metadata object (a redirect or similar object).
+	 * @param docType The document type.
+	 * @param uri The URI pointed to.
+	 * @param cm The client metadata, if any.
+	 */
+	public Metadata(byte docType, FreenetURI uri, ClientMetadata cm) {
+		if(docType == SIMPLE_REDIRECT) {
+			documentType = docType;
+			clientMetadata = cm;
+			setMIMEType(cm.getMIMEType());
+			simpleRedirectKey = uri;
+		} else
+			throw new IllegalArgumentException();
+	}
+
+	/**
 	 * Set the MIME type to a string. Compresses it if possible for transit.
 	 */
 	private void setMIMEType(String type) {
@@ -625,5 +641,18 @@ public class Metadata {
 	
 	public FreenetURI[] getSplitfileCheckKeys() {
 		return splitfileCheckKeys;
+	}
+
+	/** Count the number of distinct compression algorithms currently supported. */
+	public static int countCompressAlgorithms() {
+		// FIXME we presently only support gzip. This should change in future.
+		return 1;
+	}
+
+	public static Compressor getCompressionAlgorithmByDifficulty(int i) {
+		if(i == 0)
+			return Compressor.gzip;
+		// FIXME when we get more compression algos, put them here.
+		return null;
 	}
 }

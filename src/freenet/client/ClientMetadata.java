@@ -33,4 +33,8 @@ public class ClientMetadata {
 		if(mimeType == null || mimeType.equals(""))
 			mimeType = clientMetadata.mimeType;
 	}
+
+	public boolean isTrivial() {
+		return (mimeType == null || mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE));
+	}
 }

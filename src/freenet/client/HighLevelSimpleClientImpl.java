@@ -65,8 +65,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public FreenetURI insert(InsertBlock insert) {
-		// TODO Auto-generated method stub
-		return null;
+		InserterContext context = new InserterContext(client);
+		FileInserter i = new FileInserter(context);
+		return i.run(insert);
 	}
 
 }

@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 
 /**
@@ -7,12 +8,14 @@ import freenet.support.Bucket;
  */
 public class InsertBlock {
 
-	private Bucket data;
-	private String mimeType;
+	final Bucket data;
+	final FreenetURI desiredURI;
+	final ClientMetadata clientMetadata;
 	
-	public InsertBlock(Bucket data, String mimeType) {
+	public InsertBlock(Bucket data, ClientMetadata metadata, FreenetURI desiredURI) {
 		this.data = data;
-		this.mimeType = mimeType;
+		clientMetadata = metadata;
+		this.desiredURI = desiredURI;
 	}
 
 }

@@ -24,7 +24,7 @@ public class CHKBlock implements KeyBlock {
     final byte[] header;
     final short hashIdentifier;
     final NodeCHK chk;
-    protected static final int MAX_LENGTH_BEFORE_COMPRESSION = 1024 * 1024;
+    public static final int MAX_LENGTH_BEFORE_COMPRESSION = 1024 * 1024;
     final static int HASH_SHA1 = 1;
     
     public String toString() {

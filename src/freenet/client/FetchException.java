@@ -60,7 +60,7 @@ public class FetchException extends Exception {
 	public static final int NOT_IN_ARCHIVE = 10;
 	/** Has more metastrings, can't fulfill them */
 	public static final int HAS_MORE_METASTRINGS = 11;
-	/** Internal error, probably failed to read from a bucket */
+	/** Failed to read from or write to a bucket; a kind of internal error */
 	public static final int BUCKET_ERROR = 12;
 	/** Data not found */
 	public static final int DATA_NOT_FOUND = 13;

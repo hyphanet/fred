@@ -86,6 +86,8 @@ public class FreenetURI {
 		this(keyType, docName, (String[]) null, null, null, null);
 	}
 
+	public static final FreenetURI EMPTY_CHK_URI = new FreenetURI("CHK", null, null, null, null, null);
+	
 	public FreenetURI(
 		String keyType,
 		String docName,

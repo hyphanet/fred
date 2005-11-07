@@ -47,9 +47,12 @@ public class ClientCHKBlock extends CHKBlock {
 
     /**
      * Encode a block of data to a CHKBlock.
+     * @param sourceData The data to encode.
+     * @param asMetadata Is this a metadata key?
+     * @param dontCompress If set, don't even try to compress.
      */
 
-    static public ClientCHKBlock encode(byte[] sourceData) throws CHKEncodeException {
+    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress) throws CHKEncodeException {
         byte[] data;
         byte[] header;
         ClientCHK key;
@@ -58,7 +61,7 @@ public class ClientCHKBlock extends CHKBlock {
         boolean compressed = false;
         if(sourceData.length > MAX_LENGTH_BEFORE_COMPRESSION)
             throw new CHKEncodeException("Too big");
-        if(sourceData.length != 0) {
+        if(sourceData.length > NodeCHK.BLOCK_SIZE && !dontCompress) {
             int sourceLength = sourceData.length;
             byte[] cbuf = new byte[32768+1024];
             Deflater compressor = new Deflater();
@@ -149,7 +152,7 @@ public class ClientCHKBlock extends CHKBlock {
         byte[] finalHash = md160.digest(data);
         
         // Now convert it into a ClientCHK
-        key = new ClientCHK(finalHash, encKey, compressed, false, ClientCHK.ALGO_AES_PCFB_256);
+        key = new ClientCHK(finalHash, encKey, compressed, asMetadata, ClientCHK.ALGO_AES_PCFB_256);
         
         try {
             return new ClientCHKBlock(data, header, key, false);
