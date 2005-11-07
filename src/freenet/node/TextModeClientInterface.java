@@ -204,7 +204,11 @@ public class TextModeClientInterface implements Runnable {
             ClientCHK chk = block.getClientKey();
             FreenetURI uri = 
                 chk.getURI();
-            n.putCHK(block);
+            try {
+				n.putCHK(block);
+			} catch (LowLevelPutException e) {
+				System.err.println("Error: "+e.getMessage());
+			}
             // Definitely interface
             System.out.println("URI: "+uri);
         } else if(uline.startsWith("PUTFILE:")) {
@@ -243,6 +247,8 @@ public class TextModeClientInterface implements Runnable {
             } catch (IOException e) {
                 System.out.println("Could not read: "+e);
                 e.printStackTrace();
+			} catch (LowLevelPutException e) {
+				System.err.println("Error: "+e.getMessage());
             } catch (Throwable t) {
                 System.out.println("Threw: "+t);
                 t.printStackTrace();

@@ -68,4 +68,8 @@ public class FetchException extends Exception {
 	public static final int ROUTE_NOT_FOUND = 14;
 	/** Downstream overload */
 	public static final int REJECTED_OVERLOAD = 15;
+	/** An internal error occurred */
+	public static final int INTERNAL_ERROR = 17;
+	/** The node found the data but the transfer failed */
+	public static final int TRANSFER_FAILED = 18;
 }

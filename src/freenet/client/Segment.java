@@ -88,10 +88,12 @@ public class Segment implements Runnable {
 					case FetchException.DATA_NOT_FOUND:
 					case FetchException.ROUTE_NOT_FOUND:
 					case FetchException.REJECTED_OVERLOAD:
+					case FetchException.TRANSFER_FAILED:
 						// Non-fatal
 						nonfatalError(e);
 						
 					case FetchException.BUCKET_ERROR:
+					case FetchException.INTERNAL_ERROR:
 						// Maybe fatal
 						nonfatalError(e);
 					}

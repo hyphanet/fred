@@ -15,12 +15,12 @@ import freenet.keys.KeyBlock;
 public interface SimpleLowLevelClient {
 
     /**
-     * Fetch a key. Return null if cannot retrieve it.
+     * Fetch a key. Throws if it cannot fetch it.
      */
-    public KeyBlock getKey(ClientKey key, boolean localOnly);
+    public KeyBlock getKey(ClientKey key, boolean localOnly) throws LowLevelGetException;
 
     /**
      * Insert a key.
      */
-    public void putCHK(ClientCHKBlock key);
+    public void putCHK(ClientCHKBlock key) throws LowLevelPutException;
 }

@@ -7,6 +7,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
+import freenet.node.LowLevelGetException;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
@@ -93,7 +94,32 @@ class Fetcher {
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
 		
 		// Do the fetch
-		KeyBlock block = ctx.client.getKey(key, ctx.localRequestOnly);
+		KeyBlock block;
+		try {
+			block = ctx.client.getKey(key, ctx.localRequestOnly);
+		} catch (LowLevelGetException e) {
+			switch(e.code) {
+			case LowLevelGetException.DATA_NOT_FOUND:
+				throw new FetchException(FetchException.DATA_NOT_FOUND);
+			case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
+				throw new FetchException(FetchException.DATA_NOT_FOUND);
+			case LowLevelGetException.DECODE_FAILED:
+				throw new FetchException(FetchException.BLOCK_DECODE_ERROR);
+			case LowLevelGetException.INTERNAL_ERROR:
+				throw new FetchException(FetchException.INTERNAL_ERROR);
+			case LowLevelGetException.REJECTED_OVERLOAD:
+				throw new FetchException(FetchException.REJECTED_OVERLOAD);
+			case LowLevelGetException.ROUTE_NOT_FOUND:
+				throw new FetchException(FetchException.ROUTE_NOT_FOUND);
+			case LowLevelGetException.TRANSFER_FAILED:
+				throw new FetchException(FetchException.TRANSFER_FAILED);
+			case LowLevelGetException.VERIFY_FAILED:
+				throw new FetchException(FetchException.BLOCK_DECODE_ERROR);
+			default:
+				Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
+				throw new FetchException(FetchException.INTERNAL_ERROR);
+			}
+		}
 		
 		byte[] data;
 		try {

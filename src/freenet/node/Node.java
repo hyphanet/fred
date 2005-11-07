@@ -338,7 +338,7 @@ public class Node implements SimpleLowLevelClient {
         usm.start();
     }
     
-    public KeyBlock getKey(ClientKey key, boolean localOnly) {
+    public KeyBlock getKey(ClientKey key, boolean localOnly) throws LowLevelGetException {
     	if(key instanceof ClientCHK)
     		return getCHK((ClientCHK)key, localOnly);
     	else
@@ -349,17 +349,19 @@ public class Node implements SimpleLowLevelClient {
      * Really trivially simple client interface.
      * Either it succeeds or it doesn't.
      */
-    public ClientCHKBlock getCHK(ClientCHK key, boolean localOnly) {
+    public ClientCHKBlock getCHK(ClientCHK key, boolean localOnly) throws LowLevelGetException {
         Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null, lm.loc.getValue(), localOnly);
         if(o instanceof CHKBlock) {
             try {
                 return new ClientCHKBlock((CHKBlock)o, key);
             } catch (CHKVerifyException e) {
                 Logger.error(this, "Does not verify: "+e, e);
-                return null;
+                throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
             }
         }
-        if(o == null) return null;
+        if(o == null) {
+        	throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
+        }
         RequestSender rs = (RequestSender)o;
         rs.waitUntilFinished();
         if(rs.getStatus() == RequestSender.SUCCESS) {
@@ -367,15 +369,31 @@ public class Node implements SimpleLowLevelClient {
                 return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
             } catch (CHKVerifyException e) {
                 Logger.error(this, "Does not verify: "+e, e);
-                return null;
+                throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);                
             }
         } else {
-            Logger.normal(this, "getCHK failed: "+rs.getStatus());
-            return null;
+        	switch(rs.getStatus()) {
+        	case RequestSender.NOT_FINISHED:
+        		Logger.error(this, "RS still running in getCHK!: "+rs);
+        		throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        	case RequestSender.DATA_NOT_FOUND:
+        		throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
+        	case RequestSender.REJECTED_OVERLOAD:
+        		throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
+        	case RequestSender.ROUTE_NOT_FOUND:
+        		throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
+        	case RequestSender.TRANSFER_FAILED:
+        		throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
+        	case RequestSender.VERIFY_FAILURE:
+        		throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
+        	default:
+        		Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
+        		throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        	}
         }
     }
 
-    public void putCHK(ClientCHKBlock block) {
+    public void putCHK(ClientCHKBlock block) throws LowLevelPutException {
         byte[] data = block.getData();
         byte[] headers = block.getHeader();
         PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
@@ -401,6 +419,19 @@ public class Node implements SimpleLowLevelClient {
             if(status == is.ROUTE_NOT_FOUND)
                 msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
             Logger.error(this, msg);
+            switch(is.getStatus()) {
+            case InsertSender.NOT_FINISHED:
+        		Logger.error(this, "IS still running in putCHK!: "+is);
+        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+            case InsertSender.REJECTED_OVERLOAD:
+            	throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
+            case InsertSender.ROUTE_NOT_FOUND:
+            	throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
+            default:
+        		Logger.error(this, "Unknown InsertSender code in putCHK: "+is.getStatus()+" on "+is);
+    			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+            		
+            }
         }
     }
 
