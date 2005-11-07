@@ -21,12 +21,11 @@ public class FileBucket implements Bucket {
 
 	protected File file;
 	protected boolean readOnly;
-	protected boolean newFile; // hack to get around deletes
+	protected boolean deleteOnFinalize;
 	protected long length;
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
-	
-	private int lastOutputStream;
+	protected long fileRestartCounter;
 
 	protected static String tempDir = null;
 
@@ -42,13 +41,14 @@ public class FileBucket implements Bucket {
 	public FileBucket(File file, boolean readOnly, boolean deleteOnFinalize, boolean deleteOnExit) {
 		this.readOnly = readOnly;
 		this.file = file;
-		this.newFile = deleteOnFinalize;
+		this.deleteOnFinalize = deleteOnFinalize;
 		if(deleteOnExit)
 			file.deleteOnExit();
 		// Useful for finding temp file leaks.
 		// System.err.println("-- FileBucket.ctr(0) -- " +
 		// file.getAbsolutePath());
 		// (new Exception("get stack")).printStackTrace();
+		fileRestartCounter = 0;
 		if(file.exists()) {
 			length = file.length();
 			if(!file.canWrite())
@@ -61,7 +61,6 @@ public class FileBucket implements Bucket {
 	 * Creates a new FileBucket in a random temporary file in the temporary
 	 * directory.
 	 */
-
 	public FileBucket(RandomSource random) {
 		file =
 			new File(
@@ -73,7 +72,7 @@ public class FileBucket implements Bucket {
 		//System.err.println("-- FileBucket.ctr(1) -- " +
 		// file.getAbsolutePath());
 		//(new Exception("get stack")).printStackTrace();
-		newFile = true;
+		deleteOnFinalize = true;
 		length = 0;
 		file.deleteOnExit();
 	}
@@ -88,12 +87,12 @@ public class FileBucket implements Bucket {
 			// FIXME: what about existing streams? Will ones on append append
 			// to the new truncated file? Do we want them to? What about
 			// truncated ones? We should kill old streams here, right?
-			return newFileBucketOutputStream(file.getPath(), ++lastOutputStream);
+			return newFileBucketOutputStream(file.getPath(), ++fileRestartCounter);
 		}
 	}
 
 	protected FileBucketOutputStream newFileBucketOutputStream(
-		String s, int streamNumber) throws IOException {
+		String s, long streamNumber) throws IOException {
 		return new FileBucketOutputStream(s, streamNumber);
 	}
 
@@ -103,44 +102,42 @@ public class FileBucket implements Bucket {
 
 	class FileBucketOutputStream extends FileOutputStream {
 
-		private int streamNumber;
+		private long restartCount;
 		
 		protected FileBucketOutputStream(
-			String s, int streamNumber)
+			String s, long restartCount)
 			throws FileNotFoundException {
 			super(s, false);
 			resetLength();
-			this.streamNumber = streamNumber;
+			this.restartCount = restartCount;
 		}
-
+		
+		protected void confirmWriteSynchronized() throws IOException {
+			if (fileRestartCounter > restartCount)
+				throw new IllegalStateException("writing to file after restart");
+			if(readOnly)
+				throw new IOException("File is read-only");
+		}
+		
 		public void write(byte[] b) throws IOException {
-			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
 			synchronized (FileBucket.this) {
-				if(readOnly)
-					throw new IOException("Bucket is read-only");
+				confirmWriteSynchronized();
 				super.write(b);
 				length += b.length;
 			}
 		}
 
 		public void write(byte[] b, int off, int len) throws IOException {
-			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
 			synchronized (FileBucket.this) {
-				if(readOnly)
-					throw new IOException("Bucket is read-only");
+				confirmWriteSynchronized();
 				super.write(b, off, len);
 				length += len;
 			}
 		}
 
 		public void write(int b) throws IOException {
-			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
 			synchronized (FileBucket.this) {
-				if(readOnly)
-					throw new IOException("Bucket is read-only");
+				confirmWriteSynchronized();
 				super.write(b);
 				length++;
 			}
@@ -193,7 +190,7 @@ public class FileBucket implements Bucket {
 		if (Logger.shouldLog(Logger.DEBUG, this))
 			Logger.debug(this,
 				"FileBucket Finalizing " + file.getName());
-		if (newFile && file.exists()) {
+		if (deleteOnFinalize && file.exists()) {
 			Logger.debug(this,
 				"Deleting bucket " + file.getName());
 			deleteFile();
@@ -300,6 +297,6 @@ public class FileBucket implements Bucket {
 	 * can do to recover it! Delete file on finalize, on the other hand, is reversible.
 	 */
 	public void dontDeleteOnFinalize() {
-		newFile = false;
+		deleteOnFinalize = false;
 	}
 }

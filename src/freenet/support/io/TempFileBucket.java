@@ -49,7 +49,7 @@ public class TempFileBucket extends FileBucket {
 
 		// Make sure finalize wacks temp file 
 		// if it is not explictly freed.
-		newFile = true;
+		deleteOnFinalize = true;
 
 		//System.err.println("FproxyServlet.TempFileBucket -- created: " +
 		//         f.getAbsolutePath());
@@ -174,12 +174,12 @@ public class TempFileBucket extends FileBucket {
 							"closed open OutputStream !: "
 								+ file.getAbsolutePath(),
 							new Exception("debug"));
-						if (os instanceof FileBucketOutputStream) {
-							Logger.debug(
-								this,
-								"Open OutputStream created: ",
-								((FileBucketOutputStream) os).e);
-						}
+//						if (os instanceof FileBucketOutputStream) {
+//							Logger.debug(
+//								this,
+//								"Open OutputStream created: ",
+//								((FileBucketOutputStream) os).e);
+//						}
 
 					}
 				}
@@ -240,16 +240,16 @@ public class TempFileBucket extends FileBucket {
 		return released;
 	}
 
-	/**
-	 *  Finalize
-	 *
-	 * @exception  Throwable  Description of the Exception
-	 */
-	public void finalize() throws Throwable {
-		if (logDebug)
-			Logger.debug(this, "Finalizing TempFileBucket for " + file);
-		super.finalize();
-	}
+//	/**
+//	 *  Finalize
+//	 *
+//	 * @exception  Throwable  Description of the Exception
+//	 */
+//	public void finalize() throws Throwable {
+//		if (logDebug)
+//			Logger.debug(this, "Finalizing TempFileBucket for " + file);
+//		super.finalize();
+//	}
 
 	protected Vector streams = new Vector();
 	private boolean released;
@@ -263,9 +263,9 @@ public class TempFileBucket extends FileBucket {
 			Logger.debug(this,
 				"Creating new HookedFileBucketOutputStream for " + file);
 		if (hook != null)
-			return new HookedFileBucketOutputStream(s, append, restartCount);
+			return new HookedFileBucketOutputStream(s, restartCount);
 		else
-			return super.newFileBucketOutputStream(s, append, restartCount);
+			return super.newFileBucketOutputStream(s, restartCount);
 	}
 
 	protected void deleteFile() {
@@ -342,18 +342,15 @@ public class TempFileBucket extends FileBucket {
 
 		protected HookedFileBucketOutputStream(
 			String s,
-			boolean append,
 			long restartCount)
 			throws IOException {
-			super(s, append, restartCount);
+			super(s, restartCount);
 			streams.addElement(this);
 			if (Logger.shouldLog(Logger.DEBUG, this))
 				Logger.debug(
 					this,
 					"Created HookedFileBucketOutputStream("
 						+ s
-						+ ","
-						+ append
 						+ ","
 						+ restartCount
 						+ ")");
