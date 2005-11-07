@@ -54,6 +54,7 @@ import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FilenameGenerator;
 import freenet.support.io.TempBucketFactory;
 
 /**
@@ -117,18 +118,29 @@ public class Node implements SimpleLowLevelClient {
     final PacketSender ps;
     final NodeDispatcher dispatcher;
     final String filenamesPrefix;
+    final FilenameGenerator tempFilenameGenerator;
     static short MAX_HTL = 10;
-    private static final int EXIT_STORE_FILE_NOT_FOUND = 1;
-    private static final int EXIT_STORE_IOEXCEPTION = 2;
-    private static final int EXIT_STORE_OTHER = 3;
-    private static final int EXIT_USM_DIED = 4;
+    static final int EXIT_STORE_FILE_NOT_FOUND = 1;
+    static final int EXIT_STORE_IOEXCEPTION = 2;
+    static final int EXIT_STORE_OTHER = 3;
+    static final int EXIT_USM_DIED = 4;
     public static final int EXIT_YARROW_INIT_FAILED = 5;
+    static final int EXIT_TEMP_INIT_ERROR = 6;
+    
     public final long bootID;
     public final long startupTime;
     
     // Client stuff
     final ArchiveManager archiveManager;
     final BucketFactory tempBucketFactory;
+    
+    // Client stuff that needs to be configged - FIXME
+    static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
+    static final long MAX_CACHED_ARCHIVE_DATA = 32*1024*1024; // make a fixed fraction of the store by default? FIXME
+    static final long MAX_ARCHIVE_SIZE = 1024*1024; // ??? FIXME
+    static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
+    static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
+    
     
     /**
      * Read all storable settings (identity etc) from the node file.
@@ -308,7 +320,15 @@ public class Node implements SimpleLowLevelClient {
         bootID = random.nextLong();
         localStreamContexts = new Hashtable();
         peers.writePeers();
-        tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory("temp", true));
+        try {
+			tempFilenameGenerator = new FilenameGenerator(random, true, new File("temp"), "temp-");
+		} catch (IOException e) {
+			Logger.error(this, "Could not create temp bucket factory: "+e, e);
+			System.exit(EXIT_TEMP_INIT_ERROR);
+			throw new Error();
+		}
+		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
+		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
     }
 
     void start(SwapRequestInterval interval) {

@@ -22,6 +22,7 @@ import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.io.FileBucket;
+import freenet.support.io.FilenameGenerator;
 
 /**
  * Cache of recently decoded archives:
@@ -47,17 +48,17 @@ public class ArchiveManager {
 	 * @param cacheDir The directory in which to store cached data.
 	 * @param random A random source for the encryption keys used by stored files.
 	 */
-	ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, File cacheDir, RandomSource random) {
+	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, RandomSource random, FilenameGenerator filenameGenerator) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
 		cachedElements = new LRUHashtable();
 		this.maxCachedElements = maxCachedElements;
 		this.maxCachedData = maxCachedData;
-		this.cacheDir = cacheDir;
 		storedData = new LRUHashtable();
 		this.maxArchiveSize = maxArchiveSize;
 		this.maxArchivedFileSize = maxArchivedFileSize;
 		this.random = random;
+		this.filenameGenerator = filenameGenerator;
 	}
 
 	final RandomSource random;
@@ -97,10 +98,10 @@ public class ArchiveManager {
 	final long maxCachedData;
 	/** Currently cached data in bytes */
 	long cachedData;
-	/** Cache directory */
-	final File cacheDir;
 	/** Map from ArchiveKey to ArchiveStoreElement */
 	final LRUHashtable storedData;
+	/** Filename generator */
+	final FilenameGenerator filenameGenerator;
 
 	/**
 	 * Create an archive handler. This does not need to know how to
@@ -353,10 +354,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 	 * go over the maximum size. Will obviously keep its key when we move it to main.
 	 */
 	private TempStoreElement makeTempStoreBucket(long size) {
-		byte[] randomFilename = new byte[16]; // should be plenty
-		random.nextBytes(randomFilename);
-		String filename = HexUtil.bytesToHex(randomFilename);
-		File myFile = new File(cacheDir, filename);
+		File myFile = filenameGenerator.makeRandomFilename();
 		FileBucket fb = new FileBucket(myFile, false, true, false);
 		
 		byte[] cipherKey = new byte[32];
