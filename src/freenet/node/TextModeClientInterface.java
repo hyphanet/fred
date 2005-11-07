@@ -13,6 +13,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
@@ -22,6 +24,8 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
+import freenet.support.Bucket;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -86,8 +90,9 @@ public class TextModeClientInterface implements Runnable {
 
     /**
      * Process a single command.
+     * @throws IOException If we could not write the data to stdout.
      */
-    private void processLine(BufferedReader reader) throws UnsupportedEncodingException {
+    private void processLine(BufferedReader reader) throws IOException {
         String line;
         try {
             line = reader.readLine();
@@ -107,32 +112,21 @@ public class TextModeClientInterface implements Runnable {
                 key = key.substring(0, key.length()-2);
             Logger.normal(this, "Key: "+key);
             FreenetURI uri;
-            ClientCHK chk;
             try {
                 uri = new FreenetURI(key);
-                chk = new ClientCHK(uri);
             } catch (MalformedURLException e2) {
                 System.out.println("Malformed URI: "+key+" : "+e2);
                 return;
             }
-            CHKBlock block;
-            // Fetch, possibly from other node.
-            block = n.getCHK(chk, false);
-            if(block == null) {
-                System.out.println("Not found in store: "+chk.getURI());
-            } else {
-                // Decode it
-                byte[] decoded;
-                try {
-                    decoded = block.decode(chk);
-                } catch (CHKDecodeException e) {
-                    Logger.error(this, "Cannot decode: "+e, e);
-                    System.out.println("Cannot decode: "+e.getMessage());
-                    return;
-                }
-                System.out.println("Decoded data:\n");
-                System.out.println(new String(decoded));
-            }
+            try {
+				FetchResult result = client.fetch(uri);
+				System.out.println("Data:\n");
+				Bucket data = result.asBucket();
+				BucketTools.copyTo(data, System.out, Long.MAX_VALUE);
+				System.out.println();
+			} catch (FetchException e) {
+				System.out.println("Error: "+e.getMessage());
+			}
         } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
             String key = line.substring("GETFILE:".length());
@@ -142,29 +136,15 @@ public class TextModeClientInterface implements Runnable {
                 key = key.substring(0, key.length()-2);
             Logger.normal(this, "Key: "+key);
             FreenetURI uri;
-            ClientCHK chk;
             try {
                 uri = new FreenetURI(key);
-                chk = new ClientCHK(uri);
             } catch (MalformedURLException e2) {
-                System.err.println("Malformed URI: "+key+" : "+e2);
+                System.out.println("Malformed URI: "+key+" : "+e2);
                 return;
             }
-            CHKBlock block;
-            // Fetch, possibly from other node.
-            block = n.getCHK(chk, false);
-            if(block == null) {
-                System.out.println("Not found in store: "+chk.getURI());
-            } else {
-                // Decode it
-                byte[] decoded;
-                try {
-                    decoded = block.decode(chk);
-                } catch (CHKDecodeException e) {
-                    Logger.error(this, "Cannot decode: "+e, e);
-                    System.out.println("Cannot decode: "+e.getMessage());
-                    return;
-                }
+            try {
+				FetchResult result = client.fetch(uri);
+				Bucket data = result.asBucket();
                 // Now calculate filename
                 String fnam = uri.getDocName();
                 fnam = sanitize(fnam);
@@ -178,7 +158,7 @@ public class TextModeClientInterface implements Runnable {
                 FileOutputStream fos = null;
                 try {
                     fos = new FileOutputStream(fnam);
-                    fos.write(decoded);
+                    BucketTools.copyTo(data, fos, Long.MAX_VALUE);
                     fos.close();
                     System.out.println("Written to "+fnam);
                 } catch (IOException e) {
@@ -191,7 +171,9 @@ public class TextModeClientInterface implements Runnable {
                         // Ignore
                     }
                 }
-            }
+			} catch (FetchException e) {
+				System.out.println("Error: "+e.getMessage());
+			}
         } else if(uline.startsWith("QUIT")) {
             System.out.println("Goodbye.");
             System.exit(0);
