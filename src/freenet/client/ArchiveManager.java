@@ -17,7 +17,6 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
-import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.PaddedEphemerallyEncryptedBucket;

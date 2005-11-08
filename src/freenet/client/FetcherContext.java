@@ -18,12 +18,12 @@ public class FetcherContext implements Cloneable {
 	final BucketFactory bucketFactory;
 	final int maxRecursionLevel;
 	final int maxArchiveRestarts;
-	final boolean dontEnterImplicitArchives;
+	boolean dontEnterImplicitArchives;
 	final int maxSplitfileThreads;
 	final int maxSplitfileBlockRetries;
 	final int maxNonSplitfileRetries;
 	final RandomSource random;
-	final boolean allowSplitfiles;
+	boolean allowSplitfiles;
 	final boolean followRedirects;
 	final boolean localRequestOnly;
 	/** Whether to allow non-full blocks, or blocks which are not direct CHKs, in splitfiles.
