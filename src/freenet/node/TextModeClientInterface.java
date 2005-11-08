@@ -196,7 +196,7 @@ public class TextModeClientInterface implements Runnable {
             byte[] data = content.getBytes();
             ClientCHKBlock block;
             try {
-                block = ClientCHKBlock.encode(data);
+                block = ClientCHKBlock.encode(data, false, false, (short)-1);
             } catch (CHKEncodeException e) {
                 Logger.error(this, "Couldn't encode: "+e, e);
                 return;
@@ -230,7 +230,7 @@ public class TextModeClientInterface implements Runnable {
                 System.out.println("Inserting...");
                 ClientCHKBlock block;
                 try {
-                    block = ClientCHKBlock.encode(data);
+                    block = ClientCHKBlock.encode(data, false, false, (short)-1);
                 } catch (CHKEncodeException e) {
                     System.out.println("Couldn't encode: "+e.getMessage());
                     Logger.error(this, "Couldn't encode: "+e, e);

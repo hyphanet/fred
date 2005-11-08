@@ -1,10 +1,13 @@
-package freenet.client;
+package freenet.support.compress;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.zip.DataFormatException;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.Inflater;
 
+import freenet.keys.CHKDecodeException;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 
@@ -24,6 +27,19 @@ public class GzipCompressor extends Compressor {
 		}
 		gos.close();
 		return output;
+	}
+
+	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws DecompressException {
+        Inflater decompressor = new Inflater();
+        decompressor.setInput(dbuf, i, j);
+        try {
+            int resultLength = decompressor.inflate(output);
+            return resultLength;
+        } catch (DataFormatException e) {
+            throw new DecompressException("Invalid data: "+e);
+        } catch (ArrayIndexOutOfBoundsException e) {
+        	throw new DecompressException("Invalid data: "+e);
+        }
 	}
 
 }

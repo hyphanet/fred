@@ -9,6 +9,8 @@ import freenet.keys.NodeCHK;
 import freenet.node.LowLevelPutException;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.Logger;
+import freenet.support.compress.Compressor;
 
 /**
  * Class that does high-level inserts.
@@ -39,65 +41,64 @@ public class FileInserter {
 		
 		Bucket data = block.data;
 		ClientCHKBlock chk;
-		
-		int compressionCodec = -1; // no compression
 
-		int bestCompressionCodec = -1; // no compression
-		Bucket bestCompressedData;
+		Compressor bestCodec = null;
+		Bucket bestCompressedData = null;
 		
 		if(data.size() > NodeCHK.BLOCK_SIZE && (!ctx.dontCompress)) {
 			// Try to compress the data.
 			// Try each algorithm, starting with the fastest and weakest.
 			// Stop when run out of algorithms, or the compressed data fits in a single block.
-			int algos = Metadata.countCompressAlgorithms();
-			for(int i=0;i<algos;i++) {
-				Compressor comp = Metadata.getCompressionAlgorithmByDifficulty(i);
-				Bucket result = comp.compress(data, ctx.bf);
-				if(result.size() < NodeCHK.BLOCK_SIZE) {
-					compressionCodec = -1;
-					data = result;
-					if(bestCompressedData != null)
+			int algos = Compressor.countCompressAlgorithms();
+			try {
+				for(int i=0;i<algos;i++) {
+					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
+					Bucket result;
+					result = comp.compress(data, ctx.bf);
+					if(result.size() < NodeCHK.BLOCK_SIZE) {
+						bestCodec = comp;
+						data = result;
+						if(bestCompressedData != null)
+							ctx.bf.freeBucket(bestCompressedData);
+						break;
+					}
+					if(bestCompressedData != null && result.size() <  bestCompressedData.size()) {
 						ctx.bf.freeBucket(bestCompressedData);
-					break;
+						bestCompressedData = result;
+						bestCodec = comp;
+					} else if(bestCompressedData == null && result.size() < data.size()) {
+						bestCompressedData = result;
+						bestCodec = comp;
+					}
 				}
-				if(bestCompressedData != null && result.size() <  bestCompressedData.size()) {
-					ctx.bf.freeBucket(bestCompressedData);
-					bestCompressedData = result;
-					bestCompressionCodec = comp.codecNumberForMetadata();
-				} else if(bestCompressedData == null && result.size() < data.size()) {
-					bestCompressedData = result;
-					bestCompressionCodec = comp.codecNumberForMetadata();
-				}
-			}
-			if(compressionCodec == -1) {
-				compressionCodec = bestCompressionCodec;
-				if(compressionCodec != -1) {
-					data = bestCompressedData;
-				}
+			} catch (IOException e) {
+				throw new InserterException(InserterException.BUCKET_ERROR, e);
 			}
 		}
 		
 		if(data.size() <= NodeCHK.BLOCK_SIZE) {
-			if(compressionCodec == -1) {
-				chk = ClientCHKBlock.encode(BucketTools.toByteArray(data), metadata, true);
-			}
-		}
-		
-		if(data.size() <= NodeCHK.BLOCK_SIZE ||
-				data.size() <= ClientCHKBlock.MAX_LENGTH_BEFORE_COMPRESSION) {
+			byte[] array;
 			try {
-				chk = ClientCHKBlock.encode(BucketTools.toByteArray(data), metadata);
-				return simplePutCHK(chk, block.clientMetadata);
-			} catch (CHKEncodeException e) {
-				// Too big! Encode to a splitfile, below.
+				array = BucketTools.toByteArray(data);
 			} catch (IOException e) {
-				throw new InserterException(InserterException.BUCKET_ERROR);
+				throw new InserterException(InserterException.BUCKET_ERROR, e);
 			}
+			try {
+				if(bestCodec == null) {
+					chk = ClientCHKBlock.encode(array, metadata, true, (short)-1);
+				} else {
+					chk = ClientCHKBlock.encode(array, metadata, false, bestCodec.codecNumberForMetadata());
+				}
+			} catch (CHKEncodeException e) {
+				Logger.error(this, "Unexpected error: "+e, e);
+				throw new InserterException(InserterException.INTERNAL_ERROR);
+			}
+			return simplePutCHK(chk, block.clientMetadata);
 		}
 		
 		// Too big, encode to a splitfile
 		SplitInserter splitInsert = new SplitInserter(data, block.clientMetadata);
-		splitInsert.run();
+		return splitInsert.run();
 	}
 
 	/**
@@ -106,8 +107,9 @@ public class FileInserter {
 	 * @param clientMetadata The client metadata. If this is non-trivial, we will have to
 	 * create a redirect document just to put the metadata in.
 	 * @return The URI of the resulting CHK.
+	 * @throws InserterException If there was an error inserting the block.
 	 */
-	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata) {
+	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata) throws InserterException {
 		try {
 			ctx.client.putCHK(chk);
 		} catch (LowLevelPutException e) {
@@ -121,6 +123,20 @@ public class FileInserter {
 			// Do need a redirect for the metadata
 			Metadata metadata = new Metadata(Metadata.SIMPLE_REDIRECT, chk.getClientKey().getURI(), clientMetadata);
 			return putMetadataCHK(metadata);
+		}
+	}
+
+	private void translateException(LowLevelPutException e) throws InserterException {
+		switch(e.code) {
+		case LowLevelPutException.INTERNAL_ERROR:
+			throw new InserterException(InserterException.INTERNAL_ERROR);
+		case LowLevelPutException.REJECTED_OVERLOAD:
+			throw new InserterException(InserterException.REJECTED_OVERLOAD);
+		case LowLevelPutException.ROUTE_NOT_FOUND:
+			throw new InserterException(InserterException.ROUTE_NOT_FOUND);
+		default:
+			Logger.error(this, "Unknown LowLevelPutException code: "+e.code+" on "+this);
+			throw new InserterException(InserterException.INTERNAL_ERROR);
 		}
 	}
 
@@ -138,5 +154,4 @@ public class FileInserter {
 		InsertBlock block = new InsertBlock(bucket, null, FreenetURI.EMPTY_CHK_URI);
 		return run(block, true);
 	}
-
 }

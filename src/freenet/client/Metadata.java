@@ -14,6 +14,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Logger;
+import freenet.support.compress.Compressor;
 
 /** Metadata parser/writer class. */
 public class Metadata {
@@ -396,7 +397,7 @@ public class Metadata {
 	
 	/** Compressed splitfile codec */
 	short compressionCodec;
-	static final short COMPRESS_GZIP = 0; // for future use
+	static public final short COMPRESS_GZIP = 0; // for future use
 	static final short COMPRESS_BZIP2 = 1; // FIXME for future use
 	
 	/** The length of the splitfile */
@@ -641,18 +642,5 @@ public class Metadata {
 	
 	public FreenetURI[] getSplitfileCheckKeys() {
 		return splitfileCheckKeys;
-	}
-
-	/** Count the number of distinct compression algorithms currently supported. */
-	public static int countCompressAlgorithms() {
-		// FIXME we presently only support gzip. This should change in future.
-		return 1;
-	}
-
-	public static Compressor getCompressionAlgorithmByDifficulty(int i) {
-		if(i == 0)
-			return Compressor.gzip;
-		// FIXME when we get more compression algos, put them here.
-		return null;
 	}
 }

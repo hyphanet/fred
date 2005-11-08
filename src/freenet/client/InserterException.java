@@ -25,5 +25,10 @@ public class InserterException extends Exception {
 	public static final int INVALID_URI = 1;
 	/** Failed to read from or write to a bucket; a kind of internal error */
 	public static final int BUCKET_ERROR = 2;
-
+	/** Internal error of some sort */
+	public static final int INTERNAL_ERROR = 3;
+	/** Downstream node was overloaded */
+	public static final int REJECTED_OVERLOAD = 4;
+	/** Couldn't find enough nodes to send the data to */
+	public static final int ROUTE_NOT_FOUND = 5;
 }

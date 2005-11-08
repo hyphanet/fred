@@ -13,7 +13,27 @@ import freenet.support.Base64;
  */
 public class ClientCHK extends ClientKey {
     
+	/** Lazily constructed: the NodeCHK */
     NodeCHK nodeKey;
+    /** Routing key */
+    final byte[] routingKey;
+    /** Decryption key */
+    final byte[] cryptoKey;
+    /** Is the data a control document? */
+    final boolean controlDocument;
+    /** Encryption algorithm */
+    final short cryptoAlgorithm;
+    /** Compression algorithm, negative means uncompressed */
+    final short compressionAlgorithm;
+    
+    /* We use EXTRA_LENGTH above for consistency, rather than dis.read etc. Some code depends on this
+     * being accurate. Change those uses if you like. */
+    /** The length of the "extra" bytes in the key */
+    static final short EXTRA_LENGTH = 5;
+    /** The length of the decryption key */
+    static final short CRYPTO_KEY_LENGTH = 32;
+    /** Code for 256-bit AES with PCFB */
+    static final short ALGO_AES_PCFB_256 = 1;
     
     /**
      * @param routingKey The routing key. This is the overall hash of the
@@ -27,13 +47,13 @@ public class ClientCHK extends ClientKey {
      * @param algo The encryption algorithm's identifier. See ALGO_* for 
      * values.
      */
-    public ClientCHK(byte[] routingKey, byte[] encKey, boolean isCompressed, 
-            boolean isControlDocument, short algo) {
+    public ClientCHK(byte[] routingKey, byte[] encKey,  
+            boolean isControlDocument, short algo, short compressionAlgorithm) {
         this.routingKey = routingKey;
         this.cryptoKey = encKey;
-        this.compressed = isCompressed;
         this.controlDocument = isControlDocument;
         this.cryptoAlgorithm = algo;
+        this.compressionAlgorithm = compressionAlgorithm;
     }
 
     /**
@@ -45,13 +65,13 @@ public class ClientCHK extends ClientKey {
         routingKey = uri.getRoutingKey();
         cryptoKey = uri.getCryptoKey();
         byte[] extra = uri.getExtra();
-        if(extra == null || extra.length < 3)
+        if(extra == null || extra.length < 5)
             throw new MalformedURLException();
         cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
 		if(cryptoAlgorithm != ALGO_AES_PCFB_256)
 			throw new MalformedURLException("Invalid crypto algorithm");
-        compressed = (extra[2] & 0x01) != 0;
         controlDocument = (extra[2] & 0x02) != 0;
+        compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
     }
 
     /**
@@ -65,7 +85,7 @@ public class ClientCHK extends ClientKey {
         cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
 		if(cryptoAlgorithm != ALGO_AES_PCFB_256)
 			throw new MalformedURLException("Invalid crypto algorithm");
-        compressed = (extra[2] & 0x01) != 0;
+        compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
         controlDocument = (extra[2] & 0x02) != 0;
 		routingKey = new byte[NodeCHK.KEY_LENGTH];
 		dis.readFully(routingKey);
@@ -78,30 +98,27 @@ public class ClientCHK extends ClientKey {
 	 * @throws IOException If a write failed.
 	 */
 	public void writeRawBinaryKey(DataOutputStream dos) throws IOException {
-		byte[] extra = new byte[EXTRA_LENGTH];
-		extra[0] = (byte) (cryptoAlgorithm >> 8);
-		extra[1] = (byte) cryptoAlgorithm;
-		extra[2] = (byte) ((compressed ? 1 : 0) + (controlDocument ? 2 : 0));
-		dos.write(extra);
+		dos.write(getExtra());
 		dos.write(routingKey);
 		dos.write(cryptoKey);
 	}
     
-    byte[] routingKey;
-    byte[] cryptoKey;
-    boolean compressed;
-    boolean controlDocument;
-    short cryptoAlgorithm;
-    
+	public byte[] getExtra() {
+		byte[] extra = new byte[EXTRA_LENGTH];
+		extra[0] = (byte) (cryptoAlgorithm >> 8);
+		extra[1] = (byte) cryptoAlgorithm;
+		extra[2] = (byte) (controlDocument ? 2 : 0);
+		extra[3] = (byte) (compressionAlgorithm >> 8);
+		extra[4] = (byte) compressionAlgorithm;
+		return extra;
+	}
+	
     public String toString() {
         return super.toString()+":"+Base64.encode(routingKey)+","+
-        	Base64.encode(cryptoKey)+","+compressed+","+controlDocument+
+        	Base64.encode(cryptoKey)+","+compressionAlgorithm+","+controlDocument+
         	","+cryptoAlgorithm;
     }
 
-    static final short EXTRA_LENGTH = 3;
-    static final short CRYPTO_KEY_LENGTH = 32;
-    static final short ALGO_AES_PCFB_256 = 1;
 
     /**
      * @return a NodeCHK corresponding to this key. Basically keep the 
@@ -117,11 +134,7 @@ public class ClientCHK extends ClientKey {
      * @return URI form of this key.
      */
     public FreenetURI getURI() {
-        byte[] extra = new byte[3];
-        extra[0] = (byte)((cryptoAlgorithm >> 8) & 0xff);
-        extra[1] = (byte)(cryptoAlgorithm & 0xff);
-        extra[2] = 
-            (byte)((compressed ? 1 : 0) + (controlDocument ? 2 : 0));
+        byte[] extra = getExtra();
         return new FreenetURI("CHK", "", routingKey, cryptoKey, extra);
     }
 
@@ -135,5 +148,9 @@ public class ClientCHK extends ClientKey {
 
 	public boolean isMetadata() {
 		return controlDocument;
+	}
+
+	public boolean isCompressed() {
+		return compressionAlgorithm > 0;
 	}
 }

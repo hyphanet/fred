@@ -1,5 +1,6 @@
 package freenet.keys;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.zip.Deflater;
@@ -10,6 +11,11 @@ import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.ArrayBucket;
+import freenet.support.ArrayBucketFactory;
+import freenet.support.Bucket;
+import freenet.support.BucketTools;
+import freenet.support.compress.Compressor;
 
 
 /**
@@ -19,7 +25,8 @@ import freenet.crypt.ciphers.Rijndael;
  */
 public class ClientCHKBlock extends CHKBlock {
 
-    final ClientCHK key;
+    public static final long MAX_COMPRESSED_DATA_LENGTH = NodeCHK.BLOCK_SIZE - 3;
+	final ClientCHK key;
     
     public String toString() {
         return super.toString()+",key="+key;
@@ -50,35 +57,63 @@ public class ClientCHKBlock extends CHKBlock {
      * @param sourceData The data to encode.
      * @param asMetadata Is this a metadata key?
      * @param dontCompress If set, don't even try to compress.
+     * @param alreadyCompressedCodec If !dontCompress, and this is >=0, then the
+     * data is already compressed, and this is the algorithm.
      */
 
-    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress) throws CHKEncodeException {
+    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec) throws CHKEncodeException {
         byte[] data;
         byte[] header;
         ClientCHK key;
+        short compressionAlgorithm = -1;
         // Try to compress it - even if it fits into the block,
         // because compressing it improves its entropy.
         boolean compressed = false;
         if(sourceData.length > MAX_LENGTH_BEFORE_COMPRESSION)
             throw new CHKEncodeException("Too big");
-        if(sourceData.length > NodeCHK.BLOCK_SIZE && !dontCompress) {
-            int sourceLength = sourceData.length;
-            byte[] cbuf = new byte[32768+1024];
-            Deflater compressor = new Deflater();
-            compressor.setInput(sourceData);
-            compressor.finish();
-            int compressedLength = compressor.deflate(cbuf);
-            if(compressedLength+2 < sourceData.length) {
-                // Yay
+        if(!dontCompress) {
+        	byte[] cbuf = null;
+        	if(alreadyCompressedCodec >= 0) {
+        		compressionAlgorithm = alreadyCompressedCodec;
+        		cbuf = sourceData;
+        	} else {
+        		// Determine the best algorithm
+            	Bucket bucket = new ArrayBucket(sourceData);
+            	bucket.setReadOnly();
+            	for(int i=0;i<Compressor.countCompressAlgorithms();i++) {
+            		Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
+            		ArrayBucket compressedData;
+    				try {
+    					compressedData = (ArrayBucket) comp.compress(bucket, new ArrayBucketFactory());
+    				} catch (IOException e) {
+    					throw new Error(e);
+    				}
+            		if(compressedData.size() <= MAX_COMPRESSED_DATA_LENGTH) {
+            			compressionAlgorithm = comp.codecNumberForMetadata();
+        				try {
+        					cbuf = BucketTools.toByteArray(compressedData);
+        					// FIXME provide a method in ArrayBucket
+        				} catch (IOException e) {
+        					throw new Error(e);
+        				}
+            			break;
+            		}
+            	}
+        		
+        	}
+        	if(cbuf != null) {
+    			// Use it
+                int sourceLength = sourceData.length;
+    			int compressedLength = cbuf.length;
                 sourceData = new byte[compressedLength+3];
                 System.arraycopy(cbuf, 0, sourceData, 3, compressedLength);
                 sourceData[0] = (byte) ((sourceLength >> 16) & 0xff);
                 sourceData[1] = (byte) ((sourceLength >> 8) & 0xff);
                 sourceData[2] = (byte) ((sourceLength) & 0xff);
                 compressed = true;
-            }
+        	}
         }
-        if(sourceData.length > 32768) {
+        if(sourceData.length > NodeCHK.BLOCK_SIZE) {
             throw new CHKEncodeException("Too big");
         }
         MessageDigest md160;
@@ -152,7 +187,7 @@ public class ClientCHKBlock extends CHKBlock {
         byte[] finalHash = md160.digest(data);
         
         // Now convert it into a ClientCHK
-        key = new ClientCHK(finalHash, encKey, compressed, asMetadata, ClientCHK.ALGO_AES_PCFB_256);
+        key = new ClientCHK(finalHash, encKey, asMetadata, ClientCHK.ALGO_AES_PCFB_256, compressionAlgorithm);
         
         try {
             return new ClientCHKBlock(data, header, key, false);

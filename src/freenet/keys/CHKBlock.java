@@ -11,6 +11,8 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.node.Node;
+import freenet.support.compress.Compressor;
+import freenet.support.compress.DecompressException;
 
 /**
  * @author amphibian
@@ -135,7 +137,7 @@ public class CHKBlock implements KeyBlock {
         int size = ((hbuf[32] & 0xff) << 8) + (hbuf[33] & 0xff);
         if(size > 32768 || size < 0)
             throw new CHKDecodeException("Invalid size: "+size);
-        if(key.compressed) {
+        if(key.isCompressed()) {
             if(size < 4) throw new CHKDecodeException("No bytes to decompress");
             // Decompress
             // First get the length
@@ -144,15 +146,14 @@ public class CHKBlock implements KeyBlock {
             if(len > MAX_LENGTH_BEFORE_COMPRESSION)
                 throw new CHKDecodeException("Invalid precompressed size: "+len);
             byte[] output = new byte[len];
-            Inflater decompressor = new Inflater();
-            decompressor.setInput(dbuf, 3, size-3);
+            Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(key.compressionAlgorithm);
             try {
-                int resultLength = decompressor.inflate(output);
-                if(resultLength != len)
-                    throw new CHKDecodeException("Wanted "+len+" but got "+resultLength+" bytes from decompression");
-            } catch (DataFormatException e2) {
-                throw new CHKDecodeException(e2);
-            }
+            	int x = decompressor.decompress(dbuf, 3, dbuf.length-3, output);
+            	if(x != len)
+					throw new CHKDecodeException("Decompression failed: got "+x+" bytes, needed "+len+" bytes");
+			} catch (DecompressException e) {
+				throw new CHKDecodeException(e.getMessage());
+			}
             return output;
         }
         byte[] output = new byte[size];
