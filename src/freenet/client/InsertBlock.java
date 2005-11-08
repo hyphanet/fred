@@ -18,20 +18,6 @@ public class InsertBlock {
 		this.desiredURI = desiredURI;
 	}
 
-	public Bucket getData() {
-		return data;
-	}
 
-	public void setData(Bucket data) {
-		this.data = data;
-	}
-
-	public String getMimeType() {
-		return mimeType;
-	}
-
-	public void setMimeType(String mimeType) {
-		this.mimeType = mimeType;
-	}
 
 }
