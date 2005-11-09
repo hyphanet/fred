@@ -240,7 +240,8 @@ public class Node implements SimpleLowLevelClient {
      * Then create a node.
      */
     public static void main(String[] args) throws IOException {
-    	if (args.length != 1) {
+    	int length = args.length;
+    	if (length < 1 && length > 2) {
     		System.out.println("Usage: $ java freenet.node.Node <portNumber>");
     		return;
     	}
@@ -423,7 +424,7 @@ public class Node implements SimpleLowLevelClient {
         } else {
             int status = is.getStatus();
             String msg = "Failed inserting "+block+" : "+is.getStatusString();
-            if(status == is.ROUTE_NOT_FOUND)
+            if(status == InsertSender.ROUTE_NOT_FOUND)
                 msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
             Logger.error(this, msg);
             switch(is.getStatus()) {
