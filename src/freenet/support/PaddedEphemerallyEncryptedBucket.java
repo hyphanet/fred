@@ -145,15 +145,20 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		}
 		
 		public final int available() {
-			return (int) (dataLength - ptr);
+			int x = (int)(dataLength - ptr);
+			return (x < 0) ? 0 : x;
 		}
 		
 		public int read(byte[] buf, int offset, int length) throws IOException {
-			if(ptr > dataLength) return -1;
-			length = Math.min(length, available());
+			// FIXME remove debugging
+			if(length+offset > buf.length || offset < 0 || length < 0)
+				throw new ArrayIndexOutOfBoundsException("a="+offset+", b="+length+", length "+buf.length);
+			int x = available();
+			if(x <= 0) return -1;
+			length = Math.min(length, x);
 			int readBytes = in.read(buf, offset, length);
 			if(readBytes <= 0) return readBytes;
-			ptr += dataLength;
+			ptr += readBytes;
 			pcfb.blockDecipher(buf, offset, readBytes);
 			return readBytes;
 		}

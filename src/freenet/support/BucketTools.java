@@ -348,14 +348,25 @@ public class BucketTools {
 	 * @throws IOException If there was an error reading from the bucket or writing to the stream. */
 	public static void copyTo(Bucket decodedData, OutputStream os, long truncateLength) throws IOException {
 		if(truncateLength == 0) return;
+		if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
 		InputStream is = decodedData.getInputStream();
 		byte[] buf = new byte[4096];
 		long moved = 0;
 		while(moved < truncateLength) {
-			int bytes = Math.min(buf.length, (int)(truncateLength - moved));
-			is.read(buf, 0, bytes);
+			// DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
+			int bytes = (int) Math.min(buf.length, truncateLength - moved);
+			if(bytes <= 0)
+				throw new IllegalStateException("bytes="+bytes+", truncateLength="+truncateLength+", moved="+moved);
+			bytes = is.read(buf, 0, bytes);
+			if(bytes <= 0) {
+				if(truncateLength == Long.MAX_VALUE)
+					break;
+				throw new IOException("Could not move required quantity of data: "+bytes);
+			}
 			os.write(buf, 0, bytes);
+			moved += bytes;
 		}
+		is.close();
 	}
 
 	/**

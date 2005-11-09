@@ -87,6 +87,9 @@ class SpyInputStream extends java.io.FilterInputStream {
 		synchronized (tfb) {
 			println(".read(byte[], int, int)");
 			checkValid();
+			// FIXME remove debugging
+			if(a+b > bytes.length || a < 0 || b < 0)
+				throw new ArrayIndexOutOfBoundsException("a="+a+", b="+b+", length "+bytes.length);
 			return in.read(bytes, a, b);
 		}
 	}
