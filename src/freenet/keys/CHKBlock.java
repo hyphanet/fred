@@ -3,8 +3,6 @@ package freenet.keys;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.zip.DataFormatException;
-import java.util.zip.Inflater;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;

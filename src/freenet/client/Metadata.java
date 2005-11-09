@@ -14,7 +14,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Logger;
-import freenet.support.compress.Compressor;
+
 
 /** Metadata parser/writer class. */
 public class Metadata {

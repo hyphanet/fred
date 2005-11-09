@@ -2,6 +2,7 @@ package freenet.node;
 
 public class LowLevelGetException extends Exception {
 
+	private static final long serialVersionUID = 1L;
 	/** Decode of data failed, probably was bogus at source */
 	public static final int DECODE_FAILED = 1;
 	/** Data was not in store and request was local-only */

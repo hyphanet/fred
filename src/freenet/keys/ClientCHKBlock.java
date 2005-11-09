@@ -3,7 +3,6 @@ package freenet.keys;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.zip.Deflater;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 

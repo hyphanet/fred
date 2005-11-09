@@ -1,7 +1,7 @@
 package freenet.node;
 
 public class LowLevelPutException extends Exception {
-
+	private static final long serialVersionUID = 1L;
 	/** An internal error occurred */
 	public static final int INTERNAL_ERROR = 1;
 	/** The request could not go enough hops to store the data properly. */

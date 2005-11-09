@@ -8,7 +8,6 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.Inflater;
 
-import freenet.keys.CHKDecodeException;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 
