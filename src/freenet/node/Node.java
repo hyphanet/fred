@@ -240,6 +240,12 @@ public class Node implements SimpleLowLevelClient {
      * Then create a node.
      */
     public static void main(String[] args) throws IOException {
+    	if (args.length != 1) {
+    		System.out.println("Usage: $ java freenet.node.Node <portNumber>");
+    		return;
+    	}
+
+    		
         int port = Integer.parseInt(args[0]);
         System.out.println("Port number: "+port);
         FileLoggerHook logger = new FileLoggerHook("freenet-"+port+".log", "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true);
