@@ -19,7 +19,7 @@ import freenet.support.Logger;
  */
 public class Segment implements Runnable {
 
-	public class BlockStatus implements Runnable, SplitfileBlock {
+	public class BlockStatus extends SplitfileBlock implements Runnable {
 
 		/** Splitfile index - [0,k[ is the data blocks, [k,n[ is the check blocks */
 		final int index;
@@ -196,6 +196,8 @@ public class Segment implements Runnable {
 	private final int recursionLevel;
 	/** Number of blocks which got fatal errors */
 	private int fatalErrorCount;
+	/** Retry tracker */
+	private RetryTracker tracker;
 	
 	/**
 	 * Create a Segment.

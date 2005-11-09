@@ -11,6 +11,7 @@ import freenet.node.LowLevelGetException;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.compress.Compressor;
 
 /** Class that does the actual fetching. Does not have to have a user friendly
  * interface!
@@ -240,7 +241,19 @@ class Fetcher {
 					return runMetadata(dm, recursionLevel+1, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives);
 				}
 			}
-			return realRun(dm, recursionLevel, uri, dontEnterImplicitArchives);
+			FetchResult fr = realRun(dm, recursionLevel, uri, dontEnterImplicitArchives);
+			if(metadata.compressed) {
+				Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.compressionCodec);
+				Bucket data = fr.data;
+				Bucket output;
+				try {
+					output = codec.decompress(data, ctx.bucketFactory);
+				} catch (IOException e) {
+					throw new FetchException(FetchException.BUCKET_ERROR, e);
+				}
+				return new FetchResult(fr, output);
+			}
+			return fr;
 		} else if(metadata.isSplitfile()) {
 			// Straight data splitfile.
 			// Might be used by parents for something else, in which case they will set dontEnterImplicitArchives.
@@ -265,6 +278,14 @@ class Fetcher {
 			
 			SplitFetcher sf = new SplitFetcher(metadata, archiveContext, newCtx);
 			Bucket sfResult = sf.fetch(); // will throw in event of error
+			if(metadata.compressed) {
+				Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.compressionCodec);
+				try {
+					sfResult = codec.decompress(sfResult, ctx.bucketFactory);
+				} catch (IOException e) {
+					throw new FetchException(FetchException.BUCKET_ERROR, e);
+				}
+			}
 			return new FetchResult(dm, sfResult);
 		} else {
 			Logger.error(this, "Don't know what to do with metadata: "+metadata);

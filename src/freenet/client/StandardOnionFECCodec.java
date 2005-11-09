@@ -178,4 +178,8 @@ public class StandardOnionFECCodec extends FECCodec {
 		// TODO Auto-generated method stub
 		
 	}
+
+	public int countCheckBlocks() {
+		return n-k;
+	}
 }

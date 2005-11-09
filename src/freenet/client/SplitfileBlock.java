@@ -1,20 +1,30 @@
 package freenet.client;
 
+import freenet.client.RetryTracker.Level;
 import freenet.support.Bucket;
 
 /** Simple interface for a splitfile block */
-public interface SplitfileBlock {
+public abstract class SplitfileBlock {
 
 	/** Get block number. [0,k[ = data blocks, [k, n[ = check blocks */
-	int getNumber();
+	abstract int getNumber();
 	
 	/** Has data? */
-	boolean hasData();
+	abstract boolean hasData();
 	
 	/** Get data */
-	Bucket getData();
+	abstract Bucket getData();
 	
 	/** Set data */
-	void setData(Bucket data);
+	abstract void setData(Bucket data);
+
+	private Level level;
 	
+	final Level getLevel() {
+		return level;
+	}
+	
+	final void setLevel(Level l) {
+		level = l;
+	}
 }

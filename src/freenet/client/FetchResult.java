@@ -18,6 +18,15 @@ public class FetchResult {
 		data = fetched;
 	}
 
+	/**
+	 * Create a FetchResult with a new Bucket of data, but everything else
+	 * the same as the old one.
+	 */
+	public FetchResult(FetchResult fr, Bucket output) {
+		this.data = output;
+		this.metadata = fr.metadata;
+	}
+
 	/** Get the MIME type of the fetched data. 
 	 * If unknown, returns application/octet-stream. */
 	public String getMimeType() {

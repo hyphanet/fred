@@ -14,6 +14,18 @@ import freenet.support.BucketFactory;
  */
 abstract class FECCodec {
 
+	public static int getCodecMaxSegmentSize(short splitfileType) {
+		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
+			return -1;
+		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
+			return 128;
+		throw new IllegalArgumentException();
+	}
+	
+	/**
+	 * Get a codec where we know both the number of data blocks and the number
+	 * of check blocks, and the codec type. Normally for decoding.
+	 */
 	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks) {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
@@ -22,6 +34,22 @@ abstract class FECCodec {
 		else return null;
 	}
 
+	/**
+	 * Get a codec where we know only the number of data blocks and the codec
+	 * type. Normally for encoding.
+	 */
+	public static FECCodec getCodec(short splitfileType, int dataBlocks) {
+		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
+			return null;
+		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
+			int checkBlocks = dataBlocks;
+			checkBlocks += (dataBlocks>>1);
+			if((dataBlocks & 1) == 1) checkBlocks++;
+			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks);
+		}
+		else return null;
+	}
+	
 	/**
 	 * Decode all missing *data* blocks.
 	 * Requires that the total number of available blocks is equal to or greater than the length of
@@ -37,12 +65,16 @@ abstract class FECCodec {
 	/**
 	 * Encode all missing *check* blocks.
 	 * Requires that all the data blocks be present.
-	 * @param dataBlockStatus The data blocks.
-	 * @param checkBlockStatus The check blocks.
+	 * @param dataBlocks The data blocks.
+	 * @param checkBlocks The check blocks.
 	 * @param blockLength The block length in bytes.
 	 * @param bf The BucketFactory to use to generate buckets.
 	 * @throws IOException If there is an error in decoding caused by an I/O error (usually involving buckets).
 	 */
-	public abstract void encode(BlockStatus[] dataBlockStatus, BlockStatus[] checkBlockStatus, int blockLength, BucketFactory bucketFactory);
+	public abstract void encode(SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks, int blockLength, BucketFactory bucketFactory);
 
+	/**
+	 * How many check blocks?
+	 */
+	public abstract int countCheckBlocks();
 }

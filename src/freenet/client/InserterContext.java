@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.crypt.RandomSource;
 import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
 
@@ -10,11 +11,15 @@ public class InserterContext {
 	final BucketFactory bf;
 	/** If true, don't try to compress the data */
 	final boolean dontCompress;
+	final RandomSource random;
+	final short splitfileAlgorithm;
 	
-	public InserterContext(SimpleLowLevelClient client, BucketFactory bf) {
+	public InserterContext(SimpleLowLevelClient client, BucketFactory bf, RandomSource random) {
 		this.client = client;
 		this.bf = bf;
+		this.random = random;
 		dontCompress = false;
+		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 	}
 
 }

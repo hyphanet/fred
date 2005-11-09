@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.zip.DataFormatException;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.Inflater;
 
@@ -25,7 +26,25 @@ public class GzipCompressor extends Compressor {
 			if(x == 0) throw new IOException("Returned zero from read()");
 			gos.write(buffer, 0, x);
 		}
+		is.close();
 		gos.close();
+		return output;
+	}
+
+	public Bucket decompress(Bucket data, BucketFactory bf) throws IOException {
+		Bucket output = bf.makeBucket(-1);
+		InputStream is = data.getInputStream();
+		OutputStream os = output.getOutputStream();
+		GZIPInputStream gis = new GZIPInputStream(is);
+		byte[] buffer = new byte[4096];
+		while(true) {
+			int x = gis.read(buffer);
+			if(x <= -1) break;
+			if(x == 0) throw new IOException("Returned zero from read()");
+			os.write(buffer, 0, x);
+		}
+		os.close();
+		gis.close();
 		return output;
 	}
 

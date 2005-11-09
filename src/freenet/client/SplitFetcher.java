@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Vector;
 
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.FECCodeFactory;
@@ -48,9 +49,7 @@ public class SplitFetcher {
 	/** Currently fetching segment */
 	private Segment fetchingSegment;
 	/** Array of unstarted segments. Modify synchronized. */
-	private Segment[] unstartedSegments;
-	/** Number of unstarted segments. Ditto. */
-	private int unstartedSegmentsCount;
+	private Vector unstartedSegments;
 	/** Override length. If this is positive, truncate the splitfile to this length. */
 	private long overrideLength;
 	/** Accept non-full splitfile chunks? */
@@ -100,8 +99,9 @@ public class SplitFetcher {
 				segments[i] = new Segment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths, blockLength);
 			}
 		}
-		unstartedSegments = segments;
-		unstartedSegmentsCount = segments.length;
+		unstartedSegments = new Vector();
+		for(int i=0;i<segments.length;i++)
+			unstartedSegments.add(segments[i]);
 	}
 
 	/**
@@ -132,7 +132,7 @@ public class SplitFetcher {
 					if(s == null) {
 						// All segments have started
 					} else {
-						start(s); // will keep unstartedSegments up to date
+						s.start();
 					}
 				}
 				if(allSegmentsFinished) {
@@ -147,22 +147,13 @@ public class SplitFetcher {
 		}
 	}
 
-	private synchronized void start(Segment start) {
-		start.start();
-		int j = 0;
-		for(int i=0;i<unstartedSegmentsCount;i++) {
-			Segment s = unstartedSegments[i];
-			if(!s.isStarted()) {
-				unstartedSegments[j] = unstartedSegments[i];
-				j++;
-			}
-		}
-		unstartedSegmentsCount = j;
-	}
-
 	private Segment chooseUnstartedSegment() {
-		if(unstartedSegmentsCount == 0) return null;
-		return unstartedSegments[fctx.random.nextInt(unstartedSegmentsCount)];
+		synchronized(unstartedSegments) {
+			int x = fctx.random.nextInt(unstartedSegments.size());
+			Segment s = (Segment) unstartedSegments.get(x);
+			unstartedSegments.remove(x);
+			return s;
+		}
 	}
 
 	/** Return the final status of the fetch. Throws an exception, or returns a 
