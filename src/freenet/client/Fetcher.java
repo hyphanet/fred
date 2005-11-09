@@ -1,6 +1,7 @@
 package freenet.client;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.LinkedList;
 
 import freenet.keys.ClientKey;
@@ -32,6 +33,7 @@ class Fetcher {
 	 * Local-only constructor, with ArchiveContext, for recursion via e.g. archives.
 	 */
 	Fetcher(FreenetURI uri, FetcherContext fctx, ArchiveContext actx) {
+		if(uri == null) throw new NullPointerException();
 		origURI = uri;
 		ctx = fctx;
 		archiveContext = actx;
@@ -87,7 +89,12 @@ class Fetcher {
 	 */
 	FetchResult realRun(ClientMetadata dm, int recursionLevel, FreenetURI uri, boolean dontEnterImplicitArchives) 
 	throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
-		ClientKey key = ClientKey.getBaseKey(uri);
+		ClientKey key;
+		try {
+			key = ClientKey.getBaseKey(uri);
+		} catch (MalformedURLException e2) {
+			throw new FetchException(FetchException.INVALID_URI, "Invalid URI: "+uri);
+		}
 		LinkedList metaStrings = uri.listMetaStrings();
 		
 		recursionLevel++;
@@ -226,7 +233,12 @@ class Fetcher {
 			FreenetURI uri = metadata.getSingleTarget();
 			dm.mergeNoOverwrite(metadata.getClientMetadata());
 			if((!dontEnterImplicitArchives) && ArchiveManager.isUsableArchiveType(dm.getMIMEType()) && (!metaStrings.isEmpty())) {
-				ClientKey target = ClientKey.getBaseKey(uri);
+				ClientKey target;
+				try {
+					target = ClientKey.getBaseKey(uri);
+				} catch (MalformedURLException e1) {
+					throw new FetchException(FetchException.INVALID_URI, "Invalid URI: "+uri);
+				}
 				if(!(target.isMetadata())) {
 					// Target *is not* metadata.
 					// Therefore target is a usable archive.

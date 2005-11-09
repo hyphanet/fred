@@ -114,6 +114,7 @@ public class TextModeClientInterface implements Runnable {
             FreenetURI uri;
             try {
                 uri = new FreenetURI(key);
+                Logger.normal(this, "Key: "+uri);
             } catch (MalformedURLException e2) {
                 System.out.println("Malformed URI: "+key+" : "+e2);
                 return;

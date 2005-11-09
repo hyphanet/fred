@@ -25,11 +25,26 @@ public class LowLevelGetException extends Exception {
 	public static final int VERIFY_FAILED = 8;
 	
 	static final String getMessage(int reason) {
-		if(reason == DECODE_FAILED)
+		switch(reason) {
+		case DECODE_FAILED:
 			return "Decode of data failed, probably was bogus at source";
-		else if(reason == DATA_NOT_FOUND_IN_STORE)
+		case DATA_NOT_FOUND_IN_STORE:
 			return "Data was not in store and request was local-only";
-		return "Unknown error code: "+reason;
+		case INTERNAL_ERROR:
+			return "Internal error - probably a bug";
+		case DATA_NOT_FOUND:
+			return "Could not find the data";
+		case ROUTE_NOT_FOUND:
+			return "Could not find enough nodes to be sure that the data is not out there somewhere";
+		case REJECTED_OVERLOAD:
+			return "A node downstream either timed out or was overloaded (retry)";
+		case TRANSFER_FAILED:
+			return "Started to transfer data, then failed (should be rare)";
+		case VERIFY_FAILED:
+			return "Node sent us invalid data";
+		default:
+			return "Unknown error code: "+reason;
+		}
 	}
 	
 	/** Failure code */

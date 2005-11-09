@@ -321,7 +321,8 @@ public class Node implements SimpleLowLevelClient {
         localStreamContexts = new Hashtable();
         peers.writePeers();
         try {
-			tempFilenameGenerator = new FilenameGenerator(random, true, new File("temp"), "temp-");
+        	String dirName = "temp-"+portNumber;
+			tempFilenameGenerator = new FilenameGenerator(random, true, new File(dirName), "temp-");
 		} catch (IOException e) {
 			Logger.error(this, "Could not create temp bucket factory: "+e, e);
 			System.exit(EXIT_TEMP_INIT_ERROR);
@@ -342,7 +343,7 @@ public class Node implements SimpleLowLevelClient {
     	if(key instanceof ClientCHK)
     		return getCHK((ClientCHK)key, localOnly);
     	else
-    		throw new IllegalArgumentException();
+    		throw new IllegalArgumentException("Not a CHK: "+key);
     }
     
     /**
@@ -769,6 +770,6 @@ public class Node implements SimpleLowLevelClient {
     }
 
 	public HighLevelSimpleClient makeClient() {
-		return new HighLevelSimpleClientImpl(this, archiveManager, null, random);
+		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random);
 	}
 }

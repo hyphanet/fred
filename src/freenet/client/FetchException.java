@@ -18,29 +18,87 @@ public class FetchException extends Exception {
 	}
 	
 	public FetchException(int m) {
+		super(getMessage(m));
 		mode = m;
 	}
 
 	public FetchException(MetadataParseException e) {
+		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		mode = INVALID_METADATA;
 		initCause(e);
 	}
 
 	public FetchException(ArchiveFailureException e) {
+		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		mode = ARCHIVE_FAILURE;
 		initCause(e);
 	}
 
 	public FetchException(int mode, IOException e) {
+		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		this.mode = mode;
 		initCause(e);
 	}
 
+	public FetchException(int mode, String msg) {
+		super(getMessage(mode)+": "+msg);
+		this.mode = mode;
+	}
+
+	private static String getMessage(int mode) {
+		switch(mode) {
+		case TOO_DEEP_ARCHIVE_RECURSION:
+			return "Too many levels of recursion into archives";
+		case UNKNOWN_SPLITFILE_METADATA:
+			return "Don't know what to do with splitfile";
+		case TOO_MANY_REDIRECTS:
+			return "Too many redirects - loop?";
+		case UNKNOWN_METADATA:
+			return "Don't know what to do with metadata";
+		case INVALID_METADATA:
+			return "Failed to parse metadata";
+		case ARCHIVE_FAILURE:
+			return "Failure in extracting files from an archive";
+		case BLOCK_DECODE_ERROR:
+			return "Failed to decode a splitfile block";
+		case TOO_MANY_METADATA_LEVELS:
+			return "Too many levels of split metadata";
+		case TOO_MANY_ARCHIVE_RESTARTS:
+			return "Request was restarted too many times due to archives changing";
+		case TOO_MUCH_RECURSION:
+			return "Too many redirects"; // FIXME: ???
+		case NOT_IN_ARCHIVE:
+			return "File not in archive";
+		case HAS_MORE_METASTRINGS:
+			return "Not a manifest";
+		case BUCKET_ERROR:
+			return "Internal error, maybe disk full or permissions problem?";
+		case DATA_NOT_FOUND:
+			return "Data not found";
+		case ROUTE_NOT_FOUND:
+			return "Route not found - could not find enough nodes to be sure the data doesn't exist";
+		case REJECTED_OVERLOAD:
+			return "A node was overloaded or timed out";
+		case INTERNAL_ERROR:
+			return "Internal error, probably a bug";
+		case TRANSFER_FAILED:
+			return "Found the file, but lost it while receiving the data";
+		case SPLITFILE_ERROR:
+			return "Splitfile error";
+		case INVALID_URI:
+			return "Invalid URI";
+		default:
+			return "Unknown fetch error code: "+mode;
+		}
+	}
+	
+	// FIXME many of these are not used any more
+	
 	/** Too many levels of recursion into archives */
 	public static final int TOO_DEEP_ARCHIVE_RECURSION = 1;
 	/** Don't know what to do with splitfile */
 	public static final int UNKNOWN_SPLITFILE_METADATA = 2;
-	/** Too many ordinary redirects */
+	/** Too many redirects */
 	public static final int TOO_MANY_REDIRECTS = 16;
 	/** Don't know what to do with metadata */
 	public static final int UNKNOWN_METADATA = 3;
@@ -74,4 +132,6 @@ public class FetchException extends Exception {
 	public static final int TRANSFER_FAILED = 18;
 	/** Splitfile error. This should be a SplitFetchException. */
 	public static final int SPLITFILE_ERROR = 19;
+	/** Invalid URI. */
+	public static final int INVALID_URI = 20;
 }

@@ -15,17 +15,20 @@ public class InserterException extends Exception {
 	}
 	
 	public InserterException(int m) {
+		super(getMessage(m));
 		mode = m;
 		errorCodes = null;
 	}
 
 	public InserterException(int mode, IOException e) {
+		super(getMessage(mode)+": "+e.getMessage());
 		this.mode = mode;
 		errorCodes = null;
 		initCause(e);
 	}
 
 	public InserterException(int mode, FailureCodeTracker errorCodes) {
+		super(getMessage(mode));
 		this.mode = mode;
 		this.errorCodes = errorCodes;
 	}
@@ -44,4 +47,23 @@ public class InserterException extends Exception {
 	public static final int FATAL_ERRORS_IN_BLOCKS = 6;
 	/** Could not insert a splitfile because a block failed too many times */
 	public static final int TOO_MANY_RETRIES_IN_BLOCKS = 7;
+	
+	private static String getMessage(int mode) {
+		switch(mode) {
+		case INVALID_URI:
+			return "Caller supplied a URI we cannot use";
+		case BUCKET_ERROR:
+			return "Internal bucket error: out of disk space/permissions problem?";
+		case INTERNAL_ERROR:
+			return "Internal error";
+		case REJECTED_OVERLOAD:
+			return "A downstream node timed out or was severely overloaded";
+		case FATAL_ERRORS_IN_BLOCKS:
+			return "Fatal errors in a splitfile insert";
+		case TOO_MANY_RETRIES_IN_BLOCKS:
+			return "Could not insert splitfile: ran out of retries (nonfatal errors)";
+		default:
+			return "Unknown error "+mode;
+		}
+	}
 }
