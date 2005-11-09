@@ -38,10 +38,10 @@ public class InsertSegment {
 	 * Encode the data blocks into check blocks.
 	 * @return The number of check blocks generated.
 	 */
-	public int encode(int offset) {
+	public int encode(int offset, RetryTracker tracker, InserterContext ctx) {
 		if(codec == null) return 0; // no FEC
 		for(int i=0;i<checkBlocks.length;i++)
-			checkBlocks[i] = new BlockInserter(null, offset + i);
+			checkBlocks[i] = new BlockInserter(null, offset + i, tracker, ctx);
 		codec.encode(origDataBlocks, checkBlocks, blockLength, bf);
 		return checkBlocks.length;
 	}

@@ -138,7 +138,7 @@ public class SplitInserter implements RetryTrackerCallback {
 
 	private int encodeSegment(int i, int offset) {
 		encodingSegment = segments[i];
-		return encodingSegment.encode(offset);
+		return encodingSegment.encode(offset, tracker, ctx);
 	}
 
 	/**
@@ -157,7 +157,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		Bucket[] dataBuckets = BucketTools.split(origData, NodeCHK.BLOCK_SIZE, ctx.bf);
 		origDataBlocks = new SplitfileBlock[dataBuckets.length];
 		for(int i=0;i<origDataBlocks.length;i++) {
-			origDataBlocks[i] = new BlockInserter(dataBuckets[i], i);
+			origDataBlocks[i] = new BlockInserter(dataBuckets[i], i, tracker, ctx);
 		}
 	}
 
