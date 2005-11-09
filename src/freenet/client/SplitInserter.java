@@ -67,8 +67,13 @@ public class SplitInserter implements RetryTrackerCallback {
 		startInsertingDataBlocks();
 		splitIntoSegments(segmentSize);
 		// Backwards, because the last is the shortest
-		for(int i=segments.length-1;i>=0;i--)
-			countCheckBlocks += encodeSegment(i, origDataBlocks.length + checkSegmentSize * i);
+		try {
+			for(int i=segments.length-1;i>=0;i--) {
+				countCheckBlocks += encodeSegment(i, origDataBlocks.length + checkSegmentSize * i);
+			}
+		} catch (IOException e) {
+			throw new InserterException(InserterException.BUCKET_ERROR);
+		}
 		// Wait for the insertion thread to finish
 		return waitForCompletion();
 	}
@@ -136,7 +141,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		return uris;
 	}
 
-	private int encodeSegment(int i, int offset) {
+	private int encodeSegment(int i, int offset) throws IOException {
 		encodingSegment = segments[i];
 		return encodingSegment.encode(offset, tracker, ctx);
 	}

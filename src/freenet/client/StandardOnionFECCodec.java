@@ -103,13 +103,13 @@ public class StandardOnionFECCodec extends FECCodec {
 		if(dataBlockStatus.length != k)
 			throw new IllegalArgumentException();
 		Buffer[] packets = new Buffer[k];
-		Bucket[] buckets = new Bucket[k];
+		Bucket[] buckets = new Bucket[n];
 		DataInputStream[] readers = new DataInputStream[k];
 		OutputStream[] writers = new OutputStream[k];
 		int[] toDecode = new int[n-k];
 		int numberToDecode = 0; // can be less than n-k
 		
-		byte[] realBuffer = new byte[k * STRIPE_SIZE];
+		byte[] realBuffer = new byte[n * STRIPE_SIZE];
 		
 		for(int i=0;i<n;i++)
 			packets[i] = new Buffer(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
@@ -145,9 +145,6 @@ public class StandardOnionFECCodec extends FECCodec {
 			toDecode = newToDecode;
 		}
 
-		int[] offsets = new int[n];
-		for(int i=0;i<n;i++) offsets[i] = 0;
-		
 		if(numberToDecode > 0) {
 			// Do the (striped) decode
 			for(int offset=0;offset<blockLength;offset+=STRIPE_SIZE) {
@@ -159,23 +156,115 @@ public class StandardOnionFECCodec extends FECCodec {
 				}
 				// Do the decode
 				// Not shuffled
-				code.decode(packets, offsets);
+				code.decode(packets, toDecode);
 				// packets now contains an array of decoded blocks, in order
 				// Write the data out
 				for(int i=0;i<n;i++) {
-					writers[i].write(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
+					if(writers[i] != null)
+						writers[i].write(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
 				}
 			}
 		}
 		for(int i=0;i<k;i++) {
-			writers[i].close();
-			readers[i].close();
+			if(writers[i] != null) writers[i].close();
+			if(readers[i] != null) readers[i].close();
+		}
+		// Set new buckets only after have a successful decode.
+		for(int i=0;i<dataBlockStatus.length;i++) {
+			dataBlockStatus[i].setData(buckets[i]);
+		}
+		for(int i=0;i<checkBlockStatus.length;i++) {
+			checkBlockStatus[i].setData(buckets[i+k]);
 		}
 	}
 
-	public void encode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bucketFactory) {
-		// TODO Auto-generated method stub
+	public void encode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		// Encodes count as decodes.
+		synchronized(runningDecodesSync) {
+			while(runningDecodes >= PARALLEL_DECODES) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+			runningDecodes++;
+		}
+		try {
+			realEncode(dataBlockStatus, checkBlockStatus, blockLength, bf);
+		} finally {
+			synchronized(runningDecodesSync) {
+				runningDecodes--;
+			}
+		}
+	}
+
+	/**
+	 * Do the actual encode.
+	 */
+	private void realEncode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		if(dataBlockStatus.length + checkBlockStatus.length != n)
+			throw new IllegalArgumentException();
+		if(dataBlockStatus.length != k)
+			throw new IllegalArgumentException();
+		Buffer[] dataPackets = new Buffer[k];
+		Buffer[] checkPackets = new Buffer[n-k];
+		Bucket[] buckets = new Bucket[n];
+		DataInputStream[] readers = new DataInputStream[k];
+		OutputStream[] writers = new OutputStream[n-k];
+		int[] toEncode = new int[n-k];
+		int numberToEncode = 0; // can be less than n-k
 		
+		byte[] realBuffer = new byte[n * STRIPE_SIZE];
+
+		for(int i=0;i<k;i++)
+			dataPackets[i] = new Buffer(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
+		for(int i=0;i<n-k;i++)
+			checkPackets[i] = new Buffer(realBuffer, (i+k)*STRIPE_SIZE, STRIPE_SIZE);
+
+		for(int i=0;i<dataBlockStatus.length;i++) {
+			buckets[i] = dataBlockStatus[i].getData();
+			readers[i] = new DataInputStream(buckets[i].getInputStream());
+		}
+		for(int i=0;i<checkBlockStatus.length;i++) {
+			buckets[i+k] = checkBlockStatus[i].getData();
+			if(buckets[i+k] == null) {
+				buckets[i+k] = bf.makeBucket(blockLength);
+				writers[i+k] = buckets[i+k].getOutputStream();
+				readers[i+k] = null;
+				toEncode[numberToEncode++] = i+k;
+			} else {
+				writers[i+k] = null;
+				readers[i+k] = new DataInputStream(buckets[i+k].getInputStream());
+			}
+		}
+		
+		if(numberToEncode > 0) {
+			// Do the (striped) decode
+			for(int offset=0;offset<blockLength;offset+=STRIPE_SIZE) {
+				// Read the data in first
+				for(int i=0;i<n;i++) {
+					readers[i].readFully(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
+				}
+				// Do the encode
+				// Not shuffled
+				code.encode(dataPackets, checkPackets, toEncode);
+				// packets now contains an array of decoded blocks, in order
+				// Write the data out
+				for(int i=k;i<n;i++) {
+					if(writers[i] != null)
+						writers[i].write(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
+				}
+			}
+		}
+		for(int i=0;i<n;i++) {
+			if(writers[i] != null) writers[i].close();
+			if(readers[i] != null) readers[i].close();
+		}
+		// Set new buckets only after have a successful decode.
+		for(int i=0;i<checkBlockStatus.length;i++) {
+			checkBlockStatus[i].setData(buckets[i+k]);
+		}
 	}
 
 	public int countCheckBlocks() {

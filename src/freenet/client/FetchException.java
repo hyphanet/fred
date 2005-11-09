@@ -72,4 +72,6 @@ public class FetchException extends Exception {
 	public static final int INTERNAL_ERROR = 17;
 	/** The node found the data but the transfer failed */
 	public static final int TRANSFER_FAILED = 18;
+	/** Splitfile error. This should be a SplitFetchException. */
+	public static final int SPLITFILE_ERROR = 19;
 }

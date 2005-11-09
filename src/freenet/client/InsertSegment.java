@@ -1,5 +1,7 @@
 package freenet.client;
 
+import java.io.IOException;
+
 import freenet.keys.FreenetURI;
 import freenet.support.BucketFactory;
 
@@ -37,8 +39,9 @@ public class InsertSegment {
 	/**
 	 * Encode the data blocks into check blocks.
 	 * @return The number of check blocks generated.
+	 * @throws IOException If the encode fails due to a bucket error.
 	 */
-	public int encode(int offset, RetryTracker tracker, InserterContext ctx) {
+	public int encode(int offset, RetryTracker tracker, InserterContext ctx) throws IOException {
 		if(codec == null) return 0; // no FEC
 		for(int i=0;i<checkBlocks.length;i++)
 			checkBlocks[i] = new BlockInserter(null, offset + i, tracker, ctx);

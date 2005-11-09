@@ -78,7 +78,7 @@ abstract class FECCodec {
 	 * @param bf The BucketFactory to use to generate buckets.
 	 * @throws IOException If there is an error in decoding caused by an I/O error (usually involving buckets).
 	 */
-	public abstract void encode(SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks, int blockLength, BucketFactory bucketFactory);
+	public abstract void encode(SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks, int blockLength, BucketFactory bucketFactory) throws IOException;
 
 	/**
 	 * How many check blocks?

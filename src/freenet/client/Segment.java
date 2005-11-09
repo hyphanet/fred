@@ -9,6 +9,7 @@ import java.util.Vector;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.Logger;
 
 /**
  * A segment, within a splitfile.
@@ -48,6 +49,7 @@ public class Segment implements RetryTrackerCallback {
 	final int recursionLevel;
 	/** Retry tracker */
 	private final RetryTracker tracker;
+	private FetchException failureException;
 	
 	/**
 	 * Create a Segment.
@@ -173,9 +175,12 @@ public class Segment implements RetryTrackerCallback {
 	public void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors) {
 		
 		if(succeeded.length > minFetched)
+			// Not finished yet, need to decode
 			successfulFetch();
 		else {
-			parentFetcher.failed(this, minFetched, succeeded.length, failed.length, fatalErrors.length);
+			failureException = new SplitFetchException(failed.length, fatalErrors.length);
+			finished = true;
+			parentFetcher.segmentFinished(this);
 		}
 	}
 
@@ -204,17 +209,27 @@ public class Segment implements RetryTrackerCallback {
 				fetcherContext.bucketFactory.freeBucket(data);
 			}
 			os.close();
-			parentFetcher.decoded(this, output);
+			// Must set finished BEFORE calling parentFetcher.
+			// Otherwise a race is possible that might result in it not seeing our finishing.
+			finished = true;
+			parentFetcher.segmentFinished(this);
 		} catch (IOException e) {
-			parentFetcher.internalBucketError(this, e);
+			finished = true;
+			failureException = new FetchException(FetchException.BUCKET_ERROR);
+			parentFetcher.segmentFinished(this);
 			return;
 		}
 		
 		// Now heal
 		
 		// Encode any check blocks we don't have
-		if(codec != null)
-			codec.encode(dataBlockStatus, checkBlockStatus, 32768, fetcherContext.bucketFactory);
+		if(codec != null) {
+			try {
+				codec.encode(dataBlockStatus, checkBlockStatus, 32768, fetcherContext.bucketFactory);
+			} catch (IOException e) {
+				Logger.error(this, "Bucket error while healing: "+e, e);
+			}
+		}
 		
 		// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 		for(int i=0;i<dataBlockStatus.length;i++) {
@@ -226,5 +241,7 @@ public class Segment implements RetryTrackerCallback {
 			}
 			block.queueHeal();
 		}
+		
+		// FIXME heal check blocks too
 	}
 }
