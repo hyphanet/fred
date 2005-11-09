@@ -1,6 +1,7 @@
 package freenet.client;
 
 import freenet.client.RetryTracker.Level;
+import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 
 /** Simple interface for a splitfile block */
@@ -27,4 +28,19 @@ public abstract class SplitfileBlock {
 	final void setLevel(Level l) {
 		level = l;
 	}
+
+	/** Start the fetch (or insert). Implementation is required to call relevant
+	 * methods on RetryTracker when done. */
+	abstract void start();
+
+	/**
+	 * Shut down the fetch as soon as reasonably possible.
+	 */
+	abstract public void kill();
+
+	/**
+	 * Get the URI of the file. For an insert, this is derived during insert.
+	 * For a request, it is fixed in the constructor.
+	 */
+	abstract public FreenetURI getURI();
 }

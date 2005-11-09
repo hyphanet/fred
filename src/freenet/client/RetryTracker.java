@@ -1,5 +1,6 @@
 package freenet.client;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
@@ -51,6 +52,8 @@ public class RetryTracker {
 		}
 	}
 
+	final FailureCodeTracker fatalErrors;
+	final FailureCodeTracker nonfatalErrors;
 	final HashMap levels;
 	final RandomSource random;
 	final int maxLevel;
@@ -60,9 +63,30 @@ public class RetryTracker {
 	final HashSet succeededBlocks;
 	private int curMaxLevel;
 	private int curMinLevel;
-	
-	public RetryTracker(int maxLevel, RandomSource random) {
+	/** Maximum number of concurrently running threads */
+	final int maxThreads;
+	/** After we have successes on this many blocks, we should terminate, 
+	 * even if there are threads running and blocks queued. */
+	final int targetSuccesses;
+	final boolean killOnFatalError;
+	private boolean finishOnEmpty;
+	private final RetryTrackerCallback callback;
+
+	/**
+	 * Create a RetryTracker.
+	 * @param maxLevel The maximum number of tries for each block.
+	 * @param random The random number source.
+	 * @param maxThreads The maximum number of threads to use.
+	 * @param killOnFatalError Whether to terminate the tracker when a fatal
+	 * error occurs on a single block.
+	 * @param cb The callback to call .finish(...) when we no longer have
+	 * anything to do *and* the client has set the finish on empty flag.
+	 */
+	public RetryTracker(int maxLevel, int targetSuccesses, RandomSource random, int maxThreads, boolean killOnFatalError, RetryTrackerCallback cb) {
 		levels = new HashMap();
+		fatalErrors = new FailureCodeTracker();
+		nonfatalErrors = new FailureCodeTracker();
+		this.targetSuccesses = targetSuccesses;
 		this.maxLevel = maxLevel;
 		this.random = random;
 		curMaxLevel = curMinLevel = 0;
@@ -70,8 +94,21 @@ public class RetryTracker {
 		failedBlocksFatalErrors = new HashSet();
 		runningBlocks = new HashSet();
 		succeededBlocks = new HashSet();
+		this.maxThreads = maxThreads;
+		this.killOnFatalError = killOnFatalError;
+		this.finishOnEmpty = false;
+		this.callback = cb;
 	}
 
+	/**
+	 * Set the finish-on-empty flag to true.
+	 * This means that when there are no longer any blocks to process, and there
+	 * are none running, the tracker will call the client's finish(...) method.
+	 */
+	public synchronized void setFinishOnEmpty() {
+		finishOnEmpty = true;
+	}
+	
 	/** Remove a level */
 	private synchronized void removeLevel(int level) {
 		Integer x = new Integer(level);
@@ -126,6 +163,7 @@ public class RetryTracker {
 	public synchronized void addBlock(SplitfileBlock block) {
 		Level l = makeLevel(0);
 		l.add(block);
+		maybeStart(true);
 	}
 	
 	/**
@@ -133,7 +171,8 @@ public class RetryTracker {
 	 * Move it out of the running list and back into the relevant list, unless
 	 * we have run out of retries.
 	 */
-	public synchronized void nonfatalError(SplitfileBlock block) {
+	public synchronized void nonfatalError(SplitfileBlock block, int reasonCode) {
+		nonfatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
 		Level l = block.getLevel();
 		if(l == null) throw new IllegalArgumentException();
@@ -147,24 +186,57 @@ public class RetryTracker {
 			Level newLevel = makeLevel(levelNumber);
 			newLevel.add(block);
 		}
+		maybeStart(false);
 	}
 	
 	/**
 	 * A block got a fatal error and should not be retried.
 	 * Move it into the fatal error list.
+	 * @param reasonCode A client-specific code indicating the type of failure.
 	 */
-	public synchronized void fatalError(SplitfileBlock block) {
+	public synchronized void fatalError(SplitfileBlock block, int reasonCode) {
+		fatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
 		Level l = block.getLevel();
 		if(l == null) throw new IllegalArgumentException();
 		if(l.tracker != this) throw new IllegalArgumentException("Belongs to wrong tracker");
 		l.remove(block);
 		failedBlocksFatalErrors.add(block);
+		maybeStart(false);
+	}
+
+	/**
+	 * If we can start some blocks, start some blocks.
+	 * Otherwise if we are finished, call the callback's finish method.
+	 */
+	public synchronized void maybeStart(boolean cantCallFinished) {
+		if((succeededBlocks.size() >= targetSuccesses)
+				|| (runningBlocks.isEmpty() && levels.isEmpty() && finishOnEmpty)) {
+			SplitfileBlock[] running = runningBlocks();
+			for(int i=0;i<running.length;i++) {
+				running[i].kill();
+			}
+			if(!cantCallFinished)
+				callback.finished(succeededBlocks(), failedBlocks(), fatalErrorBlocks());
+			else {
+				Runnable r = new Runnable() { public void run() { callback.finished(succeededBlocks(), failedBlocks(), fatalErrorBlocks()); } };
+				Thread t = new Thread(r);
+				t.setDaemon(true);
+				t.start();
+			}
+		} else {
+			while(runningBlocks.size() < maxThreads) {
+				SplitfileBlock block = getBlock();
+				block.start();
+				runningBlocks.add(block);
+			}
+		}
 	}
 
 	public synchronized void success(SplitfileBlock block) {
 		runningBlocks.remove(block);
 		succeededBlocks.add(block);
+		maybeStart(false);
 	}
 	
 	/**
@@ -188,9 +260,17 @@ public class RetryTracker {
 	 * Get all blocks with fatal errors.
 	 * SplitfileBlock's are assumed to remember their errors, so we don't.
 	 */
-	public synchronized SplitfileBlock[] errorBlocks() {
+	public synchronized SplitfileBlock[] fatalErrorBlocks() {
 		return (SplitfileBlock[])
 			failedBlocksFatalErrors.toArray(new SplitfileBlock[failedBlocksFatalErrors.size()]);
+	}
+	
+	/**
+	 * Get all blocks which didn't succeed in the maximum number of tries.
+	 */
+	public synchronized SplitfileBlock[] failedBlocks() {
+		return (SplitfileBlock[])
+		failedBlocksTooManyRetries.toArray(new SplitfileBlock[failedBlocksTooManyRetries.size()]);
 	}
 	
 	/**
@@ -228,5 +308,13 @@ public class RetryTracker {
 	 */
 	public synchronized boolean moreBlocks() {
 		return !levels.isEmpty();
+	}
+
+	public FailureCodeTracker getAccumulatedFatalErrorCodes() {
+		return fatalErrors;
+	}
+	
+	public FailureCodeTracker getAccumulatedNonFatalErrorCodes() {
+		return nonfatalErrors;
 	}
 }

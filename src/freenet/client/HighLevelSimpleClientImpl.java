@@ -33,7 +33,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	/** If set, only check the local datastore, don't send an actual request out.
 	 * Don't turn this off either. */
 	static final boolean LOCAL_REQUESTS_ONLY = false;
-	
+	static final int SPLITFILE_INSERT_THREADS = 40;
+	static final int SPLITFILE_INSERT_RETRIES = 10;
 	
 	
 	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r) {
@@ -65,7 +66,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public FreenetURI insert(InsertBlock insert) throws InserterException {
-		InserterContext context = new InserterContext(client, bucketFactory, random);
+		InserterContext context = new InserterContext(client, bucketFactory, random, SPLITFILE_INSERT_RETRIES, SPLITFILE_INSERT_THREADS);
 		FileInserter i = new FileInserter(context);
 		return i.run(insert, false);
 	}

@@ -2,7 +2,6 @@ package freenet.client;
 
 import java.io.IOException;
 
-import freenet.client.Segment.BlockStatus;
 import freenet.support.BucketFactory;
 
 /**
@@ -14,11 +13,19 @@ import freenet.support.BucketFactory;
  */
 abstract class FECCodec {
 
-	public static int getCodecMaxSegmentSize(short splitfileType) {
+	public static int getCodecMaxSegmentDataBlocks(short splitfileType) {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return -1;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
 			return 128;
+		throw new IllegalArgumentException();
+	}
+
+	public static int getCodecMaxSegmentCheckBlocks(short splitfileType) {
+		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
+			return -1;
+		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
+			return 64;
 		throw new IllegalArgumentException();
 	}
 	

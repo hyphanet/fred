@@ -97,7 +97,7 @@ public class FileInserter {
 		}
 		
 		// Too big, encode to a splitfile
-		SplitInserter splitInsert = new SplitInserter(data, block.clientMetadata, bestCodec, ctx.splitfileAlgorithm, ctx);
+		SplitInserter splitInsert = new SplitInserter(data, block.clientMetadata, bestCodec, ctx.splitfileAlgorithm, ctx, this, NodeCHK.BLOCK_SIZE);
 		return splitInsert.run();
 	}
 

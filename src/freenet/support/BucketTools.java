@@ -357,4 +357,40 @@ public class BucketTools {
 			os.write(buf, 0, bytes);
 		}
 	}
+
+	/**
+	 * Split the data into a series of read-only Bucket's.
+	 * @param origData The original data Bucket.
+	 * @param splitSize The number of bytes to put into each bucket.
+	 * 
+	 * FIXME This could be made many orders of magnitude more efficient on
+	 * time and space if the underlying Bucket happens to be a passed-in
+	 * plaintext file!
+	 * 
+	 * Note that this method will allocate a buffer of size splitSize.
+	 * @throws IOException If there is an error creating buckets, reading from
+	 * the provided bucket, or writing to created buckets.
+	 */
+	public static Bucket[] split(Bucket origData, int splitSize, BucketFactory bf) throws IOException {
+		long length = origData.size();
+		if(length > Integer.MAX_VALUE * splitSize)
+			throw new IllegalArgumentException("Way too big!");
+		int bucketCount = (int) (length / splitSize);
+		Bucket[] buckets = new Bucket[bucketCount];
+		if(length % splitSize > 0) bucketCount++;
+		InputStream is = origData.getInputStream();
+		DataInputStream dis = new DataInputStream(is);
+		long remainingLength = length;
+		byte[] buf = new byte[splitSize];
+		for(int i=0;i<bucketCount;i++) {
+			int len = (int) Math.min(splitSize, remainingLength);
+			Bucket bucket = bf.makeBucket(len);
+			dis.readFully(buf, 0, len);
+			OutputStream os = bucket.getOutputStream();
+			os.write(buf, 0, len);
+			os.close();
+		}
+		dis.close();
+		return buckets;
+	}
 }

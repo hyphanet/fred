@@ -8,7 +8,6 @@ import com.onionnetworks.fec.DefaultFECCodeFactory;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.util.Buffer;
 
-import freenet.client.Segment.BlockStatus;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.LRUHashtable;
@@ -174,7 +173,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 
-	public void encode(BlockStatus[] dataBlockStatus, BlockStatus[] checkBlockStatus, int blockLength, BucketFactory bucketFactory) {
+	public void encode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bucketFactory) {
 		// TODO Auto-generated method stub
 		
 	}

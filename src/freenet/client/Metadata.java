@@ -293,6 +293,20 @@ public class Metadata {
 			throw new IllegalArgumentException();
 	}
 
+	public Metadata(short algo, FreenetURI[] dataURIs, FreenetURI[] checkURIs, ClientMetadata cm, long dataLength, short compressionAlgo) {
+		documentType = SIMPLE_REDIRECT;
+		splitfile = true;
+		splitfileAlgorithm = algo;
+		this.dataLength = dataLength;
+		this.compressionCodec = compressionAlgo;
+		splitfileBlocks = dataURIs.length;
+		splitfileCheckBlocks = checkURIs.length;
+		splitfileDataKeys = dataURIs;
+		splitfileCheckKeys = checkURIs;
+		clientMetadata = cm;
+		setMIMEType(cm.getMIMEType());
+	}
+
 	/**
 	 * Set the MIME type to a string. Compresses it if possible for transit.
 	 */

@@ -13,13 +13,18 @@ public class InserterContext {
 	final boolean dontCompress;
 	final RandomSource random;
 	final short splitfileAlgorithm;
+	final int maxInsertBlockRetries;
+	final int maxSplitInsertThreads;
 	
-	public InserterContext(SimpleLowLevelClient client, BucketFactory bf, RandomSource random) {
+	public InserterContext(SimpleLowLevelClient client, BucketFactory bf, RandomSource random,
+			int maxRetries, int maxThreads) {
 		this.client = client;
 		this.bf = bf;
 		this.random = random;
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
+		this.maxInsertBlockRetries = maxRetries;
+		this.maxSplitInsertThreads = maxThreads;
 	}
 
 }

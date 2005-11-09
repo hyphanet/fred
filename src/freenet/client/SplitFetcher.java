@@ -195,11 +195,6 @@ public class SplitFetcher {
 		return output;
 	}
 
-	public void failedNotEnoughBlocks(Segment segment) {
-		// TODO Auto-generated method stub
-		
-	}
-
 	public void gotBlocks(Segment segment) {
 		// TODO Auto-generated method stub
 		
@@ -211,6 +206,21 @@ public class SplitFetcher {
 	}
 
 	public void internalBucketError(Segment segment, IOException e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	/**
+	 * The segment fetch failed.
+	 * @param segment The segment that failed.
+	 * @param minFetched The minimum number of successful blocks for a successful fetch.
+	 * @param successfulBlocks The number of blocks successfully fetched.
+	 * @param failedBlocks The number of blocks that failed because they got
+	 * non-fatal errors on every try, and ran out of retries.
+	 * @param fatalErrors The number of blocks that got fatal errors.
+	 */
+	public void failed(Segment segment, int minFetched, int successfulBlocks, 
+			int failedBlocks, int fatalErrors) {
 		// TODO Auto-generated method stub
 		
 	}
