@@ -1,7 +1,6 @@
 package freenet.client;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.Vector;
