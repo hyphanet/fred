@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.client.events.BlockInsertErrorEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Logger;
@@ -96,14 +97,20 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 		
 	}
 
-	private void fatalError(Throwable e, int code) {
+	private void fatalError(InserterException e, int code) {
 		Logger.normal(this, "Giving up on block: "+this+": "+e);
 		tracker.fatalError(this, code);
+		ctx.eventProducer.produceEvent(new BlockInsertErrorEvent(e, uri, completedTries));
 	}
 
-	private void nonfatalError(Exception e, int code) {
+	private void fatalError(Throwable t, int code) {
+		fatalError(new InserterException(code, t.toString()), code);
+	}
+
+	private void nonfatalError(InserterException e, int code) {
 		Logger.minor(this, "Non-fatal error on "+this+": "+e);
 		tracker.nonfatalError(this, code);
+		ctx.eventProducer.produceEvent(new BlockInsertErrorEvent(e, uri, completedTries));
 	}
 	
 	protected void checkStartable() {

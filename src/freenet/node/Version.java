@@ -20,7 +20,7 @@ public abstract class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	public static final int buildNumber = 155;
+	public static final int buildNumber = 156;
 
 	/** Oldest build of Fred we will talk to */
 	public static final int lastGoodBuild = 153;

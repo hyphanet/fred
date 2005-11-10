@@ -16,6 +16,12 @@ public class InserterException extends Exception {
 		return mode;
 	}
 	
+	public InserterException(int m, String msg) {
+		super(getMessage(m)+": "+msg);
+		mode = m;
+		errorCodes = null;
+	}
+	
 	public InserterException(int m) {
 		super(getMessage(m));
 		mode = m;
