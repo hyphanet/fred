@@ -11,6 +11,7 @@ import freenet.node.LowLevelPutException;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 
 /**
@@ -56,7 +57,7 @@ public class FileInserter {
 				for(int i=0;i<algos;i++) {
 					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
 					Bucket result;
-					result = comp.compress(data, ctx.bf);
+					result = comp.compress(data, ctx.bf, Long.MAX_VALUE);
 					if(result.size() < NodeCHK.BLOCK_SIZE) {
 						bestCodec = comp;
 						data = result;
@@ -75,6 +76,9 @@ public class FileInserter {
 				}
 			} catch (IOException e) {
 				throw new InserterException(InserterException.BUCKET_ERROR, e);
+			} catch (CompressionOutputSizeException e) {
+				// Impossible
+				throw new Error(e);
 			}
 		}
 		

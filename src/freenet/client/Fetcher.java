@@ -15,6 +15,7 @@ import freenet.node.LowLevelGetException;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 
 /** Class that does the actual fetching. Does not have to have a user friendly
@@ -134,27 +135,33 @@ class Fetcher {
 		
 		ctx.eventProducer.produceEvent(new GotBlockEvent(key));
 		
-		byte[] data;
+		Bucket data;
 		try {
-			data = block.decode(key);
+			data = block.decode(key, ctx.bucketFactory, (int) (Math.min(ctx.maxTempLength, Integer.MAX_VALUE)));
 		} catch (KeyDecodeException e1) {
 			throw new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage());
+		} catch (IOException e) {
+			Logger.error(this, "Could not capture data - disk full?: "+e, e);
+			throw new FetchException(FetchException.BUCKET_ERROR);
 		}
 		
 		ctx.eventProducer.produceEvent(new DecodedBlockEvent(key));
 		
 		if(!key.isMetadata()) {
 			// Just return the data
-			try {
-				return new FetchResult(dm, BucketTools.makeImmutableBucket(ctx.bucketFactory, data));
-			} catch (IOException e) {
-				Logger.error(this, "Could not capture data - disk full?: "+e, e);
-			}
+			return new FetchResult(dm, data);
 		}
 		
 		// Otherwise we need to parse the metadata
-		
-		Metadata metadata = Metadata.construct(data);
+
+		if(data.size() > ctx.maxMetadataSize)
+			throw new FetchException(FetchException.TOO_BIG_METADATA);
+		Metadata metadata;
+		try {
+			metadata = Metadata.construct(BucketTools.toByteArray(data));
+		} catch (IOException e) {
+			throw new FetchException(FetchException.BUCKET_ERROR);
+		}
 		
 		ctx.eventProducer.produceEvent(new FetchedMetadataEvent());
 		
@@ -273,6 +280,8 @@ class Fetcher {
 					output = codec.decompress(data, ctx.bucketFactory, maxLen);
 				} catch (IOException e) {
 					throw new FetchException(FetchException.BUCKET_ERROR, e);
+				} catch (CompressionOutputSizeException e) {
+					throw new FetchException(FetchException.TOO_BIG);
 				}
 				return new FetchResult(fr, output);
 			}
@@ -309,6 +318,8 @@ class Fetcher {
 					sfResult = codec.decompress(sfResult, ctx.bucketFactory, maxLen);
 				} catch (IOException e) {
 					throw new FetchException(FetchException.BUCKET_ERROR, e);
+				} catch (CompressionOutputSizeException e) {
+					throw new FetchException(FetchException.TOO_BIG);
 				}
 			}
 			return new FetchResult(dm, sfResult);

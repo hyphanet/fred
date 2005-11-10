@@ -19,6 +19,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private final ClientEventProducer globalEventProducer;
 	private long curMaxLength;
 	private long curMaxTempLength;
+	private int curMaxMetadataLength;
 	private final RandomSource random;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
@@ -51,6 +52,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		random = r;
 		this.globalEventProducer = new SimpleEventProducer();
 		globalEventProducer.addEventListener(new EventLogger(Logger.MINOR));
+		curMaxLength = Long.MAX_VALUE;
+		curMaxTempLength = Long.MAX_VALUE;
+		curMaxMetadataLength = 1024 * 1024;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -66,7 +70,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	 */
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxTempLength, 
+		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxTempLength, curMaxMetadataLength, 
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, 
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,

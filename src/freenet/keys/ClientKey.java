@@ -11,7 +11,7 @@ public abstract class ClientKey {
 	public static ClientKey getBaseKey(FreenetURI origURI) throws MalformedURLException {
 		if(origURI.getKeyType().equals("CHK"))
 			return new ClientCHK(origURI);
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Unknown keytype from "+origURI);
 	}
 
 	/**

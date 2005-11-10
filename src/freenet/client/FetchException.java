@@ -87,6 +87,8 @@ public class FetchException extends Exception {
 			return "Splitfile error";
 		case INVALID_URI:
 			return "Invalid URI";
+		case TOO_BIG:
+			return "Too big";
 		default:
 			return "Unknown fetch error code: "+mode;
 		}
@@ -134,4 +136,8 @@ public class FetchException extends Exception {
 	public static final int SPLITFILE_ERROR = 19;
 	/** Invalid URI. */
 	public static final int INVALID_URI = 20;
+	/** Too big */
+	public static final int TOO_BIG = 21;
+	/** Metadata too big */
+	public static final int TOO_BIG_METADATA = 22;
 }

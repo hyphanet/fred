@@ -14,7 +14,9 @@ import freenet.support.ArrayBucket;
 import freenet.support.ArrayBucketFactory;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
+import freenet.support.compress.DecompressException;
 
 
 /**
@@ -24,7 +26,7 @@ import freenet.support.compress.Compressor;
  */
 public class ClientCHKBlock extends CHKBlock {
 
-    public static final long MAX_COMPRESSED_DATA_LENGTH = NodeCHK.BLOCK_SIZE - 3;
+    public static final long MAX_COMPRESSED_DATA_LENGTH = NodeCHK.BLOCK_SIZE - 4;
 	final ClientCHK key;
     
     public String toString() {
@@ -52,15 +54,17 @@ public class ClientCHKBlock extends CHKBlock {
     }
 
     /**
-     * Encode a block of data to a CHKBlock.
-     * @param sourceData The data to encode.
+     * Encode a Bucket of data to a CHKBlock.
+     * @param sourceData The bucket of data to encode. Can be arbitrarily large.
      * @param asMetadata Is this a metadata key?
      * @param dontCompress If set, don't even try to compress.
      * @param alreadyCompressedCodec If !dontCompress, and this is >=0, then the
      * data is already compressed, and this is the algorithm.
+     * @throws CHKEncodeException
+     * @throws IOException If there is an error reading from the Bucket.
      */
-
-    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength) throws CHKEncodeException {
+    static public ClientCHKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength) throws CHKEncodeException, IOException {
+        byte[] finalData = null;
         byte[] data;
         byte[] header;
         ClientCHK key;
@@ -68,32 +72,36 @@ public class ClientCHKBlock extends CHKBlock {
         // Try to compress it - even if it fits into the block,
         // because compressing it improves its entropy.
         boolean compressed = false;
-        if(sourceData.length > MAX_LENGTH_BEFORE_COMPRESSION)
+        if(sourceData.size() > MAX_LENGTH_BEFORE_COMPRESSION)
             throw new CHKEncodeException("Too big");
         if(!dontCompress) {
         	byte[] cbuf = null;
         	if(alreadyCompressedCodec >= 0) {
+           		if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH)
+        			throw new CHKEncodeException("Too big (precompressed)");
         		compressionAlgorithm = alreadyCompressedCodec;
-        		cbuf = sourceData;
+        		cbuf = BucketTools.toByteArray(sourceData);
+        		if(sourceLength > MAX_LENGTH_BEFORE_COMPRESSION)
+        			throw new CHKEncodeException("Too big");
         	} else {
-        		if (sourceData.length > NodeCHK.BLOCK_SIZE) {
+        		if (sourceData.size() > NodeCHK.BLOCK_SIZE) {
 					// Determine the best algorithm
-					Bucket bucket = new ArrayBucket(sourceData);
-					bucket.setReadOnly();
 					for (int i = 0; i < Compressor.countCompressAlgorithms(); i++) {
 						Compressor comp = Compressor
 								.getCompressionAlgorithmByDifficulty(i);
 						ArrayBucket compressedData;
 						try {
 							compressedData = (ArrayBucket) comp.compress(
-									bucket, new ArrayBucketFactory());
+									sourceData, new ArrayBucketFactory(), NodeCHK.BLOCK_SIZE);
 						} catch (IOException e) {
 							throw new Error(e);
+						} catch (CompressionOutputSizeException e) {
+							continue;
 						}
 						if (compressedData.size() <= MAX_COMPRESSED_DATA_LENGTH) {
 							compressionAlgorithm = comp
 									.codecNumberForMetadata();
-							sourceLength = sourceData.length;
+							sourceLength = sourceData.size();
 							try {
 								cbuf = BucketTools.toByteArray(compressedData);
 								// FIXME provide a method in ArrayBucket
@@ -109,17 +117,24 @@ public class ClientCHKBlock extends CHKBlock {
         	if(cbuf != null) {
     			// Use it
     			int compressedLength = cbuf.length;
-                sourceData = new byte[compressedLength+3];
-                System.arraycopy(cbuf, 0, sourceData, 3, compressedLength);
-                sourceData[0] = (byte) ((sourceLength >> 16) & 0xff);
-                sourceData[1] = (byte) ((sourceLength >> 8) & 0xff);
-                sourceData[2] = (byte) ((sourceLength) & 0xff);
+                finalData = new byte[compressedLength+4];
+                System.arraycopy(cbuf, 0, finalData, 4, compressedLength);
+                finalData[0] = (byte) ((sourceLength >> 24) & 0xff);
+                finalData[1] = (byte) ((sourceLength >> 16) & 0xff);
+                finalData[2] = (byte) ((sourceLength >> 8) & 0xff);
+                finalData[3] = (byte) ((sourceLength) & 0xff);
                 compressed = true;
         	}
         }
-        if(sourceData.length > NodeCHK.BLOCK_SIZE) {
-            throw new CHKEncodeException("Too big");
+        if(finalData == null) {
+            if(sourceData.size() > NodeCHK.BLOCK_SIZE) {
+                throw new CHKEncodeException("Too big");
+            }
+        	finalData = BucketTools.toByteArray(sourceData);
         }
+        
+        // Now do the actual encode
+        
         MessageDigest md160;
         try {
             md160 = MessageDigest.getInstance("SHA-1");
@@ -136,10 +151,10 @@ public class ClientCHKBlock extends CHKBlock {
             throw new Error(e1);
         }
         // First pad it
-        if(sourceData.length != 32768) {
+        if(finalData.length != 32768) {
             // Hash the data
-            if(sourceData.length != 0)
-            	md256.update(sourceData);
+            if(finalData.length != 0)
+            	md256.update(finalData);
             byte[] digest = md256.digest();
             // Turn digest into a seed array for the MT
             int[] seed = new int[8]; // 32/4=8
@@ -152,12 +167,12 @@ public class ClientCHKBlock extends CHKBlock {
             }
             MersenneTwister mt = new MersenneTwister(seed);
             data = new byte[32768];
-            System.arraycopy(sourceData, 0, data, 0, sourceData.length);
-            byte[] randomBytes = new byte[32768-sourceData.length];
+            System.arraycopy(finalData, 0, data, 0, finalData.length);
+            byte[] randomBytes = new byte[32768-finalData.length];
             mt.nextBytes(randomBytes);
-            System.arraycopy(randomBytes, 0, data, sourceData.length, 32768-sourceData.length);
+            System.arraycopy(randomBytes, 0, data, finalData.length, 32768-finalData.length);
         } else {
-        	data = sourceData;
+        	data = finalData;
         }
         // Now make the header
         byte[] encKey = md256.digest(data);
@@ -168,8 +183,8 @@ public class ClientCHKBlock extends CHKBlock {
         header[0] = (byte)(CHKBlock.HASH_SHA1 >> 8);
         header[1] = (byte)(CHKBlock.HASH_SHA1 & 0xff);
         System.arraycopy(plainIV, 0, header, 2, plainIV.length);
-        header[plainIV.length+2] = (byte)(sourceData.length >> 8);
-        header[plainIV.length+3] = (byte)(sourceData.length & 0xff);
+        header[plainIV.length+2] = (byte)(finalData.length >> 8);
+        header[plainIV.length+3] = (byte)(finalData.length & 0xff);
         // GRRR, java 1.4 does not have any symmetric crypto
         // despite exposing asymmetric and hashes!
         
@@ -200,6 +215,23 @@ public class ClientCHKBlock extends CHKBlock {
             throw new Error(e3);
         }
     }
+    
+    /**
+     * Encode a block of data to a CHKBlock.
+     * @param sourceData The data to encode.
+     * @param asMetadata Is this a metadata key?
+     * @param dontCompress If set, don't even try to compress.
+     * @param alreadyCompressedCodec If !dontCompress, and this is >=0, then the
+     * data is already compressed, and this is the algorithm.
+     */
+    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength) throws CHKEncodeException {
+    	try {
+			return encode(new ArrayBucket(sourceData), asMetadata, dontCompress, alreadyCompressedCodec, sourceLength);
+		} catch (IOException e) {
+			// Can't happen
+			throw new Error(e);
+		}
+    }
 
     /**
      * @return The ClientCHK for this key.
@@ -207,4 +239,5 @@ public class ClientCHKBlock extends CHKBlock {
     public ClientCHK getClientKey() {
         return key;
     }
+
 }

@@ -14,9 +14,9 @@ public abstract class Compressor {
 
 	public static Compressor gzip = new GzipCompressor();
 
-	public abstract Bucket compress(Bucket data, BucketFactory bf) throws IOException;
+	public abstract Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException;
 
-	public abstract Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength) throws IOException;
+	public abstract Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength) throws IOException, CompressionOutputSizeException;
 
 	public short codecNumberForMetadata() {
 		return Metadata.COMPRESS_GZIP;
@@ -48,8 +48,9 @@ public abstract class Compressor {
 	 * @param j Number of bytes to read.
 	 * @param output Output buffer.
 	 * @throws DecompressException 
+	 * @throws CompressionOutputSizeException 
 	 * @returns The number of bytes actually written.
 	 */
-	public abstract int decompress(byte[] dbuf, int i, int j, byte[] output) throws DecompressException;
+	public abstract int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException;
 
 }

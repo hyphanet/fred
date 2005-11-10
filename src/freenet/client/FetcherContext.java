@@ -31,9 +31,10 @@ public class FetcherContext implements Cloneable {
 	/** Whether to allow non-full blocks, or blocks which are not direct CHKs, in splitfiles.
 	 * Set by the splitfile metadata and the mask constructor, so we don't need to pass it in. */
 	final boolean splitfileUseLengths;
+	final int maxMetadataSize;
 	
 	public FetcherContext(SimpleLowLevelClient client, long curMaxLength, 
-			long curMaxTempLength, int maxRecursionLevel, int maxArchiveRestarts,
+			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts,
 			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
@@ -42,6 +43,7 @@ public class FetcherContext implements Cloneable {
 		this.client = client;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
+		this.maxMetadataSize = maxMetadataSize;
 		this.archiveManager = archiveManager;
 		this.bucketFactory = bucketFactory;
 		this.maxRecursionLevel = maxRecursionLevel;
@@ -62,6 +64,7 @@ public class FetcherContext implements Cloneable {
 		if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
+			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
 			this.archiveManager = ctx.archiveManager;
 			this.bucketFactory = ctx.bucketFactory;
@@ -81,6 +84,7 @@ public class FetcherContext implements Cloneable {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxTempLength = ctx.maxTempLength;
+			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.archiveManager = ctx.archiveManager;
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
@@ -99,6 +103,7 @@ public class FetcherContext implements Cloneable {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxTempLength = ctx.maxTempLength;
+			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.archiveManager = ctx.archiveManager;
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;

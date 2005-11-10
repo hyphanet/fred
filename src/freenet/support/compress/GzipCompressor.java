@@ -15,24 +15,30 @@ import freenet.support.BucketFactory;
 
 public class GzipCompressor extends Compressor {
 
-	public Bucket compress(Bucket data, BucketFactory bf) throws IOException {
+	public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
 		Bucket output = bf.makeBucket(-1);
 		InputStream is = data.getInputStream();
 		OutputStream os = output.getOutputStream();
 		GZIPOutputStream gos = new GZIPOutputStream(os);
+		long written = 0;
 		byte[] buffer = new byte[4096];
 		while(true) {
-			int x = is.read(buffer);
+			int l = (int) Math.min(buffer.length, maxLength - written);
+			int x = is.read(buffer, 0, buffer.length);
+			if(l < x) {
+				throw new CompressionOutputSizeException();
+			}
 			if(x <= -1) break;
 			if(x == 0) throw new IOException("Returned zero from read()");
 			gos.write(buffer, 0, x);
+			written += x;
 		}
 		is.close();
 		gos.close();
 		return output;
 	}
 
-	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength) throws IOException {
+	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
 		Bucket output = bf.makeBucket(-1);
 		InputStream is = data.getInputStream();
 		OutputStream os = output.getOutputStream();
@@ -42,15 +48,16 @@ public class GzipCompressor extends Compressor {
 		return output;
 	}
 
-	private long decompress(InputStream is, OutputStream os, long maxLength) throws IOException {
+	private long decompress(InputStream is, OutputStream os, long maxLength) throws IOException, CompressionOutputSizeException {
 		GZIPInputStream gis = new GZIPInputStream(is);
 		long written = 0;
 		byte[] buffer = new byte[4096];
 		while(true) {
 			int l = (int) Math.min(buffer.length, maxLength - written);
-			if(l <= 0)
-				return written;
-			int x = gis.read(buffer, 0, l);
+			int x = gis.read(buffer, 0, 4096);
+			if(l < x) {
+				throw new CompressionOutputSizeException();
+			}
 			if(x <= -1) return written;
 			if(x == 0) throw new IOException("Returned zero from read()");
 			os.write(buffer, 0, x);
@@ -58,7 +65,7 @@ public class GzipCompressor extends Compressor {
 		}
 	}
 
-	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws DecompressException {
+	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
 		// Didn't work with Inflater.
 		// FIXME fix sometimes to use Inflater - format issue?
 		ByteArrayInputStream bais = new ByteArrayInputStream(dbuf, i, j);
@@ -67,7 +74,7 @@ public class GzipCompressor extends Compressor {
 		try {
 			bytes = (int)decompress(bais, baos, output.length);
 		} catch (IOException e) {
-			throw new DecompressException("Got IOException: "+e.getMessage());
+			throw new Error("Got IOException: "+e.getMessage());
 		}
 		byte[] buf = baos.toByteArray();
 		System.arraycopy(buf, 0, output, 0, bytes);

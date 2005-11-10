@@ -1,5 +1,6 @@
 package freenet.keys;
 
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -9,7 +10,14 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.node.Node;
+import freenet.support.ArrayBucket;
+import freenet.support.ArrayBucketFactory;
+import freenet.support.Bucket;
+import freenet.support.BucketFactory;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressException;
 
@@ -25,7 +33,7 @@ public class CHKBlock implements KeyBlock {
     final byte[] header;
     final short hashIdentifier;
     final NodeCHK chk;
-    public static final int MAX_LENGTH_BEFORE_COMPRESSION = 1024 * 1024;
+    public static final int MAX_LENGTH_BEFORE_COMPRESSION = Integer.MAX_VALUE;
     final static int HASH_SHA1 = 1;
     
     public String toString() {
@@ -80,17 +88,31 @@ public class CHKBlock implements KeyBlock {
         // Otherwise it checks out
     }
 
-    public byte[] decode(ClientKey key) throws KeyDecodeException {
+    /**
+     * Decode into RAM, if short.
+     * @throws CHKDecodeException 
+     */
+	public byte[] memoryDecode(ClientCHK chk) throws CHKDecodeException {
+		try {
+			ArrayBucket a = (ArrayBucket) decode(chk, new ArrayBucketFactory(), 32*1024);
+			return BucketTools.toByteArray(a); // FIXME
+		} catch (IOException e) {
+			throw new Error(e);
+		}
+	}
+	
+    public Bucket decode(ClientKey key, BucketFactory bf, int maxLength) throws KeyDecodeException, IOException {
     	if(!(key instanceof ClientCHK))
     		throw new KeyDecodeException("Not a CHK!: "+key);
-    	return decode((ClientCHK)key);
+    	return decode((ClientCHK)key, bf, maxLength);
     }
     
     /**
      * Decode the CHK and recover the original data
      * @return the original data
+     * @throws IOException If there is a bucket error.
      */
-    public byte[] decode(ClientCHK key) throws CHKDecodeException {
+    public Bucket decode(ClientCHK key, BucketFactory bf, int maxLength) throws CHKDecodeException, IOException {
         // Overall hash already verified, so first job is to decrypt.
         if(key.cryptoAlgorithm != ClientCHK.ALGO_AES_PCFB_256)
             throw new UnsupportedOperationException();
@@ -136,33 +158,35 @@ public class CHKBlock implements KeyBlock {
         int size = ((hbuf[32] & 0xff) << 8) + (hbuf[33] & 0xff);
         if(size > 32768 || size < 0)
             throw new CHKDecodeException("Invalid size: "+size);
-        if(key.isCompressed()) {
-        	Logger.minor(this, "Decompressing in decode: "+key.getURI()+" with codec "+key.compressionAlgorithm);
-            if(size < 4) throw new CHKDecodeException("No bytes to decompress");
-            // Decompress
-            // First get the length
-            int len = ((((dbuf[0] & 0xff) << 8) + (dbuf[1] & 0xff)) << 8) +
-            	(dbuf[2] & 0xff);
-            if(len > MAX_LENGTH_BEFORE_COMPRESSION)
-                throw new CHKDecodeException("Invalid precompressed size: "+len);
-            byte[] output = new byte[len];
-            Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(key.compressionAlgorithm);
-            try {
-            	int x = decompressor.decompress(dbuf, 3, dbuf.length-3, output);
-            	if(x != len)
-					throw new CHKDecodeException("Decompression failed: got "+x+" bytes, needed "+len+" bytes");
-			} catch (DecompressException e) {
-				throw new CHKDecodeException(e.getMessage());
-			}
-            return output;
-        }
         byte[] output = new byte[size];
         // No particular reason to check the padding, is there?
         System.arraycopy(dbuf, 0, output, 0, size);
-        return output;
+        return decompress(key, output, bf, maxLength);
     }
 
-    public Key getKey() {
+    private Bucket decompress(ClientCHK key, byte[] output, BucketFactory bf, int maxLength) throws CHKDecodeException, IOException {
+        if(key.isCompressed()) {
+        	Logger.minor(this, "Decompressing in decode: "+key.getURI()+" with codec "+key.compressionAlgorithm);
+            if(output.length < 5) throw new CHKDecodeException("No bytes to decompress");
+            // Decompress
+            // First get the length
+            int len = ((((((output[0] & 0xff) << 8) + (output[1] & 0xff)) << 8) + (output[2] & 0xff)) << 8) +
+            	(output[3] & 0xff);
+            if(len > MAX_LENGTH_BEFORE_COMPRESSION)
+                throw new CHKDecodeException("Invalid precompressed size: "+len);
+            Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(key.compressionAlgorithm);
+            Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, 4, output.length-4);
+            try {
+				return decompressor.decompress(inputBucket, bf, maxLength);
+			} catch (CompressionOutputSizeException e) {
+				throw new CHKDecodeException("Too big");
+			}
+        } else {
+        	return BucketTools.makeImmutableBucket(bf, output);
+        }
+	}
+
+	public Key getKey() {
         return chk;
     }
 }
