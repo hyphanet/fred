@@ -184,14 +184,15 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 	 */
 	public synchronized long paddedLength() {
 		long size = dataLength;
-		if(dataLength < minPaddedSize) dataLength = minPaddedSize;
+		if(size < minPaddedSize) size = minPaddedSize;
 		if(size == minPaddedSize) return size;
 		long min = minPaddedSize;
 		long max = minPaddedSize << 1;
 		while(true) {
 			if(max < 0)
-				throw new Error("Impossible size: "+dataLength);
+				throw new Error("Impossible size: "+size+" - min="+min+", max="+max);
 			if(size > min && size < max) return max;
+			min = max;
 			max = max << 1;
 		}
 	}

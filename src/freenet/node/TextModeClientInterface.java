@@ -15,6 +15,8 @@ import java.util.Hashtable;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertBlock;
+import freenet.client.InserterException;
 import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
@@ -22,10 +24,12 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
+import freenet.support.ArrayBucket;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileBucket;
 
 /**
  * @author amphibian
@@ -194,22 +198,17 @@ public class TextModeClientInterface implements Runnable {
             }
             // Insert
             byte[] data = content.getBytes();
-            ClientCHKBlock block;
+            
+            InsertBlock block = new InsertBlock(new ArrayBucket(data), null, FreenetURI.EMPTY_CHK_URI);
+
+            FreenetURI uri;
             try {
-                block = ClientCHKBlock.encode(data, false, false, (short)-1);
-            } catch (CHKEncodeException e) {
-                Logger.error(this, "Couldn't encode: "+e, e);
-                return;
+            	uri = client.insert(block);
+            } catch (InserterException e) {
+            	System.out.println("Error: "+e.getMessage());
+            	return;
             }
-            ClientCHK chk = block.getClientKey();
-            FreenetURI uri = 
-                chk.getURI();
-            try {
-				n.putCHK(block);
-			} catch (LowLevelPutException e) {
-				System.err.println("Error: "+e.getMessage());
-			}
-            // Definitely interface
+            
             System.out.println("URI: "+uri);
         } else if(uline.startsWith("PUTFILE:")) {
             // Just insert to local store
@@ -221,34 +220,22 @@ public class TextModeClientInterface implements Runnable {
             File f = new File(line);
             System.out.println("Attempting to read file "+line);
             try {
-                FileInputStream fis = new FileInputStream(line);
-                DataInputStream dis = new DataInputStream(fis);
-                int length = (int)f.length();
-                byte[] data = new byte[length];
-                dis.readFully(data);
-                dis.close();
-                System.out.println("Inserting...");
-                ClientCHKBlock block;
-                try {
-                    block = ClientCHKBlock.encode(data, false, false, (short)-1);
-                } catch (CHKEncodeException e) {
-                    System.out.println("Couldn't encode: "+e.getMessage());
-                    Logger.error(this, "Couldn't encode: "+e, e);
-                    return;
-                }
-                ClientCHK chk = block.getClientKey();
-                FreenetURI uri = 
-                    chk.getURI();
+            	if(!f.exists() && f.canRead()) {
+            		throw new FileNotFoundException();
+            	}
+            	FileBucket fb = new FileBucket(f, true, false, false);
+            	InsertBlock block = new InsertBlock(fb, null, FreenetURI.EMPTY_CHK_URI);
+            	
+            	FreenetURI uri = client.insert(block);
+            	
+            	// FIXME depends on CHK's still being renamable
                 uri = uri.setDocName(f.getName());
-                n.putCHK(block);
+            	
                 System.out.println("URI: "+uri);
             } catch (FileNotFoundException e1) {
                 System.out.println("File not found");
-            } catch (IOException e) {
-                System.out.println("Could not read: "+e);
-                e.printStackTrace();
-			} catch (LowLevelPutException e) {
-				System.err.println("Error: "+e.getMessage());
+            } catch (InserterException e) {
+            	System.out.println(e.getMessage());
             } catch (Throwable t) {
                 System.out.println("Threw: "+t);
                 t.printStackTrace();

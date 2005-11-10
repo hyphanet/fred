@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.io.IOException;
 
+import freenet.client.events.SimpleBlockPutEvent;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
@@ -111,6 +112,7 @@ public class FileInserter {
 	 */
 	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata) throws InserterException {
 		try {
+			ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(chk.getClientKey()));
 			ctx.client.putCHK(chk);
 		} catch (LowLevelPutException e) {
 			translateException(e);

@@ -76,7 +76,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public FreenetURI insert(InsertBlock insert) throws InserterException {
-		InserterContext context = new InserterContext(client, bucketFactory, random, SPLITFILE_INSERT_RETRIES, SPLITFILE_INSERT_THREADS);
+		InserterContext context = new InserterContext(client, bucketFactory, random, SPLITFILE_INSERT_RETRIES, SPLITFILE_INSERT_THREADS, globalEventProducer);
 		FileInserter i = new FileInserter(context);
 		return i.run(insert, false);
 	}

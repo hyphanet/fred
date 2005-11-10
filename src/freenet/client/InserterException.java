@@ -62,6 +62,8 @@ public class InserterException extends Exception {
 			return "Fatal errors in a splitfile insert";
 		case TOO_MANY_RETRIES_IN_BLOCKS:
 			return "Could not insert splitfile: ran out of retries (nonfatal errors)";
+		case ROUTE_NOT_FOUND:
+			return "Could not propagate the insert to enough nodes (normal on small networks, try fetching it anyway)";
 		default:
 			return "Unknown error "+mode;
 		}
