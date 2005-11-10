@@ -241,7 +241,7 @@ public class Node implements SimpleLowLevelClient {
      */
     public static void main(String[] args) throws IOException {
     	int length = args.length;
-    	if (length < 1 && length > 2) {
+    	if (length < 1 || length > 2) {
     		System.out.println("Usage: $ java freenet.node.Node <portNumber> [ipOverride]");
     		return;
     	}
