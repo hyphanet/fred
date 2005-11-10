@@ -15,6 +15,7 @@ import java.util.Hashtable;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.CHKEncodeException;
@@ -43,6 +44,7 @@ public class TextModeClientInterface implements Runnable {
     TextModeClientInterface(Node n) {
         this.n = n;
         client = n.makeClient();
+        client.addGlobalHook(new EventDumper());
         this.r = n.random;
         streams = new Hashtable();
         new Thread(this).start();

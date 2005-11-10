@@ -88,6 +88,10 @@ public abstract class Logger {
 	    logger.log(c, s, NORMAL);
 	}
 	
+	public static void logStatic(Object o, String s, int prio) {
+		logger.log(o, s, prio);
+	}
+	
 	/**
 	 * Log a message
 	 * 

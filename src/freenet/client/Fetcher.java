@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 
+import freenet.client.events.DecodedBlockEvent;
+import freenet.client.events.FetchedMetadataEvent;
+import freenet.client.events.GotBlockEvent;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.KeyBlock;
@@ -129,12 +132,16 @@ class Fetcher {
 			}
 		}
 		
+		ctx.eventProducer.produceEvent(new GotBlockEvent(key));
+		
 		byte[] data;
 		try {
 			data = block.decode(key);
 		} catch (KeyDecodeException e1) {
-			throw new FetchException(FetchException.BLOCK_DECODE_ERROR);
+			throw new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage());
 		}
+		
+		ctx.eventProducer.produceEvent(new DecodedBlockEvent(key));
 		
 		if(!key.isMetadata()) {
 			// Just return the data
@@ -148,6 +155,8 @@ class Fetcher {
 		// Otherwise we need to parse the metadata
 		
 		Metadata metadata = Metadata.construct(data);
+		
+		ctx.eventProducer.produceEvent(new FetchedMetadataEvent());
 		
 		FetchResult result = runMetadata(dm, recursionLevel, key, metaStrings, metadata, null, key.getURI(), dontEnterImplicitArchives);
 		if(metaStrings.isEmpty()) return result;
@@ -259,7 +268,9 @@ class Fetcher {
 				Bucket data = fr.data;
 				Bucket output;
 				try {
-					output = codec.decompress(data, ctx.bucketFactory);
+					long maxLen = ctx.maxTempLength;
+					if(maxLen < 0) maxLen = Long.MAX_VALUE;
+					output = codec.decompress(data, ctx.bucketFactory, maxLen);
 				} catch (IOException e) {
 					throw new FetchException(FetchException.BUCKET_ERROR, e);
 				}
@@ -293,7 +304,9 @@ class Fetcher {
 			if(metadata.compressed) {
 				Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.compressionCodec);
 				try {
-					sfResult = codec.decompress(sfResult, ctx.bucketFactory);
+					long maxLen = ctx.maxTempLength;
+					if(maxLen < 0) maxLen = Long.MAX_VALUE;
+					sfResult = codec.decompress(sfResult, ctx.bucketFactory, maxLen);
 				} catch (IOException e) {
 					throw new FetchException(FetchException.BUCKET_ERROR, e);
 				}

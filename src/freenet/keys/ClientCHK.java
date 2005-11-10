@@ -151,6 +151,6 @@ public class ClientCHK extends ClientKey {
 	}
 
 	public boolean isCompressed() {
-		return compressionAlgorithm > 0;
+		return compressionAlgorithm >= 0;
 	}
 }

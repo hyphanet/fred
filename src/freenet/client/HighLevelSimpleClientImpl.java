@@ -1,15 +1,22 @@
 package freenet.client;
 
+import freenet.client.events.ClientEventListener;
+import freenet.client.events.ClientEventProducer;
+import freenet.client.events.EventLogger;
+import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
+import freenet.support.Logger;
 
 public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 
 	private final SimpleLowLevelClient client;
 	private final ArchiveManager archiveManager;
 	private final BucketFactory bucketFactory;
+	/** One CEP for all requests and inserts */
+	private final ClientEventProducer globalEventProducer;
 	private long curMaxLength;
 	private long curMaxTempLength;
 	private final RandomSource random;
@@ -42,6 +49,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		archiveManager = mgr;
 		bucketFactory = bf;
 		random = r;
+		this.globalEventProducer = new SimpleEventProducer();
+		globalEventProducer.addEventListener(new EventLogger(Logger.MINOR));
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -61,7 +70,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, 
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
-				random, archiveManager, bucketFactory);
+				random, archiveManager, bucketFactory, globalEventProducer);
 		Fetcher f = new Fetcher(uri, context);
 		return f.run();
 	}
@@ -72,4 +81,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return i.run(insert, false);
 	}
 
+	public void addGlobalHook(ClientEventListener listener) {
+		globalEventProducer.addEventListener(listener);
+	}
 }

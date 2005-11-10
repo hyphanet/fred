@@ -9,6 +9,7 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.node.Node;
+import freenet.support.Logger;
 import freenet.support.compress.Compressor;
 import freenet.support.compress.DecompressException;
 
@@ -136,6 +137,7 @@ public class CHKBlock implements KeyBlock {
         if(size > 32768 || size < 0)
             throw new CHKDecodeException("Invalid size: "+size);
         if(key.isCompressed()) {
+        	Logger.minor(this, "Decompressing in decode: "+key.getURI()+" with codec "+key.compressionAlgorithm);
             if(size < 4) throw new CHKDecodeException("No bytes to decompress");
             // Decompress
             // First get the length

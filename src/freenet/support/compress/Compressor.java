@@ -16,7 +16,7 @@ public abstract class Compressor {
 
 	public abstract Bucket compress(Bucket data, BucketFactory bf) throws IOException;
 
-	public abstract Bucket decompress(Bucket data, BucketFactory bucketFactory) throws IOException;
+	public abstract Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength) throws IOException;
 
 	public short codecNumberForMetadata() {
 		return Metadata.COMPRESS_GZIP;

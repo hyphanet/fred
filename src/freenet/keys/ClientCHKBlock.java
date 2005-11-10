@@ -76,28 +76,33 @@ public class ClientCHKBlock extends CHKBlock {
         		compressionAlgorithm = alreadyCompressedCodec;
         		cbuf = sourceData;
         	} else {
-        		// Determine the best algorithm
-            	Bucket bucket = new ArrayBucket(sourceData);
-            	bucket.setReadOnly();
-            	for(int i=0;i<Compressor.countCompressAlgorithms();i++) {
-            		Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
-            		ArrayBucket compressedData;
-    				try {
-    					compressedData = (ArrayBucket) comp.compress(bucket, new ArrayBucketFactory());
-    				} catch (IOException e) {
-    					throw new Error(e);
-    				}
-            		if(compressedData.size() <= MAX_COMPRESSED_DATA_LENGTH) {
-            			compressionAlgorithm = comp.codecNumberForMetadata();
-        				try {
-        					cbuf = BucketTools.toByteArray(compressedData);
-        					// FIXME provide a method in ArrayBucket
-        				} catch (IOException e) {
-        					throw new Error(e);
-        				}
-            			break;
-            		}
-            	}
+        		if (sourceData.length > NodeCHK.BLOCK_SIZE) {
+					// Determine the best algorithm
+					Bucket bucket = new ArrayBucket(sourceData);
+					bucket.setReadOnly();
+					for (int i = 0; i < Compressor.countCompressAlgorithms(); i++) {
+						Compressor comp = Compressor
+								.getCompressionAlgorithmByDifficulty(i);
+						ArrayBucket compressedData;
+						try {
+							compressedData = (ArrayBucket) comp.compress(
+									bucket, new ArrayBucketFactory());
+						} catch (IOException e) {
+							throw new Error(e);
+						}
+						if (compressedData.size() <= MAX_COMPRESSED_DATA_LENGTH) {
+							compressionAlgorithm = comp
+									.codecNumberForMetadata();
+							try {
+								cbuf = BucketTools.toByteArray(compressedData);
+								// FIXME provide a method in ArrayBucket
+							} catch (IOException e) {
+								throw new Error(e);
+							}
+							break;
+						}
+					}
+				}
         		
         	}
         	if(cbuf != null) {

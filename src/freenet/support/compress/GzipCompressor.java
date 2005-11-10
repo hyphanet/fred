@@ -1,5 +1,7 @@
 package freenet.support.compress;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,34 +32,46 @@ public class GzipCompressor extends Compressor {
 		return output;
 	}
 
-	public Bucket decompress(Bucket data, BucketFactory bf) throws IOException {
+	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength) throws IOException {
 		Bucket output = bf.makeBucket(-1);
 		InputStream is = data.getInputStream();
 		OutputStream os = output.getOutputStream();
-		GZIPInputStream gis = new GZIPInputStream(is);
-		byte[] buffer = new byte[4096];
-		while(true) {
-			int x = gis.read(buffer);
-			if(x <= -1) break;
-			if(x == 0) throw new IOException("Returned zero from read()");
-			os.write(buffer, 0, x);
-		}
+		decompress(is, os, maxLength);
 		os.close();
-		gis.close();
+		is.close();
 		return output;
 	}
 
+	private long decompress(InputStream is, OutputStream os, long maxLength) throws IOException {
+		GZIPInputStream gis = new GZIPInputStream(is);
+		long written = 0;
+		byte[] buffer = new byte[4096];
+		while(true) {
+			int l = (int) Math.min(buffer.length, maxLength - written);
+			if(l <= 0)
+				return written;
+			int x = gis.read(buffer, 0, l);
+			if(x <= -1) return written;
+			if(x == 0) throw new IOException("Returned zero from read()");
+			os.write(buffer, 0, x);
+			written += x;
+		}
+	}
+
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws DecompressException {
-        Inflater decompressor = new Inflater();
-        decompressor.setInput(dbuf, i, j);
-        try {
-            int resultLength = decompressor.inflate(output);
-            return resultLength;
-        } catch (DataFormatException e) {
-            throw new DecompressException("Invalid data: "+e);
-        } catch (ArrayIndexOutOfBoundsException e) {
-        	throw new DecompressException("Invalid data: "+e);
-        }
+		// Didn't work with Inflater.
+		// FIXME fix sometimes to use Inflater - format issue?
+		ByteArrayInputStream bais = new ByteArrayInputStream(dbuf, i, j);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(output.length);
+		int bytes = 0;
+		try {
+			bytes = (int)decompress(bais, baos, output.length);
+		} catch (IOException e) {
+			throw new DecompressException("Got IOException: "+e.getMessage());
+		}
+		byte[] buf = baos.toByteArray();
+		System.arraycopy(buf, 0, output, 0, bytes);
+		return bytes;
 	}
 
 }

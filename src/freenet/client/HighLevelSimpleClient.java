@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
 
 public interface HighLevelSimpleClient {
@@ -25,4 +26,9 @@ public interface HighLevelSimpleClient {
 	 * @throws InserterException If there is an error inserting the data
 	 */
 	public FreenetURI insert(InsertBlock insert) throws InserterException;
+	
+	/**
+	 * Add a ClientEventListener.
+	 */
+	public void addGlobalHook(ClientEventListener listener);
 }

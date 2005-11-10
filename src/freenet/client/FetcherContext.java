@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.client.events.ClientEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
@@ -26,6 +27,7 @@ public class FetcherContext implements Cloneable {
 	final boolean allowSplitfiles;
 	final boolean followRedirects;
 	final boolean localRequestOnly;
+	final ClientEventProducer eventProducer;
 	/** Whether to allow non-full blocks, or blocks which are not direct CHKs, in splitfiles.
 	 * Set by the splitfile metadata and the mask constructor, so we don't need to pass it in. */
 	final boolean splitfileUseLengths;
@@ -35,7 +37,8 @@ public class FetcherContext implements Cloneable {
 			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
-			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory) {
+			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
+			ClientEventProducer producer) {
 		this.client = client;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -52,6 +55,7 @@ public class FetcherContext implements Cloneable {
 		this.followRedirects = followRedirects;
 		this.localRequestOnly = localRequestOnly;
 		this.splitfileUseLengths = false;
+		this.eventProducer = producer;
 	}
 
 	public FetcherContext(FetcherContext ctx, int maskID) {
@@ -72,6 +76,7 @@ public class FetcherContext implements Cloneable {
 			this.followRedirects = false;
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = false;
+			this.eventProducer = ctx.eventProducer;
 		} else if(maskID == SPLITFILE_DEFAULT_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
@@ -89,6 +94,7 @@ public class FetcherContext implements Cloneable {
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = false;
+			this.eventProducer = ctx.eventProducer;
 		} else if(maskID == SPLITFILE_USE_LENGTHS_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
@@ -106,6 +112,7 @@ public class FetcherContext implements Cloneable {
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = true;
+			this.eventProducer = ctx.eventProducer;
 		} else throw new IllegalArgumentException();
 	}
 
