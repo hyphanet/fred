@@ -176,7 +176,6 @@ public class RetryTracker {
 		runningBlocks.remove(block);
 		Level l = makeLevel(block.getRetryCount());
 		if(l == null) throw new IllegalArgumentException();
-		if(l.tracker != this) throw new IllegalArgumentException("Belongs to wrong tracker");
 		int levelNumber = l.level;
 		l.remove(block);
 		levelNumber++;
@@ -211,10 +210,11 @@ public class RetryTracker {
 	 * Otherwise if we are finished, call the callback's finish method.
 	 */
 	public synchronized void maybeStart(boolean cantCallFinished) {
+		Logger.minor(this, "succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
+				", running: "+runningBlocks.size()+", levels: "+levels.size()+", finishOnEmpty: "+finishOnEmpty);
 		if((succeededBlocks.size() >= targetSuccesses)
 				|| (runningBlocks.isEmpty() && levels.isEmpty() && finishOnEmpty)) {
-			Logger.minor(this, "Finishing: succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
-					", running: "+runningBlocks.size()+", levels: "+levels.size()+", finishOnEmpty: "+finishOnEmpty);
+			Logger.minor(this, "Finishing");
 			SplitfileBlock[] running = runningBlocks();
 			for(int i=0;i<running.length;i++) {
 				running[i].kill();
@@ -231,6 +231,7 @@ public class RetryTracker {
 			while(runningBlocks.size() < maxThreads) {
 				SplitfileBlock block = getBlock();
 				if(block == null) break;
+				Logger.minor(this, "Starting: "+block);
 				block.start();
 				runningBlocks.add(block);
 			}
