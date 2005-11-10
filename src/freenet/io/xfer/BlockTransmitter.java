@@ -70,11 +70,13 @@ public class BlockTransmitter {
 						long waitUntil = System.currentTimeMillis() + throttle.getDelay();
 						try {
 							while (waitUntil > System.currentTimeMillis()) {
+								if(_sendComplete) return;
 								synchronized (_senderThread) {
-								_senderThread.wait(waitUntil - System.currentTimeMillis());
+									_senderThread.wait(waitUntil - System.currentTimeMillis());
 								}
 							}
 							while (_unsent.size() == 0) {
+								if(_sendComplete) return;
 								synchronized (_senderThread) {
 									_senderThread.wait();
 								}

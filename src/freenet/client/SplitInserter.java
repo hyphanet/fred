@@ -81,6 +81,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	}
 
 	private FreenetURI waitForCompletion() throws InserterException {
+		tracker.setFinishOnEmpty();
 		synchronized(this) {
 			while(!allSegmentsFinished) {
 				try {
@@ -91,19 +92,17 @@ public class SplitInserter implements RetryTrackerCallback {
 			}
 		}
 
-		// Did we succeed?
+		// Create the manifest (even if we failed, so that the key is visible)
+
+		FreenetURI[] dataURIs = getDataURIs();
+		FreenetURI[] checkURIs = getCheckURIs();
 		
-		if(fatalErrors > 0) {
-			throw new InserterException(InserterException.FATAL_ERRORS_IN_BLOCKS, tracker.getAccumulatedFatalErrorCodes());
-		}
+		boolean missingURIs = anyNulls(dataURIs) || anyNulls(checkURIs);
 		
-		if(failed > 0) {
-			throw new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, tracker.getAccumulatedNonFatalErrorCodes());
-		}
+		if(missingURIs && fatalErrors == 0 && failed == 0)
+			throw new IllegalStateException();
 		
-		// Okay, we succeeded... create the manifest
-		
-		Metadata metadata = new Metadata(splitfileAlgorithm, getDataURIs(), getCheckURIs(), clientMetadata, dataLength, compressionCodec);
+		Metadata metadata = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, clientMetadata, dataLength, compressionCodec);
 		
 		Bucket mbucket;
 		try {
@@ -116,8 +115,29 @@ public class SplitInserter implements RetryTrackerCallback {
 			inserter = new FileInserter(ctx);
 		
 		InsertBlock mblock = new InsertBlock(mbucket, clientMetadata, FreenetURI.EMPTY_CHK_URI);
+
+		// FIXME probably should uncomment below so it doesn't get inserted at all?
+		// FIXME this is a hack for small network support... but we will need that IRL... hmmm
+		FreenetURI uri = inserter.run(mblock, true, getCHKOnly/* || (fatalErrors > 0 || failed > 0)*/);
 		
-		return inserter.run(mblock, true, getCHKOnly);
+		// Did we succeed?
+		
+		if(fatalErrors > 0) {
+			throw new InserterException(InserterException.FATAL_ERRORS_IN_BLOCKS, tracker.getAccumulatedFatalErrorCodes());
+		}
+		
+		if(failed > 0) {
+			throw new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, tracker.getAccumulatedNonFatalErrorCodes());
+		}
+		
+		return uri;
+	}
+
+	// FIXME move this to somewhere
+	private static boolean anyNulls(Object[] array) {
+		for(int i=0;i<array.length;i++)
+			if(array[i] == null) return true;
+		return false;
 	}
 
 	private FreenetURI[] getCheckURIs() {

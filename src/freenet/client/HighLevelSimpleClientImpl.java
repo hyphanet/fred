@@ -25,7 +25,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
 	/** Number of threads used by a splitfile fetch */
-	static final int SPLITFILE_THREADS = 5;
+	static final int SPLITFILE_THREADS = 10;
 	/** Number of retries allowed per block in a splitfile. Must be at least 1 as 
 	 * on the first try we just check the datastore.
 	 */
@@ -41,7 +41,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	/** If set, only check the local datastore, don't send an actual request out.
 	 * Don't turn this off either. */
 	static final boolean LOCAL_REQUESTS_ONLY = false;
-	static final int SPLITFILE_INSERT_THREADS = 5;
+	static final int SPLITFILE_INSERT_THREADS = 10;
 	static final int SPLITFILE_INSERT_RETRIES = 3;
 	
 	

@@ -207,7 +207,6 @@ public final class InsertSender implements Runnable {
             
             if(msg.getSpec() == DMT.FNPRouteNotFound) {
                 Logger.minor(this, "Rejected: RNF");
-                // Still gets the data - but not yet
                 short newHtl = msg.getShort(DMT.HTL);
                 if(htl > newHtl) htl = newHtl;
                 continue;
