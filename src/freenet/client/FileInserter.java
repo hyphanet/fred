@@ -45,7 +45,8 @@ public class FileInserter {
 
 		Compressor bestCodec = null;
 		Bucket bestCompressedData = null;
-		
+
+		long origSize = data.size();
 		if(data.size() > NodeCHK.BLOCK_SIZE && (!ctx.dontCompress)) {
 			// Try to compress the data.
 			// Try each algorithm, starting with the fastest and weakest.
@@ -86,9 +87,11 @@ public class FileInserter {
 			}
 			try {
 				if(bestCodec == null) {
-					chk = ClientCHKBlock.encode(array, metadata, true, (short)-1);
+					chk = ClientCHKBlock.encode(array, metadata, true, (short)-1, 0);
 				} else {
-					chk = ClientCHKBlock.encode(array, metadata, false, bestCodec.codecNumberForMetadata());
+					if(origSize > ClientCHKBlock.MAX_LENGTH_BEFORE_COMPRESSION)
+						throw new IllegalArgumentException("Data too big to compress into single block, but it does");
+					chk = ClientCHKBlock.encode(array, metadata, false, bestCodec.codecNumberForMetadata(), (int)origSize);
 				}
 			} catch (CHKEncodeException e) {
 				Logger.error(this, "Unexpected error: "+e, e);

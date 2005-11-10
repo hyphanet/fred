@@ -220,7 +220,7 @@ public class TextModeClientInterface implements Runnable {
             File f = new File(line);
             System.out.println("Attempting to read file "+line);
             try {
-            	if(!f.exists() && f.canRead()) {
+            	if(!(f.exists() && f.canRead())) {
             		throw new FileNotFoundException();
             	}
             	FileBucket fb = new FileBucket(f, true, false, false);

@@ -168,7 +168,7 @@ public class RealNodeRequestInsertTest {
                 Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\" to "+node1);
                 byte[] data = dataString.getBytes();
                 ClientCHKBlock block;
-                block = ClientCHKBlock.encode(data, false, false, (short)-1);
+                block = ClientCHKBlock.encode(data, false, false, (short)-1, 0);
                 ClientCHK chk = block.getClientKey();
                 byte[] encData = block.getData();
                 byte[] encHeaders = block.getHeader();

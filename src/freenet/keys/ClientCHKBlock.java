@@ -60,7 +60,7 @@ public class ClientCHKBlock extends CHKBlock {
      * data is already compressed, and this is the algorithm.
      */
 
-    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec) throws CHKEncodeException {
+    static public ClientCHKBlock encode(byte[] sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, int sourceLength) throws CHKEncodeException {
         byte[] data;
         byte[] header;
         ClientCHK key;
@@ -93,6 +93,7 @@ public class ClientCHKBlock extends CHKBlock {
 						if (compressedData.size() <= MAX_COMPRESSED_DATA_LENGTH) {
 							compressionAlgorithm = comp
 									.codecNumberForMetadata();
+							sourceLength = sourceData.length;
 							try {
 								cbuf = BucketTools.toByteArray(compressedData);
 								// FIXME provide a method in ArrayBucket
@@ -107,7 +108,6 @@ public class ClientCHKBlock extends CHKBlock {
         	}
         	if(cbuf != null) {
     			// Use it
-                int sourceLength = sourceData.length;
     			int compressedLength = cbuf.length;
                 sourceData = new byte[compressedLength+3];
                 System.arraycopy(cbuf, 0, sourceData, 3, compressedLength);
