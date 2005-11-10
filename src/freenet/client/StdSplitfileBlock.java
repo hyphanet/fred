@@ -12,6 +12,7 @@ public abstract class StdSplitfileBlock extends SplitfileBlock implements Runnab
 	protected Bucket data;
 
 	public StdSplitfileBlock(RetryTracker tracker2, int index2) {
+		if(tracker2 == null) throw new NullPointerException();
 		this.tracker = tracker2;
 		this.index = index2;
 	}

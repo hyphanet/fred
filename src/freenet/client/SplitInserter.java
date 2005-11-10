@@ -29,6 +29,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	InsertSegment[] segments;
 	final Vector unstartedSegments = new Vector();
 	private boolean allSegmentsFinished = false;
+	private boolean getCHKOnly;
 	private int succeeded;
 	private int failed;
 	private int fatalErrors;
@@ -36,8 +37,9 @@ public class SplitInserter implements RetryTrackerCallback {
 	private SplitfileBlock[] fatalErrorBlocks;
 	private FileInserter inserter;
 	
-	public SplitInserter(Bucket data, ClientMetadata clientMetadata, Compressor compressor, short splitfileAlgorithm, InserterContext ctx, FileInserter inserter, int blockLength) throws InserterException {
+	public SplitInserter(Bucket data, ClientMetadata clientMetadata, Compressor compressor, short splitfileAlgorithm, InserterContext ctx, FileInserter inserter, int blockLength, boolean getCHKOnly) throws InserterException {
 		this.origData = data;
+		this.getCHKOnly = getCHKOnly;
 		this.blockSize = blockLength;
 		this.clientMetadata = clientMetadata;
 		if(compressor == null)
@@ -49,12 +51,12 @@ public class SplitInserter implements RetryTrackerCallback {
 		this.dataLength = data.size();
 		segmentSize = FECCodec.getCodecMaxSegmentDataBlocks(splitfileAlgorithm);
 		checkSegmentSize = FECCodec.getCodecMaxSegmentCheckBlocks(splitfileAlgorithm);
+		tracker = new RetryTracker(ctx.maxInsertBlockRetries, Integer.MAX_VALUE, ctx.random, ctx.maxSplitInsertThreads, true, this);
 		try {
 			splitIntoBlocks();
 		} catch (IOException e) {
-			throw new InserterException(InserterException.BUCKET_ERROR);
+			throw new InserterException(InserterException.BUCKET_ERROR, e);
 		}
-		tracker = new RetryTracker(ctx.maxInsertBlockRetries, 0, ctx.random, ctx.maxSplitInsertThreads, true, this);
 		this.inserter = inserter;
 	}
 
@@ -115,7 +117,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		
 		InsertBlock mblock = new InsertBlock(mbucket, clientMetadata, FreenetURI.EMPTY_CHK_URI);
 		
-		return inserter.run(mblock, true);
+		return inserter.run(mblock, true, getCHKOnly);
 	}
 
 	private FreenetURI[] getCheckURIs() {
@@ -162,7 +164,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		Bucket[] dataBuckets = BucketTools.split(origData, NodeCHK.BLOCK_SIZE, ctx.bf);
 		origDataBlocks = new SplitfileBlock[dataBuckets.length];
 		for(int i=0;i<origDataBlocks.length;i++) {
-			origDataBlocks[i] = new BlockInserter(dataBuckets[i], i, tracker, ctx);
+			origDataBlocks[i] = new BlockInserter(dataBuckets[i], i, tracker, ctx, getCHKOnly);
 		}
 	}
 
@@ -177,7 +179,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		// First split the data up
 		if(dataBlocks < segmentSize || segmentSize == -1) {
 			// Single segment
-			InsertSegment onlySeg = new InsertSegment(splitfileAlgorithm, origDataBlocks, blockSize, ctx.bf);
+			InsertSegment onlySeg = new InsertSegment(splitfileAlgorithm, origDataBlocks, blockSize, ctx.bf, getCHKOnly);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
@@ -187,7 +189,7 @@ public class SplitInserter implements RetryTrackerCallback {
 				System.arraycopy(origDataBlocks, j, seg, 0, i-j);
 				unstartedSegments.add(seg);
 				j = i;
-				segs.add(new InsertSegment(splitfileAlgorithm, seg, blockSize, ctx.bf));
+				segs.add(new InsertSegment(splitfileAlgorithm, seg, blockSize, ctx.bf, getCHKOnly));
 				if(i == dataBlocks) break;
 			}
 		}

@@ -16,13 +16,15 @@ public class InsertSegment {
 	final BucketFactory bf;
 	/** Check blocks. Will be created by encode(...). */
 	final SplitfileBlock[] checkBlocks;
+	final boolean getCHKOnly;
 	
-	public InsertSegment(short splitfileAlgo, SplitfileBlock[] origDataBlocks, int blockLength, BucketFactory bf) {
+	public InsertSegment(short splitfileAlgo, SplitfileBlock[] origDataBlocks, int blockLength, BucketFactory bf, boolean getCHKOnly) {
 		this.origDataBlocks = origDataBlocks;
 		codec = FECCodec.getCodec(splitfileAlgo, origDataBlocks.length);
 		checkBlocks = new SplitfileBlock[codec.countCheckBlocks()];
 		this.blockLength = blockLength;
 		this.bf = bf;
+		this.getCHKOnly = getCHKOnly;
 	}
 
 	/**
@@ -44,7 +46,7 @@ public class InsertSegment {
 	public int encode(int offset, RetryTracker tracker, InserterContext ctx) throws IOException {
 		if(codec == null) return 0; // no FEC
 		for(int i=0;i<checkBlocks.length;i++)
-			checkBlocks[i] = new BlockInserter(null, offset + i, tracker, ctx);
+			checkBlocks[i] = new BlockInserter(null, offset + i, tracker, ctx, getCHKOnly);
 		codec.encode(origDataBlocks, checkBlocks, blockLength, bf);
 		return checkBlocks.length;
 	}

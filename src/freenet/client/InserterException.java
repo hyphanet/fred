@@ -2,6 +2,8 @@ package freenet.client;
 
 import java.io.IOException;
 
+import freenet.support.Logger;
+
 public class InserterException extends Exception {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
@@ -22,6 +24,7 @@ public class InserterException extends Exception {
 
 	public InserterException(int mode, IOException e) {
 		super(getMessage(mode)+": "+e.getMessage());
+		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+e, e);
 		this.mode = mode;
 		errorCodes = null;
 		initCause(e);

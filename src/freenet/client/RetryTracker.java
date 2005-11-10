@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Vector;
 
 import freenet.crypt.RandomSource;
+import freenet.support.Logger;
 
 /**
  * Keeps a list of SplitfileBlocks for each retry level.
@@ -173,7 +174,7 @@ public class RetryTracker {
 	public synchronized void nonfatalError(SplitfileBlock block, int reasonCode) {
 		nonfatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
-		Level l = block.getLevel();
+		Level l = makeLevel(block.getRetryCount());
 		if(l == null) throw new IllegalArgumentException();
 		if(l.tracker != this) throw new IllegalArgumentException("Belongs to wrong tracker");
 		int levelNumber = l.level;
@@ -181,6 +182,7 @@ public class RetryTracker {
 		levelNumber++;
 		if(levelNumber > maxLevel) {
 			failedBlocksTooManyRetries.add(block);
+			Logger.minor(this, "Finished with "+block);
 		} else {
 			Level newLevel = makeLevel(levelNumber);
 			newLevel.add(block);
@@ -196,7 +198,7 @@ public class RetryTracker {
 	public synchronized void fatalError(SplitfileBlock block, int reasonCode) {
 		fatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
-		Level l = block.getLevel();
+		Level l = makeLevel(block.getRetryCount());
 		if(l == null) throw new IllegalArgumentException();
 		if(l.tracker != this) throw new IllegalArgumentException("Belongs to wrong tracker");
 		l.remove(block);
@@ -211,6 +213,8 @@ public class RetryTracker {
 	public synchronized void maybeStart(boolean cantCallFinished) {
 		if((succeededBlocks.size() >= targetSuccesses)
 				|| (runningBlocks.isEmpty() && levels.isEmpty() && finishOnEmpty)) {
+			Logger.minor(this, "Finishing: succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
+					", running: "+runningBlocks.size()+", levels: "+levels.size()+", finishOnEmpty: "+finishOnEmpty);
 			SplitfileBlock[] running = runningBlocks();
 			for(int i=0;i<running.length;i++) {
 				running[i].kill();
@@ -226,6 +230,7 @@ public class RetryTracker {
 		} else {
 			while(runningBlocks.size() < maxThreads) {
 				SplitfileBlock block = getBlock();
+				if(block == null) break;
 				block.start();
 				runningBlocks.add(block);
 			}
@@ -244,6 +249,7 @@ public class RetryTracker {
 	 */
 	public synchronized SplitfileBlock getBlock() {
 		Level l = (Level) levels.get(new Integer(curMinLevel));
+		if(l == null) return null;
 		return l.getBlock();
 	}
 	

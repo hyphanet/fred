@@ -287,7 +287,10 @@ public class Metadata {
 		if(docType == SIMPLE_REDIRECT) {
 			documentType = docType;
 			clientMetadata = cm;
-			setMIMEType(cm.getMIMEType());
+			if(cm != null)
+				setMIMEType(cm.getMIMEType());
+			else
+				setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
 			simpleRedirectKey = uri;
 		} else
 			throw new IllegalArgumentException();
@@ -304,7 +307,10 @@ public class Metadata {
 		splitfileDataKeys = dataURIs;
 		splitfileCheckKeys = checkURIs;
 		clientMetadata = cm;
-		setMIMEType(cm.getMIMEType());
+		if(cm != null)
+			setMIMEType(cm.getMIMEType());
+		else
+			setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
 	}
 
 	/**

@@ -79,10 +79,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return f.run();
 	}
 
-	public FreenetURI insert(InsertBlock insert) throws InserterException {
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
 		InserterContext context = new InserterContext(client, bucketFactory, random, SPLITFILE_INSERT_RETRIES, SPLITFILE_INSERT_THREADS, globalEventProducer);
 		FileInserter i = new FileInserter(context);
-		return i.run(insert, false);
+		return i.run(insert, false, getCHKOnly);
 	}
 
 	public void addGlobalHook(ClientEventListener listener) {

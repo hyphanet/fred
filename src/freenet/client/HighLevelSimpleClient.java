@@ -25,7 +25,7 @@ public interface HighLevelSimpleClient {
 	 * Blocking insert of a URI
 	 * @throws InserterException If there is an error inserting the data
 	 */
-	public FreenetURI insert(InsertBlock insert) throws InserterException;
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException;
 	
 	/**
 	 * Add a ClientEventListener.

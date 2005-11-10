@@ -28,10 +28,11 @@ public class FileInserter {
 	/**
 	 * Do an insert.
 	 * @param block The data to insert.
+	 * @param localOnly 
 	 * @return The URI of the inserted data.
 	 * @throws InserterException 
 	 */
-	public FreenetURI run(InsertBlock block, boolean metadata) throws InserterException {
+	public FreenetURI run(InsertBlock block, boolean metadata, boolean getCHKOnly) throws InserterException {
 		if(!block.desiredURI.toString(false).equals("CHK@"))
 			throw new InserterException(InserterException.INVALID_URI);
 		
@@ -101,11 +102,11 @@ public class FileInserter {
 				Logger.error(this, "Unexpected error: "+e, e);
 				throw new InserterException(InserterException.INTERNAL_ERROR);
 			}
-			return simplePutCHK(chk, block.clientMetadata);
+			return simplePutCHK(chk, block.clientMetadata, getCHKOnly);
 		}
 		
 		// Too big, encode to a splitfile
-		SplitInserter splitInsert = new SplitInserter(data, block.clientMetadata, bestCodec, ctx.splitfileAlgorithm, ctx, this, NodeCHK.BLOCK_SIZE);
+		SplitInserter splitInsert = new SplitInserter(data, block.clientMetadata, bestCodec, ctx.splitfileAlgorithm, ctx, this, NodeCHK.BLOCK_SIZE, getCHKOnly);
 		return splitInsert.run();
 	}
 
@@ -117,10 +118,11 @@ public class FileInserter {
 	 * @return The URI of the resulting CHK.
 	 * @throws InserterException If there was an error inserting the block.
 	 */
-	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata) throws InserterException {
+	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata, boolean getCHKOnly) throws InserterException {
 		try {
 			ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(chk.getClientKey()));
-			ctx.client.putCHK(chk);
+			if(!getCHKOnly)
+				ctx.client.putCHK(chk);
 		} catch (LowLevelPutException e) {
 			translateException(e);
 		}
@@ -131,7 +133,7 @@ public class FileInserter {
 		else {
 			// Do need a redirect for the metadata
 			Metadata metadata = new Metadata(Metadata.SIMPLE_REDIRECT, chk.getClientKey().getURI(), clientMetadata);
-			return putMetadataCHK(metadata);
+			return putMetadataCHK(metadata, getCHKOnly);
 		}
 	}
 
@@ -152,7 +154,7 @@ public class FileInserter {
 	/** Put a metadata CHK 
 	 * @throws InserterException If the insert fails.
 	 */
-	private FreenetURI putMetadataCHK(Metadata metadata) throws InserterException {
+	private FreenetURI putMetadataCHK(Metadata metadata, boolean getCHKOnly) throws InserterException {
 		byte[] data = metadata.writeToByteArray();
 		Bucket bucket;
 		try {
@@ -161,6 +163,6 @@ public class FileInserter {
 			throw new InserterException(InserterException.BUCKET_ERROR);
 		}
 		InsertBlock block = new InsertBlock(bucket, null, FreenetURI.EMPTY_CHK_URI);
-		return run(block, true);
+		return run(block, true, getCHKOnly);
 	}
 }

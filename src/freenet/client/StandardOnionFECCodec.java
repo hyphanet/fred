@@ -47,7 +47,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 
-	private static LRUHashtable recentlyUsedCodecs;
+	private static LRUHashtable recentlyUsedCodecs = new LRUHashtable();
 	
 	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
@@ -64,12 +64,14 @@ public class StandardOnionFECCodec extends FECCodec {
 		return codec;
 	}
 
-	private FECCode code;
+	private final FECCode code;
 
-	private int k;
-	private int n;
+	private final int k;
+	private final int n;
 	
 	public StandardOnionFECCodec(int k, int n) {
+		this.k = k;
+		this.n = n;
 		code = DefaultFECCodeFactory.getDefault().createFECCode(k,n);
 	}
 

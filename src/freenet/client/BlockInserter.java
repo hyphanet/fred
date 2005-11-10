@@ -14,19 +14,21 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 	private final InserterContext ctx;
 	private final InsertBlock block;
 	private FreenetURI uri;
+	private final boolean getCHKOnly;
 	
 	/**
 	 * Create a BlockInserter.
 	 * @param bucket The data to insert, or null if it will be filled in later.
 	 * @param num The block number in the splitfile.
 	 */
-	public BlockInserter(Bucket bucket, int num, RetryTracker tracker, InserterContext ctx) {
+	public BlockInserter(Bucket bucket, int num, RetryTracker tracker, InserterContext ctx, boolean getCHKOnly) {
 		super(tracker, num);
 		this.data = bucket;
 		if(bucket == null) throw new NullPointerException();
 		succeeded = false;
 		this.ctx = ctx;
 		block = new InsertBlock(bucket, null, FreenetURI.EMPTY_CHK_URI);
+		this.getCHKOnly = getCHKOnly;
 	}
 
 	public synchronized void setData(Bucket data) {
@@ -38,6 +40,10 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 		// Do nothing, for now.
 	}
 
+	public String toString() {
+		return super.toString()+" succeeded="+succeeded+" tries="+completedTries+" uri="+uri;
+	}
+	
 	public FreenetURI getURI() {
 		return uri;
 	}
@@ -55,7 +61,9 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 	private void realRun() {
 		FileInserter inserter = new FileInserter(ctx);
 		try {
-			uri = inserter.run(block, false);
+			if(uri == null && !getCHKOnly)
+				uri = inserter.run(block, false, true);
+			uri = inserter.run(block, false, getCHKOnly);
 			succeeded = true;
 			tracker.success(this);
 		} catch (InserterException e) {
@@ -63,6 +71,7 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 			case InserterException.REJECTED_OVERLOAD:
 			case InserterException.ROUTE_NOT_FOUND:
 				nonfatalError(e, e.mode);
+				return;
 			case InserterException.INTERNAL_ERROR:
 			case InserterException.BUCKET_ERROR:
 				fatalError(e, e.mode);
@@ -89,7 +98,6 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 
 	private void fatalError(Throwable e, int code) {
 		Logger.normal(this, "Giving up on block: "+this+": "+e);
-		completedTries = -1;
 		tracker.fatalError(this, code);
 	}
 
@@ -101,5 +109,9 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 	protected void checkStartable() {
 		if(succeeded)
 			throw new IllegalStateException("Already inserted block");
+	}
+
+	public int getRetryCount() {
+		return completedTries;
 	}
 }

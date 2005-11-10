@@ -19,16 +19,6 @@ public abstract class SplitfileBlock {
 	/** Set data */
 	abstract void setData(Bucket data);
 
-	private Level level;
-	
-	final Level getLevel() {
-		return level;
-	}
-	
-	final void setLevel(Level l) {
-		level = l;
-	}
-
 	/** Start the fetch (or insert). Implementation is required to call relevant
 	 * methods on RetryTracker when done. */
 	abstract void start();
@@ -43,4 +33,6 @@ public abstract class SplitfileBlock {
 	 * For a request, it is fixed in the constructor.
 	 */
 	abstract public FreenetURI getURI();
+
+	abstract public int getRetryCount();
 }

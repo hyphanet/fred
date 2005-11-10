@@ -89,7 +89,6 @@ public class BlockFetcher extends StdSplitfileBlock implements Runnable {
 
 	private void fatalError(Throwable e, int code) {
 		Logger.normal(this, "Giving up on block: "+this+": "+e);
-		completedTries = -1;
 		tracker.fatalError(this, code);
 	}
 
@@ -129,5 +128,9 @@ public class BlockFetcher extends StdSplitfileBlock implements Runnable {
 		if(fetchedData != null) {
 			throw new IllegalStateException("Already have data");
 		}
+	}
+
+	public int getRetryCount() {
+		return completedTries;
 	}
 }

@@ -63,14 +63,17 @@ public class TextModeClientInterface implements Runnable {
         System.out.println();
         System.out.println("Build "+Version.buildNumber);
         System.out.println("Enter one of the following commands:");
-        System.out.println("GET:<Freenet key> - fetch a key");
-        System.out.println("PUT:\n<text, until a . on a line by itself> - We will insert the document and return the key.");
-        System.out.println("PUT:<text> - put a single line of text to a CHK and return the key.");
-        System.out.println("PUTFILE:<filename> - put a file from disk.");
-        System.out.println("GETFILE:<filename> - fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
-        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
-        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
-        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
+        System.out.println("GET:<Freenet key> - Fetch a key");
+        System.out.println("PUT:\n<text, until a . on a line by itself> - Insert the document and return the key.");
+        System.out.println("PUT:<text> - Put a single line of text to a CHK and return the key.");
+        System.out.println("GETCHK:\n<text, until a . on a line by itself> - Get the key that would be returned if the document was inserted.");
+        System.out.println("GETCHK:<text> - Get the key that would be returned if the line was inserted.");
+        System.out.println("PUTFILE:<filename> - Put a file from disk.");
+        System.out.println("GETFILE:<filename> - Fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
+        System.out.println("GETCHKFILE:<filename> - Get the key that would be returned if we inserted the file.");
+//        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
+//        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
+//        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
         System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
         System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
         System.out.println("NAME:<new node name> - change the node's name.");
@@ -103,6 +106,7 @@ public class TextModeClientInterface implements Runnable {
             System.err.println("Bye... ("+e+")");
             return;
         }
+        boolean getCHKOnly = false;
         if(line == null) line = "QUIT";
         String uline = line.toUpperCase();
         Logger.minor(this, "Command: "+line);
@@ -181,7 +185,7 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("QUIT")) {
             System.out.println("Goodbye.");
             System.exit(0);
-        } else if(uline.startsWith("PUT:")) {
+        } else if(uline.startsWith("PUT:") || (getCHKOnly = uline.startsWith("GETCHK:"))) {
             // Just insert to local store
             line = line.substring("PUT:".length());
             while(line.length() > 0 && line.charAt(0) == ' ')
@@ -203,14 +207,14 @@ public class TextModeClientInterface implements Runnable {
 
             FreenetURI uri;
             try {
-            	uri = client.insert(block);
+            	uri = client.insert(block, getCHKOnly);
             } catch (InserterException e) {
             	System.out.println("Error: "+e.getMessage());
             	return;
             }
             
             System.out.println("URI: "+uri);
-        } else if(uline.startsWith("PUTFILE:")) {
+        } else if(uline.startsWith("PUTFILE:") || (getCHKOnly = uline.startsWith("GETCHKFILE:"))) {
             // Just insert to local store
             line = line.substring("PUTFILE:".length());
             while(line.length() > 0 && line.charAt(0) == ' ')
@@ -226,7 +230,7 @@ public class TextModeClientInterface implements Runnable {
             	FileBucket fb = new FileBucket(f, true, false, false);
             	InsertBlock block = new InsertBlock(fb, null, FreenetURI.EMPTY_CHK_URI);
             	
-            	FreenetURI uri = client.insert(block);
+            	FreenetURI uri = client.insert(block, getCHKOnly);
             	
             	// FIXME depends on CHK's still being renamable
                 uri = uri.setDocName(f.getName());

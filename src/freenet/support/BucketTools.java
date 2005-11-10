@@ -384,11 +384,11 @@ public class BucketTools {
 	 */
 	public static Bucket[] split(Bucket origData, int splitSize, BucketFactory bf) throws IOException {
 		long length = origData.size();
-		if(length > Integer.MAX_VALUE * splitSize)
-			throw new IllegalArgumentException("Way too big!");
+		if(length > ((long)Integer.MAX_VALUE) * splitSize)
+			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
 		int bucketCount = (int) (length / splitSize);
-		Bucket[] buckets = new Bucket[bucketCount];
 		if(length % splitSize > 0) bucketCount++;
+		Bucket[] buckets = new Bucket[bucketCount];
 		InputStream is = origData.getInputStream();
 		DataInputStream dis = new DataInputStream(is);
 		long remainingLength = length;
@@ -396,7 +396,9 @@ public class BucketTools {
 		for(int i=0;i<bucketCount;i++) {
 			int len = (int) Math.min(splitSize, remainingLength);
 			Bucket bucket = bf.makeBucket(len);
+			buckets[i] = bucket;
 			dis.readFully(buf, 0, len);
+			remainingLength -= len;
 			OutputStream os = bucket.getOutputStream();
 			os.write(buf, 0, len);
 			os.close();

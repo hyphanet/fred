@@ -31,8 +31,12 @@ class DefaultMIMETypes {
 	 * parameters and there is a separate mechanism for them.
 	 */
 	protected static synchronized void addMIMEType(short number, String type) {
-		String s = (String) mimeTypesByNumber.get(number);
-		if(s != null) throw new IllegalArgumentException("Already used: "+number);
+		if(mimeTypesByNumber.size() > number) {
+			String s = (String) mimeTypesByNumber.get(number);
+			if(s != null) throw new IllegalArgumentException("Already used: "+number);
+		} else {
+			mimeTypesByNumber.add(number, null);
+		}
 		mimeTypesByNumber.set(number, type);
 		mimeTypesByName.put(type, new Short(number));
 	}
@@ -48,7 +52,7 @@ class DefaultMIMETypes {
 	 */
 	protected static synchronized void addMIMEType(short number, String type, String[] extensions) {
 		addMIMEType(number, type);
-		Short t = new Short(type);
+		Short t = new Short(number);
 		if(extensions != null)
 			for(int i=0;i<extensions.length;i++) {
 				String ext = extensions[i].toLowerCase();
