@@ -93,6 +93,7 @@ class Fetcher {
 	 */
 	FetchResult realRun(ClientMetadata dm, int recursionLevel, FreenetURI uri, boolean dontEnterImplicitArchives) 
 	throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+		Logger.minor(this, "Running fetch for: "+uri);
 		ClientKey key;
 		try {
 			key = ClientKey.getBaseKey(uri);
@@ -103,7 +104,7 @@ class Fetcher {
 		
 		recursionLevel++;
 		if(recursionLevel > ctx.maxRecursionLevel)
-			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
+			throw new FetchException(FetchException.TOO_MUCH_RECURSION, ""+recursionLevel+" should be < "+ctx.maxRecursionLevel);
 		
 		// Do the fetch
 		KeyBlock block;
@@ -142,7 +143,7 @@ class Fetcher {
 			throw new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage());
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
-			throw new FetchException(FetchException.BUCKET_ERROR);
+			throw new FetchException(FetchException.BUCKET_ERROR, e);
 		}
 		
 		ctx.eventProducer.produceEvent(new DecodedBlockEvent(key));
@@ -160,7 +161,7 @@ class Fetcher {
 		try {
 			metadata = Metadata.construct(BucketTools.toByteArray(data));
 		} catch (IOException e) {
-			throw new FetchException(FetchException.BUCKET_ERROR);
+			throw new FetchException(FetchException.BUCKET_ERROR, e);
 		}
 		
 		ctx.eventProducer.produceEvent(new FetchedMetadataEvent());
@@ -297,7 +298,7 @@ class Fetcher {
 				try {
 					metadata = Metadata.construct(metadataBucket);
 				} catch (IOException e) {
-					throw new FetchException(FetchException.BUCKET_ERROR);
+					throw new FetchException(FetchException.BUCKET_ERROR, e);
 				}
 				return runMetadata(dm, recursionLevel+1, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives);
 			}
@@ -308,7 +309,7 @@ class Fetcher {
 			else
 				newCtx = new FetcherContext(ctx, FetcherContext.SPLITFILE_DEFAULT_MASK);
 			
-			SplitFetcher sf = new SplitFetcher(metadata, archiveContext, newCtx);
+			SplitFetcher sf = new SplitFetcher(metadata, archiveContext, newCtx, recursionLevel);
 			Bucket sfResult = sf.fetch(); // will throw in event of error
 			if(metadata.compressed) {
 				Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.compressionCodec);

@@ -11,6 +11,7 @@ import com.onionnetworks.util.Buffer;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.LRUHashtable;
+import freenet.support.Logger;
 
 /**
  * FECCodec implementation using the onion code.
@@ -100,6 +101,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	}
 	
 	public void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		Logger.minor(this, "Doing decode: "+dataBlockStatus.length+" data blocks, "+checkBlockStatus.length+" check blocks, block length "+blockLength+" with "+this);
 		if(dataBlockStatus.length + checkBlockStatus.length != n)
 			throw new IllegalArgumentException();
 		if(dataBlockStatus.length != k)
@@ -167,7 +169,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				}
 			}
 		}
-		for(int i=0;i<k;i++) {
+		for(int i=0;i<n;i++) {
 			if(writers[i] != null) writers[i].close();
 			if(readers[i] != null) readers[i].close();
 		}
@@ -205,6 +207,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	 * Do the actual encode.
 	 */
 	private void realEncode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		Logger.minor(this, "Doing encode: "+dataBlockStatus.length+" data blocks, "+checkBlockStatus.length+" check blocks, block length "+blockLength+" with "+this);
 		if(dataBlockStatus.length + checkBlockStatus.length != n)
 			throw new IllegalArgumentException();
 		if(dataBlockStatus.length != k)
@@ -259,10 +262,10 @@ public class StandardOnionFECCodec extends FECCodec {
 				}
 			}
 		}
-		for(int i=0;i<n;i++) {
-			if(writers[i] != null) writers[i].close();
+		for(int i=0;i<k;i++)
 			if(readers[i] != null) readers[i].close();
-		}
+		for(int i=0;i<n-k;i++)
+			if(writers[i] != null) writers[i].close();
 		// Set new buckets only after have a successful decode.
 		for(int i=0;i<checkBlockStatus.length;i++) {
 			checkBlockStatus[i].setData(buckets[i+k]);

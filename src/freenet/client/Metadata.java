@@ -572,6 +572,7 @@ public class Metadata {
 			if(fullKeys) flags |= FLAGS_FULL_KEYS;
 			if(splitUseLengths) flags |= FLAGS_SPLIT_USE_LENGTHS;
 			if(compressed) flags |= FLAGS_COMPRESSED;
+			dos.writeShort(flags);
 		}
 		
 		if(documentType == ZIP_MANIFEST) {

@@ -55,7 +55,7 @@ public class SplitFetcher {
 	/** Accept non-full splitfile chunks? */
 	private boolean splitUseLengths;
 	
-	public SplitFetcher(Metadata metadata, ArchiveContext archiveContext, FetcherContext ctx) throws MetadataParseException {
+	public SplitFetcher(Metadata metadata, ArchiveContext archiveContext, FetcherContext ctx, int recursionLevel) throws MetadataParseException {
 		actx = archiveContext;
 		fctx = ctx;
 		overrideLength = metadata.dataLength;
@@ -80,7 +80,7 @@ public class SplitFetcher {
 		} else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
 		segments = new Segment[segmentCount]; // initially null on all entries
 		if(segmentCount == 1) {
-			segments[0] = new Segment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths, blockLength);
+			segments[0] = new Segment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths, recursionLevel+1);
 		} else {
 			int dataBlocksPtr = 0;
 			int checkBlocksPtr = 0;
@@ -149,6 +149,7 @@ public class SplitFetcher {
 
 	private Segment chooseUnstartedSegment() {
 		synchronized(unstartedSegments) {
+			if(unstartedSegments.isEmpty()) return null;
 			int x = fctx.random.nextInt(unstartedSegments.size());
 			Segment s = (Segment) unstartedSegments.get(x);
 			unstartedSegments.remove(x);
@@ -184,6 +185,7 @@ public class SplitFetcher {
 				long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 				bytesWritten += s.writeDecodedDataTo(os, max);
 			}
+			os.close();
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, e);
 		} finally {
@@ -206,6 +208,10 @@ public class SplitFetcher {
 
 	public void segmentFinished(Segment segment) {
 		synchronized(this) {
+			boolean allDone = true;
+			for(int i=0;i<segments.length;i++)
+				if(!segments[i].isFinished()) allDone = false;
+			if(allDone) allSegmentsFinished = true;
 			notifyAll();
 		}
 	}

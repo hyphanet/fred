@@ -35,6 +35,7 @@ public abstract class StdSplitfileBlock extends SplitfileBlock implements Runnab
 
 	public void start() {
 		checkStartable();
+		Logger.minor(this, "Starting "+this);
 		try {
 			Thread t = new Thread(this);
 			t.setDaemon(true);

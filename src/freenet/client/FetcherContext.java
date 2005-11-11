@@ -68,7 +68,7 @@ public class FetcherContext implements Cloneable {
 			this.maxTempLength = ctx.maxTempLength;
 			this.archiveManager = ctx.archiveManager;
 			this.bucketFactory = ctx.bucketFactory;
-			this.maxRecursionLevel = 0;
+			this.maxRecursionLevel = 1;
 			this.maxArchiveRestarts = 0;
 			this.dontEnterImplicitArchives = true;
 			this.random = ctx.random;

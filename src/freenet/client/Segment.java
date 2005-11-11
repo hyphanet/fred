@@ -34,8 +34,6 @@ public class Segment implements RetryTrackerCallback {
 	private boolean started;
 	/** Has the segment finished processing? Irreversible. */
 	private boolean finished;
-	/** Error code, or -1 */
-	private short fetchError;
 	/** Bucket to store the data retrieved, after it has been decoded */
 	private Bucket decodedData;
 	/** Recently completed fetches */
@@ -57,7 +55,7 @@ public class Segment implements RetryTrackerCallback {
 	 * @param splitfileCheckBlocks The check blocks to fetch.
 	 */
 	public Segment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks,
-			SplitFetcher fetcher, ArchiveContext actx, FetcherContext fctx, long maxTempLength, boolean useLengths, int recursionLevel) throws MetadataParseException {
+			SplitFetcher fetcher, ArchiveContext actx, FetcherContext fctx, long maxTempLength, boolean useLengths, int recLevel) throws MetadataParseException {
 		this.splitfileType = splitfileType;
 		dataBlocks = splitfileDataBlocks;
 		checkBlocks = splitfileCheckBlocks;
@@ -75,7 +73,6 @@ public class Segment implements RetryTrackerCallback {
 		nonFullBlocksAllowed = useLengths;
 		started = false;
 		finished = false;
-		fetchError = -1;
 		decodedData = null;
 		dataBlockStatus = new BlockFetcher[dataBlocks.length];
 		checkBlockStatus = new BlockFetcher[checkBlocks.length];
@@ -92,9 +89,14 @@ public class Segment implements RetryTrackerCallback {
 		}
 		recentlyCompletedFetches = new LinkedList();
 		runningFetches = new LinkedList();
-		this.recursionLevel = recursionLevel;
 		// FIXME be a bit more flexible here depending on flags
-		blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK);
+		if(useLengths) {
+			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_USE_LENGTHS_MASK);
+			this.recursionLevel = recLevel;
+		} else {
+			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK);
+			this.recursionLevel = 0;
+		}
 	}
 
 	/**
@@ -108,8 +110,8 @@ public class Segment implements RetryTrackerCallback {
 	 * If there was an error, throw it now.
 	 */
 	public void throwError() throws FetchException {
-		if(fetchError != -1)
-			throw new FetchException(fetchError);
+		if(failureException != null)
+			throw failureException;
 	}
 
 	/**
@@ -173,7 +175,7 @@ public class Segment implements RetryTrackerCallback {
 	 */
 	public void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors) {
 		
-		if(succeeded.length > minFetched)
+		if(succeeded.length >= minFetched)
 			// Not finished yet, need to decode
 			successfulFetch();
 		else {
@@ -199,13 +201,12 @@ public class Segment implements RetryTrackerCallback {
 				// Now have all the data blocks (not necessarily all the check blocks)
 			}
 			
-			Bucket output = fetcherContext.bucketFactory.makeBucket(-1);
-			OutputStream os = output.getOutputStream();
+			decodedData = fetcherContext.bucketFactory.makeBucket(-1);
+			OutputStream os = decodedData.getOutputStream();
 			for(int i=0;i<dataBlockStatus.length;i++) {
 				BlockFetcher status = dataBlockStatus[i];
 				Bucket data = status.fetchedData;
 				BucketTools.copyTo(data, os, Long.MAX_VALUE);
-				fetcherContext.bucketFactory.freeBucket(data);
 			}
 			os.close();
 			// Must set finished BEFORE calling parentFetcher.

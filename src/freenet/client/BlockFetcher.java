@@ -7,7 +7,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Logger;
 
-public class BlockFetcher extends StdSplitfileBlock implements Runnable {
+public class BlockFetcher extends StdSplitfileBlock {
 
 	private final Segment segment;
 	final FreenetURI uri;
@@ -26,6 +26,7 @@ public class BlockFetcher extends StdSplitfileBlock implements Runnable {
 	}
 
 	public void run() {
+		Logger.minor(this, "Running: "+this);
 		// Already added to runningFetches.
 		// But need to make sure we are removed when we exit.
 		try {
@@ -35,11 +36,15 @@ public class BlockFetcher extends StdSplitfileBlock implements Runnable {
 		}
 	}
 
+	public String toString() {
+		return super.toString()+" tries="+completedTries+" uri="+uri;
+	}
+	
 	private void realRun() {
 		// Do the fetch
 		Fetcher f = new Fetcher(uri, this.segment.blockFetchContext);
 		try {
-			FetchResult fr = f.realRun(new ClientMetadata(), this.segment.recursionLevel, uri, 
+			FetchResult fr = f.realRun(new ClientMetadata(), segment.recursionLevel, uri, 
 					(!this.segment.nonFullBlocksAllowed) || dontEnterImplicitArchives);
 			actuallyFetched = true;
 			fetchedData = fr.data;

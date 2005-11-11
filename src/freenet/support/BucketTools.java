@@ -316,6 +316,7 @@ public class BucketTools {
 		Bucket bucket = bucketFactory.makeBucket(data.length);
 		OutputStream os = bucket.getOutputStream();
 		os.write(data);
+		os.close();
 		bucket.setReadOnly();
 		return bucket;
 	}

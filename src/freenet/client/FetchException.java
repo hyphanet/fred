@@ -2,6 +2,8 @@ package freenet.client;
 
 import java.io.IOException;
 
+import freenet.support.Logger;
+
 /**
  * Generic exception thrown by a Fetcher. All other exceptions are converted to one of
  * these to tell the client.
@@ -20,29 +22,34 @@ public class FetchException extends Exception {
 	public FetchException(int m) {
 		super(getMessage(m));
 		mode = m;
+		Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
 	}
 
 	public FetchException(MetadataParseException e) {
 		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		mode = INVALID_METADATA;
 		initCause(e);
+		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
 
 	public FetchException(ArchiveFailureException e) {
 		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		mode = ARCHIVE_FAILURE;
 		initCause(e);
+		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
 
 	public FetchException(int mode, IOException e) {
 		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		this.mode = mode;
 		initCause(e);
+		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e.getMessage(),e);
 	}
 
 	public FetchException(int mode, String msg) {
 		super(getMessage(mode)+": "+msg);
 		this.mode = mode;
+		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
 	}
 
 	private static String getMessage(int mode) {
@@ -66,7 +73,7 @@ public class FetchException extends Exception {
 		case TOO_MANY_ARCHIVE_RESTARTS:
 			return "Request was restarted too many times due to archives changing";
 		case TOO_MUCH_RECURSION:
-			return "Too many redirects"; // FIXME: ???
+			return "Too many redirects (too much recursion)"; // FIXME: ???
 		case NOT_IN_ARCHIVE:
 			return "File not in archive";
 		case HAS_MORE_METASTRINGS:
