@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Vector;
 
 import freenet.crypt.RandomSource;
@@ -67,6 +68,7 @@ public class RetryTracker {
 	 * even if there are threads running and blocks queued. */
 	final int targetSuccesses;
 	final boolean killOnFatalError;
+	private boolean killed;
 	private boolean finishOnEmpty;
 	private final RetryTrackerCallback callback;
 
@@ -159,6 +161,7 @@ public class RetryTracker {
 	 * Add a block at retry level zero.
 	 */
 	public synchronized void addBlock(SplitfileBlock block) {
+		if(killed) return;
 		Level l = makeLevel(0);
 		l.add(block);
 		maybeStart(true);
@@ -170,6 +173,7 @@ public class RetryTracker {
 	 * we have run out of retries.
 	 */
 	public synchronized void nonfatalError(SplitfileBlock block, int reasonCode) {
+		if(killed) return;
 		nonfatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
 		int levelNumber = block.getRetryCount();
@@ -190,6 +194,7 @@ public class RetryTracker {
 	 * @param reasonCode A client-specific code indicating the type of failure.
 	 */
 	public synchronized void fatalError(SplitfileBlock block, int reasonCode) {
+		if(killed) return;
 		fatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
 		failedBlocksFatalErrors.add(block);
@@ -201,6 +206,7 @@ public class RetryTracker {
 	 * Otherwise if we are finished, call the callback's finish method.
 	 */
 	public synchronized void maybeStart(boolean cantCallFinished) {
+		if(killed) return;
 		Logger.minor(this, "succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
 				", running: "+runningBlocks.size()+", levels: "+levels.size()+", finishOnEmpty: "+finishOnEmpty);
 		if(runningBlocks.size() == 1)
@@ -232,6 +238,7 @@ public class RetryTracker {
 	}
 
 	public synchronized void success(SplitfileBlock block) {
+		if(killed) return;
 		runningBlocks.remove(block);
 		succeededBlocks.add(block);
 		maybeStart(false);
@@ -242,6 +249,7 @@ public class RetryTracker {
 	 * lowest priority currently available. Move it into the running list.
 	 */
 	public synchronized SplitfileBlock getBlock() {
+		if(killed) return null;
 		Level l = (Level) levels.get(new Integer(curMinLevel));
 		if(l == null) {
 			if(!levels.isEmpty()) {
@@ -324,5 +332,15 @@ public class RetryTracker {
 	
 	public FailureCodeTracker getAccumulatedNonFatalErrorCodes() {
 		return nonfatalErrors;
+	}
+
+	public synchronized void kill() {
+		killed = true;
+		levels.clear();
+		for(Iterator i=runningBlocks.iterator();i.hasNext();) {
+			SplitfileBlock sb = (SplitfileBlock) i.next();
+			sb.kill();
+		}
+		runningBlocks.clear();
 	}
 }

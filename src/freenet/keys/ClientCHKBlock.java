@@ -156,16 +156,7 @@ public class ClientCHKBlock extends CHKBlock {
             if(finalData.length != 0)
             	md256.update(finalData);
             byte[] digest = md256.digest();
-            // Turn digest into a seed array for the MT
-            int[] seed = new int[8]; // 32/4=8
-            for(int i=0;i<8;i++) {
-                int x = digest[i*4] & 0xff;
-                x = (x << 8) + (digest[i*4+1] & 0xff);
-                x = (x << 8) + (digest[i*4+2] & 0xff);
-                x = (x << 8) + (digest[i*4+3] & 0xff);
-                seed[i] = x;
-            }
-            MersenneTwister mt = new MersenneTwister(seed);
+            MersenneTwister mt = new MersenneTwister(digest);
             data = new byte[32768];
             System.arraycopy(finalData, 0, data, 0, finalData.length);
             byte[] randomBytes = new byte[32768-finalData.length];

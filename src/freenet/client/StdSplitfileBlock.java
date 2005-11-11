@@ -9,12 +9,12 @@ public abstract class StdSplitfileBlock extends SplitfileBlock implements Runnab
 	protected final RetryTracker tracker;
 	/** Splitfile index - [0,k[ is the data blocks, [k,n[ is the check blocks */
 	protected final int index;
-	protected Bucket data;
 
-	public StdSplitfileBlock(RetryTracker tracker2, int index2) {
+	public StdSplitfileBlock(RetryTracker tracker2, int index2, Bucket data) {
 		if(tracker2 == null) throw new NullPointerException();
 		this.tracker = tracker2;
 		this.index = index2;
+		this.fetchedData = data;
 	}
 
 	public int getNumber() {

@@ -23,9 +23,7 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 	 * @param num The block number in the splitfile.
 	 */
 	public BlockInserter(Bucket bucket, int num, RetryTracker tracker, InserterContext ctx, boolean getCHKOnly) {
-		super(tracker, num);
-		this.data = bucket;
-		if(bucket == null) throw new NullPointerException();
+		super(tracker, num, bucket);
 		succeeded = false;
 		this.ctx = ctx;
 		block = new InsertBlock(bucket, null, FreenetURI.EMPTY_CHK_URI);
@@ -33,8 +31,7 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 	}
 
 	public synchronized void setData(Bucket data) {
-		if(this.data != null) throw new IllegalArgumentException("Cannot set data when already have data");
-		this.data = data;
+		if(this.fetchedData != null) throw new IllegalArgumentException("Cannot set data when already have data");
 	}
 
 	public void kill() {

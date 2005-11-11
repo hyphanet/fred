@@ -20,10 +20,10 @@ public abstract class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	public static final int buildNumber = 161;
+	public static final int buildNumber = 162;
 
 	/** Oldest build of Fred we will talk to */
-	public static final int lastGoodBuild = 159;
+	public static final int lastGoodBuild = 162;
 
 	/** The highest reported build of fred */
 	public static int highestSeenBuild = buildNumber;

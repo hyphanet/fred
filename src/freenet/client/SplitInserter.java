@@ -7,6 +7,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.NodeCHK;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.Logger;
 import freenet.support.compress.Compressor;
 
 /**
@@ -27,7 +28,6 @@ public class SplitInserter implements RetryTrackerCallback {
 	SplitfileBlock[] origDataBlocks;
 	InsertSegment encodingSegment;
 	InsertSegment[] segments;
-	final Vector unstartedSegments = new Vector();
 	private boolean finishedInserting = false;
 	private boolean getCHKOnly;
 	private int succeeded;
@@ -66,18 +66,25 @@ public class SplitInserter implements RetryTrackerCallback {
 	 * @throws InserterException If we are not able to insert the splitfile.
 	 */
 	public FreenetURI run() throws InserterException {
-		startInsertingDataBlocks();
-		splitIntoSegments(segmentSize);
-		// Backwards, because the last is the shortest
 		try {
-			for(int i=segments.length-1;i>=0;i--) {
-				countCheckBlocks += encodeSegment(i, origDataBlocks.length + checkSegmentSize * i);
+			startInsertingDataBlocks();
+			splitIntoSegments(segmentSize);
+			// Backwards, because the last is the shortest
+			try {
+				for(int i=segments.length-1;i>=0;i--) {
+					countCheckBlocks += encodeSegment(i, origDataBlocks.length + checkSegmentSize * i);
+					Logger.minor(this, "Encoded segment "+i+" of "+segments.length);
+				}
+			} catch (IOException e) {
+				throw new InserterException(InserterException.BUCKET_ERROR, e);
 			}
-		} catch (IOException e) {
-			throw new InserterException(InserterException.BUCKET_ERROR);
+			// Wait for the insertion thread to finish
+			return waitForCompletion();
+		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			tracker.kill();
+			throw new InserterException(InserterException.INTERNAL_ERROR, t.toString());
 		}
-		// Wait for the insertion thread to finish
-		return waitForCompletion();
 	}
 
 	private FreenetURI waitForCompletion() throws InserterException {
@@ -190,6 +197,8 @@ public class SplitInserter implements RetryTrackerCallback {
 		origDataBlocks = new SplitfileBlock[dataBuckets.length];
 		for(int i=0;i<origDataBlocks.length;i++) {
 			origDataBlocks[i] = new BlockInserter(dataBuckets[i], i, tracker, ctx, getCHKOnly);
+			if(origDataBlocks[i].getData() == null)
+				throw new NullPointerException("Block "+i+" of "+dataBuckets.length+" is null");
 		}
 	}
 
@@ -204,21 +213,24 @@ public class SplitInserter implements RetryTrackerCallback {
 		// First split the data up
 		if(dataBlocks < segmentSize || segmentSize == -1) {
 			// Single segment
-			InsertSegment onlySeg = new InsertSegment(splitfileAlgorithm, origDataBlocks, blockSize, ctx.bf, getCHKOnly);
+			InsertSegment onlySeg = new InsertSegment(splitfileAlgorithm, origDataBlocks, blockSize, ctx.bf, getCHKOnly, 0);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
+			int segNo = 0;
 			for(int i=segmentSize;;i+=segmentSize) {
 				if(i > dataBlocks) i = dataBlocks;
 				SplitfileBlock[] seg = new SplitfileBlock[i-j];
 				System.arraycopy(origDataBlocks, j, seg, 0, i-j);
-				unstartedSegments.add(seg);
 				j = i;
-				segs.add(new InsertSegment(splitfileAlgorithm, seg, blockSize, ctx.bf, getCHKOnly));
+				for(int x=0;x<seg.length;x++)
+					if(seg[x].getData() == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
+				segs.add(new InsertSegment(splitfileAlgorithm, seg, blockSize, ctx.bf, getCHKOnly, segNo));
 				if(i == dataBlocks) break;
+				segNo++;
 			}
 		}
-		segments = (InsertSegment[]) unstartedSegments.toArray(new InsertSegment[unstartedSegments.size()]);
+		segments = (InsertSegment[]) segs.toArray(new InsertSegment[segs.size()]);
 	}
 
 	public void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors) {

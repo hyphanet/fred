@@ -253,9 +253,9 @@ public class TextModeClientInterface implements Runnable {
             } catch (FileNotFoundException e1) {
                 System.out.println("File not found");
             } catch (InserterException e) {
-            	System.out.println(e.getMessage());
+            	System.out.println("Finished insert but: "+e.getMessage());
             } catch (Throwable t) {
-                System.out.println("Threw: "+t);
+                System.out.println("Insert threw: "+t);
                 t.printStackTrace();
             }
         } else if(uline.startsWith("STATUS")) {

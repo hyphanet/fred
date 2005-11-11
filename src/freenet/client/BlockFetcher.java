@@ -16,7 +16,7 @@ public class BlockFetcher extends StdSplitfileBlock {
 	boolean actuallyFetched;
 	
 	public BlockFetcher(Segment segment, RetryTracker tracker, FreenetURI freenetURI, int index, boolean dontEnterImplicitArchives) {
-		super(tracker, index);
+		super(tracker, index, null);
 		this.segment = segment;
 		uri = freenetURI;
 		completedTries = 0;

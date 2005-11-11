@@ -488,6 +488,19 @@ public abstract class Fields {
         return x;
     }
 
+    /**
+     * Convert an array of bytes to a single int.
+     */
+	public static int bytesToInt(byte[] buf, int offset) {
+        if(buf.length < 4) throw new IllegalArgumentException();
+        int x = 0;
+        for(int j=3;j>=0;j--) {
+            int y = (buf[j+offset] & 0xff);
+            x = (x << 8) + y;
+        }
+        return x;
+	}
+	
     public static byte[] longToBytes(long x) {
         byte[] buf = new byte[8];
         for(int j=0;j<8;j++) {
@@ -496,4 +509,5 @@ public abstract class Fields {
         }
         return buf;
     }
+
 }

@@ -49,8 +49,7 @@ abstract class FECCodec {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			int checkBlocks = dataBlocks;
-			checkBlocks += (dataBlocks>>1);
+			int checkBlocks = (dataBlocks>>1);
 			if((dataBlocks & 1) == 1) checkBlocks++;
 			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks);
 		}
@@ -61,6 +60,9 @@ abstract class FECCodec {
 	 * Decode all missing *data* blocks.
 	 * Requires that the total number of available blocks is equal to or greater than the length of
 	 * the data blocks array. (i.e. it is > k).
+	 * Note that the last data bucket may be returned padded.
+	 * This is one reason why it is important to set the data length,
+	 * and truncate to it, when using FEC codes.
 	 * @param dataBlockStatus The data blocks.
 	 * @param checkBlockStatus The check blocks.
 	 * @param blockLength The block length in bytes.

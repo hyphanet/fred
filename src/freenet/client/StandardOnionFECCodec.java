@@ -4,12 +4,16 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.spaceroots.mantissa.random.MersenneTwister;
+
 import com.onionnetworks.fec.DefaultFECCodeFactory;
 import com.onionnetworks.fec.FECCode;
+import com.onionnetworks.fec.PureCode;
 import com.onionnetworks.util.Buffer;
 
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
+import freenet.support.BucketTools;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 
@@ -74,11 +78,13 @@ public class StandardOnionFECCodec extends FECCodec {
 		this.k = k;
 		this.n = n;
 		code = DefaultFECCodeFactory.getDefault().createFECCode(k,n);
+		// revert to below if above causes JVM crashes
+		//code = new PureCode(k,n);
 	}
 
 	private static Object runningDecodesSync = new Object();
 	private static int runningDecodes;
-	
+
 	public void decode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		// Ensure that there are only K simultaneous running decodes.
 		synchronized(runningDecodesSync) {
@@ -120,6 +126,14 @@ public class StandardOnionFECCodec extends FECCodec {
 		
 		for(int i=0;i<dataBlockStatus.length;i++) {
 			buckets[i] = dataBlockStatus[i].getData();
+			long sz = buckets[i].size();
+			if(sz < blockLength) {
+				if(i != dataBlockStatus.length-1)
+					throw new IllegalArgumentException("All buckets except the last must be the full size");
+				if(sz < blockLength)
+					buckets[i] = pad(buckets[i], blockLength, bf, (int) sz);
+				else throw new IllegalArgumentException("Too big: "+sz+" bigger than "+blockLength);
+			}
 			if(buckets[i] == null) {
 				buckets[i] = bf.makeBucket(blockLength);
 				writers[i] = buckets[i].getOutputStream();
@@ -174,6 +188,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			if(readers[i] != null) readers[i].close();
 		}
 		// Set new buckets only after have a successful decode.
+		// Note that the last data bucket will be overwritten padded.
 		for(int i=0;i<dataBlockStatus.length;i++) {
 			dataBlockStatus[i].setData(buckets[i]);
 		}
@@ -207,6 +222,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	 * Do the actual encode.
 	 */
 	private void realEncode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		System.err.println("************* Encoding "+dataBlockStatus.length+" -> "+checkBlockStatus.length+"... *************");
 		Logger.minor(this, "Doing encode: "+dataBlockStatus.length+" data blocks, "+checkBlockStatus.length+" check blocks, block length "+blockLength+" with "+this);
 		if(dataBlockStatus.length + checkBlockStatus.length != n)
 			throw new IllegalArgumentException();
@@ -229,18 +245,25 @@ public class StandardOnionFECCodec extends FECCodec {
 
 		for(int i=0;i<dataBlockStatus.length;i++) {
 			buckets[i] = dataBlockStatus[i].getData();
+			long sz = buckets[i].size();
+			if(sz < blockLength) {
+				if(i != dataBlockStatus.length-1)
+					throw new IllegalArgumentException("All buckets except the last must be the full size");
+				if(sz < blockLength)
+					buckets[i] = pad(buckets[i], blockLength, bf, (int) sz);
+				else throw new IllegalArgumentException("Too big: "+sz+" bigger than "+blockLength);
+			}
 			readers[i] = new DataInputStream(buckets[i].getInputStream());
 		}
+		
 		for(int i=0;i<checkBlockStatus.length;i++) {
 			buckets[i+k] = checkBlockStatus[i].getData();
 			if(buckets[i+k] == null) {
 				buckets[i+k] = bf.makeBucket(blockLength);
-				writers[i+k] = buckets[i+k].getOutputStream();
-				readers[i+k] = null;
+				writers[i] = buckets[i+k].getOutputStream();
 				toEncode[numberToEncode++] = i+k;
 			} else {
-				writers[i+k] = null;
-				readers[i+k] = new DataInputStream(buckets[i+k].getInputStream());
+				writers[i] = null;
 			}
 		}
 		
@@ -248,7 +271,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			// Do the (striped) decode
 			for(int offset=0;offset<blockLength;offset+=STRIPE_SIZE) {
 				// Read the data in first
-				for(int i=0;i<n;i++) {
+				for(int i=0;i<k;i++) {
 					readers[i].readFully(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
 				}
 				// Do the encode
@@ -257,8 +280,8 @@ public class StandardOnionFECCodec extends FECCodec {
 				// packets now contains an array of decoded blocks, in order
 				// Write the data out
 				for(int i=k;i<n;i++) {
-					if(writers[i] != null)
-						writers[i].write(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
+					if(writers[i-k] != null)
+						writers[i-k].write(realBuffer, i*STRIPE_SIZE, STRIPE_SIZE);
 				}
 			}
 		}
@@ -270,6 +293,27 @@ public class StandardOnionFECCodec extends FECCodec {
 		for(int i=0;i<checkBlockStatus.length;i++) {
 			checkBlockStatus[i].setData(buckets[i+k]);
 		}
+		System.err.println("************* Encoded "+dataBlockStatus.length+" -> "+checkBlockStatus.length+"... *************");
+	}
+
+	private Bucket pad(Bucket oldData, int blockLength, BucketFactory bf, int l) throws IOException {
+		// FIXME move somewhere else?
+		byte[] hash = BucketTools.hash(oldData);
+		Bucket b = bf.makeBucket(blockLength);
+		MersenneTwister mt = new MersenneTwister(hash);
+		OutputStream os = b.getOutputStream();
+		BucketTools.copyTo(oldData, os, l);
+		byte[] buf = new byte[4096];
+		for(int x=l;x<blockLength;) {
+			int remaining = blockLength - x;
+			int thisCycle = Math.min(remaining, buf.length);
+			mt.nextBytes(buf); // FIXME??
+			os.write(buf, 0, thisCycle);
+		}
+		os.close();
+		if(b.size() != blockLength)
+			throw new IllegalStateException();
+		return b;
 	}
 
 	public int countCheckBlocks() {

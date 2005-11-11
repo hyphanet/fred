@@ -2,6 +2,8 @@ package org.spaceroots.mantissa.random;
 
 import java.util.Random;
 
+import freenet.support.Fields;
+
 /** This class implements a powerful pseudo-random number generator
  * developed by Makoto Matsumoto and Takuji Nishimura during
  * 1996-1997.
@@ -97,6 +99,12 @@ public class MersenneTwister
     setSeed(seed);
   }
 
+  /** Seed from byte[] */
+  public MersenneTwister(byte[] seed) {
+	mt = new int[N];
+	setSeed(seed);
+  }
+  
   /** Creates a new random number generator using a single long seed.
    * @param seed the initial seed (64 bits integer)
    */
@@ -122,6 +130,17 @@ public class MersenneTwister
     }
   }
 
+  /**
+   * Seed from byte[].
+   */
+  public void setSeed(byte[] seed) {
+	  int[] seeds = new int[seed.length/4];
+	  for(int i=0;i<seeds.length;i+=4) {
+		  seeds[i] = Fields.bytesToInt(seed, i);
+	  }
+	  setSeed(seeds);
+  }
+  
   /** Reinitialize the generator as if just built with the given int array seed.
    * <p>The state of the generator is exactly the same as a new
    * generator built with the same seed.</p>

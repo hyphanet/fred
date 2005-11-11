@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import freenet.keys.FreenetURI;
 import freenet.support.BucketFactory;
+import freenet.support.Logger;
 
 /**
  * Segment of a splitfile, for insertion purposes.
@@ -17,14 +18,20 @@ public class InsertSegment {
 	/** Check blocks. Will be created by encode(...). */
 	final SplitfileBlock[] checkBlocks;
 	final boolean getCHKOnly;
+	// just for debugging
+	final int segNo;
 	
-	public InsertSegment(short splitfileAlgo, SplitfileBlock[] origDataBlocks, int blockLength, BucketFactory bf, boolean getCHKOnly) {
+	public InsertSegment(short splitfileAlgo, SplitfileBlock[] origDataBlocks, int blockLength, BucketFactory bf, boolean getCHKOnly, int segNo) {
 		this.origDataBlocks = origDataBlocks;
 		codec = FECCodec.getCodec(splitfileAlgo, origDataBlocks.length);
 		checkBlocks = new SplitfileBlock[codec.countCheckBlocks()];
 		this.blockLength = blockLength;
 		this.bf = bf;
 		this.getCHKOnly = getCHKOnly;
+		this.segNo = segNo;
+		// FIXME: remove debugging code
+		for(int i=0;i<origDataBlocks.length;i++)
+			if(origDataBlocks[i].getData() == null) throw new NullPointerException("Block "+i+" of "+origDataBlocks.length+" data blocks of seg "+segNo+" is null");
 	}
 
 	/**
@@ -46,6 +53,7 @@ public class InsertSegment {
 	 * @throws IOException If the encode fails due to a bucket error.
 	 */
 	public int encode(int offset, RetryTracker tracker, InserterContext ctx) throws IOException {
+		Logger.minor(this, "Encoding "+segNo+": "+origDataBlocks.length+" into "+checkBlocks.length);
 		if(codec == null) return 0; // no FEC
 		for(int i=0;i<checkBlocks.length;i++)
 			checkBlocks[i] = new BlockInserter(null, offset + i, tracker, ctx, getCHKOnly);
