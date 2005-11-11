@@ -735,7 +735,7 @@ public class DefaultMIMETypes {
 	
 	/** Guess a MIME type from a filename */
 	public static String guessMIMEType(String arg) {
-		int x = arg.indexOf('.');
+		int x = arg.lastIndexOf('.');
 		if(x == -1 || x == arg.length()-1)
 			return DEFAULT_MIME_TYPE;
 		String ext = arg.substring(x+1).toLowerCase();
