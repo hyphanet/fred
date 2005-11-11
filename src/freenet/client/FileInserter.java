@@ -84,20 +84,16 @@ public class FileInserter {
 		}
 		
 		if(data.size() <= NodeCHK.BLOCK_SIZE) {
-			byte[] array;
-			try {
-				array = BucketTools.toByteArray(data);
-			} catch (IOException e) {
-				throw new InserterException(InserterException.BUCKET_ERROR, e);
-			}
 			try {
 				if(bestCodec == null) {
-					chk = ClientCHKBlock.encode(array, metadata, true, (short)-1, 0);
+					chk = ClientCHKBlock.encode(data, metadata, true, (short)-1, 0);
 				} else {
 					if(origSize > ClientCHKBlock.MAX_LENGTH_BEFORE_COMPRESSION)
 						throw new IllegalArgumentException("Data too big to compress into single block, but it does");
-					chk = ClientCHKBlock.encode(array, metadata, false, bestCodec.codecNumberForMetadata(), (int)origSize);
+					chk = ClientCHKBlock.encode(data, metadata, false, bestCodec.codecNumberForMetadata(), (int)origSize);
 				}
+			} catch (IOException e) {
+				throw new InserterException(InserterException.BUCKET_ERROR, e);
 			} catch (CHKEncodeException e) {
 				Logger.error(this, "Unexpected error: "+e, e);
 				throw new InserterException(InserterException.INTERNAL_ERROR);
@@ -119,22 +115,30 @@ public class FileInserter {
 	 * @throws InserterException If there was an error inserting the block.
 	 */
 	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata, boolean getCHKOnly) throws InserterException {
+		LowLevelPutException le = null;
 		try {
 			ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(chk.getClientKey()));
 			if(!getCHKOnly)
 				ctx.client.putCHK(chk);
 		} catch (LowLevelPutException e) {
-			translateException(e);
+			le = e;
 		}
+		
+		FreenetURI uri;
 		
 		if(clientMetadata == null || clientMetadata.isTrivial())
 			// Don't need a redirect for the metadata
-			return chk.getClientKey().getURI();
+			 uri = chk.getClientKey().getURI();
 		else {
 			// Do need a redirect for the metadata
 			Metadata metadata = new Metadata(Metadata.SIMPLE_REDIRECT, chk.getClientKey().getURI(), clientMetadata);
-			return putMetadataCHK(metadata, getCHKOnly);
+			uri = putMetadataCHK(metadata, getCHKOnly);
 		}
+		
+		if(le != null)
+			translateException(le);
+		
+		return uri;
 	}
 
 	private void translateException(LowLevelPutException e) throws InserterException {

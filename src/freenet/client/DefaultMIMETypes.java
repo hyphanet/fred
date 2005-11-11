@@ -8,7 +8,7 @@ import freenet.support.Logger;
 /**
  * Holds the default MIME types.
  */
-class DefaultMIMETypes {
+public class DefaultMIMETypes {
 	
 	/** Default MIME type - what to set it to if we don't know any better */
 	public static final String DEFAULT_MIME_TYPE = "application/octet-stream";
@@ -22,6 +22,9 @@ class DefaultMIMETypes {
 	/** MIME types by extension. One extension maps to one MIME type, but not necessarily
 	 * the other way around. */
 	private static HashMap mimeTypesByExtension = new HashMap();
+	
+	/** Primary extension by MIME type number. */
+	private static HashMap primaryExtensionByMimeNumber = new HashMap();
 	
 	/**
 	 * Add a MIME type, without any extensions.
@@ -50,19 +53,27 @@ class DefaultMIMETypes {
 	 * @param extensions An array of common extensions for files of this type. Must be
 	 * unique for the type.
 	 */
-	protected static synchronized void addMIMEType(short number, String type, String[] extensions) {
+	protected static synchronized void addMIMEType(short number, String type, String[] extensions, String outExtension) {
 		addMIMEType(number, type);
 		Short t = new Short(number);
-		if(extensions != null)
+		if(extensions != null) {
+			boolean first = true;
 			for(int i=0;i<extensions.length;i++) {
 				String ext = extensions[i].toLowerCase();
 				if(mimeTypesByExtension.containsKey(ext)) {
 					// No big deal
 					Short s = (Short) mimeTypesByExtension.get(ext);
 					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s.shortValue())+" in preference to "+number+":"+type);
-				} else
+				} else {
+					// If only one, make it primary
+					if(outExtension == null && extensions.length == 1)
+						primaryExtensionByMimeNumber.put(t, ext);
 					mimeTypesByExtension.put(ext, t);
+				}
 			}
+		}
+		if(outExtension != null)
+			primaryExtensionByMimeNumber.put(t, outExtension);
 				
 	}
 
@@ -71,9 +82,17 @@ class DefaultMIMETypes {
 	 * the format in /etc/mime-types.
 	 */
 	protected static synchronized void addMIMEType(short number, String type, String extensions) {
-		addMIMEType(number, type, extensions.split(" "));
+		addMIMEType(number, type, extensions.split(" "), null);
 	}
 
+	/**
+	 * Add a MIME type, with extensions separated by spaces. This is more or less
+	 * the format in /etc/mime-types.
+	 */
+	protected static synchronized void addMIMEType(short number, String type, String extensions, String outExtension) {
+		addMIMEType(number, type, extensions.split(" "), outExtension);
+	}
+	
 	/**
 	 * Get a known MIME type by number.
 	 */
@@ -141,7 +160,7 @@ class DefaultMIMETypes {
 		addMIMEType((short)38, "application/mathematica", "nb");
 		addMIMEType((short)39, "application/mathematica-old");
 		addMIMEType((short)40, "application/msaccess", "mdb");
-		addMIMEType((short)41, "application/msword", "doc dot");
+		addMIMEType((short)41, "application/msword", "doc dot", "doc");
 		addMIMEType((short)42, "application/news-message-id");
 		addMIMEType((short)43, "application/news-transmission");
 		addMIMEType((short)44, "application/octet-stream", "bin");
@@ -161,7 +180,7 @@ class DefaultMIMETypes {
 		addMIMEType((short)58, "application/pkix-cert");
 		addMIMEType((short)59, "application/pkixcmp");
 		addMIMEType((short)60, "application/pkix-crl");
-		addMIMEType((short)61, "application/postscript", "ps ai eps");
+		addMIMEType((short)61, "application/postscript", "ps ai eps", "ps");
 		addMIMEType((short)62, "application/prs.alvestrand.titrax-sheet");
 		addMIMEType((short)63, "application/prs.cww");
 		addMIMEType((short)64, "application/prs.nprend");
@@ -181,7 +200,7 @@ class DefaultMIMETypes {
 		addMIMEType((short)78, "application/sgml-open-catalog");
 		addMIMEType((short)79, "application/sieve");
 		addMIMEType((short)80, "application/slate");
-		addMIMEType((short)81, "application/smil", "smi smil");
+		addMIMEType((short)81, "application/smil", "smi smil", "smil");
 		addMIMEType((short)82, "application/timestamp-query");
 		addMIMEType((short)83, "application/timestamp-reply");
 		addMIMEType((short)84, "application/vemmi");
@@ -190,8 +209,8 @@ class DefaultMIMETypes {
 		addMIMEType((short)87, "application/wita");
 		addMIMEType((short)88, "application/wordperfect5.1", "wp5");
 		addMIMEType((short)89, "application/x400-bp");
-		addMIMEType((short)90, "application/xhtml+xml", "xht xhtml");
-		addMIMEType((short)91, "application/xml", "xml xsl");
+		addMIMEType((short)90, "application/xhtml+xml", "xht xhtml", "xhtml");
+		addMIMEType((short)91, "application/xml", "xml xsl", "xml");
 		addMIMEType((short)92, "application/xml-dtd");
 		addMIMEType((short)93, "application/xml-external-parsed-entity");
 		addMIMEType((short)94, "application/zip", "zip");
@@ -314,11 +333,11 @@ class DefaultMIMETypes {
 		addMIMEType((short)211, "application/vnd.mozilla.xul+xml", "xul");
 		addMIMEType((short)212, "application/vnd.ms-artgalry");
 		addMIMEType((short)213, "application/vnd.ms-asf");
-		addMIMEType((short)214, "application/vnd.ms-excel", "xls xlb xlt");
+		addMIMEType((short)214, "application/vnd.ms-excel", "xls xlb xlt", "xls");
 		addMIMEType((short)215, "application/vnd.ms-lrm");
 		addMIMEType((short)216, "application/vnd.ms-pki.seccat", "cat");
 		addMIMEType((short)217, "application/vnd.ms-pki.stl", "stl");
-		addMIMEType((short)218, "application/vnd.ms-powerpoint", "ppt pps");
+		addMIMEType((short)218, "application/vnd.ms-powerpoint", "ppt pps", "pps");
 		addMIMEType((short)219, "application/vnd.ms-project");
 		addMIMEType((short)220, "application/vnd.ms-tnef");
 		addMIMEType((short)221, "application/vnd.ms-works");
@@ -430,14 +449,14 @@ class DefaultMIMETypes {
 		addMIMEType((short)327, "application/x-dvi", "dvi");
 		addMIMEType((short)328, "application/x-executable");
 		addMIMEType((short)329, "application/x-flac", "flac");
-		addMIMEType((short)330, "application/x-font", "pfa pfb gsf pcf pcf.Z");
+		addMIMEType((short)330, "application/x-font", "pfa pfb gsf pcf pcf.Z", "unknown-font-type");
 		addMIMEType((short)331, "application/x-futuresplash", "spl");
 		addMIMEType((short)332, "application/x-gnumeric", "gnumeric");
 		addMIMEType((short)333, "application/x-go-sgf", "sgf");
 		addMIMEType((short)334, "application/x-graphing-calculator", "gcf");
-		addMIMEType((short)335, "application/x-gtar", "gtar tgz taz");
+		addMIMEType((short)335, "application/x-gtar", "gtar tgz taz", "tgz");
 		addMIMEType((short)336, "application/x-hdf", "hdf");
-		addMIMEType((short)337, "application/x-httpd-php", "phtml pht php");
+		addMIMEType((short)337, "application/x-httpd-php", "phtml pht php", "php");
 		addMIMEType((short)338, "application/x-httpd-php-source", "phps");
 		addMIMEType((short)339, "application/x-httpd-php3", "php3");
 		addMIMEType((short)340, "application/x-httpd-php3-preprocessed", "php3p");
@@ -458,7 +477,7 @@ class DefaultMIMETypes {
 		addMIMEType((short)355, "application/x-kpresenter", "kpr kpt");
 		addMIMEType((short)356, "application/x-koan", "skp skd skt skm");
 		addMIMEType((short)357, "application/x-kspread", "ksp");
-		addMIMEType((short)358, "application/x-kword", "kwd kwt");
+		addMIMEType((short)358, "application/x-kword", "kwd kwt", "kwd");
 		addMIMEType((short)359, "application/x-latex", "latex");
 		addMIMEType((short)360, "application/x-lha", "lha");
 		addMIMEType((short)361, "application/x-lzh", "lzh");
@@ -467,7 +486,7 @@ class DefaultMIMETypes {
 		addMIMEType((short)364, "application/x-mif", "mif");
 		addMIMEType((short)365, "application/x-ms-wmz", "wmz");
 		addMIMEType((short)366, "application/x-ms-wmd", "wmd");
-		addMIMEType((short)367, "application/x-msdos-program", "com exe bat dll");
+		addMIMEType((short)367, "application/x-msdos-program", "com exe bat dll", "exe");
 		addMIMEType((short)368, "application/x-msi", "msi");
 		addMIMEType((short)369, "application/x-netcdf", "nc");
 		addMIMEType((short)370, "application/x-ns-proxy-autoconfig", "pac");
@@ -476,14 +495,14 @@ class DefaultMIMETypes {
 		addMIMEType((short)373, "application/x-oz-application", "oza");
 		addMIMEType((short)374, "application/x-pkcs7-certreqresp", "p7r");
 		addMIMEType((short)375, "application/x-pkcs7-crl", "crl");
-		addMIMEType((short)376, "application/x-python-code", "pyc pyo");
+		addMIMEType((short)376, "application/x-python-code", "pyc pyo", "unknown-pyc-pyo");
 		addMIMEType((short)377, "application/x-quicktimeplayer", "qtl");
 		addMIMEType((short)378, "application/x-redhat-package-manager", "rpm");
 		addMIMEType((short)379, "application/x-rx");
 		addMIMEType((short)380, "application/x-sh");
 		addMIMEType((short)381, "application/x-shar", "shar");
 		addMIMEType((short)382, "application/x-shellscript");
-		addMIMEType((short)383, "application/x-shockwave-flash", "swf swfl");
+		addMIMEType((short)383, "application/x-shockwave-flash", "swf swfl", "swf");
 		addMIMEType((short)384, "application/x-sh", "sh");
 		addMIMEType((short)385, "application/x-stuffit", "sit");
 		addMIMEType((short)386, "application/x-sv4cpio", "sv4cpio");
@@ -492,7 +511,7 @@ class DefaultMIMETypes {
 		addMIMEType((short)389, "application/x-tcl", "tcl");
 		addMIMEType((short)390, "application/x-tex-gf", "gf");
 		addMIMEType((short)391, "application/x-tex-pk", "pk");
-		addMIMEType((short)392, "application/x-texinfo", "texinfo texi");
+		addMIMEType((short)392, "application/x-texinfo", "texinfo texi", "texi");
 		addMIMEType((short)393, "application/x-trash", "~ % bak old sik");
 		addMIMEType((short)394, "application/x-troff", "t tr roff");
 		addMIMEType((short)395, "application/x-troff-man", "man");
@@ -506,13 +525,13 @@ class DefaultMIMETypes {
 		addMIMEType((short)403, "application/x-xcf", "xcf");
 		addMIMEType((short)404, "application/x-xfig", "fig");
 		addMIMEType((short)405, "audio/32kadpcm");
-		addMIMEType((short)406, "audio/basic", "au snd");
+		addMIMEType((short)406, "audio/basic", "au snd", "au");
 		addMIMEType((short)407, "audio/g.722.1");
 		addMIMEType((short)408, "audio/l16");
-		addMIMEType((short)409, "audio/midi", "mid midi kar");
+		addMIMEType((short)409, "audio/midi", "mid midi kar", "mid");
 		addMIMEType((short)410, "audio/mp4a-latm");
 		addMIMEType((short)411, "audio/mpa-robust");
-		addMIMEType((short)412, "audio/mpeg", "mpga mpega mp2 mp3 m4a");
+		addMIMEType((short)412, "audio/mpeg", "mpga mpega mp2 mp3 m4a", "mpeg");
 		addMIMEType((short)413, "audio/mpegurl", "m3u");
 		addMIMEType((short)414, "audio/parityfec");
 		addMIMEType((short)415, "audio/prs.sid", "sid");
@@ -532,13 +551,13 @@ class DefaultMIMETypes {
 		addMIMEType((short)429, "audio/vnd.qcelp");
 		addMIMEType((short)430, "audio/vnd.rhetorex.32kadpcm");
 		addMIMEType((short)431, "audio/vnd.vmx.cvsd");
-		addMIMEType((short)432, "audio/x-aiff", "aif aiff aifc");
+		addMIMEType((short)432, "audio/x-aiff", "aif aiff aifc", "aiff");
 		addMIMEType((short)433, "audio/x-gsm", "gsm");
 		addMIMEType((short)434, "audio/x-mpegurl", "m3u");
 		addMIMEType((short)435, "audio/x-ms-wma", "wma");
 		addMIMEType((short)436, "audio/x-ms-wax", "wax");
 		addMIMEType((short)437, "audio/x-pn-realaudio-plugin");
-		addMIMEType((short)438, "audio/x-pn-realaudio", "ra rm ram");
+		addMIMEType((short)438, "audio/x-pn-realaudio", "ra rm ram", "ra");
 		addMIMEType((short)439, "audio/x-realaudio", "ra");
 		addMIMEType((short)440, "audio/x-scpls", "pls");
 		addMIMEType((short)441, "audio/x-sd2", "sd2");
@@ -549,14 +568,14 @@ class DefaultMIMETypes {
 		addMIMEType((short)446, "image/g3fax");
 		addMIMEType((short)447, "image/gif", "gif");
 		addMIMEType((short)448, "image/ief", "ief");
-		addMIMEType((short)449, "image/jpeg", "jpeg jpg jpe");
+		addMIMEType((short)449, "image/jpeg", "jpeg jpg jpe", "jpeg");
 		addMIMEType((short)450, "image/naplps");
 		addMIMEType((short)451, "image/pcx", "pcx");
 		addMIMEType((short)452, "image/png", "png");
 		addMIMEType((short)453, "image/prs.btif");
 		addMIMEType((short)454, "image/prs.pti");
-		addMIMEType((short)455, "image/svg+xml", "svg svgz");
-		addMIMEType((short)456, "image/tiff", "tiff tif");
+		addMIMEType((short)455, "image/svg+xml", "svg svgz", "svg");
+		addMIMEType((short)456, "image/tiff", "tiff tif", "tiff");
 		addMIMEType((short)457, "image/vnd.cns.inf2");
 		addMIMEType((short)458, "image/vnd.djvu", "djvu djv");
 		addMIMEType((short)459, "image/vnd.dwg");
@@ -612,7 +631,7 @@ class DefaultMIMETypes {
 		addMIMEType((short)509, "model/vnd.gtw");
 		addMIMEType((short)510, "model/vnd.mts");
 		addMIMEType((short)511, "model/vnd.vtu");
-		addMIMEType((short)512, "model/vrml", "wrl vrml");
+		addMIMEType((short)512, "model/vrml", "wrl vrml", "vrml");
 		addMIMEType((short)513, "multipart/alternative");
 		addMIMEType((short)514, "multipart/appledouble");
 		addMIMEType((short)515, "multipart/byteranges");
@@ -626,18 +645,18 @@ class DefaultMIMETypes {
 		addMIMEType((short)523, "multipart/report");
 		addMIMEType((short)524, "multipart/signed");
 		addMIMEType((short)525, "multipart/voice-message");
-		addMIMEType((short)526, "text/calendar", "ics icz");
+		addMIMEType((short)526, "text/calendar", "ics icz", "ics");
 		addMIMEType((short)527, "text/comma-separated-values", "csv");
 		addMIMEType((short)528, "text/css", "css");
 		addMIMEType((short)529, "text/directory");
 		addMIMEType((short)530, "text/english");
 		addMIMEType((short)531, "text/enriched");
 		addMIMEType((short)532, "text/h323", "323");
-		addMIMEType((short)533, "text/html", "htm html shtml");
+		addMIMEType((short)533, "text/html", "htm html shtml", "html");
 		addMIMEType((short)534, "text/iuls", "uls");
 		addMIMEType((short)535, "text/mathml", "mml");
 		addMIMEType((short)536, "text/parityfec");
-		addMIMEType((short)537, "text/plain", "asc txt text diff pot");
+		addMIMEType((short)537, "text/plain", "asc txt text diff pot", "txt");
 		addMIMEType((short)538, "text/prs.lines.tag");
 		addMIMEType((short)539, "text/rfc822-headers");
 		addMIMEType((short)540, "text/richtext", "rtx");
@@ -665,8 +684,8 @@ class DefaultMIMETypes {
 		addMIMEType((short)562, "text/vnd.wap.sl");
 		addMIMEType((short)563, "text/vnd.wap.wml", "wml");
 		addMIMEType((short)564, "text/vnd.wap.wmlscript", "wmls");
-		addMIMEType((short)565, "text/x-c++hdr", "h++ hpp hxx hh");
-		addMIMEType((short)566, "text/x-c++src", "c++ cpp cxx cc");
+		addMIMEType((short)565, "text/x-c++hdr", "h++ hpp hxx hh", "hh");
+		addMIMEType((short)566, "text/x-c++src", "c++ cpp cxx cc", "cc");
 		addMIMEType((short)567, "text/x-chdr", "h");
 		addMIMEType((short)568, "text/x-crontab");
 		addMIMEType((short)569, "text/x-csh", "csh");
@@ -674,23 +693,23 @@ class DefaultMIMETypes {
 		addMIMEType((short)571, "text/x-java", "java");
 		addMIMEType((short)572, "text/x-makefile");
 		addMIMEType((short)573, "text/x-moc", "moc");
-		addMIMEType((short)574, "text/x-pascal", "p pas");
+		addMIMEType((short)574, "text/x-pascal", "p pas", "pas");
 		addMIMEType((short)575, "text/x-pcs-gcd", "gcd");
-		addMIMEType((short)576, "text/x-perl", "pl pm");
+		addMIMEType((short)576, "text/x-perl", "pl pm", "pl");
 		addMIMEType((short)577, "text/x-python", "py");
-		addMIMEType((short)578, "text/x-server-parsed-html");
+		addMIMEType((short)578, "text/x-server-parsed-html", "shmtl", "shtml");
 		addMIMEType((short)579, "text/x-setext", "etx");
 		addMIMEType((short)580, "text/x-sh", "sh");
-		addMIMEType((short)581, "text/x-tcl", "tcl tk");
-		addMIMEType((short)582, "text/x-tex", "tex ltx sty cls");
+		addMIMEType((short)581, "text/x-tcl", "tcl tk", "tcl");
+		addMIMEType((short)582, "text/x-tex", "tex ltx sty cls", "tex");
 		addMIMEType((short)583, "text/x-vcalendar", "vcs");
 		addMIMEType((short)584, "text/x-vcard", "vcf");
 		addMIMEType((short)585, "video/dl", "dl");
 		addMIMEType((short)586, "video/fli", "fli");
 		addMIMEType((short)587, "video/gl", "gl");
-		addMIMEType((short)588, "video/mpeg", "mpeg mpg mpe");
+		addMIMEType((short)588, "video/mpeg", "mpeg mpg mpe", "mpeg");
 		addMIMEType((short)589, "video/mp4", "mp4");
-		addMIMEType((short)590, "video/quicktime", "qt mov");
+		addMIMEType((short)590, "video/quicktime", "qt mov", "mov");
 		addMIMEType((short)591, "video/mp4v-es");
 		addMIMEType((short)592, "video/parityfec");
 		addMIMEType((short)593, "video/pointer");
@@ -702,9 +721,9 @@ class DefaultMIMETypes {
 		addMIMEType((short)599, "video/vnd.nokia.interleaved-multimedia");
 		addMIMEType((short)600, "video/vnd.vivo");
 		addMIMEType((short)601, "video/x-dv", "dif dv");
-		addMIMEType((short)602, "video/x-la-asf", "lsf lsx");
+		addMIMEType((short)602, "video/x-la-asf", "lsf lsx", "lsf");
 		addMIMEType((short)603, "video/x-mng", "mng");
-		addMIMEType((short)604, "video/x-ms-asf", "asf asx");
+		addMIMEType((short)604, "video/x-ms-asf", "asf asx", "asf");
 		addMIMEType((short)605, "video/x-ms-wm", "wm");
 		addMIMEType((short)606, "video/x-ms-wmv", "wmv");
 		addMIMEType((short)607, "video/x-ms-wmx", "wmx");
@@ -712,7 +731,7 @@ class DefaultMIMETypes {
 		addMIMEType((short)609, "video/x-msvideo", "avi");
 		addMIMEType((short)610, "video/x-sgi-movie", "movie");
 		addMIMEType((short)611, "x-conference/x-cooltalk", "ice");
-		addMIMEType((short)612, "x-world/x-vrml", "vrm vrml wrl");
+		addMIMEType((short)612, "x-world/x-vrml", "vrm vrml wrl", "vrml");
 	}
 	
 	/** Guess a MIME type from a filename */
@@ -725,5 +744,11 @@ class DefaultMIMETypes {
 		if(mimeIndexOb != null) {
 			return (String) mimeTypesByNumber.get(mimeIndexOb.intValue());
 		} else return DEFAULT_MIME_TYPE;
+	}
+
+	public static String getExtension(String type) {
+		short typeNumber = byName(type);
+		if(typeNumber < 0) return null;
+		return (String) primaryExtensionByMimeNumber.get(new Short(typeNumber));
 	}
 }

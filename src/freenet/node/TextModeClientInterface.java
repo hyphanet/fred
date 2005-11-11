@@ -12,6 +12,8 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.util.Hashtable;
 
+import freenet.client.ClientMetadata;
+import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -128,6 +130,8 @@ public class TextModeClientInterface implements Runnable {
             }
             try {
 				FetchResult result = client.fetch(uri);
+				ClientMetadata cm = result.getMetadata();
+				System.out.println("Content MIME type: "+cm.getMIMEType());
 				System.out.println("Data:\n");
 				Bucket data = result.asBucket();
 				BucketTools.copyTo(data, System.out, Long.MAX_VALUE);
@@ -152,12 +156,17 @@ public class TextModeClientInterface implements Runnable {
             }
             try {
 				FetchResult result = client.fetch(uri);
+				ClientMetadata cm = result.getMetadata();
+				System.out.println("Content MIME type: "+cm.getMIMEType());
 				Bucket data = result.asBucket();
                 // Now calculate filename
                 String fnam = uri.getDocName();
                 fnam = sanitize(fnam);
                 if(fnam.length() == 0) {
                     fnam = "freenet-download-"+System.currentTimeMillis();
+                    String ext = DefaultMIMETypes.getExtension(cm.getMIMEType());
+                    if(ext != null && !ext.equals(""))
+                    	fnam += "." + ext;
                 }
                 if(new File(fnam).exists()) {
                     System.out.println("File exists already: "+fnam);
@@ -227,8 +236,13 @@ public class TextModeClientInterface implements Runnable {
             	if(!(f.exists() && f.canRead())) {
             		throw new FileNotFoundException();
             	}
+            	
+            	// Guess MIME type
+            	String mimeType = DefaultMIMETypes.guessMIMEType(line);
+            	System.out.println("Using MIME type: "+mimeType);
+            	
             	FileBucket fb = new FileBucket(f, true, false, false);
-            	InsertBlock block = new InsertBlock(fb, null, FreenetURI.EMPTY_CHK_URI);
+            	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
             	
             	FreenetURI uri = client.insert(block, getCHKOnly);
             	

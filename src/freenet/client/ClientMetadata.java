@@ -8,7 +8,7 @@ public class ClientMetadata {
 	/** The document MIME type */
 	private String mimeType;
 
-	ClientMetadata(String mime) {
+	public ClientMetadata(String mime) {
 		mimeType = mime;
 	}
 

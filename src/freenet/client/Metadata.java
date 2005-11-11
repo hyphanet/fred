@@ -112,8 +112,10 @@ public class Metadata {
 		
 		if(noMIME) {
 			mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+			Logger.minor(this, "noMIME enabled");
 		} else {
 			if(compressedMIME) {
+				Logger.minor(this, "Compressed MIME");
 				short x = dis.readShort();
 				compressedMIMEValue = (short) (x & 32767); // chop off last bit
 				hasCompressedMIMEParams = ((int)compressedMIMEValue & 32768) == 32768;
@@ -132,7 +134,9 @@ public class Metadata {
 				dis.readFully(toRead);
 				// Use UTF-8 for everything, for simplicity
 				mimeType = new String(toRead, "UTF-8");
+				Logger.minor(this, "Raw MIME");
 			}
+			Logger.minor(this, "MIME = "+mimeType);
 		}
 		
 		if(dbr) {
@@ -317,6 +321,7 @@ public class Metadata {
 	 * Set the MIME type to a string. Compresses it if possible for transit.
 	 */
 	private void setMIMEType(String type) {
+		noMIME = false;
 		short s = DefaultMIMETypes.byName(type);
 		if(s >= 0) {
 			compressedMIME = true;
