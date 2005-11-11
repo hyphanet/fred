@@ -78,6 +78,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		this.k = k;
 		this.n = n;
 		code = DefaultFECCodeFactory.getDefault().createFECCode(k,n);
+		Logger.minor(this, "FEC impl is "+code);
 		// revert to below if above causes JVM crashes
 		//code = new PureCode(k,n);
 	}
@@ -210,7 +211,10 @@ public class StandardOnionFECCodec extends FECCodec {
 			runningDecodes++;
 		}
 		try {
+			long startTime = System.currentTimeMillis();
 			realEncode(dataBlockStatus, checkBlockStatus, blockLength, bf);
+			long endTime = System.currentTimeMillis();
+			Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
 		} finally {
 			synchronized(runningDecodesSync) {
 				runningDecodes--;
@@ -276,7 +280,10 @@ public class StandardOnionFECCodec extends FECCodec {
 				}
 				// Do the encode
 				// Not shuffled
+				long startTime = System.currentTimeMillis();
 				code.encode(dataPackets, checkPackets, toEncode);
+				long endTime = System.currentTimeMillis();
+				Logger.minor(this, "Stripe encode took "+(endTime-startTime)+" ms for k="+k+", n="+n+", stripeSize="+STRIPE_SIZE);
 				// packets now contains an array of decoded blocks, in order
 				// Write the data out
 				for(int i=k;i<n;i++) {

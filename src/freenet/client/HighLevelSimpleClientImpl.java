@@ -42,7 +42,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	 * Don't turn this off either. */
 	static final boolean LOCAL_REQUESTS_ONLY = false;
 	static final int SPLITFILE_INSERT_THREADS = 10;
-	static final int SPLITFILE_INSERT_RETRIES = 3;
+	static final int SPLITFILE_INSERT_RETRIES = 0;
 	
 	
 	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r) {
