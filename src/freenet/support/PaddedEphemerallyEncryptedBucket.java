@@ -191,7 +191,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		while(true) {
 			if(max < 0)
 				throw new Error("Impossible size: "+size+" - min="+min+", max="+max);
-			if(size >= min && size <= max) return max;
+			if(size < min)
+				throw new IllegalStateException("???");
+			if(size >= min && size <= max) {
+				Logger.minor(this, "Padded: "+max+" was: "+dataLength+" for "+getName());
+				return max;
+			}
 			min = max;
 			max = max << 1;
 		}

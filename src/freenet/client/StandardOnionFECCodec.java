@@ -316,6 +316,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			int thisCycle = Math.min(remaining, buf.length);
 			mt.nextBytes(buf); // FIXME??
 			os.write(buf, 0, thisCycle);
+			x += thisCycle;
 		}
 		os.close();
 		if(b.size() != blockLength)
