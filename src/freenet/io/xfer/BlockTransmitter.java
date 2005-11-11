@@ -72,7 +72,9 @@ public class BlockTransmitter {
 							while (waitUntil > System.currentTimeMillis()) {
 								if(_sendComplete) return;
 								synchronized (_senderThread) {
-									_senderThread.wait(waitUntil - System.currentTimeMillis());
+									long x = waitUntil - System.currentTimeMillis();
+									if(x > 0)
+										_senderThread.wait(x);
 								}
 							}
 							while (_unsent.size() == 0) {
