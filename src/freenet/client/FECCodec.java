@@ -13,22 +13,6 @@ import freenet.support.BucketFactory;
  */
 abstract class FECCodec {
 
-	public static int getCodecMaxSegmentDataBlocks(short splitfileType) {
-		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
-			return -1;
-		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
-			return 128;
-		throw new IllegalArgumentException();
-	}
-
-	public static int getCodecMaxSegmentCheckBlocks(short splitfileType) {
-		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
-			return -1;
-		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
-			return 64;
-		throw new IllegalArgumentException();
-	}
-	
 	/**
 	 * Get a codec where we know both the number of data blocks and the number
 	 * of check blocks, and the codec type. Normally for decoding.

@@ -49,8 +49,8 @@ public class SplitInserter implements RetryTrackerCallback {
 		this.splitfileAlgorithm = splitfileAlgorithm;
 		this.ctx = ctx;
 		this.dataLength = data.size();
-		segmentSize = FECCodec.getCodecMaxSegmentDataBlocks(splitfileAlgorithm);
-		checkSegmentSize = FECCodec.getCodecMaxSegmentCheckBlocks(splitfileAlgorithm);
+		segmentSize = ctx.splitfileSegmentDataBlocks;
+		checkSegmentSize = splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT ? 0 : ctx.splitfileSegmentCheckBlocks;
 		tracker = new RetryTracker(ctx.maxInsertBlockRetries, Integer.MAX_VALUE, ctx.random, ctx.maxSplitInsertThreads, true, this);
 		try {
 			splitIntoBlocks();
@@ -83,6 +83,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			tracker.kill();
+			if(t instanceof InserterException) throw (InserterException)t;
 			throw new InserterException(InserterException.INTERNAL_ERROR, t.toString());
 		}
 	}
@@ -113,7 +114,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		
 		if(!missingURIs) {
 		
-			Metadata metadata = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, clientMetadata, dataLength, compressionCodec);
+			Metadata metadata = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, clientMetadata, dataLength, compressionCodec);
 			
 			Bucket mbucket;
 			try {

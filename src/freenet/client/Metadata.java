@@ -13,6 +13,7 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 
@@ -300,7 +301,7 @@ public class Metadata {
 			throw new IllegalArgumentException();
 	}
 
-	public Metadata(short algo, FreenetURI[] dataURIs, FreenetURI[] checkURIs, ClientMetadata cm, long dataLength, short compressionAlgo) {
+	public Metadata(short algo, FreenetURI[] dataURIs, FreenetURI[] checkURIs, int segmentSize, int checkSegmentSize, ClientMetadata cm, long dataLength, short compressionAlgo) {
 		documentType = SIMPLE_REDIRECT;
 		splitfile = true;
 		splitfileAlgorithm = algo;
@@ -315,6 +316,7 @@ public class Metadata {
 			setMIMEType(cm.getMIMEType());
 		else
 			setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
+		splitfileParams = Fields.intsToBytes(new int[] { segmentSize, checkSegmentSize } );
 	}
 
 	/**

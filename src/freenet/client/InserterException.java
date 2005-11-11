@@ -19,14 +19,14 @@ public class InserterException extends Exception {
 	public InserterException(int m, String msg) {
 		super(getMessage(m)+": "+msg);
 		mode = m;
-		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+msg);
+		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+msg, this);
 		errorCodes = null;
 	}
 	
 	public InserterException(int m) {
 		super(getMessage(m));
 		mode = m;
-		Logger.minor(this, "Creating InserterException: "+getMessage(mode));
+		Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
 		errorCodes = null;
 	}
 
@@ -41,7 +41,7 @@ public class InserterException extends Exception {
 	public InserterException(int mode, FailureCodeTracker errorCodes) {
 		super(getMessage(mode));
 		this.mode = mode;
-		Logger.minor(this, "Creating InserterException: "+getMessage(mode));
+		Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
 		this.errorCodes = errorCodes;
 	}
 

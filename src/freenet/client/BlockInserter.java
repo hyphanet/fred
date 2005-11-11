@@ -28,10 +28,13 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 		this.ctx = ctx;
 		block = new InsertBlock(bucket, null, FreenetURI.EMPTY_CHK_URI);
 		this.getCHKOnly = getCHKOnly;
+		Logger.minor(this, "Created "+this);
 	}
 
 	public synchronized void setData(Bucket data) {
 		if(this.fetchedData != null) throw new IllegalArgumentException("Cannot set data when already have data");
+		block.data = data;
+		super.setData(data);
 	}
 
 	public void kill() {
@@ -48,9 +51,11 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 
 	public void run() {
 		try {
+			if(fetchedData == null)
+				throw new NullPointerException();
 			realRun();
 		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
+			Logger.error(this, "Caught "+t+" on "+this, t);
 			fatalError(t, InserterException.INTERNAL_ERROR);
 		} finally {
 			completedTries++;

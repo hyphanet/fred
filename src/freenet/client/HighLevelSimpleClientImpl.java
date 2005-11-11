@@ -43,6 +43,12 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final boolean LOCAL_REQUESTS_ONLY = false;
 	static final int SPLITFILE_INSERT_THREADS = 10;
 	static final int SPLITFILE_INSERT_RETRIES = 0;
+	// going by memory usage only; 4kB per stripe
+	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
+	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
+	// ~ 70kB/sec encode, 16MB segments
+	static final int SPLITFILE_BLOCKS_PER_SEGMENT = 512;
+	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 768;
 	
 	
 	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r) {
@@ -74,13 +80,15 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, 
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
+				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				random, archiveManager, bucketFactory, globalEventProducer);
 		Fetcher f = new Fetcher(uri, context);
 		return f.run();
 	}
 
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
-		InserterContext context = new InserterContext(client, bucketFactory, random, SPLITFILE_INSERT_RETRIES, SPLITFILE_INSERT_THREADS, globalEventProducer);
+		InserterContext context = new InserterContext(client, bucketFactory, random, SPLITFILE_INSERT_RETRIES, 
+				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer);
 		FileInserter i = new FileInserter(context);
 		return i.run(insert, false, getCHKOnly);
 	}

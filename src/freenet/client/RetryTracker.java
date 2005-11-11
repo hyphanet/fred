@@ -173,7 +173,6 @@ public class RetryTracker {
 	 * we have run out of retries.
 	 */
 	public synchronized void nonfatalError(SplitfileBlock block, int reasonCode) {
-		if(killed) return;
 		nonfatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
 		int levelNumber = block.getRetryCount();
@@ -194,7 +193,6 @@ public class RetryTracker {
 	 * @param reasonCode A client-specific code indicating the type of failure.
 	 */
 	public synchronized void fatalError(SplitfileBlock block, int reasonCode) {
-		if(killed) return;
 		fatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
 		failedBlocksFatalErrors.add(block);
@@ -213,6 +211,7 @@ public class RetryTracker {
 			Logger.minor(this, "Only block running: "+runningBlocks.toArray()[0]);
 		if((succeededBlocks.size() >= targetSuccesses)
 				|| (runningBlocks.isEmpty() && levels.isEmpty() && finishOnEmpty)) {
+			killed = true;
 			Logger.minor(this, "Finishing");
 			SplitfileBlock[] running = runningBlocks();
 			for(int i=0;i<running.length;i++) {

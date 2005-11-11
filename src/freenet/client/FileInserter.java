@@ -33,6 +33,8 @@ public class FileInserter {
 	 * @throws InserterException 
 	 */
 	public FreenetURI run(InsertBlock block, boolean metadata, boolean getCHKOnly) throws InserterException {
+		if(block.data == null)
+			throw new NullPointerException();
 		if(!block.desiredURI.toString(false).equals("CHK@"))
 			throw new InserterException(InserterException.INVALID_URI);
 		

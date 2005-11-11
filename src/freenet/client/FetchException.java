@@ -96,6 +96,10 @@ public class FetchException extends Exception {
 			return "Invalid URI";
 		case TOO_BIG:
 			return "Too big";
+		case TOO_BIG_METADATA:
+			return "Metadata too big";
+		case TOO_MANY_BLOCKS_PER_SEGMENT:
+			return "Too many blocks per segment";
 		default:
 			return "Unknown fetch error code: "+mode;
 		}
@@ -147,4 +151,6 @@ public class FetchException extends Exception {
 	public static final int TOO_BIG = 21;
 	/** Metadata too big */
 	public static final int TOO_BIG_METADATA = 22;
+	/** Splitfile has too big segments */
+	public static final int TOO_MANY_BLOCKS_PER_SEGMENT = 23;
 }

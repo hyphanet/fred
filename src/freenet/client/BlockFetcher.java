@@ -50,6 +50,7 @@ public class BlockFetcher extends StdSplitfileBlock {
 					(!this.segment.nonFullBlocksAllowed) || dontEnterImplicitArchives);
 			actuallyFetched = true;
 			fetchedData = fr.data;
+			Logger.minor(this, "Fetched "+fetchedData.size()+" bytes on "+this);
 			tracker.success(this);
 		} catch (MetadataParseException e) {
 			fatalError(e, FetchException.INVALID_METADATA);
@@ -95,7 +96,7 @@ public class BlockFetcher extends StdSplitfileBlock {
 	}
 
 	private void fatalError(Throwable e, int code) {
-		Logger.normal(this, "Giving up on block: "+this+": "+e);
+		Logger.error(this, "Giving up on block: "+this+": "+e, e);
 		tracker.fatalError(this, code);
 	}
 

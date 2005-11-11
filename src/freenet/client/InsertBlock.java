@@ -8,7 +8,7 @@ import freenet.support.Bucket;
  */
 public class InsertBlock {
 
-	final Bucket data;
+	Bucket data;
 	final FreenetURI desiredURI;
 	final ClientMetadata clientMetadata;
 	

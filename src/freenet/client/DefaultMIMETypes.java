@@ -57,7 +57,6 @@ public class DefaultMIMETypes {
 		addMIMEType(number, type);
 		Short t = new Short(number);
 		if(extensions != null) {
-			boolean first = true;
 			for(int i=0;i<extensions.length;i++) {
 				String ext = extensions[i].toLowerCase();
 				if(mimeTypesByExtension.containsKey(ext)) {

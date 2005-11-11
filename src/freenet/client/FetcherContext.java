@@ -32,12 +32,16 @@ public class FetcherContext implements Cloneable {
 	 * Set by the splitfile metadata and the mask constructor, so we don't need to pass it in. */
 	final boolean splitfileUseLengths;
 	final int maxMetadataSize;
+	final int maxDataBlocksPerSegment;
+	final int maxCheckBlocksPerSegment;
+	
 	
 	public FetcherContext(SimpleLowLevelClient client, long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts,
 			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
+			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
 			ClientEventProducer producer) {
 		this.client = client;
@@ -58,6 +62,8 @@ public class FetcherContext implements Cloneable {
 		this.localRequestOnly = localRequestOnly;
 		this.splitfileUseLengths = false;
 		this.eventProducer = producer;
+		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
+		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
 	}
 
 	public FetcherContext(FetcherContext ctx, int maskID) {
@@ -80,6 +86,8 @@ public class FetcherContext implements Cloneable {
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = false;
 			this.eventProducer = ctx.eventProducer;
+			this.maxDataBlocksPerSegment = 0;
+			this.maxCheckBlocksPerSegment = 0;
 		} else if(maskID == SPLITFILE_DEFAULT_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
@@ -99,6 +107,8 @@ public class FetcherContext implements Cloneable {
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = false;
 			this.eventProducer = ctx.eventProducer;
+			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
+			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 		} else if(maskID == SPLITFILE_USE_LENGTHS_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
@@ -118,6 +128,8 @@ public class FetcherContext implements Cloneable {
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = true;
 			this.eventProducer = ctx.eventProducer;
+			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
+			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 		} else throw new IllegalArgumentException();
 	}
 

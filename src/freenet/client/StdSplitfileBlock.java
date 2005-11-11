@@ -31,6 +31,7 @@ public abstract class StdSplitfileBlock extends SplitfileBlock implements Runnab
 
 	public void setData(Bucket data) {
 		fetchedData = data;
+		Logger.minor(this, "Set data: "+(data == null ? "(null)" : (""+data.size())+ " on "+this), new Exception("debug"));
 	}
 
 	public void start() {

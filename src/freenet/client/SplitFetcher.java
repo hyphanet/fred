@@ -10,6 +10,8 @@ import com.onionnetworks.fec.FECCodeFactory;
 import freenet.keys.FreenetURI;
 import freenet.keys.NodeCHK;
 import freenet.support.Bucket;
+import freenet.support.Fields;
+import freenet.support.Logger;
 
 /**
  * Class to fetch a splitfile.
@@ -55,7 +57,7 @@ public class SplitFetcher {
 	/** Accept non-full splitfile chunks? */
 	private boolean splitUseLengths;
 	
-	public SplitFetcher(Metadata metadata, ArchiveContext archiveContext, FetcherContext ctx, int recursionLevel) throws MetadataParseException {
+	public SplitFetcher(Metadata metadata, ArchiveContext archiveContext, FetcherContext ctx, int recursionLevel) throws MetadataParseException, FetchException {
 		actx = archiveContext;
 		fctx = ctx;
 		overrideLength = metadata.dataLength;
@@ -71,13 +73,20 @@ public class SplitFetcher {
 			checkBlocksPerSegment = -1;
 			segmentCount = 1;
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			blocksPerSegment = 128;
-			checkBlocksPerSegment = 64;
+			byte[] params = metadata.splitfileParams;
+			if(params == null || params.length < 8)
+				throw new MetadataParseException("No splitfile params");
+			blocksPerSegment = Fields.bytesToInt(params, 0);
+			checkBlocksPerSegment = Fields.bytesToInt(params, 4);
+			if(blocksPerSegment > ctx.maxDataBlocksPerSegment
+					|| checkBlocksPerSegment > ctx.maxCheckBlocksPerSegment)
+				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segmentCount = (splitfileDataBlocks.length / blocksPerSegment) +
 				(splitfileDataBlocks.length % blocksPerSegment == 0 ? 0 : 1);
 			// Onion, 128/192.
 			// Will be segmented.
 		} else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
+		Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount);
 		segments = new Segment[segmentCount]; // initially null on all entries
 		if(segmentCount == 1) {
 			segments[0] = new Segment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths, recursionLevel+1);
@@ -102,6 +111,7 @@ public class SplitFetcher {
 		unstartedSegments = new Vector();
 		for(int i=0;i<segments.length;i++)
 			unstartedSegments.add(segments[i]);
+		Logger.minor(this, "Segments: "+unstartedSegments.size());
 	}
 
 	/**
@@ -151,8 +161,8 @@ public class SplitFetcher {
 		synchronized(unstartedSegments) {
 			if(unstartedSegments.isEmpty()) return null;
 			int x = fctx.random.nextInt(unstartedSegments.size());
-			Segment s = (Segment) unstartedSegments.get(x);
-			unstartedSegments.remove(x);
+			Logger.minor(this, "Starting segment "+x+" of "+unstartedSegments.size());
+			Segment s = (Segment) unstartedSegments.remove(x);
 			return s;
 		}
 	}

@@ -16,10 +16,13 @@ public class InserterContext {
 	final short splitfileAlgorithm;
 	final int maxInsertBlockRetries;
 	final int maxSplitInsertThreads;
+	final int splitfileSegmentDataBlocks;
+	final int splitfileSegmentCheckBlocks;
 	final ClientEventProducer eventProducer;
 	
 	public InserterContext(SimpleLowLevelClient client, BucketFactory bf, RandomSource random,
-			int maxRetries, int maxThreads, ClientEventProducer eventProducer) {
+			int maxRetries, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
+			ClientEventProducer eventProducer) {
 		this.client = client;
 		this.bf = bf;
 		this.random = random;
@@ -28,6 +31,8 @@ public class InserterContext {
 		this.maxInsertBlockRetries = maxRetries;
 		this.maxSplitInsertThreads = maxThreads;
 		this.eventProducer = eventProducer;
+		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
+		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
 	}
 
 }
