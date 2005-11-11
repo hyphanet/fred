@@ -28,7 +28,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	InsertSegment encodingSegment;
 	InsertSegment[] segments;
 	final Vector unstartedSegments = new Vector();
-	private boolean allSegmentsFinished = false;
+	private boolean finishedInserting = false;
 	private boolean getCHKOnly;
 	private int succeeded;
 	private int failed;
@@ -83,7 +83,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	private FreenetURI waitForCompletion() throws InserterException {
 		tracker.setFinishOnEmpty();
 		synchronized(this) {
-			while(!allSegmentsFinished) {
+			while(!finishedInserting) {
 				try {
 					wait(10*1000);
 				} catch (InterruptedException e) {
@@ -102,24 +102,29 @@ public class SplitInserter implements RetryTrackerCallback {
 		if(missingURIs && fatalErrors == 0 && failed == 0)
 			throw new IllegalStateException();
 		
-		Metadata metadata = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, clientMetadata, dataLength, compressionCodec);
+		FreenetURI uri = null;
 		
-		Bucket mbucket;
-		try {
-			mbucket = BucketTools.makeImmutableBucket(ctx.bf, metadata.writeToByteArray());
-		} catch (IOException e) {
-			throw new InserterException(InserterException.BUCKET_ERROR);
+		if(!missingURIs) {
+		
+			Metadata metadata = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, clientMetadata, dataLength, compressionCodec);
+			
+			Bucket mbucket;
+			try {
+				mbucket = BucketTools.makeImmutableBucket(ctx.bf, metadata.writeToByteArray());
+			} catch (IOException e) {
+				throw new InserterException(InserterException.BUCKET_ERROR);
+			}
+			
+			if(inserter == null)
+				inserter = new FileInserter(ctx);
+			
+			InsertBlock mblock = new InsertBlock(mbucket, clientMetadata, FreenetURI.EMPTY_CHK_URI);
+			
+			// FIXME probably should uncomment below so it doesn't get inserted at all?
+			// FIXME this is a hack for small network support... but we will need that IRL... hmmm
+			uri = inserter.run(mblock, true, getCHKOnly/* || (fatalErrors > 0 || failed > 0)*/);
+			
 		}
-
-		if(inserter == null)
-			inserter = new FileInserter(ctx);
-		
-		InsertBlock mblock = new InsertBlock(mbucket, clientMetadata, FreenetURI.EMPTY_CHK_URI);
-
-		// FIXME probably should uncomment below so it doesn't get inserted at all?
-		// FIXME this is a hack for small network support... but we will need that IRL... hmmm
-		FreenetURI uri = inserter.run(mblock, true, getCHKOnly/* || (fatalErrors > 0 || failed > 0)*/);
-		
 		// Did we succeed?
 		
 		if(fatalErrors > 0) {
@@ -218,7 +223,7 @@ public class SplitInserter implements RetryTrackerCallback {
 
 	public void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors) {
 		synchronized(this) {
-			allSegmentsFinished = true;
+			finishedInserting = true;
 			this.succeeded = succeeded.length;
 			this.failed = failed.length;
 			this.fatalErrorBlocks = fatalErrors;

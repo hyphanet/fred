@@ -77,8 +77,8 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
         System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
         System.out.println("NAME:<new node name> - change the node's name.");
-        System.out.println("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.");
-        System.out.println("SAY:<text> - send text to the last created/pushed stream");
+//        System.out.println("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.");
+//        System.out.println("SAY:<text> - send text to the last created/pushed stream");
         System.out.println("STATUS - display some status information on the node including its reference and connections.");
         System.out.println("QUIT - exit the program");
         // Read command, and data

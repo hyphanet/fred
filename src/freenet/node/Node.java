@@ -425,7 +425,10 @@ public class Node implements SimpleLowLevelClient {
             String msg = "Failed inserting "+block+" : "+is.getStatusString();
             if(status == InsertSender.ROUTE_NOT_FOUND)
                 msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
-            Logger.error(this, msg);
+            if(is.getStatus() != InsertSender.ROUTE_NOT_FOUND)
+            	Logger.error(this, msg);
+            else
+            	Logger.normal(this, msg);
             switch(is.getStatus()) {
             case InsertSender.NOT_FINISHED:
         		Logger.error(this, "IS still running in putCHK!: "+is);
@@ -437,7 +440,6 @@ public class Node implements SimpleLowLevelClient {
             default:
         		Logger.error(this, "Unknown InsertSender code in putCHK: "+is.getStatus()+" on "+is);
     			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-            		
             }
         }
     }

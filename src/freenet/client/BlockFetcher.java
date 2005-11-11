@@ -33,6 +33,8 @@ public class BlockFetcher extends StdSplitfileBlock {
 			realRun();
 		} catch (Throwable t) {
 			fatalError(t, FetchException.INTERNAL_ERROR);
+		} finally {
+			completedTries++;
 		}
 	}
 

@@ -53,6 +53,7 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 		try {
 			realRun();
 		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
 			fatalError(t, InserterException.INTERNAL_ERROR);
 		} finally {
 			completedTries++;

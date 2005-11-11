@@ -33,8 +33,10 @@ public class InsertSegment {
 	 */
 	public FreenetURI[] getCheckURIs() {
 		FreenetURI[] uris = new FreenetURI[checkBlocks.length];
-		for(int i=0;i<uris.length;i++)
-			uris[i] = checkBlocks[i].getURI();
+		for(int i=0;i<uris.length;i++) {
+			FreenetURI uri = checkBlocks[i].getURI();
+			uris[i] = uri;
+		}
 		return uris;
 	}
 
@@ -48,6 +50,8 @@ public class InsertSegment {
 		for(int i=0;i<checkBlocks.length;i++)
 			checkBlocks[i] = new BlockInserter(null, offset + i, tracker, ctx, getCHKOnly);
 		codec.encode(origDataBlocks, checkBlocks, blockLength, bf);
+		for(int i=0;i<checkBlocks.length;i++)
+			tracker.addBlock(checkBlocks[i]);
 		return checkBlocks.length;
 	}
 

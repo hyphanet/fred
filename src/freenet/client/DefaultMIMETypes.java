@@ -57,7 +57,9 @@ class DefaultMIMETypes {
 			for(int i=0;i<extensions.length;i++) {
 				String ext = extensions[i].toLowerCase();
 				if(mimeTypesByExtension.containsKey(ext)) {
-					Logger.error(DefaultMIMETypes.class, "Extension already registered to number "+mimeTypesByExtension.get(ext));
+					// No big deal
+					Short s = (Short) mimeTypesByExtension.get(ext);
+					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s.shortValue())+" in preference to "+number+":"+type);
 				} else
 					mimeTypesByExtension.put(ext, t);
 			}

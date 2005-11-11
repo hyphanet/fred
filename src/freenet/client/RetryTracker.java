@@ -12,14 +12,12 @@ import freenet.support.Logger;
  */
 public class RetryTracker {
 
-	static class Level {
+	class Level {
 		final int level;
 		final Vector blocks;
-		final RetryTracker tracker;
 
-		Level(RetryTracker tracker, int l) {
+		Level(int l) {
 			level = l;
-			this.tracker = tracker;
 			blocks = new Vector();
 		}
 		
@@ -29,10 +27,10 @@ public class RetryTracker {
 		 */
 		SplitfileBlock getBlock() {
 			int len = blocks.size();
-			int x = tracker.random.nextInt(len);
+			int x = random.nextInt(len);
 			SplitfileBlock block = (SplitfileBlock) blocks.remove(x);
 			if(blocks.isEmpty())
-				tracker.removeLevel(level);
+				removeLevel(level);
 			return block;
 		}
 		
@@ -48,7 +46,7 @@ public class RetryTracker {
 		void remove(SplitfileBlock block) {
 			blocks.remove(block);
 			if(blocks.isEmpty())
-				tracker.removeLevel(level);
+				removeLevel(level);
 		}
 	}
 
@@ -140,7 +138,7 @@ public class RetryTracker {
 	/** Add a level */
 	private synchronized Level addLevel(int level, Integer x) {
 		if(level < 0) throw new IllegalArgumentException();
-		Level l = new Level(this, level);
+		Level l = new Level(level);
 		levels.put(x, l);
 		if(level > curMaxLevel) curMaxLevel = level;
 		if(level < curMinLevel) curMinLevel = level;
@@ -174,10 +172,7 @@ public class RetryTracker {
 	public synchronized void nonfatalError(SplitfileBlock block, int reasonCode) {
 		nonfatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
-		Level l = makeLevel(block.getRetryCount());
-		if(l == null) throw new IllegalArgumentException();
-		int levelNumber = l.level;
-		l.remove(block);
+		int levelNumber = block.getRetryCount();
 		levelNumber++;
 		if(levelNumber > maxLevel) {
 			failedBlocksTooManyRetries.add(block);
@@ -197,10 +192,6 @@ public class RetryTracker {
 	public synchronized void fatalError(SplitfileBlock block, int reasonCode) {
 		fatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
-		Level l = makeLevel(block.getRetryCount());
-		if(l == null) throw new IllegalArgumentException();
-		if(l.tracker != this) throw new IllegalArgumentException("Belongs to wrong tracker");
-		l.remove(block);
 		failedBlocksFatalErrors.add(block);
 		maybeStart(false);
 	}
@@ -212,6 +203,8 @@ public class RetryTracker {
 	public synchronized void maybeStart(boolean cantCallFinished) {
 		Logger.minor(this, "succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
 				", running: "+runningBlocks.size()+", levels: "+levels.size()+", finishOnEmpty: "+finishOnEmpty);
+		if(runningBlocks.size() == 1)
+			Logger.minor(this, "Only block running: "+runningBlocks.toArray()[0]);
 		if((succeededBlocks.size() >= targetSuccesses)
 				|| (runningBlocks.isEmpty() && levels.isEmpty() && finishOnEmpty)) {
 			Logger.minor(this, "Finishing");
@@ -250,7 +243,16 @@ public class RetryTracker {
 	 */
 	public synchronized SplitfileBlock getBlock() {
 		Level l = (Level) levels.get(new Integer(curMinLevel));
-		if(l == null) return null;
+		if(l == null) {
+			if(!levels.isEmpty()) {
+				Integer x = (Integer) levels.keySet().toArray()[0];
+				Logger.error(this, "Inconsistent: min level = "+curMinLevel+", max level = "+curMaxLevel+" but level exists: "+x, new Exception("error"));
+				curMinLevel = x.intValue();
+				curMaxLevel = x.intValue();
+				return getBlock();
+			}
+			return null;
+		}
 		return l.getBlock();
 	}
 	
