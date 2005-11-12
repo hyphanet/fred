@@ -856,7 +856,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 pn.requeueMessageItems(messages, 0, messages.length, false);
                 return;
             } catch (Throwable e) {
-                Logger.error(this, "Caught "+e+" while sending messages, requeueing");
+                Logger.error(this, "Caught "+e+" while sending messages, requeueing", e);
                 // Requeue
                 pn.requeueMessageItems(messages, 0, messages.length, false);
                 return;
@@ -893,7 +893,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                             pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
                             return;
                         } catch (Throwable e) {
-                            Logger.error(this, "Caught "+e+" while sending messages, requeueing remaining messages");
+                            Logger.error(this, "Caught "+e+" while sending messages, requeueing remaining messages", e);
                             // Requeue
                             pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
                             return;

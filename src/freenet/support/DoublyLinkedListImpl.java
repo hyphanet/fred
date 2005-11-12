@@ -25,12 +25,16 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     public DoublyLinkedListImpl() {
         _headptr = new Item();
         _tailptr = new Item();
+        _headptr.setParent(this);
+        _tailptr.setParent(this);
         clear();
     }
 
     protected DoublyLinkedListImpl(Item _h, Item _t, int size) {
         _headptr  = _h;
         _tailptr  = _t;
+        _headptr.setParent(this);
+        _tailptr.setParent(this);
         this.size = size;
     }
 
@@ -139,6 +143,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
 
         DoublyLinkedList newlist = new DoublyLinkedListImpl(_headptr, newtailptr, n);
         _headptr = newheadptr;
+        _headptr.setParent(this);
         size -= n;
         
         return newlist;
@@ -218,7 +223,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      */
     public DoublyLinkedList.Item remove(DoublyLinkedList.Item i) {
     	if (i.getParent() != this)
-    		throw new PromiscuousItemException(i);
+    		throw new PromiscuousItemException(i, i.getParent());
         DoublyLinkedList.Item next = i.getNext(), prev = i.getPrev();
         if (next == null || prev == null) return null;  // not in the list
         prev.setNext(next);
@@ -235,9 +240,9 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      */
     public void insertPrev(DoublyLinkedList.Item i, DoublyLinkedList.Item j) {
     	if (i.getParent() != this)
-    		throw new PromiscuousItemException(i);
+    		throw new PromiscuousItemException(i, i.getParent());
     	if (j.getParent() != null)
-    		throw new PromiscuousItemException(j);
+    		throw new PromiscuousItemException(j, i.getParent());
         if (j.getNext() != null || j.getPrev() != null)
             throw new PromiscuousItemException(j);
         DoublyLinkedList.Item prev = i.getPrev();
@@ -247,6 +252,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
         j.setPrev(prev);
         i.setPrev(j);
         j.setNext(i);
+        j.setParent(this);
         ++size;
     }
 
@@ -263,9 +269,9 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      */
     public void insertNext(DoublyLinkedList.Item i, DoublyLinkedList.Item j) {
     	if (i.getParent() != this)
-    		throw new PromiscuousItemException(i);
+    		throw new PromiscuousItemException(i, i.getParent());
     	if (j.getParent() != null)
-    		throw new PromiscuousItemException(j);
+    		throw new PromiscuousItemException(j, i.getParent());
         if (j.getNext() != null || j.getPrev() != null)
             throw new PromiscuousItemException(j);
         DoublyLinkedList.Item next = i.getNext();
@@ -275,6 +281,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
         j.setNext(next);
         i.setNext(j);
         j.setPrev(i);
+        j.setParent(this);
         ++size;
     }
 

@@ -105,6 +105,6 @@ public class SimpleFieldSet {
         } catch (IOException e) {
             Logger.error(this, "WTF?!: "+e+" in toString()!", e);
         }
-        return super.toString()+"\n\n"+sw.toString();
+        return sw.toString();
     }
 }

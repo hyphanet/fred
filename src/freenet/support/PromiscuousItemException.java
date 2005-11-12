@@ -1,5 +1,7 @@
 package freenet.support;
 
+import freenet.support.DoublyLinkedList.Item;
+
 /**
  * Indicates an attempt to link a DoublyLinkedList.Item into
  * two or more DoublyLinkedList's simultaneously (or twice
@@ -16,4 +18,8 @@ public class PromiscuousItemException extends RuntimeException {
     PromiscuousItemException(DoublyLinkedList.Item item) {
         super(item.toString());
     }
+
+	public PromiscuousItemException(Item item, DoublyLinkedList parent) {
+		super(item.toString()+":"+parent);
+	}
 }
