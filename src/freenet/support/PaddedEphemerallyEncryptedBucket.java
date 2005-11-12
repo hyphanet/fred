@@ -101,21 +101,25 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		}
 		
 		public void close() throws IOException {
-			if(streamNumber != lastOutputStream) {
-				Logger.normal(this, "Not padding out to length because have been superceded: "+getName());
-				return;
-			}
-			synchronized(PaddedEphemerallyEncryptedBucket.this) {
-				long finalLength = paddedLength();
-				long padding = finalLength - dataLength;
-				byte[] buf = new byte[4096];
-				long writtenPadding = 0;
-				while(writtenPadding < padding) {
-					int left = Math.min((int) (padding - writtenPadding), buf.length);
-					paddingSource.nextBytes(buf);
-					out.write(buf, 0, left);
-					writtenPadding += left;
+			try {
+				if(streamNumber != lastOutputStream) {
+					Logger.normal(this, "Not padding out to length because have been superceded: "+getName());
+					return;
 				}
+				synchronized(PaddedEphemerallyEncryptedBucket.this) {
+					long finalLength = paddedLength();
+					long padding = finalLength - dataLength;
+					byte[] buf = new byte[4096];
+					long writtenPadding = 0;
+					while(writtenPadding < padding) {
+						int left = Math.min((int) (padding - writtenPadding), buf.length);
+						paddingSource.nextBytes(buf);
+						out.write(buf, 0, left);
+						writtenPadding += left;
+					}
+				}
+			} finally {
+				out.close();
 			}
 		}
 	}
@@ -176,6 +180,10 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 				skipped += x;
 			}
 			return skipped;
+		}
+		
+		public void close() throws IOException {
+			in.close();
 		}
 	}
 
