@@ -81,7 +81,7 @@ public class PeerNode implements PeerContext {
      * handshake.
      */
     private boolean isConnected;
-
+    
     
     /** Current location in the keyspace */
     private Location currentLocation;
@@ -327,6 +327,10 @@ public class PeerNode implements PeerContext {
         node.lm.lostOrRestartedNode(this);
     }
 
+    public void forceDisconnect() {
+    	disconnected();
+    }
+    
     /**
      * Grab all queued Message's.
      * @return Null if no messages are queued, or an array of

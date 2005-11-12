@@ -9,4 +9,7 @@ package freenet.io.comm;
 public interface PeerContext {
     // Largely opaque interface for now
     Peer getPeer();
+
+    /** Force the peer to disconnect */
+	void forceDisconnect();
 }

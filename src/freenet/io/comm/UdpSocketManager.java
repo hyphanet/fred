@@ -358,7 +358,14 @@ public class UdpSocketManager extends Thread {
 		}
 		byte[] blockToSend = m.encodeToPacket(lowLevelFilter, destination);
 		if(lowLevelFilter != null) {
-		    lowLevelFilter.processOutgoing(blockToSend, 0, blockToSend.length, destination);
+			try {
+				lowLevelFilter.processOutgoing(blockToSend, 0, blockToSend.length, destination);
+				return;
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t+" sending "+m+" to "+destination, t);
+				destination.forceDisconnect();
+				throw new NotConnectedException("Error "+t.toString()+" forced disconnect");
+			}
 		} else {
 		    sendPacket(blockToSend, destination.getPeer());
 		}

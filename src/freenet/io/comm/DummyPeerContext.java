@@ -18,4 +18,8 @@ public class DummyPeerContext implements PeerContext {
         peer = p;
     }
 
+	public void forceDisconnect() {
+		// Do nothing
+	}
+
 }
