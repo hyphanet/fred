@@ -73,6 +73,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     	DoublyLinkedList.Item pos = _headptr.next;
     	DoublyLinkedList.Item opos = _headptr;
     	while(true) {
+    		if(pos == null) break;
     		pos.setParent(null);
     		pos.setPrev(null);
     		opos = pos;
