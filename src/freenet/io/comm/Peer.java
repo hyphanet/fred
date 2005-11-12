@@ -58,7 +58,7 @@ public class Peer implements WritableToDataOutputStream {
      * @param physical
      */
     public Peer(String physical) throws PeerParseException {
-        int offset = physical.indexOf(':');
+        int offset = physical.lastIndexOf(':');
         if(offset < 0) throw new PeerParseException();
         String before = physical.substring(0, offset);
         String after = physical.substring(offset+1);
