@@ -68,58 +68,63 @@ public class BucketTools {
 		out.close();
 	}
 
-	public final static void paddedCopy(
-		Bucket from,
-		Bucket to,
-		long nBytes,
-		int blockSize)
-		throws IOException {
+	public final static void paddedCopy(Bucket from, Bucket to, long nBytes,
+			int blockSize) throws IOException {
 
 		if (nBytes > blockSize) {
 			throw new IllegalArgumentException("nBytes > blockSize");
 		}
 
-		OutputStream out = to.getOutputStream();
-		byte[] buffer = new byte[16384];
-		InputStream in = from.getInputStream();
+		OutputStream out = null;
+		InputStream in = null;
 
-		long count = 0;
-		while (count != nBytes) {
-			long nRequired = nBytes - count;
-			if (nRequired > buffer.length) {
-				nRequired = buffer.length;
-			}
-			long nRead = in.read(buffer, 0, (int) nRequired);
-			if (nRead == -1) {
-				throw new IOException("Not enough data in source bucket.");
-			}
-			out.write(buffer, 0, (int) nRead);
-			count += nRead;
-		}
+		try {
 
-		if (count < blockSize) {
-			// hmmm... better to just allocate a new buffer
-			// instead of explicitly zeroing the old one?
-			// Zero pad to blockSize
-			long padLength = buffer.length;
-			if (padLength > blockSize - nBytes) {
-				padLength = blockSize - nBytes;
-			}
-			for (int i = 0; i < padLength; i++) {
-				buffer[i] = 0;
-			}
+			out = to.getOutputStream();
+			byte[] buffer = new byte[16384];
+			in = from.getInputStream();
 
-			while (count != blockSize) {
-				long nRequired = blockSize - count;
-				if (blockSize - count > buffer.length) {
+			long count = 0;
+			while (count != nBytes) {
+				long nRequired = nBytes - count;
+				if (nRequired > buffer.length) {
 					nRequired = buffer.length;
 				}
-				out.write(buffer, 0, (int) nRequired);
-				count += nRequired;
+				long nRead = in.read(buffer, 0, (int) nRequired);
+				if (nRead == -1) {
+					throw new IOException("Not enough data in source bucket.");
+				}
+				out.write(buffer, 0, (int) nRead);
+				count += nRead;
 			}
+
+			if (count < blockSize) {
+				// hmmm... better to just allocate a new buffer
+				// instead of explicitly zeroing the old one?
+				// Zero pad to blockSize
+				long padLength = buffer.length;
+				if (padLength > blockSize - nBytes) {
+					padLength = blockSize - nBytes;
+				}
+				for (int i = 0; i < padLength; i++) {
+					buffer[i] = 0;
+				}
+
+				while (count != blockSize) {
+					long nRequired = blockSize - count;
+					if (blockSize - count > buffer.length) {
+						nRequired = buffer.length;
+					}
+					out.write(buffer, 0, (int) nRequired);
+					count += nRequired;
+				}
+			}
+		} finally {
+			if (in != null)
+				in.close();
+			if (out != null)
+				out.close();
 		}
-		in.close();
-		out.close();
 	}
 
 	public static class BucketFactoryWrapper implements BucketFactory {
@@ -307,9 +312,12 @@ public class BucketTools {
 		if(size > Integer.MAX_VALUE) throw new OutOfMemoryError();
 		byte[] data = new byte[(int)size];
 		InputStream is = bucket.getInputStream();
-		DataInputStream dis = new DataInputStream(is);
-		dis.readFully(data);
-		dis.close();
+		try {
+			DataInputStream dis = new DataInputStream(is);
+			dis.readFully(data);
+		} finally {
+			is.close();
+		}
 		return data;
 	}
 
@@ -323,9 +331,10 @@ public class BucketTools {
 	}
 
 	public static byte[] hash(Bucket data) throws IOException {
+		InputStream is = null;
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA-256");
-			InputStream is = data.getInputStream();
+			is = data.getInputStream();
 			long bucketLength = data.size();
 			long bytesRead = 0;
 			byte[] buf = new byte[4096];
@@ -343,6 +352,8 @@ public class BucketTools {
 		} catch (NoSuchAlgorithmException e) {
 			Logger.error(BucketTools.class, "No such digest: SHA-256 !!");
 			throw new Error("No such digest: SHA-256 !!");
+		} finally {
+			if(is != null) is.close();
 		}
 	}
 
@@ -352,23 +363,26 @@ public class BucketTools {
 		if(truncateLength == 0) return;
 		if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
 		InputStream is = decodedData.getInputStream();
-		byte[] buf = new byte[4096];
-		long moved = 0;
-		while(moved < truncateLength) {
-			// DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
-			int bytes = (int) Math.min(buf.length, truncateLength - moved);
-			if(bytes <= 0)
-				throw new IllegalStateException("bytes="+bytes+", truncateLength="+truncateLength+", moved="+moved);
-			bytes = is.read(buf, 0, bytes);
-			if(bytes <= 0) {
-				if(truncateLength == Long.MAX_VALUE)
-					break;
-				throw new IOException("Could not move required quantity of data: "+bytes);
+		try {
+			byte[] buf = new byte[4096];
+			long moved = 0;
+			while(moved < truncateLength) {
+				// DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
+				int bytes = (int) Math.min(buf.length, truncateLength - moved);
+				if(bytes <= 0)
+					throw new IllegalStateException("bytes="+bytes+", truncateLength="+truncateLength+", moved="+moved);
+				bytes = is.read(buf, 0, bytes);
+				if(bytes <= 0) {
+					if(truncateLength == Long.MAX_VALUE)
+						break;
+					throw new IOException("Could not move required quantity of data: "+bytes);
+				}
+				os.write(buf, 0, bytes);
+				moved += bytes;
 			}
-			os.write(buf, 0, bytes);
-			moved += bytes;
+		} finally {
+			is.close();
 		}
-		is.close();
 	}
 
 	/**
@@ -392,20 +406,26 @@ public class BucketTools {
 		if(length % splitSize > 0) bucketCount++;
 		Bucket[] buckets = new Bucket[bucketCount];
 		InputStream is = origData.getInputStream();
-		DataInputStream dis = new DataInputStream(is);
-		long remainingLength = length;
-		byte[] buf = new byte[splitSize];
-		for(int i=0;i<bucketCount;i++) {
-			int len = (int) Math.min(splitSize, remainingLength);
-			Bucket bucket = bf.makeBucket(len);
-			buckets[i] = bucket;
-			dis.readFully(buf, 0, len);
-			remainingLength -= len;
-			OutputStream os = bucket.getOutputStream();
-			os.write(buf, 0, len);
-			os.close();
+		try {
+			DataInputStream dis = new DataInputStream(is);
+			long remainingLength = length;
+			byte[] buf = new byte[splitSize];
+			for(int i=0;i<bucketCount;i++) {
+				int len = (int) Math.min(splitSize, remainingLength);
+				Bucket bucket = bf.makeBucket(len);
+				buckets[i] = bucket;
+				dis.readFully(buf, 0, len);
+				remainingLength -= len;
+				OutputStream os = bucket.getOutputStream();
+				try {
+					os.write(buf, 0, len);
+				} finally {
+					os.close();
+				}
+			}
+		} finally {
+			is.close();
 		}
-		dis.close();
 		return buckets;
 	}
 }

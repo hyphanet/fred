@@ -629,7 +629,12 @@ public class FileLoggerHook extends LoggerHook {
 			// Convert the stack trace to a string.
 			ByteArrayOutputStream bos = new ByteArrayOutputStream(350);
 			PrintWriter bpw = new PrintWriter(bos);
-			e.printStackTrace(bpw);
+			try {
+				e.printStackTrace(bpw);
+			} catch (NullPointerException ex) {
+				log(this, getClass(), "Got evil NPE-in-stack-trace bug", null, ERROR);
+				bpw.println("[ evil NPE-in-stack-trace triggered ]");
+			}
 			bpw.flush();
 
 			sb.append(bos.toString());

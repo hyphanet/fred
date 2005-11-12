@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -45,19 +46,21 @@ public class Metadata {
 	 * @throws IOException If we could not read the metadata from the bucket.
 	 */
 	public static Metadata construct(Bucket data) throws MetadataParseException, IOException {
-		return new Metadata(data);
+		InputStream is = data.getInputStream();
+		Metadata m;
+		try {
+			DataInputStream dis = new DataInputStream(is);
+			m = new Metadata(dis, false, data.size());
+		} finally {
+			is.close();
+		}
+		return m;
 	}
 	
 	/** Parse some metadata from a byte[]. 
 	 * @throws IOException If the data is incomplete, or something wierd happens. */
 	private Metadata(byte[] data) throws IOException {
 		this(new DataInputStream(new ByteArrayInputStream(data)), false, data.length);
-	}
-
-	/** Parse some metadata from a Bucket.
-	 * @throws IOException If the data is incomplete, or something wierd happens. */
-	public Metadata(Bucket meta) throws IOException {
-		this(new DataInputStream(meta.getInputStream()), false, meta.size());
 	}
 
 	/** Parse some metadata from a DataInputStream
