@@ -226,6 +226,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
         i.setNext(null);
         i.setPrev(null);
         --size;
+        i.setParent(null);
         return i;
     }
 
