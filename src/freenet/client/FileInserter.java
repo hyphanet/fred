@@ -146,14 +146,14 @@ public class FileInserter {
 	private void translateException(LowLevelPutException e) throws InserterException {
 		switch(e.code) {
 		case LowLevelPutException.INTERNAL_ERROR:
-			throw new InserterException(InserterException.INTERNAL_ERROR);
+			throw new InserterException(InserterException.INTERNAL_ERROR, e);
 		case LowLevelPutException.REJECTED_OVERLOAD:
 			throw new InserterException(InserterException.REJECTED_OVERLOAD);
 		case LowLevelPutException.ROUTE_NOT_FOUND:
 			throw new InserterException(InserterException.ROUTE_NOT_FOUND);
 		default:
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code+" on "+this);
-			throw new InserterException(InserterException.INTERNAL_ERROR);
+			throw new InserterException(InserterException.INTERNAL_ERROR, e);
 		}
 	}
 

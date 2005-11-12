@@ -320,7 +320,12 @@ public class KeyTracker {
      * @param seqNumber The packet's serial number.
      */
     public synchronized void receivedPacket(int seqNumber) {
-        pn.receivedPacket();
+        try {
+			pn.receivedPacket();
+		} catch (NotConnectedException e) {
+			Logger.minor(this, "Ignoring, because disconnected");
+			return;
+		}
         if(seqNumber == -1) return;
         receivedPacketNumber(seqNumber);
         if(packetNumbersReceived.contains(seqNumber)) {
@@ -449,9 +454,9 @@ public class KeyTracker {
             pn.node.ps.queuedResendPacket();
         } else {
             String msg = "Asking me to resend packet "+seqNumber+
-        		" which we haven't sent yet or which they have already acked";
+        		" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+")";
             // Can have a race condition
-            if(seqNumber < nextPacketNumber && seqNumber > nextPacketNumber-16)
+            if(seqNumber < nextPacketNumber && seqNumber > nextPacketNumber-64)
                 Logger.minor(this, msg);
             else
                 Logger.error(this, msg);
@@ -622,7 +627,7 @@ public class KeyTracker {
                     int packetNumber = qrr.packetNumber;
                     if(qrr.activeTime <= now) {
                         if(sentPacketsContents.get(packetNumber) == null) {
-                            Logger.error(this, "Asking to ack packet which has already been acked: "+packetNumber+" on "+this+".grabAckRequests");
+                            Logger.minor(this, "Asking to ack packet which has already been acked: "+packetNumber+" on "+this+".grabAckRequests");
                             ackRequestQueue.remove(qrr);
                             continue;
                         }

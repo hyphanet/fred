@@ -1,5 +1,7 @@
 package freenet.io.comm;
 
+import freenet.node.PacketSequenceException;
+
 
 /**
  * Filter interface used by Freenet to decrypt incoming packets.
@@ -28,8 +30,9 @@ public interface LowLevelFilter {
      * @param offset The offset to start reading from.
      * @param length The length in bytes to read.
      * @param peer The PeerContext the messages will be sent to.
+     * @throws PacketSequenceException 
      */
-    void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException;
+    void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException, LowLevelFilterException;
 
     /**
      * Is the given connection closed?

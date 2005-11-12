@@ -66,6 +66,20 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      * Reset the size of the list to zero.
      */
     public void clear() {
+    	// Help to detect removal after clear().
+    	// The check in remove() is enough, strictly,
+    	// as long as people don't add elements afterwards.
+    	Enumeration e = forwardElements();
+    	DoublyLinkedList.Item pos = _headptr.next;
+    	DoublyLinkedList.Item opos = _headptr;
+    	while(true) {
+    		pos.setParent(null);
+    		pos.setPrev(null);
+    		opos = pos;
+    		pos = pos.getNext();
+    		opos.setNext(null);
+    		if(pos == _tailptr) break;
+    	}
         _headptr.next = _tailptr;
         _tailptr.prev = _headptr;
         size = 0;
@@ -222,10 +236,19 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      * @return  this item, or null if the item was not in the list
      */
     public DoublyLinkedList.Item remove(DoublyLinkedList.Item i) {
+    	if(isEmpty()) {
+    		Logger.error(this, "Illegal ERROR: Removing from an empty list!!");
+    		throw new IllegalStateException("Illegal ERROR: Removing from an empty list!!");
+    	}
     	if (i.getParent() != this)
     		throw new PromiscuousItemException(i, i.getParent());
         DoublyLinkedList.Item next = i.getNext(), prev = i.getPrev();
         if (next == null || prev == null) return null;  // not in the list
+        if(next.getPrev() != i || prev.getNext() != i) {
+        	String msg = "Illegal ERROR: i="+i+", next="+next+", next.prev="+next.getPrev()+", prev="+prev+", prev.next="+prev.getNext();
+        	Logger.error(this, msg);
+        	throw new IllegalStateException(msg);
+        }
         prev.setNext(next);
         next.setPrev(prev);
         i.setNext(null);

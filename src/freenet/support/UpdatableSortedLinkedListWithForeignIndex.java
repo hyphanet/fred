@@ -30,11 +30,13 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         }
         super.add(i);
         map.put(i.indexValue(), item);
+        checkList();
     }
     
     public synchronized void remove(UpdatableSortedLinkedListItem item) {
         super.remove(item);
         map.remove(((IndexableUpdatableSortedLinkedListItem)item).indexValue());
+        checkList();
     }
 
     public synchronized boolean containsKey(Object o) {
@@ -48,5 +50,6 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         IndexableUpdatableSortedLinkedListItem item = 
             (IndexableUpdatableSortedLinkedListItem) map.get(key);
         if(item != null) remove(item);
+        checkList();
     }
 }

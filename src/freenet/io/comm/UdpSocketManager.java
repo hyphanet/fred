@@ -46,6 +46,29 @@ public class UdpSocketManager extends Thread {
 	protected UdpSocketManager() {
 	}
 
+	public void start() {
+		super.start();
+		Thread checker = new Thread(new USMChecker());
+		checker.setDaemon(true);
+		checker.start();
+	}
+	
+	public class USMChecker implements Runnable {
+		public void run() {
+			while(true) {
+				try {
+					Thread.sleep(10*1000);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+				if(UdpSocketManager.this.isAlive())
+					Logger.minor(this, "PING on "+UdpSocketManager.this);
+				else
+					Logger.error(this, "MAIN LOOP TERMINATED");
+			}
+		}
+	}
+
 	public UdpSocketManager(int listenPort) throws SocketException {
 		super("UdpSocketManager sender thread on port " + listenPort);
 		try {
@@ -64,6 +87,7 @@ public class UdpSocketManager extends Thread {
 	}
 
 	public void run() { // Listen for packets
+		try {
 		while (_active) {
 		    try {
 			DatagramPacket packet = getPacket();
@@ -78,6 +102,7 @@ public class UdpSocketManager extends Thread {
 			    if(lowLevelFilter != null) {
 			        try {
 			            lowLevelFilter.process(data, offset, length, peer);
+			            Logger.minor(this, "Successfully handled packet length "+length);
 			        } catch (Throwable t) {
 			            Logger.error(this, "Caught "+t+" from "+lowLevelFilter, t);
 			        }
@@ -88,14 +113,18 @@ public class UdpSocketManager extends Thread {
 			        if(m != null)
 			            checkFilters(m);
 			    }
-			}
+			} else
+				Logger.minor(this, "Null packet");
 		    } catch (Throwable t) {
 		        Logger.error(this, "Caught "+t, t);
 		    }
 		}
+		} finally {
+		Logger.error(this, "run() exiting");
 		synchronized (this) {
 			_isDone = true;
 			notifyAll();
+		}
 		}
 	}
 
@@ -361,7 +390,7 @@ public class UdpSocketManager extends Thread {
 			try {
 				lowLevelFilter.processOutgoing(blockToSend, 0, blockToSend.length, destination);
 				return;
-			} catch (Throwable t) {
+			} catch (LowLevelFilterException t) {
 				Logger.error(this, "Caught "+t+" sending "+m+" to "+destination, t);
 				destination.forceDisconnect();
 				throw new NotConnectedException("Error "+t.toString()+" forced disconnect");
@@ -395,6 +424,7 @@ public class UdpSocketManager extends Thread {
     }
 
     public void close(boolean exit) {
+    	Logger.error(this, "Closing.", new Exception("error"));
 		_active = false;
 		synchronized (this) {
 			while (!_isDone) {

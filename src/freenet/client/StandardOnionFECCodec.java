@@ -266,6 +266,12 @@ public class StandardOnionFECCodec extends FECCodec {
 	private void realEncode(SplitfileBlock[] dataBlockStatus,
 			SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf)
 			throws IOException {
+		Runtime.getRuntime().gc();
+		Runtime.getRuntime().runFinalization();
+		Runtime.getRuntime().gc();
+		Runtime.getRuntime().runFinalization();
+		long memUsedAtStart = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+		Logger.minor(this, "Memory in use at start: "+memUsedAtStart);
 		System.err.println("************* Encoding " + dataBlockStatus.length
 				+ " -> " + checkBlockStatus.length + " *************");
 		Logger.minor(this, "Doing encode: " + dataBlockStatus.length
@@ -334,7 +340,19 @@ public class StandardOnionFECCodec extends FECCodec {
 					// Do the encode
 					// Not shuffled
 					long startTime = System.currentTimeMillis();
+					Runtime.getRuntime().gc();
+					Runtime.getRuntime().runFinalization();
+					Runtime.getRuntime().gc();
+					Runtime.getRuntime().runFinalization();
+					long memUsedBeforeStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+					Logger.minor(this, "Memory in use before stripe: "+memUsedBeforeStripe);
 					code.encode(dataPackets, checkPackets, toEncode);
+					Runtime.getRuntime().gc();
+					Runtime.getRuntime().runFinalization();
+					Runtime.getRuntime().gc();
+					Runtime.getRuntime().runFinalization();
+					long memUsedAfterStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+					Logger.minor(this, "Memory in use after stripe: "+memUsedAfterStripe);
 					long endTime = System.currentTimeMillis();
 					Logger.minor(this, "Stripe encode took "
 							+ (endTime - startTime) + " ms for k=" + k + ", n="

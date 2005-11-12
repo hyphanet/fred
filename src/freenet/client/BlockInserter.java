@@ -108,7 +108,7 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 	}
 
 	private void fatalError(Throwable t, int code) {
-		fatalError(new InserterException(code, t.toString()), code);
+		fatalError(new InserterException(code, t), code);
 	}
 
 	private void nonfatalError(InserterException e, int code) {

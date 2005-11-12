@@ -84,7 +84,7 @@ public class SplitInserter implements RetryTrackerCallback {
 			Logger.error(this, "Caught "+t, t);
 			tracker.kill();
 			if(t instanceof InserterException) throw (InserterException)t;
-			throw new InserterException(InserterException.INTERNAL_ERROR, t.toString());
+			throw new InserterException(InserterException.INTERNAL_ERROR, t);
 		}
 	}
 

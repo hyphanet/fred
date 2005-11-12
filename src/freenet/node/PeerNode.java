@@ -325,9 +325,11 @@ public class PeerNode implements PeerContext {
             currentTracker = previousTracker = unverifiedTracker = null;
         }
         node.lm.lostOrRestartedNode(this);
+        sendHandshakeTime = System.currentTimeMillis();
     }
 
     public void forceDisconnect() {
+    	Logger.error(this, "Forcing disconnect on "+this, new Exception("debug"));
     	disconnected();
     }
     
@@ -554,10 +556,12 @@ public class PeerNode implements PeerContext {
     
     /**
      * Update timeLastReceivedPacket
+     * @throws NotConnectedException 
      */
-    synchronized void receivedPacket() {
+    synchronized void receivedPacket() throws NotConnectedException {
         if(isConnected == false && unverifiedTracker == null) {
             Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
+            throw new NotConnectedException();
         }
         timeLastReceivedPacket = System.currentTimeMillis();
         randomizeMaxTimeBetweenPacketReceives();
@@ -644,7 +648,12 @@ public class PeerNode implements PeerContext {
             ctx = null;
         }
         Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID);
-        receivedPacket();
+        try {
+			receivedPacket();
+		} catch (NotConnectedException e) {
+			Logger.error(this, "Disconnected in completedHandshake with "+this);
+			return true; // i suppose
+		}
         node.peers.addConnectedPeer(this);
         sentInitialMessages = false;
         return true;
@@ -795,8 +804,9 @@ public class PeerNode implements PeerContext {
 
     /**
      * Send a payload-less packet on either key if necessary.
+     * @throws PacketSequenceException 
      */
-    public void sendAnyUrgentNotifications() {
+    public void sendAnyUrgentNotifications() throws PacketSequenceException {
         Logger.minor(this, "sendAnyUrgentNotifications");
         long now = System.currentTimeMillis();
         KeyTracker cur, prev;

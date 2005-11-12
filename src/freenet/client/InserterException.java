@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.io.IOException;
 
+import freenet.node.LowLevelPutException;
 import freenet.support.Logger;
 
 public class InserterException extends Exception {
@@ -30,7 +31,7 @@ public class InserterException extends Exception {
 		errorCodes = null;
 	}
 
-	public InserterException(int mode, IOException e) {
+	public InserterException(int mode, Throwable e) {
 		super(getMessage(mode)+": "+e.getMessage());
 		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+e, e);
 		this.mode = mode;

@@ -21,14 +21,17 @@ public class UpdatableSortedLinkedList {
         Logger.minor(this, "Add("+i+") on "+this);
         if(list.isEmpty()) {
             list.push(i);
+            checkList();
             return;
         }
         if(i.compareTo(list.tail()) >= 0) {
             list.push(i);
+            checkList();
             return;
         }
         if(i.compareTo(list.head()) <= 0) {
             list.unshift(i);
+            checkList();
             return;
         }
         // Search the list for a good place to put it
@@ -39,6 +42,7 @@ public class UpdatableSortedLinkedList {
                 (UpdatableSortedLinkedListItem) e.nextElement();
             if(prev != null && cur.compareTo(i) >= 0 && prev.compareTo(i) <= 0) {
                 list.insertNext(prev, i);
+                checkList();
                 return;
             }
             Logger.minor(this, "Not matching "+cur+" "+prev);
@@ -47,26 +51,59 @@ public class UpdatableSortedLinkedList {
         throw new IllegalStateException("impossible");
     }
 
-    public synchronized void remove(UpdatableSortedLinkedListItem i) {
+    private StringBuffer sb = new StringBuffer(1000);
+    
+    protected synchronized void checkList() {
+    	// FIXME once satisfied that this works, make it only happen occasionally
+    	int statedLength = list.size();
+    	int realLength = 0;
+    	sb.setLength(0);
+    	int x = 0;
+    	for(Enumeration e = list.elements();e.hasMoreElements();) {
+    		UpdatableSortedLinkedListItem i = (UpdatableSortedLinkedListItem) e.nextElement();
+    		sb.append(x);
+    		sb.append("=");
+    		sb.append(i);
+    		sb.append('\n');
+    		realLength++;
+    	}
+    	if(statedLength != realLength) {
+    		String err = "statedLength = "+statedLength+" but realLength = "+realLength+" on "+this;
+    		Logger.error(this, "Illegal ERROR: "+err, new Exception("error"));
+    		Logger.error(this, "Details:\n"+sb.toString());
+    		throw new IllegalStateException(err);
+    	} else {
+    		Logger.minor(this, "checkList() successful: realLength = statedLength = "+realLength+" on "+this);
+    		Logger.minor(this, "Details:\n"+sb.toString());
+    	}
+	}
+
+	public synchronized void remove(UpdatableSortedLinkedListItem i) {
         Logger.minor(this, "Remove("+i+") on "+this);
+        checkList();
         list.remove(i);
+        checkList();
     }
     
     public synchronized void update(UpdatableSortedLinkedListItem i) {
         Logger.minor(this, "Update("+i+") on "+this);
+        checkList();
         if(i.compareTo(list.tail()) > 0) {
             list.remove(i);
             list.push(i);
+            checkList();
             return;
         }
         if(i.compareTo(list.head()) < 0) {
             list.remove(i);
             list.unshift(i);
+            checkList();
             return;
         }
         if(list.head() == list.tail() && i != list.head()) {
             Logger.error(this, "Only 1 element: "+list.head()+" and updating "+i+" on "+this, new Exception("error"));
             add(i);
+            checkList();
             return;
         }
         // Forwards or backwards?
@@ -94,6 +131,7 @@ public class UpdatableSortedLinkedList {
                 if(i.compareTo(next) < 0 && i.compareTo(prev) > 0) {
                     list.remove(i);
                     list.insertNext(prev, i);
+                    checkList();
                     return;
                 }
             }
@@ -108,6 +146,7 @@ public class UpdatableSortedLinkedList {
                 if(i.compareTo(next) < 0 && i.compareTo(prev) > 0) {
                     list.remove(i);
                     list.insertNext(prev, i);
+                    checkList();
                     return;
                 }
             }
@@ -116,6 +155,7 @@ public class UpdatableSortedLinkedList {
         dump();
         remove(i);
         add(i);
+        checkList();
     }
 
     /**

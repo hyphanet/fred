@@ -12,11 +12,6 @@ import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.EntropySource;
 import freenet.crypt.PCFBMode;
 import freenet.io.comm.*;
-import freenet.io.comm.LowLevelFilter;
-import freenet.io.comm.Message;
-import freenet.io.comm.Peer;
-import freenet.io.comm.PeerContext;
-import freenet.io.comm.UdpSocketManager;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -723,6 +718,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
 
         int ackRequestsCount = decrypted[ptr++] & 0xff;
+        Logger.minor(this, "Ack requests: "+ackRequestsCount);
         
         // These two are relative to our outgoing packet number
         // Because they relate to packets we have sent.
@@ -737,7 +733,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         
         int forgottenCount = decrypted[ptr++] & 0xff;
-        //Logger.minor(this, "Forgotten packets: "+forgottenCount);
+        Logger.minor(this, "Forgotten packets: "+forgottenCount);
         
         for(int i=0;i<forgottenCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
@@ -748,7 +744,10 @@ public class FNPPacketMangler implements LowLevelFilter {
             tracker.destForgotPacket(realSeqNo);
         }
 
-        if(seqNumber == -1) return;
+        if(seqNumber == -1) {
+        	Logger.minor(this, "Returning because seqno = "+seqNumber);
+        	return;
+        }
         // No sequence number == no messages
         
         int messages = decrypted[ptr++] & 0xff;
@@ -771,6 +770,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 usm.checkFilters(m);
             }
         }
+        Logger.minor(this, "Done");
     }
 
     /**
@@ -915,8 +915,9 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param length Number of messages to read.
      * @param bufferLength Size of the buffer to write into.
      * @param pn Node to send the messages to.
+     * @throws PacketSequenceException 
      */
-    private void innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, PeerNode pn, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks) throws NotConnectedException, WouldBlockException {
+    private void innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, PeerNode pn, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks) throws NotConnectedException, WouldBlockException, PacketSequenceException {
         Logger.minor(this, "innerProcessOutgoing(...,"+start+","+length+","+bufferLength+")");
         byte[] buf = new byte[bufferLength];
         buf[0] = (byte)length;
@@ -935,8 +936,10 @@ public class FNPPacketMangler implements LowLevelFilter {
     /**
      * Build a packet and send it. From a Message recently converted into byte[],
      * but with no outer formatting.
+     * @throws PacketSequenceException 
      */
-    public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException {
+    public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException, PacketSequenceException {
+    	Logger.minor(this, "processOutgoing(buf, "+offset+", "+length+", "+peer.getPeer());
         if(!(peer instanceof PeerNode))
             throw new IllegalArgumentException();
         PeerNode pn = (PeerNode)peer;
@@ -948,8 +951,9 @@ public class FNPPacketMangler implements LowLevelFilter {
     /**
      * Build a packet and send it. From a Message recently converted into byte[],
      * but with no outer formatting.
+     * @throws PacketSequenceException 
      */
-    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker) throws KeyChangedException, NotConnectedException {
+    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker) throws KeyChangedException, NotConnectedException, PacketSequenceException {
         byte[] newBuf = preformat(buf, offset, length);
         processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1, null);
     }
@@ -957,8 +961,9 @@ public class FNPPacketMangler implements LowLevelFilter {
 
     /**
      * Send a packet, with a packet number.
+     * @throws PacketSequenceException 
      */
-    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker, int packetNo, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException {
+    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker, int packetNo, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException, PacketSequenceException {
         byte[] newBuf = preformat(buf, offset, length);
         processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, packetNo, callbacks);
     }
@@ -966,10 +971,12 @@ public class FNPPacketMangler implements LowLevelFilter {
     /**
      * Send a packet using the current key. Retry if it fails solely because
      * the key changes.
+     * @throws PacketSequenceException 
      */
-    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, int k, AsyncMessageCallback[] callbacks) throws NotConnectedException {
+    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, int k, AsyncMessageCallback[] callbacks) throws NotConnectedException, PacketSequenceException {
         while(true) {
             try {
+            	Logger.minor(this, "At beginning of processOutgoingPreformatted loop for "+peer.getPeer());
                 KeyTracker tracker = peer.getCurrentKeyTracker();
                 if(tracker == null) {
                     Logger.normal(this, "Dropping packet: Not connected yet");
@@ -978,6 +985,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 processOutgoingPreformatted(buf, offset, length, tracker, k, callbacks);
                 return;
             } catch (KeyChangedException e) {
+            	Logger.normal(this, "Key changed");
                 // Go around again
             }
         }
@@ -986,8 +994,9 @@ public class FNPPacketMangler implements LowLevelFilter {
     /**
      * Send a packet using the current key. Retry if it fails solely because
      * the key changes.
+     * @throws PacketSequenceException 
      */
-    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks) throws NotConnectedException, WouldBlockException {
+    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks) throws NotConnectedException, WouldBlockException, PacketSequenceException {
         while(true) {
             try {
                 KeyTracker tracker = peer.getCurrentKeyTracker();
@@ -1038,8 +1047,9 @@ public class FNPPacketMangler implements LowLevelFilter {
      * Means this is a resend of a dropped packet.
      * @throws NotConnectedException If the node is not connected.
      * @throws KeyChangedException If the primary key changes while we are trying to send this packet.
+     * @throws PacketSequenceException 
      */
-    public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException {
+    public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException, PacketSequenceException {
         if(Logger.shouldLog(Logger.MINOR, this)) {
             String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+","+length+","+tracker+","+packetNumber+",";
             if(callbacks == null) log += "null";
@@ -1120,8 +1130,8 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.minor(this, "Acking "+ackSeq);
             int offsetSeq = otherSideSeqNumber - ackSeq;
             if(offsetSeq > 255 || offsetSeq < 0)
-                throw new IllegalStateException("bad ack offset "+offsetSeq+
-                        " - seqNumber="+otherSideSeqNumber+", ackNumber="+ackSeq);
+                throw new PacketSequenceException("bad ack offset "+offsetSeq+
+                        " - seqNumber="+otherSideSeqNumber+", ackNumber="+ackSeq+" talking to "+tracker.pn.getPeer());
             plaintext[ptr++] = (byte)offsetSeq;
         }
         
@@ -1131,8 +1141,8 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.minor(this, "Resend req: "+reqSeq);
             int offsetSeq = otherSideSeqNumber - reqSeq;
             if(offsetSeq > 255 || offsetSeq < 0)
-                throw new IllegalStateException("bad resend request offset "+offsetSeq+
-                        " - reqSeq="+reqSeq+", otherSideSeqNumber="+otherSideSeqNumber);
+                throw new PacketSequenceException("bad resend request offset "+offsetSeq+
+                        " - reqSeq="+reqSeq+", otherSideSeqNumber="+otherSideSeqNumber+" talking to "+tracker.pn.getPeer());
             plaintext[ptr++] = (byte)offsetSeq;
         }
 
@@ -1145,8 +1155,8 @@ public class FNPPacketMangler implements LowLevelFilter {
             // a packet we sent to them.
             int offsetSeq = realSeqNumber - ackReqSeq;
             if(offsetSeq > 255 || offsetSeq < 0)
-                throw new IllegalStateException("bad ack requests offset: "+offsetSeq+
-                        " - ackReqSeq="+ackReqSeq+", packetNumber="+realSeqNumber);
+                throw new PacketSequenceException("bad ack requests offset: "+offsetSeq+
+                        " - ackReqSeq="+ackReqSeq+", packetNumber="+realSeqNumber+" talking to "+tracker.pn.getPeer());
             plaintext[ptr++] = (byte)offsetSeq;
         }
         
