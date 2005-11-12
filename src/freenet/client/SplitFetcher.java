@@ -195,7 +195,6 @@ public class SplitFetcher {
 				long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 				bytesWritten += s.writeDecodedDataTo(os, max);
 			}
-			os.close();
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, e);
 		} finally {
@@ -203,6 +202,7 @@ public class SplitFetcher {
 				try {
 					os.close();
 				} catch (IOException e) {
+					// If it fails to close it may return corrupt data.
 					throw new FetchException(FetchException.BUCKET_ERROR, e);
 				}
 			}
