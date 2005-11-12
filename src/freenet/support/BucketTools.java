@@ -309,6 +309,7 @@ public class BucketTools {
 		InputStream is = bucket.getInputStream();
 		DataInputStream dis = new DataInputStream(is);
 		dis.readFully(data);
+		dis.close();
 		return data;
 	}
 
