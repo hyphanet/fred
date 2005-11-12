@@ -15,6 +15,9 @@ public interface DoublyLinkedList {
         Item setNext(Item i);
         Item getPrev();
         Item setPrev(Item i);
+        // Strictly for sanity checking
+        DoublyLinkedList getParent();
+        DoublyLinkedList setParent(DoublyLinkedList l);
     }
     
     void clear();

@@ -217,6 +217,8 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      * @return  this item, or null if the item was not in the list
      */
     public DoublyLinkedList.Item remove(DoublyLinkedList.Item i) {
+    	if (i.getParent() != this)
+    		throw new PromiscuousItemException(i);
         DoublyLinkedList.Item next = i.getNext(), prev = i.getPrev();
         if (next == null || prev == null) return null;  // not in the list
         prev.setNext(next);
@@ -231,6 +233,10 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      * Inserts item J before item I (going from head to tail).
      */
     public void insertPrev(DoublyLinkedList.Item i, DoublyLinkedList.Item j) {
+    	if (i.getParent() != this)
+    		throw new PromiscuousItemException(i);
+    	if (j.getParent() != null)
+    		throw new PromiscuousItemException(j);
         if (j.getNext() != null || j.getPrev() != null)
             throw new PromiscuousItemException(j);
         DoublyLinkedList.Item prev = i.getPrev();
@@ -255,6 +261,10 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      * Inserts item J after item I (going from head to tail).
      */
     public void insertNext(DoublyLinkedList.Item i, DoublyLinkedList.Item j) {
+    	if (i.getParent() != this)
+    		throw new PromiscuousItemException(i);
+    	if (j.getParent() != null)
+    		throw new PromiscuousItemException(j);
         if (j.getNext() != null || j.getPrev() != null)
             throw new PromiscuousItemException(j);
         DoublyLinkedList.Item next = i.getNext();
@@ -390,6 +400,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
 
     public static class Item implements DoublyLinkedList.Item {
         private DoublyLinkedList.Item next, prev;
+        private DoublyLinkedList list;
         public Object clone() {
             if(getClass() != Item.class)
                 throw new RuntimeException("Must implement clone() for "+getClass());
@@ -411,6 +422,14 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
             prev = i;
             return old;
         }
+		public DoublyLinkedList getParent() {
+			return list;
+		}
+		public DoublyLinkedList setParent(DoublyLinkedList l) {
+			DoublyLinkedList old = list;
+			list = l;
+			return old;
+		}
     }
 }
 

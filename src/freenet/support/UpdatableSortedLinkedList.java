@@ -131,7 +131,7 @@ public class UpdatableSortedLinkedList {
     /**
      * @return The number of items in the list.
      */
-    public int size() {
+    public synchronized int size() {
         return list.size();
     }
 
@@ -140,6 +140,9 @@ public class UpdatableSortedLinkedList {
      */
     public synchronized UpdatableSortedLinkedListItem[] toArray() {
         int size = list.size();
+        if(size < 0)
+        	throw new IllegalStateException("list.size() = "+size+" for "+this);
+        	
         UpdatableSortedLinkedListItem[] output = 
             new UpdatableSortedLinkedListItem[size];
         int i=0;

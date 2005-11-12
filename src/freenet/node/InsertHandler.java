@@ -155,7 +155,10 @@ public class InsertHandler implements Runnable {
                 continue;
             }
             
-            if(status == InsertSender.REJECTED_OVERLOAD) {
+            // Internal error counts as overload. It'd only create a timeout otherwise, which is the same thing anyway.
+            // We *really* need a good way to deal with nodes that constantly R_O!
+            if(status == InsertSender.REJECTED_OVERLOAD || 
+            		status == InsertSender.INTERNAL_ERROR) {
                 msg = DMT.createFNPRejectedOverload(uid);
                 source.send(msg);
                 return;

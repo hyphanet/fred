@@ -811,7 +811,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                     pn.requeueMessageItems(messages, i, messages.length-i, false);
                     return;
                 } catch (Throwable e) {
-                    Logger.error(this, "Caught "+e+" while sending messages, requeueing");
+                    Logger.error(this, "Caught "+e+" while sending messages, requeueing", e);
                     // Requeue
                     pn.requeueMessageItems(messages, i, messages.length-i, false);
                     return;

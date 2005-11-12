@@ -437,6 +437,8 @@ public class Node implements SimpleLowLevelClient {
             	throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
             case InsertSender.ROUTE_NOT_FOUND:
             	throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
+            case InsertSender.INTERNAL_ERROR:
+            	throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
             default:
         		Logger.error(this, "Unknown InsertSender code in putCHK: "+is.getStatus()+" on "+is);
     			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);

@@ -62,12 +62,14 @@ public class BlockTransmitter {
 	public boolean send() {
 		final PacketThrottle throttle = PacketThrottle.getThrottle(_destination.getPeer(), _prb._packetSize);
 		_receiverThread = Thread.currentThread();
-		_senderThread = new Thread() {
+		_senderThread = new Thread("_senderThread for "+_uid) {
 		    
 			public void run() {
 				int sentSinceLastPing = 0;
 				while (!_sendComplete) {
-						long waitUntil = System.currentTimeMillis() + throttle.getDelay();
+						long delay = throttle.getDelay();
+						long waitUntil = System.currentTimeMillis() + delay;
+						Logger.minor(this, "Waiting for "+delay+" ms for "+_uid+" : "+throttle);
 						try {
 							while (waitUntil > System.currentTimeMillis()) {
 								if(_sendComplete) return;
@@ -136,6 +138,7 @@ public class BlockTransmitter {
                 _sendComplete = true;
                 return false;
             }
+			if(_sendComplete || !_destination.isConnected()) return false;
 			if (msg == null) {
 				if (getNumSent() == _prb.getNumPackets()) {
 					_sendComplete = true;

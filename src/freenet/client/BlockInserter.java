@@ -51,6 +51,7 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 
 	public void run() {
 		try {
+			Logger.minor(this, "Running "+this);
 			if(fetchedData == null)
 				throw new NullPointerException();
 			realRun();

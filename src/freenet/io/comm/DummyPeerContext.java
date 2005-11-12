@@ -22,4 +22,8 @@ public class DummyPeerContext implements PeerContext {
 		// Do nothing
 	}
 
+	public boolean isConnected() {
+		return false;
+	}
+
 }

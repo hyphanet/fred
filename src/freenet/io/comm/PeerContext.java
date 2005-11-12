@@ -12,4 +12,7 @@ public interface PeerContext {
 
     /** Force the peer to disconnect */
 	void forceDisconnect();
+
+	/** Is the peer connected? If we can't tell, return true. */
+	boolean isConnected();
 }

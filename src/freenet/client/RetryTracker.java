@@ -209,6 +209,11 @@ public class RetryTracker {
 				", running: "+runningBlocks.size()+", levels: "+levels.size()+", finishOnEmpty: "+finishOnEmpty);
 		if(runningBlocks.size() == 1)
 			Logger.minor(this, "Only block running: "+runningBlocks.toArray()[0]);
+		else if(levels.isEmpty()) {
+			for(Iterator i=runningBlocks.iterator();i.hasNext();) {
+				Logger.minor(this, "Still running: "+i.next());
+			}
+		}
 		if((succeededBlocks.size() >= targetSuccesses)
 				|| (runningBlocks.isEmpty() && levels.isEmpty() && finishOnEmpty)) {
 			killed = true;

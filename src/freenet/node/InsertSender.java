@@ -54,6 +54,7 @@ public final class InsertSender implements Runnable {
     static final int SUCCESS = 0;
     static final int ROUTE_NOT_FOUND = 1;
     static final int REJECTED_OVERLOAD = 2;
+    static final int INTERNAL_ERROR = 3;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -261,6 +262,7 @@ public final class InsertSender implements Runnable {
         }
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
+            finish(INTERNAL_ERROR);
         } finally {
             node.completed(uid);
         	node.removeInsertSender(myKey, origHTL, this);
@@ -317,6 +319,8 @@ public final class InsertSender implements Runnable {
             return "REJECTED: OVERLOAD";
         if(status == NOT_FINISHED)
             return "NOT FINISHED";
+        if(status == INTERNAL_ERROR)
+        	return "INTERNAL ERROR";
         return "UNKNOWN STATUS CODE: "+status;
     }
 }

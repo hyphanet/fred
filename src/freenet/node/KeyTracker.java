@@ -185,6 +185,18 @@ public class KeyTracker {
             prev = i;
             return old;
         }
+
+        private DoublyLinkedList parent;
+        
+		public DoublyLinkedList getParent() {
+			return parent;
+		}
+
+		public DoublyLinkedList setParent(DoublyLinkedList l) {
+			DoublyLinkedList old = parent;
+			parent = l;
+			return old;
+		}
     }
 
     private abstract class BaseQueuedResend extends PacketActionItem implements IndexableUpdatableSortedLinkedListItem {
@@ -249,6 +261,18 @@ public class KeyTracker {
         public Object indexValue() {
             return packetNumberAsInteger;
         }
+        
+        private DoublyLinkedList parent;
+        
+		public DoublyLinkedList getParent() {
+			return parent;
+		}
+
+		public DoublyLinkedList setParent(DoublyLinkedList l) {
+			DoublyLinkedList old = parent;
+			parent = l;
+			return old;
+		}
     }
     
     private class QueuedResendRequest extends BaseQueuedResend {
