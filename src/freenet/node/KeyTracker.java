@@ -13,6 +13,7 @@ import freenet.support.LimitedRangeIntByteArrayMap;
 import freenet.support.LimitedRangeIntByteArrayMapElement;
 import freenet.support.Logger;
 import freenet.support.UpdatableSortedLinkedListItem;
+import freenet.support.UpdatableSortedLinkedListKilledException;
 import freenet.support.UpdatableSortedLinkedListWithForeignIndex;
 import freenet.support.WouldBlockException;
 import freenet.support.DoublyLinkedList.Item;
@@ -208,7 +209,7 @@ public class KeyTracker {
         long activeTime;
         final Integer packetNumberAsInteger;
         
-        void sent() {
+        void sent() throws UpdatableSortedLinkedListKilledException {
             long now = System.currentTimeMillis();
             activeTime = now + 500;
             urgentTime = activeTime + 200;
@@ -285,7 +286,7 @@ public class KeyTracker {
             super(packetNumber);
         }
         
-        void sent() {
+        void sent() throws UpdatableSortedLinkedListKilledException {
             synchronized(resendRequestQueue) {
                 super.sent();
                 resendRequestQueue.update(this);
@@ -307,7 +308,7 @@ public class KeyTracker {
             }
         }
         
-        void sent() {
+        void sent() throws UpdatableSortedLinkedListKilledException {
             synchronized(ackRequestQueue) {
                 super.sent();
                 ackRequestQueue.update(this);
@@ -319,7 +320,8 @@ public class KeyTracker {
      * Called when we receive a packet.
      * @param seqNumber The packet's serial number.
      */
-    public synchronized void receivedPacket(int seqNumber) {
+    public void receivedPacket(int seqNumber) {
+    	Logger.minor(this, "Received packet "+seqNumber);
         try {
 			pn.receivedPacket();
 		} catch (NotConnectedException e) {
@@ -327,39 +329,49 @@ public class KeyTracker {
 			return;
 		}
         if(seqNumber == -1) return;
+        // FIXME delete this log statement
+        Logger.minor(this, "Still received packet: "+seqNumber);
+        // Received packet
         receivedPacketNumber(seqNumber);
-        if(packetNumbersReceived.contains(seqNumber)) {
-            // They resent it
-            // Lets re-ack it.
-            queueAck(seqNumber);
-        } else {
-            receivedPacketNumber(seqNumber);
-            queueAck(seqNumber);
-        }
+        // Ack it even if it is a resend
+        queueAck(seqNumber);
     }
 
-    protected synchronized void receivedPacketNumber(int seqNumber) {
+    protected void receivedPacketNumber(int seqNumber) {
+    	Logger.minor(this, "Handling received packet number "+seqNumber);
         queueResendRequests(seqNumber);
         packetNumbersReceived.got(seqNumber);
-        removeResendRequest(seqNumber);
-        highestSeenIncomingSerialNumber = Math.max(highestSeenIncomingSerialNumber, seqNumber);
+        try {
+			removeResendRequest(seqNumber);
+		} catch (UpdatableSortedLinkedListKilledException e) {
+			// Ignore, not our problem
+		}
+        synchronized(this) {
+        	highestSeenIncomingSerialNumber = Math.max(highestSeenIncomingSerialNumber, seqNumber);
+        }
+        Logger.minor(this, "Handled received packet number "+seqNumber);
     }
     
     /**
      * Remove a resend request from the queue.
      * @param seqNumber
+     * @throws UpdatableSortedLinkedListKilledException 
      */
-    private void removeResendRequest(int seqNumber) {
-        resendRequestQueue.removeByKey(new Integer(seqNumber));
+    private void removeResendRequest(int seqNumber) throws UpdatableSortedLinkedListKilledException {
+    	resendRequestQueue.removeByKey(new Integer(seqNumber));
     }
 
     /**
      * Add some resend requests if necessary.
      * @param seqNumber The number of the packet we just received.
      */
-    private synchronized void queueResendRequests(int seqNumber) {
-        int max = packetNumbersReceived.highest();
+    private void queueResendRequests(int seqNumber) {
+        int max;
+        synchronized(this) {
+        	max = packetNumbersReceived.highest();
+        }
         if(seqNumber > max) {
+        	try {
             if(max != -1 && seqNumber - max > 1) {
                 Logger.minor(this, "Queueing resends from "+max+" to "+seqNumber);
                 // Missed some packets out
@@ -367,6 +379,9 @@ public class KeyTracker {
                     queueResendRequest(i);
                 }
             }
+        	} catch (UpdatableSortedLinkedListKilledException e) {
+        		// Ignore (we are decoding packet, not sending one)
+        	}
         }
     }
 
@@ -374,23 +389,27 @@ public class KeyTracker {
      * Queue a resend request
      * @param packetNumber the packet serial number to queue a
      * resend request for
+     * @throws UpdatableSortedLinkedListKilledException 
      */
-    private void queueResendRequest(int packetNumber) {
-        if(queuedResendRequest(packetNumber)) {
-            Logger.minor(this, "Not queueing resend request for "+packetNumber+" - already queued");
-            return;
-        }
-        Logger.minor(this, "Queueing resend request for "+packetNumber);
-        QueuedResendRequest qrr = new QueuedResendRequest(packetNumber);
-        resendRequestQueue.add(qrr);
+    private void queueResendRequest(int packetNumber) throws UpdatableSortedLinkedListKilledException {
+    	synchronized(resendRequestQueue) {
+    		if(queuedResendRequest(packetNumber)) {
+    			Logger.minor(this, "Not queueing resend request for "+packetNumber+" - already queued");
+    			return;
+    		}
+    		Logger.minor(this, "Queueing resend request for "+packetNumber);
+    		QueuedResendRequest qrr = new QueuedResendRequest(packetNumber);
+    		resendRequestQueue.add(qrr);
+    	}
     }
 
     /**
      * Queue an ack request
      * @param packetNumber the packet serial number to queue a
      * resend request for
+     * @throws UpdatableSortedLinkedListKilledException 
      */
-    private void queueAckRequest(int packetNumber) {
+    private void queueAckRequest(int packetNumber) throws UpdatableSortedLinkedListKilledException {
         synchronized(ackRequestQueue) {
             if(queuedAckRequest(packetNumber)) {
                 Logger.minor(this, "Not queueing ack request for "+packetNumber+" - already queued");
@@ -417,26 +436,63 @@ public class KeyTracker {
     }
 
     /**
+     * Called when we have received several packet acknowledgements.
+     */
+    public void acknowledgedPackets(int[] seqNos) {
+    	AsyncMessageCallback[][] callbacks = new AsyncMessageCallback[seqNos.length][];
+   		for(int i=0;i<seqNos.length;i++) {
+   			int realSeqNo = seqNos[i];
+           	Logger.minor(this, "Acknowledged packet (synced): "+realSeqNo);
+            try {
+				removeAckRequest(realSeqNo);
+			} catch (UpdatableSortedLinkedListKilledException e) {
+				// Ignore, we are processing an incoming packet
+			}
+            Logger.minor(this, "Removed ack request");
+            callbacks[i] = sentPacketsContents.getCallbacks(realSeqNo);
+            sentPacketsContents.remove(realSeqNo);
+  		}
+    	int cbCount = 0;
+    	for(int i=0;i<callbacks.length;i++) {
+    		AsyncMessageCallback[] cbs = callbacks[i];
+    		if(cbs != null) {
+    			for(int j=0;j<cbs.length;j++) {
+    				cbs[j].acknowledged();
+    				cbCount++;
+    			}
+    		}
+    	}
+    	if(cbCount > 0)
+    		Logger.minor(this, "Executed "+cbCount+" callbacks");
+    }
+    
+    /**
      * Called when we have received a packet acknowledgement.
      * @param realSeqNo
      */
     public void acknowledgedPacket(int realSeqNo) {
         AsyncMessageCallback[] callbacks;
-        synchronized(this) {
-            removeAckRequest(realSeqNo);
-            callbacks = sentPacketsContents.getCallbacks(realSeqNo);
-            sentPacketsContents.remove(realSeqNo);
-        }
+       	Logger.minor(this, "Acknowledged packet (synced): "+realSeqNo);
+        try {
+			removeAckRequest(realSeqNo);
+		} catch (UpdatableSortedLinkedListKilledException e) {
+			// Ignore, we are processing an incoming packet
+		}
+        Logger.minor(this, "Removed ack request");
+        callbacks = sentPacketsContents.getCallbacks(realSeqNo);
+        sentPacketsContents.remove(realSeqNo);
         if(callbacks != null) {
             for(int i=0;i<callbacks.length;i++)
                 callbacks[i].acknowledged();
+            Logger.minor(this, "Executed "+callbacks.length+" callbacks");
         }
     }
 
     /**
      * Remove an ack request from the queue by packet number.
+     * @throws UpdatableSortedLinkedListKilledException 
      */
-    private void removeAckRequest(int seqNo) {
+    private void removeAckRequest(int seqNo) throws UpdatableSortedLinkedListKilledException {
         ackRequestQueue.removeByKey(new Integer(seqNo));
     }
 
@@ -453,13 +509,15 @@ public class KeyTracker {
             }
             pn.node.ps.queuedResendPacket();
         } else {
-            String msg = "Asking me to resend packet "+seqNumber+
-        		" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+")";
-            // Can have a race condition
-            if(seqNumber < nextPacketNumber && seqNumber > nextPacketNumber-64)
-                Logger.minor(this, msg);
-            else
-                Logger.error(this, msg);
+        	synchronized(this) {
+        		String msg = "Asking me to resend packet "+seqNumber+
+        			" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+")";
+        		// Can have a race condition
+        		if(seqNumber < nextPacketNumber && seqNumber > nextPacketNumber-64)
+        			Logger.minor(this, msg);
+        		else
+        			Logger.error(this, msg);
+        	}
         }
     }
 
@@ -478,7 +536,11 @@ public class KeyTracker {
                 queueAck(packetNumber);
             } else {
                 // We have not received it, so get them to resend it
-                queueResendRequest(packetNumber);
+                try {
+					queueResendRequest(packetNumber);
+				} catch (UpdatableSortedLinkedListKilledException e) {
+					// Ignore, we are decoding, not sending.
+				}
                 synchronized(this) {
                     highestSeenIncomingSerialNumber = Math.max(highestSeenIncomingSerialNumber, packetNumber);
                 }
@@ -514,7 +576,11 @@ public class KeyTracker {
         } else {
             Logger.error(this, "Destination forgot packet: "+seqNumber);
         }
-        removeResendRequest(seqNumber);
+        try {
+			removeResendRequest(seqNumber);
+		} catch (UpdatableSortedLinkedListKilledException e) {
+			// Ignore
+		}
     }
 
     /**
@@ -584,12 +650,14 @@ public class KeyTracker {
     /**
      * Grab all the currently queued resend requests.
      * @return An array of the packet numbers of all the packets we want to be resent.
+     * @throws NotConnectedException If the peer is no longer connected.
      */
-    public int[] grabResendRequests() {
+    public int[] grabResendRequests() throws NotConnectedException {
         UpdatableSortedLinkedListItem[] items;
         int[] packetNumbers;
         int realLength;
         long now = System.currentTimeMillis();
+        try {
         synchronized(resendRequestQueue) {
             items = resendRequestQueue.toArray();
             int length = items.length;
@@ -597,6 +665,11 @@ public class KeyTracker {
             realLength = 0;
             for(int i=0;i<length;i++) {
                 QueuedResendRequest qrr = (QueuedResendRequest)items[i];
+                if(packetNumbersReceived.contains(qrr.packetNumber)) {
+                	Logger.minor(this, "Have already seen "+qrr.packetNumber+", removing from resend list");
+                	resendRequestQueue.remove(qrr);
+                	continue;
+                }
                 if(qrr.activeTime <= now) {
                     packetNumbers[realLength++] = qrr.packetNumber;
                     Logger.minor(this, "Grabbing resend request: "+qrr.packetNumber+" from "+this);
@@ -606,39 +679,44 @@ public class KeyTracker {
                 }
             }
         }
+        } catch (UpdatableSortedLinkedListKilledException e) {
+        	throw new NotConnectedException();
+        }
         int[] trimmedPacketNumbers = new int[realLength];
         System.arraycopy(packetNumbers, 0, trimmedPacketNumbers, 0, realLength);
         return trimmedPacketNumbers;
     }
 
-    public int[] grabAckRequests() {
+    public int[] grabAckRequests() throws NotConnectedException {
         UpdatableSortedLinkedListItem[] items;
         int[] packetNumbers;
         int realLength;
         long now = System.currentTimeMillis();
-        synchronized(this) {
-            synchronized(ackRequestQueue) {
-                items = ackRequestQueue.toArray();
-                int length = items.length;
-                packetNumbers = new int[length];
-                realLength = 0;
-                for(int i=0;i<length;i++) {
-                    QueuedAckRequest qrr = (QueuedAckRequest)items[i];
-                    int packetNumber = qrr.packetNumber;
-                    if(qrr.activeTime <= now) {
-                        if(sentPacketsContents.get(packetNumber) == null) {
-                            Logger.minor(this, "Asking to ack packet which has already been acked: "+packetNumber+" on "+this+".grabAckRequests");
-                            ackRequestQueue.remove(qrr);
-                            continue;
-                        }
-                        packetNumbers[realLength++] = packetNumber;
-                        Logger.minor(this, "Grabbing ack request "+packetNumber+" from "+this);
-                        qrr.sent();
-                    } else {
-                        Logger.minor(this, "Ignoring ack request "+packetNumber+" - will become active in "+(qrr.activeTime-now)+" ms on "+this);
+        try {
+        synchronized(ackRequestQueue) {
+            items = ackRequestQueue.toArray();
+            int length = items.length;
+            packetNumbers = new int[length];
+            realLength = 0;
+            for(int i=0;i<length;i++) {
+                QueuedAckRequest qr = (QueuedAckRequest)items[i];
+                int packetNumber = qr.packetNumber;
+                if(qr.activeTime <= now) {
+                    if(sentPacketsContents.get(packetNumber) == null) {
+                        Logger.minor(this, "Asking to ack packet which has already been acked: "+packetNumber+" on "+this+".grabAckRequests");
+                        ackRequestQueue.remove(qr);
+                        continue;
                     }
+                    packetNumbers[realLength++] = packetNumber;
+                    Logger.minor(this, "Grabbing ack request "+packetNumber+" from "+this);
+                    qr.sent();
+                } else {
+                    Logger.minor(this, "Ignoring ack request "+packetNumber+" - will become active in "+(qr.activeTime-now)+" ms on "+this);
                 }
             }
+        }
+        } catch (UpdatableSortedLinkedListKilledException e) {
+        	throw new NotConnectedException();
         }
         int[] trimmedPacketNumbers = new int[realLength];
         System.arraycopy(packetNumbers, 0, trimmedPacketNumbers, 0, realLength);
@@ -685,8 +763,9 @@ public class KeyTracker {
      * Report a packet has been sent
      * @param data The data we have just sent (payload only, decrypted). 
      * @param seqNumber The packet number.
+     * @throws NotConnectedException 
      */
-    public void sentPacket(byte[] data, int seqNumber, AsyncMessageCallback[] callbacks) {
+    public void sentPacket(byte[] data, int seqNumber, AsyncMessageCallback[] callbacks) throws NotConnectedException {
         if(callbacks != null) {
             for(int i=0;i<callbacks.length;i++) {
                 if(callbacks[i] == null)
@@ -694,7 +773,11 @@ public class KeyTracker {
             }
         }
         sentPacketsContents.add(seqNumber, data, callbacks);
-        queueAckRequest(seqNumber);
+        try {
+			queueAckRequest(seqNumber);
+		} catch (UpdatableSortedLinkedListKilledException e) {
+			throw new NotConnectedException();
+		}
     }
 
     public void completelyDeprecated(KeyTracker newTracker) {
@@ -741,8 +824,8 @@ public class KeyTracker {
         synchronized(ackQueue) {
             ackQueue.clear();
         }
-        resendRequestQueue.clear();
-        ackRequestQueue.clear();
+        resendRequestQueue.kill();
+        ackRequestQueue.kill();
         synchronized(packetsToResend) {
             packetsToResend.clear();
         }

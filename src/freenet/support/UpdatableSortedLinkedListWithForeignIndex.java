@@ -18,7 +18,7 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         map = new HashMap();
     }
     
-    public synchronized void add(UpdatableSortedLinkedListItem item) {
+    public synchronized void add(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
         if(!(item instanceof IndexableUpdatableSortedLinkedListItem)) {
             throw new IllegalArgumentException();
         }
@@ -33,10 +33,9 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         checkList();
     }
     
-    public synchronized void remove(UpdatableSortedLinkedListItem item) {
+    public synchronized void remove(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
         super.remove(item);
         map.remove(((IndexableUpdatableSortedLinkedListItem)item).indexValue());
-        checkList();
     }
 
     public synchronized boolean containsKey(Object o) {
@@ -45,8 +44,9 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
 
     /**
      * Remove an element from the list by its key.
+     * @throws UpdatableSortedLinkedListKilledException 
      */
-    public synchronized void removeByKey(Object key) {
+    public synchronized void removeByKey(Object key) throws UpdatableSortedLinkedListKilledException {
         IndexableUpdatableSortedLinkedListItem item = 
             (IndexableUpdatableSortedLinkedListItem) map.get(key);
         if(item != null) remove(item);

@@ -883,28 +883,34 @@ public class PeerNode implements PeerContext {
      * Requeue ResendPacketItem[]s if they are not sent.
      * @param resendItems
      */
-    public synchronized void requeueResendItems(ResendPacketItem[] resendItems) {
+    public void requeueResendItems(ResendPacketItem[] resendItems) {
+    	KeyTracker cur, prev, unv;
+    	synchronized(this) {
+    		cur = currentTracker;
+    		prev = previousTracker;
+    		unv = unverifiedTracker;
+    	}
         for(int i=0;i<resendItems.length;i++) {
             ResendPacketItem item = resendItems[i];
             if(item.pn != this)
                 throw new IllegalArgumentException("item.pn != this!");
-            KeyTracker kt = currentTracker;
+            KeyTracker kt = cur;
             if(kt != null && item.kt == kt) {
                 kt.resendPacket(item.packetNumber);
                 continue;
             }
-            kt = previousTracker;
+            kt = prev;
             if(kt != null && item.kt == kt) {
                 kt.resendPacket(item.packetNumber);
                 continue;
             }
-            kt = unverifiedTracker;
+            kt = unv;
             if(kt != null && item.kt == kt) {
                 kt.resendPacket(item.packetNumber);
                 continue;
             }
             // Doesn't match any of these, need to resend the data
-            kt = currentTracker == null ? unverifiedTracker : currentTracker;
+            kt = cur == null ? unv : cur;
             if(kt == null) {
                 Logger.error(this, "No tracker to resend packet "+item.packetNumber+" on");
                 continue;

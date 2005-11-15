@@ -88,7 +88,11 @@ public class DiffieHellmanContext {
     
     public synchronized void setOtherSideExponential(NativeBigInteger a) {
         lastUsedTime = System.currentTimeMillis();
-        if(peerExponential != null) throw new IllegalStateException("Assigned other side exponential twice");
+        if(peerExponential != null) {
+        	if(!peerExponential.equals(a))
+        		throw new IllegalStateException("Assigned other side exponential twice");
+        	else return;
+        }
         if(a == null) throw new NullPointerException();
         peerExponential = a;
     }

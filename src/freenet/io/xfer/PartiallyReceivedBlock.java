@@ -61,9 +61,9 @@ public class PartiallyReceivedBlock {
 		_packetSize = packetSize;
 	}
 
-	public synchronized LinkedList addListener(PacketReceivedListener listener) {
+	public synchronized LinkedList addListener(PacketReceivedListener listener) throws AbortedException {
 		if (_aborted) {
-			throw new RuntimeException("Adding listener to aborted PRB");
+			throw new AbortedException("Adding listener to aborted PRB");
 		}
 		_packetReceivedListeners.add(listener);
 		LinkedList ret = new LinkedList();
@@ -75,30 +75,30 @@ public class PartiallyReceivedBlock {
 		return ret;
 	}
 
-	public synchronized boolean isReceived(int packetNo) {
+	public synchronized boolean isReceived(int packetNo) throws AbortedException {
 		if (_aborted) {
-			throw new RuntimeException("PRB is aborted");
+			throw new AbortedException("PRB is aborted");
 		}
 		return _received[packetNo];
 	}
 	
-	public synchronized int getNumPackets() {
+	public synchronized int getNumPackets() throws AbortedException {
 		if (_aborted) {
-			throw new RuntimeException("PRB is aborted");
+			throw new AbortedException("PRB is aborted");
 		}
 		return _packets;
 	}
 	
-	public synchronized int getPacketSize() {
+	public synchronized int getPacketSize() throws AbortedException {
 		if (_aborted) {
-			throw new RuntimeException("PRB is aborted");
+			throw new AbortedException("PRB is aborted");
 		}
 		return _packetSize;
 	}
 	
-	public synchronized void addPacket(int position, Buffer packet) {
+	public synchronized void addPacket(int position, Buffer packet) throws AbortedException {
 		if (_aborted) {
-			throw new RuntimeException("PRB is aborted");
+			throw new AbortedException("PRB is aborted");
 		}
 		if (packet.getLength() != _packetSize) {
 			throw new RuntimeException("New packet size "+packet.getLength()+" but expecting packet of size "+_packetSize);
@@ -114,16 +114,16 @@ public class PartiallyReceivedBlock {
 		}
 	}
 
-	public boolean allReceived() {
+	public boolean allReceived() throws AbortedException {
 		if (_aborted) {
-			throw new RuntimeException("PRB is aborted");
+			throw new AbortedException("PRB is aborted");
 		}
 		return _receivedCount == _packets;
 	}
 	
-	public byte[] getBlock() {
+	public byte[] getBlock() throws AbortedException {
 		if (_aborted) {
-			throw new RuntimeException("PRB is aborted");
+			throw new AbortedException("PRB is aborted");
 		}
 		if (!allReceived()) {
 			throw new RuntimeException("Tried to get block before all packets received");
@@ -131,9 +131,9 @@ public class PartiallyReceivedBlock {
 		return _data;
 	}
 	
-	public Buffer getPacket(int x) {
+	public Buffer getPacket(int x) throws AbortedException {
 		if (_aborted) {
-			throw new RuntimeException("PRB is aborted");
+			throw new AbortedException("PRB is aborted");
 		}
 		return new Buffer(_data, x * _packetSize, _packetSize);
 	}

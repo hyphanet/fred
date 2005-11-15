@@ -6,6 +6,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.RetrievalException;
+import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
@@ -195,14 +196,17 @@ public class InsertHandler implements Runnable {
     private void finish() {
         Message toSend = null;
         synchronized(this) { // REDFLAG do not use synch(this) for any other purpose!
-            if(!canCommit) return;
-            if(!prb.allReceived()) return;
             try {
+                if(!canCommit) return;
+                if(!prb.allReceived()) return;
                 CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
                 node.store(block);
             } catch (CHKVerifyException e) {
                 Logger.error(this, "Verify failed in InsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
                 toSend = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_VERIFY_FAILED);
+            } catch (AbortedException e) {
+            	Logger.error(this, "Receive failed: "+e);
+            	// Receiver thread will handle below
             }
         }
         if(toSend != null) {

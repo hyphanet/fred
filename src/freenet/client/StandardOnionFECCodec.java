@@ -271,7 +271,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		Runtime.getRuntime().gc();
 		Runtime.getRuntime().runFinalization();
 		long memUsedAtStart = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-		Logger.minor(this, "Memory in use at start: "+memUsedAtStart);
+		Logger.minor(this, "Memory in use at start: "+memUsedAtStart+" max="+Runtime.getRuntime().maxMemory());
 		System.err.println("************* Encoding " + dataBlockStatus.length
 				+ " -> " + checkBlockStatus.length + " *************");
 		Logger.minor(this, "Doing encode: " + dataBlockStatus.length

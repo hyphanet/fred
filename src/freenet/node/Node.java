@@ -37,6 +37,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
+import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -377,7 +378,10 @@ public class Node implements SimpleLowLevelClient {
             } catch (CHKVerifyException e) {
                 Logger.error(this, "Does not verify: "+e, e);
                 throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);                
-            }
+            } catch (AbortedException e) {
+            	Logger.error(this, "Impossible: "+e, e);
+            	throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+			}
         } else {
         	switch(rs.getStatus()) {
         	case RequestSender.NOT_FINISHED:

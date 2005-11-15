@@ -50,6 +50,7 @@ public class UdpSocketManager extends Thread {
 		super.start();
 		Thread checker = new Thread(new USMChecker());
 		checker.setDaemon(true);
+		checker.setPriority(Thread.MAX_PRIORITY);
 		checker.start();
 	}
 	
@@ -88,43 +89,45 @@ public class UdpSocketManager extends Thread {
 
 	public void run() { // Listen for packets
 		try {
-		while (_active) {
-		    try {
-			DatagramPacket packet = getPacket();
-			// Check for timedout _filters
-			removeTimedOutFilters();
-			// Check for matched _filters
-			if(packet != null) {
-			    Peer peer = new Peer(packet.getAddress(), packet.getPort());
-			    byte[] data = packet.getData();
-			    int offset = packet.getOffset();
-			    int length = packet.getLength();
-			    if(lowLevelFilter != null) {
-			        try {
-			            lowLevelFilter.process(data, offset, length, peer);
-			            Logger.minor(this, "Successfully handled packet length "+length);
-			        } catch (Throwable t) {
-			            Logger.error(this, "Caught "+t+" from "+lowLevelFilter, t);
-			        }
-			    }
-			    else {
-			        // Create a bogus context since no filter
-			        Message m = decodePacket(data, offset, length, new DummyPeerContext(peer));
-			        if(m != null)
-			            checkFilters(m);
-			    }
-			} else
-				Logger.minor(this, "Null packet");
-		    } catch (Throwable t) {
-		        Logger.error(this, "Caught "+t, t);
-		    }
-		}
+			while (/*_active*/true) {
+				try {
+					DatagramPacket packet = getPacket();
+					// Check for timedout _filters
+					removeTimedOutFilters();
+					// Check for matched _filters
+					if (packet != null) {
+						Peer peer = new Peer(packet.getAddress(), packet.getPort());
+						byte[] data = packet.getData();
+						int offset = packet.getOffset();
+						int length = packet.getLength();
+						if (lowLevelFilter != null) {
+							try {
+								lowLevelFilter.process(data, offset, length, peer);
+								Logger.minor(this,
+										"Successfully handled packet length " + length);
+							} catch (Throwable t) {
+								Logger.error(this, "Caught " + t + " from "
+										+ lowLevelFilter, t);
+							}
+						} else {
+							// Create a bogus context since no filter
+							Message m = decodePacket(data, offset, length,
+									new DummyPeerContext(peer));
+							if (m != null)
+								checkFilters(m);
+						}
+					} else
+						Logger.minor(this, "Null packet");
+				} catch (Throwable t) {
+					Logger.error(this, "Caught " + t, t);
+				}
+			}
 		} finally {
-		Logger.error(this, "run() exiting");
-		synchronized (this) {
-			_isDone = true;
-			notifyAll();
-		}
+			Logger.error(this, "run() exiting");
+			synchronized (this) {
+				_isDone = true;
+				notifyAll();
+			}
 		}
 	}
 

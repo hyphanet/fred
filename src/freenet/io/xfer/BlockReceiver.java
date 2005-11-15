@@ -135,6 +135,10 @@ public class BlockReceiver {
 		return _prb.getBlock();
 		} catch(NotConnectedException e) {
 		    throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
+		} catch(AbortedException e) {
+			// We didn't cause it?!
+			Logger.error(this, "Caught in receive - probably a bug as receive sets it: "+e);
+			throw new RetrievalException(RetrievalException.UNKNOWN);
 		}
 	}
 }

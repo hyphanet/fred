@@ -338,7 +338,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         output[1] = (byte) negType;
         output[2] = (byte) phase;
         System.arraycopy(data, 0, output, 3, data.length);
-        Logger.minor(this, "Sending auth packet to "+replyTo+" - version="+version+" negType="+negType+" phase="+phase+" data.length="+data.length+" for "+pn);
+        Logger.minor(this, "Sending auth packet ("+version+","+negType+" to "+replyTo+" - version="+version+" negType="+negType+" phase="+phase+" data.length="+data.length+" for "+pn);
         sendAuthPacket(output, pn, replyTo);
     }
 
@@ -369,8 +369,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         pcfb.blockEncipher(output, 0, output.length);
         System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
         usm.sendPacket(data, replyTo);
-        Logger.minor(this, "Sending auth packet to "+replyTo+" - size "+data.length+" data length: "+output.length);
-    }
+        Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
+     }
 
     /**
      * @param i
@@ -692,17 +692,18 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         int ackCount = decrypted[ptr++] & 0xff;
         Logger.minor(this, "Acks: "+ackCount);
-        
+
+        int[] acks = new int[ackCount];
         for(int i=0;i<ackCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
             if(ptr > decrypted.length) {
                 Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
                 return;
             }
-            int realSeqNo = referenceSeqNumber - offset;
-            Logger.minor(this, "ACK: "+realSeqNo);
-            tracker.acknowledgedPacket(realSeqNo);
+            acks[i] = referenceSeqNumber - offset;
         }
+        
+        tracker.acknowledgedPackets(acks);
         
         int retransmitCount = decrypted[ptr++] & 0xff;
         Logger.minor(this, "Retransmit requests: "+retransmitCount);
@@ -1062,6 +1063,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         // We do not support forgotten packets at present
         
+        int[] acks = tracker.grabAcks();
+        int[] resendRequests = tracker.grabResendRequests();
+        int[] ackRequests = tracker.grabAckRequests();
+        
         // Allocate a sequence number
         int seqNumber;
         if(packetNumber > 0)
@@ -1075,10 +1080,6 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         
         Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());
-        
-        int[] acks = tracker.grabAcks();
-        int[] resendRequests = tracker.grabResendRequests();
-        int[] ackRequests = tracker.grabAckRequests();
         
         int packetLength = acks.length + resendRequests.length + ackRequests.length + 4 + 1 + length + 4 + 4 + RANDOM_BYTES_LENGTH;
         if(packetNumber == -1) packetLength += 4;
@@ -1096,6 +1097,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         plaintext[ptr++] = (byte)seqNumber;
         
         node.random.nextBytes(randomJunk);
+        Logger.minor(this, "Got random junk");
         System.arraycopy(randomJunk, 0, plaintext, ptr, RANDOM_BYTES_LENGTH);
         ptr += RANDOM_BYTES_LENGTH;
         

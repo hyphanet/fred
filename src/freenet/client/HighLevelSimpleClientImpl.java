@@ -47,8 +47,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
 	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
 	// ~ 70kB/sec encode, 16MB segments
-	static final int SPLITFILE_BLOCKS_PER_SEGMENT = 512;
-	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 768;
+	static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
+	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 192;
 	
 	
 	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r) {

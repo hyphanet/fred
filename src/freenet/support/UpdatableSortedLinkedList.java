@@ -11,13 +11,16 @@ import java.util.Enumeration;
  */
 public class UpdatableSortedLinkedList {
 
+	private boolean killed = false;
+	
     public UpdatableSortedLinkedList() {
         list = new DoublyLinkedListImpl();
     }
     
     private final DoublyLinkedList list;
     
-    public synchronized void add(UpdatableSortedLinkedListItem i) {
+    public synchronized void add(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+    	if(killed) throw new UpdatableSortedLinkedListKilledException();
         Logger.minor(this, "Add("+i+") on "+this);
         if(list.isEmpty()) {
             list.push(i);
@@ -58,34 +61,32 @@ public class UpdatableSortedLinkedList {
     	int statedLength = list.size();
     	int realLength = 0;
     	sb.setLength(0);
-    	int x = 0;
     	for(Enumeration e = list.elements();e.hasMoreElements();) {
     		UpdatableSortedLinkedListItem i = (UpdatableSortedLinkedListItem) e.nextElement();
-    		sb.append(x);
-    		sb.append("=");
-    		sb.append(i);
-    		sb.append('\n');
+    		// Sanity check for infinite looping 
+    		if(realLength > 100*1000)
+    			Logger.normal(this, "["+realLength+"] = "+i+" (prev="+i.getPrev()+")");
     		realLength++;
     	}
     	if(statedLength != realLength) {
     		String err = "statedLength = "+statedLength+" but realLength = "+realLength+" on "+this;
     		Logger.error(this, "Illegal ERROR: "+err, new Exception("error"));
-    		Logger.error(this, "Details:\n"+sb.toString());
     		throw new IllegalStateException(err);
     	} else {
     		Logger.minor(this, "checkList() successful: realLength = statedLength = "+realLength+" on "+this);
-    		Logger.minor(this, "Details:\n"+sb.toString());
     	}
 	}
 
-	public synchronized void remove(UpdatableSortedLinkedListItem i) {
+	public synchronized void remove(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+    	if(killed) throw new UpdatableSortedLinkedListKilledException();
         Logger.minor(this, "Remove("+i+") on "+this);
         checkList();
         list.remove(i);
         checkList();
     }
     
-    public synchronized void update(UpdatableSortedLinkedListItem i) {
+    public synchronized void update(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+    	if(killed) throw new UpdatableSortedLinkedListKilledException();
         Logger.minor(this, "Update("+i+") on "+this);
         checkList();
         if(i.compareTo(list.tail()) > 0) {
@@ -160,8 +161,10 @@ public class UpdatableSortedLinkedList {
 
     /**
      * Dump the current status of the list to the log.
+     * @throws UpdatableSortedLinkedListKilledException 
      */
-    private synchronized void dump() {
+    private synchronized void dump() throws UpdatableSortedLinkedListKilledException {
+    	if(killed) throw new UpdatableSortedLinkedListKilledException();
         for(Enumeration e=list.elements();e.hasMoreElements();) {
             UpdatableSortedLinkedListItem item = (UpdatableSortedLinkedListItem) e.nextElement();
             Logger.minor(this, item.toString());
@@ -177,8 +180,10 @@ public class UpdatableSortedLinkedList {
 
     /**
      * @return an array, in order, of the elements in the list
+     * @throws UpdatableSortedLinkedListKilledException 
      */
-    public synchronized UpdatableSortedLinkedListItem[] toArray() {
+    public synchronized UpdatableSortedLinkedListItem[] toArray() throws UpdatableSortedLinkedListKilledException {
+    	if(killed) throw new UpdatableSortedLinkedListKilledException();
         int size = list.size();
         if(size < 0)
         	throw new IllegalStateException("list.size() = "+size+" for "+this);
@@ -209,5 +214,10 @@ public class UpdatableSortedLinkedList {
     
     public synchronized void clear() {
         list.clear();
+    }
+    
+    public synchronized void kill() {
+    	clear();
+    	killed = true;
     }
 }

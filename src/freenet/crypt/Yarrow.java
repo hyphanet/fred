@@ -535,6 +535,7 @@ public class Yarrow extends RandomSource {
 	}
 
 	private void fast_pool_reseed() {
+		long startTime = System.currentTimeMillis();
 		byte[] v0 = fast_pool.digest();
 		byte[] vi = v0;
 
@@ -550,6 +551,9 @@ public class Yarrow extends RandomSource {
 		rekey(tmp);
 		Arrays.fill(v0, (byte) 0); // blank out for security
 		fast_entropy = 0;
+		long endTime = System.currentTimeMillis();
+		if(endTime - startTime > 5000)
+			Logger.normal(this, "Fast pool reseed took "+(endTime-startTime)+"ms");
 	}
 
 	private void slow_pool_reseed() {

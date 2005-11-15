@@ -56,7 +56,12 @@ public class BlockTransmitter {
 		_destination = destination;
 		_uid = uid;
 		_prb = source;
-		_sentPackets = new BitArray(_prb.getNumPackets());
+		try {
+			_sentPackets = new BitArray(_prb.getNumPackets());
+		} catch (AbortedException e) {
+			Logger.error(this, "Aborted during setup");
+			// Will throw on running
+		}
 	}
 
 	public boolean send() {
@@ -100,11 +105,15 @@ public class BlockTransmitter {
 						} catch (NotConnectedException e) {
 						    Logger.normal(this, "Terminating send: "+e);
 						    _sendComplete = true;
+						} catch (AbortedException e) {
+							Logger.normal(this, "Terminating send due to abort: "+e);
+							_sendComplete = true;
 						}
 				}
 			}
 		};
 		
+		try {
 		_unsent = _prb.addListener(new PartiallyReceivedBlock.PacketReceivedListener() {;
 
 			public void packetReceived(int packetNo) {
@@ -164,7 +173,12 @@ public class BlockTransmitter {
 			    // Terminated abnormally
 			    return false;
 			}
-		}		
+		}
+		} catch (AbortedException e) {
+			// Terminate
+			_sendComplete = true;
+			return false;
+		}
 	}
 
 	public int getNumSent() {
