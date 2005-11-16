@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.io.IOException;
 
+import freenet.keys.FreenetURI;
 import freenet.node.LowLevelPutException;
 import freenet.support.Logger;
 
@@ -11,39 +12,45 @@ public class InserterException extends Exception {
 	final int mode;
 	/** For collection errors */
 	final FailureCodeTracker errorCodes;
+	/** If a non-serious error, the URI */
+	public final FreenetURI uri;
 	
 	/** Get the failure mode. */
 	public int getMode() {
 		return mode;
 	}
 	
-	public InserterException(int m, String msg) {
+	public InserterException(int m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
 		mode = m;
 		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+msg, this);
 		errorCodes = null;
+		this.uri = expectedURI;
 	}
 	
-	public InserterException(int m) {
+	public InserterException(int m, FreenetURI expectedURI) {
 		super(getMessage(m));
 		mode = m;
 		Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
 		errorCodes = null;
+		this.uri = expectedURI;
 	}
 
-	public InserterException(int mode, Throwable e) {
+	public InserterException(int mode, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+e.getMessage());
 		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+e, e);
 		this.mode = mode;
 		errorCodes = null;
 		initCause(e);
+		this.uri = expectedURI;
 	}
 
-	public InserterException(int mode, FailureCodeTracker errorCodes) {
+	public InserterException(int mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
 		super(getMessage(mode));
 		this.mode = mode;
 		Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
 		this.errorCodes = errorCodes;
+		this.uri = expectedURI;
 	}
 
 	/** Caller supplied a URI we cannot use */

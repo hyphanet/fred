@@ -3,6 +3,7 @@ package freenet.client;
 import java.io.IOException;
 import java.util.Vector;
 
+import freenet.client.events.GeneratedURIEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.NodeCHK;
 import freenet.support.Bucket;
@@ -55,7 +56,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		try {
 			splitIntoBlocks();
 		} catch (IOException e) {
-			throw new InserterException(InserterException.BUCKET_ERROR, e);
+			throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 		}
 		this.inserter = inserter;
 	}
@@ -76,7 +77,7 @@ public class SplitInserter implements RetryTrackerCallback {
 					Logger.minor(this, "Encoded segment "+i+" of "+segments.length);
 				}
 			} catch (IOException e) {
-				throw new InserterException(InserterException.BUCKET_ERROR, e);
+				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 			}
 			// Wait for the insertion thread to finish
 			return waitForCompletion();
@@ -84,7 +85,7 @@ public class SplitInserter implements RetryTrackerCallback {
 			Logger.error(this, "Caught "+t, t);
 			tracker.kill();
 			if(t instanceof InserterException) throw (InserterException)t;
-			throw new InserterException(InserterException.INTERNAL_ERROR, t);
+			throw new InserterException(InserterException.INTERNAL_ERROR, t, null);
 		}
 	}
 
@@ -120,7 +121,7 @@ public class SplitInserter implements RetryTrackerCallback {
 			try {
 				mbucket = BucketTools.makeImmutableBucket(ctx.bf, metadata.writeToByteArray());
 			} catch (IOException e) {
-				throw new InserterException(InserterException.BUCKET_ERROR);
+				throw new InserterException(InserterException.BUCKET_ERROR, null);
 			}
 			
 			if(inserter == null)
@@ -135,12 +136,14 @@ public class SplitInserter implements RetryTrackerCallback {
 		}
 		// Did we succeed?
 		
+		ctx.eventProducer.produceEvent(new GeneratedURIEvent(uri));
+		
 		if(fatalErrors > 0) {
-			throw new InserterException(InserterException.FATAL_ERRORS_IN_BLOCKS, tracker.getAccumulatedFatalErrorCodes());
+			throw new InserterException(InserterException.FATAL_ERRORS_IN_BLOCKS, tracker.getAccumulatedFatalErrorCodes(), uri);
 		}
 		
 		if(failed > 0) {
-			throw new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, tracker.getAccumulatedNonFatalErrorCodes());
+			throw new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, tracker.getAccumulatedNonFatalErrorCodes(), uri);
 		}
 		
 		return uri;

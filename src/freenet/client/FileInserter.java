@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.io.IOException;
 
+import freenet.client.events.GeneratedURIEvent;
 import freenet.client.events.SimpleBlockPutEvent;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
@@ -36,7 +37,7 @@ public class FileInserter {
 		if(block.data == null)
 			throw new NullPointerException();
 		if(!block.desiredURI.toString(false).equals("CHK@"))
-			throw new InserterException(InserterException.INVALID_URI);
+			throw new InserterException(InserterException.INVALID_URI, null);
 		
 		// Insert the content.
 		// If we have reason to create a metadata document, include the client metadata.
@@ -78,7 +79,7 @@ public class FileInserter {
 					}
 				}
 			} catch (IOException e) {
-				throw new InserterException(InserterException.BUCKET_ERROR, e);
+				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 			} catch (CompressionOutputSizeException e) {
 				// Impossible
 				throw new Error(e);
@@ -95,10 +96,10 @@ public class FileInserter {
 					chk = ClientCHKBlock.encode(data, metadata, false, bestCodec.codecNumberForMetadata(), (int)origSize);
 				}
 			} catch (IOException e) {
-				throw new InserterException(InserterException.BUCKET_ERROR, e);
+				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 			} catch (CHKEncodeException e) {
 				Logger.error(this, "Unexpected error: "+e, e);
-				throw new InserterException(InserterException.INTERNAL_ERROR);
+				throw new InserterException(InserterException.INTERNAL_ERROR, null);
 			}
 			return simplePutCHK(chk, block.clientMetadata, getCHKOnly);
 		}
@@ -138,22 +139,22 @@ public class FileInserter {
 		}
 		
 		if(le != null)
-			translateException(le);
+			translateException(le, uri);
 		
 		return uri;
 	}
 
-	private void translateException(LowLevelPutException e) throws InserterException {
+	private void translateException(LowLevelPutException e, FreenetURI uri) throws InserterException {
 		switch(e.code) {
 		case LowLevelPutException.INTERNAL_ERROR:
-			throw new InserterException(InserterException.INTERNAL_ERROR, e);
+			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
 		case LowLevelPutException.REJECTED_OVERLOAD:
-			throw new InserterException(InserterException.REJECTED_OVERLOAD);
+			throw new InserterException(InserterException.REJECTED_OVERLOAD, uri);
 		case LowLevelPutException.ROUTE_NOT_FOUND:
-			throw new InserterException(InserterException.ROUTE_NOT_FOUND);
+			throw new InserterException(InserterException.ROUTE_NOT_FOUND, uri);
 		default:
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code+" on "+this);
-			throw new InserterException(InserterException.INTERNAL_ERROR, e);
+			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
 		}
 	}
 
@@ -166,7 +167,7 @@ public class FileInserter {
 		try {
 			bucket = BucketTools.makeImmutableBucket(ctx.bf, data);
 		} catch (IOException e) {
-			throw new InserterException(InserterException.BUCKET_ERROR);
+			throw new InserterException(InserterException.BUCKET_ERROR, null);
 		}
 		InsertBlock block = new InsertBlock(bucket, null, FreenetURI.EMPTY_CHK_URI);
 		return run(block, true, getCHKOnly);

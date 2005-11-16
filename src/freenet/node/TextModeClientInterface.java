@@ -219,6 +219,8 @@ public class TextModeClientInterface implements Runnable {
             	uri = client.insert(block, getCHKOnly);
             } catch (InserterException e) {
             	System.out.println("Error: "+e.getMessage());
+            	if(e.uri != null)
+            		System.out.println("URI would have been: "+e.uri);
             	return;
             }
             
@@ -254,6 +256,8 @@ public class TextModeClientInterface implements Runnable {
                 System.out.println("File not found");
             } catch (InserterException e) {
             	System.out.println("Finished insert but: "+e.getMessage());
+            	if(e.uri != null)
+            		System.out.println("URI would have been: "+e.uri);
             } catch (Throwable t) {
                 System.out.println("Insert threw: "+t);
                 t.printStackTrace();
