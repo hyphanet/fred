@@ -33,9 +33,9 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         checkList();
     }
     
-    public synchronized void remove(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
-        super.remove(item);
+    public synchronized UpdatableSortedLinkedListItem remove(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
         map.remove(((IndexableUpdatableSortedLinkedListItem)item).indexValue());
+        return super.remove(item);
     }
 
     public synchronized boolean containsKey(Object o) {

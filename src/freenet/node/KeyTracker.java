@@ -85,7 +85,8 @@ public class KeyTracker {
         this.sessionKey = sessionKey;
         ackQueue = new DoublyLinkedListImpl();
         highestSeenIncomingSerialNumber = -1;
-        sentPacketsContents = new LimitedRangeIntByteArrayMap(256);
+        // give some leeway
+        sentPacketsContents = new LimitedRangeIntByteArrayMap(128);
         resendRequestQueue = new UpdatableSortedLinkedListWithForeignIndex();
         ackRequestQueue = new UpdatableSortedLinkedListWithForeignIndex();
         packetsToResend = new HashSet();
@@ -319,8 +320,10 @@ public class KeyTracker {
     /**
      * Called when we receive a packet.
      * @param seqNumber The packet's serial number.
+     * See the comments in FNPPacketMangler.processOutgoing* for
+     * the reason for the locking.
      */
-    public void receivedPacket(int seqNumber) {
+    public synchronized void receivedPacket(int seqNumber) {
     	Logger.minor(this, "Received packet "+seqNumber);
         try {
 			pn.receivedPacket();
@@ -437,12 +440,16 @@ public class KeyTracker {
 
     /**
      * Called when we have received several packet acknowledgements.
+     * Synchronized for the same reason as the sender code is:
+     * So that we don't end up sending packets too late when overloaded,
+     * and get horrible problems such as asking to resend packets which
+     * haven't been sent yet.
      */
-    public void acknowledgedPackets(int[] seqNos) {
+    public synchronized void acknowledgedPackets(int[] seqNos) {
     	AsyncMessageCallback[][] callbacks = new AsyncMessageCallback[seqNos.length][];
    		for(int i=0;i<seqNos.length;i++) {
    			int realSeqNo = seqNos[i];
-           	Logger.minor(this, "Acknowledged packet (synced): "+realSeqNo);
+           	Logger.minor(this, "Acknowledged packet: "+realSeqNo);
             try {
 				removeAckRequest(realSeqNo);
 			} catch (UpdatableSortedLinkedListKilledException e) {
@@ -472,7 +479,7 @@ public class KeyTracker {
      */
     public void acknowledgedPacket(int realSeqNo) {
         AsyncMessageCallback[] callbacks;
-       	Logger.minor(this, "Acknowledged packet (synced): "+realSeqNo);
+       	Logger.minor(this, "Acknowledged packet: "+realSeqNo);
         try {
 			removeAckRequest(realSeqNo);
 		} catch (UpdatableSortedLinkedListKilledException e) {
@@ -512,11 +519,8 @@ public class KeyTracker {
         	synchronized(this) {
         		String msg = "Asking me to resend packet "+seqNumber+
         			" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+")";
-        		// Can have a race condition
-        		if(seqNumber < nextPacketNumber && seqNumber > nextPacketNumber-64)
-        			Logger.minor(this, msg);
-        		else
-        			Logger.error(this, msg);
+        		// Probably just a bit late - caused by overload etc
+        		Logger.minor(this, msg);
         	}
         }
     }
@@ -526,7 +530,7 @@ public class KeyTracker {
      * @param packetNumber The packet that the other side wants
      * us to re-ack.
      */
-    public void receivedAckRequest(int packetNumber) {
+    public synchronized void receivedAckRequest(int packetNumber) {
         if(queuedAck(packetNumber)) {
             // Already going to send an ack
             // Don't speed it up though; wasteful
@@ -541,9 +545,7 @@ public class KeyTracker {
 				} catch (UpdatableSortedLinkedListKilledException e) {
 					// Ignore, we are decoding, not sending.
 				}
-                synchronized(this) {
-                    highestSeenIncomingSerialNumber = Math.max(highestSeenIncomingSerialNumber, packetNumber);
-                }
+                highestSeenIncomingSerialNumber = Math.max(highestSeenIncomingSerialNumber, packetNumber);
             }
         }
     }
@@ -570,7 +572,7 @@ public class KeyTracker {
      * This is normal if we are the secondary key.
      * @param seqNumber The packet number lost.
      */
-    public void destForgotPacket(int seqNumber) {
+    public synchronized void destForgotPacket(int seqNumber) {
         if(isDeprecated) {
             Logger.normal(this, "Destination forgot packet: "+seqNumber);
         } else {
@@ -631,6 +633,7 @@ public class KeyTracker {
      * @return An array of packet numbers that we need to acknowledge.
      */
     public int[] grabAcks() {
+    	Logger.minor(this, "Grabbing acks");
         int[] acks;
         synchronized(ackQueue) {
             // Grab the acks and tell them they are sent
@@ -691,9 +694,9 @@ public class KeyTracker {
         UpdatableSortedLinkedListItem[] items;
         int[] packetNumbers;
         int realLength;
-        long now = System.currentTimeMillis();
         try {
         synchronized(ackRequestQueue) {
+            long now = System.currentTimeMillis();
             items = ackRequestQueue.toArray();
             int length = items.length;
             packetNumbers = new int[length];
@@ -711,7 +714,7 @@ public class KeyTracker {
                     Logger.minor(this, "Grabbing ack request "+packetNumber+" from "+this);
                     qr.sent();
                 } else {
-                    Logger.minor(this, "Ignoring ack request "+packetNumber+" - will become active in "+(qr.activeTime-now)+" ms on "+this);
+                    Logger.minor(this, "Ignoring ack request "+packetNumber+" - will become active in "+(qr.activeTime-now)+" ms on "+this+" - "+qr);
                 }
             }
         }

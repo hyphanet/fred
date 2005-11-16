@@ -101,11 +101,17 @@ public class LimitedRangeIntByteArrayMap {
         boolean oldFlag = flag;
         if(minValue == -1) return;
         if(index - minValue < maxRange) return;
-        Logger.normal(this, toString()+" lock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
+        Logger.minor(this, toString()+" lock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
         while(true) {
             wait();
-            if(flag != oldFlag) throw new InterruptedException();
-            if(index - minValue < maxRange) return;
+            if(flag != oldFlag) {
+            	Logger.minor(this, "Interrupted");
+            	throw new InterruptedException();
+            }
+            if(index - minValue < maxRange || minValue == -1) {
+            	Logger.minor(this, "index="+index+", minValue="+minValue+", maxRange="+maxRange+" - returning");
+            	return;
+            }
         }
     }
     
@@ -127,6 +133,7 @@ public class LimitedRangeIntByteArrayMap {
             if(index > minValue && index < maxValue) return;
             if(contents.size() == 0) {
                 minValue = maxValue = -1;
+                notifyAll();
                 return;
             }
             if(index == maxValue) {
@@ -134,10 +141,12 @@ public class LimitedRangeIntByteArrayMap {
                     Integer ii = new Integer(i);
                     if(contents.containsKey(ii)) {
                         maxValue = i;
+                        notifyAll();
                         return;
                     }
                 }
                 // Still here - WTF?
+                notifyAll();
                 throw new IllegalStateException("Still here! (a)");
             }
             if(index == minValue) {
@@ -145,12 +154,15 @@ public class LimitedRangeIntByteArrayMap {
                     Integer ii = new Integer(i);
                     if(contents.containsKey(ii)) {
                         minValue = i;
+                        notifyAll();
                         return;
                     }
                 }
                 // Still here - WTF?
+                notifyAll();
                 throw new IllegalStateException("Still here! (b)");
             }
+            notifyAll();
             throw new IllegalStateException("impossible");
         }
     }

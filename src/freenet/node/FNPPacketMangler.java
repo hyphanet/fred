@@ -1062,24 +1062,44 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         
         // We do not support forgotten packets at present
+
+        int[] acks, resendRequests, ackRequests;
+    	int seqNumber;
+        /* Locking:
+         * Avoid allocating a packet number, then a long pause due to 
+         * overload, during which many other packets are sent, 
+         * resulting in the other side asking us to resend a packet 
+         * which doesn't exist yet.
+         * => grabbing resend reqs, packet no etc must be as
+         * close together as possible.
+         * 
+         * HOWEVER, tracker.allocateOutgoingPacketNumber can block,
+         * so should not be locked.
+         */
+    	
+       	if(packetNumber > 0)
+       		seqNumber = packetNumber;
+       	else {
+       		if(buf.length == 1)
+       			// Ack/resendreq only packet
+       			seqNumber = -1;
+       		else
+       			seqNumber = tracker.allocateOutgoingPacketNumber();
+       	}
         
-        int[] acks = tracker.grabAcks();
-        int[] resendRequests = tracker.grabResendRequests();
-        int[] ackRequests = tracker.grabAckRequests();
+       	Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());
         
-        // Allocate a sequence number
-        int seqNumber;
-        if(packetNumber > 0)
-            seqNumber = packetNumber;
-        else {
-            if(buf.length == 1)
-                // Ack/resendreq only packet
-                seqNumber = -1;
-            else
-                seqNumber = tracker.allocateOutgoingPacketNumber();
+        /** The last sent sequence number, so that we can refer to packets
+         * sent after this packet was originally sent (it may be a resend) */
+       	int realSeqNumber;
+       	
+       	synchronized(tracker) {
+        	acks = tracker.grabAcks();
+        	resendRequests = tracker.grabResendRequests();
+        	ackRequests = tracker.grabAckRequests();
+            realSeqNumber = tracker.getLastOutgoingSeqNumber();
+            
         }
-        
-        Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());
         
         int packetLength = acks.length + resendRequests.length + ackRequests.length + 4 + 1 + length + 4 + 4 + RANDOM_BYTES_LENGTH;
         if(packetNumber == -1) packetLength += 4;
@@ -1103,18 +1123,12 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         plaintext[ptr++] = 0; // version number
 
-        /** The last sent sequence number, so that we can refer to packets
-         * sent after this packet was originally sent (it may be a resend) */
-        int realSeqNumber = seqNumber;
-        
         if(seqNumber == -1) {
-            realSeqNumber = tracker.getLastOutgoingSeqNumber();
             plaintext[ptr++] = (byte)(realSeqNumber >> 24);
             plaintext[ptr++] = (byte)(realSeqNumber >> 16);
             plaintext[ptr++] = (byte)(realSeqNumber >> 8);
             plaintext[ptr++] = (byte)realSeqNumber;
         } else {
-            realSeqNumber = tracker.getLastOutgoingSeqNumber();
             plaintext[ptr++] = (byte)(realSeqNumber - seqNumber);
         }
         

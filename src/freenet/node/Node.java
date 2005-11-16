@@ -71,8 +71,8 @@ public class Node implements SimpleLowLevelClient {
     public static final double DECREMENT_AT_MAX_PROB = 0.1;
     // Send keepalives every 2.5-5.0 seconds
     public static final int KEEPALIVE_INTERVAL = 2500;
-    // If no activity for 15 seconds, node is dead
-    public static final int MAX_PEER_INACTIVITY = 15000;
+    // If no activity for 30 seconds, node is dead
+    public static final int MAX_PEER_INACTIVITY = 60000;
     /** Time after which a handshake is assumed to have failed. */
     public static final int HANDSHAKE_TIMEOUT = 5000;
     // Inter-handshake time must be at least 2x handshake timeout
@@ -265,6 +265,9 @@ public class Node implements SimpleLowLevelClient {
         Node n = new Node(port, yarrow, overrideIP, "");
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
+        Thread t = new Thread(new MemoryChecker(), "Memory checker");
+        t.setPriority(Thread.MAX_PRIORITY);
+        t.start();
     }
     
     // FIXME - the whole overrideIP thing is a hack to avoid config
@@ -785,5 +788,20 @@ public class Node implements SimpleLowLevelClient {
 
 	public HighLevelSimpleClient makeClient() {
 		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random);
+	}
+	
+	private static class MemoryChecker implements Runnable {
+
+		public void run() {
+			Runtime r = Runtime.getRuntime();
+			while(true) {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+				Logger.minor(this, "Memory in use: "+(r.totalMemory()-r.freeMemory()));
+			}
+		}
 	}
 }

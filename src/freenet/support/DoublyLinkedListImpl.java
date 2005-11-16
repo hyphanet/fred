@@ -244,7 +244,9 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     	if (i.getParent() != this)
     		throw new PromiscuousItemException(i, i.getParent());
         DoublyLinkedList.Item next = i.getNext(), prev = i.getPrev();
-        if (next == null || prev == null) return null;  // not in the list
+        if (next == null && prev == null) return null;  // not in the list
+        if (next == null || prev == null)
+        	throw new NullPointerException("next="+next+", prev="+prev); // partially in the list?!
         if(next.getPrev() != i || prev.getNext() != i) {
         	String msg = "Illegal ERROR: i="+i+", next="+next+", next.prev="+next.getPrev()+", prev="+prev+", prev.next="+prev.getNext();
         	Logger.error(this, msg);

@@ -77,12 +77,15 @@ public class UpdatableSortedLinkedList {
     	}
 	}
 
-	public synchronized void remove(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+	public synchronized UpdatableSortedLinkedListItem remove(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         Logger.minor(this, "Remove("+i+") on "+this);
         checkList();
-        list.remove(i);
+        UpdatableSortedLinkedListItem item = 
+        	(UpdatableSortedLinkedListItem) list.remove(i);
+        Logger.minor(this, "Returning "+item);
         checkList();
+        return item;
     }
     
     public synchronized void update(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
@@ -193,7 +196,7 @@ public class UpdatableSortedLinkedList {
         int i=0;
         for(Enumeration e = list.elements();e.hasMoreElements();) {
             output[i++] = (UpdatableSortedLinkedListItem)e.nextElement();
-            Logger.minor(this, "["+(i-1)+"] = "+output[i-1]);
+            //Logger.minor(this, "["+(i-1)+"] = "+output[i-1]);
         }
         return output;
     }

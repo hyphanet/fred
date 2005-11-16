@@ -72,11 +72,6 @@ public class PeerNode implements PeerContext {
     /** When did we last receive a packet? */
     private long timeLastReceivedPacket;
     
-    /** Maximum time between packet receives. In other words,
-     * after this amount of time, we assume the node is dead.
-     */
-    private int maxTimeBetweenPacketReceives;
-
     /** Are we connected? If not, we need to start trying to
      * handshake.
      */
@@ -235,7 +230,6 @@ public class PeerNode implements PeerContext {
         timeLastReceivedPacket = -1;
         timeLastReceivedSwapRequest = -1;
         
-        randomizeMaxTimeBetweenPacketReceives();
         randomizeMaxTimeBetweenPacketSends();
         swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
         
@@ -251,12 +245,6 @@ public class PeerNode implements PeerContext {
     private void randomizeMaxTimeBetweenPacketSends() {
         int x = Node.KEEPALIVE_INTERVAL;
         x += node.random.nextInt(x);
-    }
-
-    private void randomizeMaxTimeBetweenPacketReceives() {
-        int x = Node.MAX_PEER_INACTIVITY;
-        x += node.random.nextInt(x);
-        maxTimeBetweenPacketReceives = x;
     }
 
     /**
@@ -351,7 +339,7 @@ public class PeerNode implements PeerContext {
     public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog) {
         // Will usually indicate serious problems
         if(!dontLog)
-            Logger.error(this, "Requeueing "+messages.length+" messages on "+this);
+            Logger.normal(this, "Requeueing "+messages.length+" messages on "+this);
         synchronized(messagesToSendNow) {
             for(int i=offset;i<offset+length;i++)
                 if(messages[i] != null)
@@ -427,7 +415,7 @@ public class PeerNode implements PeerContext {
      * @return The maximum time between received packets.
      */
     public int maxTimeBetweenReceivedPackets() {
-        return this.maxTimeBetweenPacketReceives;
+    	return Node.MAX_PEER_INACTIVITY;
     }
     
     /**
@@ -470,11 +458,10 @@ public class PeerNode implements PeerContext {
 
     /**
      * Send a message, right now, on this thread, to this node.
-     * REDFLAG: If we ever implement queueing, do it here.
      */
     public void send(Message req) throws NotConnectedException {
         if(!isConnected) {
-            Logger.error(this, "Tried to send "+req+" but not connected", new Exception("debug"));
+            Logger.error(this, "Tried to send "+req+" but not connected to "+this, new Exception("debug"));
             return;
         }
         node.usm.send(this, req);
@@ -564,7 +551,6 @@ public class PeerNode implements PeerContext {
             throw new NotConnectedException();
         }
         timeLastReceivedPacket = System.currentTimeMillis();
-        randomizeMaxTimeBetweenPacketReceives();
     }
 
     /**

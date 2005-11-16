@@ -22,6 +22,53 @@ import freenet.support.Logger;
  */
 public class StandardOnionFECCodec extends FECCodec {
 
+	public class Encoder implements Runnable {
+
+		private final SplitfileBlock[] dataBlockStatus, checkBlockStatus;
+		private final int blockLength;
+		private final BucketFactory bf;
+		private IOException thrownIOE;
+		private RuntimeException thrownRE;
+		private Error thrownError;
+		private boolean finished;
+		
+		public Encoder(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) {
+			this.dataBlockStatus = dataBlockStatus;
+			this.checkBlockStatus = checkBlockStatus;
+			this.blockLength = blockLength;
+			this.bf = bf;
+		}
+
+		public void run() {
+			long startTime = System.currentTimeMillis();
+			try {
+				realEncode(dataBlockStatus, checkBlockStatus, blockLength, bf);
+			} catch (IOException e) {
+				thrownIOE = e;
+			} catch (RuntimeException e) {
+				thrownRE = e;
+			} catch (Error e) {
+				thrownError = e;
+			}
+			long endTime = System.currentTimeMillis();
+			Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
+			finished = true;
+			synchronized(this) {
+				notify();
+			}
+		}
+
+		public void throwException() throws IOException {
+			if(thrownIOE != null)
+				throw thrownIOE;
+			if(thrownRE != null)
+				throw thrownRE;
+			if(thrownError != null)
+				throw thrownError;
+		}
+
+	}
+
 	// REDFLAG: How big is one of these?
 	private static int MAX_CACHED_CODECS = 16;
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
@@ -249,10 +296,22 @@ public class StandardOnionFECCodec extends FECCodec {
 			runningDecodes++;
 		}
 		try {
-			long startTime = System.currentTimeMillis();
-			realEncode(dataBlockStatus, checkBlockStatus, blockLength, bf);
-			long endTime = System.currentTimeMillis();
-			Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
+			// Run on a separate thread so we can tweak priority
+			Encoder et = new Encoder(dataBlockStatus, checkBlockStatus, blockLength, bf);
+			Thread t = new Thread(et, "Encoder thread for k="+k+", n="+n+" started at "+System.currentTimeMillis());
+			t.setDaemon(true);
+			t.setPriority(Thread.MIN_PRIORITY);
+			t.start();
+			synchronized(et) {
+				while(!et.finished) {
+					try {
+						et.wait(10*1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+			}
+			et.throwException();
 		} finally {
 			synchronized(runningDecodesSync) {
 				runningDecodes--;
@@ -266,10 +325,10 @@ public class StandardOnionFECCodec extends FECCodec {
 	private void realEncode(SplitfileBlock[] dataBlockStatus,
 			SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf)
 			throws IOException {
-		Runtime.getRuntime().gc();
-		Runtime.getRuntime().runFinalization();
-		Runtime.getRuntime().gc();
-		Runtime.getRuntime().runFinalization();
+//		Runtime.getRuntime().gc();
+//		Runtime.getRuntime().runFinalization();
+//		Runtime.getRuntime().gc();
+//		Runtime.getRuntime().runFinalization();
 		long memUsedAtStart = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 		Logger.minor(this, "Memory in use at start: "+memUsedAtStart+" max="+Runtime.getRuntime().maxMemory());
 		System.err.println("************* Encoding " + dataBlockStatus.length
@@ -340,23 +399,30 @@ public class StandardOnionFECCodec extends FECCodec {
 					// Do the encode
 					// Not shuffled
 					long startTime = System.currentTimeMillis();
-					Runtime.getRuntime().gc();
-					Runtime.getRuntime().runFinalization();
-					Runtime.getRuntime().gc();
-					Runtime.getRuntime().runFinalization();
+//					Runtime.getRuntime().gc();
+//					Runtime.getRuntime().runFinalization();
+//					Runtime.getRuntime().gc();
+//					Runtime.getRuntime().runFinalization();
 					long memUsedBeforeStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 					Logger.minor(this, "Memory in use before stripe: "+memUsedBeforeStripe);
 					code.encode(dataPackets, checkPackets, toEncode);
-					Runtime.getRuntime().gc();
-					Runtime.getRuntime().runFinalization();
-					Runtime.getRuntime().gc();
-					Runtime.getRuntime().runFinalization();
+//					Runtime.getRuntime().gc();
+//					Runtime.getRuntime().runFinalization();
+//					Runtime.getRuntime().gc();
+//					Runtime.getRuntime().runFinalization();
 					long memUsedAfterStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 					Logger.minor(this, "Memory in use after stripe: "+memUsedAfterStripe);
 					long endTime = System.currentTimeMillis();
 					Logger.minor(this, "Stripe encode took "
 							+ (endTime - startTime) + " ms for k=" + k + ", n="
 							+ n + ", stripeSize=" + STRIPE_SIZE);
+					// FIXME this is a total horrible hack, but I was desperate
+					// Without this, threads get randomly stuck for many seconds at a time
+					try {
+						Thread.sleep(endTime - startTime);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
 					// packets now contains an array of decoded blocks, in order
 					// Write the data out
 					for (int i = k; i < n; i++) {
