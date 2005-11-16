@@ -28,6 +28,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
+import freenet.node.PeerNode;
 import freenet.support.BitArray;
 import freenet.support.Logger;
 
@@ -84,23 +85,29 @@ public class BlockTransmitter {
 										_senderThread.wait(x);
 								}
 							}
-							while (_unsent.size() == 0) {
+							while (true) {
+								synchronized(_unsent) {
+									if(_unsent.size() != 0) break;
+								}
 								if(_sendComplete) return;
 								synchronized (_senderThread) {
 									_senderThread.wait();
 								}
 							}
 						} catch (InterruptedException e) {  }
-						int packetNo = ((Integer) _unsent.removeFirst()).intValue();
+						int packetNo;
+						synchronized(_unsent) {
+							packetNo = ((Integer) _unsent.removeFirst()).intValue();
+						}
 						_sentPackets.setBit(packetNo, true);
 						try {
-						_usm.send(BlockTransmitter.this._destination, DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)));
-						
+							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null);
 						// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
 						sentSinceLastPing++;
 						if (sentSinceLastPing >= PING_EVERY) {
 							sentSinceLastPing = 0;
-							_usm.send(BlockTransmitter.this._destination, DMT.createPing());
+							//_usm.send(BlockTransmitter.this._destination, DMT.createPing());
+							((PeerNode)_destination).sendAsync(DMT.createPing(), null);
 						}
 						} catch (NotConnectedException e) {
 						    Logger.normal(this, "Terminating send: "+e);
@@ -126,7 +133,7 @@ public class BlockTransmitter {
 
 			public void receiveAborted(int reason, String description) {
 				try {
-                    _usm.send(_destination, DMT.createSendAborted(reason, description));
+					((PeerNode)_destination).sendAsync(DMT.createSendAborted(reason, description), null);
                 } catch (NotConnectedException e) {
                     Logger.minor(this, "Receive aborted and receiver is not connected");
                 }
@@ -159,7 +166,9 @@ public class BlockTransmitter {
 				for (Iterator i = missing.iterator(); i.hasNext();) {
 					Integer packetNo = (Integer) i.next();
 					if (_prb.isReceived(packetNo.intValue())) {
-					    _unsent.addFirst(packetNo);
+						synchronized(_unsent) {
+							_unsent.addFirst(packetNo);
+						}
 					    _sentPackets.setBit(packetNo.intValue(), false);
 					    synchronized(_senderThread) {
 					        _senderThread.notify();

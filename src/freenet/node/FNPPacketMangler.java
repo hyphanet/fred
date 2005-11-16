@@ -1050,7 +1050,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws KeyChangedException If the primary key changes while we are trying to send this packet.
      * @throws PacketSequenceException 
      */
-    public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException, PacketSequenceException {
+    public synchronized void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException, PacketSequenceException {
         if(Logger.shouldLog(Logger.MINOR, this)) {
             String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+","+length+","+tracker+","+packetNumber+",";
             if(callbacks == null) log += "null";
@@ -1093,12 +1093,15 @@ public class FNPPacketMangler implements LowLevelFilter {
          * sent after this packet was originally sent (it may be a resend) */
        	int realSeqNumber;
        	
+       	int otherSideSeqNumber;
+       	
        	synchronized(tracker) {
         	acks = tracker.grabAcks();
         	resendRequests = tracker.grabResendRequests();
         	ackRequests = tracker.grabAckRequests();
             realSeqNumber = tracker.getLastOutgoingSeqNumber();
-            
+            otherSideSeqNumber = tracker.highestReceivedIncomingSeqNumber();
+            Logger.minor(this, "otherSideSeqNumber: "+otherSideSeqNumber);
         }
         
         int packetLength = acks.length + resendRequests.length + ackRequests.length + 4 + 1 + length + 4 + 4 + RANDOM_BYTES_LENGTH;
@@ -1131,9 +1134,6 @@ public class FNPPacketMangler implements LowLevelFilter {
         } else {
             plaintext[ptr++] = (byte)(realSeqNumber - seqNumber);
         }
-        
-        int otherSideSeqNumber = tracker.highestReceivedIncomingSeqNumber();
-        Logger.minor(this, "otherSideSeqNumber: "+otherSideSeqNumber);
         
         plaintext[ptr++] = (byte)(otherSideSeqNumber >> 24);
         plaintext[ptr++] = (byte)(otherSideSeqNumber >> 16);

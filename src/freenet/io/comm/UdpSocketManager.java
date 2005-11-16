@@ -22,6 +22,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import freenet.node.PeerNode;
 import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
@@ -47,6 +48,7 @@ public class UdpSocketManager extends Thread {
 	}
 
 	public void start() {
+		setPriority(Thread.MAX_PRIORITY);
 		super.start();
 		Thread checker = new Thread(new USMChecker());
 		checker.setDaemon(true);
@@ -388,19 +390,20 @@ public class UdpSocketManager extends Thread {
 			Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
 					+ " : " + m);
 		}
-		byte[] blockToSend = m.encodeToPacket(lowLevelFilter, destination);
-		if(lowLevelFilter != null) {
-			try {
-				lowLevelFilter.processOutgoing(blockToSend, 0, blockToSend.length, destination);
-				return;
-			} catch (LowLevelFilterException t) {
-				Logger.error(this, "Caught "+t+" sending "+m+" to "+destination, t);
-				destination.forceDisconnect();
-				throw new NotConnectedException("Error "+t.toString()+" forced disconnect");
-			}
-		} else {
-		    sendPacket(blockToSend, destination.getPeer());
-		}
+//		byte[] blockToSend = m.encodeToPacket(lowLevelFilter, destination);
+//		if(lowLevelFilter != null) {
+//			try {
+//				lowLevelFilter.processOutgoing(blockToSend, 0, blockToSend.length, destination);
+//				return;
+//			} catch (LowLevelFilterException t) {
+//				Logger.error(this, "Caught "+t+" sending "+m+" to "+destination, t);
+//				destination.forceDisconnect();
+//				throw new NotConnectedException("Error "+t.toString()+" forced disconnect");
+//			}
+//		} else {
+//		    sendPacket(blockToSend, destination.getPeer());
+//		}
+		((PeerNode)destination).sendAsync(m, null);
 	}
 
 	/**

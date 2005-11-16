@@ -195,6 +195,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
 
         j.setNext(newtailptr);
         newtailptr.setPrev(j);
+        newtailptr.setParent(this);
 
         i.setPrev(newheadptr);
         newheadptr.setNext(i);
@@ -268,7 +269,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     	if (i.getParent() != this)
     		throw new PromiscuousItemException(i, i.getParent());
     	if (j.getParent() != null)
-    		throw new PromiscuousItemException(j, i.getParent());
+    		throw new PromiscuousItemException(j, j.getParent());
         if (j.getNext() != null || j.getPrev() != null)
             throw new PromiscuousItemException(j);
         DoublyLinkedList.Item prev = i.getPrev();

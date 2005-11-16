@@ -27,7 +27,8 @@ public class InserterContext {
 		this.bf = bf;
 		this.random = random;
 		dontCompress = false;
-		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
+		//splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
+		splitfileAlgorithm = Metadata.SPLITFILE_NONREDUNDANT;
 		this.maxInsertBlockRetries = maxRetries;
 		this.maxSplitInsertThreads = maxThreads;
 		this.eventProducer = eventProducer;

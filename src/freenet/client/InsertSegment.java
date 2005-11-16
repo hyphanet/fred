@@ -24,7 +24,10 @@ public class InsertSegment {
 	public InsertSegment(short splitfileAlgo, SplitfileBlock[] origDataBlocks, int blockLength, BucketFactory bf, boolean getCHKOnly, int segNo) {
 		this.origDataBlocks = origDataBlocks;
 		codec = FECCodec.getCodec(splitfileAlgo, origDataBlocks.length);
-		checkBlocks = new SplitfileBlock[codec.countCheckBlocks()];
+		if(codec != null)
+			checkBlocks = new SplitfileBlock[codec.countCheckBlocks()];
+		else
+			checkBlocks = new SplitfileBlock[0];
 		this.blockLength = blockLength;
 		this.bf = bf;
 		this.getCHKOnly = getCHKOnly;
