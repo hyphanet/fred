@@ -354,13 +354,15 @@ public class DMT {
 	
 	public static final MessageType sendAborted = new MessageType("sendAborted") {{
 		addField(UID, Long.class);
-		addField(REASON, String.class);
+		addField(DESCRIPTION, String.class);
+		addField(REASON, Integer.class);
 	}};
 
-	public static final Message createSendAborted(long uid, String reason) {
+	public static final Message createSendAborted(long uid, int reason, String description) {
 		Message msg = new Message(sendAborted);
 		msg.set(UID, uid);
 		msg.set(REASON, reason);
+		msg.set(DESCRIPTION, description);
 		return msg;
 	}
 

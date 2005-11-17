@@ -6,6 +6,7 @@ import freenet.client.events.EventLogger;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestStarterClient;
 import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
 import freenet.support.Logger;
@@ -21,6 +22,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
 	private final RandomSource random;
+	private final RequestStarterClient requestStarter;
+	private final RequestStarterClient insertStarter;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
@@ -50,7 +53,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 192;
 	
 	
-	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r) {
+	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r, RequestStarterClient requestStarterClient, RequestStarterClient insertStarterClient) {
 		this.client = client;
 		archiveManager = mgr;
 		bucketFactory = bf;
@@ -60,6 +63,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		curMaxLength = Long.MAX_VALUE;
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
+		this.requestStarter = requestStarterClient;
+		this.insertStarter = insertStarterClient;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -80,14 +85,14 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				random, archiveManager, bucketFactory, globalEventProducer);
+				random, archiveManager, bucketFactory, globalEventProducer, requestStarter);
 		Fetcher f = new Fetcher(uri, context);
 		return f.run();
 	}
 
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
 		InserterContext context = new InserterContext(client, bucketFactory, random, SPLITFILE_INSERT_RETRIES, 
-				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer);
+				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, insertStarter);
 		FileInserter i = new FileInserter(context);
 		return i.run(insert, false, getCHKOnly);
 	}

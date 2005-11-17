@@ -38,6 +38,7 @@ public class RetrievalException extends Exception {
 	public static final int TIMED_OUT = 4;
     public static final int ALREADY_CACHED = 6;
     public static final int SENDER_DISCONNECTED = 7;
+    public static final int NO_DATAINSERT = 8;
 	
 	int _reason;
 	String _cause = null;

@@ -65,6 +65,10 @@ public class BlockTransmitter {
 		}
 	}
 
+	public void sendAborted(int reason, String desc) throws NotConnectedException {
+		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc));
+	}
+	
 	public boolean send() {
 		final PacketThrottle throttle = PacketThrottle.getThrottle(_destination.getPeer(), _prb._packetSize);
 		_receiverThread = Thread.currentThread();
@@ -133,7 +137,7 @@ public class BlockTransmitter {
 
 			public void receiveAborted(int reason, String description) {
 				try {
-					((PeerNode)_destination).sendAsync(DMT.createSendAborted(reason, description), null);
+					((PeerNode)_destination).sendAsync(DMT.createSendAborted(_uid, reason, description), null);
                 } catch (NotConnectedException e) {
                     Logger.minor(this, "Receive aborted and receiver is not connected");
                 }

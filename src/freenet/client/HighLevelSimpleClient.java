@@ -2,6 +2,7 @@ package freenet.client;
 
 import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestStarterClient;
 
 public interface HighLevelSimpleClient {
 

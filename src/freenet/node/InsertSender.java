@@ -15,7 +15,14 @@ import freenet.support.Logger;
 
 public final class InsertSender implements Runnable {
 
-    InsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
+    public class Sender implements Runnable {
+
+		public void run() {
+			bt.send();
+		}
+	}
+
+	InsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore, double closestLocation) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
@@ -27,6 +34,7 @@ public final class InsertSender implements Runnable {
         this.prb = prb;
         this.fromStore = fromStore;
         this.closestLocation = closestLocation;
+        this.startTime = System.currentTimeMillis();
         Thread t = new Thread(this, "InsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
         t.start();
@@ -48,6 +56,10 @@ public final class InsertSender implements Runnable {
     final boolean fromStore;
     private boolean receiveFailed = false;
     final double closestLocation;
+    final long startTime;
+    private BlockTransmitter bt;
+    private Sender s;
+    private Thread senderThread;
     
     private int status = -1;
     static final int NOT_FINISHED = -1;
@@ -110,8 +122,8 @@ public final class InsertSender implements Runnable {
             // mfRejectedOverload must be the last thing in the or
             // So its or pointer remains null
             // Otherwise we need to recreate it below
-            MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
             mfRejectedOverload.clearOr();
+            MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
             
             // Send to next node
             
@@ -127,9 +139,11 @@ public final class InsertSender implements Runnable {
             }
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
             
-            if(msg == null) {
-                // No response, move on
-                continue;
+            if(msg == null || msg.getSpec() == DMT.FNPRejectedOverload) {
+                // Overload... hmmmm - propagate error back to source
+                Logger.error(this, "Propagating "+msg+" back to source on "+this);
+                finish(REJECTED_OVERLOAD);
+                return;
             }
             
             if(msg.getSpec() == DMT.FNPRejectedLoop) {
@@ -137,19 +151,11 @@ public final class InsertSender implements Runnable {
                 continue;
             }
             
-            if(msg.getSpec() == DMT.FNPRejectedOverload) {
-                // Overload... hmmmm - propagate error back to source
-                Logger.error(this, "Propagating "+msg+" back to source on "+this);
-                finish(REJECTED_OVERLOAD);
-                return;
-            }
-            
             // Otherwise must be an Accepted
             
             // Send them the data.
             // Which might be the new data resulting from a collision...
 
-            BlockTransmitter bt;
             Message dataInsert;
             PartiallyReceivedBlock prbNow;
             prbNow = prb;
@@ -168,10 +174,12 @@ public final class InsertSender implements Runnable {
             MessageFilter mfRNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPRouteNotFound);
             MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPInsertReply);
             mfRejectedOverload.setTimeout(PUT_TIMEOUT);
+            mfRejectedOverload.clearOr();
             MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPRouteNotFound);
             MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPDataInsertRejected);
+            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPRejectedTimeout);
             
-            mf = mfRNF.or(mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfRejectedOverload.setTimeout(PUT_TIMEOUT)))));
+            mf = mfRNF.or(mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload)))));
 
             Logger.minor(this, "Sending DataInsert");
             if(receiveFailed) return;
@@ -179,8 +187,10 @@ public final class InsertSender implements Runnable {
 
             Logger.minor(this, "Sending data");
             if(receiveFailed) return;
-            bt.send();
-            Logger.minor(this, "Sent data");
+            s = new Sender();
+            senderThread = new Thread(s);
+            senderThread.setDaemon(true);
+            senderThread.start();
             
             if(receiveFailed) return;
             try {
@@ -200,7 +210,7 @@ public final class InsertSender implements Runnable {
                 return;
             }
             
-            if(msg.getSpec() == DMT.FNPRejectedOverload) {
+            if(msg.getSpec() == DMT.FNPRejectedOverload || msg.getSpec() == DMT.FNPRejectedTimeout) {
                 Logger.minor(this, "Rejected due to overload");
                 finish(REJECTED_OVERLOAD);
                 return;
@@ -255,14 +265,19 @@ public final class InsertSender implements Runnable {
                 
             }
             
-            // Otherwise should be an InsertReply
+            if(msg.getSpec() != DMT.FNPInsertReply) {
+            	Logger.error(this, "Unknown reply: "+msg);
+            	finish(INTERNAL_ERROR);
+            }
+            
             // Our task is complete
             finish(SUCCESS);
             return;
         }
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
-            finish(INTERNAL_ERROR);
+            if(status == NOT_FINISHED)
+            	finish(INTERNAL_ERROR);
         } finally {
             node.completed(uid);
         	node.removeInsertSender(myKey, origHTL, this);
@@ -280,12 +295,30 @@ public final class InsertSender implements Runnable {
             } catch (InterruptedException e) {
                 // Ignore
             }
-        }            
+        }
     }
     
     private void finish(int code) {
         Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+        if(status != NOT_FINISHED)
+        	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
+        
+        if(senderThread != null) {
+        	while(senderThread.isAlive()) {
+        		try {
+        			senderThread.join();
+        		} catch (InterruptedException e) {
+        			// Ignore
+        		}
+        	}
+        }
+        
+        if(status == REJECTED_OVERLOAD)
+        	node.getInsertThrottle().requestRejectedOverload();
+        else if(status == SUCCESS || status == ROUTE_NOT_FOUND)
+        	node.getInsertThrottle().requestCompleted(System.currentTimeMillis() - startTime);
+        
         synchronized(this) {
             notifyAll();
         }

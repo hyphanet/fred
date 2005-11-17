@@ -57,6 +57,10 @@ public class BlockReceiver {
 		_usm = usm;
 	}
 
+	public void sendAborted(int reason, String desc) throws NotConnectedException {
+		_usm.send(_sender, DMT.createSendAborted(_uid, reason, desc));
+	}
+	
 	public byte[] receive() throws RetrievalException {
 		int consecutiveMissingPacketReports = 0;
 		try {

@@ -27,6 +27,7 @@ import java.util.Hashtable;
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
+import freenet.client.InsertBlock;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
@@ -61,7 +62,7 @@ import freenet.support.io.TempBucketFactory;
 /**
  * @author amphibian
  */
-public class Node implements SimpleLowLevelClient {
+public class Node implements QueueingSimpleLowLevelClient {
     
 	static final long serialVersionUID = -1;
 	
@@ -134,6 +135,10 @@ public class Node implements SimpleLowLevelClient {
     // Client stuff
     final ArchiveManager archiveManager;
     final BucketFactory tempBucketFactory;
+    final RequestThrottle requestThrottle;
+    final RequestStarter requestStarter;
+    final RequestThrottle insertThrottle;
+    final RequestStarter insertStarter;
     
     // Client stuff that needs to be configged - FIXME
     static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -340,6 +345,12 @@ public class Node implements SimpleLowLevelClient {
 		}
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
+		requestThrottle = new RequestThrottle(5000, 2.0F);
+		requestStarter = new RequestStarter(requestThrottle, "Request starter ("+portNumber+")");
+		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
+		// FIXME reenable the above
+		insertThrottle = new RequestThrottle(10000, 2.0F);
+		insertStarter = new RequestStarter(insertThrottle, "Insert starter ("+portNumber+")");
     }
 
     void start(SwapRequestInterval interval) {
@@ -349,9 +360,16 @@ public class Node implements SimpleLowLevelClient {
         usm.start();
     }
     
-    public KeyBlock getKey(ClientKey key, boolean localOnly) throws LowLevelGetException {
+    public KeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client) throws LowLevelGetException {
+    	if(localOnly)
+    		return realGetKey(key, localOnly);
+    	else
+    		return client.getKey(key, localOnly);
+    }
+    
+    public KeyBlock realGetKey(ClientKey key, boolean localOnly) throws LowLevelGetException {
     	if(key instanceof ClientCHK)
-    		return getCHK((ClientCHK)key, localOnly);
+    		return realGetCHK((ClientCHK)key, localOnly);
     	else
     		throw new IllegalArgumentException("Not a CHK: "+key);
     }
@@ -360,7 +378,7 @@ public class Node implements SimpleLowLevelClient {
      * Really trivially simple client interface.
      * Either it succeeds or it doesn't.
      */
-    public ClientCHKBlock getCHK(ClientCHK key, boolean localOnly) throws LowLevelGetException {
+    ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly) throws LowLevelGetException {
         Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null, lm.loc.getValue(), localOnly);
         if(o instanceof CHKBlock) {
             try {
@@ -407,7 +425,11 @@ public class Node implements SimpleLowLevelClient {
         }
     }
 
-    public void putCHK(ClientCHKBlock block) throws LowLevelPutException {
+    public void putCHK(ClientCHKBlock block, RequestStarterClient starter) throws LowLevelPutException {
+   		starter.putCHK(block);
+    }
+    
+    public void realPutCHK(ClientCHKBlock block) throws LowLevelPutException {
         byte[] data = block.getData();
         byte[] headers = block.getHeader();
         PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
@@ -786,8 +808,8 @@ public class Node implements SimpleLowLevelClient {
         writeNodeFile();
     }
 
-	public HighLevelSimpleClient makeClient() {
-		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random);
+	public HighLevelSimpleClient makeClient(short prioClass, short prio) {
+		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, makeStarterClient(prioClass, prio, false), makeStarterClient(prioClass, prio, true));
 	}
 	
 	private static class MemoryChecker implements Runnable {
@@ -803,5 +825,17 @@ public class Node implements SimpleLowLevelClient {
 				Logger.minor(this, "Memory in use: "+(r.totalMemory()-r.freeMemory()));
 			}
 		}
+	}
+
+	public RequestThrottle getRequestThrottle() {
+		return requestThrottle;
+	}
+
+	public RequestThrottle getInsertThrottle() {
+		return insertThrottle;
+	}
+
+	public RequestStarterClient makeStarterClient(short prioClass, short prio, boolean inserts) {
+		return new RequestStarterClient(prioClass, prio, random, this, inserts ? insertStarter : requestStarter);
 	}
 }

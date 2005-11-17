@@ -2,6 +2,7 @@ package freenet.client;
 
 import freenet.client.events.ClientEventProducer;
 import freenet.crypt.RandomSource;
+import freenet.node.RequestStarterClient;
 import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
 
@@ -19,21 +20,22 @@ public class InserterContext {
 	final int splitfileSegmentDataBlocks;
 	final int splitfileSegmentCheckBlocks;
 	final ClientEventProducer eventProducer;
+	final RequestStarterClient starterClient;
 	
 	public InserterContext(SimpleLowLevelClient client, BucketFactory bf, RandomSource random,
 			int maxRetries, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer) {
+			ClientEventProducer eventProducer, RequestStarterClient sctx) {
 		this.client = client;
 		this.bf = bf;
 		this.random = random;
 		dontCompress = false;
-		//splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
-		splitfileAlgorithm = Metadata.SPLITFILE_NONREDUNDANT;
+		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 		this.maxInsertBlockRetries = maxRetries;
 		this.maxSplitInsertThreads = maxThreads;
 		this.eventProducer = eventProducer;
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
+		this.starterClient = sctx;
 	}
 
 }

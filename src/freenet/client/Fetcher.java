@@ -109,7 +109,7 @@ class Fetcher {
 		// Do the fetch
 		KeyBlock block;
 		try {
-			block = ctx.client.getKey(key, ctx.localRequestOnly);
+			block = ctx.client.getKey(key, ctx.localRequestOnly, ctx.starterClient);
 		} catch (LowLevelGetException e) {
 			switch(e.code) {
 			case LowLevelGetException.DATA_NOT_FOUND:

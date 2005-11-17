@@ -40,6 +40,7 @@ public final class RequestSender implements Runnable {
     final long uid;
     final Node node;
     private double nearestLoc;
+    private final long startTime;
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
     private PartiallyReceivedBlock prb = null;
@@ -65,6 +66,7 @@ public final class RequestSender implements Runnable {
     
     public RequestSender(NodeCHK key, short htl, long uid, Node n, double nearestLoc, 
             PeerNode source) {
+    	startTime = System.currentTimeMillis();
         this.key = key;
         this.htl = htl;
         this.uid = uid;
@@ -295,8 +297,15 @@ public final class RequestSender implements Runnable {
     
     private void finish(int code) {
         Logger.minor(this, "finish("+code+")");
+        if(status != NOT_FINISHED)
+        	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
-
+        
+        if(status == REJECTED_OVERLOAD)
+        	node.getRequestThrottle().requestRejectedOverload();
+        else if(status == SUCCESS || status == ROUTE_NOT_FOUND || status == DATA_NOT_FOUND || status == VERIFY_FAILURE)
+        	node.getRequestThrottle().requestCompleted(System.currentTimeMillis() - startTime);
+        
         synchronized(this) {
             notifyAll();
         }

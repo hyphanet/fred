@@ -2,6 +2,8 @@ package freenet.support;
 
 import java.util.Enumeration;
 
+import freenet.node.RequestStarterClient;
+
 /**
  * @author amphibian
  * 
@@ -88,6 +90,14 @@ public class UpdatableSortedLinkedList {
         return item;
     }
     
+	public synchronized void addOrUpdate(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
+		if(item.getParent() == list)
+			update(item);
+		else if(item.getParent() == null)
+			add(item);
+		else throw new IllegalStateException("Item "+item+" should be on our list: "+list+" or null, but is "+item.getParent());
+	}
+	
     public synchronized void update(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         Logger.minor(this, "Update("+i+") on "+this);
@@ -223,4 +233,20 @@ public class UpdatableSortedLinkedList {
     	clear();
     	killed = true;
     }
+
+	public synchronized UpdatableSortedLinkedListItem removeLowest() throws UpdatableSortedLinkedListKilledException {
+		if(isEmpty()) return null;
+		UpdatableSortedLinkedListItem i = getLowest();
+		remove(i);
+		return i;
+	}
+
+	public synchronized void moveTo(UpdatableSortedLinkedList dest) throws UpdatableSortedLinkedListKilledException {
+		Enumeration e = list.elements();
+		while(e.hasMoreElements()) {
+			UpdatableSortedLinkedListItem item = (UpdatableSortedLinkedListItem) e.nextElement();
+			remove(item);
+			dest.add(item);
+		}
+	}
 }

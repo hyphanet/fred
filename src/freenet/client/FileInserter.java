@@ -122,7 +122,7 @@ public class FileInserter {
 		try {
 			ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(chk.getClientKey()));
 			if(!getCHKOnly)
-				ctx.client.putCHK(chk);
+				ctx.client.putCHK(chk, ctx.starterClient);
 		} catch (LowLevelPutException e) {
 			le = e;
 		}
