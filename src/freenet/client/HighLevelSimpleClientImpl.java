@@ -50,7 +50,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
 	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
 	static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
-	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 192;
+	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 64;
 	
 	
 	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r, RequestStarterClient requestStarterClient, RequestStarterClient insertStarterClient) {

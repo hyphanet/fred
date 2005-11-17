@@ -97,6 +97,7 @@ public class Segment implements RetryTrackerCallback {
 			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK);
 			this.recursionLevel = 0;
 		}
+		Logger.minor(this, "Created segment: data blocks: "+dataBlocks.length+", check blocks: "+checkBlocks.length+" "+this);
 	}
 
 	/**
@@ -133,7 +134,7 @@ public class Segment implements RetryTrackerCallback {
 		long len = decodedData.size();
 		if(truncateLength >= 0 && truncateLength < len)
 			len = truncateLength;
-		BucketTools.copyTo(decodedData, os, truncateLength);
+		BucketTools.copyTo(decodedData, os, Math.min(truncateLength, decodedData.size()));
 		return len;
 	}
 
@@ -175,6 +176,7 @@ public class Segment implements RetryTrackerCallback {
 	 */
 	public void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors) {
 		
+		parentFetcher.gotBlocks(this);
 		if(succeeded.length >= minFetched)
 			// Not finished yet, need to decode
 			successfulFetch();
@@ -189,7 +191,6 @@ public class Segment implements RetryTrackerCallback {
 	 * Successful fetch, do the decode, tell the parent, etc.
 	 */
 	private void successfulFetch() {
-		parentFetcher.gotBlocks(this);
 		
 		// Now decode
 		
@@ -202,18 +203,21 @@ public class Segment implements RetryTrackerCallback {
 			}
 			
 			decodedData = fetcherContext.bucketFactory.makeBucket(-1);
+			Logger.minor(this, "Copying data from data blocks");
 			OutputStream os = decodedData.getOutputStream();
 			for(int i=0;i<dataBlockStatus.length;i++) {
 				BlockFetcher status = dataBlockStatus[i];
 				Bucket data = status.fetchedData;
 				BucketTools.copyTo(data, os, Long.MAX_VALUE);
 			}
+			Logger.minor(this, "Copied data");
 			os.close();
 			// Must set finished BEFORE calling parentFetcher.
 			// Otherwise a race is possible that might result in it not seeing our finishing.
 			finished = true;
 			parentFetcher.segmentFinished(this);
 		} catch (IOException e) {
+			Logger.minor(this, "Caught bucket error?: "+e, e);
 			finished = true;
 			failureException = new FetchException(FetchException.BUCKET_ERROR);
 			parentFetcher.segmentFinished(this);

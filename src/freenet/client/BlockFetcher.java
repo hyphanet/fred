@@ -47,7 +47,7 @@ public class BlockFetcher extends StdSplitfileBlock {
 		Fetcher f = new Fetcher(uri, this.segment.blockFetchContext);
 		try {
 			FetchResult fr = f.realRun(new ClientMetadata(), segment.recursionLevel, uri, 
-					(!this.segment.nonFullBlocksAllowed) || dontEnterImplicitArchives);
+					(!this.segment.nonFullBlocksAllowed) || dontEnterImplicitArchives, segment.blockFetchContext.localRequestOnly || completedTries == 0);
 			actuallyFetched = true;
 			fetchedData = fr.data;
 			Logger.minor(this, "Fetched "+fetchedData.size()+" bytes on "+this);

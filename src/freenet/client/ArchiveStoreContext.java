@@ -66,7 +66,7 @@ class ArchiveStoreContext implements ArchiveHandler {
 			
 			if(fetchContext == null) return null;
 			Fetcher fetcher = new Fetcher(key, fetchContext, archiveContext);
-			FetchResult result = fetcher.realRun(dm, recursionLevel, key, dontEnterImplicitArchives);
+			FetchResult result = fetcher.realRun(dm, recursionLevel, key, dontEnterImplicitArchives, fetchContext.localRequestOnly);
 			manager.extractToCache(key, archiveType, result.data, archiveContext, this);
 			return manager.getCached(key, internalName);
 		}

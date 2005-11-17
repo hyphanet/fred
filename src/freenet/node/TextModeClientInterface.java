@@ -64,6 +64,21 @@ public class TextModeClientInterface implements Runnable {
      * Read commands, run them
      */
     public void run() {
+    	printHeader();
+        // Read command, and data
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        while(true) {
+            try {
+                processLine(reader);
+            } catch (Throwable t) {
+                Logger.error(this, "Caught "+t, t);
+                System.out.println("Caught: "+t);
+                t.printStackTrace();
+            }
+        }
+    }
+
+    private void printHeader() {
         System.out.println("Freenet 0.7 Trivial Node Test Interface");
         System.out.println("---------------------------------------");
         System.out.println();
@@ -87,20 +102,9 @@ public class TextModeClientInterface implements Runnable {
 //        System.out.println("SAY:<text> - send text to the last created/pushed stream");
         System.out.println("STATUS - display some status information on the node including its reference and connections.");
         System.out.println("QUIT - exit the program");
-        // Read command, and data
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        while(true) {
-            try {
-                processLine(reader);
-            } catch (Throwable t) {
-                Logger.error(this, "Caught "+t, t);
-                System.out.println("Caught: "+t);
-                t.printStackTrace();
-            }
-        }
-    }
+	}
 
-    /**
+	/**
      * Process a single command.
      * @throws IOException If we could not write the data to stdout.
      */
@@ -310,7 +314,7 @@ public class TextModeClientInterface implements Runnable {
             System.out.println("New name: "+key);
             n.setName(key);
         } else {
-            
+            printHeader();
         }
     }
 

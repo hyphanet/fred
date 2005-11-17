@@ -211,16 +211,22 @@ public class SplitFetcher {
 	}
 
 	public void gotBlocks(Segment segment) {
+		Logger.minor(this, "Got blocks for segment: "+segment);
 		synchronized(this) {
 			fetchingSegment = null;
+			notifyAll();
 		}
 	}
 
 	public void segmentFinished(Segment segment) {
+		Logger.minor(this, "Finished segment: "+segment);
 		synchronized(this) {
 			boolean allDone = true;
 			for(int i=0;i<segments.length;i++)
-				if(!segments[i].isFinished()) allDone = false;
+				if(!segments[i].isFinished()) {
+					Logger.minor(this, "Segment "+segments[i]+" is not finished");
+					allDone = false;
+				}
 			if(allDone) allSegmentsFinished = true;
 			notifyAll();
 		}

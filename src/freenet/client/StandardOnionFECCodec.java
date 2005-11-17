@@ -129,7 +129,9 @@ public class StandardOnionFECCodec extends FECCodec {
 		encoder = DefaultFECCodeFactory.getDefault().createFECCode(k,n);
 		// revert to below if above causes JVM crashes
 		// Worst performance, but decode crashes
-		decoder = new PureCode(k,n);
+		//decoder = new PureCode(k,n);
+		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
+		decoder = encoder;
 	}
 
 	private static Object runningDecodesSync = new Object();
@@ -263,7 +265,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			}
 
 		} finally {
-
+			
 			for (int i = 0; i < k; i++) {
 				if (writers[i] != null)
 					writers[i].close();
@@ -333,8 +335,6 @@ public class StandardOnionFECCodec extends FECCodec {
 //		Runtime.getRuntime().runFinalization();
 		long memUsedAtStart = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 		Logger.minor(this, "Memory in use at start: "+memUsedAtStart+" max="+Runtime.getRuntime().maxMemory());
-		System.err.println("************* Encoding " + dataBlockStatus.length
-				+ " -> " + checkBlockStatus.length + " *************");
 		Logger.minor(this, "Doing encode: " + dataBlockStatus.length
 				+ " data blocks, " + checkBlockStatus.length
 				+ " check blocks, block length " + blockLength + " with "
@@ -391,6 +391,8 @@ public class StandardOnionFECCodec extends FECCodec {
 			}
 
 			if (numberToEncode > 0) {
+				System.err.println("************* Encoding " + dataBlockStatus.length
+						+ " -> " + numberToEncode + " *************");
 				// Do the (striped) encode
 				for (int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
 					// Read the data in first
@@ -432,6 +434,8 @@ public class StandardOnionFECCodec extends FECCodec {
 									STRIPE_SIZE);
 					}
 				}
+				System.err.println("************* Encoded " + dataBlockStatus.length
+						+ " -> " + numberToEncode + " *************");
 			}
 
 		} finally {
@@ -451,8 +455,6 @@ public class StandardOnionFECCodec extends FECCodec {
 				throw new NullPointerException();
 			checkBlockStatus[i].setData(data);
 		}
-		System.err.println("************* Encoded " + dataBlockStatus.length
-				+ " -> " + checkBlockStatus.length + " *************");
 	}
 
 	private Bucket pad(Bucket oldData, int blockLength, BucketFactory bf, int l) throws IOException {
