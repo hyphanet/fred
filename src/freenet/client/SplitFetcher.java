@@ -138,18 +138,18 @@ public class SplitFetcher {
 			synchronized(this) {
 				if(fetchingSegment == null) {
 					// Pick a random segment
-					Segment s = chooseUnstartedSegment();
-					if(s == null) {
+					fetchingSegment = chooseUnstartedSegment();
+					if(fetchingSegment == null) {
 						// All segments have started
 					} else {
-						s.start();
+						fetchingSegment.start();
 					}
 				}
 				if(allSegmentsFinished) {
 					return finalStatus();
 				}
 				try {
-					wait(100*1000); // or wait()?
+					wait(10*1000); // or wait()?
 				} catch (InterruptedException e) {
 					// Ignore
 				}
