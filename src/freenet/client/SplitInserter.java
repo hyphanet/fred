@@ -26,6 +26,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	final int segmentSize;
 	final int checkSegmentSize;
 	final int blockSize;
+	final boolean isMetadata;
 	SplitfileBlock[] origDataBlocks;
 	InsertSegment encodingSegment;
 	InsertSegment[] segments;
@@ -38,7 +39,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	private SplitfileBlock[] fatalErrorBlocks;
 	private FileInserter inserter;
 	
-	public SplitInserter(Bucket data, ClientMetadata clientMetadata, Compressor compressor, short splitfileAlgorithm, InserterContext ctx, FileInserter inserter, int blockLength, boolean getCHKOnly) throws InserterException {
+	public SplitInserter(Bucket data, ClientMetadata clientMetadata, Compressor compressor, short splitfileAlgorithm, InserterContext ctx, FileInserter inserter, int blockLength, boolean getCHKOnly, boolean isMetadata) throws InserterException {
 		this.origData = data;
 		this.getCHKOnly = getCHKOnly;
 		this.blockSize = blockLength;
@@ -59,6 +60,7 @@ public class SplitInserter implements RetryTrackerCallback {
 			throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 		}
 		this.inserter = inserter;
+		this.isMetadata = isMetadata;
 	}
 
 	/**
@@ -106,6 +108,8 @@ public class SplitInserter implements RetryTrackerCallback {
 		FreenetURI[] dataURIs = getDataURIs();
 		FreenetURI[] checkURIs = getCheckURIs();
 		
+		Logger.minor(this, "Data URIs: "+dataURIs.length+", check URIs: "+checkURIs.length);
+		
 		boolean missingURIs = anyNulls(dataURIs) || anyNulls(checkURIs);
 		
 		if(missingURIs && fatalErrors == 0 && failed == 0)
@@ -115,7 +119,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		
 		if(!missingURIs) {
 		
-			Metadata metadata = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, clientMetadata, dataLength, compressionCodec);
+			Metadata metadata = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, clientMetadata, dataLength, compressionCodec, isMetadata);
 			
 			Bucket mbucket;
 			try {

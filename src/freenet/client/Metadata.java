@@ -304,8 +304,11 @@ public class Metadata {
 			throw new IllegalArgumentException();
 	}
 
-	public Metadata(short algo, FreenetURI[] dataURIs, FreenetURI[] checkURIs, int segmentSize, int checkSegmentSize, ClientMetadata cm, long dataLength, short compressionAlgo) {
-		documentType = SIMPLE_REDIRECT;
+	public Metadata(short algo, FreenetURI[] dataURIs, FreenetURI[] checkURIs, int segmentSize, int checkSegmentSize, ClientMetadata cm, long dataLength, short compressionAlgo, boolean isMetadata) {
+		if(isMetadata)
+			documentType = MULTI_LEVEL_METADATA;
+		else
+			documentType = SIMPLE_REDIRECT;
 		splitfile = true;
 		splitfileAlgorithm = algo;
 		this.dataLength = dataLength;

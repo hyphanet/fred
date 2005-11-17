@@ -111,7 +111,7 @@ public class SplitFetcher {
 		unstartedSegments = new Vector();
 		for(int i=0;i<segments.length;i++)
 			unstartedSegments.add(segments[i]);
-		Logger.minor(this, "Segments: "+unstartedSegments.size());
+		Logger.minor(this, "Segments: "+unstartedSegments.size()+", data keys: "+splitfileDataBlocks.length+", check keys: "+(splitfileCheckBlocks==null?0:splitfileCheckBlocks.length));
 	}
 
 	/**

@@ -31,8 +31,8 @@ public class BaseFreenetStore implements FreenetStore {
     
     public BaseFreenetStore(RandomAccessFile storeFile, RandomAccessFile storeIndexFile, 
             RandomAccessFile headerStoreFile, RandomAccessFile headerStoreIndexFile, long maxBlocks) throws Exception {
-        dataStore = new DataStore(storeFile, storeIndexFile, DATA_BLOCK_SIZE, maxBlocks);
-        headersStore = new DataStore(headerStoreFile, headerStoreIndexFile, HEADER_BLOCK_SIZE, maxBlocks);
+        dataStore = new DataStore(storeIndexFile, storeFile, DATA_BLOCK_SIZE, maxBlocks);
+        headersStore = new DataStore(headerStoreIndexFile, headerStoreFile, HEADER_BLOCK_SIZE, maxBlocks);
     }
     
     /**

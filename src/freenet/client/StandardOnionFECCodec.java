@@ -116,7 +116,8 @@ public class StandardOnionFECCodec extends FECCodec {
 		return codec;
 	}
 
-	private final FECCode code;
+	private final FECCode encoder;
+	private final FECCode decoder;
 
 	private final int k;
 	private final int n;
@@ -124,10 +125,11 @@ public class StandardOnionFECCodec extends FECCodec {
 	public StandardOnionFECCodec(int k, int n) {
 		this.k = k;
 		this.n = n;
-		code = DefaultFECCodeFactory.getDefault().createFECCode(k,n);
-		Logger.minor(this, "FEC impl is "+code);
+		// Best performance, doesn't crash
+		encoder = DefaultFECCodeFactory.getDefault().createFECCode(k,n);
 		// revert to below if above causes JVM crashes
-		//code = new PureCode(k,n);
+		// Worst performance, but decode crashes
+		decoder = new PureCode(k,n);
 	}
 
 	private static Object runningDecodesSync = new Object();
@@ -249,7 +251,7 @@ public class StandardOnionFECCodec extends FECCodec {
 					int[] disposableIndexes = new int[packetIndexes.length];
 					System.arraycopy(packetIndexes, 0, disposableIndexes, 0,
 							packetIndexes.length);
-					code.decode(packets, disposableIndexes);
+					decoder.decode(packets, disposableIndexes);
 					// packets now contains an array of decoded blocks, in order
 					// Write the data out
 					for (int i = 0; i < k; i++) {
@@ -405,7 +407,7 @@ public class StandardOnionFECCodec extends FECCodec {
 //					Runtime.getRuntime().runFinalization();
 					long memUsedBeforeStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 					Logger.minor(this, "Memory in use before stripe: "+memUsedBeforeStripe);
-					code.encode(dataPackets, checkPackets, toEncode);
+					encoder.encode(dataPackets, checkPackets, toEncode);
 //					Runtime.getRuntime().gc();
 //					Runtime.getRuntime().runFinalization();
 //					Runtime.getRuntime().gc();
