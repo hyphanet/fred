@@ -389,7 +389,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			}
 
 			if (numberToEncode > 0) {
-				// Do the (striped) decode
+				// Do the (striped) encode
 				for (int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
 					// Read the data in first
 					for (int i = 0; i < k; i++) {
@@ -416,8 +416,7 @@ public class StandardOnionFECCodec extends FECCodec {
 					Logger.minor(this, "Stripe encode took "
 							+ (endTime - startTime) + " ms for k=" + k + ", n="
 							+ n + ", stripeSize=" + STRIPE_SIZE);
-					// FIXME this is a total horrible hack, but I was desperate
-					// Without this, threads get randomly stuck for many seconds at a time
+					// Try to limit CPU usage!!
 					try {
 						Thread.sleep(endTime - startTime);
 					} catch (InterruptedException e) {
