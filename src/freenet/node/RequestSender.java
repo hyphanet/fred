@@ -91,7 +91,7 @@ public final class RequestSender implements Runnable {
                 // RNF
                 // Would be DNF if arrived with no HTL
                 // But here we've already routed it and that's been rejected.
-                finish(ROUTE_NOT_FOUND);
+                finish(ROUTE_NOT_FOUND, null);
                 return;
             }
             
@@ -108,7 +108,7 @@ public final class RequestSender implements Runnable {
             
             if(next == null) {
                 // Backtrack
-                finish(ROUTE_NOT_FOUND);
+                finish(ROUTE_NOT_FOUND, null);
                 return;
             }
             Logger.minor(this, "Routing insert to "+next);
@@ -151,7 +151,7 @@ public final class RequestSender implements Runnable {
             if(msg == null) {
                 // Timeout
                 // Treat as FNPRejectOverloadd
-                finish(REJECTED_OVERLOAD);
+                finish(REJECTED_OVERLOAD, next);
                 return;
             }
             
@@ -163,7 +163,7 @@ public final class RequestSender implements Runnable {
             if(msg.getSpec() == DMT.FNPRejectedOverload) {
                 // Failed. Propagate back to source.
                 // Source will reduce send rate.
-                finish(REJECTED_OVERLOAD);
+                finish(REJECTED_OVERLOAD, next);
                 return;
             }
             
@@ -186,12 +186,12 @@ public final class RequestSender implements Runnable {
             
             if(msg == null) {
                 // Timeout. Treat as FNPRejectOverload.
-                finish(REJECTED_OVERLOAD);
+                finish(REJECTED_OVERLOAD, next);
                 return;
             }
             
             if(msg.getSpec() == DMT.FNPDataNotFound) {
-                finish(DATA_NOT_FOUND);
+                finish(DATA_NOT_FOUND, next);
                 return;
             }
             
@@ -203,7 +203,7 @@ public final class RequestSender implements Runnable {
             }
             
             if(msg.getSpec() == DMT.FNPRejectedOverload) {
-                finish(REJECTED_OVERLOAD);
+                finish(REJECTED_OVERLOAD, next);
                 return;
             }
 
@@ -234,15 +234,15 @@ public final class RequestSender implements Runnable {
                         block = new CHKBlock(data, headers, key);
                     } catch (CHKVerifyException e1) {
                         Logger.normal(this, "Got data but verify failed: "+e1, e1);
-                        finish(VERIFY_FAILURE);
+                        finish(VERIFY_FAILURE, next);
                         return;
                     }
                     node.store(block);
-                    finish(SUCCESS);
+                    finish(SUCCESS, next);
                     return;
                 } catch (RetrievalException e) {
                     Logger.normal(this, "Transfer failed: "+e, e);
-                    finish(TRANSFER_FAILED);
+                    finish(TRANSFER_FAILED, next);
                     return;
                 }
             } finally {
@@ -295,16 +295,19 @@ public final class RequestSender implements Runnable {
         }            
     }
     
-    private void finish(int code) {
+    private void finish(int code, PeerNode next) {
         Logger.minor(this, "finish("+code+")");
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
         
-        if(status == REJECTED_OVERLOAD)
+        if(status == REJECTED_OVERLOAD) {
         	node.getRequestThrottle().requestRejectedOverload();
-        else if(status == SUCCESS || status == ROUTE_NOT_FOUND || status == DATA_NOT_FOUND || status == VERIFY_FAILURE)
+        	next.rejectedOverload();
+        } else if(status == SUCCESS || status == ROUTE_NOT_FOUND || status == DATA_NOT_FOUND || status == VERIFY_FAILURE) {
         	node.getRequestThrottle().requestCompleted(System.currentTimeMillis() - startTime);
+        	next.didNotRejectOverload();
+        }
         
         synchronized(this) {
             notifyAll();
