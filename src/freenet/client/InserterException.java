@@ -9,9 +9,9 @@ import freenet.support.Logger;
 public class InserterException extends Exception {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
-	final int mode;
+	public final int mode;
 	/** For collection errors */
-	final FailureCodeTracker errorCodes;
+	public final FailureCodeTracker errorCodes;
 	/** If a non-serious error, the URI */
 	public final FreenetURI uri;
 	

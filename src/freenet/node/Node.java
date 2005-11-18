@@ -285,7 +285,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         filenamesPrefix = prefix;
         this.overrideIPAddress = overrideIP;
         try {
-            datastore = new BaseFreenetStore(prefix+"freenet-"+portNumber,1024);
+            datastore = new BaseFreenetStore(prefix+"freenet-"+portNumber,16384); // 512MB
         } catch (FileNotFoundException e1) {
             Logger.error(this, "Could not open datastore: "+e1, e1);
             System.exit(EXIT_STORE_FILE_NOT_FOUND);

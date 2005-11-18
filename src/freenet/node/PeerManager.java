@@ -254,7 +254,7 @@ public class PeerManager {
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
             if(!p.isConnected()) continue;
-            double diff = distance(p.getLocation().getValue(), loc);
+            double diff = distance(p, loc);
             if(diff < bestDiff) {
                 best = p;
                 bestDiff = diff;
@@ -262,7 +262,15 @@ public class PeerManager {
         }
         return best;
     }
-
+    
+    static double distance(PeerNode p, double loc) {
+    	double d = distance(p.getLocation().getValue(), loc);
+    	double pSummaryFailure = p.getPRejectedOverload();
+    	double denom = 1.0 - pSummaryFailure;
+    	if(denom == 0.0) denom = 0.000001;
+    	return d / denom;
+    }
+    
     /**
      * Distance between two locations.
      */
@@ -295,7 +303,7 @@ public class PeerManager {
             if(!p.isConnected()) continue;
             count++;
             any = p;
-            double diff = distance(p.getLocation().getValue(), loc);
+            double diff = distance(p, loc);
             if((!ignoreSelf) && diff > maxDiff) continue;
             if(diff < bestDiff) {
                 best = p;

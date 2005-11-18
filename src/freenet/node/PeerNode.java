@@ -29,6 +29,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 
@@ -149,6 +150,11 @@ public class PeerNode implements PeerContext {
     
     /** The time at which we last completed a connection setup. */
     private long connectedTime;
+
+    /** The probability of the node rejecting a request because of
+     * overload, or of it timing out etc.
+     */
+    private final RunningAverage pRejectOverload;
     
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
@@ -240,6 +246,9 @@ public class PeerNode implements PeerContext {
         
         decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
         decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
+
+        // FIXME maybe a simple binary RA would be better?
+        pRejectOverload = new SimpleRunningAverage(100, 0.05);
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
@@ -917,4 +926,24 @@ public class PeerNode implements PeerContext {
     public int hashCode() {
         return hashCode;
     }
+
+    /**
+     * Record the fact that the node rejected a request due to
+     * overload (or timed out etc).
+     */
+	public void rejectedOverload() {
+		pRejectOverload.report(1.0);
+	}
+
+	/**
+	 * Record the fact that the node did not reject a request
+	 * due to overload.
+	 */
+	public void didNotRejectOverload() {
+		pRejectOverload.report(0.0);
+	}
+
+	public double getPRejectedOverload() {
+		return pRejectOverload.currentValue();
+	}
 }

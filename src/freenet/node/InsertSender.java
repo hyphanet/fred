@@ -82,7 +82,7 @@ public final class InsertSender implements Runnable {
             
             if(htl == 0) {
                 // Send an InsertReply back
-                finish(SUCCESS);
+                finish(SUCCESS, null);
                 return;
             }
             
@@ -100,7 +100,7 @@ public final class InsertSender implements Runnable {
             
             if(next == null) {
                 // Backtrack
-                finish(ROUTE_NOT_FOUND);
+                finish(ROUTE_NOT_FOUND, null);
                 return;
             }
             Logger.minor(this, "Routing insert to "+next);
@@ -142,7 +142,7 @@ public final class InsertSender implements Runnable {
             if(msg == null || msg.getSpec() == DMT.FNPRejectedOverload) {
                 // Overload... hmmmm - propagate error back to source
                 Logger.error(this, "Propagating "+msg+" back to source on "+this);
-                finish(REJECTED_OVERLOAD);
+                finish(REJECTED_OVERLOAD, next);
                 return;
             }
             
@@ -206,13 +206,13 @@ public final class InsertSender implements Runnable {
                 // Fairly serious problem
                 Logger.error(this, "Timeout after Accepted in insert");
                 // Treat as rejected-overload
-                finish(REJECTED_OVERLOAD);
+                finish(REJECTED_OVERLOAD, next);
                 return;
             }
             
             if(msg.getSpec() == DMT.FNPRejectedOverload || msg.getSpec() == DMT.FNPRejectedTimeout) {
                 Logger.minor(this, "Rejected due to overload");
-                finish(REJECTED_OVERLOAD);
+                finish(REJECTED_OVERLOAD, next);
                 return;
             }
             
@@ -267,17 +267,17 @@ public final class InsertSender implements Runnable {
             
             if(msg.getSpec() != DMT.FNPInsertReply) {
             	Logger.error(this, "Unknown reply: "+msg);
-            	finish(INTERNAL_ERROR);
+            	finish(INTERNAL_ERROR, next);
             }
             
             // Our task is complete
-            finish(SUCCESS);
+            finish(SUCCESS, next);
             return;
         }
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
             if(status == NOT_FINISHED)
-            	finish(INTERNAL_ERROR);
+            	finish(INTERNAL_ERROR, null);
         } finally {
             node.completed(uid);
         	node.removeInsertSender(myKey, origHTL, this);
@@ -298,7 +298,7 @@ public final class InsertSender implements Runnable {
         }
     }
     
-    private void finish(int code) {
+    private void finish(int code, PeerNode next) {
         Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
@@ -314,10 +314,13 @@ public final class InsertSender implements Runnable {
         	}
         }
         
-        if(status == REJECTED_OVERLOAD)
+        if(status == REJECTED_OVERLOAD) {
         	node.getInsertThrottle().requestRejectedOverload();
-        else if(status == SUCCESS || status == ROUTE_NOT_FOUND)
+        	next.rejectedOverload();
+        } else if(status == SUCCESS || status == ROUTE_NOT_FOUND) {
         	node.getInsertThrottle().requestCompleted(System.currentTimeMillis() - startTime);
+        	next.didNotRejectOverload();
+        }
         
         synchronized(this) {
             notifyAll();
