@@ -44,6 +44,7 @@ public class RequestHandler implements Runnable {
 
     public void run() {
         try {
+        Logger.minor(this, "Handling a request: "+uid);
         htl = source.decrementHTL(htl);
         
         Message accepted = DMT.createFNPAccepted(uid);

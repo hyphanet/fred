@@ -88,10 +88,21 @@ public class NodeDispatcher implements Dispatcher {
             try {
                 ((PeerNode)(m.getSource())).sendAsync(rejected, null);
             } catch (NotConnectedException e) {
+                Logger.normal(this, "Rejecting data request (loop, finished): "+e);
+            }
+            return true;
+        }
+        if(!node.lockUID(id)) {
+            Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
+            Message rejected = DMT.createFNPRejectedLoop(id);
+            try {
+                ((PeerNode)(m.getSource())).sendAsync(rejected, null);
+            } catch (NotConnectedException e) {
                 Logger.normal(this, "Rejecting insert request: "+e);
             }
+            return true;
         }
-        if(!node.lockUID(id)) return false;
+        //if(!node.lockUID(id)) return false;
         RequestHandler rh = new RequestHandler(m, id, node);
         Thread t = new Thread(rh);
         t.setDaemon(true);
