@@ -303,10 +303,12 @@ public final class RequestSender implements Runnable {
         
         if(status == REJECTED_OVERLOAD) {
         	node.getRequestThrottle().requestRejectedOverload();
-        	next.rejectedOverload();
+        	if(next != null)
+        		next.rejectedOverload();
         } else if(status == SUCCESS || status == ROUTE_NOT_FOUND || status == DATA_NOT_FOUND || status == VERIFY_FAILURE) {
         	node.getRequestThrottle().requestCompleted(System.currentTimeMillis() - startTime);
-        	next.didNotRejectOverload();
+        	if(next != null)
+        		next.didNotRejectOverload();
         }
         
         synchronized(this) {

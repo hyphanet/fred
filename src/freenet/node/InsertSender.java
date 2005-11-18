@@ -316,10 +316,12 @@ public final class InsertSender implements Runnable {
         
         if(status == REJECTED_OVERLOAD) {
         	node.getInsertThrottle().requestRejectedOverload();
-        	next.insertRejectedOverload();
+        	if(next != null)
+        		next.insertRejectedOverload();
         } else if(status == SUCCESS || status == ROUTE_NOT_FOUND) {
         	node.getInsertThrottle().requestCompleted(System.currentTimeMillis() - startTime);
-        	next.insertDidNotRejectOverload();
+        	if(next != null)
+        		next.insertDidNotRejectOverload();
         }
         
         synchronized(this) {

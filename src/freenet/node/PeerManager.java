@@ -266,7 +266,9 @@ public class PeerManager {
     static double distance(PeerNode p, double loc) {
     	double d = distance(p.getLocation().getValue(), loc);
     	double pSummaryFailure = p.getPRejectedOverload();
-    	return d * pSummaryFailure;
+    	double denom = 1.0 - pSummaryFailure;
+    	if(denom == 0.0) denom = 0.000001;
+    	return d / denom;
     }
     
     /**
