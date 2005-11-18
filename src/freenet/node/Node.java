@@ -267,7 +267,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     	
         int port = Integer.parseInt(args[0]);
         System.out.println("Port number: "+port);
-        FileLoggerHook logger = new FileLoggerHook("freenet-"+port+".log", "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true);
+        FileLoggerHook logger = new FileLoggerHook(true, "freenet-"+port+".log", "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true);
         Logger.setupChain();
         Logger.globalSetThreshold(Logger.MINOR);
         Logger.globalAddHook(logger);

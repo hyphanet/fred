@@ -163,6 +163,7 @@ public class TextModeClientInterface implements Runnable {
                 return;
             }
             try {
+            	long startTime = System.currentTimeMillis();
 				FetchResult result = client.fetch(uri);
 				ClientMetadata cm = result.getMetadata();
 				System.out.println("Content MIME type: "+cm.getMIMEType());
@@ -196,6 +197,10 @@ public class TextModeClientInterface implements Runnable {
                         // Ignore
                     }
                 }
+                long endTime = System.currentTimeMillis();
+                long sz = data.size();
+                double rate = 1000.0 * sz / (endTime-startTime);
+                System.out.println("Download rate: "+rate+" bytes / second");
 			} catch (FetchException e) {
 				System.out.println("Error: "+e.getMessage());
 			}
@@ -245,6 +250,7 @@ public class TextModeClientInterface implements Runnable {
                 line = line.substring(0, line.length()-2);
             File f = new File(line);
             System.out.println("Attempting to read file "+line);
+            long startTime = System.currentTimeMillis();
             try {
             	if(!(f.exists() && f.canRead())) {
             		throw new FileNotFoundException();
@@ -256,19 +262,29 @@ public class TextModeClientInterface implements Runnable {
             	
             	FileBucket fb = new FileBucket(f, true, false, false);
             	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
-            	
+
+            	startTime = System.currentTimeMillis();
             	FreenetURI uri = client.insert(block, getCHKOnly);
             	
             	// FIXME depends on CHK's still being renamable
-                uri = uri.setDocName(f.getName());
+                //uri = uri.setDocName(f.getName());
             	
                 System.out.println("URI: "+uri);
+            	long endTime = System.currentTimeMillis();
+                long sz = f.length();
+                double rate = 1000.0 * sz / (endTime-startTime);
+                System.out.println("Upload rate: "+rate+" bytes / second");
             } catch (FileNotFoundException e1) {
                 System.out.println("File not found");
             } catch (InserterException e) {
             	System.out.println("Finished insert but: "+e.getMessage());
-            	if(e.uri != null)
+            	if(e.uri != null) {
             		System.out.println("URI would have been: "+e.uri);
+                	long endTime = System.currentTimeMillis();
+                    long sz = f.length();
+                    double rate = 1000.0 * sz / (endTime-startTime);
+                    System.out.println("Upload rate: "+rate+" bytes / second");
+            	}
             } catch (Throwable t) {
                 System.out.println("Insert threw: "+t);
                 t.printStackTrace();
