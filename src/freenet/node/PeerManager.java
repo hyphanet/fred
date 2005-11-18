@@ -268,7 +268,7 @@ public class PeerManager {
     	double pSummaryFailure = p.getPRejectedOverload();
     	double denom = 1.0 - pSummaryFailure;
     	if(denom == 0.0) denom = 0.000001;
-    	return d / denom;
+    	return d * denom;
     }
     
     /**

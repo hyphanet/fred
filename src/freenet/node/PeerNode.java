@@ -156,6 +156,11 @@ public class PeerNode implements PeerContext {
      */
     private final RunningAverage pRejectOverload;
     
+    /** The probability of the node rejecting an insert because of
+     * overload, timing out, etc.
+     */
+    private final RunningAverage pInsertRejectOverload;
+    
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following
@@ -249,6 +254,7 @@ public class PeerNode implements PeerContext {
 
         // FIXME maybe a simple binary RA would be better?
         pRejectOverload = new SimpleRunningAverage(100, 0.05);
+        pInsertRejectOverload = new SimpleRunningAverage(100, 0.05);
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
@@ -839,7 +845,7 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
         return 
-        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion();
+        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion() + " "+pRejectOverload.currentValue()+" ("+pRejectOverload.countReports()+") "+ pInsertRejectOverload.currentValue()+" ("+pInsertRejectOverload.countReports()+")";
     }
 	
     public String getVersion(){
@@ -935,6 +941,10 @@ public class PeerNode implements PeerContext {
 		pRejectOverload.report(1.0);
 	}
 
+	public void insertRejectedOverload() {
+		pInsertRejectOverload.report(1.0);
+	}
+	
 	/**
 	 * Record the fact that the node did not reject a request
 	 * due to overload.
@@ -943,7 +953,15 @@ public class PeerNode implements PeerContext {
 		pRejectOverload.report(0.0);
 	}
 
+	public void insertDidNotRejectOverload() {
+		pInsertRejectOverload.report(0.0);
+	}
+	
 	public double getPRejectedOverload() {
 		return pRejectOverload.currentValue();
+	}
+	
+	public double getPInsertRejectedOverload() {
+		return pInsertRejectOverload.currentValue();
 	}
 }
