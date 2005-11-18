@@ -16,11 +16,15 @@ public interface SimpleLowLevelClient {
 
     /**
      * Fetch a key. Throws if it cannot fetch it.
+     * @param cache If false, don't cache the data. See the comments at the top
+     * of Node.java.
      */
-    public KeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client) throws LowLevelGetException;
+    public KeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache) throws LowLevelGetException;
 
     /**
      * Insert a key.
+     * @param cache If false, don't cache the data. See the comments at the top
+     * of Node.java.
      */
-    public void putCHK(ClientCHKBlock key, RequestStarterClient sctx) throws LowLevelPutException;
+    public void putCHK(ClientCHKBlock key, RequestStarterClient sctx, boolean cache) throws LowLevelPutException;
 }

@@ -21,10 +21,12 @@ public class InserterContext {
 	final int splitfileSegmentCheckBlocks;
 	final ClientEventProducer eventProducer;
 	final RequestStarterClient starterClient;
+	/** Interesting tradeoff, see comments at top of Node.java. */
+	final boolean cacheLocalRequests;
 	
 	public InserterContext(SimpleLowLevelClient client, BucketFactory bf, RandomSource random,
 			int maxRetries, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, RequestStarterClient sctx) {
+			ClientEventProducer eventProducer, RequestStarterClient sctx, boolean cacheLocalRequests) {
 		this.client = client;
 		this.bf = bf;
 		this.random = random;
@@ -36,6 +38,7 @@ public class InserterContext {
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
 		this.starterClient = sctx;
+		this.cacheLocalRequests = cacheLocalRequests;
 	}
 
 }

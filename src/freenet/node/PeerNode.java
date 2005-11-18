@@ -845,7 +845,8 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
         return 
-        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion() + " "+pRejectOverload.currentValue()+" ("+pRejectOverload.countReports()+") "+ pInsertRejectOverload.currentValue()+" ("+pInsertRejectOverload.countReports()+")";
+        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion() + " reqs: pRO="+pRejectOverload.currentValue()+" (h="+pRejectOverload.countReports()+",b="+getBias()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
+        			" (h="+pInsertRejectOverload.countReports()+")";
     }
 	
     public String getVersion(){
@@ -963,5 +964,24 @@ public class PeerNode implements PeerContext {
 	
 	public double getPInsertRejectedOverload() {
 		return pInsertRejectOverload.currentValue();
+	}
+
+	/**
+	 * Return the bias value for routing for this node.
+	 * The idea is simply that if a node is overloaded,
+	 * its specialization shrinks.
+	 * Essentially this is 1.0-P(RejectedOverload or timeout).
+	 */
+	public double getBias() {
+    	double pSummaryFailure = pRejectOverload.currentValue();
+    	long hits = pRejectOverload.countReports();
+    	if(hits > 10) {
+    		double max = ((double) hits) / ((double) (hits+1));
+    		double denom = 1.0 - pSummaryFailure;
+    		if(denom == 0.0) denom = 0.000001;
+    		return denom;
+    	} else {
+    		return 1.0;
+    	}
 	}
 }

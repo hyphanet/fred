@@ -50,16 +50,16 @@ public class BaseFreenetStore implements FreenetStore {
      * Retrieve a block.
      * @return null if there is no such block stored, otherwise the block.
      */
-    public synchronized CHKBlock fetch(NodeCHK chk) throws IOException {
-        byte[] data = dataStore.getDataForBlock(chk);
+    public synchronized CHKBlock fetch(NodeCHK chk, boolean dontPromote) throws IOException {
+        byte[] data = dataStore.getDataForBlock(chk, dontPromote);
         if(data == null) {
-            if(headersStore.getDataForBlock(chk) != null) {
+            if(headersStore.getDataForBlock(chk, true) != null) {
                 Logger.normal(this, "Deleting: "+chk+" headers, no data");
                 headersStore.delete(chk);
             }
             return null;
         }
-        byte[] headers = headersStore.getDataForBlock(chk);
+        byte[] headers = headersStore.getDataForBlock(chk, dontPromote);
         if(headers == null) {
             // No headers, delete
             Logger.normal(this, "Deleting: "+chk+" data, no headers");

@@ -12,9 +12,10 @@ public interface FreenetStore {
 
     /**
      * Retrieve a block.
+     * @param dontPromote If true, don't promote data if fetched.
      * @return null if there is no such block stored, otherwise the block.
      */
-    public CHKBlock fetch(NodeCHK chk) throws IOException;
+    public CHKBlock fetch(NodeCHK chk, boolean dontPromote) throws IOException;
 
     /**
      * Store a block.

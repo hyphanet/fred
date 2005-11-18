@@ -148,13 +148,13 @@ public class DataStore extends Store {
 		getRecordNumberList().add(recnum, b);
 	}
 
-	public synchronized byte[] getDataForBlock(Key key) throws IOException {
+	public synchronized byte[] getDataForBlock(Key key, boolean dontPromote) throws IOException {
 		DataBlock b = getBlockByKey(key);
 		if (b == null) {
 			return null;
 		} else {
 		    Logger.minor(this, "Reading block: "+b.getRecordNumber());
-			return readData(b);
+			return readData(b, dontPromote);
 		}
 	}
 
@@ -162,16 +162,18 @@ public class DataStore extends Store {
 		return ((Map)getKeyMap().clone()).keySet();
 	}
 	
-	private byte[] readData(DataBlock dataBlock) throws IOException {
+	private byte[] readData(DataBlock dataBlock, boolean dontPromote) throws IOException {
 		byte[] ba = new byte[blockSize];
 		getBlockStore().seek(dataBlock.positionInDataFile());
 		getBlockStore().readFully(ba);
 		dataBlock.setLastAccessTime(System.currentTimeMillis()) ;
 
-		getAccessTimeList().remove(dataBlock);
-		getAccessTimeList().addLast(dataBlock);
-		_index.seek(dataBlock.positionInIndexFile() + DataBlock.KEY_SIZE);
-		_index.writeLong(dataBlock.getLastAccessTime());
+		if(!dontPromote) {
+			getAccessTimeList().remove(dataBlock);
+			getAccessTimeList().addLast(dataBlock);
+			_index.seek(dataBlock.positionInIndexFile() + DataBlock.KEY_SIZE);
+			_index.writeLong(dataBlock.getLastAccessTime());
+		}
 		return ba;
 
 	}

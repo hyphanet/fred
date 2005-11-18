@@ -36,6 +36,7 @@ public class FetcherContext implements Cloneable {
 	final int maxDataBlocksPerSegment;
 	final int maxCheckBlocksPerSegment;
 	final RequestStarterClient starterClient;
+	final boolean cacheLocalRequests;
 	
 	
 	public FetcherContext(SimpleLowLevelClient client, long curMaxLength, 
@@ -45,7 +46,7 @@ public class FetcherContext implements Cloneable {
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
-			ClientEventProducer producer, RequestStarterClient starter) {
+			ClientEventProducer producer, RequestStarterClient starter, boolean cacheLocalRequests) {
 		this.client = client;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -67,6 +68,7 @@ public class FetcherContext implements Cloneable {
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
 		this.starterClient = starter;
+		this.cacheLocalRequests = cacheLocalRequests;
 	}
 
 	public FetcherContext(FetcherContext ctx, int maskID) {
@@ -92,6 +94,7 @@ public class FetcherContext implements Cloneable {
 			this.maxDataBlocksPerSegment = 0;
 			this.maxCheckBlocksPerSegment = 0;
 			this.starterClient = ctx.starterClient;
+			this.cacheLocalRequests = ctx.cacheLocalRequests;
 		} else if(maskID == SPLITFILE_DEFAULT_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
@@ -114,6 +117,7 @@ public class FetcherContext implements Cloneable {
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.starterClient = ctx.starterClient;
+			this.cacheLocalRequests = ctx.cacheLocalRequests;
 		} else if(maskID == SPLITFILE_USE_LENGTHS_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
@@ -136,6 +140,7 @@ public class FetcherContext implements Cloneable {
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.starterClient = ctx.starterClient;
+			this.cacheLocalRequests = ctx.cacheLocalRequests;
 		} else throw new IllegalArgumentException();
 	}
 

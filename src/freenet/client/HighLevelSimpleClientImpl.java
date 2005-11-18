@@ -24,6 +24,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private final RandomSource random;
 	private final RequestStarterClient requestStarter;
 	private final RequestStarterClient insertStarter;
+	/** See comments in Node */
+	private final boolean cacheLocalRequests;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
@@ -53,7 +55,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 64;
 	
 	
-	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r, RequestStarterClient requestStarterClient, RequestStarterClient insertStarterClient) {
+	public HighLevelSimpleClientImpl(SimpleLowLevelClient client, ArchiveManager mgr, BucketFactory bf, RandomSource r, RequestStarterClient requestStarterClient, RequestStarterClient insertStarterClient, boolean cacheLocalRequests) {
 		this.client = client;
 		archiveManager = mgr;
 		bucketFactory = bf;
@@ -65,6 +67,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		curMaxMetadataLength = 1024 * 1024;
 		this.requestStarter = requestStarterClient;
 		this.insertStarter = insertStarterClient;
+		this.cacheLocalRequests = cacheLocalRequests;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -85,14 +88,14 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				random, archiveManager, bucketFactory, globalEventProducer, requestStarter);
+				random, archiveManager, bucketFactory, globalEventProducer, requestStarter, cacheLocalRequests);
 		Fetcher f = new Fetcher(uri, context);
 		return f.run();
 	}
 
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
 		InserterContext context = new InserterContext(client, bucketFactory, random, SPLITFILE_INSERT_RETRIES, 
-				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, insertStarter);
+				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, insertStarter, cacheLocalRequests);
 		FileInserter i = new FileInserter(context);
 		return i.run(insert, false, getCHKOnly);
 	}

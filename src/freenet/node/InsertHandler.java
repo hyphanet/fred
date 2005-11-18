@@ -106,7 +106,7 @@ public class InsertHandler implements Runnable {
 
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
-            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, closestLoc);
+            sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, closestLoc, true);
         br = new BlockReceiver(node.usm, source, uid, prb);
         
         // Receive the data, off thread

@@ -66,6 +66,19 @@ public class Node implements QueueingSimpleLowLevelClient {
     
 	static final long serialVersionUID = -1;
 	
+	/** If true, local requests and inserts aren't cached.
+	 * This opens up a glaring vulnerability; connected nodes
+	 * can then probe the store, and if the node doesn't have the
+	 * content, they know for sure that it was a local request.
+	 * HOWEVER, if we don't do this, then a non-full seized 
+	 * datastore will contain everything requested by the user...
+	 * Also, remote probing is possible.
+	 * 
+	 * So it may be useful on some darknets, and is useful for 
+	 * debugging, but in general should be off on opennet and 
+	 * most darknets.
+	 */
+	public static final boolean DONT_CACHE_LOCAL_REQUESTS = true;
     public static final int PACKETS_IN_BLOCK = 32;
     public static final int PACKET_SIZE = 1024;
     public static final double DECREMENT_AT_MIN_PROB = 0.2;
@@ -360,16 +373,16 @@ public class Node implements QueueingSimpleLowLevelClient {
         usm.start();
     }
     
-    public KeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client) throws LowLevelGetException {
+    public KeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache) throws LowLevelGetException {
     	if(localOnly)
-    		return realGetKey(key, localOnly);
+    		return realGetKey(key, localOnly, cache);
     	else
-    		return client.getKey(key, localOnly);
+    		return client.getKey(key, localOnly, cache);
     }
     
-    public KeyBlock realGetKey(ClientKey key, boolean localOnly) throws LowLevelGetException {
+    public KeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache) throws LowLevelGetException {
     	if(key instanceof ClientCHK)
-    		return realGetCHK((ClientCHK)key, localOnly);
+    		return realGetCHK((ClientCHK)key, localOnly, cache);
     	else
     		throw new IllegalArgumentException("Not a CHK: "+key);
     }
@@ -378,8 +391,8 @@ public class Node implements QueueingSimpleLowLevelClient {
      * Really trivially simple client interface.
      * Either it succeeds or it doesn't.
      */
-    ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly) throws LowLevelGetException {
-        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null, lm.loc.getValue(), localOnly);
+    ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache) throws LowLevelGetException {
+        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null, lm.loc.getValue(), localOnly, cache);
         if(o instanceof CHKBlock) {
             try {
                 return new ClientCHKBlock((CHKBlock)o, key);
@@ -425,11 +438,11 @@ public class Node implements QueueingSimpleLowLevelClient {
         }
     }
 
-    public void putCHK(ClientCHKBlock block, RequestStarterClient starter) throws LowLevelPutException {
-   		starter.putCHK(block);
+    public void putCHK(ClientCHKBlock block, RequestStarterClient starter, boolean cache) throws LowLevelPutException {
+   		starter.putCHK(block, cache);
     }
     
-    public void realPutCHK(ClientCHKBlock block) throws LowLevelPutException {
+    public void realPutCHK(ClientCHKBlock block, boolean cache) throws LowLevelPutException {
         byte[] data = block.getData();
         byte[] headers = block.getHeader();
         PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
@@ -438,13 +451,15 @@ public class Node implements QueueingSimpleLowLevelClient {
         if(!lockUID(uid))
             Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
         synchronized(this) {
-            try {
-                datastore.put(block);
-            } catch (IOException e) {
-                Logger.error(this, "Datastore failure: "+e, e);
-            }
+        	if(cache) {
+        		try {
+        			datastore.put(block);
+        		} catch (IOException e) {
+        			Logger.error(this, "Datastore failure: "+e, e);
+        		}
+        	}
             is = makeInsertSender(block.getClientKey().getNodeCHK(), 
-                    MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue());
+                    MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
         }
         is.waitUntilFinished();
         if(is.getStatus() == InsertSender.SUCCESS) {
@@ -553,12 +568,12 @@ public class Node implements QueueingSimpleLowLevelClient {
      * a RequestSender, unless the HTL is 0, in which case NULL.
      * RequestSender.
      */
-    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly) {
+    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache) {
         Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
         // In store?
         CHKBlock chk = null;
         try {
-            chk = datastore.fetch(key);
+            chk = datastore.fetch(key, !cache);
         } catch (IOException e) {
             Logger.error(this, "Error accessing store: "+e, e);
         }
@@ -643,15 +658,6 @@ public class Node implements QueueingSimpleLowLevelClient {
         }
     }
 
-    public synchronized CHKBlock fetchFromStore(NodeCHK key) {
-        try {
-            return datastore.fetch(key);
-        } catch (IOException e) {
-            Logger.error(this, "Cannot fetch: "+e, e);
-            return null;
-        }
-    }
-    
     /**
      * Remove a sender from the set of currently transferring senders.
      */
@@ -721,7 +727,7 @@ public class Node implements QueueingSimpleLowLevelClient {
      * if it originated locally.
      */
     public synchronized InsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-            byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc) {
+            byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
         Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         InsertSender is = (InsertSender) insertSenders.get(kh);
@@ -729,6 +735,8 @@ public class Node implements QueueingSimpleLowLevelClient {
             Logger.minor(this, "Found "+is+" for "+kh);
             return is;
         }
+        if(fromStore && !cache)
+        	throw new IllegalArgumentException("From store = true but cache = false !!!");
         is = new InsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
         Logger.minor(this, is.toString()+" for "+kh.toString());
         insertSenders.put(kh, is);
@@ -809,7 +817,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     }
 
 	public HighLevelSimpleClient makeClient(short prioClass, short prio) {
-		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, makeStarterClient(prioClass, prio, false), makeStarterClient(prioClass, prio, true));
+		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, makeStarterClient(prioClass, prio, false), makeStarterClient(prioClass, prio, true), !DONT_CACHE_LOCAL_REQUESTS);
 	}
 	
 	private static class MemoryChecker implements Runnable {

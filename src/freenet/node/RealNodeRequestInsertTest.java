@@ -181,7 +181,7 @@ public class RealNodeRequestInsertTest {
                 Logger.error(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode(chk)));
                 Logger.error(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
                 Logger.error(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeader()));
-                randomNode.putCHK(block, starters[node1]);
+                randomNode.putCHK(block, starters[node1], true);
                 Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
                 Logger.error(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
                 // Pick random node to request from
@@ -190,7 +190,7 @@ public class RealNodeRequestInsertTest {
                     node2 = random.nextInt(NUMBER_OF_NODES);
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
-                block = (ClientCHKBlock) fetchNode.getKey((ClientKey) chk, false, starters[node2]);
+                block = (ClientCHKBlock) fetchNode.getKey((ClientKey) chk, false, starters[node2], true);
                 if(block == null) {
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch FAILED from "+node2);
                     requestsAvg.report(0.0);
