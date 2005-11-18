@@ -258,6 +258,7 @@ public class UdpSocketManager extends Thread {
 		     * filters after we return from dispatcher, for example.
 		     */
 			synchronized (_filters) {
+				Logger.minor(this, "Rechecking filters and adding message");
 				for (ListIterator i = _filters.listIterator(); i.hasNext();) {
 					MessageFilter f = (MessageFilter) i.next();
 					if (f.match(m)) {
@@ -277,6 +278,7 @@ public class UdpSocketManager extends Thread {
 				    }
 				    _unclaimed.addLast(m);
 				}
+				Logger.minor(this, "Done");
 			}
 		}
 	}
@@ -300,6 +302,7 @@ public class UdpSocketManager extends Thread {
 	}
 	
 	public Message waitFor(MessageFilter filter) throws DisconnectedException {
+		Logger.debug(this, "Waiting for "+filter);
 		long startTime = System.currentTimeMillis();
 		Message ret = null;
 		if(lowLevelFilter != null && filter._source != null && 
@@ -308,7 +311,7 @@ public class UdpSocketManager extends Thread {
 		    throw new DisconnectedException();
 		// Check to see whether the filter matches any of the recently _unclaimed messages
 		synchronized (_filters) {
-			Logger.debug(this, "Checking _unclaimed");
+			Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
 				Message m = (Message) i.next();
 				if (filter.match(m)) {
@@ -341,7 +344,7 @@ public class UdpSocketManager extends Thread {
 		// Waiting on the filter won't release the outer lock
 		// So we have to release it here
 		if(ret == null) {	
-			Logger.debug(this, "Waiting...");
+			Logger.minor(this, "Waiting...");
 			synchronized (filter) {
 				try {
 					// Precaution against filter getting matched between being added to _filters and

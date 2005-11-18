@@ -111,12 +111,12 @@ public final class RequestSender implements Runnable {
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }
-            Logger.minor(this, "Routing insert to "+next);
+            Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
             if(Math.abs(target - nextValue) > Math.abs(target - nearestLoc)) {
-                Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc);
                 htl = node.decrementHTL(source, htl);
+                Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl);
             }
             
             Message req = DMT.createFNPDataRequest(uid, htl, key, nearestLoc);
