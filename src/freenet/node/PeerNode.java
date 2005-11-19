@@ -984,4 +984,8 @@ public class PeerNode implements PeerContext {
     		return 1.0;
     	}
 	}
+
+	public void throttledSend(Message message) throws NotConnectedException {
+		node.globalThrottle.sendPacket(message, this);
+	}
 }

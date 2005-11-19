@@ -260,8 +260,8 @@ public class Node implements QueueingSimpleLowLevelClient {
      */
     public static void main(String[] args) throws IOException {
     	int length = args.length;
-    	if (length < 1 || length > 2) {
-    		System.out.println("Usage: $ java freenet.node.Node <portNumber> [ipOverride]");
+    	if (length < 1 || length > 3) {
+    		System.out.println("Usage: $ java freenet.node.Node <portNumber> [ipOverride] [max data packets / second]");
     		return;
     	}
     	
@@ -275,12 +275,16 @@ public class Node implements QueueingSimpleLowLevelClient {
         Logger.normal(Node.class, "Creating node...");
         Yarrow yarrow = new Yarrow();
         InetAddress overrideIP = null;
+        int packetsPerSecond = 15;
         if(args.length > 1) {
             overrideIP = InetAddress.getByName(args[1]);
             System.err.println("Overriding IP detection: "+overrideIP.getHostAddress());
+            if(args.length > 2) {
+            	packetsPerSecond = Integer.parseInt(args[2]);
+            }
         }
         DiffieHellman.init(yarrow);
-        Node n = new Node(port, yarrow, overrideIP, "");
+        Node n = new Node(port, yarrow, overrideIP, "", 1000 / packetsPerSecond);
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
         Thread t = new Thread(new MemoryChecker(), "Memory checker");
@@ -290,7 +294,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     
     // FIXME - the whole overrideIP thing is a hack to avoid config
     // Implement the config!
-    Node(int port, RandomSource rand, InetAddress overrideIP, String prefix) {
+    Node(int port, RandomSource rand, InetAddress overrideIP, String prefix, int throttleInterval) {
         portNumber = port;
         startupTime = System.currentTimeMillis();
         recentlyCompletedIDs = new LRUQueue();
@@ -318,6 +322,8 @@ public class Node implements QueueingSimpleLowLevelClient {
         insertSenders = new HashMap();
         runningUIDs = new HashSet();
 
+        globalThrottle = new ThrottledPacketSender(throttleInterval);
+        
 		lm = new LocationManager(random);
 
         try {
@@ -793,6 +799,8 @@ public class Node implements QueueingSimpleLowLevelClient {
     }
 
     final LRUQueue recentlyCompletedIDs;
+
+	public final ThrottledPacketSender globalThrottle;
     static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
     
     /**
