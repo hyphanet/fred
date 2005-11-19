@@ -108,6 +108,7 @@ public class ThrottledPacketSender implements Runnable {
 					p.sent = true;
 					p.notifyAll();
 				}
+				return true;
 			} catch (NotConnectedException e) {
 				continue;
 			} catch (Throwable t) {
