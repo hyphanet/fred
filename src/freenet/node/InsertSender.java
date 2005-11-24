@@ -1,6 +1,8 @@
 package freenet.node;
 
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -58,8 +60,7 @@ public final class InsertSender implements Runnable {
     final double closestLocation;
     final long startTime;
     private BlockTransmitter bt;
-    private Sender s;
-    private Thread senderThread;
+    private LinkedList senderThreads;
     
     private int status = -1;
     static final int NOT_FINISHED = -1;
@@ -187,10 +188,11 @@ public final class InsertSender implements Runnable {
 
             Logger.minor(this, "Sending data");
             if(receiveFailed) return;
-            s = new Sender();
-            senderThread = new Thread(s);
+            Sender s = new Sender();
+            Thread senderThread = new Thread(s);
             senderThread.setDaemon(true);
             senderThread.start();
+            senderThreads.add(senderThread);
             
             if(receiveFailed) return;
             try {
@@ -304,7 +306,8 @@ public final class InsertSender implements Runnable {
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
         
-        if(senderThread != null) {
+        for(Iterator i = senderThreads.iterator();i.hasNext();) {
+        	Thread senderThread = (Thread) i.next();
         	while(senderThread.isAlive()) {
         		try {
         			senderThread.join();
