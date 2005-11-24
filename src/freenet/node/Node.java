@@ -761,6 +761,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     
     public void unlockUID(long uid) {
         Long l = new Long(uid);
+        completed(uid);
         synchronized(runningUIDs) {
             if(!runningUIDs.remove(l))
                 throw new IllegalStateException("Could not unlock "+uid+"!");
