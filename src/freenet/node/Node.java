@@ -271,6 +271,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         Logger.setupChain();
         Logger.globalSetThreshold(Logger.MINOR);
         Logger.globalAddHook(logger);
+        logger.setUseNativeGzip(true);
         logger.start();
         Logger.normal(Node.class, "Creating node...");
         Yarrow yarrow = new Yarrow();
@@ -604,7 +605,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         sender = (RequestSender) requestSenders.get(kh);
         if(sender != null) {
-            Logger.minor(this, "Found sender: "+sender);
+            Logger.minor(this, "Found sender: "+sender+" for "+uid);
             return sender;
         }
         
