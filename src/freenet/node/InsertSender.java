@@ -144,11 +144,13 @@ public final class InsertSender implements Runnable {
             if(msg == null || msg.getSpec() == DMT.FNPRejectedOverload) {
                 // Overload... hmmmm - propagate error back to source
                 Logger.error(this, "Propagating "+msg+" back to source on "+this);
+                next.insertRejectedOverload();
                 finish(REJECTED_OVERLOAD, next);
                 return;
             }
             
             if(msg.getSpec() == DMT.FNPRejectedLoop) {
+           		next.insertDidNotRejectOverload();
                 // Loop - we don't want to send the data to this one
                 continue;
             }

@@ -301,6 +301,7 @@ public class PeerManager {
             count++;
             any = p;
             double diff = distance(p, loc);
+            Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff);
             if((!ignoreSelf) && diff > maxDiff) continue;
             if(diff < bestDiff) {
                 best = p;
