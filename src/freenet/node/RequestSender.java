@@ -151,11 +151,13 @@ public final class RequestSender implements Runnable {
             if(msg == null) {
                 // Timeout
                 // Treat as FNPRejectOverloadd
+        		next.rejectedOverload();
                 finish(REJECTED_OVERLOAD, next);
                 return;
             }
             
             if(msg.getSpec() == DMT.FNPRejectedLoop) {
+        		next.didNotRejectOverload();
                 // Find another node to route to
                 continue;
             }
@@ -163,6 +165,7 @@ public final class RequestSender implements Runnable {
             if(msg.getSpec() == DMT.FNPRejectedOverload) {
                 // Failed. Propagate back to source.
                 // Source will reduce send rate.
+        		next.rejectedOverload();
                 finish(REJECTED_OVERLOAD, next);
                 return;
             }
@@ -191,6 +194,7 @@ public final class RequestSender implements Runnable {
             }
             
             if(msg.getSpec() == DMT.FNPDataNotFound) {
+        		next.didNotRejectOverload();
                 finish(DATA_NOT_FOUND, next);
                 return;
             }
@@ -199,15 +203,18 @@ public final class RequestSender implements Runnable {
                 // Backtrack within available hops
                 short newHtl = msg.getShort(DMT.HTL);
                 if(newHtl < htl) htl = newHtl;
+        		next.didNotRejectOverload();
                 continue;
             }
             
             if(msg.getSpec() == DMT.FNPRejectedOverload) {
+        		next.rejectedOverload();
                 finish(REJECTED_OVERLOAD, next);
                 return;
             }
 
             // Found data
+    		next.didNotRejectOverload();
             
             // First get headers
             
@@ -303,12 +310,8 @@ public final class RequestSender implements Runnable {
         
         if(status == REJECTED_OVERLOAD) {
         	node.getRequestThrottle().requestRejectedOverload();
-        	if(next != null)
-        		next.rejectedOverload();
         } else if(status == SUCCESS || status == ROUTE_NOT_FOUND || status == DATA_NOT_FOUND || status == VERIFY_FAILURE) {
         	node.getRequestThrottle().requestCompleted(System.currentTimeMillis() - startTime);
-        	if(next != null)
-        		next.didNotRejectOverload();
         }
         
         synchronized(this) {

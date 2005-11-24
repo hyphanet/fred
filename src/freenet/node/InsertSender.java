@@ -209,12 +209,14 @@ public final class InsertSender implements Runnable {
                 // Fairly serious problem
                 Logger.error(this, "Timeout after Accepted in insert");
                 // Treat as rejected-overload
+           		next.insertRejectedOverload();
                 finish(REJECTED_OVERLOAD, next);
                 return;
             }
             
             if(msg.getSpec() == DMT.FNPRejectedOverload || msg.getSpec() == DMT.FNPRejectedTimeout) {
                 Logger.minor(this, "Rejected due to overload");
+           		next.insertRejectedOverload();
                 finish(REJECTED_OVERLOAD, next);
                 return;
             }
@@ -223,10 +225,13 @@ public final class InsertSender implements Runnable {
                 Logger.minor(this, "Rejected: RNF");
                 short newHtl = msg.getShort(DMT.HTL);
                 if(htl > newHtl) htl = newHtl;
+                // Finished as far as this node is concerned
+           		next.insertDidNotRejectOverload();
                 continue;
             }
             
             if(msg.getSpec() == DMT.FNPDataInsertRejected) {
+           		next.insertDidNotRejectOverload();
                 short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
                 Logger.minor(this, "DataInsertRejected: "+reason);
                 
@@ -274,6 +279,7 @@ public final class InsertSender implements Runnable {
             }
             
             // Our task is complete
+       		next.insertDidNotRejectOverload();
             finish(SUCCESS, next);
             return;
         }
@@ -320,12 +326,8 @@ public final class InsertSender implements Runnable {
         
         if(status == REJECTED_OVERLOAD) {
         	node.getInsertThrottle().requestRejectedOverload();
-        	if(next != null)
-        		next.insertRejectedOverload();
         } else if(status == SUCCESS || status == ROUTE_NOT_FOUND) {
         	node.getInsertThrottle().requestCompleted(System.currentTimeMillis() - startTime);
-        	if(next != null)
-        		next.insertDidNotRejectOverload();
         }
         
         synchronized(this) {
