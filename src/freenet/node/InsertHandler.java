@@ -166,6 +166,9 @@ public class InsertHandler implements Runnable {
             		status == InsertSender.INTERNAL_ERROR) {
                 msg = DMT.createFNPRejectedOverload(uid);
                 source.send(msg);
+                // Might as well store it anyway.
+                if(status == InsertSender.REJECTED_OVERLOAD)
+                	canCommit = true;
                 return;
             }
             

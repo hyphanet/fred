@@ -156,6 +156,7 @@ public class Segment implements RetryTrackerCallback {
 		for(int i=0;i<dataBlockStatus.length;i++) {
 			tracker.addBlock(dataBlockStatus[i]);
 		}
+		Logger.minor(this, "Added data blocks");
 		for(int i=0;i<checkBlockStatus.length;i++) {
 			tracker.addBlock(checkBlockStatus[i]);
 		}
@@ -181,7 +182,7 @@ public class Segment implements RetryTrackerCallback {
 			// Not finished yet, need to decode
 			successfulFetch();
 		else {
-			failureException = new SplitFetchException(failed.length, fatalErrors.length);
+			failureException = new SplitFetchException(failed.length, fatalErrors.length, succeeded.length, minFetched);
 			finished = true;
 			parentFetcher.segmentFinished(this);
 		}

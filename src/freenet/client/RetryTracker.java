@@ -206,7 +206,7 @@ public class RetryTracker {
 	public synchronized void maybeStart(boolean cantCallFinished) {
 		if(killed) return;
 		Logger.minor(this, "succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
-				", running: "+runningBlocks.size()+", levels: "+levels.size()+", finishOnEmpty: "+finishOnEmpty);
+				", running: "+runningBlocks.size()+", levels: "+levels.size()+"("+curMinLevel+"-"+curMaxLevel+"), finishOnEmpty: "+finishOnEmpty);
 		if(runningBlocks.size() == 1)
 			Logger.minor(this, "Only block running: "+runningBlocks.toArray()[0]);
 		else if(levels.isEmpty()) {
@@ -254,16 +254,22 @@ public class RetryTracker {
 	 */
 	public synchronized SplitfileBlock getBlock() {
 		if(killed) return null;
-		Level l = (Level) levels.get(new Integer(curMinLevel));
+		Integer iMin = new Integer(curMinLevel);
+		Level l = (Level) levels.get(iMin);
 		if(l == null) {
+			if(!(curMinLevel == 0 && curMaxLevel == 0))
+				Logger.error(this, "min="+curMinLevel+", max="+curMaxLevel+" but min does not exist!");
 			if(!levels.isEmpty()) {
-				Integer x = (Integer) levels.keySet().toArray()[0];
-				Logger.error(this, "Inconsistent: min level = "+curMinLevel+", max level = "+curMaxLevel+" but level exists: "+x, new Exception("error"));
+				Integer[] levelNums = (Integer[]) levels.keySet().toArray(new Integer[levels.size()]);
+				java.util.Arrays.sort(levelNums);
+				Integer x = levelNums[0];
 				curMinLevel = x.intValue();
-				curMaxLevel = x.intValue();
+				Integer y = levelNums[levelNums.length-1];
+				curMaxLevel = y.intValue();
+				Logger.normal(this, "Corrected: min="+curMinLevel+", max="+curMaxLevel);
 				return getBlock();
 			}
-			return null;
+			else return null;
 		}
 		return l.getBlock();
 	}
