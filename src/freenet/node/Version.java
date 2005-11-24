@@ -23,7 +23,7 @@ public abstract class Version {
 	public static final int buildNumber = 206;
 
 	/** Oldest build of Fred we will talk to */
-	public static final int lastGoodBuild = 205;
+	public static final int lastGoodBuild = 206;
 
 	/** The highest reported build of fred */
 	public static int highestSeenBuild = buildNumber;
