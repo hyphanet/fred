@@ -351,9 +351,10 @@ public class PeerManager {
             for (int i = 0; i < peers.length; i++) {
                 try {
                     peers[i].write(w);
+                    w.flush();
                 } catch (IOException e) {
                     try {
-                        fos.close();
+                        w.close();
                     } catch (IOException e1) {
                         Logger.error(this, "Cannot close file!: " + e1, e1);
                     }

@@ -55,6 +55,7 @@ public class DataStore extends Store {
 		_index.seek(0);
 		int recordNum = 0;
 
+		try {
 		while (_index.getFilePointer() < _index.length()) {
 
 		    Key k = Key.read(_index);
@@ -67,6 +68,11 @@ public class DataStore extends Store {
 
 			updateLastAccess(dataBlock);
 			recordNum++;
+		}
+		} catch (EOFException e) {
+			// Chopped off in the middle of a key
+			Logger.normal(this, "Store index truncated");
+			return;
 		}
 	}
 
