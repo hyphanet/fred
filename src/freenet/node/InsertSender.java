@@ -37,6 +37,7 @@ public final class InsertSender implements Runnable {
         this.fromStore = fromStore;
         this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
+        senderThreads = new LinkedList();
         Thread t = new Thread(this, "InsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
         t.start();
@@ -60,7 +61,7 @@ public final class InsertSender implements Runnable {
     final double closestLocation;
     final long startTime;
     private BlockTransmitter bt;
-    private LinkedList senderThreads;
+    private final LinkedList senderThreads;
     
     private int status = -1;
     static final int NOT_FINISHED = -1;

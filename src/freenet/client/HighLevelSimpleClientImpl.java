@@ -46,7 +46,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	/** If set, only check the local datastore, don't send an actual request out.
 	 * Don't turn this off either. */
 	static final boolean LOCAL_REQUESTS_ONLY = false;
-	static final int SPLITFILE_INSERT_THREADS = 50;
+	static final int SPLITFILE_INSERT_THREADS = 20;
 	static final int SPLITFILE_INSERT_RETRIES = 0;
 	// going by memory usage only; 4kB per stripe
 	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
