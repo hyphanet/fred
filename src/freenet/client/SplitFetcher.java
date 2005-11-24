@@ -7,6 +7,7 @@ import java.util.Vector;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.FECCodeFactory;
 
+import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.NodeCHK;
 import freenet.support.Bucket;
@@ -230,6 +231,21 @@ public class SplitFetcher {
 			if(allDone) allSegmentsFinished = true;
 			notifyAll();
 		}
+	}
+
+	public void onProgress() {
+		int totalBlocks = splitfileDataBlocks.length + splitfileCheckBlocks.length;
+		int fetchedBlocks = 0;
+		int failedBlocks = 0;
+		int fatallyFailedBlocks = 0;
+		int runningBlocks = 0;
+		for(int i=0;i<segments.length;i++) {
+			fetchedBlocks += segments[i].fetchedBlocks();
+			failedBlocks += segments[i].failedBlocks();
+			fatallyFailedBlocks += segments[i].fatallyFailedBlocks();
+			runningBlocks += segments[i].runningBlocks();
+		}
+		fctx.eventProducer.produceEvent(new SplitfileProgressEvent(totalBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, runningBlocks));
 	}
 
 }

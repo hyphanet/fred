@@ -204,6 +204,7 @@ public class RetryTracker {
 	 * Otherwise if we are finished, call the callback's finish method.
 	 */
 	public synchronized void maybeStart(boolean cantCallFinished) {
+		callback.onProgress();
 		if(killed) return;
 		Logger.minor(this, "succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
 				", running: "+runningBlocks.size()+", levels: "+levels.size()+"("+curMinLevel+"-"+curMaxLevel+"), finishOnEmpty: "+finishOnEmpty);

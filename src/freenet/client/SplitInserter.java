@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Vector;
 
 import freenet.client.events.GeneratedURIEvent;
+import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.NodeCHK;
 import freenet.support.Bucket;
@@ -75,7 +76,7 @@ public class SplitInserter implements RetryTrackerCallback {
 			// Backwards, because the last is the shortest
 			try {
 				for(int i=segments.length-1;i>=0;i--) {
-					countCheckBlocks += encodeSegment(i, origDataBlocks.length + checkSegmentSize * i);
+					encodeSegment(i, origDataBlocks.length + checkSegmentSize * i);
 					Logger.minor(this, "Encoded segment "+i+" of "+segments.length);
 				}
 			} catch (IOException e) {
@@ -233,7 +234,10 @@ public class SplitInserter implements RetryTrackerCallback {
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x].getData() == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				segs.add(new InsertSegment(splitfileAlgorithm, seg, blockSize, ctx.bf, getCHKOnly, segNo));
+				InsertSegment s = new InsertSegment(splitfileAlgorithm, seg, blockSize, ctx.bf, getCHKOnly, segNo);
+				countCheckBlocks += s.checkBlocks.length;
+				segs.add(s);
+				
 				if(i == dataBlocks) break;
 				segNo++;
 			}
@@ -250,6 +254,19 @@ public class SplitInserter implements RetryTrackerCallback {
 			this.fatalErrors = fatalErrorBlocks.length;
 			notify();
 		}
+	}
+
+	public void onProgress() {
+		/* What info to report?
+		 * - Total number of blocks to insert.
+		 * - 
+		 */
+		int totalBlocks = origDataBlocks.length + countCheckBlocks;
+		int fetchedBlocks = tracker.succeededBlocks().length;
+		int failedBlocks = tracker.countFailedBlocks();
+		int fatallyFailedBlocks = tracker.fatalErrorBlocks().length;
+		int runningBlocks = tracker.runningBlocks().length;
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(totalBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, runningBlocks));
 	}
 
 }

@@ -249,4 +249,24 @@ public class Segment implements RetryTrackerCallback {
 		
 		// FIXME heal check blocks too
 	}
+
+	public void onProgress() {
+		parentFetcher.onProgress();
+	}
+
+	public int fetchedBlocks() {
+		return tracker.succeededBlocks().length;
+	}
+
+	public int failedBlocks() {
+		return tracker.failedBlocks().length;
+	}
+
+	public int fatallyFailedBlocks() {
+		return tracker.fatalErrorBlocks().length;
+	}
+
+	public int runningBlocks() {
+		return tracker.runningBlocks().length;
+	}
 }

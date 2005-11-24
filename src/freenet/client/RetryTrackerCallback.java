@@ -13,4 +13,9 @@ public interface RetryTrackerCallback {
 	 */
 	void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors);
 
+	/**
+	 * When a block completes etc.
+	 */
+	void onProgress();
+
 }
