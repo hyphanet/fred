@@ -187,8 +187,8 @@ public class RetryTracker {
 				Level newLevel = makeLevel(levelNumber);
 				newLevel.add(block);
 			}
-			maybeStart(false);
 		}
+		maybeStart(false);
 		if(callOnProgress)
 			callback.onProgress();
 	}
@@ -203,8 +203,8 @@ public class RetryTracker {
 			fatalErrors.inc(reasonCode);
 			runningBlocks.remove(block);
 			failedBlocksFatalErrors.add(block);
-			maybeStart(false);
 		}
+		maybeStart(false);
 		if(callOnProgress)
 			callback.onProgress();
 	}
@@ -264,8 +264,8 @@ public class RetryTracker {
 			if(killed) return;
 			runningBlocks.remove(block);
 			succeededBlocks.add(block);
-			maybeStart(false);
 		}
+		maybeStart(false);
 		if(callOnProgress)
 			callback.onProgress();
 	}
