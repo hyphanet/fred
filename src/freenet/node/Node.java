@@ -853,9 +853,11 @@ public class Node implements QueueingSimpleLowLevelClient {
 		return new RequestStarterClient(prioClass, prio, random, this, inserts ? insertStarter : requestStarter);
 	}
 
+	InetAddress lastIP;
+	
 	public void redetectAddress() {
-		
-		// TODO Auto-generated method stub
-		
+		InetAddress newIP = ipDetector.getAddress();
+		if(newIP.equals(lastIP)) return;
+		writeNodeFile();
 	}
 }
