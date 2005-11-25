@@ -459,10 +459,12 @@ public class KeyTracker {
             Logger.minor(this, "Removed ack request");
             callbacks[i] = sentPacketsContents.getCallbacks(realSeqNo);
             byte[] buf = sentPacketsContents.get(realSeqNo);
+            long timeAdded = sentPacketsContents.getTime(realSeqNo);
             if(sentPacketsContents.remove(realSeqNo)) {
             	if(buf.length > Node.PACKET_SIZE) {
             		PacketThrottle throttle = getThrottle();
             		throttle.notifyOfPacketAcknowledged();
+            		throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
             	}
             }
   		}
