@@ -174,7 +174,7 @@ public class PeerNode implements PeerContext {
     private double BIAS_SENSITIVITY = 0.01;
     
     /** Target pRO for bias computations */
-    private double BIAS_TARGET = 0.02;
+    private double BIAS_TARGET = 0.05;
     
     /**
      * Create a PeerNode from a SimpleFieldSet containing a

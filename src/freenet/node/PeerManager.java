@@ -286,7 +286,7 @@ public class PeerManager {
      */
     public PeerNode closerPeer(PeerNode pn, HashSet routedTo, double loc, boolean ignoreSelf) {
         PeerNode[] peers = connectedPeers;
-        double bestDiff = 1.0;
+        double bestDiff = Double.MAX_VALUE;
         double maxDiff = 0.0;
         if(!ignoreSelf)
             maxDiff = distance(node.lm.getLocation().getValue(), loc);
