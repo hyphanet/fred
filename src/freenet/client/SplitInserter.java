@@ -197,6 +197,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	private void startInsertingDataBlocks() {
 		for(int i=0;i<origDataBlocks.length;i++)
 			tracker.addBlock(origDataBlocks[i]);
+		tracker.callOnProgress();
 	}
 
 	/**

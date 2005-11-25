@@ -71,6 +71,7 @@ public class RetryTracker {
 	private boolean killed;
 	private boolean finishOnEmpty;
 	private final RetryTrackerCallback callback;
+	private boolean callOnProgress = false;
 
 	/**
 	 * Create a RetryTracker.
@@ -173,6 +174,8 @@ public class RetryTracker {
 	 * we have run out of retries.
 	 */
 	public synchronized void nonfatalError(SplitfileBlock block, int reasonCode) {
+		if(!callOnProgress)
+			callback.onProgress();
 		nonfatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
 		int levelNumber = block.getRetryCount();
@@ -194,6 +197,8 @@ public class RetryTracker {
 	 * @param reasonCode A client-specific code indicating the type of failure.
 	 */
 	public synchronized void fatalError(SplitfileBlock block, int reasonCode) {
+		if(!callOnProgress)
+			callback.onProgress();
 		fatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
 		failedBlocksFatalErrors.add(block);
@@ -205,7 +210,6 @@ public class RetryTracker {
 	 * Otherwise if we are finished, call the callback's finish method.
 	 */
 	public synchronized void maybeStart(boolean cantCallFinished) {
-		callback.onProgress();
 		if(killed) return;
 		Logger.minor(this, "succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
 				", failed: "+failedBlocksTooManyRetries.size()+", fatal: "+failedBlocksFatalErrors.size()+
@@ -245,10 +249,16 @@ public class RetryTracker {
 	}
 
 	public synchronized void success(SplitfileBlock block) {
+		if(!callOnProgress)
+			callback.onProgress();
 		if(killed) return;
 		runningBlocks.remove(block);
 		succeededBlocks.add(block);
 		maybeStart(false);
+	}
+	
+	public synchronized void callOnProgress() {
+		callOnProgress = true;
 	}
 	
 	/**

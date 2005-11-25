@@ -160,6 +160,7 @@ public class Segment implements RetryTrackerCallback {
 		for(int i=0;i<checkBlockStatus.length;i++) {
 			tracker.addBlock(checkBlockStatus[i]);
 		}
+		tracker.callOnProgress();
 		tracker.setFinishOnEmpty();
 	}
 
