@@ -146,7 +146,7 @@ public class BlockTransmitter {
 			if (_prb.isAborted()) {
 				synchronized(_senderThread) {
 					_sendComplete = true;
-					notifyAll();
+					_senderThread.notifyAll();
 				}
 				return false;
 			}
@@ -157,7 +157,7 @@ public class BlockTransmitter {
                 Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
                 synchronized(_senderThread) {
                 	_sendComplete = true;
-                	notifyAll();
+                	_senderThread.notifyAll();
                 }
                 return false;
             }
@@ -166,7 +166,7 @@ public class BlockTransmitter {
 				if (getNumSent() == _prb.getNumPackets()) {
 					synchronized(_senderThread) {
 						_sendComplete = true;
-						notifyAll();
+						_senderThread.notifyAll();
 					}
 					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+SEND_TIMEOUT+"ms.");
 					return false;
@@ -188,7 +188,7 @@ public class BlockTransmitter {
 			} else if (msg.getSpec().equals(DMT.allReceived)) {
 				synchronized(_senderThread) {
 					_sendComplete = true;
-					notifyAll();
+					_senderThread.notifyAll();
 				}
 				return true;
 			} else if(_sendComplete) {
@@ -200,7 +200,7 @@ public class BlockTransmitter {
 			// Terminate
 			synchronized(_senderThread) {
 				_sendComplete = true;
-				notifyAll();
+				_senderThread.notifyAll();
 			}
 			return false;
 		}
