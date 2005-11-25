@@ -56,6 +56,14 @@ public class LimitedRangeIntByteArrayMap {
         else return null;
     }
     
+    public synchronized long getTime(int index) {
+        Integer i = new Integer(index);
+        LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        if(wrapper != null)
+            return wrapper.createdTime;
+        else throw new IllegalArgumentException();
+    }
+    
     /**
      * Try to add an index/data mapping.
      * @return True if we succeeded, false if the index was out

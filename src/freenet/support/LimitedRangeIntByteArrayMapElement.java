@@ -9,9 +9,11 @@ public class LimitedRangeIntByteArrayMapElement {
         this.packetNumber = packetNumber;
         this.data = data2;
         this.callbacks = callbacks2;
+        createdTime = System.currentTimeMillis();
     }
 
     public final int packetNumber;
     public final byte[] data;
     public final AsyncMessageCallback[] callbacks;
+    public final long createdTime;
 }
