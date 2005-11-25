@@ -208,6 +208,7 @@ public class RetryTracker {
 		callback.onProgress();
 		if(killed) return;
 		Logger.minor(this, "succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
+				", failed: "+failedBlocksTooManyRetries.size()+", fatal: "+failedBlocksFatalErrors.size()+
 				", running: "+runningBlocks.size()+", levels: "+levels.size()+"("+curMinLevel+"-"+curMaxLevel+"), finishOnEmpty: "+finishOnEmpty);
 		if(runningBlocks.size() == 1)
 			Logger.minor(this, "Only block running: "+runningBlocks.toArray()[0]);
