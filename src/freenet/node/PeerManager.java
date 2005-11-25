@@ -265,7 +265,7 @@ public class PeerManager {
     
     static double distance(PeerNode p, double loc) {
     	double d = distance(p.getLocation().getValue(), loc);
-    	return d / p.getBias();
+    	return d * p.getBias();
     }
     
     /**
