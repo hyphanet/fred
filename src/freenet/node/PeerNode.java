@@ -151,10 +151,15 @@ public class PeerNode implements PeerContext {
     /** The time at which we last completed a connection setup. */
     private long connectedTime;
 
-    /** The probability of the node rejecting a request because of
-     * overload, or of it timing out etc.
+    /** The overall probability of the node rejecting a request or insert
+     * because of overload or timeout.
      */
     private final RunningAverage pRejectOverload;
+    
+    /** The probability of the node rejecting a data request because of
+     * overload, or of it timing out etc.
+     */
+    private final RunningAverage pDataRequestRejectOverload;
     
     /** The probability of the node rejecting an insert because of
      * overload, timing out, etc.
@@ -253,8 +258,9 @@ public class PeerNode implements PeerContext {
         decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
 
         // FIXME maybe a simple binary RA would be better?
-        pRejectOverload = new SimpleRunningAverage(100, 0.05);
+        pDataRequestRejectOverload = new SimpleRunningAverage(100, 0.05);
         pInsertRejectOverload = new SimpleRunningAverage(100, 0.05);
+        pRejectOverload = new SimpleRunningAverage(100, 0.05);
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
@@ -845,7 +851,8 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
         return 
-        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion() + " reqs: pRO="+pRejectOverload.currentValue()+" (h="+pRejectOverload.countReports()+",b="+getBias()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
+        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion() +
+        	" bias="+getBias()+" reqs: pRO="+pDataRequestRejectOverload.currentValue()+" (h="+pDataRequestRejectOverload.countReports()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
         			" (h="+pInsertRejectOverload.countReports()+")";
     }
 	
@@ -940,9 +947,11 @@ public class PeerNode implements PeerContext {
      */
 	public void rejectedOverload() {
 		pRejectOverload.report(1.0);
+		pDataRequestRejectOverload.report(1.0);
 	}
 
 	public void insertRejectedOverload() {
+		pRejectOverload.report(1.0);
 		pInsertRejectOverload.report(1.0);
 	}
 	
@@ -952,14 +961,16 @@ public class PeerNode implements PeerContext {
 	 */
 	public void didNotRejectOverload() {
 		pRejectOverload.report(0.0);
+		pDataRequestRejectOverload.report(0.0);
 	}
 
 	public void insertDidNotRejectOverload() {
+		pRejectOverload.report(0.0);
 		pInsertRejectOverload.report(0.0);
 	}
 	
 	public double getPRejectedOverload() {
-		return pRejectOverload.currentValue();
+		return pDataRequestRejectOverload.currentValue();
 	}
 	
 	public double getPInsertRejectedOverload() {
