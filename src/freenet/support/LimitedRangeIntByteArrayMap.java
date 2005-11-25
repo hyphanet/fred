@@ -127,14 +127,17 @@ public class LimitedRangeIntByteArrayMap {
         throw new WouldBlockException();
     }
     
-    public synchronized void remove(int index) {
+    /**
+     * @return true if we removed something.
+     */
+    public synchronized boolean remove(int index) {
         Logger.minor(this, "Removing "+index+" - min="+minValue+" max="+maxValue);
         if(contents.remove(new Integer(index)) != null) {
-            if(index > minValue && index < maxValue) return;
+            if(index > minValue && index < maxValue) return true;
             if(contents.size() == 0) {
                 minValue = maxValue = -1;
                 notifyAll();
-                return;
+                return true;
             }
             if(index == maxValue) {
                 for(int i=maxValue;i>=minValue;i--) {
@@ -142,7 +145,7 @@ public class LimitedRangeIntByteArrayMap {
                     if(contents.containsKey(ii)) {
                         maxValue = i;
                         notifyAll();
-                        return;
+                        return true;
                     }
                 }
                 // Still here - WTF?
@@ -155,7 +158,7 @@ public class LimitedRangeIntByteArrayMap {
                     if(contents.containsKey(ii)) {
                         minValue = i;
                         notifyAll();
-                        return;
+                        return true;
                     }
                 }
                 // Still here - WTF?
@@ -165,6 +168,7 @@ public class LimitedRangeIntByteArrayMap {
             notifyAll();
             throw new IllegalStateException("impossible");
         }
+        return false;
     }
 
     /**

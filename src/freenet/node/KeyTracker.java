@@ -6,6 +6,7 @@ import java.util.Iterator;
 
 import freenet.crypt.BlockCipher;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.xfer.PacketThrottle;
 import freenet.support.DoublyLinkedList;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.IndexableUpdatableSortedLinkedListItem;
@@ -457,7 +458,13 @@ public class KeyTracker {
 			}
             Logger.minor(this, "Removed ack request");
             callbacks[i] = sentPacketsContents.getCallbacks(realSeqNo);
-            sentPacketsContents.remove(realSeqNo);
+            byte[] buf = sentPacketsContents.get(realSeqNo);
+            if(sentPacketsContents.remove(realSeqNo)) {
+            	if(buf.length > Node.PACKET_SIZE) {
+            		PacketThrottle throttle = getThrottle();
+            		throttle.notifyOfPacketAcknowledged();
+            	}
+            }
   		}
     	int cbCount = 0;
     	for(int i=0;i<callbacks.length;i++) {
@@ -473,7 +480,11 @@ public class KeyTracker {
     		Logger.minor(this, "Executed "+cbCount+" callbacks");
     }
     
-    /**
+    private PacketThrottle getThrottle() {
+    	return PacketThrottle.getThrottle(pn.getPeer(), Node.PACKET_SIZE);
+	}
+
+	/**
      * Called when we have received a packet acknowledgement.
      * @param realSeqNo
      */
@@ -487,7 +498,13 @@ public class KeyTracker {
 		}
         Logger.minor(this, "Removed ack request");
         callbacks = sentPacketsContents.getCallbacks(realSeqNo);
-        sentPacketsContents.remove(realSeqNo);
+        byte[] buf = sentPacketsContents.get(realSeqNo);
+        if(sentPacketsContents.remove(realSeqNo)) {
+        	if(buf.length > Node.PACKET_SIZE) {
+        		PacketThrottle throttle = getThrottle();
+        		throttle.notifyOfPacketAcknowledged();
+        	}
+        }
         if(callbacks != null) {
             for(int i=0;i<callbacks.length;i++)
                 callbacks[i].acknowledged();
@@ -511,6 +528,8 @@ public class KeyTracker {
     public void resendPacket(int seqNumber) {
         byte[] resendData = sentPacketsContents.get(seqNumber);
         if(resendData != null) {
+        	if(resendData.length > Node.PACKET_SIZE)
+        		getThrottle().notifyOfPacketLost();
             synchronized(packetsToResend) {
                 packetsToResend.add(new Integer(seqNumber));
             }
