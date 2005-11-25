@@ -177,7 +177,8 @@ public class Segment implements RetryTrackerCallback {
 	 * Once we have enough data to decode, tell parent, and decode it.
 	 */
 	public void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors) {
-		
+
+		Logger.minor(this, "Finished("+succeeded.length+", "+failed.length+", "+fatalErrors.length+")");
 		parentFetcher.gotBlocks(this);
 		if(succeeded.length >= minFetched)
 			// Not finished yet, need to decode
@@ -202,6 +203,7 @@ public class Segment implements RetryTrackerCallback {
 	private void successfulFetch() {
 		
 		// Now decode
+		Logger.minor(this, "Decoding "+this);
 		
 		FECCodec codec = FECCodec.getCodec(splitfileType, dataBlocks.length, checkBlocks.length);
 		try {

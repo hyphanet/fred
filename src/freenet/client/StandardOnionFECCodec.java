@@ -142,7 +142,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		synchronized(runningDecodesSync) {
 			while(runningDecodes >= PARALLEL_DECODES) {
 				try {
-					runningDecodesSync.wait();
+					runningDecodesSync.wait(10*1000);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
@@ -154,6 +154,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		} finally {
 			synchronized(runningDecodesSync) {
 				runningDecodes--;
+				runningDecodesSync.notify();
 			}
 		}
 	}
@@ -292,7 +293,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		synchronized(runningDecodesSync) {
 			while(runningDecodes >= PARALLEL_DECODES) {
 				try {
-					runningDecodesSync.wait();
+					runningDecodesSync.wait(10*1000);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
@@ -319,6 +320,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		} finally {
 			synchronized(runningDecodesSync) {
 				runningDecodes--;
+				runningDecodesSync.notify();
 			}
 		}
 	}
