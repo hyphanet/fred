@@ -92,7 +92,7 @@ public class BlockTransmitter {
 								}
 								if(_sendComplete) return;
 								synchronized (_senderThread) {
-									_senderThread.wait();
+									_senderThread.wait(10*1000);
 								}
 							}
 						} catch (InterruptedException e) {  }
@@ -144,7 +144,10 @@ public class BlockTransmitter {
 		
 		while (true) {
 			if (_prb.isAborted()) {
-				_sendComplete = true;
+				synchronized(_senderThread) {
+					_sendComplete = true;
+					notifyAll();
+				}
 				return false;
 			}
 			Message msg;
@@ -152,13 +155,19 @@ public class BlockTransmitter {
                 msg = _usm.waitFor(MessageFilter.create().setTimeout(SEND_TIMEOUT).setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).or(MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid)));
             } catch (DisconnectedException e) {
                 Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
-                _sendComplete = true;
+                synchronized(_senderThread) {
+                	_sendComplete = true;
+                	notifyAll();
+                }
                 return false;
             }
 			if(_sendComplete || !_destination.isConnected()) return false;
 			if (msg == null) {
 				if (getNumSent() == _prb.getNumPackets()) {
-					_sendComplete = true;
+					synchronized(_senderThread) {
+						_sendComplete = true;
+						notifyAll();
+					}
 					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+SEND_TIMEOUT+"ms.");
 					return false;
 				}
@@ -177,7 +186,10 @@ public class BlockTransmitter {
 					}
 				}
 			} else if (msg.getSpec().equals(DMT.allReceived)) {
-				_sendComplete = true;
+				synchronized(_senderThread) {
+					_sendComplete = true;
+					notifyAll();
+				}
 				return true;
 			} else if(_sendComplete) {
 			    // Terminated abnormally
@@ -186,7 +198,10 @@ public class BlockTransmitter {
 		}
 		} catch (AbortedException e) {
 			// Terminate
-			_sendComplete = true;
+			synchronized(_senderThread) {
+				_sendComplete = true;
+				notifyAll();
+			}
 			return false;
 		}
 	}

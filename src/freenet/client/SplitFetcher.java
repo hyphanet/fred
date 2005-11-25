@@ -234,7 +234,7 @@ public class SplitFetcher {
 	}
 
 	public void onProgress() {
-		int totalBlocks = splitfileDataBlocks.length + splitfileCheckBlocks.length;
+		int totalBlocks = splitfileDataBlocks.length;
 		int fetchedBlocks = 0;
 		int failedBlocks = 0;
 		int fatallyFailedBlocks = 0;
