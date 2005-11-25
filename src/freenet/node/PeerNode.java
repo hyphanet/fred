@@ -166,6 +166,16 @@ public class PeerNode implements PeerContext {
      */
     private final RunningAverage pInsertRejectOverload;
     
+    private final Object biasLock = new Object();
+    
+    private double biasValue = 1.0;
+    
+    /** Sensitivity of bias computations */
+    private double BIAS_SENSITIVITY = 0.01;
+    
+    /** Target pRO for bias computations */
+    private double BIAS_TARGET = 0.02;
+    
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following
@@ -948,11 +958,27 @@ public class PeerNode implements PeerContext {
 	public void rejectedOverload() {
 		pRejectOverload.report(1.0);
 		pDataRequestRejectOverload.report(1.0);
+		increaseBias();
 	}
 
 	public void insertRejectedOverload() {
 		pRejectOverload.report(1.0);
 		pInsertRejectOverload.report(1.0);
+		increaseBias();
+	}
+	
+	private void increaseBias() {
+		synchronized(biasLock) {
+			if(biasValue < 1.0) biasValue = 1.0;
+			biasValue += BIAS_SENSITIVITY / BIAS_TARGET;
+		}
+	}
+
+	private void decreaseBias() {
+		synchronized(biasLock) {
+			biasValue -= BIAS_SENSITIVITY;
+			if(biasValue < 1.0) biasValue = 1.0;
+		}
 	}
 	
 	/**
@@ -962,11 +988,13 @@ public class PeerNode implements PeerContext {
 	public void didNotRejectOverload() {
 		pRejectOverload.report(0.0);
 		pDataRequestRejectOverload.report(0.0);
+		decreaseBias();
 	}
 
 	public void insertDidNotRejectOverload() {
 		pRejectOverload.report(0.0);
 		pInsertRejectOverload.report(0.0);
+		decreaseBias();
 	}
 	
 	public double getPRejectedOverload() {
@@ -984,16 +1012,19 @@ public class PeerNode implements PeerContext {
 	 * Essentially this is 1.0-P(RejectedOverload or timeout).
 	 */
 	public double getBias() {
-    	double pSummaryFailure = pRejectOverload.currentValue();
-    	long hits = pRejectOverload.countReports();
-    	if(hits > 10) {
-    		double max = ((double) hits) / ((double) (hits+1));
-    		double denom = 1.0 - pSummaryFailure;
-    		if(denom == 0.0) denom = 0.000001;
-    		return denom;
-    	} else {
-    		return 1.0;
-    	}
+		synchronized(biasLock) {
+			return biasValue;
+		}
+//    	double pSummaryFailure = pRejectOverload.currentValue();
+//    	long hits = pRejectOverload.countReports();
+//    	if(hits > 10) {
+//    		double max = ((double) hits) / ((double) (hits+1));
+//    		double denom = 1.0 - pSummaryFailure;
+//    		if(denom == 0.0) denom = 0.000001;
+//    		return denom;
+//    	} else {
+//    		return 1.0;
+//    	}
 	}
 
 	public void throttledSend(Message message) throws NotConnectedException {
