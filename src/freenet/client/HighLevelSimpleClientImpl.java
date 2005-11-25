@@ -30,7 +30,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
 	/** Number of threads used by a splitfile fetch */
-	static final int SPLITFILE_THREADS = 10;
+	static final int SPLITFILE_THREADS = 20;
 	/** Number of retries allowed per block in a splitfile. Must be at least 1 as 
 	 * on the first try we just check the datastore.
 	 */

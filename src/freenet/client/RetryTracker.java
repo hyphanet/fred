@@ -174,8 +174,6 @@ public class RetryTracker {
 	 * we have run out of retries.
 	 */
 	public void nonfatalError(SplitfileBlock block, int reasonCode) {
-		if(callOnProgress)
-			callback.onProgress();
 		synchronized(this) {
 			nonfatalErrors.inc(reasonCode);
 			runningBlocks.remove(block);
@@ -191,6 +189,8 @@ public class RetryTracker {
 			}
 			maybeStart(false);
 		}
+		if(callOnProgress)
+			callback.onProgress();
 	}
 	
 	/**
@@ -199,14 +199,14 @@ public class RetryTracker {
 	 * @param reasonCode A client-specific code indicating the type of failure.
 	 */
 	public void fatalError(SplitfileBlock block, int reasonCode) {
-		if(callOnProgress)
-			callback.onProgress();
 		synchronized(this) {
 			fatalErrors.inc(reasonCode);
 			runningBlocks.remove(block);
 			failedBlocksFatalErrors.add(block);
 			maybeStart(false);
 		}
+		if(callOnProgress)
+			callback.onProgress();
 	}
 
 	/**
@@ -217,7 +217,8 @@ public class RetryTracker {
 		if(killed) return;
 		Logger.minor(this, "succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
 				", failed: "+failedBlocksTooManyRetries.size()+", fatal: "+failedBlocksFatalErrors.size()+
-				", running: "+runningBlocks.size()+", levels: "+levels.size()+"("+curMinLevel+"-"+curMaxLevel+"), finishOnEmpty: "+finishOnEmpty);
+				", running: "+runningBlocks.size()+", levels: "+levels.size()+"("+curMinLevel+"-"+curMaxLevel+
+				"), finishOnEmpty: "+finishOnEmpty+" for "+callback);
 		if(runningBlocks.size() == 1)
 			Logger.minor(this, "Only block running: "+runningBlocks.toArray()[0]);
 		else if(levels.isEmpty()) {
@@ -233,6 +234,7 @@ public class RetryTracker {
 			for(int i=0;i<running.length;i++) {
 				running[i].kill();
 			}
+			runningBlocks.clear();
 			if(!cantCallFinished)
 				callback.finished(succeededBlocks(), failedBlocks(), fatalErrorBlocks());
 			else {
@@ -253,14 +255,14 @@ public class RetryTracker {
 	}
 
 	public void success(SplitfileBlock block) {
-		if(callOnProgress)
-			callback.onProgress();
 		synchronized(this) {
 			if(killed) return;
 			runningBlocks.remove(block);
 			succeededBlocks.add(block);
 			maybeStart(false);
 		}
+		if(callOnProgress)
+			callback.onProgress();
 	}
 	
 	public synchronized void callOnProgress() {

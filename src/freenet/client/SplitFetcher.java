@@ -240,6 +240,8 @@ public class SplitFetcher {
 		int fatallyFailedBlocks = 0;
 		int runningBlocks = 0;
 		for(int i=0;i<segments.length;i++) {
+			Logger.minor(this, "Segment: "+segments[i]+": fetched="+segments[i].fetchedBlocks()+", failedBlocks: "+segments[i].failedBlocks()+
+					", fatally: "+segments[i].fatallyFailedBlocks()+", running: "+segments[i].runningBlocks());
 			fetchedBlocks += segments[i].fetchedBlocks();
 			failedBlocks += segments[i].failedBlocks();
 			fatallyFailedBlocks += segments[i].fatallyFailedBlocks();
