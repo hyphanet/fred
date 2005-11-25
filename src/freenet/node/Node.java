@@ -17,7 +17,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -27,7 +26,6 @@ import java.util.Hashtable;
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
-import freenet.client.InsertBlock;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
@@ -58,6 +56,7 @@ import freenet.support.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.TempBucketFactory;
+import freenet.transport.IPAddressDetector;
 
 /**
  * @author amphibian
@@ -113,6 +112,8 @@ public class Node implements QueueingSimpleLowLevelClient {
     private final HashMap transferringRequestSenders;
     /** InsertSender's currently running, by KeyHTLPair */
     private final HashMap insertSenders;
+    /** IP address detector */
+    private final IPAddressDetector ipDetector;
     
     /** Locally published stream contexts */
     private final Hashtable localStreamContexts;
@@ -299,6 +300,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         portNumber = port;
         startupTime = System.currentTimeMillis();
         recentlyCompletedIDs = new LRUQueue();
+        ipDetector = new IPAddressDetector(10*1000, this);
         if(prefix == null) prefix = "";
         filenamesPrefix = prefix;
         this.overrideIPAddress = overrideIP;
@@ -526,13 +528,7 @@ public class Node implements QueueingSimpleLowLevelClient {
             return overrideIPAddress;
         }
         Logger.minor(this, "IP address not overridden");
-        try {
-            // FIXME we should detect this properly
-            return InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            Logger.error(this, "Caught "+e+" trying to get localhost!");
-            return null;
-        }
+       	return ipDetector.getAddress();
     }
 
     /**
@@ -855,5 +851,11 @@ public class Node implements QueueingSimpleLowLevelClient {
 
 	public RequestStarterClient makeStarterClient(short prioClass, short prio, boolean inserts) {
 		return new RequestStarterClient(prioClass, prio, random, this, inserts ? insertStarter : requestStarter);
+	}
+
+	public void redetectAddress() {
+		
+		// TODO Auto-generated method stub
+		
 	}
 }
