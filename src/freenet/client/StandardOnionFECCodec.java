@@ -142,7 +142,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		synchronized(runningDecodesSync) {
 			while(runningDecodes >= PARALLEL_DECODES) {
 				try {
-					wait();
+					runningDecodesSync.wait();
 				} catch (InterruptedException e) {
 					// Ignore
 				}
@@ -292,7 +292,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		synchronized(runningDecodesSync) {
 			while(runningDecodes >= PARALLEL_DECODES) {
 				try {
-					wait();
+					runningDecodesSync.wait();
 				} catch (InterruptedException e) {
 					// Ignore
 				}

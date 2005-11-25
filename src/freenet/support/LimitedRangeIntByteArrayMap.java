@@ -61,7 +61,7 @@ public class LimitedRangeIntByteArrayMap {
         LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
         if(wrapper != null)
             return wrapper.createdTime;
-        else throw new IllegalArgumentException();
+        else return -1;
     }
     
     /**

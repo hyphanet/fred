@@ -39,11 +39,11 @@ public class FetchException extends Exception {
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
 
-	public FetchException(int mode, IOException e) {
-		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
+	public FetchException(int mode, Throwable t) {
+		super(getMessage(mode)+": "+t.getMessage());
 		this.mode = mode;
-		initCause(e);
-		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e.getMessage(),e);
+		initCause(t);
+		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
 	}
 
 	public FetchException(int mode, String msg) {

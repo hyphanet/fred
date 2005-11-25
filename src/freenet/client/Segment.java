@@ -181,7 +181,14 @@ public class Segment implements RetryTrackerCallback {
 		parentFetcher.gotBlocks(this);
 		if(succeeded.length >= minFetched)
 			// Not finished yet, need to decode
-			successfulFetch();
+			try {
+				successfulFetch();
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t+" decoding "+this);
+				finished = true;
+				failureException = new FetchException(FetchException.INTERNAL_ERROR, t);
+				parentFetcher.segmentFinished(this);
+			}
 		else {
 			failureException = new SplitFetchException(failed.length, fatalErrors.length, succeeded.length, minFetched);
 			finished = true;
