@@ -213,7 +213,9 @@ public class RetryTracker {
 	 * If we can start some blocks, start some blocks.
 	 * Otherwise if we are finished, call the callback's finish method.
 	 */
-	public synchronized void maybeStart(boolean cantCallFinished) {
+	public void maybeStart(boolean cantCallFinished) {
+		boolean callFinished = false;
+		synchronized(this) {
 		if(killed) return;
 		Logger.minor(this, "succeeded: "+succeededBlocks.size()+", target: "+targetSuccesses+
 				", failed: "+failedBlocksTooManyRetries.size()+", fatal: "+failedBlocksFatalErrors.size()+
@@ -236,7 +238,7 @@ public class RetryTracker {
 			}
 			runningBlocks.clear();
 			if(!cantCallFinished)
-				callback.finished(succeededBlocks(), failedBlocks(), fatalErrorBlocks());
+				callFinished = true;
 			else {
 				Runnable r = new Runnable() { public void run() { callback.finished(succeededBlocks(), failedBlocks(), fatalErrorBlocks()); } };
 				Thread t = new Thread(r);
@@ -252,6 +254,9 @@ public class RetryTracker {
 				runningBlocks.add(block);
 			}
 		}
+		}
+		if(callFinished)
+			callback.finished(succeededBlocks(), failedBlocks(), fatalErrorBlocks());
 	}
 
 	public void success(SplitfileBlock block) {
