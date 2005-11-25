@@ -173,22 +173,24 @@ public class RetryTracker {
 	 * Move it out of the running list and back into the relevant list, unless
 	 * we have run out of retries.
 	 */
-	public synchronized void nonfatalError(SplitfileBlock block, int reasonCode) {
+	public void nonfatalError(SplitfileBlock block, int reasonCode) {
 		if(callOnProgress)
 			callback.onProgress();
-		nonfatalErrors.inc(reasonCode);
-		runningBlocks.remove(block);
-		int levelNumber = block.getRetryCount();
-		levelNumber++;
-		Logger.minor(this, "Non-fatal error on "+block+" -> "+levelNumber);
-		if(levelNumber > maxLevel) {
-			failedBlocksTooManyRetries.add(block);
-			Logger.minor(this, "Finished with "+block);
-		} else {
-			Level newLevel = makeLevel(levelNumber);
-			newLevel.add(block);
+		synchronized(this) {
+			nonfatalErrors.inc(reasonCode);
+			runningBlocks.remove(block);
+			int levelNumber = block.getRetryCount();
+			levelNumber++;
+			Logger.minor(this, "Non-fatal error on "+block+" -> "+levelNumber);
+			if(levelNumber > maxLevel) {
+				failedBlocksTooManyRetries.add(block);
+				Logger.minor(this, "Finished with "+block);
+			} else {
+				Level newLevel = makeLevel(levelNumber);
+				newLevel.add(block);
+			}
+			maybeStart(false);
 		}
-		maybeStart(false);
 	}
 	
 	/**
@@ -196,13 +198,15 @@ public class RetryTracker {
 	 * Move it into the fatal error list.
 	 * @param reasonCode A client-specific code indicating the type of failure.
 	 */
-	public synchronized void fatalError(SplitfileBlock block, int reasonCode) {
+	public void fatalError(SplitfileBlock block, int reasonCode) {
 		if(callOnProgress)
 			callback.onProgress();
-		fatalErrors.inc(reasonCode);
-		runningBlocks.remove(block);
-		failedBlocksFatalErrors.add(block);
-		maybeStart(false);
+		synchronized(this) {
+			fatalErrors.inc(reasonCode);
+			runningBlocks.remove(block);
+			failedBlocksFatalErrors.add(block);
+			maybeStart(false);
+		}
 	}
 
 	/**
@@ -248,13 +252,15 @@ public class RetryTracker {
 		}
 	}
 
-	public synchronized void success(SplitfileBlock block) {
+	public void success(SplitfileBlock block) {
 		if(callOnProgress)
 			callback.onProgress();
-		if(killed) return;
-		runningBlocks.remove(block);
-		succeededBlocks.add(block);
-		maybeStart(false);
+		synchronized(this) {
+			if(killed) return;
+			runningBlocks.remove(block);
+			succeededBlocks.add(block);
+			maybeStart(false);
+		}
 	}
 	
 	public synchronized void callOnProgress() {
@@ -320,6 +326,10 @@ public class RetryTracker {
 			succeededBlocks.toArray(new SplitfileBlock[succeededBlocks.size()]);
 	}
 
+	public synchronized int succeededBlocksLength() {
+		return succeededBlocks.size();
+	}
+	
 	/**
 	 * Count the number of blocks which could not be fetched because we ran out
 	 * of retries.

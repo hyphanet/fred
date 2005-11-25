@@ -7,7 +7,7 @@ import freenet.support.math.BootstrappingDecayingRunningAverage;
  */
 public class RequestThrottle {
 
-	protected static final float PACKET_DROP_DECREASE_MULTIPLE = 0.97f;
+	protected static final float PACKET_DROP_DECREASE_MULTIPLE = 0.875f;
 	protected static final float PACKET_TRANSMIT_INCREMENT = (4 * (1 - (PACKET_DROP_DECREASE_MULTIPLE * PACKET_DROP_DECREASE_MULTIPLE))) / 3;
 	protected static final long MAX_DELAY = 5*60*1000;
 	protected static final long MIN_DELAY = 20;

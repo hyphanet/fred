@@ -256,7 +256,7 @@ public class Segment implements RetryTrackerCallback {
 	}
 
 	public int fetchedBlocks() {
-		return tracker.succeededBlocks().length;
+		return tracker.succeededBlocksLength();
 	}
 
 	public int failedBlocks() {
