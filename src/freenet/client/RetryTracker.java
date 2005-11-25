@@ -83,10 +83,10 @@ public class RetryTracker {
 	 * @param cb The callback to call .finish(...) when we no longer have
 	 * anything to do *and* the client has set the finish on empty flag.
 	 */
-	public RetryTracker(int maxLevel, int targetSuccesses, RandomSource random, int maxThreads, boolean killOnFatalError, RetryTrackerCallback cb) {
+	public RetryTracker(int maxLevel, int targetSuccesses, RandomSource random, int maxThreads, boolean killOnFatalError, RetryTrackerCallback cb, boolean isInsert) {
 		levels = new HashMap();
-		fatalErrors = new FailureCodeTracker();
-		nonfatalErrors = new FailureCodeTracker();
+		fatalErrors = new FailureCodeTracker(isInsert);
+		nonfatalErrors = new FailureCodeTracker(isInsert);
 		this.targetSuccesses = targetSuccesses;
 		this.maxLevel = maxLevel;
 		this.random = random;

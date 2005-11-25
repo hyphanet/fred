@@ -64,7 +64,7 @@ public class Segment implements RetryTrackerCallback {
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
 			minFetched = dataBlocks.length;
 		} else throw new MetadataParseException("Unknown splitfile type"+splitfileType);
-		tracker = new RetryTracker(fctx.maxSplitfileBlockRetries, splitfileDataBlocks.length, fctx.random, fctx.maxSplitfileThreads, false, this);
+		tracker = new RetryTracker(fctx.maxSplitfileBlockRetries, splitfileDataBlocks.length, fctx.random, fctx.maxSplitfileThreads, false, this, false);
 		// Don't add blocks to tracker yet, because don't want to start fetch yet.
 		parentFetcher = fetcher;
 		archiveContext = actx;
@@ -191,7 +191,7 @@ public class Segment implements RetryTrackerCallback {
 				parentFetcher.segmentFinished(this);
 			}
 		else {
-			failureException = new SplitFetchException(failed.length, fatalErrors.length, succeeded.length, minFetched);
+			failureException = new SplitFetchException(failed.length, fatalErrors.length, succeeded.length, minFetched, tracker.getAccumulatedNonFatalErrorCodes().merge(tracker.getAccumulatedFatalErrorCodes()));
 			finished = true;
 			parentFetcher.segmentFinished(this);
 		}

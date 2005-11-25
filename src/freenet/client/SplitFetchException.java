@@ -7,8 +7,8 @@ public class SplitFetchException extends FetchException {
 	final int succeeded;
 	final int enough;
 	
-	public SplitFetchException(int failed, int fatal, int succeeded, int enough) {
-		super(FetchException.SPLITFILE_ERROR);
+	public SplitFetchException(int failed, int fatal, int succeeded, int enough, FailureCodeTracker errorCodes) {
+		super(FetchException.SPLITFILE_ERROR, errorCodes);
 		this.failed = failed;
 		this.fatal = fatal;
 		this.succeeded = succeeded;

@@ -22,13 +22,11 @@ import freenet.client.InserterException;
 import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
-import freenet.keys.CHKEncodeException;
-import freenet.keys.ClientCHK;
-import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.ArrayBucket;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FileBucket;
@@ -172,7 +170,7 @@ public class TextModeClientInterface implements Runnable {
                 String fnam = uri.getDocName();
                 fnam = sanitize(fnam);
                 if(fnam.length() == 0) {
-                    fnam = "freenet-download-"+System.currentTimeMillis();
+                    fnam = "freenet-download-"+HexUtil.bytesToHex(BucketTools.hash(data), 0, 10);
                     String ext = DefaultMIMETypes.getExtension(cm.getMIMEType());
                     if(ext != null && !ext.equals(""))
                     	fnam += "." + ext;
@@ -203,6 +201,9 @@ public class TextModeClientInterface implements Runnable {
                 System.out.println("Download rate: "+rate+" bytes / second");
 			} catch (FetchException e) {
 				System.out.println("Error: "+e.getMessage());
+            	if(e.getMode() == e.SPLITFILE_ERROR && e.errorCodes != null) {
+            		System.out.println(e.errorCodes.toVerboseString());
+            	}
 			}
         } else if(uline.startsWith("QUIT")) {
             System.out.println("Goodbye.");
@@ -284,6 +285,10 @@ public class TextModeClientInterface implements Runnable {
                     long sz = f.length();
                     double rate = 1000.0 * sz / (endTime-startTime);
                     System.out.println("Upload rate: "+rate+" bytes / second");
+            	}
+            	if(e.errorCodes != null) {
+            		System.out.println("Splitfile errors breakdown:");
+            		System.out.println(e.errorCodes.toVerboseString());
             	}
             } catch (Throwable t) {
                 System.out.println("Insert threw: "+t);

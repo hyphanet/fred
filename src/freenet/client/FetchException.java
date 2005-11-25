@@ -12,7 +12,10 @@ public class FetchException extends Exception {
 
 	private static final long serialVersionUID = -1106716067841151962L;
 	
-	final int mode;
+	public final int mode;
+
+	/** For collection errors */
+	public final FailureCodeTracker errorCodes;
 	
 	/** Get the failure mode. */
 	public int getMode() {
@@ -22,12 +25,14 @@ public class FetchException extends Exception {
 	public FetchException(int m) {
 		super(getMessage(m));
 		mode = m;
+		errorCodes = null;
 		Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
 	}
 
 	public FetchException(MetadataParseException e) {
 		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		mode = INVALID_METADATA;
+		errorCodes = null;
 		initCause(e);
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
@@ -35,6 +40,7 @@ public class FetchException extends Exception {
 	public FetchException(ArchiveFailureException e) {
 		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		mode = ARCHIVE_FAILURE;
+		errorCodes = null;
 		initCause(e);
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
@@ -42,17 +48,27 @@ public class FetchException extends Exception {
 	public FetchException(int mode, Throwable t) {
 		super(getMessage(mode)+": "+t.getMessage());
 		this.mode = mode;
+		errorCodes = null;
 		initCause(t);
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
 	}
 
+	public FetchException(int mode, FailureCodeTracker errorCodes) {
+		super(getMessage(mode));
+		this.mode = mode;
+		this.errorCodes = errorCodes;
+		Logger.minor(this, "FetchException("+getMessage(mode)+")");
+		
+	}
+	
 	public FetchException(int mode, String msg) {
 		super(getMessage(mode)+": "+msg);
+		errorCodes = null;
 		this.mode = mode;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
 	}
 
-	private static String getMessage(int mode) {
+	public static String getMessage(int mode) {
 		switch(mode) {
 		case TOO_DEEP_ARCHIVE_RECURSION:
 			return "Too many levels of recursion into archives";

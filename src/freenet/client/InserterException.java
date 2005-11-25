@@ -1,9 +1,6 @@
 package freenet.client;
 
-import java.io.IOException;
-
 import freenet.keys.FreenetURI;
-import freenet.node.LowLevelPutException;
 import freenet.support.Logger;
 
 public class InserterException extends Exception {
@@ -11,7 +8,7 @@ public class InserterException extends Exception {
 	
 	public final int mode;
 	/** For collection errors */
-	public final FailureCodeTracker errorCodes;
+	public FailureCodeTracker errorCodes;
 	/** If a non-serious error, the URI */
 	public final FreenetURI uri;
 	
@@ -68,7 +65,7 @@ public class InserterException extends Exception {
 	/** Could not insert a splitfile because a block failed too many times */
 	public static final int TOO_MANY_RETRIES_IN_BLOCKS = 7;
 	
-	private static String getMessage(int mode) {
+	public static String getMessage(int mode) {
 		switch(mode) {
 		case INVALID_URI:
 			return "Caller supplied a URI we cannot use";

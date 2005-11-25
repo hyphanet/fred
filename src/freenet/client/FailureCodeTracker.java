@@ -10,6 +10,12 @@ import java.util.Iterator;
  */
 public class FailureCodeTracker {
 
+	public final boolean insert;
+	
+	public FailureCodeTracker(boolean insert) {
+		this.insert = insert;
+	}
+	
 	public class Item {
 		int x;
 	}
@@ -23,20 +29,38 @@ public class FailureCodeTracker {
 			map.put(key, i = new Item());
 		i.x++;
 	}
+
+	public synchronized void inc(Integer key, int val) {
+		Item i = (Item) map.get(key);
+		if(i == null)
+			map.put(key, i = new Item());
+		i.x+=val;
+	}
 	
 	public synchronized String toVerboseString() {
 		StringBuffer sb = new StringBuffer();
-		Collection values = map.values();
+		Collection values = map.keySet();
 		Iterator i = values.iterator();
 		while(i.hasNext()) {
 			Integer x = (Integer) i.next();
 			Item val = (Item) map.get(x);
-			sb.append(x);
-			sb.append('=');
+			String s = insert ? InserterException.getMessage(x.intValue()) : FetchException.getMessage(x.intValue());
 			sb.append(val.x);
+			sb.append('\t');
+			sb.append(s);
 			sb.append('\n');
 		}
 		return sb.toString();
+	}
+
+	public synchronized FailureCodeTracker merge(FailureCodeTracker accumulatedFatalErrorCodes) {
+		Iterator keys = map.keySet().iterator();
+		while(keys.hasNext()) {
+			Integer k = (Integer) keys.next();
+			Item item = (Item) map.get(k);
+			inc(k, item.x);
+		}
+		return this;
 	}
 	
 }
