@@ -175,7 +175,6 @@ public final class InsertSender implements Runnable {
              *   inserting.
              */
             
-            MessageFilter mfRNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPRouteNotFound);
             MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPInsertReply);
             mfRejectedOverload.setTimeout(PUT_TIMEOUT);
             mfRejectedOverload.clearOr();
@@ -183,7 +182,7 @@ public final class InsertSender implements Runnable {
             MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPDataInsertRejected);
             MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPRejectedTimeout);
             
-            mf = mfRNF.or(mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload)))));
+            mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
             Logger.minor(this, "Sending DataInsert");
             if(receiveFailed) return;
@@ -313,7 +312,6 @@ public final class InsertSender implements Runnable {
         Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
-        status = code;
         
         for(Iterator i = senderThreads.iterator();i.hasNext();) {
         	Thread senderThread = (Thread) i.next();
@@ -326,6 +324,7 @@ public final class InsertSender implements Runnable {
         	}
         }
         
+        status = code;
         if(status == REJECTED_OVERLOAD) {
         	node.getInsertThrottle().requestRejectedOverload();
         } else if(status == SUCCESS || status == ROUTE_NOT_FOUND) {

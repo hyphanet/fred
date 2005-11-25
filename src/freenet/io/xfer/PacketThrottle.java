@@ -22,13 +22,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import freenet.io.comm.Peer;
+import freenet.support.Logger;
 
 public class PacketThrottle {
 
 	protected static final float PACKET_DROP_DECREASE_MULTIPLE = 0.875f;
 	protected static final float PACKET_TRANSMIT_INCREMENT = (4 * (1 - (PACKET_DROP_DECREASE_MULTIPLE * PACKET_DROP_DECREASE_MULTIPLE))) / 3;
 	protected static final long MAX_DELAY = 1000;
-	protected static final long MIN_DELAY = 100;
+	protected static final long MIN_DELAY = 25;
 	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
 	private static Map _throttles = new HashMap();
@@ -59,22 +60,24 @@ public class PacketThrottle {
 		PACKET_SIZE = packetSize;
 	}
 
-	public void setRoundTripTime(long rtt) {
+	public synchronized void setRoundTripTime(long rtt) {
 		_roundTripTime = Math.max(rtt, 10);
 	}
 
-    public void notifyOfPacketLost() {
+    public synchronized void notifyOfPacketLost() {
 		_droppedPackets++;
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+    	Logger.minor(this, "notifyOfPacketLost(): "+this);
     }
 
-    public void notifyOfPacketAcknowledged() {
+    public synchronized void notifyOfPacketAcknowledged() {
         _totalPackets++;
         _simulatedWindowSize += PACKET_TRANSMIT_INCREMENT;
+    	Logger.minor(this, "notifyOfPacketAcked(): "+this);
     }
     
-	public long getDelay() {
+	public synchronized long getDelay() {
 		float winSizeForMinPacketDelay = ((float)_roundTripTime / MIN_DELAY);
 		if (_simulatedWindowSize > winSizeForMinPacketDelay) {
 			_simulatedWindowSize = winSizeForMinPacketDelay;
@@ -89,6 +92,6 @@ public class PacketThrottle {
 	public String toString() {
 		return Double.toString((((PACKET_SIZE * 1000.0 / getDelay())) / 1024)) + " k/sec, (w: "
 				+ _simulatedWindowSize + ", r:" + _roundTripTime + ", d:"
-				+ (((float) _droppedPackets / (float) _totalPackets)) + ")";
+				+ (((float) _droppedPackets / (float) _totalPackets)) + ") for "+_peer;
 	}
 }
