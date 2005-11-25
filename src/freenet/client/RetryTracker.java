@@ -174,7 +174,7 @@ public class RetryTracker {
 	 * we have run out of retries.
 	 */
 	public synchronized void nonfatalError(SplitfileBlock block, int reasonCode) {
-		if(!callOnProgress)
+		if(callOnProgress)
 			callback.onProgress();
 		nonfatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
@@ -197,7 +197,7 @@ public class RetryTracker {
 	 * @param reasonCode A client-specific code indicating the type of failure.
 	 */
 	public synchronized void fatalError(SplitfileBlock block, int reasonCode) {
-		if(!callOnProgress)
+		if(callOnProgress)
 			callback.onProgress();
 		fatalErrors.inc(reasonCode);
 		runningBlocks.remove(block);
@@ -249,7 +249,7 @@ public class RetryTracker {
 	}
 
 	public synchronized void success(SplitfileBlock block) {
-		if(!callOnProgress)
+		if(callOnProgress)
 			callback.onProgress();
 		if(killed) return;
 		runningBlocks.remove(block);
