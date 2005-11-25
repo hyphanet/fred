@@ -167,6 +167,8 @@ public class SplitInserter implements RetryTrackerCallback {
 		int x = 0;
 		for(int i=0;i<segments.length;i++) {
 			FreenetURI[] segURIs = segments[i].getCheckURIs();
+			if(x + segURIs.length > countCheckBlocks) 
+				throw new IllegalStateException("x="+x+", segURIs="+segURIs.length+", countCheckBlocks="+countCheckBlocks);
 			System.arraycopy(segURIs, 0, uris, x, segURIs.length);
 			x += segURIs.length;
 		}
@@ -223,6 +225,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		if(dataBlocks < segmentSize || segmentSize == -1) {
 			// Single segment
 			InsertSegment onlySeg = new InsertSegment(splitfileAlgorithm, origDataBlocks, blockSize, ctx.bf, getCHKOnly, 0);
+			countCheckBlocks = onlySeg.checkBlocks.length;
 			segs.add(onlySeg);
 		} else {
 			int j = 0;

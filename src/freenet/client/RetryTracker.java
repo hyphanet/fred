@@ -177,6 +177,7 @@ public class RetryTracker {
 		runningBlocks.remove(block);
 		int levelNumber = block.getRetryCount();
 		levelNumber++;
+		Logger.minor(this, "Non-fatal error on "+block+" -> "+levelNumber);
 		if(levelNumber > maxLevel) {
 			failedBlocksTooManyRetries.add(block);
 			Logger.minor(this, "Finished with "+block);
