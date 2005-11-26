@@ -265,7 +265,8 @@ public class PeerManager {
     
     static double distance(PeerNode p, double loc) {
     	double d = distance(p.getLocation().getValue(), loc);
-    	return d * p.getBias();
+    	return d;
+    	//return d * p.getBias();
     }
     
     /**
@@ -284,7 +285,7 @@ public class PeerManager {
      * Find the peer, if any, which is closer to the target location
      * than we are, and is not included in the provided set.
      */
-    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, double loc, boolean ignoreSelf) {
+    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf) {
         PeerNode[] peers = connectedPeers;
         Logger.minor(this, "Choosing closest peer: connectedPeers="+peers.length);
         double bestDiff = Double.MAX_VALUE;
@@ -301,6 +302,15 @@ public class PeerManager {
             if(!p.isConnected()) continue;
             count++;
             any = p;
+            double pRO = p.getPRejectedOverload();
+            double random = node.random.nextDouble();
+            if(!notIgnored.contains(p)) {
+            	if(random < pRO) {
+            		Logger.minor(this, "Ignoring "+p+": pRO="+pRO+", random="+random);
+            		routedTo.add(p);
+            		continue;
+            	} else notIgnored.add(p);
+            }
             double diff = distance(p, loc);
             Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+", bias="+p.getBias());
             if((!ignoreSelf) && diff > maxDiff) continue;

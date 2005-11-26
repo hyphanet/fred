@@ -87,6 +87,7 @@ public final class InsertSender implements Runnable {
         short origHTL = htl;
         try {
         HashSet nodesRoutedTo = new HashSet();
+        HashSet nodesNotIgnored = new HashSet();
         
         while(true) {
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
@@ -102,7 +103,7 @@ public final class InsertSender implements Runnable {
             // Can backtrack, so only route to nodes closer than we are to target.
             double nextValue;
             synchronized(node.peers) {
-                next = node.peers.closerPeer(source, nodesRoutedTo, target, true);
+                next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true);
                 if(next != null)
                     nextValue = next.getLocation().getValue();
                 else

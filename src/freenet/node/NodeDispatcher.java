@@ -146,7 +146,8 @@ public class NodeDispatcher implements Dispatcher {
         long createdTime;
         long accessTime;
         PeerNode source;
-        HashSet routedTo;
+        final HashSet routedTo;
+        final HashSet notIgnored;
         Message msg;
         short lastHtl;
         
@@ -154,6 +155,7 @@ public class NodeDispatcher implements Dispatcher {
             createdTime = accessTime = System.currentTimeMillis();
             source = (PeerNode)msg.getSource();
             routedTo = new HashSet();
+            notIgnored = new HashSet();
             this.msg = msg;
             lastHtl = msg.getShort(DMT.HTL);
         }
@@ -259,7 +261,7 @@ public class NodeDispatcher implements Dispatcher {
         // Forward
         m = preForward(m, htl);
         while(true) {
-            PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, target, true);
+            PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, ctx.notIgnored, target, true);
             Logger.minor(this, "Next: "+next+" message: "+m);
             if(next != null) {
                 Logger.minor(this, "Forwarding "+m.getSpec()+" to "+next.getPeer().getPort());

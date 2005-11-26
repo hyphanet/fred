@@ -84,6 +84,7 @@ public final class RequestSender implements Runnable {
         short origHTL = htl;
         node.addSender(key, htl, this);
         HashSet nodesRoutedTo = new HashSet();
+        HashSet nodesNotIgnored = new HashSet();
         try {
         while(true) {
             Logger.minor(this, "htl="+htl);
@@ -99,7 +100,7 @@ public final class RequestSender implements Runnable {
             PeerNode next;
             double nextValue;
             synchronized(node.peers) {
-                next = node.peers.closerPeer(source, nodesRoutedTo, target, true);
+                next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true);
                 if(next != null)
                     nextValue = next.getLocation().getValue();
                 else
