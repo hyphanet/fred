@@ -1049,7 +1049,7 @@ public class PeerNode implements PeerContext {
 			double d = otherBiasValue;
 			if(d < 0) d = 0.0;
 			d += 1.0;
-			return 1.0 / d;
+			return 1.0 - (1.0 / d);
 		}
 	}
 }
