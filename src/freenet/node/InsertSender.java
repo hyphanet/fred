@@ -38,6 +38,7 @@ public final class InsertSender implements Runnable {
         this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
         senderThreads = new LinkedList();
+        blockSenders = new LinkedList();
         Thread t = new Thread(this, "InsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
         t.start();
@@ -62,6 +63,7 @@ public final class InsertSender implements Runnable {
     final long startTime;
     private BlockTransmitter bt;
     private final LinkedList senderThreads;
+    private final LinkedList blockSenders;
     
     private int status = -1;
     static final int NOT_FINISHED = -1;
@@ -195,6 +197,7 @@ public final class InsertSender implements Runnable {
             senderThread.setDaemon(true);
             senderThread.start();
             senderThreads.add(senderThread);
+            blockSenders.add(bt);
             
             if(receiveFailed) return;
             try {
@@ -312,6 +315,15 @@ public final class InsertSender implements Runnable {
         Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+
+        for(Iterator i = blockSenders.iterator();i.hasNext();) {
+        	BlockTransmitter bt = (BlockTransmitter) i.next();
+        	bt.waitForComplete();
+        	if(bt.failedDueToOverload() && (status == SUCCESS || status == ROUTE_NOT_FOUND)) {
+        		status = REJECTED_OVERLOAD;
+        		break;
+        	}
+        }
         
         for(Iterator i = senderThreads.iterator();i.hasNext();) {
         	Thread senderThread = (Thread) i.next();

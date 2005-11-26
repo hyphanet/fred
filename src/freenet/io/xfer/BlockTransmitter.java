@@ -29,6 +29,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
 import freenet.node.PeerNode;
+import freenet.node.ThrottledPacketLagException;
 import freenet.support.BitArray;
 import freenet.support.Logger;
 
@@ -48,6 +49,8 @@ public class BlockTransmitter {
 	LinkedList _unsent;
 	Thread _receiverThread, _senderThread;
 	BitArray _sentPackets;
+	boolean failedByOverload = false;
+	final PacketThrottle throttle;
 
 	public BlockTransmitter(UdpSocketManager usm, PeerContext destination, long uid, PartiallyReceivedBlock source) {
 		_usm = usm;
@@ -60,15 +63,7 @@ public class BlockTransmitter {
 			Logger.error(this, "Aborted during setup");
 			// Will throw on running
 		}
-	}
-
-	public void sendAborted(int reason, String desc) throws NotConnectedException {
-		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc));
-	}
-	
-	public boolean send() {
-		final PacketThrottle throttle = PacketThrottle.getThrottle(_destination.getPeer(), _prb._packetSize);
-		_receiverThread = Thread.currentThread();
+		throttle = PacketThrottle.getThrottle(_destination.getPeer(), _prb._packetSize);
 		_senderThread = new Thread("_senderThread for "+_uid) {
 		    
 			public void run() {
@@ -102,7 +97,7 @@ public class BlockTransmitter {
 						}
 						_sentPackets.setBit(packetNo, true);
 						try {
-							((PeerNode)_destination).throttledSend(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)));
+							((PeerNode)_destination).throttledSend(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), SEND_TIMEOUT);
 						// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
 						sentSinceLastPing++;
 						if (sentSinceLastPing >= PING_EVERY) {
@@ -112,14 +107,35 @@ public class BlockTransmitter {
 						}
 						} catch (NotConnectedException e) {
 						    Logger.normal(this, "Terminating send: "+e);
-						    _sendComplete = true;
+						    synchronized(_senderThread) {
+						    	_sendComplete = true;
+						    	_senderThread.notifyAll();
+						    }
 						} catch (AbortedException e) {
 							Logger.normal(this, "Terminating send due to abort: "+e);
-							_sendComplete = true;
+							synchronized(_senderThread) {
+								_sendComplete = true;
+								_senderThread.notifyAll();
+							}
+						} catch (ThrottledPacketLagException e) {
+							Logger.error(this, "Terminating send due to overload: "+e);
+							synchronized(_senderThread) {
+								failedByOverload = true;
+								_sendComplete = true;
+								_senderThread.notifyAll();
+							}
 						}
 				}
 			}
 		};
+	}
+
+	public void sendAborted(int reason, String desc) throws NotConnectedException {
+		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc));
+	}
+	
+	public boolean send() {
+		_receiverThread = Thread.currentThread();
 		
 		try {
 		_unsent = _prb.addListener(new PartiallyReceivedBlock.PacketReceivedListener() {;
@@ -226,4 +242,20 @@ public class BlockTransmitter {
         t.setDaemon(true);
         t.start();
     }
+
+	public void waitForComplete() {
+		synchronized(_senderThread) {
+			while(!_sendComplete) {
+				try {
+				_senderThread.wait(10*1000);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+		}
+	}
+
+	public boolean failedDueToOverload() {
+		return failedByOverload;
+	}
 }

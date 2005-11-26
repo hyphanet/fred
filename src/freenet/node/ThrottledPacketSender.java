@@ -43,11 +43,18 @@ public class ThrottledPacketSender implements Runnable {
 		RuntimeException re;
 		Error err;
 		
-		public void waitUntilSent() throws NotConnectedException {
+		public void waitUntilSent(long maxWaitTime) throws NotConnectedException, ThrottledPacketLagException {
+			long startTime = System.currentTimeMillis();
+			long waitEndTime = startTime + maxWaitTime;
 			synchronized(this) {
 				while(!(sent || lostConn || re != null || err != null)) {
 					try {
-						wait(10*1000);
+						long wait = waitEndTime - System.currentTimeMillis();
+						if(wait > 0)
+							wait(10*1000);
+						if(wait <= 0) {
+							throw new ThrottledPacketLagException();
+						}
 					} catch (InterruptedException e) {
 						// Ignore
 					}
@@ -65,9 +72,9 @@ public class ThrottledPacketSender implements Runnable {
 		}
 	}
 
-	public void sendPacket(Message msg, PeerNode pn) throws NotConnectedException {
+	public void sendPacket(Message msg, PeerNode pn, long maxWaitTime) throws NotConnectedException, ThrottledPacketLagException {
 		ThrottledPacket p = queuePacket(msg, pn);
-		p.waitUntilSent();
+		p.waitUntilSent(maxWaitTime);
 	}
 
 	private ThrottledPacket queuePacket(Message msg, PeerNode pn) throws NotConnectedException {

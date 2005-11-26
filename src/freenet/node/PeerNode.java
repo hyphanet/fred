@@ -1027,7 +1027,7 @@ public class PeerNode implements PeerContext {
 //    	}
 	}
 
-	public void throttledSend(Message message) throws NotConnectedException {
-		node.globalThrottle.sendPacket(message, this);
+	public void throttledSend(Message message, long maxWaitTime) throws NotConnectedException, ThrottledPacketLagException {
+		node.globalThrottle.sendPacket(message, this, maxWaitTime);
 	}
 }
