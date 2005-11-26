@@ -19,6 +19,13 @@ public final class InsertSender implements Runnable {
 
     public class Sender implements Runnable {
 
+    	public Sender(BlockTransmitter bt) {
+    		this.bt = bt;
+    	}
+
+    	// We will often have multiple simultaneous senders, so we need them to send separately.
+    	final BlockTransmitter bt;
+    	
 		public void run() {
 			bt.send();
 		}
@@ -192,7 +199,7 @@ public final class InsertSender implements Runnable {
 
             Logger.minor(this, "Sending data");
             if(receiveFailed) return;
-            Sender s = new Sender();
+            Sender s = new Sender(bt);
             Thread senderThread = new Thread(s);
             senderThread.setDaemon(true);
             senderThread.start();
