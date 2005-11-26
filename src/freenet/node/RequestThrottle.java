@@ -1,5 +1,6 @@
 package freenet.node;
 
+import freenet.support.Logger;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 /**
@@ -59,6 +60,7 @@ public class RequestThrottle {
 	
 	private synchronized void setRoundTripTime(long rtt) {
 		roundTripTime.report(Math.max(rtt, 10));
+		Logger.minor(this, "Reporting RTT: "+rtt);
 	}
 
 	public synchronized String toString() {

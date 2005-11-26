@@ -71,6 +71,7 @@ public final class InsertSender implements Runnable {
     private BlockTransmitter bt;
     private final LinkedList senderThreads;
     private final LinkedList blockSenders;
+    private boolean sentRequest;
     
     private int status = -1;
     static final int NOT_FINISHED = -1;
@@ -140,6 +141,7 @@ public final class InsertSender implements Runnable {
             // Send to next node
             
             next.send(req);
+            sentRequest = true;
             
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
             Message msg;
@@ -345,10 +347,12 @@ public final class InsertSender implements Runnable {
         }
         
         status = code;
-        if(status == REJECTED_OVERLOAD) {
-        	node.getInsertThrottle().requestRejectedOverload();
-        } else if(status == SUCCESS || status == ROUTE_NOT_FOUND) {
-        	node.getInsertThrottle().requestCompleted(System.currentTimeMillis() - startTime);
+        if(sentRequest) {
+        	if(status == REJECTED_OVERLOAD) {
+        		node.getInsertThrottle().requestRejectedOverload();
+        	} else if(status == SUCCESS || status == ROUTE_NOT_FOUND) {
+        		node.getInsertThrottle().requestCompleted(System.currentTimeMillis() - startTime);
+        	}
         }
         
         synchronized(this) {

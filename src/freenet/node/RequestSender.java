@@ -45,6 +45,7 @@ public final class RequestSender implements Runnable {
     final PeerNode source;
     private PartiallyReceivedBlock prb = null;
     private byte[] headers;
+    private boolean sentRequest;
     
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -140,6 +141,7 @@ public final class RequestSender implements Runnable {
             MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
             
             next.send(req);
+            sentRequest = true;
             
             Message msg;
             try {
@@ -308,11 +310,13 @@ public final class RequestSender implements Runnable {
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
-        
-        if(status == REJECTED_OVERLOAD) {
-        	node.getRequestThrottle().requestRejectedOverload();
-        } else if(status == SUCCESS || status == ROUTE_NOT_FOUND || status == DATA_NOT_FOUND || status == VERIFY_FAILURE) {
-        	node.getRequestThrottle().requestCompleted(System.currentTimeMillis() - startTime);
+
+        if(sentRequest) {
+        	if(status == REJECTED_OVERLOAD) {
+        		node.getRequestThrottle().requestRejectedOverload();
+        	} else if(status == SUCCESS || status == ROUTE_NOT_FOUND || status == DATA_NOT_FOUND || status == VERIFY_FAILURE) {
+        		node.getRequestThrottle().requestCompleted(System.currentTimeMillis() - startTime);
+        	}
         }
         
         synchronized(this) {
