@@ -862,7 +862,7 @@ public class PeerNode implements PeerContext {
     public String getStatus() {
         return 
         	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion() +
-        	" adjpRO="+this.getAdjustedPRejectedOverload()+/*" bias="+getBias()+*/" reqs: pRO="+pDataRequestRejectOverload.currentValue()+" (h="+pDataRequestRejectOverload.countReports()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
+        	"ob="+this.getOtherBiasProbability()+/*" adjpRO="+this.getAdjustedPRejectedOverload()+*//*" bias="+getBias()+*/" reqs: pRO="+pDataRequestRejectOverload.currentValue()+" (h="+pDataRequestRejectOverload.countReports()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
         			" (h="+pInsertRejectOverload.countReports()+")";
     }
 	
@@ -951,6 +951,8 @@ public class PeerNode implements PeerContext {
         return hashCode;
     }
 
+    int otherBiasValue = 0;
+    
     /**
      * Record the fact that the node rejected a request due to
      * overload (or timed out etc).
@@ -971,6 +973,7 @@ public class PeerNode implements PeerContext {
 		synchronized(biasLock) {
 			if(biasValue < 1.0) biasValue = 1.0;
 			biasValue += BIAS_SENSITIVITY / BIAS_TARGET;
+			otherBiasValue += 20;
 		}
 	}
 
@@ -978,6 +981,7 @@ public class PeerNode implements PeerContext {
 		synchronized(biasLock) {
 			biasValue -= BIAS_SENSITIVITY;
 			if(biasValue < 1.0) biasValue = 1.0;
+			otherBiasValue -= 1;
 		}
 	}
 	
@@ -1038,5 +1042,14 @@ public class PeerNode implements PeerContext {
 
 	public void throttledSend(Message message, long maxWaitTime) throws NotConnectedException, ThrottledPacketLagException {
 		node.globalThrottle.sendPacket(message, this, maxWaitTime);
+	}
+
+	public double getOtherBiasProbability() {
+		synchronized(biasLock) {
+			double d = otherBiasValue;
+			if(d < 0) d = 0.0;
+			d += 1.0;
+			return 1.0 / d;
+		}
 	}
 }

@@ -302,9 +302,10 @@ public class PeerManager {
             if(!p.isConnected()) continue;
             count++;
             any = p;
-            double pRO = p.getAdjustedPRejectedOverload();
-            double random = node.random.nextDouble();
             if(!notIgnored.contains(p)) {
+                //double pRO = p.getAdjustedPRejectedOverload();
+            	double pRO = p.getOtherBiasProbability();
+                double random = node.random.nextDouble();
             	if(random < pRO) {
             		Logger.minor(this, "Ignoring "+p+": pRO="+pRO+", random="+random);
             		routedTo.add(p);
