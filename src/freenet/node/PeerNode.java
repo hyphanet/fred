@@ -862,7 +862,7 @@ public class PeerNode implements PeerContext {
     public String getStatus() {
         return 
         	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion() +
-        	" bias="+getBias()+" reqs: pRO="+pDataRequestRejectOverload.currentValue()+" (h="+pDataRequestRejectOverload.countReports()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
+        	"adjpRO="+this.getAdjustedPRejectedOverload()+/*" bias="+getBias()+*/" reqs: pRO="+pDataRequestRejectOverload.currentValue()+" (h="+pDataRequestRejectOverload.countReports()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
         			" (h="+pInsertRejectOverload.countReports()+")";
     }
 	
