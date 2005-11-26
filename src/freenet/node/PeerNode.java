@@ -1001,6 +1001,15 @@ public class PeerNode implements PeerContext {
 		return pDataRequestRejectOverload.currentValue();
 	}
 	
+	public double getAdjustedPRejectedOverload() {
+		double d = pRejectOverload.currentValue();
+		long hits = pRejectOverload.countReports();
+		hits = Math.min(hits, 100);
+		double max = ((double) hits) / ((double) (hits + 1));
+		if(hits < 25) return 0.0;
+		return Math.min(d, max);
+	}
+	
 	public double getPInsertRejectedOverload() {
 		return pInsertRejectOverload.currentValue();
 	}

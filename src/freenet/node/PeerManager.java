@@ -302,7 +302,7 @@ public class PeerManager {
             if(!p.isConnected()) continue;
             count++;
             any = p;
-            double pRO = p.getPRejectedOverload();
+            double pRO = p.getAdjustedPRejectedOverload();
             double random = node.random.nextDouble();
             if(!notIgnored.contains(p)) {
             	if(random < pRO) {
