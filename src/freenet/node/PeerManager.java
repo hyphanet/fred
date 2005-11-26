@@ -286,6 +286,7 @@ public class PeerManager {
      */
     public PeerNode closerPeer(PeerNode pn, HashSet routedTo, double loc, boolean ignoreSelf) {
         PeerNode[] peers = connectedPeers;
+        Logger.minor(this, "Choosing closest peer: connectedPeers="+peers.length);
         double bestDiff = Double.MAX_VALUE;
         double maxDiff = 0.0;
         if(!ignoreSelf)

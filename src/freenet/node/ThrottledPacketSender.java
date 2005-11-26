@@ -32,21 +32,35 @@ public class ThrottledPacketSender implements Runnable {
 			this.msg = msg2;
 			this.pn = pn2;
 			sent = false;
+			queuedTime = System.currentTimeMillis();
 		}
 		
 		final Message msg;
 		final PeerNode pn;
+		final long queuedTime;
 		boolean sent;
+		boolean lostConn;
+		RuntimeException re;
+		Error err;
 		
-		public void waitUntilSent() {
+		public void waitUntilSent() throws NotConnectedException {
 			synchronized(this) {
-				while(!sent) {
+				while(!(sent || lostConn || re != null || err != null)) {
 					try {
 						wait(10*1000);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
 				}
+				if(lostConn) throw new NotConnectedException();
+				if(re != null) throw re;
+				if(err != null) throw err;
+				long timeDiff = System.currentTimeMillis() - queuedTime;
+				if(timeDiff > 30*1000)
+					Logger.error(this, "Took "+timeDiff+" ms to send packet "+msg+" to "+pn);
+				else
+					Logger.minor(this, "Took "+timeDiff+" ms to send packet "+msg+" to "+pn);
+				
 			}
 		}
 	}
@@ -62,7 +76,7 @@ public class ThrottledPacketSender implements Runnable {
 		ThrottledPacket p = new ThrottledPacket(msg, pn);
 		synchronized(queuedPackets) {
 			queuedPackets.addLast(p);
-			queuedPackets.notify();
+			queuedPackets.notifyAll();
 		}
 		return p;
 	}
@@ -101,20 +115,39 @@ public class ThrottledPacketSender implements Runnable {
 				if(queuedPackets.isEmpty()) return false;
 				p = (ThrottledPacket) queuedPackets.removeFirst();
 			}
-			if(!p.pn.isConnected()) continue;
+			if(!p.pn.isConnected()) {
+				synchronized(p) {
+					p.lostConn = true;
+					p.notifyAll();
+				}
+				continue;
+			}
 			try {
 				p.pn.send(p.msg);
+			} catch (NotConnectedException e) {
 				synchronized(p) {
-					p.sent = true;
+					p.lostConn = true;
+					p.notifyAll();
+				}
+				continue;
+			} catch (RuntimeException e) {
+				synchronized(p) {
+					p.re = e;
 					p.notifyAll();
 				}
 				return true;
-			} catch (NotConnectedException e) {
-				continue;
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
-				continue;
+			} catch (Error e) {
+				synchronized(p) {
+					p.err = e;
+					p.notifyAll();
+				}
+				return true;
 			}
+			synchronized(p) {
+				p.sent = true;
+				p.notifyAll();
+			}
+			return true;
 		}
 	}
 

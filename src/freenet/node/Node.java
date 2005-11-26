@@ -768,7 +768,7 @@ public class Node implements QueueingSimpleLowLevelClient {
      * @return Some status information.
      */
     public String getStatus() {
-        return peers.getStatus();
+        return peers.getStatus()+"\nInserts: "+insertSenders.size()+"\nRequests: "+requestSenders.size()+"\nTransferring requests: "+this.transferringRequestSenders.size();
     }
 
     /**
