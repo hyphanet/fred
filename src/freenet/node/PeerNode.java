@@ -862,7 +862,7 @@ public class PeerNode implements PeerContext {
     public String getStatus() {
         return 
         	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion() +
-        	" ob="+this.getOtherBiasProbability()+/*" adjpRO="+this.getAdjustedPRejectedOverload()+*//*" bias="+getBias()+*/" reqs: pRO="+pDataRequestRejectOverload.currentValue()+" (h="+pDataRequestRejectOverload.countReports()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
+        	" ob="+this.getOtherBiasProbability()+" ("+otherBiasValue+") "+/*" adjpRO="+this.getAdjustedPRejectedOverload()+*//*" bias="+getBias()+*/" reqs: pRO="+pDataRequestRejectOverload.currentValue()+" (h="+pDataRequestRejectOverload.countReports()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
         			" (h="+pInsertRejectOverload.countReports()+")";
     }
 	
@@ -1046,7 +1046,7 @@ public class PeerNode implements PeerContext {
 
 	public double getOtherBiasProbability() {
 		synchronized(biasLock) {
-			double d = otherBiasValue;
+			double d = otherBiasValue / 100.0;
 			if(d < 0) d = 0.0;
 			d += 1.0;
 			return 1.0 - (1.0 / d);
