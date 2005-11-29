@@ -548,6 +548,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         			Logger.error(this, "IS still running in putCHK!: "+is);
         			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
         		case InsertSender.GENERATED_REJECTED_OVERLOAD:
+        		case InsertSender.TIMED_OUT:
         			throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
         		case InsertSender.ROUTE_NOT_FOUND:
         			throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);

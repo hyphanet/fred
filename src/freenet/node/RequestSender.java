@@ -329,6 +329,7 @@ public final class RequestSender implements Runnable {
     }
 
     boolean hadROLastTimeWaited = false;
+    boolean prbWasNonNull = false;
     
     /**
      * Wait until either the transfer has started or we have a 
@@ -341,7 +342,10 @@ public final class RequestSender implements Runnable {
         		hadROLastTimeWaited = true;
         		return true;
         	}
-            if(prb != null) return false;
+        	if((!prbWasNonNull) && prb != null) {
+        		prbWasNonNull = true;
+        		return false;
+        	}
             if(status != NOT_FINISHED) return false;
             try {
                 wait(10000);
