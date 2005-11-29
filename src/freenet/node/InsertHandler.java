@@ -139,6 +139,8 @@ public class InsertHandler implements Runnable {
         // also have a flag locally to indicate the receive failed.
         // And if it does, we interrupt.
         
+        boolean receivedRejectedOverload = false;
+        
         while(true) {
             synchronized(sender) {
                 try {
@@ -154,20 +156,29 @@ public class InsertHandler implements Runnable {
                 return;
             }
             
+            if((!receivedRejectedOverload) && sender.receivedRejectedOverload()) {
+            	// Forward it
+            	Message m = DMT.createFNPRejectedOverload(uid, false);
+            	source.send(m);
+            }
+            
             int status = sender.getStatus();
             
             if(status == InsertSender.NOT_FINISHED) {
                 continue;
             }
-            
+
+            // Local RejectedOverload's (fatal).
             // Internal error counts as overload. It'd only create a timeout otherwise, which is the same thing anyway.
             // We *really* need a good way to deal with nodes that constantly R_O!
-            if(status == InsertSender.REJECTED_OVERLOAD || 
+            if(status == InsertSender.TIMED_OUT ||
+            		status == InsertSender.GENERATED_REJECTED_OVERLOAD ||
             		status == InsertSender.INTERNAL_ERROR) {
-                msg = DMT.createFNPRejectedOverload(uid);
+                msg = DMT.createFNPRejectedOverload(uid, true);
                 source.send(msg);
                 // Might as well store it anyway.
-                if(status == InsertSender.REJECTED_OVERLOAD)
+                if(status == InsertSender.TIMED_OUT ||
+                		status == InsertSender.GENERATED_REJECTED_OVERLOAD)
                 	canCommit = true;
                 return;
             }

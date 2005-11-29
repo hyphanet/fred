@@ -40,7 +40,6 @@ public final class RequestSender implements Runnable {
     final long uid;
     final Node node;
     private double nearestLoc;
-    private final long startTime;
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
     private PartiallyReceivedBlock prb = null;
@@ -54,10 +53,11 @@ public final class RequestSender implements Runnable {
     static final int NOT_FINISHED = -1;
     static final int SUCCESS = 0;
     static final int ROUTE_NOT_FOUND = 1;
-    static final int REJECTED_OVERLOAD = 2;
     static final int DATA_NOT_FOUND = 3;
     static final int TRANSFER_FAILED = 4;
     static final int VERIFY_FAILURE = 5;
+    static final int TIMED_OUT = 6;
+    static final int GENERATED_REJECTED_OVERLOAD = 7;
     
     
     
@@ -67,7 +67,6 @@ public final class RequestSender implements Runnable {
     
     public RequestSender(NodeCHK key, short htl, long uid, Node n, double nearestLoc, 
             PeerNode source) {
-    	startTime = System.currentTimeMillis();
         this.key = key;
         this.htl = htl;
         this.uid = uid;
@@ -123,140 +122,182 @@ public final class RequestSender implements Runnable {
             
             Message req = DMT.createFNPDataRequest(uid, htl, key, nearestLoc);
             
-            /**
-             * What are we waiting for?
-             * FNPAccepted - continue
-             * FNPRejectedLoop - go to another node
-             * FNPRejectedOverload - fail (propagates back to source,
-             * then reduces source transmit rate)
-             */
-            
-            MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
-            MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
-            MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
-
-            // mfRejectedOverload must be the last thing in the or
-            // So its or pointer remains null
-            // Otherwise we need to recreate it below
-            MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
             
             next.send(req);
             sentRequest = true;
             
-            Message msg;
-            try {
-                msg = node.usm.waitFor(mf);
-            } catch (DisconnectedException e) {
-                Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
-                continue;
+            Message msg = null;
+            
+            while(true) {
+            	
+                /**
+                 * What are we waiting for?
+                 * FNPAccepted - continue
+                 * FNPRejectedLoop - go to another node
+                 * FNPRejectedOverload - fail (propagates back to source,
+                 * then reduces source transmit rate)
+                 */
+                
+                MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
+                MessageFilter mfRejectedLoop = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedLoop);
+                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPRejectedOverload);
+
+                // mfRejectedOverload must be the last thing in the or
+                // So its or pointer remains null
+                // Otherwise we need to recreate it below
+                MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
+                
+                try {
+                    msg = node.usm.waitFor(mf);
+                } catch (DisconnectedException e) {
+                    Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
+                    break;
+                }
+                
+            	if(msg == null) {
+            		Logger.minor(this, "Timeout waiting for Accepted");
+            		// Timeout waiting for Accepted
+            		next.localRejectedOverload();
+            		forwardRejectedOverload();
+            		// Try next node
+            		break;
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPRejectedLoop) {
+            		Logger.minor(this, "Rejected loop");
+            		next.successNotOverload();
+            		// Find another node to route to
+            		break;
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPRejectedOverload) {
+            		Logger.minor(this, "Rejected: overload");
+					// Non-fatal - probably still have time left
+					forwardRejectedOverload();
+					if (msg.getBoolean(DMT.IS_LOCAL)) {
+						Logger.minor(this, "Is local");
+						next.localRejectedOverload();
+						Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+						// Give up on this one, try another
+						break;
+					}
+					continue;
+            	}
+            	
+            	if(msg.getSpec() != DMT.FNPAccepted) {
+            		Logger.error(this, "Unrecognized message: "+msg);
+            		continue;
+            	}
+            	
+            	break;
             }
             
-            if(msg == null) {
-                // Timeout
-                // Treat as FNPRejectOverloadd
-        		next.rejectedOverload();
-                finish(REJECTED_OVERLOAD, next);
-                return;
+            if(msg == null || msg.getSpec() != DMT.FNPAccepted) {
+            	// Try another node
+            	continue;
             }
-            
-            if(msg.getSpec() == DMT.FNPRejectedLoop) {
-        		next.didNotRejectOverload();
-                // Find another node to route to
-                continue;
-            }
-            
-            if(msg.getSpec() == DMT.FNPRejectedOverload) {
-                // Failed. Propagate back to source.
-                // Source will reduce send rate.
-        		next.rejectedOverload();
-                finish(REJECTED_OVERLOAD, next);
-                return;
-            }
+
+            Logger.minor(this, "Got Accepted");
             
             // Otherwise, must be Accepted
             
             // So wait...
             
-            MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataNotFound);
-            MessageFilter mfDF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataFound);
-            MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
-            mfRejectedOverload = mfRejectedOverload.setTimeout(FETCH_TIMEOUT);
-            mf = mfDNF.or(mfDF.or(mfRouteNotFound.or(mfRejectedOverload)));
+            while(true) {
+            	
+                MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataNotFound);
+                MessageFilter mfDF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataFound);
+                MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
+                MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
+                MessageFilter mf = mfDNF.or(mfDF.or(mfRouteNotFound.or(mfRejectedOverload)));
 
-            try {
-                msg = node.usm.waitFor(mf);
-            } catch (DisconnectedException e) {
-                Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
-                continue;
-            }
-            
-            if(msg == null) {
-                // Timeout. Treat as FNPRejectOverload.
-                finish(REJECTED_OVERLOAD, next);
-                return;
-            }
-            
-            if(msg.getSpec() == DMT.FNPDataNotFound) {
-        		next.didNotRejectOverload();
-                finish(DATA_NOT_FOUND, next);
-                return;
-            }
-            
-            if(msg.getSpec() == DMT.FNPRouteNotFound) {
-                // Backtrack within available hops
-                short newHtl = msg.getShort(DMT.HTL);
-                if(newHtl < htl) htl = newHtl;
-        		next.didNotRejectOverload();
-                continue;
-            }
-            
-            if(msg.getSpec() == DMT.FNPRejectedOverload) {
-        		next.rejectedOverload();
-                finish(REJECTED_OVERLOAD, next);
-                return;
-            }
+            	try {
+            		msg = node.usm.waitFor(mf);
+            	} catch (DisconnectedException e) {
+            		Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
+            		continue;
+            	}
+            	
+            	if(msg == null) {
+            		// Fatal timeout
+            		next.localRejectedOverload();
+            		forwardRejectedOverload();
+            		finish(TIMED_OUT, next);
+            		return;
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPDataNotFound) {
+            		next.successNotOverload();
+            		finish(DATA_NOT_FOUND, next);
+            		return;
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPRouteNotFound) {
+            		// Backtrack within available hops
+            		short newHtl = msg.getShort(DMT.HTL);
+            		if(newHtl < htl) htl = newHtl;
+            		next.successNotOverload();
+            		continue;
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPRejectedOverload) {
+					// Non-fatal - probably still have time left
+					forwardRejectedOverload();
+					if (msg.getBoolean(DMT.IS_LOCAL)) {
+						next.localRejectedOverload();
+						Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+						// Give up on this one, try another
+						break;
+					}
+					continue; // Wait for any further response
+            	}
 
-            // Found data
-    		next.didNotRejectOverload();
-            
-            // First get headers
-            
-            headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
-            
-            // FIXME: Validate headers
-    
-            node.addTransferringSender(key, this);
-            try {
-            
-                prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-                
-                synchronized(this) {
-                    notifyAll();
-                }
-                
-                BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb);
-                
-                try {
-                    byte[] data = br.receive();
-                    // Received data
-                    CHKBlock block;
-                    try {
-                        block = new CHKBlock(data, headers, key);
-                    } catch (CHKVerifyException e1) {
-                        Logger.normal(this, "Got data but verify failed: "+e1, e1);
-                        finish(VERIFY_FAILURE, next);
-                        return;
-                    }
-                    node.store(block);
-                    finish(SUCCESS, next);
-                    return;
-                } catch (RetrievalException e) {
-                    Logger.normal(this, "Transfer failed: "+e, e);
-                    finish(TRANSFER_FAILED, next);
-                    return;
-                }
-            } finally {
-                node.removeTransferringSender(key, this);
+            	if(msg.getSpec() != DMT.FNPDataFound) {
+            		Logger.error(this, "Unexpected message: "+msg);
+            	}
+            	
+            	// Found data
+            	next.successNotOverload();
+            	
+            	// First get headers
+            	
+            	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+            	
+            	// FIXME: Validate headers
+            	
+            	node.addTransferringSender(key, this);
+            	try {
+            		
+            		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
+            		
+            		synchronized(this) {
+            			notifyAll();
+            		}
+            		
+            		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb);
+            		
+            		try {
+            			byte[] data = br.receive();
+            			// Received data
+            			CHKBlock block;
+            			try {
+            				block = new CHKBlock(data, headers, key);
+            			} catch (CHKVerifyException e1) {
+            				Logger.normal(this, "Got data but verify failed: "+e1, e1);
+            				finish(VERIFY_FAILURE, next);
+            				return;
+            			}
+            			node.store(block);
+            			finish(SUCCESS, next);
+            			return;
+            		} catch (RetrievalException e) {
+            			Logger.normal(this, "Transfer failed: "+e, e);
+            			finish(TRANSFER_FAILED, next);
+            			return;
+            		}
+            	} finally {
+            		node.removeTransferringSender(key, this);
+            	}
             }
         }
         } catch (Throwable t) {
@@ -267,6 +308,15 @@ public final class RequestSender implements Runnable {
         }
     }
 
+    private volatile boolean hasForwardedRejectedOverload;
+    
+    /** Forward RejectedOverload to the request originator */
+    private synchronized void forwardRejectedOverload() {
+    	if(hasForwardedRejectedOverload) return;
+    	hasForwardedRejectedOverload = true;
+   		notifyAll();
+	}
+    
     public PartiallyReceivedBlock getPRB() {
         return prb;
     }
@@ -275,14 +325,21 @@ public final class RequestSender implements Runnable {
         return prb != null;
     }
 
+    boolean hadROLastTimeWaited = false;
+    
     /**
      * Wait until either the transfer has started or we have a 
      * terminal status code.
+     * @return True if we got a RejectedOverload.
      */
-    public synchronized void waitUntilStatusChange() {
+    public synchronized boolean waitUntilStatusChange() {
         while(true) {
-            if(prb != null) return;
-            if(status != NOT_FINISHED) return;
+        	if((!hadROLastTimeWaited) && hasForwardedRejectedOverload) {
+        		hadROLastTimeWaited = true;
+        		return true;
+        	}
+            if(prb != null) return false;
+            if(status != NOT_FINISHED) return false;
             try {
                 wait(10000);
             } catch (InterruptedException e) {
@@ -311,14 +368,6 @@ public final class RequestSender implements Runnable {
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
 
-        if(sentRequest) {
-        	if(status == REJECTED_OVERLOAD) {
-        		node.getRequestThrottle().requestRejectedOverload();
-        	} else if(status == SUCCESS || status == ROUTE_NOT_FOUND || status == DATA_NOT_FOUND || status == VERIFY_FAILURE) {
-        		node.getRequestThrottle().requestCompleted(System.currentTimeMillis() - startTime);
-        	}
-        }
-        
         synchronized(this) {
             notifyAll();
         }

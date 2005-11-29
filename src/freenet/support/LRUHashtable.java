@@ -30,6 +30,7 @@ public class LRUHashtable {
         	insert.value = value;
             list.remove(insert);
         }
+        Logger.minor(this, "Pushed "+insert);
 
         list.unshift(insert);
     } 
@@ -109,8 +110,13 @@ public class LRUHashtable {
         public Object obj;
         public Object value;
 
-        public QItem(Object obj, Object key) {
-            this.obj = obj;
+        public QItem(Object key, Object val) {
+            this.obj = key;
+            this.value = val;
+        }
+        
+        public String toString() {
+        	return super.toString()+": "+obj+" "+value;
         }
     }
 }

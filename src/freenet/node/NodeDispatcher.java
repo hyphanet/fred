@@ -74,6 +74,19 @@ public class NodeDispatcher implements Dispatcher {
             return handleDataRequest(m);
         } else if(spec == DMT.FNPInsertRequest) {
             return handleInsertRequest(m);
+        } else if(spec == DMT.FNPLinkPing) {
+        	long id = m.getLong(DMT.PING_SEQNO);
+        	Message msg = DMT.createFNPLinkPong(id);
+        	try {
+				source.sendAsync(msg, null);
+			} catch (NotConnectedException e) {
+				// Ignore
+			}
+        	return true;
+        } else if(spec == DMT.FNPLinkPong) {
+        	long id = m.getLong(DMT.PING_SEQNO);
+        	source.receivedLinkPong(id);
+        	return true;
         }
         return false;
     }

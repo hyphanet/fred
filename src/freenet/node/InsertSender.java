@@ -74,11 +74,18 @@ public final class InsertSender implements Runnable {
     private boolean sentRequest;
     
     private int status = -1;
+    /** Still running */
     static final int NOT_FINISHED = -1;
+    /** Successful insert */
     static final int SUCCESS = 0;
+    /** Route not found */
     static final int ROUTE_NOT_FOUND = 1;
-    static final int REJECTED_OVERLOAD = 2;
+    /** Internal error */
     static final int INTERNAL_ERROR = 3;
+    /** Timed out waiting for response */
+    static final int TIMED_OUT = 4;
+    /** Locally Generated a RejectedOverload */
+    static final int GENERATED_REJECTED_OVERLOAD = 5;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -145,29 +152,66 @@ public final class InsertSender implements Runnable {
             
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
             Message msg;
-            try {
-                msg = node.usm.waitFor(mf);
-            } catch (DisconnectedException e) {
-                Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted");
-                continue;
-            }
-            if(receiveFailed) return; // don't need to set status as killed by InsertHandler
             
-            if(msg == null || msg.getSpec() == DMT.FNPRejectedOverload) {
-                // Overload... hmmmm - propagate error back to source
-                Logger.error(this, "Propagating "+msg+" back to source on "+this);
-                next.insertRejectedOverload();
-                finish(REJECTED_OVERLOAD, next);
-                return;
-            }
+            /*
+             * Because messages may be re-ordered, it is
+             * entirely possible that we get a non-local RejectedOverload,
+             * followed by an Accepted. So we must loop here.
+             */
             
-            if(msg.getSpec() == DMT.FNPRejectedLoop) {
-           		next.insertDidNotRejectOverload();
-                // Loop - we don't want to send the data to this one
-                continue;
-            }
+            while (true) {
+            	
+				try {
+					msg = node.usm.waitFor(mf);
+				} catch (DisconnectedException e) {
+					Logger.normal(this, "Disconnected from " + next
+							+ " while waiting for Accepted");
+					continue;
+				}
+				
+				if (receiveFailed)
+					return; // don't need to set status as killed by InsertHandler
+				
+				if (msg == null) {
+					// Terminal overload
+					// Try to propagate back to source
+					next.localRejectedOverload();
+					finish(TIMED_OUT, next);
+					return;
+				}
+				
+				if (msg.getSpec() == DMT.FNPRejectedOverload) {
+					// Non-fatal - probably still have time left
+					if (msg.getBoolean(DMT.IS_LOCAL)) {
+						next.localRejectedOverload();
+						Logger
+								.minor(this,
+										"Local RejectedOverload, moving on to next peer");
+						// Give up on this one, try another
+						break;
+					} else {
+						forwardRejectedOverload();
+					}
+					continue;
+				}
+				
+				if (msg.getSpec() == DMT.FNPRejectedLoop) {
+					next.successNotOverload();
+					// Loop - we don't want to send the data to this one
+					break;
+				}
+				
+				if (msg.getSpec() != DMT.FNPAccepted) {
+					Logger.error(this,
+							"Unexpected message waiting for Accepted: "
+									+ msg);
+					break;
+				}
+				// Otherwise is an FNPAccepted
+				break;
+			}
             
-            // Otherwise must be an Accepted
+            if(msg == null || msg.getSpec() != DMT.FNPAccepted) continue;
             
             // Send them the data.
             // Which might be the new data resulting from a collision...
@@ -208,95 +252,118 @@ public final class InsertSender implements Runnable {
             senderThread.start();
             senderThreads.add(senderThread);
             blockSenders.add(bt);
-            
-            if(receiveFailed) return;
-            try {
-                msg = node.usm.waitFor(mf);
-            } catch (DisconnectedException e) {
-                Logger.normal(this, "Disconnected from "+next+" while waiting for InsertReply on "+this);
-                continue;
-            }
-            if(receiveFailed) return;
-            
-            if(msg == null) {
-                // Timeout :(
-                // Fairly serious problem
-                Logger.error(this, "Timeout after Accepted in insert");
-                // Treat as rejected-overload
-           		next.insertRejectedOverload();
-                finish(REJECTED_OVERLOAD, next);
-                return;
-            }
-            
-            if(msg.getSpec() == DMT.FNPRejectedOverload || msg.getSpec() == DMT.FNPRejectedTimeout) {
-                Logger.minor(this, "Rejected due to overload");
-           		next.insertRejectedOverload();
-                finish(REJECTED_OVERLOAD, next);
-                return;
-            }
-            
-            if(msg.getSpec() == DMT.FNPRouteNotFound) {
-                Logger.minor(this, "Rejected: RNF");
-                short newHtl = msg.getShort(DMT.HTL);
-                if(htl > newHtl) htl = newHtl;
-                // Finished as far as this node is concerned
-           		next.insertDidNotRejectOverload();
-                continue;
-            }
-            
-            if(msg.getSpec() == DMT.FNPDataInsertRejected) {
-           		next.insertDidNotRejectOverload();
-                short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
-                Logger.minor(this, "DataInsertRejected: "+reason);
-                
-                if(reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
-                    if(fromStore) {
-                        // That's odd...
-                        Logger.error(this, "Verify failed on next node "+next+" for DataInsert but we were sending from the store!");
-                    } else {
-                        try {
-                            if(!prb.allReceived())
-                                Logger.error(this, "Did not receive all packets but next node says invalid anyway!");
-                            else {
-                                // Check the data
-                                new CHKBlock(prb.getBlock(), headers, myKey);
-                                Logger.error(this, "Verify failed on "+next+" but data was valid!");
-                            }
-                        } catch (CHKVerifyException e) {
-                            Logger.normal(this, "Verify failed because data was invalid");
-                        }
-                    }
-                    continue; // What else can we do?
-                } else if(reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
-                    if(receiveFailed) {
-                        Logger.minor(this, "Failed to receive data, so failed to send data");
-                    } else {
-                        if(prb.allReceived()) {
-                            Logger.error(this, "Received all data but send failed to "+next);
-                        } else {
-                            if(prb.isAborted()) {
-                                Logger.normal(this, "Send failed: aborted: "+prb.getAbortReason()+": "+prb.getAbortDescription());
-                            } else
-                                Logger.normal(this, "Send failed; have not yet received all data but not aborted: "+next);
-                        }
-                    }
-                    continue;
-                }
-                
-                Logger.error(this, "DataInsert rejected! Reason="+DMT.getDataInsertRejectedReason(reason));
-                
-            }
-            
-            if(msg.getSpec() != DMT.FNPInsertReply) {
-            	Logger.error(this, "Unknown reply: "+msg);
-            	finish(INTERNAL_ERROR, next);
-            }
-            
-            // Our task is complete
-       		next.insertDidNotRejectOverload();
-            finish(SUCCESS, next);
-            return;
-        }
+
+            while (true) {
+
+				if (receiveFailed)
+					return;
+				
+				try {
+					msg = node.usm.waitFor(mf);
+				} catch (DisconnectedException e) {
+					Logger.normal(this, "Disconnected from " + next
+							+ " while waiting for InsertReply on " + this);
+					break;
+				}
+				if (receiveFailed)
+					return;
+				
+				if (msg == null || msg.getSpec() == DMT.FNPRejectedTimeout) {
+					// Timeout :(
+					// Fairly serious problem
+					Logger.error(this, "Timeout (" + msg
+							+ ") after Accepted in insert");
+					// Terminal overload
+					// Try to propagate back to source
+					next.localRejectedOverload();
+					finish(TIMED_OUT, next);
+					return;
+				}
+
+				if (msg.getSpec() == DMT.FNPRejectedOverload) {
+					// Probably non-fatal, if so, we have time left, can try next one
+					if (msg.getBoolean(DMT.IS_LOCAL)) {
+						next.localRejectedOverload();
+						Logger.minor(this,
+								"Local RejectedOverload, moving on to next peer");
+						// Give up on this one, try another
+						break;
+					} else {
+						forwardRejectedOverload();
+					}
+					continue; // Wait for any further response
+				}
+
+				if (msg.getSpec() == DMT.FNPRouteNotFound) {
+					Logger.minor(this, "Rejected: RNF");
+					short newHtl = msg.getShort(DMT.HTL);
+					if (htl > newHtl)
+						htl = newHtl;
+					// Finished as far as this node is concerned
+					next.successNotOverload();
+					break;
+				}
+
+				if (msg.getSpec() == DMT.FNPDataInsertRejected) {
+					next.successNotOverload();
+					short reason = msg
+							.getShort(DMT.DATA_INSERT_REJECTED_REASON);
+					Logger.minor(this, "DataInsertRejected: " + reason);
+						if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
+						if (fromStore) {
+							// That's odd...
+							Logger.error(this,"Verify failed on next node "
+									+ next + " for DataInsert but we were sending from the store!");
+						} else {
+							try {
+								if (!prb.allReceived())
+									Logger.error(this,
+											"Did not receive all packets but next node says invalid anyway!");
+								else {
+									// Check the data
+									new CHKBlock(prb.getBlock(), headers,
+											myKey);
+									Logger.error(this,
+											"Verify failed on " + next
+											+ " but data was valid!");
+								}
+							} catch (CHKVerifyException e) {
+								Logger
+										.normal(this,
+												"Verify failed because data was invalid");
+							}
+						}
+						break; // What else can we do?
+					} else if (reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
+						if (receiveFailed) {
+							Logger.minor(this, "Failed to receive data, so failed to send data");
+						} else {
+							if (prb.allReceived()) {
+								Logger.error(this, "Received all data but send failed to " + next);
+							} else {
+								if (prb.isAborted()) {
+									Logger.normal(this, "Send failed: aborted: " + prb.getAbortReason() + ": " + prb.getAbortDescription());
+								} else
+									Logger.normal(this, "Send failed; have not yet received all data but not aborted: " + next);
+							}
+						}
+						break;
+					}
+					Logger.error(this, "DataInsert rejected! Reason="
+						+ DMT.getDataInsertRejectedReason(reason));
+				}
+				
+				if (msg.getSpec() != DMT.FNPInsertReply) {
+					Logger.error(this, "Unknown reply: " + msg);
+					finish(INTERNAL_ERROR, next);
+				}
+				
+				// Our task is complete
+				next.successNotOverload();
+				finish(SUCCESS, next);
+				return;
+			}
+		}
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
             if(status == NOT_FINISHED)
@@ -306,20 +373,21 @@ public final class InsertSender implements Runnable {
         	node.removeInsertSender(myKey, origHTL, this);
         }
     }
-
-    /**
-     * Wait until we have a terminal status code.
-     */
-    public synchronized void waitUntilFinished() {
-        while(true) {
-            if(status != NOT_FINISHED) return;
-            try {
-                wait(10000);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
-        }
+    
+    private boolean hasForwardedRejectedOverload = false;
+    
+    synchronized boolean receivedRejectedOverload() {
+    	return hasForwardedRejectedOverload;
     }
+    
+    /** Forward RejectedOverload to the request originator.
+     * DO NOT CALL if have a *local* RejectedOverload.
+     */
+    private synchronized void forwardRejectedOverload() {
+    	if(hasForwardedRejectedOverload) return;
+    	hasForwardedRejectedOverload = true;
+   		notifyAll();
+	}
     
     private void finish(int code, PeerNode next) {
         Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
@@ -330,30 +398,13 @@ public final class InsertSender implements Runnable {
         	BlockTransmitter bt = (BlockTransmitter) i.next();
         	bt.waitForComplete();
         	if(bt.failedDueToOverload() && (status == SUCCESS || status == ROUTE_NOT_FOUND)) {
-        		status = REJECTED_OVERLOAD;
+        		forwardRejectedOverload();
+        		((PeerNode)bt.getDestination()).localRejectedOverload();
         		break;
         	}
         }
         
-        for(Iterator i = senderThreads.iterator();i.hasNext();) {
-        	Thread senderThread = (Thread) i.next();
-        	while(senderThread.isAlive()) {
-        		try {
-        			senderThread.join();
-        		} catch (InterruptedException e) {
-        			// Ignore
-        		}
-        	}
-        }
-        
         status = code;
-        if(sentRequest) {
-        	if(status == REJECTED_OVERLOAD) {
-        		node.getInsertThrottle().requestRejectedOverload();
-        	} else if(status == SUCCESS || status == ROUTE_NOT_FOUND) {
-        		node.getInsertThrottle().requestCompleted(System.currentTimeMillis() - startTime);
-        	}
-        }
         
         synchronized(this) {
             notifyAll();
@@ -384,12 +435,18 @@ public final class InsertSender implements Runnable {
             return "SUCCESS";
         if(status == ROUTE_NOT_FOUND)
             return "ROUTE NOT FOUND";
-        if(status == REJECTED_OVERLOAD)
-            return "REJECTED: OVERLOAD";
         if(status == NOT_FINISHED)
             return "NOT FINISHED";
         if(status == INTERNAL_ERROR)
         	return "INTERNAL ERROR";
+        if(status == TIMED_OUT)
+        	return "TIMED OUT";
+        if(status == GENERATED_REJECTED_OVERLOAD)
+        	return "GENERATED REJECTED OVERLOAD";
         return "UNKNOWN STATUS CODE: "+status;
     }
+
+	public boolean sentRequest() {
+		return sentRequest;
+	}
 }

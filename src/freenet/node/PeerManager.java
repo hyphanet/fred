@@ -126,6 +126,7 @@ public class PeerManager {
         System.arraycopy(connectedPeers, 0, newConnectedPeers, 0, connectedPeers.length);
         newConnectedPeers[connectedPeers.length] = pn;
         connectedPeers = newConnectedPeers;
+        Logger.minor(this, "Connected peers: "+connectedPeers.length);
     }
     
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
@@ -300,20 +301,11 @@ public class PeerManager {
             if(routedTo.contains(p)) continue;
             if(p == pn) continue;
             if(!p.isConnected()) continue;
+            if(p.isBackedOff()) continue;
             count++;
             any = p;
-            if(!notIgnored.contains(p)) {
-                //double pRO = p.getAdjustedPRejectedOverload();
-            	double pRO = p.getOtherBiasProbability();
-                double random = node.random.nextDouble();
-            	if(random < pRO) {
-            		Logger.minor(this, "Ignoring "+p+": pRO="+pRO+", random="+random);
-            		routedTo.add(p);
-            		continue;
-            	} else notIgnored.add(p);
-            }
             double diff = distance(p, loc);
-            Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+", bias="+p.getBias());
+            Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff);
             if((!ignoreSelf) && diff > maxDiff) continue;
             if(diff < bestDiff) {
                 best = p;

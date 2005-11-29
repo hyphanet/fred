@@ -80,8 +80,8 @@ public class Node implements QueueingSimpleLowLevelClient {
 	public static final boolean DONT_CACHE_LOCAL_REQUESTS = true;
     public static final int PACKETS_IN_BLOCK = 32;
     public static final int PACKET_SIZE = 1024;
-    public static final double DECREMENT_AT_MIN_PROB = 0.2;
-    public static final double DECREMENT_AT_MAX_PROB = 0.1;
+    public static final double DECREMENT_AT_MIN_PROB = 0.25;
+    public static final double DECREMENT_AT_MAX_PROB = 0.5;
     // Send keepalives every 2.5-5.0 seconds
     public static final int KEEPALIVE_INTERVAL = 2500;
     // If no activity for 30 seconds, node is dead
@@ -95,6 +95,10 @@ public class Node implements QueueingSimpleLowLevelClient {
     public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*2; // 20-30 secs
     // If we don't receive any packets at all in this period, from any node, tell the user
     public static final long ALARM_TIME = 60*1000;
+    /** Maximum overall average ping time. If ping is greater than this,
+     * we reject all requests.
+     */
+    public static final long MAX_PING_TIME = 1000;
 
     // 900ms
     static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
@@ -133,6 +137,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     final FNPPacketMangler packetMangler;
     final PacketSender ps;
     final NodeDispatcher dispatcher;
+    final NodePinger nodePinger;
     final String filenamesPrefix;
     final FilenameGenerator tempFilenameGenerator;
     static short MAX_HTL = 10;
@@ -365,6 +370,7 @@ public class Node implements QueueingSimpleLowLevelClient {
 			System.exit(EXIT_TEMP_INIT_ERROR);
 			throw new Error();
 		}
+        nodePinger = new NodePinger(this);
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
 		requestThrottle = new RequestThrottle(5000, 2.0F);
@@ -401,6 +407,7 @@ public class Node implements QueueingSimpleLowLevelClient {
      * Either it succeeds or it doesn't.
      */
     ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache) throws LowLevelGetException {
+    	long startTime = System.currentTimeMillis();
         Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null, lm.loc.getValue(), localOnly, cache);
         if(o instanceof CHKBlock) {
             try {
@@ -414,35 +421,64 @@ public class Node implements QueueingSimpleLowLevelClient {
         	throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
         }
         RequestSender rs = (RequestSender)o;
-        rs.waitUntilFinished();
-        if(rs.getStatus() == RequestSender.SUCCESS) {
-            try {
-                return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
-            } catch (CHKVerifyException e) {
-                Logger.error(this, "Does not verify: "+e, e);
-                throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);                
-            } catch (AbortedException e) {
-            	Logger.error(this, "Impossible: "+e, e);
-            	throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-			}
-        } else {
-        	switch(rs.getStatus()) {
-        	case RequestSender.NOT_FINISHED:
-        		Logger.error(this, "RS still running in getCHK!: "+rs);
-        		throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-        	case RequestSender.DATA_NOT_FOUND:
-        		throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
-        	case RequestSender.REJECTED_OVERLOAD:
-        		throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
-        	case RequestSender.ROUTE_NOT_FOUND:
-        		throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
-        	case RequestSender.TRANSFER_FAILED:
-        		throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
-        	case RequestSender.VERIFY_FAILURE:
-        		throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
-        	default:
-        		Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
-        		throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        boolean rejectedOverload = false;
+        while(true) {
+        	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
+        		requestThrottle.requestRejectedOverload();
+        		rejectedOverload = true;
+        	}
+
+        	int status = rs.getStatus();
+        	
+        	if(status == RequestSender.NOT_FINISHED) 
+        		continue;
+        	
+        	if(status == RequestSender.TIMED_OUT ||
+        			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
+        		if(!rejectedOverload) {
+            		requestThrottle.requestRejectedOverload();
+        			rejectedOverload = true;
+        		}
+        	} else {
+        		if(status == RequestSender.DATA_NOT_FOUND ||
+        				status == RequestSender.SUCCESS ||
+        				status == RequestSender.ROUTE_NOT_FOUND ||
+        				status == RequestSender.VERIFY_FAILURE) {
+        			long rtt = System.currentTimeMillis() - startTime;
+        			insertThrottle.requestCompleted(rtt);
+        		}
+        	}
+        	
+        	if(rs.getStatus() == RequestSender.SUCCESS) {
+        		try {
+        			return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
+        		} catch (CHKVerifyException e) {
+        			Logger.error(this, "Does not verify: "+e, e);
+        			throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);                
+        		} catch (AbortedException e) {
+        			Logger.error(this, "Impossible: "+e, e);
+        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        		}
+        	} else {
+        		switch(rs.getStatus()) {
+        		case RequestSender.NOT_FINISHED:
+        			Logger.error(this, "RS still running in getCHK!: "+rs);
+        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        		case RequestSender.DATA_NOT_FOUND:
+        			throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
+        		case RequestSender.ROUTE_NOT_FOUND:
+        			throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
+        		case RequestSender.TRANSFER_FAILED:
+        			throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
+        		case RequestSender.VERIFY_FAILURE:
+        			throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
+        		case RequestSender.GENERATED_REJECTED_OVERLOAD:
+        		case RequestSender.TIMED_OUT:
+        			throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
+        		default:
+        			Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
+        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        		}
         	}
         }
     }
@@ -459,6 +495,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         long uid = random.nextLong();
         if(!lockUID(uid))
             Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+        long startTime = System.currentTimeMillis();
         synchronized(this) {
         	if(cache) {
         		try {
@@ -470,35 +507,64 @@ public class Node implements QueueingSimpleLowLevelClient {
             is = makeInsertSender(block.getClientKey().getNodeCHK(), 
                     MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
         }
-        is.waitUntilFinished();
-        if(is.getStatus() == InsertSender.SUCCESS) {
-            Logger.normal(this, "Succeeded inserting "+block);
-        } else {
-            int status = is.getStatus();
-            String msg = "Failed inserting "+block+" : "+is.getStatusString();
-            if(status == InsertSender.ROUTE_NOT_FOUND)
-                msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
-            if(is.getStatus() != InsertSender.ROUTE_NOT_FOUND)
-            	Logger.error(this, msg);
-            else
-            	Logger.normal(this, msg);
-            switch(is.getStatus()) {
-            case InsertSender.NOT_FINISHED:
-        		Logger.error(this, "IS still running in putCHK!: "+is);
-        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-            case InsertSender.REJECTED_OVERLOAD:
-            	throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
-            case InsertSender.ROUTE_NOT_FOUND:
-            	throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
-            case InsertSender.INTERNAL_ERROR:
-            	throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-            default:
-        		Logger.error(this, "Unknown InsertSender code in putCHK: "+is.getStatus()+" on "+is);
-    			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-            }
+        boolean hasForwardedRejectedOverload = false;
+        while(true) {
+        	synchronized(is) {
+        		if(is.getStatus() == InsertSender.NOT_FINISHED) {
+        			try {
+        				is.wait(5*1000);
+        			} catch (InterruptedException e) {
+        				// Ignore
+        			}
+        		}
+        		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
+        			insertThrottle.requestRejectedOverload();
+        		}
+        		if(is.getStatus() == InsertSender.NOT_FINISHED) continue;
+        	}
+        	// Finished?
+        	if(!hasForwardedRejectedOverload) {
+        		// Is it ours? Did we send a request?
+        		if(is.sentRequest() && is.uid == uid && (is.getStatus() == InsertSender.ROUTE_NOT_FOUND || is.getStatus() == InsertSender.SUCCESS)) {
+        			// It worked!
+        			long endTime = System.currentTimeMillis();
+        			long len = endTime - startTime;
+        			insertThrottle.requestCompleted(len);
+        		}
+        	}
+        	if(is.getStatus() == InsertSender.SUCCESS) {
+        		Logger.normal(this, "Succeeded inserting "+block);
+        	} else {
+        		int status = is.getStatus();
+        		String msg = "Failed inserting "+block+" : "+is.getStatusString();
+        		if(status == InsertSender.ROUTE_NOT_FOUND)
+        			msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
+        		if(is.getStatus() != InsertSender.ROUTE_NOT_FOUND)
+        			Logger.error(this, msg);
+        		else
+        			Logger.normal(this, msg);
+        		switch(is.getStatus()) {
+        		case InsertSender.NOT_FINISHED:
+        			Logger.error(this, "IS still running in putCHK!: "+is);
+        			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        		case InsertSender.GENERATED_REJECTED_OVERLOAD:
+        			throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
+        		case InsertSender.ROUTE_NOT_FOUND:
+        			throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
+        		case InsertSender.INTERNAL_ERROR:
+        			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        		default:
+        			Logger.error(this, "Unknown InsertSender code in putCHK: "+is.getStatus()+" on "+is);
+    				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        		}
+        	}
         }
     }
 
+    public boolean shouldRejectRequest() {
+    	return nodePinger.averagePingTime() > MAX_PING_TIME;
+    }
+    
     /**
      * Export my reference so that another node can connect to me.
      * @return

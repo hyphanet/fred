@@ -78,6 +78,7 @@ public class DMT {
     public static final String BLOCK_HEADERS = "blockHeaders";
     public static final String DATA_INSERT_REJECTED_REASON = "dataInsertRejectedReason";
     public static final String STREAM_SEQNO = "streamSequenceNumber";
+    public static final String IS_LOCAL = "isLocal";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -528,14 +529,16 @@ public class DMT {
     // to source, and reduce send rate.
     public static final MessageType FNPRejectedOverload = new MessageType("FNPRejectOverload") {{
         addField(UID, Long.class);
+        addField(IS_LOCAL, Boolean.class);
     }};
     
-    public static final Message createFNPRejectedOverload(long id) {
+    public static final Message createFNPRejectedOverload(long id, boolean isLocal) {
         Message msg = new Message(FNPRejectedOverload);
         msg.set(UID, id);
+        msg.set(IS_LOCAL, isLocal);
         return msg;
     }
-
+    
     public static final MessageType FNPAccepted = new MessageType("FNPAccepted") {{
         addField(UID, Long.class);
     }};
@@ -661,6 +664,26 @@ public class DMT {
         return msg;
     }
 
+    public static final MessageType FNPLinkPing = new MessageType("FNPLinkPing") {{
+    	addField(PING_SEQNO, Long.class);
+    }};
+    
+    public static final Message createFNPLinkPing(long seqNo) {
+    	Message msg = new Message(FNPLinkPing);
+    	msg.set(PING_SEQNO, seqNo);
+    	return msg;
+    }
+    
+    public static final MessageType FNPLinkPong = new MessageType("FNPLinkPong") {{
+    	addField(PING_SEQNO, Long.class);
+    }};
+    
+    public static final Message createFNPLinkPong(long seqNo) {
+    	Message msg = new Message(FNPLinkPong);
+    	msg.set(PING_SEQNO, seqNo);
+    	return msg;
+    }
+    
     public static final MessageType FNPPong = new MessageType("FNPPong") {{
         addField(PING_SEQNO, Integer.class);
     }};

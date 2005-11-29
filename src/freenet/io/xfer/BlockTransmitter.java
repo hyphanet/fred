@@ -258,4 +258,8 @@ public class BlockTransmitter {
 	public boolean failedDueToOverload() {
 		return failedByOverload;
 	}
+
+	public PeerContext getDestination() {
+		return _destination;
+	}
 }

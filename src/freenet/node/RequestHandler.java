@@ -74,7 +74,11 @@ public class RequestHandler implements Runnable {
         
         while(true) {
             
-            rs.waitUntilStatusChange();
+            if(rs.waitUntilStatusChange()) {
+            	// Forward RejectedOverload
+            	Message msg = DMT.createFNPRejectedOverload(uid, false);
+            	source.sendAsync(msg, null);
+            }
             
             if(rs.transferStarted()) {
                 Message df = DMT.createFNPDataFound(uid, rs.getHeaders());
@@ -95,9 +99,11 @@ public class RequestHandler implements Runnable {
                     Message dnf = DMT.createFNPDataNotFound(uid);
             		source.sendAsync(dnf, null);
             		return;
-            	case RequestSender.REJECTED_OVERLOAD:
+            	case RequestSender.GENERATED_REJECTED_OVERLOAD:
+            	case RequestSender.TIMED_OUT:
+            		// Locally generated.
             	    // Propagate back to source who needs to reduce send rate
-            	    Message reject = DMT.createFNPRejectedOverload(uid);
+            	    Message reject = DMT.createFNPRejectedOverload(uid, true);
             		source.sendAsync(reject, null);
             		return;
             	case RequestSender.ROUTE_NOT_FOUND:

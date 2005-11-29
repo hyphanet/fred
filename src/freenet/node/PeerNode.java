@@ -27,6 +27,7 @@ import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
+import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
@@ -271,6 +272,8 @@ public class PeerNode implements PeerContext {
         pDataRequestRejectOverload = new SimpleRunningAverage(100, 0.05);
         pInsertRejectOverload = new SimpleRunningAverage(100, 0.05);
         pRejectOverload = new SimpleRunningAverage(100, 0.05);
+        pingNumber = node.random.nextLong();
+        pingAverage = new SimpleRunningAverage(20, 1);
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
@@ -861,9 +864,7 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
         return 
-        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion() +
-        	" ob="+this.getOtherBiasProbability()+" ("+otherBiasValue+") "+/*" adjpRO="+this.getAdjustedPRejectedOverload()+*//*" bias="+getBias()+*/" reqs: pRO="+pDataRequestRejectOverload.currentValue()+" (h="+pDataRequestRejectOverload.countReports()+") ins: pRO="+ pInsertRejectOverload.currentValue()+
-        			" (h="+pInsertRejectOverload.countReports()+")";
+        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+backoffLength+" ("+(Math.max(backedOffUntil - System.currentTimeMillis(),0))+")";
     }
 	
     public String getVersion(){
@@ -951,105 +952,106 @@ public class PeerNode implements PeerContext {
         return hashCode;
     }
 
-    int otherBiasValue = 0;
-    
-    /**
-     * Record the fact that the node rejected a request due to
-     * overload (or timed out etc).
-     */
-	public void rejectedOverload() {
-		pRejectOverload.report(1.0);
-		pDataRequestRejectOverload.report(1.0);
-		increaseBias();
-	}
-
-	public void insertRejectedOverload() {
-		pRejectOverload.report(1.0);
-		pInsertRejectOverload.report(1.0);
-		increaseBias();
-	}
-	
-	private void increaseBias() {
-		synchronized(biasLock) {
-			if(biasValue < 1.0) biasValue = 1.0;
-			biasValue += BIAS_SENSITIVITY / BIAS_TARGET;
-			otherBiasValue += 20;
-		}
-	}
-
-	private void decreaseBias() {
-		synchronized(biasLock) {
-			biasValue -= BIAS_SENSITIVITY;
-			if(biasValue < 1.0) biasValue = 1.0;
-			otherBiasValue -= 1;
-		}
-	}
-	
-	/**
-	 * Record the fact that the node did not reject a request
-	 * due to overload.
-	 */
-	public void didNotRejectOverload() {
-		pRejectOverload.report(0.0);
-		pDataRequestRejectOverload.report(0.0);
-		decreaseBias();
-	}
-
-	public void insertDidNotRejectOverload() {
-		pRejectOverload.report(0.0);
-		pInsertRejectOverload.report(0.0);
-		decreaseBias();
-	}
-	
-	public double getPRejectedOverload() {
-		return pDataRequestRejectOverload.currentValue();
-	}
-	
-	public double getAdjustedPRejectedOverload() {
-		double d = pRejectOverload.currentValue();
-		long hits = pRejectOverload.countReports();
-		hits = Math.min(hits, 100);
-		double max = ((double) hits) / ((double) (hits + 1));
-		if(hits < 25) return 0.0;
-		return Math.min(d, max);
-	}
-	
-	public double getPInsertRejectedOverload() {
-		return pInsertRejectOverload.currentValue();
-	}
-
-	/**
-	 * Return the bias value for routing for this node.
-	 * The idea is simply that if a node is overloaded,
-	 * its specialization shrinks.
-	 * Essentially this is 1.0-P(RejectedOverload or timeout).
-	 */
-	public double getBias() {
-		synchronized(biasLock) {
-			return biasValue;
-		}
-//    	double pSummaryFailure = pRejectOverload.currentValue();
-//    	long hits = pRejectOverload.countReports();
-//    	if(hits > 10) {
-//    		double max = ((double) hits) / ((double) (hits+1));
-//    		double denom = 1.0 - pSummaryFailure;
-//    		if(denom == 0.0) denom = 0.000001;
-//    		return denom;
-//    	} else {
-//    		return 1.0;
-//    	}
-	}
-
 	public void throttledSend(Message message, long maxWaitTime) throws NotConnectedException, ThrottledPacketLagException {
 		node.globalThrottle.sendPacket(message, this, maxWaitTime);
 	}
 
-	public double getOtherBiasProbability() {
-		synchronized(biasLock) {
-			double d = otherBiasValue / 100.0;
-			if(d < 0) d = 0.0;
-			d += 1.0;
-			return 1.0 - (1.0 / d);
+	private final Object backoffSync = new Object();
+	
+	public boolean isBackedOff() {
+		synchronized(backoffSync) {
+			if(System.currentTimeMillis() < backedOffUntil) {
+				Logger.minor(this, "Is backed off");
+				return true;
+			} else return false;
 		}
+	}
+	
+	long backedOffUntil = -1;
+	/** Initial nominal backoff length */
+	final int INITIAL_BACKOFF_LENGTH = 5000;
+	/** Double every time */
+	final int BACKOFF_MULTIPLIER = 2;
+	/** Maximum: 24 hours */
+	final int MAX_BACKOFF_LENGTH = 24*60*60*1000;
+	/** Current nominal backoff length */
+	int backoffLength = INITIAL_BACKOFF_LENGTH;
+	
+	/**
+	 * Got a local RejectedOverload.
+	 * Back off this node for a while.
+	 */
+	public void localRejectedOverload() {
+		synchronized(backoffSync) {
+			backoffLength = backoffLength * BACKOFF_MULTIPLIER;
+			if(backoffLength > MAX_BACKOFF_LENGTH)
+				backoffLength = MAX_BACKOFF_LENGTH;
+			backedOffUntil = System.currentTimeMillis() + node.random.nextInt(backoffLength);
+		}
+	}
+	
+	/**
+	 * Didn't get RejectedOverload.
+	 * Reset backoff.
+	 */
+	public void successNotOverload() {
+		synchronized(backoffSync) {
+			backoffLength = INITIAL_BACKOFF_LENGTH;
+		}
+	}
+
+	Object pingSync = new Object();
+	final static int MAX_PINGS = 10;
+	final LRUHashtable pingsSentTimes = new LRUHashtable();
+	long pingNumber;
+	final RunningAverage pingAverage;
+	
+	public void sendPing() {
+		long pingNo;
+		long now = System.currentTimeMillis();
+		Long lPingNo;
+		synchronized(pingSync) {
+			pingNo = pingNumber++;
+			lPingNo = new Long(pingNo);
+			Long lnow = new Long(now);
+			pingsSentTimes.push(lPingNo, lnow);
+			Logger.minor(this, "Pushed "+lPingNo+" "+lnow);
+			while(pingsSentTimes.size() > MAX_PINGS) {
+				Long l = (Long) pingsSentTimes.popValue();
+				Logger.minor(this, "pingsSentTimes.size()="+pingsSentTimes.size()+", l="+l);
+				long tStarted = l.longValue();
+				pingAverage.report(now - tStarted);
+				Logger.minor(this, "Reporting dumped ping time to "+this+" : "+(now - tStarted));
+			}
+		}
+		Message msg = DMT.createFNPLinkPing(pingNo);
+		try {
+			sendAsync(msg, null);
+		} catch (NotConnectedException e) {
+			synchronized(pingSync) {
+				pingsSentTimes.removeKey(lPingNo);
+			}
+		}
+	}
+
+	public void receivedLinkPong(long id) {
+		Long lid = new Long(id);
+		long startTime;
+		synchronized(pingSync) {
+			Long s = (Long) pingsSentTimes.get(lid);
+			if(s == null) {
+				Logger.normal(this, "Dropping ping "+id+" on "+this);
+				return;
+			}
+			startTime = s.longValue();
+			pingsSentTimes.removeKey(lid);
+			long now = System.currentTimeMillis();
+			pingAverage.report(now - startTime);
+			Logger.minor(this, "Reporting ping time to "+this+" : "+(now - startTime));
+		}
+	}
+
+	public double averagePingTime() {
+		return pingAverage.currentValue();
 	}
 }
