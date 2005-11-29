@@ -442,6 +442,7 @@ public class TextModeClientInterface implements Runnable {
     }
 
     private String sanitize(String fnam) {
+    	if(fnam == null) return "";
         StringBuffer sb = new StringBuffer(fnam.length());
         for(int i=0;i<fnam.length();i++) {
             char c = fnam.charAt(i);

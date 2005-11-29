@@ -534,6 +534,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         	}
         	if(is.getStatus() == InsertSender.SUCCESS) {
         		Logger.normal(this, "Succeeded inserting "+block);
+        		return;
         	} else {
         		int status = is.getStatus();
         		String msg = "Failed inserting "+block+" : "+is.getStatusString();
