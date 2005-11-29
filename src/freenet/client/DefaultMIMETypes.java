@@ -530,7 +530,7 @@ public class DefaultMIMETypes {
 		addMIMEType((short)409, "audio/midi", "mid midi kar", "mid");
 		addMIMEType((short)410, "audio/mp4a-latm");
 		addMIMEType((short)411, "audio/mpa-robust");
-		addMIMEType((short)412, "audio/mpeg", "mpga mpega mp2 mp3 m4a", "mpeg");
+		addMIMEType((short)412, "audio/mpeg", "mpga mpega mp2 mp3 m4a", "mp3");
 		addMIMEType((short)413, "audio/mpegurl", "m3u");
 		addMIMEType((short)414, "audio/parityfec");
 		addMIMEType((short)415, "audio/prs.sid", "sid");
