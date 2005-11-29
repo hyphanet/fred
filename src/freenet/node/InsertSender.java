@@ -396,6 +396,7 @@ public final class InsertSender implements Runnable {
 
         for(Iterator i = blockSenders.iterator();i.hasNext();) {
         	BlockTransmitter bt = (BlockTransmitter) i.next();
+        	Logger.minor(this, "Waiting for "+bt);
         	bt.waitForComplete();
         	if(bt.failedDueToOverload() && (status == SUCCESS || status == ROUTE_NOT_FOUND)) {
         		forwardRejectedOverload();
@@ -409,6 +410,7 @@ public final class InsertSender implements Runnable {
         synchronized(this) {
             notifyAll();
         }
+        Logger.minor(this, "Returning from finish()");
     }
 
     public int getStatus() {

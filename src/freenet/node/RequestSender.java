@@ -149,6 +149,7 @@ public final class RequestSender implements Runnable {
                 
                 try {
                     msg = node.usm.waitFor(mf);
+                    Logger.minor(this, "first part got "+msg);
                 } catch (DisconnectedException e) {
                     Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
                     break;
@@ -218,6 +219,8 @@ public final class RequestSender implements Runnable {
             		continue;
             	}
             	
+                Logger.minor(this, "second part got "+msg);
+                
             	if(msg == null) {
             		// Fatal timeout
             		next.localRejectedOverload();
@@ -237,7 +240,7 @@ public final class RequestSender implements Runnable {
             		short newHtl = msg.getShort(DMT.HTL);
             		if(newHtl < htl) htl = newHtl;
             		next.successNotOverload();
-            		continue;
+            		break;
             	}
             	
             	if(msg.getSpec() == DMT.FNPRejectedOverload) {
