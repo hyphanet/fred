@@ -112,6 +112,7 @@ public class RetryTracker {
 	
 	/** Remove a level */
 	private synchronized void removeLevel(int level) {
+		Logger.minor(this, "Removing level "+level);
 		Integer x = new Integer(level);
 		levels.remove(x);
 		if(curMinLevel == level) {
@@ -140,11 +141,16 @@ public class RetryTracker {
 
 	/** Add a level */
 	private synchronized Level addLevel(int level, Integer x) {
+		Logger.minor(this, "Adding level "+level);
 		if(level < 0) throw new IllegalArgumentException();
 		Level l = new Level(level);
+		if(levels.isEmpty()) {
+			curMaxLevel = curMinLevel = level;
+		} else {
+			if(level > curMaxLevel) curMaxLevel = level;
+			if(level < curMinLevel) curMinLevel = level;
+		}
 		levels.put(x, l);
-		if(level > curMaxLevel) curMaxLevel = level;
-		if(level < curMinLevel) curMinLevel = level;
 		return l;
 	}
 	

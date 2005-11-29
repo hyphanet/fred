@@ -223,6 +223,7 @@ public class PeerManager {
         PeerNode[] newConnectedPeers = new PeerNode[v.size()];
         newConnectedPeers = (PeerNode[]) v.toArray(newConnectedPeers);
         connectedPeers = newConnectedPeers;
+        Logger.minor(this, "Connected peers (in getRandomPeer): "+connectedPeers.length);
         if(lengthWithoutExcluded == 0) return null;
         return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
     }
