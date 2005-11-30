@@ -332,8 +332,17 @@ public class Node implements QueueingSimpleLowLevelClient {
         runningUIDs = new HashSet();
 
         BlockTransmitter.setMinPacketInterval(throttleInterval);
-        
-        // FIXME test the soft limit
+
+        /*
+         * FIXME: test the soft limit.
+         * 
+         * The soft limit is implemented, except for:
+         * - We need to write the current status to disk every 1 minute or so.
+         * - When we start up, we need to read this in, assume that the node sent
+         *   as many packets as it was allowed to in the following minute, and
+         *   then shut down before writing again (worst case scenario).
+         * - We need to test the soft limit!
+         */
         BlockTransmitter.setSoftLimitPeriod(14*24*60*60*1000);
         BlockTransmitter.setSoftMinPacketInterval(0);
         
