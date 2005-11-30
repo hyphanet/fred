@@ -50,6 +50,7 @@ public class BlockTransmitter {
 	BitArray _sentPackets;
 	boolean failedByOverload = false;
 	final PacketThrottle throttle;
+	long timeAllSent = -1;
 	
 	// Static stuff for global bandwidth limiter
 	/** Synchronization object for bandwidth limiting */
@@ -114,13 +115,24 @@ public class BlockTransmitter {
 							while (true) {
 								synchronized(_unsent) {
 									if(_unsent.size() != 0) break;
+									// No unsent packets
+									if(getNumSent() == _prb.getNumPackets()) {
+										timeAllSent = System.currentTimeMillis();
+									}
 								}
 								if(_sendComplete) return;
 								synchronized (_senderThread) {
 									_senderThread.wait(10*1000);
 								}
 							}
-						} catch (InterruptedException e) {  }
+						} catch (InterruptedException e) {
+						} catch (AbortedException e) {
+							synchronized(_senderThread) {
+								_sendComplete = true;
+								_senderThread.notifyAll();
+							}
+							return;
+						}
 						long startDelayTime = System.currentTimeMillis();
 						delay(startCycleTime);
 						int packetNo;
@@ -284,14 +296,15 @@ public class BlockTransmitter {
             }
 			if(_sendComplete || !_destination.isConnected()) return false;
 			if (msg == null) {
-				if (getNumSent() == _prb.getNumPackets()) {
+				if(timeAllSent > 0 && System.currentTimeMillis() - timeAllSent > SEND_TIMEOUT &&
+						getNumSent() == _prb.getNumPackets()) {
 					synchronized(_senderThread) {
 						_sendComplete = true;
 						_senderThread.notifyAll();
 					}
 					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+SEND_TIMEOUT+"ms.");
 					return false;
-				}
+				} else continue;
 			} else if (msg.getSpec().equals(DMT.missingPacketNotification)) {
 				LinkedList missing = (LinkedList) msg.getObject(DMT.MISSING);
 				for (Iterator i = missing.iterator(); i.hasNext();) {
