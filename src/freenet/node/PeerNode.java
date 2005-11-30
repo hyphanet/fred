@@ -611,7 +611,7 @@ public class PeerNode implements PeerContext {
         if(thisBootID != this.bootID) {
             connectedTime = System.currentTimeMillis();
             Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID);
-            isConnected = false;
+            // We are connected, but we need a new KeyTracker
             if(previousTracker != null) {
                 KeyTracker old = previousTracker;
                 previousTracker = null;

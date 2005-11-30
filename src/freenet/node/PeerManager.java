@@ -215,6 +215,8 @@ public class PeerManager {
             if(pn == exclude) continue;
             if(pn.isConnected()) {
                 v.add(pn);
+            } else {
+            	Logger.minor(this, "Excluding "+pn+" because is disconnected");
             }
         }
         int lengthWithoutExcluded = v.size();
@@ -222,8 +224,8 @@ public class PeerManager {
             v.add(exclude);
         PeerNode[] newConnectedPeers = new PeerNode[v.size()];
         newConnectedPeers = (PeerNode[]) v.toArray(newConnectedPeers);
+        Logger.minor(this, "Connected peers (in getRandomPeer): "+newConnectedPeers.length+" was "+connectedPeers.length);
         connectedPeers = newConnectedPeers;
-        Logger.minor(this, "Connected peers (in getRandomPeer): "+connectedPeers.length);
         if(lengthWithoutExcluded == 0) return null;
         return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
     }
