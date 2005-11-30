@@ -74,6 +74,7 @@ public class BlockReceiver {
                 Logger.normal(this, "Disconnected during receive: "+_uid+" from "+_sender);
                 throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
             }
+            Logger.minor(this, "Received "+m1);
             if ((m1 != null) && m1.getSpec().equals(DMT.sendAborted)) {
 				_prb.abort(m1.getInt(DMT.REASON), m1.getString(DMT.DESCRIPTION));
 				throw new RetrievalException(m1.getInt(DMT.REASON), m1.getString(DMT.DESCRIPTION));
@@ -96,8 +97,7 @@ public class BlockReceiver {
 						Long resendTime = (Long) _recentlyReportedMissingPackets.get(new Integer(x));
 						if ((resendTime == null) || (System.currentTimeMillis() > resendTime.longValue())) {
 							// Make a note of the earliest time we should resend this, based on the number of other
-							// packets we
-							// are already waiting for
+							// packets we are already waiting for
 							long resendWait = System.currentTimeMillis()
 									+ (MAX_ROUND_TRIP_TIME + (_recentlyReportedMissingPackets.size() * MAX_SEND_INTERVAL));
 							_recentlyReportedMissingPackets.put(new Integer(x), (new Long(resendWait)));
@@ -105,6 +105,7 @@ public class BlockReceiver {
 						}
 					}
 				}
+				Logger.minor(this, "Missing: "+missing.size());
 				if (missing.size() > 0) {
 					Message mn = DMT.createMissingPacketNotification(_uid, missing);
 					_usm.send(_sender, mn);

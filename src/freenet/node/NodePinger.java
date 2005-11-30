@@ -48,7 +48,10 @@ public class NodePinger implements Runnable {
 			PeerNode peer = peers[i];
 			if(!peer.isConnected()) continue;
 			peerCount++;
-			total *= peer.averagePingTime();
+			double avgPingTime = peer.averagePingTime();
+			double avgThrottledPacketSendTime = peer.throttledPacketSendAverage.currentValue();
+			double value = Math.max(avgPingTime, avgThrottledPacketSendTime);
+			total *= value;
 		}
 		if(peerCount > 0) {
 			total = Math.pow(total, 1.0 / peerCount);

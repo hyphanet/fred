@@ -37,6 +37,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
 import freenet.io.xfer.AbortedException;
+import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -330,7 +331,11 @@ public class Node implements QueueingSimpleLowLevelClient {
         insertSenders = new HashMap();
         runningUIDs = new HashSet();
 
-        globalThrottle = new ThrottledPacketSender(throttleInterval);
+        BlockTransmitter.setMinPacketInterval(throttleInterval);
+        
+        // FIXME test the soft limit
+        BlockTransmitter.setSoftLimitPeriod(14*24*60*60*1000);
+        BlockTransmitter.setSoftMinPacketInterval(0);
         
 		lm = new LocationManager(random);
 
@@ -866,7 +871,6 @@ public class Node implements QueueingSimpleLowLevelClient {
 
     final LRUQueue recentlyCompletedIDs;
 
-	public final ThrottledPacketSender globalThrottle;
     static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
     
     /**

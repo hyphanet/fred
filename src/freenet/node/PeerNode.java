@@ -152,31 +152,6 @@ public class PeerNode implements PeerContext {
     /** The time at which we last completed a connection setup. */
     private long connectedTime;
 
-    /** The overall probability of the node rejecting a request or insert
-     * because of overload or timeout.
-     */
-    private final RunningAverage pRejectOverload;
-    
-    /** The probability of the node rejecting a data request because of
-     * overload, or of it timing out etc.
-     */
-    private final RunningAverage pDataRequestRejectOverload;
-    
-    /** The probability of the node rejecting an insert because of
-     * overload, timing out, etc.
-     */
-    private final RunningAverage pInsertRejectOverload;
-    
-    private final Object biasLock = new Object();
-    
-    private double biasValue = 1.0;
-    
-    /** Sensitivity of bias computations */
-    private double BIAS_SENSITIVITY = 0.01;
-    
-    /** Target pRO for bias computations */
-    private double BIAS_TARGET = 0.05;
-    
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following
@@ -269,11 +244,9 @@ public class PeerNode implements PeerContext {
         decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
 
         // FIXME maybe a simple binary RA would be better?
-        pDataRequestRejectOverload = new SimpleRunningAverage(100, 0.05);
-        pInsertRejectOverload = new SimpleRunningAverage(100, 0.05);
-        pRejectOverload = new SimpleRunningAverage(100, 0.05);
         pingNumber = node.random.nextLong();
         pingAverage = new SimpleRunningAverage(20, 1);
+        throttledPacketSendAverage = new SimpleRunningAverage(20, 1);
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
@@ -952,10 +925,6 @@ public class PeerNode implements PeerContext {
         return hashCode;
     }
 
-	public void throttledSend(Message message, long maxWaitTime) throws NotConnectedException, ThrottledPacketLagException {
-		node.globalThrottle.sendPacket(message, this, maxWaitTime);
-	}
-
 	private final Object backoffSync = new Object();
 	
 	public boolean isBackedOff() {
@@ -1005,6 +974,7 @@ public class PeerNode implements PeerContext {
 	final LRUHashtable pingsSentTimes = new LRUHashtable();
 	long pingNumber;
 	final RunningAverage pingAverage;
+	final RunningAverage throttledPacketSendAverage;
 	
 	public void sendPing() {
 		long pingNo;
@@ -1053,5 +1023,9 @@ public class PeerNode implements PeerContext {
 
 	public double averagePingTime() {
 		return pingAverage.currentValue();
+	}
+
+	public void reportThrottledPacketSendTime(long timeDiff) {
+		throttledPacketSendAverage.report(timeDiff);
 	}
 }

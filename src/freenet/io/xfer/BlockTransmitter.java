@@ -29,7 +29,6 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
 import freenet.node.PeerNode;
-import freenet.node.ThrottledPacketLagException;
 import freenet.support.BitArray;
 import freenet.support.Logger;
 
@@ -51,7 +50,48 @@ public class BlockTransmitter {
 	BitArray _sentPackets;
 	boolean failedByOverload = false;
 	final PacketThrottle throttle;
+	
+	// Static stuff for global bandwidth limiter
+	/** Synchronization object for bandwidth limiting */
+	static final Object lastPacketSendTimeSync = new Object();
+	/** Time at which the last known packet is scheduled to be sent.
+	 * We will not send another packet until at least minPacketDelay ms after this time. */
+	static long hardLastPacketSendTime = System.currentTimeMillis();
+	/** Minimum interval between packet sends, for overall hard bandwidth limiter */
+	static long minPacketDelay = 0;
+	/** Minimum average interval between packet sends, for averaged (soft) overall
+	 * bandwidth usage limiter. */
+	static long minSoftDelay = 0;
+	/** "Soft" equivalent to hardLastPacketSendTime. Can lag up to half the softLimitPeriod
+	 * behind the current time. Otherwise is similar. This gives it flexibility; we can have
+	 * spurts above the average limit, but over the softLimitPeriod, it will average out to 
+	 * the target minSoftDelay. */
+	static long softLastPacketSendTime = System.currentTimeMillis();
+	/** Period over which the soft limiter should work */
+	static long softLimitPeriod;
 
+	public static void setMinPacketInterval(int delay) {
+		synchronized(lastPacketSendTimeSync) {
+			minPacketDelay = delay;
+		}
+	}
+	
+	public static void setSoftMinPacketInterval(int delay) {
+		synchronized(lastPacketSendTimeSync) {
+			minSoftDelay = delay;
+		}
+	}
+	
+	public static void setSoftLimitPeriod(long period) {
+		synchronized(lastPacketSendTimeSync) {
+			softLimitPeriod = period;
+			long now = System.currentTimeMillis();
+			if(now - softLastPacketSendTime > period / 2) {
+				softLastPacketSendTime = now - (period / 2);
+			}
+		}
+	}
+	
 	public BlockTransmitter(UdpSocketManager usm, PeerContext destination, long uid, PartiallyReceivedBlock source) {
 		_usm = usm;
 		_destination = destination;
@@ -69,18 +109,8 @@ public class BlockTransmitter {
 			public void run() {
 				int sentSinceLastPing = 0;
 				while (!_sendComplete) {
-						long delay = throttle.getDelay();
-						long waitUntil = System.currentTimeMillis() + delay;
-						Logger.minor(this, "Waiting for "+delay+" ms for "+_uid+" : "+throttle);
+						long startCycleTime = System.currentTimeMillis();
 						try {
-							while (waitUntil > System.currentTimeMillis()) {
-								if(_sendComplete) return;
-								synchronized (_senderThread) {
-									long x = waitUntil - System.currentTimeMillis();
-									if(x > 0)
-										_senderThread.wait(x);
-								}
-							}
 							while (true) {
 								synchronized(_unsent) {
 									if(_unsent.size() != 0) break;
@@ -91,13 +121,24 @@ public class BlockTransmitter {
 								}
 							}
 						} catch (InterruptedException e) {  }
+						long startDelayTime = System.currentTimeMillis();
+						delay(startCycleTime);
 						int packetNo;
 						synchronized(_unsent) {
 							packetNo = ((Integer) _unsent.removeFirst()).intValue();
 						}
 						_sentPackets.setBit(packetNo, true);
 						try {
-							((PeerNode)_destination).throttledSend(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), SEND_TIMEOUT);
+							long endDelayTime = System.currentTimeMillis();
+							long delayTime = endDelayTime - startDelayTime;
+							((PeerNode)_destination).reportThrottledPacketSendTime(delayTime);
+							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null);
+							// May have been delays in sending, so update to avoid sending more frequently than allowed
+							long now = System.currentTimeMillis();
+							synchronized(lastPacketSendTimeSync) {
+								if(hardLastPacketSendTime < now)
+									hardLastPacketSendTime = now;
+							}
 						// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
 						sentSinceLastPing++;
 						if (sentSinceLastPing >= PING_EVERY) {
@@ -117,14 +158,78 @@ public class BlockTransmitter {
 								_sendComplete = true;
 								_senderThread.notifyAll();
 							}
-						} catch (ThrottledPacketLagException e) {
-							Logger.error(this, "Terminating send due to overload: "+e);
-							synchronized(_senderThread) {
-								failedByOverload = true;
-								_sendComplete = true;
-								_senderThread.notifyAll();
+						}
+				}
+			}
+
+			/** @return True if _sendComplete */
+			private boolean delay(long startCycleTime) {
+				
+				// Get the current inter-packet delay
+				long delay = throttle.getDelay();
+				
+				while(true) {
+					
+					long now = System.currentTimeMillis();
+					
+					long endTime = -1;
+					
+					boolean thenSend = true;
+					
+					// Synchronize on the static lock, and update
+					synchronized(lastPacketSendTimeSync) {
+						
+						// Get the current time
+						now = System.currentTimeMillis();
+						
+						// Update time if necessary to avoid spurts
+						if(hardLastPacketSendTime < (now - minPacketDelay))
+							hardLastPacketSendTime = now - minPacketDelay;
+						
+						// Wait until the next send window
+						long newHardLastPacketSendTime =
+							hardLastPacketSendTime + minPacketDelay;
+						
+						long earliestSendTime = startCycleTime + delay;
+						
+						if(earliestSendTime > hardLastPacketSendTime) {
+							// Don't clog up other senders!
+							thenSend = false;
+							endTime = earliestSendTime;
+						} else {
+							hardLastPacketSendTime = newHardLastPacketSendTime;
+							endTime = hardLastPacketSendTime;
+							
+							// What about the soft limit?
+							
+							if(now - softLastPacketSendTime > minSoftDelay / 2) {
+								softLastPacketSendTime = now - (minSoftDelay / 2);
+							}
+							
+							softLastPacketSendTime += minSoftDelay;
+							
+							if(softLastPacketSendTime > hardLastPacketSendTime) {
+								endTime = hardLastPacketSendTime = softLastPacketSendTime;
 							}
 						}
+					}
+					
+					while(now < endTime) {
+						synchronized(_senderThread) {
+							if(_sendComplete)
+								return true;
+							try {
+								_senderThread.wait(endTime - now);
+							} catch (InterruptedException e) {
+								// Ignore
+							}
+						}
+						if(_sendComplete)
+							return true;
+						now = System.currentTimeMillis();
+					}
+					
+					if(thenSend) return false;
 				}
 			}
 		};
