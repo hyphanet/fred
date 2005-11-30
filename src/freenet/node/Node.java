@@ -445,7 +445,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         				status == RequestSender.ROUTE_NOT_FOUND ||
         				status == RequestSender.VERIFY_FAILURE) {
         			long rtt = System.currentTimeMillis() - startTime;
-        			insertThrottle.requestCompleted(rtt);
+        			requestThrottle.requestCompleted(rtt);
         		}
         	}
         	
