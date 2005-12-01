@@ -251,7 +251,7 @@ public final class InsertSender implements Runnable {
             Logger.minor(this, "Sending data");
             if(receiveFailed) return;
             Sender s = new Sender(bt);
-            Thread senderThread = new Thread(s);
+            Thread senderThread = new Thread(s, "Sender for "+uid+" to "+next.getPeer());
             senderThread.setDaemon(true);
             senderThread.start();
             senderThreads.add(senderThread);

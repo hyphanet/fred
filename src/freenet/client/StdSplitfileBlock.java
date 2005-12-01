@@ -39,7 +39,7 @@ public abstract class StdSplitfileBlock extends SplitfileBlock implements Runnab
 		checkStartable();
 		Logger.minor(this, "Starting "+this);
 		try {
-			Thread t = new Thread(this);
+			Thread t = new Thread(this, getName());
 			t.setDaemon(true);
 			t.start();
 		} catch (Throwable error) {
@@ -48,5 +48,7 @@ public abstract class StdSplitfileBlock extends SplitfileBlock implements Runnab
 		}
 	}
 
+	public abstract String getName();
+	
 	protected abstract void checkStartable();
 }

@@ -117,6 +117,7 @@ public class BlockTransmitter {
 									if(_unsent.size() != 0) break;
 									// No unsent packets
 									if(getNumSent() == _prb.getNumPackets()) {
+										Logger.minor(this, "Sent all blocks, none unsent");
 										timeAllSent = System.currentTimeMillis();
 									}
 								}
@@ -254,8 +255,10 @@ public class BlockTransmitter {
 	public boolean send() {
 		_receiverThread = Thread.currentThread();
 		
+		PartiallyReceivedBlock.PacketReceivedListener myListener;
+		
 		try {
-		_unsent = _prb.addListener(new PartiallyReceivedBlock.PacketReceivedListener() {;
+		_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
 
 			public void packetReceived(int packetNo) {
 				_unsent.addLast(new Integer(packetNo));
@@ -285,8 +288,12 @@ public class BlockTransmitter {
 			}
 			Message msg;
 			try {
-                msg = _usm.waitFor(MessageFilter.create().setTimeout(SEND_TIMEOUT).setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).or(MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid)));
+                msg = _usm.waitFor(MessageFilter.create().setTimeout(SEND_TIMEOUT).setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).or(MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT)).or(MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT)));
             } catch (DisconnectedException e) {
+            	// Ignore, see below
+            	msg = null;
+            }
+            if(!_destination.isConnected()) {
                 Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
                 synchronized(_senderThread) {
                 	_sendComplete = true;
@@ -294,9 +301,10 @@ public class BlockTransmitter {
                 }
                 return false;
             }
-			if(_sendComplete || !_destination.isConnected()) return false;
+            if(_sendComplete)
+            	return false;
 			if (msg == null) {
-				if(timeAllSent > 0 && System.currentTimeMillis() - timeAllSent > SEND_TIMEOUT &&
+				if(timeAllSent > 0 && (System.currentTimeMillis() - timeAllSent) > SEND_TIMEOUT &&
 						getNumSent() == _prb.getNumPackets()) {
 					synchronized(_senderThread) {
 						_sendComplete = true;
@@ -304,7 +312,10 @@ public class BlockTransmitter {
 					}
 					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+SEND_TIMEOUT+"ms.");
 					return false;
-				} else continue;
+				} else {
+					Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+"/"+_prb.getNumPackets());
+					continue;
+				}
 			} else if (msg.getSpec().equals(DMT.missingPacketNotification)) {
 				LinkedList missing = (LinkedList) msg.getObject(DMT.MISSING);
 				for (Iterator i = missing.iterator(); i.hasNext();) {
@@ -325,6 +336,17 @@ public class BlockTransmitter {
 					_senderThread.notifyAll();
 				}
 				return true;
+			} else if (msg.getSpec().equals(DMT.sendAborted)) {
+				// Overloaded: receiver no longer wants the data
+				// Do NOT abort PRB, it's none of its business.
+				// And especially, we don't want a downstream node to 
+				// be able to abort our sends to all the others!
+				_prb.removeListener(myListener);
+				synchronized(_senderThread) {
+					_sendComplete = true;
+					_senderThread.notifyAll();
+				}
+				return false;
 			} else if(_sendComplete) {
 			    // Terminated abnormally
 			    return false;
@@ -365,7 +387,7 @@ public class BlockTransmitter {
 		synchronized(_senderThread) {
 			while(!_sendComplete) {
 				try {
-				_senderThread.wait(10*1000);
+					_senderThread.wait(10*1000);
 				} catch (InterruptedException e) {
 					// Ignore
 				}

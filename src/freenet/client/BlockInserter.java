@@ -49,6 +49,10 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 		return uri;
 	}
 
+	public String getName() {
+		return "BlockInserter for "+this.getNumber();
+	}
+	
 	public void run() {
 		try {
 			Logger.minor(this, "Running "+this);

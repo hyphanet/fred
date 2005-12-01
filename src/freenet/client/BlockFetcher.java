@@ -25,6 +25,10 @@ public class BlockFetcher extends StdSplitfileBlock {
 		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
 	}
 
+	public String getName() {
+		return "BlockFetcher for "+getNumber();
+	}
+	
 	public void run() {
 		Logger.minor(this, "Running: "+this);
 		// Already added to runningFetches.
