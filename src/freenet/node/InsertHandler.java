@@ -183,7 +183,7 @@ public class InsertHandler implements Runnable {
                 return;
             }
             
-            if(status == InsertSender.ROUTE_NOT_FOUND) {
+            if(status == InsertSender.ROUTE_NOT_FOUND || status == InsertSender.ROUTE_REALLY_NOT_FOUND) {
                 msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 source.send(msg);
                 canCommit = true;
@@ -198,6 +198,12 @@ public class InsertHandler implements Runnable {
                 finish();
                 return;
             }
+            
+            // Otherwise...?
+            Logger.error(this, "Unknown status code: "+sender.getStatusString());
+            msg = DMT.createFNPRejectedOverload(uid, true);
+            source.send(msg);
+            return;
         }
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
