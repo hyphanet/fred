@@ -290,11 +290,10 @@ public class BlockTransmitter {
 			}
 			Message msg;
 			try {
-				MessageFilter mf = 
-					MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination).
-					or(MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination)).
-					or(MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination));
-                msg = _usm.waitFor(mf);
+				MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
+				MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
+				MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
+                msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)));
             } catch (DisconnectedException e) {
             	// Ignore, see below
             	msg = null;

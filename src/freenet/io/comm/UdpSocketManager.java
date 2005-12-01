@@ -278,8 +278,8 @@ public class UdpSocketManager extends Thread {
 				        Logger.normal(this, "Dropping unclaimed: "+removed);
 				    }
 				    _unclaimed.addLast(m);
+					Logger.minor(this, "Done");
 				}
-				Logger.minor(this, "Done");
 			}
 		}
 	}
