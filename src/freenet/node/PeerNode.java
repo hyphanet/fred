@@ -953,10 +953,14 @@ public class PeerNode implements PeerContext {
 	 */
 	public void localRejectedOverload() {
 		synchronized(backoffSync) {
-			backoffLength = backoffLength * BACKOFF_MULTIPLIER;
-			if(backoffLength > MAX_BACKOFF_LENGTH)
-				backoffLength = MAX_BACKOFF_LENGTH;
-			backedOffUntil = System.currentTimeMillis() + node.random.nextInt(backoffLength);
+			long now = System.currentTimeMillis();
+			// Don't back off any further if we are already backed off
+			if(now > backedOffUntil) {
+				backoffLength = backoffLength * BACKOFF_MULTIPLIER;
+				if(backoffLength > MAX_BACKOFF_LENGTH)
+					backoffLength = MAX_BACKOFF_LENGTH;
+				backedOffUntil = now + node.random.nextInt(backoffLength);
+			}
 		}
 	}
 	
@@ -966,7 +970,9 @@ public class PeerNode implements PeerContext {
 	 */
 	public void successNotOverload() {
 		synchronized(backoffSync) {
-			backoffLength = INITIAL_BACKOFF_LENGTH;
+			// Don't un-backoff if still backed off
+			if(System.currentTimeMillis() > backedOffUntil)
+				backoffLength = INITIAL_BACKOFF_LENGTH;
 		}
 	}
 
