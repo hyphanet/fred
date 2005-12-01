@@ -57,7 +57,7 @@ public class RequestStarter implements Runnable {
 		cycleNumber = 0;
 		this.throttle = throttle;
 		this.name = name;
-		Thread t = new Thread(this, "Request starter");
+		Thread t = new Thread(this, name);
 		t.setDaemon(true);
 		t.start();
 	}

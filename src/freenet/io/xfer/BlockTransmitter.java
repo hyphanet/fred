@@ -118,7 +118,8 @@ public class BlockTransmitter {
 									// No unsent packets
 									if(getNumSent() == _prb.getNumPackets()) {
 										Logger.minor(this, "Sent all blocks, none unsent");
-										timeAllSent = System.currentTimeMillis();
+										if(timeAllSent <= 0)
+											timeAllSent = System.currentTimeMillis();
 									}
 								}
 								if(_sendComplete) return;
@@ -126,6 +127,7 @@ public class BlockTransmitter {
 									_senderThread.wait(10*1000);
 								}
 							}
+							timeAllSent = -1;
 						} catch (InterruptedException e) {
 						} catch (AbortedException e) {
 							synchronized(_senderThread) {
@@ -288,7 +290,11 @@ public class BlockTransmitter {
 			}
 			Message msg;
 			try {
-                msg = _usm.waitFor(MessageFilter.create().setTimeout(SEND_TIMEOUT).setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).or(MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT)).or(MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT)));
+				MessageFilter mf = 
+					MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination).
+					or(MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination)).
+					or(MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination));
+                msg = _usm.waitFor(mf);
             } catch (DisconnectedException e) {
             	// Ignore, see below
             	msg = null;

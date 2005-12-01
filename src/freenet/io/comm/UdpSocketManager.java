@@ -219,13 +219,13 @@ public class UdpSocketManager extends Thread {
 						i.remove();
 						f.notify();
 					}
-					Logger.minor(this, "Matched");
+					Logger.minor(this, "Matched: "+f);
 					break; // Only one match permitted per message
 				}
 			}
 		}
 		// Feed unmatched messages to the dispatcher
-		if (!matched && (_dispatcher != null)) {
+		if ((!matched) && (_dispatcher != null)) {
 		    try {
 		        Logger.minor(this, "Feeding to dispatcher: "+m);
 		        matched = _dispatcher.handleMessage(m);
@@ -268,13 +268,14 @@ public class UdpSocketManager extends Thread {
 							i.remove();
 							f.notify();
 						}
+						Logger.minor(this, "Matched: "+f);
 						break; // Only one match permitted per message
 					}
 				}
 				if(!matched) {
 				    while (_unclaimed.size() > 500) {
 				        Message removed = (Message)_unclaimed.removeFirst();
-				        Logger.normal(this, "Unclaimed: "+removed);
+				        Logger.normal(this, "Dropping unclaimed: "+removed);
 				    }
 				    _unclaimed.addLast(m);
 				}
@@ -320,21 +321,21 @@ public class UdpSocketManager extends Thread {
 					Logger.debug(this, "Matching from _unclaimed");
 				}
 			}
-			Logger.debug(this, "Not in _unclaimed");
+			Logger.minor(this, "Not in _unclaimed");
 			if (ret == null) {
 			    // Insert filter into filter list in order of timeout
 				ListIterator i = _filters.listIterator();
 				while (true) {
 					if (!i.hasNext()) {
 						i.add(filter);
-						Logger.debug(this, "Added at end");
+						Logger.minor(this, "Added at end");
 						break;
 					}
 					MessageFilter mf = (MessageFilter) i.next();
 					if (mf.getTimeout() > filter.getTimeout()) {
 						i.previous();
 						i.add(filter);
-						Logger.debug(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
+						Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
 						break;
 					}
 				}
