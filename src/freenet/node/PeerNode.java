@@ -30,7 +30,6 @@ import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 
@@ -611,7 +610,7 @@ public class PeerNode implements PeerContext {
         if(thisBootID != this.bootID) {
             connectedTime = System.currentTimeMillis();
             Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID);
-            // We are connected, but we need a new KeyTracker
+            isConnected = false; // Will be reset below
             if(previousTracker != null) {
                 KeyTracker old = previousTracker;
                 previousTracker = null;
@@ -647,7 +646,8 @@ public class PeerNode implements PeerContext {
 			Logger.error(this, "Disconnected in completedHandshake with "+this);
 			return true; // i suppose
 		}
-        node.peers.addConnectedPeer(this);
+		if(isConnected)
+			node.peers.addConnectedPeer(this);
         sentInitialMessages = false;
         return true;
     }
@@ -695,6 +695,7 @@ public class PeerNode implements PeerContext {
             unverifiedTracker = null;
             isConnected = true;
             ctx = null;
+            node.peers.addConnectedPeer(this);
             maybeSendInitialMessages();
         }
     }

@@ -235,7 +235,8 @@ public class TextModeClientInterface implements Runnable {
             	System.out.println("Error: "+e.getMessage());
             	if(e.uri != null)
             		System.out.println("URI would have been: "+e.uri);
-            	if(e.mode == e.FATAL_ERRORS_IN_BLOCKS || e.mode == e.TOO_MANY_RETRIES_IN_BLOCKS) {
+            	int mode = e.getMode();
+            	if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
             		System.out.println("Splitfile-specific error:\n"+e.errorCodes.toVerboseString());
             	}
             	return;

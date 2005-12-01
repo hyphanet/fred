@@ -104,6 +104,10 @@ public class PeerManager {
     }
 
     public synchronized void addConnectedPeer(PeerNode pn) {
+    	if(!pn.isConnected()) {
+    		Logger.minor(this, "Not connected: "+pn);
+    		return;
+    	}
         for(int i=0;i<connectedPeers.length;i++) {
             if(connectedPeers[i] == pn) {
                 Logger.minor(this, "Already connected: "+pn);
@@ -210,8 +214,8 @@ public class PeerManager {
         // This is safe as they will add themselves when they
         // reconnect, and they can't do it yet as we are synchronized.
         Vector v = new Vector(connectedPeers.length);
-        for(int i=0;i<connectedPeers.length;i++) {
-            PeerNode pn = connectedPeers[i];
+        for(int i=0;i<myPeers.length;i++) {
+            PeerNode pn = myPeers[i];
             if(pn == exclude) continue;
             if(pn.isConnected()) {
                 v.add(pn);

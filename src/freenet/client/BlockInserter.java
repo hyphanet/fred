@@ -72,19 +72,21 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 			succeeded = true;
 			tracker.success(this);
 		} catch (InserterException e) {
-			switch(e.mode) {
+			int mode = e.getMode();
+			switch(mode) {
 			case InserterException.REJECTED_OVERLOAD:
 			case InserterException.ROUTE_NOT_FOUND:
-				nonfatalError(e, e.mode);
+			case InserterException.ROUTE_REALLY_NOT_FOUND:
+				nonfatalError(e, mode);
 				return;
 			case InserterException.INTERNAL_ERROR:
 			case InserterException.BUCKET_ERROR:
-				fatalError(e, e.mode);
+				fatalError(e, mode);
 				return;
 			case InserterException.FATAL_ERRORS_IN_BLOCKS:
 			case InserterException.TOO_MANY_RETRIES_IN_BLOCKS:
 				// Huh?
-				Logger.error(this, "Got error inserting blocks ("+e.mode+") while inserting a block - WTF?");
+				Logger.error(this, "Got error inserting blocks ("+e.getMessage()+") while inserting a block - WTF?");
 				fatalError(e, InserterException.INTERNAL_ERROR);
 				return;
 			case InserterException.INVALID_URI:
@@ -92,7 +94,7 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 				fatalError(e, InserterException.INTERNAL_ERROR);
 				return;
 			default:
-				Logger.error(this, "Unknown insert error "+e.mode+" while inserting a block");
+				Logger.error(this, "Unknown insert error "+mode+" while inserting a block");
 				fatalError(e, InserterException.INTERNAL_ERROR);
 				return;
 			}

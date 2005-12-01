@@ -567,6 +567,8 @@ public class Node implements QueueingSimpleLowLevelClient {
         			throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
         		case InsertSender.ROUTE_NOT_FOUND:
         			throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
+        		case InsertSender.ROUTE_REALLY_NOT_FOUND:
+        			throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
         		case InsertSender.INTERNAL_ERROR:
         			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
         		default:

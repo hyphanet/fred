@@ -6,7 +6,7 @@ import freenet.support.Logger;
 public class InserterException extends Exception {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
-	public final int mode;
+	private final int mode;
 	/** For collection errors */
 	public FailureCodeTracker errorCodes;
 	/** If a non-serious error, the URI */
@@ -64,6 +64,8 @@ public class InserterException extends Exception {
 	public static final int FATAL_ERRORS_IN_BLOCKS = 6;
 	/** Could not insert a splitfile because a block failed too many times */
 	public static final int TOO_MANY_RETRIES_IN_BLOCKS = 7;
+	/** Not able to leave the node at all */
+	public static final int ROUTE_REALLY_NOT_FOUND = 8;
 	
 	public static String getMessage(int mode) {
 		switch(mode) {
@@ -81,6 +83,8 @@ public class InserterException extends Exception {
 			return "Could not insert splitfile: ran out of retries (nonfatal errors)";
 		case ROUTE_NOT_FOUND:
 			return "Could not propagate the insert to enough nodes (normal on small networks, try fetching it anyway)";
+		case ROUTE_REALLY_NOT_FOUND:
+			return "Insert could not leave the node at all";
 		default:
 			return "Unknown error "+mode;
 		}

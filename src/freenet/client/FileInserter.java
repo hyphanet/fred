@@ -2,7 +2,6 @@ package freenet.client;
 
 import java.io.IOException;
 
-import freenet.client.events.GeneratedURIEvent;
 import freenet.client.events.SimpleBlockPutEvent;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
@@ -152,6 +151,8 @@ public class FileInserter {
 			throw new InserterException(InserterException.REJECTED_OVERLOAD, uri);
 		case LowLevelPutException.ROUTE_NOT_FOUND:
 			throw new InserterException(InserterException.ROUTE_NOT_FOUND, uri);
+		case LowLevelPutException.ROUTE_REALLY_NOT_FOUND:
+			throw new InserterException(InserterException.ROUTE_REALLY_NOT_FOUND, uri);
 		default:
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code+" on "+this);
 			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);

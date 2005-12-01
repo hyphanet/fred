@@ -9,6 +9,8 @@ public class LowLevelPutException extends Exception {
 	/** A downstream node is overloaded, and rejected the insert. We should
 	 * reduce our rate of sending inserts. */
 	public static final int REJECTED_OVERLOAD = 3;
+	/** Insert could not get off the node at all */
+	public static final int ROUTE_REALLY_NOT_FOUND = 4;
 	
 	/** Failure code */
 	public final int code;
@@ -21,6 +23,8 @@ public class LowLevelPutException extends Exception {
 			return "Could not store the data on enough nodes";
 		case REJECTED_OVERLOAD:
 			return "A node downstream either timed out or was overloaded (retry)";
+		case ROUTE_REALLY_NOT_FOUND:
+			return "The insert could not get off the node at all";
 		default:
 			return "Unknown error code: "+reason;
 		}

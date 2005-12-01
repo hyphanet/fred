@@ -86,6 +86,8 @@ public final class InsertSender implements Runnable {
     static final int TIMED_OUT = 4;
     /** Locally Generated a RejectedOverload */
     static final int GENERATED_REJECTED_OVERLOAD = 5;
+    /** Could not get off the node at all! */
+    static final int ROUTE_REALLY_NOT_FOUND = 6;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -212,6 +214,8 @@ public final class InsertSender implements Runnable {
 			}
             
             if(msg == null || msg.getSpec() != DMT.FNPAccepted) continue;
+            
+            Logger.minor(this, "Got Accepted on "+this);
             
             // Send them the data.
             // Which might be the new data resulting from a collision...
@@ -404,6 +408,9 @@ public final class InsertSender implements Runnable {
         		break;
         	}
         }
+        
+        if(code == ROUTE_NOT_FOUND && blockSenders.isEmpty())
+        	code = ROUTE_REALLY_NOT_FOUND;
         
         status = code;
         
