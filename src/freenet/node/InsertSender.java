@@ -168,7 +168,7 @@ public final class InsertSender implements Runnable {
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for Accepted");
-					continue;
+					break;
 				}
 				
 				if (receiveFailed)

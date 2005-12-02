@@ -32,7 +32,7 @@ public class FileInserter {
 	 * @return The URI of the inserted data.
 	 * @throws InserterException 
 	 */
-	public FreenetURI run(InsertBlock block, boolean metadata, boolean getCHKOnly) throws InserterException {
+	public FreenetURI run(InsertBlock block, boolean metadata, boolean getCHKOnly, boolean noRetries) throws InserterException {
 		if(block.data == null)
 			throw new NullPointerException();
 		if(!block.desiredURI.toString(false).equals("CHK@"))
@@ -100,7 +100,7 @@ public class FileInserter {
 				Logger.error(this, "Unexpected error: "+e, e);
 				throw new InserterException(InserterException.INTERNAL_ERROR, null);
 			}
-			return simplePutCHK(chk, block.clientMetadata, getCHKOnly);
+			return simplePutCHK(chk, block.clientMetadata, getCHKOnly, noRetries);
 		}
 		
 		// Too big, encode to a splitfile
@@ -116,14 +116,32 @@ public class FileInserter {
 	 * @return The URI of the resulting CHK.
 	 * @throws InserterException If there was an error inserting the block.
 	 */
-	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata, boolean getCHKOnly) throws InserterException {
+	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata, boolean getCHKOnly, boolean noRetries) throws InserterException {
 		LowLevelPutException le = null;
-		try {
-			ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(chk.getClientKey()));
-			if(!getCHKOnly)
-				ctx.client.putCHK(chk, ctx.starterClient, ctx.cacheLocalRequests);
-		} catch (LowLevelPutException e) {
-			le = e;
+		int rnfs = 0;
+		for(int i=0;i<=ctx.maxInsertRetries;i++) {
+			try {
+				ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(chk.getClientKey()));
+				if(!getCHKOnly)
+					ctx.client.putCHK(chk, ctx.starterClient, ctx.cacheLocalRequests);
+				break;
+			} catch (LowLevelPutException e) {
+				le = e;
+				switch(le.code) {
+				case LowLevelPutException.ROUTE_REALLY_NOT_FOUND:
+				case LowLevelPutException.REJECTED_OVERLOAD:
+					rnfs = 0;
+				}
+				if(noRetries)
+					break;
+				if(le.code == LowLevelPutException.ROUTE_NOT_FOUND && ctx.consecutiveRNFsCountAsSuccess > 0) {
+					rnfs++;
+					if(rnfs >= ctx.consecutiveRNFsCountAsSuccess) {
+						le = null;
+						break;
+					}
+				}
+			}
 		}
 		
 		FreenetURI uri;
@@ -134,7 +152,7 @@ public class FileInserter {
 		else {
 			// Do need a redirect for the metadata
 			Metadata metadata = new Metadata(Metadata.SIMPLE_REDIRECT, chk.getClientKey().getURI(), clientMetadata);
-			uri = putMetadataCHK(metadata, getCHKOnly);
+			uri = putMetadataCHK(metadata, getCHKOnly, noRetries);
 		}
 		
 		if(le != null)
@@ -162,7 +180,7 @@ public class FileInserter {
 	/** Put a metadata CHK 
 	 * @throws InserterException If the insert fails.
 	 */
-	private FreenetURI putMetadataCHK(Metadata metadata, boolean getCHKOnly) throws InserterException {
+	private FreenetURI putMetadataCHK(Metadata metadata, boolean getCHKOnly, boolean noRetries) throws InserterException {
 		byte[] data = metadata.writeToByteArray();
 		Bucket bucket;
 		try {
@@ -171,6 +189,6 @@ public class FileInserter {
 			throw new InserterException(InserterException.BUCKET_ERROR, null);
 		}
 		InsertBlock block = new InsertBlock(bucket, null, FreenetURI.EMPTY_CHK_URI);
-		return run(block, true, getCHKOnly);
+		return run(block, true, getCHKOnly, noRetries);
 	}
 }

@@ -67,10 +67,11 @@ public class BlockReceiver {
 		while (!_prb.allReceived()) {
 			Message m1;
             try {
-            	MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid);
-            	MessageFilter mfAllSent = MessageFilter.create().setType(DMT.allSent).setField(DMT.UID, _uid);
-            	MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid);
+            	MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
+            	MessageFilter mfAllSent = MessageFilter.create().setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
+            	MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
                 m1 = _usm.waitFor(mfPacketTransmit.or(mfAllSent.or(mfSendAborted)));
+                if(!_sender.isConnected()) throw new DisconnectedException();
             } catch (DisconnectedException e1) {
                 Logger.normal(this, "Disconnected during receive: "+_uid+" from "+_sender);
                 throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);

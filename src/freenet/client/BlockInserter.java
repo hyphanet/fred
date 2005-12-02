@@ -16,6 +16,8 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 	private final InsertBlock block;
 	private FreenetURI uri;
 	private final boolean getCHKOnly;
+	/** RNF count. We can count many consecutive RNFs as success. */
+	private int rnfs;
 	
 	/**
 	 * Create a BlockInserter.
@@ -71,16 +73,28 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 		FileInserter inserter = new FileInserter(ctx);
 		try {
 			if(uri == null && !getCHKOnly)
-				uri = inserter.run(block, false, true);
-			uri = inserter.run(block, false, getCHKOnly);
+				uri = inserter.run(block, false, true, true);
+			uri = inserter.run(block, false, getCHKOnly, true);
 			succeeded = true;
 			tracker.success(this);
 		} catch (InserterException e) {
 			int mode = e.getMode();
 			switch(mode) {
-			case InserterException.REJECTED_OVERLOAD:
 			case InserterException.ROUTE_NOT_FOUND:
+				// N consecutive RNFs = success
+				if(ctx.consecutiveRNFsCountAsSuccess > 0) {
+					rnfs++;
+					if(rnfs >= ctx.consecutiveRNFsCountAsSuccess) {
+						succeeded = true;
+						tracker.success(this);
+						return;
+					}
+				}
+				nonfatalError(e, mode);
+				return;
+			case InserterException.REJECTED_OVERLOAD:
 			case InserterException.ROUTE_REALLY_NOT_FOUND:
+				rnfs = 0;
 				nonfatalError(e, mode);
 				return;
 			case InserterException.INTERNAL_ERROR:
@@ -98,6 +112,7 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 				fatalError(e, InserterException.INTERNAL_ERROR);
 				return;
 			default:
+				rnfs = 0;
 				Logger.error(this, "Unknown insert error "+mode+" while inserting a block");
 				fatalError(e, InserterException.INTERNAL_ERROR);
 				return;

@@ -47,7 +47,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	 * Don't turn this off either. */
 	static final boolean LOCAL_REQUESTS_ONLY = false;
 	static final int SPLITFILE_INSERT_THREADS = 20;
-	static final int SPLITFILE_INSERT_RETRIES = 0;
+	/** Number of retries on inserts */
+	static final int INSERT_RETRIES = 10;
+	/** Number of RNFs on insert that make a success, or -1 on large networks */
+	static final int CONSECUTIVE_RNFS_ASSUME_SUCCESS = 2;
 	// going by memory usage only; 4kB per stripe
 	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
 	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
@@ -94,10 +97,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
-		InserterContext context = new InserterContext(client, bucketFactory, random, SPLITFILE_INSERT_RETRIES, 
+		InserterContext context = new InserterContext(client, bucketFactory, random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, insertStarter, cacheLocalRequests);
 		FileInserter i = new FileInserter(context);
-		return i.run(insert, false, getCHKOnly);
+		return i.run(insert, false, getCHKOnly, false);
 	}
 
 	public void addGlobalHook(ClientEventListener listener) {

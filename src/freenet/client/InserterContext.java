@@ -15,8 +15,9 @@ public class InserterContext {
 	final boolean dontCompress;
 	final RandomSource random;
 	final short splitfileAlgorithm;
-	final int maxInsertBlockRetries;
+	final int maxInsertRetries;
 	final int maxSplitInsertThreads;
+	final int consecutiveRNFsCountAsSuccess;
 	final int splitfileSegmentDataBlocks;
 	final int splitfileSegmentCheckBlocks;
 	final ClientEventProducer eventProducer;
@@ -25,14 +26,15 @@ public class InserterContext {
 	final boolean cacheLocalRequests;
 	
 	public InserterContext(SimpleLowLevelClient client, BucketFactory bf, RandomSource random,
-			int maxRetries, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
+			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
 			ClientEventProducer eventProducer, RequestStarterClient sctx, boolean cacheLocalRequests) {
 		this.client = client;
 		this.bf = bf;
 		this.random = random;
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
-		this.maxInsertBlockRetries = maxRetries;
+		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
+		this.maxInsertRetries = maxRetries;
 		this.maxSplitInsertThreads = maxThreads;
 		this.eventProducer = eventProducer;
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;

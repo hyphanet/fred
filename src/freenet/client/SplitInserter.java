@@ -54,7 +54,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		this.dataLength = data.size();
 		segmentSize = ctx.splitfileSegmentDataBlocks;
 		checkSegmentSize = splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT ? 0 : ctx.splitfileSegmentCheckBlocks;
-		tracker = new RetryTracker(ctx.maxInsertBlockRetries, Integer.MAX_VALUE, ctx.random, ctx.maxSplitInsertThreads, true, this, true);
+		tracker = new RetryTracker(ctx.maxInsertRetries, Integer.MAX_VALUE, ctx.random, ctx.maxSplitInsertThreads, true, this, true);
 		try {
 			splitIntoBlocks();
 		} catch (IOException e) {
@@ -137,7 +137,7 @@ public class SplitInserter implements RetryTrackerCallback {
 			// FIXME probably should uncomment below so it doesn't get inserted at all?
 			// FIXME this is a hack for small network support... but we will need that IRL... hmmm
 			try {
-				uri = inserter.run(mblock, true, getCHKOnly/* || (fatalErrors > 0 || failed > 0)*/);
+				uri = inserter.run(mblock, true, getCHKOnly/* || (fatalErrors > 0 || failed > 0)*/, false);
 			} catch (InserterException e) {
 				e.errorCodes = tracker.getAccumulatedNonFatalErrorCodes().merge(tracker.getAccumulatedFatalErrorCodes());
 				throw e;
