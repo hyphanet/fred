@@ -153,7 +153,7 @@ public final class InsertSender implements Runnable {
             sentRequest = true;
             
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
-            Message msg;
+            Message msg = null;
             
             /*
              * Because messages may be re-ordered, it is
