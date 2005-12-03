@@ -39,6 +39,7 @@ public class InsertHandler implements Runnable {
     private byte[] headers;
     private BlockReceiver br;
     private Thread runThread;
+    private boolean sentSuccess;
     
     PartiallyReceivedBlock prb;
     
@@ -168,6 +169,15 @@ public class InsertHandler implements Runnable {
                 continue;
             }
 
+//            // FIXME obviously! For debugging load issues.
+//        	if(node.myName.equalsIgnoreCase("Toad #1") &&
+//        			node.random.nextBoolean()) {
+//        		// Maliciously timeout
+//        		Logger.error(this, "Maliciously timing out: was "+sender.getStatusString());
+//        		sentSuccess = true;
+//        		return;
+//        	}
+        	
             // Local RejectedOverload's (fatal).
             // Internal error counts as overload. It'd only create a timeout otherwise, which is the same thing anyway.
             // We *really* need a good way to deal with nodes that constantly R_O!
@@ -193,6 +203,7 @@ public class InsertHandler implements Runnable {
             
             if(status == InsertSender.SUCCESS) {
             	msg = DMT.createFNPInsertReply(uid);
+            	sentSuccess = true;
             	source.send(msg);
                 canCommit = true;
                 finish();
@@ -242,15 +253,16 @@ public class InsertHandler implements Runnable {
                 // :(
                 Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");
             }
-        } else if(sender.getStatus() == InsertSender.SUCCESS) {
+        } else if(sender != null && sender.getStatus() == InsertSender.SUCCESS && !sentSuccess) {
+        	sentSuccess = true;
             // Succeeded! Yay!
-            Message msg = DMT.createFNPInsertReply(uid);
-            try {
-                source.send(msg);
-            } catch (NotConnectedException e) {
-                // Ugh
-                Logger.normal(this, "Finished InsertHandler but can't tell original node!: "+e);
-            }
+        	Message msg = DMT.createFNPInsertReply(uid);
+        	try {
+        		source.send(msg);
+        	} catch (NotConnectedException e) {
+        		// Ugh
+        		Logger.normal(this, "Finished InsertHandler but can't tell original node!: "+e);
+        	}
         }
     }
     

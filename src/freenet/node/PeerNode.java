@@ -952,6 +952,7 @@ public class PeerNode implements PeerContext {
 	 * Back off this node for a while.
 	 */
 	public void localRejectedOverload() {
+		Logger.minor(this, "Local rejected overload on "+this);
 		synchronized(backoffSync) {
 			long now = System.currentTimeMillis();
 			// Don't back off any further if we are already backed off
@@ -959,7 +960,11 @@ public class PeerNode implements PeerContext {
 				backoffLength = backoffLength * BACKOFF_MULTIPLIER;
 				if(backoffLength > MAX_BACKOFF_LENGTH)
 					backoffLength = MAX_BACKOFF_LENGTH;
-				backedOffUntil = now + node.random.nextInt(backoffLength);
+				int x = node.random.nextInt(backoffLength);
+				backedOffUntil = now + x;
+				Logger.minor(this, "Backing off: backoffLength="+backoffLength+", until "+x+"ms on "+getPeer());
+			} else {
+				Logger.minor(this, "Ignoring localRejectedOverload: "+(backedOffUntil-now)+"ms remaining on backoff on "+getPeer());
 			}
 		}
 	}
@@ -969,10 +974,16 @@ public class PeerNode implements PeerContext {
 	 * Reset backoff.
 	 */
 	public void successNotOverload() {
+		Logger.minor(this, "Success not overload on "+this);
 		synchronized(backoffSync) {
+			long now = System.currentTimeMillis();
 			// Don't un-backoff if still backed off
-			if(System.currentTimeMillis() > backedOffUntil)
+			if(now > backedOffUntil) {
 				backoffLength = INITIAL_BACKOFF_LENGTH;
+				Logger.minor(this, "Resetting backoff on "+getPeer());
+			} else {
+				Logger.minor(this, "Ignoring successNotOverload: "+(backedOffUntil-now)+"ms remaining on backoff on "+getPeer());
+			}
 		}
 	}
 

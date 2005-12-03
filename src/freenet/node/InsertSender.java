@@ -186,8 +186,7 @@ public final class InsertSender implements Runnable {
 					// Non-fatal - probably still have time left
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						next.localRejectedOverload();
-						Logger
-								.minor(this,
+						Logger.minor(this,
 										"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;

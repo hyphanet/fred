@@ -22,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
@@ -852,7 +853,28 @@ public class Node implements QueueingSimpleLowLevelClient {
      * @return Some status information.
      */
     public String getStatus() {
-        return peers.getStatus()+"\nInserts: "+insertSenders.size()+"\nRequests: "+requestSenders.size()+"\nTransferring requests: "+this.transferringRequestSenders.size();
+    	StringBuffer sb = new StringBuffer();
+    	sb.append(peers.getStatus());
+    	sb.append("\nInserts: ");
+    	int x = insertSenders.size();
+    	sb.append(x);
+    	if(x < 5 && x > 0) {
+    		sb.append('\n');
+    		// Dump
+    		Iterator i = insertSenders.values().iterator();
+    		while(i.hasNext()) {
+    			InsertSender s = (InsertSender) i.next();
+    			sb.append(s.uid);
+    			sb.append(": ");
+    			sb.append(s.getStatusString());
+    			sb.append('\n');
+    		}
+    	}
+    	sb.append("\nRequests: ");
+    	sb.append(requestSenders.size());
+    	sb.append("\nTransferring requests: ");
+    	sb.append(this.transferringRequestSenders.size());
+    	return sb.toString();
     }
 
     /**

@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.io.IOException;
 
+import freenet.client.events.BlockInsertErrorEvent;
 import freenet.client.events.SimpleBlockPutEvent;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
@@ -121,7 +122,8 @@ public class FileInserter {
 		int rnfs = 0;
 		for(int i=0;i<=ctx.maxInsertRetries;i++) {
 			try {
-				ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(chk.getClientKey()));
+				if(!getCHKOnly)
+					ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(chk.getClientKey()));
 				if(!getCHKOnly)
 					ctx.client.putCHK(chk, ctx.starterClient, ctx.cacheLocalRequests);
 				break;
