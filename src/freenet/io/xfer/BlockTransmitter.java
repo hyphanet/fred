@@ -207,7 +207,7 @@ public class BlockTransmitter {
 						
 						long earliestSendTime = startCycleTime + delay;
 						
-						if(earliestSendTime > hardLastPacketSendTime) {
+						if(earliestSendTime > newHardLastPacketSendTime) {
 							// Don't clog up other senders!
 							thenSend = false;
 							endTime = earliestSendTime;

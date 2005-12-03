@@ -105,6 +105,8 @@ public class InsertHandler implements Runnable {
         // Now create an InsertSender, or use an existing one, or
         // discover that the data is in the store.
 
+        // From this point onwards, if we return cleanly we must go through finish().
+        
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
             sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, closestLoc, true);
@@ -154,6 +156,7 @@ public class InsertHandler implements Runnable {
                 // Cancel the sender
                 sender.receiveFailed(); // tell it to stop if it hasn't already failed... unless it's sending from store
                 // Nothing else we can do
+                finish();
                 return;
             }
             
@@ -190,6 +193,7 @@ public class InsertHandler implements Runnable {
                 if(status == InsertSender.TIMED_OUT ||
                 		status == InsertSender.GENERATED_REJECTED_OVERLOAD)
                 	canCommit = true;
+                finish();
                 return;
             }
             
@@ -214,6 +218,7 @@ public class InsertHandler implements Runnable {
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
             msg = DMT.createFNPRejectedOverload(uid, true);
             source.send(msg);
+            finish();
             return;
         }
         } catch (Throwable t) {
@@ -225,6 +230,8 @@ public class InsertHandler implements Runnable {
     }
 
     private boolean canCommit = false;
+    private boolean sentCompletion = false;
+    private Object sentCompletionLock = new Object();
     
     /**
      * If canCommit, and we have received all the data, and it
@@ -232,7 +239,36 @@ public class InsertHandler implements Runnable {
      */
     private void finish() {
         Message toSend = null;
+        // Wait for completion
+        boolean sentCompletionWasSet;
+        synchronized(sentCompletionLock) {
+        	sentCompletionWasSet = sentCompletion;
+        	sentCompletion = true;
+        }
+        if(!sentCompletionWasSet) {
+        	while(true) {
+        		synchronized(sender) {
+        			if(sender.completed()) {
+        				break;
+        			}
+        			try {
+        				sender.wait(10*1000);
+        			} catch (InterruptedException e) {
+        				// Loop
+        			}
+        		}
+        	}
+        	Message m = DMT.createFNPInsertTransfersCompleted(uid, sender.anyTransfersFailed());
+        	try {
+        		source.sendAsync(m, null);
+        	} catch (NotConnectedException e1) {
+        		Logger.minor(this, "Not connected: "+source+" for "+this);
+        		// May need to commit anyway...
+        	}
+        }
+        
         synchronized(this) { // REDFLAG do not use synch(this) for any other purpose!
+        	if(prb != null || prb.isAborted()) return;
             try {
                 if(!canCommit) return;
                 if(!prb.allReceived()) return;

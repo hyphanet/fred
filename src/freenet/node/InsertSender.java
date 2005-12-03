@@ -1,8 +1,7 @@
 package freenet.node;
 
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.Vector;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -17,20 +16,94 @@ import freenet.support.Logger;
 
 public final class InsertSender implements Runnable {
 
-    public class Sender implements Runnable {
-
-    	public Sender(BlockTransmitter bt) {
-    		this.bt = bt;
-    	}
-
-    	// We will often have multiple simultaneous senders, so we need them to send separately.
-    	final BlockTransmitter bt;
-    	
-		public void run() {
-			bt.send();
+	private class AwaitingCompletion {
+		
+		/** Node we are waiting for response from */
+		final PeerNode pn;
+		/** We may be sending data to that node */
+		BlockTransmitter bt;
+		/** Have we received notice of the downstream success
+		 * or failure of dependant transfers from that node?
+		 * Includes timing out. */
+		boolean receivedCompletionNotice = false;
+		/** Timed out - didn't receive completion notice in
+		 * the allotted time?? */
+		boolean completionTimedOut = false;
+		/** Was the notification of successful transfer? */
+		boolean completionSucceeded;
+		
+		/** Have we completed the immediate transfer? */
+		boolean completedTransfer = false;
+		/** Did it succeed? */
+		boolean transferSucceeded = false;
+		
+		AwaitingCompletion(PeerNode pn, PartiallyReceivedBlock prb) {
+			this.pn = pn;
+			bt = new BlockTransmitter(node.usm, pn, uid, prb);
+			Sender s = new Sender(this);
+            Thread senderThread = new Thread(s, "Sender for "+uid+" to "+pn.getPeer());
+            senderThread.setDaemon(true);
+            senderThread.start();
+            makeCompletionWaiter();
+		}
+		
+		void completed(boolean timeout, boolean success) {
+			synchronized(this) {
+				if(timeout)
+					completionTimedOut = true;
+				else
+					completionSucceeded = success;
+				receivedCompletionNotice = true;
+				notifyAll();
+			}
+			synchronized(nodesWaitingForCompletion) {
+				nodesWaitingForCompletion.notifyAll();
+			}
+		}
+		
+		void completedTransfer(boolean success) {
+			synchronized(this) {
+				transferSucceeded = success;
+				completedTransfer = true;
+				notifyAll();
+			}
+			synchronized(nodesWaitingForCompletion) {
+				nodesWaitingForCompletion.notifyAll();
+			}
+			if(!success) {
+				synchronized(InsertSender.this) {
+					transferTimedOut = true;
+					InsertSender.this.notifyAll();
+				}
+			}
 		}
 	}
-
+	
+    public class Sender implements Runnable {
+    	
+    	final AwaitingCompletion completion;
+    	final BlockTransmitter bt;
+    	
+    	public Sender(AwaitingCompletion ac) {
+    		this.bt = ac.bt;
+    		this.completion = ac;
+    	}
+    	
+		public void run() {
+			try {
+				bt.send();
+				if(bt.failedDueToOverload()) {
+					completion.completedTransfer(false);
+				} else {
+					completion.completedTransfer(true);
+				}
+			} catch (Throwable t) {
+				completion.completedTransfer(false);
+				Logger.error(this, "Caught "+t, t);
+			}
+		}
+	}
+    
 	InsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore, double closestLocation) {
         this.myKey = myKey;
@@ -44,8 +117,6 @@ public final class InsertSender implements Runnable {
         this.fromStore = fromStore;
         this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
-        senderThreads = new LinkedList();
-        blockSenders = new LinkedList();
         Thread t = new Thread(this, "InsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
         t.start();
@@ -53,7 +124,8 @@ public final class InsertSender implements Runnable {
     
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
-    static final int PUT_TIMEOUT = 120000;
+    static final int SEARCH_TIMEOUT = 60000;
+    static final int TRANSFER_COMPLETION_TIMEOUT = 120000;
 
     // Basics
     final NodeCHK myKey;
@@ -68,10 +140,24 @@ public final class InsertSender implements Runnable {
     private boolean receiveFailed = false;
     final double closestLocation;
     final long startTime;
-    private BlockTransmitter bt;
-    private final LinkedList senderThreads;
-    private final LinkedList blockSenders;
     private boolean sentRequest;
+    
+    /** List of nodes we are waiting for either a transfer completion
+     * notice or a transfer completion from. */
+    private Vector nodesWaitingForCompletion;
+    
+    /** Have all transfers completed and all nodes reported completion status? */
+    private boolean allTransfersCompleted = false;
+    
+    /** Has a transfer timed out, either directly or downstream? */
+    private boolean transferTimedOut = false;
+    
+    /** Runnable which waits for completion of all transfers */
+    private CompletionWaiter cw = null;
+
+    /** Time at which we set status to a value other than NOT_FINISHED */
+    private long setStatusTime = -1;
+    
     
     private int status = -1;
     /** Still running */
@@ -223,7 +309,6 @@ public final class InsertSender implements Runnable {
             PartiallyReceivedBlock prbNow;
             prbNow = prb;
             dataInsert = DMT.createFNPDataInsert(uid, headers);
-            bt = new BlockTransmitter(node.usm, next, uid, prbNow);
             /** What are we waiting for now??:
              * - FNPRouteNotFound - couldn't exhaust HTL, but send us the 
              *   data anyway please
@@ -234,12 +319,12 @@ public final class InsertSender implements Runnable {
              *   inserting.
              */
             
-            MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPInsertReply);
-            mfRejectedOverload.setTimeout(PUT_TIMEOUT);
+            MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPInsertReply);
+            mfRejectedOverload.setTimeout(SEARCH_TIMEOUT);
             mfRejectedOverload.clearOr();
-            MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPRouteNotFound);
-            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPDataInsertRejected);
-            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(PUT_TIMEOUT).setType(DMT.FNPRejectedTimeout);
+            MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
+            MessageFilter mfDataInsertRejected = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPDataInsertRejected);
+            MessageFilter mfTimeout = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPRejectedTimeout);
             
             mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
@@ -249,12 +334,11 @@ public final class InsertSender implements Runnable {
 
             Logger.minor(this, "Sending data");
             if(receiveFailed) return;
-            Sender s = new Sender(bt);
-            Thread senderThread = new Thread(s, "Sender for "+uid+" to "+next.getPeer());
-            senderThread.setDaemon(true);
-            senderThread.start();
-            senderThreads.add(senderThread);
-            blockSenders.add(bt);
+            AwaitingCompletion ac = new AwaitingCompletion(next, prbNow);
+            synchronized(nodesWaitingForCompletion) {
+            	nodesWaitingForCompletion.add(ac);
+            	nodesWaitingForCompletion.notifyAll();
+            }
 
             while (true) {
 
@@ -397,21 +481,30 @@ public final class InsertSender implements Runnable {
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
 
-        for(Iterator i = blockSenders.iterator();i.hasNext();) {
-        	BlockTransmitter bt = (BlockTransmitter) i.next();
-        	Logger.minor(this, "Waiting for "+bt);
-        	bt.waitForComplete();
-        	if(bt.failedDueToOverload() && (status == SUCCESS || status == ROUTE_NOT_FOUND)) {
-        		forwardRejectedOverload();
-        		((PeerNode)bt.getDestination()).localRejectedOverload();
-        		break;
-        	}
-        }
+        setStatusTime = System.currentTimeMillis();
         
-        if(code == ROUTE_NOT_FOUND && blockSenders.isEmpty())
+        if(code == ROUTE_NOT_FOUND && nodesWaitingForCompletion.isEmpty())
         	code = ROUTE_REALLY_NOT_FOUND;
         
         status = code;
+        
+        synchronized(this) {
+            notifyAll();
+        }
+
+        Logger.minor(this, "Set status code: "+getStatusString());
+        
+        // Now wait for transfers, or for downstream transfer notifications.
+        
+        synchronized(this) {
+        	while(!allTransfersCompleted) {
+        		try {
+					wait(10*1000);
+				} catch (InterruptedException e) {
+					// Try again
+				}
+        	}
+        }
         
         synchronized(this) {
             notifyAll();
@@ -458,5 +551,150 @@ public final class InsertSender implements Runnable {
 
 	public boolean sentRequest() {
 		return sentRequest;
+	}
+	
+	private synchronized void makeCompletionWaiter() {
+		if(cw != null) {
+			cw = new CompletionWaiter();
+			Thread t = new Thread(cw, "Completion waiter for "+uid);
+			t.setDaemon(true);
+			t.start();
+		}
+	}
+	
+	private class CompletionWaiter implements Runnable {
+		
+		public void run() {
+outer:		while(true) {			
+			AwaitingCompletion[] waiters;
+			synchronized(nodesWaitingForCompletion) {
+				waiters = new AwaitingCompletion[nodesWaitingForCompletion.size()];
+				waiters = (AwaitingCompletion[]) nodesWaitingForCompletion.toArray(waiters);
+			}
+			
+			// First calculate the timeout
+			
+			int timeout;
+			boolean noTimeLeft = false;
+
+			long now = System.currentTimeMillis();
+			if(status == NOT_FINISHED) {
+				// Wait 5 seconds, then try again
+				timeout = 5000;
+			} else {
+				// Completed, wait for everything
+				timeout = (int)Math.min(Integer.MAX_VALUE, (setStatusTime + TRANSFER_COMPLETION_TIMEOUT) - now);
+			}
+			if(timeout <= 0) {
+				noTimeLeft = true;
+				timeout = 1;
+			}
+			
+			MessageFilter mf = null;
+			for(int i=0;i<waiters.length;i++) {
+				AwaitingCompletion awc = waiters[i];
+				if(!awc.pn.isConnected()) {
+					Logger.normal(this, "Disconnected: "+awc.pn+" in "+InsertSender.this);
+					continue;
+				}
+				if(!awc.receivedCompletionNotice) {
+					MessageFilter m =
+						MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPInsertTransfersCompleted).setSource(awc.pn).setTimeout(timeout);
+					if(mf == null)
+						mf = m;
+					else
+						mf = m.or(mf);
+				}
+			}
+			
+			if(mf == null) {
+				if(status != NOT_FINISHED) {
+					if(noTimeLeft) {
+						// All done!
+						Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for.");
+						synchronized(InsertSender.this) {
+							allTransfersCompleted = true;
+							InsertSender.this.notifyAll();
+						}
+						return;
+					}
+				}
+				synchronized(nodesWaitingForCompletion) {
+					try {
+						nodesWaitingForCompletion.wait(timeout);
+					} catch (InterruptedException e) {
+						// Go back around the loop
+					}
+				}
+			} else {
+				Message m;
+				try {
+					m = node.usm.waitFor(mf);
+				} catch (DisconnectedException e) {
+					// Which one? I have no idea.
+					// Go around the loop again.
+					continue;
+				}
+				if(m != null) {
+					// Process message
+					PeerNode pn = (PeerNode) m.getSource();
+					boolean processed = false;
+					for(int i=0;i<waiters.length;i++) {
+						PeerNode p = waiters[i].pn;
+						if(p == pn) {
+							boolean anyTimedOut = m.getBoolean(DMT.ANY_TIMED_OUT);
+							waiters[i].completed(false, !anyTimedOut);
+							if(anyTimedOut) {
+								synchronized(InsertSender.this) {
+									transferTimedOut = true;
+									InsertSender.this.notifyAll();
+								}
+							}
+							processed = true;
+							if(waiters[i].completedTransfer) {
+								if(!waiters[i].transferSucceeded) {
+									synchronized(InsertSender.this) {
+										transferTimedOut = true;
+										InsertSender.this.notifyAll();
+									}
+								}
+							}
+							break;
+						}
+					}
+					if(!processed) {
+						Logger.error(this, "Did not process message: "+m+" on "+this);
+					}
+				} else {
+					if(nodesWaitingForCompletion.size() > waiters.length) {
+						// Added another one
+						Logger.minor(this, "Looping: waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
+						continue;
+					}
+					if(noTimeLeft) {
+						Logger.minor(this, "Overall timeout on "+InsertSender.this);
+						for(int i=0;i<waiters.length;i++) {
+							if(!waiters[i].receivedCompletionNotice)
+								waiters[i].completed(false, false);
+						}
+						synchronized(InsertSender.this) {
+							transferTimedOut = true;
+							allTransfersCompleted = true;
+							InsertSender.this.notifyAll();
+						}
+						return;
+					}
+				}
+			}
+		}
+		}
+	}
+
+	public boolean completed() {
+		return allTransfersCompleted;
+	}
+
+	public boolean anyTransfersFailed() {
+		return transferTimedOut;
 	}
 }

@@ -523,6 +523,7 @@ public class Node implements QueueingSimpleLowLevelClient {
                     MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
         }
         boolean hasForwardedRejectedOverload = false;
+        // Wait for status
         while(true) {
         	synchronized(is) {
         		if(is.getStatus() == InsertSender.NOT_FINISHED) {
@@ -532,50 +533,72 @@ public class Node implements QueueingSimpleLowLevelClient {
         				// Ignore
         			}
         		}
-        		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
-        			insertThrottle.requestRejectedOverload();
-        		}
-        		if(is.getStatus() == InsertSender.NOT_FINISHED) continue;
+        		if(is.getStatus() != InsertSender.NOT_FINISHED) break;
         	}
-        	// Finished?
-        	if(!hasForwardedRejectedOverload) {
-        		// Is it ours? Did we send a request?
-        		if(is.sentRequest() && is.uid == uid && (is.getStatus() == InsertSender.ROUTE_NOT_FOUND || is.getStatus() == InsertSender.SUCCESS)) {
-        			// It worked!
-        			long endTime = System.currentTimeMillis();
-        			long len = endTime - startTime;
-        			insertThrottle.requestCompleted(len);
-        		}
+    		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
+    			hasForwardedRejectedOverload = true;
+    			insertThrottle.requestRejectedOverload();
+    		}
+        }
+        
+        // Wait for completion
+        while(true) {
+        	synchronized(is) {
+        		if(is.completed()) break;
+        		try {
+					is.wait(10*1000);
+				} catch (InterruptedException e) {
+					// Go around again
+				}
         	}
-        	if(is.getStatus() == InsertSender.SUCCESS) {
-        		Logger.normal(this, "Succeeded inserting "+block);
-        		return;
-        	} else {
-        		int status = is.getStatus();
-        		String msg = "Failed inserting "+block+" : "+is.getStatusString();
-        		if(status == InsertSender.ROUTE_NOT_FOUND)
-        			msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
-        		if(is.getStatus() != InsertSender.ROUTE_NOT_FOUND)
-        			Logger.error(this, msg);
-        		else
-        			Logger.normal(this, msg);
-        		switch(is.getStatus()) {
-        		case InsertSender.NOT_FINISHED:
-        			Logger.error(this, "IS still running in putCHK!: "+is);
-        			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        		case InsertSender.GENERATED_REJECTED_OVERLOAD:
-        		case InsertSender.TIMED_OUT:
-        			throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
-        		case InsertSender.ROUTE_NOT_FOUND:
-        			throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
-        		case InsertSender.ROUTE_REALLY_NOT_FOUND:
-        			throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
-        		case InsertSender.INTERNAL_ERROR:
-        			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        		default:
-        			Logger.error(this, "Unknown InsertSender code in putCHK: "+is.getStatus()+" on "+is);
-    				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        		}
+    		if(is.anyTransfersFailed() && (!hasForwardedRejectedOverload)) {
+    			hasForwardedRejectedOverload = true; // not strictly true but same effect
+    			insertThrottle.requestRejectedOverload();
+    		}        		
+        }
+        
+        Logger.minor(this, "Completed "+uid+" overload="+hasForwardedRejectedOverload+" "+is.getStatusString());
+        
+        // Finished?
+        if(!hasForwardedRejectedOverload) {
+        	// Is it ours? Did we send a request?
+        	if(is.sentRequest() && is.uid == uid && (is.getStatus() == InsertSender.ROUTE_NOT_FOUND 
+        			|| is.getStatus() == InsertSender.SUCCESS)) {
+        		// It worked!
+        		long endTime = System.currentTimeMillis();
+        		long len = endTime - startTime;
+        		insertThrottle.requestCompleted(len);
+        	}
+        }
+        
+        if(is.getStatus() == InsertSender.SUCCESS) {
+        	Logger.normal(this, "Succeeded inserting "+block);
+        	return;
+        } else {
+        	int status = is.getStatus();
+        	String msg = "Failed inserting "+block+" : "+is.getStatusString();
+        	if(status == InsertSender.ROUTE_NOT_FOUND)
+        		msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
+        	if(is.getStatus() != InsertSender.ROUTE_NOT_FOUND)
+        		Logger.error(this, msg);
+        	else
+        		Logger.normal(this, msg);
+        	switch(is.getStatus()) {
+        	case InsertSender.NOT_FINISHED:
+        		Logger.error(this, "IS still running in putCHK!: "+is);
+        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        	case InsertSender.GENERATED_REJECTED_OVERLOAD:
+        	case InsertSender.TIMED_OUT:
+        		throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
+        	case InsertSender.ROUTE_NOT_FOUND:
+        		throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
+        	case InsertSender.ROUTE_REALLY_NOT_FOUND:
+        		throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
+        	case InsertSender.INTERNAL_ERROR:
+        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        	default:
+        		Logger.error(this, "Unknown InsertSender code in putCHK: "+is.getStatus()+" on "+is);
+    			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
         	}
         }
     }

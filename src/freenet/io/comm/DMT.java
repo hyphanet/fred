@@ -79,6 +79,7 @@ public class DMT {
     public static final String DATA_INSERT_REJECTED_REASON = "dataInsertRejectedReason";
     public static final String STREAM_SEQNO = "streamSequenceNumber";
     public static final String IS_LOCAL = "isLocal";
+    public static final String ANY_TIMED_OUT = "anyTimedOut";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -621,6 +622,18 @@ public class DMT {
         return msg;
     }
 
+    public static final MessageType FNPInsertTransfersCompleted = new MessageType("FNPInsertTransfersCompleted") {{
+    	addField(UID, Long.class);
+    	addField(ANY_TIMED_OUT, Boolean.class);
+    }};
+
+    public static final Message createFNPInsertTransfersCompleted(long uid, boolean anyTimedOut) {
+    	Message msg = new Message(FNPInsertTransfersCompleted);
+    	msg.set(UID, uid);
+    	msg.set(ANY_TIMED_OUT, anyTimedOut);
+    	return msg;
+    }
+    
     public static final MessageType FNPRejectedTimeout = new MessageType("FNPTooSlow") {{
         addField(UID, Long.class);
     }};
