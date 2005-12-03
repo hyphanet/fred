@@ -308,10 +308,9 @@ public class PeerManager {
             if(routedTo.contains(p)) continue;
             if(p == pn) continue;
             if(!p.isConnected()) continue;
-            // Don't backoff our only peer
+            if(p.isBackedOff()) continue;
             count++;
             any = p;
-            if(p.isBackedOff()) continue;
             double diff = distance(p, loc);
             Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff);
             if((!ignoreSelf) && diff > maxDiff) continue;
