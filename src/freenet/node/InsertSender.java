@@ -117,6 +117,7 @@ public final class InsertSender implements Runnable {
         this.fromStore = fromStore;
         this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
+        this.nodesWaitingForCompletion = new Vector();
         Thread t = new Thread(this, "InsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
         t.start();
