@@ -249,7 +249,7 @@ public class InsertHandler implements Runnable {
         	sentCompletion = true;
         }
         
-        if(!sentCompletionWasSet) {
+        if((sender != null) && (!sentCompletionWasSet)) {
         	while(true) {
         		synchronized(sender) {
         			if(sender.completed()) {
