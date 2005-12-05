@@ -44,7 +44,6 @@ public final class InsertSender implements Runnable {
             Thread senderThread = new Thread(s, "Sender for "+uid+" to "+pn.getPeer());
             senderThread.setDaemon(true);
             senderThread.start();
-            makeCompletionWaiter();
 		}
 		
 		void completed(boolean timeout, boolean success) {
@@ -340,6 +339,7 @@ public final class InsertSender implements Runnable {
             	nodesWaitingForCompletion.add(ac);
             	nodesWaitingForCompletion.notifyAll();
             }
+            makeCompletionWaiter();
 
             while (true) {
 
@@ -555,7 +555,7 @@ public final class InsertSender implements Runnable {
 	}
 	
 	private synchronized void makeCompletionWaiter() {
-		if(cw != null) {
+		if(cw == null) {
 			cw = new CompletionWaiter();
 			Thread t = new Thread(cw, "Completion waiter for "+uid);
 			t.setDaemon(true);
@@ -566,7 +566,8 @@ public final class InsertSender implements Runnable {
 	private class CompletionWaiter implements Runnable {
 		
 		public void run() {
-outer:		while(true) {			
+			Logger.minor(this, "Starting "+this);
+outer:		while(true) {
 			AwaitingCompletion[] waiters;
 			synchronized(nodesWaitingForCompletion) {
 				waiters = new AwaitingCompletion[nodesWaitingForCompletion.size()];
@@ -688,6 +689,10 @@ outer:		while(true) {
 				}
 			}
 		}
+		}
+		
+		public String toString() {
+			return super.toString()+" for "+uid;
 		}
 	}
 
