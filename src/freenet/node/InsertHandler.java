@@ -121,6 +121,9 @@ public class InsertHandler implements Runnable {
 
         if(htl == 0) {
             canCommit = true;
+        	msg = DMT.createFNPInsertReply(uid);
+        	sentSuccess = true;
+        	source.send(msg);
             finish();
             return;
         }
