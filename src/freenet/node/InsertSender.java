@@ -498,12 +498,17 @@ public final class InsertSender implements Runnable {
         // Now wait for transfers, or for downstream transfer notifications.
         
         synchronized(this) {
-        	while(!allTransfersCompleted) {
-        		try {
-					wait(10*1000);
-				} catch (InterruptedException e) {
-					// Try again
-				}
+        	if(cw != null) {
+        		while(!allTransfersCompleted) {
+        			try {
+        				wait(10*1000);
+        			} catch (InterruptedException e) {
+        				// Try again
+        			}
+        		}
+        	} else {
+        		// There weren't any transfers
+        		allTransfersCompleted = true;
         	}
         }
         
@@ -606,20 +611,23 @@ outer:		while(true) {
 						mf = m;
 					else
 						mf = m.or(mf);
+					Logger.minor(this, "Waiting for "+awc.pn.getPeer());
 				}
 			}
 			
 			if(mf == null) {
 				if(status != NOT_FINISHED) {
-					if(noTimeLeft) {
-						// All done!
-						Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for.");
-						synchronized(InsertSender.this) {
-							allTransfersCompleted = true;
-							InsertSender.this.notifyAll();
-						}
-						return;
+					if(nodesWaitingForCompletion.size() != waiters.length) {
+						// Added another one
+						Logger.minor(this, "Looping (mf==null): waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
 					}
+					// All done!
+					Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for.");
+					synchronized(InsertSender.this) {
+						allTransfersCompleted = true;
+						InsertSender.this.notifyAll();
+					}
+					return;
 				}
 				synchronized(nodesWaitingForCompletion) {
 					try {

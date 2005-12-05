@@ -258,9 +258,11 @@ public class InsertHandler implements Runnable {
         			}
         		}
         	}
-        	Message m = DMT.createFNPInsertTransfersCompleted(uid, sender.anyTransfersFailed());
+        	boolean failed = sender.anyTransfersFailed();
+        	Message m = DMT.createFNPInsertTransfersCompleted(uid, failed);
         	try {
         		source.sendAsync(m, null);
+        		Logger.minor(this, "Sent completion: "+failed+" for "+this);
         	} catch (NotConnectedException e1) {
         		Logger.minor(this, "Not connected: "+source+" for "+this);
         		// May need to commit anyway...
