@@ -306,6 +306,7 @@ public final class RequestSender implements Runnable {
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
+        	Logger.minor(this, "Leaving RequestSender.run() for "+uid);
             node.completed(uid);
             node.removeSender(key, origHTL, this);
         }

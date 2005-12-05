@@ -238,13 +238,17 @@ public class InsertHandler implements Runnable {
      * verifies, then commit it.
      */
     private void finish() {
-        Message toSend = null;
+    	Logger.minor(this, "Finishing");
+        maybeCommit();
+        
+        Logger.minor(this, "Waiting for completion");
         // Wait for completion
         boolean sentCompletionWasSet;
         synchronized(sentCompletionLock) {
         	sentCompletionWasSet = sentCompletion;
         	sentCompletion = true;
         }
+        
         if(!sentCompletionWasSet) {
         	while(true) {
         		synchronized(sender) {
@@ -268,14 +272,19 @@ public class InsertHandler implements Runnable {
         		// May need to commit anyway...
         	}
         }
+    }
+    
+    private void maybeCommit() {
+        Message toSend = null;
         
         synchronized(this) { // REDFLAG do not use synch(this) for any other purpose!
-        	if(prb != null || prb.isAborted()) return;
+        	if(prb == null || prb.isAborted()) return;
             try {
                 if(!canCommit) return;
                 if(!prb.allReceived()) return;
                 CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
                 node.store(block);
+                Logger.minor(this, "Committed");
             } catch (CHKVerifyException e) {
                 Logger.error(this, "Verify failed in InsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
                 toSend = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_VERIFY_FAILED);
@@ -291,20 +300,10 @@ public class InsertHandler implements Runnable {
                 // :(
                 Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");
             }
-        } else if(sender != null && sender.getStatus() == InsertSender.SUCCESS && !sentSuccess) {
-        	sentSuccess = true;
-            // Succeeded! Yay!
-        	Message msg = DMT.createFNPInsertReply(uid);
-        	try {
-        		source.send(msg);
-        	} catch (NotConnectedException e) {
-        		// Ugh
-        		Logger.normal(this, "Finished InsertHandler but can't tell original node!: "+e);
-        	}
         }
-    }
-    
-    /** Has the receive failed? If so, there's not much more that can be done... */
+	}
+
+	/** Has the receive failed? If so, there's not much more that can be done... */
     private boolean receiveFailed;
 
     public class DataReceiver implements Runnable {
@@ -314,7 +313,7 @@ public class InsertHandler implements Runnable {
             try {
                 br.receive();
                 Logger.minor(this, "Received data for "+InsertHandler.this);
-                finish();
+                maybeCommit();
             } catch (RetrievalException e) {
                 receiveFailed = true;
                 runThread.interrupt();
@@ -331,6 +330,10 @@ public class InsertHandler implements Runnable {
             }
         }
 
+        public String toString() {
+        	return super.toString()+" for "+uid;
+        }
+        
     }
 
 }

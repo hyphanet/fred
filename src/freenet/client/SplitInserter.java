@@ -132,7 +132,7 @@ public class SplitInserter implements RetryTrackerCallback {
 			if(inserter == null)
 				inserter = new FileInserter(ctx);
 			
-			InsertBlock mblock = new InsertBlock(mbucket, clientMetadata, FreenetURI.EMPTY_CHK_URI);
+			InsertBlock mblock = new InsertBlock(mbucket, null, FreenetURI.EMPTY_CHK_URI);
 			
 			// FIXME probably should uncomment below so it doesn't get inserted at all?
 			// FIXME this is a hack for small network support... but we will need that IRL... hmmm

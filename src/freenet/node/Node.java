@@ -855,6 +855,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     }
     
     public boolean lockUID(long uid) {
+    	Logger.minor(this, "Locking "+uid);
         Long l = new Long(uid);
         synchronized(runningUIDs) {
             if(runningUIDs.contains(l)) return false;
@@ -864,6 +865,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     }
     
     public void unlockUID(long uid) {
+    	Logger.minor(this, "Unlocking "+uid);
         Long l = new Long(uid);
         completed(uid);
         synchronized(runningUIDs) {

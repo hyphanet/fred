@@ -114,6 +114,8 @@ public class NodeDispatcher implements Dispatcher {
                 Logger.normal(this, "Rejecting insert request: "+e);
             }
             return true;
+        } else {
+        	Logger.minor(this, "Locked "+id);
         }
         //if(!node.lockUID(id)) return false;
         RequestHandler rh = new RequestHandler(m, id, node);
