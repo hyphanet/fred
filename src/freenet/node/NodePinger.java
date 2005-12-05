@@ -51,6 +51,7 @@ public class NodePinger implements Runnable {
 			double avgPingTime = peer.averagePingTime();
 			double avgThrottledPacketSendTime = peer.throttledPacketSendAverage.currentValue();
 			double value = Math.max(avgPingTime, avgThrottledPacketSendTime);
+			Logger.minor(this, "Peer: "+peer.getPeer()+", avgPingTime: "+avgPingTime+", avg throttled send time: "+avgThrottledPacketSendTime);
 			total *= value;
 		}
 		if(peerCount > 0) {

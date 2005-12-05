@@ -105,6 +105,17 @@ public class NodeDispatcher implements Dispatcher {
             }
             return true;
         }
+        if(node.shouldRejectRequest()) {
+        	Logger.normal(this, "Rejecting request preemptively");
+        	Message rejected = DMT.createFNPRejectedOverload(id, true);
+        	try {
+        		((PeerNode)(m.getSource())).sendAsync(rejected, null);
+            } catch (NotConnectedException e) {
+                Logger.normal(this, "Rejecting (overload) data request: "+e);
+        	}
+            node.completed(id);
+            return true;
+        }
         if(!node.lockUID(id)) {
             Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
             Message rejected = DMT.createFNPRejectedLoop(id);
@@ -135,6 +146,17 @@ public class NodeDispatcher implements Dispatcher {
             } catch (NotConnectedException e) {
                 Logger.normal(this, "Rejecting insert request: "+e);
             }
+            return true;
+        }
+        if(node.shouldRejectRequest()) {
+        	Logger.normal(this, "Rejecting insert preemptively");
+        	Message rejected = DMT.createFNPRejectedOverload(id, true);
+        	try {
+        		((PeerNode)(m.getSource())).sendAsync(rejected, null);
+            } catch (NotConnectedException e) {
+                Logger.normal(this, "Rejecting (overload) insert request: "+e);
+        	}
+            node.completed(id);
             return true;
         }
         if(!node.lockUID(id)) {

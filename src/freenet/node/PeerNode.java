@@ -988,7 +988,9 @@ public class PeerNode implements PeerContext {
 	}
 
 	Object pingSync = new Object();
-	final static int MAX_PINGS = 10;
+	// Relatively few as we only get one every 200ms*#nodes
+	// We want to get reasonably early feedback if it's dropping all of them...
+	final static int MAX_PINGS = 5;
 	final LRUHashtable pingsSentTimes = new LRUHashtable();
 	long pingNumber;
 	final RunningAverage pingAverage;

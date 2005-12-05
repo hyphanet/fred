@@ -91,6 +91,8 @@ public class InsertHandler implements Runnable {
                 Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
             Message tooSlow = DMT.createFNPRejectedTimeout(uid);
             source.sendAsync(tooSlow, null);
+        	Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
+        	source.sendAsync(m, null);
             prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
             br = new BlockReceiver(node.usm, source, uid, prb);
             prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
