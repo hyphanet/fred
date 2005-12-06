@@ -423,7 +423,12 @@ public class Node implements QueueingSimpleLowLevelClient {
      */
     ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache) throws LowLevelGetException {
     	long startTime = System.currentTimeMillis();
-        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, random.nextLong(), null, lm.loc.getValue(), localOnly, cache);
+    	long uid = random.nextLong();
+        if(!lockUID(uid)) {
+            Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+            throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        }
+        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache);
         if(o instanceof CHKBlock) {
             try {
                 return new ClientCHKBlock((CHKBlock)o, key);
@@ -508,8 +513,10 @@ public class Node implements QueueingSimpleLowLevelClient {
         PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
         InsertSender is;
         long uid = random.nextLong();
-        if(!lockUID(uid))
+        if(!lockUID(uid)) {
             Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+            throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        }
         long startTime = System.currentTimeMillis();
         synchronized(this) {
         	if(cache) {
