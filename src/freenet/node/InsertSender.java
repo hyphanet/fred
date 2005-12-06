@@ -58,6 +58,12 @@ public final class InsertSender implements Runnable {
 			synchronized(nodesWaitingForCompletion) {
 				nodesWaitingForCompletion.notifyAll();
 			}
+			if(!success) {
+				synchronized(InsertSender.this) {
+					transferTimedOut = true;
+					InsertSender.this.notifyAll();
+				}
+			}
 		}
 		
 		void completedTransfer(boolean success) {
@@ -621,21 +627,38 @@ outer:		while(true) {
 						// Added another one
 						Logger.minor(this, "Looping (mf==null): waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
 					}
-					// All done!
-					Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for.");
-					synchronized(InsertSender.this) {
-						allTransfersCompleted = true;
-						InsertSender.this.notifyAll();
+					if(waitForCompletedTransfers(waiters, timeout, noTimeLeft)) {
+						synchronized(InsertSender.this) {
+							allTransfersCompleted = true;
+							InsertSender.this.notifyAll();
+						}
+						return;
 					}
-					return;
-				}
-				synchronized(nodesWaitingForCompletion) {
-					try {
-						nodesWaitingForCompletion.wait(timeout);
-					} catch (InterruptedException e) {
-						// Go back around the loop
+					if(timeout <= 0) {
+						for(int i=0;i<waiters.length;i++) {
+							if(!waiters[i].completedTransfer) {
+								waiters[i].completedTransfer(false);
+							}
+						}
+						synchronized(InsertSender.this) {
+							allTransfersCompleted = true;
+							InsertSender.this.notifyAll();
+						}
+						return;
+					}
+					// Otherwise, not finished, go back around loop
+					continue;
+				} else {
+					// Still waiting for request completion, so more may be added
+					synchronized(nodesWaitingForCompletion) {
+						try {
+							nodesWaitingForCompletion.wait(timeout);
+						} catch (InterruptedException e) {
+							// Go back around the loop
+						}
 					}
 				}
+				continue;
 			} else {
 				Message m;
 				try {
@@ -656,19 +679,13 @@ outer:		while(true) {
 							waiters[i].completed(false, !anyTimedOut);
 							if(anyTimedOut) {
 								synchronized(InsertSender.this) {
-									transferTimedOut = true;
-									InsertSender.this.notifyAll();
-								}
-							}
-							processed = true;
-							if(waiters[i].completedTransfer) {
-								if(!waiters[i].transferSucceeded) {
-									synchronized(InsertSender.this) {
+									if(!transferTimedOut) {
 										transferTimedOut = true;
 										InsertSender.this.notifyAll();
 									}
 								}
 							}
+							processed = true;
 							break;
 						}
 					}
@@ -686,6 +703,8 @@ outer:		while(true) {
 						for(int i=0;i<waiters.length;i++) {
 							if(!waiters[i].receivedCompletionNotice)
 								waiters[i].completed(false, false);
+							if(!waiters[i].completedTransfer)
+								waiters[i].completedTransfer(false);
 						}
 						synchronized(InsertSender.this) {
 							transferTimedOut = true;
@@ -698,7 +717,47 @@ outer:		while(true) {
 			}
 		}
 		}
-		
+
+		/** @return True if all transfers have completed, false otherwise. */
+		private boolean waitForCompletedTransfers(AwaitingCompletion[] waiters, int timeout, boolean noTimeLeft) {
+			// MAYBE all done
+			boolean completedTransfers = true;
+			synchronized(nodesWaitingForCompletion) {
+				for(int i=0;i<waiters.length;i++) {
+					if(!waiters[i].completedTransfer) {
+						completedTransfers = false;
+						break;
+					}
+				}
+				if(!completedTransfers) {
+					try {
+						if(!noTimeLeft) {
+							nodesWaitingForCompletion.wait(timeout);
+						} else {
+							// Timed out
+						}
+						for(int i=0;i<waiters.length;i++) {
+							if(!waiters[i].completedTransfer) {
+								completedTransfers = false;
+								break;
+							}
+						}
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+			}
+			if(completedTransfers) {
+				// All done!
+				Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for.");
+				synchronized(InsertSender.this) {
+					allTransfersCompleted = true;
+					InsertSender.this.notifyAll();
+				}
+				return true;
+			} else return false;
+		}
+
 		public String toString() {
 			return super.toString()+" for "+uid;
 		}
