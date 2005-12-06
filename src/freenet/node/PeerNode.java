@@ -30,6 +30,7 @@ import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.WouldBlockException;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 
@@ -800,7 +801,7 @@ public class PeerNode implements PeerContext {
      * Send a payload-less packet on either key if necessary.
      * @throws PacketSequenceException 
      */
-    public void sendAnyUrgentNotifications() throws PacketSequenceException {
+    public void sendAnyUrgentNotifications() {
         Logger.minor(this, "sendAnyUrgentNotifications");
         long now = System.currentTimeMillis();
         KeyTracker cur, prev;
@@ -818,7 +819,12 @@ public class PeerNode implements PeerContext {
                     // Ignore
                 } catch (KeyChangedException e) {
                     // Ignore
-                }
+                } catch (PacketSequenceException e) {
+                	Logger.error(this, "Impossible: "+e, e);
+				} catch (WouldBlockException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
             }
         }
         tracker = prev;
@@ -831,7 +837,11 @@ public class PeerNode implements PeerContext {
                     // Ignore
                 } catch (KeyChangedException e) {
                     // Ignore
-                }
+				} catch (WouldBlockException e) {
+					Logger.error(this, "Impossible: "+e, e);
+				} catch (PacketSequenceException e) {
+					Logger.error(this, "Impossible: "+e, e);
+				}
             }
         }
     }
@@ -1047,5 +1057,6 @@ public class PeerNode implements PeerContext {
 
 	public void reportThrottledPacketSendTime(long timeDiff) {
 		throttledPacketSendAverage.report(timeDiff);
+		Logger.minor(this, "Reporting throttled packet send time: "+timeDiff+" to "+getPeer());
 	}
 }

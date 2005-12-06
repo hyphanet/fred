@@ -938,8 +938,9 @@ public class FNPPacketMangler implements LowLevelFilter {
      * Build a packet and send it. From a Message recently converted into byte[],
      * but with no outer formatting.
      * @throws PacketSequenceException 
+     * @throws WouldBlockException 
      */
-    public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException, PacketSequenceException {
+    public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException, PacketSequenceException, WouldBlockException {
     	Logger.minor(this, "processOutgoing(buf, "+offset+", "+length+", "+peer.getPeer());
         if(!(peer instanceof PeerNode))
             throw new IllegalArgumentException();
@@ -953,8 +954,9 @@ public class FNPPacketMangler implements LowLevelFilter {
      * Build a packet and send it. From a Message recently converted into byte[],
      * but with no outer formatting.
      * @throws PacketSequenceException 
+     * @throws WouldBlockException 
      */
-    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker) throws KeyChangedException, NotConnectedException, PacketSequenceException {
+    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
         byte[] newBuf = preformat(buf, offset, length);
         processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1, null);
     }
@@ -963,8 +965,9 @@ public class FNPPacketMangler implements LowLevelFilter {
     /**
      * Send a packet, with a packet number.
      * @throws PacketSequenceException 
+     * @throws WouldBlockException If allocating a packet number would have blocked.
      */
-    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker, int packetNo, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException, PacketSequenceException {
+    public void processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker, int packetNo, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
         byte[] newBuf = preformat(buf, offset, length);
         processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, packetNo, callbacks);
     }
@@ -973,8 +976,9 @@ public class FNPPacketMangler implements LowLevelFilter {
      * Send a packet using the current key. Retry if it fails solely because
      * the key changes.
      * @throws PacketSequenceException 
+     * @throws WouldBlockException 
      */
-    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, int k, AsyncMessageCallback[] callbacks) throws NotConnectedException, PacketSequenceException {
+    void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, int k, AsyncMessageCallback[] callbacks) throws NotConnectedException, PacketSequenceException, WouldBlockException {
         while(true) {
             try {
             	Logger.minor(this, "At beginning of processOutgoingPreformatted loop for "+peer.getPeer());
@@ -1049,8 +1053,9 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws NotConnectedException If the node is not connected.
      * @throws KeyChangedException If the primary key changes while we are trying to send this packet.
      * @throws PacketSequenceException 
+     * @throws WouldBlockException If we cannot allocate a packet number because it would block.
      */
-    public synchronized void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException, PacketSequenceException {
+    public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
         if(Logger.shouldLog(Logger.MINOR, this)) {
             String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+","+length+","+tracker+","+packetNumber+",";
             if(callbacks == null) log += "null";
@@ -1084,7 +1089,7 @@ public class FNPPacketMangler implements LowLevelFilter {
        			// Ack/resendreq only packet
        			seqNumber = -1;
        		else
-       			seqNumber = tracker.allocateOutgoingPacketNumber();
+       			seqNumber = tracker.allocateOutgoingPacketNumberNeverBlock();
        	}
         
        	Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());

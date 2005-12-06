@@ -97,10 +97,16 @@ public class Node implements QueueingSimpleLowLevelClient {
     public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*2; // 20-30 secs
     // If we don't receive any packets at all in this period, from any node, tell the user
     public static final long ALARM_TIME = 60*1000;
+    /** Sub-max ping time. If ping is greater than this, we reject some requests. */
+    public static final long SUB_MAX_PING_TIME = 1000;
     /** Maximum overall average ping time. If ping is greater than this,
      * we reject all requests.
      */
-    public static final long MAX_PING_TIME = 1000;
+    public static final long MAX_PING_TIME = 2000;
+    /** Accept one request every 10 seconds regardless, to ensure we update the
+     * block send time.
+     */
+    public static final int MAX_INTERREQUEST_TIME = 10*1000;
 
     // 900ms
     static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
@@ -120,9 +126,6 @@ public class Node implements QueueingSimpleLowLevelClient {
     private final HashMap insertSenders;
     /** IP address detector */
     private final IPAddressDetector ipDetector;
-    
-    /** Locally published stream contexts */
-    private final Hashtable localStreamContexts;
     
     private final HashSet runningUIDs;
     
@@ -375,7 +378,6 @@ public class Node implements QueueingSimpleLowLevelClient {
         decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
         decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
         bootID = random.nextLong();
-        localStreamContexts = new Hashtable();
         peers.writePeers();
         try {
         	String dirName = "temp-"+portNumber;
@@ -610,8 +612,25 @@ public class Node implements QueueingSimpleLowLevelClient {
         }
     }
 
-    public boolean shouldRejectRequest() {
-    	return nodePinger.averagePingTime() > MAX_PING_TIME;
+    long lastAcceptedRequest = -1;
+    
+    public synchronized boolean shouldRejectRequest() {
+    	long now = System.currentTimeMillis();
+    	double pingTime = nodePinger.averagePingTime();
+    	if(pingTime > MAX_PING_TIME) {
+    		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) {
+    			lastAcceptedRequest = now;
+    			return false;
+    		}
+    		return true;
+    	}
+    	if(pingTime > SUB_MAX_PING_TIME) {
+    		double x = (pingTime - SUB_MAX_PING_TIME) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
+    		if(random.nextDouble() < x)
+    			return true;
+    	}
+    	lastAcceptedRequest = now;
+    	return false;
     }
     
     /**

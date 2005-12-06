@@ -6,4 +6,8 @@ public class LowLevelFilterException extends Exception {
 		super(string);
 	}
 
+	public LowLevelFilterException() {
+		super();
+	}
+
 }
