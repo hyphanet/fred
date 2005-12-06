@@ -799,9 +799,10 @@ public class PeerNode implements PeerContext {
 
     /**
      * Send a payload-less packet on either key if necessary.
-     * @throws PacketSequenceException 
+     * @throws PacketSequenceException If there is an error sending the packet
+     * caused by a sequence inconsistency. 
      */
-    public void sendAnyUrgentNotifications() {
+    public void sendAnyUrgentNotifications() throws PacketSequenceException {
         Logger.minor(this, "sendAnyUrgentNotifications");
         long now = System.currentTimeMillis();
         KeyTracker cur, prev;
@@ -819,8 +820,6 @@ public class PeerNode implements PeerContext {
                     // Ignore
                 } catch (KeyChangedException e) {
                     // Ignore
-                } catch (PacketSequenceException e) {
-                	Logger.error(this, "Impossible: "+e, e);
 				} catch (WouldBlockException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -838,8 +837,6 @@ public class PeerNode implements PeerContext {
                 } catch (KeyChangedException e) {
                     // Ignore
 				} catch (WouldBlockException e) {
-					Logger.error(this, "Impossible: "+e, e);
-				} catch (PacketSequenceException e) {
 					Logger.error(this, "Impossible: "+e, e);
 				}
             }

@@ -64,7 +64,12 @@ public class PacketSender implements Runnable {
                 long urgentTime = pn.getNextUrgentTime();
                 if(urgentTime <= now) {
                     // Send them
-                    pn.sendAnyUrgentNotifications();
+                    try {
+						pn.sendAnyUrgentNotifications();
+					} catch (PacketSequenceException e) {
+                    	Logger.error(this, "Caught "+e+" - disconnecting", e);
+                    	pn.forceDisconnect();
+					}
                 } else {
                     nextActionTime = Math.min(nextActionTime, urgentTime);
                 }
