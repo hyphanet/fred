@@ -484,7 +484,7 @@ public final class InsertSender implements Runnable {
 
         setStatusTime = System.currentTimeMillis();
         
-        if(code == ROUTE_NOT_FOUND && nodesWaitingForCompletion.isEmpty())
+        if(code == ROUTE_NOT_FOUND && !sentRequest)
         	code = ROUTE_REALLY_NOT_FOUND;
         
         status = code;

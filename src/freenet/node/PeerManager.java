@@ -305,10 +305,22 @@ public class PeerManager {
         int count = 0;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
-            if(routedTo.contains(p)) continue;
-            if(p == pn) continue;
-            if(!p.isConnected()) continue;
-            if(p.isBackedOff()) continue;
+            if(routedTo.contains(p)) {
+            	Logger.minor(this, "Skipping (already routed to): "+p.getPeer());
+            	continue;
+            }
+            if(p == pn) {
+            	Logger.minor(this, "Skipping (req came from): "+p.getPeer());
+            	continue;
+            }
+            if(!p.isConnected()) {
+            	Logger.minor(this, "Skipping (not connected): "+p.getPeer());
+            	continue;
+            }
+            if(p.isBackedOff()) {
+            	Logger.minor(this, "Skipping (backed off): "+p.getPeer());
+            	continue;
+            }
             count++;
             any = p;
             double diff = distance(p, loc);
