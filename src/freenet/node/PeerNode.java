@@ -198,10 +198,11 @@ public class PeerNode implements PeerContext {
         if(name == null) throw new FSParseException("No name");
         myName = name;
         String testnet = fs.get("testnet");
-        testnetEnabled = Boolean.getBoolean(testnet);
+        testnetEnabled = Boolean.parseBoolean(testnet);
         if(testnetEnabled != node.testnetEnabled) {
-        	Logger.error(this, "Ignoring incompatible node "+peer+" - peer.testnet="+testnetEnabled+" but node.testnet="+node.testnetEnabled);
-        	throw new PeerParseException("Ignoring incompatible node "+peer+" - peer.testnet="+testnetEnabled+" but node.testnet="+node.testnetEnabled);
+        	String err = "Ignoring incompatible node "+peer+" - peer.testnet="+testnetEnabled+"("+testnet+") but node.testnet="+node.testnetEnabled;
+        	Logger.error(this, err);
+        	throw new PeerParseException(err);
         }
         
         // Setup incoming and outgoing setup ciphers
