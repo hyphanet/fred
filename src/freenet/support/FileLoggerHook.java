@@ -2,6 +2,7 @@ package freenet.support;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -337,6 +338,7 @@ public class FileLoggerHook extends LoggerHook {
 							+ runningCompressors
 							+ ") running!");
 					runningCompressors--;
+					new File(filename).delete();
 					return;
 				}
 			}
@@ -344,7 +346,7 @@ public class FileLoggerHook extends LoggerHook {
 				System.err.println("Starting gzip " + filename);
 				Process r =
 					Runtime.getRuntime().exec(
-						new String[] { "gzip", filename });
+						new String[] { "nice", "gzip", filename });
 				System.err.println("Started gzip " + filename);
 				InputStream is = r.getInputStream();
 				InputStream es = r.getErrorStream();
@@ -359,7 +361,9 @@ public class FileLoggerHook extends LoggerHook {
 					} catch (IOException e) {
 					}
 					try {
-						r.exitValue();
+						if(r.exitValue() != 0) {
+							new File(filename).delete();
+						}
 						break;
 					} catch (IllegalThreadStateException e) {
 					}

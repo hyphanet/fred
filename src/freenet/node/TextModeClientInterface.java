@@ -245,7 +245,11 @@ public class TextModeClientInterface implements Runnable {
             System.out.println("URI: "+uri);
         } else if(uline.startsWith("PUTFILE:") || (getCHKOnly = uline.startsWith("GETCHKFILE:"))) {
             // Just insert to local store
-            line = line.substring("PUTFILE:".length());
+        	if(getCHKOnly) {
+        		line = line.substring(("GETCHKFILE:").length());
+        	} else {
+        		line = line.substring("PUTFILE:".length());
+        	}
             while(line.length() > 0 && line.charAt(0) == ' ')
                 line = line.substring(1);
             while(line.length() > 0 && line.charAt(line.length()-1) == ' ')
