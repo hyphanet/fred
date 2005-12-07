@@ -38,7 +38,8 @@ public class FileLoggerHook extends LoggerHook {
 
 	private volatile boolean closed = false;
 
-	protected int INTERVAL = GregorianCalendar.HOUR;
+	protected int INTERVAL = GregorianCalendar.MINUTE;
+	protected int INTERVAL_MULTIPLIER = 5;
 
 	/** Name of the local host (called uname in Unix-like operating systems). */
 	private static String uname;
@@ -102,6 +103,22 @@ public class FileLoggerHook extends LoggerHook {
 	}
 
 	public void setInterval(String intervalName) {
+		StringBuffer sb = new StringBuffer(intervalName.length());
+		for(int i=0;i<intervalName.length();i++) {
+			char c = intervalName.charAt(i);
+			if(!Character.isDigit(c)) break;
+			sb.append(c);
+		}
+		if(sb.length() > 0) {
+			String prefix = sb.toString();
+			intervalName = intervalName.substring(prefix.length());
+			INTERVAL_MULTIPLIER = Integer.parseInt(prefix);
+		} else {
+			INTERVAL_MULTIPLIER = 1;
+		}
+		if (intervalName.endsWith("S")) {
+			intervalName = intervalName.substring(0, intervalName.length()-1);
+		}
 		if (intervalName.equalsIgnoreCase("MINUTE"))
 			INTERVAL = Calendar.MINUTE;
 		else if (intervalName.equalsIgnoreCase("HOUR"))
@@ -157,8 +174,6 @@ public class FileLoggerHook extends LoggerHook {
 			String filename = null;
 			if (baseFilename != null) {
 				gc = new GregorianCalendar();
-				filename = getHourLogName(gc);
-				uout = openNewLogFile(filename);
 				switch (INTERVAL) {
 					case Calendar.YEAR :
 						gc.set(Calendar.MONTH, 0);
@@ -175,7 +190,13 @@ public class FileLoggerHook extends LoggerHook {
 						gc.set(Calendar.SECOND, 0);
 						gc.set(Calendar.MILLISECOND, 0);
 				}
-				gc.add(INTERVAL, 1);
+				if(INTERVAL_MULTIPLIER > 1) {
+					int x = gc.get(INTERVAL);
+					gc.set(INTERVAL, (x / INTERVAL_MULTIPLIER) * INTERVAL_MULTIPLIER);
+				}
+				filename = getHourLogName(gc);
+				uout = openNewLogFile(filename);
+				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 				nextHour = gc.getTimeInMillis();
 				lout = new PrintStream(uout);
 			}
@@ -211,16 +232,16 @@ public class FileLoggerHook extends LoggerHook {
 								System.err.println(
 									"Closing on change caught " + e);
 							}
-							System.err.println("Almost rotated");
+							//System.err.println("Almost rotated");
 							if (useNativeGzip) {
 								CompressorThread ct =
 									new CompressorThread(oldFilename);
 								ct.start();
 								// Don't care about result
 							} // FIXME: implement a portable default compressor
-							gc.add(INTERVAL, 1);
+							gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 							nextHour = gc.getTimeInMillis();
-							System.err.println("Rotated");
+							//System.err.println("Rotated");
 						}
 					}
 					if(list.size() == 0) {
@@ -343,11 +364,11 @@ public class FileLoggerHook extends LoggerHook {
 				}
 			}
 			try {
-				System.err.println("Starting gzip " + filename);
+				//System.err.println("Starting gzip " + filename);
 				Process r =
 					Runtime.getRuntime().exec(
 						new String[] { "nice", "gzip", filename });
-				System.err.println("Started gzip " + filename);
+				//System.err.println("Started gzip " + filename);
 				InputStream is = r.getInputStream();
 				InputStream es = r.getErrorStream();
 				while (true) {
@@ -368,7 +389,7 @@ public class FileLoggerHook extends LoggerHook {
 					} catch (IllegalThreadStateException e) {
 					}
 				}
-				System.err.println("Finished gzip " + filename);
+				//System.err.println("Finished gzip " + filename);
 				is.close();
 				es.close();
 			} catch (IOException e) {
