@@ -159,6 +159,7 @@ public class FileLoggerHook extends LoggerHook {
 		StringBuffer buf = new StringBuffer(50);
 		buf.append(baseFilename).append('-');
 		buf.append(Version.buildNumber);
+		buf.append('-');
 		buf.append(c.get(Calendar.YEAR)).append('-');
 		pad2digits(buf, c.get(Calendar.MONTH) + 1);
 		buf.append('-');
