@@ -626,6 +626,7 @@ outer:		while(true) {
 					if(nodesWaitingForCompletion.size() != waiters.length) {
 						// Added another one
 						Logger.minor(this, "Looping (mf==null): waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
+						continue;
 					}
 					if(waitForCompletedTransfers(waiters, timeout, noTimeLeft)) {
 						synchronized(InsertSender.this) {
@@ -634,8 +635,9 @@ outer:		while(true) {
 						}
 						return;
 					}
-					if(timeout <= 0) {
+					if(noTimeLeft) {
 						for(int i=0;i<waiters.length;i++) {
+							if(!waiters[i].pn.isConnected()) continue;
 							if(!waiters[i].completedTransfer) {
 								waiters[i].completedTransfer(false);
 							}
@@ -701,6 +703,7 @@ outer:		while(true) {
 					if(noTimeLeft) {
 						Logger.minor(this, "Overall timeout on "+InsertSender.this);
 						for(int i=0;i<waiters.length;i++) {
+							if(!waiters[i].pn.isConnected()) continue;
 							if(!waiters[i].receivedCompletionNotice)
 								waiters[i].completed(false, false);
 							if(!waiters[i].completedTransfer)
@@ -724,6 +727,7 @@ outer:		while(true) {
 			boolean completedTransfers = true;
 			synchronized(nodesWaitingForCompletion) {
 				for(int i=0;i<waiters.length;i++) {
+					if(!waiters[i].pn.isConnected()) continue;
 					if(!waiters[i].completedTransfer) {
 						completedTransfers = false;
 						break;
@@ -737,6 +741,7 @@ outer:		while(true) {
 							// Timed out
 						}
 						for(int i=0;i<waiters.length;i++) {
+							if(!waiters[i].pn.isConnected()) continue;
 							if(!waiters[i].completedTransfer) {
 								completedTransfers = false;
 								break;
