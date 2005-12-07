@@ -198,7 +198,7 @@ public class PeerNode implements PeerContext {
         if(name == null) throw new FSParseException("No name");
         myName = name;
         String testnet = fs.get("testnet");
-        testnetEnabled = Boolean.parseBoolean(testnet);
+        testnetEnabled = testnet.equalsIgnoreCase("true") || testnet.equalsIgnoreCase("yes");
         if(testnetEnabled != node.testnetEnabled) {
         	String err = "Ignoring incompatible node "+peer+" - peer.testnet="+testnetEnabled+"("+testnet+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
