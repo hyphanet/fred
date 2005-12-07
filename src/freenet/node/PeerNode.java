@@ -878,6 +878,7 @@ public class PeerNode implements PeerContext {
         fs.put("physical.udp", peer.toString());
         fs.put("identity", HexUtil.bytesToHex(identity));
         fs.put("location", Double.toString(currentLocation.getValue()));
+        fs.put("testnet", Boolean.toString(testnetEnabled));
         fs.put("version", version);
         fs.put("myName", myName);
         return fs;
