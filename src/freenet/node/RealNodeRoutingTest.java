@@ -5,6 +5,7 @@ import java.io.File;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
+import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
@@ -25,7 +26,7 @@ public class RealNodeRoutingTest {
     public static void main(String[] args) throws FSParseException, PeerParseException {
         PeerNode.disableProbabilisticHTLs = true;
         Node.MAX_HTL = 6;
-        Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
+        FileLoggerHook fh = Logger.setupStdoutLogging(Logger.NORMAL, "freenet.node.CPUAdjustingSwapRequestInterval:minor" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
         System.out.println("Routing test using real nodes:");
         System.out.println();
         String wd = "realNodeRequestInsertTest";
@@ -35,7 +36,7 @@ public class RealNodeRoutingTest {
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] = new Node(5000+i, random, null, wd+File.separator, 0);
+            nodes[i] = new Node(5000+i, random, null, wd+File.separator, 0, false, fh);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];

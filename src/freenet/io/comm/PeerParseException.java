@@ -14,4 +14,8 @@ public class PeerParseException extends Exception {
         super();
     }
 
+	public PeerParseException(String string) {
+		super(string);
+	}
+
 }

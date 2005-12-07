@@ -28,7 +28,7 @@ public abstract class Logger {
 	 */
 	static Logger logger = new VoidLogger();
 	
-	public static void setupStdoutLogging(int level, String detail) {
+	public static FileLoggerHook setupStdoutLogging(int level, String detail) {
 	    setupChain();
 	    logger.setThreshold(level);
 	    logger.setDetailedThresholds(detail);
@@ -38,6 +38,7 @@ public abstract class Logger {
 	        fh.setDetailedThresholds(detail);
 	    ((LoggerHookChain) logger).addHook(fh);
 	    fh.start();
+	    return fh;
 	}
 
     public static void setupChain() {

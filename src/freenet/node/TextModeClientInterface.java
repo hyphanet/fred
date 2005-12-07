@@ -102,7 +102,10 @@ public class TextModeClientInterface implements Runnable {
 //        System.out.println("SAY:<text> - send text to the last created/pushed stream");
         System.out.println("STATUS - display some status information on the node including its reference and connections.");
         System.out.println("QUIT - exit the program");
-	}
+        if(n.testnetEnabled) {
+        	System.out.println("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.");
+        }
+    }
 
 	/**
      * Process a single command.

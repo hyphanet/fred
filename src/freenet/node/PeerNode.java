@@ -54,6 +54,9 @@ public class PeerNode implements PeerContext {
     /** My low-level address for SocketManager purposes */
     private Peer peer;
     
+    /** Is this a testnet node? */
+    public final boolean testnetEnabled;
+    
     /** Name of this node */
     String myName;
     
@@ -194,6 +197,12 @@ public class PeerNode implements PeerContext {
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         myName = name;
+        String testnet = fs.get("testnet");
+        testnetEnabled = Boolean.getBoolean(testnet);
+        if(testnetEnabled != node.testnetEnabled) {
+        	Logger.error(this, "Ignoring incompatible node "+peer+" - peer.testnet="+testnetEnabled+" but node.testnet="+node.testnetEnabled);
+        	throw new PeerParseException("Ignoring incompatible node "+peer+" - peer.testnet="+testnetEnabled+" but node.testnet="+node.testnetEnabled);
+        }
         
         // Setup incoming and outgoing setup ciphers
         byte[] nodeKey = node.identityHash;

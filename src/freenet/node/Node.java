@@ -145,6 +145,9 @@ public class Node implements QueueingSimpleLowLevelClient {
     final NodePinger nodePinger;
     final String filenamesPrefix;
     final FilenameGenerator tempFilenameGenerator;
+    final FileLoggerHook fileLoggerHook;
+    final boolean testnetEnabled;
+    final int testnetPort;
     static short MAX_HTL = 10;
     static final int EXIT_STORE_FILE_NOT_FOUND = 1;
     static final int EXIT_STORE_IOEXCEPTION = 2;
@@ -152,6 +155,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     static final int EXIT_USM_DIED = 4;
     public static final int EXIT_YARROW_INIT_FAILED = 5;
     static final int EXIT_TEMP_INIT_ERROR = 6;
+    static final int EXIT_TESTNET_FAILED = 7;
     
     public final long bootID;
     public final long startupTime;
@@ -164,6 +168,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     final RequestThrottle insertThrottle;
     final RequestStarter insertStarter;
     final File downloadDir;
+    final TestnetHandler testnetHandler;
     
     // Client stuff that needs to be configged - FIXME
     static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -281,7 +286,9 @@ public class Node implements QueueingSimpleLowLevelClient {
         System.out.println("Port number: "+port);
         File logDir = new File("logs-"+port);
         logDir.mkdir();
-        FileLoggerHook logger = new FileLoggerHook(true, new File(logDir, "freenet-"+port).getAbsolutePath(), "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true);
+        FileLoggerHook logger = new FileLoggerHook(true, new File(logDir, "freenet-"+port).getAbsolutePath(), 
+        		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true, 
+        		1024*1024*1024 /* 1GB of old compressed logfiles */);
         logger.setInterval("5MINUTES");
         Logger.setupChain();
         Logger.globalSetThreshold(Logger.MINOR);
@@ -299,7 +306,7 @@ public class Node implements QueueingSimpleLowLevelClient {
             }
         }
         DiffieHellman.init(yarrow);
-        Node n = new Node(port, yarrow, overrideIP, "", 1000 / packetsPerSecond);
+        Node n = new Node(port, yarrow, overrideIP, "", 1000 / packetsPerSecond, true, logger);
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
         Thread t = new Thread(new MemoryChecker(), "Memory checker");
@@ -309,7 +316,18 @@ public class Node implements QueueingSimpleLowLevelClient {
     
     // FIXME - the whole overrideIP thing is a hack to avoid config
     // Implement the config!
-    Node(int port, RandomSource rand, InetAddress overrideIP, String prefix, int throttleInterval) {
+    Node(int port, RandomSource rand, InetAddress overrideIP, String prefix, int throttleInterval, boolean enableTestnet, FileLoggerHook logger) {
+    	this.fileLoggerHook = logger;
+    	if(enableTestnet) {
+    		Logger.error(this, "WARNING: ENABLING TESTNET CODE! This may seriously jeopardize your anonymity!");
+    		testnetEnabled = true;
+    		testnetPort = 1024 + (port-1024+1000) % (65536 - 1024);
+    		testnetHandler = new TestnetHandler(this, testnetPort);
+    	} else {
+    		testnetEnabled = false;
+    		testnetPort = -1;
+    		testnetHandler = null;
+    	}
         portNumber = port;
         startupTime = System.currentTimeMillis();
         recentlyCompletedIDs = new LRUQueue();
@@ -318,6 +336,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         filenamesPrefix = prefix;
         this.overrideIPAddress = overrideIP;
         downloadDir = new File("downloads");
+        downloadDir.mkdir();
         try {
             datastore = new BaseFreenetStore(prefix+"freenet-"+portNumber,16384); // 512MB
         } catch (FileNotFoundException e1) {
@@ -647,6 +666,9 @@ public class Node implements QueueingSimpleLowLevelClient {
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());
+        fs.put("testnet", Boolean.toString(testnetEnabled));
+        if(testnetEnabled)
+        	fs.put("testnetPort", Integer.toString(testnetPort));
         fs.put("myName", myName);
         Logger.minor(this, "My reference: "+fs);
         return fs;

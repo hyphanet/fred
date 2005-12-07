@@ -4,6 +4,7 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.Yarrow;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
+import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -20,12 +21,12 @@ import freenet.support.SimpleFieldSet;
 public class RealNodePingTest {
 
     public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException {
-        Logger.setupStdoutLogging(Logger.MINOR, "");
+        FileLoggerHook fh = Logger.setupStdoutLogging(Logger.MINOR, "");
         Yarrow yarrow = new Yarrow();
         DiffieHellman.init(yarrow);
         // Create 2 nodes
-        Node node1 = new Node(5001, yarrow, null, "pingtest-", 0);
-        Node node2 = new Node(5002, yarrow, null, "pingtest-", 0);
+        Node node1 = new Node(5001, yarrow, null, "pingtest-", 0, false, fh);
+        Node node2 = new Node(5002, yarrow, null, "pingtest-", 0, false, fh);
         SimpleFieldSet node1ref = node1.exportFieldSet();
         SimpleFieldSet node2ref = node2.exportFieldSet();
         // Connect

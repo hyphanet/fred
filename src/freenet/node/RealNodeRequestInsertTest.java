@@ -12,6 +12,7 @@ import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.node.PeerNode;
 import freenet.support.Fields;
+import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -32,7 +33,7 @@ public class RealNodeRequestInsertTest {
         new File(wd).mkdir();
         // Don't clobber nearby nodes!
         Node.MAX_HTL = 5;
-        Logger.setupStdoutLogging(Logger.DEBUG, "freenet.store:minor,freenet.node.Location:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
+        FileLoggerHook fh = Logger.setupStdoutLogging(Logger.DEBUG, "freenet.store:minor,freenet.node.Location:normal" /*"freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.UdpSocketManager:debug"*/);
         Logger.globalSetThreshold(Logger.DEBUG);
         System.out.println("Insert/retrieve test");
         System.out.println();
@@ -41,7 +42,7 @@ public class RealNodeRequestInsertTest {
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] = new Node(5000+i, random, null, wd+File.separator, 0);
+            nodes[i] = new Node(5000+i, random, null, wd+File.separator, 0, false, fh);
             nodes[i].usm.setDropProbability(20); // 5%
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }

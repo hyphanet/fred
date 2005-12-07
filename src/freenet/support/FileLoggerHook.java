@@ -2,10 +2,14 @@ package freenet.support;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
@@ -14,11 +18,14 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.Vector;
 import java.util.zip.GZIPOutputStream;
+
+import freenet.node.Version;
 
 /**
  * Converted the old StandardLogger to Ian's loggerhook interface.
@@ -82,13 +89,30 @@ public class FileLoggerHook extends LoggerHook {
 	 * Something wierd happens when the disk gets full, also we don't want to
 	 * block So run the actual write on another thread
 	 */
-	protected LinkedList list = new LinkedList();
+	protected final LinkedList list = new LinkedList();
 	protected long listBytes = 0;
 
 	protected int MAX_LIST_SIZE = 100000;
 	protected long MAX_LIST_BYTES = 10 * (1 << 20);
 	// FIXME: should reimplement LinkedList with minimal locking
 
+	final long maxOldLogfilesDiskUsage;
+	protected final LinkedList logFiles = new LinkedList();
+	private long oldLogFilesDiskSpaceUsage = 0;
+
+	class OldLogFile {
+		public OldLogFile(File currentFilename, long startTime, long endTime, long length) {
+			this.filename = currentFilename;
+			this.start = startTime;
+			this.end = endTime;
+			this.size = length;
+		}
+		final File filename;
+		final long start; // inclusive
+		final long end; // exclusive
+		final long size;
+	}
+	
 	public void setMaxListLength(int len) {
 		MAX_LIST_SIZE = len;
 	}
@@ -134,6 +158,7 @@ public class FileLoggerHook extends LoggerHook {
 	protected String getHourLogName(Calendar c, boolean compressed) {
 		StringBuffer buf = new StringBuffer(50);
 		buf.append(baseFilename).append('-');
+		buf.append(Version.buildNumber);
 		buf.append(c.get(Calendar.YEAR)).append('-');
 		pad2digits(buf, c.get(Calendar.MONTH) + 1);
 		buf.append('-');
@@ -164,8 +189,11 @@ public class FileLoggerHook extends LoggerHook {
 		}
 
 		public void run() {
+			findOldLogFiles();
+			File currentFilename = null;
 			Object o = null;
 			long thisTime = System.currentTimeMillis();
+			long startTime = -1;
 			long nextHour = -1;
 			GregorianCalendar gc = null;
 			String filename = null;
@@ -194,11 +222,13 @@ public class FileLoggerHook extends LoggerHook {
 					gc.set(INTERVAL, (x / INTERVAL_MULTIPLIER) * INTERVAL_MULTIPLIER);
 				}
 				filename = getHourLogName(gc, true);
-				logStream = openNewLogFile(new File(filename), true);
+				currentFilename = new File(filename);
+				logStream = openNewLogFile(currentFilename, true);
 				if(latestFilename != null) {
 					altLogStream = openNewLogFile(latestFilename, false);
 				}
 				System.err.println("Created log files");
+				startTime = gc.getTimeInMillis();
 				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 				nextHour = gc.getTimeInMillis();
 			}
@@ -216,14 +246,21 @@ public class FileLoggerHook extends LoggerHook {
 									"Flushing on change caught " + e);
 							}
 							String oldFilename = filename;
-							// Rotate primary log stream
-							filename = getHourLogName(gc, true);
+							long length = currentFilename.length();
+							OldLogFile olf = new OldLogFile(currentFilename, startTime, thisTime, length);
+							synchronized(logFiles) {
+								logFiles.addLast(olf);
+							}
+							oldLogFilesDiskSpaceUsage += length;
+							trimOldLogFiles();
 							try {
 								logStream.close();
 							} catch (IOException e) {
 								System.err.println(
 										"Closing on change caught " + e);
 							}
+							// Rotate primary log stream
+							filename = getHourLogName(gc, true);
 							logStream = openNewLogFile(new File(filename), true);
 							if(latestFilename != null) {
 								try {
@@ -370,7 +407,8 @@ public class FileLoggerHook extends LoggerHook {
 		String dfmt,
 		int threshold,
 		boolean assumeWorking,
-		boolean logOverwrite)
+		boolean logOverwrite,
+		long maxOldLogfilesDiskUsage)
 		throws IOException {
 		this(
 			false,
@@ -379,23 +417,127 @@ public class FileLoggerHook extends LoggerHook {
 			dfmt,
 			threshold,
 			assumeWorking,
-			logOverwrite);
+			logOverwrite,
+			maxOldLogfilesDiskUsage);
 	}
 	
+	public void trimOldLogFiles() {
+		while(oldLogFilesDiskSpaceUsage > maxOldLogfilesDiskUsage) {
+			OldLogFile olf;
+			synchronized(logFiles) {
+				olf = (OldLogFile) logFiles.removeFirst();
+			}
+			olf.filename.delete();
+			oldLogFilesDiskSpaceUsage -= olf.size;
+			Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
+					" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
+		}
+	}
+
+	/** Initialize oldLogFiles */
+	public void findOldLogFiles() {
+		int slashIndex = baseFilename.lastIndexOf(File.separatorChar);
+		File dir;
+		String prefix;
+		if(slashIndex == -1) {
+			dir = new File(System.getProperty("user.dir"));
+			prefix = baseFilename.toLowerCase();
+		} else {
+			dir = new File(baseFilename.substring(0, slashIndex));
+			prefix = baseFilename.substring(slashIndex+1).toLowerCase();
+		}
+		File[] files = dir.listFiles();
+		java.util.Arrays.sort(files);
+		long lastStartTime = -1;
+		File oldFile = null;
+		for(int i=0;i<files.length;i++) {
+			File f = files[i];
+			String name = f.getName();
+			if(name.toLowerCase().startsWith(prefix)) {
+				if(name.equals(previousFilename)) {
+					f.delete();
+					continue;
+				} else if(name.equals(latestFilename)) {
+					f.renameTo(previousFilename);
+					continue;
+				}
+				if(!name.endsWith(".log.gz")) {
+					f.delete();
+					continue;
+				} else {
+					name = name.substring(0, name.length()-".log.gz".length());
+				}
+				String[] tokens = name.split("-");
+				int[] nums = new int[tokens.length];
+				for(int j=0;j<tokens.length;j++) {
+					try {
+						nums[j] = Integer.parseInt(tokens[j]);
+					} catch (NumberFormatException e) {
+						// Broken
+						f.delete();
+						continue;
+					}
+				}
+				// First field: version
+				if(nums.length < 1) {
+					f.delete();
+					continue;
+				}
+				if(nums[0] != Version.buildNumber) {
+					// Logs that old are useless
+					f.delete();
+					continue;
+				}
+				GregorianCalendar gc = new GregorianCalendar();
+				if(nums.length > 1)
+					gc.set(Calendar.YEAR, nums[1]);
+				if(nums.length > 2)
+					gc.set(Calendar.MONTH, nums[2]);
+				if(nums.length > 3)
+					gc.set(Calendar.DAY_OF_MONTH, nums[3]);
+				if(nums.length > 4)
+					gc.set(Calendar.HOUR_OF_DAY, nums[4]);
+				if(nums.length > 5)
+					gc.set(Calendar.MINUTE, nums[5]);
+				long startTime = gc.getTimeInMillis();
+				if(oldFile != null) {
+					long l = oldFile.length();
+					OldLogFile olf = new OldLogFile(oldFile, lastStartTime, startTime, l);
+					logFiles.addLast(olf);
+					oldLogFilesDiskSpaceUsage += l;
+				}
+				lastStartTime = -1;
+				oldFile = f;
+			} else {
+				// Nothing to do with us
+				Logger.normal(this, "Unknown file: "+name+" in our log directory");
+			}
+		}
+		if(oldFile != null) {
+			long l = oldFile.length();
+			OldLogFile olf = new OldLogFile(oldFile, lastStartTime, System.currentTimeMillis(), l);
+			logFiles.addLast(olf);
+			oldLogFilesDiskSpaceUsage += l;
+		}
+		trimOldLogFiles();
+	}
+
 	public FileLoggerHook(
 			String filename,
 			String fmt,
 			String dfmt,
 			String threshold,
 			boolean assumeWorking,
-			boolean logOverwrite)
+			boolean logOverwrite,
+			long maxOldLogFilesDiskUsage)
 			throws IOException {
 			this(filename,
 				fmt,
 				dfmt,
 				priorityOf(threshold),
 				assumeWorking,
-				logOverwrite);
+				logOverwrite,
+				maxOldLogFilesDiskUsage);
 		}
 
 	private void checkStdStreams() {
@@ -447,7 +589,7 @@ public class FileLoggerHook extends LoggerHook {
 		String dfmt,
 		int threshold,
 		boolean overwrite) {
-		this(fmt, dfmt, threshold, overwrite);
+		this(fmt, dfmt, threshold, overwrite, -1);
 		logStream = stream;
 	}
 
@@ -470,9 +612,10 @@ public class FileLoggerHook extends LoggerHook {
 		String dfmt,
 		int threshold,
 		boolean assumeWorking,
-		boolean logOverwrite)
+		boolean logOverwrite,
+		long maxOldLogfilesDiskUsage)
 		throws IOException {
-		this(fmt, dfmt, threshold, logOverwrite);
+		this(fmt, dfmt, threshold, logOverwrite, maxOldLogfilesDiskUsage);
 		//System.err.println("Creating FileLoggerHook with threshold
 		// "+threshold);
 		if (!assumeWorking)
@@ -491,12 +634,14 @@ public class FileLoggerHook extends LoggerHook {
 			String dfmt,
 			String threshold,
 			boolean assumeWorking,
-			boolean logOverwrite) throws IOException{
-		this(rotate,baseFilename,fmt,dfmt,priorityOf(threshold),assumeWorking,logOverwrite);
+			boolean logOverwrite,
+			long maxOldLogFilesDiskUsage) throws IOException{
+		this(rotate,baseFilename,fmt,dfmt,priorityOf(threshold),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage);
 	}
 
-	private FileLoggerHook(String fmt, String dfmt, int threshold, boolean overwrite) {
+	private FileLoggerHook(String fmt, String dfmt, int threshold, boolean overwrite, long maxOldLogfilesDiskUsage) {
 		super(threshold);
+		this.maxOldLogfilesDiskUsage = maxOldLogfilesDiskUsage;
 		this.logOverwrite = overwrite;
 		if (dfmt != null && dfmt.length() != 0) {
 			try {
@@ -684,6 +829,55 @@ public class FileLoggerHook extends LoggerHook {
 	class CloserThread extends Thread {
 		public void run() {
 			closed = true;
+		}
+	}
+
+	/**
+	 * Print a human- and script- readable list of available log files.
+	 * @throws IOException 
+	 */
+	public void listAvailableLogs(OutputStreamWriter writer) throws IOException {
+		OldLogFile[] oldLogFiles;
+		synchronized(logFiles) {
+			oldLogFiles = (OldLogFile[]) logFiles.toArray(new OldLogFile[logFiles.size()]);
+		}
+		DateFormat df = DateFormat.getDateTimeInstance();
+		df.setTimeZone(TimeZone.getTimeZone("GMT"));
+		for(int i=0;i<oldLogFiles.length;i++) {
+			OldLogFile olf = oldLogFiles[i];
+			writer.write(olf.filename.getName()+" : "+df.format(new Date(olf.start))+" to "+df.format(new Date(olf.end))+ " - "+olf.size+" bytes");
+		}
+	}
+
+	public void sendLogByContainedDate(long time, OutputStream os) throws IOException {
+		OldLogFile toReturn = null;
+		synchronized(logFiles) {
+			Iterator i = logFiles.iterator();
+			while(i.hasNext()) {
+				OldLogFile olf = (OldLogFile) i.next();
+				if(time >= olf.start && time < olf.end) {
+					toReturn = olf;
+					break;
+				}
+			}
+			if(toReturn == null)
+				return; // couldn't find it
+		}
+		FileInputStream fis = new FileInputStream(toReturn.filename);
+		DataInputStream dis = new DataInputStream(fis);
+		long written = 0;
+		long size = toReturn.size;
+		byte[] buf = new byte[4096];
+		while(written < size) {
+			int toRead = (int) Math.min(buf.length, (size - written));
+			try {
+				dis.readFully(buf, 0, toRead);
+			} catch (IOException e) {
+				Logger.error(this, "Could not read bytes "+written+" to "+(written + toRead)+" from file "+toReturn.filename+" which is supposed to be "+size+" bytes ("+toReturn.filename.length()+")");
+				return;
+			}
+			os.write(buf, 0, toRead);
+			written += toRead;
 		}
 	}
 }
