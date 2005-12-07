@@ -46,6 +46,7 @@ public class TextModeClientInterface implements Runnable {
     final Hashtable streams;
     final RequestStarterClient requestStarterClient;
     final RequestStarterClient insertStarterClient;
+    final File downloadsDir;
     
     TextModeClientInterface(Node n) {
         this.n = n;
@@ -56,6 +57,7 @@ public class TextModeClientInterface implements Runnable {
         new Thread(this, "Text mode client interface").start();
         this.requestStarterClient = n.makeStarterClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, (short)0, false);
         this.insertStarterClient = n.makeStarterClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, (short)0, true);
+        this.downloadsDir = n.downloadDir;
     }
     
     /**
@@ -175,13 +177,14 @@ public class TextModeClientInterface implements Runnable {
                     if(ext != null && !ext.equals(""))
                     	fnam += "." + ext;
                 }
-                if(new File(fnam).exists()) {
+                File f = new File(downloadsDir, fnam);
+                if(f.exists()) {
                     System.out.println("File exists already: "+fnam);
                     fnam = "freenet-"+System.currentTimeMillis()+"-"+fnam;
                 }
                 FileOutputStream fos = null;
                 try {
-                    fos = new FileOutputStream(fnam);
+                    fos = new FileOutputStream(f);
                     BucketTools.copyTo(data, fos, Long.MAX_VALUE);
                     fos.close();
                     System.out.println("Written to "+fnam);

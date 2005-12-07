@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -19,6 +18,7 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.Vector;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Converted the old StandardLogger to Ian's loggerhook interface.
@@ -60,17 +60,18 @@ public class FileLoggerHook extends LoggerHook {
 	private int[] fmt;
 	private String[] str;
 
-	/**
-	 * The printstream the Logger writes too.
-	 */
-	public PrintStream lout;
-
-	protected OutputStream uout;
+	/** Stream to write data to (compressed if rotate is on) */
+	protected OutputStream logStream;
+	/** Other stream to write data to (may be null) */
+	protected OutputStream altLogStream;
 
 	protected final boolean logOverwrite;
 
 	/* Base filename for rotating logs */
 	protected String baseFilename = null;
+	
+	protected File latestFilename;
+	protected File previousFilename;
 
 	/* Whether to redirect stdout */
 	protected boolean redirectStdOut = false;
@@ -86,16 +87,10 @@ public class FileLoggerHook extends LoggerHook {
 
 	protected int MAX_LIST_SIZE = 100000;
 	protected long MAX_LIST_BYTES = 10 * (1 << 20);
-	protected boolean useNativeGzip = false;
-
 	// FIXME: should reimplement LinkedList with minimal locking
 
 	public void setMaxListLength(int len) {
 		MAX_LIST_SIZE = len;
-	}
-
-	public void setUseNativeGzip(boolean x) {
-		useNativeGzip = x;
 	}
 
 	public void setMaxListBytes(long len) {
@@ -136,7 +131,7 @@ public class FileLoggerHook extends LoggerHook {
 				"invalid interval " + intervalName);
 	}
 
-	protected String getHourLogName(Calendar c) {
+	protected String getHourLogName(Calendar c, boolean compressed) {
 		StringBuffer buf = new StringBuffer(50);
 		buf.append(baseFilename).append('-');
 		buf.append(c.get(Calendar.YEAR)).append('-');
@@ -149,6 +144,8 @@ public class FileLoggerHook extends LoggerHook {
 			buf.append('-');
 			pad2digits(buf, c.get(Calendar.MINUTE));
 		}
+		buf.append(".log");
+		if(compressed) buf.append(".gz");
 		return buf.toString();
 	}
 
@@ -173,6 +170,8 @@ public class FileLoggerHook extends LoggerHook {
 			GregorianCalendar gc = null;
 			String filename = null;
 			if (baseFilename != null) {
+				latestFilename = new File(baseFilename+"-latest.log");
+				previousFilename = new File(baseFilename+"-previous.log");
 				gc = new GregorianCalendar();
 				switch (INTERVAL) {
 					case Calendar.YEAR :
@@ -194,16 +193,15 @@ public class FileLoggerHook extends LoggerHook {
 					int x = gc.get(INTERVAL);
 					gc.set(INTERVAL, (x / INTERVAL_MULTIPLIER) * INTERVAL_MULTIPLIER);
 				}
-				filename = getHourLogName(gc);
-				uout = openNewLogFile(filename);
+				filename = getHourLogName(gc, true);
+				logStream = openNewLogFile(new File(filename), true);
+				if(latestFilename != null) {
+					altLogStream = openNewLogFile(latestFilename, false);
+				}
+				System.err.println("Created log files");
 				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 				nextHour = gc.getTimeInMillis();
-				lout = new PrintStream(uout);
 			}
-			if (redirectStdOut)
-				System.setOut(lout);
-			if (redirectStdErr)
-				System.setErr(lout);
 			while (true) {
 				try {				
 					thisTime = System.currentTimeMillis();
@@ -211,44 +209,49 @@ public class FileLoggerHook extends LoggerHook {
 						if (thisTime > nextHour) {
 							// Switch logs
 							try {
-								uout.flush();
+								logStream.flush();
+								if(altLogStream != null) altLogStream.flush();
 							} catch (IOException e) {
 								System.err.println(
 									"Flushing on change caught " + e);
 							}
 							String oldFilename = filename;
-							filename = getHourLogName(gc);
-							OutputStream os = openNewLogFile(filename);
-							OutputStream oldUout = uout;
-							uout = os;
-							lout = new PrintStream(uout);
-							if (redirectStdOut)
-								System.setOut(lout);
-							if (redirectStdErr)
-								System.setErr(lout);
+							// Rotate primary log stream
+							filename = getHourLogName(gc, true);
 							try {
-								oldUout.close();
+								logStream.close();
 							} catch (IOException e) {
 								System.err.println(
-									"Closing on change caught " + e);
+										"Closing on change caught " + e);
 							}
+							logStream = openNewLogFile(new File(filename), true);
+							if(latestFilename != null) {
+								try {
+									altLogStream.close();
+								} catch (IOException e) {
+									System.err.println(
+											"Closing alt on change caught " + e);
+								}
+								if(previousFilename != null) {
+									previousFilename.delete();
+									latestFilename.renameTo(previousFilename);
+									latestFilename.delete();
+								} else {
+									latestFilename.delete();
+								}
+								altLogStream = openNewLogFile(latestFilename, false);
+							}
+							System.err.println("Rotated log files: "+filename);
 							//System.err.println("Almost rotated");
-							if (useNativeGzip) {
-								CompressorThread ct =
-									new CompressorThread(oldFilename);
-								ct.start();
-								// Don't care about result
-							} // FIXME: implement a portable default compressor
 							gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 							nextHour = gc.getTimeInMillis();
 							//System.err.println("Rotated");
 						}
 					}
 					if(list.size() == 0) {
-					    if (uout != null) {
-					        myWrite(uout, null);
-					    } else
-					        lout.flush();
+				        myWrite(logStream, null);
+				        if(altLogStream != null)
+				        	myWrite(altLogStream, null);
 					}
 					synchronized (list) {
 						while (list.size() == 0) {
@@ -264,11 +267,9 @@ public class FileLoggerHook extends LoggerHook {
 						o = list.removeFirst();
 						listBytes -= (((byte[]) o).length + 16);
 					}
-					if (uout != null) {
-						myWrite(uout, ((byte[]) o));
-					} else {
-						lout.print(new String((byte[]) o));
-					}
+					myWrite(logStream, ((byte[]) o));
+			        if(altLogStream != null)
+			        	myWrite(altLogStream, (byte[]) o);
 				} catch (OutOfMemoryError e) {
 				    // FIXME
 					//freenet.node.Main.dumpInterestingObjects();
@@ -291,9 +292,9 @@ public class FileLoggerHook extends LoggerHook {
 				boolean thrown = false;
 				try {
 					if (b != null)
-						uout.write(b);
+						os.write(b);
 					else
-						uout.flush();
+						os.flush();
 				} catch (IOException e) {
 					System.err.println(
 						"Exception writing to log: "
@@ -315,13 +316,16 @@ public class FileLoggerHook extends LoggerHook {
 			}
 		}
 
-		protected OutputStream openNewLogFile(String filename) {
+		protected OutputStream openNewLogFile(File filename, boolean compress) {
 			while (true) {
 				long sleepTime = 1000;
 				try {
-					System.err.println("Creating new logfile " + filename);
 					OutputStream o = new FileOutputStream(filename, !logOverwrite);
-					return new BufferedOutputStream(o, 32768);
+					o = new BufferedOutputStream(o, 32768);
+					if(compress) {
+						o = new GZIPOutputStream(o);
+					}
+					return o;
 				} catch (IOException e) {
 					System.err.println(
 						"Could not create FOS " + filename + ": " + e);
@@ -341,67 +345,6 @@ public class FileLoggerHook extends LoggerHook {
 	protected Object runningCompressorsSync = new Object();
 
 	private Date myDate = new Date();
-
-	class CompressorThread extends Thread {
-		protected String filename;
-
-		public CompressorThread(String fn) {
-			super("Logfile compressor thread");
-			this.filename = fn;
-		}
-
-		public void run() {
-			synchronized (runningCompressorsSync) {
-				runningCompressors++;
-				if (runningCompressors > 3) { // try to absorb a spike...
-					System.err.println(
-						"Too many compressors ("
-							+ runningCompressors
-							+ ") running!");
-					runningCompressors--;
-					new File(filename).delete();
-					return;
-				}
-			}
-			try {
-				//System.err.println("Starting gzip " + filename);
-				Process r =
-					Runtime.getRuntime().exec(
-						new String[] { "nice", "gzip", filename });
-				//System.err.println("Started gzip " + filename);
-				InputStream is = r.getInputStream();
-				InputStream es = r.getErrorStream();
-				while (true) {
-					byte[] buf = new byte[1024];
-					try {
-						is.read(buf, 0, buf.length);
-					} catch (IOException e) {
-					}
-					try {
-						es.read(buf, 0, buf.length);
-					} catch (IOException e) {
-					}
-					try {
-						if(r.exitValue() != 0) {
-							new File(filename).delete();
-						}
-						break;
-					} catch (IllegalThreadStateException e) {
-					}
-				}
-				//System.err.println("Finished gzip " + filename);
-				is.close();
-				es.close();
-			} catch (IOException e) {
-				System.err.println("Cannot compress old logfile " + filename);
-				e.printStackTrace(System.err);
-			} finally {
-				synchronized (runningCompressorsSync) {
-					runningCompressors--;
-				}
-			}
-		}
-	}
 
 	/**
 	 * Create a Logger to append to the given file. If the file does not exist
@@ -474,7 +417,7 @@ public class FileLoggerHook extends LoggerHook {
 		String dfmt,
 		int threshold) {
 		this(new PrintStream(os), fmt, dfmt, threshold, true);
-		uout = os;
+		logStream = os;
 	}
 	
 	public FileLoggerHook(
@@ -483,7 +426,7 @@ public class FileLoggerHook extends LoggerHook {
 			String dfmt,
 			String threshold) {
 			this(new PrintStream(os), fmt, dfmt, priorityOf(threshold), true);
-			uout = os;
+			logStream = os;
 		}
 
 	/**
@@ -505,10 +448,14 @@ public class FileLoggerHook extends LoggerHook {
 		int threshold,
 		boolean overwrite) {
 		this(fmt, dfmt, threshold, overwrite);
-		lout = stream;
+		logStream = stream;
 	}
 
 	public void start() {
+		if(redirectStdOut)
+			System.setOut(new PrintStream(new OutputStreamLogger(Logger.NORMAL, "Stdout: ")));
+		if(redirectStdErr)
+			System.setErr(new PrintStream(new OutputStreamLogger(Logger.ERROR, "Stderr: ")));
 		WriterThread wt = new WriterThread();
 		//wt.setDaemon(true);
 		CloserThread ct = new CloserThread();
@@ -531,12 +478,9 @@ public class FileLoggerHook extends LoggerHook {
 		if (!assumeWorking)
 			checkStdStreams();
 		if (rotate) {
-			lout = null;
 			this.baseFilename = baseFilename;
 		} else {
-			lout =
-				new PrintStream(
-					new FileOutputStream(baseFilename, !logOverwrite));
+			logStream = new FileOutputStream(baseFilename, !logOverwrite);
 		}
 	}
 	
@@ -731,10 +675,6 @@ public class FileLoggerHook extends LoggerHook {
 
 	public long anyFlags() {
 		return ((2 * ERROR) - 1) & ~(threshold - 1);
-	}
-
-	public PrintStream getStream() {
-		return lout;
 	}
 
 	public void close() {

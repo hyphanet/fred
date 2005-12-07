@@ -163,6 +163,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     final RequestStarter requestStarter;
     final RequestThrottle insertThrottle;
     final RequestStarter insertStarter;
+    final File downloadDir;
     
     // Client stuff that needs to be configged - FIXME
     static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -278,13 +279,13 @@ public class Node implements QueueingSimpleLowLevelClient {
     	
         int port = Integer.parseInt(args[0]);
         System.out.println("Port number: "+port);
-        new File("logs").mkdir();
-        FileLoggerHook logger = new FileLoggerHook(true, "logs/freenet-"+port+".log", "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true);
+        File logDir = new File("logs-"+port);
+        logDir.mkdir();
+        FileLoggerHook logger = new FileLoggerHook(true, new File(logDir, "freenet-"+port).getAbsolutePath(), "d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true);
         logger.setInterval("5MINUTES");
         Logger.setupChain();
         Logger.globalSetThreshold(Logger.MINOR);
         Logger.globalAddHook(logger);
-        logger.setUseNativeGzip(true);
         logger.start();
         Logger.normal(Node.class, "Creating node...");
         Yarrow yarrow = new Yarrow();
@@ -316,6 +317,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         if(prefix == null) prefix = "";
         filenamesPrefix = prefix;
         this.overrideIPAddress = overrideIP;
+        downloadDir = new File("downloads");
         try {
             datastore = new BaseFreenetStore(prefix+"freenet-"+portNumber,16384); // 512MB
         } catch (FileNotFoundException e1) {
