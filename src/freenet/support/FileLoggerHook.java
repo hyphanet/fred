@@ -189,7 +189,6 @@ public class FileLoggerHook extends LoggerHook {
 		}
 
 		public void run() {
-			findOldLogFiles();
 			File currentFilename = null;
 			Object o = null;
 			long thisTime = System.currentTimeMillis();
@@ -200,6 +199,7 @@ public class FileLoggerHook extends LoggerHook {
 			if (baseFilename != null) {
 				latestFilename = new File(baseFilename+"-latest.log");
 				previousFilename = new File(baseFilename+"-previous.log");
+				findOldLogFiles();
 				gc = new GregorianCalendar();
 				switch (INTERVAL) {
 					case Calendar.YEAR :
@@ -450,19 +450,14 @@ public class FileLoggerHook extends LoggerHook {
 		java.util.Arrays.sort(files);
 		long lastStartTime = -1;
 		File oldFile = null;
+		previousFilename.delete();
+		latestFilename.renameTo(previousFilename);
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];
 			String name = f.getName();
 			if(name.toLowerCase().startsWith(prefix)) {
-				if(name.equals(previousFilename)) {
-					Logger.minor(this, "Deleting "+previousFilename);
-					f.delete();
+				if(name.equals(previousFilename) || name.equals(latestFilename))
 					continue;
-				} else if(name.equals(latestFilename)) {
-					Logger.minor(this, "Renaming latest to previous");
-					f.renameTo(previousFilename);
-					continue;
-				}
 				if(!name.endsWith(".log.gz")) {
 					Logger.minor(this, "Does not end in .log.gz: "+name);
 					f.delete();
@@ -500,13 +495,14 @@ public class FileLoggerHook extends LoggerHook {
 				if(nums.length > 1)
 					gc.set(Calendar.YEAR, nums[1]);
 				if(nums.length > 2)
-					gc.set(Calendar.MONTH, nums[2]);
+					gc.set(Calendar.MONTH, nums[2]-1);
 				if(nums.length > 3)
 					gc.set(Calendar.DAY_OF_MONTH, nums[3]);
 				if(nums.length > 4)
 					gc.set(Calendar.HOUR_OF_DAY, nums[4]);
 				if(nums.length > 5)
 					gc.set(Calendar.MINUTE, nums[5]);
+				gc.set(Calendar.SECOND, 0);
 				long startTime = gc.getTimeInMillis();
 				if(oldFile != null) {
 					long l = oldFile.length();
@@ -514,7 +510,7 @@ public class FileLoggerHook extends LoggerHook {
 					logFiles.addLast(olf);
 					oldLogFilesDiskSpaceUsage += l;
 				}
-				lastStartTime = -1;
+				lastStartTime = startTime;
 				oldFile = f;
 			} else {
 				// Nothing to do with us
@@ -865,6 +861,7 @@ public class FileLoggerHook extends LoggerHook {
 				OldLogFile olf = (OldLogFile) i.next();
 				if(time >= olf.start && time < olf.end) {
 					toReturn = olf;
+					Logger.minor(this, "Found "+olf);
 					break;
 				}
 			}
