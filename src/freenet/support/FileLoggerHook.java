@@ -193,7 +193,7 @@ public class FileLoggerHook extends LoggerHook {
 			File currentFilename = null;
 			Object o = null;
 			long thisTime = System.currentTimeMillis();
-			long lastTime = thisTime;
+			long lastTime = -1;
 			long startTime = -1;
 			long nextHour = -1;
 			GregorianCalendar gc = null;
@@ -234,6 +234,8 @@ public class FileLoggerHook extends LoggerHook {
 				}
 				System.err.println("Created log files");
 				startTime = gc.getTimeInMillis();
+				Logger.minor(this, "Start time: "+gc+" -> "+startTime);
+				lastTime = startTime;
 				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 				nextHour = gc.getTimeInMillis();
 			}
@@ -258,8 +260,8 @@ public class FileLoggerHook extends LoggerHook {
 							}
 							String oldFilename = filename;
 							long length = currentFilename.length();
-							OldLogFile olf = new OldLogFile(currentFilename, lastTime, thisTime, length);
-							lastTime = thisTime;
+							OldLogFile olf = new OldLogFile(currentFilename, lastTime, nextHour, length);
+							lastTime = nextHour;
 							synchronized(logFiles) {
 								logFiles.addLast(olf);
 							}
@@ -510,6 +512,7 @@ public class FileLoggerHook extends LoggerHook {
 				if(nums.length > 5)
 					gc.set(Calendar.MINUTE, nums[5]);
 				gc.set(Calendar.SECOND, 0);
+				gc.set(Calendar.MILLISECOND, 0);
 				long startTime = gc.getTimeInMillis();
 				if(oldFile != null) {
 					long l = oldFile.length();
@@ -866,6 +869,7 @@ public class FileLoggerHook extends LoggerHook {
 			Iterator i = logFiles.iterator();
 			while(i.hasNext()) {
 				OldLogFile olf = (OldLogFile) i.next();
+				Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 				if(time >= olf.start && time < olf.end) {
 					toReturn = olf;
 					Logger.minor(this, "Found "+olf);
