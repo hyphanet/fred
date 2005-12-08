@@ -81,6 +81,9 @@ public class TestnetHandler implements Runnable {
 		
 		public TestnetSocketHandler(Socket s2) {
 			this.s = s2;
+			Thread t = new Thread(this, "Testnet handler for "+s.getInetAddress()+" at "+System.currentTimeMillis());
+			t.setDaemon(true);
+			t.start();
 		}
 
 		public void run() {
@@ -93,9 +96,14 @@ public class TestnetHandler implements Runnable {
 				InputStreamReader isr = new InputStreamReader(is, "ISO-8859-1");
 				BufferedReader br = new BufferedReader(isr);
 				String command = br.readLine();
+				Logger.minor(this, "Command: "+command);
 				if(command.equalsIgnoreCase("LIST")) {
-					node.fileLoggerHook.listAvailableLogs(new OutputStreamWriter(os, "ISO-8859-1"));
+					Logger.minor(this, "Listing available logs");
+					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
+					node.fileLoggerHook.listAvailableLogs(osw);
+					osw.close();
 				} else if(command.startsWith("GET:")) {
+					Logger.minor(this, "Sending log: "+command);
 					String date = command.substring("GET:".length());
 					DateFormat df = DateFormat.getDateTimeInstance();
 					df.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -106,6 +114,8 @@ public class TestnetHandler implements Runnable {
 						return;
 					}
 					node.fileLoggerHook.sendLogByContainedDate(d.getTime(), os);
+				} else {
+					Logger.error(this, "Unknown testnet command: "+command);
 				}
 			} catch (IOException e) {
 				Logger.normal(this, "Failure handling testnet connection: "+e);

@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -456,35 +455,43 @@ public class FileLoggerHook extends LoggerHook {
 			String name = f.getName();
 			if(name.toLowerCase().startsWith(prefix)) {
 				if(name.equals(previousFilename)) {
+					Logger.minor(this, "Deleting "+previousFilename);
 					f.delete();
 					continue;
 				} else if(name.equals(latestFilename)) {
+					Logger.minor(this, "Renaming latest to previous");
 					f.renameTo(previousFilename);
 					continue;
 				}
 				if(!name.endsWith(".log.gz")) {
+					Logger.minor(this, "Does not end in .log.gz: "+name);
 					f.delete();
 					continue;
 				} else {
 					name = name.substring(0, name.length()-".log.gz".length());
 				}
+				name = name.substring(prefix.length());
+				if(name.length() == 0 || name.charAt(0) != '-') {
+					Logger.minor(this, "Deleting unrecognized: "+name+" ("+f.getPath()+")");
+					f.delete();
+					continue;
+				} else
+					name = name.substring(1);
 				String[] tokens = name.split("-");
 				int[] nums = new int[tokens.length];
 				for(int j=0;j<tokens.length;j++) {
 					try {
 						nums[j] = Integer.parseInt(tokens[j]);
 					} catch (NumberFormatException e) {
+						Logger.normal(this, "Could not parse: "+tokens[j]+" into number from "+name);
 						// Broken
 						f.delete();
 						continue;
 					}
 				}
 				// First field: version
-				if(nums.length < 1) {
-					f.delete();
-					continue;
-				}
 				if(nums[0] != Version.buildNumber) {
+					Logger.minor(this, "Deleting old log from build "+nums[0]+", current="+Version.buildNumber);
 					// Logs that old are useless
 					f.delete();
 					continue;
@@ -846,7 +853,7 @@ public class FileLoggerHook extends LoggerHook {
 		df.setTimeZone(TimeZone.getTimeZone("GMT"));
 		for(int i=0;i<oldLogFiles.length;i++) {
 			OldLogFile olf = oldLogFiles[i];
-			writer.write(olf.filename.getName()+" : "+df.format(new Date(olf.start))+" to "+df.format(new Date(olf.end))+ " - "+olf.size+" bytes");
+			writer.write(olf.filename.getName()+" : "+df.format(new Date(olf.start))+" to "+df.format(new Date(olf.end))+ " - "+olf.size+" bytes\n");
 		}
 	}
 
