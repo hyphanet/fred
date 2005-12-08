@@ -105,7 +105,7 @@ public class TestnetHandler implements Runnable {
 				} else if(command.startsWith("GET:")) {
 					Logger.minor(this, "Sending log: "+command);
 					String date = command.substring("GET:".length());
-					DateFormat df = DateFormat.getDateTimeInstance();
+					DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.ENGLISH);
 					df.setTimeZone(TimeZone.getTimeZone("GMT"));
 					Date d;
 					try {

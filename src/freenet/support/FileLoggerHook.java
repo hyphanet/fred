@@ -19,6 +19,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.Vector;
@@ -224,6 +225,9 @@ public class FileLoggerHook extends LoggerHook {
 				}
 				filename = getHourLogName(gc, true);
 				currentFilename = new File(filename);
+				if((!logFiles.isEmpty()) && ((OldLogFile)logFiles.getLast()).filename.equals(currentFilename)) {
+					logFiles.removeLast();
+				}
 				logStream = openNewLogFile(currentFilename, true);
 				if(latestFilename != null) {
 					altLogStream = openNewLogFile(latestFilename, false);
@@ -234,7 +238,7 @@ public class FileLoggerHook extends LoggerHook {
 				nextHour = gc.getTimeInMillis();
 			}
 			while (true) {
-				try {				
+				try {
 					thisTime = System.currentTimeMillis();
 					if (baseFilename != null) {
 						if (thisTime > nextHour) {
@@ -246,21 +250,21 @@ public class FileLoggerHook extends LoggerHook {
 								System.err.println(
 									"Flushing on change caught " + e);
 							}
-							String oldFilename = filename;
-							long length = currentFilename.length();
-							OldLogFile olf = new OldLogFile(currentFilename, startTime, lastTime, length);
-							lastTime = thisTime;
-							synchronized(logFiles) {
-								logFiles.addLast(olf);
-							}
-							oldLogFilesDiskSpaceUsage += length;
-							trimOldLogFiles();
 							try {
 								logStream.close();
 							} catch (IOException e) {
 								System.err.println(
 										"Closing on change caught " + e);
 							}
+							String oldFilename = filename;
+							long length = currentFilename.length();
+							OldLogFile olf = new OldLogFile(currentFilename, lastTime, thisTime, length);
+							lastTime = thisTime;
+							synchronized(logFiles) {
+								logFiles.addLast(olf);
+							}
+							oldLogFilesDiskSpaceUsage += length;
+							trimOldLogFiles();
 							// Rotate primary log stream
 							filename = getHourLogName(gc, true);
 							currentFilename = new File(filename);
@@ -848,7 +852,7 @@ public class FileLoggerHook extends LoggerHook {
 		synchronized(logFiles) {
 			oldLogFiles = (OldLogFile[]) logFiles.toArray(new OldLogFile[logFiles.size()]);
 		}
-		DateFormat df = DateFormat.getDateTimeInstance();
+		DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.ENGLISH);
 		df.setTimeZone(TimeZone.getTimeZone("GMT"));
 		for(int i=0;i<oldLogFiles.length;i++) {
 			OldLogFile olf = oldLogFiles[i];
