@@ -192,6 +192,7 @@ public class FileLoggerHook extends LoggerHook {
 			File currentFilename = null;
 			Object o = null;
 			long thisTime = System.currentTimeMillis();
+			long lastTime = thisTime;
 			long startTime = -1;
 			long nextHour = -1;
 			GregorianCalendar gc = null;
@@ -247,7 +248,8 @@ public class FileLoggerHook extends LoggerHook {
 							}
 							String oldFilename = filename;
 							long length = currentFilename.length();
-							OldLogFile olf = new OldLogFile(currentFilename, startTime, thisTime, length);
+							OldLogFile olf = new OldLogFile(currentFilename, startTime, lastTime, length);
+							lastTime = thisTime;
 							synchronized(logFiles) {
 								logFiles.addLast(olf);
 							}
@@ -261,6 +263,7 @@ public class FileLoggerHook extends LoggerHook {
 							}
 							// Rotate primary log stream
 							filename = getHourLogName(gc, true);
+							currentFilename = new File(filename);
 							logStream = openNewLogFile(new File(filename), true);
 							if(latestFilename != null) {
 								try {
