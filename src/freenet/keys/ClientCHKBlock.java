@@ -163,8 +163,8 @@ public class ClientCHKBlock extends CHKBlock {
         // IV = E(H(crypto key))
         byte[] plainIV = md256.digest(encKey);
         header = new byte[plainIV.length+2+2];
-        header[0] = (byte)(CHKBlock.HASH_SHA1 >> 8);
-        header[1] = (byte)(CHKBlock.HASH_SHA1 & 0xff);
+        header[0] = (byte)(CHKBlock.HASH_SHA256 >> 8);
+        header[1] = (byte)(CHKBlock.HASH_SHA256 & 0xff);
         System.arraycopy(plainIV, 0, header, 2, plainIV.length);
         header[plainIV.length+2] = (byte)(finalData.length >> 8);
         header[plainIV.length+3] = (byte)(finalData.length & 0xff);

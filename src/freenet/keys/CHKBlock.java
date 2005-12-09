@@ -34,7 +34,7 @@ public class CHKBlock implements KeyBlock {
     final short hashIdentifier;
     final NodeCHK chk;
     public static final int MAX_LENGTH_BEFORE_COMPRESSION = Integer.MAX_VALUE;
-    final static int HASH_SHA1 = 1;
+    final static int HASH_SHA256 = 1;
     
     public String toString() {
         return super.toString()+": chk="+chk;
@@ -69,11 +69,11 @@ public class CHKBlock implements KeyBlock {
         
         // Minimal verification
         // Check the hash
-        if(hashIdentifier != HASH_SHA1)
-            throw new CHKVerifyException("Hash not SHA-1");
+        if(hashIdentifier != HASH_SHA256)
+            throw new CHKVerifyException("Hash not SHA-256");
         MessageDigest md;
         try {
-            md = MessageDigest.getInstance("SHA-1");
+            md = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
             throw new Error(e);
         }
