@@ -135,14 +135,6 @@ public class ClientCHKBlock extends CHKBlock {
         
         // Now do the actual encode
         
-        MessageDigest md160;
-        try {
-            md160 = MessageDigest.getInstance("SHA-1");
-        } catch (NoSuchAlgorithmException e2) {
-            // FIXME: log properly? Not much we can do... But we could log a
-            // more user-friendly message...
-            throw new Error(e2);
-        }
         MessageDigest md256;
         try {
             md256 = MessageDigest.getInstance("SHA-256");
@@ -193,8 +185,8 @@ public class ClientCHKBlock extends CHKBlock {
         pcfb.blockEncipher(data, 0, data.length);
         
         // Now calculate the final hash
-        md160.update(header);
-        byte[] finalHash = md160.digest(data);
+        md256.update(header);
+        byte[] finalHash = md256.digest(data);
         
         // Now convert it into a ClientCHK
         key = new ClientCHK(finalHash, encKey, asMetadata, ClientCHK.ALGO_AES_PCFB_256, compressionAlgorithm);

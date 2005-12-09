@@ -29,7 +29,7 @@ public class NodeCHK extends Key {
         cachedNormalizedDouble = -1;
     }
 
-    static final int KEY_LENGTH = 20;
+    static final int KEY_LENGTH = 32;
     
     byte[] routingKey;
     public static final short TYPE = 0x0302;

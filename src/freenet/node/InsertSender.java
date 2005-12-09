@@ -516,11 +516,9 @@ public final class InsertSender implements Runnable {
         		// There weren't any transfers
         		allTransfersCompleted = true;
         	}
-        }
-        
-        synchronized(this) {
             notifyAll();
         }
+        
         Logger.minor(this, "Returning from finish()");
     }
 

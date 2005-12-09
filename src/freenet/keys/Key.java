@@ -13,8 +13,8 @@ import freenet.io.WritableToDataOutputStream;
  */
 public abstract class Key implements WritableToDataOutputStream {
 
-    /** 20 bytes for hash, 2 bytes for type */
-    public static final short KEY_SIZE_ON_DISK = 22;
+    /** 32 bytes for hash, 2 bytes for type */
+    public static final short KEY_SIZE_ON_DISK = 34;
 
     /**
      * Write to disk.
@@ -32,8 +32,6 @@ public abstract class Key implements WritableToDataOutputStream {
         short type = raf.readShort();
         if(type == NodeCHK.TYPE) {
             return NodeCHK.read(raf);
-        } else if(type == PublishStreamKey.TYPE) {
-            return PublishStreamKey.read(raf);
         }
         throw new IOException("Unrecognized format: "+type);
     }

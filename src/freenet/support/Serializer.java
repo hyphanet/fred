@@ -19,13 +19,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 package freenet.support;
 
-import freenet.io.*;
-import freenet.io.comm.*;
-import freenet.keys.Key;
-import freenet.keys.PublishStreamKey;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
-import java.io.*;
-import java.util.*;
+import freenet.io.WritableToDataOutputStream;
+import freenet.io.comm.Peer;
+import freenet.keys.Key;
 
 /**
  * @author ian
@@ -78,8 +81,6 @@ public class Serializer {
 			return new BitArray(dis);
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
-		} else if (type.equals(PublishStreamKey.class)) {
-		    return PublishStreamKey.read(dis, true);
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}

@@ -152,7 +152,8 @@ public class InsertHandler implements Runnable {
         while(true) {
             synchronized(sender) {
                 try {
-                    sender.wait(5000);
+                	if(sender.getStatus() != InsertSender.NOT_FINISHED)
+                		sender.wait(5000);
                 } catch (InterruptedException e) {
                     // Cool, probably this is because the receive failed...
                 }
@@ -166,6 +167,7 @@ public class InsertHandler implements Runnable {
             }
             
             if((!receivedRejectedOverload) && sender.receivedRejectedOverload()) {
+            	receivedRejectedOverload = true;
             	// Forward it
             	Message m = DMT.createFNPRejectedOverload(uid, false);
             	source.send(m);
