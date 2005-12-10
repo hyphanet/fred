@@ -97,6 +97,7 @@ public class TextModeClientInterface implements Runnable {
 //        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
         System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
         System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
+        System.out.println("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port");
         System.out.println("NAME:<new node name> - change the node's name.");
 //        System.out.println("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.");
 //        System.out.println("SAY:<text> - send text to the last created/pushed stream");
@@ -348,6 +349,9 @@ public class TextModeClientInterface implements Runnable {
                 key = key.substring(0, key.length()-2);
             System.out.println("New name: "+key);
             n.setName(key);
+        } else if(uline.startsWith("DISCONNECT:")) {
+        	String ipAndPort = line.substring("DISCONNECT:".length());
+        	disconnect(ipAndPort.trim());
         } else {
         	if(uline.length() > 0)
         		printHeader();
@@ -450,6 +454,24 @@ public class TextModeClientInterface implements Runnable {
         if(n.peers.addPeer(pn))
             System.out.println("Added peer: "+pn);
         n.peers.writePeers();
+    }
+    
+    /**
+     * Disconnect from a node, given its ip and port as a String
+     */
+    private void disconnect(String ipAndPort) {
+    	System.out.println("Disconnecting from node at: "+ipAndPort);
+    	PeerNode[] pn = n.peers.myPeers;
+    	for(int i=0;i<pn.length;i++)
+    	{
+    		String nodeIpAndPort = pn[i].getPeer().getAddress().getHostAddress()+":"+pn[i].getPeer().getPort();
+    		if(nodeIpAndPort.equals(ipAndPort))
+    		{
+    			n.peers.disconnect(pn[i]);
+    			return;
+    		}
+    	}
+    	System.out.println("No node in peers list at: "+ipAndPort);
     }
 
     private String sanitize(String fnam) {

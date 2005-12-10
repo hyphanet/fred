@@ -12,6 +12,7 @@ import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Vector;
+import java.util.ArrayList;
 
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
@@ -102,6 +103,38 @@ public class PeerManager {
         Logger.normal(this, "Added "+pn);
         return true;
     }
+    
+    private synchronized boolean removePeer(PeerNode pn) {
+    	boolean isInPeers = false;
+        for(int i=0;i<myPeers.length;i++) {
+            if(myPeers[i].equals(pn)) isInPeers=true;
+        }
+        if(!isInPeers) return false;
+                
+        // removing from connectedPeers
+        ArrayList a = new ArrayList();
+        for(int i=0;i<myPeers.length;i++) {
+        	if(myPeers[i]!=pn)
+        		a.add(myPeers[i]);
+        }
+        
+        PeerNode[] newConnectedPeers = new PeerNode[a.size()];
+        newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
+	    connectedPeers = newConnectedPeers;
+        
+        // removing from myPeers
+        PeerNode[] newMyPeers = new PeerNode[myPeers.length-1];
+        int positionInNewArray = 0;
+        for(int i=0;i<myPeers.length;i++) {
+        	if(myPeers[i]!=pn){
+        		newMyPeers[positionInNewArray] = myPeers[i];
+        		positionInNewArray++;
+        	}
+        }
+        myPeers = newMyPeers;
+        Logger.normal(this, "Removed "+pn);
+        return true;
+    }
 
     public synchronized void addConnectedPeer(PeerNode pn) {
     	if(!pn.isConnected()) {
@@ -173,6 +206,13 @@ public class PeerManager {
             if(Arrays.equals(myPeers[i].identity, pn.identity)) return;
         }
         addPeer(pn);
+    }
+       
+    /**
+     * Disconnect from a specified node
+     */
+    public void disconnect(PeerNode pn){
+    	removePeer(pn);
     }
 
     /**
