@@ -212,7 +212,8 @@ public class PeerManager {
      * Disconnect from a specified node
      */
     public void disconnect(PeerNode pn){
-    	removePeer(pn);
+    	if(removePeer(pn))
+    		writePeers();
     }
 
     /**
