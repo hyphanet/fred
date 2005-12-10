@@ -295,7 +295,8 @@ public class FileLoggerHook extends LoggerHook {
 						}
 					}
 					if(list.size() == 0) {
-				        myWrite(logStream, null);
+						if(currentFilename == null)
+							myWrite(logStream, null);
 				        if(altLogStream != null)
 				        	myWrite(altLogStream, null);
 					}
@@ -367,9 +368,15 @@ public class FileLoggerHook extends LoggerHook {
 				long sleepTime = 1000;
 				try {
 					OutputStream o = new FileOutputStream(filename, !logOverwrite);
-					o = new BufferedOutputStream(o, 32768);
 					if(compress) {
+						// buffer -> gzip -> buffer -> file
+						o = new BufferedOutputStream(o, 32768); // to file
 						o = new GZIPOutputStream(o);
+						// gzip block size is 32kB
+						o = new BufferedOutputStream(o, 65536); // to gzipper
+					} else {
+						// buffer -> file
+						o = new BufferedOutputStream(o, 32768);
 					}
 					return o;
 				} catch (IOException e) {
