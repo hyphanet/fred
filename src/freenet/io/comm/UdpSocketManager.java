@@ -66,8 +66,11 @@ public class UdpSocketManager extends Thread {
 				}
 				if(UdpSocketManager.this.isAlive())
 					Logger.minor(this, "PING on "+UdpSocketManager.this);
-				else
+				else {
 					Logger.error(this, "MAIN LOOP TERMINATED");
+					System.err.println("MAIN LOOP TERMINATED!");
+					System.exit(freenet.node.Node.EXIT_MAIN_LOOP_LOST);
+				}
 			}
 		}
 	}

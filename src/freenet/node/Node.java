@@ -156,6 +156,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     public static final int EXIT_YARROW_INIT_FAILED = 5;
     static final int EXIT_TEMP_INIT_ERROR = 6;
     static final int EXIT_TESTNET_FAILED = 7;
+    public static final int EXIT_MAIN_LOOP_LOST = 8;
     
     public final long bootID;
     public final long startupTime;
