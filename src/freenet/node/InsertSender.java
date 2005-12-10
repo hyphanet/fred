@@ -269,6 +269,7 @@ public final class InsertSender implements Runnable {
 				if (msg == null) {
 					// Terminal overload
 					// Try to propagate back to source
+					Logger.minor(this, "Timeout");
 					next.localRejectedOverload();
 					finish(TIMED_OUT, next);
 					return;
@@ -738,6 +739,7 @@ outer:		while(true) {
 						} else {
 							// Timed out
 						}
+						completedTransfers = true;
 						for(int i=0;i<waiters.length;i++) {
 							if(!waiters[i].pn.isConnected()) continue;
 							if(!waiters[i].completedTransfer) {
