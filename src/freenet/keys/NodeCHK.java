@@ -90,4 +90,8 @@ public class NodeCHK extends Key {
         cachedNormalizedDouble = ((double)asLong)/((double)Long.MAX_VALUE);
         return cachedNormalizedDouble;
     }
+    
+    public byte[] getRoutingKey(){
+    	return routingKey;
+    }
 }
