@@ -36,7 +36,6 @@ import freenet.support.Logger;
  * @author tubbie
  * 
  * TODO: Fix ugly Exception handling
- * TODO: Don't use timestamps
  */
 public class BerkelyDBFreenetStore implements FreenetStore {
 
@@ -52,6 +51,8 @@ public class BerkelyDBFreenetStore implements FreenetStore {
 	private final Database chkDB;
 	private final Database chkDB_accessTime;
 	private final RandomAccessFile chkStore;
+	
+	private long lastRecentlyUsed;
 	
 	private boolean closed = false;
 	
@@ -112,11 +113,12 @@ public class BerkelyDBFreenetStore implements FreenetStore {
 		if(!storeFile.exists())
 			storeFile.createNewFile();
 		chkStore = new RandomAccessFile(storeFile,"rw");
-		
-		// Add shutdownhook
-		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
-		
+			
 		chkBlocksInStore = countCHKBlocks();
+		lastRecentlyUsed = getMaxRecentlyUsed();
+		
+//		 Add shutdownhook
+		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
 	}
 	
 	/**
@@ -161,7 +163,7 @@ public class BerkelyDBFreenetStore implements FreenetStore {
 	    		
 	    		if(!dontPromote)
 	    		{
-	    			storeBlock.updateAccessTime();
+	    			storeBlock.updateRecentlyUsed();
 	    			DatabaseEntry updateDBE = new DatabaseEntry();
 	    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
 	    			c.putCurrent(updateDBE);
@@ -178,7 +180,7 @@ public class BerkelyDBFreenetStore implements FreenetStore {
 	    		
 	    	}catch(CHKVerifyException ex){
 	    		Logger.normal(this, "Does not verify, setting accessTime to 0 for : "+chk);
-	    		storeBlock.setAccessTime(0);
+	    		storeBlock.setRecentlyUsedToZero();
     			DatabaseEntry updateDBE = new DatabaseEntry();
     			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
     			c.putCurrent(updateDBE);
@@ -272,31 +274,33 @@ public class BerkelyDBFreenetStore implements FreenetStore {
     
     private class StoreBlock
     {
-    	private long lastAccessed;
+    	private long recentlyUsed;
     	private int offset;
     	
     	public StoreBlock(int offset)
     	{
-    		this(offset,System.currentTimeMillis());
+    		this(offset,getNewRecentlyUsed());
     	}
     	
-    	public StoreBlock(int offset,long lastAccessed)
+    	public StoreBlock(int offset,long recentlyUsed)
     	{
     		this.offset = offset;
-    		this.lastAccessed = lastAccessed;
+    		this.recentlyUsed = recentlyUsed;
     	}
     	    	
-    	public void updateAccessTime() {
-    		lastAccessed = System.currentTimeMillis();
+   	
+    	public long getRecentlyUsed() {
+    		return recentlyUsed;
     	}
     	
-    	public long getLastAccessed() {
-    		return lastAccessed;
-    	}
-    	
-    	public void setAccessTime(long time)
+    	public void setRecentlyUsedToZero()
     	{
-    		lastAccessed = time;
+    		recentlyUsed = 0;
+    	}
+    	
+    	public void updateRecentlyUsed()
+    	{
+    		recentlyUsed = getNewRecentlyUsed();
     	}
     	
     	public int getOffset() {
@@ -314,7 +318,7 @@ public class BerkelyDBFreenetStore implements FreenetStore {
     		StoreBlock myData = (StoreBlock)object;
 
     		to.writeInt(myData.getOffset());
-    		to.writeLong(myData.getLastAccessed());
+    		to.writeLong(myData.getRecentlyUsed());
     	}
 
     	public Object entryToObject(TupleInput ti) {
@@ -342,7 +346,7 @@ public class BerkelyDBFreenetStore implements FreenetStore {
     	DatabaseEntry resultEntry) {
 
     		StoreBlock storeblock = (StoreBlock) theBinding.entryToObject(dataEntry);
-    		Long accessTime = new Long(storeblock.getLastAccessed());
+    		Long accessTime = new Long(storeblock.getRecentlyUsed());
     		longTupleBinding.objectToEntry(accessTime, resultEntry);
     		return true;
     	}
@@ -388,5 +392,28 @@ public class BerkelyDBFreenetStore implements FreenetStore {
     		Logger.minor(this, "Exception while counting items in database",ex);
     	}
     	return count;
+    }
+    
+    private long getMaxRecentlyUsed()
+    {
+    	long maxRecentlyUsed = 0;
+    	
+    	try{
+	    	Cursor c = chkDB_accessTime.openCursor(null,null);
+			DatabaseEntry keyDBE = new DatabaseEntry();
+			DatabaseEntry dataDBE = new DatabaseEntry();
+			if(c.getLast(keyDBE,dataDBE,null)==OperationStatus.SUCCESS) {
+				StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+				maxRecentlyUsed = storeBlock.getRecentlyUsed();
+			}
+			c.close();
+    	}catch(DatabaseException ex){ex.printStackTrace();}
+    	
+    	return maxRecentlyUsed;
+    }
+    
+    private synchronized long getNewRecentlyUsed() {
+    	lastRecentlyUsed++;
+    	return lastRecentlyUsed;
     }
 }
