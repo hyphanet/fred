@@ -236,6 +236,94 @@ public class Metadata {
 	}
 	
 	/**
+	 * Create an empty Metadata object 
+	 */
+	private Metadata() {
+		// Should be followed by addRedirectionManifest
+	}
+	
+	/**
+	 * Create a Metadata object and add data for redirection to it.
+	 * 
+	 * @param dir A map of names (string) to either files (same string) or
+	 * directories (more HashMap's)
+	 * @throws MalformedURLException One of the URI:s were malformed
+	 */
+	private void addRedirectionManifest(HashMap dir) throws MalformedURLException {
+		// Simple manifest - contains actual redirects.
+		// Not zip manifest, which is basically a redirect.
+		documentType = SIMPLE_MANIFEST;
+		noMIME = true;
+		//mimeType = null;
+		//clientMetadata = new ClientMetadata(null);
+		manifestEntries = new HashMap();
+		int count = 0;
+		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
+			String key = (String) i.next();
+			count++;
+			Object o = dir.get(key);
+			Metadata target;
+			if(o instanceof String) {
+				// External redirect
+				FreenetURI uri = new FreenetURI((String)o);
+				target = new Metadata(SIMPLE_REDIRECT, uri, null);
+			} else if(o instanceof HashMap) {
+				target = new Metadata();
+				target.addRedirectionManifest((HashMap)o);
+			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
+			byte[] data = target.writeToByteArray();
+			manifestEntries.put(key, data);
+		}
+		manifestEntryCount = count;
+		
+	}
+	
+	/**
+	 * Create a Metadata object and add data for redirection to it.
+	 * 
+	 * @param dir A map of names (string) to either files (same string) or
+	 * directories (more HashMap's)
+	 * @throws MalformedURLException One of the URI:s were malformed
+	 */
+	public static Metadata mkRedirectionManifest(HashMap dir) throws MalformedURLException {
+		Metadata ret = new Metadata();
+		ret.addRedirectionManifest(dir);
+		return ret;
+	}
+	
+	/**
+	 * Create a Metadata object for an archive which does not have its own
+	 * metadata.
+	 * @param dir A map of names (string) to either files (same string) or
+	 * directories (more HashMap's)
+	 */
+	public void addManifest(HashMap dir) {
+		// Simple manifest - contains actual redirects.
+		// Not zip manifest, which is basically a redirect.
+		documentType = SIMPLE_MANIFEST;
+		noMIME = true;
+		//mimeType = null;
+		//clientMetadata = new ClientMetadata(null);
+		manifestEntries = new HashMap();
+		int count = 0;
+		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
+			String key = (String) i.next();
+			count++;
+			Object o = dir.get(key);
+			Metadata target;
+			if(o instanceof String) {
+				// Zip internal redirect
+				target = new Metadata(ZIP_INTERNAL_REDIRECT, key);
+			} else if(o instanceof HashMap) {
+				target = new Metadata((HashMap)o);
+			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
+			byte[] data = target.writeToByteArray();
+			manifestEntries.put(key, data);
+		}
+		manifestEntryCount = count;
+	}
+	
+	/**
 	 * Create a Metadata object for an archive which does not have its own
 	 * metadata.
 	 * @param dir A map of names (string) to either files (same string) or

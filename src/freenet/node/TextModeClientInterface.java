@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -10,15 +11,19 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
+import freenet.client.Metadata;
 import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
@@ -92,6 +97,8 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("PUTFILE:<filename> - Put a file from disk.");
         System.out.println("GETFILE:<filename> - Fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
         System.out.println("GETCHKFILE:<filename> - Get the key that would be returned if we inserted the file.");
+        System.out.println("PUTDIR:<path>[#<defaultfile>] - Put the entire directory from disk.");
+        System.out.println("GETCHKDIR:<path>[#<defaultfile>] - Get the key that would be returned if we'd put the entire directory from disk.");
 //        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
 //        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
 //        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
@@ -250,6 +257,85 @@ public class TextModeClientInterface implements Runnable {
             }
             
             System.out.println("URI: "+uri);
+            ////////////////////////////////////////////////////////////////////////////////
+        } else if(uline.startsWith("PUTDIR:") || (getCHKOnly = uline.startsWith("GETCHKDIR:"))) {
+        	// TODO: Check for errors?
+        	if(getCHKOnly) {
+        		line = line.substring(("GETCHKDIR:").length());
+        	} else {
+        		line = line.substring("PUTDIR:".length());
+        	}
+        	
+        	line = line.trim();
+        	
+        	if(line.length() < 1) {
+        		printHeader();
+        		return;
+        	}
+        	
+        	String defaultFile = null;
+        	
+        	// set default file?
+        	if (line.contains("#")) {
+        		defaultFile = line.split("#")[1];
+        		line = line.split("#")[0];
+        	}
+        	
+        	// Get files as name and keys
+        	HashMap manifestBase = dirPut(line, getCHKOnly);
+        	
+        	// Set defaultfile
+        	if (defaultFile != null) {
+        		HashMap currPos = manifestBase;
+        		String splitpath[] = defaultFile.split("/");
+        		int i = 0;
+        		for( ; i < (splitpath.length - 1) ; i++)
+        			currPos = (HashMap)currPos.get(splitpath[i]);
+        		
+        		if (currPos.get(splitpath[i]) != null) {
+        			// Add key as default
+        			manifestBase.put("", currPos.get(splitpath[i]));
+        			System.out.println("Using default key: " + currPos.get(splitpath[i]));
+        		}else{
+        			System.err.println("Default key not found. No default document.");
+        		}
+        		//getchkdir:/home/cyberdo/fort/new#filelist
+        	}
+        	
+        	// Create metadata
+            Metadata med = Metadata.mkRedirectionManifest(manifestBase);
+            ClientMetadata md = med.getClientMetadata();
+            
+            // Extract binary data from metadata
+            ArrayBucket metabucket = new ArrayBucket();
+            DataOutputStream mdos = new DataOutputStream( metabucket.getOutputStream() );
+            med.writeTo(mdos);
+            mdos.close();
+            
+            // Insert metadata
+            InsertBlock block = new InsertBlock(metabucket, md, FreenetURI.EMPTY_CHK_URI);
+            
+            FreenetURI uri;
+            try {
+            	uri = ((HighLevelSimpleClientImpl)client).insert(block, getCHKOnly, true);
+            } catch (InserterException e) {
+            	System.out.println("Error: "+e.getMessage());
+            	if(e.uri != null)
+            		System.out.println("URI would have been: "+e.uri);
+            	int mode = e.getMode();
+            	if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
+            		System.out.println("Splitfile-specific error:\n"+e.errorCodes.toVerboseString());
+            	}
+            	return;
+            }
+            
+        	String filelist = dirPutToList(manifestBase, "");
+        	System.out.println("=======================================================");
+        	System.out.println(filelist);
+        	System.out.println("=======================================================");
+            System.out.println("URI: "+uri);
+        	System.out.println("=======================================================");
+            
         } else if(uline.startsWith("PUTFILE:") || (getCHKOnly = uline.startsWith("GETCHKFILE:"))) {
             // Just insert to local store
         	if(getCHKOnly) {
@@ -358,6 +444,101 @@ public class TextModeClientInterface implements Runnable {
         }
     }
 
+    
+    private String dirPutToList(HashMap dir, String basedir) {
+    	String ret = "";
+		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
+			String key = (String) i.next();
+			Object o = dir.get(key);
+			Metadata target;
+			if(o instanceof String) {
+				// File
+				ret += basedir + key + "\n";
+			} else if(o instanceof HashMap) {
+				ret += dirPutToList((HashMap)o, basedir + key + "//");
+			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
+		}
+		return ret;
+    }
+    
+    private HashMap dirPut(String directory, boolean getCHKOnly) {
+    	if (!directory.endsWith("/"))
+    		directory = directory + "/";
+    	File thisdir = new File(directory);
+    	
+    	HashMap ret = new HashMap();
+    	
+    	File filelist[] = thisdir.listFiles();
+    	for(int i = 0 ; i < filelist.length ; i++)
+    		if (filelist[i].isFile()) {
+    			FreenetURI uri = null;
+    			File f = filelist[i];
+    			String line = f.getAbsolutePath(); 
+    			// To ease cleanup, the following code is taken from above
+    			// Except for the uri-declaration above.
+    			// Somelines is also commented out
+    			//////////////////////////////////////////////////////////////////////////////////////
+    			System.out.println("Attempting to read file "+line);
+                long startTime = System.currentTimeMillis();
+                try {
+                	if(!(f.exists() && f.canRead())) {
+                		throw new FileNotFoundException();
+                	}
+                	
+                	// Guess MIME type
+                	String mimeType = DefaultMIMETypes.guessMIMEType(line);
+                	System.out.println("Using MIME type: "+mimeType);
+                	
+                	FileBucket fb = new FileBucket(f, true, false, false);
+                	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
+
+                	startTime = System.currentTimeMillis();
+                	// Declaration is moved out!!!!!!!!!!!!
+                	uri = client.insert(block, getCHKOnly);
+                	
+                	// FIXME depends on CHK's still being renamable
+                    //uri = uri.setDocName(f.getName());
+                	
+                    System.out.println("URI: "+uri);
+                	long endTime = System.currentTimeMillis();
+                    long sz = f.length();
+                    double rate = 1000.0 * sz / (endTime-startTime);
+                    System.out.println("Upload rate: "+rate+" bytes / second");
+                } catch (FileNotFoundException e1) {
+                    System.out.println("File not found");
+                } catch (InserterException e) {
+                	System.out.println("Finished insert but: "+e.getMessage());
+                	if(e.uri != null) {
+                		System.out.println("URI would have been: "+e.uri);
+                    	long endTime = System.currentTimeMillis();
+                        long sz = f.length();
+                        double rate = 1000.0 * sz / (endTime-startTime);
+                        System.out.println("Upload rate: "+rate+" bytes / second");
+                	}
+                	if(e.errorCodes != null) {
+                		System.out.println("Splitfile errors breakdown:");
+                		System.out.println(e.errorCodes.toVerboseString());
+                	}
+                } catch (Throwable t) {
+                    System.out.println("Insert threw: "+t);
+                    t.printStackTrace();
+                }
+                //////////////////////////////////////////////////////////////////////////////////////
+    			
+                if (uri != null)
+                	ret.put(filelist[i].getName(), uri.toString(false));
+                else
+                	System.err.println("Could not insert file.");
+                //ret.put(filelist[i].getName(), null);
+    		} else {
+    			HashMap subdir = dirPut(filelist[i].getAbsolutePath(), getCHKOnly);
+    			ret.put(filelist[i].getName(), subdir);
+    		}
+    	
+    	return ret;
+	}
+    
+    
     /**
      * @return A block of text, input from stdin, ending with a
      * . on a line by itself. Does some mangling for a fieldset if 
