@@ -20,6 +20,10 @@
 
 <!-- FIXME: remove the debug and replace with optimize -->
     <javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
+    <compilerarg value="-Xlint"/>	 
+    <classpath>
+    	<pathelement location="freenet-ext.jar"/>
+    </classpath>
 <!-- following a very temporary list of files to be build -->
       <include name="org/**/*.java"/>
       <include name="freenet/**/*.java"/>
@@ -54,6 +58,12 @@
     <!-- ================================================== -->
     <target name="clean" description="Delete class files and docs dir.">
         <delete dir="${build}"/>
+        <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
+    </target>
+    <target name="distclean" description="Delete class files and docs dir.">
+        <delete dir="${build}"/>
+	<delete file="freenet-cvs-snapshot.jar"/>
+	<delete file="freenet-ext.jar"/>
         <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
     </target>
 
