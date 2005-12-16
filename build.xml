@@ -20,7 +20,6 @@
 
 <!-- FIXME: remove the debug and replace with optimize -->
     <javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
-    <compilerarg value="-Xlint"/>	 
     <classpath>
     	<pathelement location="freenet-ext.jar"/>
     </classpath>
