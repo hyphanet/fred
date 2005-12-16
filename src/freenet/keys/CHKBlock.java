@@ -34,7 +34,6 @@ public class CHKBlock implements KeyBlock {
     final short hashIdentifier;
     final NodeCHK chk;
     public static final int MAX_LENGTH_BEFORE_COMPRESSION = Integer.MAX_VALUE;
-    final static int HASH_SHA256 = 1;
     
     public String toString() {
         return super.toString()+": chk="+chk;

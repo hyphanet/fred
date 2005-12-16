@@ -27,7 +27,21 @@ import java.util.*;
 
 public class DataStore extends Store {
 
-    public static final String VERSION = "$Id: DataStore.java,v 1.5 2005/08/20 21:21:21 amphibian Exp $";    
+    public class ATimeComparator implements Comparator {
+
+		public int compare(Object arg0, Object arg1) {
+			DataBlock db0 = (DataBlock) arg0;
+			DataBlock db1 = (DataBlock) arg1;
+			long a0 = db0.getLastAccessTime();
+			long a1 = db1.getLastAccessTime();
+			if(a0 < a1) return -1;
+			if(a0 > a1) return 1;
+			return 0;
+		}
+
+	}
+
+	public static final String VERSION = "$Id: DataStore.java,v 1.5 2005/08/20 21:21:21 amphibian Exp $";    
 
 	private RandomAccessFile _index;
 	private final int blockSize;
@@ -55,6 +69,8 @@ public class DataStore extends Store {
 		_index.seek(0);
 		int recordNum = 0;
 
+		Vector v = new Vector();
+		
 		try {
 		while (_index.getFilePointer() < _index.length()) {
 
@@ -65,14 +81,19 @@ public class DataStore extends Store {
 
 			getKeyMap().put(dataBlock.getKey(), dataBlock);
 			getRecordNumberList().add(recordNum, dataBlock);
-
-			updateLastAccess(dataBlock);
+			v.add(dataBlock);
 			recordNum++;
 		}
 		} catch (EOFException e) {
 			// Chopped off in the middle of a key
 			Logger.normal(this, "Store index truncated");
 			return;
+		} finally {
+			DataBlock[] blocks = (DataBlock[]) v.toArray(new DataBlock[v.size()]);
+			Arrays.sort(blocks, new ATimeComparator());
+			for(int i=0;i<blocks.length;i++) {
+				updateLastAccess(blocks[i]);
+			}
 		}
 	}
 

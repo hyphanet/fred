@@ -18,21 +18,16 @@ import freenet.support.Fields;
  */
 public class NodeCHK extends Key {
 
-    final int hash;
-    double cachedNormalizedDouble;
-    
     public NodeCHK(byte[] routingKey2) {
-        routingKey = routingKey2;
+    	super(routingKey2);
         if(routingKey2.length != KEY_LENGTH)
             throw new IllegalArgumentException("Wrong length: "+routingKey2.length+" should be "+KEY_LENGTH);
-        hash = Fields.hashCode(routingKey);
-        cachedNormalizedDouble = -1;
     }
 
     static final int KEY_LENGTH = 32;
     
-    byte[] routingKey;
-    public static final short TYPE = 0x0302;
+    // 01 = CHK, 01 = first version of CHK
+    public static final short TYPE = 0x0101;
     /** The size of the data */
 	public static final int BLOCK_SIZE = 32768;
 
@@ -55,10 +50,6 @@ public class NodeCHK extends Key {
         return new NodeCHK(buf);
     }
 
-    public int hashCode() {
-        return hash;
-    }
-
     public boolean equals(Object key) {
         if(key instanceof NodeCHK) {
             NodeCHK chk = (NodeCHK) key;
@@ -67,27 +58,7 @@ public class NodeCHK extends Key {
         return false;
     }
 
-    /**
-     * @return The key, hashed, converted to a double in the range
-     * 0.0 to 1.0.
-     */
-    public synchronized double toNormalizedDouble() {
-        if(cachedNormalizedDouble > 0) return cachedNormalizedDouble;
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
-        md.update(routingKey);
-        md.update((byte)(TYPE >> 8));
-        md.update((byte)TYPE);
-        byte[] digest = md.digest();
-        long asLong = Math.abs(Fields.bytesToLong(digest));
-        // Math.abs can actually return negative...
-        if(asLong == Long.MIN_VALUE)
-            asLong = Long.MAX_VALUE;
-        cachedNormalizedDouble = ((double)asLong)/((double)Long.MAX_VALUE);
-        return cachedNormalizedDouble;
-    }
+	public short getType() {
+		return TYPE;
+	}
 }

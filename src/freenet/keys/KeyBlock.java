@@ -10,6 +10,8 @@ import freenet.support.BucketFactory;
  */
 public interface KeyBlock {
 
+    final static int HASH_SHA256 = 1;
+	
 	/** Decode with the key
 	 * @param key The ClientKey to use to decode the block. 
 	 * @param factory The BucketFactory to use to create the Bucket to return the data in.
