@@ -276,7 +276,7 @@ public class TextModeClientInterface implements Runnable {
         	String defaultFile = null;
         	
         	// set default file?
-        	if (line.contains("#")) {
+        	if (line.matches("^.*#.*$")) {
         		defaultFile = line.split("#")[1];
         		line = line.split("#")[0];
         	}
