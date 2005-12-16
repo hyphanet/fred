@@ -45,6 +45,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.store.BaseFreenetStore;
@@ -429,14 +430,14 @@ public class Node implements QueueingSimpleLowLevelClient {
         usm.start();
     }
     
-    public KeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache) throws LowLevelGetException {
+    public ClientKeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache) throws LowLevelGetException {
     	if(localOnly)
     		return realGetKey(key, localOnly, cache);
     	else
     		return client.getKey(key, localOnly, cache);
     }
     
-    public KeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache) throws LowLevelGetException {
+    public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache) throws LowLevelGetException {
     	if(key instanceof ClientCHK)
     		return realGetCHK((ClientCHK)key, localOnly, cache);
     	else

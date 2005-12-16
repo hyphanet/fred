@@ -111,9 +111,10 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler. 
 	 */
-	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType) {
+	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType, boolean returnNullIfNotFound) {
 		ArchiveHandler handler = getCached(key);
 		if(handler != null) return handler;
+		if(returnNullIfNotFound) return null;
 		handler = new ArchiveStoreContext(this, key, archiveType);
 		putCached(key, handler);
 		return handler;

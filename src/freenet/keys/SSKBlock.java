@@ -3,6 +3,7 @@ package freenet.keys;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import net.i2p.util.NativeBigInteger;
 
@@ -20,7 +21,7 @@ public class SSKBlock implements KeyBlock {
 
 	final byte[] data;
 	final byte[] headers;
-	/** The index of the first non-signature-related byte in the headers */
+	/** The index of the first byte of encrypted fields in the headers, after E(H(docname)) */
 	final int headersOffset;
 	/* HEADERS FORMAT:
 	 * 2 bytes - hash ID
@@ -43,11 +44,13 @@ public class SSKBlock implements KeyBlock {
 	final NodeSSK nodeKey;
 	final DSAPublicKey pubKey;
     final short hashIdentifier;
+    final short symCipherIdentifier;
     
     static final short DATA_LENGTH = 1024;
     
     static final short SIG_R_LENGTH = 20;
     static final short SIG_S_LENGTH = 20;
+    static final short E_H_DOCNAME_LENGTH = 32;
 	
 	/**
 	 * Initialize, and verify data, headers against key. Provided
@@ -95,13 +98,16 @@ public class SSKBlock implements KeyBlock {
 		if(!DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash))) {
 			throw new SSKVerifyException("Signature verification failed for node-level SSK");
 		}
-		headersOffset = x;
-	}
-	
-	public Bucket decode(ClientKey key, BucketFactory factory, int maxLength) throws KeyDecodeException, IOException {
-		
-		// TODO Auto-generated method stub
-		return null;
+		if(headers.length < x+2+E_H_DOCNAME_LENGTH)
+			throw new SSKVerifyException("Headers too short after sig verification: "+headers.length+" should be "+x+2+E_H_DOCNAME_LENGTH);
+		symCipherIdentifier = (short)(((headers[x] & 0xff) << 8) + (headers[x+1] & 0xff));
+		x+=2;
+		byte[] ehDocname = new byte[E_H_DOCNAME_LENGTH];
+		System.arraycopy(headers, x, ehDocname, 0, ehDocname.length);
+		x+=E_H_DOCNAME_LENGTH;
+		headersOffset = x; // is index to start of e(h(docname))
+		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
+			throw new SSKVerifyException("E(H(docname)) wrong - wrong key??");
 	}
 
 }

@@ -2,6 +2,7 @@ package freenet.node;
 
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyBlock;
 
 /**
@@ -19,7 +20,7 @@ public interface SimpleLowLevelClient {
      * @param cache If false, don't cache the data. See the comments at the top
      * of Node.java.
      */
-    public KeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache) throws LowLevelGetException;
+    public ClientKeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache) throws LowLevelGetException;
 
     /**
      * Insert a key.

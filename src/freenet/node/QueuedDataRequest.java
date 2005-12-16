@@ -1,6 +1,7 @@
 package freenet.node;
 
 import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyBlock;
 
 public class QueuedDataRequest extends QueuedRequest {
@@ -17,7 +18,7 @@ public class QueuedDataRequest extends QueuedRequest {
 		this.cache = cache;
 	}
 
-	public KeyBlock waitAndFetch() throws LowLevelGetException {
+	public ClientKeyBlock waitAndFetch() throws LowLevelGetException {
 		waitForSendClearance();
 		return client.realGetKey(key, localOnly, cache);
 	}

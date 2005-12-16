@@ -7,7 +7,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import freenet.io.WritableToDataOutputStream;
+import freenet.support.Bucket;
+import freenet.support.BucketFactory;
+import freenet.support.BucketTools;
 import freenet.support.Fields;
+import freenet.support.Logger;
+import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.Compressor;
 
 /**
  * @author amphibian
@@ -82,4 +89,27 @@ public abstract class Key implements WritableToDataOutputStream {
     public int hashCode() {
         return hash;
     }
+    
+    static Bucket decompress(ClientCHK key, byte[] output, BucketFactory bf, int maxLength, short compressionAlgorithm, int maxDecompressedLength) throws CHKDecodeException, IOException {
+        if(key.isCompressed()) {
+        	Logger.minor(key, "Decompressing in decode: "+key.getURI()+" with codec "+compressionAlgorithm);
+            if(output.length < 5) throw new CHKDecodeException("No bytes to decompress");
+            // Decompress
+            // First get the length
+            int len = ((((((output[0] & 0xff) << 8) + (output[1] & 0xff)) << 8) + (output[2] & 0xff)) << 8) +
+            	(output[3] & 0xff);
+            if(len > maxDecompressedLength)
+                throw new CHKDecodeException("Invalid precompressed size: "+len);
+            Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(compressionAlgorithm);
+            Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, 4, output.length-4);
+            try {
+				return decompressor.decompress(inputBucket, bf, maxLength);
+			} catch (CompressionOutputSizeException e) {
+				throw new CHKDecodeException("Too big");
+			}
+        } else {
+        	return BucketTools.makeImmutableBucket(bf, output);
+        }
+	}
+
 }

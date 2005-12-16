@@ -5,6 +5,7 @@ import java.util.Vector;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyBlock;
 import freenet.support.DoublyLinkedList;
 import freenet.support.UpdatableSortedLinkedListItemImpl;
@@ -42,7 +43,7 @@ public class RequestStarterClient extends UpdatableSortedLinkedListItemImpl {
 	 * Blocking fetch of a key.
 	 * @throws LowLevelGetException If the fetch failed for some reason.
 	 */
-	public KeyBlock getKey(ClientKey key, boolean localOnly, boolean cache) throws LowLevelGetException {
+	public ClientKeyBlock getKey(ClientKey key, boolean localOnly, boolean cache) throws LowLevelGetException {
 		QueuedDataRequest qdr = new QueuedDataRequest(key, localOnly, cache, client);
 		addRequest(qdr);
 		return qdr.waitAndFetch();

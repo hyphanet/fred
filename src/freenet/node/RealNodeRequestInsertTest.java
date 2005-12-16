@@ -179,7 +179,7 @@ public class RealNodeRequestInsertTest {
                 byte[] encData = block.getData();
                 byte[] encHeaders = block.getHeader();
                 ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
-                Logger.error(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode(chk)));
+                Logger.error(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode()));
                 Logger.error(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
                 Logger.error(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeader()));
                 randomNode.putCHK(block, starters[node1], true);
@@ -196,7 +196,7 @@ public class RealNodeRequestInsertTest {
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch FAILED from "+node2);
                     requestsAvg.report(0.0);
                 } else {
-                    byte[] results = block.memoryDecode(chk);
+                    byte[] results = block.memoryDecode();
                     requestsAvg.report(1.0);
                     if(Arrays.equals(results, data)) {
                         Logger.error(RealNodeRequestInsertTest.class, "Fetch succeeded: "+new String(results));

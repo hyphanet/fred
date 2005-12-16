@@ -13,12 +13,13 @@ public abstract class ClientKey {
 			return new ClientCHK(origURI);
 		throw new UnsupportedOperationException("Unknown keytype from "+origURI);
 	}
+	
+	public abstract FreenetURI getURI();
 
 	/**
-	 * Does the key contain metadata? If not, it contains real data.
+	 * @return a NodeCHK corresponding to this key. Basically keep the 
+	 * routingKey and lose everything else.
 	 */
-	public abstract boolean isMetadata();
-
-	public abstract FreenetURI getURI();
+	public abstract Key getNodeKey();
 
 }

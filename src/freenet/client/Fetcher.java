@@ -7,7 +7,9 @@ import java.util.LinkedList;
 import freenet.client.events.DecodedBlockEvent;
 import freenet.client.events.FetchedMetadataEvent;
 import freenet.client.events.GotBlockEvent;
+import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
@@ -107,7 +109,7 @@ class Fetcher {
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION, ""+recursionLevel+" should be < "+ctx.maxRecursionLevel);
 		
 		// Do the fetch
-		KeyBlock block;
+		ClientKeyBlock block;
 		try {
 			block = ctx.client.getKey(key, localOnly, ctx.starterClient, ctx.cacheLocalRequests);
 		} catch (LowLevelGetException e) {
@@ -138,7 +140,7 @@ class Fetcher {
 		
 		Bucket data;
 		try {
-			data = block.decode(key, ctx.bucketFactory, (int) (Math.min(ctx.maxTempLength, Integer.MAX_VALUE)));
+			data = block.decode(ctx.bucketFactory, (int) (Math.min(ctx.maxTempLength, Integer.MAX_VALUE)));
 		} catch (KeyDecodeException e1) {
 			throw new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage());
 		} catch (IOException e) {
@@ -148,7 +150,7 @@ class Fetcher {
 		
 		ctx.eventProducer.produceEvent(new DecodedBlockEvent(key));
 		
-		if(!key.isMetadata()) {
+		if(!block.isMetadata()) {
 			// Just return the data
 			return new FetchResult(dm, data);
 		}
@@ -202,7 +204,7 @@ class Fetcher {
 			}
 			return runMetadata(dm, recursionLevel, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives, localOnly);
 		} else if(metadata.isArchiveManifest()) {
-			container = ctx.archiveManager.makeHandler(thisKey, metadata.getArchiveType());
+			container = ctx.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), false);
 			Bucket metadataBucket = container.getMetadata(archiveContext, ctx, dm, recursionLevel, true);
 			try {
 				metadata = Metadata.construct(metadataBucket);
@@ -223,7 +225,7 @@ class Fetcher {
 				 */
 				if((!dontEnterImplicitArchives) && ArchiveManager.isUsableArchiveType(dm.getMIMEType()) && (!metaStrings.isEmpty())) {
 					// Possible implicit archive inside archive?
-					container = ctx.archiveManager.makeHandler(thisKey, ArchiveManager.getArchiveType(dm.getMIMEType()));
+					container = ctx.archiveManager.makeHandler(thisKey, ArchiveManager.getArchiveType(dm.getMIMEType()), false);
 					Bucket metadataBucket = container.getMetadata(archiveContext, ctx, dm, recursionLevel, true);
 					try {
 						metadata = Metadata.construct(metadataBucket);
@@ -250,17 +252,16 @@ class Fetcher {
 			FreenetURI uri = metadata.getSingleTarget();
 			dm.mergeNoOverwrite(metadata.getClientMetadata());
 			if((!dontEnterImplicitArchives) && ArchiveManager.isUsableArchiveType(dm.getMIMEType()) && (!metaStrings.isEmpty())) {
+				// Is probably an implicit archive.
 				ClientKey target;
 				try {
 					target = ClientKey.getBaseKey(uri);
 				} catch (MalformedURLException e1) {
 					throw new FetchException(FetchException.INVALID_URI, "Invalid URI: "+uri);
 				}
-				if(!(target.isMetadata())) {
-					// Target *is not* metadata.
-					// Therefore target is a usable archive.
-					// We might not have to fetch it.
-					container = ctx.archiveManager.makeHandler(uri, ArchiveManager.getArchiveType(dm.getMIMEType()));
+				// Probably a usable archive as-is. We may not have to fetch it.
+				container = ctx.archiveManager.makeHandler(uri, ArchiveManager.getArchiveType(dm.getMIMEType()), true);
+				if(container != null) {
 					Bucket metadataBucket = container.getMetadata(archiveContext, ctx, dm, recursionLevel, true);
 					try {
 						metadata = Metadata.construct(metadataBucket);
@@ -268,7 +269,7 @@ class Fetcher {
 						throw new FetchException(FetchException.BUCKET_ERROR);
 					}
 					return runMetadata(dm, recursionLevel+1, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives, localOnly);
-				}
+				} // else just fetch it, create context later
 			}
 			FetchResult fr = realRun(dm, recursionLevel, uri, dontEnterImplicitArchives, localOnly);
 			if(metadata.compressed) {
@@ -293,7 +294,7 @@ class Fetcher {
 			dm.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 			if((!dontEnterImplicitArchives) && ArchiveManager.isUsableArchiveType(dm.getMIMEType()) && (!metaStrings.isEmpty())) {
 				// We know target is not metadata.
-				container = ctx.archiveManager.makeHandler(thisKey, ArchiveManager.getArchiveType(dm.getMIMEType()));
+				container = ctx.archiveManager.makeHandler(thisKey, ArchiveManager.getArchiveType(dm.getMIMEType()), false);
 				Bucket metadataBucket = container.getMetadata(archiveContext, ctx, dm, recursionLevel, true);
 				try {
 					metadata = Metadata.construct(metadataBucket);

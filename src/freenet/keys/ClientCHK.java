@@ -119,17 +119,16 @@ public class ClientCHK extends ClientKey {
         	","+cryptoAlgorithm;
     }
 
+	public Key getNodeKey() {
+		return getNodeCHK();
+	}
 
-    /**
-     * @return a NodeCHK corresponding to this key. Basically keep the 
-     * routingKey and lose everything else.
-     */
-    public NodeCHK getNodeCHK() {
-        if(nodeKey == null)
-            nodeKey = new NodeCHK(routingKey);
-        return nodeKey;
-    }
-
+	public NodeCHK getNodeCHK() {
+		if(nodeKey == null)
+	        nodeKey = new NodeCHK(routingKey);
+	    return nodeKey;
+	}
+	
     /**
      * @return URI form of this key.
      */
