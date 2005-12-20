@@ -960,7 +960,6 @@ public class Node implements QueueingSimpleLowLevelClient {
      * @return Our reference, compressed
      */
     public byte[] myRefCompressed() {
-
         SimpleFieldSet fs = exportFieldSet();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter osw = new OutputStreamWriter(baos);
