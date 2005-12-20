@@ -179,7 +179,6 @@ public class Node implements QueueingSimpleLowLevelClient {
     static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
     static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
     
-    
     /**
      * Read all storable settings (identity etc) from the node file.
      * @param filename The name of the file to read from.
