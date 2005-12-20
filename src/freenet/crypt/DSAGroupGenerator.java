@@ -1,0 +1,159 @@
+package freenet.crypt;
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+import freenet.support.HexUtil;
+
+/**
+ * DSA Group Generator.
+ * Adapted from FIPS 186-2.
+ * Can generate valid groups of any keysize and any hash length.
+ */
+public class DSAGroupGenerator {
+
+    static BigInteger smallPrimes[] = new BigInteger[] { BigInteger.valueOf(3),
+        BigInteger.valueOf(5), BigInteger.valueOf(7),
+        BigInteger.valueOf(11), BigInteger.valueOf(13),
+        BigInteger.valueOf(17), BigInteger.valueOf(19),
+        BigInteger.valueOf(23), BigInteger.valueOf(29)};
+
+	public static void main(String[] args) throws NoSuchAlgorithmException {
+		Yarrow r = new Yarrow();
+		int keyLength = Integer.parseInt(args[0]);
+		int hashLength = Integer.parseInt(args[1]);
+		System.out.println("Key length: "+keyLength);
+		System.out.println("Hash length: "+hashLength);
+		if(hashLength > keyLength)
+			throw new IllegalArgumentException("hashLength must not be greater than keyLength");
+		MessageDigest md;
+		if(hashLength == 256) {
+			md = MessageDigest.getInstance("SHA-256");
+		} else if(hashLength == 160) {
+			md = MessageDigest.getInstance("SHA-160");
+		} else {
+			throw new IllegalArgumentException("Invalid hash length "+hashLength);
+		}
+		if(keyLength % 64 != 0)
+			throw new IllegalArgumentException("Key length must be divisible by 64");
+		if(keyLength % hashLength != 0)
+			throw new IllegalArgumentException("Key length must be divisible by hash length (short cut taken here)");
+		while(!generate(r, keyLength, hashLength, md));
+	}
+
+	private static boolean generate(RandomSource r, int keyLength, int hashLength, MessageDigest md) {
+		
+		int n = keyLength / hashLength;
+		
+		// 1: SEED = arbitrary sequence of at least hashLength bits
+		// g = length of SEED in bits
+		int g = hashLength * 2;
+		byte[] seed = new byte[g/8];
+		r.nextBytes(seed);
+		
+		// 2: U = SHA-256(SEED) XOR SHA-256(SEED+1 mod 2^g)
+		byte[] seedPlus1 = increment(seed);
+		byte[] seedHash = md.digest(seed);
+		byte[] seedPlus1Hash = md.digest(seedPlus1);
+		byte[] U = new byte[hashLength/8];
+		for(int i=0;i<U.length;i++)
+			U[i] = (byte) (seedHash[i] ^ seedPlus1Hash[i]);
+		
+		// 3: Set LSB and MSB on U to 1, q = U
+		byte[] qBuf = new byte[hashLength/8];
+		System.arraycopy(U, 0, qBuf, 0, hashLength/8);
+		qBuf[0] = (byte) (qBuf[0] | 128);
+		qBuf[qBuf.length-1] = (byte) (qBuf[qBuf.length-1] | 1);
+		BigInteger q = new BigInteger(1, qBuf);
+		
+		// 4: Check that q is prime, and 2q+1 is prime
+		// 5: If not, restart from step 1
+		
+		System.out.println("Maybe got prime: "+q.toString(16));
+		
+		if(!isPrime(q))
+			return false;
+		
+		System.out.println("Got prime q");
+		
+		BigInteger sophieGermainCheck = q.add(q).add(BigInteger.ONE);
+		if(!isPrime(sophieGermainCheck))
+			return false;
+
+		System.out.println("Got SG-prime q");
+		
+		// 6: Let counter = 0 and offset = 2
+		
+		int counter = 0;
+		int offset = 2;
+		
+		byte[] curSeed = seedPlus1;
+		
+		while(true) {
+		
+			// 7: For k = 0...n let V_k = SHA-256((SEED+offset+k) mod 2^g)
+			
+			byte[][] V = new byte[n][];
+			
+			for(int i=0;i<n;i++) {
+				curSeed = increment(curSeed);
+				V[i] = md.digest(curSeed);
+			}
+			
+			// 8: Pack all the V's into W bit-wise, set the top bit so is between 2^(L-1) and 2^L
+			byte[] Wbuf = new byte[keyLength/8];
+			for(int i=0;i<keyLength;i+=hashLength) {
+				System.arraycopy(V[i/hashLength], 0, Wbuf, i/8, hashLength/8);
+			}
+			Wbuf[0] = (byte) (Wbuf[0] | 128);
+			
+			BigInteger X = new BigInteger(1, Wbuf);
+			
+			// 9: Let c = X mod 2q. Set p = X - ( c - 1 ). Therefore p mod 2q = 1.
+			
+			BigInteger c = X.mod(q.add(q));
+			BigInteger p = X.subtract(c.subtract(BigInteger.ONE));
+			
+			if(p.bitLength() >= keyLength-1) {
+				if(isPrime(p)) {
+					finish(p, q, seed, counter);
+					return true;
+				}
+			}
+			
+			counter++;
+			offset += n;
+			if(counter >= 4096) return false;
+		}		
+	}
+
+    private static void finish(BigInteger p, BigInteger q, byte[] seed, int counter) {
+    	System.out.println("SEED: "+HexUtil.bytesToHex(seed));
+    	System.out.println("COUNTER: "+counter);
+    	System.out.println("p: "+p.toString(16));
+    	System.out.println("q: "+q.toString(16));
+	}
+
+	private static byte[] increment(byte[] seed) {
+    	byte[] obuf = new byte[seed.length];
+    	System.arraycopy(seed, 0, obuf, 0, seed.length);
+    	int pos = seed.length-1;
+    	while(pos >= 0) {
+    		byte b = (byte) (obuf[pos] + 1);
+    		obuf[pos] = b;
+    		if(b != 0) return obuf;
+    		pos--;
+    	}
+    	return obuf;
+	}
+
+	public static boolean isPrime(BigInteger b) {
+        for (int i = 0; i < smallPrimes.length; i++) {
+            if (b.mod(smallPrimes[i]).equals(BigInteger.ZERO)) return false;
+        }
+        // FIPS 186-2 recommends 2^100:1 confidence
+        return b.isProbablePrime(200);
+    }
+
+}
