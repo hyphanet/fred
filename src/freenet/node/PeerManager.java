@@ -394,6 +394,21 @@ public class PeerManager {
         }
         return sb.toString();
     }
+    public String getIdentity() {
+        StringBuffer sb = new StringBuffer();
+        PeerNode[] peers = myPeers;
+        String[] identity = new String[peers.length];
+        for(int i=0;i<myPeers.length;i++) {
+            PeerNode pn = myPeers[i];
+            identity[i] = pn.getIdentity();
+        }
+        Arrays.sort(identity);
+        for(int i=0;i<identity.length;i++) {
+            sb.append(identity[i]);
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
 
     final Object writePeersSync = new Object();
     

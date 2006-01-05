@@ -857,7 +857,11 @@ public class PeerNode implements PeerContext {
         return 
         	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+backoffLength+" ("+(Math.max(backedOffUntil - System.currentTimeMillis(),0))+")";
     }
-	
+    
+    public String getIdentity() {
+    	return
+       		myName+"|"+ HexUtil.bytesToHex(identity);
+    }
     public String getVersion(){
 	    return version;
     }

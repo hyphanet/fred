@@ -967,6 +967,17 @@ public class Node implements QueueingSimpleLowLevelClient {
     	sb.append(this.transferringRequestSenders.size());
     	return sb.toString();
     }
+    
+    /**
+     * @return Some identity information.
+     */
+    public String getIdentity() {
+    	StringBuffer sb = new StringBuffer();
+    	if (peers != null)
+    		sb.append(peers.getIdentity());
+    	  		    	    	
+    	return sb.toString();
+    }
 
     /**
      * @return Our reference, compressed
