@@ -4,6 +4,8 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import net.i2p.util.NativeBigInteger;
+
 import freenet.support.HexUtil;
 
 /**
@@ -70,7 +72,7 @@ public class DSAGroupGenerator {
 		// 4: Check that q is prime, and 2q+1 is prime
 		// 5: If not, restart from step 1
 		
-		System.out.println("Maybe got prime: "+q.toString(16));
+		System.out.println("Maybe got prime: "+q.toString(16)+ " ("+q.bitLength()+")");
 		
 		if(!isPrime(q))
 			return false;
@@ -108,7 +110,7 @@ public class DSAGroupGenerator {
 			}
 			Wbuf[0] = (byte) (Wbuf[0] | 128);
 			
-			BigInteger X = new BigInteger(1, Wbuf);
+			BigInteger X = new NativeBigInteger(1, Wbuf);
 			
 			// 9: Let c = X mod 2q. Set p = X - ( c - 1 ). Therefore p mod 2q = 1.
 			
@@ -117,7 +119,7 @@ public class DSAGroupGenerator {
 			
 			if(p.bitLength() >= keyLength-1) {
 				if(isPrime(p)) {
-					finish(p, q, seed, counter);
+					finish(r, hashLength, new NativeBigInteger(p), new NativeBigInteger(q), seed, counter);
 					return true;
 				}
 			}
@@ -128,11 +130,46 @@ public class DSAGroupGenerator {
 		}		
 	}
 
-    private static void finish(BigInteger p, BigInteger q, byte[] seed, int counter) {
+    private static void finish(RandomSource r, int hashLength, NativeBigInteger p, NativeBigInteger q, byte[] seed, int counter) {
     	System.out.println("SEED: "+HexUtil.bytesToHex(seed));
     	System.out.println("COUNTER: "+counter);
-    	System.out.println("p: "+p.toString(16));
-    	System.out.println("q: "+q.toString(16));
+    	System.out.println("p: "+p.toString(16)+" ("+p.bitLength()+")");
+    	System.out.println("q: "+q.toString(16)+" ("+q.bitLength()+")");
+		// Now generate g (algorithm from appendix 4 of FIPS 186-2)
+    	NativeBigInteger g;
+    	do {
+    		BigInteger e = p.subtract(BigInteger.ONE).divide(q);
+    		NativeBigInteger h;
+    		do {
+    			h = new NativeBigInteger(hashLength, r);
+    		} while(h.compareTo(p.subtract(BigInteger.ONE)) >= 0);
+    		g = (NativeBigInteger) h.modPow(e, p);
+    	} while (g.equals(BigInteger.ONE));
+    	DSAGroup group = new DSAGroup(p, q, g);
+    	System.out.println("g: "+g.toHexString()+" ("+g.bitLength()+")");
+    	System.out.println("Group: "+group.verboseToString());
+    	long totalSigTime = 0;
+    	long totalVerifyTime = 0;
+    	for(int i=0;i<10000;i++) {
+    	byte[] testHash = new byte[hashLength/8];
+    	r.nextBytes(testHash);
+    	NativeBigInteger m = new NativeBigInteger(1, testHash);
+    	DSAPrivateKey privKey = new DSAPrivateKey(group, r);
+    	DSAPublicKey pubKey = new DSAPublicKey(group, privKey);
+    	long now = System.currentTimeMillis();
+    	DSASignature sig = DSA.sign(group, privKey, m, r);
+    	long middle = System.currentTimeMillis();
+    	boolean success = DSA.verify(pubKey, sig, m);
+    	long end = System.currentTimeMillis();
+    	if(success) {
+    		totalSigTime += (middle - now);
+    		totalVerifyTime += (end - middle);
+    	} else {
+    		System.out.println("SIGNATURE VERIFICATION FAILED!!!");
+    		System.exit(1);
+    	}
+    	}
+    	System.out.println("Successfully signed and verified 10,000 times, average sig time "+(double)totalSigTime / 10000.0 +", average verify time "+(double)totalVerifyTime/10000.0);
 	}
 
 	private static byte[] increment(byte[] seed) {
