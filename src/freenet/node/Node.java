@@ -429,6 +429,8 @@ public class Node implements QueueingSimpleLowLevelClient {
 		insertStarter = new RequestStarter(insertThrottle, "Insert starter ("+portNumber+")");
 		if(testnetHandler != null)
 			testnetHandler.start();
+		if(statusUploader != null)
+			statusUploader.start();
 		System.err.println("Created Node on port "+port);
     }
 

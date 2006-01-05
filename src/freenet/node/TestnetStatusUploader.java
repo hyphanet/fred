@@ -38,13 +38,16 @@ public class TestnetStatusUploader implements Runnable {
 		System.err.println("You have no anonymity. Thank you for running a testnet node, this will help the developers to efficiently debug Freenet, by letting them (and anyone else who knows how!!) automatically fetch your log files.");
 		System.err.println("We repeat: YOU HAVE NO ANONYMITY WHATSOEVER. DO NOT POST ANYTHING YOU DO NOT WANT TO BE ASSOCIATED WITH.");
 		System.err.println("If you want a real freenet node, with anonymity, turn off testnet mode.");
+	}
+
+	void start() {
 		uploaderThread = new Thread(this, "TestnetStatusUploader thread");
 		uploaderThread.setDaemon(true);
 		uploaderThread.start();
 	}
 	
 	private final Node node;
-	private final Thread uploaderThread;
+	private Thread uploaderThread;
 	private final int updateInterval;
 	private Socket client;
 	
