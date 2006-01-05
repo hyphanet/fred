@@ -171,6 +171,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     final RequestStarter insertStarter;
     final File downloadDir;
     final TestnetHandler testnetHandler;
+    final TestnetStatusUploader statusUploader;
     
     // Client stuff that needs to be configged - FIXME
     static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -324,10 +325,12 @@ public class Node implements QueueingSimpleLowLevelClient {
     		testnetEnabled = true;
     		testnetPort = 1024 + (port-1024+1000) % (65536 - 1024);
     		testnetHandler = new TestnetHandler(this, testnetPort);
+    		statusUploader = new TestnetStatusUploader(this, 180000);
     	} else {
     		testnetEnabled = false;
     		testnetPort = -1;
     		testnetHandler = null;
+    		statusUploader = null;
     	}
         portNumber = port;
         startupTime = System.currentTimeMillis();
