@@ -12,11 +12,17 @@
 	<property name="build" location="build"/>
 	<property name="lib"	location="lib"/>
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
-<target name="env"      description="Learn about the environment">
+
+<target name="mkdir">
+    <mkdir dir="${build}"/>
+    <mkdir dir="${lib}"/>
+</target>
+
+<target name="env" depends="mkdir"   description="Learn about the environment">
     <available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
 </target>
 
-  <target name="get-extjar" unless="freenet-ext.present"
+  <target name="get-extjar" depends="env" unless="freenet-ext.present"
     description="Download some external libraries which Freenet relies on">
     <mkdir dir="${lib}"/>
     <get src="http://downloads.freenetproject.org/alpha/freenet-ext.jar" 
@@ -26,17 +32,15 @@
 		<property name="freenet-ext.present" value="true"/>
   </target>
     <!-- ================================================== -->
-  <target name="compile" depends="get-extjar"  unless="freenet-ext.present">
+  <target name="compile" depends="get-extjar">
     <!-- Create the time stamp -->
     <tstamp/>
     <!-- Create the build directory structure used by compile -->
-    <mkdir dir="${build}"/>
-    <mkdir dir="${lib}"/>
 
 <!-- FIXME: remove the debug and replace with optimize -->
     <javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
     <classpath>
-    	<pathelement location="${lib}freenet-ext.jar"/>
+    	<pathelement location="${freenet-ext.location}"/>
     </classpath>
 <!-- following a very temporary list of files to be build -->
       <include name="org/**/*.java"/>
@@ -53,7 +57,7 @@
     <!-- Create the distribution directory -->
     <!--<mkdir dir="."/>-->
     <!-- Put everything in ${build} into the freenet-${DSTAMP}.jar file -->
-    <jar jarfile="freenet-cvs-snapshot.jar" basedir="${lib}">
+    <jar jarfile="freenet-cvs-snapshot.jar" basedir="${build}">
       <manifest>
       <attribute name="Main-Class" value="freenet/node/Node"/>
          <attribute name="Built-By" value="${user.name}"/>
