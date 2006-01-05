@@ -49,6 +49,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.store.BaseFreenetStore;
+import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.BucketFactory;
 import freenet.support.FileLoggerHook;
@@ -342,17 +343,20 @@ public class Node implements QueueingSimpleLowLevelClient {
         downloadDir = new File("downloads");
         downloadDir.mkdir();
         try {
-            datastore = new BaseFreenetStore(prefix+"freenet-"+portNumber,16384); // 512MB
+            datastore = new BerkeleyDBFreenetStore(prefix+"store-"+portNumber, 32768); // 1GB
         } catch (FileNotFoundException e1) {
             Logger.error(this, "Could not open datastore: "+e1, e1);
+            System.err.println("Could not open datastore: "+e1);
             System.exit(EXIT_STORE_FILE_NOT_FOUND);
             throw new Error();
         } catch (IOException e1) {
             Logger.error(this, "Could not open datastore: "+e1, e1);
+            System.err.println("Could not open datastore: "+e1);
             System.exit(EXIT_STORE_IOEXCEPTION);
             throw new Error();
         } catch (Exception e1) {
             Logger.error(this, "Could not open datastore: "+e1, e1);
+            System.err.println("Could not open datastore: "+e1);
             System.exit(EXIT_STORE_OTHER);
             throw new Error();
         }
@@ -423,6 +427,7 @@ public class Node implements QueueingSimpleLowLevelClient {
 		// FIXME reenable the above
 		insertThrottle = new RequestThrottle(10000, 2.0F);
 		insertStarter = new RequestStarter(insertThrottle, "Insert starter ("+portNumber+")");
+		System.err.println("Created Node on port "+port);
     }
 
     void start(SwapRequestInterval interval) {

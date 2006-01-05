@@ -61,4 +61,8 @@ public class NodeCHK extends Key {
 	public short getType() {
 		return TYPE;
 	}
+    
+    public byte[] getRoutingKey(){
+    	return routingKey;
+    }
 }

@@ -47,6 +47,7 @@ public class TestnetHandler implements Runnable {
 		serverThread = new Thread(this, "Testnet handler thread");
 		serverThread.setDaemon(true);
 		serverThread.start();
+		System.err.println("Started testnet handler on port "+testnetPort);
 	}
 	
 	private final Node node;
