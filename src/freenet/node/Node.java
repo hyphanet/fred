@@ -49,6 +49,7 @@ import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.store.BaseFreenetStore;
 import freenet.store.FreenetStore;
+import freenet.store.BerkelyDBFreenetStore;
 import freenet.support.BucketFactory;
 import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
@@ -339,7 +340,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         downloadDir = new File("downloads");
         downloadDir.mkdir();
         try {
-            datastore = new BaseFreenetStore(prefix+"freenet-"+portNumber,16384); // 512MB
+            datastore = new BerkelyDBFreenetStore(prefix+"freenet-"+portNumber,16384); // 512MB
         } catch (FileNotFoundException e1) {
             Logger.error(this, "Could not open datastore: "+e1, e1);
             System.exit(EXIT_STORE_FILE_NOT_FOUND);
