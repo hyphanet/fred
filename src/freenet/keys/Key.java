@@ -90,15 +90,15 @@ public abstract class Key implements WritableToDataOutputStream {
         return hash;
     }
     
-    static Bucket decompress(ClientCHK key, byte[] output, BucketFactory bf, int maxLength, short compressionAlgorithm, int maxDecompressedLength) throws CHKDecodeException, IOException {
-        if(key.isCompressed()) {
-        	Logger.minor(key, "Decompressing in decode: "+key.getURI()+" with codec "+compressionAlgorithm);
+    static Bucket decompress(boolean isCompressed, byte[] output, BucketFactory bf, int maxLength, short compressionAlgorithm) throws CHKDecodeException, IOException {
+        if(isCompressed) {
+        	Logger.minor(Key.class, "Decompressing in decode with codec "+compressionAlgorithm);
             if(output.length < 5) throw new CHKDecodeException("No bytes to decompress");
             // Decompress
             // First get the length
             int len = ((((((output[0] & 0xff) << 8) + (output[1] & 0xff)) << 8) + (output[2] & 0xff)) << 8) +
             	(output[3] & 0xff);
-            if(len > maxDecompressedLength)
+            if(len > maxLength)
                 throw new CHKDecodeException("Invalid precompressed size: "+len);
             Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(compressionAlgorithm);
             Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, 4, output.length-4);

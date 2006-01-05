@@ -12,6 +12,8 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	
 	static final int DATA_DECRYPT_KEY_LENGTH = 32;
 	
+	static final int MAX_DECOMPRESSED_DATA_LENGTH = 32768;
+	
 	/** Is metadata. Set on decode. */
 	private boolean isMetadata;
 	/** Has decoded? */
@@ -69,11 +71,10 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 			dataOutput = realDataOutput;
 		}
         short compressionAlgorithm = (short)(((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+2] & 0xff) << 8) + (decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+3] & 0xff));
-        
-		
-		decoded = true;
-		// TODO Auto-generated method stub
-		return null;
+
+        Bucket b = Key.decompress(compressionAlgorithm >= 0, dataOutput, factory, Math.min(MAX_DECOMPRESSED_DATA_LENGTH, maxLength), compressionAlgorithm);
+        decoded = true;
+        return b;
 	}
 
 	public boolean isMetadata() {

@@ -26,8 +26,8 @@ public class SSKBlock implements KeyBlock {
 	/* HEADERS FORMAT:
 	 * 2 bytes - hash ID
 	 * SIGNATURE ON THE BELOW HASH:
-	 *  20 bytes - signature: R (unsigned bytes)
-	 *  20 bytes - signature: S (unsigned bytes)
+	 *  32 bytes - signature: R (unsigned bytes)
+	 *  32 bytes - signature: S (unsigned bytes)
 	 * IMPLICIT - hash of remaining fields, including the implicit hash of data
 	 * IMPLICIT - hash of data
 	 * 2 bytes - symmetric cipher ID
@@ -48,8 +48,8 @@ public class SSKBlock implements KeyBlock {
     
     static final short DATA_LENGTH = 1024;
     
-    static final short SIG_R_LENGTH = 20;
-    static final short SIG_S_LENGTH = 20;
+    static final short SIG_R_LENGTH = 32;
+    static final short SIG_S_LENGTH = 32;
     static final short E_H_DOCNAME_LENGTH = 32;
 	
 	/**
