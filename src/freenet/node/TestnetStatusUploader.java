@@ -55,19 +55,22 @@ public class TestnetStatusUploader implements Runnable {
 			//thread loop
 			
 			while(true){
-				client = new Socket("sleon.dyndns.org", 12345);
-
-				PrintStream output = new PrintStream(client.getOutputStream());
-				output.println(node.getStatus());
-				output.close();
-
-				client.close();
+				if ( node != null) {
+					client = new Socket("sleon.dyndns.org", 23415);
+	
+					PrintStream output = new PrintStream(client.getOutputStream());
+					output.println(node.getStatus());
+					output.close();
+	
+					client.close();
+				}
 				try{
 					Thread.sleep(updateInterval);
-					
+						
 				//how i love java 
 				}catch (InterruptedException e){
 					return;
+					
 				}
 				
 			}
