@@ -90,7 +90,7 @@ public class DSA {
 
     public static void main(String[] args) throws Exception {
     	//DSAGroup g=DSAGroup.readFromField(args[0]);
-    	DSAGroup g = Global.DSAgroupB;
+    	DSAGroup g = Global.DSAgroupBigA;
         //Yarrow y=new Yarrow();
     	DummyRandomSource y = new DummyRandomSource();
         DSAPrivateKey pk=new DSAPrivateKey(g, y);
@@ -132,13 +132,15 @@ public class DSA {
         	long t3 = System.currentTimeMillis();
         	totalTimeSigning += (t2 - t1);
         	totalTimeVerifying += (t3 - t2);
-        	int rSize = sig.getR().toByteArray().length;
+        	int rSize = sig.getR().bitLength();
+        	rSize = (rSize / 8) + (rSize % 8 == 0 ? 0 : 1);
         	totalRSize += rSize;
         	if(rSize > maxRSize) maxRSize = rSize;
         	int rUnsignedBitSize = sig.getR().bitLength();
         	totalRUnsignedBitSize += rUnsignedBitSize;
         	maxRUnsignedBitSize = Math.max(maxRUnsignedBitSize, rUnsignedBitSize);
-        	int sSize = sig.getS().toByteArray().length;
+        	int sSize = sig.getS().bitLength();
+        	sSize = sSize / 8 +  (sSize % 8 == 0 ? 0 : 1);
         	totalSSize += sSize;
         	if(sSize > maxSSize) maxSSize = sSize;
         }
