@@ -935,7 +935,8 @@ public class Node implements QueueingSimpleLowLevelClient {
      */
     public String getStatus() {
     	StringBuffer sb = new StringBuffer();
-    	sb.append(peers.getStatus());
+    	if (peers != null)
+    		sb.append(peers.getStatus());
     	sb.append("\nInserts: ");
     	int x = insertSenders.size();
     	sb.append(x);
