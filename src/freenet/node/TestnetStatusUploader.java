@@ -15,6 +15,7 @@ import java.net.Socket;
 //import java.util.TimeZone;
 
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * Testnet StatusUploader.
@@ -61,9 +62,12 @@ public class TestnetStatusUploader implements Runnable {
 			
 				client = new Socket("sleon.dyndns.org", 23415);
 				PrintStream output = new PrintStream(client.getOutputStream());
+	            	
+	            output.println(node.exportFieldSet().toString());
+	            output.println();
 				output.println(node.getStatus());
 				output.close();
-	
+				
 				client.close();
 				
 				try{
