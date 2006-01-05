@@ -115,7 +115,12 @@ public class TestnetHandler implements Runnable {
 						return;
 					}
 					node.fileLoggerHook.sendLogByContainedDate(d.getTime(), os);
-				} else {
+				} else if(command.equalsIgnoreCase("STATUS")) {
+					Logger.minor(this, "Sending status");
+					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
+					osw.write(node.getStatus());
+					osw.close();
+				}else {
 					Logger.error(this, "Unknown testnet command: "+command);
 				}
 			} catch (IOException e) {
