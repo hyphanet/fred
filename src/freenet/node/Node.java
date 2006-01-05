@@ -427,7 +427,8 @@ public class Node implements QueueingSimpleLowLevelClient {
 		// FIXME reenable the above
 		insertThrottle = new RequestThrottle(10000, 2.0F);
 		insertStarter = new RequestStarter(insertThrottle, "Insert starter ("+portNumber+")");
-		testnetHandler.start();
+		if(testnetHandler != null)
+			testnetHandler.start();
 		System.err.println("Created Node on port "+port);
     }
 
