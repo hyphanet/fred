@@ -44,6 +44,9 @@ public class TestnetHandler implements Runnable {
 		System.err.println("We repeat: YOU HAVE NO ANONYMITY WHATSOEVER. DO NOT POST ANYTHING YOU DO NOT WANT TO BE ASSOCIATED WITH.");
 		System.err.println("If you want a real freenet node, with anonymity, turn off testnet mode.");
 		System.err.println("Note, this node will not connect to non-testnet nodes, for security reasons. You can of course run a testnet node and a non-testnet node separately.");
+	}
+
+	public void start() {
 		serverThread = new Thread(this, "Testnet handler thread");
 		serverThread.setDaemon(true);
 		serverThread.start();
@@ -51,7 +54,7 @@ public class TestnetHandler implements Runnable {
 	}
 	
 	private final Node node;
-	private final Thread serverThread;
+	private Thread serverThread;
 	private final int testnetPort;
 	
 	public void run() {
