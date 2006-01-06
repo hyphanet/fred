@@ -131,7 +131,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] output = new byte[size];
         // No particular reason to check the padding, is there?
         System.arraycopy(dbuf, 0, output, 0, size);
-        return Key.decompress(key.isCompressed(), output, bf, Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm);
+        return Key.decompress(key.isCompressed(), output, bf, Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
 
     /**

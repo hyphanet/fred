@@ -48,7 +48,6 @@ public class ClientSSK extends ClientKey {
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
-		
 	}
 	
 	public FreenetURI getURI() {

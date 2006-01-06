@@ -1,17 +1,13 @@
 package freenet.keys;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import net.i2p.util.NativeBigInteger;
-
 import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 
 /**
  * SSKBlock. Contains a full fetched key. Can do a node-level verification. Can 

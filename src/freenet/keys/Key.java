@@ -90,18 +90,22 @@ public abstract class Key implements WritableToDataOutputStream {
         return hash;
     }
     
-    static Bucket decompress(boolean isCompressed, byte[] output, BucketFactory bf, int maxLength, short compressionAlgorithm) throws CHKDecodeException, IOException {
+    static Bucket decompress(boolean isCompressed, byte[] output, BucketFactory bf, int maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
         if(isCompressed) {
         	Logger.minor(Key.class, "Decompressing in decode with codec "+compressionAlgorithm);
-            if(output.length < 5) throw new CHKDecodeException("No bytes to decompress");
+            if(output.length < (shortLength ? 3 : 5)) throw new CHKDecodeException("No bytes to decompress");
             // Decompress
             // First get the length
-            int len = ((((((output[0] & 0xff) << 8) + (output[1] & 0xff)) << 8) + (output[2] & 0xff)) << 8) +
-            	(output[3] & 0xff);
+            int len;
+            if(shortLength)
+            	len = ((output[0] & 0xff) << 8) + (output[1] & 0xff);
+            else 
+            	len = ((((((output[0] & 0xff) << 8) + (output[1] & 0xff)) << 8) + (output[2] & 0xff)) << 8) +
+            		(output[3] & 0xff);
             if(len > maxLength)
                 throw new CHKDecodeException("Invalid precompressed size: "+len);
             Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(compressionAlgorithm);
-            Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, 4, output.length-4);
+            Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, output.length-(shortLength?2:4));
             try {
 				return decompressor.decompress(inputBucket, bf, maxLength);
 			} catch (CompressionOutputSizeException e) {
