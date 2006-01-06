@@ -1,21 +1,10 @@
 package freenet.node;
 
-//import java.io.BufferedReader;
 import java.io.IOException;
-//import java.io.InputStream;
-//import java.io.InputStreamReader;
-//import java.io.OutputStream;
-//import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.net.Socket;
-//import java.text.DateFormat;
-//import java.text.ParseException;
-//import java.util.Date;
-//import java.util.Locale;
-//import java.util.TimeZone;
 
 import freenet.support.Logger;
-import freenet.support.SimpleFieldSet;
 
 /**
  * Testnet StatusUploader.
@@ -53,22 +42,27 @@ public class TestnetStatusUploader implements Runnable {
 	private Socket client;
 	
 	public void run() {
-		// Set up client socket
-		try
-		{
 			//thread loop
 			
 			while(true){
 			
-				client = new Socket("sleon.dyndns.org", 23415);
-				PrintStream output = new PrintStream(client.getOutputStream());
-	            	
-	            output.println(node.exportFieldSet().toString());
-	            output.println();
-				output.println(node.getIdentity());
-				output.close();
-				
-				client.close();
+				// Set up client socket
+				try
+				{
+					client = new Socket("sleon.dyndns.org", 23415);
+					PrintStream output = new PrintStream(client.getOutputStream());
+	            		
+					output.println(node.exportFieldSet().toString());
+					output.println();
+					output.println(node.getIdentity());
+					output.close();
+					
+					client.close();
+					
+				} catch (IOException e){
+					Logger.error(this, "Could not open connection to the uploadhost");
+					System.err.println("Could not open connection to the uploadhost");
+				}
 				
 				try{
 					Thread.sleep(updateInterval);
@@ -81,11 +75,6 @@ public class TestnetStatusUploader implements Runnable {
 				
 			}
 			
-		}catch (IOException e){
-			Logger.error(this, "Could not open connection to the uploadhost");
-			System.err.println("Could not open connection to the uploadhost");
-			return;
-		}
 
 	}
 	
