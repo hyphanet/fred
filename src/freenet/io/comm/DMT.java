@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import freenet.keys.Key;
+import freenet.keys.NodeSSK;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.ShortBuffer;
@@ -80,6 +81,9 @@ public class DMT {
     public static final String STREAM_SEQNO = "streamSequenceNumber";
     public static final String IS_LOCAL = "isLocal";
     public static final String ANY_TIMED_OUT = "anyTimedOut";
+    public static final String PUBKEY_HASH = "pubkeyHash";
+    public static final String NEED_PUB_KEY = "needPubKey";
+    public static final String PUBKEY_AS_BYTES = "pubkeyAsBytes";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -666,7 +670,83 @@ public class DMT {
             return "Receive failed";
         return "Unknown reason code: "+reason;
     }
+
+    public static final MessageType FNPSSKInsertRequest = new MessageType("FNPSSKInsertRequest") {{
+    	addField(UID, Long.class);
+    	addField(HTL, Short.class);
+    	addField(KEY, NodeSSK.class);
+        addField(NEAREST_LOCATION, Double.class);
+        addField(BLOCK_HEADERS, ShortBuffer.class);
+        addField(PUBKEY_HASH, ShortBuffer.class);
+    }};
     
+	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, double closestLocation, byte[] headers, byte[] pubKeyHash) {
+		Message msg = new Message(FNPSSKInsertRequest);
+		msg.set(UID, uid);
+		msg.set(HTL, htl);
+		msg.set(KEY, myKey);
+		msg.set(NEAREST_LOCATION, closestLocation);
+		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		msg.set(PUBKEY_HASH, new ShortBuffer(pubKeyHash));
+		return msg;
+	}
+
+	public static final MessageType FNPSSKDataFound = new MessageType("FNPSSKDataFound") {{
+    	addField(UID, Long.class);
+    	addField(HTL, Short.class);
+    	addField(KEY, NodeSSK.class);
+        addField(NEAREST_LOCATION, Double.class);
+        addField(BLOCK_HEADERS, ShortBuffer.class);
+        addField(PUBKEY_HASH, ShortBuffer.class);
+	}};
+	
+	public static Message createFNPSSKDataFound(long uid, short htl, NodeSSK myKey, double closestLocation, byte[] headers, byte[] pubKeyHash) {
+		Message msg = new Message(FNPSSKDataFound);
+		msg.set(UID, uid);
+		msg.set(HTL, htl);
+		msg.set(KEY, myKey);
+		msg.set(NEAREST_LOCATION, closestLocation);
+		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		msg.set(PUBKEY_HASH, new ShortBuffer(pubKeyHash));
+		return msg;
+	}
+
+	
+	
+	public static MessageType FNPSSKAccepted = new MessageType("FNPSSKAccepted") {{
+		addField(UID, Long.class);
+		addField(NEED_PUB_KEY, Boolean.class);
+	}};
+	
+	public static final Message createFNPSSKAccepted(long uid, boolean needPubKey) {
+		Message msg = new Message(FNPSSKAccepted);
+		msg.set(UID, uid);
+		msg.set(NEED_PUB_KEY, needPubKey);
+		return msg;
+	}
+	
+	public static MessageType FNPSSKPubKey = new MessageType("FNPSSKPubKey") {{
+		addField(UID, Long.class);
+		addField(PUBKEY_AS_BYTES, ShortBuffer.class);
+	}};
+	
+	public static Message createFNPSSKPubKey(long uid, byte[] pubkey) {
+		Message msg = new Message(FNPSSKPubKey);
+		msg.set(UID, uid);
+		msg.set(PUBKEY_AS_BYTES, new ShortBuffer(pubkey));
+		return msg;
+	}
+	
+	public static MessageType FNPSSKPubKeyAccepted = new MessageType("FNPSSKPubKeyAccepted") {{
+		addField(UID, Long.class);
+	}};
+	
+	public static Message createFNPSSKPubKeyAccepted(long uid) {
+		Message msg = new Message(FNPSSKPubKeyAccepted);
+		msg.set(UID, uid);
+		return msg;
+	}
+	
     public static final MessageType FNPPing = new MessageType("FNPPing") {{
         addField(PING_SEQNO, Integer.class);
     }};
@@ -812,7 +892,7 @@ public class DMT {
         msg.set(HTL, htl);
         return msg;
     }
-    
+
 	public static void init() { }
 
 }

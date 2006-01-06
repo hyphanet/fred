@@ -35,7 +35,7 @@ public class InsertHandler implements Runnable {
     final long startTime;
     private double closestLoc;
     private short htl;
-    private InsertSender sender;
+    private CHKInsertSender sender;
     private byte[] headers;
     private BlockReceiver br;
     private Thread runThread;
@@ -104,7 +104,7 @@ public class InsertHandler implements Runnable {
         headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
         // FIXME check the headers
         
-        // Now create an InsertSender, or use an existing one, or
+        // Now create an CHKInsertSender, or use an existing one, or
         // discover that the data is in the store.
 
         // From this point onwards, if we return cleanly we must go through finish().
@@ -134,16 +134,16 @@ public class InsertHandler implements Runnable {
         // What do we want to wait for?
         // If the data receive completes, that's very nice,
         // but doesn't really matter. What matters is what
-        // happens to the InsertSender. If the data receive
+        // happens to the CHKInsertSender. If the data receive
         // fails, that does matter...
         
-        // We are waiting for a terminal status on the InsertSender,
+        // We are waiting for a terminal status on the CHKInsertSender,
         // including REPLIED_WITH_DATA.
         // If we get transfer failed, we can check whether the receive
         // failed first. If it did it's not our fault.
         // If the receive failed, and we haven't started transferring
         // yet, we probably want to kill the sender.
-        // So we call the wait method on the InsertSender, but we
+        // So we call the wait method on the CHKInsertSender, but we
         // also have a flag locally to indicate the receive failed.
         // And if it does, we interrupt.
         
@@ -152,7 +152,7 @@ public class InsertHandler implements Runnable {
         while(true) {
             synchronized(sender) {
                 try {
-                	if(sender.getStatus() == InsertSender.NOT_FINISHED)
+                	if(sender.getStatus() == CHKInsertSender.NOT_FINISHED)
                 		sender.wait(5000);
                 } catch (InterruptedException e) {
                     // Cool, probably this is because the receive failed...
@@ -175,7 +175,7 @@ public class InsertHandler implements Runnable {
             
             int status = sender.getStatus();
             
-            if(status == InsertSender.NOT_FINISHED) {
+            if(status == CHKInsertSender.NOT_FINISHED) {
                 continue;
             }
 
@@ -191,20 +191,20 @@ public class InsertHandler implements Runnable {
             // Local RejectedOverload's (fatal).
             // Internal error counts as overload. It'd only create a timeout otherwise, which is the same thing anyway.
             // We *really* need a good way to deal with nodes that constantly R_O!
-            if(status == InsertSender.TIMED_OUT ||
-            		status == InsertSender.GENERATED_REJECTED_OVERLOAD ||
-            		status == InsertSender.INTERNAL_ERROR) {
+            if(status == CHKInsertSender.TIMED_OUT ||
+            		status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD ||
+            		status == CHKInsertSender.INTERNAL_ERROR) {
                 msg = DMT.createFNPRejectedOverload(uid, true);
                 source.send(msg);
                 // Might as well store it anyway.
-                if(status == InsertSender.TIMED_OUT ||
-                		status == InsertSender.GENERATED_REJECTED_OVERLOAD)
+                if(status == CHKInsertSender.TIMED_OUT ||
+                		status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD)
                 	canCommit = true;
                 finish();
                 return;
             }
             
-            if(status == InsertSender.ROUTE_NOT_FOUND || status == InsertSender.ROUTE_REALLY_NOT_FOUND) {
+            if(status == CHKInsertSender.ROUTE_NOT_FOUND || status == CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
                 msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 source.send(msg);
                 canCommit = true;
@@ -212,7 +212,7 @@ public class InsertHandler implements Runnable {
                 return;
             }
             
-            if(status == InsertSender.SUCCESS) {
+            if(status == CHKInsertSender.SUCCESS) {
             	msg = DMT.createFNPInsertReply(uid);
             	sentSuccess = true;
             	source.send(msg);

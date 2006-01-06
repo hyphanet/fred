@@ -53,7 +53,7 @@ public class RequestHandler implements Runnable {
         Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, false, true);
         if(o instanceof CHKBlock) {
             CHKBlock block = (CHKBlock) o;
-            Message df = DMT.createFNPDataFound(uid, block.getHeader());
+            Message df = DMT.createFNPDataFound(uid, block.getHeaders());
             source.send(df);
             PartiallyReceivedBlock prb =
                 new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getData());

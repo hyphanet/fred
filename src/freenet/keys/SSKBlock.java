@@ -109,4 +109,16 @@ public class SSKBlock implements KeyBlock {
 			throw new SSKVerifyException("E(H(docname)) wrong - wrong key??");
 	}
 
+	public Key getKey() {
+		return nodeKey;
+	}
+
+	public byte[] getRawHeaders() {
+		return headers;
+	}
+
+	public byte[] getRawData() {
+		return data;
+	}
+
 }

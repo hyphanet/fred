@@ -177,11 +177,11 @@ public class RealNodeRequestInsertTest {
                 block = ClientCHKBlock.encode(data, false, false, (short)-1, 0);
                 ClientCHK chk = block.getClientKey();
                 byte[] encData = block.getData();
-                byte[] encHeaders = block.getHeader();
+                byte[] encHeaders = block.getHeaders();
                 ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
                 Logger.error(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode()));
                 Logger.error(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
-                Logger.error(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeader()));
+                Logger.error(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
                 randomNode.putCHK(block, starters[node1], true);
                 Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
                 Logger.error(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));

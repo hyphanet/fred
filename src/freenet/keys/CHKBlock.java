@@ -1,25 +1,7 @@
 package freenet.keys;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-
-import freenet.crypt.BlockCipher;
-import freenet.crypt.PCFBMode;
-import freenet.crypt.UnsupportedCipherException;
-import freenet.crypt.ciphers.Rijndael;
-import freenet.node.Node;
-import freenet.support.ArrayBucket;
-import freenet.support.ArrayBucketFactory;
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
-import freenet.support.Logger;
-import freenet.support.SimpleReadOnlyArrayBucket;
-import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.Compressor;
-import freenet.support.compress.DecompressException;
 
 /**
  * @author amphibian
@@ -30,7 +12,7 @@ import freenet.support.compress.DecompressException;
 public class CHKBlock implements KeyBlock {
 
     final byte[] data;
-    final byte[] header;
+    final byte[] headers;
     final short hashIdentifier;
     final NodeCHK chk;
     public static final int MAX_LENGTH_BEFORE_COMPRESSION = Integer.MAX_VALUE;
@@ -43,8 +25,8 @@ public class CHKBlock implements KeyBlock {
     /**
      * @return The header for this key. DO NOT MODIFY THIS DATA!
      */
-    public byte[] getHeader() {
-        return header;
+    public byte[] getHeaders() {
+        return headers;
     }
 
     /**
@@ -60,10 +42,10 @@ public class CHKBlock implements KeyBlock {
     
     public CHKBlock(byte[] data2, byte[] header2, NodeCHK key, boolean verify) throws CHKVerifyException {
         data = data2;
-        header = header2;
-        if(header.length != TOTAL_HEADERS_LENGTH)
-        	throw new IllegalArgumentException("Wrong length: "+header.length+" should be "+TOTAL_HEADERS_LENGTH);
-        hashIdentifier = (short)(((header[0] & 0xff) << 8) + (header[1] & 0xff));
+        headers = header2;
+        if(headers.length != TOTAL_HEADERS_LENGTH)
+        	throw new IllegalArgumentException("Wrong length: "+headers.length+" should be "+TOTAL_HEADERS_LENGTH);
+        hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
         this.chk = key;
 //        Logger.debug(CHKBlock.class, "Data length: "+data.length+", header length: "+header.length);
         if(!verify) return;
@@ -79,7 +61,7 @@ public class CHKBlock implements KeyBlock {
             throw new Error(e);
         }
         
-        md.update(header);
+        md.update(headers);
         md.update(data);
         byte[] hash = md.digest();
         byte[] check = chk.routingKey;
@@ -92,4 +74,12 @@ public class CHKBlock implements KeyBlock {
 	public Key getKey() {
         return chk;
     }
+
+	public byte[] getRawHeaders() {
+		return headers;
+	}
+
+	public byte[] getRawData() {
+		return data;
+	}
 }

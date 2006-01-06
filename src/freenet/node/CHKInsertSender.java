@@ -7,6 +7,8 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
+import freenet.io.comm.NotConnectedException;
+import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
@@ -14,7 +16,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 
-public final class InsertSender implements Runnable {
+public final class CHKInsertSender implements Runnable, AnyInsertSender {
 
 	private class AwaitingCompletion {
 		
@@ -59,9 +61,9 @@ public final class InsertSender implements Runnable {
 				nodesWaitingForCompletion.notifyAll();
 			}
 			if(!success) {
-				synchronized(InsertSender.this) {
+				synchronized(CHKInsertSender.this) {
 					transferTimedOut = true;
-					InsertSender.this.notifyAll();
+					CHKInsertSender.this.notifyAll();
 				}
 			}
 		}
@@ -76,9 +78,9 @@ public final class InsertSender implements Runnable {
 				nodesWaitingForCompletion.notifyAll();
 			}
 			if(!success) {
-				synchronized(InsertSender.this) {
+				synchronized(CHKInsertSender.this) {
 					transferTimedOut = true;
-					InsertSender.this.notifyAll();
+					CHKInsertSender.this.notifyAll();
 				}
 			}
 		}
@@ -109,7 +111,7 @@ public final class InsertSender implements Runnable {
 		}
 	}
     
-	InsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
+	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore, double closestLocation) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
@@ -123,7 +125,7 @@ public final class InsertSender implements Runnable {
         this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
         this.nodesWaitingForCompletion = new Vector();
-        Thread t = new Thread(this, "InsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
+        Thread t = new Thread(this, "CHKInsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
         t.start();
     }
@@ -188,6 +190,18 @@ public final class InsertSender implements Runnable {
     public void run() {
         short origHTL = htl;
         try {
+        	realRun();
+        } catch (Throwable t) {
+            Logger.error(this, "Caught "+t, t);
+            if(status == NOT_FINISHED)
+            	finish(INTERNAL_ERROR, null);
+        } finally {
+            node.completed(uid);
+        	node.removeInsertSender(myKey, origHTL, this);
+        }
+    }
+    
+    private void realRun() {
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
         
@@ -241,7 +255,12 @@ public final class InsertSender implements Runnable {
             
             // Send to next node
             
-            next.send(req);
+            try {
+				next.send(req);
+			} catch (NotConnectedException e1) {
+				Logger.minor(this, "Not connected to "+next);
+				continue;
+			}
             sentRequest = true;
             
             if(receiveFailed) return; // don't need to set status as killed by InsertHandler
@@ -321,9 +340,8 @@ public final class InsertSender implements Runnable {
              *   data anyway please
              * - FNPInsertReply - used up all HTL, yay
              * - FNPRejectOverload - propagating an overload error :(
-             * - FNPDataFound - target already has the data, and the data is
-             *   an SVK/SSK/KSK, therefore could be different to what we are
-             *   inserting.
+             * - FNPRejectTimeout - we took too long to send the DataInsert
+             * - FNPDataInsertRejected - the insert was invalid
              */
             
             MessageFilter mfInsertReply = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SEARCH_TIMEOUT).setType(DMT.FNPInsertReply);
@@ -337,7 +355,12 @@ public final class InsertSender implements Runnable {
 
             Logger.minor(this, "Sending DataInsert");
             if(receiveFailed) return;
-            next.send(dataInsert);
+            try {
+				next.send(dataInsert);
+			} catch (NotConnectedException e1) {
+				Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
+				continue;
+			}
 
             Logger.minor(this, "Sending data");
             if(receiveFailed) return;
@@ -426,6 +449,8 @@ public final class InsertSender implements Runnable {
 								Logger
 										.normal(this,
 												"Verify failed because data was invalid");
+							} catch (AbortedException e) {
+								receiveFailed = true;
 							}
 						}
 						break; // What else can we do?
@@ -433,19 +458,23 @@ public final class InsertSender implements Runnable {
 						if (receiveFailed) {
 							Logger.minor(this, "Failed to receive data, so failed to send data");
 						} else {
-							if (prb.allReceived()) {
-								Logger.error(this, "Received all data but send failed to " + next);
-							} else {
-								if (prb.isAborted()) {
-									Logger.normal(this, "Send failed: aborted: " + prb.getAbortReason() + ": " + prb.getAbortDescription());
-								} else
-									Logger.normal(this, "Send failed; have not yet received all data but not aborted: " + next);
+							try {
+								if (prb.allReceived()) {
+									Logger.error(this, "Received all data but send failed to " + next);
+								} else {
+									if (prb.isAborted()) {
+										Logger.normal(this, "Send failed: aborted: " + prb.getAbortReason() + ": " + prb.getAbortDescription());
+									} else
+										Logger.normal(this, "Send failed; have not yet received all data but not aborted: " + next);
+								}
+							} catch (AbortedException e) {
+								receiveFailed = true;
 							}
 						}
-						break;
 					}
 					Logger.error(this, "DataInsert rejected! Reason="
-						+ DMT.getDataInsertRejectedReason(reason));
+							+ DMT.getDataInsertRejectedReason(reason));
+					break;
 				}
 				
 				if (msg.getSpec() != DMT.FNPInsertReply) {
@@ -459,17 +488,9 @@ public final class InsertSender implements Runnable {
 				return;
 			}
 		}
-        } catch (Throwable t) {
-            Logger.error(this, "Caught "+t, t);
-            if(status == NOT_FINISHED)
-            	finish(INTERNAL_ERROR, null);
-        } finally {
-            node.completed(uid);
-        	node.removeInsertSender(myKey, origHTL, this);
-        }
-    }
-    
-    private boolean hasForwardedRejectedOverload = false;
+	}
+
+	private boolean hasForwardedRejectedOverload = false;
     
     synchronized boolean receivedRejectedOverload() {
     	return hasForwardedRejectedOverload;
@@ -500,7 +521,7 @@ public final class InsertSender implements Runnable {
             notifyAll();
         }
 
-        Logger.minor(this, "Set status code: "+getStatusString());
+        Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         
         // Now wait for transfers, or for downstream transfer notifications.
         
@@ -606,7 +627,7 @@ outer:		while(true) {
 			for(int i=0;i<waiters.length;i++) {
 				AwaitingCompletion awc = waiters[i];
 				if(!awc.pn.isConnected()) {
-					Logger.normal(this, "Disconnected: "+awc.pn+" in "+InsertSender.this);
+					Logger.normal(this, "Disconnected: "+awc.pn+" in "+CHKInsertSender.this);
 					continue;
 				}
 				if(!awc.receivedCompletionNotice) {
@@ -628,9 +649,9 @@ outer:		while(true) {
 						continue;
 					}
 					if(waitForCompletedTransfers(waiters, timeout, noTimeLeft)) {
-						synchronized(InsertSender.this) {
+						synchronized(CHKInsertSender.this) {
 							allTransfersCompleted = true;
-							InsertSender.this.notifyAll();
+							CHKInsertSender.this.notifyAll();
 						}
 						return;
 					}
@@ -641,9 +662,9 @@ outer:		while(true) {
 								waiters[i].completedTransfer(false);
 							}
 						}
-						synchronized(InsertSender.this) {
+						synchronized(CHKInsertSender.this) {
 							allTransfersCompleted = true;
-							InsertSender.this.notifyAll();
+							CHKInsertSender.this.notifyAll();
 						}
 						return;
 					}
@@ -679,10 +700,10 @@ outer:		while(true) {
 							boolean anyTimedOut = m.getBoolean(DMT.ANY_TIMED_OUT);
 							waiters[i].completed(false, !anyTimedOut);
 							if(anyTimedOut) {
-								synchronized(InsertSender.this) {
+								synchronized(CHKInsertSender.this) {
 									if(!transferTimedOut) {
 										transferTimedOut = true;
-										InsertSender.this.notifyAll();
+										CHKInsertSender.this.notifyAll();
 									}
 								}
 							}
@@ -700,7 +721,7 @@ outer:		while(true) {
 						continue;
 					}
 					if(noTimeLeft) {
-						Logger.minor(this, "Overall timeout on "+InsertSender.this);
+						Logger.minor(this, "Overall timeout on "+CHKInsertSender.this);
 						for(int i=0;i<waiters.length;i++) {
 							if(!waiters[i].pn.isConnected()) continue;
 							if(!waiters[i].receivedCompletionNotice)
@@ -708,10 +729,10 @@ outer:		while(true) {
 							if(!waiters[i].completedTransfer)
 								waiters[i].completedTransfer(false);
 						}
-						synchronized(InsertSender.this) {
+						synchronized(CHKInsertSender.this) {
 							transferTimedOut = true;
 							allTransfersCompleted = true;
-							InsertSender.this.notifyAll();
+							CHKInsertSender.this.notifyAll();
 						}
 						return;
 					}
@@ -755,9 +776,9 @@ outer:		while(true) {
 			if(completedTransfers) {
 				// All done!
 				Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for.");
-				synchronized(InsertSender.this) {
+				synchronized(CHKInsertSender.this) {
 					allTransfersCompleted = true;
-					InsertSender.this.notifyAll();
+					CHKInsertSender.this.notifyAll();
 				}
 				return true;
 			} else return false;

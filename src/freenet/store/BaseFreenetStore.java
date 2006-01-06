@@ -95,7 +95,7 @@ public class BaseFreenetStore implements FreenetStore {
      */
     public synchronized void put(CHKBlock block) throws IOException {
         byte[] data = block.getData();
-        byte[] headers = block.getHeader();
+        byte[] headers = block.getHeaders();
         int hlen = headers.length;
         if(data.length != DATA_BLOCK_SIZE || hlen > HEADER_BLOCK_SIZE-2)
             throw new IllegalArgumentException("Too big - data: "+data.length+" should be "+

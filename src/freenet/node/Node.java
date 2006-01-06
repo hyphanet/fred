@@ -47,6 +47,7 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.keys.SSKBlock;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -128,7 +129,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     private final HashMap requestSenders;
     /** RequestSender's currently transferring, by key */
     private final HashMap transferringRequestSenders;
-    /** InsertSender's currently running, by KeyHTLPair */
+    /** CHKInsertSender's currently running, by KeyHTLPair */
     private final HashMap insertSenders;
     /** IP address detector */
     private final IPAddressDetector ipDetector;
@@ -555,9 +556,9 @@ public class Node implements QueueingSimpleLowLevelClient {
     
     public void realPutCHK(ClientCHKBlock block, boolean cache) throws LowLevelPutException {
         byte[] data = block.getData();
-        byte[] headers = block.getHeader();
+        byte[] headers = block.getHeaders();
         PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
-        InsertSender is;
+        CHKInsertSender is;
         long uid = random.nextLong();
         if(!lockUID(uid)) {
             Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
@@ -579,14 +580,14 @@ public class Node implements QueueingSimpleLowLevelClient {
         // Wait for status
         while(true) {
         	synchronized(is) {
-        		if(is.getStatus() == InsertSender.NOT_FINISHED) {
+        		if(is.getStatus() == CHKInsertSender.NOT_FINISHED) {
         			try {
         				is.wait(5*1000);
         			} catch (InterruptedException e) {
         				// Ignore
         			}
         		}
-        		if(is.getStatus() != InsertSender.NOT_FINISHED) break;
+        		if(is.getStatus() != CHKInsertSender.NOT_FINISHED) break;
         	}
     		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
     			hasForwardedRejectedOverload = true;
@@ -615,8 +616,8 @@ public class Node implements QueueingSimpleLowLevelClient {
         // Finished?
         if(!hasForwardedRejectedOverload) {
         	// Is it ours? Did we send a request?
-        	if(is.sentRequest() && is.uid == uid && (is.getStatus() == InsertSender.ROUTE_NOT_FOUND 
-        			|| is.getStatus() == InsertSender.SUCCESS)) {
+        	if(is.sentRequest() && is.uid == uid && (is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND 
+        			|| is.getStatus() == CHKInsertSender.SUCCESS)) {
         		// It worked!
         		long endTime = System.currentTimeMillis();
         		long len = endTime - startTime;
@@ -624,33 +625,33 @@ public class Node implements QueueingSimpleLowLevelClient {
         	}
         }
         
-        if(is.getStatus() == InsertSender.SUCCESS) {
+        if(is.getStatus() == CHKInsertSender.SUCCESS) {
         	Logger.normal(this, "Succeeded inserting "+block);
         	return;
         } else {
         	int status = is.getStatus();
         	String msg = "Failed inserting "+block+" : "+is.getStatusString();
-        	if(status == InsertSender.ROUTE_NOT_FOUND)
+        	if(status == CHKInsertSender.ROUTE_NOT_FOUND)
         		msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
-        	if(is.getStatus() != InsertSender.ROUTE_NOT_FOUND)
+        	if(is.getStatus() != CHKInsertSender.ROUTE_NOT_FOUND)
         		Logger.error(this, msg);
         	else
         		Logger.normal(this, msg);
         	switch(is.getStatus()) {
-        	case InsertSender.NOT_FINISHED:
+        	case CHKInsertSender.NOT_FINISHED:
         		Logger.error(this, "IS still running in putCHK!: "+is);
         		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        	case InsertSender.GENERATED_REJECTED_OVERLOAD:
-        	case InsertSender.TIMED_OUT:
+        	case CHKInsertSender.GENERATED_REJECTED_OVERLOAD:
+        	case CHKInsertSender.TIMED_OUT:
         		throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
-        	case InsertSender.ROUTE_NOT_FOUND:
+        	case CHKInsertSender.ROUTE_NOT_FOUND:
         		throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
-        	case InsertSender.ROUTE_REALLY_NOT_FOUND:
+        	case CHKInsertSender.ROUTE_REALLY_NOT_FOUND:
         		throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
-        	case InsertSender.INTERNAL_ERROR:
+        	case CHKInsertSender.INTERNAL_ERROR:
         		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
         	default:
-        		Logger.error(this, "Unknown InsertSender code in putCHK: "+is.getStatus()+" on "+is);
+        		Logger.error(this, "Unknown CHKInsertSender code in putCHK: "+is.getStatus()+" on "+is);
     			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
         	}
         }
@@ -793,9 +794,9 @@ public class Node implements QueueingSimpleLowLevelClient {
     }
     
     static class KeyHTLPair {
-        final NodeCHK key;
+        final Key key;
         final short htl;
-        KeyHTLPair(NodeCHK key, short htl) {
+        KeyHTLPair(Key key, short htl) {
             this.key = key;
             this.htl = htl;
         }
@@ -864,11 +865,11 @@ public class Node implements QueueingSimpleLowLevelClient {
     }
 
     /**
-     * Remove an InsertSender from the map.
+     * Remove an CHKInsertSender from the map.
      */
-    public void removeInsertSender(NodeCHK key, short htl, InsertSender sender) {
+    public void removeInsertSender(Key key, short htl, AnyInsertSender sender) {
         KeyHTLPair kh = new KeyHTLPair(key, htl);
-        InsertSender is = (InsertSender) insertSenders.remove(kh);
+        AnyInsertSender is = (AnyInsertSender) insertSenders.remove(kh);
         if(is != sender) {
             Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeInsertSender");
         }
@@ -900,28 +901,28 @@ public class Node implements QueueingSimpleLowLevelClient {
     }
 
     /**
-     * Fetch or create an InsertSender for a given key/htl.
+     * Fetch or create an CHKInsertSender for a given key/htl.
      * @param key The key to be inserted.
      * @param htl The current HTL. We can't coalesce inserts across
      * HTL's.
      * @param uid The UID of the caller's request chain, or a new
      * one. This is obviously not used if there is already an 
-     * InsertSender running.
+     * CHKInsertSender running.
      * @param source The node that sent the InsertRequest, or null
      * if it originated locally.
      */
-    public synchronized InsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
+    public synchronized CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
             byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
         Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
         KeyHTLPair kh = new KeyHTLPair(key, htl);
-        InsertSender is = (InsertSender) insertSenders.get(kh);
+        CHKInsertSender is = (CHKInsertSender) insertSenders.get(kh);
         if(is != null) {
             Logger.minor(this, "Found "+is+" for "+kh);
             return is;
         }
         if(fromStore && !cache)
         	throw new IllegalArgumentException("From store = true but cache = false !!!");
-        is = new InsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
+        is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
         Logger.minor(this, is.toString()+" for "+kh.toString());
         insertSenders.put(kh, is);
         return is;
@@ -962,7 +963,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     		// Dump
     		Iterator i = insertSenders.values().iterator();
     		while(i.hasNext()) {
-    			InsertSender s = (InsertSender) i.next();
+    			CHKInsertSender s = (CHKInsertSender) i.next();
     			sb.append(s.uid);
     			sb.append(": ");
     			sb.append(s.getStatusString());

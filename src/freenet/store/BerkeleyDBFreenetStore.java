@@ -212,7 +212,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	  	
     	byte[] routingkey = ((NodeCHK)block.getKey()).getRoutingKey();
         byte[] data = block.getData();
-        byte[] header = block.getHeader();
+        byte[] header = block.getHeaders();
         
         if(data.length!=dataBlockSize) {
         	Logger.minor(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
