@@ -54,7 +54,7 @@ public class SSKBlock implements KeyBlock {
 	 * Initialize, and verify data, headers against key. Provided
 	 * key must have a pubkey, or we throw.
 	 */
-	public SSKBlock(byte[] data, byte[] headers, NodeSSK nodeKey) throws SSKVerifyException {
+	public SSKBlock(byte[] data, byte[] headers, NodeSSK nodeKey, boolean dontVerify) throws SSKVerifyException {
 		if(headers.length != TOTAL_HEADERS_LENGTH)
 			throw new IllegalArgumentException("Headers.length="+headers.length+" should be "+TOTAL_HEADERS_LENGTH);
 		this.data = data;
@@ -81,24 +81,28 @@ public class SSKBlock implements KeyBlock {
 		int x = 2;
 		if(x+SIG_R_LENGTH+SIG_S_LENGTH > headers.length)
 			throw new SSKVerifyException("Headers too short: "+headers.length+" should be at least "+x+SIG_R_LENGTH+SIG_S_LENGTH);
-		System.arraycopy(headers, x, bufR, 0, SIG_R_LENGTH);
+		if(!dontVerify)
+			System.arraycopy(headers, x, bufR, 0, SIG_R_LENGTH);
 		x+=SIG_R_LENGTH;
-		System.arraycopy(headers, x, bufS, 0, SIG_S_LENGTH);
+		if(!dontVerify)
+			System.arraycopy(headers, x, bufS, 0, SIG_S_LENGTH);
 		x+=SIG_S_LENGTH;
 		// Compute the hash on the data
-		md.update(data);
-		byte[] dataHash = md.digest();
-		md.update(dataHash);
-		md.update(headers, x, headers.length - x);
-		byte[] overallHash = md.digest();
-		// Now verify it
-		NativeBigInteger r = new NativeBigInteger(1, bufR);
-		NativeBigInteger s = new NativeBigInteger(1, bufS);
-		if(!DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash))) {
-			throw new SSKVerifyException("Signature verification failed for node-level SSK");
+		if(!dontVerify) {
+			md.update(data);
+			byte[] dataHash = md.digest();
+			md.update(dataHash);
+			md.update(headers, x, headers.length - x);
+			byte[] overallHash = md.digest();
+			// Now verify it
+			NativeBigInteger r = new NativeBigInteger(1, bufR);
+			NativeBigInteger s = new NativeBigInteger(1, bufS);
+			if(!DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash))) {
+				throw new SSKVerifyException("Signature verification failed for node-level SSK");
+			}
+			if(headers.length < x+2+E_H_DOCNAME_LENGTH)
+				throw new SSKVerifyException("Headers too short after sig verification: "+headers.length+" should be "+x+2+E_H_DOCNAME_LENGTH);
 		}
-		if(headers.length < x+2+E_H_DOCNAME_LENGTH)
-			throw new SSKVerifyException("Headers too short after sig verification: "+headers.length+" should be "+x+2+E_H_DOCNAME_LENGTH);
 		symCipherIdentifier = (short)(((headers[x] & 0xff) << 8) + (headers[x+1] & 0xff));
 		x+=2;
 		byte[] ehDocname = new byte[E_H_DOCNAME_LENGTH];

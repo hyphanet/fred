@@ -116,4 +116,8 @@ public abstract class Key implements WritableToDataOutputStream {
         }
 	}
 
+    public byte[] getRoutingKey() {
+    	return routingKey;
+    }
+    
 }

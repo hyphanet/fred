@@ -49,6 +49,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
@@ -843,6 +844,14 @@ public class Node implements QueueingSimpleLowLevelClient {
         }
     }
 
+    public synchronized void store(SSKBlock block) {
+    	try {
+    		sskDatastore.put(block);
+    	} catch (IOException e) {
+    		Logger.error(this, "Cannot store data: "+e, e);
+    	}
+    }
+    
     /**
      * Remove a sender from the set of currently transferring senders.
      */
@@ -923,6 +932,24 @@ public class Node implements QueueingSimpleLowLevelClient {
         if(fromStore && !cache)
         	throw new IllegalArgumentException("From store = true but cache = false !!!");
         is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
+        Logger.minor(this, is.toString()+" for "+kh.toString());
+        insertSenders.put(kh, is);
+        return is;
+    }
+    
+    public synchronized SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
+    		boolean fromStore, double closestLoc, boolean cache) {
+    	Key key = block.getKey();
+        Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
+        KeyHTLPair kh = new KeyHTLPair(key, htl);
+        SSKInsertSender is = (SSKInsertSender) insertSenders.get(kh);
+        if(is != null) {
+            Logger.minor(this, "Found "+is+" for "+kh);
+            return is;
+        }
+        if(fromStore && !cache)
+        	throw new IllegalArgumentException("From store = true but cache = false !!!");
+        is = new SSKInsertSender(block, uid, htl, source, this, fromStore, closestLoc);
         Logger.minor(this, is.toString()+" for "+kh.toString());
         insertSenders.put(kh, is);
         return is;

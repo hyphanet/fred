@@ -22,7 +22,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	private ClientSSK key;
 	
 	public ClientSSKBlock(byte[] data, byte[] headers, ClientSSK key) throws SSKVerifyException {
-		super(data, headers, (NodeSSK) key.getNodeKey());
+		super(data, headers, (NodeSSK) key.getNodeKey(), false);
 	}
 	
 	/**

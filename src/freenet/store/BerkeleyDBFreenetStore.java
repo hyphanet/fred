@@ -25,7 +25,11 @@ import com.sleepycat.je.Transaction;
 
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
+import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
+import freenet.keys.SSKBlock;
+import freenet.keys.SSKVerifyException;
 import freenet.support.Fields;
 import freenet.support.Logger;
 
@@ -202,17 +206,97 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 //    	return null;
     }
 
+	/**
+     * Retrieve a block.
+     * @param dontPromote If true, don't promote data if fetched.
+     * @return null if there is no such block stored, otherwise the block.
+     */
+    public SSKBlock fetch(NodeSSK chk, boolean dontPromote) throws IOException
+    {
+    	if(closed)
+    		return null;
+    	
+    	byte[] routingkey = chk.getRoutingKey();
+    	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+    	DatabaseEntry blockDBE = new DatabaseEntry();
+    	Cursor c = null;
+    	try{
+    		Transaction t = environment.beginTransaction(null,null);
+    		c = chkDB.openCursor(t,null);
+    		
+    		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.DEFAULT)
+    				!=OperationStatus.SUCCESS) {
+    			c.close();
+    			t.abort();
+    			return null;
+    		}
+
+	    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+	    		    	
+	    	SSKBlock block = null;
+	    	try{
+	    		byte[] header = new byte[headerBlockSize];
+	    		byte[] data = new byte[dataBlockSize];
+	    		synchronized(chkStore) {
+		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+		    		chkStore.read(header);
+		    		chkStore.read(data);
+	    		}
+	    		
+	    		
+	    		block = new SSKBlock(data,header,chk, true);
+	    		
+	    		if(!dontPromote)
+	    		{
+	    			storeBlock.updateRecentlyUsed();
+	    			DatabaseEntry updateDBE = new DatabaseEntry();
+	    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
+	    			c.putCurrent(updateDBE);
+		    		c.close();
+		    		t.commit();
+	    		}else{
+	    			c.close();
+	    			t.abort();
+	    		}
+	    		
+	    		Logger.minor(this, "Get key: "+chk);
+	            Logger.minor(this, "Headers: "+header.length+" bytes, hash "+header);
+	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    		
+	    	}catch(SSKVerifyException ex){
+	    		Logger.normal(this, "Does not verify, setting accessTime to 0 for : "+chk);
+	    		storeBlock.setRecentlyUsedToZero();
+    			DatabaseEntry updateDBE = new DatabaseEntry();
+    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
+    			c.putCurrent(updateDBE);
+	    		c.close();
+	    		t.commit();
+	            return null;
+	    	}
+	    	return block;
+    	}catch(Exception ex) {  // FIXME: ugly  
+    		if(c!=null) {
+    			try{c.close();}catch(DatabaseException ex2){}
+    		}
+    		Logger.error(this, "Caught "+ex, ex);
+    		ex.printStackTrace();
+        	throw new IOException(ex.getMessage());
+        }
+    	
+//    	return null;
+    }
+
     /**
      * Store a block.
      */
-    public void put(CHKBlock block) throws IOException
+    public void put(KeyBlock block) throws IOException
     {   	
     	if(closed)
     		return;
     	  	
     	byte[] routingkey = ((NodeCHK)block.getKey()).getRoutingKey();
-        byte[] data = block.getData();
-        byte[] header = block.getHeaders();
+        byte[] data = block.getRawData();
+        byte[] header = block.getRawHeaders();
         
         if(data.length!=dataBlockSize) {
         	Logger.minor(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);

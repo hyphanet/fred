@@ -7,7 +7,11 @@ import java.io.RandomAccessFile;
 
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
+import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
+import freenet.keys.SSKBlock;
+import freenet.keys.SSKVerifyException;
 import freenet.support.Fields;
 import freenet.support.Logger;
 
@@ -91,11 +95,55 @@ public class BaseFreenetStore implements FreenetStore {
     }
 
     /**
+     * Retrieve a block.
+     * @return null if there is no such block stored, otherwise the block.
+     */
+    public synchronized SSKBlock fetch(NodeSSK chk, boolean dontPromote) throws IOException {
+        byte[] data = dataStore.getDataForBlock(chk, dontPromote);
+        if(data == null) {
+            if(headersStore.getDataForBlock(chk, true) != null) {
+                Logger.normal(this, "Deleting: "+chk+" headers, no data");
+                headersStore.delete(chk);
+            }
+            return null;
+        }
+        byte[] headers = headersStore.getDataForBlock(chk, dontPromote);
+        if(headers == null) {
+            // No headers, delete
+            Logger.normal(this, "Deleting: "+chk+" data, no headers");
+            dataStore.delete(chk);
+            return null;
+        }
+        // Decode
+        int headerLen = ((headers[0] & 0xff) << 8) + (headers[1] & 0xff);
+        if(headerLen > HEADER_BLOCK_SIZE-2) {
+            Logger.normal(this, "Invalid header data on "+chk+", deleting");
+            dataStore.delete(chk);
+            headersStore.delete(chk);
+            return null;
+        }
+        byte[] buf = new byte[headerLen];
+        System.arraycopy(headers, 2, buf, 0, headerLen);
+        Logger.minor(this, "Get key: "+chk);
+        Logger.minor(this, "Raw headers: "+headers.length+" bytes, hash "+Fields.hashCode(headers));
+        Logger.minor(this, "Headers: "+headerLen+" bytes, hash "+Fields.hashCode(buf));
+        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+        try {
+            return new SSKBlock(data, buf, chk, true);
+        } catch (SSKVerifyException e) {
+            Logger.normal(this, "Does not verify, deleting: "+chk);
+            dataStore.delete(chk);
+            headersStore.delete(chk);
+            return null;
+        }
+    }
+
+    /**
      * Store a block.
      */
-    public synchronized void put(CHKBlock block) throws IOException {
-        byte[] data = block.getData();
-        byte[] headers = block.getHeaders();
+    public synchronized void put(KeyBlock block) throws IOException {
+        byte[] data = block.getRawData();
+        byte[] headers = block.getRawHeaders();
         int hlen = headers.length;
         if(data.length != DATA_BLOCK_SIZE || hlen > HEADER_BLOCK_SIZE-2)
             throw new IllegalArgumentException("Too big - data: "+data.length+" should be "+

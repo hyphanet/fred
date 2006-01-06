@@ -796,4 +796,12 @@ outer:		while(true) {
 	public boolean anyTransfersFailed() {
 		return transferTimedOut;
 	}
+
+	public byte[] getPubkeyHash() {
+		return headers;
+	}
+
+	public byte[] getHeaders() {
+		return headers;
+	}
 }

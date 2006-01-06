@@ -662,6 +662,7 @@ public class DMT {
 
     public static final short DATA_INSERT_REJECTED_VERIFY_FAILED = 1;
     public static final short DATA_INSERT_REJECTED_RECEIVE_FAILED = 2;
+    public static final short DATA_INSERT_REJECTED_SSK_ERROR = 3;
     
     public static final String getDataInsertRejectedReason(short reason) {
         if(reason == DATA_INSERT_REJECTED_VERIFY_FAILED)
@@ -674,44 +675,42 @@ public class DMT {
     public static final MessageType FNPSSKInsertRequest = new MessageType("FNPSSKInsertRequest") {{
     	addField(UID, Long.class);
     	addField(HTL, Short.class);
-    	addField(KEY, NodeSSK.class);
+    	addField(FREENET_ROUTING_KEY, NodeSSK.class);
         addField(NEAREST_LOCATION, Double.class);
         addField(BLOCK_HEADERS, ShortBuffer.class);
         addField(PUBKEY_HASH, ShortBuffer.class);
+        addField(DATA, ShortBuffer.class);
     }};
     
-	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, double closestLocation, byte[] headers, byte[] pubKeyHash) {
+	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, double closestLocation, byte[] headers, byte[] data, byte[] pubKeyHash) {
 		Message msg = new Message(FNPSSKInsertRequest);
 		msg.set(UID, uid);
 		msg.set(HTL, htl);
-		msg.set(KEY, myKey);
+		msg.set(FREENET_ROUTING_KEY, myKey);
 		msg.set(NEAREST_LOCATION, closestLocation);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
 		msg.set(PUBKEY_HASH, new ShortBuffer(pubKeyHash));
+		msg.set(DATA, new ShortBuffer(data));
 		return msg;
 	}
 
 	public static final MessageType FNPSSKDataFound = new MessageType("FNPSSKDataFound") {{
     	addField(UID, Long.class);
-    	addField(HTL, Short.class);
-    	addField(KEY, NodeSSK.class);
-        addField(NEAREST_LOCATION, Double.class);
+    	addField(FREENET_ROUTING_KEY, NodeSSK.class);
         addField(BLOCK_HEADERS, ShortBuffer.class);
         addField(PUBKEY_HASH, ShortBuffer.class);
+        addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKDataFound(long uid, short htl, NodeSSK myKey, double closestLocation, byte[] headers, byte[] pubKeyHash) {
+	public static Message createFNPSSKDataFound(long uid, NodeSSK myKey, byte[] headers, byte[] data, byte[] pubKeyHash) {
 		Message msg = new Message(FNPSSKDataFound);
 		msg.set(UID, uid);
-		msg.set(HTL, htl);
-		msg.set(KEY, myKey);
-		msg.set(NEAREST_LOCATION, closestLocation);
+		msg.set(FREENET_ROUTING_KEY, myKey);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
 		msg.set(PUBKEY_HASH, new ShortBuffer(pubKeyHash));
+		msg.set(DATA, new ShortBuffer(data));
 		return msg;
 	}
-
-	
 	
 	public static MessageType FNPSSKAccepted = new MessageType("FNPSSKAccepted") {{
 		addField(UID, Long.class);

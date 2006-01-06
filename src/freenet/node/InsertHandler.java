@@ -64,12 +64,27 @@ public class InsertHandler implements Runnable {
     
     public void run() {
         try {
+        	realRun();
+        } catch (Throwable t) {
+            Logger.error(this, "Caught "+t, t);
+        } finally {
+            Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
+            node.unlockUID(uid);
+        }
+    }
+
+    private void realRun() {
         runThread = Thread.currentThread();
         
         // FIXME implement rate limiting or something!
         // Send Accepted
         Message accepted = DMT.createFNPAccepted(uid);
-        source.send(accepted);
+        try {
+			source.send(accepted);
+		} catch (NotConnectedException e1) {
+			Logger.minor(this, "Lost connection to source");
+			return;
+		}
         
         // Source will send us a DataInsert
         
@@ -87,17 +102,22 @@ public class InsertHandler implements Runnable {
         Logger.minor(this, "Received "+msg);
         
         if(msg == null) {
-            if(source.isConnected() && startTime > (source.timeLastConnected()+Node.HANDSHAKE_TIMEOUT*4))
-                Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
-            Message tooSlow = DMT.createFNPRejectedTimeout(uid);
-            source.sendAsync(tooSlow, null);
-        	Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
-        	source.sendAsync(m, null);
-            prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-            br = new BlockReceiver(node.usm, source, uid, prb);
-            prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
-            br.sendAborted(RetrievalException.NO_DATAINSERT, "No DataInsert");
-            return;
+        	try {
+        		if(source.isConnected() && startTime > (source.timeLastConnected()+Node.HANDSHAKE_TIMEOUT*4))
+        			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
+        		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
+        		source.sendAsync(tooSlow, null);
+        		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
+        		source.sendAsync(m, null);
+        		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
+        		br = new BlockReceiver(node.usm, source, uid, prb);
+        		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
+        		br.sendAborted(RetrievalException.NO_DATAINSERT, "No DataInsert");
+        		return;
+        	} catch (NotConnectedException e) {
+    			Logger.minor(this, "Lost connection to source");
+    			return;
+        	}
         }
         
         // We have a DataInsert
@@ -125,7 +145,11 @@ public class InsertHandler implements Runnable {
             canCommit = true;
         	msg = DMT.createFNPInsertReply(uid);
         	sentSuccess = true;
-        	source.send(msg);
+        	try {
+				source.send(msg);
+			} catch (NotConnectedException e) {
+				// Ignore
+			}
             finish();
             return;
         }
@@ -170,7 +194,12 @@ public class InsertHandler implements Runnable {
             	receivedRejectedOverload = true;
             	// Forward it
             	Message m = DMT.createFNPRejectedOverload(uid, false);
-            	source.send(m);
+            	try {
+					source.send(m);
+				} catch (NotConnectedException e) {
+					Logger.minor(this, "Lost connection to source");
+					return;
+				}
             }
             
             int status = sender.getStatus();
@@ -195,7 +224,12 @@ public class InsertHandler implements Runnable {
             		status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD ||
             		status == CHKInsertSender.INTERNAL_ERROR) {
                 msg = DMT.createFNPRejectedOverload(uid, true);
-                source.send(msg);
+                try {
+					source.send(msg);
+				} catch (NotConnectedException e) {
+					Logger.minor(this, "Lost connection to source");
+					return;
+				}
                 // Might as well store it anyway.
                 if(status == CHKInsertSender.TIMED_OUT ||
                 		status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD)
@@ -206,7 +240,12 @@ public class InsertHandler implements Runnable {
             
             if(status == CHKInsertSender.ROUTE_NOT_FOUND || status == CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
                 msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
-                source.send(msg);
+                try {
+					source.send(msg);
+				} catch (NotConnectedException e) {
+					Logger.minor(this, "Lost connection to source");
+					return;
+				}
                 canCommit = true;
                 finish();
                 return;
@@ -215,7 +254,12 @@ public class InsertHandler implements Runnable {
             if(status == CHKInsertSender.SUCCESS) {
             	msg = DMT.createFNPInsertReply(uid);
             	sentSuccess = true;
-            	source.send(msg);
+            	try {
+					source.send(msg);
+				} catch (NotConnectedException e) {
+					Logger.minor(this, "Lost connection to source");
+					return;
+				}
                 canCommit = true;
                 finish();
                 return;
@@ -224,19 +268,17 @@ public class InsertHandler implements Runnable {
             // Otherwise...?
             Logger.error(this, "Unknown status code: "+sender.getStatusString());
             msg = DMT.createFNPRejectedOverload(uid, true);
-            source.send(msg);
+            try {
+				source.send(msg);
+			} catch (NotConnectedException e) {
+				// Ignore
+			}
             finish();
             return;
         }
-        } catch (Throwable t) {
-            Logger.error(this, "Caught "+t, t);
-        } finally {
-            Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
-            node.unlockUID(uid);
-        }
-    }
+	}
 
-    private boolean canCommit = false;
+	private boolean canCommit = false;
     private boolean sentCompletion = false;
     private Object sentCompletionLock = new Object();
     

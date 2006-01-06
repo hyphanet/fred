@@ -38,7 +38,17 @@ public class DSAPublicKey extends CryptoKey {
 		this(g,g.getG().modPow(p.getX(), g.getP()));
     }
 
-    public BigInteger getY() {
+    public DSAPublicKey(InputStream is) throws IOException {
+		group=(DSAGroup) DSAGroup.read(is);
+		y=Util.readMPI(is);
+		this.yAsHexString = HexUtil.biToHex(y);
+    }
+    
+    public DSAPublicKey(byte[] pubkeyAsBytes) throws IOException {
+    	this(new ByteArrayInputStream(pubkeyAsBytes));
+	}
+
+	public BigInteger getY() {
 		return y;
     }
     
@@ -95,9 +105,7 @@ public class DSAPublicKey extends CryptoKey {
 //    }
 //
     public static CryptoKey read(InputStream i) throws IOException {
-		BigInteger y=Util.readMPI(i);
-		DSAGroup g=(DSAGroup)CryptoKey.read(i);
-		return new DSAPublicKey(g, y);
+		return new DSAPublicKey(i);
     }
 
     public int keyId() {
