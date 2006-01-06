@@ -42,7 +42,7 @@ public class RealNodeRequestInsertTest {
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         for(int i=0;i<NUMBER_OF_NODES;i++) {
-            nodes[i] = new Node(5000+i, random, null, wd+File.separator, 0, false, fh);
+            nodes[i] = new Node(5000+i, random, null, wd+File.separator, 0, false, fh, 100);
             nodes[i].usm.setDropProbability(20); // 5%
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }

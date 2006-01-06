@@ -47,12 +47,16 @@ public class SSKBlock implements KeyBlock {
     static final short SIG_R_LENGTH = 32;
     static final short SIG_S_LENGTH = 32;
     static final short E_H_DOCNAME_LENGTH = 32;
-	
+    static public final short TOTAL_HEADERS_LENGTH = 2 + SIG_R_LENGTH + SIG_S_LENGTH + 2 + 
+    	E_H_DOCNAME_LENGTH + ClientSSKBlock.DATA_DECRYPT_KEY_LENGTH + 2 + 2;
+    
 	/**
 	 * Initialize, and verify data, headers against key. Provided
 	 * key must have a pubkey, or we throw.
 	 */
 	public SSKBlock(byte[] data, byte[] headers, NodeSSK nodeKey) throws SSKVerifyException {
+		if(headers.length != TOTAL_HEADERS_LENGTH)
+			throw new IllegalArgumentException("Headers.length="+headers.length+" should be "+TOTAL_HEADERS_LENGTH);
 		this.data = data;
 		this.headers = headers;
 		this.nodeKey = nodeKey;
@@ -61,7 +65,6 @@ public class SSKBlock implements KeyBlock {
 			throw new SSKVerifyException("Data length wrong: "+data.length+" should be "+DATA_LENGTH);
 		if(pubKey == null)
 			throw new SSKVerifyException("PubKey was null from "+nodeKey);
-        if(headers.length < 2) throw new IllegalArgumentException("Too short: "+headers.length);
         hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
         if(hashIdentifier != HASH_SHA256)
             throw new SSKVerifyException("Hash not SHA-256");

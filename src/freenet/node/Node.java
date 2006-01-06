@@ -27,6 +27,7 @@ import java.util.Iterator;
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
+import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
@@ -46,14 +47,15 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
-import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
-import freenet.store.BaseFreenetStore;
+import freenet.keys.SSKBlock;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.BucketFactory;
 import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
+import freenet.support.ImmutableByteArrayWrapper;
+import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.PaddedEphemerallyEncryptedBucketFactory;
@@ -118,8 +120,10 @@ public class Node implements QueueingSimpleLowLevelClient {
     final int portNumber;
     
     /** These 3 are private because must be protected by synchronized(this) */
-    /** The datastore */
-    private final FreenetStore datastore;
+    /** The CHK datastore */
+    private final FreenetStore chkDatastore;
+    /** The SSK datastore */
+    private final FreenetStore sskDatastore;
     /** RequestSender's currently running, by KeyHTLPair */
     private final HashMap requestSenders;
     /** RequestSender's currently transferring, by key */
@@ -148,6 +152,8 @@ public class Node implements QueueingSimpleLowLevelClient {
     final String filenamesPrefix;
     final FilenameGenerator tempFilenameGenerator;
     final FileLoggerHook fileLoggerHook;
+    static final int MAX_CACHED_KEYS = 1000;
+    final LRUHashtable cachedPubKeys;
     final boolean testnetEnabled;
     final int testnetPort;
     static short MAX_HTL = 10;
@@ -309,7 +315,7 @@ public class Node implements QueueingSimpleLowLevelClient {
             }
         }
         DiffieHellman.init(yarrow);
-        Node n = new Node(port, yarrow, overrideIP, "", 1000 / packetsPerSecond, true, logger);
+        Node n = new Node(port, yarrow, overrideIP, "", 1000 / packetsPerSecond, true, logger, 16384);
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
         Thread t = new Thread(new MemoryChecker(), "Memory checker");
@@ -319,8 +325,9 @@ public class Node implements QueueingSimpleLowLevelClient {
     
     // FIXME - the whole overrideIP thing is a hack to avoid config
     // Implement the config!
-    Node(int port, RandomSource rand, InetAddress overrideIP, String prefix, int throttleInterval, boolean enableTestnet, FileLoggerHook logger) {
+    Node(int port, RandomSource rand, InetAddress overrideIP, String prefix, int throttleInterval, boolean enableTestnet, FileLoggerHook logger, int maxStoreKeys) {
     	this.fileLoggerHook = logger;
+    	cachedPubKeys = new LRUHashtable();
     	if(enableTestnet) {
     		Logger.error(this, "WARNING: ENABLING TESTNET CODE! This may seriously jeopardize your anonymity!");
     		testnetEnabled = true;
@@ -343,7 +350,8 @@ public class Node implements QueueingSimpleLowLevelClient {
         downloadDir = new File("downloads");
         downloadDir.mkdir();
         try {
-            datastore = new BerkeleyDBFreenetStore(prefix+"store-"+portNumber, 32768); // 1GB
+            chkDatastore = new BerkeleyDBFreenetStore(prefix+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH);
+            sskDatastore = new BerkeleyDBFreenetStore(prefix+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH);
         } catch (FileNotFoundException e1) {
             Logger.error(this, "Could not open datastore: "+e1, e1);
             System.err.println("Could not open datastore: "+e1);
@@ -559,7 +567,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         synchronized(this) {
         	if(cache) {
         		try {
-        			datastore.put(block);
+        			chkDatastore.put(block);
         		} catch (IOException e) {
         			Logger.error(this, "Datastore failure: "+e, e);
         		}
@@ -749,7 +757,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         // In store?
         CHKBlock chk = null;
         try {
-            chk = datastore.fetch(key, !cache);
+            chk = chkDatastore.fetch(key, !cache);
         } catch (IOException e) {
             Logger.error(this, "Error accessing store: "+e, e);
         }
@@ -828,7 +836,7 @@ public class Node implements QueueingSimpleLowLevelClient {
      */
     public synchronized void store(CHKBlock block) {
         try {
-            datastore.put(block);
+            chkDatastore.put(block);
         } catch (IOException e) {
             Logger.error(this, "Cannot store data: "+e, e);
         }
@@ -1066,5 +1074,33 @@ public class Node implements QueueingSimpleLowLevelClient {
 		InetAddress newIP = ipDetector.getAddress();
 		if(newIP.equals(lastIP)) return;
 		writeNodeFile();
+	}
+	
+	/**
+	 * Look up a cached public key by its hash.
+	 */
+	public DSAPublicKey getKey(byte[] hash) {
+		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
+		synchronized(cachedPubKeys) {
+			DSAPublicKey key = (DSAPublicKey) cachedPubKeys.get(w);
+			if(key != null)
+				cachedPubKeys.push(w, key);
+			return key;
+		}
+	}
+	
+	/**
+	 * Cache a public key
+	 */
+	public void cacheKey(byte[] hash, DSAPublicKey key) {
+		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
+		synchronized(cachedPubKeys) {
+			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
+			if(key2 != null && !key2.equals(key))
+				throw new IllegalArgumentException("Wrong hash?? Already have different key with same hash!");
+			cachedPubKeys.push(w, key);
+			while(cachedPubKeys.size() > MAX_CACHED_KEYS)
+				cachedPubKeys.popKey();
+		}
 	}
 }

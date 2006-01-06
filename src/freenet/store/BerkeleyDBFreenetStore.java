@@ -39,8 +39,8 @@ import freenet.support.Logger;
  */
 public class BerkeleyDBFreenetStore implements FreenetStore {
 
-    static final int CHK_DATA_BLOCK_SIZE = 32*1024;
-    static final int CHK_HEADER_BLOCK_SIZE = 36;
+    final int dataBlockSize;
+    final int headerBlockSize;
 	
 	private final Environment environment;
 	private final TupleBinding storeBlockTupleBinding;
@@ -61,8 +61,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
      * @param the directory where the store is located
      * @throws FileNotFoundException if the dir does not exist and could not be created
      */
-	public BerkeleyDBFreenetStore(String storeDir,int maxChkBlocks) throws Exception
-	{
+	public BerkeleyDBFreenetStore(String storeDir, int maxChkBlocks, int blockSize, int headerSize) throws Exception {
+		this.dataBlockSize = blockSize;
+		this.headerBlockSize = headerSize;
 		// Percentage of the database that must contain usefull data
 		// decrease to increase performance, increase to save disk space
 		System.setProperty("je.cleaner.minUtilization","98");
@@ -150,10 +151,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		    	
 	    	CHKBlock block = null;
 	    	try{
-	    		byte[] header = new byte[CHK_HEADER_BLOCK_SIZE];
-	    		byte[] data = new byte[CHK_DATA_BLOCK_SIZE];
+	    		byte[] header = new byte[headerBlockSize];
+	    		byte[] data = new byte[dataBlockSize];
 	    		synchronized(chkStore) {
-		    		chkStore.seek(storeBlock.offset*(long)(CHK_DATA_BLOCK_SIZE+CHK_HEADER_BLOCK_SIZE));
+		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 		    		chkStore.read(header);
 		    		chkStore.read(data);
 	    		}
@@ -213,12 +214,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         byte[] data = block.getData();
         byte[] header = block.getHeader();
         
-        if(data.length!=CHK_DATA_BLOCK_SIZE) {
-        	Logger.minor(this, "This data is "+data.length+" bytes. Should be "+CHK_DATA_BLOCK_SIZE);
+        if(data.length!=dataBlockSize) {
+        	Logger.minor(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
         	return;
         }
-        if(header.length!=CHK_HEADER_BLOCK_SIZE) {
-        	Logger.minor(this, "This header is "+data.length+" bytes. Should be "+CHK_HEADER_BLOCK_SIZE);
+        if(header.length!=headerBlockSize) {
+        	Logger.minor(this, "This header is "+data.length+" bytes. Should be "+headerBlockSize);
         	return;
         }
         
@@ -231,7 +232,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	synchronized(chkStore) {
 	        	if(chkBlocksInStore<maxChkBlocks) {
 	        		// Expand the store file
-	        		int byteOffset = chkBlocksInStore*(CHK_DATA_BLOCK_SIZE+CHK_HEADER_BLOCK_SIZE);
+	        		int byteOffset = chkBlocksInStore*(dataBlockSize+headerBlockSize);
 	        		StoreBlock storeBlock = new StoreBlock(chkBlocksInStore);
 	        		DatabaseEntry blockDBE = new DatabaseEntry();
 	    	    	storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
@@ -254,7 +255,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	        		DatabaseEntry blockDBE = new DatabaseEntry();
 	        		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 	        		chkDB.put(t,routingkeyDBE,blockDBE);
-	    	        chkStore.seek(storeBlock.getOffset()*(long)(CHK_DATA_BLOCK_SIZE+CHK_HEADER_BLOCK_SIZE));
+	    	        chkStore.seek(storeBlock.getOffset()*(long)(dataBlockSize+headerBlockSize));
 	    	        chkStore.write(header);
 	    	        chkStore.write(data);
 	        		t.commit();

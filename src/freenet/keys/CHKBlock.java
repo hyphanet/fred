@@ -34,6 +34,7 @@ public class CHKBlock implements KeyBlock {
     final short hashIdentifier;
     final NodeCHK chk;
     public static final int MAX_LENGTH_BEFORE_COMPRESSION = Integer.MAX_VALUE;
+    public static final int TOTAL_HEADERS_LENGTH = 36;
     
     public String toString() {
         return super.toString()+": chk="+chk;
@@ -60,7 +61,8 @@ public class CHKBlock implements KeyBlock {
     public CHKBlock(byte[] data2, byte[] header2, NodeCHK key, boolean verify) throws CHKVerifyException {
         data = data2;
         header = header2;
-        if(header.length < 2) throw new IllegalArgumentException("Too short: "+header.length);
+        if(header.length != TOTAL_HEADERS_LENGTH)
+        	throw new IllegalArgumentException("Wrong length: "+header.length+" should be "+TOTAL_HEADERS_LENGTH);
         hashIdentifier = (short)(((header[0] & 0xff) << 8) + (header[1] & 0xff));
         this.chk = key;
 //        Logger.debug(CHKBlock.class, "Data length: "+data.length+", header length: "+header.length);
