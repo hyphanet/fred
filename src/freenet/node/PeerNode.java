@@ -860,7 +860,7 @@ public class PeerNode implements PeerContext {
     
     public String getIdentity() {
     	return
-       		myName+"|"+ HexUtil.bytesToHex(identity);
+       		getStatus()+"|"+ HexUtil.bytesToHex(identity);
     }
     public String getVersion(){
 	    return version;
