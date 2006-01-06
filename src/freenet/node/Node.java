@@ -982,6 +982,16 @@ public class Node implements QueueingSimpleLowLevelClient {
      */
     public String getIdentity() {
     	StringBuffer sb = new StringBuffer();
+    	sb.append("\nRequests=");
+    	sb.append(requestSenders.size());
+    	
+    	sb.append("\nTransferring requests=");
+    	sb.append(this.transferringRequestSenders.size());
+    	
+    	sb.append("\nInserts=");
+    	sb.append(this.insertSenders.size());
+    	
+    	
     	if (peers != null)
     		sb.append(peers.getIdentity());
     	  		    	    	
