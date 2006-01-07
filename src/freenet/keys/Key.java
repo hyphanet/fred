@@ -30,8 +30,6 @@ public abstract class Key implements WritableToDataOutputStream {
     /** Whatever its type, it will need a routingKey ! */
     final byte[] routingKey;
     
-    /** 32 bytes for hash, 2 bytes for type */
-    public static final short KEY_SIZE_ON_DISK = 34;
     /** Code for 256-bit AES with PCFB */
     static final short ALGO_AES_PCFB_256 = 1;
 

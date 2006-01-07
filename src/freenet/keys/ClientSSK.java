@@ -21,6 +21,8 @@ public class ClientSSK extends ClientKey {
 	/** Encrypted hashed docname */
 	public final byte[] ehDocname;
 	
+	static final int CRYPTO_KEY_LENGTH = 32;
+	
 	public ClientSSK(String docName, DSAPublicKey pubKey, byte[] cryptoKey) {
 		this.docName = docName;
 		this.pubKey = pubKey;

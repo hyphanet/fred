@@ -9,9 +9,11 @@ import net.i2p.util.NativeBigInteger;
 import org.spaceroots.mantissa.random.MersenneTwister;
 
 import freenet.crypt.DSA;
+import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.Global;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
@@ -156,6 +158,19 @@ public class InsertableClientSSK extends ClientSSK {
 			System.arraycopy(bs, 0, buf, (bs.length-len), buf.length);
 			return buf;
 		}
+	}
+
+	public static InsertableClientSSK createRandom(RandomSource r) {
+		byte[] ckey = new byte[CRYPTO_KEY_LENGTH];
+		r.nextBytes(ckey);
+		DSAGroup g = Global.DSAgroupBigA;
+		DSAPrivateKey privKey = new DSAPrivateKey(g, r);
+		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
+		return new InsertableClientSSK("", pubKey, privKey, ckey);
+	}
+
+	public FreenetURI getInsertURI() {
+		return new FreenetURI("SSK", docName, privKey.getX().toByteArray(), cryptoKey, null);
 	}
 	
 }

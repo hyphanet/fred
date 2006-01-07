@@ -18,6 +18,9 @@ import freenet.support.Fields;
  */
 public class NodeCHK extends Key {
 
+    /** 32 bytes for hash, 2 bytes for type */
+    public static final short KEY_SIZE_ON_DISK = 34;
+	
     public NodeCHK(byte[] routingKey2) {
     	super(routingKey2);
         if(routingKey2.length != KEY_LENGTH)

@@ -28,6 +28,7 @@ import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.support.ArrayBucket;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
@@ -394,6 +395,10 @@ public class TextModeClientInterface implements Runnable {
                 System.out.println("Insert threw: "+t);
                 t.printStackTrace();
             }
+        } else if(uline.startsWith("MAKESSK")) {
+        	InsertableClientSSK key = InsertableClientSSK.createRandom(r);
+        	System.out.println("Insert URI: "+key.getInsertURI().toString(false));
+        	System.out.println("Request URI: "+key.getURI().toString(false));
         } else if(uline.startsWith("STATUS")) {
             SimpleFieldSet fs = n.exportFieldSet();
             System.out.println(fs.toString());
