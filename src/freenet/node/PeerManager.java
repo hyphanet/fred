@@ -321,7 +321,7 @@ public class PeerManager {
     /**
      * Distance between two locations.
      */
-    static double distance(double d, double loc) {
+    public static double distance(double d, double loc) {
         // Circular keyspace
         double dist = Math.abs(d-loc);
         double min = Math.min(d, loc);

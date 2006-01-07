@@ -142,7 +142,7 @@ class LocationManager {
                             } finally {
                                 unlock();
                             }
-                        }
+                        } else unlock();
                     } else {
                         continue;
                     }
@@ -515,7 +515,10 @@ class LocationManager {
      * false if it was already locked.
      */
     synchronized boolean lock() {
-        if(locked) return false;
+        if(locked) {
+        	Logger.minor(this, "Already locked");
+        	return false;
+        }
         Logger.minor(this, "Locking on port "+node.portNumber);
         locked = true;
         lockedTime = System.currentTimeMillis();
