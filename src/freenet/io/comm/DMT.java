@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import freenet.keys.Key;
+import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
@@ -503,19 +504,37 @@ public class DMT {
     }
 
     // FNP messages
-    public static final MessageType FNPDataRequest = new MessageType("FNPDataRequest") {{
+    public static final MessageType FNPCHKDataRequest = new MessageType("FNPCHKDataRequest") {{
         addField(UID, Long.class);
         addField(HTL, Short.class);
         addField(NEAREST_LOCATION, Double.class);
-        addField(FREENET_ROUTING_KEY, Key.class);
+        addField(FREENET_ROUTING_KEY, NodeCHK.class);
     }};
     
-    public static final Message createFNPDataRequest(long id, short htl, Key key, double nearestLocation) {
-        Message msg = new Message(FNPDataRequest);
+    public static final Message createFNPCHKDataRequest(long id, short htl, NodeCHK key, double nearestLocation) {
+        Message msg = new Message(FNPCHKDataRequest);
         msg.set(UID, id);
         msg.set(HTL, htl);
         msg.set(FREENET_ROUTING_KEY, key);
         msg.set(NEAREST_LOCATION, nearestLocation);
+        return msg;
+    }
+    
+    public static final MessageType FNPSSKDataRequest = new MessageType("FNPSSKDataRequest") {{
+        addField(UID, Long.class);
+        addField(HTL, Short.class);
+        addField(NEAREST_LOCATION, Double.class);
+        addField(FREENET_ROUTING_KEY, NodeSSK.class);
+    	addField(NEED_PUB_KEY, Boolean.class);
+    }};
+    
+    public static final Message createFNPSSKDataRequest(long id, short htl, NodeSSK key, double nearestLocation, boolean needPubKey) {
+        Message msg = new Message(FNPCHKDataRequest);
+        msg.set(UID, id);
+        msg.set(HTL, htl);
+        msg.set(FREENET_ROUTING_KEY, key);
+        msg.set(NEAREST_LOCATION, nearestLocation);
+        msg.set(NEED_PUB_KEY, needPubKey);
         return msg;
     }
     
@@ -564,13 +583,13 @@ public class DMT {
         return msg;
     }
     
-    public static final MessageType FNPDataFound = new MessageType("FNPDataFound") {{
+    public static final MessageType FNPCHKDataFound = new MessageType("FNPDataFound") {{
         addField(UID, Long.class);
         addField(BLOCK_HEADERS, ShortBuffer.class);
     }};
     
-    public static final Message createFNPDataFound(long id, byte[] buf) {
-        Message msg = new Message(FNPDataFound);
+    public static final Message createFNPCHKDataFound(long id, byte[] buf) {
+        Message msg = new Message(FNPCHKDataFound);
         msg.set(UID, id);
         msg.set(BLOCK_HEADERS, new ShortBuffer(buf));
         return msg;
@@ -696,18 +715,14 @@ public class DMT {
 
 	public static final MessageType FNPSSKDataFound = new MessageType("FNPSSKDataFound") {{
     	addField(UID, Long.class);
-    	addField(FREENET_ROUTING_KEY, NodeSSK.class);
         addField(BLOCK_HEADERS, ShortBuffer.class);
-        addField(PUBKEY_HASH, ShortBuffer.class);
         addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKDataFound(long uid, NodeSSK myKey, byte[] headers, byte[] data, byte[] pubKeyHash) {
+	public static Message createFNPSSKDataFound(long uid, byte[] headers, byte[] data) {
 		Message msg = new Message(FNPSSKDataFound);
 		msg.set(UID, uid);
-		msg.set(FREENET_ROUTING_KEY, myKey);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
-		msg.set(PUBKEY_HASH, new ShortBuffer(pubKeyHash));
 		msg.set(DATA, new ShortBuffer(data));
 		return msg;
 	}

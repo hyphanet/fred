@@ -49,7 +49,7 @@ public abstract class Key implements WritableToDataOutputStream {
      * @param raf The file to read from.
      * @return a Key, or throw an exception, or return null if the key is not parsable.
      */
-    public static Key read(DataInput raf) throws IOException {
+    public static final Key read(DataInput raf) throws IOException {
         short type = raf.readShort();
         if(type == NodeCHK.TYPE) {
             return NodeCHK.read(raf);

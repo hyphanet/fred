@@ -5,7 +5,11 @@ import freenet.io.comm.Message;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
+import freenet.keys.Key;
+import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
+import freenet.keys.SSKBlock;
 import freenet.support.Logger;
 
 /**
@@ -21,7 +25,7 @@ public class RequestHandler implements Runnable {
     private short htl;
     final PeerNode source;
     private double closestLoc;
-    final NodeCHK key;
+    final Key key;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -51,15 +55,17 @@ public class RequestHandler implements Runnable {
         source.send(accepted);
         
         Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, false, true);
-        if(o instanceof CHKBlock) {
-            CHKBlock block = (CHKBlock) o;
-            Message df = DMT.createFNPDataFound(uid, block.getHeaders());
+        if(o instanceof KeyBlock) {
+            KeyBlock block = (KeyBlock) o;
+            Message df = createDataFound(block);
             source.send(df);
-            PartiallyReceivedBlock prb =
-                new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getData());
-            BlockTransmitter bt =
-                new BlockTransmitter(node.usm, source, uid, prb);
-            bt.send();
+            if(block instanceof NodeCHK) {
+            	PartiallyReceivedBlock prb =
+            		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
+            	BlockTransmitter bt =
+            		new BlockTransmitter(node.usm, source, uid, prb);
+            	bt.send();
+            }
             return;
         }
         RequestSender rs = (RequestSender) o;
@@ -81,7 +87,8 @@ public class RequestHandler implements Runnable {
             }
             
             if(rs.transferStarted()) {
-                Message df = DMT.createFNPDataFound(uid, rs.getHeaders());
+            	// Is a CHK.
+                Message df = DMT.createFNPCHKDataFound(uid, rs.getHeaders());
                 source.send(df);
                 PartiallyReceivedBlock prb = rs.getPRB();
             	BlockTransmitter bt =
@@ -112,12 +119,18 @@ public class RequestHandler implements Runnable {
             		source.sendAsync(rnf, null);
             		return;
             	case RequestSender.SUCCESS:
+            		if(key instanceof NodeSSK) {
+                        Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
+                        source.send(df);
+            		}
             	case RequestSender.TRANSFER_FAILED:
             	case RequestSender.VERIFY_FAILURE:
-            	    if(shouldHaveStartedTransfer)
-            	        throw new IllegalStateException("Got status code "+status+" but transfer not started");
-            	    shouldHaveStartedTransfer = true;
-            	    continue; // should have started transfer
+            		if(key instanceof NodeCHK) {
+            			if(shouldHaveStartedTransfer)
+            				throw new IllegalStateException("Got status code "+status+" but transfer not started");
+            			shouldHaveStartedTransfer = true;
+            			continue; // should have started transfer
+            		}
             	default:
             	    throw new IllegalStateException("Unknown status code "+status);
             }
@@ -128,5 +141,14 @@ public class RequestHandler implements Runnable {
             node.unlockUID(uid);
         }
     }
+
+	private Message createDataFound(KeyBlock block) {
+		if(block instanceof CHKBlock)
+			return DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
+		else if(block instanceof SSKBlock)
+			return DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
+		else
+			throw new IllegalStateException("Unknown key block type: "+block.getClass());
+	}
 
 }

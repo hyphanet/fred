@@ -29,6 +29,8 @@ import java.util.List;
 import freenet.io.WritableToDataOutputStream;
 import freenet.io.comm.Peer;
 import freenet.keys.Key;
+import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
 
 /**
  * @author ian
@@ -79,6 +81,12 @@ public class Serializer {
 			return new Peer(dis);
 		} else if (type.equals(BitArray.class)) {
 			return new BitArray(dis);
+		} else if (type.equals(NodeCHK.class)) {
+			// Use Key.read(...) because write(...) writes the TYPE field.
+			return (NodeCHK) Key.read(dis);
+		} else if (type.equals(NodeSSK.class)) {
+			// Use Key.read(...) because write(...) writes the TYPE field.
+			return (NodeSSK) Key.read(dis);
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
 		} else {

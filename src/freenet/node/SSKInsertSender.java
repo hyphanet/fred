@@ -390,9 +390,8 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 						break;
 					}
 					
-					SSKBlock newBlock;
 					try {
-						newBlock = new SSKBlock(newData, newHeaders, myKey, false);
+						SSKBlock newBlock = new SSKBlock(newData, newHeaders, myKey, false);
 					} catch (SSKVerifyException e) {
 						Logger.error(this, "Node sent us collision but got corrupt SSK!! from "+next+" on "+uid);
 						// Try next node, no way to tell this one about its mistake as it's stopped listening. FIXME should it?

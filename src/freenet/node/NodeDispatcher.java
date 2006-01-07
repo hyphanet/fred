@@ -70,7 +70,7 @@ public class NodeDispatcher implements Dispatcher {
             return handleRoutedReply(m);
         } else if(spec == DMT.FNPRoutedRejected) {
             return handleRoutedRejected(m);
-        } else if(spec == DMT.FNPDataRequest) {
+        } else if(spec == DMT.FNPCHKDataRequest || spec == DMT.FNPSSKDataRequest) {
             return handleDataRequest(m);
         } else if(spec == DMT.FNPInsertRequest) {
             return handleInsertRequest(m);

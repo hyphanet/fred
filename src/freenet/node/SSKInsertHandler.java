@@ -186,7 +186,7 @@ public class SSKInsertHandler implements Runnable {
 					// Is verified elsewhere...
 					throw new Error("Impossible: "+e1);
 				}
-            	Message msg = DMT.createFNPSSKDataFound(uid, key, headers, data, sender.getPubkeyHash());
+            	Message msg = DMT.createFNPSSKDataFound(uid, headers, data);
             	try {
             		source.send(msg);
             	} catch (NotConnectedException e) {

@@ -44,7 +44,7 @@ public class NodeCHK extends Key {
         _index.write(routingKey);
     }
     
-    public static Key read(DataInput raf) throws IOException {
+    public static Key readCHK(DataInput raf) throws IOException {
         byte[] buf = new byte[KEY_LENGTH];
         raf.readFully(buf);
         return new NodeCHK(buf);

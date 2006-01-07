@@ -1,17 +1,25 @@
 package freenet.node;
 
+import java.io.IOException;
 import java.util.HashSet;
 
+import freenet.crypt.DSAPublicKey;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
+import freenet.keys.Key;
+import freenet.keys.KeyVerifyException;
 import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
+import freenet.keys.SSKBlock;
+import freenet.keys.SSKVerifyException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 
@@ -34,7 +42,7 @@ public final class RequestSender implements Runnable {
     static final int FETCH_TIMEOUT = 60000;
     
     // Basics
-    final NodeCHK key;
+    final Key key;
     final double target;
     private short htl;
     final long uid;
@@ -43,7 +51,9 @@ public final class RequestSender implements Runnable {
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
     private PartiallyReceivedBlock prb = null;
+    private DSAPublicKey pubKey;
     private byte[] headers;
+    private byte[] sskData;
     private boolean sentRequest;
     
     // Terminal status
@@ -65,14 +75,18 @@ public final class RequestSender implements Runnable {
         return super.toString()+" for "+uid;
     }
     
-    public RequestSender(NodeCHK key, short htl, long uid, Node n, double nearestLoc, 
+    public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n, double nearestLoc, 
             PeerNode source) {
         this.key = key;
+        this.pubKey = pubKey;
         this.htl = htl;
         this.uid = uid;
         this.node = n;
         this.source = source;
         this.nearestLoc = nearestLoc;
+        if(key instanceof NodeSSK && pubKey == null) {
+        	pubKey = node.getKey(((NodeSSK)key).getPubKeyHash());
+        }
         
         target = key.toNormalizedDouble();
         Thread t = new Thread(this, "RequestSender for UID "+uid);
@@ -120,7 +134,7 @@ public final class RequestSender implements Runnable {
                 Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl);
             }
             
-            Message req = DMT.createFNPDataRequest(uid, htl, key, nearestLoc);
+            Message req = createDataRequest();
             
             
             next.send(req);
@@ -207,7 +221,7 @@ public final class RequestSender implements Runnable {
             while(true) {
             	
                 MessageFilter mfDNF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataNotFound);
-                MessageFilter mfDF = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPDataFound);
+                MessageFilter mfDF = makeDataFoundFilter(next);
                 MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
                 MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
                 MessageFilter mf = mfDNF.or(mfDF.or(mfRouteNotFound.or(mfRejectedOverload)));
@@ -255,52 +269,101 @@ public final class RequestSender implements Runnable {
 					continue; // Wait for any further response
             	}
 
-            	if(msg.getSpec() != DMT.FNPDataFound) {
-            		Logger.error(this, "Unexpected message: "+msg);
-            	}
-            	
-            	// Found data
-            	next.successNotOverload();
-            	
-            	// First get headers
-            	
-            	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
-            	
-            	// FIXME: Validate headers
-            	
-            	node.addTransferringSender(key, this);
-            	try {
-            		
-            		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-            		
-            		synchronized(this) {
-            			notifyAll();
+            	if(msg.getSpec() == DMT.FNPCHKDataFound) {
+            		if(!(key instanceof NodeCHK)) {
+            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
+            			break;
             		}
             		
-            		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb);
-            		
-            		try {
-            			byte[] data = br.receive();
-            			// Received data
-            			CHKBlock block;
-            			try {
-            				block = new CHKBlock(data, headers, key);
-            			} catch (CHKVerifyException e1) {
-            				Logger.normal(this, "Got data but verify failed: "+e1, e1);
-            				finish(VERIFY_FAILURE, next);
-            				return;
-            			}
-            			node.store(block);
-            			finish(SUCCESS, next);
-            			return;
-            		} catch (RetrievalException e) {
-            			Logger.normal(this, "Transfer failed: "+e, e);
-            			finish(TRANSFER_FAILED, next);
-            			return;
-            		}
-            	} finally {
-            		node.removeTransferringSender(key, this);
+                	// Found data
+                	next.successNotOverload();
+                	
+                	// First get headers
+                	
+                	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+                	
+                	// FIXME: Validate headers
+                	
+                	node.addTransferringSender((NodeCHK)key, this);
+                	
+                	try {
+                		
+                		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
+                		
+                		synchronized(this) {
+                			notifyAll();
+                		}
+                		
+                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb);
+                		
+                		try {
+                			byte[] data = br.receive();
+                			// Received data
+                			CHKBlock block;
+                			try {
+                				verifyAndCommit(data);
+                			} catch (KeyVerifyException e1) {
+                				Logger.normal(this, "Got data but verify failed: "+e1, e1);
+                				finish(VERIFY_FAILURE, next);
+                				return;
+                			}
+                			finish(SUCCESS, next);
+                			return;
+                		} catch (RetrievalException e) {
+                			Logger.normal(this, "Transfer failed: "+e, e);
+                			finish(TRANSFER_FAILED, next);
+                			return;
+                		}
+                	} finally {
+                		node.removeTransferringSender((NodeCHK)key, this);
+                	}
             	}
+            	
+            	if(msg.getSpec() == DMT.FNPSSKPubKey) {
+            		
+            		Logger.minor(this, "Got pubkey on "+uid);
+            		
+            		if(!(key instanceof NodeSSK)) {
+            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
+            			break;
+            		}
+    				byte[] pubkeyAsBytes = ((ShortBuffer)msg.getObject(DMT.PUBKEY_AS_BYTES)).getData();
+    				try {
+    					pubKey = new DSAPublicKey(pubkeyAsBytes);
+    				} catch (IOException e) {
+    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
+    					finish(VERIFY_FAILURE, next);
+    					return;
+    				}
+    				if(sskData != null) {
+    					finishSSK(next);
+    					return;
+    				}
+    				continue;
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPSSKDataFound) {
+
+            		Logger.minor(this, "Got data on "+uid);
+            		
+            		if(!(key instanceof NodeCHK)) {
+            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
+            			break;
+            		}
+            		
+                	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+            		
+                	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
+                	
+                	if(pubKey != null) {
+                		finishSSK(next);
+                		return;
+                	}
+                	continue;
+            	}
+            	
+           		Logger.error(this, "Unexpected message: "+msg);
+            	
             }
         }
         } catch (Throwable t) {
@@ -312,7 +375,45 @@ public final class RequestSender implements Runnable {
         }
     }
 
-    private volatile boolean hasForwardedRejectedOverload;
+    private void finishSSK(PeerNode next) {
+    	try {
+			SSKBlock block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
+			node.store(block);
+			finish(SUCCESS, next);
+		} catch (SSKVerifyException e) {
+			Logger.error(this, "Failed to verify: "+e+" from "+next);
+			finish(VERIFY_FAILURE, next);
+			return;
+		}
+	}
+
+	private MessageFilter makeDataFoundFilter(PeerNode next) {
+    	if(key instanceof NodeCHK)
+    		return MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
+    	else if(key instanceof NodeSSK)
+    		return MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFound);
+    	else throw new IllegalStateException("Unknown keytype: "+key);
+	}
+
+	private Message createDataRequest() {
+    	if(key instanceof NodeCHK)
+    		return DMT.createFNPCHKDataRequest(uid, htl, (NodeCHK)key, nearestLoc);
+    	else if(key instanceof NodeSSK)
+    		return DMT.createFNPSSKDataRequest(uid, htl, (NodeSSK)key, nearestLoc, pubKey == null);
+    	else throw new IllegalStateException("Unknown keytype: "+key);
+	}
+
+	private void verifyAndCommit(byte[] data) throws KeyVerifyException {
+    	if(key instanceof NodeCHK) {
+    		CHKBlock block = new CHKBlock(data, headers, (NodeCHK)key);
+    		node.store(block);
+    	} else if (key instanceof NodeSSK) {
+    		SSKBlock block = new SSKBlock(data, headers, (NodeSSK)key, false);
+    		node.store(block);
+    	}
+	}
+
+	private volatile boolean hasForwardedRejectedOverload;
     
     /** Forward RejectedOverload to the request originator */
     private synchronized void forwardRejectedOverload() {
@@ -391,5 +492,9 @@ public final class RequestSender implements Runnable {
 
     public short getHTL() {
         return htl;
+    }
+    
+    final byte[] getSSKData() {
+    	return sskData;
     }
 }

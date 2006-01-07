@@ -48,6 +48,7 @@ import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
+import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
@@ -754,12 +755,17 @@ public class Node implements QueueingSimpleLowLevelClient {
      * a RequestSender, unless the HTL is 0, in which case NULL.
      * RequestSender.
      */
-    public synchronized Object makeRequestSender(NodeCHK key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache) {
+    public synchronized Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache) {
         Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
         // In store?
-        CHKBlock chk = null;
+        KeyBlock chk = null;
         try {
-            chk = chkDatastore.fetch(key, !cache);
+        	if(key instanceof NodeCHK)
+        		chk = chkDatastore.fetch((NodeCHK)key, !cache);
+        	else if(key instanceof NodeSSK)
+        		chk = sskDatastore.fetch((NodeSSK)key, !cache);
+        	else
+        		throw new IllegalStateException("Unknown key type: "+key.getClass());
         } catch (IOException e) {
             Logger.error(this, "Error accessing store: "+e, e);
         }
@@ -788,7 +794,7 @@ public class Node implements QueueingSimpleLowLevelClient {
             return sender;
         }
         
-        sender = new RequestSender(key, htl, uid, this, closestLocation, source);
+        sender = new RequestSender(key, null, htl, uid, this, closestLocation, source);
         requestSenders.put(kh, sender);
         Logger.minor(this, "Created new sender: "+sender);
         return sender;
@@ -821,7 +827,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     /**
      * Add a RequestSender to our HashSet.
      */
-    public synchronized void addSender(NodeCHK key, short htl, RequestSender sender) {
+    public synchronized void addSender(Key key, short htl, RequestSender sender) {
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         requestSenders.put(kh, sender);
     }
@@ -865,7 +871,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     /**
      * Remove a RequestSender from the map.
      */
-    public synchronized void removeSender(NodeCHK key, short htl, RequestSender sender) {
+    public synchronized void removeSender(Key key, short htl, RequestSender sender) {
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         RequestSender rs = (RequestSender) requestSenders.remove(kh);
         if(rs != sender) {

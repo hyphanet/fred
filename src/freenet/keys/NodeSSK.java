@@ -1,5 +1,6 @@
 package freenet.keys;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -25,6 +26,9 @@ public class NodeSSK extends Key {
 	final byte[] encryptedHashedDocname;
 	/** The signature key, if we know it */
 	DSAPublicKey pubKey;
+	
+	static final int PUBKEY_HASH_SIZE = 32;
+	static final int E_H_DOCNAME_SIZE = 32;
 	
 	public NodeSSK(byte[] pkHash, byte[] ehDocname) {
 		super(makeRoutingKey(pkHash, ehDocname));
@@ -54,6 +58,14 @@ public class NodeSSK extends Key {
         _index.write(pubKeyHash);
 	}
 
+    public static Key readSSK(DataInput raf) throws IOException {
+        byte[] buf = new byte[E_H_DOCNAME_SIZE];
+        raf.readFully(buf);
+        byte[] buf2 = new byte[PUBKEY_HASH_SIZE];
+        raf.readFully(buf2);
+        return new NodeSSK(buf, buf2);
+    }
+
 	public short getType() {
 		return TYPE;
 	}
@@ -74,6 +86,10 @@ public class NodeSSK extends Key {
 	 */
 	public DSAPublicKey getPubKey() {
 		return pubKey;
+	}
+
+	public byte[] getPubKeyHash() {
+		return pubKeyHash;
 	}
 
 }

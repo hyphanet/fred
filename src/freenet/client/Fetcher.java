@@ -7,11 +7,9 @@ import java.util.LinkedList;
 import freenet.client.events.DecodedBlockEvent;
 import freenet.client.events.FetchedMetadataEvent;
 import freenet.client.events.GotBlockEvent;
-import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
-import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.node.LowLevelGetException;
 import freenet.support.Bucket;
@@ -194,7 +192,11 @@ class Fetcher {
 	throws MetadataParseException, FetchException, ArchiveFailureException, ArchiveRestartException {
 		
 		if(metadata.isSimpleManifest()) {
-			String name = (String) metaStrings.removeFirst();
+			String name;
+			if(metaStrings.isEmpty())
+				name = null;
+			else
+				name = (String) metaStrings.removeFirst();
 			// Since metadata is a document, we just replace metadata here
 			if(name == null) {
 				metadata = metadata.getDefaultDocument();
