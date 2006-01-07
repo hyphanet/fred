@@ -1017,6 +1017,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     	
     	sb.append("\nInserts=");
     	sb.append(this.insertSenders.size());
+    	sb.append("\n");
     	
     	
     	if (peers != null)
