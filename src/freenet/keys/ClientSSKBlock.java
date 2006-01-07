@@ -21,8 +21,8 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	/** Client-key. This contains the decryption key etc. */
 	private ClientSSK key;
 	
-	public ClientSSKBlock(byte[] data, byte[] headers, ClientSSK key) throws SSKVerifyException {
-		super(data, headers, (NodeSSK) key.getNodeKey(), false);
+	public ClientSSKBlock(byte[] data, byte[] headers, ClientSSK key, boolean dontVerify) throws SSKVerifyException {
+		super(data, headers, (NodeSSK) key.getNodeKey(), dontVerify);
 	}
 	
 	/**
@@ -31,8 +31,8 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	public Bucket decode(BucketFactory factory, int maxLength) throws KeyDecodeException, IOException {
 		/* We know the signature is valid because it is checked in the constructor. */
 		/* We also know e(h(docname)) is valid */
-		byte[] decryptedHeaders = new byte[headers.length - headersOffset];
-		System.arraycopy(headers, headersOffset, decryptedHeaders, 0, headers.length - headersOffset);
+		byte[] decryptedHeaders = new byte[ENCRYPTED_HEADERS_LENGTH];
+		System.arraycopy(headers, headersOffset, decryptedHeaders, 0, ENCRYPTED_HEADERS_LENGTH);
 		Rijndael aes;
 		try {
 			aes = new Rijndael(256,256);

@@ -28,7 +28,7 @@ public class DSA {
 				    Random r) {
 	BigInteger k;
 	do {
-	    k=new NativeBigInteger(160, r);
+	    k=new NativeBigInteger(256, r);
 	} while (k.compareTo(g.getQ())>-1 || k.compareTo(BigInteger.ZERO)==0);
 	return sign(g, x, k, m);
     }

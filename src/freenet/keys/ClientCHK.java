@@ -32,8 +32,6 @@ public class ClientCHK extends ClientKey {
     static final short EXTRA_LENGTH = 5;
     /** The length of the decryption key */
     static final short CRYPTO_KEY_LENGTH = 32;
-    /** Code for 256-bit AES with PCFB */
-    static final short ALGO_AES_PCFB_256 = 1;
     
     /**
      * @param routingKey The routing key. This is the overall hash of the
@@ -68,7 +66,7 @@ public class ClientCHK extends ClientKey {
         if(extra == null || extra.length < 5)
             throw new MalformedURLException();
         cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
-		if(cryptoAlgorithm != ALGO_AES_PCFB_256)
+		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256)
 			throw new MalformedURLException("Invalid crypto algorithm");
         controlDocument = (extra[2] & 0x02) != 0;
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
@@ -83,7 +81,7 @@ public class ClientCHK extends ClientKey {
 		byte[] extra = new byte[EXTRA_LENGTH];
 		dis.readFully(extra);
         cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
-		if(cryptoAlgorithm != ALGO_AES_PCFB_256)
+		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256)
 			throw new MalformedURLException("Invalid crypto algorithm");
         compressionAlgorithm = (short)(((extra[3] & 0xff) << 8) + (extra[4] & 0xff));
         controlDocument = (extra[2] & 0x02) != 0;

@@ -21,17 +21,18 @@ public class SSKBlock implements KeyBlock {
 	final int headersOffset;
 	/* HEADERS FORMAT:
 	 * 2 bytes - hash ID
-	 * SIGNATURE ON THE BELOW HASH:
-	 *  32 bytes - signature: R (unsigned bytes)
-	 *  32 bytes - signature: S (unsigned bytes)
-	 * IMPLICIT - hash of remaining fields, including the implicit hash of data
-	 * IMPLICIT - hash of data
 	 * 2 bytes - symmetric cipher ID
 	 * 32 bytes - E(H(docname))
 	 * ENCRYPTED WITH E(H(docname)) AS IV:
 	 *  32 bytes - H(decrypted data), = data decryption key
 	 *  2 bytes - data length + metadata flag
 	 *  2 bytes - data compression algorithm or -1
+	 * IMPLICIT - hash of remaining fields, including the implicit hash of data
+	 * IMPLICIT - hash of data
+	 * 
+	 * SIGNATURE ON THE ABOVE HASH:
+	 *  32 bytes - signature: R (unsigned bytes)
+	 *  32 bytes - signature: S (unsigned bytes)
 	 * 
 	 * PLUS THE PUBKEY:
 	 *  Pubkey
@@ -50,6 +51,8 @@ public class SSKBlock implements KeyBlock {
     static public final short TOTAL_HEADERS_LENGTH = 2 + SIG_R_LENGTH + SIG_S_LENGTH + 2 + 
     	E_H_DOCNAME_LENGTH + ClientSSKBlock.DATA_DECRYPT_KEY_LENGTH + 2 + 2;
     
+    static final short ENCRYPTED_HEADERS_LENGTH = 36;
+    
 	/**
 	 * Initialize, and verify data, headers against key. Provided
 	 * key must have a pubkey, or we throw.
@@ -65,9 +68,6 @@ public class SSKBlock implements KeyBlock {
 			throw new SSKVerifyException("Data length wrong: "+data.length+" should be "+DATA_LENGTH);
 		if(pubKey == null)
 			throw new SSKVerifyException("PubKey was null from "+nodeKey);
-        hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
-        if(hashIdentifier != HASH_SHA256)
-            throw new SSKVerifyException("Hash not SHA-256");
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-256");
@@ -75,10 +75,20 @@ public class SSKBlock implements KeyBlock {
             throw new Error(e);
         }
         // Now verify it
+        hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
+        if(hashIdentifier != HASH_SHA256)
+            throw new SSKVerifyException("Hash not SHA-256");
+        int x = 2;
+		symCipherIdentifier = (short)(((headers[x] & 0xff) << 8) + (headers[x+1] & 0xff));
+		x+=2;
+		// Then E(H(docname))
+		byte[] ehDocname = new byte[E_H_DOCNAME_LENGTH];
+		System.arraycopy(headers, x, ehDocname, 0, ehDocname.length);
+		x+=E_H_DOCNAME_LENGTH;
+		headersOffset = x; // is index to start of encrypted headers
 		// Extract the signature
 		byte[] bufR = new byte[SIG_R_LENGTH];
 		byte[] bufS = new byte[SIG_S_LENGTH];
-		int x = 2;
 		if(x+SIG_R_LENGTH+SIG_S_LENGTH > headers.length)
 			throw new SSKVerifyException("Headers too short: "+headers.length+" should be at least "+x+SIG_R_LENGTH+SIG_S_LENGTH);
 		if(!dontVerify)
@@ -91,8 +101,11 @@ public class SSKBlock implements KeyBlock {
 		if(!dontVerify) {
 			md.update(data);
 			byte[] dataHash = md.digest();
+			// All headers up to and not including the signature
+			md.update(headers, 0, headersOffset);
+			// Then the implicit data hash
 			md.update(dataHash);
-			md.update(headers, x, headers.length - x);
+			// Makes the implicit overall hash
 			byte[] overallHash = md.digest();
 			// Now verify it
 			NativeBigInteger r = new NativeBigInteger(1, bufR);
@@ -103,12 +116,6 @@ public class SSKBlock implements KeyBlock {
 			if(headers.length < x+2+E_H_DOCNAME_LENGTH)
 				throw new SSKVerifyException("Headers too short after sig verification: "+headers.length+" should be "+x+2+E_H_DOCNAME_LENGTH);
 		}
-		symCipherIdentifier = (short)(((headers[x] & 0xff) << 8) + (headers[x+1] & 0xff));
-		x+=2;
-		byte[] ehDocname = new byte[E_H_DOCNAME_LENGTH];
-		System.arraycopy(headers, x, ehDocname, 0, ehDocname.length);
-		x+=E_H_DOCNAME_LENGTH;
-		headersOffset = x; // is index to start of e(h(docname))
 		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
 			throw new SSKVerifyException("E(H(docname)) wrong - wrong key??");
 	}

@@ -99,6 +99,8 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("GETCHKFILE:<filename> - Get the key that would be returned if we inserted the file.");
         System.out.println("PUTDIR:<path>[#<defaultfile>] - Put the entire directory from disk.");
         System.out.println("GETCHKDIR:<path>[#<defaultfile>] - Get the key that would be returned if we'd put the entire directory from disk.");
+        System.out.println("MAKESSK - Create an SSK keypair.");
+        System.out.println("PUTSSK:<insert uri>:<url to redirect to> - Insert an SSK redirect to a file already inserted.");
 //        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
 //        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
 //        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");

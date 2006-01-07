@@ -7,6 +7,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import freenet.io.WritableToDataOutputStream;
+import freenet.support.ArrayBucket;
+import freenet.support.ArrayBucketFactory;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.BucketTools;
@@ -30,6 +32,8 @@ public abstract class Key implements WritableToDataOutputStream {
     
     /** 32 bytes for hash, 2 bytes for type */
     public static final short KEY_SIZE_ON_DISK = 34;
+    /** Code for 256-bit AES with PCFB */
+    static final short ALGO_AES_PCFB_256 = 1;
 
     protected Key(byte[] routingKey) {
     	this.routingKey = routingKey;
@@ -116,6 +120,85 @@ public abstract class Key implements WritableToDataOutputStream {
         }
 	}
 
+    static class Compressed {
+    	public Compressed(byte[] finalData, short compressionAlgorithm2) {
+    		this.compressedData = finalData;
+    		this.compressionAlgorithm = compressionAlgorithm2;
+		}
+		byte[] compressedData;
+    	short compressionAlgorithm;
+    }
+    
+    static Compressed compress(Bucket sourceData, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, long MAX_LENGTH_BEFORE_COMPRESSION, long MAX_COMPRESSED_DATA_LENGTH) throws KeyEncodeException, IOException {
+    	byte[] finalData = null;
+        short compressionAlgorithm = -1;
+        // Try to compress it - even if it fits into the block,
+        // because compressing it improves its entropy.
+        boolean compressed = false;
+        if(sourceData.size() > MAX_LENGTH_BEFORE_COMPRESSION)
+            throw new KeyEncodeException("Too big");
+        if(!dontCompress) {
+        	byte[] cbuf = null;
+        	if(alreadyCompressedCodec >= 0) {
+           		if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH)
+        			throw new KeyEncodeException("Too big (precompressed)");
+        		compressionAlgorithm = alreadyCompressedCodec;
+        		cbuf = BucketTools.toByteArray(sourceData);
+        		if(sourceLength > MAX_LENGTH_BEFORE_COMPRESSION)
+        			throw new CHKEncodeException("Too big");
+        	} else {
+        		if (sourceData.size() > NodeCHK.BLOCK_SIZE) {
+					// Determine the best algorithm
+					for (int i = 0; i < Compressor.countCompressAlgorithms(); i++) {
+						Compressor comp = Compressor
+								.getCompressionAlgorithmByDifficulty(i);
+						ArrayBucket compressedData;
+						try {
+							compressedData = (ArrayBucket) comp.compress(
+									sourceData, new ArrayBucketFactory(), NodeCHK.BLOCK_SIZE);
+						} catch (IOException e) {
+							throw new Error(e);
+						} catch (CompressionOutputSizeException e) {
+							continue;
+						}
+						if (compressedData.size() <= MAX_COMPRESSED_DATA_LENGTH) {
+							compressionAlgorithm = comp
+									.codecNumberForMetadata();
+							sourceLength = sourceData.size();
+							try {
+								cbuf = BucketTools.toByteArray(compressedData);
+								// FIXME provide a method in ArrayBucket
+							} catch (IOException e) {
+								throw new Error(e);
+							}
+							break;
+						}
+					}
+				}
+        		
+        	}
+        	if(cbuf != null) {
+    			// Use it
+    			int compressedLength = cbuf.length;
+                finalData = new byte[compressedLength+4];
+                System.arraycopy(cbuf, 0, finalData, 4, compressedLength);
+                finalData[0] = (byte) ((sourceLength >> 24) & 0xff);
+                finalData[1] = (byte) ((sourceLength >> 16) & 0xff);
+                finalData[2] = (byte) ((sourceLength >> 8) & 0xff);
+                finalData[3] = (byte) ((sourceLength) & 0xff);
+                compressed = true;
+        	}
+        }
+        if(finalData == null) {
+            if(sourceData.size() > NodeCHK.BLOCK_SIZE) {
+                throw new CHKEncodeException("Too big");
+            }
+        	finalData = BucketTools.toByteArray(sourceData);
+        }
+
+        return new Compressed(finalData, compressionAlgorithm);
+    }
+    
     public byte[] getRoutingKey() {
     	return routingKey;
     }

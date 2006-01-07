@@ -11,6 +11,7 @@ import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.keys.Key.Compressed;
 import freenet.node.Node;
 import freenet.support.ArrayBucket;
 import freenet.support.ArrayBucketFactory;
@@ -84,7 +85,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      */
     public Bucket decode(BucketFactory bf, int maxLength) throws CHKDecodeException, IOException {
         // Overall hash already verified, so first job is to decrypt.
-        if(key.cryptoAlgorithm != ClientCHK.ALGO_AES_PCFB_256)
+        if(key.cryptoAlgorithm != Key.ALGO_AES_PCFB_256)
             throw new UnsupportedOperationException();
         BlockCipher cipher;
         try {
@@ -150,69 +151,13 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] header;
         ClientCHK key;
         short compressionAlgorithm = -1;
-        // Try to compress it - even if it fits into the block,
-        // because compressing it improves its entropy.
-        boolean compressed = false;
-        if(sourceData.size() > MAX_LENGTH_BEFORE_COMPRESSION)
-            throw new CHKEncodeException("Too big");
-        if(!dontCompress) {
-        	byte[] cbuf = null;
-        	if(alreadyCompressedCodec >= 0) {
-           		if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH)
-        			throw new CHKEncodeException("Too big (precompressed)");
-        		compressionAlgorithm = alreadyCompressedCodec;
-        		cbuf = BucketTools.toByteArray(sourceData);
-        		if(sourceLength > MAX_LENGTH_BEFORE_COMPRESSION)
-        			throw new CHKEncodeException("Too big");
-        	} else {
-        		if (sourceData.size() > NodeCHK.BLOCK_SIZE) {
-					// Determine the best algorithm
-					for (int i = 0; i < Compressor.countCompressAlgorithms(); i++) {
-						Compressor comp = Compressor
-								.getCompressionAlgorithmByDifficulty(i);
-						ArrayBucket compressedData;
-						try {
-							compressedData = (ArrayBucket) comp.compress(
-									sourceData, new ArrayBucketFactory(), NodeCHK.BLOCK_SIZE);
-						} catch (IOException e) {
-							throw new Error(e);
-						} catch (CompressionOutputSizeException e) {
-							continue;
-						}
-						if (compressedData.size() <= MAX_COMPRESSED_DATA_LENGTH) {
-							compressionAlgorithm = comp
-									.codecNumberForMetadata();
-							sourceLength = sourceData.size();
-							try {
-								cbuf = BucketTools.toByteArray(compressedData);
-								// FIXME provide a method in ArrayBucket
-							} catch (IOException e) {
-								throw new Error(e);
-							}
-							break;
-						}
-					}
-				}
-        		
-        	}
-        	if(cbuf != null) {
-    			// Use it
-    			int compressedLength = cbuf.length;
-                finalData = new byte[compressedLength+4];
-                System.arraycopy(cbuf, 0, finalData, 4, compressedLength);
-                finalData[0] = (byte) ((sourceLength >> 24) & 0xff);
-                finalData[1] = (byte) ((sourceLength >> 16) & 0xff);
-                finalData[2] = (byte) ((sourceLength >> 8) & 0xff);
-                finalData[3] = (byte) ((sourceLength) & 0xff);
-                compressed = true;
-        	}
-        }
-        if(finalData == null) {
-            if(sourceData.size() > NodeCHK.BLOCK_SIZE) {
-                throw new CHKEncodeException("Too big");
-            }
-        	finalData = BucketTools.toByteArray(sourceData);
-        }
+        try {
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, MAX_LENGTH_BEFORE_COMPRESSION, MAX_COMPRESSED_DATA_LENGTH);
+			finalData = comp.compressedData;
+			compressionAlgorithm = comp.compressionAlgorithm;
+		} catch (KeyEncodeException e2) {
+			throw new CHKEncodeException(e2.getMessage(), e2);
+		}
         
         // Now do the actual encode
         
@@ -270,7 +215,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] finalHash = md256.digest(data);
         
         // Now convert it into a ClientCHK
-        key = new ClientCHK(finalHash, encKey, asMetadata, ClientCHK.ALGO_AES_PCFB_256, compressionAlgorithm);
+        key = new ClientCHK(finalHash, encKey, asMetadata, Key.ALGO_AES_PCFB_256, compressionAlgorithm);
         
         try {
             return new ClientCHKBlock(data, header, key, false);

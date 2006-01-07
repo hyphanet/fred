@@ -6,7 +6,7 @@ package freenet.keys;
  * Exception thrown when a CHK encoding fails.
  * Specifically, it is thrown when the data is too big to encode.
  */
-public class CHKEncodeException extends Exception {
+public class CHKEncodeException extends KeyEncodeException {
 	static final long serialVersionUID = -1;
     public CHKEncodeException() {
         super();
