@@ -20,10 +20,10 @@ public abstract class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	public static final int buildNumber = 331;
+	public static final int buildNumber = 332;
 
 	/** Oldest build of Fred we will talk to */
-	public static final int lastGoodBuild = 330;
+	public static final int lastGoodBuild = 332;
 
 	/** The highest reported build of fred */
 	public static int highestSeenBuild = buildNumber;
@@ -57,12 +57,25 @@ public abstract class Version {
 			{ nodeName, nodeVersion, protocolVersion, "" + buildNumber };
 		return ret;
 	}
+	
+	public static final String[] getLastGoodVersion() {
+		String[] ret =
+			{ nodeName, nodeVersion, protocolVersion, "" + lastGoodBuild };
+		return ret;
+	}
 
 	/**
 	 * @return the version string that should be presented in the NodeReference
 	 */
 	public static final String getVersionString() {
 		return Fields.commaList(getVersion());
+	}
+	
+	/**
+	 * @return is needed for the freeviz
+	 */
+	public static final String getLastGoodVersionString() {
+		return Fields.commaList(getLastGoodVersion());
 	}
 
 	/**

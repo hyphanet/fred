@@ -691,6 +691,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());
         fs.put("testnet", Boolean.toString(testnetEnabled));
+        fs.put("lastGoodVersion", Version.getLastGoodVersionString());
         if(testnetEnabled)
         	fs.put("testnetPort", Integer.toString(testnetPort));
         fs.put("myName", myName);
