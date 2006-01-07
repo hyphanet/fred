@@ -1009,13 +1009,13 @@ public class Node implements QueueingSimpleLowLevelClient {
      */
     public String getIdentity() {
     	StringBuffer sb = new StringBuffer();
-    	sb.append("\nRequests=");
+    	sb.append("\nrequests=");
     	sb.append(requestSenders.size());
     	
-    	sb.append("\nTransferring requests=");
+    	sb.append("\ntransferring_requests=");
     	sb.append(this.transferringRequestSenders.size());
     	
-    	sb.append("\nInserts=");
+    	sb.append("\ninserts=");
     	sb.append(this.insertSenders.size());
     	sb.append("\n");
     	
