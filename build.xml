@@ -15,11 +15,12 @@
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 
 <!-- ================================================== -->
-<target name="get_revision" description="extract build number from svn" unless="svn.revision" depends="distclean">
+<target name="get_revision" description="extract build number from svn" unless="svn.revision" depends="revert_version">
     <exec executable="svnversion" outputproperty="svn.revision">
         <arg value="."/>
     </exec>
     <property name="svn.revision" value="${svn.revision}"/>
+    <echo message="Revision: ${svn.revision}" />
 </target>
 
 <target name="revision" description="Creates svn revision label file" depends="get_revision">
@@ -41,13 +42,13 @@
 
 <!-- ================================================== -->
 
-<target name="env" depends="mkdir, revision"   description="Learn about the environment">
+<target name="env" depends="mkdir, revision, get-extjar"   description="Learn about the environment">
     <available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
 </target>
 
 <!-- ================================================== -->
 
-<target name="get-extjar" depends="env" unless="freenet-ext.present"
+<target name="get-extjar" depends="mkdir" unless="freenet-ext.present"
     description="Download some external libraries which Freenet relies on">
     <mkdir dir="${lib}"/>
     <get src="http://downloads.freenetproject.org/alpha/freenet-ext.jar" 
@@ -60,7 +61,7 @@
 
   
     <!-- ================================================== -->
-  <target name="compile" depends="get-extjar">
+  <target name="compile" depends="env">
     <!-- Create the time stamp -->
     <tstamp/>
     <!-- Create the build directory structure used by compile -->
@@ -106,15 +107,16 @@
         <delete dir="${build}"/>
         <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
     </target>
-    <target name="distclean" description="Delete class files and docs dir.">
+    <target name="distclean" description="Delete class files and docs dir." depends="revert_version">
         <delete dir="${build}"/>
         <delete dir="${lib}"/>
+
+        <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
+    </target>
+    <target name="revert_version" description="Revert src/freenet/node/Version.java.">
 	<exec executable="svn">
 		<arg value="revert"/>
 		<arg value="src/freenet/node/Version.java"/>
 	</exec>
-
-        <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
     </target>
-
 </project>
