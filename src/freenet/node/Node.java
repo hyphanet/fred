@@ -47,6 +47,7 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
@@ -552,8 +553,17 @@ public class Node implements QueueingSimpleLowLevelClient {
         }
     }
 
-    public void putCHK(ClientCHKBlock block, RequestStarterClient starter, boolean cache) throws LowLevelPutException {
-   		starter.putCHK(block, cache);
+    public void putKey(ClientKeyBlock block, RequestStarterClient client, boolean cache) throws LowLevelPutException {
+    	client.putKey(block, cache);
+    }
+    
+    public void realPut(ClientKeyBlock block, boolean cache) throws LowLevelPutException {
+    	if(block instanceof ClientCHKBlock)
+    		realPutCHK((ClientCHKBlock)block, cache);
+    	else if(block instanceof ClientSSKBlock)
+    		realPutSSK((ClientSSKBlock)block, cache);
+    	else
+    		throw new IllegalArgumentException("Unknown put type "+block.getClass());
     }
     
     public void realPutCHK(ClientCHKBlock block, boolean cache) throws LowLevelPutException {
@@ -575,7 +585,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         			Logger.error(this, "Datastore failure: "+e, e);
         		}
         	}
-            is = makeInsertSender(block.getClientKey().getNodeCHK(), 
+            is = makeInsertSender((NodeCHK)block.getClientKey().getNodeKey(), 
                     MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
         }
         boolean hasForwardedRejectedOverload = false;
@@ -654,6 +664,105 @@ public class Node implements QueueingSimpleLowLevelClient {
         		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
         	default:
         		Logger.error(this, "Unknown CHKInsertSender code in putCHK: "+is.getStatus()+" on "+is);
+    			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        	}
+        }
+    }
+
+    public void realPutSSK(ClientSSKBlock block, boolean cache) throws LowLevelPutException {
+        byte[] data = block.getRawData();
+        byte[] headers = block.getRawHeaders();
+        PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
+        SSKInsertSender is;
+        long uid = random.nextLong();
+        if(!lockUID(uid)) {
+            Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+            throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        }
+        long startTime = System.currentTimeMillis();
+        synchronized(this) {
+        	if(cache) {
+        		try {
+        			sskDatastore.put(block);
+        		} catch (IOException e) {
+        			Logger.error(this, "Datastore failure: "+e, e);
+        		}
+        	}
+            is = makeInsertSender(block, 
+                    MAX_HTL, uid, null, false, lm.getLocation().getValue(), cache);
+        }
+        boolean hasForwardedRejectedOverload = false;
+        // Wait for status
+        while(true) {
+        	synchronized(is) {
+        		if(is.getStatus() == SSKInsertSender.NOT_FINISHED) {
+        			try {
+        				is.wait(5*1000);
+        			} catch (InterruptedException e) {
+        				// Ignore
+        			}
+        		}
+        		if(is.getStatus() != SSKInsertSender.NOT_FINISHED) break;
+        	}
+    		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
+    			hasForwardedRejectedOverload = true;
+    			insertThrottle.requestRejectedOverload();
+    		}
+        }
+        
+        // Wait for completion
+        while(true) {
+        	synchronized(is) {
+        		if(is.getStatus() != SSKInsertSender.NOT_FINISHED) break;
+        		try {
+					is.wait(10*1000);
+				} catch (InterruptedException e) {
+					// Go around again
+				}
+        	}
+        }
+        
+        Logger.minor(this, "Completed "+uid+" overload="+hasForwardedRejectedOverload+" "+is.getStatusString());
+        
+        // Finished?
+        if(!hasForwardedRejectedOverload) {
+        	// Is it ours? Did we send a request?
+        	if(is.sentRequest() && is.uid == uid && (is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND 
+        			|| is.getStatus() == SSKInsertSender.SUCCESS)) {
+        		// It worked!
+        		long endTime = System.currentTimeMillis();
+        		long len = endTime - startTime;
+        		insertThrottle.requestCompleted(len);
+        	}
+        }
+        
+        if(is.getStatus() == SSKInsertSender.SUCCESS) {
+        	Logger.normal(this, "Succeeded inserting "+block);
+        	return;
+        } else {
+        	int status = is.getStatus();
+        	String msg = "Failed inserting "+block+" : "+is.getStatusString();
+        	if(status == CHKInsertSender.ROUTE_NOT_FOUND)
+        		msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
+        	if(is.getStatus() != SSKInsertSender.ROUTE_NOT_FOUND)
+        		Logger.error(this, msg);
+        	else
+        		Logger.normal(this, msg);
+        	switch(is.getStatus()) {
+        	case SSKInsertSender.NOT_FINISHED:
+        		Logger.error(this, "IS still running in putCHK!: "+is);
+        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        	case SSKInsertSender.GENERATED_REJECTED_OVERLOAD:
+        	case SSKInsertSender.TIMED_OUT:
+        		throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
+        	case SSKInsertSender.ROUTE_NOT_FOUND:
+        		throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
+        	case SSKInsertSender.ROUTE_REALLY_NOT_FOUND:
+        		throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
+        	case SSKInsertSender.INTERNAL_ERROR:
+        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+        	default:
+        		Logger.error(this, "Unknown CHKInsertSender code in putSSK: "+is.getStatus()+" on "+is);
     			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
         	}
         }
@@ -944,9 +1053,20 @@ public class Node implements QueueingSimpleLowLevelClient {
         return is;
     }
     
+    /**
+     * Fetch or create an SSKInsertSender for a given key/htl.
+     * @param key The key to be inserted.
+     * @param htl The current HTL. We can't coalesce inserts across
+     * HTL's.
+     * @param uid The UID of the caller's request chain, or a new
+     * one. This is obviously not used if there is already an 
+     * SSKInsertSender running.
+     * @param source The node that sent the InsertRequest, or null
+     * if it originated locally.
+     */
     public synchronized SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-    		boolean fromStore, double closestLoc, boolean cache) {
-    	Key key = block.getKey();
+            boolean fromStore, double closestLoc, boolean cache) {
+    	NodeSSK key = (NodeSSK) block.getKey();
         Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         SSKInsertSender is = (SSKInsertSender) insertSenders.get(kh);

@@ -50,6 +50,12 @@ public class InserterException extends Exception {
 		this.uri = expectedURI;
 	}
 
+	public InserterException(int mode) {
+		this.mode = mode;
+		this.errorCodes = null;
+		this.uri = null;
+	}
+
 	/** Caller supplied a URI we cannot use */
 	public static final int INVALID_URI = 1;
 	/** Failed to read from or write to a bucket; a kind of internal error */

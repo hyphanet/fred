@@ -6,6 +6,7 @@ import freenet.crypt.RandomSource;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSKBlock;
 import freenet.keys.KeyBlock;
 import freenet.support.DoublyLinkedList;
 import freenet.support.UpdatableSortedLinkedListItemImpl;
@@ -53,7 +54,7 @@ public class RequestStarterClient extends UpdatableSortedLinkedListItemImpl {
 	 * Blocking insert of a key.
 	 * @throws LowLevelPutException If the fetch failed for some reason.
 	 */
-	public void putCHK(ClientCHKBlock block, boolean cache) throws LowLevelPutException {
+	public void putKey(ClientKeyBlock block, boolean cache) throws LowLevelPutException {
 		QueuedInsertRequest qir = new QueuedInsertRequest(block, client, cache);
 		addRequest(qir);
 		qir.waitAndPut();

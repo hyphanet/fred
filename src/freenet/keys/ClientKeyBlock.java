@@ -18,4 +18,9 @@ public interface ClientKeyBlock {
 	 */
 	boolean isMetadata();
 
+    /**
+     * @return The ClientKey for this key.
+     */
+    public ClientKey getClientKey();
+
 }

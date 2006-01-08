@@ -12,6 +12,6 @@ interface QueueingSimpleLowLevelClient extends SimpleLowLevelClient {
 	ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache) throws LowLevelGetException;
 
 	/** Ditto */
-	void realPutCHK(ClientCHKBlock block, boolean cache) throws LowLevelPutException;
+	void realPut(ClientKeyBlock block, boolean cache) throws LowLevelPutException;
 
 }

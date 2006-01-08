@@ -43,7 +43,7 @@ public class SSKBlock implements KeyBlock {
     final short hashIdentifier;
     final short symCipherIdentifier;
     
-    static final short DATA_LENGTH = 1024;
+    public static final short DATA_LENGTH = 1024;
     
     static final short SIG_R_LENGTH = 32;
     static final short SIG_S_LENGTH = 32;

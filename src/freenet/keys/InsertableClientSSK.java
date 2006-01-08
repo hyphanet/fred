@@ -30,6 +30,13 @@ public class InsertableClientSSK extends ClientSSK {
 		this.privKey = privKey;
 	}
 	
+	public static InsertableClientSSK create(FreenetURI uri) {
+		DSAGroup g = Global.DSAgroupBigA;
+		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getKeyVal()));
+		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
+		return new InsertableClientSSK(uri.getDocName(), pubKey, privKey, uri.getCryptoKey());
+	}
+	
 	public ClientSSKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, RandomSource r) throws SSKEncodeException, IOException {
 		byte[] compressedData;
 		short compressionAlgo;

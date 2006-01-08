@@ -27,5 +27,5 @@ public interface SimpleLowLevelClient {
      * @param cache If false, don't cache the data. See the comments at the top
      * of Node.java.
      */
-    public void putCHK(ClientCHKBlock key, RequestStarterClient sctx, boolean cache) throws LowLevelPutException;
+    public void putKey(ClientKeyBlock key, RequestStarterClient sctx, boolean cache) throws LowLevelPutException;
 }

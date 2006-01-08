@@ -4,10 +4,17 @@ import java.io.IOException;
 
 import freenet.client.events.BlockInsertErrorEvent;
 import freenet.client.events.SimpleBlockPutEvent;
+import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.ClientSSK;
+import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.keys.NodeCHK;
+import freenet.keys.NodeSSK;
+import freenet.keys.SSKBlock;
+import freenet.keys.SSKEncodeException;
 import freenet.node.LowLevelPutException;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
@@ -45,14 +52,34 @@ public class FileInserter {
 		
 		// First, can it fit into a single block?
 		
+		Bucket origData = block.data;
 		Bucket data = block.data;
+		int blockSize;
+		int maxSourceDataSize;
+		boolean isSSK = false;
+		boolean dontCompress = false;
+		
+		long origSize = data.size();
+		if(block.desiredURI.getKeyType().equals("SSK")) {
+			blockSize = SSKBlock.DATA_LENGTH;
+			isSSK = true;
+			maxSourceDataSize = ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH;
+			if(origSize > maxSourceDataSize)
+				dontCompress = true;
+			// If too big to fit in an SSK, don't even try.
+		} else if(block.desiredURI.getKeyType().equals("CHK")) {
+			blockSize = CHKBlock.DATA_LENGTH;
+			maxSourceDataSize = ClientCHKBlock.MAX_LENGTH_BEFORE_COMPRESSION;
+		} else {
+			throw new InserterException(InserterException.INVALID_URI);
+		}
+		
 		ClientCHKBlock chk;
-
+		
 		Compressor bestCodec = null;
 		Bucket bestCompressedData = null;
 
-		long origSize = data.size();
-		if(data.size() > NodeCHK.BLOCK_SIZE && (!ctx.dontCompress)) {
+		if(origSize > blockSize && (!ctx.dontCompress) && (!dontCompress)) {
 			// Try to compress the data.
 			// Try each algorithm, starting with the fastest and weakest.
 			// Stop when run out of algorithms, or the compressed data fits in a single block.
@@ -61,8 +88,8 @@ public class FileInserter {
 				for(int i=0;i<algos;i++) {
 					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
 					Bucket result;
-					result = comp.compress(data, ctx.bf, Long.MAX_VALUE);
-					if(result.size() < NodeCHK.BLOCK_SIZE) {
+					result = comp.compress(origData, ctx.bf, Long.MAX_VALUE);
+					if(result.size() < blockSize) {
 						bestCodec = comp;
 						data = result;
 						if(bestCompressedData != null)
@@ -72,10 +99,12 @@ public class FileInserter {
 					if(bestCompressedData != null && result.size() <  bestCompressedData.size()) {
 						ctx.bf.freeBucket(bestCompressedData);
 						bestCompressedData = result;
+						data = result;
 						bestCodec = comp;
 					} else if(bestCompressedData == null && result.size() < data.size()) {
 						bestCompressedData = result;
 						bestCodec = comp;
+						data = result;
 					}
 				}
 			} catch (IOException e) {
@@ -84,6 +113,41 @@ public class FileInserter {
 				// Impossible
 				throw new Error(e);
 			}
+		}
+		
+		InsertableClientSSK isk = null;
+		
+		if(isSSK && data.size() <= SSKBlock.DATA_LENGTH && block.clientMetadata.isTrivial()) {
+			short codec;
+			if(bestCodec == null) {
+				codec = -1;
+			} else {
+				codec = bestCodec.codecNumberForMetadata();
+			}
+			isk = InsertableClientSSK.create(block.desiredURI);
+			ClientSSKBlock ssk;
+			try {
+				ssk = isk.encode(data, metadata, true, codec, data.size(), ctx.random);
+			} catch (SSKEncodeException e) {
+				throw new InserterException(InserterException.INTERNAL_ERROR, e, isk.getURI());
+			} catch (IOException e) {
+				throw new InserterException(InserterException.INTERNAL_ERROR, e, isk.getURI());
+			}
+			return simplePutSSK(ssk, getCHKOnly, noRetries);
+		}
+		
+		if(isSSK) {
+			// Insert as CHK
+			// Create metadata pointing to it (include the clientMetadata if there is any).
+			FreenetURI uri = run(new InsertBlock(block.data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI), metadata, getCHKOnly, noRetries);
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, uri, block.clientMetadata);
+			Bucket bucket;
+			try {
+				bucket = BucketTools.makeImmutableBucket(ctx.bf, m.writeToByteArray());
+			} catch (IOException e) {
+				throw new InserterException(InserterException.INTERNAL_ERROR, e, isk.getURI());
+			}
+			return run(new InsertBlock(bucket, new ClientMetadata(), block.desiredURI), metadata, getCHKOnly, noRetries);
 		}
 		
 		if(data.size() <= NodeCHK.BLOCK_SIZE) {
@@ -125,7 +189,7 @@ public class FileInserter {
 				if(!getCHKOnly)
 					ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(chk.getClientKey()));
 				if(!getCHKOnly)
-					ctx.client.putCHK(chk, ctx.starterClient, ctx.cacheLocalRequests);
+					ctx.client.putKey(chk, ctx.starterClient, ctx.cacheLocalRequests);
 				break;
 			} catch (LowLevelPutException e) {
 				le = e;
@@ -156,6 +220,43 @@ public class FileInserter {
 			Metadata metadata = new Metadata(Metadata.SIMPLE_REDIRECT, chk.getClientKey().getURI(), clientMetadata);
 			uri = putMetadataCHK(metadata, getCHKOnly, noRetries);
 		}
+		
+		if(le != null)
+			translateException(le, uri);
+		
+		return uri;
+	}
+
+	private FreenetURI simplePutSSK(ClientSSKBlock ssk, boolean getCHKOnly, boolean noRetries) throws InserterException {
+		LowLevelPutException le = null;
+		int rnfs = 0;
+		for(int i=0;i<=ctx.maxInsertRetries;i++) {
+			try {
+				if(!getCHKOnly)
+					ctx.eventProducer.produceEvent(new SimpleBlockPutEvent(ssk.getClientKey()));
+				if(!getCHKOnly)
+					ctx.client.putKey(ssk, ctx.starterClient, ctx.cacheLocalRequests);
+				break;
+			} catch (LowLevelPutException e) {
+				le = e;
+				switch(le.code) {
+				case LowLevelPutException.ROUTE_REALLY_NOT_FOUND:
+				case LowLevelPutException.REJECTED_OVERLOAD:
+					rnfs = 0;
+				}
+				if(noRetries)
+					break;
+				if(le.code == LowLevelPutException.ROUTE_NOT_FOUND && ctx.consecutiveRNFsCountAsSuccess > 0) {
+					rnfs++;
+					if(rnfs >= ctx.consecutiveRNFsCountAsSuccess) {
+						le = null;
+						break;
+					}
+				}
+			}
+		}
+		
+		FreenetURI uri = ssk.getClientKey().getURI();
 		
 		if(le != null)
 			translateException(le, uri);

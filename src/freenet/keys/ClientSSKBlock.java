@@ -12,7 +12,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	
 	static final int DATA_DECRYPT_KEY_LENGTH = 32;
 	
-	static final int MAX_DECOMPRESSED_DATA_LENGTH = 32768;
+	static public final int MAX_DECOMPRESSED_DATA_LENGTH = 32768;
 	
 	/** Is metadata. Set on decode. */
 	private boolean isMetadata;
@@ -81,6 +81,10 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		if(!decoded)
 			throw new IllegalStateException("Cannot read isMetadata before decoded");
 		return isMetadata;
+	}
+
+	public ClientKey getClientKey() {
+		return key;
 	}
 
 }

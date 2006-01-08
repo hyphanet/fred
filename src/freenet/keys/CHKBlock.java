@@ -17,6 +17,7 @@ public class CHKBlock implements KeyBlock {
     final NodeCHK chk;
     public static final int MAX_LENGTH_BEFORE_COMPRESSION = Integer.MAX_VALUE;
     public static final int TOTAL_HEADERS_LENGTH = 36;
+    public static final int DATA_LENGTH = 32768;
     
     public String toString() {
         return super.toString()+": chk="+chk;
