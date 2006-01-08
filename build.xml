@@ -15,7 +15,7 @@
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 
 <!-- ================================================== -->
-<target name="get_revision" description="extract build number from svn" unless="svn.revision">
+<target name="get_revision" description="extract build number from svn" unless="svn.revision" depends="distclean">
     <exec executable="svnversion" outputproperty="svn.revision">
         <arg value="."/>
     </exec>
