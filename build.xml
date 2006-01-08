@@ -9,28 +9,56 @@
 
   <!-- set global properties for this build -->
   	<property name="src" location="src"/>
+  	<property name="version_file" location="src/freenet/node/Version.java"/>
 	<property name="build" location="build"/>
 	<property name="lib"	location="lib"/>
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
+
+<!-- ================================================== -->
+<target name="get_revision" description="extract build number from svn" unless="svn.revision">
+    <exec executable="svnversion" outputproperty="svn.revision">
+        <arg value="."/>
+    </exec>
+    <property name="svn.revision" value="${svn.revision}"/>
+</target>
+
+<target name="revision" description="Creates svn revision label file" depends="get_revision">
+
+    <echo message="Replacing version string with ${svn.revision}"/>
+    <replaceregexp file="${version_file}"
+	match="public static final int buildNumber = SVN_REVISION"
+	replace="public static final int buildNumber = ${svn.revision} ;"
+	byline="true"
+    />
+</target>
+
+<!-- ================================================== -->
 
 <target name="mkdir">
     <mkdir dir="${build}"/>
     <mkdir dir="${lib}"/>
 </target>
 
-<target name="env" depends="mkdir"   description="Learn about the environment">
+<!-- ================================================== -->
+
+<target name="env" depends="mkdir, revision"   description="Learn about the environment">
     <available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
 </target>
 
-  <target name="get-extjar" depends="env" unless="freenet-ext.present"
+<!-- ================================================== -->
+
+<target name="get-extjar" depends="env" unless="freenet-ext.present"
     description="Download some external libraries which Freenet relies on">
     <mkdir dir="${lib}"/>
     <get src="http://downloads.freenetproject.org/alpha/freenet-ext.jar" 
 		 	dest="${freenet-ext.location}" 
 	 verbose="true"
 	 usetimestamp="true"/>
-		<property name="freenet-ext.present" value="true"/>
-  </target>
+    <property name="freenet-ext.present" value="true"/>
+</target>
+
+
+  
     <!-- ================================================== -->
   <target name="compile" depends="get-extjar">
     <!-- Create the time stamp -->
