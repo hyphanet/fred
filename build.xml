@@ -109,6 +109,11 @@
     <target name="distclean" description="Delete class files and docs dir.">
         <delete dir="${build}"/>
         <delete dir="${lib}"/>
+	<exec executable="svn">
+		<arg value="revert"/>
+		<arg value="src/freenet/node/Version.java"/>
+	</exec>
+
         <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
     </target>
 
