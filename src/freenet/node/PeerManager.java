@@ -386,6 +386,7 @@ public class PeerManager {
         for(int i=0;i<myPeers.length;i++) {
             PeerNode pn = myPeers[i];
             status[i] = pn.getStatus();
+	    Version.seenVersion(pn.getVersion());
         }
         Arrays.sort(status);
         for(int i=0;i<status.length;i++) {

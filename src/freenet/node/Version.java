@@ -20,7 +20,7 @@ public abstract class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	public static final int buildNumber = 335;
+	public static final int buildNumber = 336;
 
 	/** Oldest build of Fred we will talk to */
 	public static final int lastGoodBuild = 332;
@@ -62,6 +62,10 @@ public abstract class Version {
 		String[] ret =
 			{ nodeName, nodeVersion, protocolVersion, "" + lastGoodBuild };
 		return ret;
+	}
+	
+	public static final int getHighestSeenBuild() {
+		return highestSeenBuild;
 	}
 
 	/**
