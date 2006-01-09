@@ -27,7 +27,7 @@
 
     <echo message="Replacing version string with ${svn.revision}"/>
     <replaceregexp file="${version_file}"
-	match="public static final int buildNumber = SVN_REVISION"
+	match="public static final int buildNumber =[0-9\ ]+;"
 	replace="public static final int buildNumber = ${svn.revision} ;"
 	byline="true"
     />
