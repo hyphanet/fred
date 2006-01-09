@@ -64,10 +64,6 @@ public abstract class Version {
 		return ret;
 	}
 	
-	public static final int getHighestSeenBuild() {
-		return highestSeenBuild;
-	}
-
 	/**
 	 * @return the version string that should be presented in the NodeReference
 	 */

@@ -404,7 +404,9 @@ public class TextModeClientInterface implements Runnable {
             System.out.println(fs.toString());
             System.out.println();
             System.out.println(n.getStatus());
-            System.out.println("The latest version is :"+Version.getHighestSeenBuild());
+	    if(Version.buildNumber<Version.highestSeenBuild){
+	            System.out.println("The latest version is : "+Version.highestSeenBuild);
+	    }
         } else if(uline.startsWith("CONNECT:")) {
             String key = line.substring("CONNECT:".length());
             while(key.length() > 0 && key.charAt(0) == ' ')
