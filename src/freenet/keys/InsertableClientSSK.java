@@ -146,7 +146,10 @@ public class InsertableClientSSK extends ClientSSK {
 		try {
 			return new ClientSSKBlock(data, headers, this, false); // FIXME set last arg to true to not verify
 		} catch (SSKVerifyException e) {
-			throw new IllegalStateException("Impossible encoding error: "+e.getMessage(), e);
+			IllegalStateException exception=new IllegalStateException("Impossible encoding error: "+e.getMessage());
+			exception.initCause(e);
+
+			throw exception;
 		}
 	}
 
