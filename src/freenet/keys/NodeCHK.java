@@ -4,11 +4,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import freenet.support.Base64;
-import freenet.support.Fields;
 
 /**
  * @author amphibian

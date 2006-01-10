@@ -50,7 +50,7 @@ public class NodeSSK extends Key {
 	}
 	
 	// 01 = SSK, 01 = first version of SSK
-	public short TYPE = 0x0201;
+	public static short TYPE = 0x0201;
 	
 	public void write(DataOutput _index) throws IOException {
         _index.writeShort(TYPE);
