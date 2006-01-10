@@ -35,6 +35,10 @@ public class NodeSSK extends Key {
 		this.encryptedHashedDocname = ehDocname;
 		this.pubKeyHash = pkHash;
 		this.pubKey = pubKey;
+		if(ehDocname.length != E_H_DOCNAME_SIZE)
+			throw new IllegalArgumentException("ehDocname must be "+E_H_DOCNAME_SIZE+" bytes");
+		if(pkHash.length != PUBKEY_HASH_SIZE)
+			throw new IllegalArgumentException("pubKeyHash must be "+PUBKEY_HASH_SIZE+" bytes");
 	}
 	
 	// routingKey = H( E(H(docname)) + H(pubkey) )
@@ -64,7 +68,7 @@ public class NodeSSK extends Key {
         raf.readFully(buf);
         byte[] buf2 = new byte[PUBKEY_HASH_SIZE];
         raf.readFully(buf2);
-        return new NodeSSK(buf, buf2, null);
+        return new NodeSSK(buf2, buf, null);
     }
 
 	public short getType() {

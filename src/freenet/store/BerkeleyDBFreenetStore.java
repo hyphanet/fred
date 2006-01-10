@@ -294,7 +294,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	if(closed)
     		return;
     	  	
-    	byte[] routingkey = ((NodeCHK)block.getKey()).getRoutingKey();
+    	byte[] routingkey = block.getKey().getRoutingKey();
         byte[] data = block.getRawData();
         byte[] header = block.getRawHeaders();
         

@@ -8,6 +8,7 @@ import net.i2p.util.NativeBigInteger;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.support.HexUtil;
 
 /**
  * SSKBlock. Contains a full fetched key. Can do a node-level verification. Can 
@@ -84,7 +85,7 @@ public class SSKBlock implements KeyBlock {
 		// Then E(H(docname))
 		byte[] ehDocname = new byte[E_H_DOCNAME_LENGTH];
 		System.arraycopy(headers, x, ehDocname, 0, ehDocname.length);
-		x+=E_H_DOCNAME_LENGTH;
+		x += E_H_DOCNAME_LENGTH;
 		headersOffset = x; // is index to start of encrypted headers
 		x += ENCRYPTED_HEADERS_LENGTH;
 		// Extract the signature
@@ -116,7 +117,7 @@ public class SSKBlock implements KeyBlock {
 			}
 		}
 		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
-			throw new SSKVerifyException("E(H(docname)) wrong - wrong key??");
+			throw new SSKVerifyException("E(H(docname)) wrong - wrong key?? \nfrom headers: "+HexUtil.bytesToHex(ehDocname)+"\nfrom key:     "+HexUtil.bytesToHex(nodeKey.encryptedHashedDocname));
 	}
 
 	public Key getKey() {

@@ -106,12 +106,9 @@ public class InsertableClientSSK extends ClientSSK {
         headers[x++] = (byte) (Key.ALGO_AES_PCFB_256 >> 8);
         headers[x++] = (byte) (Key.ALGO_AES_PCFB_256);
         // Then E(H(docname))
-        byte[] hDocname = md256.digest(docName.getBytes("UTF-8"));
-		aes.initialize(cryptoKey);
-		aes.encipher(hDocname, hDocname);
 		// Copy to headers
-		System.arraycopy(hDocname, 0, headers, x, hDocname.length);
-		x += hDocname.length;
+		System.arraycopy(ehDocname, 0, headers, x, ehDocname.length);
+		x += ehDocname.length;
 		// Now the encrypted headers
 		byte[] encryptedHeaders = new byte[SSKBlock.ENCRYPTED_HEADERS_LENGTH];
 		System.arraycopy(origDataHash, 0, encryptedHeaders, 0, origDataHash.length);
@@ -125,7 +122,7 @@ public class InsertableClientSSK extends ClientSSK {
 		if(encryptedHeaders.length != y)
 			throw new IllegalStateException("Have more bytes to generate encoding SSK");
 		aes.initialize(cryptoKey);
-		pcfb.reset(hDocname);
+		pcfb.reset(ehDocname);
 		pcfb.blockEncipher(encryptedHeaders, 0, encryptedHeaders.length);
 		System.arraycopy(encryptedHeaders, 0, headers, x, encryptedHeaders.length);
 		x+=encryptedHeaders.length;
