@@ -54,7 +54,7 @@ public class TestnetStatusUploader implements Runnable {
 	            		
 					output.println(node.exportFieldSet().toString());
 					output.println();
-					output.println(node.getIdentity());
+					output.println(node.getFreevizOutput());
 					output.close();
 					
 					client.close();

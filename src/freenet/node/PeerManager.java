@@ -395,13 +395,13 @@ public class PeerManager {
         }
         return sb.toString();
     }
-    public String getIdentity() {
+    public String getFreevizOutput() {
         StringBuffer sb = new StringBuffer();
         PeerNode[] peers = myPeers;
         String[] identity = new String[peers.length];
         for(int i=0;i<myPeers.length;i++) {
             PeerNode pn = myPeers[i];
-            identity[i] = pn.getIdentity();
+            identity[i] = pn.getFreevizOutput();
         }
         Arrays.sort(identity);
         for(int i=0;i<identity.length;i++) {

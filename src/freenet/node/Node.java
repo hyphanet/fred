@@ -1132,9 +1132,9 @@ public class Node implements QueueingSimpleLowLevelClient {
     }
     
     /**
-     * @return Some identity information.
+     * @return Data String for freeviz.
      */
-    public String getIdentity() {
+    public String getFreevizOutput() {
     	StringBuffer sb = new StringBuffer();
     	sb.append("\nrequests=");
     	sb.append(requestSenders.size());
@@ -1148,7 +1148,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     	
     	
     	if (peers != null)
-    		sb.append(peers.getIdentity());
+    		sb.append(peers.getFreevizOutput());
     	  		    	    	
     	return sb.toString();
     }
