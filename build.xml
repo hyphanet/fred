@@ -57,7 +57,7 @@
     <!-- Create the distribution directory -->
     <!--<mkdir dir="."/>-->
     <!-- Put everything in ${build} into the freenet-${DSTAMP}.jar file -->
-    <jar jarfile="freenet-cvs-snapshot.jar" basedir="${build}">
+    <jar jarfile="${lib}/freenet-cvs-snapshot.jar" basedir="${build}">
       <manifest>
       <attribute name="Main-Class" value="freenet/node/Node"/>
          <attribute name="Built-By" value="${user.name}"/>
@@ -78,7 +78,7 @@
         <delete dir="${build}"/>
         <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
     </target>
-    <target name="distclean" description="Delete class files and docs dir.">
+    <target name="distclean" description="Delete class files, lib dir and docs dir.">
         <delete dir="${build}"/>
         <delete dir="${lib}"/>
         <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
