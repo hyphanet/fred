@@ -101,7 +101,7 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("PUTDIR:<path>[#<defaultfile>] - Put the entire directory from disk.");
         System.out.println("GETCHKDIR:<path>[#<defaultfile>] - Get the key that would be returned if we'd put the entire directory from disk.");
         System.out.println("MAKESSK - Create an SSK keypair.");
-        System.out.println("PUTSSK:<insert uri>:<url to redirect to> - Insert an SSK redirect to a file already inserted.");
+        System.out.println("PUTSSK:<insert uri>;<url to redirect to> - Insert an SSK redirect to a file already inserted.");
 //        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
 //        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
 //        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
@@ -399,6 +399,33 @@ public class TextModeClientInterface implements Runnable {
         	InsertableClientSSK key = InsertableClientSSK.createRandom(r);
         	System.out.println("Insert URI: "+key.getInsertURI().toString(false));
         	System.out.println("Request URI: "+key.getURI().toString(false));
+        } else if(uline.startsWith("PUTSSK:")) {
+        	String cmd = line.substring("PUTSSK:".length());
+        	cmd = cmd.trim();
+        	if(cmd.indexOf(';') <= 0) {
+        		System.out.println("No target URI provided.");
+        		System.out.println("PUTSSK:<insert uri>;<url to redirect to>");
+        		return;
+        	}
+        	String[] split = cmd.split(";");
+        	String insertURI = split[0];
+        	String targetURI = split[1];
+        	System.out.println("Insert URI: "+insertURI);
+        	System.out.println("Target URI: "+targetURI);
+        	FreenetURI insert = new FreenetURI(insertURI);
+        	FreenetURI target = new FreenetURI(targetURI);
+        	InsertableClientSSK key = InsertableClientSSK.create(insert);
+        	System.out.println("Fetch URI: "+key.getURI());
+        	try {
+				FreenetURI result = client.insertRedirect(insert, target);
+				System.out.println("Successfully inserted to fetch URI: "+key.getURI());
+			} catch (InserterException e) {
+            	System.out.println("Finished insert but: "+e.getMessage());
+            	if(e.uri != null) {
+            		System.out.println("URI would have been: "+e.uri);
+            	}
+			}
+        	
         } else if(uline.startsWith("STATUS")) {
             SimpleFieldSet fs = n.exportFieldSet();
             System.out.println(fs.toString());

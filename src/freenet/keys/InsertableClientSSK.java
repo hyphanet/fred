@@ -1,6 +1,7 @@
 package freenet.keys;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -27,10 +28,13 @@ public class InsertableClientSSK extends ClientSSK {
 	
 	public InsertableClientSSK(String docName, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey) {
 		super(docName, pubKey, cryptoKey);
+		if(pubKey == null) throw new NullPointerException();
 		this.privKey = privKey;
 	}
 	
-	public static InsertableClientSSK create(FreenetURI uri) {
+	public static InsertableClientSSK create(FreenetURI uri) throws MalformedURLException {
+		if(!uri.getKeyType().equalsIgnoreCase("SSK"))
+			throw new MalformedURLException();
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getKeyVal()));
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
@@ -145,7 +149,7 @@ public class InsertableClientSSK extends ClientSSK {
 		try {
 			return new ClientSSKBlock(data, headers, this, false); // FIXME set last arg to true to not verify
 		} catch (SSKVerifyException e) {
-			throw new IllegalStateException("Impossible encoding error: "+e.getMessage()+e);
+			throw new IllegalStateException("Impossible encoding error: "+e.getMessage(), e);
 		}
 	}
 
@@ -162,7 +166,7 @@ public class InsertableClientSSK extends ClientSSK {
 					throw new IllegalStateException("Cannot truncate");
 			}
 			byte[] buf = new byte[len];
-			System.arraycopy(bs, 0, buf, (bs.length-len), buf.length);
+			System.arraycopy(bs, (bs.length-len), buf, 0, len);
 			return buf;
 		}
 	}

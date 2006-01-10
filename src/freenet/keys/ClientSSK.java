@@ -1,6 +1,7 @@
 package freenet.keys;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -52,12 +53,18 @@ public class ClientSSK extends ClientKey {
 		}
 	}
 	
+	public ClientSSK(FreenetURI origURI) throws MalformedURLException {
+		this(origURI.getDocName(), null, origURI.getCryptoKey());
+		if(!origURI.getKeyType().equalsIgnoreCase("SSK"))
+			throw new MalformedURLException();
+	}
+
 	public FreenetURI getURI() {
 		return new FreenetURI("SSK", docName, pubKeyHash, cryptoKey, null);
 	}
 
 	public Key getNodeKey() {
-		return new NodeSSK(pubKeyHash, ehDocname);
+		return new NodeSSK(pubKeyHash, ehDocname, pubKey);
 	}
 
 }

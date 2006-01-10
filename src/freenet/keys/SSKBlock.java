@@ -27,8 +27,8 @@ public class SSKBlock implements KeyBlock {
 	 *  32 bytes - H(decrypted data), = data decryption key
 	 *  2 bytes - data length + metadata flag
 	 *  2 bytes - data compression algorithm or -1
-	 * IMPLICIT - hash of remaining fields, including the implicit hash of data
 	 * IMPLICIT - hash of data
+	 * IMPLICIT - hash of remaining fields, including the implicit hash of data
 	 * 
 	 * SIGNATURE ON THE ABOVE HASH:
 	 *  32 bytes - signature: R (unsigned bytes)
@@ -86,6 +86,7 @@ public class SSKBlock implements KeyBlock {
 		System.arraycopy(headers, x, ehDocname, 0, ehDocname.length);
 		x+=E_H_DOCNAME_LENGTH;
 		headersOffset = x; // is index to start of encrypted headers
+		x += ENCRYPTED_HEADERS_LENGTH;
 		// Extract the signature
 		byte[] bufR = new byte[SIG_R_LENGTH];
 		byte[] bufS = new byte[SIG_S_LENGTH];
@@ -102,7 +103,7 @@ public class SSKBlock implements KeyBlock {
 			md.update(data);
 			byte[] dataHash = md.digest();
 			// All headers up to and not including the signature
-			md.update(headers, 0, headersOffset);
+			md.update(headers, 0, headersOffset + ENCRYPTED_HEADERS_LENGTH);
 			// Then the implicit data hash
 			md.update(dataHash);
 			// Makes the implicit overall hash
@@ -113,8 +114,6 @@ public class SSKBlock implements KeyBlock {
 			if(!DSA.verify(pubKey, new DSASignature(r, s), new NativeBigInteger(1, overallHash))) {
 				throw new SSKVerifyException("Signature verification failed for node-level SSK");
 			}
-			if(headers.length < x+2+E_H_DOCNAME_LENGTH)
-				throw new SSKVerifyException("Headers too short after sig verification: "+headers.length+" should be "+x+2+E_H_DOCNAME_LENGTH);
 		}
 		if(!Arrays.equals(ehDocname, nodeKey.encryptedHashedDocname))
 			throw new SSKVerifyException("E(H(docname)) wrong - wrong key??");

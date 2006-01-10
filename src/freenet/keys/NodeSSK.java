@@ -30,10 +30,11 @@ public class NodeSSK extends Key {
 	static final int PUBKEY_HASH_SIZE = 32;
 	static final int E_H_DOCNAME_SIZE = 32;
 	
-	public NodeSSK(byte[] pkHash, byte[] ehDocname) {
+	public NodeSSK(byte[] pkHash, byte[] ehDocname, DSAPublicKey pubKey) {
 		super(makeRoutingKey(pkHash, ehDocname));
 		this.encryptedHashedDocname = ehDocname;
 		this.pubKeyHash = pkHash;
+		this.pubKey = pubKey;
 	}
 	
 	// routingKey = H( E(H(docname)) + H(pubkey) )
@@ -63,7 +64,7 @@ public class NodeSSK extends Key {
         raf.readFully(buf);
         byte[] buf2 = new byte[PUBKEY_HASH_SIZE];
         raf.readFully(buf2);
-        return new NodeSSK(buf, buf2);
+        return new NodeSSK(buf, buf2, null);
     }
 
 	public short getType() {
@@ -90,6 +91,12 @@ public class NodeSSK extends Key {
 
 	public byte[] getPubKeyHash() {
 		return pubKeyHash;
+	}
+
+	public void setPubKey(DSAPublicKey pubKey2) {
+		if(pubKey == pubKey2) return;
+		if(pubKey != null) throw new IllegalStateException("Already assigned pubkey to different value! Old="+pubKey.writeAsField()+", new="+pubKey2.writeAsField());
+		this.pubKey = pubKey2;
 	}
 
 }

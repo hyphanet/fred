@@ -9,7 +9,6 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.BlockReceiver;
-import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
@@ -92,6 +91,7 @@ public class SSKInsertHandler implements Runnable {
 
 		if(pubKey == null) {
 			// Wait for pub key
+			Logger.minor(this, "Waiting for pubkey on "+uid);
 			
 			MessageFilter mfPK = MessageFilter.create().setType(DMT.FNPSSKPubKey).setField(DMT.UID, uid).setSource(source).setTimeout(PUBKEY_TIMEOUT);
 			
@@ -104,6 +104,7 @@ public class SSKInsertHandler implements Runnable {
 				byte[] pubkeyAsBytes = ((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData();
 				try {
 					pubKey = new DSAPublicKey(pubkeyAsBytes);
+					Logger.minor(this, "Got pubkey on "+uid);
 				} catch (IOException e) {
 					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
 					Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
@@ -123,9 +124,10 @@ public class SSKInsertHandler implements Runnable {
 		// Now we have the data, the headers and the pubkey. Commit it.
 		
 		try {
+			key.setPubKey(pubKey);
 			block = new SSKBlock(data, headers, key, false);
 		} catch (SSKVerifyException e1) {
-			Logger.error(this, "Invalid SSK from "+source);
+			Logger.error(this, "Invalid SSK from "+source, e1);
 			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
 			try {
 				source.send(msg);

@@ -14,7 +14,7 @@ public class SimpleBlockPutEvent implements ClientEvent {
 	}
 
 	public String getDescription() {
-		return "Inserting simple CHK: "+key.getURI();
+		return "Inserting simple key: "+key.getURI();
 	}
 
 	public int getCode() {

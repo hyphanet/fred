@@ -23,10 +23,15 @@ public interface HighLevelSimpleClient {
 	public FetchResult fetch(FreenetURI uri) throws FetchException;
 
 	/**
-	 * Blocking insert of a URI
+	 * Blocking insert.
 	 * @throws InserterException If there is an error inserting the data
 	 */
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException;
+
+	/**
+	 * Blocking insert of a redirect.
+	 */
+	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI target) throws InserterException;
 	
 	/**
 	 * Add a ClientEventListener.

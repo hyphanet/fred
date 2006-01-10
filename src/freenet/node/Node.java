@@ -21,7 +21,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 
 import freenet.client.ArchiveManager;
@@ -672,7 +671,6 @@ public class Node implements QueueingSimpleLowLevelClient {
     public void realPutSSK(ClientSSKBlock block, boolean cache) throws LowLevelPutException {
         byte[] data = block.getRawData();
         byte[] headers = block.getRawHeaders();
-        PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
         SSKInsertSender is;
         long uid = random.nextLong();
         if(!lockUID(uid)) {

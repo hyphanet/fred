@@ -1,6 +1,7 @@
 package freenet.client;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 import freenet.client.events.BlockInsertErrorEvent;
 import freenet.client.events.SimpleBlockPutEvent;
@@ -43,8 +44,12 @@ public class FileInserter {
 	public FreenetURI run(InsertBlock block, boolean metadata, boolean getCHKOnly, boolean noRetries) throws InserterException {
 		if(block.data == null)
 			throw new NullPointerException();
-		if(!block.desiredURI.toString(false).equals("CHK@"))
+		if(block.desiredURI.getKeyType().equalsIgnoreCase("CHK")) {
+			if(!block.desiredURI.toString(false).equalsIgnoreCase("CHK@"))
+				throw new InserterException(InserterException.INVALID_URI, null);
+		} else if(!block.desiredURI.getKeyType().equalsIgnoreCase("SSK")) {
 			throw new InserterException(InserterException.INVALID_URI, null);
+		}
 		
 		// Insert the content.
 		// If we have reason to create a metadata document, include the client metadata.
@@ -124,7 +129,11 @@ public class FileInserter {
 			} else {
 				codec = bestCodec.codecNumberForMetadata();
 			}
-			isk = InsertableClientSSK.create(block.desiredURI);
+			try {
+				isk = InsertableClientSSK.create(block.desiredURI);
+			} catch (MalformedURLException e1) {
+				throw new InserterException(InserterException.INVALID_URI, e1, null);
+			}
 			ClientSSKBlock ssk;
 			try {
 				ssk = isk.encode(data, metadata, true, codec, data.size(), ctx.random);

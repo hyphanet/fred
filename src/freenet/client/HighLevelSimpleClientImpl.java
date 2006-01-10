@@ -1,14 +1,22 @@
 package freenet.client;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.EventLogger;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
+import freenet.keys.ClientCHK;
+import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.node.RequestStarterClient;
 import freenet.node.SimpleLowLevelClient;
+import freenet.support.Bucket;
 import freenet.support.BucketFactory;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
 
 public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
@@ -108,6 +116,23 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, insertStarter, cacheLocalRequests);
 		FileInserter i = new FileInserter(context);
 		return i.run(insert, metadata, getCHKOnly, false);
+	}
+	
+	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InserterException {
+		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, new ClientMetadata());
+		Bucket b;
+		try {
+			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
+		} catch (IOException e) {
+			Logger.error(this, "Bucket error: "+e);
+			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
+		}
+		ClientKey k;
+		InsertBlock block = new InsertBlock(b, new ClientMetadata(), insertURI);
+		InserterContext context = new InserterContext(client, bucketFactory, random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
+				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, insertStarter, cacheLocalRequests);
+		FileInserter i = new FileInserter(context);
+		return i.run(block, true, false, false);
 	}
 
 	public void addGlobalHook(ClientEventListener listener) {

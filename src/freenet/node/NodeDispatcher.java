@@ -72,7 +72,7 @@ public class NodeDispatcher implements Dispatcher {
             return handleRoutedRejected(m);
         } else if(spec == DMT.FNPCHKDataRequest || spec == DMT.FNPSSKDataRequest) {
             return handleDataRequest(m);
-        } else if(spec == DMT.FNPInsertRequest) {
+        } else if(spec == DMT.FNPInsertRequest || spec == DMT.FNPSSKInsertRequest) {
             return handleInsertRequest(m);
         } else if(spec == DMT.FNPLinkPing) {
         	long id = m.getLong(DMT.PING_SEQNO);
@@ -169,10 +169,17 @@ public class NodeDispatcher implements Dispatcher {
             }
             return true;
         }
-        InsertHandler rh = new InsertHandler(m, id, node, now);
-        Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.portNumber);
-        t.setDaemon(true);
-        t.start();
+        if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
+        	SSKInsertHandler rh = new SSKInsertHandler(m, id, node, now);
+            Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.portNumber);
+            t.setDaemon(true);
+            t.start();
+        } else {
+        	InsertHandler rh = new InsertHandler(m, id, node, now);
+        	Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.portNumber);
+        	t.setDaemon(true);
+        	t.start();
+        }
         Logger.minor(this, "Started InsertHandler for "+id);
         return true;
     }
