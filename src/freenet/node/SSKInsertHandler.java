@@ -105,6 +105,13 @@ public class SSKInsertHandler implements Runnable {
 				try {
 					pubKey = new DSAPublicKey(pubkeyAsBytes);
 					Logger.minor(this, "Got pubkey on "+uid);
+					Message confirm = DMT.createFNPSSKPubKeyAccepted(uid);
+					try {
+						source.sendAsync(confirm, null);
+					} catch (NotConnectedException e) {
+						Logger.minor(this, "Lost connection to source on "+uid);
+						return;
+					}
 				} catch (IOException e) {
 					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
 					Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
@@ -116,7 +123,7 @@ public class SSKInsertHandler implements Runnable {
 					return;
 				}
 			} catch (DisconnectedException e) {
-				Logger.minor(this, "Lost connection to source");
+				Logger.minor(this, "Lost connection to source on "+uid);
 				return;
 			}
 		}
