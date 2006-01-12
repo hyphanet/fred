@@ -14,7 +14,7 @@ public class DSAPublicKey extends CryptoKey {
 	/** A cache of the hexadecimal string representation of y */
     private final String yAsHexString; 
     
-    public static final int PADDED_SIZE = 660;
+    public static final int PADDED_SIZE = 1024;
 
     private final DSAGroup group;
 	

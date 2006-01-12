@@ -373,11 +373,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         byte[] header = block.getRawHeaders();
         
         if(data.length!=dataBlockSize) {
-        	Logger.minor(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
+        	Logger.error(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
         	return;
         }
         if(header.length!=headerBlockSize) {
-        	Logger.minor(this, "This header is "+data.length+" bytes. Should be "+headerBlockSize);
+        	Logger.error(this, "This header is "+data.length+" bytes. Should be "+headerBlockSize);
         	return;
         }
         
@@ -443,10 +443,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		return;
     	  	
     	byte[] routingkey = hash;
-        byte[] data = key.asBytes();
+        byte[] data = key.asPaddedBytes();
         
         if(data.length!=dataBlockSize) {
-        	Logger.minor(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
+        	Logger.error(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
         	return;
         }
         

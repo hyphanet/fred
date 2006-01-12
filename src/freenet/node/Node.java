@@ -974,8 +974,11 @@ public class Node implements QueueingSimpleLowLevelClient {
         			pubKey = getKey(k.getPubKeyHash());
         			k.setPubKey(pubKey);
         		}
-        		if(pubKey != null)
+        		if(pubKey != null) {
         			chk = sskDatastore.fetch((NodeSSK)key, !cache);
+        		} else {
+        			Logger.minor(this, "Not found because no pubkey: "+uid);
+        		}
         	} else
         		throw new IllegalStateException("Unknown key type: "+key.getClass());
         } catch (IOException e) {

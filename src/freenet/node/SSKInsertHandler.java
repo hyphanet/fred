@@ -206,7 +206,7 @@ public class SSKInsertHandler implements Runnable {
             
             int status = sender.getStatus();
             
-            if(status == CHKInsertSender.NOT_FINISHED) {
+            if(status == SSKInsertSender.NOT_FINISHED) {
                 continue;
             }
             
@@ -224,14 +224,14 @@ public class SSKInsertHandler implements Runnable {
 					return;
 				}
                 // Might as well store it anyway.
-                if(status == CHKInsertSender.TIMED_OUT ||
-                		status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD)
+                if(status == SSKInsertSender.TIMED_OUT ||
+                		status == SSKInsertSender.GENERATED_REJECTED_OVERLOAD)
                 	canCommit = true;
                 finish();
                 return;
             }
             
-            if(status == CHKInsertSender.ROUTE_NOT_FOUND || status == CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
+            if(status == SSKInsertSender.ROUTE_NOT_FOUND || status == SSKInsertSender.ROUTE_REALLY_NOT_FOUND) {
                 Message msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
 					source.send(msg);
@@ -244,7 +244,7 @@ public class SSKInsertHandler implements Runnable {
                 return;
             }
             
-            if(status == CHKInsertSender.SUCCESS) {
+            if(status == SSKInsertSender.SUCCESS) {
             	Message msg = DMT.createFNPInsertReply(uid);
             	sentSuccess = true;
             	try {
