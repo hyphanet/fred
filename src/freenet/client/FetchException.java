@@ -95,7 +95,7 @@ public class FetchException extends Exception {
 		case HAS_MORE_METASTRINGS:
 			return "Not a manifest";
 		case BUCKET_ERROR:
-			return "Internal error, maybe disk full or permissions problem?";
+			return "Internal temp files error, maybe disk full or permissions problem?";
 		case DATA_NOT_FOUND:
 			return "Data not found";
 		case ROUTE_NOT_FOUND:

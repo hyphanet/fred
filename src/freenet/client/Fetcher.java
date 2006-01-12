@@ -246,8 +246,10 @@ class Fetcher {
 			FetchResult res = runMetadata(dm, recursionLevel, key, metaStrings, metadata, container, thisKey, true, localOnly);
 			try {
 				metadata = Metadata.construct(res.data);
+			} catch (MetadataParseException e) {
+				throw new FetchException(FetchException.INVALID_METADATA, e);
 			} catch (IOException e) {
-				throw new FetchException(FetchException.BUCKET_ERROR);
+				throw new FetchException(FetchException.BUCKET_ERROR, e);
 			}
 			return runMetadata(dm, recursionLevel, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives, localOnly);
 		} else if(metadata.isSingleFileRedirect()) {
