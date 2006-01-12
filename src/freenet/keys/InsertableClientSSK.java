@@ -26,8 +26,8 @@ public class InsertableClientSSK extends ClientSSK {
 
 	public final DSAPrivateKey privKey;
 	
-	public InsertableClientSSK(String docName, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey) {
-		super(docName, pubKey, cryptoKey);
+	public InsertableClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey) {
+		super(docName, pubKeyHash, pubKey, cryptoKey);
 		if(pubKey == null) throw new NullPointerException();
 		this.privKey = privKey;
 	}
@@ -38,7 +38,14 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getKeyVal()));
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
-		return new InsertableClientSSK(uri.getDocName(), pubKey, privKey, uri.getCryptoKey());
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("SHA-256");
+		} catch (NoSuchAlgorithmException e) {
+			throw new Error(e);
+		}
+		md.update(pubKey.asBytes());
+		return new InsertableClientSSK(uri.getDocName(), md.digest(), pubKey, privKey, uri.getCryptoKey());
 	}
 	
 	public ClientSSKBlock encode(Bucket sourceData, boolean asMetadata, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, RandomSource r) throws SSKEncodeException, IOException {
@@ -177,7 +184,13 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(g, r);
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
-		return new InsertableClientSSK("", pubKey, privKey, ckey);
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("SHA-256");
+		} catch (NoSuchAlgorithmException e) {
+			throw new Error(e);
+		}
+		return new InsertableClientSSK("", md.digest(pubKey.asBytes()), pubKey, privKey, ckey);
 	}
 
 	public FreenetURI getInsertURI() {

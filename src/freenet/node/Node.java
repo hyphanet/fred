@@ -46,12 +46,14 @@ import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
+import freenet.keys.SSKVerifyException;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.BucketFactory;
@@ -462,8 +464,10 @@ public class Node implements QueueingSimpleLowLevelClient {
     public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache) throws LowLevelGetException {
     	if(key instanceof ClientCHK)
     		return realGetCHK((ClientCHK)key, localOnly, cache);
+    	else if(key instanceof ClientSSK)
+    		return realGetSSK((ClientSSK)key, localOnly, cache);
     	else
-    		throw new IllegalArgumentException("Not a CHK: "+key);
+    		throw new IllegalArgumentException("Not a CHK or SSK: "+key);
     }
     
     /**
@@ -538,6 +542,90 @@ public class Node implements QueueingSimpleLowLevelClient {
         		case RequestSender.ROUTE_NOT_FOUND:
         			throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
         		case RequestSender.TRANSFER_FAILED:
+        			throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
+        		case RequestSender.VERIFY_FAILURE:
+        			throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
+        		case RequestSender.GENERATED_REJECTED_OVERLOAD:
+        		case RequestSender.TIMED_OUT:
+        			throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
+        		default:
+        			Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
+        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        		}
+        	}
+        }
+    }
+
+    /**
+     * Really trivially simple client interface.
+     * Either it succeeds or it doesn't.
+     */
+    ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache) throws LowLevelGetException {
+    	long startTime = System.currentTimeMillis();
+    	long uid = random.nextLong();
+        if(!lockUID(uid)) {
+            Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+            throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        }
+        Object o = makeRequestSender(key.getNodeKey(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache);
+        if(o instanceof SSKBlock) {
+            try {
+                return new ClientSSKBlock((SSKBlock)o, key);
+            } catch (SSKVerifyException e) {
+                Logger.error(this, "Does not verify: "+e, e);
+                throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
+            }
+        }
+        if(o == null) {
+        	throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
+        }
+        RequestSender rs = (RequestSender)o;
+        boolean rejectedOverload = false;
+        while(true) {
+        	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
+        		requestThrottle.requestRejectedOverload();
+        		rejectedOverload = true;
+        	}
+
+        	int status = rs.getStatus();
+        	
+        	if(status == RequestSender.NOT_FINISHED) 
+        		continue;
+        	
+        	if(status == RequestSender.TIMED_OUT ||
+        			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
+        		if(!rejectedOverload) {
+            		requestThrottle.requestRejectedOverload();
+        			rejectedOverload = true;
+        		}
+        	} else {
+        		if(status == RequestSender.DATA_NOT_FOUND ||
+        				status == RequestSender.SUCCESS ||
+        				status == RequestSender.ROUTE_NOT_FOUND ||
+        				status == RequestSender.VERIFY_FAILURE) {
+        			long rtt = System.currentTimeMillis() - startTime;
+        			requestThrottle.requestCompleted(rtt);
+        		}
+        	}
+        	
+        	if(rs.getStatus() == RequestSender.SUCCESS) {
+        		try {
+        			return new ClientSSKBlock(rs.getSSKBlock(), key);
+        		} catch (SSKVerifyException e) {
+        			Logger.error(this, "Does not verify: "+e, e);
+        			throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);                
+        		}
+        	} else {
+        		switch(rs.getStatus()) {
+        		case RequestSender.NOT_FINISHED:
+        			Logger.error(this, "RS still running in getCHK!: "+rs);
+        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+        		case RequestSender.DATA_NOT_FOUND:
+        			throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
+        		case RequestSender.ROUTE_NOT_FOUND:
+        			throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
+        		case RequestSender.TRANSFER_FAILED:
+        			Logger.error(this, "WTF? Transfer failed on an SSK? on "+uid);
         			throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
         		case RequestSender.VERIFY_FAILURE:
         			throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);

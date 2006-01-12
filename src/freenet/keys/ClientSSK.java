@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.UnsupportedCipherException;
@@ -14,7 +15,7 @@ public class ClientSSK extends ClientKey {
 	/** Document name */
 	public final String docName;
 	/** Public key */
-	public final DSAPublicKey pubKey;
+	public DSAPublicKey pubKey;
 	/** Public key hash */
 	public final byte[] pubKeyHash;
 	/** Encryption key */
@@ -24,17 +25,22 @@ public class ClientSSK extends ClientKey {
 	
 	static final int CRYPTO_KEY_LENGTH = 32;
 	
-	public ClientSSK(String docName, DSAPublicKey pubKey, byte[] cryptoKey) {
+	public ClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, byte[] cryptoKey) {
 		this.docName = docName;
 		this.pubKey = pubKey;
-		byte[] pubKeyAsBytes = pubKey.asBytes();
+		this.pubKeyHash = pubKeyHash;
 		MessageDigest md;
 		try {
 			md = MessageDigest.getInstance("SHA-256");
-			md.update(pubKeyAsBytes);
-			pubKeyHash = md.digest();
 		} catch (NoSuchAlgorithmException e) {
 			throw new Error(e);
+		}
+		if(pubKey != null) {
+			byte[] pubKeyAsBytes = pubKey.asBytes();
+			md.update(pubKeyAsBytes);
+			byte[] otherPubKeyHash = md.digest();
+			if(!Arrays.equals(otherPubKeyHash, pubKeyHash))
+				throw new IllegalArgumentException();
 		}
 		this.cryptoKey = cryptoKey;
 		try {
@@ -54,11 +60,17 @@ public class ClientSSK extends ClientKey {
 	}
 	
 	public ClientSSK(FreenetURI origURI) throws MalformedURLException {
-		this(origURI.getDocName(), null, origURI.getCryptoKey());
+		this(origURI.getDocName(), origURI.getRoutingKey(), null, origURI.getCryptoKey());
 		if(!origURI.getKeyType().equalsIgnoreCase("SSK"))
 			throw new MalformedURLException();
 	}
-
+	
+	public void setPublicKey(DSAPublicKey pubKey) {
+		if(this.pubKey != null && this.pubKey != pubKey)
+			throw new IllegalArgumentException("Cannot reassign: was "+this.pubKey+" now "+pubKey);
+		this.pubKey = pubKey;
+	}
+	
 	public FreenetURI getURI() {
 		return new FreenetURI("SSK", docName, pubKeyHash, cryptoKey, null);
 	}

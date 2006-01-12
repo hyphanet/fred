@@ -529,7 +529,7 @@ public class DMT {
     }};
     
     public static final Message createFNPSSKDataRequest(long id, short htl, NodeSSK key, double nearestLocation, boolean needPubKey) {
-        Message msg = new Message(FNPCHKDataRequest);
+        Message msg = new Message(FNPSSKDataRequest);
         msg.set(UID, id);
         msg.set(HTL, htl);
         msg.set(FREENET_ROUTING_KEY, key);

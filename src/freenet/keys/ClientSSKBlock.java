@@ -26,6 +26,10 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 		this.key = key;
 	}
 	
+	public ClientSSKBlock(SSKBlock block, ClientSSK key) throws SSKVerifyException {
+		this(block.data, block.headers, key, false);
+	}
+	
 	/**
 	 * Decode the data.
 	 */

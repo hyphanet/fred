@@ -55,6 +55,7 @@ public final class RequestSender implements Runnable {
     private byte[] headers;
     private byte[] sskData;
     private boolean sentRequest;
+    private SSKBlock block;
     
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -377,7 +378,7 @@ public final class RequestSender implements Runnable {
 
     private void finishSSK(PeerNode next) {
     	try {
-			SSKBlock block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
+			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
 			node.store(block);
 			finish(SUCCESS, next);
 		} catch (SSKVerifyException e) {
@@ -496,5 +497,9 @@ public final class RequestSender implements Runnable {
     
     final byte[] getSSKData() {
     	return sskData;
+    }
+    
+    public SSKBlock getSSKBlock() {
+    	return block;
     }
 }

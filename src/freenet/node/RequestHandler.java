@@ -40,7 +40,7 @@ public class RequestHandler implements Runnable {
         closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
         double myLoc = n.lm.getLocation().getValue();
         // FIXME should be more generic when implement SSKs
-        key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
+        key = (Key) req.getObject(DMT.FREENET_ROUTING_KEY);
         double keyLoc = key.toNormalizedDouble();
         if(Math.abs(keyLoc - myLoc) < Math.abs(keyLoc - closestLoc))
             closestLoc = myLoc;
