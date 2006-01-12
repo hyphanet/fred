@@ -13,6 +13,8 @@ public class DSAPublicKey extends CryptoKey {
     private final BigInteger y;
 	/** A cache of the hexadecimal string representation of y */
     private final String yAsHexString; 
+    
+    public static final int PADDED_SIZE = 660;
 
     private final DSAGroup group;
 	
@@ -131,6 +133,17 @@ public class DSAPublicKey extends CryptoKey {
 		return bytes;
     }
 
+    public byte[] asPaddedBytes() {
+    	byte[] asBytes = asBytes();
+    	if(asBytes.length == PADDED_SIZE)
+    		return asBytes;
+    	if(asBytes.length > PADDED_SIZE)
+    		throw new Error("Cannot fit key in "+PADDED_SIZE+" - real size is "+asBytes.length);
+    	byte[] padded = new byte[PADDED_SIZE];
+    	System.arraycopy(asBytes, 0, padded, 0, asBytes.length);
+    	return padded;
+    }
+    
     public byte[] fingerprint() {
 		synchronized(this) {
 			if(fingerprint == null)

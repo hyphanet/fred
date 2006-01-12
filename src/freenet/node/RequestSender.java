@@ -8,12 +8,10 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
-import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.RetrievalException;
 import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
-import freenet.keys.CHKVerifyException;
 import freenet.keys.Key;
 import freenet.keys.KeyVerifyException;
 import freenet.keys.NodeCHK;
@@ -69,6 +67,7 @@ public final class RequestSender implements Runnable {
     static final int VERIFY_FAILURE = 5;
     static final int TIMED_OUT = 6;
     static final int GENERATED_REJECTED_OVERLOAD = 7;
+    static final int INTERNAL_ERROR = 8;
     
     
     
@@ -225,8 +224,12 @@ public final class RequestSender implements Runnable {
                 MessageFilter mfDF = makeDataFoundFilter(next);
                 MessageFilter mfRouteNotFound = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRouteNotFound);
                 MessageFilter mfRejectedOverload = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPRejectedOverload);
-                MessageFilter mf = mfDNF.or(mfDF.or(mfRouteNotFound.or(mfRejectedOverload)));
+                MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
+            	MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
+            	MessageFilter mfRealDFSSK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFound);
+                MessageFilter mf = mfDNF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfRealDFCHK.or(mfRealDFSSK))))));
 
+                
             	try {
             		msg = node.usm.waitFor(mf);
             	} catch (DisconnectedException e) {
@@ -333,6 +336,7 @@ public final class RequestSender implements Runnable {
     				byte[] pubkeyAsBytes = ((ShortBuffer)msg.getObject(DMT.PUBKEY_AS_BYTES)).getData();
     				try {
     					pubKey = new DSAPublicKey(pubkeyAsBytes);
+    					((NodeSSK)key).setPubKey(pubKey);
     				} catch (IOException e) {
     					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
     					finish(VERIFY_FAILURE, next);
@@ -349,7 +353,7 @@ public final class RequestSender implements Runnable {
 
             		Logger.minor(this, "Got data on "+uid);
             		
-            		if(!(key instanceof NodeCHK)) {
+            		if(!(key instanceof NodeSSK)) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
             			break;
             		}
@@ -371,6 +375,7 @@ public final class RequestSender implements Runnable {
         }
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
+            finish(INTERNAL_ERROR, null);
         } finally {
         	Logger.minor(this, "Leaving RequestSender.run() for "+uid);
             node.completed(uid);
@@ -384,17 +389,21 @@ public final class RequestSender implements Runnable {
 			node.store(block);
 			finish(SUCCESS, next);
 		} catch (SSKVerifyException e) {
-			Logger.error(this, "Failed to verify: "+e+" from "+next);
+			Logger.error(this, "Failed to verify: "+e+" from "+next, e);
 			finish(VERIFY_FAILURE, next);
 			return;
 		}
 	}
 
+    /**
+     * Note that this must be first on the list.
+     */
 	private MessageFilter makeDataFoundFilter(PeerNode next) {
     	if(key instanceof NodeCHK)
     		return MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
-    	else if(key instanceof NodeSSK)
+    	else if(key instanceof NodeSSK) {
     		return MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFound);
+    	}
     	else throw new IllegalStateException("Unknown keytype: "+key);
 	}
 

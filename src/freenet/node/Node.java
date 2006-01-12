@@ -129,6 +129,8 @@ public class Node implements QueueingSimpleLowLevelClient {
     private final FreenetStore chkDatastore;
     /** The SSK datastore */
     private final FreenetStore sskDatastore;
+    /** The store of DSAPublicKeys (by hash) */
+    private final FreenetStore pubKeyDatastore;
     /** RequestSender's currently running, by KeyHTLPair */
     private final HashMap requestSenders;
     /** RequestSender's currently transferring, by key */
@@ -357,6 +359,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         try {
             chkDatastore = new BerkeleyDBFreenetStore(prefix+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH);
             sskDatastore = new BerkeleyDBFreenetStore(prefix+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH);
+            pubKeyDatastore = new BerkeleyDBFreenetStore(prefix+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0);
         } catch (FileNotFoundException e1) {
             Logger.error(this, "Could not open datastore: "+e1, e1);
             System.err.println("Could not open datastore: "+e1);
@@ -548,6 +551,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         		case RequestSender.GENERATED_REJECTED_OVERLOAD:
         		case RequestSender.TIMED_OUT:
         			throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
+        		case RequestSender.INTERNAL_ERROR:
         		default:
         			Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
         			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -570,7 +574,9 @@ public class Node implements QueueingSimpleLowLevelClient {
         Object o = makeRequestSender(key.getNodeKey(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache);
         if(o instanceof SSKBlock) {
             try {
-                return new ClientSSKBlock((SSKBlock)o, key);
+            	SSKBlock block = (SSKBlock)o;
+            	key.setPublicKey(block.getPubKey());
+                return new ClientSSKBlock(block, key);
             } catch (SSKVerifyException e) {
                 Logger.error(this, "Does not verify: "+e, e);
                 throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
@@ -610,7 +616,9 @@ public class Node implements QueueingSimpleLowLevelClient {
         	
         	if(rs.getStatus() == RequestSender.SUCCESS) {
         		try {
-        			return new ClientSSKBlock(rs.getSSKBlock(), key);
+        			SSKBlock block = rs.getSSKBlock();
+        			key.setPublicKey(block.getPubKey());
+        			return new ClientSSKBlock(block, key);
         		} catch (SSKVerifyException e) {
         			Logger.error(this, "Does not verify: "+e, e);
         			throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);                
@@ -632,6 +640,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         		case RequestSender.GENERATED_REJECTED_OVERLOAD:
         		case RequestSender.TIMED_OUT:
         			throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
+        		case RequestSender.INTERNAL_ERROR:
         		default:
         			Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
         			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -958,9 +967,16 @@ public class Node implements QueueingSimpleLowLevelClient {
         try {
         	if(key instanceof NodeCHK)
         		chk = chkDatastore.fetch((NodeCHK)key, !cache);
-        	else if(key instanceof NodeSSK)
-        		chk = sskDatastore.fetch((NodeSSK)key, !cache);
-        	else
+        	else if(key instanceof NodeSSK) {
+        		NodeSSK k = (NodeSSK)key;
+        		DSAPublicKey pubKey = k.getPubKey();
+        		if(pubKey == null) {
+        			pubKey = getKey(k.getPubKeyHash());
+        			k.setPubKey(pubKey);
+        		}
+        		if(pubKey != null)
+        			chk = sskDatastore.fetch((NodeSSK)key, !cache);
+        	} else
         		throw new IllegalStateException("Unknown key type: "+key.getClass());
         } catch (IOException e) {
             Logger.error(this, "Error accessing store: "+e, e);
@@ -1049,6 +1065,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     public synchronized void store(SSKBlock block) {
     	try {
     		sskDatastore.put(block);
+    		cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey());
     	} catch (IOException e) {
     		Logger.error(this, "Cannot store data: "+e, e);
     	}
@@ -1153,6 +1170,10 @@ public class Node implements QueueingSimpleLowLevelClient {
     public synchronized SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
             boolean fromStore, double closestLoc, boolean cache) {
     	NodeSSK key = (NodeSSK) block.getKey();
+    	if(key.getPubKey() == null) {
+    		throw new IllegalArgumentException("No pub key when inserting");
+    	}
+    	cacheKey(key.getPubKeyHash(), key.getPubKey());
         Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
         KeyHTLPair kh = new KeyHTLPair(key, htl);
         SSKInsertSender is = (SSKInsertSender) insertSenders.get(kh);
@@ -1335,9 +1356,21 @@ public class Node implements QueueingSimpleLowLevelClient {
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key = (DSAPublicKey) cachedPubKeys.get(w);
-			if(key != null)
+			if(key != null) {
 				cachedPubKeys.push(w, key);
+				return key;
+			}
+		}
+		try {
+			DSAPublicKey key = pubKeyDatastore.fetchPubKey(hash, false);
+			if(key != null) {
+				cacheKey(hash, key);
+			}
 			return key;
+		} catch (IOException e) {
+			// FIXME deal with disk full, access perms etc; tell user about it.
+			Logger.error(this, "Error accessing pubkey store: "+e, e);
+			return null;
 		}
 	}
 	
@@ -1353,6 +1386,12 @@ public class Node implements QueueingSimpleLowLevelClient {
 			cachedPubKeys.push(w, key);
 			while(cachedPubKeys.size() > MAX_CACHED_KEYS)
 				cachedPubKeys.popKey();
+		}
+		try {
+			pubKeyDatastore.put(hash, key);
+		} catch (IOException e) {
+			// FIXME deal with disk full, access perms etc; tell user about it.
+			Logger.error(this, "Error accessing pubkey store: "+e, e);
 		}
 	}
 }

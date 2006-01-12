@@ -97,6 +97,7 @@ public class InsertableClientSSK extends ClientSSK {
 		
 		aes.initialize(origDataHash);
 		PCFBMode pcfb = new PCFBMode(aes);
+		pcfb.reset(origDataHash);
 		
 		pcfb.blockEncipher(data, 0, data.length);
 		

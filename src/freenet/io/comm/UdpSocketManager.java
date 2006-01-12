@@ -322,10 +322,11 @@ public class UdpSocketManager extends Thread {
 					i.remove();
 					ret = m;
 					Logger.debug(this, "Matching from _unclaimed");
+					break;
 				}
 			}
-			Logger.minor(this, "Not in _unclaimed");
 			if (ret == null) {
+				Logger.minor(this, "Not in _unclaimed");
 			    // Insert filter into filter list in order of timeout
 				ListIterator i = _filters.listIterator();
 				while (true) {
@@ -354,7 +355,7 @@ public class UdpSocketManager extends Thread {
 					// Precaution against filter getting matched between being added to _filters and
 					// here - bug discovered by Mason
 				    boolean fmatched = false;
-				    while(!(fmatched = filter.matched() || filter.droppedConnection() != null)) {
+				    while(!(fmatched = (filter.matched() || filter.droppedConnection() != null))) {
 				        long wait = filter.getTimeout()-System.currentTimeMillis();
 				        if(wait > 0)
 				            filter.wait(wait);

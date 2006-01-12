@@ -132,4 +132,8 @@ public class SSKBlock implements KeyBlock {
 		return data;
 	}
 
+	public DSAPublicKey getPubKey() {
+		return pubKey;
+	}
+
 }

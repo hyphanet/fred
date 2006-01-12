@@ -99,7 +99,7 @@ public class NodeSSK extends Key {
 
 	public void setPubKey(DSAPublicKey pubKey2) {
 		if(pubKey == pubKey2) return;
-		if(pubKey != null) throw new IllegalStateException("Already assigned pubkey to different value! Old="+pubKey.writeAsField()+", new="+pubKey2.writeAsField());
+		if(pubKey != null && !pubKey.equals(pubKey2)) throw new IllegalStateException("Already assigned pubkey to different value! Old="+pubKey.writeAsField()+", new="+pubKey2.writeAsField());
 		this.pubKey = pubKey2;
 	}
 

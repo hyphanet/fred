@@ -23,6 +23,7 @@ import com.sleepycat.je.SecondaryDatabase;
 import com.sleepycat.je.SecondaryKeyCreator;
 import com.sleepycat.je.Transaction;
 
+import freenet.crypt.DSAPublicKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
 import freenet.keys.KeyBlock;
@@ -31,6 +32,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.support.Fields;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 
 /** 
@@ -264,7 +266,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
 	    		
 	    	}catch(SSKVerifyException ex){
-	    		Logger.normal(this, "Does not verify, setting accessTime to 0 for : "+chk);
+	    		Logger.normal(this, "Does not verify, setting accessTime to 0 for : "+chk, ex);
 	    		storeBlock.setRecentlyUsedToZero();
     			DatabaseEntry updateDBE = new DatabaseEntry();
     			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
@@ -273,6 +275,78 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		t.commit();
 	            return null;
 	    	}
+	    	return block;
+    	}catch(Exception ex) {  // FIXME: ugly  
+    		if(c!=null) {
+    			try{c.close();}catch(DatabaseException ex2){}
+    		}
+    		Logger.error(this, "Caught "+ex, ex);
+    		ex.printStackTrace();
+        	throw new IOException(ex.getMessage());
+        }
+    	
+//    	return null;
+    }
+
+    // FIXME do this with interfaces etc.
+    
+	/**
+     * Retrieve a block.
+     * @param dontPromote If true, don't promote data if fetched.
+     * @return null if there is no such block stored, otherwise the block.
+     */
+    public DSAPublicKey fetchPubKey(byte[] hash, boolean dontPromote) throws IOException
+    {
+    	if(closed)
+    		return null;
+    	
+    	DatabaseEntry routingkeyDBE = new DatabaseEntry(hash);
+    	DatabaseEntry blockDBE = new DatabaseEntry();
+    	Cursor c = null;
+    	try{
+    		Transaction t = environment.beginTransaction(null,null);
+    		c = chkDB.openCursor(t,null);
+    		
+    		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.DEFAULT)
+    				!=OperationStatus.SUCCESS) {
+    			c.close();
+    			t.abort();
+    			return null;
+    		}
+
+	    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+	    		    	
+	    	DSAPublicKey block = null;
+	    	
+	    		byte[] data = new byte[dataBlockSize];
+	    		synchronized(chkStore) {
+		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+		    		chkStore.read(data);
+	    		}
+	    		
+	    		try {
+	    			block = new DSAPublicKey(data);
+	    		} catch (IOException e) {
+	    			Logger.error(this, "Could not read key");
+	    			return null;
+	    		}
+	    		
+	    		if(!dontPromote)
+	    		{
+	    			storeBlock.updateRecentlyUsed();
+	    			DatabaseEntry updateDBE = new DatabaseEntry();
+	    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
+	    			c.putCurrent(updateDBE);
+		    		c.close();
+		    		t.commit();
+	    		}else{
+	    			c.close();
+	    			t.abort();
+	    		}
+	    		
+	    		Logger.minor(this, "Get key: "+HexUtil.bytesToHex(hash));
+	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    		
 	    	return block;
     	}catch(Exception ex) {  // FIXME: ugly  
     		if(c!=null) {
@@ -348,6 +422,72 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	
 	    	Logger.minor(this, "Put key: "+block.getKey());
 	        Logger.minor(this, "Headers: "+header.length+" bytes, hash "+Fields.hashCode(header));
+	        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+                
+        }catch(Exception ex) {  // FIXME: ugly  
+        	if(t!=null){
+        		try{t.abort();}catch(DatabaseException ex2){};
+        	}
+        	Logger.error(this, "Caught "+ex, ex);
+        	ex.printStackTrace();
+        	throw new IOException(ex.getMessage());
+        }
+    }
+    
+    /**
+     * Store a block.
+     */
+    public void put(byte[] hash, DSAPublicKey key) throws IOException
+    {   	
+    	if(closed)
+    		return;
+    	  	
+    	byte[] routingkey = hash;
+        byte[] data = key.asBytes();
+        
+        if(data.length!=dataBlockSize) {
+        	Logger.minor(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
+        	return;
+        }
+        
+        Transaction t = null;
+        
+        try{
+        	t = environment.beginTransaction(null,null);
+        	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+        	
+        	synchronized(chkStore) {
+	        	if(chkBlocksInStore<maxChkBlocks) {
+	        		// Expand the store file
+	        		int byteOffset = chkBlocksInStore*(dataBlockSize+headerBlockSize);
+	        		StoreBlock storeBlock = new StoreBlock(chkBlocksInStore);
+	        		DatabaseEntry blockDBE = new DatabaseEntry();
+	    	    	storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+	    	        chkDB.put(t,routingkeyDBE,blockDBE);
+	    	        chkStore.seek(byteOffset);
+	    	        chkStore.write(data);
+	    	        t.commit();
+	    	        chkBlocksInStore++;
+	        	}else{
+	        		// Overwrite an other block
+	        		Cursor c = chkDB_accessTime.openCursor(t,null);
+	        		DatabaseEntry keyDBE = new DatabaseEntry();
+	        		DatabaseEntry dataDBE = new DatabaseEntry();
+	        		c.getFirst(keyDBE,dataDBE,null);
+	        		StoreBlock oldStoreBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+	        		c.delete();
+	        		c.close();
+	        		StoreBlock storeBlock = new StoreBlock(oldStoreBlock.getOffset());
+	        		DatabaseEntry blockDBE = new DatabaseEntry();
+	        		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+	        		chkDB.put(t,routingkeyDBE,blockDBE);
+	    	        chkStore.seek(storeBlock.getOffset()*(long)(dataBlockSize+headerBlockSize));
+	    	        chkStore.write(data);
+	        		t.commit();
+	        	}
+        	}
+        	
+	    	Logger.minor(this, "Put key: "+HexUtil.bytesToHex(hash));
 	        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
                 
         }catch(Exception ex) {  // FIXME: ugly  

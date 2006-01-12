@@ -25,6 +25,7 @@ public class RequestHandler implements Runnable {
     private short htl;
     final PeerNode source;
     private double closestLoc;
+    private boolean needsPubKey;
     final Key key;
     
     public String toString() {
@@ -44,6 +45,8 @@ public class RequestHandler implements Runnable {
         double keyLoc = key.toNormalizedDouble();
         if(Math.abs(keyLoc - myLoc) < Math.abs(keyLoc - closestLoc))
             closestLoc = myLoc;
+        if(key instanceof NodeSSK)
+        	needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
     }
 
     public void run() {
@@ -59,6 +62,12 @@ public class RequestHandler implements Runnable {
             KeyBlock block = (KeyBlock) o;
             Message df = createDataFound(block);
             source.send(df);
+            if(key instanceof NodeSSK) {
+                if(needsPubKey) {
+                	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)block.getKey()).getPubKey().asBytes());
+                	source.send(pk);
+                }
+            }
             if(block instanceof CHKBlock) {
             	PartiallyReceivedBlock prb =
             		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
@@ -108,6 +117,7 @@ public class RequestHandler implements Runnable {
             		return;
             	case RequestSender.GENERATED_REJECTED_OVERLOAD:
             	case RequestSender.TIMED_OUT:
+            	case RequestSender.INTERNAL_ERROR:
             		// Locally generated.
             	    // Propagate back to source who needs to reduce send rate
             	    Message reject = DMT.createFNPRejectedOverload(uid, true);
@@ -122,10 +132,14 @@ public class RequestHandler implements Runnable {
             		if(key instanceof NodeSSK) {
                         Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
                         source.send(df);
+                        if(needsPubKey) {
+                        	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey().asBytes());
+                        	source.send(df);
+                        }
             		} else if(!rs.transferStarted()) {
             			Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
             		}
-            	case RequestSender.TRANSFER_FAILED:
+            		return;
             	case RequestSender.VERIFY_FAILURE:
             		if(key instanceof NodeCHK) {
             			if(shouldHaveStartedTransfer)
@@ -133,6 +147,18 @@ public class RequestHandler implements Runnable {
             			shouldHaveStartedTransfer = true;
             			continue; // should have started transfer
             		}
+            	    reject = DMT.createFNPRejectedOverload(uid, true);
+            		source.sendAsync(reject, null);
+            		return;
+            	case RequestSender.TRANSFER_FAILED:
+            		if(key instanceof NodeCHK) {
+            			if(shouldHaveStartedTransfer)
+            				throw new IllegalStateException("Got status code "+status+" but transfer not started");
+            			shouldHaveStartedTransfer = true;
+            			continue; // should have started transfer
+            		}
+            		// Other side knows, right?
+            		return;
             	default:
             	    throw new IllegalStateException("Unknown status code "+status);
             }
