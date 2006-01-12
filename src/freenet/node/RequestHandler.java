@@ -59,7 +59,7 @@ public class RequestHandler implements Runnable {
             KeyBlock block = (KeyBlock) o;
             Message df = createDataFound(block);
             source.send(df);
-            if(block instanceof NodeCHK) {
+            if(block instanceof CHKBlock) {
             	PartiallyReceivedBlock prb =
             		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
             	BlockTransmitter bt =
@@ -122,6 +122,8 @@ public class RequestHandler implements Runnable {
             		if(key instanceof NodeSSK) {
                         Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
                         source.send(df);
+            		} else if(!rs.transferStarted()) {
+            			Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
             		}
             	case RequestSender.TRANSFER_FAILED:
             	case RequestSender.VERIFY_FAILURE:

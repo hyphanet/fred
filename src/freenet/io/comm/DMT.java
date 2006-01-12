@@ -583,7 +583,7 @@ public class DMT {
         return msg;
     }
     
-    public static final MessageType FNPCHKDataFound = new MessageType("FNPDataFound") {{
+    public static final MessageType FNPCHKDataFound = new MessageType("FNPCHKDataFound") {{
         addField(UID, Long.class);
         addField(BLOCK_HEADERS, ShortBuffer.class);
     }};

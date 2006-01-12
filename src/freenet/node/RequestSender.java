@@ -298,7 +298,9 @@ public final class RequestSender implements Runnable {
                 		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb);
                 		
                 		try {
+                			Logger.minor(this, "Receiving data");
                 			byte[] data = br.receive();
+                			Logger.minor(this, "Received data");
                 			// Received data
                 			CHKBlock block;
                 			try {
