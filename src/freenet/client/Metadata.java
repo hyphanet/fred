@@ -517,8 +517,8 @@ public class Metadata {
 	static final short ARCHIVE_TAR = 1; // FIXME for future use
 	
 	/** Compressed splitfile codec */
-	short compressionCodec;
-	static public final short COMPRESS_GZIP = 0; // for future use
+	short compressionCodec = -1;
+	static public final short COMPRESS_GZIP = 0;
 	static final short COMPRESS_BZIP2 = 1; // FIXME for future use
 	
 	/** The length of the splitfile */
