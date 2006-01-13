@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import freenet.crypt.DSAPublicKey;
 
@@ -103,4 +104,14 @@ public class NodeSSK extends Key {
 		this.pubKey = pubKey2;
 	}
 
+	public boolean equals(Object o) {
+		if(!(o instanceof NodeSSK)) return false;
+		NodeSSK key = (NodeSSK)o;
+		if(!Arrays.equals(key.encryptedHashedDocname, encryptedHashedDocname)) return false;
+		if(!Arrays.equals(key.pubKeyHash, pubKeyHash)) return false;
+		if(!Arrays.equals(key.routingKey, routingKey)) return false;
+		// cachedNormalizedDouble and pubKey could be negative/null.
+		return true;
+	}
+	
 }

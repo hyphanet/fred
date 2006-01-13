@@ -11,6 +11,7 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.keys.CHKBlock;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
@@ -51,6 +52,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
     private boolean sentRequest;
     private boolean hasCollided;
     private boolean hasRecentlyCollided;
+    private SSKBlock block;
     
     /** Time at which we set status to a value other than NOT_FINISHED */
     private long setStatusTime = -1;
@@ -93,7 +95,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 		} catch (NoSuchAlgorithmException e) {
 			throw new Error("SHA-256 not supported by system!: "+e);
 		}
-    	
+    	this.block = block;
     	startTime = System.currentTimeMillis();
         Thread t = new Thread(this, "SSKInsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
@@ -391,7 +393,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 					}
 					
 					try {
-						SSKBlock newBlock = new SSKBlock(newData, newHeaders, myKey, false);
+						block = new SSKBlock(newData, newHeaders, myKey, false);
 					} catch (SSKVerifyException e) {
 						Logger.error(this, "Node sent us collision but got corrupt SSK!! from "+next+" on "+uid);
 						// Try next node, no way to tell this one about its mistake as it's stopped listening. FIXME should it?
@@ -405,6 +407,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 						hasCollided = true;
 						notifyAll();
 					}
+					break; // go to next node
 				}
 				
 				if (msg.getSpec() != DMT.FNPInsertReply) {
@@ -508,6 +511,10 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 	
 	public byte[] getData() {
 		return data;
+	}
+
+	public SSKBlock getBlock() {
+		return block;
 	}
 
 }

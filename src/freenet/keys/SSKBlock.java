@@ -54,6 +54,20 @@ public class SSKBlock implements KeyBlock {
     
     static final short ENCRYPTED_HEADERS_LENGTH = 36;
     
+    public boolean equals(Object o) {
+    	if(!(o instanceof SSKBlock)) return false;
+    	SSKBlock block = (SSKBlock)o;
+
+    	if(!block.pubKey.equals(pubKey)) return false;
+    	if(!block.nodeKey.equals(nodeKey)) return false;
+    	if(block.headersOffset != headersOffset) return false;
+    	if(block.hashIdentifier != hashIdentifier) return false;
+    	if(block.symCipherIdentifier != symCipherIdentifier) return false;
+    	if(!Arrays.equals(block.headers, headers)) return false;
+    	if(!Arrays.equals(block.data, data)) return false;
+    	return true;
+    }
+    
 	/**
 	 * Initialize, and verify data, headers against key. Provided
 	 * key must have a pubkey, or we throw.

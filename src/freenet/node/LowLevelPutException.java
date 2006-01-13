@@ -11,6 +11,8 @@ public class LowLevelPutException extends Exception {
 	public static final int REJECTED_OVERLOAD = 3;
 	/** Insert could not get off the node at all */
 	public static final int ROUTE_REALLY_NOT_FOUND = 4;
+	/** Insert collided with pre-existing, different content. Can only happen with KSKs and SSKs. */
+	public static final int COLLISION = 5;
 	
 	/** Failure code */
 	public final int code;
@@ -25,6 +27,8 @@ public class LowLevelPutException extends Exception {
 			return "A node downstream either timed out or was overloaded (retry)";
 		case ROUTE_REALLY_NOT_FOUND:
 			return "The insert could not get off the node at all";
+		case COLLISION:
+			return "The insert collided with different data of the same key already on the network";
 		default:
 			return "Unknown error code: "+reason;
 		}

@@ -830,6 +830,12 @@ public class Node implements QueueingSimpleLowLevelClient {
         		insertThrottle.requestCompleted(len);
         	}
         }
+
+        if(is.hasCollided()) {
+        	// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
+        	store(is.getBlock());
+        	throw new LowLevelPutException(LowLevelPutException.COLLISION);
+        }
         
         if(is.getStatus() == SSKInsertSender.SUCCESS) {
         	Logger.normal(this, "Succeeded inserting "+block);
@@ -1054,6 +1060,24 @@ public class Node implements QueueingSimpleLowLevelClient {
         transferringRequestSenders.put(key, sender);
     }
 
+    public synchronized SSKBlock fetch(NodeSSK key) {
+    	try {
+    		return sskDatastore.fetch(key, false);
+    	} catch (IOException e) {
+    		Logger.error(this, "Cannot fetch data: "+e, e);
+    		return null;
+    	}
+    }
+
+    public synchronized CHKBlock fetch(NodeCHK key) {
+    	try {
+    		return chkDatastore.fetch(key, false);
+    	} catch (IOException e) {
+    		Logger.error(this, "Cannot fetch data: "+e, e);
+    		return null;
+    	}
+    }
+    
     /**
      * Store a datum.
      */

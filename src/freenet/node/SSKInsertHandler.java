@@ -40,6 +40,7 @@ public class SSKInsertHandler implements Runnable {
     private Thread runThread;
     private boolean sentSuccess;
     private boolean canCommit;
+    private boolean collided;
 
     SSKInsertHandler(Message req, long id, Node node, long startTime) {
         this.req = req;
@@ -128,8 +129,6 @@ public class SSKInsertHandler implements Runnable {
 			}
 		}
 		
-		// Now we have the data, the headers and the pubkey. Commit it.
-		
 		try {
 			key.setPubKey(pubKey);
 			block = new SSKBlock(data, headers, key, false);
@@ -143,7 +142,20 @@ public class SSKInsertHandler implements Runnable {
 			}
 			return;
 		}
-		Logger.minor(this, "Committed SSK "+key+" for "+uid);
+		
+		SSKBlock storedBlock = node.fetch(key);
+		
+		if(storedBlock != null && !storedBlock.equals(block)) {
+			Message msg = DMT.createFNPSSKDataFound(uid, storedBlock.getRawHeaders(), storedBlock.getRawData());
+			try {
+				source.send(msg);
+			} catch (NotConnectedException e) {
+				Logger.minor(this, "Lost connection to source on "+uid);
+			}
+			block = storedBlock;
+		}
+		
+		Logger.minor(this, "Got block for "+key+" for "+uid);
 		
         if(htl == 0) {
         	Message msg = DMT.createFNPInsertReply(uid);

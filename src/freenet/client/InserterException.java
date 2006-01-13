@@ -72,6 +72,8 @@ public class InserterException extends Exception {
 	public static final int TOO_MANY_RETRIES_IN_BLOCKS = 7;
 	/** Not able to leave the node at all */
 	public static final int ROUTE_REALLY_NOT_FOUND = 8;
+	/** Collided with pre-existing content */
+	public static final int COLLISION = 9;
 	
 	public static String getMessage(int mode) {
 		switch(mode) {
@@ -91,6 +93,8 @@ public class InserterException extends Exception {
 			return "Could not propagate the insert to enough nodes (normal on small networks, try fetching it anyway)";
 		case ROUTE_REALLY_NOT_FOUND:
 			return "Insert could not leave the node at all";
+		case COLLISION:
+			return "Insert collided with different, pre-existing data at the same key";
 		default:
 			return "Unknown error "+mode;
 		}

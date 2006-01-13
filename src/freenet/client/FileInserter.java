@@ -263,6 +263,8 @@ public class FileInserter {
 						break;
 					}
 				}
+				if(le.code == LowLevelPutException.COLLISION)
+					break;
 			}
 		}
 		
@@ -284,6 +286,8 @@ public class FileInserter {
 			throw new InserterException(InserterException.ROUTE_NOT_FOUND, uri);
 		case LowLevelPutException.ROUTE_REALLY_NOT_FOUND:
 			throw new InserterException(InserterException.ROUTE_REALLY_NOT_FOUND, uri);
+		case LowLevelPutException.COLLISION:
+			throw new InserterException(InserterException.COLLISION, uri);
 		default:
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code+" on "+this);
 			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
