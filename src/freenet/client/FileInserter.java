@@ -99,6 +99,7 @@ public class FileInserter {
 						data = result;
 						if(bestCompressedData != null)
 							ctx.bf.freeBucket(bestCompressedData);
+						bestCompressedData = data;
 						break;
 					}
 					if(bestCompressedData != null && result.size() <  bestCompressedData.size()) {

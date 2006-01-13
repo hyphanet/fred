@@ -76,6 +76,8 @@ public class Metadata {
 		if(documentType < 0 || documentType > 5 || 
 				(documentType == ZIP_INTERNAL_REDIRECT && !acceptZipInternalRedirects))
 			throw new MetadataParseException("Unsupported document type: "+documentType);
+		
+		boolean compressed = false;
 		if(documentType == SIMPLE_REDIRECT || documentType == MULTI_LEVEL_METADATA
 				|| documentType == ZIP_MANIFEST) {
 			short flags = dis.readShort();
@@ -500,8 +502,6 @@ public class Metadata {
 	boolean fullKeys;
 	/** Non-final splitfile chunks can be non-full */
 	boolean splitUseLengths;
-	/** Compressed splitfile */
-	boolean compressed;
 	static final short FLAGS_SPLITFILE = 1;
 	static final short FLAGS_DBR = 2;
 	static final short FLAGS_NO_MIME = 4;
@@ -672,7 +672,7 @@ public class Metadata {
 			if(extraMetadata) flags |= FLAGS_EXTRA_METADATA;
 			if(fullKeys) flags |= FLAGS_FULL_KEYS;
 			if(splitUseLengths) flags |= FLAGS_SPLIT_USE_LENGTHS;
-			if(compressed) flags |= FLAGS_COMPRESSED;
+			if(compressionCodec >= 0) flags |= FLAGS_COMPRESSED;
 			dos.writeShort(flags);
 		}
 		
@@ -684,7 +684,7 @@ public class Metadata {
 			dos.writeLong(dataLength);
 		}
 		
-		if(compressed) {
+		if(compressionCodec >= 0) {
 			dos.writeShort(compressionCodec);
 			dos.writeLong(decompressedLength);
 		}
@@ -764,5 +764,9 @@ public class Metadata {
 	
 	public FreenetURI[] getSplitfileCheckKeys() {
 		return splitfileCheckKeys;
+	}
+
+	public boolean isCompressed() {
+		return compressionCodec >= 0;
 	}
 }

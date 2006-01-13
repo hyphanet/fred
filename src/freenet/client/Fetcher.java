@@ -276,7 +276,7 @@ class Fetcher {
 				} // else just fetch it, create context later
 			}
 			FetchResult fr = realRun(dm, recursionLevel, uri, dontEnterImplicitArchives, localOnly);
-			if(metadata.compressed) {
+			if(metadata.isCompressed()) {
 				Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.compressionCodec);
 				Bucket data = fr.data;
 				Bucket output;
@@ -316,7 +316,8 @@ class Fetcher {
 			
 			SplitFetcher sf = new SplitFetcher(metadata, archiveContext, newCtx, recursionLevel);
 			Bucket sfResult = sf.fetch(); // will throw in event of error
-			if(metadata.compressed) {
+			if(metadata.isCompressed()) {
+				Logger.minor(this, "Is compressed: "+metadata.compressionCodec);
 				Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.compressionCodec);
 				try {
 					long maxLen = ctx.maxTempLength;
@@ -327,7 +328,8 @@ class Fetcher {
 				} catch (CompressionOutputSizeException e) {
 					throw new FetchException(FetchException.TOO_BIG);
 				}
-			}
+			} else
+				Logger.minor(this, "Not compressed ("+metadata.compressionCodec+")");
 			return new FetchResult(dm, sfResult);
 		} else {
 			Logger.error(this, "Don't know what to do with metadata: "+metadata);
