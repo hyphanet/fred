@@ -12,6 +12,8 @@ import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
 
@@ -131,8 +133,11 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				URI uri;
 				try {
-					uri = new URI(split[1]);
+					uri = new URI(URLDecoder.decode(split[1]));
 				} catch (URISyntaxException e) {
+					sendURIParseError(sock.getOutputStream(), true);
+					return;
+				} catch (URLEncodedFormatException e) {
 					sendURIParseError(sock.getOutputStream(), true);
 					return;
 				}

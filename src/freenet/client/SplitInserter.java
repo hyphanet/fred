@@ -1,5 +1,6 @@
 package freenet.client;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Vector;
 
@@ -28,6 +29,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	final int checkSegmentSize;
 	final int blockSize;
 	final boolean isMetadata;
+	final Bucket returnMetadata;
 	SplitfileBlock[] origDataBlocks;
 	InsertSegment encodingSegment;
 	InsertSegment[] segments;
@@ -40,7 +42,11 @@ public class SplitInserter implements RetryTrackerCallback {
 	private SplitfileBlock[] fatalErrorBlocks;
 	private FileInserter inserter;
 	
-	public SplitInserter(Bucket data, ClientMetadata clientMetadata, Compressor compressor, short splitfileAlgorithm, InserterContext ctx, FileInserter inserter, int blockLength, boolean getCHKOnly, boolean isMetadata) throws InserterException {
+	/**
+	 * @param returnMetadata If not null, then write the metadata to this bucket,
+	 * rather than inserting it.
+	 */
+	public SplitInserter(Bucket data, ClientMetadata clientMetadata, Compressor compressor, short splitfileAlgorithm, InserterContext ctx, FileInserter inserter, int blockLength, boolean getCHKOnly, boolean isMetadata, Bucket returnMetadata) throws InserterException {
 		this.origData = data;
 		this.getCHKOnly = getCHKOnly;
 		this.blockSize = blockLength;
@@ -62,6 +68,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		}
 		this.inserter = inserter;
 		this.isMetadata = isMetadata;
+		this.returnMetadata = returnMetadata;
 	}
 
 	/**
@@ -122,31 +129,45 @@ public class SplitInserter implements RetryTrackerCallback {
 		
 			Metadata metadata = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, clientMetadata, dataLength, compressionCodec, isMetadata);
 			
-			Bucket mbucket;
-			try {
-				mbucket = BucketTools.makeImmutableBucket(ctx.bf, metadata.writeToByteArray());
-			} catch (IOException e) {
-				throw new InserterException(InserterException.BUCKET_ERROR, null);
+			if(returnMetadata != null) {
+				DataOutputStream dos;
+				try {
+					dos = new DataOutputStream(returnMetadata.getOutputStream());
+					metadata.writeTo(dos);
+					dos.close();
+				} catch (IOException e) {
+					throw new InserterException(InserterException.BUCKET_ERROR);
+				}
+			} else {
+			
+				Bucket mbucket;
+				try {
+					mbucket = BucketTools.makeImmutableBucket(ctx.bf, metadata.writeToByteArray());
+				} catch (IOException e) {
+					throw new InserterException(InserterException.BUCKET_ERROR, null);
+				}
+				
+				if(inserter == null)
+					inserter = new FileInserter(ctx);
+				
+				InsertBlock mblock = new InsertBlock(mbucket, null, FreenetURI.EMPTY_CHK_URI);
+				
+				// FIXME probably should uncomment below so it doesn't get inserted at all?
+				// FIXME this is a hack for small network support... but we will need that IRL... hmmm
+				try {
+					uri = inserter.run(mblock, true, getCHKOnly/* || (fatalErrors > 0 || failed > 0)*/, false, null);
+				} catch (InserterException e) {
+					e.errorCodes = tracker.getAccumulatedNonFatalErrorCodes().merge(tracker.getAccumulatedFatalErrorCodes());
+					throw e;
+				}
 			}
-			
-			if(inserter == null)
-				inserter = new FileInserter(ctx);
-			
-			InsertBlock mblock = new InsertBlock(mbucket, null, FreenetURI.EMPTY_CHK_URI);
-			
-			// FIXME probably should uncomment below so it doesn't get inserted at all?
-			// FIXME this is a hack for small network support... but we will need that IRL... hmmm
-			try {
-				uri = inserter.run(mblock, true, getCHKOnly/* || (fatalErrors > 0 || failed > 0)*/, false);
-			} catch (InserterException e) {
-				e.errorCodes = tracker.getAccumulatedNonFatalErrorCodes().merge(tracker.getAccumulatedFatalErrorCodes());
-				throw e;
-			}
+				
 			
 		}
 		// Did we succeed?
 		
-		ctx.eventProducer.produceEvent(new GeneratedURIEvent(uri));
+		if(uri != null)
+			ctx.eventProducer.produceEvent(new GeneratedURIEvent(uri));
 		
 		if(fatalErrors > 0) {
 			throw new InserterException(InserterException.FATAL_ERRORS_IN_BLOCKS, tracker.getAccumulatedFatalErrorCodes(), uri);

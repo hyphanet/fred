@@ -292,7 +292,35 @@ public class Metadata {
 		ret.addRedirectionManifest(dir);
 		return ret;
 	}
+
+	/**
+	 * Create a Metadata object and add manifest entries from the given array. */
+	public static Metadata mkRedirectionManifestWithMetadata(HashMap dir) {
+		Metadata ret = new Metadata();
+		ret.addRedirectionManifestWithMetadata(dir);
+		return ret;
+	}
 	
+	private void addRedirectionManifestWithMetadata(HashMap dir) {
+		// Simple manifest - contains actual redirects.
+		// Not zip manifest, which is basically a redirect.
+		documentType = SIMPLE_MANIFEST;
+		noMIME = true;
+		//mimeType = null;
+		//clientMetadata = new ClientMetadata(null);
+		manifestEntries = new HashMap();
+		int count = 0;
+		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
+			String key = (String) i.next();
+			count++;
+			byte[] data = (byte[]) dir.get(key);
+			if(data == null)
+				throw new NullPointerException();
+			manifestEntries.put(key, data);
+		}
+		manifestEntryCount = count;
+	}
+
 	/**
 	 * Create a Metadata object for an archive which does not have its own
 	 * metadata.

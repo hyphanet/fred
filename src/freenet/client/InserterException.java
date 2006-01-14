@@ -51,6 +51,7 @@ public class InserterException extends Exception {
 	}
 
 	public InserterException(int mode) {
+		super(getMessage(mode));
 		this.mode = mode;
 		this.errorCodes = null;
 		this.uri = null;

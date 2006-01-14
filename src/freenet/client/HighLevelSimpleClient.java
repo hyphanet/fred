@@ -38,7 +38,7 @@ public interface HighLevelSimpleClient {
 	/**
 	 * Blocking insert of multiple files as a manifest (or zip manifest, etc).
 	 */
-	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName) throws InserterException;
+	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException;
 	
 	/**
 	 * Add a ClientEventListener.

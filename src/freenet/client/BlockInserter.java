@@ -73,8 +73,8 @@ public class BlockInserter extends StdSplitfileBlock implements Runnable {
 		FileInserter inserter = new FileInserter(ctx);
 		try {
 			if(uri == null && !getCHKOnly)
-				uri = inserter.run(block, false, true, true);
-			uri = inserter.run(block, false, getCHKOnly, true);
+				uri = inserter.run(block, false, true, true, null);
+			uri = inserter.run(block, false, getCHKOnly, true, null);
 			succeeded = true;
 			tracker.success(this);
 		} catch (InserterException e) {

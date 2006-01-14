@@ -284,60 +284,40 @@ public class TextModeClientInterface implements Runnable {
         		line = line.split("#")[0];
         	}
         	
-        	// Get files as name and keys
-        	HashMap manifestBase = dirPut(line, getCHKOnly);
+        	HashMap bucketsByName =
+        		makeBucketsByName(line);
         	
-        	// Set defaultfile
-        	if (defaultFile != null) {
-        		HashMap currPos = manifestBase;
-        		String splitpath[] = defaultFile.split("/");
-        		int i = 0;
-        		for( ; i < (splitpath.length - 1) ; i++)
-        			currPos = (HashMap)currPos.get(splitpath[i]);
-        		
-        		if (currPos.get(splitpath[i]) != null) {
-        			// Add key as default
-        			manifestBase.put("", currPos.get(splitpath[i]));
-        			System.out.println("Using default key: " + currPos.get(splitpath[i]));
-        		}else{
-        			System.err.println("Default key not found. No default document.");
+        	if(defaultFile == null) {
+        		String[] defaultFiles = 
+        			new String[] { "index.html", "index.htm", "default.html", "default.htm" };
+        		for(int i=0;i<defaultFiles.length;i++) {
+        			if(bucketsByName.containsKey(defaultFiles[i])) {
+        				defaultFile = defaultFiles[i];
+        				break;
+        			}        				
         		}
-        		//getchkdir:/home/cyberdo/fort/new#filelist
         	}
         	
-        	// Create metadata
-            Metadata med = Metadata.mkRedirectionManifest(manifestBase);
-            ClientMetadata md = med.getClientMetadata();
-            
-            // Extract binary data from metadata
-            ArrayBucket metabucket = new ArrayBucket();
-            DataOutputStream mdos = new DataOutputStream( metabucket.getOutputStream() );
-            med.writeTo(mdos);
-            mdos.close();
-            
-            // Insert metadata
-            InsertBlock block = new InsertBlock(metabucket, md, FreenetURI.EMPTY_CHK_URI);
-            
-            FreenetURI uri;
-            try {
-            	uri = ((HighLevelSimpleClientImpl)client).insert(block, getCHKOnly, true);
-            } catch (InserterException e) {
-            	System.out.println("Error: "+e.getMessage());
-            	if(e.uri != null)
+        	FreenetURI uri;
+			try {
+				uri = client.insertManifest(FreenetURI.EMPTY_CHK_URI, bucketsByName, defaultFile);
+				uri.addMetaStrings(new String[] { "" });
+	        	System.out.println("=======================================================");
+	            System.out.println("URI: "+uri);
+	        	System.out.println("=======================================================");
+			} catch (InserterException e) {
+            	System.out.println("Finished insert but: "+e.getMessage());
+            	if(e.uri != null) {
+            		uri = e.uri;
+    				uri.addMetaStrings(new String[] { "" });
             		System.out.println("URI would have been: "+e.uri);
-            	int mode = e.getMode();
-            	if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
-            		System.out.println("Splitfile-specific error:\n"+e.errorCodes.toVerboseString());
             	}
-            	return;
-            }
-            
-        	String filelist = dirPutToList(manifestBase, "");
-        	System.out.println("=======================================================");
-        	System.out.println(filelist);
-        	System.out.println("=======================================================");
-            System.out.println("URI: "+uri);
-        	System.out.println("=======================================================");
+            	if(e.errorCodes != null) {
+            		System.out.println("Splitfile errors breakdown:");
+            		System.out.println(e.errorCodes.toVerboseString());
+            	}
+            	Logger.error(this, "Caught "+e, e);
+			}
             
         } else if(uline.startsWith("PUTFILE:") || (getCHKOnly = uline.startsWith("GETCHKFILE:"))) {
             // Just insert to local store
@@ -481,8 +461,42 @@ public class TextModeClientInterface implements Runnable {
         }
     }
 
-    
-    private String dirPutToList(HashMap dir, String basedir) {
+    /**
+     * Create a map of String -> Bucket for every file in a directory
+     * and its subdirs.
+     */
+    private HashMap makeBucketsByName(String directory) {
+    	
+    	if (!directory.endsWith("/"))
+    		directory = directory + "/";
+    	File thisdir = new File(directory);
+    	
+    	System.out.println("Listing dir: "+thisdir);
+    	
+    	HashMap ret = new HashMap();
+    	
+    	File filelist[] = thisdir.listFiles();
+    	for(int i = 0 ; i < filelist.length ; i++) {
+    		if (filelist[i].isFile() && filelist[i].canRead()) {
+    			File f = filelist[i];
+    			
+    			FileBucket bucket = new FileBucket(f, true, false, false);
+    			
+    			ret.put(f.getName(), bucket);
+    		} else if(filelist[i].isDirectory()) {
+    			HashMap subdir = makeBucketsByName(directory + filelist[i].getName());
+    			Iterator it = subdir.keySet().iterator();
+    			while(it.hasNext()) {
+    				String key = (String) it.next();
+    				Bucket bucket = (Bucket) subdir.get(key);
+    				ret.put(filelist[i].getName() + "/" + key, bucket);
+    			}
+    		}
+    	}
+    	return ret;
+	}
+
+	private String dirPutToList(HashMap dir, String basedir) {
     	String ret = "";
 		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
 			String key = (String) i.next();

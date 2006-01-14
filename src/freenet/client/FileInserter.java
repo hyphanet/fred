@@ -1,19 +1,17 @@
 package freenet.client;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import freenet.client.events.BlockInsertErrorEvent;
 import freenet.client.events.SimpleBlockPutEvent;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
-import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.keys.NodeCHK;
-import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKEncodeException;
 import freenet.node.LowLevelPutException;
@@ -37,11 +35,15 @@ public class FileInserter {
 	/**
 	 * Do an insert.
 	 * @param block The data to insert.
-	 * @param localOnly 
+	 * @param localOnly
+	 * @param returnMetadata If not null, return the metadata in this bucket, rather
+	 * than inserting it; return the *data* CHK only. This is used by e.g.
+	 * MultiFileInserter, where we will aggregate the metadata elsewhere.
+	 * Only supported on CHKs. 
 	 * @return The URI of the inserted data.
 	 * @throws InserterException 
 	 */
-	public FreenetURI run(InsertBlock block, boolean metadata, boolean getCHKOnly, boolean noRetries) throws InserterException {
+	public FreenetURI run(InsertBlock block, boolean metadata, boolean getCHKOnly, boolean noRetries, Bucket returnMetadata) throws InserterException {
 		if(block.data == null)
 			throw new NullPointerException();
 		if(block.desiredURI.getKeyType().equalsIgnoreCase("CHK")) {
@@ -149,7 +151,7 @@ public class FileInserter {
 		if(isSSK) {
 			// Insert as CHK
 			// Create metadata pointing to it (include the clientMetadata if there is any).
-			FreenetURI uri = run(new InsertBlock(block.data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI), metadata, getCHKOnly, noRetries);
+			FreenetURI uri = run(new InsertBlock(block.data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI), metadata, getCHKOnly, noRetries, null);
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, uri, block.clientMetadata);
 			Bucket bucket;
 			try {
@@ -157,7 +159,7 @@ public class FileInserter {
 			} catch (IOException e) {
 				throw new InserterException(InserterException.INTERNAL_ERROR, e, isk.getURI());
 			}
-			return run(new InsertBlock(bucket, new ClientMetadata(), block.desiredURI), metadata, getCHKOnly, noRetries);
+			return run(new InsertBlock(bucket, new ClientMetadata(), block.desiredURI), metadata, getCHKOnly, noRetries, null);
 		}
 		
 		if(data.size() <= NodeCHK.BLOCK_SIZE) {
@@ -175,11 +177,11 @@ public class FileInserter {
 				Logger.error(this, "Unexpected error: "+e, e);
 				throw new InserterException(InserterException.INTERNAL_ERROR, null);
 			}
-			return simplePutCHK(chk, block.clientMetadata, getCHKOnly, noRetries);
+			return simplePutCHK(chk, block.clientMetadata, getCHKOnly, noRetries, returnMetadata);
 		}
 		
 		// Too big, encode to a splitfile
-		SplitInserter splitInsert = new SplitInserter(data, block.clientMetadata, bestCodec, ctx.splitfileAlgorithm, ctx, this, NodeCHK.BLOCK_SIZE, getCHKOnly, metadata);
+		SplitInserter splitInsert = new SplitInserter(data, block.clientMetadata, bestCodec, ctx.splitfileAlgorithm, ctx, this, NodeCHK.BLOCK_SIZE, getCHKOnly, metadata, returnMetadata);
 		return splitInsert.run();
 	}
 
@@ -188,10 +190,13 @@ public class FileInserter {
 	 * @param chk The data encoded into a single CHK.
 	 * @param clientMetadata The client metadata. If this is non-trivial, we will have to
 	 * create a redirect document just to put the metadata in.
+	 * @param returnMetadata If not null, return the metadata in this bucket, rather
+	 * than inserting it; return the *data* CHK only. This is used by e.g.
+	 * MultiFileInserter, where we will aggregate the metadata elsewhere. 
 	 * @return The URI of the resulting CHK.
 	 * @throws InserterException If there was an error inserting the block.
 	 */
-	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata, boolean getCHKOnly, boolean noRetries) throws InserterException {
+	private FreenetURI simplePutCHK(ClientCHKBlock chk, ClientMetadata clientMetadata, boolean getCHKOnly, boolean noRetries, Bucket returnMetadata) throws InserterException {
 		LowLevelPutException le = null;
 		int rnfs = 0;
 		for(int i=0;i<=ctx.maxInsertRetries;i++) {
@@ -224,11 +229,22 @@ public class FileInserter {
 		
 		if(clientMetadata == null || clientMetadata.isTrivial())
 			// Don't need a redirect for the metadata
-			 uri = chk.getClientKey().getURI();
+			uri = chk.getClientKey().getURI();
 		else {
 			// Do need a redirect for the metadata
 			Metadata metadata = new Metadata(Metadata.SIMPLE_REDIRECT, chk.getClientKey().getURI(), clientMetadata);
-			uri = putMetadataCHK(metadata, getCHKOnly, noRetries);
+			if(returnMetadata != null) {
+				uri = chk.getClientKey().getURI();
+				try {
+					DataOutputStream dos = new DataOutputStream(returnMetadata.getOutputStream());
+					metadata.writeTo(dos);
+					dos.close();
+				} catch (IOException e) {
+					throw new InserterException(InserterException.BUCKET_ERROR);
+				}
+			} else {
+				uri = putMetadataCHK(metadata, getCHKOnly, noRetries);
+			}
 		}
 		
 		if(le != null)
@@ -306,6 +322,6 @@ public class FileInserter {
 			throw new InserterException(InserterException.BUCKET_ERROR, null);
 		}
 		InsertBlock block = new InsertBlock(bucket, null, FreenetURI.EMPTY_CHK_URI);
-		return run(block, true, getCHKOnly, noRetries);
+		return run(block, true, getCHKOnly, noRetries, null);
 	}
 }
