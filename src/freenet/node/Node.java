@@ -26,6 +26,8 @@ import java.util.Iterator;
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
+import freenet.clients.http.FproxyToadlet;
+import freenet.clients.http.SimpleToadletServer;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
@@ -328,6 +330,12 @@ public class Node implements QueueingSimpleLowLevelClient {
         Thread t = new Thread(new MemoryChecker(), "Memory checker");
         t.setPriority(Thread.MAX_PRIORITY);
         t.start();
+        SimpleToadletServer server = new SimpleToadletServer(port+2001);
+        FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, (short)0));
+        server.register(fproxy, "/", false);
+        System.out.println("Starting fproxy on port "+(port+2001));
+        //server.register(fproxy, "/SSK@", false);
+        //server.register(fproxy, "/KSK@", false);
     }
     
     // FIXME - the whole overrideIP thing is a hack to avoid config
