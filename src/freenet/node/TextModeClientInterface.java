@@ -102,6 +102,7 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("GETCHKDIR:<path>[#<defaultfile>] - Get the key that would be returned if we'd put the entire directory from disk.");
         System.out.println("MAKESSK - Create an SSK keypair.");
         System.out.println("PUTSSK:<insert uri>;<url to redirect to> - Insert an SSK redirect to a file already inserted.");
+        System.out.println("PUTSSKDIR:<insert uri>#<path>[#<defaultfile>] - Insert an entire directory to an SSK.");
 //        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
 //        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
 //        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
@@ -261,13 +262,18 @@ public class TextModeClientInterface implements Runnable {
             
             System.out.println("URI: "+uri);
             ////////////////////////////////////////////////////////////////////////////////
-        } else if(uline.startsWith("PUTDIR:") || (getCHKOnly = uline.startsWith("GETCHKDIR:"))) {
+        } else if(uline.startsWith("PUTDIR:") || (uline.startsWith("PUTSSKDIR")) || (getCHKOnly = uline.startsWith("GETCHKDIR:"))) {
         	// TODO: Check for errors?
-        	if(getCHKOnly) {
-        		line = line.substring(("GETCHKDIR:").length());
-        	} else {
+        	boolean ssk = false;
+        	if(uline.startsWith("PUTDIR:"))
         		line = line.substring("PUTDIR:".length());
-        	}
+        	else if(uline.startsWith("PUTSSKDIR:")) {
+        		line = line.substring("PUTSSKDIR:".length());
+        		ssk = true;
+        	} else if(uline.startsWith("GETCHKDIR:"))
+        		line = line.substring(("GETCHKDIR:").length());
+        	else
+        		System.err.println("Impossible");
         	
         	line = line.trim();
         	
@@ -278,10 +284,20 @@ public class TextModeClientInterface implements Runnable {
         	
         	String defaultFile = null;
         	
+        	FreenetURI insertURI = FreenetURI.EMPTY_CHK_URI;
+        	
         	// set default file?
         	if (line.matches("^.*#.*$")) {
-        		defaultFile = line.split("#")[1];
-        		line = line.split("#")[0];
+        		String[] split = line.split("#");
+        		if(ssk) {
+        			insertURI = new FreenetURI(split[0]);
+        			line = split[1];
+        			if(split.length > 2)
+        				defaultFile = split[2];
+        		} else {
+        			defaultFile = split[1];
+        			line = split[0];
+        		}
         	}
         	
         	HashMap bucketsByName =
@@ -300,8 +316,8 @@ public class TextModeClientInterface implements Runnable {
         	
         	FreenetURI uri;
 			try {
-				uri = client.insertManifest(FreenetURI.EMPTY_CHK_URI, bucketsByName, defaultFile);
-				uri.addMetaStrings(new String[] { "" });
+				uri = client.insertManifest(insertURI, bucketsByName, defaultFile);
+				uri = uri.addMetaStrings(new String[] { "" });
 	        	System.out.println("=======================================================");
 	            System.out.println("URI: "+uri);
 	        	System.out.println("=======================================================");
@@ -309,8 +325,8 @@ public class TextModeClientInterface implements Runnable {
             	System.out.println("Finished insert but: "+e.getMessage());
             	if(e.uri != null) {
             		uri = e.uri;
-    				uri.addMetaStrings(new String[] { "" });
-            		System.out.println("URI would have been: "+e.uri);
+    				uri = uri.addMetaStrings(new String[] { "" });
+            		System.out.println("URI would have been: "+uri);
             	}
             	if(e.errorCodes != null) {
             		System.out.println("Splitfile errors breakdown:");

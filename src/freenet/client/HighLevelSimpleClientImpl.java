@@ -129,7 +129,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
 		}
 		ClientKey k;
-		InsertBlock block = new InsertBlock(b, new ClientMetadata(), insertURI);
+		InsertBlock block = new InsertBlock(b, null, insertURI);
 		InserterContext context = new InserterContext(client, bucketFactory, random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, insertStarter, cacheLocalRequests);
 		FileInserter i = new FileInserter(context);

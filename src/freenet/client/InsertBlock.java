@@ -14,7 +14,10 @@ public class InsertBlock {
 	
 	public InsertBlock(Bucket data, ClientMetadata metadata, FreenetURI desiredURI) {
 		this.data = data;
-		clientMetadata = metadata;
+		if(metadata == null)
+			clientMetadata = new ClientMetadata();
+		else
+			clientMetadata = metadata;
 		this.desiredURI = desiredURI;
 	}
 

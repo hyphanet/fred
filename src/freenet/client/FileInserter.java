@@ -151,7 +151,7 @@ public class FileInserter {
 		if(isSSK) {
 			// Insert as CHK
 			// Create metadata pointing to it (include the clientMetadata if there is any).
-			FreenetURI uri = run(new InsertBlock(block.data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI), metadata, getCHKOnly, noRetries, null);
+			FreenetURI uri = run(new InsertBlock(block.data, null, FreenetURI.EMPTY_CHK_URI), metadata, getCHKOnly, noRetries, null);
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, uri, block.clientMetadata);
 			Bucket bucket;
 			try {
@@ -159,7 +159,7 @@ public class FileInserter {
 			} catch (IOException e) {
 				throw new InserterException(InserterException.INTERNAL_ERROR, e, isk.getURI());
 			}
-			return run(new InsertBlock(bucket, new ClientMetadata(), block.desiredURI), metadata, getCHKOnly, noRetries, null);
+			return run(new InsertBlock(bucket, null, block.desiredURI), metadata, getCHKOnly, noRetries, null);
 		}
 		
 		if(data.size() <= NodeCHK.BLOCK_SIZE) {
