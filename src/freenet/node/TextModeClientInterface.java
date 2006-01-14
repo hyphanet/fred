@@ -2,7 +2,6 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +19,6 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
@@ -417,6 +415,7 @@ public class TextModeClientInterface implements Runnable {
 				System.out.println("Successfully inserted to fetch URI: "+key.getURI());
 			} catch (InserterException e) {
             	System.out.println("Finished insert but: "+e.getMessage());
+            	Logger.normal(this, "Error: "+e, e);
             	if(e.uri != null) {
             		System.out.println("URI would have been: "+e.uri);
             	}

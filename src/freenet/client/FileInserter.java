@@ -46,10 +46,11 @@ public class FileInserter {
 	public FreenetURI run(InsertBlock block, boolean metadata, boolean getCHKOnly, boolean noRetries, Bucket returnMetadata) throws InserterException {
 		if(block.data == null)
 			throw new NullPointerException();
-		if(block.desiredURI.getKeyType().equalsIgnoreCase("CHK")) {
+		String type = block.desiredURI.getKeyType();
+		if(type.equalsIgnoreCase("CHK")) {
 			if(!block.desiredURI.toString(false).equalsIgnoreCase("CHK@"))
 				throw new InserterException(InserterException.INVALID_URI, null);
-		} else if(!block.desiredURI.getKeyType().equalsIgnoreCase("SSK")) {
+		} else if(!(type.equalsIgnoreCase("SSK") || type.equalsIgnoreCase("KSK"))) {
 			throw new InserterException(InserterException.INVALID_URI, null);
 		}
 		
@@ -67,7 +68,7 @@ public class FileInserter {
 		boolean dontCompress = false;
 		
 		long origSize = data.size();
-		if(block.desiredURI.getKeyType().equals("SSK")) {
+		if(type.equals("SSK") || type.equals("KSK")) {
 			blockSize = SSKBlock.DATA_LENGTH;
 			isSSK = true;
 			maxSourceDataSize = ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH;

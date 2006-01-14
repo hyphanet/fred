@@ -57,6 +57,7 @@ public abstract class Key implements WritableToDataOutputStream {
             return NodeCHK.readCHK(raf);
         } else if(type == NodeSSK.TYPE)
         	return NodeSSK.readSSK(raf);
+        
         throw new IOException("Unrecognized format: "+type);
     }
     

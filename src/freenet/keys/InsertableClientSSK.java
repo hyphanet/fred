@@ -33,6 +33,8 @@ public class InsertableClientSSK extends ClientSSK {
 	}
 	
 	public static InsertableClientSSK create(FreenetURI uri) throws MalformedURLException {
+		if(uri.getKeyType().equalsIgnoreCase("KSK"))
+			return ClientKSK.create(uri);
 		if(!uri.getKeyType().equalsIgnoreCase("SSK"))
 			throw new MalformedURLException();
 		DSAGroup g = Global.DSAgroupBigA;

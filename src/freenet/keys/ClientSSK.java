@@ -66,7 +66,7 @@ public class ClientSSK extends ClientKey {
 	}
 	
 	public void setPublicKey(DSAPublicKey pubKey) {
-		if(this.pubKey != null && this.pubKey != pubKey)
+		if(this.pubKey != null && this.pubKey != pubKey && !this.pubKey.equals(pubKey))
 			throw new IllegalArgumentException("Cannot reassign: was "+this.pubKey+" now "+pubKey);
 		this.pubKey = pubKey;
 	}

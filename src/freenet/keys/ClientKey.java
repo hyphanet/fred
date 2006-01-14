@@ -13,6 +13,8 @@ public abstract class ClientKey {
 			return new ClientCHK(origURI);
 		if(origURI.getKeyType().equals("SSK"))
 			return new ClientSSK(origURI);
+		if(origURI.getKeyType().equals("KSK"))
+			return ClientKSK.create(origURI.getDocName());
 		throw new UnsupportedOperationException("Unknown keytype from "+origURI);
 	}
 	
