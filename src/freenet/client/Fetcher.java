@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import freenet.client.events.DecodedBlockEvent;
@@ -63,7 +64,20 @@ class Fetcher {
 		for(int i=0;i<ctx.maxArchiveRestarts;i++) {
 			try {
 				ClientMetadata dm = new ClientMetadata();
-				return realRun(dm, 0, origURI, ctx.dontEnterImplicitArchives, ctx.localRequestOnly);
+				ClientKey key;
+				try {
+					key = ClientKey.getBaseKey(origURI);
+				} catch (MalformedURLException e2) {
+					throw new FetchException(FetchException.INVALID_URI, "Invalid URI: "+origURI);
+				}
+				LinkedList metaStrings = origURI.listMetaStrings();
+				
+				FetchResult fr = realRun(dm, 0, key, metaStrings, ctx.dontEnterImplicitArchives, ctx.localRequestOnly);
+				
+				if(metaStrings.isEmpty()) return fr;
+				// Still got some meta-strings
+				throw new FetchException(FetchException.HAS_MORE_METASTRINGS);
+				
 			} catch (ArchiveRestartException e) {
 				archiveContext = new ArchiveContext();
 				continue;
@@ -76,6 +90,19 @@ class Fetcher {
 			}
 		}
 		throw new FetchException(FetchException.TOO_MANY_ARCHIVE_RESTARTS);
+	}
+
+	FetchResult realRun(ClientMetadata dm, int recursionLevel, FreenetURI uri, boolean dontEnterImplicitArchives, boolean localOnly) 
+	throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+		ClientKey key;
+		try {
+			key = ClientKey.getBaseKey(origURI);
+		} catch (MalformedURLException e2) {
+			throw new FetchException(FetchException.INVALID_URI, "Invalid URI: "+origURI);
+		}
+		LinkedList metaStrings = origURI.listMetaStrings();
+		
+		return realRun(dm, recursionLevel, key, metaStrings, dontEnterImplicitArchives, localOnly);
 	}
 	
 	/**
@@ -91,17 +118,9 @@ class Fetcher {
 	 * @throws ArchiveFailureException If we could not extract data from an archive.
 	 * @throws ArchiveRestartException 
 	 */
-	FetchResult realRun(ClientMetadata dm, int recursionLevel, FreenetURI uri, boolean dontEnterImplicitArchives, boolean localOnly) 
+	FetchResult realRun(ClientMetadata dm, int recursionLevel, ClientKey key, LinkedList metaStrings, boolean dontEnterImplicitArchives, boolean localOnly) 
 	throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
-		Logger.minor(this, "Running fetch for: "+uri);
-		ClientKey key;
-		try {
-			key = ClientKey.getBaseKey(uri);
-		} catch (MalformedURLException e2) {
-			throw new FetchException(FetchException.INVALID_URI, "Invalid URI: "+uri);
-		}
-		LinkedList metaStrings = uri.listMetaStrings();
-		
+		Logger.minor(this, "Running fetch for: "+key);
 		recursionLevel++;
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION, ""+recursionLevel+" should be < "+ctx.maxRecursionLevel);
@@ -166,10 +185,7 @@ class Fetcher {
 		
 		ctx.eventProducer.produceEvent(new FetchedMetadataEvent());
 		
-		FetchResult result = runMetadata(dm, recursionLevel, key, metaStrings, metadata, null, key.getURI(), dontEnterImplicitArchives, localOnly);
-		if(metaStrings.isEmpty()) return result;
-		// Still got some meta-strings
-		throw new FetchException(FetchException.HAS_MORE_METASTRINGS);
+		return runMetadata(dm, recursionLevel, key, metaStrings, metadata, null, key.getURI(), dontEnterImplicitArchives, localOnly);
 	}
 	
 	/**
@@ -180,7 +196,6 @@ class Fetcher {
 	 * @param metaStrings List of unused meta strings (to be used by manifests).
 	 * @param metadata The parsed metadata to process.
 	 * @param container The container in which this metadata is found.
-	 * @return
 	 * @throws MetadataParseException If we could not parse metadata from a sub-document. Will be
 	 * converted to a FetchException above.
 	 * @throws ArchiveFailureException If extracting data from an archive failed.
@@ -200,9 +215,13 @@ class Fetcher {
 			// Since metadata is a document, we just replace metadata here
 			if(name == null) {
 				metadata = metadata.getDefaultDocument();
+				if(metadata == null)
+					throw new FetchException(FetchException.NOT_ENOUGH_METASTRINGS);
 			} else {
 				metadata = metadata.getDocument(name);
 				thisKey = thisKey.pushMetaString(name);
+				if(metadata == null)
+					throw new FetchException(FetchException.NOT_IN_ARCHIVE);
 			}
 			return runMetadata(dm, recursionLevel, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives, localOnly);
 		} else if(metadata.isArchiveManifest()) {
@@ -275,7 +294,24 @@ class Fetcher {
 					return runMetadata(dm, recursionLevel+1, key, metaStrings, metadata, container, thisKey, dontEnterImplicitArchives, localOnly);
 				} // else just fetch it, create context later
 			}
-			FetchResult fr = realRun(dm, recursionLevel, uri, dontEnterImplicitArchives, localOnly);
+			
+			
+			ClientKey newKey;
+			try {
+				newKey = ClientKey.getBaseKey(uri);
+			} catch (MalformedURLException e2) {
+				throw new FetchException(FetchException.INVALID_URI, "Invalid URI: "+uri);
+			}
+			
+			LinkedList newMetaStrings = uri.listMetaStrings();
+			
+			// Move any new meta strings to beginning of our list of remaining meta strings
+			while(!newMetaStrings.isEmpty()) {
+				Object o = newMetaStrings.removeLast();
+				metaStrings.addFirst(o);
+			}
+			
+			FetchResult fr = realRun(dm, recursionLevel, newKey, metaStrings, dontEnterImplicitArchives, localOnly);
 			if(metadata.isCompressed()) {
 				Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.compressionCodec);
 				Bucket data = fr.data;

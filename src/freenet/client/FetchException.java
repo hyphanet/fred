@@ -116,6 +116,8 @@ public class FetchException extends Exception {
 			return "Metadata too big";
 		case TOO_MANY_BLOCKS_PER_SEGMENT:
 			return "Too many blocks per segment";
+		case NOT_ENOUGH_METASTRINGS:
+			return "No default document; give more metastrings in URI";
 		default:
 			return "Unknown fetch error code: "+mode;
 		}
@@ -169,4 +171,6 @@ public class FetchException extends Exception {
 	public static final int TOO_BIG_METADATA = 22;
 	/** Splitfile has too big segments */
 	public static final int TOO_MANY_BLOCKS_PER_SEGMENT = 23;
+	/** Not enough meta strings in URI given and no default document */
+	public static final int NOT_ENOUGH_METASTRINGS = 24;
 }
