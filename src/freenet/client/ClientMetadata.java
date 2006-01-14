@@ -35,6 +35,6 @@ public class ClientMetadata {
 	}
 
 	public boolean isTrivial() {
-		return (mimeType == null || mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE));
+		return (mimeType == null || mimeType.equals(""));
 	}
 }

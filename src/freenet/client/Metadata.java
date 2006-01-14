@@ -385,9 +385,9 @@ public class Metadata {
 		if(docType == SIMPLE_REDIRECT) {
 			documentType = docType;
 			clientMetadata = cm;
-			if(cm != null)
+			if(cm != null && !cm.isTrivial()) {
 				setMIMEType(cm.getMIMEType());
-			else {
+			} else {
 				setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
 				noMIME = true;
 			}
