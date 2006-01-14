@@ -25,10 +25,16 @@ public class ClientSSK extends ClientKey {
 	
 	static final int CRYPTO_KEY_LENGTH = 32;
 	
-	public ClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, byte[] cryptoKey) {
+	public ClientSSK(String docName, byte[] pubKeyHash, byte[] extras, DSAPublicKey pubKey, byte[] cryptoKey) throws MalformedURLException {
 		this.docName = docName;
 		this.pubKey = pubKey;
 		this.pubKeyHash = pubKeyHash;
+		if(!Arrays.equals(extras, getExtraBytes()))
+			throw new MalformedURLException("Wrong extra bytes");
+		if(pubKeyHash.length != NodeSSK.PUBKEY_HASH_SIZE)
+			throw new MalformedURLException("Pubkey hash wrong length: "+pubKeyHash.length+" should be "+NodeSSK.PUBKEY_HASH_SIZE);
+		if(cryptoKey.length != CRYPTO_KEY_LENGTH)
+			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+CRYPTO_KEY_LENGTH);
 		MessageDigest md;
 		try {
 			md = MessageDigest.getInstance("SHA-256");
@@ -60,7 +66,7 @@ public class ClientSSK extends ClientKey {
 	}
 	
 	public ClientSSK(FreenetURI origURI) throws MalformedURLException {
-		this(origURI.getDocName(), origURI.getRoutingKey(), null, origURI.getCryptoKey());
+		this(origURI.getDocName(), origURI.getRoutingKey(), origURI.getExtra(), null, origURI.getCryptoKey());
 		if(!origURI.getKeyType().equalsIgnoreCase("SSK"))
 			throw new MalformedURLException();
 	}
@@ -72,7 +78,21 @@ public class ClientSSK extends ClientKey {
 	}
 	
 	public FreenetURI getURI() {
-		return new FreenetURI("SSK", docName, pubKeyHash, cryptoKey, null);
+		return new FreenetURI("SSK", docName, pubKeyHash, cryptoKey, getExtraBytes());
+	}
+	
+	protected static final byte[] getExtraBytes() {
+		// 3 bytes.
+		byte[] extra = new byte[5];
+
+		short cryptoAlgorithm = NodeSSK.ALGO_AES_PCFB_256_SHA256;
+		
+		extra[0] = NodeSSK.SSK_VERSION;
+		extra[1] = (byte) (cryptoAlgorithm >> 8);
+		extra[2] = (byte) cryptoAlgorithm;
+		extra[3] = (byte) (KeyBlock.HASH_SHA256 >> 8);
+		extra[4] = (byte) KeyBlock.HASH_SHA256;
+		return extra;
 	}
 
 	public Key getNodeKey() {

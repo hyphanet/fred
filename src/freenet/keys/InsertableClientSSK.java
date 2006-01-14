@@ -26,8 +26,8 @@ public class InsertableClientSSK extends ClientSSK {
 
 	public final DSAPrivateKey privKey;
 	
-	public InsertableClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey) {
-		super(docName, pubKeyHash, pubKey, cryptoKey);
+	public InsertableClientSSK(String docName, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] cryptoKey) throws MalformedURLException {
+		super(docName, pubKeyHash, getExtraBytes(), pubKey, cryptoKey);
 		if(pubKey == null) throw new NullPointerException();
 		this.privKey = privKey;
 	}
@@ -113,8 +113,8 @@ public class InsertableClientSSK extends ClientSSK {
         headers[x++] = (byte) (ClientSSKBlock.HASH_SHA256 >> 8);
         headers[x++] = (byte) (ClientSSKBlock.HASH_SHA256);
         // Then crypto ID
-        headers[x++] = (byte) (Key.ALGO_AES_PCFB_256 >> 8);
-        headers[x++] = (byte) (Key.ALGO_AES_PCFB_256);
+        headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256 >> 8);
+        headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256);
         // Then E(H(docname))
 		// Copy to headers
 		System.arraycopy(ehDocname, 0, headers, x, ehDocname.length);
@@ -193,7 +193,11 @@ public class InsertableClientSSK extends ClientSSK {
 		} catch (NoSuchAlgorithmException e) {
 			throw new Error(e);
 		}
-		return new InsertableClientSSK("", md.digest(pubKey.asBytes()), pubKey, privKey, ckey);
+		try {
+			return new InsertableClientSSK("", md.digest(pubKey.asBytes()), pubKey, privKey, ckey);
+		} catch (MalformedURLException e) {
+			throw new Error(e);
+		}
 	}
 
 	public FreenetURI getInsertURI() {

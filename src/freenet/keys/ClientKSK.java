@@ -1,6 +1,7 @@
 package freenet.keys;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -14,7 +15,7 @@ public class ClientKSK extends InsertableClientSSK {
 
 	final String keyword;
 	
-	public ClientKSK(String keyword, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] keywordHash) {
+	private ClientKSK(String keyword, byte[] pubKeyHash, DSAPublicKey pubKey, DSAPrivateKey privKey, byte[] keywordHash) throws MalformedURLException {
 		super(keyword, pubKeyHash, pubKey, privKey, keywordHash);
 		this.keyword = keyword;
 	}
@@ -46,7 +47,11 @@ public class ClientKSK extends InsertableClientSSK {
 		DSAPrivateKey privKey = new DSAPrivateKey(Global.DSAgroupBigA, mt);
 		DSAPublicKey pubKey = new DSAPublicKey(Global.DSAgroupBigA, privKey);
 		byte[] pubKeyHash = md256.digest(pubKey.asBytes());
-		return new ClientKSK(keyword, pubKeyHash, pubKey, privKey, keywordHash);
+		try {
+			return new ClientKSK(keyword, pubKeyHash, pubKey, privKey, keywordHash);
+		} catch (MalformedURLException e) {
+			throw new Error(e);
+		}
 	}
 	
 }

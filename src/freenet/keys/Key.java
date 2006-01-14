@@ -30,8 +30,8 @@ public abstract class Key implements WritableToDataOutputStream {
     /** Whatever its type, it will need a routingKey ! */
     final byte[] routingKey;
     
-    /** Code for 256-bit AES with PCFB */
-    static final short ALGO_AES_PCFB_256 = 1;
+    /** Code for 256-bit AES with PCFB and SHA-256 */
+    static final short ALGO_AES_PCFB_256_SHA256 = 1;
 
     protected Key(byte[] routingKey) {
     	this.routingKey = routingKey;

@@ -28,6 +28,8 @@ public class NodeSSK extends Key {
 	/** The signature key, if we know it */
 	DSAPublicKey pubKey;
 	
+	static final int SSK_VERSION = 1;
+	
 	static final int PUBKEY_HASH_SIZE = 32;
 	static final int E_H_DOCNAME_SIZE = 32;
 	
