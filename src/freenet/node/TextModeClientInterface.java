@@ -503,6 +503,8 @@ public class TextModeClientInterface implements Runnable {
     		directory = directory + "/";
     	File thisdir = new File(directory);
     	
+    	System.out.println("Listing dir: "+thisdir);
+    	
     	HashMap ret = new HashMap();
     	
     	File filelist[] = thisdir.listFiles();

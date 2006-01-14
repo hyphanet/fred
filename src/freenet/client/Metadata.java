@@ -117,7 +117,7 @@ public class Metadata {
 		}
 		
 		if(noMIME) {
-			mimeType = DefaultMIMETypes.DEFAULT_MIME_TYPE;
+			mimeType = null;
 			Logger.minor(this, "noMIME enabled");
 		} else {
 			if(compressedMIME) {
@@ -387,8 +387,10 @@ public class Metadata {
 			clientMetadata = cm;
 			if(cm != null)
 				setMIMEType(cm.getMIMEType());
-			else
+			else {
 				setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
+				noMIME = true;
+			}
 			simpleRedirectKey = uri;
 		} else
 			throw new IllegalArgumentException();

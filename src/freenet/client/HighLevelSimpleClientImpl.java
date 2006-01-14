@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ClientEventProducer;
@@ -135,6 +136,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return i.run(block, true, false, false);
 	}
 
+	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName) throws InserterException {
+		// FIXME
+		throw new UnsupportedOperationException();
+	}
+	
 	public void addGlobalHook(ClientEventListener listener) {
 		globalEventProducer.addEventListener(listener);
 	}
