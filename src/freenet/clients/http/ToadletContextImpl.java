@@ -173,6 +173,11 @@ public class ToadletContextImpl implements ToadletContext {
 					t.handleGet(uri, ctx);
 					ctx.close();
 					
+				} else if(method.equals("PUT")) {
+			
+					t.handlePut(uri, ctx);
+					ctx.close();
+
 				} else if(method.equals("POST")) {
 					
 					Logger.error(ToadletContextImpl.class, "POST not supported");
