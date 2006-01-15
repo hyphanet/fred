@@ -175,7 +175,7 @@ public class ToadletContextImpl implements ToadletContext {
 					
 				} else if(method.equals("PUT")) {
 			
-					t.handlePut(uri, ctx);
+					t.handlePut(uri, null, ctx);
 					ctx.close();
 
 				} else if(method.equals("POST")) {
