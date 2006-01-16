@@ -21,16 +21,19 @@ import freenet.support.IllegalBase64Exception;
  * FreenetURI handles parsing and creation of the Freenet URI format, defined
  * as follows:
  * <p>
- * <code>freenet:[KeyType@]RoutingKey,CryptoKey[,n1=v1,n2=v2,...][/docname][//metastring]</code>
+ * <code>freenet:[KeyType@]RoutingKey,CryptoKey[,n1=v1,n2=v2,...][/docname][/metastring]</code>
  * </p>
  * <p>
  * where KeyType is the TLA of the key (currently SVK, SSK, KSK, or CHK). If
  * omitted, KeyType defaults to KSK.
+ * BUT: CHKs don't support or require a docname.
+ * KSKs and SSKs do.
+ * Therefore CHKs go straight into metastrings.
  * </p>
  * <p>
  * For KSKs, the string keyword (docname) takes the RoutingKey position and the
  * remainder of the fields are inapplicable (except metastring). Examples:
- * <coe>freenet:KSK@foo//bar freenet:KSK@test.html freenet:test.html</code>.
+ * <coe>freenet:KSK@foo/bar freenet:KSK@test.html freenet:test.html</code>.
  * </p>
  * <p>
  * RoutingKey is the modified Base64 encoded key value. CryptoKey is the
@@ -137,8 +140,7 @@ public class FreenetURI {
 		// decode keyType
 		int atchar = URI.indexOf('@');
 		if (atchar == -1) {
-			keyType = "KSK";
-			atchar = colon;
+			throw new MalformedURLException();
 		} else {
 			keyType = URI.substring(colon + 1, atchar).toUpperCase().trim();
 		}
@@ -147,28 +149,24 @@ public class FreenetURI {
 		// decode metaString
 		int slash2;
 		Vector sv = new Vector();
-		while ((slash2 = URI.lastIndexOf("//")) != -1) {
-			String s = urlDecode(URI.substring(slash2 + "//".length()));
+		while ((slash2 = URI.lastIndexOf("/")) != -1) {
+			String s = urlDecode(URI.substring(slash2 + "/".length()));
 			if (s != null)
 				sv.addElement(urlDecode(s));
 			URI = URI.substring(0, slash2);
 		}
+		if(!"CHK".equals(keyType)) {
+			// docName not necessary, nor is it supported, for CHKs.
+			
+			if(sv.isEmpty())
+				throw new MalformedURLException("No docname");
+			docName = (String) sv.remove(sv.size()-1);
+		}
+		
 		if (!sv.isEmpty()) {
 			metaStr = new String[sv.size()];
 			for (int i = 0; i < metaStr.length; i++)
 				metaStr[i] = (String) sv.elementAt(metaStr.length - 1 - i);
-		}
-
-		// decode docName
-		if ("KSK".equals(keyType)) {
-			docName = urlDecode(URI);
-			return;
-		}
-
-		int slash1 = URI.indexOf('/');
-		if (slash1 != -1) {
-			docName = urlDecode(URI.substring(slash1 + 1));
-			URI = URI.substring(0, slash1);
 		}
 
 		// URI now contains: routingKey[,cryptoKey][,metaInfo]
@@ -379,7 +377,7 @@ public class FreenetURI {
 			b.append(urlEncode(docName));
 		if (metaStr != null) {
 			for (int i = 0; i < metaStr.length; i++) {
-				b.append("//").append(urlEncode(metaStr[i]));
+				b.append("/").append(urlEncode(metaStr[i]));
 			}
 		}
 		return b.toString();

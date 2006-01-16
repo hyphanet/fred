@@ -393,6 +393,11 @@ public class TextModeClientInterface implements Runnable {
         	InsertableClientSSK key = InsertableClientSSK.createRandom(r);
         	System.out.println("Insert URI: "+key.getInsertURI().toString(false));
         	System.out.println("Request URI: "+key.getURI().toString(false));
+        	FreenetURI insertURI = key.getInsertURI().setDocName("testsite");
+        	String fixedInsertURI = insertURI.toString(false);
+        	System.out.println("Note that you MUST add a filename to the end of the above URLs e.g.:\n"+fixedInsertURI);
+        	System.out.println("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\nPUTSSKDIR:"+fixedInsertURI+"#directoryToUpload/");
+        	System.out.println("This will then produce a manifest site containing all the files, the default document can be accessed at\n"+insertURI.addMetaStrings(new String[] { "" }).toString(false));
         } else if(uline.startsWith("PUTSSK:")) {
         	String cmd = line.substring("PUTSSK:".length());
         	cmd = cmd.trim();

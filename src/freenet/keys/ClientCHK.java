@@ -132,7 +132,7 @@ public class ClientCHK extends ClientKey {
      */
     public FreenetURI getURI() {
         byte[] extra = getExtra();
-        return new FreenetURI("CHK", "", routingKey, cryptoKey, extra);
+        return new FreenetURI("CHK", null, routingKey, cryptoKey, extra);
     }
 
     /**
