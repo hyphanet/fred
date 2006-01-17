@@ -993,7 +993,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         		DSAPublicKey pubKey = k.getPubKey();
         		if(pubKey == null) {
         			pubKey = getKey(k.getPubKeyHash());
-        			Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
+        			Logger.minor(this, "Got pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
         			try {
 						k.setPubKey(pubKey);
 					} catch (SSKVerifyException e) {
