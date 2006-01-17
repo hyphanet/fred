@@ -155,7 +155,7 @@ public class FreenetURI {
 				sv.addElement(urlDecode(s));
 			URI = URI.substring(0, slash2);
 		}
-		if(!"CHK".equals(keyType)) {
+		if("SSK".equals(keyType)) {
 			// docName not necessary, nor is it supported, for CHKs.
 			
 			if(sv.isEmpty())
@@ -169,6 +169,11 @@ public class FreenetURI {
 				metaStr[i] = (String) sv.elementAt(metaStr.length - 1 - i);
 		}
 
+		if(keyType.equalsIgnoreCase("KSK")) {
+			docName = URI;
+			return;
+		}
+		
 		// URI now contains: routingKey[,cryptoKey][,metaInfo]
 		StringTokenizer st = new StringTokenizer(URI, ",");
 		try {

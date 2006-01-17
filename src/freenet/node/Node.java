@@ -19,6 +19,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -466,6 +467,11 @@ public class Node implements QueueingSimpleLowLevelClient {
     }
     
     public ClientKeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache) throws LowLevelGetException {
+    	if(key instanceof ClientSSK) {
+    		ClientSSK k = (ClientSSK) key;
+    		if(k.getPubKey() != null)
+    			cacheKey(k.pubKeyHash, k.getPubKey());
+    	}
     	if(localOnly)
     		return realGetKey(key, localOnly, cache);
     	else
@@ -560,6 +566,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         		case RequestSender.TIMED_OUT:
         			throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
         		case RequestSender.INTERNAL_ERROR:
+        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
         		default:
         			Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
         			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -986,9 +993,15 @@ public class Node implements QueueingSimpleLowLevelClient {
         		DSAPublicKey pubKey = k.getPubKey();
         		if(pubKey == null) {
         			pubKey = getKey(k.getPubKeyHash());
-        			k.setPubKey(pubKey);
+        			Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
+        			try {
+						k.setPubKey(pubKey);
+					} catch (SSKVerifyException e) {
+						Logger.error(this, "Error setting pubkey: "+e, e);
+					}
         		}
         		if(pubKey != null) {
+        			Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
         			chk = sskDatastore.fetch((NodeSSK)key, !cache);
         		} else {
         			Logger.minor(this, "Not found because no pubkey: "+uid);
@@ -1416,8 +1429,31 @@ public class Node implements QueueingSimpleLowLevelClient {
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
-			if(key2 != null && !key2.equals(key))
+			if(key2 != null && !key2.equals(key)) {
+				MessageDigest md256;
+				// Check the hash.
+				try {
+					md256 = MessageDigest.getInstance("SHA-256");
+				} catch (NoSuchAlgorithmException e) {
+					throw new Error(e);
+				}
+				byte[] hashCheck = md256.digest(key.asBytes());
+				if(Arrays.equals(hashCheck, hash)) {
+					Logger.error(this, "Hash is correct!!!");
+					// Verify the old key
+					byte[] oldHash = md256.digest(key2.asBytes());
+					if(Arrays.equals(oldHash, hash)) {
+						Logger.error(this, "Old hash is correct too!! - Bug in DSAPublicKey.equals() or SHA-256 collision!");
+					} else {
+						Logger.error(this, "Old hash is wrong!");
+						cachedPubKeys.removeKey(w);
+						cacheKey(hash, key);
+					}
+				} else {
+					Logger.error(this, "New hash is wrong");
+				}
 				throw new IllegalArgumentException("Wrong hash?? Already have different key with same hash!");
+			}
 			cachedPubKeys.push(w, key);
 			while(cachedPubKeys.size() > MAX_CACHED_KEYS)
 				cachedPubKeys.popKey();

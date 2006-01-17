@@ -1,5 +1,6 @@
 package freenet.node;
 
+import freenet.crypt.DSAPublicKey;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.xfer.BlockTransmitter;
@@ -64,7 +65,9 @@ public class RequestHandler implements Runnable {
             source.send(df);
             if(key instanceof NodeSSK) {
                 if(needsPubKey) {
-                	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)block.getKey()).getPubKey().asBytes());
+                	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
+                	Message pk = DMT.createFNPSSKPubKey(uid, key.asBytes());
+                	Logger.minor(this, "Sending PK: "+key+" "+key.writeAsField());
                 	source.send(pk);
                 }
             }

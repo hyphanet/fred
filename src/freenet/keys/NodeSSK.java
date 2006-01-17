@@ -9,6 +9,9 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import freenet.crypt.DSAPublicKey;
+import freenet.support.Fields;
+import freenet.support.HexUtil;
+import freenet.support.Logger;
 
 /**
  * An SSK is a Signed Subspace Key.
@@ -27,21 +30,38 @@ public class NodeSSK extends Key {
 	final byte[] encryptedHashedDocname;
 	/** The signature key, if we know it */
 	DSAPublicKey pubKey;
+	final int hashCode;
 	
 	static final int SSK_VERSION = 1;
 	
 	static final int PUBKEY_HASH_SIZE = 32;
 	static final int E_H_DOCNAME_SIZE = 32;
 	
-	public NodeSSK(byte[] pkHash, byte[] ehDocname, DSAPublicKey pubKey) {
+	public String toString() {
+		return super.toString()+":pkh="+HexUtil.bytesToHex(pubKeyHash)+":ehd="+HexUtil.bytesToHex(encryptedHashedDocname);
+	}
+	
+	public NodeSSK(byte[] pkHash, byte[] ehDocname, DSAPublicKey pubKey) throws SSKVerifyException {
 		super(makeRoutingKey(pkHash, ehDocname));
 		this.encryptedHashedDocname = ehDocname;
 		this.pubKeyHash = pkHash;
 		this.pubKey = pubKey;
+		if(pubKey != null) {
+			MessageDigest md256;
+			try {
+				md256 = MessageDigest.getInstance("SHA-256");
+			} catch (NoSuchAlgorithmException e) {
+				throw new Error(e);
+			}
+			byte[] hash = md256.digest(pubKey.asBytes());
+			if(!Arrays.equals(hash, pkHash))
+				throw new SSKVerifyException("Invalid pubKey: wrong hash");
+		}
 		if(ehDocname.length != E_H_DOCNAME_SIZE)
 			throw new IllegalArgumentException("ehDocname must be "+E_H_DOCNAME_SIZE+" bytes");
 		if(pkHash.length != PUBKEY_HASH_SIZE)
 			throw new IllegalArgumentException("pubKeyHash must be "+PUBKEY_HASH_SIZE+" bytes");
+		hashCode = Fields.hashCode(pkHash) ^ Fields.hashCode(ehDocname);
 	}
 	
 	// routingKey = H( E(H(docname)) + H(pubkey) )
@@ -71,7 +91,14 @@ public class NodeSSK extends Key {
         raf.readFully(buf);
         byte[] buf2 = new byte[PUBKEY_HASH_SIZE];
         raf.readFully(buf2);
-        return new NodeSSK(buf2, buf, null);
+        try {
+			return new NodeSSK(buf2, buf, null);
+		} catch (SSKVerifyException e) {
+			IllegalStateException impossible = 
+				new IllegalStateException("Impossible: "+e);
+			impossible.initCause(e);
+			throw impossible;
+		}
     }
 
 	public short getType() {
@@ -100,10 +127,27 @@ public class NodeSSK extends Key {
 		return pubKeyHash;
 	}
 
-	public void setPubKey(DSAPublicKey pubKey2) {
+	public void setPubKey(DSAPublicKey pubKey2) throws SSKVerifyException {
 		if(pubKey == pubKey2) return;
-		if(pubKey != null && !pubKey.equals(pubKey2)) throw new IllegalStateException("Already assigned pubkey to different value! Old="+pubKey.writeAsField()+", new="+pubKey2.writeAsField());
-		this.pubKey = pubKey2;
+		if(pubKey2 == null) return;
+		if(pubKey == null || !pubKey2.equals(pubKey)) {
+			if(pubKey != null) {
+				MessageDigest md256;
+				try {
+					md256 = MessageDigest.getInstance("SHA-256");
+				} catch (NoSuchAlgorithmException e) {
+					throw new Error(e);
+				}
+				byte[] newPubKeyHash = md256.digest(pubKey2.asBytes());
+				if(Arrays.equals(pubKeyHash, newPubKeyHash)) {
+					Logger.error(this, "Found SHA-256 collision or something... WTF?");
+				} else {
+					throw new SSKVerifyException("New pubkey has invalid hash");
+				}
+				throw new SSKVerifyException("Invalid new pubkey: "+pubKey2+" old pubkey: "+pubKey);
+			}
+			pubKey = pubKey2;
+		}
 	}
 
 	public boolean equals(Object o) {
@@ -114,6 +158,10 @@ public class NodeSSK extends Key {
 		if(!Arrays.equals(key.routingKey, routingKey)) return false;
 		// cachedNormalizedDouble and pubKey could be negative/null.
 		return true;
+	}
+	
+	public int hashCode() {
+		return hashCode;
 	}
 	
 }

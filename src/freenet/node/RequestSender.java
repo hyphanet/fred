@@ -85,7 +85,9 @@ public final class RequestSender implements Runnable {
         this.source = source;
         this.nearestLoc = nearestLoc;
         if(key instanceof NodeSSK && pubKey == null) {
-        	pubKey = node.getKey(((NodeSSK)key).getPubKeyHash());
+        	pubKey = ((NodeSSK)key).getPubKey();
+        	if(pubKey == null)
+        		pubKey = node.getKey(((NodeSSK)key).getPubKeyHash());
         }
         
         target = key.toNormalizedDouble();
@@ -335,12 +337,16 @@ public final class RequestSender implements Runnable {
             		}
     				byte[] pubkeyAsBytes = ((ShortBuffer)msg.getObject(DMT.PUBKEY_AS_BYTES)).getData();
     				try {
-    					pubKey = new DSAPublicKey(pubkeyAsBytes);
+    					if(pubKey == null)
+    						pubKey = new DSAPublicKey(pubkeyAsBytes);
     					((NodeSSK)key).setPubKey(pubKey);
+    				} catch (SSKVerifyException e) {
+    					pubKey = null;
+    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" (wrong hash)");
+    					break; // try next node
     				} catch (IOException e) {
     					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
-    					finish(VERIFY_FAILURE, next);
-    					return;
+    					break; // try next node
     				}
     				if(sskData != null) {
     					finishSSK(next);

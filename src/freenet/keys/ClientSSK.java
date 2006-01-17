@@ -15,7 +15,7 @@ public class ClientSSK extends ClientKey {
 	/** Document name */
 	public final String docName;
 	/** Public key */
-	public DSAPublicKey pubKey;
+	protected DSAPublicKey pubKey;
 	/** Public key hash */
 	public final byte[] pubKeyHash;
 	/** Encryption key */
@@ -96,7 +96,17 @@ public class ClientSSK extends ClientKey {
 	}
 
 	public Key getNodeKey() {
-		return new NodeSSK(pubKeyHash, ehDocname, pubKey);
+		try {
+			return new NodeSSK(pubKeyHash, ehDocname, pubKey);
+		} catch (SSKVerifyException e) {
+			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);
+			x.initCause(e);
+			throw x;
+		}
+	}
+
+	public DSAPublicKey getPubKey() {
+		return pubKey;
 	}
 
 }
