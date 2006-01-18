@@ -61,6 +61,7 @@ public class SplitFetcher {
 	public SplitFetcher(Metadata metadata, ArchiveContext archiveContext, FetcherContext ctx, int recursionLevel) throws MetadataParseException, FetchException {
 		actx = archiveContext;
 		fctx = ctx;
+		if(fctx.isCancelled()) throw new FetchException(FetchException.CANCELLED);
 		overrideLength = metadata.dataLength;
 		this.maxTempLength = ctx.maxTempLength;
 		splitfileType = metadata.getSplitfileType();
@@ -137,6 +138,7 @@ public class SplitFetcher {
 		 */
 		while(true) {
 			synchronized(this) {
+				if(fctx.isCancelled()) throw new FetchException(FetchException.CANCELLED);
 				if(fetchingSegment == null) {
 					// Pick a random segment
 					fetchingSegment = chooseUnstartedSegment();

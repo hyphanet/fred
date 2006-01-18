@@ -261,6 +261,12 @@ public class Segment implements RetryTrackerCallback {
 	}
 
 	public void onProgress() {
+		if(fetcherContext.isCancelled()) {
+			finished = true;
+			tracker.kill();
+			failureException = new FetchException(FetchException.CANCELLED);
+			parentFetcher.gotBlocks(this);
+		}
 		parentFetcher.onProgress();
 	}
 

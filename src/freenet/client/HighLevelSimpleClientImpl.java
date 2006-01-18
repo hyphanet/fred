@@ -95,12 +95,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	 */
 	public FetchResult fetch(FreenetURI uri) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		FetcherContext context = new FetcherContext(client, curMaxLength, curMaxTempLength, curMaxMetadataLength, 
-				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, 
-				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
-				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
-				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				random, archiveManager, bucketFactory, globalEventProducer, requestStarter, cacheLocalRequests);
+		FetcherContext context = getFetcherContext();
 		Fetcher f = new Fetcher(uri, context);
 		return f.run();
 	}
@@ -145,5 +140,15 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	
 	public void addGlobalHook(ClientEventListener listener) {
 		globalEventProducer.addEventListener(listener);
+	}
+
+	public FetcherContext getFetcherContext() {
+		return 			
+			new FetcherContext(client, curMaxLength, curMaxTempLength, curMaxMetadataLength, 
+				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, 
+				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
+				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
+				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
+				random, archiveManager, bucketFactory, globalEventProducer, requestStarter, cacheLocalRequests);
 	}
 }

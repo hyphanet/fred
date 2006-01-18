@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import freenet.support.io.LineReader;
+
 /**
  * @author amphibian
  * 
@@ -20,12 +22,18 @@ import java.util.Set;
 public class SimpleFieldSet {
 
     final Map map;
+    String endMarker;
     
     public SimpleFieldSet(BufferedReader br) throws IOException {
         map = new HashMap();
         read(br);
     }
 
+    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize) throws IOException {
+    	map = new HashMap();
+    	read(lis, maxLineLength, lineBufferSize);
+    }
+    
     /**
      * Empty constructor
      */
@@ -67,13 +75,44 @@ public class SimpleFieldSet {
                 String after = line.substring(index+1);
                 map.put(before, after);
             } else {
-                if(line.equals("End")) return;
-                throw new IOException("Unknown end-marker: \""+line+"\"");
+            	endMarker = line;
+            	return;
             }
             
         }
     }
 
+    /**
+     * Read from disk
+     * Format:
+     * blah=blah
+     * blah=blah
+     * End
+     */
+    private void read(LineReader br, int maxLength, int bufferSize) throws IOException {
+        boolean firstLine = true;
+        while(true) {
+            String line = br.readLine(maxLength, bufferSize);
+            if(line == null) {
+                if(firstLine) throw new EOFException();
+                throw new IOException();
+            }
+            firstLine = false;
+            int index = line.indexOf('=');
+            if(index >= 0) {
+                // Mapping
+                String before = line.substring(0, index);
+                String after = line.substring(index+1);
+                map.put(before, after);
+            } else {
+            	endMarker = line;
+            	return;
+            }
+            
+        }
+    }
+
+    
     public String get(String key) {
         return (String) map.get(key);
     }
@@ -95,7 +134,10 @@ public class SimpleFieldSet {
             String value = (String) entry.getValue();
             w.write(key+"="+value+"\n");
         }
-        w.write("End\n");
+        if(endMarker != null)
+        	w.write(endMarker+"\n");
+        else
+        	w.write("End\n");
     }
     
     public String toString() {
@@ -106,5 +148,13 @@ public class SimpleFieldSet {
             Logger.error(this, "WTF?!: "+e+" in toString()!", e);
         }
         return sw.toString();
+    }
+    
+    public String getEndMarker() {
+    	return endMarker;
+    }
+    
+    public void setEndMarker(String s) {
+    	endMarker = s;
     }
 }

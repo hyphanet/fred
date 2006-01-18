@@ -159,6 +159,9 @@ public class TextModeClientInterface implements Runnable {
 				System.out.println();
 			} catch (FetchException e) {
 				System.out.println("Error: "+e.getMessage());
+            	if(e.getMode() == e.SPLITFILE_ERROR && e.errorCodes != null) {
+            		System.out.println(e.errorCodes.toVerboseString());
+            	}
 			}
         } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
@@ -699,10 +702,12 @@ public class TextModeClientInterface implements Runnable {
         try {
             pn = new PeerNode(fs, n);
         } catch (FSParseException e1) {
-            System.err.println("Did not parse: "+e1.getMessage());
+            System.err.println("Did not parse: "+e1);
+            Logger.error(this, "Did not parse: "+e1, e1);
             return;
         } catch (PeerParseException e1) {
-            System.err.println("Did not parse: "+e1.getMessage());
+            System.err.println("Did not parse: "+e1);
+            Logger.error(this, "Did not parse: "+e1, e1);
             return;
         }
         if(n.peers.addPeer(pn))

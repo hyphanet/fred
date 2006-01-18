@@ -9,35 +9,41 @@ import freenet.support.BucketFactory;
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
 public class FetcherContext implements Cloneable {
 
+	public static final int IDENTICAL_MASK = 0;
 	static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
 	static final int SPLITFILE_DEFAULT_MASK = 2;
 	static final int SPLITFILE_USE_LENGTHS_MASK = 3;
 	/** Low-level client to send low-level requests to. */
 	final SimpleLowLevelClient client;
-	final long maxOutputLength;
-	final long maxTempLength;
+	public long maxOutputLength;
+	public long maxTempLength;
 	final ArchiveManager archiveManager;
-	final BucketFactory bucketFactory;
-	final int maxRecursionLevel;
-	final int maxArchiveRestarts;
-	final boolean dontEnterImplicitArchives;
-	final int maxSplitfileThreads;
-	final int maxSplitfileBlockRetries;
-	final int maxNonSplitfileRetries;
-	final RandomSource random;
-	final boolean allowSplitfiles;
-	final boolean followRedirects;
-	final boolean localRequestOnly;
-	final ClientEventProducer eventProducer;
+	public final BucketFactory bucketFactory;
+	public int maxRecursionLevel;
+	public int maxArchiveRestarts;
+	public boolean dontEnterImplicitArchives;
+	public int maxSplitfileThreads;
+	public int maxSplitfileBlockRetries;
+	public int maxNonSplitfileRetries;
+	public final RandomSource random;
+	public boolean allowSplitfiles;
+	public boolean followRedirects;
+	public boolean localRequestOnly;
+	public boolean ignoreStore;
+	public final ClientEventProducer eventProducer;
 	/** Whether to allow non-full blocks, or blocks which are not direct CHKs, in splitfiles.
 	 * Set by the splitfile metadata and the mask constructor, so we don't need to pass it in. */
-	final boolean splitfileUseLengths;
-	final int maxMetadataSize;
-	final int maxDataBlocksPerSegment;
-	final int maxCheckBlocksPerSegment;
-	final RequestStarterClient starterClient;
-	final boolean cacheLocalRequests;
+	public boolean splitfileUseLengths;
+	public int maxMetadataSize;
+	public int maxDataBlocksPerSegment;
+	public int maxCheckBlocksPerSegment;
+	public final RequestStarterClient starterClient;
+	public boolean cacheLocalRequests;
+	private boolean cancelled;
 	
+	public final boolean isCancelled() {
+		return cancelled;
+	}
 	
 	public FetcherContext(SimpleLowLevelClient client, long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts,
@@ -72,7 +78,30 @@ public class FetcherContext implements Cloneable {
 	}
 
 	public FetcherContext(FetcherContext ctx, int maskID) {
-		if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
+		if(maskID == IDENTICAL_MASK) {
+			this.client = ctx.client;
+			this.maxOutputLength = ctx.maxOutputLength;
+			this.maxMetadataSize = ctx.maxMetadataSize;
+			this.maxTempLength = ctx.maxTempLength;
+			this.archiveManager = ctx.archiveManager;
+			this.bucketFactory = ctx.bucketFactory;
+			this.maxRecursionLevel = ctx.maxRecursionLevel;
+			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
+			this.random = ctx.random;
+			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
+			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
+			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
+			this.allowSplitfiles = ctx.allowSplitfiles;
+			this.followRedirects = ctx.followRedirects;
+			this.localRequestOnly = ctx.localRequestOnly;
+			this.splitfileUseLengths = ctx.splitfileUseLengths;
+			this.eventProducer = ctx.eventProducer;
+			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
+			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
+			this.starterClient = ctx.starterClient;
+			this.cacheLocalRequests = ctx.cacheLocalRequests;
+		} else if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
@@ -144,6 +173,10 @@ public class FetcherContext implements Cloneable {
 		} else throw new IllegalArgumentException();
 	}
 
+	public void cancel() {
+		this.cancelled = true;
+	}
+	
 	/** Make public, but just call parent for a field for field copy */
 	public Object clone() {
 		try {

@@ -8,7 +8,7 @@ import java.io.InputStream;
 /**
  * A FilterInputStream which provides readLine().
  */
-public class LineReadingInputStream extends FilterInputStream {
+public class LineReadingInputStream extends FilterInputStream implements LineReader {
 
 	public LineReadingInputStream(InputStream in) {
 		super(in);

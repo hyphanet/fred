@@ -2,7 +2,6 @@ package freenet.client;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import freenet.client.events.DecodedBlockEvent;
@@ -22,7 +21,7 @@ import freenet.support.compress.Compressor;
 /** Class that does the actual fetching. Does not have to have a user friendly
  * interface!
  */
-class Fetcher {
+public class Fetcher {
 
 	/** The original URI to be fetched. */
 	final FreenetURI origURI;
@@ -37,7 +36,7 @@ class Fetcher {
 	/**
 	 * Local-only constructor, with ArchiveContext, for recursion via e.g. archives.
 	 */
-	Fetcher(FreenetURI uri, FetcherContext fctx, ArchiveContext actx) {
+	public Fetcher(FreenetURI uri, FetcherContext fctx, ArchiveContext actx) {
 		if(uri == null) throw new NullPointerException();
 		origURI = uri;
 		ctx = fctx;
@@ -61,8 +60,32 @@ class Fetcher {
 	 * by this driver routine.
 	 */
 	public FetchResult run() throws FetchException {
+		FailureCodeTracker tracker = new FailureCodeTracker(false);
+		FetchException lastThrown = null;
+		for(int j=0;j<ctx.maxNonSplitfileRetries+1;j++) {
+			try {
+				return runOnce();
+			} catch (FetchException e) {
+				lastThrown = e;
+				tracker.merge(e);
+				if(e.isFatal()) throw e;
+				Logger.normal(this, "Possibly retrying "+this+" despite "+e, e);
+				continue;
+			}
+		}
+		if(tracker.totalCount() == 1)
+			throw lastThrown;
+		else {
+			if(tracker.isOneCodeOnly())
+				throw new FetchException(tracker.getFirstCode());
+			throw new FetchException(FetchException.SPLITFILE_ERROR, tracker);
+		}
+	}
+	
+	public FetchResult runOnce() throws FetchException {
 		for(int i=0;i<ctx.maxArchiveRestarts;i++) {
 			try {
+				if(ctx.isCancelled()) throw new FetchException(FetchException.CANCELLED);
 				ClientMetadata dm = new ClientMetadata();
 				ClientKey key;
 				try {
@@ -121,6 +144,7 @@ class Fetcher {
 	FetchResult realRun(ClientMetadata dm, int recursionLevel, ClientKey key, LinkedList metaStrings, boolean dontEnterImplicitArchives, boolean localOnly) 
 	throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
 		Logger.minor(this, "Running fetch for: "+key);
+		if(ctx.isCancelled()) throw new FetchException(FetchException.CANCELLED);
 		recursionLevel++;
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION, ""+recursionLevel+" should be < "+ctx.maxRecursionLevel);
@@ -128,7 +152,8 @@ class Fetcher {
 		// Do the fetch
 		ClientKeyBlock block;
 		try {
-			block = ctx.client.getKey(key, localOnly, ctx.starterClient, ctx.cacheLocalRequests);
+			block = ctx.client.getKey(key, localOnly, ctx.starterClient, ctx.cacheLocalRequests, ctx.ignoreStore);
+			if(ctx.isCancelled()) throw new FetchException(FetchException.CANCELLED);
 		} catch (LowLevelGetException e) {
 			switch(e.code) {
 			case LowLevelGetException.DATA_NOT_FOUND:
@@ -206,6 +231,7 @@ class Fetcher {
 			Metadata metadata, ArchiveHandler container, FreenetURI thisKey, boolean dontEnterImplicitArchives, boolean localOnly) 
 	throws MetadataParseException, FetchException, ArchiveFailureException, ArchiveRestartException {
 		
+		if(ctx.isCancelled()) throw new FetchException(FetchException.CANCELLED);
 		if(metadata.isSimpleManifest()) {
 			String name;
 			if(metaStrings.isEmpty())

@@ -1,7 +1,5 @@
 package freenet.client;
 
-import java.io.IOException;
-
 import freenet.support.Logger;
 
 /**
@@ -17,6 +15,8 @@ public class FetchException extends Exception {
 	/** For collection errors */
 	public final FailureCodeTracker errorCodes;
 	
+	public final String extraMessage;
+	
 	/** Get the failure mode. */
 	public int getMode() {
 		return mode;
@@ -24,6 +24,7 @@ public class FetchException extends Exception {
 	
 	public FetchException(int m) {
 		super(getMessage(m));
+		extraMessage = null;
 		mode = m;
 		errorCodes = null;
 		Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
@@ -31,6 +32,7 @@ public class FetchException extends Exception {
 
 	public FetchException(MetadataParseException e) {
 		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
+		extraMessage = e.getMessage();
 		mode = INVALID_METADATA;
 		errorCodes = null;
 		initCause(e);
@@ -39,6 +41,7 @@ public class FetchException extends Exception {
 
 	public FetchException(ArchiveFailureException e) {
 		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
+		extraMessage = e.getMessage();
 		mode = ARCHIVE_FAILURE;
 		errorCodes = null;
 		initCause(e);
@@ -47,6 +50,7 @@ public class FetchException extends Exception {
 
 	public FetchException(int mode, Throwable t) {
 		super(getMessage(mode)+": "+t.getMessage());
+		extraMessage = t.getMessage();
 		this.mode = mode;
 		errorCodes = null;
 		initCause(t);
@@ -55,6 +59,7 @@ public class FetchException extends Exception {
 
 	public FetchException(int mode, FailureCodeTracker errorCodes) {
 		super(getMessage(mode));
+		extraMessage = null;
 		this.mode = mode;
 		this.errorCodes = errorCodes;
 		Logger.minor(this, "FetchException("+getMessage(mode)+")");
@@ -63,6 +68,7 @@ public class FetchException extends Exception {
 	
 	public FetchException(int mode, String msg) {
 		super(getMessage(mode)+": "+msg);
+		extraMessage = msg;
 		errorCodes = null;
 		this.mode = mode;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
@@ -118,6 +124,8 @@ public class FetchException extends Exception {
 			return "Too many blocks per segment";
 		case NOT_ENOUGH_METASTRINGS:
 			return "No default document; give more metastrings in URI";
+		case CANCELLED:
+			return "Cancelled by caller";
 		default:
 			return "Unknown fetch error code: "+mode;
 		}
@@ -173,4 +181,50 @@ public class FetchException extends Exception {
 	public static final int TOO_MANY_BLOCKS_PER_SEGMENT = 23;
 	/** Not enough meta strings in URI given and no default document */
 	public static final int NOT_ENOUGH_METASTRINGS = 24;
+	/** Explicitly cancelled */
+	public static final int CANCELLED = 25;
+
+	/** Is an error fatal i.e. is there no point retrying? */
+	public boolean isFatal() {
+		switch(mode) {
+		// Problems with the data as inserted. No point retrying.
+		case FetchException.ARCHIVE_FAILURE:
+		case FetchException.BLOCK_DECODE_ERROR:
+		case FetchException.HAS_MORE_METASTRINGS:
+		case FetchException.INVALID_METADATA:
+		case FetchException.NOT_IN_ARCHIVE:
+		case FetchException.TOO_DEEP_ARCHIVE_RECURSION:
+		case FetchException.TOO_MANY_ARCHIVE_RESTARTS:
+		case FetchException.TOO_MANY_METADATA_LEVELS:
+		case FetchException.TOO_MANY_REDIRECTS:
+		case FetchException.TOO_MUCH_RECURSION:
+		case FetchException.UNKNOWN_METADATA:
+		case FetchException.UNKNOWN_SPLITFILE_METADATA:
+			return true;
+
+		// Low level errors, can be retried
+		case FetchException.DATA_NOT_FOUND:
+		case FetchException.ROUTE_NOT_FOUND:
+		case FetchException.REJECTED_OVERLOAD:
+		case FetchException.TRANSFER_FAILED:
+			return false;
+			
+		case FetchException.BUCKET_ERROR:
+		case FetchException.INTERNAL_ERROR:
+			// Maybe fatal
+			return false;
+			
+		case FetchException.SPLITFILE_ERROR:
+			// Fatal, because there are internal retries
+			return true;
+			
+		case FetchException.CANCELLED:
+			// Fatal
+			return true;
+			
+		default:
+			Logger.error(this, "Do not know if error code is fatal: "+getMessage(mode));
+			return false; // assume it isn't
+		}
+	}
 }

@@ -399,6 +399,32 @@ public class BucketTools {
 		}
 	}
 
+	/** Copy data from an InputStream into a Bucket. */
+	public static void copyFrom(Bucket bucket, InputStream is, long truncateLength) throws IOException {
+		OutputStream os = bucket.getOutputStream();
+		byte[] buf = new byte[4096];
+		if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
+		try {
+			long moved = 0;
+			while(moved < truncateLength) {
+				// DO NOT move the (int) inside the Math.min()! big numbers truncate to negative numbers.
+				int bytes = (int) Math.min(buf.length, truncateLength - moved);
+				if(bytes <= 0)
+					throw new IllegalStateException("bytes="+bytes+", truncateLength="+truncateLength+", moved="+moved);
+				bytes = is.read(buf, 0, bytes);
+				if(bytes <= 0) {
+					if(truncateLength == Long.MAX_VALUE)
+						break;
+					throw new IOException("Could not move required quantity of data: "+bytes+" (moved "+moved+" of "+truncateLength+")");
+				}
+				os.write(buf, 0, bytes);
+				moved += bytes;
+			}
+		} finally {
+			os.close();
+		}
+	}
+
 	/**
 	 * Split the data into a series of read-only Bucket's.
 	 * @param origData The original data Bucket.

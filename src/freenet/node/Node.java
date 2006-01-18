@@ -57,6 +57,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.node.fcp.FCPServer;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.BucketFactory;
@@ -181,7 +182,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     
     // Client stuff
     final ArchiveManager archiveManager;
-    final BucketFactory tempBucketFactory;
+    public final BucketFactory tempBucketFactory;
     final RequestThrottle requestThrottle;
     final RequestStarter requestStarter;
     final RequestThrottle insertThrottle;
@@ -331,10 +332,12 @@ public class Node implements QueueingSimpleLowLevelClient {
         Thread t = new Thread(new MemoryChecker(), "Memory checker");
         t.setPriority(Thread.MAX_PRIORITY);
         t.start();
-        SimpleToadletServer server = new SimpleToadletServer(port+2001);
+        SimpleToadletServer server = new SimpleToadletServer(port+2000);
         FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, (short)0));
         server.register(fproxy, "/", false);
-        System.out.println("Starting fproxy on port "+(port+2001));
+        System.out.println("Starting fproxy on port "+(port+2000));
+        new FCPServer(port+3000, n);
+        System.out.println("Starting FCP server on port "+(port+3000));
         //server.register(fproxy, "/SSK@", false);
         //server.register(fproxy, "/KSK@", false);
     }
@@ -466,23 +469,23 @@ public class Node implements QueueingSimpleLowLevelClient {
         usm.start();
     }
     
-    public ClientKeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache) throws LowLevelGetException {
+    public ClientKeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache, boolean ignoreStore) throws LowLevelGetException {
     	if(key instanceof ClientSSK) {
     		ClientSSK k = (ClientSSK) key;
     		if(k.getPubKey() != null)
     			cacheKey(k.pubKeyHash, k.getPubKey());
     	}
     	if(localOnly)
-    		return realGetKey(key, localOnly, cache);
+    		return realGetKey(key, localOnly, cache, ignoreStore);
     	else
-    		return client.getKey(key, localOnly, cache);
+    		return client.getKey(key, localOnly, cache, ignoreStore);
     }
     
-    public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache) throws LowLevelGetException {
+    public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
     	if(key instanceof ClientCHK)
-    		return realGetCHK((ClientCHK)key, localOnly, cache);
+    		return realGetCHK((ClientCHK)key, localOnly, cache, ignoreStore);
     	else if(key instanceof ClientSSK)
-    		return realGetSSK((ClientSSK)key, localOnly, cache);
+    		return realGetSSK((ClientSSK)key, localOnly, cache, ignoreStore);
     	else
     		throw new IllegalArgumentException("Not a CHK or SSK: "+key);
     }
@@ -491,14 +494,14 @@ public class Node implements QueueingSimpleLowLevelClient {
      * Really trivially simple client interface.
      * Either it succeeds or it doesn't.
      */
-    ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache) throws LowLevelGetException {
+    ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
     	long startTime = System.currentTimeMillis();
     	long uid = random.nextLong();
         if(!lockUID(uid)) {
             Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
             throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
         }
-        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache);
+        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache, ignoreStore);
         if(o instanceof CHKBlock) {
             try {
                 return new ClientCHKBlock((CHKBlock)o, key);
@@ -579,14 +582,14 @@ public class Node implements QueueingSimpleLowLevelClient {
      * Really trivially simple client interface.
      * Either it succeeds or it doesn't.
      */
-    ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache) throws LowLevelGetException {
+    ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
     	long startTime = System.currentTimeMillis();
     	long uid = random.nextLong();
         if(!lockUID(uid)) {
             Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
             throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
         }
-        Object o = makeRequestSender(key.getNodeKey(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache);
+        Object o = makeRequestSender(key.getNodeKey(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache, ignoreStore);
         if(o instanceof SSKBlock) {
             try {
             	SSKBlock block = (SSKBlock)o;
@@ -981,10 +984,11 @@ public class Node implements QueueingSimpleLowLevelClient {
      * a RequestSender, unless the HTL is 0, in which case NULL.
      * RequestSender.
      */
-    public synchronized Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache) {
+    public synchronized Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
         Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
         // In store?
         KeyBlock chk = null;
+        if(!ignoreStore) {
         try {
         	if(key instanceof NodeCHK)
         		chk = chkDatastore.fetch((NodeCHK)key, !cache);
@@ -1012,6 +1016,7 @@ public class Node implements QueueingSimpleLowLevelClient {
             Logger.error(this, "Error accessing store: "+e, e);
         }
         if(chk != null) return chk;
+        }
         if(localOnly) return null;
         Logger.minor(this, "Not in store locally");
         

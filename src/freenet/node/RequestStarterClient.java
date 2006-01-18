@@ -44,8 +44,8 @@ public class RequestStarterClient extends UpdatableSortedLinkedListItemImpl {
 	 * Blocking fetch of a key.
 	 * @throws LowLevelGetException If the fetch failed for some reason.
 	 */
-	public ClientKeyBlock getKey(ClientKey key, boolean localOnly, boolean cache) throws LowLevelGetException {
-		QueuedDataRequest qdr = new QueuedDataRequest(key, localOnly, cache, client);
+	public ClientKeyBlock getKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
+		QueuedDataRequest qdr = new QueuedDataRequest(key, localOnly, cache, client, ignoreStore);
 		addRequest(qdr);
 		return qdr.waitAndFetch();
 	}

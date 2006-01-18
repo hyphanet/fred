@@ -60,37 +60,11 @@ public class BlockFetcher extends StdSplitfileBlock {
 			fatalError(e, FetchException.INVALID_METADATA);
 		} catch (FetchException e) {
 			int code = e.getMode();
-			switch(code) {
-			case FetchException.ARCHIVE_FAILURE:
-			case FetchException.BLOCK_DECODE_ERROR:
-			case FetchException.HAS_MORE_METASTRINGS:
-			case FetchException.INVALID_METADATA:
-			case FetchException.NOT_IN_ARCHIVE:
-			case FetchException.TOO_DEEP_ARCHIVE_RECURSION:
-			case FetchException.TOO_MANY_ARCHIVE_RESTARTS:
-			case FetchException.TOO_MANY_METADATA_LEVELS:
-			case FetchException.TOO_MANY_REDIRECTS:
-			case FetchException.TOO_MUCH_RECURSION:
-			case FetchException.UNKNOWN_METADATA:
-			case FetchException.UNKNOWN_SPLITFILE_METADATA:
-				// Fatal, probably an error on insert
+			boolean isFatal = e.isFatal();
+			if(isFatal)
 				fatalError(e, code);
-				return;
-			
-			case FetchException.DATA_NOT_FOUND:
-			case FetchException.ROUTE_NOT_FOUND:
-			case FetchException.REJECTED_OVERLOAD:
-			case FetchException.TRANSFER_FAILED:
-				// Non-fatal
+			else
 				nonfatalError(e, code);
-				return;
-				
-			case FetchException.BUCKET_ERROR:
-			case FetchException.INTERNAL_ERROR:
-				// Maybe fatal
-				nonfatalError(e, code);
-				return;
-			}
 		} catch (ArchiveFailureException e) {
 			fatalError(e, FetchException.ARCHIVE_FAILURE);
 		} catch (ArchiveRestartException e) {
