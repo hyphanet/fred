@@ -1,0 +1,437 @@
+Freenet Client Protocol 0.7.0 (notes more than spec)
+-----------------------------
+
+Relevant message from tech (note some message names changed even within
+the composition of the below message!).
+------------------------------------------------------------------------
+
+To: tech@freenetproject.org
+From: Matthew Toseland <toad@amphibian.dyndns.org>
+Subject: [Tech] 0.7 FCP
+
+We now have a very basic FCP implementation working in 0.7, from build
+362 onwards.
+
+$ telnet 127.0.0.1 8000
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+ClientHello // client to node
+Name=hello1
+ExpectedVersion=0.7.0
+End
+NodeHello // node to client
+FCPVersion=0.7.0
+Version=Fred,0.7,1.0,361
+Node=Fred
+EndMessage
+ClientPut // client to node, with payload
+URI=KSK@blahblahblah.86149
+DataLength=9
+Identifier=6
+End
+Hello !!
+InsertSuccessful // node to client
+Identifier=6
+URI=freenet:KSK@blahblahblah.86149
+EndMessage
+ClientGet // client to node
+Identifier=haha
+URI=freenet:KSK@blahblahblah.86149
+End
+
+This is not set in stone, I welcome suggestions for improvement!
+
+Currently defined messages (client to node):
+
+ClientHello
+Name=<client name>
+ExpectedVersion=0.7.0
+End
+
+ClientGet
+IgnoreDS=false // true = ignore the datastore
+DSOnly=false // true = only check the datastore, don't route (~= htl 0)
+URI=KSK@gpl.txt
+Identifier=Request Number One
+Verbosity=0 // no status, just tell us when it's done
+ReturnType=direct // return all at once over the FCP connection
+MaxSize=100 // maximum size of returned data (all numbers in hex)
+MaxTempSize=1000 // maximum size of intermediary data
+MaxRetries=100 // automatic retry supported as an option
+EndMessage
+
+ClientPut
+URI=CHK@ // could as easily be an insertable SSK URI
+Metadata.ContentType=text/html
+DataLength=19000 // hex for 100kB
+Identifier=Insert-1 // identifier, as always
+Verbosity=0 // just report when complete
+MaxRetries=999999 // lots of retries
+Data
+<data>
+
+Node to client:
+
+NodeHello
+FCPVersion=<protocol version, 0.7.0>
+Node=Fred
+Version=Fred,0.7,1.0,361
+EndMessage
+
+PutSuccessful
+Identifier=<identifier>
+URI=<uri to fetch>
+EndMessage
+
+PutFailed
+Code=9 // error code
+Identifier=1 // identifier
+ExpectedURI=freenet:KSK@hello.toad // insert URI if it succeeded
+CodeDescription=Insert collided with different, pre-existing data at the
+    same key // description of error
+ExtraDescription=Hmmm // more info on the error
+EndMessage
+
+GetFailed
+Code=<error code>
+CodeDescription=<description of error code>
+ExtraDescription=<extra description of this specific error>
+Fatal=<true|false; true means there isn't much point retrying as it's
+     probably an error with the data>
+Identifier=<identifier passed in by client>
+EndMessage
+
+ProtocolError // indicates an FCP protocol error
+Code=1 // error code
+CodeDescription=ClientHello must be first message // description of error
+ExtraDescription=Duh // more info on the error
+Fatal=false // means the connection stays open
+EndMessage
+
+IdentifierCollision // client tried to reuse an Identifier
+Identifier=1
+EndMessage
+
+-----------------------------------------------------------------------
+
+
+Verbosity increases -> increased complexity.
+
+Verbosity 0, least complexity.
+
+So, on verbosity 0:
+
+client -> server:
+ClientHello
+Name=Toad's Test Client
+ExpectedVersion=0.7.0
+EndMessage
+
+server -> client:
+NodeHello
+Protocol=<protocol number>
+Node=Fred
+Version=0.7.0,401
+EndMessage
+
+ClientGet
+IgnoreDS=false
+URI=KSK@gpl.txt
+Identifier=Request Number One
+Verbosity=0 // no status, just tell us when we have it
+ReturnType=direct
+MaxSize=100 // maximum size of returned data (all numbers in hex)
+MaxTempSize=1000 // maximum size of intermediary data
+MaxRetries=100
+EndMessage
+
+
+Since verbosity is 0, we will only get the final response:
+
+Success
+DataLength=78a0
+Identifier=Request Number One
+Metadata.ContentType=text/plain
+EndMessage
+< data >
+
+DataNotFound
+Identifier=Request Number One
+EndMessage
+
+etc.
+
+
+Basic principles:
+- A client does not necessarily know or care whether the file it is 
+  inserting or requesting is a single block, a splitfile, a multi-level
+  splitfile, nor whether it is compressed (except if it sends the node
+  a don't-compress hint). It does not know that we had to override the
+  charset either.
+- The protocol must be simple. The simplest possible client will be
+  *very* simple. A more complex client may ask for more feedback. We 
+  have a verbosity parameter on requests.
+- If a client wants it, it can get very verbose feedback, possibly 
+  including individual block CHKs; certainly including portable block
+  identifiers of the blocks that failed so we can do out of band reinsert
+  requests etc.
+- The protocol must support multiplexing, without seriously jeopardizing
+  simplicity.
+- ALL functionality that fproxy relies on, or that is exposed to the web
+  interface, must be available via FCP. This means the anonymity filter,
+  diagnostics, configuration, everything.
+- The client must not be exposed to low-level metadata! This means we
+  will have specific commands for e.g. creating manifest sites.
+- We need good i18n support. If somebody sends us a text/html file to 
+  insert, even if it is part of a manifest, and they haven't explicitly
+  told us what charset it is, we need to scan the HTML and detect it.
+  Either from the UTF-16 mark, or from <meta http-equiv> etc.
+- Messages are still text-based.
+
+
+
+
+
+
+
+
+MultiPut.
+
+Need to be able to see path of redirects sometimes. Show all important
+events on sufficiently high verbosity level.
+
+Session identifier - yes or no?
+
+Messages are still text-based.
+
+Example:
+
+ClientGet
+RemoveLocalKey=false
+Identifier=Toad's Request Number One
+URI=SSK@rBjVda8pC-Kq04jUurIAb8IzAGcPAgM/TFE//
+EndMessage
+
+The end of the message is denoted by a line not including an =.
+
+No HTL field.
+
+Identifier field for multiplexing. For transient requests (i.e. requests
+that don't go through the download queue), this is tied to a specific
+connection. If the connection goes down, we drop the request.
+
+RemoveLocalKey still supported for requests. Meaningless for inserts.
+
+Need a duplicate-identifier message to complain when client tries to 
+assign the same ID twice.
+
+When we actually send the message out (they are queued):
+
+RequestSent
+Identifier=Toad's Request Number One
+EndMessage
+
+If it drops off the end of the queue:
+
+RequestDropped
+Identifier=Toad's Request Number One
+EndMessage
+
+DNF:
+
+DataNotFound
+Identifier=Toad's Request Number One
+EndMessage
+
+RNF:
+
+Most of the fields in the RNF message no longer make sense. If any do
+we'll add them.
+
+RouteNotFound
+Identifier=Toad's Request Number One
+TotalFailure=false
+EndMessage
+
+(TotalFailure=true means we couldn't get off the node at all).
+
+DataReceived
+Identifier=Toad's Request Number One
+DataLength=2578
+Data
+[ all the data ]
+
+Verify failed:
+
+VerifyFailed
+Identifier=Toad's Request Number One
+EndMessage
+
+(if the verify failed, the request failed)
+
+Transfer failed:
+
+TransferFailed
+Identifier=Toad's Request Number One
+EndMessage
+
+Pending
+Identifier=Insert#1
+Timeout=32000
+URI=freenet:CHK@blahblah...
+[PublicKey=...]
+[PrivateKey=...]
+EndMessage
+
+This means that the insert has been routed to the end of the chain and
+we have the InsertReply.
+
+Success
+Identifier=Insert#1
+URI=CHK@blahblah...
+[PublicKey=...]
+[PrivateKey=...]
+EndMessage
+
+Meaning that we transferred the data successfully and got the StoreData.
+
+One more important message:
+
+QueueInfo
+QueueLength=43
+QueuedThisClient=13
+Window=13
+RoundTripTime=6789
+InFlight=12
+RecommendedInterval=14000
+EndMessage
+
+This means:
+- This client has 13 requests currently queued
+- There are a total of 43 requests currently queued (FCP is intended for
+  use locally and is not designed with security in mind)
+- It takes 6789ms on average to complete a request
+- We aim for 13 in flight requests
+- We currently have 12 in flight requests
+- We recommend this client sends requests no more often than once every
+  14 seconds. (this field may be removed or replaced; like the rest of
+  the spec, it's not finalized)
+
+RemoveLocalKey -> IgnoreDS.
+
+I assume there'll be a message to request a QueueInfo packet back.
+This seems like a good addition to the protocol.
+
+Metadata
+- content type should be easily available
+- ClientMetadata.ContentType ?
+- Have other ClientMetadata fields potentially.
+
+Probably want a HELLO from both sides, since it's muxed?
+
+
+
+***************
+How exactly does queueing work with relation to clients??
+***************
+
+ClientPut
+HTL=11 // actually, I'm thinking of removing the HTL from the client
+          interface altogether; we would still have HTL, but it would
+          always be either 11 (max) or -1 (client-cache only), which
+          would be indicated by a special header
+Key=CHK@ // insert the content and return me the key
+ContentType=text/html
+DataLength=19000 // hexadecimal for 100kB
+Identifier=Insert-1 // identifier for status updates - required for
+                       multiplexing
+Verbosity=0 // just tell me when you're done, I don't care about the
+               details
+AutoRetry=99999 // if at first you don't succeed...
+Data
+<data>
+
+When the insert has finished, we tell the client, including the CHK.
+
+That's it.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+More notes:
+- KEY: **** FCPv2 should be high level to make writing clients easy. ****
+- FCPv2 is multiplexed. Request IDs are specified by the client, short
+strings, and tied to one specific connection, unless they are download/
+upload queue requests. Hmm... transient requests IDs should go away when
+the connection dies, but requests in general? Or maybe even not that -
+a client may be accessing the node over an unreliable network? Well they
+really ought not to!
+- A message ends with a line that doesn't include an = in fcp 0.5
+- Also in 0.7? It's EndMessage in 0.5... but it can be the trailer name.
+E.g. Data.
+- Requests may not start immediately. They are queued. We will send a 
+message to the client when the request starts, unless we are at verbosity
+0.
+- We must (eventually) expose all configuration variables to FCP. Clients
+must be able to query and modify them. This should probably be password
+protected, along with a clean-shutdown command.
+- Inserts and retrieves must have a verbosity level parameter. If this is
+sufficiently high, we send lots of information to the client, so that it
+knows when we try to fetch each block etc. This may or may not include the
+actual block URIs, but it should definitely include some block identifier.
+The client can then give accurate and up to date information on the
+download/upload's progress to the user, and can do clever stuff with
+rerequesting blocks. If it fails, we can provide a list of failed blocks,
+if the verbosity level is sufficiently high. Block and segment size should
+be reported on higher verbosity levels.
+- Download manager must be easily accessible via FCP. Must support
+infinite retries, priorities, and writing the file directly to a target
+directory as an alternative option to keeping it somewhere near the node.
+It must also support queued downloads across restarts.
+- Simple inserts must be really simple with low verbosity. Even for big
+files.
+- We may want to have the option of inserting from a filename rather than
+passing it over FCP.
+- We will need a command to insert a freesite. This will then call the
+multi-put command internally, and can then insert as a container or as
+a manifest.
+- Diagnostics should be exposed as well as config.
+- Whatever updating mechanism we offer, we need to expose it to FCP.
+- Obviously we need it to be possible to hint to the node that a file
+cannot be compressed!
+- Clients can query currently running requests.
+- Error handling? We have some SizeError issues in 0.5 FCP, but we don't
+need to worry about that as we support big files in 0.7 FCP...
+
+Relevant threads:
+
+Re: [Tech] Re: Re: Large files, bitrot and splitfiles
+[Tech] FCPv2
+Subject: Re: [Tech] Freenet 0.7 design.
+Subject: [Tech] Re: [freenet-dev] Which is more important? Frost or Fproxy?
+Subject: [Tech] [freenet-dev] 0.7 status report
+Subject: Re: Uh,
+        no was Re: [Tech] Proposal: Move everything non-core out of fred
+Subject: Re: [Tech] Redux: Guido Winkelman's modularization proposal
+Subject: [Tech] Re: Poll: Why do you use FUQID was Re: [freenet-dev]
+        Web     interface issues for 0.7
+Subject: [Tech] Current thinking on Fproxy for 0.7
+Subject: [Tech] Slightly longer term thoughts
+Subject: Re: [Tech] Re: Re: Re: [freenet-dev] Re: Re: What should
+        go      into    FCPv2?  was     Re: Developer docs could really stand
+        some    refinement
+Subject: [Tech] Re: What should go into FCPv2?
+Subject: Re: [Tech] Freenet 0.7
