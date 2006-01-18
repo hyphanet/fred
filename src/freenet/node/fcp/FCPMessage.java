@@ -25,11 +25,11 @@ public abstract class FCPMessage {
 	public abstract String getName();
 	
 	public static FCPMessage create(String name, SimpleFieldSet fs) throws MessageInvalidException {
-		if(name.equals("ClientHello"))
+		if(name.equals(ClientHelloMessage.name))
 			return new ClientHelloMessage(fs);
-		if(name.equals("ClientGet"))
+		if(name.equals(ClientGetMessage.name))
 			return new ClientGetMessage(fs);
-		if(name.equals("ClientPut"))
+		if(name.equals(ClientPutMessage.name))
 			return new ClientPutMessage(fs);
 		if(name.equals("Void"))
 			return null;

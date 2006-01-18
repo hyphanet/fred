@@ -21,6 +21,8 @@ import freenet.support.SimpleFieldSet;
  */
 public class ClientPutMessage extends DataCarryingMessage {
 
+	public final static String name = "ClientPut";
+	
 	final FreenetURI uri;
 	final String contentType;
 	final long dataLength;
@@ -81,7 +83,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	public String getName() {
-		return "ClientPut";
+		return name;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)

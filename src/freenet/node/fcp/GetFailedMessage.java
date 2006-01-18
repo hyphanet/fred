@@ -38,7 +38,7 @@ public class GetFailedMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return "FetchError";
+		return "GetFailed";
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {

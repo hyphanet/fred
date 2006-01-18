@@ -22,7 +22,7 @@ public class PutSuccessfulMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return "InsertSuccessful";
+		return "PutSuccessful";
 	}
 
 	public void run(FCPConnectionHandler handler, Node node)
