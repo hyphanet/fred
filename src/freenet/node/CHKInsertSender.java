@@ -43,7 +43,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
 			this.pn = pn;
 			bt = new BlockTransmitter(node.usm, pn, uid, prb);
 			Sender s = new Sender(this);
-            Thread senderThread = new Thread(s, "Sender for "+uid+" to "+pn.getDetectedPeer());
+            Thread senderThread = new Thread(s, "Sender for "+uid+" to "+pn.getPeer());
             senderThread.setDaemon(true);
             senderThread.start();
 		}
@@ -637,7 +637,7 @@ outer:		while(true) {
 						mf = m;
 					else
 						mf = m.or(mf);
-					Logger.minor(this, "Waiting for "+awc.pn.getDetectedPeer());
+					Logger.minor(this, "Waiting for "+awc.pn.getPeer());
 				}
 			}
 			

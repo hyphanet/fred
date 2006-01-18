@@ -150,7 +150,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     byte[] identityHash;
     /** Hash of hash of identity i.e. hash of setup key. */
     byte[] identityHashHash; 
-    String myName, myFQDN;
+    String myName;
     final LocationManager lm;
     final PeerManager peers; // my peers
     final RandomSource random; // strong RNG
@@ -210,10 +210,9 @@ public class Node implements QueueingSimpleLowLevelClient {
         br.close();
         // Read contents
         String physical = fs.get("physical.udp");
-        myFQDN = fs.get("hostname");
         Peer myOldPeer;
         try {
-            myOldPeer = new Peer(physical, myFQDN);
+            myOldPeer = new Peer(physical);
         } catch (PeerParseException e) {
             IOException e1 = new IOException();
             e1.initCause(e);
@@ -327,8 +326,6 @@ public class Node implements QueueingSimpleLowLevelClient {
         }
         DiffieHellman.init(yarrow);
         Node n = new Node(port, yarrow, overrideIP, "", 1000 / packetsPerSecond, true, logger, 16384);
-        if(args.length > 1)
-        	n.setFQDN(args[1]);
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
         Thread t = new Thread(new MemoryChecker(), "Memory checker");
@@ -915,7 +912,6 @@ public class Node implements QueueingSimpleLowLevelClient {
     public SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet();
         fs.put("physical.udp", getPrimaryIPAddress().getHostAddress()+":"+portNumber);
-        fs.put("hostname", myFQDN );
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());
@@ -926,11 +922,6 @@ public class Node implements QueueingSimpleLowLevelClient {
         fs.put("myName", myName);
         Logger.minor(this, "My reference: "+fs);
         return fs;
-    }
-    
-    public void setFQDN(String name){
-    	if(name!=null)
-    		myFQDN=name;
     }
 
     InetAddress overrideIPAddress;

@@ -941,7 +941,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws WouldBlockException 
      */
     public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException, PacketSequenceException, WouldBlockException {
-    	Logger.minor(this, "processOutgoing(buf, "+offset+", "+length+", "+peer.getDetectedPeer());
+    	Logger.minor(this, "processOutgoing(buf, "+offset+", "+length+", "+peer.getPeer());
         if(!(peer instanceof PeerNode))
             throw new IllegalArgumentException();
         PeerNode pn = (PeerNode)peer;
@@ -981,7 +981,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, int k, AsyncMessageCallback[] callbacks) throws NotConnectedException, PacketSequenceException, WouldBlockException {
         while(true) {
             try {
-            	Logger.minor(this, "At beginning of processOutgoingPreformatted loop for "+peer.getDetectedPeer());
+            	Logger.minor(this, "At beginning of processOutgoingPreformatted loop for "+peer.getPeer());
                 KeyTracker tracker = peer.getCurrentKeyTracker();
                 if(tracker == null) {
                     Logger.normal(this, "Dropping packet: Not connected yet");
@@ -1092,7 +1092,7 @@ public class FNPPacketMangler implements LowLevelFilter {
        			seqNumber = tracker.allocateOutgoingPacketNumberNeverBlock();
        	}
         
-       	Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getDetectedPeer());
+       	Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());
         
         /** The last sent sequence number, so that we can refer to packets
          * sent after this packet was originally sent (it may be a resend) */
@@ -1152,7 +1152,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             int offsetSeq = otherSideSeqNumber - ackSeq;
             if(offsetSeq > 255 || offsetSeq < 0)
                 throw new PacketSequenceException("bad ack offset "+offsetSeq+
-                        " - seqNumber="+otherSideSeqNumber+", ackNumber="+ackSeq+" talking to "+tracker.pn.getDetectedPeer());
+                        " - seqNumber="+otherSideSeqNumber+", ackNumber="+ackSeq+" talking to "+tracker.pn.getPeer());
             plaintext[ptr++] = (byte)offsetSeq;
         }
         
@@ -1163,7 +1163,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             int offsetSeq = otherSideSeqNumber - reqSeq;
             if(offsetSeq > 255 || offsetSeq < 0)
                 throw new PacketSequenceException("bad resend request offset "+offsetSeq+
-                        " - reqSeq="+reqSeq+", otherSideSeqNumber="+otherSideSeqNumber+" talking to "+tracker.pn.getDetectedPeer());
+                        " - reqSeq="+reqSeq+", otherSideSeqNumber="+otherSideSeqNumber+" talking to "+tracker.pn.getPeer());
             plaintext[ptr++] = (byte)offsetSeq;
         }
 
@@ -1177,7 +1177,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             int offsetSeq = realSeqNumber - ackReqSeq;
             if(offsetSeq > 255 || offsetSeq < 0)
                 throw new PacketSequenceException("bad ack requests offset: "+offsetSeq+
-                        " - ackReqSeq="+ackReqSeq+", packetNumber="+realSeqNumber+" talking to "+tracker.pn.getDetectedPeer());
+                        " - ackReqSeq="+ackReqSeq+", packetNumber="+realSeqNumber+" talking to "+tracker.pn.getPeer());
             plaintext[ptr++] = (byte)offsetSeq;
         }
         
@@ -1262,7 +1262,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         Logger.minor(this,"Sending packet of length "+output.length+" to "+kt.pn);
         
-        usm.sendPacket(output, kt.pn.getDetectedPeer());
+        usm.sendPacket(output, kt.pn.getPeer());
         kt.pn.sentPacket();
     }
 
@@ -1281,8 +1281,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 pn.setDHContext(ctx);
             }
         }
-        for(int i=0;i<pn.getHandshakeIPs().length;i++)
-        	sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, pn.getHandshakeIPs()[i]);
+        sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, pn.getPeer());
         pn.sentHandshake();
     }
 

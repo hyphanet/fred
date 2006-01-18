@@ -377,7 +377,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 					 * 
 					 * For now, accept the "old" i.e. preexisting data.
 					 */
-					Logger.normal(this, "Got collision on "+myKey+" ("+uid+") sending to "+next.getDetectedPeer());
+					Logger.normal(this, "Got collision on "+myKey+" ("+uid+") sending to "+next.getPeer());
 					
 					// FNPSSKDataFound == FNPInsertRequest
 					

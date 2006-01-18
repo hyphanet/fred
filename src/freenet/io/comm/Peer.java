@@ -35,7 +35,6 @@ public class Peer implements WritableToDataOutputStream {
     public static final String VERSION = "$Id: Peer.java,v 1.4 2005/08/25 17:28:19 amphibian Exp $";
 
 	private final InetAddress _address;
-	private final InetAddress _nominal_address;
 	private final int _port;
 
 	// Create a null peer
@@ -48,13 +47,11 @@ public class Peer implements WritableToDataOutputStream {
 		dis.readFully(ba);
 		_address = InetAddress.getByAddress(ba);
 		_port = dis.readInt();
-		_nominal_address=_address;
 	}
 
 	public Peer(InetAddress address, int port) {
 		_address = address;
 		_port = port;
-		_nominal_address=_address;
 	}
 
 	/**
@@ -75,33 +72,6 @@ public class Peer implements WritableToDataOutputStream {
         } catch (NumberFormatException e) {
             throw new PeerParseException(e);
         }
-        _nominal_address=_address;
-    }
-    
-    /**
-     * @param physicaln,hostname
-     */
-    public Peer(String physical, String hostname) throws PeerParseException {
-    	int offset = physical.lastIndexOf(':'); // ipv6
-        if(offset < 0) throw new PeerParseException();
-        String before = physical.substring(0, offset);
-        String after = physical.substring(offset+1);
-        try {
-               _address = InetAddress.getByName(before);
-        } catch (UnknownHostException e) {
-           	throw new PeerParseException(e);
-       	}
-        try {
-               _port = Integer.parseInt(after);
-        } catch (NumberFormatException e) {
-               throw new PeerParseException(e);
-        }
-           
-        try {
-            _nominal_address = InetAddress.getByName(hostname);
-        } catch (UnknownHostException e) {
-        	throw new PeerParseException(e);
-    	}
     }
 
     public boolean isNull() {
@@ -124,21 +94,13 @@ public class Peer implements WritableToDataOutputStream {
 		if (!_address.equals(peer._address)) {
 			return false;
 		}
-		
-		if (!_nominal_address.equals(peer._nominal_address)) {
-			return false;
-		}
 		return true;
 	}
 
 	public InetAddress getAddress() {
 		return _address;
 	}
-	
-	public InetAddress getHostname() {
-		return _nominal_address;
-	}
-	
+
 	public int hashCode() {
 		return _address.hashCode() + _port;
 	}

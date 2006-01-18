@@ -483,7 +483,7 @@ public class KeyTracker {
     }
     
     private PacketThrottle getThrottle() {
-    	return PacketThrottle.getThrottle(pn.getDetectedPeer(), Node.PACKET_SIZE);
+    	return PacketThrottle.getThrottle(pn.getPeer(), Node.PACKET_SIZE);
 	}
 
 	/**
