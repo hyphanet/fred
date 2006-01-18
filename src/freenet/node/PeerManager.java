@@ -191,7 +191,7 @@ public class PeerManager {
      */
     public PeerNode getByPeer(Peer peer) {
         for(int i=0;i<myPeers.length;i++) {
-            if(myPeers[i].getPeer().equals(peer))
+            if(myPeers[i].getDetectedPeer().equals(peer))
                 return myPeers[i];
         }
         return null;
@@ -347,25 +347,25 @@ public class PeerManager {
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
             if(routedTo.contains(p)) {
-            	Logger.minor(this, "Skipping (already routed to): "+p.getPeer());
+            	Logger.minor(this, "Skipping (already routed to): "+p.getDetectedPeer());
             	continue;
             }
             if(p == pn) {
-            	Logger.minor(this, "Skipping (req came from): "+p.getPeer());
+            	Logger.minor(this, "Skipping (req came from): "+p.getDetectedPeer());
             	continue;
             }
             if(!p.isConnected()) {
-            	Logger.minor(this, "Skipping (not connected): "+p.getPeer());
+            	Logger.minor(this, "Skipping (not connected): "+p.getDetectedPeer());
             	continue;
             }
             if(p.isBackedOff()) {
-            	Logger.minor(this, "Skipping (backed off): "+p.getPeer());
+            	Logger.minor(this, "Skipping (backed off): "+p.getDetectedPeer());
             	continue;
             }
             count++;
             any = p;
             double diff = distance(p, loc);
-            Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+" for "+p.getPeer());
+            Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+" for "+p.getDetectedPeer());
             if((!ignoreSelf) && diff > maxDiff) continue;
             if(diff < bestDiff) {
                 best = p;

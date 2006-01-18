@@ -52,7 +52,10 @@ public class PeerNode implements PeerContext {
     static boolean disableProbabilisticHTLs = false;
 
     /** My low-level address for SocketManager purposes */
-    private Peer peer;
+    private Peer detectedPeer;
+    
+    /** The advertised address */
+    private Peer nominalPeer;
     
     /** Is this a testnet node? */
     public final boolean testnetEnabled;
@@ -193,14 +196,17 @@ public class PeerNode implements PeerContext {
         currentLocation = new Location(locationString);
         String physical = fs.get("physical.udp");
         if(physical == null) throw new FSParseException("No physical.udp");
-        peer = new Peer(physical);
+        detectedPeer = new Peer(physical);
+        String nominal = fs.get("hostname");
+        if(nominal == null) throw new FSParseException("No hostname");
+        nominalPeer = new Peer(nominal);
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         myName = name;
         String testnet = fs.get("testnet");
         testnetEnabled = testnet == null ? false : (testnet.equalsIgnoreCase("true") || testnet.equalsIgnoreCase("yes"));
         if(testnetEnabled != node.testnetEnabled) {
-        	String err = "Ignoring incompatible node "+peer+" - peer.testnet="+testnetEnabled+"("+testnet+") but node.testnet="+node.testnetEnabled;
+        	String err = "Ignoring incompatible node "+detectedPeer+" - peer.testnet="+testnetEnabled+"("+testnet+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
         	throw new PeerParseException(err);
         }
@@ -267,8 +273,25 @@ public class PeerNode implements PeerContext {
     /**
      * Get my low-level address
      */
-    public Peer getPeer() {
-        return peer;
+    public Peer getDetectedPeer() {
+        return detectedPeer;
+    }
+    
+    /**
+     * Get my advertised address
+     */
+    public Peer getNominalPeer() {
+        return nominalPeer;
+    }
+    
+    /**
+     * Returns an array with the advertised address and the nominal one
+     */
+    public Peer[] getHandshakeIPs(){
+    	Peer[] p = new Peer[2];
+    	p[0]=nominalPeer;
+    	if(detectedPeer!=null) 	p[1]=detectedPeer;
+    	return p;
     }
     
     /**
@@ -518,7 +541,7 @@ public class PeerNode implements PeerContext {
      * @param newPeer The new address of the peer.
      */
     public void changedIP(Peer newPeer) {
-        this.peer = newPeer;
+        this.detectedPeer = newPeer;
     }
 
     /**
@@ -550,7 +573,7 @@ public class PeerNode implements PeerContext {
      * @return short version of toString()
      */
     public String shortToString() {
-        return super.toString()+"@"+peer.toString()+"@"+HexUtil.bytesToHex(identity);
+        return super.toString()+"@"+detectedPeer.toString()+"@"+HexUtil.bytesToHex(identity);
     }
 
     public String toString() {
@@ -795,8 +818,8 @@ public class PeerNode implements PeerContext {
         if(physical == null) throw new FSParseException("No physical.udp");
         try {
             Peer p = new Peer(physical);
-            if(!p.equals(peer)) changedAnything = true;
-            peer = p;
+            if(!p.equals(detectedPeer)) changedAnything = true;
+            detectedPeer = p;
         } catch (PeerParseException e1) {
             throw new FSParseException(e1);
         }
@@ -855,7 +878,7 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
         return 
-        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+backoffLength+" ("+(Math.max(backedOffUntil - System.currentTimeMillis(),0))+")";
+        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getDetectedPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+backoffLength+" ("+(Math.max(backedOffUntil - System.currentTimeMillis(),0))+")";
     }
     
     public String getFreevizOutput() {
@@ -879,7 +902,8 @@ public class PeerNode implements PeerContext {
      */
     private SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet();
-        fs.put("physical.udp", peer.toString());
+        fs.put("hostname", nominalPeer.toString());
+        fs.put("physical.udp", detectedPeer.toString());
         fs.put("identity", HexUtil.bytesToHex(identity));
         fs.put("location", Double.toString(currentLocation.getValue()));
         fs.put("testnet", Boolean.toString(testnetEnabled));
@@ -984,9 +1008,9 @@ public class PeerNode implements PeerContext {
 					backoffLength = MAX_BACKOFF_LENGTH;
 				int x = node.random.nextInt(backoffLength);
 				backedOffUntil = now + x;
-				Logger.minor(this, "Backing off: backoffLength="+backoffLength+", until "+x+"ms on "+getPeer());
+				Logger.minor(this, "Backing off: backoffLength="+backoffLength+", until "+x+"ms on "+getDetectedPeer());
 			} else {
-				Logger.minor(this, "Ignoring localRejectedOverload: "+(backedOffUntil-now)+"ms remaining on backoff on "+getPeer());
+				Logger.minor(this, "Ignoring localRejectedOverload: "+(backedOffUntil-now)+"ms remaining on backoff on "+getDetectedPeer());
 			}
 		}
 	}
@@ -1002,9 +1026,9 @@ public class PeerNode implements PeerContext {
 			// Don't un-backoff if still backed off
 			if(now > backedOffUntil) {
 				backoffLength = INITIAL_BACKOFF_LENGTH;
-				Logger.minor(this, "Resetting backoff on "+getPeer());
+				Logger.minor(this, "Resetting backoff on "+getDetectedPeer());
 			} else {
-				Logger.minor(this, "Ignoring successNotOverload: "+(backedOffUntil-now)+"ms remaining on backoff on "+getPeer());
+				Logger.minor(this, "Ignoring successNotOverload: "+(backedOffUntil-now)+"ms remaining on backoff on "+getDetectedPeer());
 			}
 		}
 	}
@@ -1069,7 +1093,7 @@ public class PeerNode implements PeerContext {
 
 	public void reportThrottledPacketSendTime(long timeDiff) {
 		throttledPacketSendAverage.report(timeDiff);
-		Logger.minor(this, "Reporting throttled packet send time: "+timeDiff+" to "+getPeer());
+		Logger.minor(this, "Reporting throttled packet send time: "+timeDiff+" to "+getDetectedPeer());
 	}
 }
 

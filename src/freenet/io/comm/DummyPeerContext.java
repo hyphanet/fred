@@ -10,7 +10,7 @@ public class DummyPeerContext implements PeerContext {
 
     private final Peer peer;
     
-    public Peer getPeer() {
+    public Peer getDetectedPeer() {
         return peer;
     }
     

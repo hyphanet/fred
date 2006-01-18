@@ -107,6 +107,7 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
         System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
         System.out.println("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port");
+        System.out.println("HOSTNAME:<new node fqdn> - change the node's fqdn.");
         System.out.println("NAME:<new node name> - change the node's name.");
 //        System.out.println("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.");
 //        System.out.println("SAY:<text> - send text to the last created/pushed stream");
@@ -472,6 +473,15 @@ public class TextModeClientInterface implements Runnable {
                 key = key.substring(0, key.length()-2);
             System.out.println("New name: "+key);
             n.setName(key);
+        } else if(uline.startsWith("HOSTNAME:")) {
+            System.out.println("Node name currently: "+n.myFQDN);
+            String key = line.substring("HOSTNAME:".length());
+            while(key.length() > 0 && key.charAt(0) == ' ')
+                key = key.substring(1);
+            while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
+                key = key.substring(0, key.length()-2);
+            System.out.println("New name: "+key);
+            n.setFQDN(key);
         } else if(uline.startsWith("DISCONNECT:")) {
         	String ipAndPort = line.substring("DISCONNECT:".length());
         	disconnect(ipAndPort.trim());
@@ -718,7 +728,7 @@ public class TextModeClientInterface implements Runnable {
     	PeerNode[] pn = n.peers.myPeers;
     	for(int i=0;i<pn.length;i++)
     	{
-    		String nodeIpAndPort = pn[i].getPeer().getAddress().getHostAddress()+":"+pn[i].getPeer().getPort();
+    		String nodeIpAndPort = pn[i].getDetectedPeer().getAddress().getHostAddress()+":"+pn[i].getDetectedPeer().getPort();
     		if(nodeIpAndPort.equals(ipAndPort))
     		{
     			n.peers.disconnect(pn[i]);
