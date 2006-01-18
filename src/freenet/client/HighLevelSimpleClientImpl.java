@@ -101,8 +101,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
-		InserterContext context = new InserterContext(client, bucketFactory, random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
-				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, insertStarter, cacheLocalRequests);
+		InserterContext context = getInserterContext();
 		FileInserter i = new FileInserter(context);
 		return i.run(insert, false, getCHKOnly, false, null);
 	}
@@ -150,5 +149,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				random, archiveManager, bucketFactory, globalEventProducer, requestStarter, cacheLocalRequests);
+	}
+
+	public InserterContext getInserterContext() {
+		return new InserterContext(client, bucketFactory, random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
+				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, insertStarter, cacheLocalRequests);
 	}
 }

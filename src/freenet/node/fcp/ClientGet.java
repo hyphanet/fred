@@ -62,7 +62,7 @@ public class ClientGet extends ClientRequest implements Runnable {
 		} catch (FetchException e) {
 			// Error
 			Logger.minor(this, "Caught "+e, e);
-			FCPMessage msg = new FetchErrorMessage(handler, e, identifier);
+			FCPMessage msg = new GetFailedMessage(handler, e, identifier);
 			handler.outputHandler.queue(msg);
 		}
 	}

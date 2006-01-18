@@ -5,6 +5,8 @@ import java.net.Socket;
 import java.util.HashMap;
 
 import freenet.client.FetcherContext;
+import freenet.client.HighLevelSimpleClient;
+import freenet.client.InserterContext;
 import freenet.node.Node;
 import freenet.support.BucketFactory;
 import freenet.support.Logger;
@@ -22,6 +24,7 @@ public class FCPConnectionHandler {
 	final BucketFactory bf;
 	final HashMap requestsByIdentifier;
 	final FetcherContext defaultFetchContext;
+	public InserterContext defaultInsertContext;
 	
 	public FCPConnectionHandler(Socket s, Node node) {
 		this.sock = s;
@@ -31,8 +34,9 @@ public class FCPConnectionHandler {
 		isClosed = false;
 		this.bf = node.tempBucketFactory;
 		requestsByIdentifier = new HashMap();
-		defaultFetchContext = 
-			node.makeClient((short)0,(short)0).getFetcherContext();
+		HighLevelSimpleClient client = node.makeClient((short)0,(short)0);
+		defaultFetchContext = client.getFetcherContext();
+		defaultInsertContext = client.getInserterContext();
 	}
 	
 	public void close() {
@@ -104,5 +108,22 @@ public class FCPConnectionHandler {
 			if(isClosed) return;
 			ClientGet cg = new ClientGet(this, message);
 		}
+	}
+
+	public void startClientPut(ClientPutMessage message) {
+		String id = message.identifier;
+		if(requestsByIdentifier.containsKey(id)) {
+			Logger.normal(this, "Identifier collision on "+this);
+			FCPMessage msg = new IdentifierCollisionMessage(id);
+			outputHandler.queue(msg);
+			return;
+		}
+		synchronized(this) {
+			if(isClosed) return;
+			ClientPut cg = new ClientPut(this, message);
+		}
+		
+		// TODO Auto-generated method stub
+		
 	}
 }

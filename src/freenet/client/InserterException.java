@@ -12,6 +12,8 @@ public class InserterException extends Exception {
 	/** If a non-serious error, the URI */
 	public final FreenetURI uri;
 	
+	public final String extra;
+	
 	/** Get the failure mode. */
 	public int getMode() {
 		return mode;
@@ -19,6 +21,7 @@ public class InserterException extends Exception {
 	
 	public InserterException(int m, String msg, FreenetURI expectedURI) {
 		super(getMessage(m)+": "+msg);
+		extra = msg;
 		mode = m;
 		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+msg, this);
 		errorCodes = null;
@@ -27,6 +30,7 @@ public class InserterException extends Exception {
 	
 	public InserterException(int m, FreenetURI expectedURI) {
 		super(getMessage(m));
+		extra = null;
 		mode = m;
 		Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
 		errorCodes = null;
@@ -35,6 +39,7 @@ public class InserterException extends Exception {
 
 	public InserterException(int mode, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+e.getMessage());
+		extra = e.getMessage();
 		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+e, e);
 		this.mode = mode;
 		errorCodes = null;
@@ -44,6 +49,7 @@ public class InserterException extends Exception {
 
 	public InserterException(int mode, FailureCodeTracker errorCodes, FreenetURI expectedURI) {
 		super(getMessage(mode));
+		extra = null;
 		this.mode = mode;
 		Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
 		this.errorCodes = errorCodes;
@@ -52,6 +58,7 @@ public class InserterException extends Exception {
 
 	public InserterException(int mode) {
 		super(getMessage(mode));
+		extra = null;
 		this.mode = mode;
 		this.errorCodes = null;
 		this.uri = null;

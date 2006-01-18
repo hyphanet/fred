@@ -5,20 +5,22 @@ import freenet.client.FetchException;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 
-public class FetchErrorMessage extends FCPMessage {
+public class GetFailedMessage extends FCPMessage {
 
 	final int code;
 	final String codeDescription;
 	final String extraDescription;
 	final FailureCodeTracker tracker;
 	final boolean isFatal;
+	final String identifier;
 	
-	public FetchErrorMessage(FCPConnectionHandler handler, FetchException e, String identifier) {
+	public GetFailedMessage(FCPConnectionHandler handler, FetchException e, String identifier) {
 		this.tracker = e.errorCodes;
 		this.code = e.mode;
 		this.codeDescription = FetchException.getMessage(code);
 		this.extraDescription = e.extraMessage;
 		this.isFatal = e.isFatal();
+		this.identifier = identifier;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -31,6 +33,7 @@ public class FetchErrorMessage extends FCPMessage {
 		if(tracker != null) {
 			tracker.copyToFieldSet(sfs, "Errors.");
 		}
+		sfs.put("Identifier", identifier);
 		return sfs;
 	}
 

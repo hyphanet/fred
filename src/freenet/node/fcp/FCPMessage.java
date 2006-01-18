@@ -29,6 +29,8 @@ public abstract class FCPMessage {
 			return new ClientHelloMessage(fs);
 		if(name.equals("ClientGet"))
 			return new ClientGetMessage(fs);
+		if(name.equals("ClientPut"))
+			return new ClientPutMessage(fs);
 		if(name.equals("Void"))
 			return null;
 //		if(name.equals("ClientPut"))
