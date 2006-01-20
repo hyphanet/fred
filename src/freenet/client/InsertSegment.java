@@ -12,22 +12,22 @@ import freenet.support.Logger;
 public class InsertSegment {
 
 	final FECCodec codec;
-	final StartableSplitfileBlock[] origDataBlocks;
+	final SplitfileBlock[] origDataBlocks;
 	final int blockLength;
 	final BucketFactory bf;
 	/** Check blocks. Will be created by encode(...). */
-	final StartableSplitfileBlock[] checkBlocks;
+	final SplitfileBlock[] checkBlocks;
 	final boolean getCHKOnly;
 	// just for debugging
 	final int segNo;
 	
-	public InsertSegment(short splitfileAlgo, StartableSplitfileBlock[] origDataBlocks, int blockLength, BucketFactory bf, boolean getCHKOnly, int segNo) {
+	public InsertSegment(short splitfileAlgo, SplitfileBlock[] origDataBlocks, int blockLength, BucketFactory bf, boolean getCHKOnly, int segNo) {
 		this.origDataBlocks = origDataBlocks;
 		codec = FECCodec.getCodec(splitfileAlgo, origDataBlocks.length);
 		if(codec != null)
-			checkBlocks = new StartableSplitfileBlock[codec.countCheckBlocks()];
+			checkBlocks = new SplitfileBlock[codec.countCheckBlocks()];
 		else
-			checkBlocks = new StartableSplitfileBlock[0];
+			checkBlocks = new SplitfileBlock[0];
 		this.blockLength = blockLength;
 		this.bf = bf;
 		this.getCHKOnly = getCHKOnly;

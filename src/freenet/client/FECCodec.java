@@ -11,7 +11,7 @@ import freenet.support.BucketFactory;
  * @author root
  *
  */
-public abstract class FECCodec {
+abstract class FECCodec {
 
 	/**
 	 * Get a codec where we know both the number of data blocks and the number

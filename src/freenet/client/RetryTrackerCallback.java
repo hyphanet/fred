@@ -11,7 +11,7 @@ public interface RetryTrackerCallback {
 	 * @param failed The blocks which failed.
 	 * @param fatalErrors The blocks which got fatal errors.
 	 */
-	void finished(StartableSplitfileBlock[] succeeded, StartableSplitfileBlock[] failed, StartableSplitfileBlock[] fatalErrors);
+	void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors);
 
 	/**
 	 * When a block completes etc.

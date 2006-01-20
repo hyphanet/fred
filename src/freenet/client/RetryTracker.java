@@ -26,16 +26,16 @@ public class RetryTracker {
 		 * Return a random block.
 		 * Call synchronized on RetryTracker.
 		 */
-		StartableSplitfileBlock getBlock() {
+		SplitfileBlock getBlock() {
 			int len = blocks.size();
 			int x = random.nextInt(len);
-			StartableSplitfileBlock block = (StartableSplitfileBlock) blocks.remove(x);
+			SplitfileBlock block = (SplitfileBlock) blocks.remove(x);
 			if(blocks.isEmpty())
 				removeLevel(level);
 			return block;
 		}
 		
-		void add(StartableSplitfileBlock block) {
+		void add(SplitfileBlock block) {
 			blocks.add(block);
 		}
 		
@@ -44,7 +44,7 @@ public class RetryTracker {
 		 * Remove self if run out of blocks.
 		 * Call synchronized on RetryTracker.
 		 */
-		void remove(StartableSplitfileBlock block) {
+		void remove(SplitfileBlock block) {
 			blocks.remove(block);
 			if(blocks.isEmpty())
 				removeLevel(level);
@@ -167,7 +167,7 @@ public class RetryTracker {
 	/**
 	 * Add a block at retry level zero.
 	 */
-	public synchronized void addBlock(StartableSplitfileBlock block) {
+	public synchronized void addBlock(SplitfileBlock block) {
 		if(killed) return;
 		Level l = makeLevel(0);
 		l.add(block);
@@ -179,7 +179,7 @@ public class RetryTracker {
 	 * Move it out of the running list and back into the relevant list, unless
 	 * we have run out of retries.
 	 */
-	public void nonfatalError(StartableSplitfileBlock block, int reasonCode) {
+	public void nonfatalError(SplitfileBlock block, int reasonCode) {
 		synchronized(this) {
 			nonfatalErrors.inc(reasonCode);
 			runningBlocks.remove(block);
@@ -204,7 +204,7 @@ public class RetryTracker {
 	 * Move it into the fatal error list.
 	 * @param reasonCode A client-specific code indicating the type of failure.
 	 */
-	public void fatalError(StartableSplitfileBlock block, int reasonCode) {
+	public void fatalError(SplitfileBlock block, int reasonCode) {
 		synchronized(this) {
 			fatalErrors.inc(reasonCode);
 			runningBlocks.remove(block);
@@ -238,7 +238,7 @@ public class RetryTracker {
 				|| (runningBlocks.isEmpty() && levels.isEmpty() && finishOnEmpty)) {
 			killed = true;
 			Logger.minor(this, "Finishing");
-			StartableSplitfileBlock[] running = runningBlocks();
+			SplitfileBlock[] running = runningBlocks();
 			for(int i=0;i<running.length;i++) {
 				running[i].kill();
 			}
@@ -253,7 +253,7 @@ public class RetryTracker {
 			}
 		} else {
 			while(runningBlocks.size() < maxThreads) {
-				StartableSplitfileBlock block = getBlock();
+				SplitfileBlock block = getBlock();
 				if(block == null) break;
 				Logger.minor(this, "Starting: "+block);
 				block.start();
@@ -265,7 +265,7 @@ public class RetryTracker {
 			callback.finished(succeededBlocks(), failedBlocks(), fatalErrorBlocks());
 	}
 
-	public void success(StartableSplitfileBlock block) {
+	public void success(SplitfileBlock block) {
 		synchronized(this) {
 			if(killed) return;
 			runningBlocks.remove(block);
@@ -284,7 +284,7 @@ public class RetryTracker {
 	 * Get the next block to try. This is a randomly selected block from the
 	 * lowest priority currently available. Move it into the running list.
 	 */
-	public synchronized StartableSplitfileBlock getBlock() {
+	public synchronized SplitfileBlock getBlock() {
 		if(killed) return null;
 		Integer iMin = new Integer(curMinLevel);
 		Level l = (Level) levels.get(iMin);
@@ -309,34 +309,34 @@ public class RetryTracker {
 	/**
 	 * Get all running blocks.
 	 */
-	public synchronized StartableSplitfileBlock[] runningBlocks() {
-		return (StartableSplitfileBlock[]) 
-			runningBlocks.toArray(new StartableSplitfileBlock[runningBlocks.size()]);
+	public synchronized SplitfileBlock[] runningBlocks() {
+		return (SplitfileBlock[]) 
+			runningBlocks.toArray(new SplitfileBlock[runningBlocks.size()]);
 	}
 	
 	/**
 	 * Get all blocks with fatal errors.
-	 * StartableSplitfileBlock's are assumed to remember their errors, so we don't.
+	 * SplitfileBlock's are assumed to remember their errors, so we don't.
 	 */
-	public synchronized StartableSplitfileBlock[] fatalErrorBlocks() {
-		return (StartableSplitfileBlock[])
-			failedBlocksFatalErrors.toArray(new StartableSplitfileBlock[failedBlocksFatalErrors.size()]);
+	public synchronized SplitfileBlock[] fatalErrorBlocks() {
+		return (SplitfileBlock[])
+			failedBlocksFatalErrors.toArray(new SplitfileBlock[failedBlocksFatalErrors.size()]);
 	}
 	
 	/**
 	 * Get all blocks which didn't succeed in the maximum number of tries.
 	 */
-	public synchronized StartableSplitfileBlock[] failedBlocks() {
-		return (StartableSplitfileBlock[])
-		failedBlocksTooManyRetries.toArray(new StartableSplitfileBlock[failedBlocksTooManyRetries.size()]);
+	public synchronized SplitfileBlock[] failedBlocks() {
+		return (SplitfileBlock[])
+		failedBlocksTooManyRetries.toArray(new SplitfileBlock[failedBlocksTooManyRetries.size()]);
 	}
 	
 	/**
 	 * Get all successfully downloaded blocks.
 	 */
-	public synchronized StartableSplitfileBlock[] succeededBlocks() {
-		return (StartableSplitfileBlock[])
-			succeededBlocks.toArray(new StartableSplitfileBlock[succeededBlocks.size()]);
+	public synchronized SplitfileBlock[] succeededBlocks() {
+		return (SplitfileBlock[])
+			succeededBlocks.toArray(new SplitfileBlock[succeededBlocks.size()]);
 	}
 
 	public synchronized int succeededBlocksLength() {
@@ -384,7 +384,7 @@ public class RetryTracker {
 		killed = true;
 		levels.clear();
 		for(Iterator i=runningBlocks.iterator();i.hasNext();) {
-			StartableSplitfileBlock sb = (StartableSplitfileBlock) i.next();
+			SplitfileBlock sb = (SplitfileBlock) i.next();
 			sb.kill();
 		}
 		runningBlocks.clear();

@@ -13,7 +13,7 @@ public class ClientMetadata {
 	}
 
 	/** Create an empty ClientMetadata instance */
-	public ClientMetadata() {
+	ClientMetadata() {
 		mimeType = null;
 	}
 	
