@@ -75,9 +75,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 		SimpleFieldSet sfs = new SimpleFieldSet();
 		sfs.put("URI", uri.toString());
 		sfs.put("Identifier", identifier);
-		sfs.put("DataLength", Long.toHexString(dataLength));
-		sfs.put("Verbosity", Integer.toHexString(verbosity));
-		sfs.put("MaxRetries", Integer.toHexString(maxRetries));
+		sfs.put("DataLength", Long.toString(dataLength));
+		sfs.put("Verbosity", Integer.toString(verbosity));
+		sfs.put("MaxRetries", Integer.toString(maxRetries));
 		sfs.put("Metadata.ContentType", contentType);
 		return sfs;
 	}

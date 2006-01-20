@@ -27,7 +27,7 @@ public class PutFailedMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
-		fs.put("Code", Integer.toHexString(code));
+		fs.put("Code", Integer.toString(code));
 		fs.put("CodeDescription", codeDescription);
 		if(extraDescription != null)
 			fs.put("ExtraDescription", extraDescription);

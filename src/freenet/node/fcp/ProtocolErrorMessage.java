@@ -58,7 +58,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
-		sfs.put("Code", Integer.toHexString(code));
+		sfs.put("Code", Integer.toString(code));
 		sfs.put("CodeDescription", codeDescription());
 		if(extra != null)
 			sfs.put("ExtraDescription", extra);

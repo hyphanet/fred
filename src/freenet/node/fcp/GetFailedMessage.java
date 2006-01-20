@@ -25,7 +25,7 @@ public class GetFailedMessage extends FCPMessage {
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
-		sfs.put("Code", Integer.toHexString(code));
+		sfs.put("Code", Integer.toString(code));
 		sfs.put("CodeDescription", codeDescription);
 		if(extraDescription != null)
 			sfs.put("ExtraDescription", extraDescription);
