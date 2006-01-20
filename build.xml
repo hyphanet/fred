@@ -7,7 +7,7 @@
      Possible targets: compile, dist (default), clean
   </description>
 
-  <!-- set global properties for this build -->
+<!-- set global properties for this build -->
   	<property name="src" location="src"/>
 	<property name="build" location="build"/>
 	<property name="lib"	location="lib"/>
