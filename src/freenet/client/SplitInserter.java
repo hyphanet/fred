@@ -30,7 +30,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	final int blockSize;
 	final boolean isMetadata;
 	final Bucket returnMetadata;
-	SplitfileBlock[] origDataBlocks;
+	StartableSplitfileBlock[] origDataBlocks;
 	InsertSegment encodingSegment;
 	InsertSegment[] segments;
 	private boolean finishedInserting = false;
@@ -39,7 +39,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	private int failed;
 	private int fatalErrors;
 	private int countCheckBlocks;
-	private SplitfileBlock[] fatalErrorBlocks;
+	private StartableSplitfileBlock[] fatalErrorBlocks;
 	private FileInserter inserter;
 	
 	/**
@@ -232,7 +232,7 @@ public class SplitInserter implements RetryTrackerCallback {
 	 */
 	private void splitIntoBlocks() throws IOException {
 		Bucket[] dataBuckets = BucketTools.split(origData, NodeCHK.BLOCK_SIZE, ctx.bf);
-		origDataBlocks = new SplitfileBlock[dataBuckets.length];
+		origDataBlocks = new StartableSplitfileBlock[dataBuckets.length];
 		for(int i=0;i<origDataBlocks.length;i++) {
 			origDataBlocks[i] = new BlockInserter(dataBuckets[i], i, tracker, ctx, getCHKOnly);
 			if(origDataBlocks[i].getData() == null)
@@ -259,7 +259,7 @@ public class SplitInserter implements RetryTrackerCallback {
 			int segNo = 0;
 			for(int i=segmentSize;;i+=segmentSize) {
 				if(i > dataBlocks) i = dataBlocks;
-				SplitfileBlock[] seg = new SplitfileBlock[i-j];
+				StartableSplitfileBlock[] seg = new StartableSplitfileBlock[i-j];
 				System.arraycopy(origDataBlocks, j, seg, 0, i-j);
 				j = i;
 				for(int x=0;x<seg.length;x++)
@@ -275,7 +275,7 @@ public class SplitInserter implements RetryTrackerCallback {
 		segments = (InsertSegment[]) segs.toArray(new InsertSegment[segs.size()]);
 	}
 
-	public void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors) {
+	public void finished(StartableSplitfileBlock[] succeeded, StartableSplitfileBlock[] failed, StartableSplitfileBlock[] fatalErrors) {
 		synchronized(this) {
 			finishedInserting = true;
 			this.succeeded = succeeded.length;

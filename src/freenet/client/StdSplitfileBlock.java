@@ -3,7 +3,7 @@ package freenet.client;
 import freenet.support.Bucket;
 import freenet.support.Logger;
 
-public abstract class StdSplitfileBlock extends SplitfileBlock implements Runnable {
+public abstract class StdSplitfileBlock implements StartableSplitfileBlock , Runnable {
 
 	Bucket fetchedData;
 	protected final RetryTracker tracker;

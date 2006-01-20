@@ -11,7 +11,7 @@ import freenet.support.SimpleFieldSet;
  * ClientPut
  * URI=CHK@ // could as easily be an insertable SSK URI
  * Metadata.ContentType=text/html
- * DataLength=100 // 100kB
+ * DataLength=19000 // hex for 100kB
  * Identifier=Insert-1 // identifier, as always
  * Verbosity=0 // just report when complete
  * MaxRetries=999999 // lots of retries
@@ -44,7 +44,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			verbosity = 0;
 		else {
 			try {
-				verbosity = Integer.parseInt(verbosityString, 10);
+				verbosity = Integer.parseInt(verbosityString, 16);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage());
 			}
@@ -53,7 +53,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		if(dataLengthString == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut");
 		try {
-			dataLength = Long.parseLong(dataLengthString, 10);
+			dataLength = Long.parseLong(dataLengthString, 16);
 		} catch (NumberFormatException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage());
 		}
@@ -64,7 +64,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			maxRetries = 0;
 		else {
 			try {
-				maxRetries = Integer.parseInt(maxRetriesString, 10);
+				maxRetries = Integer.parseInt(maxRetriesString, 16);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
 			}

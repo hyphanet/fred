@@ -24,7 +24,6 @@ public class Segment implements RetryTrackerCallback {
 	final BlockFetcher[] dataBlockStatus;
 	final BlockFetcher[] checkBlockStatus;
 	final int minFetched;
-	private Vector blocksNotTried;
 	final SplitFetcher parentFetcher;
 	final ArchiveContext archiveContext;
 	final FetcherContext fetcherContext;
@@ -36,10 +35,6 @@ public class Segment implements RetryTrackerCallback {
 	private boolean finished;
 	/** Bucket to store the data retrieved, after it has been decoded */
 	private Bucket decodedData;
-	/** Recently completed fetches */
-	final LinkedList recentlyCompletedFetches;
-	/** Running fetches */
-	LinkedList runningFetches;
 	/** Fetch context for block fetches */
 	final FetcherContext blockFetchContext;
 	/** Recursion level */
@@ -76,9 +71,7 @@ public class Segment implements RetryTrackerCallback {
 		decodedData = null;
 		dataBlockStatus = new BlockFetcher[dataBlocks.length];
 		checkBlockStatus = new BlockFetcher[checkBlocks.length];
-		blocksNotTried = new Vector();
 		Vector firstSet = new Vector(dataBlocks.length+checkBlocks.length);
-		blocksNotTried.add(0, firstSet);
 		for(int i=0;i<dataBlocks.length;i++) {
 			dataBlockStatus[i] = new BlockFetcher(this, tracker, dataBlocks[i], i, fctx.dontEnterImplicitArchives);
 			firstSet.add(dataBlockStatus[i]);
@@ -87,8 +80,6 @@ public class Segment implements RetryTrackerCallback {
 			checkBlockStatus[i] = new BlockFetcher(this, tracker, checkBlocks[i], dataBlockStatus.length + i, fctx.dontEnterImplicitArchives);
 			firstSet.add(checkBlockStatus[i]);
 		}
-		recentlyCompletedFetches = new LinkedList();
-		runningFetches = new LinkedList();
 		// FIXME be a bit more flexible here depending on flags
 		if(useLengths) {
 			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_USE_LENGTHS_MASK);
@@ -165,18 +156,9 @@ public class Segment implements RetryTrackerCallback {
 	}
 
 	/**
-	 * How many fetches are running?
-	 */
-	private int runningFetches() {
-		synchronized(runningFetches) {
-			return runningFetches.size();
-		}
-	}
-
-	/**
 	 * Once we have enough data to decode, tell parent, and decode it.
 	 */
-	public void finished(SplitfileBlock[] succeeded, SplitfileBlock[] failed, SplitfileBlock[] fatalErrors) {
+	public void finished(StartableSplitfileBlock[] succeeded, StartableSplitfileBlock[] failed, StartableSplitfileBlock[] fatalErrors) {
 
 		Logger.minor(this, "Finished("+succeeded.length+", "+failed.length+", "+fatalErrors.length+")");
 		parentFetcher.gotBlocks(this);

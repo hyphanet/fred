@@ -18,7 +18,7 @@ import freenet.support.SimpleFieldSet;
  * Identifier=Request Number One
  * Verbosity=0 // no status, just tell us when it's done
  * ReturnType=direct // return all at once over the FCP connection
- * MaxSize=100 // maximum size of returned data 
+ * MaxSize=100 // maximum size of returned data (all numbers in hex)
  * MaxTempSize=1000 // maximum size of intermediary data
  * MaxRetries=100 // automatic retry supported as an option
  * EndMessage
@@ -55,7 +55,7 @@ public class ClientGetMessage extends FCPMessage {
 			verbosity = 0;
 		else {
 			try {
-				verbosity = Integer.parseInt(verbosityString, 10);
+				verbosity = Integer.parseInt(verbosityString, 16);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage());
 			}
@@ -71,7 +71,7 @@ public class ClientGetMessage extends FCPMessage {
 			maxSize = Long.MAX_VALUE;
 		else {
 			try {
-				maxSize = Long.parseLong(maxSizeString, 10);
+				maxSize = Long.parseLong(maxSizeString, 16);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
 			}
@@ -82,7 +82,7 @@ public class ClientGetMessage extends FCPMessage {
 			maxTempSize = Long.MAX_VALUE;
 		else {
 			try {
-				maxTempSize = Long.parseLong(maxTempSizeString, 10);
+				maxTempSize = Long.parseLong(maxTempSizeString, 16);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
 			}
@@ -93,7 +93,7 @@ public class ClientGetMessage extends FCPMessage {
 			maxRetries = 0;
 		else {
 			try {
-				maxRetries = Integer.parseInt(maxRetriesString, 10);
+				maxRetries = Integer.parseInt(maxRetriesString, 16);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
 			}

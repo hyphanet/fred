@@ -19,12 +19,103 @@ import freenet.support.Logger;
 
 
 /** Metadata parser/writer class. */
-public class Metadata {
+public class Metadata implements Cloneable {
 
 	static final long FREENET_METADATA_MAGIC = 0xf053b2842d91482bL;
 	static final int MAX_SPLITFILE_PARAMS_LENGTH = 32768;
 	/** Soft limit, to avoid memory DoS */
 	static final int MAX_SPLITFILE_BLOCKS = 100*1000;
+	
+	// Actual parsed data
+	
+	// document type
+	byte documentType;
+	static final byte SIMPLE_REDIRECT = 0;
+	static final byte MULTI_LEVEL_METADATA = 1;
+	static final byte SIMPLE_MANIFEST = 2;
+	static final byte ZIP_MANIFEST = 3;
+	static final byte ZIP_INTERNAL_REDIRECT = 4;
+	
+	// 2 bytes of flags
+	/** Is a splitfile */
+	boolean splitfile;
+	/** Is a DBR */
+	boolean dbr;
+	/** No MIME type; on by default as not all doctypes have MIME */
+	boolean noMIME = true;
+	/** Compressed MIME type */
+	boolean compressedMIME;
+	/** Has extra client-metadata */
+	boolean extraMetadata;
+	/** Keys stored in full (otherwise assumed to be CHKs) */
+	boolean fullKeys;
+	/** Non-final splitfile chunks can be non-full */
+	boolean splitUseLengths;
+	static final short FLAGS_SPLITFILE = 1;
+	static final short FLAGS_DBR = 2;
+	static final short FLAGS_NO_MIME = 4;
+	static final short FLAGS_COMPRESSED_MIME = 8;
+	static final short FLAGS_EXTRA_METADATA = 16;
+	static final short FLAGS_FULL_KEYS = 32;
+	static final short FLAGS_SPLIT_USE_LENGTHS = 64;
+	static final short FLAGS_COMPRESSED = 128;
+	
+	/** Container archive type */
+	short archiveType;
+	static final short ARCHIVE_ZIP = 0;
+	static final short ARCHIVE_TAR = 1; // FIXME for future use
+	
+	/** Compressed splitfile codec */
+	short compressionCodec = -1;
+	static public final short COMPRESS_GZIP = 0;
+	static final short COMPRESS_BZIP2 = 1; // FIXME for future use
+	
+	/** The length of the splitfile */
+	long dataLength;
+	/** The decompressed length of the compressed data */
+	long decompressedLength;
+	
+	/** The MIME type, as a string */
+	String mimeType;
+	
+	/** The compressed MIME type - lookup index for the MIME types table.
+	 * Must be between 0 and 32767.
+	 */
+	short compressedMIMEValue;
+	boolean hasCompressedMIMEParams;
+	short compressedMIMEParams;
+	
+	/** The simple redirect key */
+	FreenetURI simpleRedirectKey;
+	
+	short splitfileAlgorithm;
+	static public final short SPLITFILE_NONREDUNDANT = 0;
+	static public final short SPLITFILE_ONION_STANDARD = 1;
+	
+	/** Splitfile parameters */
+	byte[] splitfileParams;
+	int splitfileBlocks;
+	int splitfileCheckBlocks;
+	FreenetURI[] splitfileDataKeys;
+	FreenetURI[] splitfileCheckKeys;
+	
+	// Manifests
+	int manifestEntryCount;
+	/** Manifest entries by name */
+	HashMap manifestEntries;
+	
+	/** ZIP internal redirect: name of file in ZIP */
+	String nameInArchive;
+
+	ClientMetadata clientMetadata;
+
+	public Object clone() {
+		try {
+			return super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new Error("Yes it is!");
+		}
+	}
 	
 	/** Parse a block of bytes into a Metadata structure.
 	 * Constructor method because of need to catch impossible exceptions.
@@ -507,89 +598,6 @@ public class Metadata {
 			} else throw new IllegalArgumentException("Full keys must be enabled to write non-CHKs");
 		}
 	}
-	// Actual parsed data
-	
-	// document type
-	byte documentType;
-	static final byte SIMPLE_REDIRECT = 0;
-	static final byte MULTI_LEVEL_METADATA = 1;
-	static final byte SIMPLE_MANIFEST = 2;
-	static final byte ZIP_MANIFEST = 3;
-	static final byte ZIP_INTERNAL_REDIRECT = 4;
-	
-	// 2 bytes of flags
-	/** Is a splitfile */
-	boolean splitfile;
-	/** Is a DBR */
-	boolean dbr;
-	/** No MIME type; on by default as not all doctypes have MIME */
-	boolean noMIME = true;
-	/** Compressed MIME type */
-	boolean compressedMIME;
-	/** Has extra client-metadata */
-	boolean extraMetadata;
-	/** Keys stored in full (otherwise assumed to be CHKs) */
-	boolean fullKeys;
-	/** Non-final splitfile chunks can be non-full */
-	boolean splitUseLengths;
-	static final short FLAGS_SPLITFILE = 1;
-	static final short FLAGS_DBR = 2;
-	static final short FLAGS_NO_MIME = 4;
-	static final short FLAGS_COMPRESSED_MIME = 8;
-	static final short FLAGS_EXTRA_METADATA = 16;
-	static final short FLAGS_FULL_KEYS = 32;
-	static final short FLAGS_SPLIT_USE_LENGTHS = 64;
-	static final short FLAGS_COMPRESSED = 128;
-	
-	/** Container archive type */
-	short archiveType;
-	static final short ARCHIVE_ZIP = 0;
-	static final short ARCHIVE_TAR = 1; // FIXME for future use
-	
-	/** Compressed splitfile codec */
-	short compressionCodec = -1;
-	static public final short COMPRESS_GZIP = 0;
-	static final short COMPRESS_BZIP2 = 1; // FIXME for future use
-	
-	/** The length of the splitfile */
-	long dataLength;
-	/** The decompressed length of the compressed data */
-	long decompressedLength;
-	
-	/** The MIME type, as a string */
-	String mimeType;
-	
-	/** The compressed MIME type - lookup index for the MIME types table.
-	 * Must be between 0 and 32767.
-	 */
-	short compressedMIMEValue;
-	boolean hasCompressedMIMEParams;
-	short compressedMIMEParams;
-	
-	/** The simple redirect key */
-	FreenetURI simpleRedirectKey;
-	
-	short splitfileAlgorithm;
-	static final short SPLITFILE_NONREDUNDANT = 0;
-	static final short SPLITFILE_ONION_STANDARD = 1;
-	
-	/** Splitfile parameters */
-	byte[] splitfileParams;
-	int splitfileBlocks;
-	int splitfileCheckBlocks;
-	FreenetURI[] splitfileDataKeys;
-	FreenetURI[] splitfileCheckKeys;
-	
-	// Manifests
-	int manifestEntryCount;
-	/** Manifest entries by name */
-	HashMap manifestEntries;
-	
-	/** ZIP internal redirect: name of file in ZIP */
-	String nameInArchive;
-
-	ClientMetadata clientMetadata;
-
 	/** Is a manifest? */
 	public boolean isSimpleManifest() {
 		return documentType == SIMPLE_MANIFEST;
@@ -798,5 +806,21 @@ public class Metadata {
 
 	public boolean isCompressed() {
 		return compressionCodec >= 0;
+	}
+
+	public boolean splitUseLengths() {
+		return splitUseLengths;
+	}
+
+	public short getCompressionCodec() {
+		return compressionCodec;
+	}
+
+	public long dataLength() {
+		return dataLength;
+	}
+
+	public byte[] splitfileParams() {
+		return splitfileParams;
 	}
 }

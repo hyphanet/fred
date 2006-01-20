@@ -12,8 +12,11 @@ import freenet.support.DoublyLinkedListImpl;
  * subject to the above.
  * 
  * Always take the lock on ArchiveStoreContext before the lock on ArchiveManager, NOT the other way around.
+ * 
+ * Not normally to be used directly by external packages, but public for
+ * ArchiveManager.extractToCache. FIXME.
  */
-class ArchiveStoreContext implements ArchiveHandler {
+public class ArchiveStoreContext implements ArchiveHandler {
 
 	private ArchiveManager manager;
 	private FreenetURI key;
@@ -65,6 +68,7 @@ class ArchiveStoreContext implements ArchiveHandler {
 			// Not in cache
 			
 			if(fetchContext == null) return null;
+			fetchContext = new FetcherContext(fetchContext, FetcherContext.SET_RETURN_ARCHIVES);
 			Fetcher fetcher = new Fetcher(key, fetchContext, archiveContext);
 			FetchResult result = fetcher.realRun(dm, recursionLevel, key, dontEnterImplicitArchives, fetchContext.localRequestOnly);
 			manager.extractToCache(key, archiveType, result.data, archiveContext, this);
@@ -129,6 +133,10 @@ class ArchiveStoreContext implements ArchiveHandler {
 		synchronized(myItems) {
 			myItems.remove(item);
 		}
+	}
+
+	public short getArchiveType() {
+		return archiveType;
 	}
 	
 }

@@ -10,14 +10,15 @@ import freenet.support.BucketFactory;
 public class FetcherContext implements Cloneable {
 
 	public static final int IDENTICAL_MASK = 0;
-	static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
-	static final int SPLITFILE_DEFAULT_MASK = 2;
-	static final int SPLITFILE_USE_LENGTHS_MASK = 3;
+	public static final int SPLITFILE_DEFAULT_BLOCK_MASK = 1;
+	public static final int SPLITFILE_DEFAULT_MASK = 2;
+	public static final int SPLITFILE_USE_LENGTHS_MASK = 3;
+	public static final int SET_RETURN_ARCHIVES = 4;
 	/** Low-level client to send low-level requests to. */
 	final SimpleLowLevelClient client;
 	public long maxOutputLength;
 	public long maxTempLength;
-	final ArchiveManager archiveManager;
+	public final ArchiveManager archiveManager;
 	public final BucketFactory bucketFactory;
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
@@ -40,6 +41,9 @@ public class FetcherContext implements Cloneable {
 	public final RequestStarterClient starterClient;
 	public boolean cacheLocalRequests;
 	private boolean cancelled;
+	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
+	 * return the manifest contents as data. */
+	public boolean returnZIPManifests;
 	
 	public final boolean isCancelled() {
 		return cancelled;
@@ -101,6 +105,7 @@ public class FetcherContext implements Cloneable {
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.starterClient = ctx.starterClient;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
+			this.returnZIPManifests = ctx.returnZIPManifests;
 		} else if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
@@ -124,6 +129,7 @@ public class FetcherContext implements Cloneable {
 			this.maxCheckBlocksPerSegment = 0;
 			this.starterClient = ctx.starterClient;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
+			this.returnZIPManifests = false;
 		} else if(maskID == SPLITFILE_DEFAULT_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
@@ -147,6 +153,7 @@ public class FetcherContext implements Cloneable {
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.starterClient = ctx.starterClient;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
+			this.returnZIPManifests = ctx.returnZIPManifests;
 		} else if(maskID == SPLITFILE_USE_LENGTHS_MASK) {
 			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
@@ -170,7 +177,33 @@ public class FetcherContext implements Cloneable {
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.starterClient = ctx.starterClient;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
-		} else throw new IllegalArgumentException();
+			this.returnZIPManifests = ctx.returnZIPManifests;
+		} else if (maskID == SET_RETURN_ARCHIVES) {
+			this.client = ctx.client;
+			this.maxOutputLength = ctx.maxOutputLength;
+			this.maxMetadataSize = ctx.maxMetadataSize;
+			this.maxTempLength = ctx.maxTempLength;
+			this.archiveManager = ctx.archiveManager;
+			this.bucketFactory = ctx.bucketFactory;
+			this.maxRecursionLevel = ctx.maxRecursionLevel;
+			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
+			this.random = ctx.random;
+			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
+			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
+			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
+			this.allowSplitfiles = ctx.allowSplitfiles;
+			this.followRedirects = ctx.followRedirects;
+			this.localRequestOnly = ctx.localRequestOnly;
+			this.splitfileUseLengths = ctx.splitfileUseLengths;
+			this.eventProducer = ctx.eventProducer;
+			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
+			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
+			this.starterClient = ctx.starterClient;
+			this.cacheLocalRequests = ctx.cacheLocalRequests;
+			this.returnZIPManifests = true;
+		}
+		else throw new IllegalArgumentException();
 	}
 
 	public void cancel() {
