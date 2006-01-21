@@ -10,16 +10,16 @@ import freenet.support.BucketFactory;
 public class InserterContext {
 
 	final SimpleLowLevelClient client;
-	final BucketFactory bf;
+	public final BucketFactory bf;
 	/** If true, don't try to compress the data */
-	final boolean dontCompress;
-	final RandomSource random;
-	final short splitfileAlgorithm;
+	public final boolean dontCompress;
+	public final RandomSource random;
+	public final short splitfileAlgorithm;
 	public int maxInsertRetries;
 	final int maxSplitInsertThreads;
 	final int consecutiveRNFsCountAsSuccess;
-	final int splitfileSegmentDataBlocks;
-	final int splitfileSegmentCheckBlocks;
+	public final int splitfileSegmentDataBlocks;
+	public final int splitfileSegmentCheckBlocks;
 	final ClientEventProducer eventProducer;
 	final RequestStarterClient starterClient;
 	/** Interesting tradeoff, see comments at top of Node.java. */

@@ -8,9 +8,6 @@ public abstract class ClientGetState {
 
 	public abstract ClientGet getParent();
 
-	public void schedule() {
-		// TODO Auto-generated method stub
-		
-	}
-	
+	public abstract void schedule();
+
 }

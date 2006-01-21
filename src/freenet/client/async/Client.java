@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.InserterException;
 
 /**
  * A client process. Something that initiates requests, and can cancel
@@ -14,4 +15,8 @@ public interface Client {
 	
 	public void onFailure(FetchException e, ClientGet state);
 
+	public void onSuccess(ClientPut state);
+	
+	public void onFailure(InserterException e, ClientPut state);
+	
 }

@@ -25,14 +25,14 @@ import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 
-public class SingleFileFetcher extends ClientGetState implements SendableRequest {
+public class SingleFileFetcher extends ClientGetState implements SendableGet {
 
 	final ClientGet parent;
 	//final FreenetURI uri;
 	final ClientKey key;
 	final LinkedList metaStrings;
 	final FetcherContext ctx;
-	final RequestCompletionCallback rcb;
+	final GetCompletionCallback rcb;
 	final ClientMetadata clientMetadata;
 	private Metadata metadata;
 	final int maxRetries;
@@ -45,6 +45,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableRequest
 	private int retryCount;
 	private final LinkedList decompressors;
 	private final boolean dontTellClientGet;
+	private boolean cancelled;
 	private Object token;
 	
 	
@@ -53,7 +54,8 @@ public class SingleFileFetcher extends ClientGetState implements SendableRequest
 	 * @param token 
 	 * @param dontTellClientGet 
 	 */
-	public SingleFileFetcher(ClientGet get, RequestCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws FetchException {
+	public SingleFileFetcher(ClientGet get, GetCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws FetchException {
+		this.cancelled = false;
 		this.dontTellClientGet = dontTellClientGet;
 		this.token = token;
 		this.parent = get;
@@ -76,12 +78,12 @@ public class SingleFileFetcher extends ClientGetState implements SendableRequest
 	}
 
 	/** Called by ClientGet. */ 
-	public SingleFileFetcher(ClientGet get, RequestCompletionCallback cb, ClientMetadata metadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws MalformedURLException, FetchException {
+	public SingleFileFetcher(ClientGet get, GetCompletionCallback cb, ClientMetadata metadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws MalformedURLException, FetchException {
 		this(get, cb, metadata, ClientKey.getBaseKey(uri), uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token);
 	}
 	
 	/** Copy constructor, modifies a few given fields, don't call schedule() */
-	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, RequestCompletionCallback callback, FetcherContext ctx2) throws FetchException {
+	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetcherContext ctx2) throws FetchException {
 		this.token = fetcher.token;
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
@@ -104,7 +106,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableRequest
 
 	public void schedule() {
 		if(!dontTellClientGet)
-			this.parent.fetchState = this;
+			this.parent.currentState = this;
 		parent.scheduler.register(this);
 	}
 
@@ -350,10 +352,10 @@ public class SingleFileFetcher extends ClientGetState implements SendableRequest
 		// And will also discover that the data is available, and will complete.
 	}
 
-	class ArchiveFetcherCallback implements RequestCompletionCallback {
+	class ArchiveFetcherCallback implements GetCompletionCallback {
 
 		public void onSuccess(FetchResult result, ClientGetState state) {
-			parent.fetchState = SingleFileFetcher.this;
+			parent.currentState = SingleFileFetcher.this;
 			try {
 				ctx.archiveManager.extractToCache(thisKey, ah.getArchiveType(), result.asBucket(), actx, ah);
 			} catch (ArchiveFailureException e) {
@@ -381,10 +383,10 @@ public class SingleFileFetcher extends ClientGetState implements SendableRequest
 		
 	}
 
-	class MultiLevelMetadataCallback implements RequestCompletionCallback {
+	class MultiLevelMetadataCallback implements GetCompletionCallback {
 		
 		public void onSuccess(FetchResult result, ClientGetState state) {
-			parent.fetchState = SingleFileFetcher.this;
+			parent.currentState = SingleFileFetcher.this;
 			try {
 				metadata = Metadata.construct(result.asBucket());
 			} catch (MetadataParseException e) {
@@ -410,6 +412,10 @@ public class SingleFileFetcher extends ClientGetState implements SendableRequest
 	
 	// Real onFailure
 	private void onFailure(FetchException e, boolean forceFatal) {
+		if(parent.isCancelled() || cancelled) {
+			onFailure(new FetchException(FetchException.CANCELLED));
+			return;
+		}
 		if(!(e.isFatal() || forceFatal) ) {
 			if(retryCount <= maxRetries) {
 				if(parent.isCancelled()) {
@@ -453,5 +459,9 @@ public class SingleFileFetcher extends ClientGetState implements SendableRequest
 	public Object getToken() {
 		return token;
 	}
-	
+
+	public void cancel() {
+		cancelled = true;
+	}
+
 }

@@ -65,16 +65,13 @@ public class FileInserter {
 		int blockSize;
 		int maxSourceDataSize;
 		boolean isSSK = false;
-		boolean dontCompress = false;
+		boolean dontCompress = ctx.dontCompress;
 		
 		long origSize = data.size();
 		if(type.equals("SSK") || type.equals("KSK")) {
 			blockSize = SSKBlock.DATA_LENGTH;
 			isSSK = true;
 			maxSourceDataSize = ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH;
-			if(origSize > maxSourceDataSize)
-				dontCompress = true;
-			// If too big to fit in an SSK, don't even try.
 		} else if(block.desiredURI.getKeyType().equals("CHK")) {
 			blockSize = CHKBlock.DATA_LENGTH;
 			maxSourceDataSize = ClientCHKBlock.MAX_LENGTH_BEFORE_COMPRESSION;

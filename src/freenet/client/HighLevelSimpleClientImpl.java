@@ -1,7 +1,6 @@
 package freenet.client;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.HashMap;
 
 import freenet.client.events.ClientEventListener;
@@ -9,10 +8,8 @@ import freenet.client.events.ClientEventProducer;
 import freenet.client.events.EventLogger;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
-import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
-import freenet.keys.InsertableClientSSK;
 import freenet.node.RequestStarterClient;
 import freenet.node.SimpleLowLevelClient;
 import freenet.support.Bucket;

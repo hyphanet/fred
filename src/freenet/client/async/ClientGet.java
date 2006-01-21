@@ -12,17 +12,15 @@ import freenet.keys.FreenetURI;
 /**
  * A high level data request.
  */
-public class ClientGet extends ClientRequest implements RequestCompletionCallback {
+public class ClientGet extends ClientRequest implements GetCompletionCallback {
 
 	final Client client;
 	final FreenetURI uri;
 	final FetcherContext ctx;
 	final ArchiveContext actx;
 	final ClientRequestScheduler scheduler;
-	ClientGetState fetchState;
+	ClientGetState currentState;
 	private boolean finished;
-	private boolean cancelled;
-	final int priorityClass;
 	private int archiveRestarts;
 	
 	public ClientGet(Client client, ClientRequestScheduler sched, FreenetURI uri, FetcherContext ctx, short priorityClass) {
@@ -33,15 +31,14 @@ public class ClientGet extends ClientRequest implements RequestCompletionCallbac
 		this.scheduler = sched;
 		this.finished = false;
 		this.actx = new ArchiveContext();
-		this.priorityClass = priorityClass;
 		archiveRestarts = 0;
 		start();
 	}
 	
 	private void start() {
 		try {
-			fetchState = new SingleFileFetcher(this, this, new ClientMetadata(), uri, ctx, actx, priorityClass, 0, false, null);
-			fetchState.schedule();
+			currentState = new SingleFileFetcher(this, this, new ClientMetadata(), uri, ctx, actx, getPriorityClass(), 0, false, null);
+			currentState.schedule();
 		} catch (MalformedURLException e) {
 			onFailure(new FetchException(FetchException.INVALID_URI, e), null);
 		} catch (FetchException e) {
@@ -49,16 +46,9 @@ public class ClientGet extends ClientRequest implements RequestCompletionCallbac
 		}
 	}
 
-	public void cancel() {
-		cancelled = true;
-	}
-	
-	public boolean isCancelled() {
-		return cancelled;
-	}
-	
 	public void onSuccess(FetchResult result, ClientGetState state) {
 		finished = true;
+		currentState = null;
 		client.onSuccess(result, this);
 	}
 

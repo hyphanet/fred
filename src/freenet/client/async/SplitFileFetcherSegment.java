@@ -22,7 +22,7 @@ import freenet.support.Logger;
  * A single segment within a SplitFileFetcher.
  * This in turn controls a large number of SingleFileFetcher's.
  */
-public class SplitFileFetcherSegment implements RequestCompletionCallback {
+public class SplitFileFetcherSegment implements GetCompletionCallback {
 	
 	final short splitfileType;
 	final FreenetURI[] dataBlocks;
@@ -82,22 +82,6 @@ public class SplitFileFetcherSegment implements RequestCompletionCallback {
 		} else {
 			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK);
 			this.recursionLevel = 0;
-		}
-		
-		try {
-			for(int i=0;i<dataBlocks.length;i++) {
-				dataBlockStatus[i] =
-					new SingleFileFetcher(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, fetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(i));
-				dataBlockStatus[i].schedule();
-			}
-			for(int i=0;i<checkBlocks.length;i++) {
-				checkBlockStatus[i] =
-					new SingleFileFetcher(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, fetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(dataBlocks.length+i));
-				checkBlockStatus[i].schedule();
-			}
-		} catch (MalformedURLException e) {
-			// Invalidates the whole splitfile
-			throw new FetchException(FetchException.INVALID_URI, "Invalid URI in splitfile");
 		}
 	}
 
@@ -293,6 +277,48 @@ public class SplitFileFetcherSegment implements RequestCompletionCallback {
 			errors.merge(e.errorCodes);
 		else
 			errors.inc(new Integer(e.mode), ((SingleFileFetcher)state).getRetryCount());
+		if(failedBlocks + fatallyFailedBlocks > (dataBlocks.length + checkBlocks.length - minFetched)) {
+			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+		}
+	}
+
+	private void fail(FetchException e) {
+		synchronized(this) {
+			if(finished) return;
+			finished = true;
+			this.failureException = e;
+		}
+		for(int i=0;i<dataBlockStatus.length;i++) {
+			SingleFileFetcher f = dataBlockStatus[i];
+			if(f != null)
+				f.cancel();
+		}
+		for(int i=0;i<checkBlockStatus.length;i++) {
+			SingleFileFetcher f = dataBlockStatus[i];
+			if(f != null)
+				f.cancel();
+		}
+		parentFetcher.segmentFinished(this);
+	}
+
+	public void schedule() {
+		try {
+			for(int i=0;i<dataBlocks.length;i++) {
+				dataBlockStatus[i] =
+					new SingleFileFetcher(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(i));
+				dataBlockStatus[i].schedule();
+			}
+			for(int i=0;i<checkBlocks.length;i++) {
+				checkBlockStatus[i] =
+					new SingleFileFetcher(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(dataBlocks.length+i));
+				checkBlockStatus[i].schedule();
+			}
+		} catch (MalformedURLException e) {
+			// Invalidates the whole splitfile
+			fail(new FetchException(FetchException.INVALID_URI, "Invalid URI in splitfile"));
+		} catch (Throwable t) {
+			fail(new FetchException(FetchException.INVALID_URI, t));
+		}
 	}
 
 }

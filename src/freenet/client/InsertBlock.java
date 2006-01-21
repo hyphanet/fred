@@ -9,8 +9,8 @@ import freenet.support.Bucket;
 public class InsertBlock {
 
 	Bucket data;
-	final FreenetURI desiredURI;
-	final ClientMetadata clientMetadata;
+	public final FreenetURI desiredURI;
+	public final ClientMetadata clientMetadata;
 	
 	public InsertBlock(Bucket data, ClientMetadata metadata, FreenetURI desiredURI) {
 		this.data = data;
@@ -20,7 +20,9 @@ public class InsertBlock {
 			clientMetadata = metadata;
 		this.desiredURI = desiredURI;
 	}
-
-
+	
+	public Bucket getData() {
+		return data;
+	}
 
 }

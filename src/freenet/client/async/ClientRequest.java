@@ -9,6 +9,7 @@ public abstract class ClientRequest {
 
 	// FIXME move the priority classes from RequestStarter here
 	private short priorityClass;
+	private boolean cancelled;
 	
 	public short getPriorityClass() {
 		return priorityClass;
@@ -18,6 +19,13 @@ public abstract class ClientRequest {
 		this.priorityClass = priorityClass;
 	}
 	
-	public abstract void cancel();
+	public void cancel() {
+		cancelled = true;
+	}
 	
+	public boolean isCancelled() {
+		return cancelled;
+	}
+	
+
 }

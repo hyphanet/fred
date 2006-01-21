@@ -82,6 +82,8 @@ public class InserterException extends Exception {
 	public static final int ROUTE_REALLY_NOT_FOUND = 8;
 	/** Collided with pre-existing content */
 	public static final int COLLISION = 9;
+	/** Cancelled by user */
+	public static final int CANCELLED = 10;
 	
 	public static String getMessage(int mode) {
 		switch(mode) {
@@ -103,6 +105,8 @@ public class InserterException extends Exception {
 			return "Insert could not leave the node at all";
 		case COLLISION:
 			return "Insert collided with different, pre-existing data at the same key";
+		case CANCELLED:
+			return "Cancelled by user";
 		default:
 			return "Unknown error "+mode;
 		}

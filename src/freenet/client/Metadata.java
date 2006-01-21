@@ -30,7 +30,7 @@ public class Metadata implements Cloneable {
 	
 	// document type
 	byte documentType;
-	static final byte SIMPLE_REDIRECT = 0;
+	public static final byte SIMPLE_REDIRECT = 0;
 	static final byte MULTI_LEVEL_METADATA = 1;
 	static final byte SIMPLE_MANIFEST = 2;
 	static final byte ZIP_MANIFEST = 3;
@@ -554,7 +554,7 @@ public class Metadata implements Cloneable {
 	/**
 	 * Write the data to a byte array.
 	 */
-	byte[] writeToByteArray() {
+	public byte[] writeToByteArray() {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {

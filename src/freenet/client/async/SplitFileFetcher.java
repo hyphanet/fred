@@ -21,7 +21,7 @@ import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 
 /**
- * Fetch a splitfile, decompress it if need be, and return it to the RequestCompletionCallback.
+ * Fetch a splitfile, decompress it if need be, and return it to the GetCompletionCallback.
  * Most of the work is done by the segments, and we do not need a thread.
  */
 public class SplitFileFetcher extends ClientGetState {
@@ -31,7 +31,7 @@ public class SplitFileFetcher extends ClientGetState {
 	final LinkedList decompressors;
 	final ClientMetadata clientMetadata;
 	final ClientGet parent;
-	final RequestCompletionCallback cb;
+	final GetCompletionCallback cb;
 	final int recursionLevel;
 	/** The splitfile type. See the SPLITFILE_ constants on Metadata. */
 	final short splitfileType;
@@ -57,7 +57,7 @@ public class SplitFileFetcher extends ClientGetState {
 	private final boolean splitUseLengths;
 	private boolean finished;
 	
-	public SplitFileFetcher(Metadata metadata, RequestCompletionCallback rcb, ClientGet parent,
+	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientGet parent,
 			FetcherContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel) throws FetchException, MetadataParseException {
 		this.finished = false;
@@ -233,6 +233,12 @@ public class SplitFileFetcher extends ClientGetState {
 			runningBlocks += segment.runningBlocks();
 		}
 		fetchContext.eventProducer.produceEvent(new SplitfileProgressEvent(totalBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, runningBlocks));
+	}
+
+	public void schedule() {
+		for(int i=0;i<segments.length;i++) {
+			segments[i].schedule();
+		}
 	}
 
 }
