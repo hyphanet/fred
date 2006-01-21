@@ -131,7 +131,7 @@ public class NodeSSK extends Key {
 		if(pubKey == pubKey2) return;
 		if(pubKey2 == null) return;
 		if(pubKey == null || !pubKey2.equals(pubKey)) {
-			if(pubKey != null) {
+			if(pubKey2 != null) {
 				MessageDigest md256;
 				try {
 					md256 = MessageDigest.getInstance("SHA-256");
