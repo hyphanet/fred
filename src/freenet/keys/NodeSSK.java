@@ -140,7 +140,12 @@ public class NodeSSK extends Key {
 				}
 				byte[] newPubKeyHash = md256.digest(pubKey2.asBytes());
 				if(Arrays.equals(pubKeyHash, newPubKeyHash)) {
-					Logger.error(this, "Found SHA-256 collision or something... WTF?");
+					if(pubKey != null)
+						Logger.error(this, "Found SHA-256 collision or something... WTF?");
+					else {
+						// Valid key
+						return;
+					}
 				} else {
 					throw new SSKVerifyException("New pubkey has invalid hash");
 				}
