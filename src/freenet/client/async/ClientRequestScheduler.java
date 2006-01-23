@@ -7,7 +7,13 @@ package freenet.client.async;
  */
 public class ClientRequestScheduler {
 
-	public void register(SendableRequest req) {
+	
+	
+	public void register(SendableGet req) {
+		// FIXME
+	}
+	
+	public void register(SendableInsert req) {
 		// FIXME
 	}
 	
@@ -19,4 +25,11 @@ public class ClientRequestScheduler {
 		// FIXME
 	}
 	
+	public void startRequest() {
+		// FIXME
+	}
+	
+	public void startInsert() {
+		// FIXME
+	}
 }
