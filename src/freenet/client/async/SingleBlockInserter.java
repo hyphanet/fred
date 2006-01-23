@@ -148,6 +148,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
 	public ClientKeyBlock getBlock() {
 		try {
+			if(finished) return null;
 			return encode();
 		} catch (InserterException e) {
 			cb.onFailure(e, this);
@@ -181,6 +182,14 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
 	public ClientPut getParent() {
 		return parent;
+	}
+
+	public void cancel() {
+		synchronized(this) {
+			if(finished) return;
+			finished = true;
+		}
+		cb.onFailure(new InserterException(InserterException.CANCELLED), this);
 	}
 
 }

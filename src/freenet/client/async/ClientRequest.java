@@ -9,7 +9,7 @@ public abstract class ClientRequest {
 
 	// FIXME move the priority classes from RequestStarter here
 	private short priorityClass;
-	private boolean cancelled;
+	protected boolean cancelled;
 	
 	public short getPriorityClass() {
 		return priorityClass;

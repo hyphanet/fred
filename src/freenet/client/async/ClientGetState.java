@@ -10,4 +10,6 @@ public abstract class ClientGetState {
 
 	public abstract void schedule();
 
+	public abstract void cancel();
+
 }

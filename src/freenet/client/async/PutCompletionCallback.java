@@ -12,6 +12,6 @@ public interface PutCompletionCallback {
 	
 	public void onFailure(InserterException e, ClientPutState state);
 
-	public void onEncode(ClientKey key);
+	public void onEncode(ClientKey key, ClientPutState state);
 	
 }

@@ -37,8 +37,11 @@ class SingleFileInserter implements ClientPutState {
 	/** If true, we are not the top level request, and should not
 	 * update our parent to point to us as current put-stage. */
 	final boolean dontTellParent;
+	private boolean cancelled = false;
 
-	SingleFileInserter(ClientPut parent, PutCompletionCallback cb, InsertBlock block, boolean metadata, InserterContext ctx, boolean dontCompress, boolean dontTellParent, boolean getCHKOnly) throws InserterException {
+	SingleFileInserter(ClientPut parent, PutCompletionCallback cb, InsertBlock block, 
+			boolean metadata, InserterContext ctx, boolean dontCompress, 
+			boolean dontTellParent, boolean getCHKOnly) throws InserterException {
 		this.parent = parent;
 		this.block = block;
 		this.ctx = ctx;
@@ -245,13 +248,25 @@ class SingleFileInserter implements ClientPutState {
 			return parent;
 		}
 
-		public void onEncode(ClientKey key) {
+		public void onEncode(ClientKey key, ClientPutState state) {
 			// Ignore
+			
+		}
+
+		public void cancel() {
+			if(sfi != null)
+				sfi.cancel();
+			if(metadataPutter != null)
+				metadataPutter.cancel();
 		}
 		
 	}
 
 	public ClientPut getParent() {
 		return parent;
+	}
+
+	public void cancel() {
+		cancelled = true;
 	}
 }

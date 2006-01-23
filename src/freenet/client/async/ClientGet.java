@@ -66,4 +66,12 @@ public class ClientGet extends ClientRequest implements GetCompletionCallback {
 		client.onFailure(e, this);
 	}
 	
+	public void cancel() {
+		synchronized(this) {
+			super.cancel();
+			if(currentState != null)
+				currentState.cancel();
+		}
+	}
+	
 }

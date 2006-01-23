@@ -9,4 +9,6 @@ public interface ClientPutState {
 
 	public abstract ClientPut getParent();
 
+	public abstract void cancel();
+
 }

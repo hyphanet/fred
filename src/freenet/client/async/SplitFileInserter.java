@@ -5,6 +5,7 @@ import java.util.Vector;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FECCodec;
+import freenet.client.FailureCodeTracker;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
@@ -105,7 +106,7 @@ public class SplitFileInserter implements ClientPutState {
 		return (SplitFileInserterSegment[]) segs.toArray(new SplitFileInserterSegment[segs.size()]);
 	}
 	
-	public void start() {
+	public void start() throws InserterException {
 		for(int i=0;i<segments.length;i++)
 			segments[i].start();
 	}
@@ -142,7 +143,7 @@ public class SplitFileInserter implements ClientPutState {
 				
 				if(!missingURIs) {
 					// Create Metadata
-					Metadata metadata = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, isMetadata);
+					m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, isMetadata);
 				}
 				haveSentMetadata = true;
 			}
@@ -209,6 +210,57 @@ public class SplitFileInserter implements ClientPutState {
 
 	public ClientPut getParent() {
 		return parent;
+	}
+
+	public void segmentFinished(SplitFileInserterSegment segment) {
+		Logger.minor(this, "Segment finished: "+segment);
+		boolean allGone = true;
+		synchronized(this) {
+			if(finished) return;
+			for(int i=0;i<segments.length;i++)
+				if(!segments[i].isFinished()) allGone = false;
+			if(segment.getException().isFatal()) {
+				cancel();
+			} else {
+				if(!allGone) return;
+			}
+			finished = true;
+		}
+		try {
+		// Finished !!
+		FailureCodeTracker tracker = new FailureCodeTracker(true);
+		boolean allSucceeded = true;
+		for(int i=0;i<segments.length;i++) {
+			InserterException e = segments[i].getException();
+			if(e == null) continue;
+			allSucceeded = false;
+			if(e.errorCodes != null)
+				tracker.merge(e.errorCodes);
+			tracker.inc(e.getMode());
+		}
+		if(allSucceeded)
+			cb.onSuccess(this);
+		else {
+			InserterException e;
+			if(tracker.isFatal(true))
+				cb.onFailure(new InserterException(InserterException.FATAL_ERRORS_IN_BLOCKS, tracker, null), this);
+			else
+				cb.onFailure(new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, tracker, null), this);
+		}
+		} catch (Throwable t) {
+			// We MUST tell the parent *something*!
+			Logger.error(this, "Caught "+t, t);
+			cb.onFailure(new InserterException(InserterException.INTERNAL_ERROR), this);
+		}
+	}
+
+	public void cancel() {
+		synchronized(this) {
+			if(finished) return;
+			finished = true;
+		}
+		for(int i=0;i<segments.length;i++)
+			segments[i].cancel();
 	}
 
 }

@@ -4,6 +4,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
+import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 
@@ -17,12 +18,13 @@ public class ClientPut extends ClientRequest implements PutCompletionCallback {
 	final ClientRequestScheduler scheduler;
 	private ClientPutState currentState;
 	private boolean finished;
-	private boolean cancelled;
+	private final boolean getCHKOnly;
 
 	public ClientPut(Client client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InserterContext ctx,
-			ClientRequestScheduler scheduler, short priorityClass) {
+			ClientRequestScheduler scheduler, short priorityClass, boolean getCHKOnly) {
 		super(priorityClass);
 		this.cm = cm;
+		this.getCHKOnly = getCHKOnly;
 		this.client = client;
 		this.data = data;
 		this.targetURI = targetURI;
@@ -39,7 +41,7 @@ public class ClientPut extends ClientRequest implements PutCompletionCallback {
 
 	private void start() throws InserterException {
 		currentState =
-			new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), false, ctx, false, false);
+			new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), false, ctx, false, false, getCHKOnly);
 	}
 
 	void setCurrentState(ClientPutState s) {
@@ -57,4 +59,17 @@ public class ClientPut extends ClientRequest implements PutCompletionCallback {
 		currentState = null;
 		client.onFailure(e, this);
 	}
+
+	public void onEncode(ClientKey key, ClientPutState state) {
+		client.onGeneratedURI(key.getURI(), this);
+	}
+	
+	public void cancel() {
+		synchronized(this) {
+			super.cancel();
+			if(currentState != null)
+				currentState.cancel();
+		}
+	}
+	
 }

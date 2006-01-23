@@ -3,11 +3,13 @@ package freenet.client.async;
 import java.util.LinkedList;
 
 import freenet.client.InserterException;
+import freenet.keys.ClientKey;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
 	private final LinkedList waitingFor;
 	private final PutCompletionCallback cb;
+	private ClientPutState generator;
 	private final ClientPut parent;
 	private boolean finished;
 	private boolean started;
@@ -45,6 +47,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			cb.onSuccess(this);
 	}
 
+	public synchronized void addURIGenerator(ClientPutState ps) {
+		add(ps);
+		generator = ps;
+	}
+	
 	public synchronized void add(ClientPutState ps) {
 		if(finished) return;
 		waitingFor.add(ps);
@@ -56,6 +63,22 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 
 	public ClientPut getParent() {
 		return parent;
+	}
+
+	public void onEncode(ClientKey key, ClientPutState state) {
+		synchronized(this) {
+			if(state != generator) return;
+		}
+		cb.onEncode(key, this);
+	}
+
+	public void cancel() {
+		ClientPutState[] states = new ClientPutState[waitingFor.size()];
+		synchronized(this) {
+			states = (ClientPutState[]) waitingFor.toArray(states);
+		}
+		for(int i=0;i<states.length;i++)
+			states[i].cancel();
 	}
 
 }

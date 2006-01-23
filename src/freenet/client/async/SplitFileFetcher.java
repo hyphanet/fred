@@ -241,4 +241,9 @@ public class SplitFileFetcher extends ClientGetState {
 		}
 	}
 
+	public void cancel() {
+		for(int i=0;i<segments.length;i++)
+			segments[i].cancel();
+	}
+
 }

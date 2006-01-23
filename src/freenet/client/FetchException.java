@@ -198,6 +198,10 @@ public class FetchException extends Exception {
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
+		return isFatal(mode);
+	}
+
+	public static boolean isFatal(int mode) {
 		switch(mode) {
 		// Problems with the data as inserted. No point retrying.
 		case FetchException.ARCHIVE_FAILURE:
@@ -238,7 +242,7 @@ public class FetchException extends Exception {
 			return true;
 			
 		default:
-			Logger.error(this, "Do not know if error code is fatal: "+getMessage(mode));
+			Logger.error(FetchException.class, "Do not know if error code is fatal: "+getMessage(mode));
 			return false; // assume it isn't
 		}
 	}

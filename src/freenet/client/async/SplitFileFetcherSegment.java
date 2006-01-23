@@ -321,4 +321,8 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		}
 	}
 
+	public void cancel() {
+		fail(new FetchException(FetchException.CANCELLED));
+	}
+
 }
