@@ -144,7 +144,7 @@ class SingleFileInserter implements ClientPutState {
 		if((block.clientMetadata == null || block.clientMetadata.isTrivial())) {
 			if(data.size() < blockSize) {
 				// Just insert it
-				SingleBlockInserter bi = new SingleBlockInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1);
+				SingleBlockInserter bi = new SingleBlockInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly);
 				bi.schedule();
 				return;
 			}
@@ -153,7 +153,7 @@ class SingleFileInserter implements ClientPutState {
 			MultiPutCompletionCallback mcb = 
 				new MultiPutCompletionCallback(cb, parent, dontTellParent);
 			// Insert single block, then insert pointer to it
-			SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1);
+			SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly);
 			Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
 			Bucket metadataBucket;
 			try {
@@ -161,7 +161,7 @@ class SingleFileInserter implements ClientPutState {
 			} catch (IOException e) {
 				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 			}
-			SingleBlockInserter metaPutter = new SingleBlockInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1);
+			SingleBlockInserter metaPutter = new SingleBlockInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly);
 			mcb.add(metaPutter);
 			mcb.add(dataPutter);
 			mcb.arm();

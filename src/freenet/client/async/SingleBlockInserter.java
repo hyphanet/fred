@@ -39,7 +39,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	final boolean isMetadata;
 	final int sourceLength;
 	
-	public SingleBlockInserter(ClientPut parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token) throws InserterException {
+	public SingleBlockInserter(ClientPut parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly) throws InserterException {
 		this.token = token;
 		this.parent = parent;
 		this.retries = 0;
@@ -52,6 +52,12 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		this.sourceData = data;
 		this.isMetadata = isMetadata;
 		this.sourceLength = sourceLength;
+		if(getCHKOnly) {
+			ClientKeyBlock block = encode();
+			cb.onEncode(block.getClientKey(), this);
+			cb.onSuccess(this);
+			finished = true;
+		}
 	}
 
 	protected ClientKeyBlock innerEncode() throws InserterException {
@@ -93,6 +99,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		refToClientKeyBlock = 
 			new SoftReference(block);
 		resultingURI = block.getClientKey().getURI();
+		cb.onEncode(block.getClientKey(), this);
 		return block;
 	}
 	
@@ -160,10 +167,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	}
 
 	public void schedule() {
-		if(finished) {
-			Logger.normal(this, "Asking to schedule but already finished");
-			return;
-		}
+		if(finished) return;
 		parent.scheduler.register(this);
 	}
 

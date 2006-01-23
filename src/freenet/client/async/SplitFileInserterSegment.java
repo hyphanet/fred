@@ -26,6 +26,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	final int segNo;
 	private boolean encoded;
 	private boolean finished;
+	private boolean getCHKOnly;
 	private InserterException toThrow;
 	private final FailureCodeTracker errors;
 	private int blocksGotURI;
@@ -49,7 +50,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	public void start() throws InserterException {
 		for(int i=0;i<dataBlockInserters.length;i++)
 			dataBlockInserters[i] = 
-				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i);
+				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i, getCHKOnly);
 		if(splitfileAlgo == null) {
 			// Don't need to encode blocks
 		} else {
@@ -76,7 +77,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			// Start the inserts
 			for(int i=0;i<checkBlockInserters.length;i++)
 				checkBlockInserters[i] = 
-					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i + dataBlocks.length);
+					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly);
 		} catch (IOException e) {
 			InserterException ex = 
 				new InserterException(InserterException.BUCKET_ERROR, e, null);
