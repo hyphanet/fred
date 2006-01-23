@@ -143,8 +143,7 @@ public class NodeSSK extends Key {
 					if(pubKey != null)
 						Logger.error(this, "Found SHA-256 collision or something... WTF?");
 					else {
-						// Valid key
-						return;
+						// Valid key, assign.
 					}
 				} else {
 					throw new SSKVerifyException("New pubkey has invalid hash");

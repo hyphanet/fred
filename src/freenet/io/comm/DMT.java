@@ -688,6 +688,8 @@ public class DMT {
             return "Verify failed";
         else if(reason == DATA_INSERT_REJECTED_RECEIVE_FAILED)
             return "Receive failed";
+        else if(reason == DATA_INSERT_REJECTED_SSK_ERROR)
+        	return "SSK error";
         return "Unknown reason code: "+reason;
     }
 

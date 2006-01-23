@@ -105,7 +105,7 @@ public class SSKInsertHandler implements Runnable {
 				byte[] pubkeyAsBytes = ((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData();
 				try {
 					pubKey = new DSAPublicKey(pubkeyAsBytes);
-					Logger.minor(this, "Got pubkey on "+uid);
+					Logger.minor(this, "Got pubkey on "+uid+" : "+pubKey);
 					Message confirm = DMT.createFNPSSKPubKeyAccepted(uid);
 					try {
 						source.sendAsync(confirm, null);
