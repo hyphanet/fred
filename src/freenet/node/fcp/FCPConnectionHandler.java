@@ -37,6 +37,7 @@ public class FCPConnectionHandler {
 		HighLevelSimpleClient client = node.makeClient((short)0,(short)0);
 		defaultFetchContext = client.getFetcherContext();
 		defaultInsertContext = client.getInserterContext();
+		inputHandler.start();
 	}
 	
 	public void close() {

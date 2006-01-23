@@ -105,11 +105,11 @@ public class ClientGetMessage extends FCPMessage {
 		fs.put("IgnoreDS", Boolean.toString(ignoreDS));
 		fs.put("URI", uri.toString(false));
 		fs.put("Identifier", identifier);
-		fs.put("Verbosity", Integer.toHexString(verbosity));
+		fs.put("Verbosity", Integer.toString(verbosity));
 		fs.put("ReturnType", getReturnTypeString());
-		fs.put("MaxSize", Long.toHexString(maxSize));
-		fs.put("MaxTempSize", Long.toHexString(maxTempSize));
-		fs.put("MaxRetries", Integer.toHexString(maxRetries));
+		fs.put("MaxSize", Long.toString(maxSize));
+		fs.put("MaxTempSize", Long.toString(maxTempSize));
+		fs.put("MaxRetries", Integer.toString(maxRetries));
 		return fs;
 	}
 

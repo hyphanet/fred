@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
@@ -329,6 +330,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		} catch (IOException e) {
 	    			Logger.error(this, "Could not read key");
 	    			return null;
+	    		}
+	    		
+	    		if(!Arrays.equals(block.asBytesHash(), hash)) {
+		    		Logger.normal(this, "Does not verify, setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
+		    		storeBlock.setRecentlyUsedToZero();
+	    			DatabaseEntry updateDBE = new DatabaseEntry();
+	    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
+	    			c.putCurrent(updateDBE);
+		    		c.close();
+		    		t.commit();
+		            return null;
 	    		}
 	    		
 	    		if(!dontPromote)

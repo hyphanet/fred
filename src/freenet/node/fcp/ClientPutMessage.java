@@ -29,6 +29,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final String identifier;
 	final int verbosity;
 	final int maxRetries;
+	final boolean getCHKOnly;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		try {
@@ -69,15 +70,16 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
 			}
 		}
+		getCHKOnly = Boolean.getBoolean(fs.get("GetCHKOnly"));
 	}
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
 		sfs.put("URI", uri.toString());
 		sfs.put("Identifier", identifier);
-		sfs.put("DataLength", Long.toHexString(dataLength));
-		sfs.put("Verbosity", Integer.toHexString(verbosity));
-		sfs.put("MaxRetries", Integer.toHexString(maxRetries));
+		sfs.put("DataLength", Long.toString(dataLength));
+		sfs.put("Verbosity", Integer.toString(verbosity));
+		sfs.put("MaxRetries", Integer.toString(maxRetries));
 		sfs.put("Metadata.ContentType", contentType);
 		return sfs;
 	}

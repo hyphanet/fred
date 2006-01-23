@@ -9,6 +9,7 @@ import java.util.Arrays;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.Logger;
 
 public class ClientSSK extends ClientKey {
 
@@ -100,6 +101,7 @@ public class ClientSSK extends ClientKey {
 			return new NodeSSK(pubKeyHash, ehDocname, pubKey);
 		} catch (SSKVerifyException e) {
 			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);
+			Logger.error(this, "Have already verified and yet it fails!: "+e);
 			x.initCause(e);
 			throw x;
 		}

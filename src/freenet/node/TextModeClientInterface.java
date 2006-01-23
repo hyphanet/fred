@@ -7,9 +7,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -104,7 +107,7 @@ public class TextModeClientInterface implements Runnable {
 //        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
 //        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
 //        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
-        System.out.println("CONNECT:<filename> - connect to a node from its ref in a file.");
+        System.out.println("CONNECT:<filename|URL> - connect to a node from its ref in a file/url.");
         System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
         System.out.println("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port");
         System.out.println("NAME:<new node name> - change the node's name.");
@@ -443,29 +446,32 @@ public class TextModeClientInterface implements Runnable {
                 key = key.substring(1);
             while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
                 key = key.substring(0, key.length()-2);
+            
+            String content = null;
             if(key.length() > 0) {
                 // Filename
+            	BufferedReader in;
                 System.out.println("Trying to connect to noderef in "+key);
                 File f = new File(key);
-                System.out.println("Attempting to read file "+key);
-                try {
-                    FileInputStream fis = new FileInputStream(key);
-                    DataInputStream dis = new DataInputStream(fis);
-                    int length = (int)f.length();
-                    byte[] data = new byte[length];
-                    dis.readFully(data);
-                    dis.close();
-                    connect(new String(data));
-                } catch (IOException e) {
-                    System.err.println("Could not read file: "+e);
-                    e.printStackTrace(System.err);
+                if (f.isFile()) {
+                	System.out.println("Given string seems to be a file, loading...");
+                	in = new BufferedReader(new FileReader(f));
+                } else {
+                	System.out.println("Given string seems to be an URL, loading...");
+                    URL url = new URL(key);
+                    URLConnection uc = url.openConnection();
+                	in = new BufferedReader(
+                			new InputStreamReader(uc.getInputStream()));
                 }
+                content = readLines(in, true);
+                in.close();
             } else {
-                String content = readLines(reader, true);
-                if(content == null) return;
-                if(content.equals("")) return;
-                connect(content);
+                content = readLines(reader, true);
             }
+            if(content == null) return;
+            if(content.equals("")) return;
+            connect(content);
+        
         } else if(uline.startsWith("NAME:")) {
             System.out.println("Node name currently: "+n.myName);
             String key = line.substring("NAME:".length());

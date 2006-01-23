@@ -11,13 +11,16 @@ public class FCPConnectionInputHandler implements Runnable {
 
 	final FCPConnectionHandler handler;
 	
-	public FCPConnectionInputHandler(FCPConnectionHandler handler) {
+	FCPConnectionInputHandler(FCPConnectionHandler handler) {
 		this.handler = handler;
+	}
+
+	void start() {
 		Thread t = new Thread(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress()+":"+handler.sock.getPort());
 		t.setDaemon(true);
 		t.start();
 	}
-
+	
 	public void run() {
 		try {
 			realRun();

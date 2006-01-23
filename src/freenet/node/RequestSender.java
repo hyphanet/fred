@@ -342,10 +342,10 @@ public final class RequestSender implements Runnable {
     					((NodeSSK)key).setPubKey(pubKey);
     				} catch (SSKVerifyException e) {
     					pubKey = null;
-    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" (wrong hash)");
+    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e.getMessage()+")", e);
     					break; // try next node
     				} catch (IOException e) {
-    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
+    					Logger.error(this, "Invalid pubkey from "+source+" on "+uid+" ("+e+")");
     					break; // try next node
     				}
     				if(sskData != null) {
