@@ -15,10 +15,12 @@ public class ClientPut extends ClientRequest implements Runnable {
 	final InsertBlock block;
 	final FCPConnectionHandler handler;
 	final String identifier;
+	final boolean getCHKOnly;
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) {
 		this.handler = handler;
 		this.identifier = message.identifier;
+		this.getCHKOnly = message.getCHKOnly;
 		ctx = new InserterContext(handler.defaultInsertContext);
 		// Now go through the fields one at a time
 		uri = message.uri;
@@ -37,7 +39,7 @@ public class ClientPut extends ClientRequest implements Runnable {
 
 	public void run() {
 		try {
-			FreenetURI uri = inserter.run(block, false, false, false, null);
+			FreenetURI uri = inserter.run(block, false, getCHKOnly, false, null);
 			FCPMessage msg = new PutSuccessfulMessage(identifier, uri);
 			handler.outputHandler.queue(msg);
 		} catch (InserterException e) {

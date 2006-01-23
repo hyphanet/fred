@@ -29,6 +29,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final String identifier;
 	final int verbosity;
 	final int maxRetries;
+	final boolean getCHKOnly;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		try {
@@ -69,6 +70,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
 			}
 		}
+		getCHKOnly = Boolean.getBoolean(fs.get("GetCHKOnly"));
 	}
 
 	public SimpleFieldSet getFieldSet() {
