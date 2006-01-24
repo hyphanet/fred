@@ -1,10 +1,12 @@
 package freenet.client.async;
 
+import freenet.support.RandomGrabArrayItem;
+
 /**
  * A low-level request which can be sent immediately. These are registered
  * on the ClientRequestScheduler.
  */
-public interface SendableRequest {
+public interface SendableRequest extends RandomGrabArrayItem {
 	
 	public short getPriorityClass();
 	

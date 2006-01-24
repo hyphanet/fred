@@ -196,4 +196,8 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		cb.onFailure(new InserterException(InserterException.CANCELLED), this);
 	}
 
+	public boolean isFinished() {
+		return finished;
+	}
+
 }

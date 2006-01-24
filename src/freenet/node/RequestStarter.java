@@ -33,6 +33,8 @@ public class RequestStarter implements Runnable {
 	/** Anything less important than prefetch (redundant??) */
 	public static final short MINIMUM_PRIORITY_CLASS = 6;
 	
+	public static final short NUMBER_OF_PRIORITY_CLASSES = MINIMUM_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS;
+	
 	// Clients registered
 	final Vector clientsByPriority;
 	final RequestThrottle throttle;

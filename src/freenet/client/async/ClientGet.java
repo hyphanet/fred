@@ -73,5 +73,9 @@ public class ClientGet extends ClientRequest implements GetCompletionCallback {
 				currentState.cancel();
 		}
 	}
+
+	public boolean isFinished() {
+		return finished || cancelled;
+	}
 	
 }

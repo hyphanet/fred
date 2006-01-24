@@ -27,5 +27,5 @@ public abstract class ClientRequest {
 		return cancelled;
 	}
 	
-
+	public abstract boolean isFinished();
 }

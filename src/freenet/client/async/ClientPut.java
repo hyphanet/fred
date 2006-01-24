@@ -72,4 +72,8 @@ public class ClientPut extends ClientRequest implements PutCompletionCallback {
 		}
 	}
 	
+	public boolean isFinished() {
+		return finished || cancelled;
+	}
+	
 }

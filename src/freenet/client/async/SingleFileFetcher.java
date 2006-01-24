@@ -464,4 +464,8 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		cancelled = true;
 	}
 
+	public boolean isFinished() {
+		return cancelled;
+	}
+
 }
