@@ -134,10 +134,11 @@ public abstract class Key implements WritableToDataOutputStream {
         short compressionAlgorithm = -1;
         // Try to compress it - even if it fits into the block,
         // because compressing it improves its entropy.
-        boolean compressed = false;
         if(sourceData.size() > MAX_LENGTH_BEFORE_COMPRESSION)
             throw new KeyEncodeException("Too big");
-        if(!dontCompress) {
+        if(alreadyCompressedCodec != -1) {
+        	compressionAlgorithm = alreadyCompressedCodec;
+        } else if(!dontCompress) {
         	byte[] cbuf = null;
         	if(alreadyCompressedCodec >= 0) {
            		if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH)
