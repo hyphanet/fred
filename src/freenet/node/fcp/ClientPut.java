@@ -34,6 +34,11 @@ public class ClientPut extends ClientRequest implements ClientCallback {
 		String mimeType = message.contentType;
 		block = new InsertBlock(message.bucket, new ClientMetadata(mimeType), uri);
 		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, handler.node.putScheduler, priorityClass, getCHKOnly, false);
+		try {
+			inserter.start();
+		} catch (InserterException e) {
+			onFailure(e, null);
+		}
 	}
 
 	public void cancel() {

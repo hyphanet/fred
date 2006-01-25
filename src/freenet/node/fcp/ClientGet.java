@@ -46,6 +46,11 @@ public class ClientGet extends ClientRequest implements ClientCallback {
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
 		getter = new ClientGetter(this, handler.node.fetchScheduler, uri, fctx, priorityClass);
+		try {
+			getter.start();
+		} catch (FetchException e) {
+			onFailure(e, null);
+		}
 	}
 
 	public void cancel() {

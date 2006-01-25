@@ -34,14 +34,12 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 		archiveRestarts = 0;
 	}
 	
-	public void start() {
+	public void start() throws FetchException {
 		try {
 			currentState = new SingleFileFetcher(this, this, new ClientMetadata(), uri, ctx, actx, getPriorityClass(), 0, false, null);
 			currentState.schedule();
 		} catch (MalformedURLException e) {
-			onFailure(new FetchException(FetchException.INVALID_URI, e), null);
-		} catch (FetchException e) {
-			onFailure(e, null);
+			throw new FetchException(FetchException.INVALID_URI, e);
 		}
 	}
 
@@ -52,17 +50,25 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	}
 
 	public void onFailure(FetchException e, ClientGetState state) {
-		if(e.mode == FetchException.ARCHIVE_RESTART) {
-			archiveRestarts++;
-			if(archiveRestarts > ctx.maxArchiveRestarts)
-				e = new FetchException(FetchException.TOO_MANY_ARCHIVE_RESTARTS);
-			else {
-				start();
-				return;
+		while(true) {
+			if(e.mode == FetchException.ARCHIVE_RESTART) {
+				archiveRestarts++;
+				if(archiveRestarts > ctx.maxArchiveRestarts)
+					e = new FetchException(FetchException.TOO_MANY_ARCHIVE_RESTARTS);
+				else {
+					try {
+						start();
+					} catch (FetchException e1) {
+						e = e1;
+						continue;
+					}
+					return;
+				}
 			}
+			finished = true;
+			client.onFailure(e, this);
+			return;
 		}
-		finished = true;
-		client.onFailure(e, this);
 	}
 	
 	public void cancel() {
