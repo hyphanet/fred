@@ -187,7 +187,6 @@ public abstract class Key implements WritableToDataOutputStream {
                 finalData[1] = (byte) ((sourceLength >> 16) & 0xff);
                 finalData[2] = (byte) ((sourceLength >> 8) & 0xff);
                 finalData[3] = (byte) ((sourceLength) & 0xff);
-                compressed = true;
         	}
         }
         if(finalData == null) {
