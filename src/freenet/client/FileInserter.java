@@ -140,7 +140,7 @@ public class FileInserter {
 			}
 			ClientSSKBlock ssk;
 			try {
-				ssk = isk.encode(data, metadata, true, codec, data.size(), ctx.random);
+				ssk = isk.encode(data, metadata, false, codec, data.size(), ctx.random);
 			} catch (SSKEncodeException e) {
 				throw new InserterException(InserterException.INTERNAL_ERROR, e, isk.getURI());
 			} catch (IOException e) {
@@ -170,7 +170,7 @@ public class FileInserter {
 				} else {
 					if(origSize > ClientCHKBlock.MAX_LENGTH_BEFORE_COMPRESSION)
 						throw new IllegalArgumentException("Data too big to compress into single block, but it does");
-					chk = ClientCHKBlock.encode(data, metadata, true, bestCodec.codecNumberForMetadata(), (int)origSize);
+					chk = ClientCHKBlock.encode(data, metadata, false, bestCodec.codecNumberForMetadata(), (int)origSize);
 				}
 			} catch (IOException e) {
 				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
