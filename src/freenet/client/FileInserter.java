@@ -160,7 +160,7 @@ public class FileInserter {
 			} catch (IOException e) {
 				throw new InserterException(InserterException.INTERNAL_ERROR, e, isk.getURI());
 			}
-			return run(new InsertBlock(bucket, null, block.desiredURI), metadata, getCHKOnly, noRetries, null);
+			return run(new InsertBlock(bucket, null, block.desiredURI), true, getCHKOnly, noRetries, null);
 		}
 		
 		if(data.size() <= NodeCHK.BLOCK_SIZE) {
