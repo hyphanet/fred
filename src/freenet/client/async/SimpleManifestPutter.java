@@ -115,11 +115,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private boolean insertedAllFiles;
 	private boolean insertedManifest;
 	private ClientPutState currentMetadataInserterState;
+	private final String defaultName;
+	private final static String[] defaultDefaultNames =
+		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler sched, 
 			HashMap bucketsByName, short prioClass, FreenetURI target, 
 			String defaultName, InserterContext ctx, boolean getCHKOnly) throws InserterException {
 		super(prioClass, sched);
+		this.defaultName = defaultName;
 		this.targetURI = target;
 		this.cb = cb;
 		this.ctx = ctx;
@@ -148,7 +152,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			runningPutHandlers.add(ph);
 			putHandlersWaitingForMetadata.add(ph);
 		}
-		it = bucketsByName.keySet().iterator();
+		it = putHandlersByName.values().iterator();
 		while(it.hasNext()) {
 			PutHandler ph = (PutHandler) it.next();
 			try {
@@ -177,6 +181,23 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			String name = ph.name;
 			byte[] meta = ph.metadata;
 			namesToByteArrays.put(name, meta);
+		}
+		if(defaultName != null) {
+			byte[] meta = (byte[]) namesToByteArrays.get(defaultName);
+			if(meta == null) {
+				fail(new InserterException(InserterException.INVALID_URI, "Default name "+defaultName+" does not exist", null));
+				return;
+			}
+			namesToByteArrays.put("", meta);
+		} else {
+			for(int j=0;j<defaultDefaultNames.length;j++) {
+				String name = defaultDefaultNames[j];
+				byte[] meta = (byte[]) namesToByteArrays.get(name);
+				if(meta != null) {
+					namesToByteArrays.put("", meta);
+					break;
+				}
+			}
 		}
 		Metadata meta =
 			Metadata.mkRedirectionManifestWithMetadata(namesToByteArrays);

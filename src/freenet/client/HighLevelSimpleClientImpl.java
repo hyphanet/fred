@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
+import freenet.client.async.SimpleManifestPutter;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.EventLogger;
@@ -126,7 +127,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException {
-		throw new UnsupportedOperationException();
+		PutWaiter pw = new PutWaiter();
+		SimpleManifestPutter putter =
+			new SimpleManifestPutter(pw, node.putScheduler, bucketsByName, priorityClass, insertURI, defaultName, getInserterContext(), false);
+		return pw.waitForCompletion();
 	}
 	
 	public void addGlobalHook(ClientEventListener listener) {
