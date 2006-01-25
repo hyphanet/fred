@@ -72,8 +72,10 @@ public class RequestStarter implements Runnable {
 			Thread t = new Thread(new SenderThread(req));
 			t.setDaemon(true);
 			t.start();
+			sentRequestTime = System.currentTimeMillis();
 			// Wait
 			long delay = throttle.getDelay();
+			Logger.minor(this, "Delay="+delay+" from "+throttle);
 			long sleepUntil = sentRequestTime + delay;
 			long now;
 			do {
