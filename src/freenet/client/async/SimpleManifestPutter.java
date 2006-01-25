@@ -101,11 +101,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				gotAllMetadata();
 			}
 		}
-
-		public void setCurrentState(ClientPutState inserter) {
-			// Ignore
-		}
-
 	}
 
 	private final HashMap putHandlersByName;
@@ -272,8 +267,4 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		fail(new InserterException(InserterException.INTERNAL_ERROR));
 	}
 
-	public void setCurrentState(ClientPutState inserter) {
-		// Ignore
-	}
-	
 }

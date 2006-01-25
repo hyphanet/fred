@@ -36,10 +36,8 @@ public class SplitFileInserter implements ClientPutState {
 	final boolean isMetadata;
 	private boolean finished;
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, boolean dontTellParent) throws InserterException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata) throws InserterException {
 		this.parent = put;
-		if(!dontTellParent)
-			parent.setCurrentState(this);
 		this.finished = false;
 		this.isMetadata = isMetadata;
 		this.cm = clientMetadata;

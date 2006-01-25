@@ -6,6 +6,4 @@ public abstract class BaseClientPutter extends ClientRequest {
 		super(priorityClass, scheduler);
 	}
 
-	public abstract void setCurrentState(ClientPutState inserter);
-
 }

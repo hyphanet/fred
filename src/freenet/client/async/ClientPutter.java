@@ -48,10 +48,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		}
 	}
 
-	public void setCurrentState(ClientPutState s) {
-		currentState = s;
-	}
-
 	public void onSuccess(ClientPutState state) {
 		finished = true;
 		currentState = null;
@@ -85,8 +81,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return uri;
 	}
 
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {
-		// Ignore
+	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+		if(currentState == oldState)
+			currentState = newState;
+		else
+			Logger.error(this, "onTransition: cur="+currentState+", old="+oldState+", new="+newState);
 	}
 
 	public void onMetadata(Metadata m, ClientPutState state) {

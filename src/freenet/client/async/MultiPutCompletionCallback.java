@@ -18,13 +18,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private boolean finished;
 	private boolean started;
 	
-	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, boolean dontTellParent) {
+	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent) {
 		this.cb = cb;
 		this.waitingFor = new LinkedList();
 		this.parent = parent;
 		finished = false;
-		if(!dontTellParent)
-			parent.setCurrentState(this);
 	}
 
 	public synchronized void onSuccess(ClientPutState state) {

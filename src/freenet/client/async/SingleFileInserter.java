@@ -64,8 +64,6 @@ class SingleFileInserter implements ClientPutState {
 		this.cb = cb;
 		this.dontTellParent = dontTellParent;
 		this.getCHKOnly = getCHKOnly;
-		if(!dontTellParent)
-			parent.setCurrentState(this);
 	}
 	
 	public void start() throws InserterException {
@@ -174,7 +172,7 @@ class SingleFileInserter implements ClientPutState {
 				dataPutter.schedule();
 			} else {
 				MultiPutCompletionCallback mcb = 
-					new MultiPutCompletionCallback(cb, parent, dontTellParent);
+					new MultiPutCompletionCallback(cb, parent);
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly);
 				Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
 				Bucket metadataBucket;
@@ -199,17 +197,13 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, true);
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata);
 			cb.onTransition(this, sfi);
-			if(!dontTellParent)
-				parent.setCurrentState(sfi);
 			sfi.start();
 		} else {
 			SplitHandler sh = new SplitHandler();
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, true);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata);
 			sh.sfi = sfi;
-			if(!dontTellParent)
-				parent.setCurrentState(sh);
 			cb.onTransition(this, sh);
 			sfi.start();
 		}
