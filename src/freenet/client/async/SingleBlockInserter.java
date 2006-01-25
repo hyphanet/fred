@@ -73,7 +73,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 				Logger.error(this, "Caught "+e, e);
 				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 			}
-		} else if(uriType.equals("SSK")) {
+		} else if(uriType.equals("SSK") || uriType.equals("KSK")) {
 			try {
 				InsertableClientSSK ik = InsertableClientSSK.create(uri);
 				return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, ctx.random);
