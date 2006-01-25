@@ -18,17 +18,15 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	final FreenetURI uri;
 	final FetcherContext ctx;
 	final ArchiveContext actx;
-	final ClientRequestScheduler scheduler;
 	ClientGetState currentState;
 	private boolean finished;
 	private int archiveRestarts;
 	
 	public ClientGetter(ClientCallback client, ClientRequestScheduler sched, FreenetURI uri, FetcherContext ctx, short priorityClass) {
-		super(priorityClass);
+		super(priorityClass, sched);
 		this.client = client;
 		this.uri = uri;
 		this.ctx = ctx;
-		this.scheduler = sched;
 		this.finished = false;
 		this.actx = new ArchiveContext();
 		archiveRestarts = 0;

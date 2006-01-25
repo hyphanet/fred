@@ -10,15 +10,17 @@ import freenet.keys.FreenetURI;
 public abstract class ClientRequest {
 
 	// FIXME move the priority classes from RequestStarter here
-	private short priorityClass;
+	protected short priorityClass;
 	protected boolean cancelled;
+	final ClientRequestScheduler scheduler;
 	
 	public short getPriorityClass() {
 		return priorityClass;
 	}
 	
-	protected ClientRequest(short priorityClass) {
+	protected ClientRequest(short priorityClass, ClientRequestScheduler scheduler) {
 		this.priorityClass = priorityClass;
+		this.scheduler = scheduler;
 	}
 	
 	public void cancel() {

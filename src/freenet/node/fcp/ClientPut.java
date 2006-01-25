@@ -6,6 +6,7 @@ import freenet.client.FetchResult;
 import freenet.client.InsertBlock;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
+import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
@@ -45,17 +46,17 @@ public class ClientPut extends ClientRequest implements ClientCallback {
 		inserter.cancel();
 	}
 
-	public void onSuccess(ClientPutter state) {
+	public void onSuccess(BaseClientPutter state) {
 		FCPMessage msg = new PutSuccessfulMessage(identifier, state.getURI());
 		handler.outputHandler.queue(msg);
 	}
 
-	public void onFailure(InserterException e, ClientPutter state) {
+	public void onFailure(InserterException e, BaseClientPutter state) {
 		FCPMessage msg = new PutFailedMessage(e, identifier);
 		handler.outputHandler.queue(msg);
 	}
 
-	public void onGeneratedURI(FreenetURI uri, ClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		FCPMessage msg = new URIGeneratedMessage(uri, identifier);
 		handler.outputHandler.queue(msg);
 	}

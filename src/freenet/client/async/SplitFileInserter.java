@@ -19,9 +19,9 @@ import freenet.support.compress.Compressor;
 
 public class SplitFileInserter implements ClientPutState {
 	
-	final ClientPutter parent;
+	final BaseClientPutter parent;
 	final InserterContext ctx;
-	final SplitPutCompletionCallback cb;
+	final PutCompletionCallback cb;
 	final long dataLength;
 	final short compressionCodec;
 	final short splitfileAlgorithm;
@@ -36,7 +36,7 @@ public class SplitFileInserter implements ClientPutState {
 	final boolean isMetadata;
 	private boolean finished;
 
-	public SplitFileInserter(ClientPutter put, SplitPutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, SplitHandler sh, boolean getCHKOnly, boolean isMetadata, boolean dontTellParent) throws InserterException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, boolean dontTellParent) throws InserterException {
 		this.parent = put;
 		if(!dontTellParent)
 			parent.setCurrentState(this);
@@ -154,7 +154,7 @@ public class SplitFileInserter implements ClientPutState {
 				fail(new InserterException(InserterException.INTERNAL_ERROR, "Missing URIs after encoding", null));
 				return;
 			} else
-				cb.onGeneratedMetadata(m);
+				cb.onMetadata(m, this);
 		}
 
 	}
@@ -210,7 +210,7 @@ public class SplitFileInserter implements ClientPutState {
 		return uris;
 	}
 
-	public ClientPutter getParent() {
+	public BaseClientPutter getParent() {
 		return parent;
 	}
 

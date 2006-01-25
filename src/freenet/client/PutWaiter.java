@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
@@ -21,19 +22,19 @@ public class PutWaiter implements ClientCallback {
 		// Ignore
 	}
 
-	public synchronized void onSuccess(ClientPutter state) {
+	public synchronized void onSuccess(BaseClientPutter state) {
 		succeeded = true;
 		finished = true;
 		notifyAll();
 	}
 
-	public synchronized void onFailure(InserterException e, ClientPutter state) {
+	public synchronized void onFailure(InserterException e, BaseClientPutter state) {
 		error = e;
 		finished = true;
 		notifyAll();
 	}
 
-	public synchronized void onGeneratedURI(FreenetURI uri, ClientPutter state) {
+	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		Logger.minor(this, "URI: "+uri);
 		if(this.uri == null)
 			this.uri = uri;

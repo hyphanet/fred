@@ -7,7 +7,7 @@ package freenet.client.async;
  */
 public interface ClientPutState {
 
-	public abstract ClientPutter getParent();
+	public abstract BaseClientPutter getParent();
 
 	public abstract void cancel();
 

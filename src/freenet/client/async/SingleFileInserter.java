@@ -29,7 +29,7 @@ class SingleFileInserter implements ClientPutState {
 	// Config option???
 	private static final long COMPRESS_OFF_THREAD_LIMIT = 65536;
 	
-	final ClientPutter parent;
+	final BaseClientPutter parent;
 	final InsertBlock block;
 	final InserterContext ctx;
 	final boolean metadata;
@@ -39,10 +39,24 @@ class SingleFileInserter implements ClientPutState {
 	 * update our parent to point to us as current put-stage. */
 	final boolean dontTellParent;
 	private boolean cancelled = false;
+	private boolean reportMetadataOnly;
 
-	SingleFileInserter(ClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
+	/**
+	 * @param parent
+	 * @param cb
+	 * @param block
+	 * @param metadata
+	 * @param ctx
+	 * @param dontCompress
+	 * @param dontTellParent
+	 * @param getCHKOnly
+	 * @param reportMetadataOnly If true, don't insert the metadata, just report it.
+	 * @throws InserterException
+	 */
+	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InserterContext ctx, boolean dontCompress, 
-			boolean dontTellParent, boolean getCHKOnly) throws InserterException {
+			boolean dontTellParent, boolean getCHKOnly, boolean reportMetadataOnly) throws InserterException {
+		this.reportMetadataOnly = reportMetadataOnly;
 		this.parent = parent;
 		this.block = block;
 		this.ctx = ctx;
@@ -151,24 +165,32 @@ class SingleFileInserter implements ClientPutState {
 			}
 		}
 		if (data.size() < ClientCHKBlock.MAX_COMPRESSED_DATA_LENGTH) {
-			MultiPutCompletionCallback mcb = 
-				new MultiPutCompletionCallback(cb, parent, dontTellParent);
 			// Insert single block, then insert pointer to it
-			SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly);
-			Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
-			Bucket metadataBucket;
-			try {
-				metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
-			} catch (IOException e) {
-				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
+			if(reportMetadataOnly) {
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly);
+				Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
+				cb.onMetadata(meta, this);
+				cb.onTransition(this, dataPutter);
+				dataPutter.schedule();
+			} else {
+				MultiPutCompletionCallback mcb = 
+					new MultiPutCompletionCallback(cb, parent, dontTellParent);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly);
+				Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
+				Bucket metadataBucket;
+				try {
+					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
+				} catch (IOException e) {
+					throw new InserterException(InserterException.BUCKET_ERROR, e, null);
+				}
+				SingleBlockInserter metaPutter = new SingleBlockInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly);
+				mcb.addURIGenerator(metaPutter);
+				mcb.add(dataPutter);
+				cb.onTransition(this, mcb);
+				mcb.arm();
+				dataPutter.schedule();
+				metaPutter.schedule();
 			}
-			SingleBlockInserter metaPutter = new SingleBlockInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly);
-			mcb.addURIGenerator(metaPutter);
-			mcb.add(dataPutter);
-			cb.onTransition(this, mcb);
-			mcb.arm();
-			dataPutter.schedule();
-			metaPutter.schedule();
 			return;
 		}
 		// Otherwise the file is too big to fit into one block
@@ -176,13 +198,21 @@ class SingleFileInserter implements ClientPutState {
 		// Job of SplitHandler: when the splitinserter has the metadata,
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
-		SplitHandler sh = new SplitHandler();
-		SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, block.clientMetadata, ctx, sh, getCHKOnly, metadata, true);
-		sh.sfi = sfi;
-		if(!dontTellParent)
-			parent.setCurrentState(sh);
-		cb.onTransition(this, sh);
-		sfi.start();
+		if(reportMetadataOnly) {
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, true);
+			cb.onTransition(this, sfi);
+			if(!dontTellParent)
+				parent.setCurrentState(sfi);
+			sfi.start();
+		} else {
+			SplitHandler sh = new SplitHandler();
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, true);
+			sh.sfi = sfi;
+			if(!dontTellParent)
+				parent.setCurrentState(sh);
+			cb.onTransition(this, sh);
+			sfi.start();
+		}
 		return;
 	}
 	
@@ -191,7 +221,7 @@ class SingleFileInserter implements ClientPutState {
 	 * When we have inserted both the metadata and the splitfile,
 	 * call the master callback.
 	 */
-	class SplitHandler implements SplitPutCompletionCallback, ClientPutState {
+	class SplitHandler implements PutCompletionCallback, ClientPutState {
 
 		ClientPutState sfi;
 		ClientPutState metadataPutter;
@@ -233,31 +263,43 @@ class SingleFileInserter implements ClientPutState {
 			fail(e);
 		}
 
-		public void onGeneratedMetadata(Metadata meta) {
+		public void onMetadata(Metadata meta, ClientPutState state) {
 			if(finished) return;
-			synchronized(this) {
-				Bucket metadataBucket;
-				try {
-					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
-				} catch (IOException e) {
-					InserterException ex = new InserterException(InserterException.BUCKET_ERROR, e, null);
-					fail(ex);
-					return;
-				}
-				InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
-				try {
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false);
-					Logger.minor(this, "Putting metadata on "+metadataPutter);
-				} catch (InserterException e) {
-					cb.onFailure(e, this);
-					return;
-				}
+			if(state == metadataPutter) {
+				Logger.error(this, "Got metadata for metadata");
+				// FIXME kill?
+			} else if(state != sfi) {
+				Logger.error(this, "Got unknown metadata");
+				// FIXME kill?
 			}
-			try {
-				((SingleFileInserter)metadataPutter).start();
-			} catch (InserterException e) {
-				fail(e);
-				return;
+			if(reportMetadataOnly) {
+				cb.onMetadata(meta, this);
+				metaInsertSuccess = true;
+			} else {
+				synchronized(this) {
+					Bucket metadataBucket;
+					try {
+						metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
+					} catch (IOException e) {
+						InserterException ex = new InserterException(InserterException.BUCKET_ERROR, e, null);
+						fail(ex);
+						return;
+					}
+					InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
+					try {
+						metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, false);
+						Logger.minor(this, "Putting metadata on "+metadataPutter);
+					} catch (InserterException e) {
+						cb.onFailure(e, this);
+						return;
+					}
+				}
+				try {
+					((SingleFileInserter)metadataPutter).start();
+				} catch (InserterException e) {
+					fail(e);
+					return;
+				}
 			}
 		}
 
@@ -268,7 +310,7 @@ class SingleFileInserter implements ClientPutState {
 			cb.onFailure(e, this);
 		}
 
-		public ClientPutter getParent() {
+		public BaseClientPutter getParent() {
 			return parent;
 		}
 
@@ -286,7 +328,7 @@ class SingleFileInserter implements ClientPutState {
 		
 	}
 
-	public ClientPutter getParent() {
+	public BaseClientPutter getParent() {
 		return parent;
 	}
 

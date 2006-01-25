@@ -1,10 +1,8 @@
 package freenet.node;
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -503,6 +501,8 @@ public class TextModeClientInterface implements Runnable {
     	HashMap ret = new HashMap();
     	
     	File filelist[] = thisdir.listFiles();
+    	if(filelist == null)
+    		throw new IllegalArgumentException("No such directory");
     	for(int i = 0 ; i < filelist.length ; i++) {
     		if (filelist[i].isFile() && filelist[i].canRead()) {
     			File f = filelist[i];
@@ -523,102 +523,6 @@ public class TextModeClientInterface implements Runnable {
     	return ret;
 	}
 
-	private String dirPutToList(HashMap dir, String basedir) {
-    	String ret = "";
-		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
-			String key = (String) i.next();
-			Object o = dir.get(key);
-			Metadata target;
-			if(o instanceof String) {
-				// File
-				ret += basedir + key + "\n";
-			} else if(o instanceof HashMap) {
-				ret += dirPutToList((HashMap)o, basedir + key + "//");
-			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
-		}
-		return ret;
-    }
-    
-    private HashMap dirPut(String directory, boolean getCHKOnly) {
-    	if (!directory.endsWith("/"))
-    		directory = directory + "/";
-    	File thisdir = new File(directory);
-    	
-    	System.out.println("Listing dir: "+thisdir);
-    	
-    	HashMap ret = new HashMap();
-    	
-    	File filelist[] = thisdir.listFiles();
-    	for(int i = 0 ; i < filelist.length ; i++)
-    		if (filelist[i].isFile()) {
-    			FreenetURI uri = null;
-    			File f = filelist[i];
-    			String line = f.getAbsolutePath(); 
-    			// To ease cleanup, the following code is taken from above
-    			// Except for the uri-declaration above.
-    			// Somelines is also commented out
-    			//////////////////////////////////////////////////////////////////////////////////////
-    			System.out.println("Attempting to read file "+line);
-                long startTime = System.currentTimeMillis();
-                try {
-                	if(!(f.exists() && f.canRead())) {
-                		throw new FileNotFoundException();
-                	}
-                	
-                	// Guess MIME type
-                	String mimeType = DefaultMIMETypes.guessMIMEType(line);
-                	System.out.println("Using MIME type: "+mimeType);
-                	
-                	FileBucket fb = new FileBucket(f, true, false, false);
-                	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
-
-                	startTime = System.currentTimeMillis();
-                	// Declaration is moved out!!!!!!!!!!!!
-                	uri = client.insert(block, getCHKOnly);
-                	
-                	// FIXME depends on CHK's still being renamable
-                    //uri = uri.setDocName(f.getName());
-                	
-                    System.out.println("URI: "+uri);
-                	long endTime = System.currentTimeMillis();
-                    long sz = f.length();
-                    double rate = 1000.0 * sz / (endTime-startTime);
-                    System.out.println("Upload rate: "+rate+" bytes / second");
-                } catch (FileNotFoundException e1) {
-                    System.out.println("File not found");
-                } catch (InserterException e) {
-                	System.out.println("Finished insert but: "+e.getMessage());
-                	if(e.uri != null) {
-                		System.out.println("URI would have been: "+e.uri);
-                    	long endTime = System.currentTimeMillis();
-                        long sz = f.length();
-                        double rate = 1000.0 * sz / (endTime-startTime);
-                        System.out.println("Upload rate: "+rate+" bytes / second");
-                	}
-                	if(e.errorCodes != null) {
-                		System.out.println("Splitfile errors breakdown:");
-                		System.out.println(e.errorCodes.toVerboseString());
-                	}
-                } catch (Throwable t) {
-                    System.out.println("Insert threw: "+t);
-                    t.printStackTrace();
-                }
-                //////////////////////////////////////////////////////////////////////////////////////
-    			
-                if (uri != null)
-                	ret.put(filelist[i].getName(), uri.toString(false));
-                else
-                	System.err.println("Could not insert file.");
-                //ret.put(filelist[i].getName(), null);
-    		} else {
-    			HashMap subdir = dirPut(filelist[i].getAbsolutePath(), getCHKOnly);
-    			ret.put(filelist[i].getName(), subdir);
-    		}
-    	
-    	return ret;
-	}
-    
-    
     /**
      * @return A block of text, input from stdin, ending with a
      * . on a line by itself. Does some mangling for a fieldset if 

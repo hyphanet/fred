@@ -16,10 +16,10 @@ public interface ClientCallback {
 	
 	public void onFailure(FetchException e, ClientGetter state);
 
-	public void onSuccess(ClientPutter state);
+	public void onSuccess(BaseClientPutter state);
 	
-	public void onFailure(InserterException e, ClientPutter state);
+	public void onFailure(InserterException e, BaseClientPutter state);
 	
-	public void onGeneratedURI(FreenetURI uri, ClientPutter state);
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
 	
 }

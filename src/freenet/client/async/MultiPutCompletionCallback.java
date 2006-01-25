@@ -5,18 +5,20 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 
 import freenet.client.InserterException;
+import freenet.client.Metadata;
 import freenet.keys.ClientKey;
+import freenet.support.Logger;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
 	private final LinkedList waitingFor;
 	private final PutCompletionCallback cb;
 	private ClientPutState generator;
-	private final ClientPutter parent;
+	private final BaseClientPutter parent;
 	private boolean finished;
 	private boolean started;
 	
-	public MultiPutCompletionCallback(PutCompletionCallback cb, ClientPutter parent, boolean dontTellParent) {
+	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, boolean dontTellParent) {
 		this.cb = cb;
 		this.waitingFor = new LinkedList();
 		this.parent = parent;
@@ -63,7 +65,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		started = true;
 	}
 
-	public ClientPutter getParent() {
+	public BaseClientPutter getParent() {
 		return parent;
 	}
 
@@ -92,6 +94,14 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				i.remove();
 				i.add(newState);
 			}
+		}
+	}
+
+	public void onMetadata(Metadata m, ClientPutState state) {
+		if(generator == state) {
+			cb.onMetadata(m, this);
+		} else {
+			Logger.error(this, "Got metadata for "+state);
 		}
 	}
 

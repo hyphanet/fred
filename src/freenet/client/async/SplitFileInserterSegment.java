@@ -6,6 +6,7 @@ import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
+import freenet.client.Metadata;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
@@ -228,5 +229,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	public void onTransition(ClientPutState oldState, ClientPutState newState) {
 		Logger.error(this, "Illegal transition in SplitFileInserterSegment: "+oldState+" -> "+newState);
+	}
+
+	public void onMetadata(Metadata m, ClientPutState state) {
+		Logger.error(this, "Got onMetadata from "+state);
 	}
 }

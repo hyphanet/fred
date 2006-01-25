@@ -1,8 +1,8 @@
 package freenet.client;
 
+import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 
 public class FetchWaiter implements ClientCallback {
@@ -25,15 +25,15 @@ public class FetchWaiter implements ClientCallback {
 		notifyAll();
 	}
 
-	public void onSuccess(ClientPutter state) {
+	public void onSuccess(BaseClientPutter state) {
 		throw new UnsupportedOperationException();
 	}
 
-	public void onFailure(InserterException e, ClientPutter state) {
+	public void onFailure(InserterException e, BaseClientPutter state) {
 		throw new UnsupportedOperationException();
 	}
 
-	public void onGeneratedURI(FreenetURI uri, ClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		throw new UnsupportedOperationException();
 	}
 

@@ -29,7 +29,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	final FreenetURI uri; // uses essentially no RAM in the common case of a CHK because we use FreenetURI.EMPTY_CHK_URI
 	FreenetURI resultingURI;
 	final PutCompletionCallback cb;
-	final ClientPutter parent;
+	final BaseClientPutter parent;
 	final InserterContext ctx;
 	private int retries;
 	private final FailureCodeTracker errors;
@@ -40,7 +40,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	final boolean isMetadata;
 	final int sourceLength;
 	
-	public SingleBlockInserter(ClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly) throws InserterException {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly) throws InserterException {
 		this.token = token;
 		this.parent = parent;
 		this.retries = 0;
@@ -188,7 +188,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		cb.onSuccess(this);
 	}
 
-	public ClientPutter getParent() {
+	public BaseClientPutter getParent() {
 		return parent;
 	}
 
