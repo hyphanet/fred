@@ -35,7 +35,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void register(SendableRequest req) {
-		Logger.minor(this, "Registering "+req);
+		Logger.minor(this, "Registering "+req, new Exception("debug"));
 		synchronized(this) {
 			if((!isInsertScheduler) && req instanceof ClientPutter)
 				throw new IllegalArgumentException("Expected a ClientPut: "+req);

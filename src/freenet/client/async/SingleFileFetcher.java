@@ -56,6 +56,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	 * @param dontTellClientGet 
 	 */
 	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws FetchException {
+		Logger.minor(this, "Creating SingleFileFetcher for "+key);
 		this.cancelled = false;
 		this.dontTellClientGet = dontTellClientGet;
 		this.token = token;
@@ -85,6 +86,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	
 	/** Copy constructor, modifies a few given fields, don't call schedule() */
 	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetcherContext ctx2) throws FetchException {
+		Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key);
 		this.token = fetcher.token;
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
@@ -285,6 +287,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				// Which will then fetch the target URI, and call the rcd.success
 				// Hopefully!
 				FreenetURI uri = metadata.getSingleTarget();
+				Logger.minor(this, "Redirecting to "+uri);
 				ClientKey key;
 				try {
 					key = ClientKey.getBaseKey(uri);
@@ -308,6 +311,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				// All done! No longer our problem!
 				return;
 			} else if(metadata.isSplitfile()) {
+				Logger.minor(this, "Fetching splitfile");
 				// FIXME implicit archive support
 				
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
@@ -321,6 +325,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
 						decompressors, clientMetadata, actx, recursionLevel);
+				sf.schedule();
 				// SplitFile will now run.
 				// Then it will return data to rcd.
 				// We are now out of the loop. Yay!

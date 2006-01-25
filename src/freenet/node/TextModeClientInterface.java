@@ -357,6 +357,8 @@ public class TextModeClientInterface implements Runnable {
             	// Guess MIME type
             	String mimeType = DefaultMIMETypes.guessMIMEType(line);
             	System.out.println("Using MIME type: "+mimeType);
+            	if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
+            		mimeType = ""; // don't need to override it
             	
             	FileBucket fb = new FileBucket(f, true, false, false);
             	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);

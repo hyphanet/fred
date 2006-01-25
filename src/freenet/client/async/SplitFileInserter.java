@@ -130,6 +130,7 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		
 		if(allHaveURIs) {
+			Logger.minor(this, "Have URIs from all segments");
 			boolean missingURIs;
 			Metadata m = null;
 			synchronized(this) {
@@ -148,6 +149,7 @@ public class SplitFileInserter implements ClientPutState {
 				haveSentMetadata = true;
 			}
 			if(missingURIs) {
+				Logger.minor(this, "Missing URIs");
 				// Error
 				fail(new InserterException(InserterException.INTERNAL_ERROR, "Missing URIs after encoding", null));
 				return;
@@ -219,7 +221,9 @@ public class SplitFileInserter implements ClientPutState {
 			if(finished) return;
 			for(int i=0;i<segments.length;i++)
 				if(!segments[i].isFinished()) allGone = false;
-			if(segment.getException().isFatal()) {
+			
+			InserterException e = segment.getException();
+			if(e != null && e.isFatal()) {
 				cancel();
 			} else {
 				if(!allGone) return;

@@ -41,6 +41,7 @@ public class ClientPutter extends ClientRequest implements PutCompletionCallback
 		try {
 			currentState =
 				new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, false, getCHKOnly);
+			((SingleFileInserter)currentState).start();
 		} catch (InserterException e) {
 			finished = true;
 			currentState = null;
@@ -82,6 +83,10 @@ public class ClientPutter extends ClientRequest implements PutCompletionCallback
 
 	public FreenetURI getURI() {
 		return uri;
+	}
+
+	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+		// Ignore
 	}
 	
 }

@@ -39,6 +39,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	final boolean nonFullBlocksAllowed;
 	/** Has the segment finished processing? Irreversible. */
 	private boolean finished;
+	private boolean decoded;
 	/** Bucket to store the data retrieved, after it has been decoded */
 	private Bucket decodedData;
 	/** Fetch context for block fetches */
@@ -155,6 +156,10 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	}
 
 	private void startDecode() {
+		synchronized(this) {
+			if(decoded) return;
+			decoded = true;
+		}
 		Runnable r = new Decoder();
 		Thread t = new Thread(r, "Decoder for "+this);
 		t.setDaemon(true);

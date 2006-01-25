@@ -65,7 +65,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		String uriType = uri.getKeyType().toUpperCase();
 		if(uriType.equals("CHK")) {
 			try {
-				return ClientCHKBlock.encode(sourceData, isMetadata, true, compressionCodec, sourceLength);
+				return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength);
 			} catch (CHKEncodeException e) {
 				Logger.error(this, "Caught "+e, e);
 				throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
@@ -76,7 +76,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		} else if(uriType.equals("SSK")) {
 			try {
 				InsertableClientSSK ik = InsertableClientSSK.create(uri);
-				return ik.encode(sourceData, isMetadata, true, compressionCodec, sourceLength, ctx.random);
+				return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, ctx.random);
 			} catch (MalformedURLException e) {
 				throw new InserterException(InserterException.INVALID_URI, e, null);
 			} catch (SSKEncodeException e) {
@@ -138,6 +138,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
 			errors.inc(InserterException.INTERNAL_ERROR);
 		}
+		Logger.minor(this, "Failed: "+e);
 		if(retries > ctx.maxInsertRetries) {
 			if(errors.isOneCodeOnly())
 				fail(new InserterException(errors.getFirstCode()));
@@ -162,6 +163,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			cb.onFailure(e, this);
 			return null;
 		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
 			cb.onFailure(new InserterException(InserterException.INTERNAL_ERROR, t, null), this);
 			return null;
 		}
@@ -179,6 +181,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	}
 
 	public void onSuccess() {
+		Logger.minor(this, "Succeeded ("+this+"): "+token);
 		synchronized(this) {
 			finished = true;
 		}
@@ -203,11 +206,14 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
 	public void send(Node node) {
 		try {
+			Logger.minor(this, "Starting request: "+this);
 			node.realPut(getBlock(), true);
 		} catch (LowLevelPutException e) {
 			onFailure(e);
+			Logger.minor(this, "Request failed: "+this+" for "+e);
 			return;
 		}
+		Logger.minor(this, "Request succeeded: "+this);
 		onSuccess();
 	}
 

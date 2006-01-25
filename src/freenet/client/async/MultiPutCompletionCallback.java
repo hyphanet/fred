@@ -1,6 +1,8 @@
 package freenet.client.async;
 
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 
 import freenet.client.InserterException;
 import freenet.keys.ClientKey;
@@ -79,6 +81,18 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 		for(int i=0;i<states.length;i++)
 			states[i].cancel();
+	}
+
+	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+		if(generator == oldState)
+			generator = newState;
+		if(oldState == newState) return;
+		for(ListIterator i = waitingFor.listIterator(0);i.hasNext();) {
+			if(i.next() == oldState) {
+				i.remove();
+				i.add(newState);
+			}
+		}
 	}
 
 }

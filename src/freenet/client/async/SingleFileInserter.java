@@ -13,6 +13,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 
@@ -51,10 +52,9 @@ class SingleFileInserter implements ClientPutState {
 		this.getCHKOnly = getCHKOnly;
 		if(!dontTellParent)
 			parent.setCurrentState(this);
-		start();
 	}
 	
-	private void start() throws InserterException {
+	public void start() throws InserterException {
 		if((!ctx.dontCompress) && block.getData().size() > COMPRESS_OFF_THREAD_LIMIT) {
 			// Run off thread
 			OffThreadCompressor otc = new OffThreadCompressor();
@@ -146,6 +146,7 @@ class SingleFileInserter implements ClientPutState {
 				// Just insert it
 				SingleBlockInserter bi = new SingleBlockInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly);
 				bi.schedule();
+				cb.onTransition(this, bi);
 				return;
 			}
 		}
@@ -162,8 +163,9 @@ class SingleFileInserter implements ClientPutState {
 				throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 			}
 			SingleBlockInserter metaPutter = new SingleBlockInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly);
-			mcb.add(metaPutter);
+			mcb.addURIGenerator(metaPutter);
 			mcb.add(dataPutter);
+			cb.onTransition(this, mcb);
 			mcb.arm();
 			dataPutter.schedule();
 			metaPutter.schedule();
@@ -179,6 +181,7 @@ class SingleFileInserter implements ClientPutState {
 		sh.sfi = sfi;
 		if(!dontTellParent)
 			parent.setCurrentState(sh);
+		cb.onTransition(this, sh);
 		sfi.start();
 		return;
 	}
@@ -190,20 +193,39 @@ class SingleFileInserter implements ClientPutState {
 	 */
 	class SplitHandler implements SplitPutCompletionCallback, ClientPutState {
 
-		SplitFileInserter sfi;
-		SingleFileInserter metadataPutter;
+		ClientPutState sfi;
+		ClientPutState metadataPutter;
 		boolean finished = false;
 		boolean splitInsertSuccess = false;
 		boolean metaInsertSuccess = false;
+
+		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+			if(oldState == sfi)
+				sfi = newState;
+			if(oldState == metadataPutter)
+				metadataPutter = newState;
+		}
 		
-		public synchronized void onSuccess(ClientPutState state) {
-			if(finished) return;
-			if(state == sfi)
-				splitInsertSuccess = true;
-			else if(state == metadataPutter)
-				metaInsertSuccess = true;
-			if(splitInsertSuccess && metaInsertSuccess)
-				cb.onSuccess(this);
+		public void onSuccess(ClientPutState state) {
+			Logger.minor(this, "onSuccess("+state+")");
+			synchronized(this) {
+				if(finished) return;
+				if(state == sfi) {
+					Logger.minor(this, "Splitfile insert succeeded");
+					splitInsertSuccess = true;
+				} else if(state == metadataPutter) {
+					Logger.minor(this, "Metadata insert succeeded");
+					metaInsertSuccess = true;
+				} else {
+					Logger.error(this, "Unknown: "+state);
+				}
+				if(splitInsertSuccess && metaInsertSuccess) {
+					Logger.minor(this, "Both succeeded");
+					finished = true;
+				}
+				else return;
+			}
+			cb.onSuccess(this);
 		}
 
 		public synchronized void onFailure(InserterException e, ClientPutState state) {
@@ -224,14 +246,15 @@ class SingleFileInserter implements ClientPutState {
 				}
 				InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
 				try {
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, true);
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false);
+					Logger.minor(this, "Putting metadata on "+metadataPutter);
 				} catch (InserterException e) {
 					cb.onFailure(e, this);
 					return;
 				}
 			}
 			try {
-				metadataPutter.start();
+				((SingleFileInserter)metadataPutter).start();
 			} catch (InserterException e) {
 				fail(e);
 				return;
@@ -239,6 +262,7 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		private synchronized void fail(InserterException e) {
+			Logger.minor(this, "Failing: "+e, e);
 			if(finished) return;
 			finished = true;
 			cb.onFailure(e, this);
@@ -249,8 +273,8 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void onEncode(ClientKey key, ClientPutState state) {
-			// Ignore
-			
+			if(state == metadataPutter)
+				cb.onEncode(key, this);
 		}
 
 		public void cancel() {

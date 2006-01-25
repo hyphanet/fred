@@ -14,4 +14,6 @@ public interface PutCompletionCallback {
 
 	public void onEncode(ClientKey key, ClientPutState state);
 	
+	public void onTransition(ClientPutState oldState, ClientPutState newState);
+	
 }

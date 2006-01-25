@@ -48,9 +48,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 	
 	public void start() throws InserterException {
-		for(int i=0;i<dataBlockInserters.length;i++)
+		for(int i=0;i<dataBlockInserters.length;i++) {
 			dataBlockInserters[i] = 
 				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i, getCHKOnly);
+			dataBlockInserters[i].schedule();
+		}
 		if(splitfileAlgo == null) {
 			// Don't need to encode blocks
 		} else {
@@ -75,9 +77,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			encoded = true;
 			parent.encodedSegment(this);
 			// Start the inserts
-			for(int i=0;i<checkBlockInserters.length;i++)
+			for(int i=0;i<checkBlockInserters.length;i++) {
 				checkBlockInserters[i] = 
 					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly);
+				checkBlockInserters[i].schedule();
+			}
 		} catch (IOException e) {
 			InserterException ex = 
 				new InserterException(InserterException.BUCKET_ERROR, e, null);
@@ -111,7 +115,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		int x = sbi.token;
 		synchronized(this) {
-			if(x > dataBlocks.length) {
+			if(x >= dataBlocks.length) {
 				if(checkURIs[x-dataBlocks.length] != null) {
 					Logger.normal(this, "Got uri twice for check block "+x+" on "+this);
 					return;
@@ -159,7 +163,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	private boolean completed(int x) {
 		synchronized(this) {
-			if(x > dataBlocks.length) {
+			if(x >= dataBlocks.length) {
 				if(checkBlockInserters[x-dataBlocks.length] == null) {
 					Logger.error(this, "Completed twice: check block "+x+" on "+this);
 					return true;
@@ -174,8 +178,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			}
 			blocksCompleted++;
 			if(blocksCompleted != dataBlockInserters.length + checkBlockInserters.length) return true;
-			if(finished) return true;
-			finished = true;
 			return false;
 		}
 	}
@@ -222,5 +224,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				sbi.cancel();
 		}
 		parent.segmentFinished(this);
+	}
+
+	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+		Logger.error(this, "Illegal transition in SplitFileInserterSegment: "+oldState+" -> "+newState);
 	}
 }
