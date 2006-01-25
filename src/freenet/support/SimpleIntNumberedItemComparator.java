@@ -4,6 +4,12 @@ import java.util.Comparator;
 
 public class SimpleIntNumberedItemComparator implements Comparator {
 
+	private final boolean nullAtStart;
+	
+	public SimpleIntNumberedItemComparator(boolean nullAtStart) {
+		this.nullAtStart = nullAtStart;
+	}
+	
     public int compare(Object o1, Object o2) {
         int x = ocompare(o1, o2);
         Logger.minor(this, "compare("+o1+","+o2+") = "+x);
@@ -15,9 +21,9 @@ public class SimpleIntNumberedItemComparator implements Comparator {
         if(o1 == null && o2 == null)
             return 0; // null == null
         if(o1 != null && o2 == null)
-            return 1; // anything > null
+            return nullAtStart? -1 : 1; // anything > null
         if(o2 != null && o1 == null)
-            return -1;
+            return nullAtStart ? 1 : -1;
         long i1, i2;
         if(o1 instanceof IntNumberedItem)
             i1 = ((IntNumberedItem)o1).getNumber();

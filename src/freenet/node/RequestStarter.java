@@ -41,6 +41,7 @@ public class RequestStarter implements Runnable {
 	final RequestThrottle throttle;
 	RequestScheduler sched;
 	final Node node;
+	private long sentRequestTime;
 	
 	public RequestStarter(Node node, RequestThrottle throttle, String name) {
 		this.node = node;
@@ -64,39 +65,46 @@ public class RequestStarter implements Runnable {
 		return name;
 	}
 	
-	public void run() {
-		long sentRequestTime = System.currentTimeMillis();
-		while(true) {
-			SendableRequest req = sched.removeFirst();
-			if(req != null) {
-				// Create a thread to handle starting the request, and the resulting feedback
-				Thread t = new Thread(new SenderThread(req));
-				t.setDaemon(true);
-				t.start();
-				// Wait
-				long delay = throttle.getDelay();
-				long sleepUntil = sentRequestTime + delay;
-				long now;
-				do {
-					now = System.currentTimeMillis();
-					if(now < sleepUntil)
-						try {
-							Thread.sleep(sleepUntil - now);
-						} catch (InterruptedException e) {
-							// Ignore
-						}
-				} while(now < sleepUntil);
-			} else {
-				synchronized(this) {
-					// Always take the lock on RequestStarter first.
-					req = sched.removeFirst();
-					if(req != null) continue;
+	void realRun() {
+		SendableRequest req = sched.removeFirst();
+		if(req != null) {
+			// Create a thread to handle starting the request, and the resulting feedback
+			Thread t = new Thread(new SenderThread(req));
+			t.setDaemon(true);
+			t.start();
+			// Wait
+			long delay = throttle.getDelay();
+			long sleepUntil = sentRequestTime + delay;
+			long now;
+			do {
+				now = System.currentTimeMillis();
+				if(now < sleepUntil)
 					try {
-						wait(1000);
+						Thread.sleep(sleepUntil - now);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
+			} while(now < sleepUntil);
+		} else {
+			synchronized(this) {
+				// Always take the lock on RequestStarter first.
+				req = sched.removeFirst();
+				if(req != null) return;
+				try {
+					wait(1000);
+				} catch (InterruptedException e) {
+					// Ignore
 				}
+			}
+		}
+	}
+	
+	public void run() {
+		while(true) {
+			try {
+				realRun();
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t, t);
 			}
 		}
 	}

@@ -21,10 +21,20 @@ public class RandomGrabArray {
 	 */
 	private HashSet contents;
 	private final static int MIN_SIZE = 32;
+
+	public RandomGrabArray(RandomSource rand) {
+		this.reqs = new RandomGrabArrayItem[MIN_SIZE];
+		index = 0;
+		this.rand = rand;
+		contents = new HashSet();
+	}
 	
 	public synchronized void add(RandomGrabArrayItem req) {
 		if(contents.contains(req)) return;
-		if(req.isFinished()) return;
+		if(req.isFinished()) {
+			Logger.minor(this, "Is finished already: "+req);
+			return;
+		}
 		contents.add(req);
 		if(index >= reqs.length) {
 			RandomGrabArray[] r = new RandomGrabArray[reqs.length*2];

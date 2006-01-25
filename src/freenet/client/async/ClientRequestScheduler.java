@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import freenet.crypt.RandomSource;
 import freenet.node.RequestStarter;
+import freenet.support.Logger;
 import freenet.support.RandomGrabArrayWithInt;
 import freenet.support.SortedVectorByNumber;
 
@@ -31,17 +32,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.random = random;
 		this.isInsertScheduler = forInserts;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
-		for(int i=0;i<priorities.length;i++)
-			priorities[i] = new SortedVectorByNumber();
 	}
 	
 	public void register(SendableRequest req) {
+		Logger.minor(this, "Registering "+req);
 		synchronized(this) {
 			if((!isInsertScheduler) && req instanceof ClientPutter)
 				throw new IllegalArgumentException("Expected a ClientPut: "+req);
 			RandomGrabArrayWithInt grabber = 
 				makeGrabArray(req.getPriorityClass(), req.getRetryCount());
 			grabber.add(req);
+			Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount());
 		}
 		synchronized(starter) {
 			starter.notifyAll();
@@ -56,8 +57,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		RandomGrabArrayWithInt grabber = (RandomGrabArrayWithInt) prio.get(retryCount);
 		if(grabber == null) {
-			grabber = new RandomGrabArrayWithInt(retryCount);
+			grabber = new RandomGrabArrayWithInt(random, retryCount);
 			prio.add(grabber);
+			Logger.minor(this, "Registering retry count "+retryCount+" with prioclass "+priorityClass);
 		}
 		return grabber;
 	}
@@ -89,8 +91,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 		// Priorities start at 0
 		for(int i=0;i<RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
 			SortedVectorByNumber s = priorities[i];
-			if(s == null) continue;
+			if(s == null) {
+				Logger.minor(this, "Priority "+i+" is null");
+				continue;
+			}
 			RandomGrabArrayWithInt rga = (RandomGrabArrayWithInt) s.getFirst(); // will discard finished items
+			if(rga == null) {
+				Logger.minor(this, "No retrycount's in priority "+i);
+				priorities[i] = null;
+				continue;
+			}
 			SendableRequest req = (SendableRequest) rga.removeRandom();
 			if(rga.isEmpty()) {
 				s.remove(rga.getNumber());
@@ -98,8 +108,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 					priorities[i] = null;
 				}
 			}
+			if(req == null) {
+				Logger.minor(this, "No requests in priority "+i+", retrycount "+rga.getNumber());
+				continue;
+			}
+			Logger.minor(this, "removeFirst() returning "+req);
 			return req;
 		}
+		Logger.minor(this, "No requests to run");
 		return null;
 	}
 }

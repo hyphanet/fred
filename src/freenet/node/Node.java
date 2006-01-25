@@ -455,12 +455,14 @@ public class Node {
 		requestThrottle = new RequestThrottle(5000, 2.0F);
 		requestStarter = new RequestStarter(this, requestThrottle, "Request starter ("+portNumber+")");
 		fetchScheduler = new ClientRequestScheduler(false, random, requestStarter);
+		requestStarter.setScheduler(fetchScheduler);
 		requestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		insertThrottle = new RequestThrottle(10000, 2.0F);
 		insertStarter = new RequestStarter(this, insertThrottle, "Insert starter ("+portNumber+")");
 		putScheduler = new ClientRequestScheduler(true, random, insertStarter);
+		insertStarter.setScheduler(putScheduler);
 		insertStarter.start();
 		if(testnetHandler != null)
 			testnetHandler.start();
