@@ -516,4 +516,8 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 		return block;
 	}
 
+	public long getUID() {
+		return uid;
+	}
+
 }

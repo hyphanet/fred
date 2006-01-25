@@ -1277,8 +1277,8 @@ public class Node implements QueueingSimpleLowLevelClient {
     		// Dump
     		Iterator i = insertSenders.values().iterator();
     		while(i.hasNext()) {
-    			CHKInsertSender s = (CHKInsertSender) i.next();
-    			sb.append(s.uid);
+    			AnyInsertSender s = (AnyInsertSender) i.next();
+    			sb.append(s.getUID());
     			sb.append(": ");
     			sb.append(s.getStatusString());
     			sb.append('\n');
