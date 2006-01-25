@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import freenet.node.Node;
 import freenet.support.RandomGrabArrayItem;
 
 /**
@@ -11,5 +12,8 @@ public interface SendableRequest extends RandomGrabArrayItem {
 	public short getPriorityClass();
 	
 	public int getRetryCount();
+	
+	/** ONLY called by RequestStarter */
+	public void send(Node node);
 	
 }

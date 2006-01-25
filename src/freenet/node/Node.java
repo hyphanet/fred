@@ -27,6 +27,7 @@ import java.util.Iterator;
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
+import freenet.client.async.ClientRequestScheduler;
 import freenet.clients.http.FproxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.crypt.DSAPublicKey;
@@ -76,7 +77,7 @@ import freenet.transport.IPAddressDetector;
 /**
  * @author amphibian
  */
-public class Node implements QueueingSimpleLowLevelClient {
+public class Node {
     
 	static final long serialVersionUID = -1;
 	
@@ -190,6 +191,8 @@ public class Node implements QueueingSimpleLowLevelClient {
     final File downloadDir;
     final TestnetHandler testnetHandler;
     final TestnetStatusUploader statusUploader;
+    public final ClientRequestScheduler fetchScheduler;
+    public final ClientRequestScheduler putScheduler;
     
     // Client stuff that needs to be configged - FIXME
     static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -333,7 +336,7 @@ public class Node implements QueueingSimpleLowLevelClient {
         t.setPriority(Thread.MAX_PRIORITY);
         t.start();
         SimpleToadletServer server = new SimpleToadletServer(port+2000);
-        FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, (short)0));
+        FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
         server.register(fproxy, "/", false);
         System.out.println("Starting fproxy on port "+(port+2000));
         new FCPServer(port+3000, n);
@@ -450,11 +453,15 @@ public class Node implements QueueingSimpleLowLevelClient {
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
 		requestThrottle = new RequestThrottle(5000, 2.0F);
-		requestStarter = new RequestStarter(requestThrottle, "Request starter ("+portNumber+")");
+		requestStarter = new RequestStarter(this, requestThrottle, "Request starter ("+portNumber+")");
+		fetchScheduler = new ClientRequestScheduler(false, random, requestStarter);
+		requestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		insertThrottle = new RequestThrottle(10000, 2.0F);
-		insertStarter = new RequestStarter(insertThrottle, "Insert starter ("+portNumber+")");
+		insertStarter = new RequestStarter(this, insertThrottle, "Insert starter ("+portNumber+")");
+		putScheduler = new ClientRequestScheduler(true, random, insertStarter);
+		insertStarter.start();
 		if(testnetHandler != null)
 			testnetHandler.start();
 		if(statusUploader != null)
@@ -467,18 +474,6 @@ public class Node implements QueueingSimpleLowLevelClient {
             lm.startSender(this, interval);
         ps.start();
         usm.start();
-    }
-    
-    public ClientKeyBlock getKey(ClientKey key, boolean localOnly, RequestStarterClient client, boolean cache, boolean ignoreStore) throws LowLevelGetException {
-    	if(key instanceof ClientSSK) {
-    		ClientSSK k = (ClientSSK) key;
-    		if(k.getPubKey() != null)
-    			cacheKey(k.pubKeyHash, k.getPubKey());
-    	}
-    	if(localOnly)
-    		return realGetKey(key, localOnly, cache, ignoreStore);
-    	else
-    		return client.getKey(key, localOnly, cache, ignoreStore);
     }
     
     public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
@@ -667,10 +662,6 @@ public class Node implements QueueingSimpleLowLevelClient {
         }
     }
 
-    public void putKey(ClientKeyBlock block, RequestStarterClient client, boolean cache) throws LowLevelPutException {
-    	client.putKey(block, cache);
-    }
-    
     public void realPut(ClientKeyBlock block, boolean cache) throws LowLevelPutException {
     	if(block instanceof ClientCHKBlock)
     		realPutCHK((ClientCHKBlock)block, cache);
@@ -1363,8 +1354,8 @@ public class Node implements QueueingSimpleLowLevelClient {
         writeNodeFile();
     }
 
-	public HighLevelSimpleClient makeClient(short prioClass, short prio) {
-		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, makeStarterClient(prioClass, prio, false), makeStarterClient(prioClass, prio, true), !DONT_CACHE_LOCAL_REQUESTS);
+	public HighLevelSimpleClient makeClient(short prioClass) {
+		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, !DONT_CACHE_LOCAL_REQUESTS, prioClass);
 	}
 	
 	private static class MemoryChecker implements Runnable {
@@ -1388,10 +1379,6 @@ public class Node implements QueueingSimpleLowLevelClient {
 
 	public RequestThrottle getInsertThrottle() {
 		return insertThrottle;
-	}
-
-	public RequestStarterClient makeStarterClient(short prioClass, short prio, boolean inserts) {
-		return new RequestStarterClient(prioClass, prio, random, this, inserts ? insertStarter : requestStarter);
 	}
 
 	InetAddress lastIP;

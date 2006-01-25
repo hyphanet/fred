@@ -6,7 +6,7 @@ package freenet.client.async;
  */
 public abstract class ClientGetState {
 
-	public abstract ClientGet getParent();
+	public abstract ClientGetter getParent();
 
 	public abstract void schedule();
 

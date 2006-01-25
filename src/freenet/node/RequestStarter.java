@@ -3,6 +3,9 @@ package freenet.node;
 import java.util.LinkedList;
 import java.util.Vector;
 
+import freenet.client.async.ClientRequest;
+import freenet.client.async.RequestScheduler;
+import freenet.client.async.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.UpdatableSortedLinkedList;
 import freenet.support.UpdatableSortedLinkedListKilledException;
@@ -35,155 +38,81 @@ public class RequestStarter implements Runnable {
 	
 	public static final short NUMBER_OF_PRIORITY_CLASSES = MINIMUM_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS;
 	
-	// Clients registered
-	final Vector clientsByPriority;
 	final RequestThrottle throttle;
-	/*
-	 * Clients which are ready.
-	 * How do we do round-robin?
-	 * Have a list of clients which are ready to go, in priority order, and
-	 * haven't gone this cycle.
-	 * Have a list of clients which are ready to go next cycle, in priority
-	 * order.
-	 * Have each client track the cycle number in which it was last sent.
-	 */
-	final UpdatableSortedLinkedList clientsReadyThisCycle;
-	final UpdatableSortedLinkedList clientsReadyNextCycle;
-	/** Increment every time we go through the whole list */
-	long cycleNumber;
+	RequestScheduler sched;
+	final Node node;
 	
-	public RequestStarter(RequestThrottle throttle, String name) {
-		clientsByPriority = new Vector();
-		clientsReadyThisCycle = new UpdatableSortedLinkedList();
-		clientsReadyNextCycle = new UpdatableSortedLinkedList();
-		cycleNumber = 0;
+	public RequestStarter(Node node, RequestThrottle throttle, String name) {
+		this.node = node;
 		this.throttle = throttle;
 		this.name = name;
+	}
+
+	void setScheduler(RequestScheduler sched) {
+		this.sched = sched;
+	}
+	
+	void start() {
 		Thread t = new Thread(this, name);
 		t.setDaemon(true);
 		t.start();
 	}
-
+	
 	final String name;
 	
 	public String toString() {
 		return name;
 	}
 	
-	public synchronized void registerClient(RequestStarterClient client) {
-		int p = client.priority;
-		LinkedList prio = makePriority(p);
-		prio.add(client);
-	}
-
-	public synchronized void notifyReady(RequestStarterClient client) {
-		Logger.minor(this, "notifyReady("+client+")");
-		try {
-			if(client.getCycleLastSent() == cycleNumber) {
-				clientsReadyNextCycle.addOrUpdate(client);
-			} else {
-				// Can send immediately
-				clientsReadyThisCycle.addOrUpdate(client);
-			}
-		} catch (UpdatableSortedLinkedListKilledException e) {
-			throw new Error(e);
-		}
-		notifyAll();
-	}
-	
-	private synchronized LinkedList makePriority(int p) {
-		while(p >= clientsByPriority.size()) {
-			clientsByPriority.add(new LinkedList());
-		}
-		return (LinkedList) clientsByPriority.get(p);
-	}
-
 	public void run() {
 		long sentRequestTime = System.currentTimeMillis();
 		while(true) {
-			RequestStarterClient client;
-			client = getNextClient();
-			Logger.minor(this, "getNextClient() = "+client);
-			if(client != null) {
-				boolean success;
-				try {
-					success = client.send(cycleNumber);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t);
-					continue;
-				}
-				if(success) {
-					sentRequestTime = System.currentTimeMillis();
-					Logger.minor(this, "Sent");
-					if(client.isReady()) {
-						synchronized(this) {
-							try {
-								clientsReadyNextCycle.addOrUpdate(client);
-							} catch (UpdatableSortedLinkedListKilledException e) {
-								// Impossible
-								throw new Error(e);
-							}
-						}
-					}
-				}
-			}
-			while(true) {
+			SendableRequest req = sched.removeFirst();
+			if(req != null) {
+				// Create a thread to handle starting the request, and the resulting feedback
+				Thread t = new Thread(new SenderThread(req));
+				t.setDaemon(true);
+				t.start();
+				// Wait
 				long delay = throttle.getDelay();
 				long sleepUntil = sentRequestTime + delay;
-				long now = System.currentTimeMillis();
-				if(sleepUntil < now) {
-					if(waitingClients()) break;
-					// Otherwise wait for notification
-					try {
-						synchronized(this) {
-							wait(1000);
-						}
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-				} else {
-					Logger.minor(this, "delay="+delay+"("+throttle+") sleep for "+(sleepUntil-now)+" for "+this);
-					if(sleepUntil - now > 0)
+				long now;
+				do {
+					now = System.currentTimeMillis();
+					if(now < sleepUntil)
 						try {
-							synchronized(this) {
-								// At most sleep 500ms, then recompute.
-								wait(Math.min(sleepUntil - now, 500));
-							}
+							Thread.sleep(sleepUntil - now);
 						} catch (InterruptedException e) {
 							// Ignore
 						}
+				} while(now < sleepUntil);
+			} else {
+				synchronized(this) {
+					// Always take the lock on RequestStarter first.
+					req = sched.removeFirst();
+					if(req != null) continue;
+					try {
+						wait(1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
 				}
 			}
 		}
 	}
+	
+	private class SenderThread implements Runnable {
 
-	private synchronized boolean waitingClients() {
-		return !(clientsReadyThisCycle.isEmpty() && clientsReadyNextCycle.isEmpty());
-	}
-
-	/**
-	 * Get the next ready client.
-	 */
-	private synchronized RequestStarterClient getNextClient() {
-		try {
-			while(true) {
-			if(clientsReadyThisCycle.isEmpty() && clientsReadyNextCycle.isEmpty())
-				return null;
-			if(clientsReadyThisCycle.isEmpty()) {
-				cycleNumber++;
-				clientsReadyNextCycle.moveTo(clientsReadyThisCycle);
-			}
-			RequestStarterClient c = (RequestStarterClient) clientsReadyThisCycle.removeLowest();
-			if(c.getCycleLastSent() == cycleNumber) {
-				clientsReadyNextCycle.add(c);
-				continue;
-			} else {
-				c.setCycleLastSet(cycleNumber);
-				return c;
-			}
-			}
-		} catch (UpdatableSortedLinkedListKilledException e) {
-			throw new Error(e);
+		private final SendableRequest req;
+		
+		public SenderThread(SendableRequest req) {
+			this.req = req;
 		}
+
+		public void run() {
+			req.send(node);
+		}
+		
 	}
+	
 }

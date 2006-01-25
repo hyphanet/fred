@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import freenet.keys.FreenetURI;
+
 /** A high level client request. A request (either fetch or put) started
  * by a Client. Has a suitable context and a URI; is fulfilled only when
  * we have followed all the redirects etc, or have an error. Can be 
@@ -26,6 +28,8 @@ public abstract class ClientRequest {
 	public boolean isCancelled() {
 		return cancelled;
 	}
+	
+	public abstract FreenetURI getURI();
 	
 	public abstract boolean isFinished();
 }

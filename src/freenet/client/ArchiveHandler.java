@@ -14,7 +14,7 @@ public interface ArchiveHandler {
 	 * @throws MetadataParseException If there was an error parsing intermediary metadata.
 	 */
 	public abstract Bucket getMetadata(ArchiveContext archiveContext,
-			FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
+			ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException;
@@ -30,7 +30,7 @@ public interface ArchiveHandler {
 	 * @throws MetadataParseException 
 	 */
 	public abstract Bucket get(String internalName,
-			ArchiveContext archiveContext, FetcherContext fetchContext,
+			ArchiveContext archiveContext, 
 			ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives)
 			throws ArchiveFailureException, ArchiveRestartException,

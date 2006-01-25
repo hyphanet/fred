@@ -2,8 +2,6 @@ package freenet.client;
 
 import freenet.client.events.ClientEventProducer;
 import freenet.crypt.RandomSource;
-import freenet.node.RequestStarterClient;
-import freenet.node.SimpleLowLevelClient;
 import freenet.support.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
@@ -15,7 +13,6 @@ public class FetcherContext implements Cloneable {
 	public static final int SPLITFILE_USE_LENGTHS_MASK = 3;
 	public static final int SET_RETURN_ARCHIVES = 4;
 	/** Low-level client to send low-level requests to. */
-	final SimpleLowLevelClient client;
 	public long maxOutputLength;
 	public long maxTempLength;
 	public final ArchiveManager archiveManager;
@@ -38,7 +35,6 @@ public class FetcherContext implements Cloneable {
 	public int maxMetadataSize;
 	public int maxDataBlocksPerSegment;
 	public int maxCheckBlocksPerSegment;
-	public final RequestStarterClient starterClient;
 	public boolean cacheLocalRequests;
 	private boolean cancelled;
 	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
@@ -49,15 +45,14 @@ public class FetcherContext implements Cloneable {
 		return cancelled;
 	}
 	
-	public FetcherContext(SimpleLowLevelClient client, long curMaxLength, 
+	public FetcherContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts,
 			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
-			ClientEventProducer producer, RequestStarterClient starter, boolean cacheLocalRequests) {
-		this.client = client;
+			ClientEventProducer producer, boolean cacheLocalRequests) {
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
 		this.maxMetadataSize = maxMetadataSize;
@@ -77,13 +72,11 @@ public class FetcherContext implements Cloneable {
 		this.eventProducer = producer;
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
-		this.starterClient = starter;
 		this.cacheLocalRequests = cacheLocalRequests;
 	}
 
 	public FetcherContext(FetcherContext ctx, int maskID) {
 		if(maskID == IDENTICAL_MASK) {
-			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
@@ -103,11 +96,9 @@ public class FetcherContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
-			this.starterClient = ctx.starterClient;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
 			this.returnZIPManifests = ctx.returnZIPManifests;
 		} else if(maskID == SPLITFILE_DEFAULT_BLOCK_MASK) {
-			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
@@ -127,11 +118,9 @@ public class FetcherContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = 0;
 			this.maxCheckBlocksPerSegment = 0;
-			this.starterClient = ctx.starterClient;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
 			this.returnZIPManifests = false;
 		} else if(maskID == SPLITFILE_DEFAULT_MASK) {
-			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxTempLength = ctx.maxTempLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
@@ -151,11 +140,9 @@ public class FetcherContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
-			this.starterClient = ctx.starterClient;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
 			this.returnZIPManifests = ctx.returnZIPManifests;
 		} else if(maskID == SPLITFILE_USE_LENGTHS_MASK) {
-			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxTempLength = ctx.maxTempLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
@@ -175,11 +162,9 @@ public class FetcherContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
-			this.starterClient = ctx.starterClient;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
 			this.returnZIPManifests = ctx.returnZIPManifests;
 		} else if (maskID == SET_RETURN_ARCHIVES) {
-			this.client = ctx.client;
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
@@ -199,7 +184,6 @@ public class FetcherContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
-			this.starterClient = ctx.starterClient;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
 			this.returnZIPManifests = true;
 		}

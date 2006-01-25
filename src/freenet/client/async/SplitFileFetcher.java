@@ -30,7 +30,7 @@ public class SplitFileFetcher extends ClientGetState {
 	final ArchiveContext archiveContext;
 	final LinkedList decompressors;
 	final ClientMetadata clientMetadata;
-	final ClientGet parent;
+	final ClientGetter parent;
 	final GetCompletionCallback cb;
 	final int recursionLevel;
 	/** The splitfile type. See the SPLITFILE_ constants on Metadata. */
@@ -57,7 +57,7 @@ public class SplitFileFetcher extends ClientGetState {
 	private final boolean splitUseLengths;
 	private boolean finished;
 	
-	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientGet parent,
+	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientGetter parent,
 			FetcherContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel) throws FetchException, MetadataParseException {
 		this.finished = false;
@@ -213,7 +213,7 @@ public class SplitFileFetcher extends ClientGetState {
 		}
 	}
 
-	public ClientGet getParent() {
+	public ClientGetter getParent() {
 		return parent;
 	}
 

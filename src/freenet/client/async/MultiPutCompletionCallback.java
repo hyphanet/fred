@@ -10,11 +10,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private final LinkedList waitingFor;
 	private final PutCompletionCallback cb;
 	private ClientPutState generator;
-	private final ClientPut parent;
+	private final ClientPutter parent;
 	private boolean finished;
 	private boolean started;
 	
-	public MultiPutCompletionCallback(PutCompletionCallback cb, ClientPut parent, boolean dontTellParent) {
+	public MultiPutCompletionCallback(PutCompletionCallback cb, ClientPutter parent, boolean dontTellParent) {
 		this.cb = cb;
 		this.waitingFor = new LinkedList();
 		this.parent = parent;
@@ -61,7 +61,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		started = true;
 	}
 
-	public ClientPut getParent() {
+	public ClientPutter getParent() {
 		return parent;
 	}
 

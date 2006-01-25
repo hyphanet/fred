@@ -8,9 +8,9 @@ import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 
-public class ClientPut extends ClientRequest implements PutCompletionCallback {
+public class ClientPutter extends ClientRequest implements PutCompletionCallback {
 
-	final Client client;
+	final ClientCallback client;
 	final Bucket data;
 	final FreenetURI targetURI;
 	final ClientMetadata cm;
@@ -19,11 +19,14 @@ public class ClientPut extends ClientRequest implements PutCompletionCallback {
 	private ClientPutState currentState;
 	private boolean finished;
 	private final boolean getCHKOnly;
+	private final boolean isMetadata;
+	private FreenetURI uri;
 
-	public ClientPut(Client client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InserterContext ctx,
-			ClientRequestScheduler scheduler, short priorityClass, boolean getCHKOnly) {
+	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InserterContext ctx,
+			ClientRequestScheduler scheduler, short priorityClass, boolean getCHKOnly, boolean isMetadata) {
 		super(priorityClass);
 		this.cm = cm;
+		this.isMetadata = isMetadata;
 		this.getCHKOnly = getCHKOnly;
 		this.client = client;
 		this.data = data;
@@ -32,16 +35,16 @@ public class ClientPut extends ClientRequest implements PutCompletionCallback {
 		this.scheduler = scheduler;
 		this.finished = false;
 		this.cancelled = false;
-		try {
-			start();
-		} catch (InserterException e) {
-			onFailure(e, null);
-		}
 	}
 
-	private void start() throws InserterException {
-		currentState =
-			new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), false, ctx, false, false, getCHKOnly);
+	public void start() throws InserterException {
+		try {
+			currentState =
+				new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, false, getCHKOnly);
+		} catch (InserterException e) {
+			finished = true;
+			currentState = null;
+		}
 	}
 
 	void setCurrentState(ClientPutState s) {
@@ -61,7 +64,8 @@ public class ClientPut extends ClientRequest implements PutCompletionCallback {
 	}
 
 	public void onEncode(ClientKey key, ClientPutState state) {
-		client.onGeneratedURI(key.getURI(), this);
+		this.uri = key.getURI();
+		client.onGeneratedURI(uri, this);
 	}
 	
 	public void cancel() {
@@ -74,6 +78,10 @@ public class ClientPut extends ClientRequest implements PutCompletionCallback {
 	
 	public boolean isFinished() {
 		return finished || cancelled;
+	}
+
+	public FreenetURI getURI() {
+		return uri;
 	}
 	
 }

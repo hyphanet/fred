@@ -19,7 +19,7 @@ import freenet.support.compress.Compressor;
 
 public class SplitFileInserter implements ClientPutState {
 	
-	final ClientPut parent;
+	final ClientPutter parent;
 	final InserterContext ctx;
 	final SplitPutCompletionCallback cb;
 	final long dataLength;
@@ -36,7 +36,7 @@ public class SplitFileInserter implements ClientPutState {
 	final boolean isMetadata;
 	private boolean finished;
 
-	public SplitFileInserter(ClientPut put, SplitPutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, SplitHandler sh, boolean getCHKOnly, boolean isMetadata, boolean dontTellParent) throws InserterException {
+	public SplitFileInserter(ClientPutter put, SplitPutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, SplitHandler sh, boolean getCHKOnly, boolean isMetadata, boolean dontTellParent) throws InserterException {
 		this.parent = put;
 		if(!dontTellParent)
 			parent.setCurrentState(this);
@@ -208,7 +208,7 @@ public class SplitFileInserter implements ClientPutState {
 		return uris;
 	}
 
-	public ClientPut getParent() {
+	public ClientPutter getParent() {
 		return parent;
 	}
 

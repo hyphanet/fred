@@ -51,19 +51,15 @@ public class TextModeClientInterface implements Runnable {
     final Node n;
     final HighLevelSimpleClient client;
     final Hashtable streams;
-    final RequestStarterClient requestStarterClient;
-    final RequestStarterClient insertStarterClient;
     final File downloadsDir;
     
     TextModeClientInterface(Node n) {
         this.n = n;
-        client = n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, (short)0);
+        client = n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
         client.addGlobalHook(new EventDumper());
         this.r = n.random;
         streams = new Hashtable();
         new Thread(this, "Text mode client interface").start();
-        this.requestStarterClient = n.makeStarterClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, (short)0, false);
-        this.insertStarterClient = n.makeStarterClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, (short)0, true);
         this.downloadsDir = n.downloadDir;
     }
     

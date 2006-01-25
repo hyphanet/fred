@@ -10,16 +10,16 @@ import freenet.keys.FreenetURI;
  * them. FCP, Fproxy, and the GlobalPersistentClient, implement this
  * somewhere.
  */
-public interface Client {
+public interface ClientCallback {
 
-	public void onSuccess(FetchResult result, ClientGet state);
+	public void onSuccess(FetchResult result, ClientGetter state);
 	
-	public void onFailure(FetchException e, ClientGet state);
+	public void onFailure(FetchException e, ClientGetter state);
 
-	public void onSuccess(ClientPut state);
+	public void onSuccess(ClientPutter state);
 	
-	public void onFailure(InserterException e, ClientPut state);
+	public void onFailure(InserterException e, ClientPutter state);
 	
-	public void onGeneratedURI(FreenetURI uri, ClientPut state);
+	public void onGeneratedURI(FreenetURI uri, ClientPutter state);
 	
 }

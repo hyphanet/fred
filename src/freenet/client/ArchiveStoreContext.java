@@ -37,43 +37,29 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	 * Get the metadata for a given archive.
 	 * @return A Bucket containing the metadata, in binary format, for the archive.
 	 */
-	public Bucket getMetadata(ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
+	public Bucket getMetadata(ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, fetchContext, dm, recursionLevel, dontEnterImplicitArchives);
+		return get(".metadata", archiveContext, dm, recursionLevel, dontEnterImplicitArchives);
 	}
 
 	/**
 	 * Fetch a file in an archive. Will check the cache first, then fetch the archive if
 	 * necessary.
 	 */
-	public Bucket get(String internalName, ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
+	public Bucket get(String internalName, ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 
 		// Do loop detection on the archive that we are about to fetch.
 		archiveContext.doLoopDetection(key);
 		
 		Bucket data;
-
+		
 		// Fetch from cache
 		if((data = manager.getCached(key, internalName)) != null) {
 			return data;
 		}
 		
-		synchronized(this) {
-			// Fetch from cache
-			if((data = manager.getCached(key, internalName)) != null) {
-				return data;
-			}
-			
-			// Not in cache
-			
-			if(fetchContext == null) return null;
-			fetchContext = new FetcherContext(fetchContext, FetcherContext.SET_RETURN_ARCHIVES);
-			Fetcher fetcher = new Fetcher(key, fetchContext, archiveContext);
-			FetchResult result = fetcher.realRun(dm, recursionLevel, key, dontEnterImplicitArchives, fetchContext.localRequestOnly);
-			manager.extractToCache(key, archiveType, result.data, archiveContext, this);
-			return manager.getCached(key, internalName);
-		}
+		return null;
 	}
 
 	// Archive size

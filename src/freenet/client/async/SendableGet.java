@@ -2,7 +2,7 @@ package freenet.client.async;
 
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
-import freenet.node.LowLevelPutException;
+import freenet.node.LowLevelGetException;
 
 /**
  * A low-level key fetch which can be sent immediately. @see SendableRequest
@@ -15,6 +15,6 @@ public interface SendableGet extends SendableRequest {
 	public void onSuccess(ClientKeyBlock block);
 	
 	/** Called when/if the low-level request fails. */
-	public void onFailure(LowLevelPutException e);
+	public void onFailure(LowLevelGetException e);
 	
 }

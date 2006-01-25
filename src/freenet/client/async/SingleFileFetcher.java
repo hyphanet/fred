@@ -20,6 +20,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.KeyDecodeException;
 import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
+import freenet.node.Node;
 import freenet.support.Bucket;
 import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
@@ -27,7 +28,7 @@ import freenet.support.compress.Compressor;
 
 public class SingleFileFetcher extends ClientGetState implements SendableGet {
 
-	final ClientGet parent;
+	final ClientGetter parent;
 	//final FreenetURI uri;
 	final ClientKey key;
 	final LinkedList metaStrings;
@@ -54,7 +55,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	 * @param token 
 	 * @param dontTellClientGet 
 	 */
-	public SingleFileFetcher(ClientGet get, GetCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws FetchException {
+	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws FetchException {
 		this.cancelled = false;
 		this.dontTellClientGet = dontTellClientGet;
 		this.token = token;
@@ -78,7 +79,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	}
 
 	/** Called by ClientGet. */ 
-	public SingleFileFetcher(ClientGet get, GetCompletionCallback cb, ClientMetadata metadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws MalformedURLException, FetchException {
+	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws MalformedURLException, FetchException {
 		this(get, cb, metadata, ClientKey.getBaseKey(uri), uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token);
 	}
 	
@@ -110,7 +111,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		parent.scheduler.register(this);
 	}
 
-	public ClientGet getParent() {
+	public ClientGetter getParent() {
 		return parent;
 	}
 
@@ -235,7 +236,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				ah = (ArchiveStoreContext) ctx.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), false);
 				// ah is set. This means we are currently handling an archive.
 				Bucket metadataBucket;
-				metadataBucket = ah.getMetadata(actx, null, null, recursionLevel+1, true);
+				metadataBucket = ah.getMetadata(actx, null, recursionLevel+1, true);
 				if(metadataBucket != null) {
 					try {
 						metadata = Metadata.construct(metadataBucket);
@@ -255,7 +256,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive");
 				if(metaStrings.isEmpty())
 					throw new FetchException(FetchException.NOT_ENOUGH_METASTRINGS);
-				Bucket dataBucket = ah.get((String) metaStrings.removeFirst(), actx, null, null, recursionLevel+1, true);
+				Bucket dataBucket = ah.get((String) metaStrings.removeFirst(), actx, null, recursionLevel+1, true);
 				if(dataBucket != null) {
 					// Return the data
 					onSuccess(new FetchResult(this.clientMetadata, dataBucket));
@@ -432,7 +433,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	}
 
 	// Translate it, then call the real onFailure
-	public void onFailure(LowLevelPutException e) {
+	public void onFailure(LowLevelGetException e) {
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND));
@@ -466,6 +467,22 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 
 	public boolean isFinished() {
 		return cancelled;
+	}
+
+	/** Do the request, blocking. Called by RequestStarter. */
+	public void send(Node node) {
+		// Do we need to support the last 3?
+		ClientKeyBlock block;
+		try {
+			block = node.realGetKey(key, false, false, false);
+		} catch (LowLevelGetException e) {
+			onFailure(e);
+			return;
+		} catch (Throwable t) {
+			onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
+			return;
+		}
+		onSuccess(block);
 	}
 
 }

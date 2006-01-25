@@ -10,7 +10,7 @@ import freenet.support.SortedVectorByNumber;
  * ask for a request to start. A request is then started, in its own 
  * thread. It is removed at that point.
  */
-public class ClientRequestScheduler {
+public class ClientRequestScheduler implements RequestScheduler {
 
 	/**
 	 * Structure:
@@ -24,8 +24,10 @@ public class ClientRequestScheduler {
 	// we have one for inserts and one for requests
 	final boolean isInsertScheduler;
 	final RandomSource random;
+	private final RequestStarter starter;
 	
-	ClientRequestScheduler(boolean forInserts, RandomSource random) {
+	public ClientRequestScheduler(boolean forInserts, RandomSource random, RequestStarter starter) {
+		this.starter = starter;
 		this.random = random;
 		this.isInsertScheduler = forInserts;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
@@ -33,12 +35,17 @@ public class ClientRequestScheduler {
 			priorities[i] = new SortedVectorByNumber();
 	}
 	
-	public synchronized void register(SendableRequest req) {
-		if((!isInsertScheduler) && req instanceof ClientPut)
-			throw new IllegalArgumentException("Expected a ClientPut: "+req);
-		RandomGrabArrayWithInt grabber = 
-			makeGrabArray(req.getPriorityClass(), req.getRetryCount());
-		grabber.add(req);
+	public void register(SendableRequest req) {
+		synchronized(this) {
+			if((!isInsertScheduler) && req instanceof ClientPutter)
+				throw new IllegalArgumentException("Expected a ClientPut: "+req);
+			RandomGrabArrayWithInt grabber = 
+				makeGrabArray(req.getPriorityClass(), req.getRetryCount());
+			grabber.add(req);
+		}
+		synchronized(starter) {
+			starter.notifyAll();
+		}
 	}
 	
 	private synchronized RandomGrabArrayWithInt makeGrabArray(short priorityClass, int retryCount) {
@@ -78,13 +85,13 @@ public class ClientRequestScheduler {
 		}
 	}
 	
-	public synchronized ClientRequest getFirst() {
+	public synchronized SendableRequest removeFirst() {
 		// Priorities start at 0
 		for(int i=0;i<RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
 			SortedVectorByNumber s = priorities[i];
 			if(s == null) continue;
 			RandomGrabArrayWithInt rga = (RandomGrabArrayWithInt) s.getFirst(); // will discard finished items
-			ClientRequest req = (ClientRequest) rga.removeRandom();
+			SendableRequest req = (SendableRequest) rga.removeRandom();
 			if(rga.isEmpty()) {
 				s.remove(rga.getNumber());
 				if(s.isEmpty()) {

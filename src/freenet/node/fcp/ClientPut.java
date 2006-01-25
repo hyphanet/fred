@@ -1,51 +1,66 @@
 package freenet.node.fcp;
 
 import freenet.client.ClientMetadata;
-import freenet.client.FileInserter;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.InsertBlock;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
+import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 
-public class ClientPut extends ClientRequest implements Runnable {
+public class ClientPut extends ClientRequest implements ClientCallback {
 
 	final FreenetURI uri;
-	final FileInserter inserter;
+	final ClientPutter inserter;
 	final InserterContext ctx;
 	final InsertBlock block;
 	final FCPConnectionHandler handler;
 	final String identifier;
 	final boolean getCHKOnly;
+	final short priorityClass;
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) {
 		this.handler = handler;
 		this.identifier = message.identifier;
 		this.getCHKOnly = message.getCHKOnly;
+		this.priorityClass = 0;
 		ctx = new InserterContext(handler.defaultInsertContext);
+		ctx.maxInsertRetries = message.maxRetries;
 		// Now go through the fields one at a time
 		uri = message.uri;
 		String mimeType = message.contentType;
 		block = new InsertBlock(message.bucket, new ClientMetadata(mimeType), uri);
-		inserter = new FileInserter(ctx);
-		ctx.maxInsertRetries = message.maxRetries;
-		Thread t = new Thread(this, "FCP inserter for "+uri+" ("+identifier+") on "+handler);
-		t.setDaemon(true);
-		t.start();
+		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, handler.node.putScheduler, priorityClass, getCHKOnly, false);
 	}
 
 	public void cancel() {
-		ctx.cancel();
+		inserter.cancel();
 	}
 
-	public void run() {
-		try {
-			FreenetURI uri = inserter.run(block, false, getCHKOnly, false, null);
-			FCPMessage msg = new PutSuccessfulMessage(identifier, uri);
-			handler.outputHandler.queue(msg);
-		} catch (InserterException e) {
-			FCPMessage msg = new PutFailedMessage(e, identifier);
-			handler.outputHandler.queue(msg);
-		}
+	public void onSuccess(ClientPutter state) {
+		FCPMessage msg = new PutSuccessfulMessage(identifier, state.getURI());
+		handler.outputHandler.queue(msg);
+	}
+
+	public void onFailure(InserterException e, ClientPutter state) {
+		FCPMessage msg = new PutFailedMessage(e, identifier);
+		handler.outputHandler.queue(msg);
+	}
+
+	public void onGeneratedURI(FreenetURI uri, ClientPutter state) {
+		FCPMessage msg = new URIGeneratedMessage(uri, identifier);
+		handler.outputHandler.queue(msg);
+	}
+
+	public void onSuccess(FetchResult result, ClientGetter state) {
+		// ignore
+	}
+
+	public void onFailure(FetchException e, ClientGetter state) {
+		// ignore
 	}
 
 }

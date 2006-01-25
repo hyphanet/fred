@@ -12,9 +12,9 @@ import freenet.keys.FreenetURI;
 /**
  * A high level data request.
  */
-public class ClientGet extends ClientRequest implements GetCompletionCallback {
+public class ClientGetter extends ClientRequest implements GetCompletionCallback {
 
-	final Client client;
+	final ClientCallback client;
 	final FreenetURI uri;
 	final FetcherContext ctx;
 	final ArchiveContext actx;
@@ -23,7 +23,7 @@ public class ClientGet extends ClientRequest implements GetCompletionCallback {
 	private boolean finished;
 	private int archiveRestarts;
 	
-	public ClientGet(Client client, ClientRequestScheduler sched, FreenetURI uri, FetcherContext ctx, short priorityClass) {
+	public ClientGetter(ClientCallback client, ClientRequestScheduler sched, FreenetURI uri, FetcherContext ctx, short priorityClass) {
 		super(priorityClass);
 		this.client = client;
 		this.uri = uri;
@@ -32,10 +32,9 @@ public class ClientGet extends ClientRequest implements GetCompletionCallback {
 		this.finished = false;
 		this.actx = new ArchiveContext();
 		archiveRestarts = 0;
-		start();
 	}
 	
-	private void start() {
+	public void start() {
 		try {
 			currentState = new SingleFileFetcher(this, this, new ClientMetadata(), uri, ctx, actx, getPriorityClass(), 0, false, null);
 			currentState.schedule();
@@ -76,6 +75,10 @@ public class ClientGet extends ClientRequest implements GetCompletionCallback {
 
 	public boolean isFinished() {
 		return finished || cancelled;
+	}
+
+	public FreenetURI getURI() {
+		return uri;
 	}
 	
 }

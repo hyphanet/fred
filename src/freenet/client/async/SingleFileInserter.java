@@ -28,7 +28,7 @@ class SingleFileInserter implements ClientPutState {
 	// Config option???
 	private static final long COMPRESS_OFF_THREAD_LIMIT = 65536;
 	
-	final ClientPut parent;
+	final ClientPutter parent;
 	final InsertBlock block;
 	final InserterContext ctx;
 	final boolean metadata;
@@ -39,7 +39,7 @@ class SingleFileInserter implements ClientPutState {
 	final boolean dontTellParent;
 	private boolean cancelled = false;
 
-	SingleFileInserter(ClientPut parent, PutCompletionCallback cb, InsertBlock block, 
+	SingleFileInserter(ClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InserterContext ctx, boolean dontCompress, 
 			boolean dontTellParent, boolean getCHKOnly) throws InserterException {
 		this.parent = parent;
@@ -244,7 +244,7 @@ class SingleFileInserter implements ClientPutState {
 			cb.onFailure(e, this);
 		}
 
-		public ClientPut getParent() {
+		public ClientPutter getParent() {
 			return parent;
 		}
 
@@ -262,7 +262,7 @@ class SingleFileInserter implements ClientPutState {
 		
 	}
 
-	public ClientPut getParent() {
+	public ClientPutter getParent() {
 		return parent;
 	}
 
