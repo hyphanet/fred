@@ -96,7 +96,7 @@ public abstract class Key implements WritableToDataOutputStream {
     
     static Bucket decompress(boolean isCompressed, byte[] output, BucketFactory bf, int maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
         if(isCompressed) {
-        	Logger.minor(Key.class, "Decompressing in decode with codec "+compressionAlgorithm);
+        	Logger.minor(Key.class, "Decompressing "+output.length+" bytes in decode with codec "+compressionAlgorithm);
             if(output.length < (shortLength ? 3 : 5)) throw new CHKDecodeException("No bytes to decompress");
             // Decompress
             // First get the length
@@ -129,12 +129,11 @@ public abstract class Key implements WritableToDataOutputStream {
     	short compressionAlgorithm;
     }
     
-    static Compressed compress(Bucket sourceData, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, long MAX_LENGTH_BEFORE_COMPRESSION, long MAX_COMPRESSED_DATA_LENGTH) throws KeyEncodeException, IOException {
+    static Compressed compress(Bucket sourceData, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, long MAX_LENGTH_BEFORE_COMPRESSION, long MAX_COMPRESSED_DATA_LENGTH, boolean shortLength) throws KeyEncodeException, IOException {
     	byte[] finalData = null;
         short compressionAlgorithm = -1;
         // Try to compress it - even if it fits into the block,
         // because compressing it improves its entropy.
-        boolean compressed = false;
         if(sourceData.size() > MAX_LENGTH_BEFORE_COMPRESSION)
             throw new KeyEncodeException("Too big");
         if(!dontCompress) {
@@ -180,13 +179,17 @@ public abstract class Key implements WritableToDataOutputStream {
         	if(cbuf != null) {
     			// Use it
     			int compressedLength = cbuf.length;
-                finalData = new byte[compressedLength+4];
-                System.arraycopy(cbuf, 0, finalData, 4, compressedLength);
-                finalData[0] = (byte) ((sourceLength >> 24) & 0xff);
-                finalData[1] = (byte) ((sourceLength >> 16) & 0xff);
-                finalData[2] = (byte) ((sourceLength >> 8) & 0xff);
-                finalData[3] = (byte) ((sourceLength) & 0xff);
-                compressed = true;
+                finalData = new byte[compressedLength+(shortLength?2:4)];
+                System.arraycopy(cbuf, 0, finalData, shortLength?2:4, compressedLength);
+                if(!shortLength) {
+                	finalData[0] = (byte) ((sourceLength >> 24) & 0xff);
+                	finalData[1] = (byte) ((sourceLength >> 16) & 0xff);
+                	finalData[2] = (byte) ((sourceLength >> 8) & 0xff);
+                	finalData[3] = (byte) ((sourceLength) & 0xff);
+                } else {
+                	finalData[0] = (byte) ((sourceLength >> 8) & 0xff);
+                	finalData[1] = (byte) ((sourceLength) & 0xff);
+                }
         	}
         }
         if(finalData == null) {

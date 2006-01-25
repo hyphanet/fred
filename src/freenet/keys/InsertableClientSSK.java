@@ -56,7 +56,7 @@ public class InsertableClientSSK extends ClientSSK {
 		byte[] compressedData;
 		short compressionAlgo;
 		try {
-			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH, ClientSSKBlock.DATA_LENGTH);
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH, ClientSSKBlock.DATA_LENGTH, true);
 			compressedData = comp.compressedData;
 			compressionAlgo = comp.compressionAlgorithm;
 		} catch (KeyEncodeException e) {

@@ -155,7 +155,7 @@ public class Node {
     String myName;
     final LocationManager lm;
     final PeerManager peers; // my peers
-    final RandomSource random; // strong RNG
+    public final RandomSource random; // strong RNG
     final UdpSocketManager usm;
     final FNPPacketMangler packetMangler;
     final PacketSender ps;
@@ -1268,8 +1268,8 @@ public class Node {
     		// Dump
     		Iterator i = insertSenders.values().iterator();
     		while(i.hasNext()) {
-    			CHKInsertSender s = (CHKInsertSender) i.next();
-    			sb.append(s.uid);
+    			AnyInsertSender s = (AnyInsertSender) i.next();
+    			sb.append(s.getUID());
     			sb.append(": ");
     			sb.append(s.getStatusString());
     			sb.append('\n');
@@ -1456,5 +1456,9 @@ public class Node {
 			// FIXME deal with disk full, access perms etc; tell user about it.
 			Logger.error(this, "Error accessing pubkey store: "+e, e);
 		}
+	}
+
+	public boolean isTestnetEnabled() {
+		return testnetEnabled;
 	}
 }

@@ -804,4 +804,8 @@ outer:		while(true) {
 	public byte[] getHeaders() {
 		return headers;
 	}
+
+	public long getUID() {
+		return uid;
+	}
 }
