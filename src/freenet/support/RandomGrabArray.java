@@ -37,8 +37,9 @@ public class RandomGrabArray {
 		}
 		contents.add(req);
 		if(index >= reqs.length) {
-			RandomGrabArray[] r = new RandomGrabArray[reqs.length*2];
+			RandomGrabArrayItem[] r = new RandomGrabArrayItem[reqs.length*2];
 			System.arraycopy(reqs, 0, r, 0, reqs.length);
+			reqs = r;
 		}
 		reqs[index++] = req;
 	}

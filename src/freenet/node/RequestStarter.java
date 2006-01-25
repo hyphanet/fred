@@ -83,6 +83,7 @@ public class RequestStarter implements Runnable {
 				if(now < sleepUntil)
 					try {
 						Thread.sleep(sleepUntil - now);
+						Logger.minor(this, "Slept: "+(sleepUntil-now)+"ms");
 					} catch (InterruptedException e) {
 						// Ignore
 					}
