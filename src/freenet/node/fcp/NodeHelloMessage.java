@@ -15,12 +15,19 @@ import freenet.support.SimpleFieldSet;
  */
 public class NodeHelloMessage extends FCPMessage {
 
+	private final Node node;
+	
+	public NodeHelloMessage(Node node) {
+		this.node = node;
+	}
+	
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
 		// FIXME
 		sfs.put("FCPVersion", "0.7.0");
 		sfs.put("Node", "Fred");
 		sfs.put("Version", Version.getVersionString());
+		sfs.put("Testnet", Boolean.toString(node.isTestnetEnabled()));
 		return sfs;
 	}
 

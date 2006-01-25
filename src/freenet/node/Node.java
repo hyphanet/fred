@@ -154,7 +154,7 @@ public class Node implements QueueingSimpleLowLevelClient {
     String myName;
     final LocationManager lm;
     final PeerManager peers; // my peers
-    final RandomSource random; // strong RNG
+    public final RandomSource random; // strong RNG
     final UdpSocketManager usm;
     final FNPPacketMangler packetMangler;
     final PacketSender ps;
@@ -1469,5 +1469,9 @@ public class Node implements QueueingSimpleLowLevelClient {
 			// FIXME deal with disk full, access perms etc; tell user about it.
 			Logger.error(this, "Error accessing pubkey store: "+e, e);
 		}
+	}
+
+	public boolean isTestnetEnabled() {
+		return testnetEnabled;
 	}
 }
