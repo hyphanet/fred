@@ -12,8 +12,11 @@ import freenet.support.DoublyLinkedListImpl;
  * subject to the above.
  * 
  * Always take the lock on ArchiveStoreContext before the lock on ArchiveManager, NOT the other way around.
+ * 
+ * Not normally to be used directly by external packages, but public for
+ * ArchiveManager.extractToCache. FIXME.
  */
-class ArchiveStoreContext implements ArchiveHandler {
+public class ArchiveStoreContext implements ArchiveHandler {
 
 	private ArchiveManager manager;
 	private FreenetURI key;
@@ -34,42 +37,29 @@ class ArchiveStoreContext implements ArchiveHandler {
 	 * Get the metadata for a given archive.
 	 * @return A Bucket containing the metadata, in binary format, for the archive.
 	 */
-	public Bucket getMetadata(ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
+	public Bucket getMetadata(ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, fetchContext, dm, recursionLevel, dontEnterImplicitArchives);
+		return get(".metadata", archiveContext, dm, recursionLevel, dontEnterImplicitArchives);
 	}
 
 	/**
 	 * Fetch a file in an archive. Will check the cache first, then fetch the archive if
 	 * necessary.
 	 */
-	public Bucket get(String internalName, ArchiveContext archiveContext, FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
+	public Bucket get(String internalName, ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 
 		// Do loop detection on the archive that we are about to fetch.
 		archiveContext.doLoopDetection(key);
 		
 		Bucket data;
-
+		
 		// Fetch from cache
 		if((data = manager.getCached(key, internalName)) != null) {
 			return data;
 		}
 		
-		synchronized(this) {
-			// Fetch from cache
-			if((data = manager.getCached(key, internalName)) != null) {
-				return data;
-			}
-			
-			// Not in cache
-			
-			if(fetchContext == null) return null;
-			Fetcher fetcher = new Fetcher(key, fetchContext, archiveContext);
-			FetchResult result = fetcher.realRun(dm, recursionLevel, key, dontEnterImplicitArchives, fetchContext.localRequestOnly);
-			manager.extractToCache(key, archiveType, result.data, archiveContext, this);
-			return manager.getCached(key, internalName);
-		}
+		return null;
 	}
 
 	// Archive size
@@ -129,6 +119,10 @@ class ArchiveStoreContext implements ArchiveHandler {
 		synchronized(myItems) {
 			myItems.remove(item);
 		}
+	}
+
+	public short getArchiveType() {
+		return archiveType;
 	}
 	
 }

@@ -73,10 +73,6 @@ public class RealNodeRequestInsertTest {
             b.peers.connect(a.exportFieldSet());
         }
         
-        RequestStarterClient[] starters = new RequestStarterClient[NUMBER_OF_NODES];
-        for(int i=0;i<starters.length;i++)
-        	starters[i] = nodes[i].makeStarterClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, (short)0, false); // pretend are all requests
-
         Logger.normal(RealNodeRoutingTest.class, "Added random links");
         
         SwapRequestInterval sri =
@@ -182,7 +178,7 @@ public class RealNodeRequestInsertTest {
                 Logger.error(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode()));
                 Logger.error(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
                 Logger.error(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
-                randomNode.putKey(block, starters[node1], true);
+                randomNode.realPut(block, true);
                 Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
                 Logger.error(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
                 // Pick random node to request from
@@ -191,7 +187,7 @@ public class RealNodeRequestInsertTest {
                     node2 = random.nextInt(NUMBER_OF_NODES);
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
-                block = (ClientCHKBlock) fetchNode.getKey((ClientKey) chk, false, starters[node2], true, false);
+                block = (ClientCHKBlock) fetchNode.realGetKey((ClientKey) chk, false, true, false);
                 if(block == null) {
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch FAILED from "+node2);
                     requestsAvg.report(0.0);

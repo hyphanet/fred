@@ -40,13 +40,21 @@ public class FetchException extends Exception {
 	}
 
 	public FetchException(ArchiveFailureException e) {
-		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
+		super(getMessage(ARCHIVE_FAILURE)+": "+e.getMessage());
 		extraMessage = e.getMessage();
 		mode = ARCHIVE_FAILURE;
 		errorCodes = null;
 		initCause(e);
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
+
+	public FetchException(ArchiveRestartException e) {
+		super(getMessage(ARCHIVE_RESTART)+": "+e.getMessage());
+		extraMessage = e.getMessage();
+		mode = ARCHIVE_FAILURE;
+		errorCodes = null;
+		initCause(e);
+		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);	}
 
 	public FetchException(int mode, Throwable t) {
 		super(getMessage(mode)+": "+t.getMessage());
@@ -126,6 +134,8 @@ public class FetchException extends Exception {
 			return "No default document; give more metastrings in URI";
 		case CANCELLED:
 			return "Cancelled by caller";
+		case ARCHIVE_RESTART:
+			return "Archive restart";
 		default:
 			return "Unknown fetch error code: "+mode;
 		}
@@ -183,9 +193,15 @@ public class FetchException extends Exception {
 	public static final int NOT_ENOUGH_METASTRINGS = 24;
 	/** Explicitly cancelled */
 	public static final int CANCELLED = 25;
+	/** Archive restart */
+	public static final int ARCHIVE_RESTART = 26;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
+		return isFatal(mode);
+	}
+
+	public static boolean isFatal(int mode) {
 		switch(mode) {
 		// Problems with the data as inserted. No point retrying.
 		case FetchException.ARCHIVE_FAILURE:
@@ -200,6 +216,7 @@ public class FetchException extends Exception {
 		case FetchException.TOO_MUCH_RECURSION:
 		case FetchException.UNKNOWN_METADATA:
 		case FetchException.UNKNOWN_SPLITFILE_METADATA:
+		case FetchException.TOO_BIG:
 			return true;
 
 		// Low level errors, can be retried
@@ -218,12 +235,14 @@ public class FetchException extends Exception {
 			// Fatal, because there are internal retries
 			return true;
 			
+			// Wierd ones
 		case FetchException.CANCELLED:
+		case FetchException.ARCHIVE_RESTART:
 			// Fatal
 			return true;
 			
 		default:
-			Logger.error(this, "Do not know if error code is fatal: "+getMessage(mode));
+			Logger.error(FetchException.class, "Do not know if error code is fatal: "+getMessage(mode));
 			return false; // assume it isn't
 		}
 	}

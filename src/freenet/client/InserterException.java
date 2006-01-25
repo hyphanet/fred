@@ -82,6 +82,8 @@ public class InserterException extends Exception {
 	public static final int ROUTE_REALLY_NOT_FOUND = 8;
 	/** Collided with pre-existing content */
 	public static final int COLLISION = 9;
+	/** Cancelled by user */
+	public static final int CANCELLED = 10;
 	
 	public static String getMessage(int mode) {
 		switch(mode) {
@@ -103,8 +105,51 @@ public class InserterException extends Exception {
 			return "Insert could not leave the node at all";
 		case COLLISION:
 			return "Insert collided with different, pre-existing data at the same key";
+		case CANCELLED:
+			return "Cancelled by user";
 		default:
 			return "Unknown error "+mode;
 		}
+	}
+
+	/** Is this error fatal? Non-fatal errors are errors which are likely to go away with
+	 * more retries, or at least for which there is some point retrying.
+	 */
+	public boolean isFatal() {
+		return isFatal(mode);
+	}
+	
+	public static boolean isFatal(int mode) {
+		switch(mode) {
+		case INVALID_URI:
+		case FATAL_ERRORS_IN_BLOCKS:
+		case COLLISION:
+		case CANCELLED:
+			return true;
+		case BUCKET_ERROR: // maybe
+		case INTERNAL_ERROR: // maybe
+		case REJECTED_OVERLOAD:
+		case TOO_MANY_RETRIES_IN_BLOCKS:
+		case ROUTE_NOT_FOUND:
+		case ROUTE_REALLY_NOT_FOUND:
+			return false;
+		default:
+			Logger.error(InserterException.class, "Error unknown to isFatal(): "+getMessage(mode));
+			return false;
+		}
+	}
+
+	public static InserterException construct(FailureCodeTracker errors) {
+		if(errors == null) return null;
+		if(errors.isEmpty()) return null;
+		if(errors.isOneCodeOnly()) {
+			return new InserterException(errors.getFirstCode());
+		}
+		int mode;
+		if(errors.isFatal(true))
+			mode = FATAL_ERRORS_IN_BLOCKS;
+		else
+			mode = TOO_MANY_RETRIES_IN_BLOCKS;
+		return new InserterException(mode, errors, null);
 	}
 }

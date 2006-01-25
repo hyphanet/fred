@@ -8,7 +8,6 @@ import org.spaceroots.mantissa.random.MersenneTwister;
 
 import com.onionnetworks.fec.DefaultFECCodeFactory;
 import com.onionnetworks.fec.FECCode;
-import com.onionnetworks.fec.PureCode;
 import com.onionnetworks.util.Buffer;
 
 import freenet.support.Bucket;
@@ -24,7 +23,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 	public class Encoder implements Runnable {
 
-		private final SplitfileBlock[] dataBlockStatus, checkBlockStatus;
+		private final Bucket[] dataBlockStatus, checkBlockStatus;
 		private final int blockLength;
 		private final BucketFactory bf;
 		private IOException thrownIOE;
@@ -32,7 +31,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		private Error thrownError;
 		private boolean finished;
 		
-		public Encoder(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) {
+		public Encoder(Bucket[] dataBlockStatus, Bucket[] checkBlockStatus, int blockLength, BucketFactory bf) {
 			this.dataBlockStatus = dataBlockStatus;
 			this.checkBlockStatus = checkBlockStatus;
 			this.blockLength = blockLength;
@@ -235,7 +234,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 			if (idx < k)
 				throw new IllegalArgumentException(
-						"Must have at least k packets");
+						"Must have at least k packets (k="+k+",idx="+idx+")");
 
 			for (int i = 0; i < packetIndexes.length; i++)
 				Logger.minor(this, "[" + i + "] = " + packetIndexes[i]);
@@ -288,7 +287,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 
-	public void encode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+	public void encode(Bucket[] dataBlockStatus, Bucket[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
 		// Encodes count as decodes.
 		synchronized(runningDecodesSync) {
 			while(runningDecodes >= PARALLEL_DECODES) {
@@ -324,12 +323,26 @@ public class StandardOnionFECCodec extends FECCodec {
 			}
 		}
 	}
+	
+	public void encode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		Bucket[] dataBlocks = new Bucket[dataBlockStatus.length];
+		Bucket[] checkBlocks = new Bucket[checkBlockStatus.length];
+		for(int i=0;i<dataBlocks.length;i++)
+			dataBlocks[i] = dataBlockStatus[i].getData();
+		for(int i=0;i<checkBlocks.length;i++)
+			checkBlocks[i] = checkBlockStatus[i].getData();
+		encode(dataBlocks, checkBlocks, blockLength, bf);
+		for(int i=0;i<dataBlocks.length;i++)
+			dataBlockStatus[i].setData(dataBlocks[i]);
+		for(int i=0;i<checkBlocks.length;i++)
+			checkBlockStatus[i].setData(checkBlocks[i]);
+	}
 
 	/**
 	 * Do the actual encode.
 	 */
-	private void realEncode(SplitfileBlock[] dataBlockStatus,
-			SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf)
+	private void realEncode(Bucket[] dataBlockStatus,
+			Bucket[] checkBlockStatus, int blockLength, BucketFactory bf)
 			throws IOException {
 //		Runtime.getRuntime().gc();
 //		Runtime.getRuntime().runFinalization();
@@ -366,7 +379,7 @@ public class StandardOnionFECCodec extends FECCodec {
 						STRIPE_SIZE);
 
 			for (int i = 0; i < dataBlockStatus.length; i++) {
-				buckets[i] = dataBlockStatus[i].getData();
+				buckets[i] = dataBlockStatus[i];
 				long sz = buckets[i].size();
 				if (sz < blockLength) {
 					if (i != dataBlockStatus.length - 1)
@@ -382,7 +395,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			}
 
 			for (int i = 0; i < checkBlockStatus.length; i++) {
-				buckets[i + k] = checkBlockStatus[i].getData();
+				buckets[i + k] = checkBlockStatus[i];
 				if (buckets[i + k] == null) {
 					buckets[i + k] = bf.makeBucket(blockLength);
 					writers[i] = buckets[i + k].getOutputStream();
@@ -455,7 +468,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			Bucket data = buckets[i + k];
 			if (data == null)
 				throw new NullPointerException();
-			checkBlockStatus[i].setData(data);
+			checkBlockStatus[i] = data;
 		}
 	}
 

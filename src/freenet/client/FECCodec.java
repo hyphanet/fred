@@ -2,6 +2,7 @@ package freenet.client;
 
 import java.io.IOException;
 
+import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 
 /**
@@ -11,7 +12,7 @@ import freenet.support.BucketFactory;
  * @author root
  *
  */
-abstract class FECCodec {
+public abstract class FECCodec {
 
 	/**
 	 * Get a codec where we know both the number of data blocks and the number
@@ -65,6 +66,17 @@ abstract class FECCodec {
 	 * @throws IOException If there is an error in decoding caused by an I/O error (usually involving buckets).
 	 */
 	public abstract void encode(SplitfileBlock[] dataBlocks, SplitfileBlock[] checkBlocks, int blockLength, BucketFactory bucketFactory) throws IOException;
+
+	/**
+	 * Encode all missing *check* blocks.
+	 * Requires that all the data blocks be present.
+	 * @param dataBlocks The data blocks.
+	 * @param checkBlocks The check blocks.
+	 * @param blockLength The block length in bytes.
+	 * @param bf The BucketFactory to use to generate buckets.
+	 * @throws IOException If there is an error in decoding caused by an I/O error (usually involving buckets).
+	 */
+	public abstract void encode(Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory) throws IOException;
 
 	/**
 	 * How many check blocks?

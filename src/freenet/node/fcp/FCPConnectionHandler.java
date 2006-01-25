@@ -34,7 +34,7 @@ public class FCPConnectionHandler {
 		isClosed = false;
 		this.bf = node.tempBucketFactory;
 		requestsByIdentifier = new HashMap();
-		HighLevelSimpleClient client = node.makeClient((short)0,(short)0);
+		HighLevelSimpleClient client = node.makeClient((short)0);
 		defaultFetchContext = client.getFetcherContext();
 		defaultInsertContext = client.getInserterContext();
 		inputHandler.start();

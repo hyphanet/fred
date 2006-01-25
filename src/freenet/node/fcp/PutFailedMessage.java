@@ -14,6 +14,7 @@ public class PutFailedMessage extends FCPMessage {
 	final FailureCodeTracker tracker;
 	final FreenetURI expectedURI;
 	final String identifier;
+	final boolean isFatal;
 	
 	public PutFailedMessage(InserterException e, String identifier) {
 		this.code = e.getMode();
@@ -22,6 +23,7 @@ public class PutFailedMessage extends FCPMessage {
 		this.tracker = e.errorCodes;
 		this.expectedURI = e.uri;
 		this.identifier = identifier;
+		this.isFatal = e.isFatal();
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -34,6 +36,7 @@ public class PutFailedMessage extends FCPMessage {
 		if(tracker != null) {
 			tracker.copyToFieldSet(fs, "Errors.");
 		}
+		fs.put("Fatal", Boolean.toString(isFatal));
 		if(expectedURI != null)
 			fs.put("ExpectedURI", expectedURI.toString());
 		return fs;

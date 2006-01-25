@@ -106,5 +106,30 @@ public class FailureCodeTracker {
 	public synchronized int getFirstCode() {
 		return ((Integer) map.keySet().toArray()[0]).intValue();
 	}
+
+	public synchronized boolean isFatal(boolean insert) {
+		Iterator i = map.keySet().iterator();
+		while(i.hasNext()) {
+			Integer code = (Integer) i.next();
+			if(((Item)map.get(code)).x == 0) continue;
+			if(insert) {
+				if(InserterException.isFatal(code.intValue())) return true;
+			} else {
+				if(FetchException.isFatal(code.intValue())) return true;
+			}
+		}
+		return false;
+	}
+
+	public void merge(InserterException e) {
+		if(!insert) throw new IllegalArgumentException("This is not an insert yet merge("+e+") called!");
+		if(e.errorCodes != null)
+			merge(e.errorCodes);
+		inc(e.getMode());
+	}
+
+	public boolean isEmpty() {
+		return map.isEmpty();
+	}
 	
 }

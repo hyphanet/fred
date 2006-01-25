@@ -2,8 +2,6 @@ package freenet.support;
 
 import java.util.Enumeration;
 
-import freenet.node.RequestStarterClient;
-
 /**
  * @author amphibian
  * 

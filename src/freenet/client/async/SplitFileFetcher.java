@@ -1,32 +1,38 @@
-package freenet.client;
+package freenet.client.async;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Vector;
+import java.util.LinkedList;
 
-import com.onionnetworks.fec.FECCode;
-import com.onionnetworks.fec.FECCodeFactory;
-
+import freenet.client.ArchiveContext;
+import freenet.client.ClientMetadata;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
+import freenet.client.FetcherContext;
+import freenet.client.Metadata;
+import freenet.client.MetadataParseException;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.NodeCHK;
 import freenet.support.Bucket;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.compress.CompressionOutputSizeException;
+import freenet.support.compress.Compressor;
 
 /**
- * Class to fetch a splitfile.
+ * Fetch a splitfile, decompress it if need be, and return it to the GetCompletionCallback.
+ * Most of the work is done by the segments, and we do not need a thread.
  */
-public class SplitFetcher {
+public class SplitFileFetcher extends ClientGetState {
 
-	// 128/192. Crazy, but it's possible we'd get big erasures.
-	static final int ONION_STD_K = 128;
-	static final int ONION_STD_N = 192;
-	
-	/** The standard onion codec */
-	static FECCode onionStandardCode =
-		FECCodeFactory.getDefault().createFECCode(ONION_STD_K,ONION_STD_N);
-	
+	final FetcherContext fetchContext;
+	final ArchiveContext archiveContext;
+	final LinkedList decompressors;
+	final ClientMetadata clientMetadata;
+	final ClientGetter parent;
+	final GetCompletionCallback cb;
+	final int recursionLevel;
 	/** The splitfile type. See the SPLITFILE_ constants on Metadata. */
 	final short splitfileType;
 	/** The segment length. -1 means not segmented and must get everything to decode. */
@@ -36,38 +42,39 @@ public class SplitFetcher {
 	/** Total number of segments */
 	final int segmentCount;
 	/** The detailed information on each segment */
-	final Segment[] segments;
+	final SplitFileFetcherSegment[] segments;
 	/** The splitfile data blocks. */
 	final FreenetURI[] splitfileDataBlocks;
 	/** The splitfile check blocks. */
 	final FreenetURI[] splitfileCheckBlocks;
-	/** The archive context */
-	final ArchiveContext actx;
-	/** The fetch context */
-	final FetcherContext fctx;
 	/** Maximum temporary length */
 	final long maxTempLength;
 	/** Have all segments finished? Access synchronized. */
 	private boolean allSegmentsFinished = false;
-	/** Currently fetching segment */
-	private Segment fetchingSegment;
-	/** Array of unstarted segments. Modify synchronized. */
-	private Vector unstartedSegments;
 	/** Override length. If this is positive, truncate the splitfile to this length. */
-	private long overrideLength;
+	private final long overrideLength;
 	/** Accept non-full splitfile chunks? */
-	private boolean splitUseLengths;
+	private final boolean splitUseLengths;
+	private boolean finished;
 	
-	public SplitFetcher(Metadata metadata, ArchiveContext archiveContext, FetcherContext ctx, int recursionLevel) throws MetadataParseException, FetchException {
-		actx = archiveContext;
-		fctx = ctx;
-		if(fctx.isCancelled()) throw new FetchException(FetchException.CANCELLED);
-		overrideLength = metadata.dataLength;
-		this.maxTempLength = ctx.maxTempLength;
-		splitfileType = metadata.getSplitfileType();
+	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientGetter parent,
+			FetcherContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
+			ArchiveContext actx, int recursionLevel) throws FetchException, MetadataParseException {
+		this.finished = false;
+		this.fetchContext = newCtx;
+		this.archiveContext = actx;
+		this.decompressors = decompressors;
+		this.clientMetadata = clientMetadata;
+		this.cb = rcb;
+		this.recursionLevel = recursionLevel + 1;
+		this.parent = parent;
+		if(parent.isCancelled())
+			throw new FetchException(FetchException.CANCELLED);
+		overrideLength = metadata.dataLength();
+		this.splitfileType = metadata.getSplitfileType();
 		splitfileDataBlocks = metadata.getSplitfileDataKeys();
 		splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
-		splitUseLengths = metadata.splitUseLengths;
+		splitUseLengths = metadata.splitUseLengths();
 		int blockLength = splitUseLengths ? -1 : NodeCHK.BLOCK_SIZE;
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
@@ -75,23 +82,24 @@ public class SplitFetcher {
 			checkBlocksPerSegment = -1;
 			segmentCount = 1;
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			byte[] params = metadata.splitfileParams;
+			byte[] params = metadata.splitfileParams();
 			if(params == null || params.length < 8)
 				throw new MetadataParseException("No splitfile params");
 			blocksPerSegment = Fields.bytesToInt(params, 0);
 			checkBlocksPerSegment = Fields.bytesToInt(params, 4);
-			if(blocksPerSegment > ctx.maxDataBlocksPerSegment
-					|| checkBlocksPerSegment > ctx.maxCheckBlocksPerSegment)
+			if(blocksPerSegment > fetchContext.maxDataBlocksPerSegment
+					|| checkBlocksPerSegment > fetchContext.maxCheckBlocksPerSegment)
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segmentCount = (splitfileDataBlocks.length / blocksPerSegment) +
 				(splitfileDataBlocks.length % blocksPerSegment == 0 ? 0 : 1);
 			// Onion, 128/192.
 			// Will be segmented.
 		} else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
+		this.maxTempLength = fetchContext.maxTempLength;
 		Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount);
-		segments = new Segment[segmentCount]; // initially null on all entries
+		segments = new SplitFileFetcherSegment[segmentCount]; // initially null on all entries
 		if(segmentCount == 1) {
-			segments[0] = new Segment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths, recursionLevel+1);
+			segments[0] = new SplitFileFetcherSegment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, fetchContext, maxTempLength, splitUseLengths, recursionLevel);
 		} else {
 			int dataBlocksPtr = 0;
 			int checkBlocksPtr = 0;
@@ -107,66 +115,8 @@ public class SplitFetcher {
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
 				dataBlocksPtr += copyDataBlocks;
 				checkBlocksPtr += copyCheckBlocks;
-				segments[i] = new Segment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, ctx, maxTempLength, splitUseLengths, blockLength);
+				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, fetchContext, maxTempLength, splitUseLengths, recursionLevel+1);
 			}
-		}
-		unstartedSegments = new Vector();
-		for(int i=0;i<segments.length;i++)
-			unstartedSegments.add(segments[i]);
-		Logger.minor(this, "Segments: "+unstartedSegments.size()+", data keys: "+splitfileDataBlocks.length+", check keys: "+(splitfileCheckBlocks==null?0:splitfileCheckBlocks.length));
-	}
-
-	/**
-	 * Fetch the splitfile.
-	 * Fetch one segment, while decoding the previous one.
-	 * Fetch the segments in random order.
-	 * When everything has been fetched and decoded, return the full data.
-	 * @throws FetchException 
-	 */
-	public Bucket fetch() throws FetchException {
-		/*
-		 * While(true) {
-		 * 	Pick a random segment, start it fetching.
-		 * 	Wait for a segment to finish fetching, a segment to finish decoding, or an error.
-		 * 	If a segment finishes fetching:
-		 * 		Continue to start another one if there are any left
-		 * 	If a segment finishes decoding:
-		 * 		If all segments are decoded, assemble all the segments and return the data.
-		 * 
-		 * Segments are expected to automatically start decoding when they finish fetching,
-		 * but to tell us either way.
-		 */
-		while(true) {
-			synchronized(this) {
-				if(fctx.isCancelled()) throw new FetchException(FetchException.CANCELLED);
-				if(fetchingSegment == null) {
-					// Pick a random segment
-					fetchingSegment = chooseUnstartedSegment();
-					if(fetchingSegment == null) {
-						// All segments have started
-					} else {
-						fetchingSegment.start();
-					}
-				}
-				if(allSegmentsFinished) {
-					return finalStatus();
-				}
-				try {
-					wait(10*1000); // or wait()?
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-			}
-		}
-	}
-
-	private Segment chooseUnstartedSegment() {
-		synchronized(unstartedSegments) {
-			if(unstartedSegments.isEmpty()) return null;
-			int x = fctx.random.nextInt(unstartedSegments.size());
-			Logger.minor(this, "Starting segment "+x+" of "+unstartedSegments.size());
-			Segment s = (Segment) unstartedSegments.remove(x);
-			return s;
 		}
 	}
 
@@ -177,7 +127,7 @@ public class SplitFetcher {
 	private Bucket finalStatus() throws FetchException {
 		long finalLength = 0;
 		for(int i=0;i<segments.length;i++) {
-			Segment s = segments[i];
+			SplitFileFetcherSegment s = segments[i];
 			if(!s.isFinished()) throw new IllegalStateException("Not all finished");
 			s.throwError();
 			// If still here, it succeeded
@@ -191,10 +141,10 @@ public class SplitFetcher {
 		OutputStream os = null;
 		Bucket output;
 		try {
-			output = fctx.bucketFactory.makeBucket(finalLength);
+			output = fetchContext.bucketFactory.makeBucket(finalLength);
 			os = output.getOutputStream();
 			for(int i=0;i<segments.length;i++) {
-				Segment s = segments[i];
+				SplitFileFetcherSegment s = segments[i];
 				long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 				bytesWritten += s.writeDecodedDataTo(os, max);
 			}
@@ -213,15 +163,7 @@ public class SplitFetcher {
 		return output;
 	}
 
-	public void gotBlocks(Segment segment) {
-		Logger.minor(this, "Got blocks for segment: "+segment);
-		synchronized(this) {
-			fetchingSegment = null;
-			notifyAll();
-		}
-	}
-
-	public void segmentFinished(Segment segment) {
+	public void segmentFinished(SplitFileFetcherSegment segment) {
 		Logger.minor(this, "Finished segment: "+segment);
 		synchronized(this) {
 			boolean allDone = true;
@@ -230,9 +172,49 @@ public class SplitFetcher {
 					Logger.minor(this, "Segment "+segments[i]+" is not finished");
 					allDone = false;
 				}
-			if(allDone) allSegmentsFinished = true;
+			if(allDone) {
+				if(allSegmentsFinished)
+					Logger.error(this, "Was already finished! (segmentFinished("+segment+")");
+				else {
+					allSegmentsFinished = true;
+					finish();
+				}
+			}
 			notifyAll();
 		}
+	}
+
+	private void finish() {
+		try {
+			synchronized(this) {
+				if(finished) {
+					Logger.error(this, "Was already finished");
+					return;
+				}
+				finished = true;
+			}
+			Bucket data = finalStatus();
+			// Decompress
+			while(!decompressors.isEmpty()) {
+				Compressor c = (Compressor) decompressors.removeLast();
+				try {
+					data = c.decompress(data, fetchContext.bucketFactory, Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength));
+				} catch (IOException e) {
+					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this);
+					return;
+				} catch (CompressionOutputSizeException e) {
+					cb.onFailure(new FetchException(FetchException.TOO_BIG, e), this);
+					return;
+				}
+			}
+			cb.onSuccess(new FetchResult(clientMetadata, data), this);
+		} catch (FetchException e) {
+			cb.onFailure(e, this);
+		}
+	}
+
+	public ClientGetter getParent() {
+		return parent;
 	}
 
 	public void onProgress() {
@@ -242,14 +224,26 @@ public class SplitFetcher {
 		int fatallyFailedBlocks = 0;
 		int runningBlocks = 0;
 		for(int i=0;i<segments.length;i++) {
-			Logger.minor(this, "Segment: "+segments[i]+": fetched="+segments[i].fetchedBlocks()+", failedBlocks: "+segments[i].failedBlocks()+
-					", fatally: "+segments[i].fatallyFailedBlocks()+", running: "+segments[i].runningBlocks());
-			fetchedBlocks += segments[i].fetchedBlocks();
-			failedBlocks += segments[i].failedBlocks();
-			fatallyFailedBlocks += segments[i].fatallyFailedBlocks();
-			runningBlocks += segments[i].runningBlocks();
+			SplitFileFetcherSegment segment = segments[i];
+			Logger.minor(this, "Segment: "+segment+": fetched="+segment.fetchedBlocks()+", failedBlocks: "+segment.failedBlocks()+
+					", fatally: "+segment.fatallyFailedBlocks()+", running: "+segment.runningBlocks());
+			fetchedBlocks += segment.fetchedBlocks();
+			failedBlocks += segment.failedBlocks();
+			fatallyFailedBlocks += segment.fatallyFailedBlocks();
+			runningBlocks += segment.runningBlocks();
 		}
-		fctx.eventProducer.produceEvent(new SplitfileProgressEvent(totalBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, runningBlocks));
+		fetchContext.eventProducer.produceEvent(new SplitfileProgressEvent(totalBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, runningBlocks));
+	}
+
+	public void schedule() {
+		for(int i=0;i<segments.length;i++) {
+			segments[i].schedule();
+		}
+	}
+
+	public void cancel() {
+		for(int i=0;i<segments.length;i++)
+			segments[i].cancel();
 	}
 
 }

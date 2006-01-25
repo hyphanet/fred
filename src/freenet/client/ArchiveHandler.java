@@ -6,7 +6,7 @@ import freenet.support.Bucket;
  * The public face (to Fetcher, for example) of ArchiveStoreContext.
  * Just has methods for fetching stuff.
  */
-interface ArchiveHandler {
+public interface ArchiveHandler {
 
 	/**
 	 * Get the metadata for this ZIP manifest, as a Bucket.
@@ -14,7 +14,7 @@ interface ArchiveHandler {
 	 * @throws MetadataParseException If there was an error parsing intermediary metadata.
 	 */
 	public abstract Bucket getMetadata(ArchiveContext archiveContext,
-			FetcherContext fetchContext, ClientMetadata dm, int recursionLevel, 
+			ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException;
@@ -30,10 +30,15 @@ interface ArchiveHandler {
 	 * @throws MetadataParseException 
 	 */
 	public abstract Bucket get(String internalName,
-			ArchiveContext archiveContext, FetcherContext fetchContext,
+			ArchiveContext archiveContext, 
 			ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException;
+
+	/**
+	 * Get the archive type.
+	 */
+	public abstract short getArchiveType();
 
 }
