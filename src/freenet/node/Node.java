@@ -54,6 +54,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
+import freenet.keys.KeyVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
@@ -454,14 +455,14 @@ public class Node {
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
 		requestThrottle = new RequestThrottle(5000, 2.0F);
 		requestStarter = new RequestStarter(this, requestThrottle, "Request starter ("+portNumber+")");
-		fetchScheduler = new ClientRequestScheduler(false, random, requestStarter);
+		fetchScheduler = new ClientRequestScheduler(false, random, requestStarter, this);
 		requestStarter.setScheduler(fetchScheduler);
 		requestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		insertThrottle = new RequestThrottle(10000, 2.0F);
 		insertStarter = new RequestStarter(this, insertThrottle, "Insert starter ("+portNumber+")");
-		putScheduler = new ClientRequestScheduler(true, random, insertStarter);
+		putScheduler = new ClientRequestScheduler(true, random, insertStarter, this);
 		insertStarter.setScheduler(putScheduler);
 		insertStarter.start();
 		if(testnetHandler != null)
@@ -1462,5 +1463,29 @@ public class Node {
 
 	public boolean isTestnetEnabled() {
 		return testnetEnabled;
+	}
+
+	public ClientKeyBlock fetchKey(ClientKey key) throws KeyVerifyException {
+		if(key instanceof ClientCHK)
+			return fetch((ClientCHK)key);
+		else if(key instanceof ClientSSK)
+			return fetch((ClientSSK)key);
+		else
+			throw new IllegalStateException("Don't know what to do with "+key);
+	}
+
+	private ClientKeyBlock fetch(ClientSSK clientSSK) throws SSKVerifyException {
+		DSAPublicKey key = getKey(clientSSK.pubKeyHash);
+		if(key == null) return null;
+		clientSSK.setPublicKey(key);
+		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey());
+		if(block == null) return null;
+		return new ClientSSKBlock(block, clientSSK);
+	}
+
+	private ClientKeyBlock fetch(ClientCHK clientCHK) throws CHKVerifyException {
+		CHKBlock block = fetch(clientCHK.getNodeCHK());
+		if(block == null) return null;
+		return new ClientCHKBlock(block, clientCHK);
 	}
 }

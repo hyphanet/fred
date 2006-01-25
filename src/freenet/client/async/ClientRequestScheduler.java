@@ -1,6 +1,10 @@
 package freenet.client.async;
 
 import freenet.crypt.RandomSource;
+import freenet.keys.ClientKeyBlock;
+import freenet.keys.KeyVerifyException;
+import freenet.node.LowLevelGetException;
+import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArrayWithInt;
@@ -26,19 +30,37 @@ public class ClientRequestScheduler implements RequestScheduler {
 	final boolean isInsertScheduler;
 	final RandomSource random;
 	private final RequestStarter starter;
+	private final Node node;
 	
-	public ClientRequestScheduler(boolean forInserts, RandomSource random, RequestStarter starter) {
+	public ClientRequestScheduler(boolean forInserts, RandomSource random, RequestStarter starter, Node node) {
 		this.starter = starter;
 		this.random = random;
+		this.node = node;
 		this.isInsertScheduler = forInserts;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 	}
 	
 	public void register(SendableRequest req) {
 		Logger.minor(this, "Registering "+req, new Exception("debug"));
+		if((!isInsertScheduler) && req instanceof ClientPutter)
+			throw new IllegalArgumentException("Expected a ClientPut: "+req);
+		if(req instanceof SendableGet) {
+			SendableGet getter = (SendableGet)req;
+			ClientKeyBlock block;
+			try {
+				block = node.fetchKey(getter.getKey());
+			} catch (KeyVerifyException e) {
+				// Verify exception, probably bogus at source;
+				// verifies at low-level, but not at decode.
+				getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED));
+				return;
+			}
+			if(block != null) {
+				getter.onSuccess(block);
+				return;
+			}
+		}
 		synchronized(this) {
-			if((!isInsertScheduler) && req instanceof ClientPutter)
-				throw new IllegalArgumentException("Expected a ClientPut: "+req);
 			RandomGrabArrayWithInt grabber = 
 				makeGrabArray(req.getPriorityClass(), req.getRetryCount());
 			grabber.add(req);
