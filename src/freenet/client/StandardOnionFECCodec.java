@@ -234,7 +234,7 @@ public class StandardOnionFECCodec extends FECCodec {
 
 			if (idx < k)
 				throw new IllegalArgumentException(
-						"Must have at least k packets");
+						"Must have at least k packets (k="+k+",idx="+idx+")");
 
 			for (int i = 0; i < packetIndexes.length; i++)
 				Logger.minor(this, "[" + i + "] = " + packetIndexes[i]);

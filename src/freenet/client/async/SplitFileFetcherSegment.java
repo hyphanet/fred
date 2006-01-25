@@ -132,6 +132,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	}
 
 	public synchronized void onSuccess(FetchResult result, ClientGetState state) {
+		if(finished) return;
 		Integer token = (Integer) ((SingleFileFetcher)state).getToken();
 		int blockNo = token.intValue();
 		if(blockNo < dataBlocks.length) {
@@ -141,12 +142,13 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			}
 			dataBlocks[blockNo] = null;
 			dataBuckets[blockNo].setData(result.asBucket());
-		} else if(blockNo < checkBlocks.length) {
-			if(checkBlocks[blockNo-dataBlocks.length] == null) {
-				Logger.error(this, "Block already finished: "+blockNo);
+		} else if(blockNo < checkBlocks.length + dataBlocks.length) {
+			blockNo -= dataBlocks.length;
+			if(checkBlocks[blockNo] == null) {
+				Logger.error(this, "Check block already finished: "+blockNo);
 				return;
 			}
-			checkBlocks[blockNo-dataBlocks.length] = null;
+			checkBlocks[blockNo] = null;
 			checkBuckets[blockNo].setData(result.asBucket());
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
