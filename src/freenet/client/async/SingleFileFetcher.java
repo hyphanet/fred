@@ -442,23 +442,32 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND));
+			return;
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND));
+			return;
 		case LowLevelGetException.DECODE_FAILED:
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR));
+			return;
 		case LowLevelGetException.INTERNAL_ERROR:
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR));
+			return;
 		case LowLevelGetException.REJECTED_OVERLOAD:
 			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD));
+			return;
 		case LowLevelGetException.ROUTE_NOT_FOUND:
 			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND));
+			return;
 		case LowLevelGetException.TRANSFER_FAILED:
 			onFailure(new FetchException(FetchException.TRANSFER_FAILED));
+			return;
 		case LowLevelGetException.VERIFY_FAILED:
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR));
+			return;
 		default:
 			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR));
+			return;
 		}
 	}
 

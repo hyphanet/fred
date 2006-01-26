@@ -187,7 +187,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
 	    		
 	    	}catch(CHKVerifyException ex){
-	    		Logger.normal(this, "Does not verify, setting accessTime to 0 for : "+chk);
+	    		Logger.normal(this, "Does not verify ("+ex+"), setting accessTime to 0 for : "+chk);
 	    		storeBlock.setRecentlyUsedToZero();
     			DatabaseEntry updateDBE = new DatabaseEntry();
     			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
