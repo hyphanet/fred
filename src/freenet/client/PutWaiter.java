@@ -50,8 +50,10 @@ public class PutWaiter implements ClientCallback {
 				// Ignore
 			}
 		}
-		error.uri = uri;
-		if(error != null) throw error;
+		if(error != null) {
+			error.uri = uri;
+			throw error;
+		}
 		if(succeeded) return uri;
 		Logger.error(this, "Did not succeed but no error");
 		throw new InserterException(InserterException.INTERNAL_ERROR, "Did not succeed but no error", uri);
