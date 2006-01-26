@@ -419,8 +419,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	// Real onFailure
 	private void onFailure(FetchException e, boolean forceFatal) {
 		if(parent.isCancelled() || cancelled) {
-			onFailure(new FetchException(FetchException.CANCELLED));
-			return;
+			e = new FetchException(FetchException.CANCELLED);
 		}
 		if(!(e.isFatal() || forceFatal) ) {
 			if(retryCount <= maxRetries) {

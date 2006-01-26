@@ -69,7 +69,7 @@ public class StandardOnionFECCodec extends FECCodec {
 	}
 
 	// REDFLAG: How big is one of these?
-	private static int MAX_CACHED_CODECS = 16;
+	private static int MAX_CACHED_CODECS = 8;
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
 	private static int STRIPE_SIZE = 4096;
 	// REDFLAG: Make this configurable, maybe make it depend on # CPUs
