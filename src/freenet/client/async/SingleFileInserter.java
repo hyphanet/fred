@@ -261,10 +261,10 @@ class SingleFileInserter implements ClientPutState {
 			if(finished) return;
 			if(state == metadataPutter) {
 				Logger.error(this, "Got metadata for metadata");
-				// FIXME kill?
+				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null), state);
 			} else if(state != sfi) {
 				Logger.error(this, "Got unknown metadata");
-				// FIXME kill?
+				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null), state);
 			}
 			if(reportMetadataOnly) {
 				cb.onMetadata(meta, this);

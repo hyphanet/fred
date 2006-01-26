@@ -280,10 +280,11 @@ public class PeerNode implements PeerContext {
     
     /**
      * Is this node currently connected?
-     * Synchronized so that we don't return until after e.g.
-     * completedHandshake has returned in PacketSender.
+     * 
+     * Note possible deadlocks! PeerManager calls this, we call
+     * PeerManager in e.g. verified.
      */
-    public synchronized boolean isConnected() {
+    public boolean isConnected() {
         return isConnected;
     }
 
@@ -693,7 +694,8 @@ public class PeerNode implements PeerContext {
      * KeyTracker for this node. Will promote the unverifiedTracker
      * if necessary.
      */
-    public synchronized void verified(KeyTracker tracker) {
+    public void verified(KeyTracker tracker) {
+    	synchronized(this) {
         if(tracker == unverifiedTracker) {
             Logger.minor(this, "Promoting unverified tracker "+tracker);
             if(previousTracker != null) {
@@ -706,9 +708,10 @@ public class PeerNode implements PeerContext {
             unverifiedTracker = null;
             isConnected = true;
             ctx = null;
-            node.peers.addConnectedPeer(this);
             maybeSendInitialMessages();
-        }
+        } else return;
+    	}
+        node.peers.addConnectedPeer(this);
     }
     
     private synchronized boolean invalidVersion() {
