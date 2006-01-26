@@ -12,7 +12,7 @@ public interface SendableGet extends SendableRequest {
 	public ClientKey getKey();
 	
 	/** Called when/if the low-level request succeeds. */
-	public void onSuccess(ClientKeyBlock block);
+	public void onSuccess(ClientKeyBlock block, boolean fromStore);
 	
 	/** Called when/if the low-level request fails. */
 	public void onFailure(LowLevelGetException e);

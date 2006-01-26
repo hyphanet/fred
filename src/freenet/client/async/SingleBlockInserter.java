@@ -207,7 +207,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		synchronized(this) {
 			finished = true;
 		}
-		parent.completedBlock();
+		parent.completedBlock(false);
 		cb.onSuccess(this);
 	}
 

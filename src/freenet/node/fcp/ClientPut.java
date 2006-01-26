@@ -10,9 +10,13 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
+import freenet.client.events.ClientEvent;
+import freenet.client.events.ClientEventListener;
+import freenet.client.events.SimpleEventProducer;
+import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 
-public class ClientPut extends ClientRequest implements ClientCallback {
+public class ClientPut extends ClientRequest implements ClientCallback, ClientEventListener {
 
 	final FreenetURI uri;
 	final ClientPutter inserter;
@@ -22,13 +26,20 @@ public class ClientPut extends ClientRequest implements ClientCallback {
 	final String identifier;
 	final boolean getCHKOnly;
 	final short priorityClass;
+	final int verbosity;
+	private boolean finished;
+	
+	// Verbosity bitmasks
+	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) {
+		this.verbosity = message.verbosity;
 		this.handler = handler;
 		this.identifier = message.identifier;
 		this.getCHKOnly = message.getCHKOnly;
 		this.priorityClass = 0;
-		ctx = new InserterContext(handler.defaultInsertContext);
+		ctx = new InserterContext(handler.defaultInsertContext, new SimpleEventProducer());
+		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = message.maxRetries;
 		// Now go through the fields one at a time
 		uri = message.uri;
@@ -47,11 +58,13 @@ public class ClientPut extends ClientRequest implements ClientCallback {
 	}
 
 	public void onSuccess(BaseClientPutter state) {
+		finished = true;
 		FCPMessage msg = new PutSuccessfulMessage(identifier, state.getURI());
 		handler.outputHandler.queue(msg);
 	}
 
 	public void onFailure(InserterException e, BaseClientPutter state) {
+		finished = true;
 		FCPMessage msg = new PutFailedMessage(e, identifier);
 		handler.outputHandler.queue(msg);
 	}
@@ -67,6 +80,16 @@ public class ClientPut extends ClientRequest implements ClientCallback {
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		// ignore
+	}
+
+	public void receive(ClientEvent ce) {
+		if(finished) return;
+		if(!(((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) &&
+				(ce instanceof SplitfileProgressEvent)))
+			return;
+		SimpleProgressMessage progress = 
+			new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
+		handler.outputHandler.queue(progress);
 	}
 
 }

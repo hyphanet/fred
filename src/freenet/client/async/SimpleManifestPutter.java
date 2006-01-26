@@ -103,6 +103,30 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		}
 
+		public void addBlock() {
+			SimpleManifestPutter.this.addBlock();
+		}
+		
+		public void addBlocks(int num) {
+			SimpleManifestPutter.this.addBlocks(num);
+		}
+		
+		public void completedBlock(boolean dontNotify) {
+			SimpleManifestPutter.this.completedBlock(dontNotify);
+		}
+		
+		public void failedBlock() {
+			SimpleManifestPutter.this.failedBlock();
+		}
+		
+		public void fatallyFailedBlock() {
+			SimpleManifestPutter.this.fatallyFailedBlock();
+		}
+		
+		public void addMustSucceedBlocks(int blocks) {
+			SimpleManifestPutter.this.addMustSucceedBlocks(blocks);
+		}
+		
 		public void notifyClients() {
 			// FIXME generate per-filename events???
 		}

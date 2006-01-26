@@ -8,6 +8,9 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
+import freenet.client.events.ClientEvent;
+import freenet.client.events.ClientEventListener;
+import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
@@ -15,7 +18,7 @@ import freenet.support.Logger;
  * A simple client fetch. This can of course fetch arbitrarily large
  * files, including splitfiles, redirects, etc.
  */
-public class ClientGet extends ClientRequest implements ClientCallback {
+public class ClientGet extends ClientRequest implements ClientCallback, ClientEventListener {
 
 	private final FreenetURI uri;
 	private final FetcherContext fctx;
@@ -24,6 +27,10 @@ public class ClientGet extends ClientRequest implements ClientCallback {
 	private final FCPConnectionHandler handler;
 	private final ClientGetter getter;
 	private final short priorityClass;
+	private boolean finished;
+	
+	// Verbosity bitmasks
+	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
 	
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) {
 		uri = message.uri;
@@ -33,6 +40,7 @@ public class ClientGet extends ClientRequest implements ClientCallback {
 		// since the client may override a few context elements.
 		this.handler = handler;
 		fctx = new FetcherContext(handler.defaultFetchContext, FetcherContext.IDENTICAL_MASK);
+		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;
 		fctx.ignoreStore = message.ignoreDS;
@@ -59,6 +67,7 @@ public class ClientGet extends ClientRequest implements ClientCallback {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
+		finished = true;
 		FCPMessage msg = new DataFoundMessage(handler, result, identifier);
 		handler.outputHandler.queue(msg);
 		// Send all the data at once
@@ -68,6 +77,7 @@ public class ClientGet extends ClientRequest implements ClientCallback {
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
+		finished = true;
 		Logger.minor(this, "Caught "+e, e);
 		FCPMessage msg = new GetFailedMessage(handler, e, identifier);
 		handler.outputHandler.queue(msg);
@@ -83,6 +93,16 @@ public class ClientGet extends ClientRequest implements ClientCallback {
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		// Ignore
+	}
+
+	public void receive(ClientEvent ce) {
+		if(finished) return;
+		if(!(((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) &&
+				(ce instanceof SplitfileProgressEvent)))
+			return;
+		SimpleProgressMessage progress = 
+			new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
+		handler.outputHandler.queue(progress);
 	}
 
 }

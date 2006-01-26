@@ -1,6 +1,7 @@
 package freenet.client.async;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 /** A high level client request. A request (either fetch or put) started
  * by a Client. Has a suitable context and a URI; is fulfilled only when
@@ -54,9 +55,11 @@ public abstract class ClientRequest {
 		totalBlocks+=num;
 	}
 	
-	public synchronized void completedBlock() {
+	public synchronized void completedBlock(boolean dontNotify) {
+		Logger.minor(this, "Completed block ("+dontNotify+")");
 		successfulBlocks++;
-		notifyClients();
+		if(!dontNotify)
+			notifyClients();
 	}
 	
 	public synchronized void failedBlock() {

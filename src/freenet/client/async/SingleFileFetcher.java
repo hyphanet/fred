@@ -134,7 +134,8 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 
 	// Process the completed data. May result in us going to a
 	// splitfile, or another SingleFileFetcher, etc.
-	public void onSuccess(ClientKeyBlock block) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore) {
+		parent.completedBlock(fromStore);
 		// Extract data
 		Bucket data;
 		try {
@@ -206,7 +207,6 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			}
 			result = new FetchResult(result, data);
 		}
-		parent.completedBlock();
 		rcb.onSuccess(result, this);
 	}
 
@@ -503,7 +503,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
 			return;
 		}
-		onSuccess(block);
+		onSuccess(block, false);
 	}
 
 }

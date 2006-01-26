@@ -33,6 +33,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		try {
+			String u = fs.get("URI");
+			if(u == null)
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI");
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage());

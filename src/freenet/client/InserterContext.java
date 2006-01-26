@@ -1,6 +1,7 @@
 package freenet.client;
 
 import freenet.client.events.ClientEventProducer;
+import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.support.BucketFactory;
 
@@ -47,6 +48,20 @@ public class InserterContext {
 		this.maxInsertRetries = ctx.maxInsertRetries;
 		this.maxSplitInsertThreads = ctx.maxSplitInsertThreads;
 		this.eventProducer = ctx.eventProducer;
+		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
+		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
+		this.cacheLocalRequests = ctx.cacheLocalRequests;
+	}
+
+	public InserterContext(InserterContext ctx, SimpleEventProducer producer) {
+		this.bf = ctx.bf;
+		this.random = ctx.random;
+		this.dontCompress = ctx.dontCompress;
+		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
+		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
+		this.maxInsertRetries = ctx.maxInsertRetries;
+		this.maxSplitInsertThreads = ctx.maxSplitInsertThreads;
+		this.eventProducer = producer;
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;

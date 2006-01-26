@@ -56,7 +56,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				return;
 			}
 			if(block != null) {
-				getter.onSuccess(block);
+				Logger.minor(this, "Can fulfill immediately from store");
+				getter.onSuccess(block, true);
 				return;
 			}
 		}
