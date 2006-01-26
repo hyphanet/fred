@@ -150,9 +150,24 @@ public class TextModeClientInterface implements Runnable {
 				FetchResult result = client.fetch(uri);
 				ClientMetadata cm = result.getMetadata();
 				System.out.println("Content MIME type: "+cm.getMIMEType());
-				System.out.println("Data:\n");
 				Bucket data = result.asBucket();
-				BucketTools.copyTo(data, System.out, Long.MAX_VALUE);
+				// FIXME limit it above
+				if(data.size() > 32*1024) {
+					System.err.println("Data is more than 32K: "+data.size());
+					return;
+				}
+				byte[] dataBytes = BucketTools.toByteArray(data);
+				boolean evil = false;
+				for(int i=0;i<dataBytes.length;i++) {
+					// Look for escape codes
+					if(dataBytes[i] < 32) evil = true;
+				}
+				if(evil) {
+					System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
+					return;
+				}
+				System.out.println("Data:\n");
+				System.out.println(new String(dataBytes));
 				System.out.println();
 			} catch (FetchException e) {
 				System.out.println("Error: "+e.getMessage());
