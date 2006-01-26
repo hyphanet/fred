@@ -143,11 +143,20 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
     	DatabaseEntry blockDBE = new DatabaseEntry();
     	Cursor c = null;
+    	Transaction t = null;
     	try{
-    		Transaction t = environment.beginTransaction(null,null);
+    		t = environment.beginTransaction(null,null);
     		c = chkDB.openCursor(t,null);
-    		
-    		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.DEFAULT)
+
+    		/**
+    		 * We will have to write, unless both dontPromote and the key is valid.
+    		 * The lock only applies to this record, so it's not a big problem for our use.
+    		 * What *IS* a big problem is that if we take a LockMode.DEFAULT, and two threads
+    		 * access the same key, they will both take the read lock, and then both try to
+    		 * take the write lock. Neither can relinquish the read in order for the other to
+    		 * take the write, so we're screwed.
+    		 */
+    		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
     				!=OperationStatus.SUCCESS) {
     			c.close();
     			t.abort();
@@ -197,10 +206,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	            return null;
 	    	}
 	    	return block;
-    	}catch(Exception ex) {  // FIXME: ugly  
+    	}catch(Throwable ex) {  // FIXME: ugly  
     		if(c!=null) {
     			try{c.close();}catch(DatabaseException ex2){}
     		}
+    		if(t!=null)
+    			try{t.abort();}catch(DatabaseException ex2){}
     		Logger.error(this, "Caught "+ex, ex);
     		ex.printStackTrace();
         	throw new IOException(ex.getMessage());
@@ -223,11 +234,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
     	DatabaseEntry blockDBE = new DatabaseEntry();
     	Cursor c = null;
+    	Transaction t = null;
     	try{
-    		Transaction t = environment.beginTransaction(null,null);
+    		t = environment.beginTransaction(null,null);
     		c = chkDB.openCursor(t,null);
     		
-    		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.DEFAULT)
+    		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
     				!=OperationStatus.SUCCESS) {
     			c.close();
     			t.abort();
@@ -277,9 +289,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	            return null;
 	    	}
 	    	return block;
-    	}catch(Exception ex) {  // FIXME: ugly  
+    	}catch(Throwable ex) {  // FIXME: ugly  
     		if(c!=null) {
     			try{c.close();}catch(DatabaseException ex2){}
+    		}
+    		if(t!=null) {
+    			try{t.abort();}catch(DatabaseException ex2){}
     		}
     		Logger.error(this, "Caught "+ex, ex);
     		ex.printStackTrace();
@@ -304,11 +319,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	DatabaseEntry routingkeyDBE = new DatabaseEntry(hash);
     	DatabaseEntry blockDBE = new DatabaseEntry();
     	Cursor c = null;
+    	Transaction t = null;
     	try{
-    		Transaction t = environment.beginTransaction(null,null);
+    		t = environment.beginTransaction(null,null);
     		c = chkDB.openCursor(t,null);
     		
-    		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.DEFAULT)
+    		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
     				!=OperationStatus.SUCCESS) {
     			c.close();
     			t.abort();
@@ -329,6 +345,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    			block = new DSAPublicKey(data);
 	    		} catch (IOException e) {
 	    			Logger.error(this, "Could not read key");
+	    			c.close();
+	    			t.abort();
 	    			return null;
 	    		}
 	    		
@@ -360,9 +378,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
 	    		
 	    	return block;
-    	}catch(Exception ex) {  // FIXME: ugly  
+    	}catch(Throwable ex) {  // FIXME: ugly  
     		if(c!=null) {
     			try{c.close();}catch(DatabaseException ex2){}
+    		}
+    		if(t!=null) {
+    			try{t.abort();}catch(DatabaseException ex2){}
     		}
     		Logger.error(this, "Caught "+ex, ex);
     		ex.printStackTrace();
@@ -436,7 +457,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	        Logger.minor(this, "Headers: "+header.length+" bytes, hash "+Fields.hashCode(header));
 	        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
                 
-        }catch(Exception ex) {  // FIXME: ugly  
+        }catch(Throwable ex) {  // FIXME: ugly  
         	if(t!=null){
         		try{t.abort();}catch(DatabaseException ex2){};
         	}
