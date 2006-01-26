@@ -14,7 +14,7 @@ public class InserterContext {
 	public final short splitfileAlgorithm;
 	public int maxInsertRetries;
 	final int maxSplitInsertThreads;
-	final int consecutiveRNFsCountAsSuccess;
+	public final int consecutiveRNFsCountAsSuccess;
 	public final int splitfileSegmentDataBlocks;
 	public final int splitfileSegmentCheckBlocks;
 	final ClientEventProducer eventProducer;

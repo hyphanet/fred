@@ -1397,10 +1397,12 @@ public class Node {
 	 */
 	public DSAPublicKey getKey(byte[] hash) {
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
+		Logger.minor(this, "Getting "+HexUtil.bytesToHex(hash));
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key = (DSAPublicKey) cachedPubKeys.get(w);
 			if(key != null) {
 				cachedPubKeys.push(w, key);
+				Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
 				return key;
 			}
 		}
@@ -1409,6 +1411,7 @@ public class Node {
 			if(key != null) {
 				cacheKey(hash, key);
 			}
+			Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
 			return key;
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.

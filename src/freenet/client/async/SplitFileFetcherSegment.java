@@ -50,10 +50,11 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	private int fatallyFailedBlocks;
 	private int failedBlocks;
 	private int fetchedBlocks;
-	private FailureCodeTracker errors;
+	private final FailureCodeTracker errors;
 	
 	public SplitFileFetcherSegment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetcherContext fetchContext, long maxTempLength, boolean splitUseLengths, int recursionLevel) throws MetadataParseException, FetchException {
 		this.parentFetcher = fetcher;
+		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
 		this.splitfileType = splitfileType;
 		dataBlocks = splitfileDataBlocks;
@@ -265,12 +266,13 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 				return;
 			}
 			dataBlocks[blockNo] = null;
-		} else if(blockNo < checkBlocks.length) {
-			if(checkBlocks[blockNo-dataBlocks.length] == null) {
-				Logger.error(this, "Block already finished: "+blockNo);
+		} else if(blockNo < checkBlocks.length + dataBlocks.length) {
+			blockNo -= dataBlocks.length;
+			if(checkBlocks[blockNo] == null) {
+				Logger.error(this, "Check block already finished: "+blockNo);
 				return;
 			}
-			checkBlocks[blockNo-dataBlocks.length] = null;
+			checkBlocks[blockNo] = null;
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 		// :(
@@ -283,7 +285,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		if(e.errorCodes != null)
 			errors.merge(e.errorCodes);
 		else
-			errors.inc(new Integer(e.mode), ((SingleFileFetcher)state).getRetryCount());
+			errors.inc(new Integer(e.mode), state == null ? 1 : ((SingleFileFetcher)state).getRetryCount());
 		if(failedBlocks + fatallyFailedBlocks > (dataBlocks.length + checkBlocks.length - minFetched)) {
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
 		}

@@ -39,8 +39,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	final int token; // for e.g. splitfiles
 	final boolean isMetadata;
 	final int sourceLength;
+	private int consecutiveRNFs;
 	
 	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly) throws InserterException {
+		this.consecutiveRNFs = 0;
 		this.token = token;
 		this.parent = parent;
 		this.retries = 0;
@@ -138,6 +140,15 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
 			errors.inc(InserterException.INTERNAL_ERROR);
 		}
+		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND) {
+			consecutiveRNFs++;
+			if(consecutiveRNFs == ctx.consecutiveRNFsCountAsSuccess) {
+				Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
+				onSuccess();
+				return;
+			}
+		} else
+			consecutiveRNFs = 0;
 		Logger.minor(this, "Failed: "+e);
 		if(retries > ctx.maxInsertRetries) {
 			if(errors.isOneCodeOnly())
@@ -149,9 +160,11 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		parent.scheduler.register(this);
 	}
 
-	private synchronized void fail(InserterException e) {
-		if(finished) return;
-		finished = true;
+	private void fail(InserterException e) {
+		synchronized(this) {
+			if(finished) return;
+			finished = true;
+		}
 		cb.onFailure(e, this);
 	}
 
