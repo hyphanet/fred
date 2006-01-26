@@ -112,6 +112,33 @@ public class InserterException extends Exception {
 		}
 	}
 
+	public static String getShortMessage(int mode) {
+		switch(mode) {
+		case INVALID_URI:
+			return "Invalid URI";
+		case BUCKET_ERROR:
+			return "Temp files error";
+		case INTERNAL_ERROR:
+			return "Internal error";
+		case REJECTED_OVERLOAD:
+			return "Timeout or overload";
+		case FATAL_ERRORS_IN_BLOCKS:
+			return "Some blocks failed fatally";
+		case TOO_MANY_RETRIES_IN_BLOCKS:
+			return "Some blocks ran out of retries";
+		case ROUTE_NOT_FOUND:
+			return "Route not found";
+		case ROUTE_REALLY_NOT_FOUND:
+			return "Request could not leave the node";
+		case COLLISION:
+			return "Collided with existing data";
+		case CANCELLED:
+			return "Cancelled";
+		default:
+			return "Unknown error "+mode;
+		}
+	}
+	
 	/** Is this error fatal? Non-fatal errors are errors which are likely to go away with
 	 * more retries, or at least for which there is some point retrying.
 	 */

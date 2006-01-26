@@ -71,7 +71,7 @@ public class TestnetHandler implements Runnable {
 		while(true) {
 			try {
 				Socket s = server.accept();
-				TestnetSocketHandler tsh = new TestnetSocketHandler(s);
+				new TestnetSocketHandler(s);
 			} catch (IOException e) {
 				Logger.error(this, "Testnet failed to accept socket: "+e, e);
 			}
@@ -100,6 +100,7 @@ public class TestnetHandler implements Runnable {
 				InputStreamReader isr = new InputStreamReader(is, "ISO-8859-1");
 				BufferedReader br = new BufferedReader(isr);
 				String command = br.readLine();
+				if(command == null) return;
 				Logger.minor(this, "Command: "+command);
 				if(command.equalsIgnoreCase("LIST")) {
 					Logger.minor(this, "Listing available logs");

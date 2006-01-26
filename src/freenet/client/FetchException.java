@@ -82,6 +82,65 @@ public class FetchException extends Exception {
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
 	}
 
+	public static String getShortMessage(int mode) {
+		switch(mode) {
+		case TOO_DEEP_ARCHIVE_RECURSION:
+			return "Too deep archive recursion";
+		case UNKNOWN_SPLITFILE_METADATA:
+			return "Unknown splitfile metadata";
+		case TOO_MANY_REDIRECTS:
+			return "Too many redirects";
+		case UNKNOWN_METADATA:
+			return "Unknown metadata";
+		case INVALID_METADATA:
+			return "Invalid metadata";
+		case ARCHIVE_FAILURE:
+			return "Archive failure";
+		case BLOCK_DECODE_ERROR:
+			return "Block decode error";
+		case TOO_MANY_METADATA_LEVELS:
+			return "Too many metadata levels";
+		case TOO_MANY_ARCHIVE_RESTARTS:
+			return "Too many archive restarts";
+		case TOO_MUCH_RECURSION:
+			return "Too much recursion";
+		case NOT_IN_ARCHIVE:
+			return "Not in archive";
+		case HAS_MORE_METASTRINGS:
+			return "Not a manifest";
+		case BUCKET_ERROR:
+			return "Temporary files error";
+		case DATA_NOT_FOUND:
+			return "Data not found";
+		case ROUTE_NOT_FOUND:
+			return "Route not found";
+		case REJECTED_OVERLOAD:
+			return "Timeout or overload";
+		case INTERNAL_ERROR:
+			return "Internal error";
+		case TRANSFER_FAILED:
+			return "Transfer failed";
+		case SPLITFILE_ERROR:
+			return "Splitfile error";
+		case INVALID_URI:
+			return "Invalid URI";
+		case TOO_BIG:
+			return "Too big";
+		case TOO_BIG_METADATA:
+			return "Metadata too big";
+		case TOO_MANY_BLOCKS_PER_SEGMENT:
+			return "Too many blocks per segment";
+		case NOT_ENOUGH_METASTRINGS:
+			return "Not enough meta-strings"; // FIXME better description
+		case CANCELLED:
+			return "Cancelled";
+		case ARCHIVE_RESTART:
+			return "Archive restarted";
+		default:
+			return "Unknown code "+mode;
+		}
+	}
+	
 	public static String getMessage(int mode) {
 		switch(mode) {
 		case TOO_DEEP_ARCHIVE_RECURSION:
@@ -97,7 +156,7 @@ public class FetchException extends Exception {
 		case ARCHIVE_FAILURE:
 			return "Failure in extracting files from an archive";
 		case BLOCK_DECODE_ERROR:
-			return "Failed to decode a splitfile block";
+			return "Failed to decode a block";
 		case TOO_MANY_METADATA_LEVELS:
 			return "Too many levels of split metadata";
 		case TOO_MANY_ARCHIVE_RESTARTS:
@@ -131,11 +190,12 @@ public class FetchException extends Exception {
 		case TOO_MANY_BLOCKS_PER_SEGMENT:
 			return "Too many blocks per segment";
 		case NOT_ENOUGH_METASTRINGS:
-			return "No default document; give more metastrings in URI";
+			return "No default document; give more metastrings (path components) in URI";
+			// FIXME better description for above
 		case CANCELLED:
 			return "Cancelled by caller";
 		case ARCHIVE_RESTART:
-			return "Archive restart";
+			return "Archive restarted";
 		default:
 			return "Unknown fetch error code: "+mode;
 		}

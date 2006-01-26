@@ -9,6 +9,7 @@ public class GetFailedMessage extends FCPMessage {
 
 	final int code;
 	final String codeDescription;
+	final String shortCodeDescription;
 	final String extraDescription;
 	final FailureCodeTracker tracker;
 	final boolean isFatal;
@@ -19,6 +20,7 @@ public class GetFailedMessage extends FCPMessage {
 		this.code = e.mode;
 		this.codeDescription = FetchException.getMessage(code);
 		this.extraDescription = e.extraMessage;
+		this.shortCodeDescription = FetchException.getShortMessage(code);
 		this.isFatal = e.isFatal();
 		this.identifier = identifier;
 	}
@@ -33,6 +35,7 @@ public class GetFailedMessage extends FCPMessage {
 		if(tracker != null) {
 			tracker.copyToFieldSet(sfs, "Errors.");
 		}
+		sfs.put("ShortCodeDescription", shortCodeDescription);
 		sfs.put("Identifier", identifier);
 		return sfs;
 	}
