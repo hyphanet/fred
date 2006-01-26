@@ -156,7 +156,7 @@ class SingleFileInserter implements ClientPutState {
 		if((block.clientMetadata == null || block.clientMetadata.isTrivial())) {
 			if(data.size() < blockSize) {
 				// Just insert it
-				SingleBlockInserter bi = new SingleBlockInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly);
+				SingleBlockInserter bi = new SingleBlockInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true);
 				bi.schedule();
 				cb.onTransition(this, bi);
 				return;
@@ -165,7 +165,7 @@ class SingleFileInserter implements ClientPutState {
 		if (data.size() < ClientCHKBlock.MAX_COMPRESSED_DATA_LENGTH) {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true);
 				Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
 				cb.onMetadata(meta, this);
 				cb.onTransition(this, dataPutter);
@@ -173,7 +173,7 @@ class SingleFileInserter implements ClientPutState {
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true);
 				Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
 				Bucket metadataBucket;
 				try {
@@ -181,7 +181,7 @@ class SingleFileInserter implements ClientPutState {
 				} catch (IOException e) {
 					throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 				}
-				SingleBlockInserter metaPutter = new SingleBlockInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly);
+				SingleBlockInserter metaPutter = new SingleBlockInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true);
 				mcb.addURIGenerator(metaPutter);
 				mcb.add(dataPutter);
 				cb.onTransition(this, mcb);

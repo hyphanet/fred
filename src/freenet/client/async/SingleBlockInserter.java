@@ -41,7 +41,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	final int sourceLength;
 	private int consecutiveRNFs;
 	
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly) throws InserterException {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent) throws InserterException {
 		this.consecutiveRNFs = 0;
 		this.token = token;
 		this.parent = parent;
@@ -60,6 +60,11 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			cb.onEncode(block.getClientKey(), this);
 			cb.onSuccess(this);
 			finished = true;
+		}
+		if(addToParent) {
+			parent.addBlock();
+			parent.addMustSucceedBlocks(1);
+			parent.notifyClients();
 		}
 	}
 
@@ -165,6 +170,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			if(finished) return;
 			finished = true;
 		}
+		if(e.isFatal())
+			parent.fatallyFailedBlock();
+		else
+			parent.failedBlock();
 		cb.onFailure(e, this);
 	}
 
@@ -198,6 +207,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		synchronized(this) {
 			finished = true;
 		}
+		parent.completedBlock();
 		cb.onSuccess(this);
 	}
 

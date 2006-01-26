@@ -34,4 +34,44 @@ public abstract class ClientRequest {
 	public abstract FreenetURI getURI();
 	
 	public abstract boolean isFinished();
+	
+	/** Total number of blocks this request has tried to fetch/put. */
+	protected int totalBlocks;
+	/** Number of blocks we have successfully completed a fetch/put for. */
+	protected int successfulBlocks;
+	/** Number of blocks which have failed. */
+	protected int failedBlocks;
+	/** Number of blocks which have failed fatally. */
+	protected int fatallyFailedBlocks;
+	/** Minimum number of blocks required to succeed for success. */
+	protected int minSuccessBlocks;
+	
+	public synchronized void addBlock() {
+		totalBlocks++;
+	}
+	
+	public synchronized void addBlocks(int num) {
+		totalBlocks+=num;
+	}
+	
+	public synchronized void completedBlock() {
+		successfulBlocks++;
+		notifyClients();
+	}
+	
+	public synchronized void failedBlock() {
+		failedBlocks++;
+		notifyClients();
+	}
+	
+	public synchronized void fatallyFailedBlock() {
+		fatallyFailedBlocks++;
+		notifyClients();
+	}
+	
+	public synchronized void addMustSucceedBlocks(int blocks) {
+		minSuccessBlocks += blocks;
+	}
+	
+	public abstract void notifyClients();
 }

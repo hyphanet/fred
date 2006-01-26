@@ -314,12 +314,12 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		try {
 			for(int i=0;i<dataBlocks.length;i++) {
 				dataBlockStatus[i] =
-					new SingleFileFetcher(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(i));
+					new SingleFileFetcher(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(i), true);
 				dataBlockStatus[i].schedule();
 			}
 			for(int i=0;i<checkBlocks.length;i++) {
 				checkBlockStatus[i] =
-					new SingleFileFetcher(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(dataBlocks.length+i));
+					new SingleFileFetcher(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false);
 				checkBlockStatus[i].schedule();
 			}
 		} catch (MalformedURLException e) {

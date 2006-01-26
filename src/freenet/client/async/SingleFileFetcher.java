@@ -55,7 +55,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	 * @param token 
 	 * @param dontTellClientGet 
 	 */
-	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws FetchException {
+	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential) throws FetchException {
 		Logger.minor(this, "Creating SingleFileFetcher for "+key);
 		this.cancelled = false;
 		this.dontTellClientGet = dontTellClientGet;
@@ -77,11 +77,14 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
 		this.decompressors = new LinkedList();
+		parent.addBlock();
+		if(isEssential)
+			parent.addMustSucceedBlocks(1);
 	}
 
 	/** Called by ClientGet. */ 
-	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token) throws MalformedURLException, FetchException {
-		this(get, cb, metadata, ClientKey.getBaseKey(uri), uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token);
+	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential) throws MalformedURLException, FetchException {
+		this(get, cb, metadata, ClientKey.getBaseKey(uri), uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential);
 	}
 	
 	/** Copy constructor, modifies a few given fields, don't call schedule() */
@@ -203,6 +206,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			}
 			result = new FetchResult(result, data);
 		}
+		parent.completedBlock();
 		rcb.onSuccess(result, this);
 	}
 
@@ -302,7 +306,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 					metaStrings.addFirst(o);
 				}
 
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, null);
+				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, null, true);
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
 					f.addDecompressor(codec);
@@ -433,6 +437,10 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			}
 		}
 		// :(
+		if(e.isFatal() || forceFatal)
+			parent.fatallyFailedBlock();
+		else
+			parent.failedBlock();
 		rcb.onFailure(e, this);
 	}
 

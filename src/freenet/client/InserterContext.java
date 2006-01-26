@@ -17,7 +17,7 @@ public class InserterContext {
 	public final int consecutiveRNFsCountAsSuccess;
 	public final int splitfileSegmentDataBlocks;
 	public final int splitfileSegmentCheckBlocks;
-	final ClientEventProducer eventProducer;
+	public final ClientEventProducer eventProducer;
 	/** Interesting tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
 	private boolean cancelled;

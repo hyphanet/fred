@@ -7,6 +7,7 @@ import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
+import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 
 /**
@@ -34,7 +35,7 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	
 	public void start() throws FetchException {
 		try {
-			currentState = new SingleFileFetcher(this, this, new ClientMetadata(), uri, ctx, actx, getPriorityClass(), 0, false, null);
+			currentState = new SingleFileFetcher(this, this, new ClientMetadata(), uri, ctx, actx, getPriorityClass(), 0, false, null, true);
 			currentState.schedule();
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
@@ -83,6 +84,10 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 
 	public FreenetURI getURI() {
 		return uri;
+	}
+
+	public void notifyClients() {
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks));
 	}
 	
 }

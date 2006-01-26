@@ -5,6 +5,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
+import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
@@ -90,6 +91,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	public void onMetadata(Metadata m, ClientPutState state) {
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
+	}
+	
+	public void notifyClients() {
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks));
 	}
 	
 }
