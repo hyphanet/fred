@@ -10,7 +10,7 @@ public class InserterException extends Exception {
 	/** For collection errors */
 	public FailureCodeTracker errorCodes;
 	/** If a non-serious error, the URI */
-	public final FreenetURI uri;
+	public FreenetURI uri;
 	
 	public final String extra;
 	
