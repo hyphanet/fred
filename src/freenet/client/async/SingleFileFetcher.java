@@ -488,7 +488,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		// Do we need to support the last 3?
 		ClientKeyBlock block;
 		try {
-			block = node.realGetKey(key, false, false, false);
+			block = node.realGetKey(key, false, ctx.cacheLocalRequests, false);
 		} catch (LowLevelGetException e) {
 			onFailure(e);
 			return;

@@ -207,7 +207,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	public void send(Node node) {
 		try {
 			Logger.minor(this, "Starting request: "+this);
-			node.realPut(getBlock(), true);
+			node.realPut(getBlock(), ctx.cacheLocalRequests);
 		} catch (LowLevelPutException e) {
 			onFailure(e);
 			Logger.minor(this, "Request failed: "+this+" for "+e);

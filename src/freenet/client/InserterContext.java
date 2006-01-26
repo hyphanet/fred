@@ -19,7 +19,7 @@ public class InserterContext {
 	public final int splitfileSegmentCheckBlocks;
 	final ClientEventProducer eventProducer;
 	/** Interesting tradeoff, see comments at top of Node.java. */
-	final boolean cacheLocalRequests;
+	public final boolean cacheLocalRequests;
 	private boolean cancelled;
 	
 	public InserterContext(BucketFactory bf, RandomSource random,

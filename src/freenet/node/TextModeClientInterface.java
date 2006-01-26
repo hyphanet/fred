@@ -160,6 +160,8 @@ public class TextModeClientInterface implements Runnable {
 				boolean evil = false;
 				for(int i=0;i<dataBytes.length;i++) {
 					// Look for escape codes
+					if(dataBytes[i] == '\n') continue;
+					if(dataBytes[i] == '\r') continue;
 					if(dataBytes[i] < 32) evil = true;
 				}
 				if(evil) {
