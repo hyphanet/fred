@@ -190,7 +190,7 @@ public class FetchException extends Exception {
 		case TOO_MANY_BLOCKS_PER_SEGMENT:
 			return "Too many blocks per segment";
 		case NOT_ENOUGH_METASTRINGS:
-			return "No default document; give more metastrings (path components) in URI";
+			return "Give more metastrings (path components) in URI";
 			// FIXME better description for above
 		case CANCELLED:
 			return "Cancelled by caller";
@@ -267,6 +267,7 @@ public class FetchException extends Exception {
 		case FetchException.ARCHIVE_FAILURE:
 		case FetchException.BLOCK_DECODE_ERROR:
 		case FetchException.HAS_MORE_METASTRINGS:
+		case FetchException.NOT_ENOUGH_METASTRINGS:
 		case FetchException.INVALID_METADATA:
 		case FetchException.NOT_IN_ARCHIVE:
 		case FetchException.TOO_DEEP_ARCHIVE_RECURSION:

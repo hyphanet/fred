@@ -215,7 +215,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			if(metadata.isSimpleManifest()) {
 				String name;
 				if(metaStrings.isEmpty())
-					name = null;
+					throw new FetchException(FetchException.NOT_ENOUGH_METASTRINGS);
 				else
 					name = (String) metaStrings.removeFirst();
 				// Since metadata is a document, we just replace metadata here
