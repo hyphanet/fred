@@ -171,8 +171,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		byte[] data = new byte[dataBlockSize];
 	    		synchronized(chkStore) {
 		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
-		    		chkStore.read(header);
-		    		chkStore.read(data);
+		    		chkStore.readFully(header);
+		    		chkStore.readFully(data);
 	    		}
 	    		
 	    		
@@ -254,8 +254,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		byte[] data = new byte[dataBlockSize];
 	    		synchronized(chkStore) {
 		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
-		    		chkStore.read(header);
-		    		chkStore.read(data);
+		    		chkStore.readFully(header);
+		    		chkStore.readFully(data);
 	    		}
 	    		
 	    		
@@ -339,7 +339,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		Logger.minor(this, "Reading from store... "+storeBlock.offset);
 	    		synchronized(chkStore) {
 		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
-		    		chkStore.read(data);
+		    		chkStore.readFully(data);
 	    		}
 	    		Logger.minor(this, "Read");
 	    		
@@ -525,7 +525,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	Logger.minor(this, "Put key: "+HexUtil.bytesToHex(hash));
 	        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
                 
-        }catch(Exception ex) {  // FIXME: ugly  
+        }catch(Throwable ex) {  // FIXME: ugly  
         	if(t!=null){
         		try{t.abort();}catch(DatabaseException ex2){};
         	}

@@ -133,6 +133,7 @@ public class UdpSocketManager extends Thread {
 			int length = packet.getLength();
 			if (lowLevelFilter != null) {
 				try {
+					Logger.minor(this, "Processing packet of length "+length+" from "+peer);
 					lowLevelFilter.process(data, offset, length, peer);
 					Logger.minor(this,
 							"Successfully handled packet length " + length);
@@ -189,6 +190,7 @@ public class UdpSocketManager extends Thread {
 		} catch (IOException e2) {
 			throw new RuntimeException(e2);
 		}
+		Logger.minor(this, "Received packet");
 		return packet;
 	}
 

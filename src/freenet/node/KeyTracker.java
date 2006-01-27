@@ -717,6 +717,7 @@ public class KeyTracker {
         UpdatableSortedLinkedListItem[] items;
         int[] packetNumbers;
         int realLength;
+        Logger.minor(this, "Grabbing ack requests");
         try {
         synchronized(ackRequestQueue) {
             long now = System.currentTimeMillis();
@@ -746,6 +747,7 @@ public class KeyTracker {
         }
         int[] trimmedPacketNumbers = new int[realLength];
         System.arraycopy(packetNumbers, 0, trimmedPacketNumbers, 0, realLength);
+        Logger.minor(this, "Returning "+trimmedPacketNumbers.length+" ackRequests");
         return trimmedPacketNumbers;
     }
 

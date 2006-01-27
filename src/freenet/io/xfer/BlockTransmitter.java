@@ -294,10 +294,12 @@ public class BlockTransmitter {
 				MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 				MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
                 msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)));
+                Logger.minor(this, "Got "+msg);
             } catch (DisconnectedException e) {
             	// Ignore, see below
             	msg = null;
             }
+            Logger.minor(this, "Got "+msg);
             if(!_destination.isConnected()) {
                 Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
                 synchronized(_senderThread) {

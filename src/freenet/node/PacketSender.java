@@ -38,6 +38,15 @@ public class PacketSender implements Runnable {
             lastReceivedPacketFromAnyNode = lastReportedNoPackets;
             try {
                 realRun();
+            } catch (OutOfMemoryError e) {
+            	System.gc();
+            	System.runFinalization();
+            	System.gc();
+            	System.runFinalization();
+            	System.err.println(e.getClass());
+            	System.err.println(e.getMessage());
+            	e.printStackTrace();
+            	Logger.error(this, "Caught "+e, e);
             } catch (Throwable t) {
                 Logger.error(this, "Caught in PacketSender: "+t, t);
             }
