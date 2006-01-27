@@ -29,14 +29,14 @@ public class FCPConnectionHandler {
 	public FCPConnectionHandler(Socket s, Node node) {
 		this.sock = s;
 		this.node = node;
-		this.inputHandler = new FCPConnectionInputHandler(this);
-		this.outputHandler = new FCPConnectionOutputHandler(this);
 		isClosed = false;
 		this.bf = node.tempBucketFactory;
 		requestsByIdentifier = new HashMap();
 		HighLevelSimpleClient client = node.makeClient((short)0);
 		defaultFetchContext = client.getFetcherContext();
 		defaultInsertContext = client.getInserterContext();
+		this.inputHandler = new FCPConnectionInputHandler(this);
+		this.outputHandler = new FCPConnectionOutputHandler(this);
 		inputHandler.start();
 	}
 	
