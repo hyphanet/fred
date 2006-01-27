@@ -163,10 +163,14 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			if(startedDecode) return;
 			startedDecode = true;
 		}
-		for(int i=0;i<dataBlockStatus.length;i++)
-			dataBlockStatus[i].cancel();
-		for(int i=0;i<checkBlockStatus.length;i++)
-			checkBlockStatus[i].cancel();
+		for(int i=0;i<dataBlockStatus.length;i++) {
+			SingleFileFetcher f = dataBlockStatus[i];
+			if(f != null) f.cancel();
+		}
+		for(int i=0;i<checkBlockStatus.length;i++) {
+			SingleFileFetcher f = checkBlockStatus[i];
+			if(f != null) f.cancel();
+		}
 		Runnable r = new Decoder();
 		Thread t = new Thread(r, "Decoder for "+this);
 		t.setDaemon(true);

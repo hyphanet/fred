@@ -277,6 +277,7 @@ public class FetchException extends Exception {
 		case FetchException.TOO_MUCH_RECURSION:
 		case FetchException.UNKNOWN_METADATA:
 		case FetchException.UNKNOWN_SPLITFILE_METADATA:
+		case FetchException.INVALID_URI:
 		case FetchException.TOO_BIG:
 			return true;
 
