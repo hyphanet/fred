@@ -24,7 +24,7 @@ public class SortedVectorByNumber {
 		return data[0];
 	}
 
-	public boolean isEmpty() {
+	public synchronized boolean isEmpty() {
 		return length == 0;
 	}
 
@@ -35,7 +35,7 @@ public class SortedVectorByNumber {
 		return null;
 	}
 
-	public void remove(int item) {
+	public synchronized void remove(int item) {
 		int x = Arrays.binarySearch(data, new Integer(item), comparator);
 		if(x >= 0) {
 			if(x < length-1)
@@ -49,7 +49,7 @@ public class SortedVectorByNumber {
 		}
 	}
 
-	public void add(IntNumberedItem grabber) {
+	public synchronized void add(IntNumberedItem grabber) {
 		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
 		if(x >= 0) throw new IllegalArgumentException(); // already exists
 		// insertion point

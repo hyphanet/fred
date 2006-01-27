@@ -93,6 +93,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * when it was added.
 	 */
 	public synchronized void remove(SendableRequest req) {
+		Logger.minor(this, "Removing "+req);
 		// Should not be called often.
 		int prio = req.getPriorityClass();
 		int retryCount = req.getRetryCount();
@@ -112,6 +113,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public synchronized SendableRequest removeFirst() {
 		// Priorities start at 0
+		Logger.minor(this, "removeFirst()");
 		for(int i=0;i<RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
 			SortedVectorByNumber s = priorities[i];
 			if(s == null) {
