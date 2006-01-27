@@ -243,7 +243,10 @@ public class TextModeClientInterface implements Runnable {
             System.exit(0);
         } else if(uline.startsWith("PUT:") || (getCHKOnly = uline.startsWith("GETCHK:"))) {
             // Just insert to local store
-            line = line.substring("PUT:".length());
+        	if(getCHKOnly)
+        		line = line.substring(("GETCHK:").length());
+        	else
+        		line = line.substring("PUT:".length());
             while(line.length() > 0 && line.charAt(0) == ' ')
                 line = line.substring(1);
             while(line.length() > 0 && line.charAt(line.length()-1) == ' ')
