@@ -23,6 +23,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int MISSING_FIELD = 5;
 	static final int ERROR_PARSING_NUMBER = 6;
 	static final int INVALID_MESSAGE = 7;
+	static final int INVALID_FIELD = 8;
 	
 	final int code;
 	final String extra;
@@ -44,6 +45,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Error parsing a numeric field";
 		case INVALID_MESSAGE:
 			return "Don't know what to do with message";
+		case INVALID_FIELD:
+			return "Invalid field value";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";

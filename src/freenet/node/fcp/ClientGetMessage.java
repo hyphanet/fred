@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -21,6 +22,7 @@ import freenet.support.SimpleFieldSet;
  * MaxSize=100 // maximum size of returned data 
  * MaxTempSize=1000 // maximum size of intermediary data
  * MaxRetries=100 // automatic retry supported as an option
+ * PriorityClass=1 // priority class 1 = interactive
  * EndMessage
  */
 public class ClientGetMessage extends FCPMessage {
@@ -35,6 +37,7 @@ public class ClientGetMessage extends FCPMessage {
 	final long maxSize;
 	final long maxTempSize;
 	final int maxRetries;
+	final short priorityClass;
 	
 	// FIXME move these to the actual getter process
 	static final int RETURN_TYPE_DIRECT = 0;
@@ -96,6 +99,19 @@ public class ClientGetMessage extends FCPMessage {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
+			}
+		}
+		String priorityString = fs.get("PriorityClass");
+		if(priorityString == null) {
+			// defaults to the one just below fproxy
+			priorityClass = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+		} else {
+			try {
+				priorityClass = Short.parseShort(priorityString, 10);
+				if(priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS || priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS);
+			} catch (NumberFormatException e) {
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage());
 			}
 		}
 	}

@@ -37,7 +37,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		this.handler = handler;
 		this.identifier = message.identifier;
 		this.getCHKOnly = message.getCHKOnly;
-		this.priorityClass = 0;
+		this.priorityClass = message.priorityClass;
 		ctx = new InserterContext(handler.defaultInsertContext, new SimpleEventProducer());
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = message.maxRetries;

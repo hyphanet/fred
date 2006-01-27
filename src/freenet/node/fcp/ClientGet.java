@@ -35,7 +35,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) {
 		uri = message.uri;
 		// FIXME
-		this.priorityClass = 0;
+		this.priorityClass = message.priorityClass;
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
 		this.handler = handler;

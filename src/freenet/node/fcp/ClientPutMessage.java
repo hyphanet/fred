@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -15,6 +16,7 @@ import freenet.support.SimpleFieldSet;
  * Identifier=Insert-1 // identifier, as always
  * Verbosity=0 // just report when complete
  * MaxRetries=999999 // lots of retries
+ * PriorityClass=1 // fproxy priority level
  * Data
  * 
  * Neither IgnoreDS nor DSOnly make sense for inserts.
@@ -30,6 +32,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final int verbosity;
 	final int maxRetries;
 	final boolean getCHKOnly;
+	final short priorityClass;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		try {
@@ -74,6 +77,19 @@ public class ClientPutMessage extends DataCarryingMessage {
 			}
 		}
 		getCHKOnly = Boolean.getBoolean(fs.get("GetCHKOnly"));
+		String priorityString = fs.get("PriorityClass");
+		if(priorityString == null) {
+			// defaults to the one just below fproxy
+			priorityClass = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+		} else {
+			try {
+				priorityClass = Short.parseShort(priorityString, 10);
+				if(priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS || priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS);
+			} catch (NumberFormatException e) {
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage());
+			}
+		}
 	}
 
 	public SimpleFieldSet getFieldSet() {
