@@ -336,10 +336,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	DSAPublicKey block = null;
 	    	
 	    		byte[] data = new byte[dataBlockSize];
+	    		Logger.minor(this, "Reading from store... "+storeBlock.offset);
 	    		synchronized(chkStore) {
 		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 		    		chkStore.read(data);
 	    		}
+	    		Logger.minor(this, "Read");
 	    		
 	    		try {
 	    			block = new DSAPublicKey(data);

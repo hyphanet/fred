@@ -33,6 +33,7 @@ public class FproxyToadlet extends Toadlet {
 			return;
 		}
 		try {
+			Logger.minor(this, "Fproxy fetching "+key);
 			FetchResult result = fetch(key);
 			writeReply(ctx, 200, result.getMimeType(), "OK", result.asBucket());
 		} catch (FetchException e) {

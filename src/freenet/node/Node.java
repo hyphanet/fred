@@ -1397,7 +1397,7 @@ public class Node {
 	 */
 	public DSAPublicKey getKey(byte[] hash) {
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
-		Logger.minor(this, "Getting "+HexUtil.bytesToHex(hash));
+		Logger.minor(this, "Getting pubkey: "+HexUtil.bytesToHex(hash));
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key = (DSAPublicKey) cachedPubKeys.get(w);
 			if(key != null) {

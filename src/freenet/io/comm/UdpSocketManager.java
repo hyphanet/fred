@@ -125,9 +125,12 @@ public class UdpSocketManager extends Thread {
 						Logger.minor(this, "Null packet");
 				} catch (Throwable t) {
 					Logger.error(this, "Caught " + t, t);
+					System.err.println("Caught "+t);
+					t.printStackTrace(System.err);
 				}
 			}
 		} finally {
+			System.err.println("run() exiting");
 			Logger.error(this, "run() exiting");
 			synchronized (this) {
 				_isDone = true;
