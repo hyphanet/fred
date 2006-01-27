@@ -94,44 +94,11 @@ public class UdpSocketManager extends Thread {
 
 	public void run() { // Listen for packets
 		try {
-			while (/*_active*/true) {
-				try {
-					DatagramPacket packet = getPacket();
-					// Check for timedout _filters
-					removeTimedOutFilters();
-					// Check for matched _filters
-					if (packet != null) {
-						Peer peer = new Peer(packet.getAddress(), packet.getPort());
-						byte[] data = packet.getData();
-						int offset = packet.getOffset();
-						int length = packet.getLength();
-						if (lowLevelFilter != null) {
-							try {
-								lowLevelFilter.process(data, offset, length, peer);
-								Logger.minor(this,
-										"Successfully handled packet length " + length);
-							} catch (Throwable t) {
-								Logger.error(this, "Caught " + t + " from "
-										+ lowLevelFilter, t);
-							}
-						} else {
-							// Create a bogus context since no filter
-							Message m = decodePacket(data, offset, length,
-									new DummyPeerContext(peer));
-							if (m != null)
-								checkFilters(m);
-						}
-					} else
-						Logger.minor(this, "Null packet");
-				} catch (Throwable t) {
-					Logger.error(this, "Caught " + t, t);
-					System.err.println("Caught "+t);
-					t.printStackTrace(System.err);
-				}
-			}
+			runLoop();
 		} catch (Throwable t) {
-			System.err.println("Caught "+t);
-			t.printStackTrace(System.err);
+			// Impossible? It keeps on exiting. We get the below,
+			// but not this...
+			System.err.println(t.getMessage());
 		} finally {
 			System.err.println("run() exiting");
 			Logger.error(this, "run() exiting");
@@ -142,6 +109,48 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 
+	private void runLoop() {
+		while (/*_active*/true) {
+			try {
+				realRun();
+			} catch (Throwable t) {
+				Logger.error(this, "Caught " + t, t);
+				System.err.println("Caught "+t);
+				t.printStackTrace(System.err);
+			}
+		}
+	}
+	
+	private void realRun() {
+		DatagramPacket packet = getPacket();
+		// Check for timedout _filters
+		removeTimedOutFilters();
+		// Check for matched _filters
+		if (packet != null) {
+			Peer peer = new Peer(packet.getAddress(), packet.getPort());
+			byte[] data = packet.getData();
+			int offset = packet.getOffset();
+			int length = packet.getLength();
+			if (lowLevelFilter != null) {
+				try {
+					lowLevelFilter.process(data, offset, length, peer);
+					Logger.minor(this,
+							"Successfully handled packet length " + length);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught " + t + " from "
+							+ lowLevelFilter, t);
+				}
+			} else {
+				// Create a bogus context since no filter
+				Message m = decodePacket(data, offset, length,
+						new DummyPeerContext(peer));
+				if (m != null)
+					checkFilters(m);
+			}
+		} else
+			Logger.minor(this, "Null packet");
+	}
+	
 	/**
 	 * Decode a packet from data and a peer.
 	 * Can be called by LowLevelFilter's.
