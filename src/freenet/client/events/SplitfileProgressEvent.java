@@ -20,7 +20,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 	}
 
 	public String getDescription() {
-		return "Completed "+(100*(fetchedBlocks+failedBlocks+fatallyFailedBlocks)/minSuccessfulBlocks)+"% "+fetchedBlocks+"/"+totalBlocks+" (failed "+failedBlocks+", fatally "+fatallyFailedBlocks+", need "+minSuccessfulBlocks+", total "+totalBlocks+")";
+		return "Completed "+(100*(fetchedBlocks)/minSuccessfulBlocks)+"% "+fetchedBlocks+"/"+totalBlocks+" (failed "+failedBlocks+", fatally "+fatallyFailedBlocks+", need "+minSuccessfulBlocks+", total "+totalBlocks+")";
 	}
 
 	public int getCode() {

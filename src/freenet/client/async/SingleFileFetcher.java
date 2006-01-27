@@ -75,7 +75,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		this.actx = actx;
 		this.recursionLevel = recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
-			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
+			throw new FetchException(FetchException.TOO_MUCH_RECURSION, "Too much recursion: "+recursionLevel+" > "+ctx.maxRecursionLevel);
 		this.decompressors = new LinkedList();
 		parent.addBlock();
 		if(isEssential)
@@ -278,7 +278,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			} else if(metadata.isMultiLevelMetadata()) {
 				// Fetch on a second SingleFileFetcher, like with archives.
 				Metadata newMeta = (Metadata) metadata.clone();
-				metadata.setSimpleRedirect();
+				newMeta.setSimpleRedirect();
 				SingleFileFetcher f = new SingleFileFetcher(this, newMeta, new MultiLevelMetadataCallback(), ctx);
 				f.handleMetadata();
 				return;

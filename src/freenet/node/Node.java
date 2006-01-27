@@ -991,7 +991,7 @@ public class Node {
         		DSAPublicKey pubKey = k.getPubKey();
         		if(pubKey == null) {
         			pubKey = getKey(k.getPubKeyHash());
-        			Logger.minor(this, "Got pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
+        			Logger.minor(this, "Fetched pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
         			try {
 						k.setPubKey(pubKey);
 					} catch (SSKVerifyException e) {
@@ -1478,11 +1478,18 @@ public class Node {
 	}
 
 	private ClientKeyBlock fetch(ClientSSK clientSSK) throws SSKVerifyException {
-		DSAPublicKey key = getKey(clientSSK.pubKeyHash);
+		DSAPublicKey key = clientSSK.getPubKey();
+		boolean hadKey = key != null;
+		if(key == null) {
+			key = getKey(clientSSK.pubKeyHash);
+		}
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
 		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey());
 		if(block == null) return null;
+		// Move the pubkey to the top of the LRU, and fix it if it
+		// was corrupt.
+		cacheKey(clientSSK.pubKeyHash, key);
 		return new ClientSSKBlock(block, clientSSK);
 	}
 
