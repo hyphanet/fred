@@ -1410,8 +1410,8 @@ public class Node {
 			DSAPublicKey key = pubKeyDatastore.fetchPubKey(hash, false);
 			if(key != null) {
 				cacheKey(hash, key);
+				Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
 			}
-			Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
 			return key;
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.

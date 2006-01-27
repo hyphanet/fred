@@ -66,37 +66,47 @@ public class RequestStarter implements Runnable {
 	}
 	
 	void realRun() {
-		SendableRequest req = sched.removeFirst();
-		if(req != null) {
-			// Create a thread to handle starting the request, and the resulting feedback
-			Thread t = new Thread(new SenderThread(req));
-			t.setDaemon(true);
-			t.start();
-			sentRequestTime = System.currentTimeMillis();
-			// Wait
-			long delay = throttle.getDelay();
-			Logger.minor(this, "Delay="+delay+" from "+throttle);
-			long sleepUntil = sentRequestTime + delay;
-			long now;
-			do {
-				now = System.currentTimeMillis();
-				if(now < sleepUntil)
+		SendableRequest req = null;
+		while(true) {
+			if(req == null) req = sched.removeFirst();
+			if(req != null) {
+				Logger.minor(this, "Running "+req);
+				// Create a thread to handle starting the request, and the resulting feedback
+				Thread t = new Thread(new SenderThread(req));
+				t.setDaemon(true);
+				t.start();
+				Logger.minor(this, "Started "+req+" on "+t);
+				sentRequestTime = System.currentTimeMillis();
+				// Wait
+				long delay = throttle.getDelay();
+				Logger.minor(this, "Delay="+delay+" from "+throttle);
+				long sleepUntil = sentRequestTime + delay;
+				long now;
+				do {
+					now = System.currentTimeMillis();
+					if(now < sleepUntil)
+						try {
+							Thread.sleep(sleepUntil - now);
+							Logger.minor(this, "Slept: "+(sleepUntil-now)+"ms");
+						} catch (InterruptedException e) {
+							// Ignore
+						}
+				} while(now < sleepUntil);
+				return;
+			} else {
+				Logger.minor(this, "Waiting...");
+				synchronized(this) {
+					// Always take the lock on RequestStarter first.
+					req = sched.removeFirst();
+					if(req != null) {
+						continue;
+					}
 					try {
-						Thread.sleep(sleepUntil - now);
-						Logger.minor(this, "Slept: "+(sleepUntil-now)+"ms");
+						wait(1000);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
-			} while(now < sleepUntil);
-		} else {
-			synchronized(this) {
-				// Always take the lock on RequestStarter first.
-				req = sched.removeFirst();
-				if(req != null) return;
-				try {
-					wait(1000);
-				} catch (InterruptedException e) {
-					// Ignore
+					return;
 				}
 			}
 		}
