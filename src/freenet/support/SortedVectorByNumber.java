@@ -40,13 +40,29 @@ public class SortedVectorByNumber {
 		if(x >= 0) {
 			if(x < length-1)
 				System.arraycopy(data, x+1, data, x, length-x-1);
-			data[length--] = null;
+			data[--length] = null;
 		}
-		if(length < 4*data.length && length > MIN_SIZE) {
+		if(length*4 < data.length && length > MIN_SIZE) {
 			IntNumberedItem[] newData = new IntNumberedItem[Math.max(length*2, MIN_SIZE)];
 			System.arraycopy(data, 0, newData, 0, length);
 			data = newData;
 		}
+		verify();
+	}
+
+	private synchronized void verify() {
+		IntNumberedItem lastItem = null;
+		for(int i=0;i<length;i++) {
+			IntNumberedItem item = data[i];
+			if(i>0) {
+				if(item.getNumber() <= lastItem.getNumber())
+					throw new IllegalStateException("Verify failed!");
+			}
+			lastItem = item;
+		}
+		for(int i=length;i<data.length;i++)
+			if(data[i] != null)
+				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != null");
 	}
 
 	public synchronized void add(IntNumberedItem grabber) {
@@ -65,6 +81,7 @@ public class SortedVectorByNumber {
 			System.arraycopy(data, x, data, x+1, length-x);
 		data[x] = grabber;
 		length++;
+		verify();
 	}
 
 }

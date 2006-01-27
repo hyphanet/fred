@@ -120,25 +120,29 @@ public class ClientRequestScheduler implements RequestScheduler {
 				Logger.minor(this, "Priority "+i+" is null");
 				continue;
 			}
-			RandomGrabArrayWithInt rga = (RandomGrabArrayWithInt) s.getFirst(); // will discard finished items
-			if(rga == null) {
-				Logger.minor(this, "No retrycount's in priority "+i);
-				priorities[i] = null;
-				continue;
-			}
-			SendableRequest req = (SendableRequest) rga.removeRandom();
-			if(rga.isEmpty()) {
-				s.remove(rga.getNumber());
-				if(s.isEmpty()) {
+			while(true) {
+				RandomGrabArrayWithInt rga = (RandomGrabArrayWithInt) s.getFirst(); // will discard finished items
+				if(rga == null) {
+					Logger.minor(this, "No retrycount's in priority "+i);
 					priorities[i] = null;
+					break;
 				}
+				SendableRequest req = (SendableRequest) rga.removeRandom();
+				if(rga.isEmpty()) {
+					Logger.minor(this, "Removing retrycount "+rga.getNumber());
+					s.remove(rga.getNumber());
+					if(s.isEmpty()) {
+						Logger.minor(this, "Removing priority "+i);
+						priorities[i] = null;
+					}
+				}
+				if(req == null) {
+					Logger.minor(this, "No requests in priority "+i+", retrycount "+rga.getNumber()+" ("+rga+")");
+					continue;
+				}
+				Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+")");
+				return req;
 			}
-			if(req == null) {
-				Logger.minor(this, "No requests in priority "+i+", retrycount "+rga.getNumber());
-				continue;
-			}
-			Logger.minor(this, "removeFirst() returning "+req);
-			return req;
 		}
 		Logger.minor(this, "No requests to run");
 		return null;

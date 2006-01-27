@@ -129,6 +129,9 @@ public class UdpSocketManager extends Thread {
 					t.printStackTrace(System.err);
 				}
 			}
+		} catch (Throwable t) {
+			System.err.println("Caught "+t);
+			t.printStackTrace(System.err);
 		} finally {
 			System.err.println("run() exiting");
 			Logger.error(this, "run() exiting");
