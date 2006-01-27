@@ -46,29 +46,49 @@ public abstract class ClientRequest {
 	protected int fatallyFailedBlocks;
 	/** Minimum number of blocks required to succeed for success. */
 	protected int minSuccessBlocks;
+	/** Has totalBlocks stopped growing? */
+	protected boolean blockSetFinalized;
+	
+	public void blockSetFinalized() {
+		synchronized(this) {
+			if(blockSetFinalized) return;
+			blockSetFinalized = true;
+		}
+		notifyClients();
+	}
 	
 	public synchronized void addBlock() {
+		if(blockSetFinalized)
+			Logger.error(this, "addBlock() but set finalized! on "+this, new Exception("error"));
 		totalBlocks++;
 	}
 	
 	public synchronized void addBlocks(int num) {
+		if(blockSetFinalized)
+			Logger.error(this, "addBlock() but set finalized! on "+this, new Exception("error"));
 		totalBlocks+=num;
 	}
 	
-	public synchronized void completedBlock(boolean dontNotify) {
+	public void completedBlock(boolean dontNotify) {
 		Logger.minor(this, "Completed block ("+dontNotify+")");
-		successfulBlocks++;
-		if(!dontNotify)
-			notifyClients();
-	}
-	
-	public synchronized void failedBlock() {
-		failedBlocks++;
+		synchronized(this) {
+			successfulBlocks++;
+			if(dontNotify) return;
+		}
 		notifyClients();
 	}
 	
-	public synchronized void fatallyFailedBlock() {
-		fatallyFailedBlocks++;
+	public void failedBlock() {
+		synchronized(this) {
+			failedBlocks++;
+		}
+		notifyClients();
+	}
+	
+	public void fatallyFailedBlock() {
+		synchronized(this) {
+			fatallyFailedBlocks++;
+		}
 		notifyClients();
 	}
 	

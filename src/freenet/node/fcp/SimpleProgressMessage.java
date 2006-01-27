@@ -21,6 +21,7 @@ public class SimpleProgressMessage extends FCPMessage {
 		fs.put("Failed", Integer.toString(event.failedBlocks));
 		fs.put("FatallyFailed", Integer.toString(event.fatallyFailedBlocks));
 		fs.put("Succeeded",Integer.toString(event.fetchedBlocks));
+		fs.put("FinalizedTotal", Boolean.toString(event.finalizedTotal));
 		fs.put("Identifier", ident);
 		return fs;
 	}

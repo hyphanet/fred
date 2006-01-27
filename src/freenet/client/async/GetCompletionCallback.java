@@ -13,4 +13,8 @@ public interface GetCompletionCallback {
 	
 	public void onFailure(FetchException e, ClientGetState state);
 	
+	/** Called when the ClientGetState knows that it knows about
+	 * all the blocks it will need to fetch.
+	 */
+	public void onBlockSetFinished(ClientGetState state);
 }

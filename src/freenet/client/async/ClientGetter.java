@@ -9,6 +9,7 @@ import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 /**
  * A high level data request.
@@ -87,7 +88,12 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	}
 
 	public void notifyClients() {
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks));
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
+	}
+
+	public void onBlockSetFinished(ClientGetState state) {
+		Logger.minor(this, "Set finished", new Exception("debug"));
+		blockSetFinalized();
 	}
 	
 }

@@ -342,4 +342,8 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		fail(new FetchException(FetchException.CANCELLED));
 	}
 
+	public void onBlockSetFinished(ClientGetState state) {
+		// Ignore; irrelevant
+	}
+
 }

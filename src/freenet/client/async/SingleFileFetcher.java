@@ -14,6 +14,7 @@ import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
@@ -251,7 +252,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 						throw new FetchException(FetchException.BUCKET_ERROR, e);
 					}
 				} else {
-					fetchArchive(); // will result in this function being called again
+					fetchArchive(false); // will result in this function being called again
 					return;
 				}
 				continue;
@@ -271,7 +272,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
-					fetchArchive();
+					fetchArchive(true);
 					// Will call back into this function when it has been fetched.
 					return;
 				}
@@ -298,6 +299,8 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				} catch (MalformedURLException e) {
 					throw new FetchException(FetchException.INVALID_URI, e);
 				}
+				if(key instanceof ClientCHK && !((ClientCHK)key).isMetadata())
+					rcb.onBlockSetFinished(this);
 				LinkedList newMetaStrings = uri.listMetaStrings();
 				
 				// Move any new meta strings to beginning of our list of remaining meta strings
@@ -330,6 +333,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
 						decompressors, clientMetadata, actx, recursionLevel);
 				sf.schedule();
+				rcb.onBlockSetFinished(this);
 				// SplitFile will now run.
 				// Then it will return data to rcd.
 				// We are now out of the loop. Yay!
@@ -345,7 +349,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		decompressors.addLast(codec);
 	}
 
-	private void fetchArchive() throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+	private void fetchArchive(boolean forData) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
 		// Fetch the archive
 		// How?
 		// Spawn a separate SingleFileFetcher,
@@ -355,7 +359,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		Metadata newMeta = (Metadata) metadata.clone();
 		newMeta.setSimpleRedirect();
 		SingleFileFetcher f;
-		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(), new FetcherContext(ctx, FetcherContext.SET_RETURN_ARCHIVES));
+		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData), new FetcherContext(ctx, FetcherContext.SET_RETURN_ARCHIVES));
 		f.handleMetadata();
 		// When it is done (if successful), the ArchiveCallback will re-call this function.
 		// Which will then discover that the metadata *is* available.
@@ -364,6 +368,12 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 
 	class ArchiveFetcherCallback implements GetCompletionCallback {
 
+		private final boolean wasFetchingFinalData;
+		
+		ArchiveFetcherCallback(boolean wasFetchingFinalData) {
+			this.wasFetchingFinalData = wasFetchingFinalData;
+		}
+		
 		public void onSuccess(FetchResult result, ClientGetState state) {
 			parent.currentState = SingleFileFetcher.this;
 			try {
@@ -389,6 +399,12 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		public void onFailure(FetchException e, ClientGetState state) {
 			// Force fatal as the fetcher is presumed to have made a reasonable effort.
 			SingleFileFetcher.this.onFailure(e, true);
+		}
+
+		public void onBlockSetFinished(ClientGetState state) {
+			if(wasFetchingFinalData) {
+				rcb.onBlockSetFinished(SingleFileFetcher.this);
+			}
 		}
 		
 	}
@@ -421,6 +437,10 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		public void onFailure(FetchException e, ClientGetState state) {
 			// Pass it on; fetcher is assumed to have retried as appropriate already, so this is fatal.
 			SingleFileFetcher.this.onFailure(e, true);
+		}
+
+		public void onBlockSetFinished(ClientGetState state) {
+			// Ignore as we are fetching metadata here
 		}
 		
 	}

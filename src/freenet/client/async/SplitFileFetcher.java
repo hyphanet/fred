@@ -217,24 +217,6 @@ public class SplitFileFetcher extends ClientGetState {
 		return parent;
 	}
 
-	public void onProgress() {
-		int totalBlocks = splitfileDataBlocks.length;
-		int fetchedBlocks = 0;
-		int failedBlocks = 0;
-		int fatallyFailedBlocks = 0;
-		int runningBlocks = 0;
-		for(int i=0;i<segments.length;i++) {
-			SplitFileFetcherSegment segment = segments[i];
-			Logger.minor(this, "Segment: "+segment+": fetched="+segment.fetchedBlocks()+", failedBlocks: "+segment.failedBlocks()+
-					", fatally: "+segment.fatallyFailedBlocks()+", running: "+segment.runningBlocks());
-			fetchedBlocks += segment.fetchedBlocks();
-			failedBlocks += segment.failedBlocks();
-			fatallyFailedBlocks += segment.fatallyFailedBlocks();
-			runningBlocks += segment.runningBlocks();
-		}
-		fetchContext.eventProducer.produceEvent(new SplitfileProgressEvent(totalBlocks, fetchedBlocks, failedBlocks, fatallyFailedBlocks, runningBlocks));
-	}
-
 	public void schedule() {
 		for(int i=0;i<segments.length;i++) {
 			segments[i].schedule();
