@@ -399,6 +399,9 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			parent.currentState = SingleFileFetcher.this;
 			try {
 				metadata = Metadata.construct(result.asBucket());
+				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, null, true);
+				f.metadata = metadata;
+				f.handleMetadata();
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
 				return;
@@ -406,6 +409,12 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
 				return;
+			} catch (FetchException e) {
+				onFailure(e, SingleFileFetcher.this);
+			} catch (ArchiveFailureException e) {
+				onFailure(new FetchException(FetchException.ARCHIVE_FAILURE), SingleFileFetcher.this);
+			} catch (ArchiveRestartException e) {
+				onFailure(new FetchException(FetchException.ARCHIVE_RESTART), SingleFileFetcher.this);
 			}
 		}
 		

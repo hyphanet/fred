@@ -300,6 +300,8 @@ class SingleFileInserter implements ClientPutState {
 		private synchronized void fail(InserterException e) {
 			Logger.minor(this, "Failing: "+e, e);
 			if(finished) return;
+			sfi.cancel();
+			metadataPutter.cancel();
 			finished = true;
 			cb.onFailure(e, this);
 		}

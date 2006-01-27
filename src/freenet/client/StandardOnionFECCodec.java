@@ -354,10 +354,9 @@ public class StandardOnionFECCodec extends FECCodec {
 				+ " data blocks, " + checkBlockStatus.length
 				+ " check blocks, block length " + blockLength + " with "
 				+ this);
-		if (dataBlockStatus.length + checkBlockStatus.length != n)
-			throw new IllegalArgumentException();
-		if (dataBlockStatus.length != k)
-			throw new IllegalArgumentException();
+		if (dataBlockStatus.length + checkBlockStatus.length != n ||
+				dataBlockStatus.length != k)
+			throw new IllegalArgumentException("Data blocks: "+dataBlockStatus.length+", Check blocks: "+checkBlockStatus.length+", n: "+n+", k: "+k);
 		Buffer[] dataPackets = new Buffer[k];
 		Buffer[] checkPackets = new Buffer[n - k];
 		Bucket[] buckets = new Bucket[n];
