@@ -158,7 +158,7 @@ public class FileLoggerHook extends LoggerHook {
 	protected String getHourLogName(Calendar c, boolean compressed) {
 		StringBuffer buf = new StringBuffer(50);
 		buf.append(baseFilename).append('-');
-		buf.append(Version.buildNumber);
+		buf.append(Version.buildNumber());
 		buf.append('-');
 		buf.append(c.get(Calendar.YEAR)).append('-');
 		pad2digits(buf, c.get(Calendar.MONTH) + 1);
@@ -501,8 +501,8 @@ public class FileLoggerHook extends LoggerHook {
 					}
 				}
 				// First field: version
-				if(nums[0] != Version.buildNumber) {
-					Logger.minor(this, "Deleting old log from build "+nums[0]+", current="+Version.buildNumber);
+				if(nums[0] != Version.buildNumber()) {
+					Logger.minor(this, "Deleting old log from build "+nums[0]+", current="+Version.buildNumber());
 					// Logs that old are useless
 					f.delete();
 					continue;

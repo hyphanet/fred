@@ -83,7 +83,7 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("Freenet 0.7 Trivial Node Test Interface");
         System.out.println("---------------------------------------");
         System.out.println();
-        System.out.println("Build "+Version.buildNumber);
+        System.out.println("Build "+Version.buildNumber());
         System.out.println("Enter one of the following commands:");
         System.out.println("GET:<Freenet key> - Fetch a key");
         System.out.println("PUT:\n<text, until a . on a line by itself> - Insert the document and return the key.");
@@ -453,7 +453,7 @@ public class TextModeClientInterface implements Runnable {
             System.out.println(fs.toString());
             System.out.println();
             System.out.println(n.getStatus());
-	    if(Version.buildNumber<Version.highestSeenBuild){
+	    if(Version.buildNumber()<Version.highestSeenBuild){
 	            System.out.println("The latest version is : "+Version.highestSeenBuild);
 	    }
         } else if(uline.startsWith("CONNECT:")) {
