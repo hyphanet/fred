@@ -491,7 +491,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		return token;
 	}
 
-	public void cancel() {
+	public synchronized void cancel() {
 		cancelled = true;
 	}
 
