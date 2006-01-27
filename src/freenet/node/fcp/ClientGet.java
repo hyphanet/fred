@@ -63,7 +63,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	public void cancel() {
-		fctx.cancel();
+		getter.cancel();
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {

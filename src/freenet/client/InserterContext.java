@@ -21,7 +21,6 @@ public class InserterContext {
 	public final ClientEventProducer eventProducer;
 	/** Interesting tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
-	private boolean cancelled;
 	
 	public InserterContext(BucketFactory bf, RandomSource random,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
@@ -67,12 +66,4 @@ public class InserterContext {
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
 	}
 
-	public void cancel() {
-		cancelled = true;
-	}
-
-	public boolean isCancelled() {
-		return cancelled;
-	}
-	
 }

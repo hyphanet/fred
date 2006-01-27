@@ -118,6 +118,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		int x = sbi.token;
 		synchronized(this) {
+			if(finished) return;
 			if(x >= dataBlocks.length) {
 				if(checkURIs[x-dataBlocks.length] != null) {
 					Logger.normal(this, "Got uri twice for check block "+x+" on "+this);
@@ -166,6 +167,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	private boolean completed(int x) {
 		synchronized(this) {
+			if(finished) return true;
 			if(x >= dataBlocks.length) {
 				if(checkBlockInserters[x-dataBlocks.length] == null) {
 					Logger.error(this, "Completed twice: check block "+x+" on "+this);

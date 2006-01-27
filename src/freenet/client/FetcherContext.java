@@ -36,14 +36,9 @@ public class FetcherContext implements Cloneable {
 	public int maxDataBlocksPerSegment;
 	public int maxCheckBlocksPerSegment;
 	public boolean cacheLocalRequests;
-	private boolean cancelled;
 	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
 	 * return the manifest contents as data. */
 	public boolean returnZIPManifests;
-	
-	public final boolean isCancelled() {
-		return cancelled;
-	}
 	
 	public FetcherContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts,
@@ -190,10 +185,6 @@ public class FetcherContext implements Cloneable {
 		else throw new IllegalArgumentException();
 	}
 
-	public void cancel() {
-		this.cancelled = true;
-	}
-	
 	/** Make public, but just call parent for a field for field copy */
 	public Object clone() {
 		try {
