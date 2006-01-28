@@ -11,7 +11,11 @@ import freenet.support.Logger;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
+	// LinkedList's rather than HashSet's for memory reasons.
+	// This class will not be used with large sets, so O(n) is cheaper than O(1) -
+	// at least it is on memory!
 	private final LinkedList waitingFor;
+	private final LinkedList waitingForBlockSet;
 	private final PutCompletionCallback cb;
 	private ClientPutState generator;
 	private final BaseClientPutter parent;
@@ -21,6 +25,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent) {
 		this.cb = cb;
 		this.waitingFor = new LinkedList();
+		this.waitingForBlockSet = new LinkedList();
 		this.parent = parent;
 		finished = false;
 	}
@@ -101,6 +106,14 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		} else {
 			Logger.error(this, "Got metadata for "+state);
 		}
+	}
+
+	public void onBlockSetFinished(ClientPutState state) {
+		synchronized(this) {
+			this.waitingForBlockSet.remove(state);
+			if(!started) return;
+		}
+		cb.onBlockSetFinished(this);
 	}
 
 }

@@ -158,6 +158,7 @@ class SingleFileInserter implements ClientPutState {
 				// Just insert it
 				SingleBlockInserter bi = new SingleBlockInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true);
 				bi.schedule();
+				cb.onBlockSetFinished(this);
 				cb.onTransition(this, bi);
 				return;
 			}
@@ -170,6 +171,7 @@ class SingleFileInserter implements ClientPutState {
 				cb.onMetadata(meta, this);
 				cb.onTransition(this, dataPutter);
 				dataPutter.schedule();
+				cb.onBlockSetFinished(this);
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent);
@@ -188,6 +190,7 @@ class SingleFileInserter implements ClientPutState {
 				mcb.arm();
 				dataPutter.schedule();
 				metaPutter.schedule();
+				cb.onBlockSetFinished(this);
 			}
 			return;
 		}
@@ -222,6 +225,8 @@ class SingleFileInserter implements ClientPutState {
 		boolean finished = false;
 		boolean splitInsertSuccess = false;
 		boolean metaInsertSuccess = false;
+		boolean splitInsertSetBlocks = false;
+		boolean metaInsertSetBlocks = false;
 
 		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
 			if(oldState == sfi)
@@ -300,8 +305,10 @@ class SingleFileInserter implements ClientPutState {
 		private synchronized void fail(InserterException e) {
 			Logger.minor(this, "Failing: "+e, e);
 			if(finished) return;
-			sfi.cancel();
-			metadataPutter.cancel();
+			if(sfi != null)
+				sfi.cancel();
+			if(metadataPutter != null)
+				metadataPutter.cancel();
 			finished = true;
 			cb.onFailure(e, this);
 		}
@@ -320,6 +327,18 @@ class SingleFileInserter implements ClientPutState {
 				sfi.cancel();
 			if(metadataPutter != null)
 				metadataPutter.cancel();
+		}
+
+		public void onBlockSetFinished(ClientPutState state) {
+			synchronized(this) {
+				if(state == sfi)
+					splitInsertSetBlocks = true;
+				else if (state == metadataPutter)
+					metaInsertSetBlocks = true;
+				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 
+					return;
+			}
+			cb.onBlockSetFinished(this);
 		}
 		
 	}

@@ -97,4 +97,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
 	}
 	
+	public void onBlockSetFinished(ClientPutState state) {
+		Logger.minor(this, "Set finished", new Exception("debug"));
+		blockSetFinalized();
+	}
+	
 }

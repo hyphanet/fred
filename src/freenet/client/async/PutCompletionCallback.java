@@ -23,4 +23,9 @@ public interface PutCompletionCallback {
 	 */
 	public void onMetadata(Metadata m, ClientPutState state);
 	
+	/** Called when the ClientPutState knows that it knows about
+	 * all the blocks it will need to put.
+	 */
+	public void onBlockSetFinished(ClientPutState state);
+
 }

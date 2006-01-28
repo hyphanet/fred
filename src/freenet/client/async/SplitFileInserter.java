@@ -112,6 +112,13 @@ public class SplitFileInserter implements ClientPutState {
 
 	public void encodedSegment(SplitFileInserterSegment segment) {
 		Logger.minor(this, "Encoded segment "+segment.segNo+" of "+this);
+		synchronized(this) {
+			for(int i=0;i<segments.length;i++) {
+				if(segments[i] == null || !segments[i].isEncoded())
+					return;
+			}
+		}
+		cb.onBlockSetFinished(this);
 	}
 	
 	public void segmentHasURIs(SplitFileInserterSegment segment) {
@@ -120,42 +127,38 @@ public class SplitFileInserter implements ClientPutState {
 			return;
 		}
 		
-		boolean allHaveURIs = true;
 		synchronized(this) {
 			for(int i=0;i<segments.length;i++) {
 				if(!segments[i].isEncoded())
-					allHaveURIs = false;
+					return;
 			}
 		}
 		
-		if(allHaveURIs) {
-			Logger.minor(this, "Have URIs from all segments");
-			boolean missingURIs;
-			Metadata m = null;
-			synchronized(this) {
-				// Create metadata
-				FreenetURI[] dataURIs = getDataURIs();
-				FreenetURI[] checkURIs = getCheckURIs();
-				
-				Logger.minor(this, "Data URIs: "+dataURIs.length+", check URIs: "+checkURIs.length);
-				
-				missingURIs = anyNulls(dataURIs) || anyNulls(checkURIs);
-				
-				if(!missingURIs) {
-					// Create Metadata
-					m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, isMetadata);
-				}
-				haveSentMetadata = true;
+		Logger.minor(this, "Have URIs from all segments");
+		boolean missingURIs;
+		Metadata m = null;
+		synchronized(this) {
+			// Create metadata
+			FreenetURI[] dataURIs = getDataURIs();
+			FreenetURI[] checkURIs = getCheckURIs();
+			
+			Logger.minor(this, "Data URIs: "+dataURIs.length+", check URIs: "+checkURIs.length);
+			
+			missingURIs = anyNulls(dataURIs) || anyNulls(checkURIs);
+			
+			if(!missingURIs) {
+				// Create Metadata
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, isMetadata);
 			}
-			if(missingURIs) {
-				Logger.minor(this, "Missing URIs");
-				// Error
-				fail(new InserterException(InserterException.INTERNAL_ERROR, "Missing URIs after encoding", null));
-				return;
-			} else
-				cb.onMetadata(m, this);
+			haveSentMetadata = true;
 		}
-
+		if(missingURIs) {
+			Logger.minor(this, "Missing URIs");
+			// Error
+			fail(new InserterException(InserterException.INTERNAL_ERROR, "Missing URIs after encoding", null));
+			return;
+		} else
+			cb.onMetadata(m, this);
 	}
 	
 	private void fail(InserterException e) {

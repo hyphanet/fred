@@ -76,15 +76,16 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	void encode() {
 		try {
 			splitfileAlgo.encode(dataBlocks, checkBlocks, ClientCHKBlock.DATA_LENGTH, blockInsertContext.bf);
-			// Success! Start the fetches.
-			encoded = true;
-			parent.encodedSegment(this);
 			// Start the inserts
 			for(int i=0;i<checkBlockInserters.length;i++) {
 				checkBlockInserters[i] = 
 					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false);
 				checkBlockInserters[i].schedule();
 			}
+			// Tell parent only after have started the inserts.
+			// Because of the counting.
+			encoded = true;
+			parent.encodedSegment(this);
 		} catch (IOException e) {
 			InserterException ex = 
 				new InserterException(InserterException.BUCKET_ERROR, e, null);
@@ -237,5 +238,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	public void onMetadata(Metadata m, ClientPutState state) {
 		Logger.error(this, "Got onMetadata from "+state);
+	}
+
+	public void onBlockSetFinished(ClientPutState state) {
+		// Ignore
+		Logger.error(this, "Should not happen: onBlockSetFinished("+state+") on "+this);
 	}
 }

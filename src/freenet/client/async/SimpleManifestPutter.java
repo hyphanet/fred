@@ -130,11 +130,20 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		public void notifyClients() {
 			// FIXME generate per-filename events???
 		}
+
+		public void onBlockSetFinished(ClientPutState state) {
+			synchronized(SimpleManifestPutter.this) {
+				waitingForBlockSets.remove(this);
+				if(!waitingForBlockSets.isEmpty()) return;
+			}
+			SimpleManifestPutter.this.blockSetFinalized();
+		}
 	}
 
 	private final HashMap putHandlersByName;
 	private final HashSet runningPutHandlers;
 	private final HashSet putHandlersWaitingForMetadata;
+	private final HashSet waitingForBlockSets;
 	private FreenetURI finalURI;
 	private FreenetURI targetURI;
 	private boolean finished;
@@ -160,6 +169,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		putHandlersByName = new HashMap();
 		runningPutHandlers = new HashSet();
 		putHandlersWaitingForMetadata = new HashSet();
+		waitingForBlockSets = new HashSet();
 		Iterator it = bucketsByName.keySet().iterator();
 		while(it.hasNext()) {
 			String name = (String) it.next();
@@ -319,6 +329,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	public void notifyClients() {
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
+	}
+
+	public void onBlockSetFinished(ClientPutState state) {
+		this.blockSetFinalized();
 	}
 
 }

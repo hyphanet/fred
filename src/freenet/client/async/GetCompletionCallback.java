@@ -17,4 +17,5 @@ public interface GetCompletionCallback {
 	 * all the blocks it will need to fetch.
 	 */
 	public void onBlockSetFinished(ClientGetState state);
+
 }
