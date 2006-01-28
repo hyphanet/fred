@@ -1,6 +1,5 @@
 package freenet.client.async;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
@@ -19,6 +18,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private final PutCompletionCallback cb;
 	private ClientPutState generator;
 	private final BaseClientPutter parent;
+	private InserterException e;
 	private boolean finished;
 	private boolean started;
 	
@@ -30,20 +30,26 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		finished = false;
 	}
 
-	public synchronized void onSuccess(ClientPutState state) {
-		if(finished) return;
-		waitingFor.remove(state);
-		if(waitingFor.isEmpty() && started) {
-			complete(null);
+	public void onSuccess(ClientPutState state) {
+		synchronized(this) {
+			if(finished) return;
+			waitingFor.remove(state);
+			if(!(waitingFor.isEmpty() && started))
+				return;
 		}
+		complete(null);
 	}
 
-	public synchronized void onFailure(InserterException e, ClientPutState state) {
-		if(finished) return;
-		waitingFor.remove(state);
-		if(waitingFor.isEmpty()) {
-			complete(e);
+	public void onFailure(InserterException e, ClientPutState state) {
+		synchronized(this) {
+			if(finished) return;
+			waitingFor.remove(state);
+			if(!(waitingFor.isEmpty() && started)) {
+				this.e = e;
+				return;
+			}
 		}
+		complete(e);
 	}
 
 	private synchronized void complete(InserterException e) {
@@ -64,8 +70,20 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		waitingFor.add(ps);
 	}
 
-	public synchronized void arm() {
-		started = true;
+	public void arm() {
+		boolean allDone;
+		boolean allGotBlocks;
+		synchronized(this) {
+			started = true;
+			allDone = waitingFor.isEmpty();
+			allGotBlocks = waitingForBlockSet.isEmpty();
+		}
+		if(allGotBlocks) {
+			cb.onBlockSetFinished(this);
+		}
+		if(allDone) {
+			complete(e);
+		}
 	}
 
 	public BaseClientPutter getParent() {

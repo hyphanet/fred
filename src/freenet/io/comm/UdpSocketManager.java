@@ -98,7 +98,30 @@ public class UdpSocketManager extends Thread {
 		} catch (Throwable t) {
 			// Impossible? It keeps on exiting. We get the below,
 			// but not this...
-			System.err.println(t.getMessage());
+			try {
+				System.err.print(t.getClass().getName());
+				System.err.println();
+			} catch (Throwable tt) {};
+			try {
+				System.err.print(t.getMessage());
+				System.err.println();
+			} catch (Throwable tt) {};
+			try {
+				System.gc();
+				System.runFinalization();
+				System.gc();
+				System.runFinalization();
+			} catch (Throwable tt) {}
+			try {
+				Runtime r = Runtime.getRuntime();
+				System.err.print(r.freeMemory());
+				System.err.println();
+				System.err.print(r.totalMemory());
+				System.err.println();
+			} catch (Throwable tt) {};
+			try {
+				t.printStackTrace();
+			} catch (Throwable tt) {};
 		} finally {
 			System.err.println("run() exiting");
 			Logger.error(this, "run() exiting");
