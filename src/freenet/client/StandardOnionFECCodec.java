@@ -344,10 +344,10 @@ public class StandardOnionFECCodec extends FECCodec {
 	private void realEncode(Bucket[] dataBlockStatus,
 			Bucket[] checkBlockStatus, int blockLength, BucketFactory bf)
 			throws IOException {
-//		Runtime.getRuntime().gc();
-//		Runtime.getRuntime().runFinalization();
-//		Runtime.getRuntime().gc();
-//		Runtime.getRuntime().runFinalization();
+		Runtime.getRuntime().gc();
+		Runtime.getRuntime().runFinalization();
+		Runtime.getRuntime().gc();
+		Runtime.getRuntime().runFinalization();
 		long memUsedAtStart = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 		Logger.minor(this, "Memory in use at start: "+memUsedAtStart+" max="+Runtime.getRuntime().maxMemory());
 		Logger.minor(this, "Doing encode: " + dataBlockStatus.length
@@ -404,11 +404,20 @@ public class StandardOnionFECCodec extends FECCodec {
 				}
 			}
 
+			Runtime.getRuntime().gc();
+			Runtime.getRuntime().runFinalization();
+			Runtime.getRuntime().gc();
+			Runtime.getRuntime().runFinalization();
+			long memUsedBeforeEncodes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+			Logger.minor(this, "Memory in use before encodes: "+memUsedBeforeEncodes);
+			
 			if (numberToEncode > 0) {
 				System.err.println("************* Encoding " + dataBlockStatus.length
 						+ " -> " + numberToEncode + " *************");
 				// Do the (striped) encode
 				for (int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
+					long memUsedBeforeRead = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+					Logger.minor(this, "Memory in use before read: "+memUsedBeforeRead);
 					// Read the data in first
 					for (int i = 0; i < k; i++) {
 						readers[i].readFully(realBuffer, i * STRIPE_SIZE,
@@ -417,17 +426,17 @@ public class StandardOnionFECCodec extends FECCodec {
 					// Do the encode
 					// Not shuffled
 					long startTime = System.currentTimeMillis();
-//					Runtime.getRuntime().gc();
-//					Runtime.getRuntime().runFinalization();
-//					Runtime.getRuntime().gc();
-//					Runtime.getRuntime().runFinalization();
+					Runtime.getRuntime().gc();
+					Runtime.getRuntime().runFinalization();
+					Runtime.getRuntime().gc();
+					Runtime.getRuntime().runFinalization();
 					long memUsedBeforeStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 					Logger.minor(this, "Memory in use before stripe: "+memUsedBeforeStripe);
 					encoder.encode(dataPackets, checkPackets, toEncode);
-//					Runtime.getRuntime().gc();
-//					Runtime.getRuntime().runFinalization();
-//					Runtime.getRuntime().gc();
-//					Runtime.getRuntime().runFinalization();
+					Runtime.getRuntime().gc();
+					Runtime.getRuntime().runFinalization();
+					Runtime.getRuntime().gc();
+					Runtime.getRuntime().runFinalization();
 					long memUsedAfterStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
 					Logger.minor(this, "Memory in use after stripe: "+memUsedAfterStripe);
 					long endTime = System.currentTimeMillis();
