@@ -908,7 +908,7 @@ public class Node {
      */
     public SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet();
-        fs.put("physical.udp", getPrimaryIPAddress().getHostAddress()+":"+portNumber);
+        fs.put("physical.udp", Peer.getHostName(getPrimaryIPAddress())+":"+portNumber);
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());

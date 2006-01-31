@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import java.util.Vector;
+
 import freenet.support.io.LineReader;
 
 /**
@@ -52,6 +54,20 @@ public class SimpleFieldSet {
 	    read(br);
     }
 
+    /**
+     * Construct from a string[].
+     * @throws IOException if the string is too short or invalid.
+     */
+    public SimpleFieldSet(String[] content) throws IOException {
+        map = new HashMap();
+        String content2=new String();
+        for(int i=0;i<content.length;i++)
+        	content2.concat(content[i]+";");
+        StringReader sr = new StringReader(content2);
+        BufferedReader br = new BufferedReader(sr);
+	    read(br);
+    }
+    
     /**
      * Read from disk
      * Format:
@@ -116,9 +132,36 @@ public class SimpleFieldSet {
     public String get(String key) {
         return (String) map.get(key);
     }
+    
+    public String[] getAll(String key) {
+    	int index = key.indexOf(';');
+    	if(index == -1) return null;
+    	Vector v=new Vector();
+    	v.removeAllElements();
+        while(index>0){
+            // Mapping
+            String before = key.substring(0, index);         
+            String after = key.substring(index+1);
+            v.addElement(before);
+            key=after;
+            index = key.indexOf(';');
+        }
+    	
+    	return (String[]) v.toArray();
+    }
 
     public void put(String key, String value) {
-        map.put(key, value);
+    	String test=null;
+    	try{
+    		if(map.get(key) != null)
+    			test=new String((String) map.get(key));
+    	}catch (Exception e){
+    	}
+    	if(test != null && test.equalsIgnoreCase(value)){
+    		map.put(key, test+";"+value);
+    	}else{
+            map.put(key, value);    		
+    	}
     }
 
     /**

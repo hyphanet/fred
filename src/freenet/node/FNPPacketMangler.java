@@ -1281,8 +1281,11 @@ public class FNPPacketMangler implements LowLevelFilter {
                 pn.setDHContext(ctx);
             }
         }
-        sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, pn.getPeer());
-        pn.sentHandshake();
+
+        for(int i=0;i<pn.getHandshakeIPs().length;i++){
+        	sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, pn.getHandshakeIPs()[i]);
+        	pn.sentHandshake();
+        }
     }
 
     public boolean isDisconnected(PeerContext context) {

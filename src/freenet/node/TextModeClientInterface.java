@@ -651,7 +651,7 @@ public class TextModeClientInterface implements Runnable {
     	PeerNode[] pn = n.peers.myPeers;
     	for(int i=0;i<pn.length;i++)
     	{
-    		String nodeIpAndPort = pn[i].getPeer().getAddress().getHostAddress()+":"+pn[i].getPeer().getPort();
+    		String nodeIpAndPort = pn[i].getDetectedPeer().getAddress().getHostAddress()+":"+pn[i].getDetectedPeer().getPort();
     		if(nodeIpAndPort.equals(ipAndPort))
     		{
     			n.peers.disconnect(pn[i]);

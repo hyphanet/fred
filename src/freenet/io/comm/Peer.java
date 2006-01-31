@@ -73,7 +73,7 @@ public class Peer implements WritableToDataOutputStream {
             throw new PeerParseException(e);
         }
     }
-
+    
     public boolean isNull() {
 		return _port == 0;
 	}
@@ -110,11 +110,21 @@ public class Peer implements WritableToDataOutputStream {
 	}
 
 	public String toString() {
-		return (_address != null ? _address.getHostAddress() : "null") + ":" + _port;
+		return (_address != null ? getHostName(_address) : "null") + ":" + _port;
 	}
 
 	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
 		dos.write(_address.getAddress());
 		dos.writeInt(_port);
+	}
+
+	/**
+	 * Return the hostname or the IP address of the given InetAddress.
+	 * Does not attempt to do a reverse lookup; if the hostname is
+	 * known, return it, otherwise return the textual IP address.
+	 */
+	public static String getHostName(InetAddress primaryIPAddress) {
+		String s = primaryIPAddress.toString();
+		return s.substring(0, s.indexOf('/')).trim();
 	}
 }

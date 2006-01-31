@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
+import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DiffieHellmanContext;
@@ -52,7 +53,10 @@ public class PeerNode implements PeerContext {
     static boolean disableProbabilisticHTLs = false;
 
     /** My low-level address for SocketManager purposes */
-    private Peer peer;
+    private Peer detectedPeer;
+    
+    /** Advertised addresses */
+    private Vector nominalPeer;
     
     /** Is this a testnet node? */
     public final boolean testnetEnabled;
@@ -191,16 +195,35 @@ public class PeerNode implements PeerContext {
         String locationString = fs.get("location");
         if(locationString == null) throw new FSParseException("No location");
         currentLocation = new Location(locationString);
-        String physical = fs.get("physical.udp");
-        if(physical == null) throw new FSParseException("No physical.udp");
-        peer = new Peer(physical);
+        
+        if(nominalPeer==null)
+        	nominalPeer=new Vector();
+        nominalPeer.removeAllElements();
+        try{
+        	String physical[]=fs.getAll("physical.udp");
+        	if(physical==null){
+        		Peer p = new Peer(fs.get("physical.udp"));
+        		nominalPeer.addElement(p);
+        	}else{
+	    		for(int i=0;i<physical.length;i++){		
+					Peer p = new Peer(physical[i]);
+				    if(!nominalPeer.contains(p)) 
+				    	nominalPeer.addElement(p);
+	    		}
+        	}
+        } catch (Exception e1) {
+                throw new FSParseException(e1);
+        }
+        if(nominalPeer.isEmpty()) throw new FSParseException("No physical.udp");
+        detectedPeer=(Peer) nominalPeer.firstElement();
+        
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         myName = name;
         String testnet = fs.get("testnet");
         testnetEnabled = testnet == null ? false : (testnet.equalsIgnoreCase("true") || testnet.equalsIgnoreCase("yes"));
         if(testnetEnabled != node.testnetEnabled) {
-        	String err = "Ignoring incompatible node "+peer+" - peer.testnet="+testnetEnabled+"("+testnet+") but node.testnet="+node.testnetEnabled;
+        	String err = "Ignoring incompatible node "+detectedPeer+" - peer.testnet="+testnetEnabled+"("+testnet+") but node.testnet="+node.testnetEnabled;
         	Logger.error(this, err);
         	throw new PeerParseException(err);
         }
@@ -267,8 +290,29 @@ public class PeerNode implements PeerContext {
     /**
      * Get my low-level address
      */
-    public Peer getPeer() {
-        return peer;
+    public Peer getDetectedPeer() {
+        return detectedPeer;
+    }
+
+    public Peer getPeer(){
+    	return detectedPeer;
+    }
+    
+    /**
+     * Returns an array with the advertised addresses and the detected one
+     */
+    public Peer[] getHandshakeIPs(){
+    	Peer[] p=null;
+    	
+    	if( ! nominalPeer.contains(detectedPeer)){
+      		p= new Peer[1+nominalPeer.size()];
+    		p[0]=detectedPeer;
+    		for(int i=1;i<nominalPeer.size()+1;i++)
+    			p[i]=(Peer) nominalPeer.get(i);
+    	}else{
+    		return (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);  		
+    	}
+    	return p;
     }
     
     /**
@@ -519,7 +563,7 @@ public class PeerNode implements PeerContext {
      * @param newPeer The new address of the peer.
      */
     public void changedIP(Peer newPeer) {
-        this.peer = newPeer;
+        this.detectedPeer=newPeer;
     }
 
     /**
@@ -551,7 +595,7 @@ public class PeerNode implements PeerContext {
      * @return short version of toString()
      */
     public String shortToString() {
-        return super.toString()+"@"+peer.toString()+"@"+HexUtil.bytesToHex(identity);
+        return super.toString()+"@"+detectedPeer.toString()+"@"+HexUtil.bytesToHex(identity);
     }
 
     public String toString() {
@@ -794,15 +838,29 @@ public class PeerNode implements PeerContext {
         Location loc = new Location(locationString);
         if(!loc.equals(currentLocation)) changedAnything = true;
         currentLocation = loc;
-        String physical = fs.get("physical.udp");
-        if(physical == null) throw new FSParseException("No physical.udp");
-        try {
-            Peer p = new Peer(physical);
-            if(!p.equals(peer)) changedAnything = true;
-            peer = p;
-        } catch (PeerParseException e1) {
-            throw new FSParseException(e1);
+        
+        if(nominalPeer==null)
+        	nominalPeer=new Vector();
+        nominalPeer.removeAllElements();
+        try{
+        	String physical[]=fs.getAll("physical.udp");
+        	if(physical==null){
+        		Peer p = new Peer(fs.get("physical.udp"));
+        		nominalPeer.addElement(p);
+        	}else{
+	    		for(int i=0;i<physical.length;i++){		
+					Peer p = new Peer(physical[i]);
+				    if(!nominalPeer.contains(p)) 
+				    	nominalPeer.addElement(p);
+	    		}
+        	}
+        } catch (Exception e1) {
+                throw new FSParseException(e1);
         }
+        if(nominalPeer.isEmpty()) throw new FSParseException("No physical.udp");
+        /* yes, we pick up a random one : it will be updated on handshake */
+        detectedPeer=(Peer) nominalPeer.firstElement();
+        
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         if(!name.equals(myName)) changedAnything = true;
@@ -882,7 +940,8 @@ public class PeerNode implements PeerContext {
      */
     private SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet();
-        fs.put("physical.udp", peer.toString());
+        for(int i=0;i<nominalPeer.size();i++)
+        	fs.put("physical.udp", nominalPeer.get(i).toString());
         fs.put("identity", HexUtil.bytesToHex(identity));
         fs.put("location", Double.toString(currentLocation.getValue()));
         fs.put("testnet", Boolean.toString(testnetEnabled));
