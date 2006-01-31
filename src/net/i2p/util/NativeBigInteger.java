@@ -128,32 +128,37 @@ public class NativeBigInteger extends BigInteger {
 	  */
     private static String resolveCPUType() {
 		try {
-			CPUInfo c = CPUID.getInfo();
-			if (c instanceof AMDCPUInfo) {
-				AMDCPUInfo amdcpu = (AMDCPUInfo) c;
-				if (amdcpu.IsAthlon64Compatible())
-					return JBIGI_OPTIMISATION_X86_64;
-				if (amdcpu.IsAthlonCompatible())
-					return JBIGI_OPTIMIZATION_ATHLON;
-				if (amdcpu.IsK6_3_Compatible())
-					return JBIGI_OPTIMIZATION_K6_3;
-				if (amdcpu.IsK6_2_Compatible())
-					return JBIGI_OPTIMIZATION_K6_2;
-				if (amdcpu.IsK6Compatible())
-					return JBIGI_OPTIMIZATION_K6;
-			} else {
-				if (c instanceof IntelCPUInfo) {
-					IntelCPUInfo intelcpu = (IntelCPUInfo) c;
-					if (intelcpu.IsPentium4Compatible())
-						return JBIGI_OPTIMIZATION_PENTIUM4;
-					if (intelcpu.IsPentium3Compatible())
-						return JBIGI_OPTIMIZATION_PENTIUM3;
-					if (intelcpu.IsPentium2Compatible())
-								return JBIGI_OPTIMIZATION_PENTIUM2;
-					if (intelcpu.IsPentiumMMXCompatible())
-						return JBIGI_OPTIMIZATION_PENTIUMMMX;
-					if (intelcpu.IsPentiumCompatible())
-						return JBIGI_OPTIMIZATION_PENTIUM;
+			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")){
+				System.out.println("Detected x86_64!");
+				return JBIGI_OPTIMISATION_X86_64;
+			}else{
+				CPUInfo c = CPUID.getInfo();
+				if (c instanceof AMDCPUInfo) {
+					AMDCPUInfo amdcpu = (AMDCPUInfo) c;
+					if (amdcpu.IsAthlon64Compatible())
+						return JBIGI_OPTIMISATION_X86_64;
+					if (amdcpu.IsAthlonCompatible())
+						return JBIGI_OPTIMIZATION_ATHLON;
+					if (amdcpu.IsK6_3_Compatible())
+						return JBIGI_OPTIMIZATION_K6_3;
+					if (amdcpu.IsK6_2_Compatible())
+						return JBIGI_OPTIMIZATION_K6_2;
+					if (amdcpu.IsK6Compatible())
+						return JBIGI_OPTIMIZATION_K6;
+				} else {
+					if (c instanceof IntelCPUInfo) {
+						IntelCPUInfo intelcpu = (IntelCPUInfo) c;
+						if (intelcpu.IsPentium4Compatible())
+							return JBIGI_OPTIMIZATION_PENTIUM4;
+						if (intelcpu.IsPentium3Compatible())
+							return JBIGI_OPTIMIZATION_PENTIUM3;
+						if (intelcpu.IsPentium2Compatible())
+							return JBIGI_OPTIMIZATION_PENTIUM2;
+						if (intelcpu.IsPentiumMMXCompatible())
+							return JBIGI_OPTIMIZATION_PENTIUMMMX;
+						if (intelcpu.IsPentiumCompatible())
+							return JBIGI_OPTIMIZATION_PENTIUM;
+					}
 				}
 			}
 			return null;
