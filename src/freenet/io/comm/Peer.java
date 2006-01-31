@@ -125,6 +125,10 @@ public class Peer implements WritableToDataOutputStream {
 	 */
 	public static String getHostName(InetAddress primaryIPAddress) {
 		String s = primaryIPAddress.toString();
-		return s.substring(0, s.indexOf('/')).trim();
+		String addr = s.substring(0, s.indexOf('/')).trim();
+		if(addr.length() == 0)
+			return primaryIPAddress.getHostAddress();
+		else
+			return addr;
 	}
 }
