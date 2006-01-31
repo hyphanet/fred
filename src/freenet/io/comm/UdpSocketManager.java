@@ -208,6 +208,9 @@ public class UdpSocketManager extends Thread {
 		DatagramPacket packet = new DatagramPacket(new byte[1500], 1500);
 		try {
 			_sock.receive(packet);
+			// TODO: keep?
+			IOStatisticCollector.addInfo(packet.getAddress() + ":" + packet.getPort(),
+					packet.getLength(), 0);
 		} catch (SocketTimeoutException e1) {
 			packet = null;
 		} catch (IOException e2) {
@@ -470,6 +473,10 @@ public class UdpSocketManager extends Thread {
 		DatagramPacket packet = new DatagramPacket(blockToSend, blockToSend.length);
 		packet.setAddress(destination.getAddress());
 		packet.setPort(destination.getPort());
+		
+		// TODO: keep?
+		IOStatisticCollector.addInfo(packet.getAddress() + ":" + packet.getPort(),
+				0, packet.getLength());
 		try {
 			_sock.send(packet);
 		} catch (IOException e) {

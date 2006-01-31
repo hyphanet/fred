@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import snmplib.SNMPAgent;
+import snmplib.SNMPStarter;
+
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
@@ -342,6 +345,9 @@ public class Node {
         System.out.println("Starting fproxy on port "+(port+2000));
         new FCPServer(port+3000, n);
         System.out.println("Starting FCP server on port "+(port+3000));
+        SNMPAgent.setSNMPPort(port+4000);
+        System.out.println("Starting SNMP server on port "+(port+4000));
+        SNMPStarter.initialize();
         //server.register(fproxy, "/SSK@", false);
         //server.register(fproxy, "/KSK@", false);
     }
