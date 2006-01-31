@@ -9,7 +9,6 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
-import freenet.client.async.SingleFileInserter.SplitHandler;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
@@ -129,7 +128,7 @@ public class SplitFileInserter implements ClientPutState {
 		
 		synchronized(this) {
 			for(int i=0;i<segments.length;i++) {
-				if(!segments[i].isEncoded())
+				if(!segments[i].hasURIs())
 					return;
 			}
 		}

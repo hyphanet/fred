@@ -28,6 +28,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	private boolean encoded;
 	private boolean finished;
 	private boolean getCHKOnly;
+	private boolean hasURIs;
 	private InserterException toThrow;
 	private final FailureCodeTracker errors;
 	private int blocksGotURI;
@@ -118,6 +119,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	public void onEncode(ClientKey key, ClientPutState state) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		int x = sbi.token;
+		FreenetURI uri = key.getURI();
 		synchronized(this) {
 			if(finished) return;
 			if(x >= dataBlocks.length) {
@@ -125,28 +127,30 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 					Logger.normal(this, "Got uri twice for check block "+x+" on "+this);
 					return;
 				}
-				checkURIs[x-dataBlocks.length] = key.getURI();
+				checkURIs[x-dataBlocks.length] = uri;
 			} else {
 				if(dataURIs[x] != null) {
 					Logger.normal(this, "Got uri twice for data block "+x+" on "+this);
 					return;
 				}
-				dataURIs[x] = key.getURI();
+				dataURIs[x] = uri;
 			}
 			blocksGotURI++;
 			if(blocksGotURI != dataBlocks.length + checkBlocks.length) return;
-		}
-		// Double check
-		for(int i=0;i<checkURIs.length;i++)
-			if(checkURIs[i] == null) {
-				Logger.error(this, "Check URI "+i+" is null");
-				return;
+			// Double check
+			for(int i=0;i<checkURIs.length;i++) {
+				if(checkURIs[i] == null) {
+					Logger.error(this, "Check URI "+i+" is null");
+					return;
+				}
 			}
-		for(int i=0;i<dataURIs.length;i++) {
-			if(dataURIs[i] == null) {
-				Logger.error(this, "Data URI "+i+" is null");
-				return;
+			for(int i=0;i<dataURIs.length;i++) {
+				if(dataURIs[i] == null) {
+					Logger.error(this, "Data URI "+i+" is null");
+					return;
+				}
 			}
+			hasURIs = true;
 		}
 		parent.segmentHasURIs(this);
 	}
@@ -243,5 +247,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	public void onBlockSetFinished(ClientPutState state) {
 		// Ignore
 		Logger.error(this, "Should not happen: onBlockSetFinished("+state+") on "+this);
+	}
+
+	public boolean hasURIs() {
+		return hasURIs;
 	}
 }
