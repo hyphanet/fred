@@ -535,4 +535,8 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		onSuccess(block, false);
 	}
 
+	public Object getClient() {
+		return parent.getClient();
+	}
+
 }

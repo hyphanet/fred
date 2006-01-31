@@ -94,7 +94,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(uri == null) throw new NullPointerException();
 		FetcherContext context = getFetcherContext();
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, node.fetchScheduler, uri, context, priorityClass);
+		ClientGetter get = new ClientGetter(fw, node.fetchScheduler, uri, context, priorityClass, this);
 		get.start();
 		return fw.waitForCompletion();
 	}
@@ -107,7 +107,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		InserterContext context = getInserterContext();
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.data, insert.desiredURI, insert.clientMetadata, 
-				context, node.putScheduler, priorityClass, getCHKOnly, isMetadata);
+				context, node.putScheduler, priorityClass, getCHKOnly, isMetadata, this);
 		put.start();
 		return pw.waitForCompletion();
 	}
@@ -129,7 +129,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, node.putScheduler, bucketsByName, priorityClass, insertURI, defaultName, getInserterContext(), false);
+			new SimpleManifestPutter(pw, node.putScheduler, bucketsByName, priorityClass, insertURI, defaultName, getInserterContext(), false, this);
 		return pw.waitForCompletion();
 	}
 	

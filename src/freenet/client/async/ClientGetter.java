@@ -24,8 +24,8 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	private boolean finished;
 	private int archiveRestarts;
 	
-	public ClientGetter(ClientCallback client, ClientRequestScheduler sched, FreenetURI uri, FetcherContext ctx, short priorityClass) {
-		super(priorityClass, sched);
+	public ClientGetter(ClientCallback client, ClientRequestScheduler sched, FreenetURI uri, FetcherContext ctx, short priorityClass, Object clientContext) {
+		super(priorityClass, sched, clientContext);
 		this.client = client;
 		this.uri = uri;
 		this.ctx = ctx;

@@ -25,8 +25,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	private FreenetURI uri;
 
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InserterContext ctx,
-			ClientRequestScheduler scheduler, short priorityClass, boolean getCHKOnly, boolean isMetadata) {
-		super(priorityClass, scheduler);
+			ClientRequestScheduler scheduler, short priorityClass, boolean getCHKOnly, boolean isMetadata, Object clientContext) {
+		super(priorityClass, scheduler, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
 		this.getCHKOnly = getCHKOnly;

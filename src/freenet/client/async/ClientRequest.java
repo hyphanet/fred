@@ -14,14 +14,16 @@ public abstract class ClientRequest {
 	protected short priorityClass;
 	protected boolean cancelled;
 	final ClientRequestScheduler scheduler;
+	protected final Object client;
 	
 	public short getPriorityClass() {
 		return priorityClass;
 	}
 	
-	protected ClientRequest(short priorityClass, ClientRequestScheduler scheduler) {
+	protected ClientRequest(short priorityClass, ClientRequestScheduler scheduler, Object client) {
 		this.priorityClass = priorityClass;
 		this.scheduler = scheduler;
+		this.client = client;
 	}
 	
 	public void cancel() {
@@ -97,4 +99,10 @@ public abstract class ClientRequest {
 	}
 	
 	public abstract void notifyClients();
+
+	/** Get client context object */
+	public Object getClient() {
+		return client;
+	}
+
 }

@@ -47,6 +47,8 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class PeerNode implements PeerContext {
 
+	private String lastGoodVersion; 
+	
     /** For debugging/testing, set this to true to stop the
      * probabilistic decrement at the edges of the HTLs.
      */
@@ -195,9 +197,11 @@ public class PeerNode implements PeerContext {
         String locationString = fs.get("location");
         if(locationString == null) throw new FSParseException("No location");
         currentLocation = new Location(locationString);
+
+        // FIXME make mandatory once everyone has upgraded
+        lastGoodVersion = fs.get("lastGoodVersion");
         
-        if(nominalPeer==null)
-        	nominalPeer=new Vector();
+       	nominalPeer=new Vector();
         nominalPeer.removeAllElements();
         try{
         	String physical[]=fs.getAll("physical.udp");
@@ -838,10 +842,15 @@ public class PeerNode implements PeerContext {
         Location loc = new Location(locationString);
         if(!loc.equals(currentLocation)) changedAnything = true;
         currentLocation = loc;
-        
+
         if(nominalPeer==null)
         	nominalPeer=new Vector();
         nominalPeer.removeAllElements();
+        
+        lastGoodVersion = fs.get("lastGoodVersion");
+        
+        Peer[] oldPeers = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
+        
         try{
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null){
@@ -857,6 +866,10 @@ public class PeerNode implements PeerContext {
         } catch (Exception e1) {
                 throw new FSParseException(e1);
         }
+        
+        if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()])))
+        	changedAnything = true;
+        
         if(nominalPeer.isEmpty()) throw new FSParseException("No physical.udp");
         /* yes, we pick up a random one : it will be updated on handshake */
         detectedPeer=(Peer) nominalPeer.firstElement();
@@ -940,6 +953,8 @@ public class PeerNode implements PeerContext {
      */
     private SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet();
+        if(lastGoodVersion != null)
+        	fs.put("lastGoodVersion", lastGoodVersion);
         for(int i=0;i<nominalPeer.size();i++)
         	fs.put("physical.udp", nominalPeer.get(i).toString());
         fs.put("identity", HexUtil.bytesToHex(identity));

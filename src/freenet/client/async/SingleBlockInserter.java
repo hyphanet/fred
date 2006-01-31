@@ -244,4 +244,8 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		onSuccess();
 	}
 
+	public Object getClient() {
+		return parent.getClient();
+	}
+
 }

@@ -8,6 +8,7 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArrayWithInt;
+import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SortedVectorByNumber;
 
 /**
@@ -62,9 +63,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		synchronized(this) {
-			RandomGrabArrayWithInt grabber = 
+			SectoredRandomGrabArrayWithInt grabber = 
 				makeGrabArray(req.getPriorityClass(), req.getRetryCount());
-			grabber.add(req);
+			grabber.add(req.getClient(), req);
 			Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount());
 		}
 		synchronized(starter) {
@@ -72,45 +73,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
-	private synchronized RandomGrabArrayWithInt makeGrabArray(short priorityClass, int retryCount) {
+	private synchronized SectoredRandomGrabArrayWithInt makeGrabArray(short priorityClass, int retryCount) {
 		SortedVectorByNumber prio = priorities[priorityClass];
 		if(prio == null) {
 			prio = new SortedVectorByNumber();
 			priorities[priorityClass] = prio;
 		}
-		RandomGrabArrayWithInt grabber = (RandomGrabArrayWithInt) prio.get(retryCount);
+		SectoredRandomGrabArrayWithInt grabber = (SectoredRandomGrabArrayWithInt) prio.get(retryCount);
 		if(grabber == null) {
-			grabber = new RandomGrabArrayWithInt(random, retryCount);
+			grabber = new SectoredRandomGrabArrayWithInt(random, retryCount);
 			prio.add(grabber);
 			Logger.minor(this, "Registering retry count "+retryCount+" with prioclass "+priorityClass);
 		}
 		return grabber;
 	}
 
-	/**
-	 * Should not be called often as can be slow if there are many requests of the same
-	 * priority and retry count. Priority and retry count must be the same as they were
-	 * when it was added.
-	 */
-	public synchronized void remove(SendableRequest req) {
-		Logger.minor(this, "Removing "+req);
-		// Should not be called often.
-		int prio = req.getPriorityClass();
-		int retryCount = req.getRetryCount();
-		SortedVectorByNumber s = priorities[prio];
-		if(s == null) return;
-		if(s.isEmpty()) return;
-		RandomGrabArrayWithInt grabber = 
-			(RandomGrabArrayWithInt) s.get(retryCount);
-		if(grabber == null) return;
-		grabber.remove(req);
-		if(grabber.isEmpty()) {
-			s.remove(retryCount);
-			if(s.isEmpty())
-				priorities[prio] = null;
-		}
-	}
-	
 	public synchronized SendableRequest removeFirst() {
 		// Priorities start at 0
 		Logger.minor(this, "removeFirst()");
@@ -121,7 +98,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				continue;
 			}
 			while(true) {
-				RandomGrabArrayWithInt rga = (RandomGrabArrayWithInt) s.getFirst(); // will discard finished items
+				SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst(); // will discard finished items
 				if(rga == null) {
 					Logger.minor(this, "No retrycount's in priority "+i);
 					priorities[i] = null;

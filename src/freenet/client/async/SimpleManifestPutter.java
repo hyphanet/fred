@@ -24,7 +24,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 
 		protected PutHandler(String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) throws InserterException {
-			super(SimpleManifestPutter.this.getPriorityClass(), SimpleManifestPutter.this.scheduler);
+			super(SimpleManifestPutter.this.getPriorityClass(), SimpleManifestPutter.this.scheduler, SimpleManifestPutter.this.client);
 			this.name = name;
 			this.cm = cm;
 			InsertBlock block = 
@@ -159,8 +159,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler sched, 
 			HashMap bucketsByName, short prioClass, FreenetURI target, 
-			String defaultName, InserterContext ctx, boolean getCHKOnly) throws InserterException {
-		super(prioClass, sched);
+			String defaultName, InserterContext ctx, boolean getCHKOnly, Object clientContext) throws InserterException {
+		super(prioClass, sched, clientContext);
 		this.defaultName = defaultName;
 		this.targetURI = target;
 		this.cb = cb;

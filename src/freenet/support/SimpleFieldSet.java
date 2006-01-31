@@ -151,16 +151,12 @@ public class SimpleFieldSet {
     }
 
     public void put(String key, String value) {
-    	String test=null;
-    	try{
-    		if(map.get(key) != null)
-    			test=new String((String) map.get(key));
-    	}catch (Exception e){
-    	}
-    	if(test != null && test.equalsIgnoreCase(value)){
-    		map.put(key, test+";"+value);
-    	}else{
-            map.put(key, value);    		
+    	String x = (String) map.get(key);
+    	
+    	if(x == null) {
+    		map.put(key, value);
+    	} else {
+    		map.put(key, ((String)map.get(key))+";"+value);
     	}
     }
 

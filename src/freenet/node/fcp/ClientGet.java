@@ -54,7 +54,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			throw new IllegalStateException("Unknown return type: "+message.returnType);
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
-		getter = new ClientGetter(this, handler.node.fetchScheduler, uri, fctx, priorityClass);
+		getter = new ClientGetter(this, handler.node.fetchScheduler, uri, fctx, priorityClass, handler.defaultFetchContext);
 		try {
 			getter.start();
 		} catch (FetchException e) {
