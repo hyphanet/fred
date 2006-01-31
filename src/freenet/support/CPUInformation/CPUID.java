@@ -33,7 +33,7 @@ public class CPUID {
      * it easier for other systems to reuse this class
      */
     private static final boolean _doLog = true;
-    private static final boolean isX86 = System.getProperty("os.arch").toLowerCase().matches("i?[x0-9]86(_64)?");
+    private static final boolean isX86 = System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86|amd64)");
     
 	static
 	{
@@ -238,6 +238,8 @@ public class CPUID {
 							return "Athlon 64";
 						case 5:
 							return "Athlon 64 FX Opteron";
+						case 12:
+							return "AMD Athlon(tm) 64 Processor 3000+";
 					}
 				}
 			}
@@ -387,6 +389,8 @@ public class CPUID {
 		if(c instanceof AMDCPUInfo){
 			System.out.println("  **AMD-info**");
 			System.out.println("  Is Athlon-compatible: "+((AMDCPUInfo)c).IsAthlonCompatible());
+                        System.out.println("  Is Athlon64-compatible: "+((AMDCPUInfo)c).IsAthlon64Compatible());
+
 		}
 		
 	}

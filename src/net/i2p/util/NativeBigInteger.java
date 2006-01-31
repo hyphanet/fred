@@ -107,6 +107,7 @@ public class NativeBigInteger extends BigInteger {
     private final static String JBIGI_OPTIMIZATION_K6_2       = "k62";
     private final static String JBIGI_OPTIMIZATION_K6_3       = "k63";
     private final static String JBIGI_OPTIMIZATION_ATHLON   = "athlon";
+    private final static String JBIGI_OPTIMISATION_X86_64    = "x86_64";
     private final static String JBIGI_OPTIMIZATION_PENTIUM    = "pentium";
     private final static String JBIGI_OPTIMIZATION_PENTIUMMMX = "pentiummmx";
     private final static String JBIGI_OPTIMIZATION_PENTIUM2 = "pentium2";
@@ -130,6 +131,8 @@ public class NativeBigInteger extends BigInteger {
 			CPUInfo c = CPUID.getInfo();
 			if (c instanceof AMDCPUInfo) {
 				AMDCPUInfo amdcpu = (AMDCPUInfo) c;
+				if (amdcpu.IsAthlon64Compatible())
+					return JBIGI_OPTIMISATION_X86_64;
 				if (amdcpu.IsAthlonCompatible())
 					return JBIGI_OPTIMIZATION_ATHLON;
 				if (amdcpu.IsK6_3_Compatible())
