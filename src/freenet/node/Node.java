@@ -330,7 +330,7 @@ public class Node {
             }
         }
         DiffieHellman.init(yarrow);
-        Node n = new Node(port, yarrow, overrideIP, "", 1000 / packetsPerSecond, true, logger, 16384);
+        Node n = new Node(port, yarrow, overrideIP, "", 1000 / packetsPerSecond, true, logger, 32768 /* 1GB */);
         n.start(new StaticSwapRequestInterval(2000));
         new TextModeClientInterface(n);
         Thread t = new Thread(new MemoryChecker(), "Memory checker");
