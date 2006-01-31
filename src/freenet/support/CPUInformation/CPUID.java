@@ -33,7 +33,7 @@ public class CPUID {
      * it easier for other systems to reuse this class
      */
     private static final boolean _doLog = true;
-    private static final boolean isX86 = System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86|amd64)");
+    private static final boolean isX86 = System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86(_64)?|amd64)");
     
 	static
 	{
