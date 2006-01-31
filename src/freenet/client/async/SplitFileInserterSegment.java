@@ -27,7 +27,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	final int segNo;
 	private boolean encoded;
 	private boolean finished;
-	private boolean getCHKOnly;
+	private final boolean getCHKOnly;
 	private boolean hasURIs;
 	private InserterException toThrow;
 	private final FailureCodeTracker errors;
@@ -36,6 +36,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	
 	public SplitFileInserterSegment(SplitFileInserter parent, FECCodec splitfileAlgo, Bucket[] origDataBlocks, InserterContext blockInsertContext, boolean getCHKOnly, int segNo) {
 		this.parent = parent;
+		this.getCHKOnly = getCHKOnly;
 		this.errors = new FailureCodeTracker(true);
 		this.blockInsertContext = blockInsertContext;
 		this.splitfileAlgo = splitfileAlgo;

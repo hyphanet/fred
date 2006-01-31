@@ -38,6 +38,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	private SoftReference refToClientKeyBlock;
 	final int token; // for e.g. splitfiles
 	final boolean isMetadata;
+	final boolean getCHKOnly;
 	final int sourceLength;
 	private int consecutiveRNFs;
 	
@@ -55,12 +56,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		this.sourceData = data;
 		this.isMetadata = isMetadata;
 		this.sourceLength = sourceLength;
-		if(getCHKOnly) {
-			ClientKeyBlock block = encode();
-			cb.onEncode(block.getClientKey(), this);
-			cb.onSuccess(this);
-			finished = true;
-		}
+		this.getCHKOnly = getCHKOnly;
 		if(addToParent) {
 			parent.addBlock();
 			parent.addMustSucceedBlocks(1);
@@ -191,9 +187,17 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		}
 	}
 
-	public void schedule() {
+	public void schedule() throws InserterException {
 		if(finished) return;
-		parent.scheduler.register(this);
+		if(getCHKOnly) {
+			ClientKeyBlock block = encode();
+			cb.onEncode(block.getClientKey(), this);
+			cb.onSuccess(this);
+			parent.completedBlock(false);
+			finished = true;
+		} else {
+			parent.scheduler.register(this);
+		}
 	}
 
 	public FreenetURI getURI() {

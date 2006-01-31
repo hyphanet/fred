@@ -30,7 +30,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block = 
 				new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, true, getCHKOnly, false);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, false);
 			currentState = origSFI;
 			metadata = null;
 		}
@@ -251,7 +251,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			new InsertBlock(bucket, null, targetURI);
 		try {
 			SingleFileInserter metadataInserter = 
-				new SingleFileInserter(this, this, block, true, ctx, false, false, getCHKOnly, false);
+				new SingleFileInserter(this, this, block, true, ctx, false, getCHKOnly, false);
 			this.currentMetadataInserterState = metadataInserter;
 			metadataInserter.start();
 		} catch (InserterException e) {

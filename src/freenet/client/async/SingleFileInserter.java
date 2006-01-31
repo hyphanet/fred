@@ -37,7 +37,6 @@ class SingleFileInserter implements ClientPutState {
 	final boolean getCHKOnly;
 	/** If true, we are not the top level request, and should not
 	 * update our parent to point to us as current put-stage. */
-	final boolean dontTellParent;
 	private boolean cancelled = false;
 	private boolean reportMetadataOnly;
 
@@ -48,21 +47,19 @@ class SingleFileInserter implements ClientPutState {
 	 * @param metadata
 	 * @param ctx
 	 * @param dontCompress
-	 * @param dontTellParent
 	 * @param getCHKOnly
 	 * @param reportMetadataOnly If true, don't insert the metadata, just report it.
 	 * @throws InserterException
 	 */
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InserterContext ctx, boolean dontCompress, 
-			boolean dontTellParent, boolean getCHKOnly, boolean reportMetadataOnly) throws InserterException {
+			boolean getCHKOnly, boolean reportMetadataOnly) throws InserterException {
 		this.reportMetadataOnly = reportMetadataOnly;
 		this.parent = parent;
 		this.block = block;
 		this.ctx = ctx;
 		this.metadata = metadata;
 		this.cb = cb;
-		this.dontTellParent = dontTellParent;
 		this.getCHKOnly = getCHKOnly;
 	}
 	
@@ -157,9 +154,9 @@ class SingleFileInserter implements ClientPutState {
 			if(data.size() < blockSize) {
 				// Just insert it
 				SingleBlockInserter bi = new SingleBlockInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true);
+				cb.onTransition(this, bi);
 				bi.schedule();
 				cb.onBlockSetFinished(this);
-				cb.onTransition(this, bi);
 				return;
 			}
 		}
@@ -246,7 +243,7 @@ class SingleFileInserter implements ClientPutState {
 					Logger.minor(this, "Metadata insert succeeded");
 					metaInsertSuccess = true;
 				} else {
-					Logger.error(this, "Unknown: "+state);
+					Logger.error(this, "Unknown: "+state, new Exception("debug"));
 				}
 				if(splitInsertSuccess && metaInsertSuccess) {
 					Logger.minor(this, "Both succeeded");
@@ -286,7 +283,7 @@ class SingleFileInserter implements ClientPutState {
 					}
 					InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
 					try {
-						metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, false);
+						metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false);
 						Logger.minor(this, "Putting metadata on "+metadataPutter);
 					} catch (InserterException e) {
 						cb.onFailure(e, this);
