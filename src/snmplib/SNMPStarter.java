@@ -20,6 +20,7 @@ public class SNMPStarter {
 			SNMPAgent.getSNMPAgent().addFetcher(new DataStatisticsInfo(i, true));
 			SNMPAgent.getSNMPAgent().addFetcher(new DataStatisticsInfo(i, false));
 		}
+		SNMPAgent.getSNMPAgent().addFetcher(new InfoSystem());
 		
 		has_been_runned = true;
 	}

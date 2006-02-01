@@ -57,8 +57,18 @@ public class SNMPAgent implements Runnable {
     }
     
     public void addFetcher(DataFetcher df) {
-    	DataHandler dh = new DataHandler(df);
-    	alldata.put(dh.getStringOID(), dh);
+    	//DataHandler dh = new DataHandler(df);
+    	//alldata.put(dh.getStringOID(), dh);
+    	alldata.put(df.getSNMPOID().replaceAll("^\\.1\\.3\\.",""), df);
+    	//System.err.println("sAdded: " + df.getSNMPOID() + "as" + df.getSNMPOID().replaceAll("^\\.1\\.3\\.",""));
+    }
+    
+    public void addFetcher(MultiplexedDataFetcher df) {
+    	String oid;
+    	for (int i = 0 ; (oid = df.getSNMPOID(i)) != null ; i++) {
+    		alldata.put(oid.replaceAll("^\\.1\\.3\\.",""), df);
+    	//	System.err.println("mAdded: " + oid + " as: " + oid.replaceAll("^\\.1\\.3\\.",""));
+    	}
     }
 
     public void removeFetcher(String OID) {
@@ -94,29 +104,53 @@ public class SNMPAgent implements Runnable {
                 
                 int replylength = 0;
                 boolean keyfound = false;
-                DataHandler dh = null;
+                //DataHandler dh = null;
                 
                 Iterator it = alldata.keySet().iterator();
                 String key = "";
                 if (rc.OID.length() == 0)
-                	rc.OID = ".";
+                	rc.OID = "";
                 
                 while (it.hasNext() && !keyfound) {
                 	key = (String)it.next();
+                	//System.err.println("is '"+ rc.OID + "' in: " + key);
                 	if (key.startsWith(rc.OID))
                 		keyfound = true;
                 }
 
                 // keyfound /\ (equal -> hasnext)
+                //System.err.println("("+keyfound+" && (!"+key.equals(rc.OID)+" || "+it.hasNext()+"))");
                 if (keyfound && (!key.equals(rc.OID) || it.hasNext())) {
                 	key = key.equals(rc.OID)?(String)it.next():key;
                 	
-                	dh = (DataHandler)alldata.get(key);
-                	rc.lOID = (long[])dh.lOID.clone();
+                	Object df = alldata.get(key);
+                	//Object key = null;
+                	Object data = null;
+                	//dh = (DataHandler)alldata.get(key);
+                	//rc.lOID = (long[])dh.lOID.clone();
+                	if (df instanceof DataFetcher) {
+                		data = ((DataFetcher)df).getSNMPData();
+                	} else if (df instanceof MultiplexedDataFetcher) {
+                		data = ((MultiplexedDataFetcher)df).getSNMPData(key);
+                		if (data == null)
+                			data = ((MultiplexedDataFetcher)df).getSNMPData(".1.3."+key);
+                	} else
+                		data = new Integer(0);
+                	
+                	rc.lOID = splitToLong(key);
+                	//System.err.println(key);
+                	//for (int i = 0; i < rc.lOID.length ; i++)
+        			//	System.err.print("." + rc.lOID[i]);
+                	
 
-                	replylength = makeIntReply(buf, rc, dh.getData());
+                	replylength = makeIntReply(buf, rc, data);
                 } else {
-                	rc.lOID[0] = 100;
+                	if (rc.lOID.length > 0)
+                		rc.lOID[0] = 100;
+                	else {
+                		rc.lOID = new long[1];
+                		rc.lOID[0] = 0;
+                	}
                 	replylength = makeIntReply(buf, rc, new Integer(1));
                 }
                 
@@ -196,12 +230,19 @@ public class SNMPAgent implements Runnable {
     	rc.lOID = bd.fetchOID();
     	rc.OID = (rc.lOID.length == 0)?".":"";
     	for (int i = 0; i < rc.lOID.length ; i++)
-    		rc.OID += "." + rc.lOID[i];
+    		rc.OID += (i==0?"":".") + rc.lOID[i];
     	
     }
-
-   
-    private class DataHandler {
+    
+    private long[] splitToLong(String list) {
+    	String nums[] = list.split("\\.");
+    	long ret[] = new long[nums.length];
+    	for(int i = 0; i < ret.length ; i++)
+    		ret[i] = Long.parseLong(nums[i]);
+    	return ret;
+    }
+    /*
+	private class DataHandler {
     	//public Integer data;
     	public long lOID[] = null;
     	DataFetcher df;
@@ -230,7 +271,7 @@ public class SNMPAgent implements Runnable {
     		return ret;
     	}
     }
-    
+    */
     
     
     
