@@ -150,9 +150,9 @@ public class FreenetURI {
 		int slash2;
 		Vector sv = new Vector();
 		while ((slash2 = URI.lastIndexOf("/")) != -1) {
-			String s = urlDecode(URI.substring(slash2 + "/".length()));
+			String s = URI.substring(slash2 + "/".length());
 			if (s != null)
-				sv.addElement(urlDecode(s));
+				sv.addElement(s);
 			URI = URI.substring(0, slash2);
 		}
 		if("SSK".equals(keyType)) {
@@ -326,34 +326,6 @@ public class FreenetURI {
 			extra);
 	}
 
-	protected static String urlDecode(String s) {
-		StringBuffer b = new StringBuffer();
-		for (int i = 0; i < s.length(); i++) {
-			if (s.charAt(i) == '+')
-				b.append(' ');
-			else if (s.charAt(i) == '%') {
-				int n = Integer.parseInt(s.substring(i + 1, i + 3), 16);
-				b.append((char) n);
-				i += 2;
-			} else
-				b.append(s.charAt(i));
-		}
-		return b.toString();
-	}
-
-	protected static String urlEncode(String s) {
-		StringBuffer b = new StringBuffer();
-		for (int i = 0; i < s.length(); i++) {
-			if (s.charAt(i) == ' ')
-				b.append('+');
-			else if (s.charAt(i) > 128 || s.charAt(i) < 44) {
-				b.append('%').append(Integer.toString(s.charAt(i), 16));
-			} else
-				b.append(s.charAt(i));
-		}
-		return b.toString();
-	}
-
 	public String toString() {
 		return toString(true);
 	}
@@ -379,10 +351,10 @@ public class FreenetURI {
 		}
 
 		if (docName != null)
-			b.append(urlEncode(docName));
+			b.append(docName);
 		if (metaStr != null) {
 			for (int i = 0; i < metaStr.length; i++) {
-				b.append("/").append(urlEncode(metaStr[i]));
+				b.append("/").append(metaStr[i]);
 			}
 		}
 		return b.toString();
