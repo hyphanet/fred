@@ -130,7 +130,8 @@ public class SNMPAgent implements Runnable {
                 e.printStackTrace();
                 break;
             } catch (BadFormatException e) {
-            	System.err.println(e.toString());
+            	e.printStackTrace();
+            	//System.err.println(e.toString());
             } catch (ArrayIndexOutOfBoundsException e) {
             	e.printStackTrace();
             	// not much to do.. ignore the request and it'll time out
@@ -155,6 +156,8 @@ public class SNMPAgent implements Runnable {
     	
     	if (data instanceof Integer)
     		be.putInteger(((Integer)data).intValue());
+    	else if (data instanceof Long)
+    		be.putInteger(((Long)data).longValue());
     	else if (data instanceof String) {
     		char[] charr = ((String)data).toCharArray();
     		byte[] byarr = new byte[charr.length];

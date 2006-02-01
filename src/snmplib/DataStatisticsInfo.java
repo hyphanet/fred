@@ -22,7 +22,7 @@ public class DataStatisticsInfo implements DataFetcher {
 	public Object getSNMPData() {
 		if (blocks == 0) {
 			long io[] = IOStatisticCollector.getTotalIO();
-			return new Integer((int)io[in?1:0]);
+			return new Long(io[in?1:0]);
 		}
 		// else sum all fields up to <blocks>
 		int res = 0;
@@ -30,6 +30,6 @@ public class DataStatisticsInfo implements DataFetcher {
 		for (int i = 0 ; i < blocks ; i++)
 			res += stats[i][in?1:0];
 		
-		return new Integer(res);
+		return new Long(res);
 	}
 }

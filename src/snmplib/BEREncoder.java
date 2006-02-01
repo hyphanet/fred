@@ -38,8 +38,10 @@ public class BEREncoder {
 		int inoffset = offset;
 		for (int i = v.size() - 1 ; i >= 0 ; i--) {
 			Object o = v.get(i); 
-			if (o instanceof Integer) {
-				int dlen = intToBytes(((Integer)o).intValue(), buf, offset);
+//			if (o instanceof Integer) {
+//				int dlen = intToBytes(((Integer)o).intValue(), buf, offset);
+			if (o instanceof Long) {
+				int dlen = intToBytes(((Long)o).longValue(), buf, offset);
 				offset += dlen;
 				offset += intToBERBytes(dlen, buf, offset);
 				buf[offset++] = 0x02;
@@ -64,7 +66,8 @@ public class BEREncoder {
 	}
 	
 	
-	private int intToBytes(int i, byte[] buf, int offset) {
+	private int intToBytes(long i, byte[] buf, int offset) {
+		// TODO: handle negative numbers also!!!!
 		int inoffset = offset;
 		if (i == 0) {
 			buf[offset++] = 0;
@@ -74,6 +77,9 @@ public class BEREncoder {
 				offset++;
 			}
 		}
+		// make the number unsigned
+		if (buf[offset-1]<0)
+			buf[offset++] = 0;
 		return (offset - inoffset);
 	}
 	
@@ -103,8 +109,12 @@ public class BEREncoder {
 	
 	
 	
-	public void putInteger(int i) {
+	/*public void putInteger(int i) {
 		addToTop(new Integer(i));
+	}*/
+	
+	public void putInteger(long i) {
+		addToTop(new Long(i));
 	}
 	
 	public void putOctetString(byte buf[]) {

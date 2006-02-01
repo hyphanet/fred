@@ -52,9 +52,9 @@ public class IOStatisticCollector {
 			entry = new StatisticEntry();
 			targets.put(key, entry);
 		}
-		entry.addData(inbytes, outbytes);
-		totalbytesout += outbytes;
-		totalbytesin += outbytes;
+		entry.addData((inbytes>0)?inbytes:0, (outbytes>0)?outbytes:0);
+		totalbytesout += (outbytes>0)?outbytes:0;
+		totalbytesin += (inbytes>0)?inbytes:0;
 	}
 	
 	public static void dumpInfo() {
