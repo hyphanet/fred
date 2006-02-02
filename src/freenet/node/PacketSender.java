@@ -39,6 +39,8 @@ public class PacketSender implements Runnable {
             try {
                 realRun();
             } catch (OutOfMemoryError e) {
+            	Runtime r = Runtime.getRuntime();
+            	long usedAtStart = r.totalMemory() - r.freeMemory();
             	System.gc();
             	System.runFinalization();
             	System.gc();
@@ -46,7 +48,9 @@ public class PacketSender implements Runnable {
             	System.err.println(e.getClass());
             	System.err.println(e.getMessage());
             	e.printStackTrace();
+            	long usedNow = r.totalMemory() - r.freeMemory();
             	Logger.error(this, "Caught "+e, e);
+            	Logger.error(this, "Used: "+usedAtStart+" now "+usedNow);
             } catch (Throwable t) {
                 Logger.error(this, "Caught in PacketSender: "+t, t);
             }

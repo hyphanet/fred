@@ -1124,8 +1124,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         plaintext[ptr++] = (byte)(seqNumber >> 8);
         plaintext[ptr++] = (byte)seqNumber;
         
+        Logger.minor(this, "Getting random junk");
         node.random.nextBytes(randomJunk);
-        Logger.minor(this, "Got random junk");
         System.arraycopy(randomJunk, 0, plaintext, ptr, RANDOM_BYTES_LENGTH);
         ptr += RANDOM_BYTES_LENGTH;
         

@@ -735,16 +735,17 @@ public class KeyTracker {
                         continue;
                     }
                     packetNumbers[realLength++] = packetNumber;
-                    Logger.minor(this, "Grabbing ack request "+packetNumber+" from "+this);
+                    Logger.minor(this, "Grabbing ack request "+packetNumber+" ("+realLength+") from "+this);
                     qr.sent();
                 } else {
-                    Logger.minor(this, "Ignoring ack request "+packetNumber+" - will become active in "+(qr.activeTime-now)+" ms on "+this+" - "+qr);
+                    Logger.minor(this, "Ignoring ack request "+packetNumber+" ("+realLength+") - will become active in "+(qr.activeTime-now)+" ms on "+this+" - "+qr);
                 }
             }
         }
         } catch (UpdatableSortedLinkedListKilledException e) {
         	throw new NotConnectedException();
         }
+        Logger.minor(this, "realLength now "+realLength);
         int[] trimmedPacketNumbers = new int[realLength];
         System.arraycopy(packetNumbers, 0, trimmedPacketNumbers, 0, realLength);
         Logger.minor(this, "Returning "+trimmedPacketNumbers.length+" ackRequests");

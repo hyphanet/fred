@@ -7,7 +7,6 @@ import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
-import freenet.support.RandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SortedVectorByNumber;
 
