@@ -364,6 +364,7 @@ public class CPUID {
 
 	public static void main(String args[])
 	{
+		System.out.println(System.getProperty("os.arch").toLowerCase());
 		if(!_nativeOk){
 			System.out.println("**Failed to retrieve CPUInfo. Please verify the existence of jcpuid dll/so**");
 		}

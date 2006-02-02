@@ -103,16 +103,17 @@ public class NativeBigInteger extends BigInteger {
      */
     private static final boolean _doLog = true;
     
-    private final static String JBIGI_OPTIMIZATION_K6         = "k6";
-    private final static String JBIGI_OPTIMIZATION_K6_2       = "k62";
-    private final static String JBIGI_OPTIMIZATION_K6_3       = "k63";
-    private final static String JBIGI_OPTIMIZATION_ATHLON   = "athlon";
-    private final static String JBIGI_OPTIMISATION_X86_64    = "x86_64";
-    private final static String JBIGI_OPTIMIZATION_PENTIUM    = "pentium";
-    private final static String JBIGI_OPTIMIZATION_PENTIUMMMX = "pentiummmx";
-    private final static String JBIGI_OPTIMIZATION_PENTIUM2 = "pentium2";
-    private final static String JBIGI_OPTIMIZATION_PENTIUM3 = "pentium3";
-    private final static String JBIGI_OPTIMIZATION_PENTIUM4 = "pentium4";
+    private final static String JBIGI_OPTIMIZATION_K6         	= "k6";
+    private final static String JBIGI_OPTIMIZATION_K6_2       	= "k62";
+    private final static String JBIGI_OPTIMIZATION_K6_3		= "k63";
+    private final static String JBIGI_OPTIMIZATION_ATHLON   	= "athlon";
+    private final static String JBIGI_OPTIMIZATION_X86_64    	= "x86_64";
+    private final static String JBIGI_OPTIMIZATION_PENTIUM    	= "pentium";
+    private final static String JBIGI_OPTIMIZATION_PENTIUMMMX 	= "pentiummmx";
+    private final static String JBIGI_OPTIMIZATION_PENTIUM2 	= "pentium2";
+    private final static String JBIGI_OPTIMIZATION_PENTIUM3 	= "pentium3";
+    private final static String JBIGI_OPTIMIZATION_PENTIUM4 	= "pentium4";
+    private final static String JBIGI_OPTIMIZATION_PPC 		= "osx";
 
     private final static String sCPUType; //The CPU Type to optimize for (one of the above strings)
     
@@ -130,13 +131,16 @@ public class NativeBigInteger extends BigInteger {
 		try {
 			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")){
 				System.out.println("Detected x86_64!");
-				return JBIGI_OPTIMISATION_X86_64;
+				return JBIGI_OPTIMIZATION_X86_64;
+			}else 	if(System.getProperty("os.arch").toLowerCase().matches("(ppc)")){
+				System.out.println("Detected PowerPC!");
+				return JBIGI_OPTIMIZATION_PPC;
 			}else{
 				CPUInfo c = CPUID.getInfo();
 				if (c instanceof AMDCPUInfo) {
 					AMDCPUInfo amdcpu = (AMDCPUInfo) c;
 					if (amdcpu.IsAthlon64Compatible())
-						return JBIGI_OPTIMISATION_X86_64;
+						return JBIGI_OPTIMIZATION_X86_64;
 					if (amdcpu.IsAthlonCompatible())
 						return JBIGI_OPTIMIZATION_ATHLON;
 					if (amdcpu.IsK6_3_Compatible())
@@ -488,7 +492,7 @@ public class NativeBigInteger extends BigInteger {
         URL resource = NativeBigInteger.class.getClassLoader().getResource(resourceName);
         if (resource == null) {
             if (_doLog)
-                System.err.println("NOTICE: Resource name [" + resourceName + "] was not found");
+                System.err.println("NOTICE: Resource name [" + getResourceName(true) + "] was not found");
             return false;
         }
 
@@ -551,20 +555,26 @@ public class NativeBigInteger extends BigInteger {
     	boolean isWindows =(System.getProperty("os.name").toLowerCase().indexOf("windows") != -1);
     	boolean isLinux =(System.getProperty("os.name").toLowerCase().indexOf("linux") != -1);
     	boolean isFreebsd =(System.getProperty("os.name").toLowerCase().indexOf("freebsd") != -1);
+    	boolean isMacOS =(System.getProperty("os.name").toLowerCase().indexOf("mac os x") != -1);
     	if(isWindows)
 		 	return "jbigi-windows"+sAppend; // The convention on Windows
 		if(isLinux)
 			return "jbigi-linux"+sAppend; // The convention on linux...
 		if(isFreebsd)
 			return "jbigi-freebsd"+sAppend; // The convention on freebsd...
+		if(isMacOS)
+			return "jbigi-osx"+sAppend; // The convention on freebsd...
 		throw new RuntimeException("Dont know jbigi library name for os type '"+System.getProperty("os.name")+"'");
     }
     private static final String getLibrarySuffix()
     {
     	boolean isWindows =System.getProperty("os.name").toLowerCase().indexOf("windows") != -1;
+    	boolean isMacOS =(System.getProperty("os.name").toLowerCase().indexOf("mac os x") != -1);
     	if(isWindows)
     		return "dll";
-    	else
+    	else if(isMacOS)
+		return "jnilib";
+	else
     		return "so";
     }
     private static final String getLibraryPrefix()
