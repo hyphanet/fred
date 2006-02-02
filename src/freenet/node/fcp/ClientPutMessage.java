@@ -1,22 +1,29 @@
 package freenet.node.fcp;
 
+import java.io.File;
 import java.net.MalformedURLException;
 
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileBucket;
 
 /**
  * 
  * ClientPut
  * URI=CHK@ // could as easily be an insertable SSK URI
  * Metadata.ContentType=text/html
- * DataLength=100 // 100kB
  * Identifier=Insert-1 // identifier, as always
  * Verbosity=0 // just report when complete
  * MaxRetries=999999 // lots of retries
  * PriorityClass=1 // fproxy priority level
+ * 
+ * UploadFrom=direct // attached directly to this message
+ * DataLength=100 // 100kB
+ * or
+ * UploadFrom=disk // upload a file from disk
+ * Filename=/home/toad/something.html
  * Data
  * 
  * Neither IgnoreDS nor DSOnly make sense for inserts.
@@ -33,6 +40,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final int maxRetries;
 	final boolean getCHKOnly;
 	final short priorityClass;
+	final boolean fromDisk;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		try {
@@ -55,14 +63,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage());
 			}
-		}
-		String dataLengthString = fs.get("DataLength");
-		if(dataLengthString == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut");
-		try {
-			dataLength = Long.parseLong(dataLengthString, 10);
-		} catch (NumberFormatException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage());
 		}
 		contentType = fs.get("Metadata.ContentType");
 		String maxRetriesString = fs.get("MaxRetries");
@@ -90,6 +90,29 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage());
 			}
 		}
+		String uploadFrom = fs.get("UploadFrom");
+		if(uploadFrom != null && uploadFrom.equalsIgnoreCase("disk")) {
+			fromDisk = true;
+			String filename = fs.get("Filename");
+			if(filename == null)
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Filename");
+			File f = new File(filename);
+			if(!(f.exists() && f.isFile() && f.canRead()))
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, null);
+			dataLength = f.length();
+			FileBucket fileBucket = new FileBucket(f, true, false, false);
+			this.bucket = fileBucket;
+		} else {
+			fromDisk = false;
+			String dataLengthString = fs.get("DataLength");
+			if(dataLengthString == null)
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut");
+			try {
+				dataLength = Long.parseLong(dataLengthString, 10);
+			} catch (NumberFormatException e) {
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage());
+			}
+		}
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -113,6 +136,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	long dataLength() {
+		if(fromDisk) return 0;
 		return dataLength;
 	}
 

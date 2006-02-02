@@ -19,6 +19,7 @@ public abstract class DataCarryingMessage extends FCPMessage {
 		long len = dataLength();
 		if(len < 0)
 			throw new IllegalArgumentException("Invalid length: "+len);
+		if(len == 0) return;
 		Bucket bucket = bf.makeBucket(len);
 		BucketTools.copyFrom(bucket, is, len);
 		this.bucket = bucket;
