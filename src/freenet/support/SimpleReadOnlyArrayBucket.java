@@ -47,4 +47,8 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 		// Already read-only
 	}
 
+	public void free() {
+		// Do nothing
+	}
+
 }

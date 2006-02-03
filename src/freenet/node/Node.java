@@ -1382,7 +1382,7 @@ public class Node {
 		public void run() {
 			Runtime r = Runtime.getRuntime();
 			while(true) {
-				for(int i=0;i<20;i++) {
+				for(int i=0;i<120;i++) {
 					try {
 						Thread.sleep(250);
 					} catch (InterruptedException e) {

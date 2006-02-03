@@ -32,7 +32,7 @@ public abstract class FCPMessage {
 		if(name.equals(ClientPutMessage.name))
 			return new ClientPutMessage(fs);
 		if(name.equals(GenerateSSKMessage.name))
-			return new GenerateSSKMessage();
+			return new GenerateSSKMessage(fs);
 		if(name.equals("Void"))
 			return null;
 //		if(name.equals("ClientPut"))

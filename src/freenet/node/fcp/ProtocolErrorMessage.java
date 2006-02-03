@@ -5,13 +5,15 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
- * ProtocolError (some problem parsing the other side's FCP messages)
+ * ProtocolError (some problem parsing the other side's FCP messages, or other
+ * problem not related to Freenet)
  * 
  * ProtocolError
  * Code=1
  * CodeDescription=ClientHello must be first message
  * ExtraDescription=Duh
  * Fatal=false // means the connection stays open
+ * [Identifier=<ident> if we managed to parse one]
  * EndMessage
  */
 public class ProtocolErrorMessage extends FCPMessage {
@@ -25,10 +27,16 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int INVALID_MESSAGE = 7;
 	static final int INVALID_FIELD = 8;
 	static final int FILE_NOT_FOUND = 9;
+	static final int DISK_TARGET_EXISTS = 10;
+	static final int FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR = 11;
+	static final int COULD_NOT_CREATE_FILE = 12;
+	static final int COULD_NOT_WRITE_FILE = 13;
+	static final int COULD_NOT_RENAME_FILE = 14;
 	
 	final int code;
 	final String extra;
 	final boolean fatal;
+	final String ident;
 	
 	private String codeDescription() {
 		switch(code) {
@@ -50,20 +58,33 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Invalid field value";
 		case FILE_NOT_FOUND:
 			return "File not found, not a file or not readable";
+		case DISK_TARGET_EXISTS:
+			return "Disk target exists, refusing to overwrite for security reasons";
+		case FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR:
+			return "Filename and temp filename must be in same directory (so can rename)";
+		case COULD_NOT_CREATE_FILE:
+			return "Could not create file";
+		case COULD_NOT_WRITE_FILE:
+			return "Could not write file";
+		case COULD_NOT_RENAME_FILE:
+			return "Could not rename file";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";
 		}
 	}
 
-	public ProtocolErrorMessage(int code, boolean fatal, String extra) {
+	public ProtocolErrorMessage(int code, boolean fatal, String extra, String ident) {
 		this.code = code;
 		this.extra = extra;
 		this.fatal = fatal;
+		this.ident = ident;
 	}
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet();
+		if(ident != null)
+			sfs.put("Identifier", ident);
 		sfs.put("Code", Integer.toString(code));
 		sfs.put("CodeDescription", codeDescription());
 		if(extra != null)

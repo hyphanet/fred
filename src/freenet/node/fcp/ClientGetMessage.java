@@ -1,5 +1,7 @@
 package freenet.node.fcp;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 
 import freenet.keys.FreenetURI;
@@ -33,26 +35,32 @@ public class ClientGetMessage extends FCPMessage {
 	final FreenetURI uri;
 	final String identifier;
 	final int verbosity;
-	final int returnType;
+	final short returnType;
 	final long maxSize;
 	final long maxTempSize;
 	final int maxRetries;
 	final short priorityClass;
+	final File diskFile;
+	final File tempFile;
 	
 	// FIXME move these to the actual getter process
-	static final int RETURN_TYPE_DIRECT = 0;
+	static final short RETURN_TYPE_DIRECT = 0; // over FCP
+	static final short RETURN_TYPE_NONE = 1; // not at all; to cache only; prefetch?
+	static final short RETURN_TYPE_DISK = 2; // to a file
+	static final short RETURN_TYPE_CHUNKED = 3; // FIXME implement: over FCP, as decoded
 	
 	public ClientGetMessage(SimpleFieldSet fs) throws MessageInvalidException {
+		short defaultPriority;
 		ignoreDS = Boolean.getBoolean(fs.get("IgnoreDS"));
 		dsOnly = Boolean.getBoolean(fs.get("DSOnly"));
+		identifier = fs.get("Identifier");
+		if(identifier == null)
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null);
 		try {
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage());
+			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier);
 		}
-		identifier = fs.get("Identifier");
-		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier");
 		String verbosityString = fs.get("Verbosity");
 		if(verbosityString == null)
 			verbosity = 0;
@@ -60,14 +68,44 @@ public class ClientGetMessage extends FCPMessage {
 			try {
 				verbosity = Integer.parseInt(verbosityString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier);
 			}
 		}
 		String returnTypeString = fs.get("ReturnType");
-		if(returnTypeString == null || returnTypeString.equalsIgnoreCase("direct"))
+		if(returnTypeString == null || returnTypeString.equalsIgnoreCase("direct")) {
 			returnType = RETURN_TYPE_DIRECT;
-		else
-			throw new MessageInvalidException(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, "Unknown return-type");
+			diskFile = null;
+			tempFile = null;
+			// default just below fproxy
+			defaultPriority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+		} else if(returnTypeString.equalsIgnoreCase("none")) {
+			diskFile = null;
+			tempFile = null;
+			returnType = RETURN_TYPE_NONE;
+			defaultPriority = RequestStarter.PREFETCH_PRIORITY_CLASS;
+		} else if(returnTypeString.equalsIgnoreCase("disk")) {
+			defaultPriority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
+			returnType = RETURN_TYPE_DISK;
+			String filename = fs.get("Filename");
+			if(filename == null)
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Filename", identifier);
+			diskFile = new File(filename);
+			String tempFilename = fs.get("TempFilename");
+			if(tempFilename == null)
+				tempFilename = filename + ".freenet-tmp";
+			tempFile = new File(tempFilename);
+			if(!diskFile.getParentFile().equals(tempFile.getParentFile()))
+				throw new MessageInvalidException(ProtocolErrorMessage.FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR, null, identifier);
+			if(diskFile.exists())
+				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier);
+			try {
+				if(!tempFile.createNewFile())
+					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, null, identifier);
+			} catch (IOException e) {
+				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, e.getMessage(), identifier);
+			}
+		} else
+			throw new MessageInvalidException(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, "Unknown return-type", identifier);
 		String maxSizeString = fs.get("MaxSize");
 		if(maxSizeString == null)
 			// default to unlimited
@@ -76,7 +114,7 @@ public class ClientGetMessage extends FCPMessage {
 			try {
 				maxSize = Long.parseLong(maxSizeString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
 			}
 		}
 		String maxTempSizeString = fs.get("MaxTempSize");
@@ -87,7 +125,7 @@ public class ClientGetMessage extends FCPMessage {
 			try {
 				maxTempSize = Long.parseLong(maxTempSizeString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
 			}
 		}
 		String maxRetriesString = fs.get("MaxRetries");
@@ -98,20 +136,20 @@ public class ClientGetMessage extends FCPMessage {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
 			}
 		}
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
 			// defaults to the one just below fproxy
-			priorityClass = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+			priorityClass = defaultPriority;
 		} else {
 			try {
 				priorityClass = Short.parseShort(priorityString, 10);
 				if(priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS || priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
 			}
 		}
 	}

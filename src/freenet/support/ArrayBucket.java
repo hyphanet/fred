@@ -15,8 +15,7 @@ import java.util.Iterator;
  */
 public class ArrayBucket implements Bucket {
 
-	private ArrayList data;
-	private boolean reset;
+	private final ArrayList data;
 	private String name;
 	private boolean readOnly;
 
@@ -36,7 +35,7 @@ public class ArrayBucket implements Bucket {
 
 	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
-		return new ArrayBucketOutputStream(reset);
+		return new ArrayBucketOutputStream();
 	}
 
 	public InputStream getInputStream() {
@@ -53,7 +52,7 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public void read(InputStream in) throws IOException {
-		OutputStream out = new ArrayBucketOutputStream(reset);
+		OutputStream out = new ArrayBucketOutputStream();
 		int i;
 		byte[] b = new byte[8 * 1024];
 		while ((i = in.read(b)) != -1) {
@@ -77,19 +76,11 @@ public class ArrayBucket implements Bucket {
 
 	private class ArrayBucketOutputStream extends ByteArrayOutputStream {
 		
-		private boolean reset;
-		
-		public ArrayBucketOutputStream(boolean reset) {
+		public ArrayBucketOutputStream() {
 			super();
-			this.reset = reset;
 		}
 
 		public void close() throws IOException {
-			if (reset) {
-				data.clear();
-				data.trimToSize();
-			}
-			reset = false;
 			data.add(toByteArray());
 			if(readOnly) throw new IOException("Read only");
 			// FIXME maybe we should throw on write instead? :)
@@ -170,5 +161,10 @@ public class ArrayBucket implements Bucket {
 
 	public void setReadOnly() {
 		readOnly = true;
+	}
+
+	public void free() {
+		data.clear();
+		// Not much else we can do.
 	}
 }

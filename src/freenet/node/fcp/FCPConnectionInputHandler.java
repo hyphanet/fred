@@ -50,12 +50,12 @@ public class FCPConnectionInputHandler implements Runnable {
 				msg = FCPMessage.create(messageType, fs);
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
-				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage());
+				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);
 				handler.outputHandler.queue(err);
 				continue;
 			}
 			if(firstMessage && !(msg instanceof ClientHelloMessage)) {
-				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.CLIENT_HELLO_MUST_BE_FIRST_MESSAGE, true, null);
+				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.CLIENT_HELLO_MUST_BE_FIRST_MESSAGE, true, null, null);
 				handler.outputHandler.queue(err);
 				handler.close();
 				continue;
@@ -64,14 +64,14 @@ public class FCPConnectionInputHandler implements Runnable {
 				((DataCarryingMessage)msg).readFrom(lis, handler.bf);
 			}
 			if((!firstMessage) && msg instanceof ClientHelloMessage) {
-				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.NO_LATE_CLIENT_HELLOS, false, null);
+				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.NO_LATE_CLIENT_HELLOS, false, null, null);
 				handler.outputHandler.queue(err);
 				continue;
 			}
 			try {
 				msg.run(handler, handler.node);
 			} catch (MessageInvalidException e) {
-				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage());
+				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);
 				handler.outputHandler.queue(err);
 				continue;
 			}

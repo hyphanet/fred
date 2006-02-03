@@ -42,4 +42,9 @@ public interface Bucket {
      */
     public void setReadOnly();
 
+    /**
+     * Free the bucket, if supported.
+     */
+	public void free();
+
 }

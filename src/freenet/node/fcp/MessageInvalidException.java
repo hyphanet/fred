@@ -9,9 +9,12 @@ package freenet.node.fcp;
 public class MessageInvalidException extends Exception {
 
 	int protocolCode;
+	public String ident;
 	
-	public MessageInvalidException(int protocolCode, String extra) {
+	public MessageInvalidException(int protocolCode, String extra, String ident) {
 		super(extra);
+		this.protocolCode = protocolCode;
+		this.ident = ident;
 	}
 
 }

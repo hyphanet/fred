@@ -99,5 +99,9 @@ public class ReadOnlyFileSliceBucket implements Bucket {
 		}
 		
 	}
+
+	public void free() {
+		// Do nothing
+	}
 	
 }

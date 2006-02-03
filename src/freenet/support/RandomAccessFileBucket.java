@@ -437,4 +437,8 @@ public class RandomAccessFileBucket implements Bucket {
     public void setReadOnly() {
     	readOnly = true;
     }
+
+	public void free() {
+		release();
+	}
 }

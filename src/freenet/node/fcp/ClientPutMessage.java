@@ -43,17 +43,17 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final boolean fromDisk;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
+		identifier = fs.get("Identifier");
+		if(identifier == null)
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null);
 		try {
 			String u = fs.get("URI");
 			if(u == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI");
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier);
 			uri = new FreenetURI(fs.get("URI"));
 		} catch (MalformedURLException e) {
-			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage());
+			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier);
 		}
-		identifier = fs.get("Identifier");
-		if(identifier == null)
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier");
 		String verbosityString = fs.get("Verbosity");
 		if(verbosityString == null)
 			verbosity = 0;
@@ -61,7 +61,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				verbosity = Integer.parseInt(verbosityString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier);
 			}
 		}
 		contentType = fs.get("Metadata.ContentType");
@@ -73,7 +73,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				maxRetries = Integer.parseInt(maxRetriesString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
 			}
 		}
 		getCHKOnly = Boolean.getBoolean(fs.get("GetCHKOnly"));
@@ -85,9 +85,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 			try {
 				priorityClass = Short.parseShort(priorityString, 10);
 				if(priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS || priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)
-					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS);
+					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
 			}
 		}
 		String uploadFrom = fs.get("UploadFrom");
@@ -95,10 +95,10 @@ public class ClientPutMessage extends DataCarryingMessage {
 			fromDisk = true;
 			String filename = fs.get("Filename");
 			if(filename == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Filename");
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Filename", identifier);
 			File f = new File(filename);
 			if(!(f.exists() && f.isFile() && f.canRead()))
-				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, null);
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, null, identifier);
 			dataLength = f.length();
 			FileBucket fileBucket = new FileBucket(f, true, false, false);
 			this.bucket = fileBucket;
@@ -106,11 +106,11 @@ public class ClientPutMessage extends DataCarryingMessage {
 			fromDisk = false;
 			String dataLengthString = fs.get("DataLength");
 			if(dataLengthString == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut");
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut", identifier);
 			try {
 				dataLength = Long.parseLong(dataLengthString, 10);
 			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage());
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier);
 			}
 		}
 	}

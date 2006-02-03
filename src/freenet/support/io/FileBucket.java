@@ -315,4 +315,8 @@ public class FileBucket implements Bucket {
 		}
 		return buckets;
 	}
+
+	public void free() {
+		finalize();
+	}
 }

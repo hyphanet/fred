@@ -234,4 +234,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		return bucket;
 	}
 
+	public void free() {
+		bucket.free();
+	}
+
 }

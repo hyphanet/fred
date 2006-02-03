@@ -1,5 +1,10 @@
 package freenet.node.fcp;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
@@ -12,6 +17,8 @@ import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
+import freenet.support.Bucket;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
 
 /**
@@ -27,7 +34,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private final FCPConnectionHandler handler;
 	private final ClientGetter getter;
 	private final short priorityClass;
+	private final short returnType;
 	private boolean finished;
+	private final File targetFile;
+	private final File tempFile;
 	
 	// Verbosity bitmasks
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
@@ -50,10 +60,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		this.verbosity = message.verbosity;
 		// FIXME do something with verbosity !!
 		// Has already been checked
-		if(message.returnType != ClientGetMessage.RETURN_TYPE_DIRECT)
-			throw new IllegalStateException("Unknown return type: "+message.returnType);
+		this.returnType = message.returnType;
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
+		this.targetFile = message.diskFile;
+		this.tempFile = message.tempFile;
 		getter = new ClientGetter(this, handler.node.fetchScheduler, uri, fctx, priorityClass, handler.defaultFetchContext);
 		try {
 			getter.start();
@@ -69,11 +80,52 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		finished = true;
 		FCPMessage msg = new DataFoundMessage(handler, result, identifier);
-		handler.outputHandler.queue(msg);
-		// Send all the data at once
-		// FIXME there should be other options
-		msg = new AllDataMessage(handler, result.asBucket(), identifier);
-		handler.outputHandler.queue(msg);
+		Bucket data = result.asBucket();
+		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+			// Send all the data at once
+			// FIXME there should be other options
+			handler.outputHandler.queue(msg);
+			msg = new AllDataMessage(handler, data, identifier);
+			handler.outputHandler.queue(msg);
+			return; // don't delete the bucket yet
+		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+			// Do nothing
+			handler.outputHandler.queue(msg);
+			data.free();
+			return;
+		} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+			// Write to temp file, then rename over filename
+			FileOutputStream fos;
+			try {
+				fos = new FileOutputStream(tempFile);
+			} catch (FileNotFoundException e) {
+				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
+				handler.outputHandler.queue(pm);
+				data.free();
+				return;
+			}
+			try {
+				BucketTools.copyTo(data, fos, data.size());
+			} catch (IOException e) {
+				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
+				handler.outputHandler.queue(pm);
+				data.free();
+				return;
+			}
+			try {
+				fos.close();
+			} catch (IOException e) {
+				Logger.error(this, "Caught "+e+" closing file "+tempFile, e);
+			}
+			if(!tempFile.renameTo(targetFile)) {
+				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
+				handler.outputHandler.queue(pm);
+				// Don't delete temp bucket, might want it
+			}
+			data.free();
+			handler.outputHandler.queue(msg);
+			return;
+		}
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
