@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -205,6 +206,9 @@ public class Node {
     static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
     static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
     
+    // Helpers
+	public final InetAddress localhostAddress;
+    
     /**
      * Read all storable settings (identity etc) from the node file.
      * @param filename The name of the file to read from.
@@ -369,6 +373,12 @@ public class Node {
     		testnetHandler = null;
     		statusUploader = null;
     	}
+    	try {
+			localhostAddress = InetAddress.getByName("127.0.0.1");
+		} catch (UnknownHostException e3) {
+			// Does not do a reverse lookup, so this is impossible
+			throw new Error(e3);
+		}
         portNumber = port;
         startupTime = System.currentTimeMillis();
         recentlyCompletedIDs = new LRUQueue();
@@ -935,7 +945,7 @@ public class Node {
      * detection properly with NetworkInterface, and we should use
      * third parties if available and UP&P if available.
      */
-    private InetAddress getPrimaryIPAddress() {
+    InetAddress getPrimaryIPAddress() {
         if(overrideIPAddress != null) {
             Logger.minor(this, "Returning overridden address: "+overrideIPAddress);
             return overrideIPAddress;
@@ -1341,7 +1351,7 @@ public class Node {
     final LRUQueue recentlyCompletedIDs;
 
     static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
-    
+
     /**
      * Has a request completed with this ID recently?
      */

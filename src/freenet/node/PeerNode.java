@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.net.InetAddress;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -314,7 +315,19 @@ public class PeerNode implements PeerContext {
     		for(int i=1;i<nominalPeer.size()+1;i++)
     			p[i]=(Peer) nominalPeer.get(i);
     	}else{
-    		return (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);  		
+    		p = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);  		
+    	}
+    	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
+    	InetAddress localhost = node.localhostAddress;
+    	InetAddress nodeIP = node.getPrimaryIPAddress();
+    	if(nodeIP.equals(localhost)) return p;
+    	InetAddress peerIP = detectedPeer.getAddress();
+    	if(peerIP.equals(localhost)) return p;
+    	if(nodeIP.equals(peerIP)) {
+    		Peer[] newPeers = new Peer[p.length+1];
+    		System.arraycopy(p, 0, newPeers, 0, p.length);
+    		newPeers[newPeers.length-1] = new Peer(node.localhostAddress, detectedPeer.getPort());
+    		p = newPeers;
     	}
     	return p;
     }
