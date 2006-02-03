@@ -15,6 +15,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import freenet.support.io.FileBucket;
+
 /**
  * Helper functions for working with Buckets.
  */
@@ -439,6 +441,9 @@ public class BucketTools {
 	 * the provided bucket, or writing to created buckets.
 	 */
 	public static Bucket[] split(Bucket origData, int splitSize, BucketFactory bf) throws IOException {
+		if(origData instanceof FileBucket) {
+			return ((FileBucket)origData).split(splitSize);
+		}
 		long length = origData.size();
 		if(length > ((long)Integer.MAX_VALUE) * splitSize)
 			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);

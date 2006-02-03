@@ -20,7 +20,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 
 	private final Bucket bucket;
 	private final int minPaddedSize;
-	private final MersenneTwister paddingSource;
+	private final RandomSource origRandom;
 	private final Rijndael aes;
 	private long dataLength;
 	private boolean readOnly;
@@ -35,6 +35,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 	 * @throws UnsupportedCipherException 
 	 */
 	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource origRandom) throws UnsupportedCipherException {
+		this.origRandom = origRandom;
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
 		aes = new Rijndael(256, 256);
@@ -44,7 +45,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		// Might as well blank it
 		for(int i=0;i<key.length;i++) key[i] = 0;
 		this.minPaddedSize = minSize;
-		paddingSource = new MersenneTwister(origRandom.nextLong());
 		readOnly = false;
 		lastOutputStream = 0;
 	}
@@ -107,6 +107,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 					return;
 				}
 				synchronized(PaddedEphemerallyEncryptedBucket.this) {
+					MersenneTwister paddingSource = new MersenneTwister(origRandom.nextLong());
 					long finalLength = paddedLength();
 					long padding = finalLength - dataLength;
 					byte[] buf = new byte[4096];

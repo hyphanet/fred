@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import freenet.crypt.RandomSource;
 import freenet.support.Bucket;
 import freenet.support.Logger;
+import freenet.support.ReadOnlyFileSliceBucket;
 
 /**
  * A file Bucket is an implementation of Bucket that writes to a file.
@@ -298,5 +299,20 @@ public class FileBucket implements Bucket {
 	 */
 	public void dontDeleteOnFinalize() {
 		deleteOnFinalize = false;
+	}
+
+	public Bucket[] split(int splitSize) {
+		if(length > ((long)Integer.MAX_VALUE) * splitSize)
+			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
+		int bucketCount = (int) (length / splitSize);
+		if(length % splitSize > 0) bucketCount++;
+		Bucket[] buckets = new Bucket[bucketCount];
+		for(int i=0;i<buckets.length;i++) {
+			long startAt = i * splitSize;
+			long endAt = Math.min((i+1) * splitSize, length);
+			long len = endAt - startAt;
+			buckets[i] = new ReadOnlyFileSliceBucket(file, startAt, len);
+		}
+		return buckets;
 	}
 }
