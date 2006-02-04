@@ -21,7 +21,7 @@ public abstract class SNMPTypeWrapperNum {
 	//public final byte typeID;
 	//= 0x02;
 	public byte getTypeID() {
-		System.err.println("Returning " + Integer.toHexString(typeID) + " for a " + this.getClass().toString());
+		//System.err.println("Returning " + Integer.toHexString(typeID) + " for a " + this.getClass().toString());
 		return typeID;
 	}
 	
