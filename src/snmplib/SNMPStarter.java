@@ -1,6 +1,5 @@
 package snmplib;
 
-import snmplib.DataStatisticsInfo;
 import freenet.io.comm.IOStatisticCollector;
 
 /**

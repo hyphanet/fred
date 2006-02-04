@@ -18,7 +18,9 @@ public class BERDecoder {
 	
 	public void startSequence(byte id) throws BadFormatException {
 		if (buf[ptr] != id)
-			throw new BadFormatException("Unknown Sequence");
+			throw new BadFormatException("Unknown Sequence (expected: 0x" +
+					Integer.toHexString(id) + ", got: 0x" +
+					Integer.toHexString(buf[ptr]) + ")");
 		ptr++;
 		int len = readBERInt();
 		seqStack.push(new Integer(ptr + len));
@@ -31,6 +33,12 @@ public class BERDecoder {
 		if (pos != ptr)
 			throw new BadFormatException("Wrong length of field " + 
 					length + ":" + pos + ":" + ptr);
+	}
+	
+	public boolean sequenceHasMore() {
+		//int length = ((Integer)seqStack.peek()).intValue();
+		int pos = ((Integer)seqStack.get(seqStack.size()-2)).intValue();
+		return (pos != ptr);
 	}
 	
 	public byte peekRaw() {
@@ -87,6 +95,11 @@ public class BERDecoder {
 	}
 
 	
+	public void fetchNull() throws BadFormatException {
+		startSequence((byte)0x05);
+		endSequence();
+	}
+
 	public int fetchInt() throws BadFormatException {
 		startSequence((byte)0x02);
 		int ret = readInt();

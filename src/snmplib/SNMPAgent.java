@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.TreeMap;
 
@@ -12,7 +13,7 @@ public class SNMPAgent implements Runnable {
 	private int port = 4445;
 
 	/**
-	 * @param args
+	 * @param args 
 	 */
 	public static void main(String[] args) throws IOException {
 		SNMPAgent.getSNMPAgent().addFetcher(new DataConstantInt("1.1.1", 10));
@@ -39,7 +40,7 @@ public class SNMPAgent implements Runnable {
     public static void restartSNMPAgent() {
     	ensureCreated();
     	_SNMPAgent.stopRunning();
-    	new Thread(_SNMPAgent).start();
+    	new Thread(_SNMPAgent, "SNMP-Agent").start();
     }
     
     public static SNMPAgent getSNMPAgent() {
@@ -54,6 +55,8 @@ public class SNMPAgent implements Runnable {
     
     private SNMPAgent() {
     	alldata = new TreeMap();
+    	//alldata.put("99.99", null);
+    	addFetcher(new DataConstantInt("99.99.99.99", 0));
     }
     
     public void addFetcher(DataFetcher df) {
@@ -91,68 +94,40 @@ public class SNMPAgent implements Runnable {
     		return ;
     	}
     	// make smaller.... 0484 enough?
-        byte[] buf = new byte[65535];
-        DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
         while (socket.isBound()) {
+        	byte[] buf = new byte[65536];
+            DatagramPacket packet = new DatagramPacket(buf, buf.length);
+            
             try {
                 socket.receive(packet);
 
                 RequestContainer rc = new RequestContainer();
-                
-                parseRequest(buf, rc);
-                
                 int replylength = 0;
-                boolean keyfound = false;
                 //DataHandler dh = null;
-                
-                Iterator it = alldata.keySet().iterator();
-                String key = "";
-                if (rc.OID.length() == 0)
-                	rc.OID = "";
-                
-                while (it.hasNext() && !keyfound) {
-                	key = (String)it.next();
-                	//System.err.println("is '"+ rc.OID + "' in: " + key);
-                	if (key.startsWith(rc.OID))
-                		keyfound = true;
-                }
 
-                // keyfound /\ (equal -> hasnext)
-                //System.err.println("("+keyfound+" && (!"+key.equals(rc.OID)+" || "+it.hasNext()+"))");
-                if (keyfound && (!key.equals(rc.OID) || it.hasNext())) {
-                	key = key.equals(rc.OID)?(String)it.next():key;
-                	
-                	Object df = alldata.get(key);
-                	//Object key = null;
-                	Object data = null;
-                	//dh = (DataHandler)alldata.get(key);
-                	//rc.lOID = (long[])dh.lOID.clone();
-                	if (df instanceof DataFetcher) {
-                		data = ((DataFetcher)df).getSNMPData();
-                	} else if (df instanceof MultiplexedDataFetcher) {
-                		data = ((MultiplexedDataFetcher)df).getSNMPData(key);
-                		if (data == null)
-                			data = ((MultiplexedDataFetcher)df).getSNMPData(".1.3."+key);
-                	} else
-                		data = new Integer(0);
-                	
-                	rc.lOID = splitToLong(key);
-                	//System.err.println(key);
-                	//for (int i = 0; i < rc.lOID.length ; i++)
-        			//	System.err.print("." + rc.lOID[i]);
-                	
+                //if (rc != null)
+                //	throw new BadFormatException("asdfa");
+                
+                BERDecoder question = parseRequestStart(buf, rc);
+                
+                
+                BEREncoder reply = replyStart(rc);
 
-                	replylength = makeIntReply(buf, rc, data);
-                } else {
-                	if (rc.lOID.length > 0)
-                		rc.lOID[0] = 100;
-                	else {
-                		rc.lOID = new long[1];
-                		rc.lOID[0] = 0;
-                	}
-                	replylength = makeIntReply(buf, rc, new Integer(1));
+                
+                while (question.sequenceHasMore()) {
+                	question.startSequence();
+                	rc.lOID = question.fetchOID();
+                	rc.OID = (rc.lOID.length == 0)?".":"";
+                	for (int i = 0; i < rc.lOID.length ; i++)
+                		rc.OID += (i==0?"":".") + rc.lOID[i];
+                	//System.err.println("Doing: " + rc.OID);
+                	question.fetchNull();
+                	question.endSequence();
+                	replyAddOID(reply, rc);
                 }
+                replylength = replyEnd(reply, buf);
+                //rc.pdutype == RequestContainer.PDU_GET_NEXT
                 
                 // send the response to the client at "address" and "port"
                 InetAddress address = packet.getAddress();
@@ -164,6 +139,17 @@ public class SNMPAgent implements Runnable {
                 e.printStackTrace();
                 break;
             } catch (BadFormatException e) {
+            	System.err.println("Datapacket length: " + packet.getLength());
+            	for (int i = 0 ; i < packet.getLength() ; i++) {
+            		String num = "000" + Integer.toHexString(buf[i]);
+            		num = num.substring(num.length()-2);
+            		System.err.print("0x" + num + " ");
+            		if ((i+1)%8 == 0)
+            			System.err.print("  ");
+            		if ((i+1)%16 == 0)
+            			System.err.println();
+            	}
+            	System.err.println();
             	e.printStackTrace();
             	//System.err.println(e.toString());
             } catch (ArrayIndexOutOfBoundsException e) {
@@ -174,7 +160,86 @@ public class SNMPAgent implements Runnable {
         socket.close();
     }
     
-    private int makeIntReply(byte buf[], RequestContainer rc, Object data) /* throws SnmpTooBigException */ {
+    private String getAccualOID(String oid, boolean thisval) {
+        boolean keyfound = false;
+        Iterator it = alldata.keySet().iterator();
+        String key = "";
+        while (it.hasNext() && !keyfound) {
+        	key = (String)it.next();
+        	if (key.startsWith(oid))
+        		keyfound = true;
+        }
+        
+        
+        if (it.hasNext() && !thisval) {
+        	key = key.equals(oid)?(String)it.next():key;
+        }
+        
+        return key;
+    }
+    
+    private Object getResultFromOID(String oid, boolean thisval) {
+        /*boolean keyfound = false;
+        Iterator it = alldata.keySet().iterator();
+        String key = "";
+        while (it.hasNext() && !keyfound) {
+        	key = (String)it.next();
+        	if (key.startsWith(oid))
+        		keyfound = true;
+        }
+        */
+        // keyfound /\ ( (equal -> hasnext) V (rc.pdutype == rc.PDU_GET_THIS))
+        //System.err.println("("+keyfound+" && (!"+key.equals(rc.OID)+" || "+it.hasNext()+"))");
+        /*if (keyfound && (
+        		(!key.equals(rc.OID) || it.hasNext())) ||
+        		(rc.pdutype == RequestContainer.PDU_GET_THIS) ) {
+        	*/
+        Object data = null;
+        /*if (keyfound && (
+        		(!key.equals(oid) || it.hasNext())) ) {
+        	if (it.hasNext() && !thisval)
+        		key = key.equals(oid)?(String)it.next():key;
+        	*/
+        	Object df = alldata.get(oid);
+        	
+        	if (df instanceof DataFetcher) {
+        		data = ((DataFetcher)df).getSNMPData();
+        	} else if (df instanceof MultiplexedDataFetcher) {
+        		data = ((MultiplexedDataFetcher)df).getSNMPData(oid);
+        		if (data == null) 
+        			if (!oid.startsWith(".1.3."))
+        				data = ((MultiplexedDataFetcher)df).getSNMPData(".1.3."+oid);
+        			else
+        				data = ((MultiplexedDataFetcher)df).getSNMPData(oid.substring(5));
+        		
+        	} else
+        		data = null; //new Integer(0);
+        	
+        	//rc.lOID = splitToLong(key);
+        	//replylength = makeIntReply(buf, rc, data);
+        //} else {
+        	/*
+        	if (rc.lOID.length > 0)
+        		rc.lOID[0] = 100;
+        	else {
+        		rc.lOID = new long[1];
+        		rc.lOID[0] = 0;
+        	}
+        	data = new Integer(1);
+        	*/
+        //	data = null;
+        	//replylength = makeIntReply(buf, rc, new Integer(1));
+        //}
+        if (data == null)
+        	debug("DNF@"+oid);
+        return data;
+    }
+    
+    private void debug(String s) {
+    	System.err.println("SNMP-Agent " + (new Date()) + ": " + s);
+    }
+    
+    private BEREncoder replyStart(RequestContainer rc) /* throws SnmpTooBigException */ {
     	int replyLength = 0;
     	BEREncoder be = new BEREncoder();
     	be.startSequence(); // whole pkg
@@ -184,14 +249,23 @@ public class SNMPAgent implements Runnable {
     	be.putInteger(rc.requestID); // RID
     	be.putInteger(0); // err
     	be.putInteger(0); // err
-    	be.startSequence(); // value
-    	be.startSequence(); // value
-    	be.putOID(rc.lOID); // oid
+    	be.startSequence(); // OID:s and their values
     	
+    	return be;
+    }
+    
+    private void replyAddOID(BEREncoder be, RequestContainer rc) /* throws SnmpTooBigException */ {
+    	String aOID = getAccualOID(rc.OID, rc.pdutype == RequestContainer.PDU_GET_THIS);
+    	Object data = getResultFromOID(aOID, rc.pdutype == RequestContainer.PDU_GET_THIS);
+    	be.startSequence(); // value
+    	be.putOID(splitToLong(aOID)); // oid
+    	//System.err.println("Will reply with OID: " + rc.OID + " -> " + aOID);
     	if (data instanceof Integer)
     		be.putInteger(((Integer)data).intValue());
     	else if (data instanceof Long)
     		be.putInteger(((Long)data).longValue());
+    	else if (data instanceof SNMPTimeTicks)
+    		be.putTimeticks(((SNMPTimeTicks)data).timeValue());
     	else if (data instanceof String) {
     		char[] charr = ((String)data).toCharArray();
     		byte[] byarr = new byte[charr.length];
@@ -199,14 +273,16 @@ public class SNMPAgent implements Runnable {
     			byarr[i] = (byte)charr[i];
     		be.putOctetString(byarr);
     	}
-    	
-    	replyLength = be.toBytes(buf);
-    	
-    	return replyLength;
+    	be.endSequence();
     }
     
+    private int replyEnd(BEREncoder be, byte[] buf) /* throws SnmpTooBigException */ {
+    	return be.toBytes(buf);
+    }
+
+    
     // http://www.rane.com/note161.html
-    private void parseRequest(byte buf[], RequestContainer rc) throws BadFormatException {
+    private BERDecoder parseRequestStart(byte buf[], RequestContainer rc) throws BadFormatException {
     	int tmpint;
     	
     	BERDecoder bd = new BERDecoder(buf);
@@ -226,19 +302,28 @@ public class SNMPAgent implements Runnable {
     	bd.fetchInt();
     	
     	bd.startSequence();
+    	/*
+    	
     	bd.startSequence();
     	rc.lOID = bd.fetchOID();
     	rc.OID = (rc.lOID.length == 0)?".":"";
     	for (int i = 0; i < rc.lOID.length ; i++)
     		rc.OID += (i==0?"":".") + rc.lOID[i];
-    	
+    	*/
+    	return bd;
     }
     
     private long[] splitToLong(String list) {
+    	if (!list.startsWith(".1.3."))
+    		list = ".1.3." + list;
+    	list = list.substring(1);
     	String nums[] = list.split("\\.");
     	long ret[] = new long[nums.length];
-    	for(int i = 0; i < ret.length ; i++)
+    	for(int i = 0; i < ret.length ; i++) {
     		ret[i] = Long.parseLong(nums[i]);
+    		//System.err.print("," + Long.parseLong(nums[i]));
+    	}
+    	// System.err.println();
     	return ret;
     }
     /*
@@ -296,7 +381,7 @@ public class SNMPAgent implements Runnable {
     		break;
     		
     		default:
-    			//System.err.println("Unknown PDU: 0x" + Integer.toHexString((id + 256)%256));
+    			System.err.println("Unknown PDU: 0x" + Integer.toHexString((id + 256)%256));
     			return false;
     		}
     		return true;
@@ -305,6 +390,11 @@ public class SNMPAgent implements Runnable {
     	public String toString() {
     		return ("Community: " + new String(community) +
     				", PDU: " + pdutype + ", OID: " + OID);
+    	}
+    	
+    	public boolean pduIsGet() {
+    		return ((pdutype == RequestContainer.PDU_GET_THIS) || 
+    				(pdutype == RequestContainer.PDU_GET_NEXT));
     	}
     }
 }
