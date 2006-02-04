@@ -22,7 +22,7 @@ public class DataStatisticsInfo implements DataFetcher {
 	public Object getSNMPData() {
 		if (blocks == 0) {
 			long io[] = IOStatisticCollector.getTotalIO();
-			return new Long(io[in?1:0]);
+			return new SNMPCounter32(io[in?1:0]);
 		}
 		// else sum all fields up to <blocks>
 		int res = 0;

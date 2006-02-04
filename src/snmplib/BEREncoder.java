@@ -1,5 +1,6 @@
 package snmplib;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Stack;
 import java.util.Vector;
 
@@ -45,11 +46,11 @@ public class BEREncoder {
 				offset += dlen;
 				offset += intToBERBytes(dlen, buf, offset);
 				buf[offset++] = 0x02;
-			} else if (o instanceof SNMPTimeTicks) {
-				int dlen = intToBytes(((SNMPTimeTicks)o).timeValue(), buf, offset);
+			} else if (o instanceof SNMPTypeWrapperNum) {
+				int dlen = intToBytes(((SNMPTypeWrapperNum)o).getValue(), buf, offset);
 				offset += dlen;
 				offset += intToBERBytes(dlen, buf, offset);
-				buf[offset++] = 0x43;
+				buf[offset++] = ((SNMPTypeWrapperNum)o).getTypeID();
 			} else if (o instanceof IDVector) {
 				int dlen = vecToBytes((IDVector)o, buf, offset);
 				offset += dlen;
@@ -138,6 +139,9 @@ public class BEREncoder {
 	}
 	
 	
+	public void putSNMPTypeWrapperNum(SNMPTypeWrapperNum o) {
+		addToTop(o.clone());
+	}
 	
 	/*public void putInteger(int i) {
 		addToTop(new Integer(i));
@@ -148,6 +152,10 @@ public class BEREncoder {
 	
 	public void putInteger(long i) {
 		addToTop(new Long(i));
+	}
+	
+	public void putCounter32(long i) {
+		addToTop(new SNMPCounter32(i));
 	}
 	
 	public void putOctetString(byte buf[]) {

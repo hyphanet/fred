@@ -1,27 +1,24 @@
 package snmplib;
 
-public class SNMPTimeTicks {
-	private long ticks;
+public class SNMPTimeTicks extends SNMPTypeWrapperNum {
+	public SNMPTimeTicks() { super(); }
+	public SNMPTimeTicks(long value) { super(value); }
 	
-	public SNMPTimeTicks(long ticks) {
-		this.ticks = ticks;
-	}
-	
-	public long timeValue() {
-		return ticks;
+	protected void init() {
+		this.typeID = 0x43;
 	}
 	
 	public String toString() {
-		long rest = ticks;
-		long dec = ticks%100;
+		long rest = value;
+		long dec = rest%100;
 		rest = rest/100;
-		long sec = ticks%60;
+		long sec = rest%60;
 		rest = rest/60;
-		long min = ticks%60;
+		long min = rest%60;
 		rest = rest/60;
-		long hour = ticks%24;
+		long hour = rest%24;
 		rest = rest/24;
-		long day = ticks;
+		long day = rest;
 		return day + ":" + hour + ":" + min + ":" + sec + "." + dec;
 	}
 }

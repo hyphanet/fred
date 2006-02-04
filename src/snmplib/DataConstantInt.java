@@ -1,5 +1,6 @@
 package snmplib;
 
+
 public class DataConstantInt implements DataFetcher {
 	private String OID;
 	private int value;

@@ -13,7 +13,7 @@ public class SNMPAgent implements Runnable {
 	private int port = 4445;
 
 	/**
-	 * @param args 
+	 * @param args  
 	 */
 	public static void main(String[] args) throws IOException {
 		SNMPAgent.getSNMPAgent().addFetcher(new DataConstantInt("1.1.1", 10));
@@ -260,12 +260,12 @@ public class SNMPAgent implements Runnable {
     	be.startSequence(); // value
     	be.putOID(splitToLong(aOID)); // oid
     	//System.err.println("Will reply with OID: " + rc.OID + " -> " + aOID);
-    	if (data instanceof Integer)
-    		be.putInteger(((Integer)data).intValue());
-    	else if (data instanceof Long)
-    		be.putInteger(((Long)data).longValue());
-    	else if (data instanceof SNMPTimeTicks)
-    		be.putTimeticks(((SNMPTimeTicks)data).timeValue());
+    	if (data instanceof Number)
+    		be.putInteger(((Number)data).longValue());
+    	else if (data instanceof SNMPTypeWrapperNum)
+    		be.putSNMPTypeWrapperNum((SNMPTypeWrapperNum)data);
+//    	else if (data instanceof SNMPCounter32)
+//    		be.putCunter32(((SNMPCounter32)data).getValue());
     	else if (data instanceof String) {
     		char[] charr = ((String)data).toCharArray();
     		byte[] byarr = new byte[charr.length];
