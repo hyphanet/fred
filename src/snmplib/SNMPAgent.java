@@ -56,7 +56,6 @@ public class SNMPAgent implements Runnable {
     private SNMPAgent() {
     	alldata = new TreeMap();
     	//alldata.put("99.99", null);
-    	addFetcher(new DataConstantInt("99.99.99.99", 0));
     }
     
     public void addFetcher(DataFetcher df) {
@@ -114,18 +113,47 @@ public class SNMPAgent implements Runnable {
                 
                 BEREncoder reply = replyStart(rc);
 
+                int errIndex = 0;
+                int errStatus = 0;
                 
-                while (question.sequenceHasMore()) {
-                	question.startSequence();
-                	rc.lOID = question.fetchOID();
-                	rc.OID = (rc.lOID.length == 0)?".":"";
-                	for (int i = 0; i < rc.lOID.length ; i++)
-                		rc.OID += (i==0?"":".") + rc.lOID[i];
-                	//System.err.println("Doing: " + rc.OID);
-                	question.fetchNull();
-                	question.endSequence();
-                	replyAddOID(reply, rc);
+                try {
+                	while (question.sequenceHasMore()) {
+                		errIndex++;
+                		question.startSequence();
+                		rc.lOID = question.fetchOID();
+                		rc.OID = (rc.lOID.length == 0)?"":"";
+                		for (int i = 0; i < rc.lOID.length ; i++)
+                			rc.OID += (i==0?"":".") + rc.lOID[i];
+                		//System.err.println("Doing: " + rc.OID);
+                		question.fetchNull();
+                		question.endSequence();
+                		replyAddOID(reply, rc);
+                	}
+                } catch (NoSuchFieldException e) {
+                	errStatus = 0x02; // NO SUCH NAME
                 }
+                
+                if (errStatus != 0) {
+                	// Need to restart the question
+                	question = parseRequestStart(buf, rc);
+                	
+                	// TODO! This does not follow the standard, but works with SNMPWALK
+                	// Or does it? ;o)
+                    reply = replyStart(rc, errStatus, errIndex);
+                	while (question.sequenceHasMore()) {
+                		question.startSequence();
+                		
+
+                		reply.startSequence(); // value
+                    	reply.putOID(question.fetchOID()); // oid
+                    	reply.putNull();
+                    	reply.endSequence();
+                    	
+                    	question.fetchNull();
+                		question.endSequence();
+                	}
+                }
+                
                 replylength = replyEnd(reply, buf);
                 //rc.pdutype == RequestContainer.PDU_GET_NEXT
                 
@@ -160,7 +188,7 @@ public class SNMPAgent implements Runnable {
         socket.close();
     }
     
-    private String getAccualOID(String oid, boolean thisval) {
+    private String getAccualOID(String oid, boolean thisval) throws NoSuchFieldException {
         boolean keyfound = false;
         Iterator it = alldata.keySet().iterator();
         String key = "";
@@ -173,6 +201,8 @@ public class SNMPAgent implements Runnable {
         
         if (it.hasNext() && !thisval) {
         	key = key.equals(oid)?(String)it.next():key;
+        } else if (!keyfound ) {
+        	throw new NoSuchFieldException("OID not found");
         }
         
         return key;
@@ -239,7 +269,10 @@ public class SNMPAgent implements Runnable {
     	System.err.println("SNMP-Agent " + (new Date()) + ": " + s);
     }
     
-    private BEREncoder replyStart(RequestContainer rc) /* throws SnmpTooBigException */ {
+    private BEREncoder replyStart(RequestContainer rc) {
+    	return replyStart(rc, 0, 0);
+    }
+    private BEREncoder replyStart(RequestContainer rc, int errStatus, int errIndex) /* throws SnmpTooBigException */ {
     	int replyLength = 0;
     	BEREncoder be = new BEREncoder();
     	be.startSequence(); // whole pkg
@@ -247,14 +280,14 @@ public class SNMPAgent implements Runnable {
     	be.putOctetString(rc.community); // community
     	be.startSequence((byte)0xa2); // Response
     	be.putInteger(rc.requestID); // RID
-    	be.putInteger(0); // err
-    	be.putInteger(0); // err
+    	be.putInteger(errStatus); // err
+    	be.putInteger(errIndex); // err
     	be.startSequence(); // OID:s and their values
     	
     	return be;
     }
     
-    private void replyAddOID(BEREncoder be, RequestContainer rc) /* throws SnmpTooBigException */ {
+    private void replyAddOID(BEREncoder be, RequestContainer rc) throws NoSuchFieldException {
     	String aOID = getAccualOID(rc.OID, rc.pdutype == RequestContainer.PDU_GET_THIS);
     	Object data = getResultFromOID(aOID, rc.pdutype == RequestContainer.PDU_GET_THIS);
     	be.startSequence(); // value

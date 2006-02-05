@@ -41,7 +41,10 @@ public class BEREncoder {
 			Object o = v.get(i); 
 //			if (o instanceof Integer) {
 //				int dlen = intToBytes(((Integer)o).intValue(), buf, offset);
-			if (o instanceof Long) {
+			if (o == null) {
+				buf[offset++] = 0x00;
+				buf[offset++] = 0x05;
+			} else if (o instanceof Long) {
 				int dlen = intToBytes(((Long)o).longValue(), buf, offset);
 				offset += dlen;
 				offset += intToBERBytes(dlen, buf, offset);
@@ -156,6 +159,10 @@ public class BEREncoder {
 	
 	public void putCounter32(long i) {
 		addToTop(new SNMPCounter32(i));
+	}
+	
+	public void putNull() {
+		addToTop(null);
 	}
 	
 	public void putOctetString(byte buf[]) {
