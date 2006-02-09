@@ -73,6 +73,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	private synchronized SectoredRandomGrabArrayWithInt makeGrabArray(short priorityClass, int retryCount) {
+		if(priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS || priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS)
+			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		SortedVectorByNumber prio = priorities[priorityClass];
 		if(prio == null) {
 			prio = new SortedVectorByNumber();
