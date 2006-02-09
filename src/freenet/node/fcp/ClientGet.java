@@ -12,7 +12,6 @@ import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientPutter;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SplitfileProgressEvent;
@@ -66,13 +65,16 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		this.targetFile = message.diskFile;
 		this.tempFile = message.tempFile;
 		getter = new ClientGetter(this, handler.node.fetchScheduler, uri, fctx, priorityClass, handler.defaultFetchContext);
+	}
+
+	void start() {
 		try {
 			getter.start();
 		} catch (FetchException e) {
 			onFailure(e, null);
 		}
 	}
-
+	
 	public void cancel() {
 		getter.cancel();
 	}
@@ -110,6 +112,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
 				handler.outputHandler.queue(pm);
 				data.free();
+				try {
+					fos.close();
+				} catch (IOException e1) {
+					// Ignore
+				}
 				return;
 			}
 			try {
@@ -120,7 +127,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(!tempFile.renameTo(targetFile)) {
 				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
 				handler.outputHandler.queue(pm);
-				// Don't delete temp bucket, might want it
+				// Don't delete temp file, user might want it.
 			}
 			data.free();
 			handler.outputHandler.queue(msg);

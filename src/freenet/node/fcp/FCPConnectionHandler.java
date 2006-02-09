@@ -99,32 +99,46 @@ public class FCPConnectionHandler {
 
 	public void startClientGet(ClientGetMessage message) {
 		String id = message.identifier;
-		if(requestsByIdentifier.containsKey(id)) {
+		ClientGet cg = null;
+		boolean success;
+		synchronized(this) {
+			if(isClosed) return;
+			success = !requestsByIdentifier.containsKey(id);
+			if(success) {
+				cg = new ClientGet(this, message);
+				requestsByIdentifier.put(id, cg);
+			}
+		}
+		if(!success) {
 			Logger.normal(this, "Identifier collision on "+this);
 			FCPMessage msg = new IdentifierCollisionMessage(id);
 			outputHandler.queue(msg);
 			return;
-		}
-		synchronized(this) {
-			if(isClosed) return;
-			ClientGet cg = new ClientGet(this, message);
+		} else {
+			cg.start();
 		}
 	}
 
 	public void startClientPut(ClientPutMessage message) {
 		String id = message.identifier;
-		if(requestsByIdentifier.containsKey(id)) {
+		ClientPut cp = null;
+		boolean success;
+		synchronized(this) {
+			if(isClosed) return;
+			success = !requestsByIdentifier.containsKey(id);
+			if(success) {
+				cp = new ClientPut(this, message);
+				requestsByIdentifier.put(id, cp);
+			}
+		}
+		if(!success) {
 			Logger.normal(this, "Identifier collision on "+this);
 			FCPMessage msg = new IdentifierCollisionMessage(id);
 			outputHandler.queue(msg);
 			return;
+		} else {
+			cp.start();
 		}
-		synchronized(this) {
-			if(isClosed) return;
-			ClientPut cg = new ClientPut(this, message);
-		}
-		
-		// TODO Auto-generated method stub
-		
 	}
+	
 }
