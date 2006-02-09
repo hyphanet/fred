@@ -36,7 +36,7 @@ public class RequestStarter implements Runnable {
 	/** Anything less important than prefetch (redundant??) */
 	public static final short MINIMUM_PRIORITY_CLASS = 6;
 	
-	public static final short NUMBER_OF_PRIORITY_CLASSES = MINIMUM_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS;
+	public static final short NUMBER_OF_PRIORITY_CLASSES = MINIMUM_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS + 1; // include 0 and max !!
 	
 	final RequestThrottle throttle;
 	RequestScheduler sched;
