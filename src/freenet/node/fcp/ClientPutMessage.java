@@ -41,6 +41,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final boolean getCHKOnly;
 	final short priorityClass;
 	final boolean fromDisk;
+	final boolean dontCompress;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -113,6 +114,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier);
 			}
 		}
+		dontCompress = Boolean.getBoolean(fs.get("DontCompress"));
 	}
 
 	public SimpleFieldSet getFieldSet() {

@@ -10,7 +10,7 @@ public class InserterContext {
 
 	public final BucketFactory bf;
 	/** If true, don't try to compress the data */
-	public final boolean dontCompress;
+	public boolean dontCompress;
 	public final RandomSource random;
 	public final short splitfileAlgorithm;
 	public int maxInsertRetries;

@@ -12,8 +12,10 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
+import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.SimpleEventProducer;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
 
 public class ClientPut extends ClientRequest implements ClientCallback, ClientEventListener {
@@ -31,6 +33,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	
 	// Verbosity bitmasks
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
+	private int VERBOSITY_COMPRESSION_START_END = 512;
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) {
 		this.verbosity = message.verbosity;
@@ -39,6 +42,8 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		this.getCHKOnly = message.getCHKOnly;
 		this.priorityClass = message.priorityClass;
 		ctx = new InserterContext(handler.defaultInsertContext, new SimpleEventProducer());
+		if(message.dontCompress)
+			ctx.dontCompress = true;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = message.maxRetries;
 		// Now go through the fields one at a time
@@ -87,12 +92,25 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 
 	public void receive(ClientEvent ce) {
 		if(finished) return;
-		if(!(((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) &&
-				(ce instanceof SplitfileProgressEvent)))
-			return;
-		SimpleProgressMessage progress = 
-			new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
-		handler.outputHandler.queue(progress);
+		if(ce instanceof SplitfileProgressEvent) {
+			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
+				SimpleProgressMessage progress = 
+					new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
+				handler.outputHandler.queue(progress);
+			}
+		} else if(ce instanceof StartedCompressionEvent) {
+			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
+				StartedCompressionMessage msg =
+					new StartedCompressionMessage(identifier, ((StartedCompressionEvent)ce).codec);
+				handler.outputHandler.queue(msg);
+			}
+		} else if(ce instanceof FinishedCompressionEvent) {
+			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
+				FinishedCompressionMessage msg = 
+					new FinishedCompressionMessage(identifier, (FinishedCompressionEvent)ce);
+				handler.outputHandler.queue(msg);
+			}
+		}
 	}
 
 }

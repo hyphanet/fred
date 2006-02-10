@@ -3,6 +3,7 @@ package freenet.node.fcp;
 import freenet.node.Node;
 import freenet.node.Version;
 import freenet.support.SimpleFieldSet;
+import freenet.support.compress.Compressor;
 
 /**
  * NodeHello
@@ -28,6 +29,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.put("Node", "Fred");
 		sfs.put("Version", Version.getVersionString());
 		sfs.put("Testnet", Boolean.toString(node.isTestnetEnabled()));
+		sfs.put("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
 		return sfs;
 	}
 

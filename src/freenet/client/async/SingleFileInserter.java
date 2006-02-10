@@ -6,6 +6,8 @@ import freenet.client.InsertBlock;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
+import freenet.client.events.FinishedCompressionEvent;
+import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
@@ -112,6 +114,9 @@ class SingleFileInserter implements ClientPutState {
 			int algos = Compressor.countCompressAlgorithms();
 			try {
 				for(int i=0;i<algos;i++) {
+					// Only produce if we are compressing *the original data*
+					if(parent == cb)
+						ctx.eventProducer.produceEvent(new StartedCompressionEvent(i));
 					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
 					Bucket result;
 					result = comp.compress(origData, ctx.bf, Long.MAX_VALUE);
@@ -140,6 +145,10 @@ class SingleFileInserter implements ClientPutState {
 				// Impossible
 				throw new Error(e);
 			}
+		}
+		
+		if(parent == cb) {
+			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()));
 		}
 		
 		// Compressed data
