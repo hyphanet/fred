@@ -51,7 +51,9 @@ public class SectoredRandomGrabArray {
 					System.arraycopy(grabArrays, x+1, newArray, x, grabArrays.length - (x+1));
 				grabArrays = newArray;
 			}
-			if(item != null) return item;
+			if(item == null) continue;
+			if(item.isFinished()) continue;
+			return item;
 		}
 	}
 

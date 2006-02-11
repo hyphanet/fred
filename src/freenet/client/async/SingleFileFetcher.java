@@ -20,7 +20,6 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.KeyDecodeException;
 import freenet.node.LowLevelGetException;
-import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.support.Bucket;
 import freenet.support.Logger;
@@ -521,6 +520,10 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 
 	/** Do the request, blocking. Called by RequestStarter. */
 	public void send(Node node) {
+		if(cancelled) {
+			onFailure(new FetchException(FetchException.CANCELLED), false);
+			return;
+		}
 		// Do we need to support the last 3?
 		ClientKeyBlock block;
 		try {
