@@ -17,6 +17,7 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 public class ClientPut extends ClientRequest implements ClientCallback, ClientEventListener {
 
@@ -50,7 +51,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		uri = message.uri;
 		String mimeType = message.contentType;
 		block = new InsertBlock(message.bucket, new ClientMetadata(mimeType), uri);
-		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, handler.node.putScheduler, priorityClass, getCHKOnly, false, handler.defaultInsertContext);
+		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, handler.node.putScheduler, priorityClass, getCHKOnly, false, handler);
 	}
 
 	void start() {

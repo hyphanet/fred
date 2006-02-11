@@ -24,6 +24,18 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	private final boolean isMetadata;
 	private FreenetURI uri;
 
+	/**
+	 * @param client The object to call back when we complete, or don't.
+	 * @param data
+	 * @param targetURI
+	 * @param cm
+	 * @param ctx
+	 * @param scheduler
+	 * @param priorityClass
+	 * @param getCHKOnly
+	 * @param isMetadata
+	 * @param clientContext The client object for purposs of round-robin client balancing.
+	 */
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InserterContext ctx,
 			ClientRequestScheduler scheduler, short priorityClass, boolean getCHKOnly, boolean isMetadata, Object clientContext) {
 		super(priorityClass, scheduler, clientContext);
