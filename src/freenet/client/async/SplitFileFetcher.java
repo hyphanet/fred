@@ -220,8 +220,10 @@ public class SplitFileFetcher extends ClientGetState {
 	public void schedule() {
 		for(int i=0;i<segments.length;i++) {
 			segments[i].schedule();
+			// Update after each segment is scheduled.
+			// The client may get updates from individual fetches anyway; make it more predictable.
+			parent.notifyClients();
 		}
-		parent.notifyClients();
 	}
 
 	public void cancel() {
