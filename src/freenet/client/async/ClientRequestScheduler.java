@@ -46,19 +46,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 			throw new IllegalArgumentException("Expected a ClientPut: "+req);
 		if(req instanceof SendableGet) {
 			SendableGet getter = (SendableGet)req;
-			ClientKeyBlock block;
-			try {
-				block = node.fetchKey(getter.getKey());
-			} catch (KeyVerifyException e) {
-				// Verify exception, probably bogus at source;
-				// verifies at low-level, but not at decode.
-				getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED));
-				return;
-			}
-			if(block != null) {
-				Logger.minor(this, "Can fulfill immediately from store");
-				getter.onSuccess(block, true);
-				return;
+			if(!getter.ignoreStore()) {
+				ClientKeyBlock block;
+				try {
+					block = node.fetchKey(getter.getKey());
+				} catch (KeyVerifyException e) {
+					// Verify exception, probably bogus at source;
+					// verifies at low-level, but not at decode.
+					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED));
+					return;
+				}
+				if(block != null) {
+					Logger.minor(this, "Can fulfill immediately from store");
+					getter.onSuccess(block, true);
+					return;
+				}
 			}
 		}
 		synchronized(this) {

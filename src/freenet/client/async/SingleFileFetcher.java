@@ -527,7 +527,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		// Do we need to support the last 3?
 		ClientKeyBlock block;
 		try {
-			block = node.realGetKey(key, false, ctx.cacheLocalRequests, false);
+			block = node.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
 		} catch (LowLevelGetException e) {
 			onFailure(e);
 			return;
@@ -540,6 +540,10 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 
 	public Object getClient() {
 		return parent.getClient();
+	}
+
+	public boolean ignoreStore() {
+		return ctx.ignoreStore;
 	}
 
 }

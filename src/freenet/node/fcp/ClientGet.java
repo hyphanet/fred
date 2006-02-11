@@ -64,7 +64,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.maxTempLength = message.maxTempSize;
 		this.targetFile = message.diskFile;
 		this.tempFile = message.tempFile;
-		getter = new ClientGetter(this, handler.node.fetchScheduler, uri, fctx, priorityClass, handler.defaultFetchContext);
+		getter = new ClientGetter(this, handler.node.fetchScheduler, uri, fctx, priorityClass, handler);
 	}
 
 	void start() {

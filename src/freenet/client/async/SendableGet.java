@@ -17,4 +17,6 @@ public interface SendableGet extends SendableRequest {
 	/** Called when/if the low-level request fails. */
 	public void onFailure(LowLevelGetException e);
 	
+	/** Should the request ignore the datastore? */
+	public boolean ignoreStore();
 }
