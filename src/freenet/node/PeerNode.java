@@ -178,6 +178,8 @@ public class PeerNode implements PeerContext {
     public PeerNode(SimpleFieldSet fs, Node node2) throws FSParseException, PeerParseException {
         this.node = node2;
         String identityString = fs.get("identity");
+    	if(identityString == null)
+    		throw new PeerParseException("No identity!");
         try {
             identity = HexUtil.hexToBytes(identityString);
         } catch (NumberFormatException e) {
