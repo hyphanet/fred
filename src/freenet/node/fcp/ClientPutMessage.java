@@ -78,7 +78,11 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
 			}
 		}
-		getCHKOnly = Boolean.parseBoolean(fs.get("GetCHKOnly"));
+		if(fs.get("GetCHKOnly").equalsIgnoreCase("true")){
+			getCHKOnly=true;
+		}else{
+			getCHKOnly=false;
+		}
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
 			// defaults to the one just below fproxy
@@ -115,7 +119,11 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier);
 			}
 		}
-		dontCompress = Boolean.parseBoolean(fs.get("DontCompress"));
+		if(fs.get("DontCompress").equalsIgnoreCase("true")){
+			dontCompress=true;
+		}else{
+			dontCompress=false;
+		}
 	}
 
 	public SimpleFieldSet getFieldSet() {

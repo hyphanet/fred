@@ -51,8 +51,16 @@ public class ClientGetMessage extends FCPMessage {
 	
 	public ClientGetMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		short defaultPriority;
-		ignoreDS = Boolean.parseBoolean(fs.get("IgnoreDS"));
-		dsOnly = Boolean.parseBoolean(fs.get("DSOnly"));
+		if(fs.get("IgnoreDS").equalsIgnoreCase("true")){
+			ignoreDS=true;
+		}else{
+			ignoreDS=false;
+		}
+		if(fs.get("DSOnly").equalsIgnoreCase("true")){
+			dsOnly=true;
+		}else{
+			dsOnly=false;
+		}
 		identifier = fs.get("Identifier");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null);
