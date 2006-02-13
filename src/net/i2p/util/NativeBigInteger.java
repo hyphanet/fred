@@ -131,7 +131,7 @@ public class NativeBigInteger extends BigInteger {
     private static String resolveCPUType() {
 		try {
 			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")){
-				if(System.getProperty("sun.arch.data.model")=="64"){
+				if(Integer.getInteger(System.getProperty("sun.arch.data.model")).equals(new Integer(64))){
 					System.out.println("Detected x86_64 running on a 64 bit jvm!");
 					return JBIGI_OPTIMIZATION_X86_64;
 				}else{
