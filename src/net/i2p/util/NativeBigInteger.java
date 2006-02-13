@@ -105,15 +105,16 @@ public class NativeBigInteger extends BigInteger {
     
     private final static String JBIGI_OPTIMIZATION_K6         	= "k6";
     private final static String JBIGI_OPTIMIZATION_K6_2       	= "k62";
-    private final static String JBIGI_OPTIMIZATION_K6_3		= "k63";
+    private final static String JBIGI_OPTIMIZATION_K6_3			= "k63";
     private final static String JBIGI_OPTIMIZATION_ATHLON   	= "athlon";
     private final static String JBIGI_OPTIMIZATION_X86_64    	= "x86_64";
+    private final static String JBIGI_OPTIMIZATION_X86_64_32    = "x86_64_32";
     private final static String JBIGI_OPTIMIZATION_PENTIUM    	= "pentium";
     private final static String JBIGI_OPTIMIZATION_PENTIUMMMX 	= "pentiummmx";
     private final static String JBIGI_OPTIMIZATION_PENTIUM2 	= "pentium2";
     private final static String JBIGI_OPTIMIZATION_PENTIUM3 	= "pentium3";
     private final static String JBIGI_OPTIMIZATION_PENTIUM4 	= "pentium4";
-    private final static String JBIGI_OPTIMIZATION_PPC 		= "osx";
+    private final static String JBIGI_OPTIMIZATION_PPC 			= "osx";
 
     private final static String sCPUType; //The CPU Type to optimize for (one of the above strings)
     
@@ -130,11 +131,16 @@ public class NativeBigInteger extends BigInteger {
     private static String resolveCPUType() {
 		try {
 			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")){
-				System.out.println("Detected x86_64!");
-				return JBIGI_OPTIMIZATION_X86_64;
+				if(System.getProperty("sun.arch.data.model")=="64"){
+					System.out.println("Detected x86_64 running on a 64 bit jvm!");
+					return JBIGI_OPTIMIZATION_X86_64;
+				}else{
+					System.out.println("Detected x86_64! using compatibility mode");
+					return JBIGI_OPTIMIZATION_X86_64_32;	
+				}
 			}else 	if(System.getProperty("os.arch").toLowerCase().matches("(ppc)")){
-				System.out.println("Detected PowerPC!");
-				return JBIGI_OPTIMIZATION_PPC;
+					System.out.println("Detected PowerPC!");
+					return JBIGI_OPTIMIZATION_PPC;
 			}else{
 				CPUInfo c = CPUID.getInfo();
 				if (c instanceof AMDCPUInfo) {
