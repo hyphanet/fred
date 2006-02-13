@@ -41,11 +41,15 @@
     <javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
     <classpath>
     	<pathelement location="${freenet-ext.location}"/>
+    	<pathelement location="gnu-crypto.jar"/>
+    	<pathelement location="javax-security.jar"/>
+    	<pathelement location="javax-crypto.jar"/>
     </classpath>
 <!-- following a very temporary list of files to be build -->
       <include name="org/**/*.java"/>
       <include name="freenet/**/*.java"/>
       <include name="net/i2p/util/*.java"/>
+      <include name="snmplib/*.java"/>
       <exclude name="org/**/MersenneTwisterTest.java"/>
     </javac>
   </target>

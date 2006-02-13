@@ -1,0 +1,180 @@
+<?xml version="1.0"?>
+
+<project name="Freenet_binary" default="dist_gcj" basedir=".">
+  <description>
+     This file builds freenet... as a binary :p
+  </description>
+
+<!-- set global properties for this build -->
+  	<property name="src" location="src"/>
+	<property name="build" location="build"/>
+	<property name="lib"	location="lib"/>
+	<property name="bin"	location="bin"/>
+	<property name="freenet-cvs-snapshot.location" location="${lib}/freenet-cvs-snapshot.jar"/>
+	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
+	<property name="gnu-crypto.location" location="${lib}/gnu-crypto.jar"/>
+	<property name="javax-crypto.location" location="${lib}/javax-crypto.jar"/>
+	<property name="javax-security.location" location="${lib}/javax-security.jar"/>
+
+<target name="env_gcj"  description="Learn about the environment">
+    <mkdir dir="${bin}"/>
+    <mkdir dir="${build}"/>
+    <mkdir dir="${lib}"/>
+    <mkdir dir="misc"/>
+    <available file="${lib}/gnu-crypto.jar"     property="gnu-crypto.present"/>
+    <available file="${lib}/javax-crypto.jar"   property="javax-crypto.present"/>
+    <available file="${lib}/javax-security.jar" property="javax-security.present"/>
+    <available file="${lib}/freenet-cvs-snapshot.jar" property="freenet.present"/>
+    <available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
+</target>
+
+  <target name="get-gnu-crypto" depends="env_gcj" unless="gnu-crypto.present">
+  	<get src="ftp://ftp.gnu.org/gnu/gnu-crypto/binaries/gnu-crypto-2.0.1-bin-r1.zip" 
+		 	dest="misc/gnu-crypto-2.0.1-bin-r1.zip" 
+	 verbose="true"
+	 usetimestamp="true"/>
+
+	 <unzip src="misc/gnu-crypto-2.0.1-bin-r1.zip" dest="misc"/>
+
+	 <move todir="lib">
+		 <fileset dir="misc/gnu-crypto-2.0.1-bin/lib/">
+			 <include name="*.jar"/>
+		 </fileset>
+	 </move>
+	
+	 <property name="gnu-crypto.present" value="true"/>
+	 <property name="javax-crypto.present" value="true"/>
+	 <property name="javax-security.present" value="true"/>
+  </target>
+
+  <target name="get-release" depends="env_gcj" unless="freenet.present"
+    description="Download FRED">
+	<exec executable="ant" failonerror="true"/>
+	<property name="freenet.present" value="true"/>
+  </target>
+
+  <target name="get-extjar" depends="env_gcj" unless="freenet-ext.present"
+    description="Download some external libraries which Freenet relies on">
+    <get src="http://downloads.freenetproject.org/alpha/freenet-ext.jar" 
+		 	dest="${freenet-ext.location}" 
+	 verbose="true"
+	 usetimestamp="true"/>
+		<property name="freenet-ext.present" value="true"/>
+  </target>
+    <!-- ================================================== -->
+  <target name="compile_gcj" depends="get-release,get-extjar,get-gnu-crypto">
+    <!-- Create the time stamp -->
+    <tstamp/>
+	<echo message="Compiling freenet-ext.jar"/>
+	<exec executable="gcj" failonerror="true">
+		<arg value="-c"/>
+		<arg value="-g"/>
+		<arg value="-O0"/>
+		<arg value="-fjni"/>
+		<arg value="-o"/>
+		<arg value="${build}/freenet-ext.o"/>
+		<arg value="-I${lib}/freenet-cvs-snapshot.jar"/>
+		<arg value="-I${lib}/freenet-ext.jar"/>
+		<arg value="-I${gnu-crypto.location}"/>
+		<arg value="-I${javax-crypto.location}"/>
+		<arg value="-I${javax-security.location}"/>
+		<arg value="${lib}/freenet-ext.jar"/>
+	</exec>
+	
+	<echo message="Compiling freenet-cvs-snapshot.jar"/>
+	<exec executable="gcj" failonerror="true">
+		<arg value="-c"/>
+		<arg value="-g"/>
+		<arg value="-O0"/>
+		<arg value="-fjni"/>
+		<arg value="-o"/>
+		<arg value="${build}/freenet-cvs-snapshot.o"/>
+		<arg value="-I${lib}/freenet-cvs-snapshot.jar"/>
+		<arg value="-I${lib}/freenet-ext.jar"/>
+		<arg value="-I${gnu-crypto.location}"/>
+		<arg value="-I${javax-crypto.location}"/>
+		<arg value="-I${javax-security.location}"/>
+		<arg value="${lib}/freenet-cvs-snapshot.jar"/>
+	</exec>
+  </target>
+
+
+    <!-- ================================================== -->
+  <target name="link_gcj" depends="compile_gcj"
+      description="generate the distribution" >
+	<echo message="Extracting libs from freenet-ext.jar"/>
+	<unzip src="${lib}/freenet-ext.jar" dest="${bin}"/>
+
+	<echo message="Linking"/>
+	<exec executable="gcj" failonerror="true">
+		<arg value="-combine"/>
+		<arg value="-g"/>
+		<arg value="-O0"/>
+		<arg value="-fjni"/>
+		<arg value="-o"/>
+		<arg value="freenet"/>
+		<arg value="--main=freenet.node.Node"/>
+		<arg value="-I${lib}/freenet-cvs-snapshot.jar"/>
+		<arg value="-I${lib}/freenet-ext.jar"/>
+		<arg value="-I${gnu-crypto.location}"/>
+		<arg value="-I${javax-crypto.location}"/>
+		<arg value="-I${javax-security.location}"/>
+		<arg value="-L${bin}/lib/linux/x86/"/>
+		<arg value="-L${bin}/net/i2p/util/"/>
+		<arg value="-lfec16"/>
+		<arg value="-lfec8"/>
+		<arg value="-ljbigi-linux-athlon"/>
+		<arg value="-l-javax-security"/>
+		<arg value="-l-javax-crypto"/>
+		<arg value="-l-gnu-crypto"/>
+		<arg value="${build}/freenet-ext.o"/>
+		<arg value="${build}/freenet-cvs-snapshot.o"/>
+	</exec>
+  </target>
+  
+  <target name="dist_gcj" depends="link_gcj"
+      description="generate the distribution" >
+	<echo message="Extracting libs from freenet-ext.jar"/>
+	<unzip src="${lib}/freenet-ext.jar" dest="${bin}"/>
+
+	<echo message="Linking"/>
+	<exec executable="gcj" failonerror="true">
+		<arg value="-combine"/>
+		<arg value="-g"/>
+		<arg value="-O0"/>
+		<arg value="-fjni"/>
+		<arg value="-o"/>
+		<arg value="freenet"/>
+		<arg value="--main=freenet.node.Node"/>
+		<arg value="-I${lib}/freenet-cvs-snapshot.jar"/>
+		<arg value="-I${lib}/freenet-ext.jar"/>
+		<arg value="-I${gnu-crypto.location}"/>
+		<arg value="-I${javax-crypto.location}"/>
+		<arg value="-I${javax-security.location}"/>
+		<arg value="-L${bin}/lib/linux/x86/"/>
+		<arg value="-L${bin}/net/i2p/util/"/>
+		<arg value="-lfec16"/>
+		<arg value="-lfec8"/>
+		<arg value="-ljbigi-linux-athlon"/>
+		<arg value="-l-javax-security"/>
+		<arg value="-l-javax-crypto"/>
+		<arg value="-l-gnu-crypto"/>
+		<arg value="${build}/freenet-ext.o"/>
+		<arg value="${build}/freenet-cvs-snapshot.o"/>
+	</exec>
+  </target>
+
+    <!-- ================================================== -->
+    <target name="clean" description="Delete class files and docs dir.">
+        <delete dir="${build}"/>
+        <delete dir="${bin}"/>
+        <delete file="freenet"/>
+    </target>
+    <target name="distclean" description="Delete class files, lib dir and docs dir.">
+        <delete dir="${build}"/>
+        <delete dir="${bin}"/>
+        <delete dir="${lib}"/>
+        <delete dir="misc"/>
+        <delete file="freenet"/>
+    </target>
+</project>
