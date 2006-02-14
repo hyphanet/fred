@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FileBucket;
@@ -78,11 +79,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
 			}
 		}
-		if(fs.get("GetCHKOnly").equalsIgnoreCase("true")){
-			getCHKOnly=true;
-		}else{
-			getCHKOnly=false;
-		}
+		getCHKOnly = Fields.stringToBool(fs.get("GetCHKOnly"), false);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
 			// defaults to the one just below fproxy
@@ -119,11 +116,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier);
 			}
 		}
-		if(fs.get("DontCompress").equalsIgnoreCase("true")){
-			dontCompress=true;
-		}else{
-			dontCompress=false;
-		}
+		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 	}
 
 	public SimpleFieldSet getFieldSet() {

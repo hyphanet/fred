@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -51,16 +52,8 @@ public class ClientGetMessage extends FCPMessage {
 	
 	public ClientGetMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		short defaultPriority;
-		if(fs.get("IgnoreDS").equalsIgnoreCase("true")){
-			ignoreDS=true;
-		}else{
-			ignoreDS=false;
-		}
-		if(fs.get("DSOnly").equalsIgnoreCase("true")){
-			dsOnly=true;
-		}else{
-			dsOnly=false;
-		}
+		ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
+		dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		identifier = fs.get("Identifier");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null);

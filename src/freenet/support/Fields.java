@@ -140,8 +140,8 @@ public abstract class Fields {
 	 */
 	/* wooo, rocket science! (this is purely abstraction people) */
 	public static final boolean stringToBool(String s, boolean def) {
-		return (
-			def ? !s.equalsIgnoreCase("false") : s.equalsIgnoreCase("true"));
+		if(s == null) return def;
+		return (def ? !s.equalsIgnoreCase("false") : s.equalsIgnoreCase("true"));
 	}
 
 	/**
