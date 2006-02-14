@@ -131,13 +131,7 @@ public class NativeBigInteger extends BigInteger {
     private static String resolveCPUType() {
 		try {
 			if(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")){
-				if(Integer.getInteger("sun.arch.data.model").equals(new Integer(64))){
-					System.out.println("Detected x86_64 running on a 64 bit jvm!");
 					return JBIGI_OPTIMIZATION_X86_64;
-				}else{
-					System.out.println("Detected x86_64! using compatibility mode");
-					return JBIGI_OPTIMIZATION_X86_64_32;	
-				}
 			}else 	if(System.getProperty("os.arch").toLowerCase().matches("(ppc)")){
 					System.out.println("Detected PowerPC!");
 					return JBIGI_OPTIMIZATION_PPC;
@@ -146,7 +140,7 @@ public class NativeBigInteger extends BigInteger {
 				if (c instanceof AMDCPUInfo) {
 					AMDCPUInfo amdcpu = (AMDCPUInfo) c;
 					if (amdcpu.IsAthlon64Compatible())
-						return JBIGI_OPTIMIZATION_X86_64;
+						return JBIGI_OPTIMIZATION_X86_64_32;
 					if (amdcpu.IsAthlonCompatible())
 						return JBIGI_OPTIMIZATION_ATHLON;
 					if (amdcpu.IsK6_3_Compatible())
