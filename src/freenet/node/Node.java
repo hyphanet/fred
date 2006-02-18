@@ -25,6 +25,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import pluginmanager.PluginManager;
+import pluginmanager.PluginRespirator;
+
 import snmplib.SNMPAgent;
 import snmplib.SNMPStarter;
 
@@ -198,6 +201,9 @@ public class Node {
     final TestnetStatusUploader statusUploader;
     public final ClientRequestScheduler fetchScheduler;
     public final ClientRequestScheduler putScheduler;
+    
+    // Things that's needed to keep track of
+    public final PluginManager pluginManager;
     
     // Client stuff that needs to be configged - FIXME
     static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -485,6 +491,19 @@ public class Node {
 			testnetHandler.start();
 		if(statusUploader != null)
 			statusUploader.start();
+		
+		// And finally, Initialize the plugin manager
+		PluginManager pm = null;
+		try {
+			HighLevelSimpleClient hlsc = new HighLevelSimpleClientImpl(this, 
+					archiveManager, tempBucketFactory, random, false, (short)0);
+			PluginRespirator pluginRespirator = new PluginRespirator(hlsc);
+			pm = new PluginManager(pluginRespirator);
+		} catch (Throwable e) {
+			e.printStackTrace();
+			System.err.println("THIS SHOULDN'T OCCUR!!!! (plugin system now disabled)");
+		}
+		pluginManager = pm;
 		System.err.println("Created Node on port "+port);
     }
 

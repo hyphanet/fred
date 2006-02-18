@@ -98,6 +98,9 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("MAKESSK - Create an SSK keypair.");
         System.out.println("PUTSSK:<insert uri>;<url to redirect to> - Insert an SSK redirect to a file already inserted.");
         System.out.println("PUTSSKDIR:<insert uri>#<path>[#<defaultfile>] - Insert an entire directory to an SSK.");
+        System.out.println("PLUGLOAD: <pkg.classname>[@file:<jarfile.jar>] - Load plugin.");
+        System.out.println("PLUGLIST - List all loaded plugins.");
+        System.out.println("PLUGKILL: <pluginID> - Unload the plugin with the given ID (see PLUGLIST).");
 //        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
 //        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
 //        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
@@ -500,6 +503,13 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("DISCONNECT:")) {
         	String ipAndPort = line.substring("DISCONNECT:".length());
         	disconnect(ipAndPort.trim());
+        	
+        } else if(uline.startsWith("PLUGLOAD:")) {
+        	n.pluginManager.startPlugin(line.substring("PLUGLOAD:".length()).trim());
+        } else if(uline.startsWith("PLUGLIST")) {
+        	n.pluginManager.dumpPlugins();
+        } else if(uline.startsWith("PLUGKILL:")) {
+        	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim());
         } else {
         	if(uline.length() > 0)
         		printHeader();
