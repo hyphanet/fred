@@ -54,7 +54,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final TupleBinding longTupleBinding;
 	
 	private long chkBlocksInStore;
-	private final long maxChkBlocks;
+	private long maxChkBlocks;
 	private final Database chkDB;
 	private final Database chkDB_accessTime;
 	private final RandomAccessFile chkStore;
@@ -679,4 +679,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	lastRecentlyUsed++;
     	return lastRecentlyUsed;
     }
+
+	public void setMaxKeys(long maxStoreKeys) {
+		maxChkBlocks = maxStoreKeys;
+	}
 }

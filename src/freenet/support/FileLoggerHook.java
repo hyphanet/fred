@@ -27,6 +27,7 @@ import java.util.Vector;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.node.Version;
+import freenet.support.LoggerHook.InvalidThresholdException;
 
 /**
  * Converted the old StandardLogger to Ian's loggerhook interface.
@@ -568,7 +569,7 @@ public class FileLoggerHook extends LoggerHook {
 			boolean assumeWorking,
 			boolean logOverwrite,
 			long maxOldLogFilesDiskUsage)
-			throws IOException {
+			throws IOException, InvalidThresholdException {
 			this(filename,
 				fmt,
 				dfmt,
@@ -604,7 +605,7 @@ public class FileLoggerHook extends LoggerHook {
 			OutputStream os,
 			String fmt,
 			String dfmt,
-			String threshold) {
+			String threshold) throws InvalidThresholdException {
 			this(new PrintStream(os), fmt, dfmt, priorityOf(threshold), true);
 			logStream = os;
 		}
@@ -673,7 +674,7 @@ public class FileLoggerHook extends LoggerHook {
 			String threshold,
 			boolean assumeWorking,
 			boolean logOverwrite,
-			long maxOldLogFilesDiskUsage) throws IOException{
+			long maxOldLogFilesDiskUsage) throws IOException, InvalidThresholdException{
 		this(rotate,baseFilename,fmt,dfmt,priorityOf(threshold),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage);
 	}
 

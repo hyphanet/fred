@@ -1,5 +1,7 @@
 package freenet.support;
 
+import freenet.support.LoggerHook.InvalidThresholdException;
+
 /**
  * A class that takes logging messages and distributes them to LoggerHooks.
  * It implements LoggerHook itself, so that instances can be chained (just
@@ -27,7 +29,7 @@ public class LoggerHookChain extends LoggerHook {
         super(threshold);
         hooks = new LoggerHook[0];
     }
-    public LoggerHookChain(String threshold) {
+    public LoggerHookChain(String threshold) throws InvalidThresholdException {
     	super(threshold);
         hooks = new LoggerHook[0];
     }
@@ -101,7 +103,7 @@ public class LoggerHookChain extends LoggerHook {
     	return ((2*ERROR)-1) & ~(threshold-1);
     }
 
-	public void setDetailedThresholds(String details) {
+	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		super.setDetailedThresholds(details);
 		LoggerHook[] h = getHooks();
 		for (int i = 0; i < h.length; i++)

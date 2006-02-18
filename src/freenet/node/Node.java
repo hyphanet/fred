@@ -227,6 +227,7 @@ public class Node {
 	static final int EXIT_BAD_NODE_DIR = 15;
 	static final int EXIT_BAD_TEMP_DIR = 16;
 	static final int EXIT_COULD_NOT_START_FCP = 17;
+	static final int EXIT_COULD_NOT_START_FPROXY = 18;
     
     
     public final long bootID;
@@ -244,6 +245,8 @@ public class Node {
     public final ClientRequestScheduler putScheduler;
     TextModeClientInterface tmci;
     FCPServer fcpServer;
+    FproxyToadlet fproxyServlet;
+    SimpleToadletServer toadletContainer;
     
     // Things that's needed to keep track of
     public final PluginManager pluginManager;
@@ -827,7 +830,11 @@ public class Node {
         
         // Fproxy
         // FIXME this is a hack, the real way to do this is plugins
-        SimpleToadletServer.maybeCreateFproxyEtc(this, config);
+        try {
+			FproxyToadlet.maybeCreateFproxyEtc(this, config);
+		} catch (IOException e) {
+			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);
+		}
         
         // FCP
         try {
@@ -838,15 +845,6 @@ public class Node {
         
         // SNMP
         SNMPStarter.maybeCreate(this, config);
-
-        
-        // FIXME old code to use above
-        
-        new FCPServer(portNumber+3000, this);
-        System.out.println("Starting FCP server on port "+(portNumber+3000));
-        SNMPAgent.setSNMPPort(portNumber+4000);
-        System.out.println("Starting SNMP server on port "+(portNumber+4000));
-        SNMPStarter.initialize();
         
         // Start testnet handler
 		if(testnetHandler != null)
@@ -1289,7 +1287,7 @@ public class Node {
         fs.put("testnet", Boolean.toString(testnetEnabled));
         fs.put("lastGoodVersion", Version.getLastGoodVersionString());
         if(testnetEnabled)
-        	fs.put("testnetPort", Integer.toString(testnetPort));
+        	fs.put("testnetPort", Integer.toString(testnetHandler.testnetPort));
         fs.put("myName", myName);
         Logger.minor(this, "My reference: "+fs);
         return fs;
@@ -1893,5 +1891,21 @@ public class Node {
 	
 	public FCPServer getFCPServer() {
 		return fcpServer;
+	}
+
+	public void setToadletContainer(SimpleToadletServer server) {
+		toadletContainer = server;
+	}
+
+	public FproxyToadlet getFproxy() {
+		return fproxyServlet;
+	}
+
+	public SimpleToadletServer getToadletContainer() {
+		return toadletContainer;
+	}
+
+	public void setFproxy(FproxyToadlet fproxy) {
+		this.fproxyServlet = fproxy;
 	}
 }

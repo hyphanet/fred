@@ -66,7 +66,7 @@ public class TestnetHandler implements Runnable {
 	
 	private final Node node;
 	private Thread serverThread;
-	private final int testnetPort;
+	final int testnetPort;
 	
 	public void run() {
 		// Set up server socket

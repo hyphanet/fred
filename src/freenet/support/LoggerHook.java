@@ -20,7 +20,7 @@ public abstract class LoggerHook extends Logger {
 		this.threshold = thresh;
 	}
 	
-	LoggerHook(String thresh){
+	LoggerHook(String thresh) throws InvalidThresholdException{
 		this.threshold = priorityOf(thresh);
 	}
 
@@ -111,7 +111,7 @@ public abstract class LoggerHook extends Logger {
 		setThreshold(priorityOf(symbolicThreshold));
 	}
 
-	public void setDetailedThresholds(String details) {
+	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		if (details == null || details.length() == 0)
 			return;
 		StringTokenizer st = new StringTokenizer(details, ",", false);

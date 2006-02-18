@@ -1,5 +1,7 @@
 package freenet.support;
 
+import freenet.support.LoggerHook.InvalidThresholdException;
+
 /**
  * @author Iakin
  
@@ -28,7 +30,7 @@ public abstract class Logger {
 	 */
 	static Logger logger = new VoidLogger();
 	
-	public static FileLoggerHook setupStdoutLogging(int level, String detail) {
+	public static FileLoggerHook setupStdoutLogging(int level, String detail) throws InvalidThresholdException {
 	    setupChain();
 	    logger.setThreshold(level);
 	    logger.setDetailedThresholds(detail);
@@ -180,15 +182,16 @@ public abstract class Logger {
 	 * 
 	 * @param symbolicThreshold
 	 *            The new threshhold, must be one of ERROR,NORMAL etc.. 
+	 * @throws InvalidThresholdException 
 	 */
-	public abstract void setThreshold(String symbolicThreshold);
+	public abstract void setThreshold(String symbolicThreshold) throws InvalidThresholdException;
 	
 	/**
 	 * @return The currently used logging threshold
 	 */
 	public abstract int getThreshold();
 	
-	public abstract void setDetailedThresholds(String details);
+	public abstract void setDetailedThresholds(String details) throws InvalidThresholdException;
 
     /**
      * Report a fatal error and exit.
