@@ -87,8 +87,11 @@ public class BEREncoder {
 			}
 		}
 		// make the number unsigned
-		if (buf[offset-1]<0)
+		/*
+		 * No, we should allow signed numbers
+		 * if (buf[offset-1]<0)
 			buf[offset++] = 0;
+			*/
 		return (offset - inoffset);
 	}
 	
