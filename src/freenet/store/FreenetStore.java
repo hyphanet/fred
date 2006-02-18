@@ -43,4 +43,10 @@ public interface FreenetStore {
      * Store a public key.
      */
     public void put(byte[] hash, DSAPublicKey key) throws IOException;
+
+    /**
+     * Change the store size.
+     * @param maxStoreKeys The maximum number of keys to be cached.
+     */
+	public void setMaxKeys(long maxStoreKeys);
 }

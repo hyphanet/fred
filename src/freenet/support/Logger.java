@@ -201,11 +201,36 @@ public abstract class Logger {
         System.exit(retcode);
     }
 
-    public static void globalAddHook(LoggerHook logger2) {
-        ((LoggerHookChain)logger).addHook(logger2);
+    public synchronized static void globalAddHook(LoggerHook logger2) {
+    	if(logger instanceof VoidLogger)
+    		setupChain();
+   		((LoggerHookChain)logger).addHook(logger2);
     }
 
     public static void globalSetThreshold(int i) {
         logger.setThreshold(i);
     }
+
+	public synchronized static void globalRemoveHook(FileLoggerHook hook) {
+		if(logger instanceof LoggerHookChain)
+			((LoggerHookChain)logger).removeHook(hook);
+		else
+			System.err.println("Cannot remove hook: "+hook+" global logger is "+logger);
+	}
+
+	public synchronized static void destroyChainIfEmpty() {
+		if(logger instanceof VoidLogger) return;
+		if(logger instanceof LoggerHookChain && ((LoggerHookChain)logger).getHooks().length == 0) {
+			logger = new VoidLogger();
+		}
+	}
+
+	public static LoggerHookChain getChain() {
+		if(logger instanceof LoggerHookChain)
+			return (LoggerHookChain) logger;
+		else {
+			setupChain();
+			return (LoggerHookChain) logger;
+		}
+	}
 }

@@ -15,6 +15,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -37,6 +38,14 @@ import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.clients.http.FproxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.config.BooleanCallback;
+import freenet.config.Config;
+import freenet.config.FilePersistentConfig;
+import freenet.config.IntCallback;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.LongCallback;
+import freenet.config.StringCallback;
+import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
@@ -76,6 +85,7 @@ import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.LoggerHookChain;
 import freenet.support.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FilenameGenerator;
@@ -86,8 +96,18 @@ import freenet.transport.IPAddressDetector;
  * @author amphibian
  */
 public class Node {
-    
-	static final long serialVersionUID = -1;
+
+	/** Config object for the whole node. */
+	public final Config config;
+	
+	// Static stuff related to logger
+	
+	/** Directory to log to */
+	static File logDir;
+	/** Maximum size of gzipped logfiles */
+	static long maxLogSize;
+	/** Log config handler */
+	static LoggingConfigHandler logConfigHandler;
 	
 	/** If true, local requests and inserts aren't cached.
 	 * This opens up a glaring vulnerability; connected nodes
@@ -136,6 +156,17 @@ public class Node {
     
     // FIXME: abstract out address stuff? Possibly to something like NodeReference?
     final int portNumber;
+
+    /** Datastore directory */
+    private final File storeDir;
+
+    /** The number of bytes per key total in all the different datastores. All the datastores
+     * are always the same size in number of keys. */
+    static final int sizePerKey = CHKBlock.DATA_LENGTH + CHKBlock.TOTAL_HEADERS_LENGTH +
+		DSAPublicKey.PADDED_SIZE + SSKBlock.DATA_LENGTH + SSKBlock.TOTAL_HEADERS_LENGTH;
+    
+    /** The maximum number of keys stored in each of the datastores. */
+    private long maxStoreKeys;
     
     /** These 3 are private because must be protected by synchronized(this) */
     /** The CHK datastore */
@@ -163,19 +194,21 @@ public class Node {
     String myName;
     final LocationManager lm;
     final PeerManager peers; // my peers
+    /** Directory to put node, peers, etc into */
+    final File nodeDir;
+    final File tempDir;
     public final RandomSource random; // strong RNG
     final UdpSocketManager usm;
     final FNPPacketMangler packetMangler;
     final PacketSender ps;
     final NodeDispatcher dispatcher;
     final NodePinger nodePinger;
-    final String filenamesPrefix;
     final FilenameGenerator tempFilenameGenerator;
-    final FileLoggerHook fileLoggerHook;
     static final int MAX_CACHED_KEYS = 1000;
     final LRUHashtable cachedPubKeys;
     final boolean testnetEnabled;
-    final int testnetPort;
+    final TestnetHandler testnetHandler;
+    final StaticSwapRequestInterval swapInterval;
     static short MAX_HTL = 10;
     static final int EXIT_STORE_FILE_NOT_FOUND = 1;
     static final int EXIT_STORE_IOEXCEPTION = 2;
@@ -185,6 +218,16 @@ public class Node {
     static final int EXIT_TEMP_INIT_ERROR = 6;
     static final int EXIT_TESTNET_FAILED = 7;
     public static final int EXIT_MAIN_LOOP_LOST = 8;
+    public static final int EXIT_COULD_NOT_BIND_USM = 9;
+    static final int EXIT_IMPOSSIBLE_USM_PORT = 10;
+    static final int EXIT_NO_AVAILABLE_UDP_PORTS = 11;
+	public static final int EXIT_TESTNET_DISABLED_NOT_SUPPORTED = 12;
+	static final int EXIT_INVALID_STORE_SIZE = 13;
+	static final int EXIT_BAD_DOWNLOADS_DIR = 14;
+	static final int EXIT_BAD_NODE_DIR = 15;
+	static final int EXIT_BAD_TEMP_DIR = 16;
+	static final int EXIT_COULD_NOT_START_FCP = 17;
+    
     
     public final long bootID;
     public final long startupTime;
@@ -196,11 +239,11 @@ public class Node {
     final RequestStarter requestStarter;
     final RequestThrottle insertThrottle;
     final RequestStarter insertStarter;
-    final File downloadDir;
-    final TestnetHandler testnetHandler;
-    final TestnetStatusUploader statusUploader;
+    File downloadDir;
     public final ClientRequestScheduler fetchScheduler;
     public final ClientRequestScheduler putScheduler;
+    TextModeClientInterface tmci;
+    FCPServer fcpServer;
     
     // Things that's needed to keep track of
     public final PluginManager pluginManager;
@@ -211,7 +254,7 @@ public class Node {
     static final long MAX_ARCHIVE_SIZE = 1024*1024; // ??? FIXME
     static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
     static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
-    
+
     // Helpers
 	public final InetAddress localhostAddress;
     
@@ -224,7 +267,7 @@ public class Node {
         FileInputStream fis = new FileInputStream(filename);
         InputStreamReader isr = new InputStreamReader(fis);
         BufferedReader br = new BufferedReader(isr);
-        SimpleFieldSet fs = new SimpleFieldSet(br);
+        SimpleFieldSet fs = new SimpleFieldSet(br, false);
         br.close();
         // Read contents
         String physical = fs.get("physical.udp");
@@ -274,18 +317,16 @@ public class Node {
 
     public void writeNodeFile() {
         try {
-            writeNodeFile(filenamesPrefix+"node-"+portNumber, filenamesPrefix+"node-"+portNumber+".bak");
+            writeNodeFile(new File(nodeDir, "node-"+portNumber), new File(nodeDir, "node-"+portNumber+".bak"));
         } catch (IOException e) {
             Logger.error(this, "Cannot write node file!: "+e+" : "+"node-"+portNumber);
         }
     }
     
-    private void writeNodeFile(String filename, String backupFilename) throws IOException {
+    private void writeNodeFile(File orig, File backup) throws IOException {
         SimpleFieldSet fs = exportFieldSet();
-        File orig = new File(filename);
-        File backup = new File(backupFilename);
         orig.renameTo(backup);
-        FileOutputStream fos = new FileOutputStream(filename);
+        FileOutputStream fos = new FileOutputStream(orig);
         OutputStreamWriter osr = new OutputStreamWriter(fos);
         fs.writeTo(osr);
         osr.close();
@@ -311,169 +352,429 @@ public class Node {
     /**
      * Read the port number from the arguments.
      * Then create a node.
+     * Anything that needs static init should ideally be in here.
      */
     public static void main(String[] args) throws IOException {
-    	int length = args.length;
-    	if (length < 1 || length > 3) {
-    		System.out.println("Usage: $ java freenet.node.Node <portNumber> [ipOverride] [max data packets / second]");
+    	if(args.length>1) {
+    		System.out.println("Usage: $ java freenet.node.Node <configFile>");
+    		System.out.println("We recommend you move your old <filename>-<portnumber> files to <filename>, otherwise the node won't use them!");
     		return;
     	}
     	
-        int port = Integer.parseInt(args[0]);
-        System.out.println("Port number: "+port);
-        File logDir = new File("logs-"+port);
-        logDir.mkdir();
-        FileLoggerHook logger = new FileLoggerHook(true, new File(logDir, "freenet-"+port).getAbsolutePath(), 
-        		"d (c, t, p): m", "MMM dd, yyyy HH:mm:ss:SSS", Logger.MINOR, false, true, 
-        		1024*1024*1024 /* 1GB of old compressed logfiles */);
-        logger.setInterval("5MINUTES");
-        Logger.setupChain();
-        Logger.globalSetThreshold(Logger.MINOR);
-        Logger.globalAddHook(logger);
-        logger.start();
-        Logger.normal(Node.class, "Creating node...");
-        Yarrow yarrow = new Yarrow();
-        InetAddress overrideIP = null;
-        int packetsPerSecond = 15;
-        if(args.length > 1) {
-            overrideIP = InetAddress.getByName(args[1]);
-            System.err.println("Overriding IP detection: "+overrideIP.getHostAddress());
-            if(args.length > 2) {
-            	packetsPerSecond = Integer.parseInt(args[2]);
-            }
-        }
-        DiffieHellman.init(yarrow);
-        Node n = new Node(port, yarrow, overrideIP, "", 1000 / packetsPerSecond, true, logger, 32768 /* 1GB */);
-        n.start(new StaticSwapRequestInterval(2000));
-        new TextModeClientInterface(n);
+    	File configFilename;
+    	if(args.length == 0) {
+    		System.out.println("Using default config filename freenet.ini");
+    		configFilename = new File("freenet.ini");
+    	} else
+    		configFilename = new File(args[0]);
+    	
+    	FilePersistentConfig cfg = new FilePersistentConfig(configFilename);
+    	
+    	// First, set up logging. It is global, and may be shared between several nodes.
+    	
+    	SubConfig loggingConfig = new SubConfig("logger", cfg);
+    	
+    	try {
+			logConfigHandler = new LoggingConfigHandler(loggingConfig);
+		} catch (InvalidConfigValueException e) {
+			System.err.println("Error: could not set up logging: "+e.getMessage());
+			e.printStackTrace();
+			return;
+		}
+    	
+    	// Setup RNG
+
+    	RandomSource random = new Yarrow();
+    	
+        DiffieHellman.init(random);
+        
         Thread t = new Thread(new MemoryChecker(), "Memory checker");
         t.setPriority(Thread.MAX_PRIORITY);
         t.start();
-        SimpleToadletServer server = new SimpleToadletServer(port+2000);
-        FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
-        server.register(fproxy, "/", false);
-        System.out.println("Starting fproxy on port "+(port+2000));
-        new FCPServer(port+3000, n);
-        System.out.println("Starting FCP server on port "+(port+3000));
-        SNMPAgent.setSNMPPort(port+4000);
-        System.out.println("Starting SNMP server on port "+(port+4000));
-        SNMPStarter.initialize();
-        //server.register(fproxy, "/SSK@", false);
-        //server.register(fproxy, "/KSK@", false);
+        
+    	Node node;
+		try {
+			node = new Node(cfg, random);
+	    	node.start(false);
+		} catch (NodeInitException e) {
+			System.err.println("Failed to load node: "+e.getMessage());
+			e.printStackTrace();
+			System.exit(e.exitCode);
+		}
     }
     
-    // FIXME - the whole overrideIP thing is a hack to avoid config
-    // Implement the config!
-    Node(int port, RandomSource rand, InetAddress overrideIP, String prefix, int throttleInterval, boolean enableTestnet, FileLoggerHook logger, int maxStoreKeys) {
-    	this.fileLoggerHook = logger;
-    	cachedPubKeys = new LRUHashtable();
-    	if(enableTestnet) {
-    		Logger.error(this, "WARNING: ENABLING TESTNET CODE! This may seriously jeopardize your anonymity!");
-    		testnetEnabled = true;
-    		testnetPort = 1024 + (port-1024+1000) % (65536 - 1024);
-    		testnetHandler = new TestnetHandler(this, testnetPort);
-    		statusUploader = new TestnetStatusUploader(this, 180000);
-    	} else {
-    		testnetEnabled = false;
-    		testnetPort = -1;
-    		testnetHandler = null;
-    		statusUploader = null;
+    static class NodeInitException extends Exception {
+    	// One of the exit codes from above
+    	public final int exitCode;
+    	
+    	NodeInitException(int exitCode, String msg) {
+    		super(msg+" ("+exitCode+")");
+    		this.exitCode = exitCode;
     	}
+    }
+
+    /**
+     * Create a Node from a Config object.
+     * @param config The Config object for this node.
+     * @param random The random number generator for this node. Passed in because we may want
+     * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
+     * a production node.
+     * @throws NodeInitException If the node initialization fails.
+     */
+    private Node(Config config, RandomSource random) throws NodeInitException {
+    	
+    	// Easy stuff
+        startupTime = System.currentTimeMillis();
+        recentlyCompletedIDs = new LRUQueue();
+    	this.config = config;
+    	this.random = random;
+    	cachedPubKeys = new LRUHashtable();
+		lm = new LocationManager(random);
     	try {
 			localhostAddress = InetAddress.getByName("127.0.0.1");
 		} catch (UnknownHostException e3) {
 			// Does not do a reverse lookup, so this is impossible
 			throw new Error(e3);
 		}
-        portNumber = port;
-        startupTime = System.currentTimeMillis();
-        recentlyCompletedIDs = new LRUQueue();
         ipDetector = new IPAddressDetector(10*1000, this);
-        if(prefix == null) prefix = "";
-        filenamesPrefix = prefix;
-        this.overrideIPAddress = overrideIP;
-        downloadDir = new File("downloads");
-        downloadDir.mkdir();
-        try {
-            chkDatastore = new BerkeleyDBFreenetStore(prefix+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH);
-            sskDatastore = new BerkeleyDBFreenetStore(prefix+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH);
-            pubKeyDatastore = new BerkeleyDBFreenetStore(prefix+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0);
-        } catch (FileNotFoundException e1) {
-            Logger.error(this, "Could not open datastore: "+e1, e1);
-            System.err.println("Could not open datastore: "+e1);
-            System.exit(EXIT_STORE_FILE_NOT_FOUND);
-            throw new Error();
-        } catch (IOException e1) {
-            Logger.error(this, "Could not open datastore: "+e1, e1);
-            System.err.println("Could not open datastore: "+e1);
-            System.exit(EXIT_STORE_IOEXCEPTION);
-            throw new Error();
-        } catch (Exception e1) {
-            Logger.error(this, "Could not open datastore: "+e1, e1);
-            System.err.println("Could not open datastore: "+e1);
-            System.exit(EXIT_STORE_OTHER);
-            throw new Error();
-        }
-        random = rand;
         requestSenders = new HashMap();
         transferringRequestSenders = new HashMap();
         insertSenders = new HashMap();
         runningUIDs = new HashSet();
+        ps = new PacketSender(this);
+        // FIXME maybe these should persist? They need to be private though, so after the node/peers split. (bug 51).
+        decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
+        decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
+        bootID = random.nextLong();
 
-        BlockTransmitter.setMinPacketInterval(throttleInterval);
+    	// Setup node-specific configuration
+    	
+    	SubConfig nodeConfig = new SubConfig("node", config);
 
-        /*
-         * FIXME: test the soft limit.
-         * 
-         * The soft limit is implemented, except for:
-         * - We need to write the current status to disk every 1 minute or so.
-         * - When we start up, we need to read this in, assume that the node sent
-         *   as many packets as it was allowed to in the following minute, and
-         *   then shut down before writing again (worst case scenario).
-         * - We need to test the soft limit!
-         */
-        BlockTransmitter.setSoftLimitPeriod(14*24*60*60*1000);
-        BlockTransmitter.setSoftMinPacketInterval(0);
+    	// IP address override
+    	
+    	nodeConfig.register("ipAddressOverride", "", 0, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
+
+			public String get() {
+				return Peer.getHostName(overrideIPAddress);
+			}
+			
+			public void set(String val) throws InvalidConfigValueException {
+				// FIXME do we need to tell anyone?
+				if(val.length() == 0) {
+					// Set to null
+					overrideIPAddress = null;
+					return;
+				}
+				InetAddress addr;
+				try {
+					addr = InetAddress.getByName(val);
+				} catch (UnknownHostException e) {
+					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
+				}
+				overrideIPAddress = addr;
+			}
+    		
+    	});
+    	
+    	String ipOverrideString = nodeConfig.getString("ipAddressOVerride");
+    	if(ipOverrideString.length() == 0)
+    		overrideIPAddress = null;
+    	else {
+			try {
+				overrideIPAddress = InetAddress.getByName(ipOverrideString);
+			} catch (UnknownHostException e) {
+				String msg = "Unknown host: "+ipOverrideString+" in config: "+e.getMessage();
+				Logger.error(this, msg);
+				System.err.println(msg+" but starting up anyway with no IP override");
+				overrideIPAddress = null;
+			}
+    	}
+    	
+    	// Determine the port number
+    	
+    	nodeConfig.register("listenPort", -1 /* means random */, 1, true, "FNP port number (UDP)", "UDP port for node-to-node communications (Freenet Node Protocol)",
+    			new IntCallback() {
+					public int get() {
+						return portNumber;
+					}
+					public void set(int val) throws InvalidConfigValueException {
+						// FIXME implement on the fly listenPort changing
+						// Note that this sort of thing should be the exception rather than the rule!!!!
+						String msg = "Switching listenPort on the fly not yet supported!";
+						Logger.error(this, msg);
+						throw new InvalidConfigValueException(msg);
+					}
+    	});
+
+    	int port = nodeConfig.getInt("listenPort");
+    	
+    	UdpSocketManager u = null;
+    	
+    	if(port > 65535) {
+    		throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Impossible port number: "+port);
+    	} else if(port == -1) {
+    		// Pick a random port
+    		for(int i=0;i<200000;i++) {
+    			int portNo = 1024 + random.nextInt(65535-1024);
+    			try {
+    				u = new UdpSocketManager(port);
+    				port = u.getPortNumber();
+    				break;
+    			} catch (SocketException e) {
+    				continue;
+    			}
+    		}
+    		throw new NodeInitException(EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
+    	} else {
+    		try {
+    			u = new UdpSocketManager(port);
+    		} catch (SocketException e) {
+    			throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
+    		}
+    	}
+    	usm = u;
+        usm.setDispatcher(dispatcher=new NodeDispatcher(this));
+        usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
+    	
+        System.out.println("Port number: "+port);
+        portNumber = port;
         
-		lm = new LocationManager(random);
+        Logger.normal(Node.class, "Creating node...");
 
+        // Now pull the override IP address, if any, from the config
+        
+        nodeConfig.register("ipAddress", "", 2, true, "IP address", "IP address of the node (should not usually be necessary)", 
+        		new StringCallback() {
+					public String get() {
+						return Peer.getHostName(overrideIPAddress);
+					}
+					public void set(String val) throws InvalidConfigValueException {
+						overrideIPAddress = resolve(val);
+					}
+        });
+
+        String ip = nodeConfig.getString("ipAddress");
+        
+        overrideIPAddress = resolve(ip);
+        
+        // Bandwidth limit
+
+        // FIXME These should not be static !!!! Need a context object for BT for bwlimiting.
+        // See bug 77
+        nodeConfig.register("outputBandwidthLimit", "15K", 3, false, 
+        		"Output bandwidth limit", "Hard output bandwidth limit (bytes/sec); the node should almost never exceed this", 
+        		new IntCallback() {
+					public int get() {
+						return BlockTransmitter.getHardBandwidthLimit();
+					}
+					public void set(int val) throws InvalidConfigValueException {
+						BlockTransmitter.setHardBandwidthLimit(val);
+					}
+        });
+        
+        int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
+        BlockTransmitter.setHardBandwidthLimit(obwLimit);
+        // FIXME add an averaging/long-term/soft bandwidth limit. (bug 76)
+        // There is already untested support for this in BlockTransmitter.
+        // No long-term limit for now.
+        BlockTransmitter.setSoftBandwidthLimit(0, 0);
+        
+        // SwapRequestInterval
+        
+        nodeConfig.register("swapRequestSendInterval", 2000, 4, true,
+        		"Swap request send interval (ms)", "Interval between swap attempting to send swap requests in milliseconds. Leave this alone!",
+        		new IntCallback() {
+					public int get() {
+						return swapInterval.fixedInterval;
+					}
+					public void set(int val) throws InvalidConfigValueException {
+						swapInterval.set(val);
+					}
+        });
+        
+        swapInterval = new StaticSwapRequestInterval(nodeConfig.getInt("swapRequestSendInterval"));
+        
+        // Testnet.
+        // Cannot be enabled/disabled on the fly.
+        // If enabled, forces certain other config options.
+        
+        if((testnetHandler = TestnetHandler.maybeCreate(this, config)) != null) {
+        	String msg = "WARNING: ENABLING TESTNET CODE! This WILL seriously jeopardize your anonymity!";
+    		Logger.error(this, msg);
+    		System.err.println(msg);
+        	testnetEnabled = true;
+        } else {
+        	Logger.normal(this, "Testnet mode DISABLED. You may have some level of anonymity. :)");
+        	testnetEnabled = false;
+        }
+
+        // Directory for node-related files other than store
+        
+        nodeConfig.register("nodeDir", ".", 6, true, "Node directory", "Name of directory to put node-related files e.g. peers list in", 
+        		new StringCallback() {
+					public String get() {
+						return nodeDir.getPath();
+					}
+					public void set(String val) throws InvalidConfigValueException {
+						if(nodeDir.equals(new File(val))) return;
+						// FIXME
+						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
+					}
+        });
+        
+        nodeDir = new File(nodeConfig.getString("nodeDir"));
+        if(!((nodeDir.exists() && nodeDir.isDirectory()) || (nodeDir.mkdir()))) {
+        	String msg = "Could not find or create datastore directory";
+        	throw new NodeInitException(EXIT_BAD_NODE_DIR, msg);
+        }
+
+        peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
+        peers.writePeers();
+        nodePinger = new NodePinger(this);
+        
+        // After we have set up testnet and IP address, load the node file
         try {
-        	readNodeFile(prefix+"node-"+portNumber);
+        	// FIXME should take file directly?
+        	readNodeFile(new File(nodeDir, "node-"+portNumber).getPath());
         } catch (IOException e) {
             try {
-                readNodeFile(prefix+"node-"+portNumber+".bak");
+                readNodeFile(new File("node-"+portNumber+".bak").getPath());
             } catch (IOException e1) {
                 initNodeFileSettings(random);
             }
         }
         writeNodeFile();
+
+        // Temp files
         
-        ps = new PacketSender(this);
-        peers = new PeerManager(this, prefix+"peers-"+portNumber);
+        nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), 6, true, "Temp files directory", "Name of directory to put temporary files in", 
+        		new StringCallback() {
+					public String get() {
+						return tempDir.getPath();
+					}
+					public void set(String val) throws InvalidConfigValueException {
+						if(tempDir.equals(new File(val))) return;
+						// FIXME
+						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
+					}
+        });
         
-        try {
-            usm = new UdpSocketManager(portNumber);
-            usm.setDispatcher(dispatcher=new NodeDispatcher(this));
-            usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
-        } catch (SocketException e2) {
-            Logger.error(this, "Could not listen for traffic: "+e2, e2);
-            System.exit(EXIT_USM_DIED);
-            throw new Error();
+        tempDir = new File(nodeConfig.getString("tempDir"));
+        if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
+        	String msg = "Could not find or create temporary directory";
+        	throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
         }
-        decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
-        decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
-        bootID = random.nextLong();
-        peers.writePeers();
+        
         try {
-        	String dirName = "temp-"+portNumber;
-			tempFilenameGenerator = new FilenameGenerator(random, true, new File(dirName), "temp-");
+			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
 		} catch (IOException e) {
 			Logger.error(this, "Could not create temp bucket factory: "+e, e);
 			System.exit(EXIT_TEMP_INIT_ERROR);
 			throw new Error();
 		}
-        nodePinger = new NodePinger(this);
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
+
+        
+        // Datastore
+        
+        nodeConfig.register("storeSize", "1G", 5, false, "Store size in bytes", "Store size in bytes", 
+        		new LongCallback() {
+
+					public long get() {
+						return maxStoreKeys * sizePerKey;
+					}
+
+					public void set(long storeSize) throws InvalidConfigValueException {
+						if(storeSize < 0 || storeSize < (32 * 1024 * 1024))
+							throw new InvalidConfigValueException("Invalid store size");
+						long newMaxStoreKeys = storeSize / sizePerKey;
+						if(newMaxStoreKeys == maxStoreKeys) return;
+						// Update each datastore
+						maxStoreKeys = newMaxStoreKeys;
+						chkDatastore.setMaxKeys(maxStoreKeys);
+						sskDatastore.setMaxKeys(maxStoreKeys);
+						pubKeyDatastore.setMaxKeys(maxStoreKeys);
+					}
+        });
+        
+        long storeSize = nodeConfig.getLong("storeSize");
+        
+        if(/*storeSize < 0 || */storeSize < (32 * 1024 * 1024)) { // totally arbitrary minimum!
+        	throw new NodeInitException(EXIT_INVALID_STORE_SIZE, "Invalid store size");
+        }
+
+        maxStoreKeys = storeSize / sizePerKey;
+        
+        nodeConfig.register("storeDir", new File(nodeDir,"store-"+portNumber).toString(), 6, true, "Store directory", "Name of directory to put store files in", 
+        		new StringCallback() {
+					public String get() {
+						return storeDir.getPath();
+					}
+					public void set(String val) throws InvalidConfigValueException {
+						if(storeDir.equals(new File(val))) return;
+						// FIXME
+						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
+					}
+        });
+        
+        storeDir = new File(nodeConfig.getString("storeDir"));
+        if(!((storeDir.exists() && storeDir.isDirectory()) || (storeDir.mkdir()))) {
+        	String msg = "Could not find or create datastore directory";
+        	throw new NodeInitException(EXIT_STORE_OTHER, msg);
+        }
+
+        try {
+            chkDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH);
+            sskDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH);
+            pubKeyDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0);
+        } catch (FileNotFoundException e1) {
+        	String msg = "Could not open datastore: "+e1;
+            Logger.error(this, msg, e1);
+            System.err.println(msg);
+            throw new NodeInitException(EXIT_STORE_FILE_NOT_FOUND, msg);
+        } catch (IOException e1) {
+        	String msg = "Could not open datastore: "+e1;
+            Logger.error(this, msg, e1);
+            System.err.println(msg);
+            throw new NodeInitException(EXIT_STORE_IOEXCEPTION, msg);
+        } catch (Exception e1) {
+        	String msg = "Could not open datastore: "+e1;
+            Logger.error(this, msg, e1);
+            System.err.println(msg);
+            throw new NodeInitException(EXIT_STORE_OTHER, msg);
+        }
+        
+        // Downloads directory
+        
+        nodeConfig.register("downloadsDir", "downloads", 8, false, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
+
+			public String get() {
+				return downloadDir.getPath();
+			}
+
+			public void set(String val) throws InvalidConfigValueException {
+				if(downloadDir.equals(new File(val)))
+					return;
+				File f = new File(val);
+		        if(!((f.exists() && f.isDirectory()) || (f.mkdir()))) {
+		        	throw new InvalidConfigValueException("Could not find or create directory");
+		        }
+				downloadDir = new File(val);
+			}
+        	
+        });
+        
+        String val = nodeConfig.getString("downloadsDir");
+		downloadDir = new File(val);
+        if(!((downloadDir.exists() && downloadDir.isDirectory()) || (downloadDir.mkdir()))) {
+        	throw new NodeInitException(EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
+        }
+
+        nodeConfig.finishedInitialization();
+        
+        // FIXME make all the below arbitrary constants configurable!
+        
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
 		requestThrottle = new RequestThrottle(5000, 2.0F);
 		requestStarter = new RequestStarter(this, requestThrottle, "Request starter ("+portNumber+")");
@@ -487,11 +788,6 @@ public class Node {
 		putScheduler = new ClientRequestScheduler(true, random, insertStarter, this);
 		insertStarter.setScheduler(putScheduler);
 		insertStarter.start();
-		if(testnetHandler != null)
-			testnetHandler.start();
-		if(statusUploader != null)
-			statusUploader.start();
-		
 		// And finally, Initialize the plugin manager
 		PluginManager pm = null;
 		try {
@@ -504,14 +800,57 @@ public class Node {
 			System.err.println("THIS SHOULDN'T OCCUR!!!! (plugin system now disabled)");
 		}
 		pluginManager = pm;
-		System.err.println("Created Node on port "+port);
     }
-
-    void start(SwapRequestInterval interval) {
-        if(interval != null)
-            lm.startSender(this, interval);
+    
+	private InetAddress resolve(String val) {
+		try {
+			if(val == null || val.length() == 0)
+				return null;
+			else
+				return InetAddress.getByName(val);
+		} catch (UnknownHostException e) {
+			Logger.error(this, "Ignoring unresolvable overridden IP address: "+overrideIPAddress);
+			return null;
+		}
+	}
+	
+    void start(boolean noSwaps) throws NodeInitException {
+        if(!noSwaps)
+            lm.startSender(this, this.swapInterval);
         ps.start();
         usm.start();
+        
+        // Start services
+        
+        // TMCI
+        TextModeClientInterface.maybeCreate(this, config);
+        
+        // Fproxy
+        // FIXME this is a hack, the real way to do this is plugins
+        SimpleToadletServer.maybeCreateFproxyEtc(this, config);
+        
+        // FCP
+        try {
+			fcpServer = FCPServer.maybeCreate(this, config);
+		} catch (IOException e) {
+			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+		}
+        
+        // SNMP
+        SNMPStarter.maybeCreate(this, config);
+
+        
+        // FIXME old code to use above
+        
+        new FCPServer(portNumber+3000, this);
+        System.out.println("Starting FCP server on port "+(portNumber+3000));
+        SNMPAgent.setSNMPPort(portNumber+4000);
+        System.out.println("Starting SNMP server on port "+(portNumber+4000));
+        SNMPStarter.initialize();
+        
+        // Start testnet handler
+		if(testnetHandler != null)
+			testnetHandler.start();
     }
     
     public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
@@ -942,7 +1281,7 @@ public class Node {
      * @return
      */
     public SimpleFieldSet exportFieldSet() {
-        SimpleFieldSet fs = new SimpleFieldSet();
+        SimpleFieldSet fs = new SimpleFieldSet(false);
         fs.put("physical.udp", Peer.getHostName(getPrimaryIPAddress())+":"+portNumber);
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
@@ -1550,5 +1889,9 @@ public class Node {
 		CHKBlock block = fetch(clientCHK.getNodeCHK());
 		if(block == null) return null;
 		return new ClientCHKBlock(block, clientCHK);
+	}
+	
+	public FCPServer getFCPServer() {
+		return fcpServer;
 	}
 }

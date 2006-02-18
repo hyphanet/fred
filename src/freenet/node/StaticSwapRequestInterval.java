@@ -1,20 +1,18 @@
 package freenet.node;
 
-/**
- * @author root
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
- */
 public class StaticSwapRequestInterval implements SwapRequestInterval {
 
-    double fixedInterval;
+    int fixedInterval;
     
-    public StaticSwapRequestInterval(double d) {
+    public StaticSwapRequestInterval(int d) {
         fixedInterval = d;
     }
     
-    public double getValue() {
+    public int getValue() {
         return fixedInterval;
     }
+
+	public void set(int val) {
+		this.fixedInterval = val;
+	}
 }

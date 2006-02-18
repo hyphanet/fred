@@ -15,7 +15,7 @@ public class GenerateSSKMessage extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet();
+		return new SimpleFieldSet(false);
 	}
 
 	public String getName() {

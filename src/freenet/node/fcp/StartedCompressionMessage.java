@@ -15,7 +15,7 @@ public class StartedCompressionMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.put("Identifier", identifier);
 		fs.put("Codec", Integer.toString(codec));
 		return fs;

@@ -9,7 +9,13 @@ import java.net.URI;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.config.BooleanCallback;
+import freenet.config.Config;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
+import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
@@ -63,4 +69,48 @@ public class FproxyToadlet extends Toadlet {
 		this.writeReply(ctx, 200, "text/html", "OK", notSupported);
 	}
 
+
+	static class FproxyEnabledCallback implements BooleanCallback {
+		
+		final Node node;
+		
+		public boolean get() {
+			
+			// TODO Auto-generated method stub
+			return false;
+		}
+		public void set(boolean val) throws InvalidConfigValueException {
+			// TODO Auto-generated method stub
+			
+		}
+	}
+	
+	public static void maybeCreateFproxyEtc(Node node, Config config) {
+		
+		SubConfig fproxyConfig = new SubConfig("fproxy", config);
+		
+		fproxyConfig.register("enabled", true, 1, true, "Enable fproxy?", "Whether to enable fproxy and related HTTP services", 
+				new BooleanCallback() {
+					public boolean get() {
+						
+						// TODO Auto-generated method stub
+						return false;
+					}
+					public void set(boolean val) throws InvalidConfigValueException {
+						// TODO Auto-generated method stub
+						
+					}
+		});
+		
+        SimpleToadletServer server = new SimpleToadletServer(+2000);
+        FproxyToadlet fproxy = new FproxyToadlet(makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+        server.register(fproxy, "/", false);
+        System.out.println("Starting fproxy on port "+(portNumber+2000));
+
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	
 }

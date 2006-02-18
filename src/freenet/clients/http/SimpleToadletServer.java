@@ -9,8 +9,15 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import freenet.config.BooleanCallback;
+import freenet.config.Config;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.SubConfig;
+import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
+import freenet.support.FileLoggerHook.IntervalParseException;
 
 public class SimpleToadletServer implements ToadletContainer, Runnable {
 
@@ -54,7 +61,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		return null;
 	}
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, IntervalParseException {
         File logDir = new File("logs-toadlettest");
         logDir.mkdir();
         FileLoggerHook logger = new FileLoggerHook(true, new File(logDir, "test-1111").getAbsolutePath(), 

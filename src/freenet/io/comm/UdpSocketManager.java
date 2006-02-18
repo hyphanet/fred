@@ -77,7 +77,6 @@ public class UdpSocketManager extends Thread {
 
 	public UdpSocketManager(int listenPort) throws SocketException {
 		super("UdpSocketManager sender thread on port " + listenPort);
-		try {
 		    // Keep the Updater code in, just commented out, for now
 		    // We may want to be able to do on-line updates.
 //			if (Updater.hasResource()) {
@@ -85,9 +84,6 @@ public class UdpSocketManager extends Thread {
 //			} else {
 				_sock = new DatagramSocket(listenPort);
 //			}
-		} catch (BindException e) {
-			Logger.fatal(UdpSocketManager.class, -1, "Couldn't connect to UDP port " + listenPort + ", is another instance of Dijjer running?");
-		}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = new Random();
 	}
