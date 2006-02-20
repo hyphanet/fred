@@ -73,8 +73,10 @@ public class FCPServer implements Runnable {
 		// FIXME check enabled etc
 		fcpConfig.register("port", 9481 /* anagram of 1984, and 1000 up from old number */,
 				2, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(node));
+		FCPServer fcp = new FCPServer(fcpConfig.getInt("port"), node);
+		node.setFCPServer(fcp);
 		fcpConfig.finishedInitialization();
-		return new FCPServer(fcpConfig.getInt("port"), node);
+		return fcp;
 	}
 
 }

@@ -451,7 +451,7 @@ public class FileLoggerHook extends LoggerHook {
 			maxOldLogfilesDiskUsage);
 	}
 	
-	private Object trimOldLogFilesLock;
+	private final Object trimOldLogFilesLock = new Object();
 	
 	public void trimOldLogFiles() {
 		synchronized(trimOldLogFilesLock) {

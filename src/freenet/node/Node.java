@@ -480,7 +480,7 @@ public class Node {
     		
     	});
     	
-    	String ipOverrideString = nodeConfig.getString("ipAddressOVerride");
+    	String ipOverrideString = nodeConfig.getString("ipAddressOverride");
     	if(ipOverrideString.length() == 0)
     		overrideIPAddress = null;
     	else {
@@ -521,14 +521,18 @@ public class Node {
     		for(int i=0;i<200000;i++) {
     			int portNo = 1024 + random.nextInt(65535-1024);
     			try {
-    				u = new UdpSocketManager(port);
+    				u = new UdpSocketManager(portNo);
     				port = u.getPortNumber();
     				break;
     			} catch (SocketException e) {
+    				Logger.normal(this, "Could not use port: "+portNo+": "+e, e);
+    				System.err.println("Could not use port: "+portNo+": "+e);
+    				e.printStackTrace();
     				continue;
     			}
     		}
-    		throw new NodeInitException(EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
+    		if(u == null)
+    			throw new NodeInitException(EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
     	} else {
     		try {
     			u = new UdpSocketManager(port);
@@ -833,6 +837,7 @@ public class Node {
         try {
 			FproxyToadlet.maybeCreateFproxyEtc(this, config);
 		} catch (IOException e) {
+			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);
 		}
         
@@ -1907,5 +1912,9 @@ public class Node {
 
 	public void setFproxy(FproxyToadlet fproxy) {
 		this.fproxyServlet = fproxy;
+	}
+
+	public void setFCPServer(FCPServer fcp) {
+		this.fcpServer = fcp;
 	}
 }

@@ -689,5 +689,6 @@ public class TextModeClientInterface implements Runnable {
 	public static void maybeCreate(Node node, Config config) {
 		// FIXME make this configurable.
 		// Depends on fixing QUIT issues. (bug #81)
+		new TextModeClientInterface(node);
 	}
 }
