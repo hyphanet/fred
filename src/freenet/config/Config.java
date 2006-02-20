@@ -1,5 +1,6 @@
 package freenet.config;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 /** Global configuration object for a node. SubConfig's register here.
@@ -21,9 +22,15 @@ public class Config {
 		}
 	}
 	
-	/** Write current config to disk */
+	/** Write current config to disk 
+	 * @throws IOException */
 	public void store() {
 		// Do nothing
 	}
 
+	/** Finished initialization */
+	public void finishedInit() {
+		// Do nothing
+	}
+	
 }

@@ -60,15 +60,20 @@ public class FilePersistentConfig extends Config {
 	
 	public void register(SubConfig sc) {
 		super.register(sc);
-		SimpleFieldSet sfs = origConfigFileContents.subset(sc.prefix);
-		// Set all the options
-		sc.setOptions(sfs);
+		if(origConfigFileContents != null) {
+			SimpleFieldSet sfs = origConfigFileContents.subset(sc.prefix);
+			Logger.minor(this, "Registering "+sc+": "+sfs);
+			// Set all the options
+			if(sfs != null)
+				sc.setOptions(sfs);
+		}
 	}
 	
 	/**
 	 * Finished initialization. So any remaining options must be invalid.
 	 */
 	public void finishedInit() {
+		if(origConfigFileContents == null) return;
 		Iterator i = origConfigFileContents.keyIterator();
 		while(i.hasNext()) {
 			String key = (String) i.next();
@@ -76,11 +81,24 @@ public class FilePersistentConfig extends Config {
 		}
 	}
 	
+	public void store() {
+		try {
+			innerStore();
+		} catch (IOException e) {
+			String err = "Cannot store config: "+e;
+			Logger.error(this, err, e);
+			System.err.println(err);
+			e.printStackTrace();
+		}
+	}
+	
 	public void innerStore() throws IOException {
 		SimpleFieldSet fs = exportFieldSet();
+		Logger.minor(this, "fs = "+fs);
 		FileOutputStream fos = new FileOutputStream(tempFilename);
-		fs.writeTo(new BufferedWriter(new OutputStreamWriter(fos)));
-		fos.close();
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+		fs.writeTo(bw);
+		bw.close();
 		tempFilename.renameTo(filename);
 	}
 

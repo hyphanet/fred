@@ -123,6 +123,7 @@ public class SubConfig {
 	 */
 	public void finishedInitialization() {
 		hasInitialized = true;
+		config.register(this);
 	}
 
 	/**

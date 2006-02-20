@@ -459,7 +459,8 @@ public class Node {
     	nodeConfig.register("ipAddressOverride", "", 0, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
 
 			public String get() {
-				return Peer.getHostName(overrideIPAddress);
+				if(overrideIPAddress == null) return "";
+				else return Peer.getHostName(overrideIPAddress);
 			}
 			
 			public void set(String val) throws InvalidConfigValueException {
@@ -509,7 +510,7 @@ public class Node {
 						throw new InvalidConfigValueException(msg);
 					}
     	});
-
+    	
     	int port = nodeConfig.getInt("listenPort");
     	
     	UdpSocketManager u = null;
@@ -549,22 +550,6 @@ public class Node {
         
         Logger.normal(Node.class, "Creating node...");
 
-        // Now pull the override IP address, if any, from the config
-        
-        nodeConfig.register("ipAddress", "", 2, true, "IP address", "IP address of the node (should not usually be necessary)", 
-        		new StringCallback() {
-					public String get() {
-						return Peer.getHostName(overrideIPAddress);
-					}
-					public void set(String val) throws InvalidConfigValueException {
-						overrideIPAddress = resolve(val);
-					}
-        });
-
-        String ip = nodeConfig.getString("ipAddress");
-        
-        overrideIPAddress = resolve(ip);
-        
         // Bandwidth limit
 
         // FIXME These should not be static !!!! Need a context object for BT for bwlimiting.
@@ -611,6 +596,7 @@ public class Node {
     		Logger.error(this, msg);
     		System.err.println(msg);
         	testnetEnabled = true;
+        	Logger.globalSetThreshold(Logger.MINOR);
         } else {
         	Logger.normal(this, "Testnet mode DISABLED. You may have some level of anonymity. :)");
         	testnetEnabled = false;
@@ -779,6 +765,8 @@ public class Node {
         }
 
         nodeConfig.finishedInitialization();
+        config.finishedInit();
+        config.store();
         
         // FIXME make all the below arbitrary constants configurable!
         
