@@ -105,7 +105,10 @@ public class FilePersistentConfig extends Config {
 			fs.writeTo(bw);
 		}
 		bw.close();
-		tempFilename.renameTo(filename);
+		if(!tempFilename.renameTo(filename)) {
+			filename.delete();
+			tempFilename.renameTo(filename);
+		}
 	}
 
 	private synchronized SimpleFieldSet exportFieldSet() {
