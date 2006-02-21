@@ -51,6 +51,7 @@
       <include name="net/i2p/util/*.java"/>
       <include name="snmplib/*.java"/>
       <exclude name="org/**/MersenneTwisterTest.java"/>
+      <exclude name="freenet/node/*Test.java"/>
     </javac>
   </target>
 
