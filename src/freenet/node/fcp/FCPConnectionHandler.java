@@ -13,6 +13,7 @@ import freenet.support.Logger;
 
 public class FCPConnectionHandler {
 
+	final FCPServer server;
 	final Socket sock;
 	final FCPConnectionInputHandler inputHandler;
 	final FCPConnectionOutputHandler outputHandler;
@@ -21,14 +22,16 @@ public class FCPConnectionHandler {
 	private boolean inputClosed;
 	private boolean outputClosed;
 	private String clientName;
+	private FCPClient client;
 	final BucketFactory bf;
 	final HashMap requestsByIdentifier;
 	final FetcherContext defaultFetchContext;
 	public InserterContext defaultInsertContext;
 	
-	public FCPConnectionHandler(Socket s, Node node) {
+	public FCPConnectionHandler(Socket s, Node node, FCPServer server) {
 		this.sock = s;
 		this.node = node;
+		this.server = server;
 		isClosed = false;
 		this.bf = node.tempBucketFactory;
 		requestsByIdentifier = new HashMap();
@@ -91,6 +94,7 @@ public class FCPConnectionHandler {
 
 	public void setClientName(String name) {
 		this.clientName = name;
+		client = server.registerClient(name, this);
 	}
 	
 	public String getClientName() {
