@@ -54,4 +54,10 @@ public class LongOption extends Option {
 		return Long.toString(getValue());
 	}
 
+	public void setInitialValue(String val) throws InvalidConfigValueException {
+		long x = Fields.parseLong(val);
+		cachedStringValue = val;
+		currentValue = x;
+	}
+
 }

@@ -48,6 +48,12 @@ public class IntOption extends Option {
 		cachedStringValue = val;
 		currentValue = x;
 	}
+	
+	public void setInitialValue(String val) {
+		int x = Fields.parseInt(val);
+		cachedStringValue = val;
+		currentValue = x;
+	}
 
 	public String getValueString() {
 		if(cachedStringValue != null) return cachedStringValue;

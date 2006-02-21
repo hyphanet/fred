@@ -23,14 +23,18 @@ public class SubConfig {
 		this.prefix = prefix;
 		map = new HashMap();
 		hasInitialized = false;
+		config.register(this);
 	}
 	
-	public synchronized void register(Option o) {
-		if(o.name.indexOf(SimpleFieldSet.MULTI_LEVEL_CHAR) != -1)
-			throw new IllegalArgumentException("Option names must not contain "+SimpleFieldSet.MULTI_LEVEL_CHAR);
-		if(map.containsKey(o.name))
-			throw new IllegalArgumentException("Already registered: "+o.name+" on "+this);
-		map.put(o.name, o);
+	public void register(Option o) {
+		synchronized(this) {
+			if(o.name.indexOf(SimpleFieldSet.MULTI_LEVEL_CHAR) != -1)
+				throw new IllegalArgumentException("Option names must not contain "+SimpleFieldSet.MULTI_LEVEL_CHAR);
+			if(map.containsKey(o.name))
+				throw new IllegalArgumentException("Already registered: "+o.name+" on "+this);
+			map.put(o.name, o);
+		}
+		config.onRegister(this, o);
 	}
 	
 	public void register(String optionName, int defaultValue, int sortOrder,
@@ -123,7 +127,6 @@ public class SubConfig {
 	 */
 	public void finishedInitialization() {
 		hasInitialized = true;
-		config.register(this);
 	}
 
 	/**

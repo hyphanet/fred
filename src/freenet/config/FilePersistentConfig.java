@@ -114,4 +114,15 @@ public class FilePersistentConfig extends Config {
 		}
 		return fs;
 	}
+	
+	public void onRegister(SubConfig config, Option o) {
+		if(origConfigFileContents == null) return;
+		String name = config.prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+o.name;
+		String val = origConfigFileContents.get(name);
+		try {
+			o.setInitialValue(val);
+		} catch (InvalidConfigValueException e) {
+			Logger.error(this, "Could not parse config option "+name+": "+e, e);
+		}
+	}
 }

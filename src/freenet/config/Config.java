@@ -32,5 +32,9 @@ public class Config {
 	public void finishedInit() {
 		// Do nothing
 	}
+
+	public void onRegister(SubConfig config, Option o) {
+		// Do nothing
+	}
 	
 }

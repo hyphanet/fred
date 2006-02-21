@@ -39,5 +39,14 @@ public class BooleanOption extends Option {
 	public String getValueString() {
 		return Boolean.toString(getValue());
 	}
+
+	public void setInitialValue(String val) throws InvalidConfigValueException {
+		if(val.equalsIgnoreCase("true") || val.equalsIgnoreCase("yes")) {
+			currentValue = true;
+		} else if(val.equalsIgnoreCase("false") || val.equalsIgnoreCase("no")) {
+			currentValue = false;
+		} else
+			throw new OptionFormatException("Unrecognized boolean: "+val);
+	}
 	
 }

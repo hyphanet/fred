@@ -30,5 +30,12 @@ public abstract class Option {
 	public abstract void setValue(String val) throws InvalidConfigValueException;
 
 	public abstract String getValueString();
+
+	/** Set to a value from the config file; this is not passed on to the callback, as we
+	 * expect the client-side initialization to check the value. The callback is not valid
+	 * until the client calls finishedInitialization().
+	 * @throws InvalidConfigValueException 
+	 */
+	public abstract void setInitialValue(String val) throws InvalidConfigValueException;
 	
 }

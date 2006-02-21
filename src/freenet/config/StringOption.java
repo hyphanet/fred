@@ -30,5 +30,9 @@ public class StringOption extends Option {
 	public String getValueString() {
 		return getValue();
 	}
+
+	public void setInitialValue(String val) throws InvalidConfigValueException {
+		this.currentValue = val;
+	}
 	
 }

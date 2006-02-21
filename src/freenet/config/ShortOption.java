@@ -33,5 +33,10 @@ public class ShortOption extends Option {
 	public String getValueString() {
 		return Short.toString(getValue());
 	}
+
+	public void setInitialValue(String val) throws InvalidConfigValueException {
+		short x = Fields.parseShort(val);
+		currentValue = x;
+	}
 	
 }
