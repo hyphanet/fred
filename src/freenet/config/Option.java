@@ -27,8 +27,15 @@ public abstract class Option {
 		this.longDesc = longDesc;
 	}
 
+	/**
+	 * Set this option's current value to a string. Will call the callback. Does not care 
+	 * whether the value of the option has changed.
+	 */
 	public abstract void setValue(String val) throws InvalidConfigValueException;
 
+	/**
+	 * Get the current value of the option as a string.
+	 */
 	public abstract String getValueString();
 
 	/** Set to a value from the config file; this is not passed on to the callback, as we
@@ -37,5 +44,12 @@ public abstract class Option {
 	 * @throws InvalidConfigValueException 
 	 */
 	public abstract void setInitialValue(String val) throws InvalidConfigValueException;
+
+	/**
+	 * Call the callback with the current value of the option.
+	 */
+	public void forceUpdate() throws InvalidConfigValueException {
+		setValue(getValueString());
+	}
 	
 }

@@ -90,6 +90,8 @@ public class LoggingConfigHandler {
 					}
     	});
     	
+    	maxZippedLogsSize = config.getLong("maxZippedLogsSize");
+    	
     	// priority
     	
     	// Node must override this to minor on testnet.
@@ -166,7 +168,8 @@ public class LoggingConfigHandler {
     	
     	maxCachedLogLines = config.getInt("maxCachedLines");
     	
-    	enableLogger();
+    	if(loggingEnabled)
+    		enableLogger();
     	
     	config.finishedInitialization();
 	}
@@ -177,9 +180,21 @@ public class LoggingConfigHandler {
 	 * Turn on the logger.
 	 */
 	private void enableLogger() {
+		try {
+			preSetLogDir(logDir);
+		} catch (InvalidConfigValueException e3) {
+			System.err.println("Cannot set log dir: "+logDir+": "+e3);
+			e3.printStackTrace();
+		}
 		synchronized(enableLoggerLock) {
 			if(fileLoggerHook != null) return;
 			Logger.setupChain();
+			try {
+				config.forceUpdate("priority");
+			} catch (InvalidConfigValueException e2) {
+				System.err.println("Invalid config value for logger.priority in config file: "+config.getString("priority"));
+				// Leave it at the default.
+			}
 			FileLoggerHook hook;
 			try {
 				hook = 
@@ -202,6 +217,7 @@ public class LoggingConfigHandler {
 			}
 			hook.setMaxListBytes(maxCachedLogBytes);
 			hook.setMaxListLength(maxCachedLogLines);
+			fileLoggerHook = hook;
 			Logger.globalAddHook(hook);
 			hook.start();
 		}
@@ -273,6 +289,18 @@ public class LoggingConfigHandler {
 
 	public FileLoggerHook getFileLoggerHook() {
 		return fileLoggerHook;
+	}
+
+	public void forceEnableLogging() {
+		enableLogger();
+	}
+
+	public long getMaxZippedLogFiles() {
+		return maxZippedLogsSize;
+	}
+
+	public void setMaxZippedLogFiles(String maxSizeAsString) throws InvalidConfigValueException {
+		config.set("maxZippedLogsSize", maxSizeAsString);
 	}
 	
 }

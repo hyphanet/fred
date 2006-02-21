@@ -153,6 +153,9 @@ public class Node {
     // 900ms
     static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
     public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
+    /** Minimum space for zipped logfiles on testnet */
+	static final long TESTNET_MIN_MAX_ZIPPED_LOGFILES = 256*1024*1024;
+	static final String TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING = "256M";
     
     // FIXME: abstract out address stuff? Possibly to something like NodeReference?
     final int portNumber;
@@ -274,17 +277,19 @@ public class Node {
         br.close();
         // Read contents
         String physical = fs.get("physical.udp");
-        Peer myOldPeer;
-        try {
-            myOldPeer = new Peer(physical);
-        } catch (PeerParseException e) {
-            IOException e1 = new IOException();
-            e1.initCause(e);
-            throw e1;
+        if(physical != null) {
+        	Peer myOldPeer;
+        	try {
+        		myOldPeer = new Peer(physical);
+        	} catch (PeerParseException e) {
+        		IOException e1 = new IOException();
+        		e1.initCause(e);
+        		throw e1;
+        	}
+        	if(myOldPeer.getPort() != portNumber)
+        		throw new IllegalArgumentException("Wrong port number "+
+        				myOldPeer.getPort()+" should be "+portNumber);
         }
-        if(myOldPeer.getPort() != portNumber)
-            throw new IllegalArgumentException("Wrong port number "+
-                    myOldPeer.getPort()+" should be "+portNumber);
         // FIXME: we ignore the IP for now, and hardcode it to localhost
         String identity = fs.get("identity");
         if(identity == null)
@@ -594,7 +599,23 @@ public class Node {
     		Logger.error(this, msg);
     		System.err.println(msg);
         	testnetEnabled = true;
-        	Logger.globalSetThreshold(Logger.MINOR);
+        	if(logConfigHandler.getFileLoggerHook() == null) {
+        		System.err.println("Forcing logging enabled (essential for testnet)");
+        		logConfigHandler.forceEnableLogging();
+        	}
+        	int x = Logger.globalGetThreshold();
+        	if(!(x == Logger.MINOR || x == Logger.DEBUG)) {
+        		System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
+        		Logger.globalSetThreshold(Logger.MINOR);
+        	}
+        	if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
+        		System.err.println("Forcing max zipped logfiles space to 256MB for testnet");
+        		try {
+					logConfigHandler.setMaxZippedLogFiles(TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING);
+				} catch (InvalidConfigValueException e) {
+					throw new Error("Impossible: "+e);
+				}
+        	}
         } else {
         	Logger.normal(this, "Testnet mode DISABLED. You may have some level of anonymity. :)");
         	testnetEnabled = false;
@@ -847,6 +868,9 @@ public class Node {
 		if(testnetHandler != null)
 			testnetHandler.start();
 		
+		Thread t = new Thread(ipDetector, "IP address re-detector");
+		t.setDaemon(true);
+		t.start();
     }
     
     public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
@@ -1278,7 +1302,9 @@ public class Node {
      */
     public SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet(false);
-        fs.put("physical.udp", Peer.getHostName(getPrimaryIPAddress())+":"+portNumber);
+        InetAddress ip = getPrimaryIPAddress();
+        if(ip != null)
+        	fs.put("physical.udp", Peer.getHostName(ip)+":"+portNumber);
         fs.put("identity", HexUtil.bytesToHex(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());

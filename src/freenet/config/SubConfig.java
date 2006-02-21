@@ -165,4 +165,18 @@ public class SubConfig {
 		return fs;
 	}
 
+	/**
+	 * Force an option to be updated even if it hasn't changed.
+	 * @throws InvalidConfigValueException 
+	 */
+	public void forceUpdate(String optionName) throws InvalidConfigValueException {
+		Option o = (Option) map.get(optionName);
+		o.forceUpdate();
+	}
+
+	public void set(String name, String value) throws InvalidConfigValueException {
+		Option o = (Option) map.get(name);
+		o.setValue(value);
+	}
+
 }

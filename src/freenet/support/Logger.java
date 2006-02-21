@@ -214,6 +214,10 @@ public abstract class Logger {
         logger.setThreshold(i);
     }
 
+	public static int globalGetThreshold() {
+		return logger.getThreshold();
+	}
+	
 	public synchronized static void globalRemoveHook(FileLoggerHook hook) {
 		if(logger instanceof LoggerHookChain)
 			((LoggerHookChain)logger).removeHook(hook);
