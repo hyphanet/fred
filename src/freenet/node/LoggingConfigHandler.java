@@ -18,7 +18,7 @@ import freenet.support.FileLoggerHook.IntervalParseException;
 
 public class LoggingConfigHandler {
 
-	protected static final String LOG_PREFIX = "freenet-";
+	protected static final String LOG_PREFIX = "freenet";
 	private final SubConfig config;
 	private FileLoggerHook fileLoggerHook;
 	private File logDir;

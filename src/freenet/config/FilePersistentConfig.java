@@ -119,6 +119,7 @@ public class FilePersistentConfig extends Config {
 		if(origConfigFileContents == null) return;
 		String name = config.prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+o.name;
 		String val = origConfigFileContents.get(name);
+		if(val == null) return;
 		try {
 			o.setInitialValue(val);
 		} catch (InvalidConfigValueException e) {

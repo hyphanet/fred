@@ -481,6 +481,7 @@ public class FileLoggerHook extends LoggerHook {
 			prefix = baseFilename.substring(slashIndex+1).toLowerCase();
 		}
 		File[] files = dir.listFiles();
+		if(files == null) return;
 		java.util.Arrays.sort(files);
 		long lastStartTime = -1;
 		File oldFile = null;

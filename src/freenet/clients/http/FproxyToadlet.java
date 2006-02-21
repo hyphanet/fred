@@ -134,6 +134,7 @@ public class FproxyToadlet extends Toadlet {
         FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
         node.setFproxy(fproxy);
         server.register(fproxy, "/", false);
+        fproxyConfig.finishedInitialization();
         System.out.println("Starting fproxy on port "+(port));
 	}
 

@@ -542,8 +542,6 @@ public class Node {
     		}
     	}
     	usm = u;
-        usm.setDispatcher(dispatcher=new NodeDispatcher(this));
-        usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
     	
         System.out.println("Port number: "+port);
         portNumber = port;
@@ -622,10 +620,6 @@ public class Node {
         	throw new NodeInitException(EXIT_BAD_NODE_DIR, msg);
         }
 
-        peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
-        peers.writePeers();
-        nodePinger = new NodePinger(this);
-        
         // After we have set up testnet and IP address, load the node file
         try {
         	// FIXME should take file directly?
@@ -638,6 +632,14 @@ public class Node {
             }
         }
         writeNodeFile();
+
+        // Then read the peers
+        peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
+        peers.writePeers();
+        nodePinger = new NodePinger(this);
+
+        usm.setDispatcher(dispatcher=new NodeDispatcher(this));
+        usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
 
         // Temp files
         
@@ -765,8 +767,6 @@ public class Node {
         }
 
         nodeConfig.finishedInitialization();
-        config.finishedInit();
-        config.store();
         
         // FIXME make all the below arbitrary constants configurable!
         
@@ -839,9 +839,14 @@ public class Node {
         // SNMP
         SNMPStarter.maybeCreate(this, config);
         
+        // After everything has been created, write the config file back to disk.
+        config.finishedInit();
+        config.store();
+        
         // Start testnet handler
 		if(testnetHandler != null)
 			testnetHandler.start();
+		
     }
     
     public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
