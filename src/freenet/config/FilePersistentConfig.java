@@ -2,6 +2,7 @@ package freenet.config;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -32,14 +33,35 @@ public class FilePersistentConfig extends Config {
 	public FilePersistentConfig(File f) throws IOException {
 		this.filename = f;
 		this.tempFilename = new File(f.getPath()+".tmp");
-		if(f.exists()) {
-			if(!f.canWrite()) {
-				Logger.error(this, "Warning: Cannot write to config file!");
-				System.err.println("Warning: Cannot write to config file.");
-			}
+		boolean filenameExists = f.exists();
+		boolean tempFilenameExists = tempFilename.exists();
+		if(filenameExists && !filename.canWrite()) {
+			Logger.error(this, "Warning: Cannot write to config file: "+filename);
+			System.err.println("Warning: Cannot write to config file: "+filename);
+		}
+		if(tempFilenameExists && !tempFilename.canWrite()) {
+			Logger.error(this, "Warning: Cannot write to config tempfile: "+tempFilename);
+			System.err.println("Warning: Cannot write to config tempfile: "+tempFilename);
+		}
+		if(filenameExists) {
 			if(f.canRead()) {
 				try {
-					initialLoad();
+					initialLoad(filename);
+					return;
+				} catch (FileNotFoundException e) {
+					System.err.println("No config file found, creating new: "+f);
+				} catch (EOFException e) {
+					System.err.println("Empty config file "+f);
+				}
+				// Other IOE's indicate a more serious problem.
+			} else {
+				throw new IOException("Cannot read config file");
+			}
+		}
+		if(tempFilename.exists()) {
+			if(tempFilename.canRead()) {
+				try {
+					initialLoad(tempFilename);
 				} catch (FileNotFoundException e) {
 					System.err.println("No config file found, creating new: "+f);
 				} // Other IOE's indicate a more serious problem.
@@ -53,12 +75,12 @@ public class FilePersistentConfig extends Config {
 
 	/** Load the config file into a SimpleFieldSet. 
 	 * @throws IOException */
-	private void initialLoad() throws IOException {
-		FileInputStream fis = new FileInputStream(filename);
+	private void initialLoad(File toRead) throws IOException {
+		FileInputStream fis = new FileInputStream(toRead);
 		BufferedInputStream bis = new BufferedInputStream(fis);
 		try {
 			LineReadingInputStream lis = new LineReadingInputStream(bis);
-			origConfigFileContents = new SimpleFieldSet(lis, 4096, 256, true);
+			origConfigFileContents = new SimpleFieldSet(lis, 4096, 256, true, true);
 		} finally {
 			try {
 				fis.close();

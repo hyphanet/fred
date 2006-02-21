@@ -32,10 +32,10 @@ public class SimpleFieldSet {
         read(br);
     }
 
-    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean multiLevel) throws IOException {
+    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean multiLevel, boolean tolerant) throws IOException {
     	map = new HashMap();
     	this.multiLevel = multiLevel;
-    	read(lis, maxLineLength, lineBufferSize);
+    	read(lis, maxLineLength, lineBufferSize, tolerant);
     }
     
     /**
@@ -110,14 +110,19 @@ public class SimpleFieldSet {
      * blah=blah
      * End
      */
-    private void read(LineReader br, int maxLength, int bufferSize) throws IOException {
+    private void read(LineReader br, int maxLength, int bufferSize, boolean tolerant) throws IOException {
         boolean firstLine = true;
         while(true) {
             String line = br.readLine(maxLength, bufferSize);
             if(line == null) {
                 if(firstLine) throw new EOFException();
-                throw new IOException();
+                if(tolerant)
+                	Logger.error(this, "No end marker");
+                else
+                	throw new IOException("No end marker");
+                return;
             }
+            if(line.length() == 0 && tolerant) continue; // ignore
             firstLine = false;
             int index = line.indexOf('=');
             if(index >= 0) {

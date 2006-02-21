@@ -15,13 +15,16 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 	}
 
 	/**
-	 * Read a line of US-ASCII. Used for e.g. HTTP.
+	 * Read a line of US-ASCII. Used for e.g. HTTP. @return Null if end of file.
 	 */
 	public String readLine(int maxLength, int bufferSize) throws IOException {
 		StringBuffer sb = new StringBuffer(bufferSize);
 		while(true) {
 			int x = read();
-			if(x == -1) throw new EOFException();
+			if(x == -1) {
+				if(sb.length() == 0) return null;
+				return sb.toString();
+			}
 			char c = (char) x;
 			if(c == '\n') {
 				if(sb.length() > 0) {
