@@ -781,6 +781,20 @@ public class Node {
         	throw new NodeInitException(EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
         }
 
+        // Name
+        
+        nodeConfig.register("name", myName, 9, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
+        		new StringCallback() {
+					public String get() {
+						return myName;
+					}
+
+					public void set(String val) throws InvalidConfigValueException {
+						myName = val;
+					}
+        });
+        myName = nodeConfig.getString("name");
+        
         nodeConfig.finishedInitialization();
         
         // FIXME make all the below arbitrary constants configurable!
