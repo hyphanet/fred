@@ -54,8 +54,17 @@ public class FilePersistentConfig extends Config {
 	 * @throws IOException */
 	private void initialLoad() throws IOException {
 		FileInputStream fis = new FileInputStream(filename);
-		LineReadingInputStream lis = new LineReadingInputStream(fis);
-		origConfigFileContents = new SimpleFieldSet(lis, 4096, 256, true);
+		try {
+			LineReadingInputStream lis = new LineReadingInputStream(fis);
+			origConfigFileContents = new SimpleFieldSet(lis, 4096, 256, true);
+		} finally {
+			try {
+				fis.close();
+			} catch (IOException e) {
+				System.err.println("Could not close "+filename+": "+e);
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	public void register(SubConfig sc) {
