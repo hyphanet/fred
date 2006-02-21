@@ -24,6 +24,10 @@ import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.events.EventDumper;
+import freenet.config.BooleanCallback;
+import freenet.config.Config;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
@@ -630,7 +634,7 @@ public class TextModeClientInterface implements Runnable {
         SimpleFieldSet fs;
         System.out.println("Connecting to:\n"+content);
         try {
-            fs = new SimpleFieldSet(content);
+            fs = new SimpleFieldSet(content, false);
         } catch (IOException e) {
             System.err.println("Did not parse: "+e);
             e.printStackTrace();
@@ -681,4 +685,10 @@ public class TextModeClientInterface implements Runnable {
         }
         return sb.toString();
     }
+
+	public static void maybeCreate(Node node, Config config) {
+		// FIXME make this configurable.
+		// Depends on fixing QUIT issues. (bug #81)
+		new TextModeClientInterface(node);
+	}
 }

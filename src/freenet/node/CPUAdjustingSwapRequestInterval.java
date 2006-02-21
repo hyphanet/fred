@@ -27,8 +27,8 @@ public final class CPUAdjustingSwapRequestInterval implements SwapRequestInterva
         t.start();
     }
 
-    public synchronized double getValue() {
-        return currentValue;
+    public synchronized int getValue() {
+        return (int)currentValue;
     }
 
     public void run() {

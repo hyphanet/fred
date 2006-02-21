@@ -120,7 +120,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet();
+		SimpleFieldSet sfs = new SimpleFieldSet(false);
 		sfs.put("URI", uri.toString());
 		sfs.put("Identifier", identifier);
 		sfs.put("DataLength", Long.toString(dataLength));

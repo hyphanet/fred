@@ -54,7 +54,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final TupleBinding longTupleBinding;
 	
 	private int chkBlocksInStore;
-	private final int maxChkBlocks;
+	private long maxChkBlocks;
 	private final Database chkDB;
 	private final Database chkDB_accessTime;
 	private final RandomAccessFile chkStore;
@@ -68,7 +68,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
      * @param the directory where the store is located
      * @throws FileNotFoundException if the dir does not exist and could not be created
      */
-	public BerkeleyDBFreenetStore(String storeDir, int maxChkBlocks, int blockSize, int headerSize) throws Exception {
+	public BerkeleyDBFreenetStore(String storeDir, long maxChkBlocks, int blockSize, int headerSize) throws Exception {
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
 		// Percentage of the database that must contain usefull data
@@ -425,7 +425,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	synchronized(chkStore) {
 	        	if(chkBlocksInStore<maxChkBlocks) {
 	        		// Expand the store file
-	        		int byteOffset = chkBlocksInStore*(dataBlockSize+headerBlockSize);
+	        		long byteOffset = chkBlocksInStore*(dataBlockSize+headerBlockSize);
 	        		StoreBlock storeBlock = new StoreBlock(chkBlocksInStore);
 	        		DatabaseEntry blockDBE = new DatabaseEntry();
 	    	    	storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
@@ -494,7 +494,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	synchronized(chkStore) {
 	        	if(chkBlocksInStore<maxChkBlocks) {
 	        		// Expand the store file
-	        		int byteOffset = chkBlocksInStore*(dataBlockSize+headerBlockSize);
+	        		long byteOffset = chkBlocksInStore*(dataBlockSize+headerBlockSize);
 	        		StoreBlock storeBlock = new StoreBlock(chkBlocksInStore);
 	        		DatabaseEntry blockDBE = new DatabaseEntry();
 	    	    	storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
@@ -538,14 +538,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     private class StoreBlock
     {
     	private long recentlyUsed;
-    	private int offset;
+    	private long offset;
     	
-    	public StoreBlock(int offset)
+    	public StoreBlock(long offset)
     	{
     		this(offset,getNewRecentlyUsed());
     	}
     	
-    	public StoreBlock(int offset,long recentlyUsed)
+    	public StoreBlock(long offset,long recentlyUsed)
     	{
     		this.offset = offset;
     		this.recentlyUsed = recentlyUsed;
@@ -566,11 +566,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		recentlyUsed = getNewRecentlyUsed();
     	}
     	
-    	public int getOffset() {
+    	public long getOffset() {
     		return offset;
     	}
     }
-        
+    
     /**
      * Convert StoreBlock's to the format used by the database
      */
@@ -580,12 +580,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	public void objectToEntry(Object object, TupleOutput to)  {
     		StoreBlock myData = (StoreBlock)object;
 
-    		to.writeInt(myData.getOffset());
+    		to.writeLong(myData.getOffset());
     		to.writeLong(myData.getRecentlyUsed());
     	}
 
     	public Object entryToObject(TupleInput ti) {
-    		int offset = ti.readInt();
+    		long offset = ti.available() == 12 ? ti.readInt() : ti.readLong();
 	    	long lastAccessed = ti.readLong();
 	    	
 	    	StoreBlock storeBlock = new StoreBlock(offset,lastAccessed);
@@ -679,4 +679,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	lastRecentlyUsed++;
     	return lastRecentlyUsed;
     }
+
+	public void setMaxKeys(long maxStoreKeys) {
+		maxChkBlocks = maxStoreKeys;
+	}
 }

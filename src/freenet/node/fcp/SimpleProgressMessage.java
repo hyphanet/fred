@@ -15,7 +15,7 @@ public class SimpleProgressMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.put("Total", Integer.toString(event.totalBlocks));
 		fs.put("Required", Integer.toString(event.minSuccessfulBlocks));
 		fs.put("Failed", Integer.toString(event.failedBlocks));

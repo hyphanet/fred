@@ -1,6 +1,8 @@
 package snmplib;
 
+import freenet.config.Config;
 import freenet.io.comm.IOStatisticCollector;
+import freenet.node.Node;
 
 /**
  * @author cyberdo
@@ -22,5 +24,9 @@ public class SNMPStarter {
 		SNMPAgent.getSNMPAgent().addFetcher(new InfoSystem());
 		
 		has_been_runned = true;
+	}
+
+	public static void maybeCreate(Node node, Config config) {
+		// FIXME any config needed for SNMPStarter?
 	}
 }

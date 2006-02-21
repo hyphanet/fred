@@ -99,7 +99,7 @@ class LocationManager {
                     long startTime = System.currentTimeMillis();
                     double nextRandom = r.nextDouble();
                     while(true) {
-                        double sleepTime = interval.getValue();
+                        int sleepTime = interval.getValue();
                         sleepTime *= nextRandom;
                         sleepTime = Math.min(sleepTime, Integer.MAX_VALUE);
                         long endTime = startTime + (int)sleepTime;

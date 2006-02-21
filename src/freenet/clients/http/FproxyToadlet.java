@@ -9,7 +9,14 @@ import java.net.URI;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.config.BooleanCallback;
+import freenet.config.Config;
+import freenet.config.IntCallback;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
+import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
@@ -63,4 +70,74 @@ public class FproxyToadlet extends Toadlet {
 		this.writeReply(ctx, 200, "text/html", "OK", notSupported);
 	}
 
+
+	static class FproxyEnabledCallback implements BooleanCallback {
+		
+		final Node node;
+		
+		FproxyEnabledCallback(Node n) {
+			this.node = n;
+		}
+		
+		public boolean get() {
+			return node.getFproxy() != null;
+		}
+		public void set(boolean val) throws InvalidConfigValueException {
+			if(val == get()) return;
+			throw new InvalidConfigValueException("Cannot change fproxy enabled/disabled after startup");
+		}
+	}
+	
+	static final int DEFAULT_FPROXY_PORT = 8888;
+	
+	static class FproxyPortCallback implements IntCallback {
+		
+		final Node node;
+		
+		FproxyPortCallback(Node n) {
+			this.node = n;
+		}
+		
+		public int get() {
+			SimpleToadletServer f = node.getToadletContainer();
+			if(f == null) return DEFAULT_FPROXY_PORT;
+			return f.port;
+		}
+		
+		public void set(int port) throws InvalidConfigValueException {
+			if(port != get())
+				throw new InvalidConfigValueException("Cannot change fproxy port number on the fly");
+		}
+	}
+	
+	public static void maybeCreateFproxyEtc(Node node, Config config) throws IOException {
+		
+		SubConfig fproxyConfig = new SubConfig("fproxy", config);
+		
+		fproxyConfig.register("enabled", true, 1, true, "Enable fproxy?", "Whether to enable fproxy and related HTTP services",
+				new FproxyEnabledCallback(node));
+		
+		boolean fproxyEnabled = fproxyConfig.getBoolean("enabled");
+		
+		if(!fproxyEnabled) {
+			fproxyConfig.finishedInitialization();
+			return;
+		}
+		
+		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, "Fproxy port number", "Fproxy port number",
+				new FproxyPortCallback(node));
+		
+		int port = fproxyConfig.getInt("port");
+		
+        SimpleToadletServer server = new SimpleToadletServer(port);
+        node.setToadletContainer(server);
+        FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+        node.setFproxy(fproxy);
+        server.register(fproxy, "/", false);
+        fproxyConfig.finishedInitialization();
+        System.out.println("Starting fproxy on port "+(port));
+	}
+
+
+	
 }

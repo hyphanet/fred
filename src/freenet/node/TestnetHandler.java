@@ -14,6 +14,13 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import freenet.config.BooleanCallback;
+import freenet.config.Config;
+import freenet.config.IntCallback;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.SubConfig;
+import freenet.node.Node.NodeInitException;
+import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 
 /**
@@ -33,6 +40,8 @@ import freenet.support.Logger;
  */
 public class TestnetHandler implements Runnable {
 
+	private final TestnetStatusUploader uploader;
+	
 	public TestnetHandler(Node node2, int testnetPort) {
 		this.node = node2;
 		this.testnetPort = testnetPort;
@@ -44,18 +53,20 @@ public class TestnetHandler implements Runnable {
 		System.err.println("We repeat: YOU HAVE NO ANONYMITY WHATSOEVER. DO NOT POST ANYTHING YOU DO NOT WANT TO BE ASSOCIATED WITH.");
 		System.err.println("If you want a real freenet node, with anonymity, turn off testnet mode.");
 		System.err.println("Note, this node will not connect to non-testnet nodes, for security reasons. You can of course run a testnet node and a non-testnet node separately.");
+		uploader = new TestnetStatusUploader(node, 180000);
 	}
 
 	public void start() {
 		serverThread = new Thread(this, "Testnet handler thread");
 		serverThread.setDaemon(true);
 		serverThread.start();
+		uploader.start();
 		System.err.println("Started testnet handler on port "+testnetPort);
 	}
 	
 	private final Node node;
 	private Thread serverThread;
-	private final int testnetPort;
+	final int testnetPort;
 	
 	public void run() {
 		// Set up server socket
@@ -102,10 +113,18 @@ public class TestnetHandler implements Runnable {
 				String command = br.readLine();
 				if(command == null) return;
 				Logger.minor(this, "Command: "+command);
+				FileLoggerHook loggerHook;
+				loggerHook = Node.logConfigHandler.getFileLoggerHook();
+				if(loggerHook == null) {
+					Logger.error(this, "Could not serve testnet command because no FileLoggerHook");
+					OutputStreamWriter osw = new OutputStreamWriter(os);
+					osw.write("ERROR: Could not serve testnet command because no FileLoggerHook");
+					return;
+				}
 				if(command.equalsIgnoreCase("LIST")) {
 					Logger.minor(this, "Listing available logs");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
-					node.fileLoggerHook.listAvailableLogs(osw);
+					loggerHook.listAvailableLogs(osw);
 					osw.close();
 				} else if(command.startsWith("GET:")) {
 					Logger.minor(this, "Sending log: "+command);
@@ -119,7 +138,7 @@ public class TestnetHandler implements Runnable {
 						Logger.minor(this, "Cannot parse: "+e+" for "+date);
 						return;
 					}
-					node.fileLoggerHook.sendLogByContainedDate(d.getTime(), os);
+					loggerHook.sendLogByContainedDate(d.getTime(), os);
 				} else if(command.equalsIgnoreCase("STATUS")) {
 					Logger.minor(this, "Sending status");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
@@ -146,6 +165,84 @@ public class TestnetHandler implements Runnable {
 			}
 		}
 
+	}
+
+	private static class TestnetEnabledCallback implements BooleanCallback {
+
+		final Node node;
+		
+		TestnetEnabledCallback(Node node) {
+			this.node = node;
+		}
+		
+		public boolean get() {
+			return node.testnetEnabled;
+		}
+
+		public void set(boolean val) throws InvalidConfigValueException {
+			if(node.testnetEnabled == val) return;
+			String msg = "On-line enable/disable of testnet mode impossible; restart the node and get new connections";
+			throw new InvalidConfigValueException(msg);
+		}
+		
+	}
+
+	private static class TestnetPortNumberCallback implements IntCallback {
+		
+		final Node node;
+		
+		TestnetPortNumberCallback(Node node) {
+			this.node = node;
+		}
+		
+		public int get() {
+			TestnetHandler th = node.testnetHandler;
+			if(th == null)
+				return node.portNumber+1000;
+			else
+				return th.testnetPort;
+		}
+		
+		public void set(int val) throws InvalidConfigValueException {
+			TestnetHandler th = node.testnetHandler;
+			if(th == null)
+				return;
+			if(val == th.testnetPort) return;
+			throw new InvalidConfigValueException("Changing testnet port number on the fly not yet supported");
+		}
+	}
+	
+	public static TestnetHandler maybeCreate(Node node, Config config) throws NodeInitException {
+        SubConfig testnetConfig = new SubConfig("node.testnet", config);
+        
+        testnetConfig.register("enabled", true /* for now */, 1, false, "Enable testnet mode? (DANGEROUS)",
+        		"Whether to enable testnet mode (DANGEROUS!). Testnet mode eliminates your anonymity in exchange for greatly assisting the developers in debugging the node.",
+        		new TestnetEnabledCallback(node));
+        
+        boolean enabled = testnetConfig.getBoolean("enabled");
+        
+        if(!enabled) {
+        	// FIXME
+        	String msg = "Sorry, testnet must be enabled while Freenet 0.7 is in pre-alpha testing phase.";
+        	Logger.error(TestnetHandler.class, msg);
+        	System.err.println(msg);
+        	throw new Node.NodeInitException(Node.EXIT_TESTNET_DISABLED_NOT_SUPPORTED, msg);
+        }
+        
+        // Testnet is enabled.
+        
+        // Get the testnet port
+        
+        // Default to node port plus 1000
+        
+        int defaultPort = 1024 + (node.portNumber-1024+1000) % (65536 - 1024);
+        
+        testnetConfig.register("port", defaultPort, 2, true, "Testnet port", "Testnet port number",
+        		new TestnetPortNumberCallback(node));
+        
+        testnetConfig.finishedInitialization();
+        
+        return new TestnetHandler(node, testnetConfig.getInt("port"));
 	}
 
 }

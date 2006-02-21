@@ -15,7 +15,7 @@ public class PutSuccessfulMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet();
+		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.put("Identifier", identifier);
 		fs.put("URI", uri.toString());
 		return fs;

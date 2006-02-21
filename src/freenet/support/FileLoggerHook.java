@@ -13,6 +13,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -26,6 +27,7 @@ import java.util.Vector;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.node.Version;
+import freenet.support.LoggerHook.InvalidThresholdException;
 
 /**
  * Converted the old StandardLogger to Ian's loggerhook interface.
@@ -96,7 +98,7 @@ public class FileLoggerHook extends LoggerHook {
 	protected long MAX_LIST_BYTES = 10 * (1 << 20);
 	// FIXME: should reimplement LinkedList with minimal locking
 
-	final long maxOldLogfilesDiskUsage;
+	long maxOldLogfilesDiskUsage;
 	protected final LinkedList logFiles = new LinkedList();
 	private long oldLogFilesDiskSpaceUsage = 0;
 
@@ -121,7 +123,7 @@ public class FileLoggerHook extends LoggerHook {
 		MAX_LIST_BYTES = len;
 	}
 
-	public void setInterval(String intervalName) {
+	public void setInterval(String intervalName) throws IntervalParseException {
 		StringBuffer sb = new StringBuffer(intervalName.length());
 		for(int i=0;i<intervalName.length();i++) {
 			char c = intervalName.charAt(i);
@@ -151,8 +153,15 @@ public class FileLoggerHook extends LoggerHook {
 		else if (intervalName.equalsIgnoreCase("YEAR"))
 			INTERVAL = Calendar.YEAR;
 		else
-			throw new IllegalArgumentException(
-				"invalid interval " + intervalName);
+			throw new IntervalParseException("invalid interval " + intervalName);
+	}
+
+	public class IntervalParseException extends Exception {
+
+		public IntervalParseException(String string) {
+			super(string);
+		}
+
 	}
 
 	protected String getHourLogName(Calendar c, boolean compressed) {
@@ -243,7 +252,7 @@ public class FileLoggerHook extends LoggerHook {
 				try {
 					thisTime = System.currentTimeMillis();
 					if (baseFilename != null) {
-						if (thisTime > nextHour) {
+						if (thisTime > nextHour || switchedBaseFilename) {
 							// Switch logs
 							try {
 								logStream.flush();
@@ -292,6 +301,11 @@ public class FileLoggerHook extends LoggerHook {
 							gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 							nextHour = gc.getTimeInMillis();
 							//System.err.println("Rotated");
+							if(switchedBaseFilename) {
+								synchronized(FileLoggerHook.class) {
+									switchedBaseFilename = false;
+								}
+							}
 						}
 					}
 					if(list.size() == 0) {
@@ -437,16 +451,20 @@ public class FileLoggerHook extends LoggerHook {
 			maxOldLogfilesDiskUsage);
 	}
 	
+	private final Object trimOldLogFilesLock = new Object();
+	
 	public void trimOldLogFiles() {
-		while(oldLogFilesDiskSpaceUsage > maxOldLogfilesDiskUsage) {
-			OldLogFile olf;
-			synchronized(logFiles) {
-				olf = (OldLogFile) logFiles.removeFirst();
+		synchronized(trimOldLogFilesLock) {
+			while(oldLogFilesDiskSpaceUsage > maxOldLogfilesDiskUsage) {
+				OldLogFile olf;
+				synchronized(logFiles) {
+					olf = (OldLogFile) logFiles.removeFirst();
+				}
+				olf.filename.delete();
+				oldLogFilesDiskSpaceUsage -= olf.size;
+				Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
+						" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
 			}
-			olf.filename.delete();
-			oldLogFilesDiskSpaceUsage -= olf.size;
-			Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
-					" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
 		}
 	}
 
@@ -463,6 +481,7 @@ public class FileLoggerHook extends LoggerHook {
 			prefix = baseFilename.substring(slashIndex+1).toLowerCase();
 		}
 		File[] files = dir.listFiles();
+		if(files == null) return;
 		java.util.Arrays.sort(files);
 		long lastStartTime = -1;
 		File oldFile = null;
@@ -551,7 +570,7 @@ public class FileLoggerHook extends LoggerHook {
 			boolean assumeWorking,
 			boolean logOverwrite,
 			long maxOldLogFilesDiskUsage)
-			throws IOException {
+			throws IOException, InvalidThresholdException {
 			this(filename,
 				fmt,
 				dfmt,
@@ -587,7 +606,7 @@ public class FileLoggerHook extends LoggerHook {
 			OutputStream os,
 			String fmt,
 			String dfmt,
-			String threshold) {
+			String threshold) throws InvalidThresholdException {
 			this(new PrintStream(os), fmt, dfmt, priorityOf(threshold), true);
 			logStream = os;
 		}
@@ -656,7 +675,7 @@ public class FileLoggerHook extends LoggerHook {
 			String threshold,
 			boolean assumeWorking,
 			boolean logOverwrite,
-			long maxOldLogFilesDiskUsage) throws IOException{
+			long maxOldLogFilesDiskUsage) throws IOException, InvalidThresholdException{
 		this(rotate,baseFilename,fmt,dfmt,priorityOf(threshold),assumeWorking,logOverwrite,maxOldLogFilesDiskUsage);
 	}
 
@@ -901,6 +920,47 @@ public class FileLoggerHook extends LoggerHook {
 			}
 			os.write(buf, 0, toRead);
 			written += toRead;
+		}
+	}
+
+	/** Set the maximum size of old (gzipped) log files to keep.
+	 * Will start to prune old files immediately, but this will likely not be completed
+	 * by the time the function returns as it is run off-thread.
+	 */
+	public void setMaxOldLogsSize(long val) {
+		maxOldLogfilesDiskUsage = val;
+		Runnable r = new Runnable() {
+			public void run() {
+				trimOldLogFiles();
+			}
+		};
+		Thread t = new Thread(r, "Shrink logs");
+		t.setDaemon(true);
+		t.start();
+	}
+
+	private boolean switchedBaseFilename;
+	
+	public void switchBaseFilename(String filename) {
+		synchronized(this) {
+			this.baseFilename = filename;
+			switchedBaseFilename = true;
+		}
+	}
+
+	public void waitForSwitch() {
+		synchronized(this) {
+			if(!switchedBaseFilename) return;
+			long startTime = System.currentTimeMillis();
+			long endTime = startTime + 10000;
+			long now;
+			while((now = System.currentTimeMillis()) < endTime && !switchedBaseFilename) {
+				try {
+					wait(Math.max(1, endTime-now));
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
 		}
 	}
 }

@@ -522,4 +522,99 @@ public abstract class Fields {
         return buf;
 	}
 
+    /**
+     * Parse a human-readable string possibly including SI units into a short.
+	 * @throws NumberFormatException
+	 *             if the string is not parseable
+	 */
+	public static short parseShort(String s) throws NumberFormatException {
+		short res = 1;
+		int x = s.length() - 1;
+		int idx;
+		try {
+			long[] l =
+				{
+					1000,
+					1 << 10 };
+			while (x >= 0
+				&& ((idx = "kK".indexOf(s.charAt(x))) != -1)) {
+				x--;
+				res *= l[idx];
+			}
+			res *= Double.parseDouble(s.substring(0, x + 1));
+		} catch (ArithmeticException e) {
+			res = Short.MAX_VALUE;
+			throw new NumberFormatException(e.getMessage());
+		}
+		return res;
+	}
+
+	/**
+	 * Parse a human-readable string possibly including SI units into an integer.
+	 * @throws NumberFormatException
+	 *             if the string is not parseable
+	 */
+	public static int parseInt(String s) throws NumberFormatException {
+		int res = 1;
+		int x = s.length() - 1;
+		int idx;
+		try {
+			long[] l =
+				{
+					1000,
+					1 << 10,
+					1000 * 1000,
+					1 << 20,
+					1000 * 1000 * 1000,
+					1 << 30 };
+			while (x >= 0
+				&& ((idx = "kKmMgG".indexOf(s.charAt(x))) != -1)) {
+				x--;
+				res *= l[idx];
+			}
+			res *= Double.parseDouble(s.substring(0, x + 1));
+		} catch (ArithmeticException e) {
+			res = Integer.MAX_VALUE;
+			throw new NumberFormatException(e.getMessage());
+		}
+		return res;
+	}
+	
+	/**
+	 * Parse a human-readable string possibly including SI units into a long.
+	 * @throws NumberFormatException
+	 *             if the string is not parseable
+	 */
+	public static long parseLong(String s) throws NumberFormatException {
+		long res = 1;
+		int x = s.length() - 1;
+		int idx;
+		try {
+			long[] l =
+				{
+					1000,
+					1 << 10,
+					1000 * 1000,
+					1 << 20,
+					1000 * 1000 * 1000,
+					1 << 30,
+					1000 * 1000 * 1000 * 1000,
+					1 << 40,
+					1000 * 1000 * 1000 * 1000 * 1000,
+					1 << 50,
+					1000 * 1000 * 1000 * 1000 * 1000 * 1000,
+					1 << 60 };
+			while (x >= 0
+				&& ((idx = "kKmMgGtTpPeE".indexOf(s.charAt(x))) != -1)) {
+				x--;
+				res *= l[idx];
+			}
+			res *= Double.parseDouble(s.substring(0, x + 1));
+		} catch (ArithmeticException e) {
+			res = Long.MAX_VALUE;
+			throw new NumberFormatException(e.getMessage());
+		}
+		return res;
+	}
+
 }

@@ -20,7 +20,7 @@ public abstract class LoggerHook extends Logger {
 		this.threshold = thresh;
 	}
 	
-	LoggerHook(String thresh){
+	LoggerHook(String thresh) throws InvalidThresholdException{
 		this.threshold = priorityOf(thresh);
 	}
 
@@ -107,11 +107,11 @@ public abstract class LoggerHook extends Logger {
 		return threshold;
 	}
 
-	public void setThreshold(String symbolicThreshold) {
+	public void setThreshold(String symbolicThreshold) throws InvalidThresholdException {
 		setThreshold(priorityOf(symbolicThreshold));
 	}
 
-	public void setDetailedThresholds(String details) {
+	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		if (details == null || details.length() == 0)
 			return;
 		StringTokenizer st = new StringTokenizer(details, ",", false);
@@ -141,7 +141,7 @@ public abstract class LoggerHook extends Logger {
      * @param s  A string matching one of the logging priorities, case
      *           insensitive.
      **/
-    public static int priorityOf(String s) {
+    public static int priorityOf(String s) throws InvalidThresholdException {
         if (s.equalsIgnoreCase("error"))
             return Logger.ERROR;
         else if (s.equalsIgnoreCase("normal"))
@@ -152,8 +152,15 @@ public abstract class LoggerHook extends Logger {
             return Logger.DEBUG;
         else if (s.equalsIgnoreCase("debug"))
             return Logger.DEBUG;
-        else 
-            return Logger.NORMAL;
+        else
+        	throw new InvalidThresholdException("Unrecognized priority: "+s);
+        // return Logger.NORMAL;
+    }
+    
+    public static class InvalidThresholdException extends Exception {
+    	InvalidThresholdException(String msg) {
+    		super(msg);
+    	}
     }
     
     /**

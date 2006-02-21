@@ -825,7 +825,7 @@ public class PeerNode implements PeerContext {
         BufferedReader br = new BufferedReader(isr);
         SimpleFieldSet fs;
         try {
-            fs = new SimpleFieldSet(br);
+            fs = new SimpleFieldSet(br, false);
         } catch (IOException e) {
             Logger.error(this, "Impossible: e", e);
             return;
@@ -967,7 +967,7 @@ public class PeerNode implements PeerContext {
      * Export our noderef as a SimpleFieldSet
      */
     private SimpleFieldSet exportFieldSet() {
-        SimpleFieldSet fs = new SimpleFieldSet();
+        SimpleFieldSet fs = new SimpleFieldSet(false);
         if(lastGoodVersion != null)
         	fs.put("lastGoodVersion", lastGoodVersion);
         for(int i=0;i<nominalPeer.size();i++)
