@@ -1,4 +1,4 @@
-package snmplib;
+package freenet.snmplib;
 
 public class SNMPInteger32 extends SNMPTypeWrapperNum {
 	public SNMPInteger32() { super(); }

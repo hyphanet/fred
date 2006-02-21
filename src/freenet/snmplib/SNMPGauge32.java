@@ -1,4 +1,4 @@
-package snmplib;
+package freenet.snmplib;
 
 public class SNMPGauge32 extends SNMPTypeWrapperNum {
 	public SNMPGauge32() { super(); }

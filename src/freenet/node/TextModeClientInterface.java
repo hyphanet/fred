@@ -512,7 +512,7 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PLUGLOAD:")) {
         	n.pluginManager.startPlugin(line.substring("PLUGLOAD:".length()).trim());
         } else if(uline.startsWith("PLUGLIST")) {
-        	n.pluginManager.dumpPlugins();
+        	System.out.println(n.pluginManager.dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
         	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim());
         } else {

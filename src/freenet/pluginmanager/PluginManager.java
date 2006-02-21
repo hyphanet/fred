@@ -1,4 +1,4 @@
-package pluginmanager;
+package freenet.pluginmanager;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -20,20 +20,24 @@ public class PluginManager {
 	 * 
 	 */
 	
-	
-	private static HashMap pluginInfo;
-	private static PluginManager pluginManager = null;
+	private HashMap toadletList;
+	private HashMap pluginInfo;
+	private PluginManager pluginManager = null;
 	private PluginRespirator pluginRespirator = null;
 	
 	public PluginManager(PluginRespirator pluginRespirator) {
 		pluginInfo = new HashMap();
+		toadletList = new HashMap();
 		
 		this.pluginRespirator = pluginRespirator;
+		pluginRespirator.setPluginManager(this);
 		//StartPlugin("misc@file:plugin.jar");
 		
 		// Needed to include plugin in jar-files
-		if (new Date().equals(null))
+		if (new Date().equals(null)){
 			System.err.println(new TestPlugin());
+			System.err.println(new TestGalleryPlugin());
+		}
 	}
 	
 	public void startPlugin(String filename) {
@@ -41,42 +45,79 @@ public class PluginManager {
 		try {
 			plug = LoadPlugin(filename);
 			PluginInfoWrapper pi = PluginHandler.startPlugin(this, plug, pluginRespirator);
-			pluginInfo.put(pi.getThreadName(), pi);
+			synchronized (pluginInfo) {
+				pluginInfo.put(pi.getThreadName(), pi);
+			}
 		} catch (PluginNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	public void registerToadlet(FredPlugin pl){
+		Exception e = new Exception();
+		//toadletList.put(e.getStackTrace()[1].getClass().toString(), pl);
+		synchronized (toadletList) {
+			toadletList.put(pl.getClass().getName(), pl);
+		}
+		System.err.println("Added HTTP handler for /plugins/"+pl.getClass().getName()+"/");
+	}
+	
 	public void removePlugin(Thread t) {
 		Object removeKey = null;
-		{
+		synchronized (pluginInfo) {
 			Iterator it = pluginInfo.keySet().iterator();
-			while (it.hasNext()) {
+			while (it.hasNext() && removeKey == null) {
 				Object key = it.next();
 				PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(key);
-				if (pi.sameThread(t))
+				if (pi.sameThread(t)) {
 					removeKey = key;
+					synchronized (toadletList) {
+						try {
+							toadletList.remove(pi.getPluginClassName());
+						} catch (Throwable ex) {
+						}
+					}
+				}
 			}
+			
+			if (removeKey != null)
+				pluginInfo.remove(removeKey);
 		}
-		if (removeKey != null)
-			pluginInfo.remove(removeKey);
 	}
 
-	public void dumpPlugins() {
-		Iterator it = pluginInfo.keySet().iterator();
-		while (it.hasNext()) {
-			PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(it.next());
-			System.out.println(pi);
+	public String dumpPlugins() {
+		StringBuffer out= new StringBuffer();
+		synchronized (pluginInfo) {
+			Iterator it = pluginInfo.keySet().iterator();
+			while (it.hasNext()) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(it.next());
+				out.append(pi.toString());
+				out.append('\n');
+			}
 		}
+		return out.toString();
+	}
+	
+	public String handleHTTPGet(String plugin, String path) {
+		FredPlugin handler = null;
+		synchronized (toadletList) {
+			handler = (FredPlugin)toadletList.get(plugin);
+		}
+		if (handler == null)
+			return null;
+		
+		return handler.handleHTTPGet(path);
 	}
 	
 	public void killPlugin(String name) {
-		Iterator it = pluginInfo.keySet().iterator();
-		while (it.hasNext()) {
-			PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(it.next());
-			if (pi.getThreadName().equals(name))
-			{
-				pi.stopPlugin();
+		synchronized (pluginInfo) {
+			Iterator it = pluginInfo.keySet().iterator();
+			while (it.hasNext()) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(it.next());
+				if (pi.getThreadName().equals(name))
+				{
+					pi.stopPlugin();
+				}
 			}
 		}
 	}

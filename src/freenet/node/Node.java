@@ -25,9 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import pluginmanager.PluginManager;
-import pluginmanager.PluginRespirator;
-import snmplib.SNMPStarter;
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
@@ -71,6 +68,11 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.fcp.FCPServer;
+import freenet.pluginmanager.PluginManager;
+import freenet.pluginmanager.PluginRespirator;
+import freenet.pluginmanager.PproxyToadlet;
+import freenet.snmplib.SNMPAgent;
+import freenet.snmplib.SNMPStarter;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.BucketFactory;
@@ -393,7 +395,22 @@ public class Node {
         Thread t = new Thread(new MemoryChecker(), "Memory checker");
         t.setPriority(Thread.MAX_PRIORITY);
         t.start();
+        /*
+        SimpleToadletServer server = new SimpleToadletServer(port+2000);
+        FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+        PproxyToadlet pproxy = new PproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
+        server.register(fproxy, "/", false);
+        server.register(pproxy, "/plugins/", true);
         
+        System.out.println("Starting fproxy on port "+(port+2000));
+        new FCPServer(port+3000, n);
+        System.out.println("Starting FCP server on port "+(port+3000));
+        SNMPAgent.setSNMPPort(port+4000);
+        System.out.println("Starting SNMP server on port "+(port+4000));
+        SNMPStarter.initialize();
+        //server.register(fproxy, "/SSK@", false);
+        //server.register(fproxy, "/KSK@", false);
+        */
     	Node node;
 		try {
 			node = new Node(cfg, random);
@@ -815,8 +832,10 @@ public class Node {
 		// And finally, Initialize the plugin manager
 		PluginManager pm = null;
 		try {
-			HighLevelSimpleClient hlsc = new HighLevelSimpleClientImpl(this, 
+			HighLevelSimpleClient hlsc = makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			/*new HighLevelSimpleClientImpl(this, 
 					archiveManager, tempBucketFactory, random, false, (short)0);
+					*/
 			PluginRespirator pluginRespirator = new PluginRespirator(hlsc);
 			pm = new PluginManager(pluginRespirator);
 		} catch (Throwable e) {
@@ -857,6 +876,13 @@ public class Node {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);
 		}
+		/*
+        SimpleToadletServer server = new SimpleToadletServer(port+2000);
+        FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+        PproxyToadlet pproxy = new PproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
+        server.register(fproxy, "/", false);
+        server.register(pproxy, "/plugins/", true);
+		 * */
         
         // FCP
         try {

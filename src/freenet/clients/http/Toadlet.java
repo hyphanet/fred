@@ -44,12 +44,12 @@ public abstract class Toadlet {
 	 * @throws IOException 
 	 * @throws ToadletContextClosedException 
 	 */
-	abstract void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException;
+	abstract public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException;
 
 	/**
 	 * Likewise for a PUT request.
 	 */
-	abstract void handlePut(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException;
+	abstract public void handlePut(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException;
 	
 	/**
 	 * Client calls from the above messages to run a freenet request.
@@ -68,7 +68,7 @@ public abstract class Toadlet {
 	/**
 	 * Client calls to write a reply to the HTTP requestor.
 	 */
-	void writeReply(ToadletContext ctx, int code, String mimeType, String desc, byte[] data, int offset, int length) throws ToadletContextClosedException, IOException {
+	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, byte[] data, int offset, int length) throws ToadletContextClosedException, IOException {
 		ctx.sendReplyHeaders(code, desc, null, mimeType, length);
 		ctx.writeData(data, offset, length);
 	}
@@ -76,12 +76,12 @@ public abstract class Toadlet {
 	/**
 	 * Client calls to write a reply to the HTTP requestor.
 	 */
-	void writeReply(ToadletContext ctx, int code, String mimeType, String desc, Bucket data) throws ToadletContextClosedException, IOException {
+	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, Bucket data) throws ToadletContextClosedException, IOException {
 		ctx.sendReplyHeaders(code, desc, null, mimeType, data.size());
 		ctx.writeData(data);
 	}
 
-	void writeReply(ToadletContext ctx, int code, String mimeType, String desc, String reply) throws ToadletContextClosedException, IOException {
+	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, String reply) throws ToadletContextClosedException, IOException {
 		byte[] buf = reply.getBytes("ISO-8859-1");
 		ctx.sendReplyHeaders(code, desc, null, mimeType, buf.length);
 		ctx.writeData(buf, 0, buf.length);

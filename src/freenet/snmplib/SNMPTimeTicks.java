@@ -1,4 +1,4 @@
-package snmplib;
+package freenet.snmplib;
 
 public class SNMPTimeTicks extends SNMPTypeWrapperNum {
 	public SNMPTimeTicks() { super(); }

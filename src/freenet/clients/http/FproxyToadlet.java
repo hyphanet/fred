@@ -17,6 +17,7 @@ import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.pluginmanager.PproxyToadlet;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
@@ -27,7 +28,7 @@ public class FproxyToadlet extends Toadlet {
 		super(client);
 	}
 
-	void handleGet(URI uri, ToadletContext ctx)
+	public void handleGet(URI uri, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
 		String ks = uri.toString();
 		if(ks.startsWith("/"))
@@ -62,7 +63,7 @@ public class FproxyToadlet extends Toadlet {
 		}
 	}
 
-	void handlePut(URI uri, Bucket data, ToadletContext ctx)
+	public void handlePut(URI uri, Bucket data, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
 		String notSupported = "<html><head><title>Not supported</title></head><body>"+
 		"Operation not supported</body>";
@@ -134,6 +135,8 @@ public class FproxyToadlet extends Toadlet {
         FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
         node.setFproxy(fproxy);
         server.register(fproxy, "/", false);
+        PproxyToadlet pproxy = new PproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node.pluginManager);
+        server.register(pproxy, "/plugins/", true);
         fproxyConfig.finishedInitialization();
         System.out.println("Starting fproxy on port "+(port));
 	}

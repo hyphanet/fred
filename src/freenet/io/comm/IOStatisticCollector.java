@@ -4,7 +4,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import snmplib.SNMPStarter;
+import freenet.snmplib.SNMPStarter;
+
 
 public class IOStatisticCollector {
 	public static final int STATISTICS_ENTRIES = 10;

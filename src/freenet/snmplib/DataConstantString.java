@@ -1,4 +1,4 @@
-package snmplib;
+package freenet.snmplib;
 
 public class DataConstantString implements DataFetcher {
 	private String OID;

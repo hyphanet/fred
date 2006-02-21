@@ -1,4 +1,4 @@
-package pluginmanager;
+package freenet.pluginmanager;
 
 /**
  * Methods to handle a specific plugin (= set it up and start it)
@@ -51,9 +51,13 @@ public class PluginHandler {
 					return;
 			}
 			
-			if (plugin instanceof FredPlugin)
+			if (plugin instanceof FredPlugin) {
+				FredPlugin plug = ((FredPlugin)plugin);
+				// handles fproxy? If so, register
+				if (plug.handles(FredPlugin.handleFproxy))
+					pm.registerToadlet(plug);
 				((FredPlugin)plugin).runPlugin(pr);
-			
+			}
 			// If not FredPlugin, then the whole thing is aborted,
 			// and then this method will return, killing the thread
 			

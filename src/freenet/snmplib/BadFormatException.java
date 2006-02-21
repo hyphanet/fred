@@ -1,4 +1,4 @@
-package snmplib;
+package freenet.snmplib;
 
 public class BadFormatException extends Exception {
 	public BadFormatException(String s) {

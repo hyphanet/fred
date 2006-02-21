@@ -1,4 +1,4 @@
-package pluginmanager;
+package freenet.pluginmanager;
 
 import java.util.Date;
 
@@ -27,20 +27,20 @@ public class PluginInfoWrapper {
 	}
 	
 	public String toString() {
-		return "ID: \"" +threadName + "\", Name: "+ className +" Started: " + (new Date(start)).toString();
+		return "ID: \"" +threadName + "\", Name: "+ className +", Started: " + (new Date(start)).toString();
 	}
 	
 	public String getThreadName() {
 		return threadName;
 	}
 	
-/*	public FredPlugin getPlugin(){
-		return plug;
+	public String getPluginClassName(){
+		return plug.getClass().getName().toString();
 	}
-	*/
+
 	public void stopPlugin() {
 		plug.terminate();
-		//thread.interrupt();
+		thread.interrupt();
 	}
 	
 	public boolean sameThread(Thread t){

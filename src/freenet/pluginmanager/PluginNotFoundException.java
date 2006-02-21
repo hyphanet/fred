@@ -1,4 +1,4 @@
-package pluginmanager;
+package freenet.pluginmanager;
 
 public class PluginNotFoundException extends Exception {
 

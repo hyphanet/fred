@@ -1,4 +1,4 @@
-package snmplib;
+package freenet.snmplib;
 
 import java.util.Stack;
 

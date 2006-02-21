@@ -1,4 +1,4 @@
-package snmplib;
+package freenet.snmplib;
 
 
 public class DataConstantInt implements DataFetcher {

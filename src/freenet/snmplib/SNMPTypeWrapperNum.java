@@ -1,4 +1,4 @@
-package snmplib;
+package freenet.snmplib;
 
 public abstract class SNMPTypeWrapperNum {
 	protected long value;
