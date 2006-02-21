@@ -53,7 +53,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final TupleBinding storeBlockTupleBinding;
 	private final TupleBinding longTupleBinding;
 	
-	private long chkBlocksInStore;
+	private int chkBlocksInStore;
 	private long maxChkBlocks;
 	private final Database chkDB;
 	private final Database chkDB_accessTime;
@@ -570,7 +570,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		return offset;
     	}
     }
-        
+    
     /**
      * Convert StoreBlock's to the format used by the database
      */
@@ -585,7 +585,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
 
     	public Object entryToObject(TupleInput ti) {
-    		int offset = ti.readInt();
+    		long offset = ti.available() == 12 ? ti.readInt() : ti.readLong();
 	    	long lastAccessed = ti.readLong();
 	    	
 	    	StoreBlock storeBlock = new StoreBlock(offset,lastAccessed);

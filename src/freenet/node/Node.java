@@ -701,7 +701,7 @@ public class Node {
 
         maxStoreKeys = storeSize / sizePerKey;
         
-        nodeConfig.register("storeDir", new File(nodeDir,"store-"+portNumber).toString(), 6, true, "Store directory", "Name of directory to put store files in", 
+        nodeConfig.register("storeDir", ".", 6, true, "Store directory", "Name of directory to put store files in", 
         		new StringCallback() {
 					public String get() {
 						return storeDir.getPath();
