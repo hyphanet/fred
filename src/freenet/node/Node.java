@@ -15,7 +15,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.net.BindException;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -28,17 +27,13 @@ import java.util.Iterator;
 
 import pluginmanager.PluginManager;
 import pluginmanager.PluginRespirator;
-
-import snmplib.SNMPAgent;
 import snmplib.SNMPStarter;
-
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.clients.http.FproxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.FilePersistentConfig;
 import freenet.config.IntCallback;
@@ -79,18 +74,17 @@ import freenet.node.fcp.FCPServer;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.BucketFactory;
-import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
 import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
-import freenet.support.LoggerHookChain;
 import freenet.support.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.TempBucketFactory;
 import freenet.transport.IPAddressDetector;
+import freenet.transport.IPUtil;
 
 /**
  * @author amphibian
@@ -1318,6 +1312,8 @@ public class Node {
     }
 
     InetAddress overrideIPAddress;
+    /** Last detected IP address */
+    InetAddress lastIPAddress;
     
     /**
      * @return Our current main IP address.
@@ -1325,15 +1321,57 @@ public class Node {
      * detection properly with NetworkInterface, and we should use
      * third parties if available and UP&P if available.
      */
-    InetAddress getPrimaryIPAddress() {
+    InetAddress detectPrimaryIPAddress() {
         if(overrideIPAddress != null) {
             Logger.minor(this, "Returning overridden address: "+overrideIPAddress);
             return overrideIPAddress;
         }
         Logger.minor(this, "IP address not overridden");
-       	return ipDetector.getAddress();
+       	InetAddress addr = ipDetector.getAddress();
+       	if(addr != null) return addr;
+   		// Try to pick it up from our connections
+       	if(peers == null) return null;
+       	PeerNode[] peerList = peers.connectedPeers;
+       	HashMap countsByPeer = new HashMap();
+       	// FIXME use a standard mutable int object, we have one somewhere
+       	for(int i=0;i<peerList.length;i++) {
+       		Peer p = peerList[i].getRemoteDetectedPeer();
+       		if(p == null || p.isNull()) continue;
+       		InetAddress ip = p.getAddress();
+       		if(!IPUtil.checkAddress(p.getAddress())) continue;
+       		if(countsByPeer.containsKey(ip)) {
+       			Integer count = (Integer) countsByPeer.get(ip);
+       			Integer newCount = new Integer(count.intValue()+1);
+       			countsByPeer.put(ip, newCount);
+       		} else {
+       			countsByPeer.put(ip, new Integer(1));
+       		}
+       	}
+       	if(countsByPeer.size() == 0) return null;
+       	Iterator it = countsByPeer.keySet().iterator();
+       	if(countsByPeer.size() == 1) {
+       		return (InetAddress) it.next();
+       	}
+       	// Pick most popular address
+       	// FIXME use multi-homing here
+       	InetAddress best = null;
+       	int bestPopularity = 0;
+       	while(it.hasNext()) {
+       		InetAddress cur = (InetAddress) it.next();
+       		int curPop = ((Integer) (countsByPeer.get(best))).intValue();
+       		if(curPop > bestPopularity) {
+       			bestPopularity = curPop;
+       			 best = cur;
+       		}
+       	}
+       	return best;
     }
 
+    InetAddress getPrimaryIPAddress() {
+    	if(lastIPAddress == null) return detectPrimaryIPAddress();
+    	return lastIPAddress;
+    }
+    
     /**
      * Do a routed ping of another node on the network by its location.
      * @param loc2 The location of the other node to ping. It must match
@@ -1801,7 +1839,7 @@ public class Node {
 	InetAddress lastIP;
 	
 	public void redetectAddress() {
-		InetAddress newIP = ipDetector.getAddress();
+		InetAddress newIP = detectPrimaryIPAddress();
 		if(newIP.equals(lastIP)) return;
 		writeNodeFile();
 	}

@@ -909,6 +909,16 @@ public class DMT {
         return msg;
     }
 
+    public static final MessageType FNPDetectedIPAddress = new MessageType("FNPDetectedIPAddress") {{
+    	addField(EXTERNAL_ADDRESS, Peer.class);
+    }};
+    
+    public static final Message createFNPDetectedIPAddress(Peer peer) {
+    	Message msg = new Message(FNPDetectedIPAddress);
+    	msg.set(EXTERNAL_ADDRESS, peer);
+    	return msg;
+    }
+    
 	public static void init() { }
 
 }

@@ -8,6 +8,7 @@ import freenet.io.comm.Dispatcher;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageType;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.comm.Peer;
 import freenet.support.Logger;
 
 /**
@@ -87,6 +88,10 @@ public class NodeDispatcher implements Dispatcher {
         	long id = m.getLong(DMT.PING_SEQNO);
         	source.receivedLinkPong(id);
         	return true;
+        } else if(spec == DMT.FNPDetectedIPAddress) {
+        	Peer p = (Peer) m.getObject(DMT.EXTERNAL_ADDRESS);
+        	source.setRemoteDetectedPeer(p);
+        	node.redetectAddress();
         }
         return false;
     }

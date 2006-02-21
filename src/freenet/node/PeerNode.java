@@ -61,6 +61,9 @@ public class PeerNode implements PeerContext {
     /** Advertised addresses */
     private Vector nominalPeer;
     
+    /** The PeerNode's report of our IP address */
+    private Peer remoteDetectedPeer;
+    
     /** Is this a testnet node? */
     public final boolean testnetEnabled;
     
@@ -749,10 +752,12 @@ public class PeerNode implements PeerContext {
      * Send any high level messages that need to be sent on connect.
      */
     private void sendInitialMessages() {
-        Message msg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
+        Message locMsg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
+        Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         
         try {
-            sendAsync(msg, null);
+            sendAsync(locMsg, null);
+            sendAsync(ipMsg, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake but disconnected!!!", new Exception("error"));
         }
@@ -1171,6 +1176,14 @@ public class PeerNode implements PeerContext {
 	public void reportThrottledPacketSendTime(long timeDiff) {
 		throttledPacketSendAverage.report(timeDiff);
 		Logger.minor(this, "Reporting throttled packet send time: "+timeDiff+" to "+getPeer());
+	}
+
+	public void setRemoteDetectedPeer(Peer p) {
+		this.remoteDetectedPeer = p;
+	}
+	
+	public Peer getRemoteDetectedPeer() {
+		return remoteDetectedPeer;
 	}
 }
 
