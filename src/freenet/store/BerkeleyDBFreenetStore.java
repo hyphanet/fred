@@ -336,7 +336,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	DSAPublicKey block = null;
 	    	
 	    		byte[] data = new byte[dataBlockSize];
-	    		Logger.minor(this, "Reading from store... "+storeBlock.offset);
+	    		Logger.minor(this, "Reading from store... "+storeBlock.offset+" ("+storeBlock.recentlyUsed+")");
 	    		synchronized(chkStore) {
 		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 		    		chkStore.readFully(data);
@@ -585,6 +585,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
 
     	public Object entryToObject(TupleInput ti) {
+    		if(Logger.shouldLog(Logger.DEBUG, this))
+    			Logger.debug(this, "Available: "+ti.available());
     		long offset = ti.available() == 12 ? ti.readInt() : ti.readLong();
 	    	long lastAccessed = ti.readLong();
 	    	

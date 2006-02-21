@@ -361,7 +361,6 @@ public class Node {
     public static void main(String[] args) throws IOException {
     	if(args.length>1) {
     		System.out.println("Usage: $ java freenet.node.Node <configFile>");
-    		System.out.println("We recommend you move your old <filename>-<portnumber> files to <filename>, otherwise the node won't use them!");
     		return;
     	}
     	
