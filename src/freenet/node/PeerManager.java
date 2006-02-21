@@ -191,7 +191,7 @@ public class PeerManager {
      */
     public PeerNode getByPeer(Peer peer) {
         for(int i=0;i<myPeers.length;i++) {
-            if(myPeers[i].getPeer().equals(peer))
+            if(peer.equals(myPeers[i].getPeer()))
                 return myPeers[i];
         }
         return null;

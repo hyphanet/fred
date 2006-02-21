@@ -29,6 +29,7 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
+import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
@@ -110,7 +111,7 @@ public class TextModeClientInterface implements Runnable {
 //        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
         System.out.println("CONNECT:<filename|URL> - connect to a node from its ref in a file/url.");
         System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
-        System.out.println("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port");
+        System.out.println("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port or name");
         System.out.println("NAME:<new node name> - change the node's name.");
 //        System.out.println("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.");
 //        System.out.println("SAY:<text> - send text to the last created/pushed stream");
@@ -658,21 +659,26 @@ public class TextModeClientInterface implements Runnable {
     }
     
     /**
-     * Disconnect from a node, given its ip and port as a String
+     * Disconnect from a node, given its ip and port, or name, as a String
      */
-    private void disconnect(String ipAndPort) {
-    	System.out.println("Disconnecting from node at: "+ipAndPort);
+    private void disconnect(String nodeIdentifier) {
+    	System.out.println("Disconnecting from node at: "+nodeIdentifier);
     	PeerNode[] pn = n.peers.myPeers;
     	for(int i=0;i<pn.length;i++)
     	{
-    		String nodeIpAndPort = pn[i].getDetectedPeer().getAddress().getHostAddress()+":"+pn[i].getDetectedPeer().getPort();
-    		if(nodeIpAndPort.equals(ipAndPort))
+    		Peer peer = pn[i].getDetectedPeer();
+    		String nodeIpAndPort = "";
+    		if(peer != null) {
+        		nodeIpAndPort = peer.getAddress().getHostAddress()+":"+pn[i].getDetectedPeer().getPort();
+    		}
+    		String name = pn[i].myName;
+    		if(nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
     		{
     			n.peers.disconnect(pn[i]);
     			return;
     		}
     	}
-    	System.out.println("No node in peers list at: "+ipAndPort);
+    	System.out.println("No node in peers list at: "+nodeIdentifier);
     }
 
     private String sanitize(String fnam) {

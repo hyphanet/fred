@@ -155,6 +155,7 @@ public class SimpleFieldSet {
     }
 
     private static final String[] split(String string) {
+    	if(string == null) return new String[0];
     	return string.split(";"); // slower???
 //    	int index = string.indexOf(';');
 //    	if(index == -1) return null;
@@ -257,16 +258,22 @@ public class SimpleFieldSet {
 	}
 
 	public Iterator keyIterator() {
-		return new KeyIterator();
+		return new KeyIterator("");
+	}
+
+	KeyIterator keyIterator(String prefix) {
+		return new KeyIterator(prefix);
 	}
 	
     public class KeyIterator implements Iterator {
     	
     	final Iterator mapIterator;
     	KeyIterator subIterator;
+    	String prefix;
     	
-    	public KeyIterator() {
+    	public KeyIterator(String prefix) {
     		mapIterator = map.keySet().iterator();
+    		this.prefix = prefix;
     	}
 
 		public boolean hasNext() {
@@ -277,17 +284,18 @@ public class SimpleFieldSet {
 
 		public Object next() {
 			while(true) { // tail-recurse so we get infinite loop instead of OOM in case of a loop...
-				if(subIterator != null && subIterator.hasNext())
+				if(subIterator != null && subIterator.hasNext()) {
 					return subIterator.next();
+				}
 				if(subIterator != null) subIterator = null;
 				if(mapIterator.hasNext()) {
 					String key = (String) mapIterator.next();
 					Object value = map.get(key);
 					if(value instanceof String)
-						return value;
+						return prefix + MULTI_LEVEL_CHAR + key;
 					else {
 						SimpleFieldSet fs = (SimpleFieldSet) value;
-						subIterator = (KeyIterator) fs.keyIterator();
+						subIterator = fs.keyIterator((prefix.length() == 0) ? key : (prefix+MULTI_LEVEL_CHAR+key));
 						continue;
 					}
 				}
@@ -302,6 +310,8 @@ public class SimpleFieldSet {
 	}
 
 	public void put(String key, SimpleFieldSet fs) {
+		if(fs.isEmpty())
+			throw new IllegalArgumentException("Empty");
 		if(!multiLevel)
 			throw new IllegalArgumentException("Not multi-level");
 		if(!fs.multiLevel)
@@ -309,6 +319,28 @@ public class SimpleFieldSet {
 		if(map.containsKey(key))
 			throw new IllegalArgumentException("Already contains "+key+" but trying to add a SimpleFieldSet!");
 		map.put(key, fs);
+	}
+
+	public void remove(String key) {
+		int idx;
+		if((!multiLevel) || (idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
+			map.remove(key);
+		} else {
+			String before = key.substring(0, idx);
+			String after = key.substring(idx+1);
+			SimpleFieldSet fs = (SimpleFieldSet) (map.get(before));
+			if(fs == null) {
+				return;
+			}
+			fs.remove(after);
+			if(fs.isEmpty())
+				map.remove(before);
+		}
+	}
+
+	/** Is this SimpleFieldSet empty? */
+	public boolean isEmpty() {
+		return map.isEmpty();
 	}
 
 }

@@ -1262,6 +1262,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         Logger.minor(this,"Sending packet of length "+output.length+" to "+kt.pn);
         
+        // pn.getPeer() cannot be null
         usm.sendPacket(output, kt.pn.getPeer());
         kt.pn.sentPacket();
     }

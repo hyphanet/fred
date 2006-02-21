@@ -308,6 +308,7 @@ public class NodeDispatcher implements Dispatcher {
             PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, ctx.notIgnored, target, true);
             Logger.minor(this, "Next: "+next+" message: "+m);
             if(next != null) {
+            	// next is connected, or at least has been => next.getPeer() CANNOT be null.
                 Logger.minor(this, "Forwarding "+m.getSpec()+" to "+next.getPeer().getPort());
                 ctx.addSent(next);
                 try {

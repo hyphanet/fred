@@ -210,7 +210,8 @@ public class PeerNode implements PeerContext {
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null){
         		Peer p = new Peer(fs.get("physical.udp"));
-        		nominalPeer.addElement(p);
+        		if(p != null)
+        			nominalPeer.addElement(p);
         	}else{
 	    		for(int i=0;i<physical.length;i++){		
 					Peer p = new Peer(physical[i]);
@@ -221,8 +222,11 @@ public class PeerNode implements PeerContext {
         } catch (Exception e1) {
                 throw new FSParseException(e1);
         }
-        if(nominalPeer.isEmpty()) throw new FSParseException("No physical.udp");
-        detectedPeer=(Peer) nominalPeer.firstElement();
+        if(nominalPeer.isEmpty()) {
+        	Logger.normal(this, "No IP addresses found");
+        	detectedPeer = null;
+        } else
+        	detectedPeer=(Peer) nominalPeer.firstElement();
         
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
@@ -310,6 +314,8 @@ public class PeerNode implements PeerContext {
      */
     public Peer[] getHandshakeIPs(){
     	Peer[] p=null;
+    	
+    	if(detectedPeer == null && nominalPeer.size() == 0) return new Peer[0];
     	
     	if( ! nominalPeer.contains(detectedPeer)){
       		p= new Peer[1+nominalPeer.size()];
@@ -614,7 +620,7 @@ public class PeerNode implements PeerContext {
      * @return short version of toString()
      */
     public String shortToString() {
-        return super.toString()+"@"+detectedPeer.toString()+"@"+HexUtil.bytesToHex(identity);
+        return super.toString()+"@"+detectedPeer+"@"+HexUtil.bytesToHex(identity);
     }
 
     public String toString() {
@@ -885,10 +891,13 @@ public class PeerNode implements PeerContext {
         if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()])))
         	changedAnything = true;
         
-        if(nominalPeer.isEmpty()) throw new FSParseException("No physical.udp");
-        /* yes, we pick up a random one : it will be updated on handshake */
-        detectedPeer=(Peer) nominalPeer.firstElement();
-        
+        if(nominalPeer.isEmpty()) {
+        	Logger.normal(this, "No physical.udp");
+        	// detectedPeer stays as it is
+        } else {
+            /* yes, we pick up a random one : it will be updated on handshake */
+            detectedPeer=(Peer) nominalPeer.firstElement();
+        }
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         if(!name.equals(myName)) changedAnything = true;
@@ -944,7 +953,7 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
         return 
-        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer().toString()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+backoffLength+" ("+(Math.max(backedOffUntil - System.currentTimeMillis(),0))+")";
+        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+backoffLength+" ("+(Math.max(backedOffUntil - System.currentTimeMillis(),0))+")";
     }
     
     public String getFreevizOutput() {

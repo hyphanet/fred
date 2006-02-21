@@ -1,5 +1,6 @@
 package freenet.config;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -54,8 +55,9 @@ public class FilePersistentConfig extends Config {
 	 * @throws IOException */
 	private void initialLoad() throws IOException {
 		FileInputStream fis = new FileInputStream(filename);
+		BufferedInputStream bis = new BufferedInputStream(fis);
 		try {
-			LineReadingInputStream lis = new LineReadingInputStream(fis);
+			LineReadingInputStream lis = new LineReadingInputStream(bis);
 			origConfigFileContents = new SimpleFieldSet(lis, 4096, 256, true);
 		} finally {
 			try {
@@ -69,24 +71,17 @@ public class FilePersistentConfig extends Config {
 	
 	public void register(SubConfig sc) {
 		super.register(sc);
-		if(origConfigFileContents != null) {
-			SimpleFieldSet sfs = origConfigFileContents.subset(sc.prefix);
-			Logger.minor(this, "Registering "+sc+": "+sfs);
-			// Set all the options
-			if(sfs != null)
-				sc.setOptions(sfs);
-		}
 	}
 	
 	/**
 	 * Finished initialization. So any remaining options must be invalid.
 	 */
-	public void finishedInit() {
+	public synchronized void finishedInit() {
 		if(origConfigFileContents == null) return;
 		Iterator i = origConfigFileContents.keyIterator();
 		while(i.hasNext()) {
 			String key = (String) i.next();
-			Logger.error(this, "Unknown option: "+key+" (value="+origConfigFileContents.get(key));
+			Logger.error(this, "Unknown option: "+key+" (value="+origConfigFileContents.get(key)+")");
 		}
 	}
 	
@@ -106,12 +101,14 @@ public class FilePersistentConfig extends Config {
 		Logger.minor(this, "fs = "+fs);
 		FileOutputStream fos = new FileOutputStream(tempFilename);
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
-		fs.writeTo(bw);
+		synchronized(this) {
+			fs.writeTo(bw);
+		}
 		bw.close();
 		tempFilename.renameTo(filename);
 	}
 
-	private SimpleFieldSet exportFieldSet() {
+	private synchronized SimpleFieldSet exportFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		SubConfig[] configs;
 		synchronized(this) {
@@ -125,10 +122,14 @@ public class FilePersistentConfig extends Config {
 	}
 	
 	public void onRegister(SubConfig config, Option o) {
-		if(origConfigFileContents == null) return;
-		String name = config.prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+o.name;
-		String val = origConfigFileContents.get(name);
-		if(val == null) return;
+		String val, name;
+		synchronized(this) {
+			if(origConfigFileContents == null) return;
+			name = config.prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+o.name;
+			val = origConfigFileContents.get(name);
+			origConfigFileContents.remove(name);
+			if(val == null) return;
+		}
 		try {
 			o.setInitialValue(val);
 		} catch (InvalidConfigValueException e) {

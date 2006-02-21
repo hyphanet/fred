@@ -483,6 +483,7 @@ public class KeyTracker {
     }
     
     private PacketThrottle getThrottle() {
+    	// pn.getPeer() cannot be null as it has already connected.
     	return PacketThrottle.getThrottle(pn.getPeer(), Node.PACKET_SIZE);
 	}
 
