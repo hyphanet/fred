@@ -45,20 +45,6 @@ public class IPAddressDetector implements Runnable {
 
 	/** 
 	 * Fetches the currently detected IP address. If not detected yet a detection is forced
-	 * @param preferedAddress An address that for some reason is prefered above others. Might be null
-	 * @return Detected ip address
-	 */
-	public InetAddress getAddress(String preferedAddress) {
-		return getAddress(0, preferedAddress);
-	}
-
-	public InetAddress getAddress(InetAddress preferredAddress) {
-	    checkpoint(preferredAddress);
-	    return lastInetAddress;
-	}
-	
-	/** 
-	 * Fetches the currently detected IP address. If not detected yet a detection is forced
 	 * @return Detected ip address
 	 */
 	public InetAddress getAddress() {

@@ -283,8 +283,8 @@ public class Node {
         	if(myOldPeer.getPort() != portNumber)
         		throw new IllegalArgumentException("Wrong port number "+
         				myOldPeer.getPort()+" should be "+portNumber);
+        	lastIPAddress = myOldPeer.getAddress();
         }
-        // FIXME: we ignore the IP for now, and hardcode it to localhost
         String identity = fs.get("identity");
         if(identity == null)
             throw new IOException();
@@ -1342,43 +1342,49 @@ public class Node {
         }
         Logger.minor(this, "IP address not overridden");
        	InetAddress addr = ipDetector.getAddress();
-       	if(addr != null) return addr;
+       	if(addr != null) {
+       		lastIPAddress = addr;
+       		return addr;
+       	}
    		// Try to pick it up from our connections
-       	if(peers == null) return null;
-       	PeerNode[] peerList = peers.connectedPeers;
-       	HashMap countsByPeer = new HashMap();
-       	// FIXME use a standard mutable int object, we have one somewhere
-       	for(int i=0;i<peerList.length;i++) {
-       		Peer p = peerList[i].getRemoteDetectedPeer();
-       		if(p == null || p.isNull()) continue;
-       		InetAddress ip = p.getAddress();
-       		if(!IPUtil.checkAddress(p.getAddress())) continue;
-       		if(countsByPeer.containsKey(ip)) {
-       			Integer count = (Integer) countsByPeer.get(ip);
-       			Integer newCount = new Integer(count.intValue()+1);
-       			countsByPeer.put(ip, newCount);
-       		} else {
-       			countsByPeer.put(ip, new Integer(1));
+       	if(peers != null) {
+       		PeerNode[] peerList = peers.connectedPeers;
+       		HashMap countsByPeer = new HashMap();
+       		// FIXME use a standard mutable int object, we have one somewhere
+       		for(int i=0;i<peerList.length;i++) {
+       			Peer p = peerList[i].getRemoteDetectedPeer();
+       			if(p == null || p.isNull()) continue;
+       			InetAddress ip = p.getAddress();
+       			if(!IPUtil.checkAddress(p.getAddress())) continue;
+       			if(countsByPeer.containsKey(ip)) {
+       				Integer count = (Integer) countsByPeer.get(ip);
+       				Integer newCount = new Integer(count.intValue()+1);
+       				countsByPeer.put(ip, newCount);
+       			} else {
+       				countsByPeer.put(ip, new Integer(1));
+       			}
        		}
-       	}
-       	if(countsByPeer.size() == 0) return null;
-       	Iterator it = countsByPeer.keySet().iterator();
-       	if(countsByPeer.size() == 1) {
-       		return (InetAddress) it.next();
-       	}
-       	// Pick most popular address
-       	// FIXME use multi-homing here
-       	InetAddress best = null;
-       	int bestPopularity = 0;
-       	while(it.hasNext()) {
-       		InetAddress cur = (InetAddress) it.next();
-       		int curPop = ((Integer) (countsByPeer.get(best))).intValue();
-       		if(curPop > bestPopularity) {
-       			bestPopularity = curPop;
-       			 best = cur;
+       		if(countsByPeer.size() == 0) return null;
+       		Iterator it = countsByPeer.keySet().iterator();
+       		if(countsByPeer.size() == 1) {
+       			return (InetAddress) it.next();
        		}
+       		// Pick most popular address
+       		// FIXME use multi-homing here
+       		InetAddress best = null;
+       		int bestPopularity = 0;
+       		while(it.hasNext()) {
+       			InetAddress cur = (InetAddress) it.next();
+       			int curPop = ((Integer) (countsByPeer.get(best))).intValue();
+       			if(curPop > bestPopularity) {
+       				bestPopularity = curPop;
+       				best = cur;
+       			}
+       		}
+       		lastIPAddress = best;
+           	return best;
        	}
-       	return best;
+       	return lastIPAddress;
     }
 
     InetAddress getPrimaryIPAddress() {
