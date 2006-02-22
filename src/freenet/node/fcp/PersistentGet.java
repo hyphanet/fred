@@ -45,7 +45,7 @@ public class PersistentGet extends FCPMessage {
 		fs.put("URI", uri.toString(false));
 		fs.put("Verbosity", Integer.toString(verbosity));
 		fs.put("ReturnType", ClientGetMessage.returnTypeString(returnType));
-		fs.put("PersistenceType", ClientGetMessage.persistenceTypeString(persistenceType));
+		fs.put("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			fs.put("Filename", targetFile.getAbsolutePath());
 			fs.put("TempFilename", tempFile.getAbsolutePath());
