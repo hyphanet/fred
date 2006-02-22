@@ -521,6 +521,9 @@ public class TextModeClientInterface implements Runnable {
         				" the accual URL. Else it is loaded as classpath and" +
         				" the class it loaded from it (meaning the file could" +
         				" be either a jar-file or a class-file).");
+        		System.out.println("");
+        		System.out.println("  PLUGLOAD: pkg.Class*  - Load newest version of plugin from http://downloads.freenetproject.org/alpha/plugins/");        		
+        		System.out.println("");
         		
         	} else
         		n.pluginManager.startPlugin(line.substring("PLUGLOAD:".length()).trim());
