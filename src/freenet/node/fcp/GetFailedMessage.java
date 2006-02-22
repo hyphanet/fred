@@ -15,7 +15,7 @@ public class GetFailedMessage extends FCPMessage {
 	final boolean isFatal;
 	final String identifier;
 	
-	public GetFailedMessage(FCPConnectionHandler handler, FetchException e, String identifier) {
+	public GetFailedMessage(FetchException e, String identifier) {
 		this.tracker = e.errorCodes;
 		this.code = e.mode;
 		this.codeDescription = FetchException.getMessage(code);

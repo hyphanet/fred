@@ -14,7 +14,7 @@ public class AllDataMessage extends DataCarryingMessage {
 	final long dataLength;
 	final String identifier;
 	
-	public AllDataMessage(FCPConnectionHandler handler, Bucket bucket, String identifier) {
+	public AllDataMessage(Bucket bucket, String identifier) {
 		this.bucket = bucket;
 		this.dataLength = bucket.size();
 		this.identifier = identifier;

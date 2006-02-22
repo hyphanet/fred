@@ -150,27 +150,32 @@ public class FCPServer implements Runnable {
 		return fcp;
 	}
 
-	public synchronized FCPClient registerClient(String name, FCPConnectionHandler handler) {
-		FCPClient oldClient = (FCPClient) clientsByName.get(name);
-		if(oldClient == null) {
-			// Create new client
-			FCPClient client = new FCPClient(name, handler);
-			clientsByName.put(name, client);
-			return client;
-		} else {
-			FCPConnectionHandler oldConn = oldClient.getConnection();
-			// Have existing client
-			if(oldConn == null) {
-				// Easy
-				oldClient.setConnection(handler);
+	public FCPClient registerClient(String name, FCPConnectionHandler handler) {
+		FCPClient oldClient;
+		synchronized(this) {
+			oldClient = (FCPClient) clientsByName.get(name);
+			if(oldClient == null) {
+				// Create new client
+				FCPClient client = new FCPClient(name, handler);
+				clientsByName.put(name, client);
+				return client;
 			} else {
-				// Kill old connection
-				oldConn.outputHandler.queue(new CloseConnectionDuplicateClientNameMessage());
-				oldConn.close();
-				oldClient.setConnection(handler);
+				FCPConnectionHandler oldConn = oldClient.getConnection();
+				// Have existing client
+				if(oldConn == null) {
+					// Easy
+					oldClient.setConnection(handler);
+				} else {
+					// Kill old connection
+					oldConn.outputHandler.queue(new CloseConnectionDuplicateClientNameMessage());
+					oldConn.close();
+					oldClient.setConnection(handler);
+					return oldClient;
+				}
 			}
-			return oldClient;
 		}
+		oldClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler);
+		return oldClient;
 	}
 
 }

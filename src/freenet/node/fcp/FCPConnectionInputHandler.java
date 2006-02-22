@@ -44,7 +44,11 @@ public class FCPConnectionInputHandler implements Runnable {
 			SimpleFieldSet fs;
 			// Read a message
 			String messageType = lis.readLine(64, 64);
-			if(messageType==null || messageType.equals("")) continue;
+			if(messageType == null) {
+				is.close();
+				return;
+			}
+			if(messageType.equals("")) continue;
 			fs = new SimpleFieldSet(lis, 4096, 128, false, false);
 			FCPMessage msg;
 			try {

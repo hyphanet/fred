@@ -45,13 +45,15 @@ public class FCPConnectionHandler {
 	
 	public void close() {
 		ClientRequest[] requests;
+		if(client != null)
+			client.onLostConnection(this);
 		synchronized(this) {
 			isClosed = true;
 			requests = new ClientRequest[requestsByIdentifier.size()];
 			requests = (ClientRequest[]) requestsByIdentifier.values().toArray(requests);
 		}
 		for(int i=0;i<requests.length;i++)
-			requests[i].cancel();
+			requests[i].onLostConnection();
 	}
 	
 	public boolean isClosed() {
@@ -120,6 +122,8 @@ public class FCPConnectionHandler {
 			return;
 		} else {
 			cg.start();
+			if(cg.isPersistent())
+				client.register(cg);
 		}
 	}
 
@@ -142,6 +146,18 @@ public class FCPConnectionHandler {
 			return;
 		} else {
 			cp.start();
+			if(cp.isPersistent())
+				client.register(cp);
+		}
+	}
+
+	public FCPClient getClient() {
+		return client;
+	}
+
+	public void finishedClientRequest(ClientRequest get) {
+		synchronized(this) {
+			requestsByIdentifier.remove(get.getIdentifier());
 		}
 	}
 	

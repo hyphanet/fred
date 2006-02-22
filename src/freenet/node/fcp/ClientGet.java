@@ -30,24 +30,40 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private final FetcherContext fctx;
 	private final String identifier;
 	private final int verbosity;
-	private final FCPConnectionHandler handler;
+	/** Original FCPConnectionHandler. Null if persistence != connection */
+	private final FCPConnectionHandler origHandler;
+	private final FCPClient client;
 	private final ClientGetter getter;
 	private final short priorityClass;
 	private final short returnType;
+	private final short persistenceType;
+	/** Has the request finished? */
 	private boolean finished;
 	private final File targetFile;
 	private final File tempFile;
+	final String clientToken;
 	
 	// Verbosity bitmasks
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
 	
+	// Stuff waiting for reconnection
+	private FCPMessage dataFoundOrGetFailedPending;
+	private AllDataMessage allDataPending;
+	private SimpleProgressMessage progressPending;
+	
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) {
 		uri = message.uri;
+		clientToken = message.clientToken;
 		// FIXME
 		this.priorityClass = message.priorityClass;
+		this.persistenceType = message.persistenceType;
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
-		this.handler = handler;
+		if(persistenceType == PERSIST_CONNECTION)
+			this.origHandler = handler;
+		else
+			origHandler = null;
+		this.client = handler.getClient();
 		fctx = new FetcherContext(handler.defaultFetchContext, FetcherContext.IDENTICAL_MASK);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
@@ -75,25 +91,36 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 	}
 	
+	public void onLostConnection() {
+		if(persistenceType == PERSIST_CONNECTION)
+			cancel();
+		// Otherwise ignore
+	}
+	
 	public void cancel() {
 		getter.cancel();
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
+		progressPending = null;
 		finished = true;
-		FCPMessage msg = new DataFoundMessage(handler, result, identifier);
+		FCPMessage msg = new DataFoundMessage(result, identifier);
 		Bucket data = result.asBucket();
 		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 			// Send all the data at once
 			// FIXME there should be other options
-			handler.outputHandler.queue(msg);
-			msg = new AllDataMessage(handler, data, identifier);
-			handler.outputHandler.queue(msg);
-			return; // don't delete the bucket yet
+			trySendDataFoundOrGetFailed(msg);
+			AllDataMessage m = new AllDataMessage(data, identifier);
+			if(persistenceType == PERSIST_CONNECTION)
+				m.setFreeOnSent();
+			trySendAllDataMessage(m);
+			finish();
+			return;
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			// Do nothing
-			handler.outputHandler.queue(msg);
+			trySendDataFoundOrGetFailed(msg);
 			data.free();
+			finish();
 			return;
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			// Write to temp file, then rename over filename
@@ -102,21 +129,23 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				fos = new FileOutputStream(tempFile);
 			} catch (FileNotFoundException e) {
 				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
-				handler.outputHandler.queue(pm);
+				trySendDataFoundOrGetFailed(pm);
 				data.free();
+				finish();
 				return;
 			}
 			try {
 				BucketTools.copyTo(data, fos, data.size());
 			} catch (IOException e) {
 				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
-				handler.outputHandler.queue(pm);
+				trySendDataFoundOrGetFailed(pm);
 				data.free();
 				try {
 					fos.close();
 				} catch (IOException e1) {
 					// Ignore
 				}
+				finish();
 				return;
 			}
 			try {
@@ -126,20 +155,75 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 			if(!tempFile.renameTo(targetFile)) {
 				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
-				handler.outputHandler.queue(pm);
+				trySendDataFoundOrGetFailed(pm);
 				// Don't delete temp file, user might want it.
 			}
 			data.free();
-			handler.outputHandler.queue(msg);
+			trySendDataFoundOrGetFailed(msg);
+			finish();
 			return;
 		}
+	}
+
+	private void trySendDataFoundOrGetFailed(FCPMessage msg) {
+		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
+			dataFoundOrGetFailedPending = msg;
+		}
+		FCPConnectionHandler conn = client.getConnection();
+		if(conn != null)
+			conn.outputHandler.queue(msg);
+	}
+
+	private void trySendAllDataMessage(AllDataMessage msg) {
+		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
+			allDataPending = msg;
+		}
+		FCPConnectionHandler conn = client.getConnection();
+		if(conn != null)
+			conn.outputHandler.queue(msg);
+	}
+	
+	private void trySendProgress(SimpleProgressMessage msg) {
+		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
+			progressPending = msg;
+		}
+		FCPConnectionHandler conn = client.getConnection();
+		if(conn != null)
+			conn.outputHandler.queue(msg);
+	}
+	
+	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest) {
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
+			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
+			return;
+		}
+		if(includePersistentRequest) {
+			FCPMessage msg = new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken);
+			handler.queue(msg);
+		}
+		if(progressPending != null)
+			handler.queue(progressPending);
+		if(dataFoundOrGetFailedPending != null)
+			handler.queue(dataFoundOrGetFailedPending);
+		if(allDataPending != null)
+			handler.queue(allDataPending);
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		finished = true;
 		Logger.minor(this, "Caught "+e, e);
-		FCPMessage msg = new GetFailedMessage(handler, e, identifier);
-		handler.outputHandler.queue(msg);
+		FCPMessage msg = new GetFailedMessage(e, identifier);
+		trySendDataFoundOrGetFailed(msg);
+		finish();
+	}
+
+	/** Request completed. But we may have to stick around until we are acked. */
+	private void finish() {
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
+			origHandler.finishedClientRequest(this);
+		} else {
+			client.finishedClientRequest(this);
+		}
 	}
 
 	public void onSuccess(BaseClientPutter state) {
@@ -161,7 +245,21 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return;
 		SimpleProgressMessage progress = 
 			new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
-		handler.outputHandler.queue(progress);
+		trySendProgress(progress);
+	}
+
+	public boolean isPersistent() {
+		return persistenceType != ClientRequest.PERSIST_CONNECTION;
+	}
+
+	public void dropped() {
+		cancel();
+		if(allDataPending != null)
+			allDataPending.bucket.free();
+	}
+
+	public String getIdentifier() {
+		return identifier;
 	}
 
 }

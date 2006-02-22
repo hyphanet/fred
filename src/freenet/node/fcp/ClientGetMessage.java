@@ -8,6 +8,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -26,6 +27,10 @@ import freenet.support.SimpleFieldSet;
  * MaxTempSize=1000 // maximum size of intermediary data
  * MaxRetries=100 // automatic retry supported as an option
  * PriorityClass=1 // priority class 1 = interactive
+ * Persistence=reboot // continue until node is restarted; report progress while client is
+ *    connected, including if it reconnects after losing connection
+ * ClientToken=hello // returned in PersistentGet, a hint to the client, so the client 
+ *    doesn't need to maintain its own state
  * EndMessage
  */
 public class ClientGetMessage extends FCPMessage {
@@ -37,12 +42,14 @@ public class ClientGetMessage extends FCPMessage {
 	final String identifier;
 	final int verbosity;
 	final short returnType;
+	final short persistenceType;
 	final long maxSize;
 	final long maxTempSize;
 	final int maxRetries;
 	final short priorityClass;
 	final File diskFile;
 	final File tempFile;
+	final String clientToken;
 	
 	// FIXME move these to the actual getter process
 	static final short RETURN_TYPE_DIRECT = 0; // over FCP
@@ -52,6 +59,7 @@ public class ClientGetMessage extends FCPMessage {
 	
 	public ClientGetMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		short defaultPriority;
+		clientToken = fs.get("ClientToken");
 		ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		identifier = fs.get("Identifier");
@@ -140,6 +148,7 @@ public class ClientGetMessage extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
 			}
 		}
+		Logger.minor(this, "max retries="+maxRetries);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
 			// defaults to the one just below fproxy
@@ -152,6 +161,20 @@ public class ClientGetMessage extends FCPMessage {
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
 			}
+		}
+		String persistenceString = fs.get("Persistence");
+		if(persistenceString == null || persistenceString.equalsIgnoreCase("connection")) {
+			// Default: persists until connection loss.
+			persistenceType = ClientRequest.PERSIST_CONNECTION;
+		} else if(persistenceString.equalsIgnoreCase("reboot")) {
+			// Reports to client by name; persists over connection loss.
+			// Not saved to disk, so dies on reboot.
+			persistenceType = ClientRequest.PERSIST_REBOOT;
+		} else if(persistenceString.equalsIgnoreCase("forever")) {
+			// Same as reboot but saved to disk, persists forever.
+			persistenceType = ClientRequest.PERSIST_FOREVER;
+		} else {
+			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
 		}
 	}
 
@@ -181,6 +204,21 @@ public class ClientGetMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node) {
 		handler.startClientGet(this);
+	}
+
+	public static String returnTypeString(short type) {
+		switch(type) {
+		case RETURN_TYPE_DIRECT:
+			return "direct";
+		case RETURN_TYPE_NONE:
+			return "none";
+		case RETURN_TYPE_DISK:
+			return "disk";
+		case RETURN_TYPE_CHUNKED:
+			return "chunked";
+		default:
+			return Short.toString(type);
+		}
 	}
 
 }

@@ -1,27 +1,111 @@
 package freenet.node.fcp;
 
+import java.util.HashMap;
+import java.util.HashSet;
+
+import freenet.support.LRUQueue;
+
 /**
  * An FCP client.
  * Identified by its Name which is sent on connection.
  */
 public class FCPClient {
 
+	/** Maximum number of unacknowledged completed requests */
+	private static final int MAX_UNACKED_REQUESTS = 256;
+	
 	public FCPClient(String name2, FCPConnectionHandler handler) {
 		this.name = name2;
 		this.currentConnection = handler;
+		this.runningPersistentRequests = new HashSet();
+		this.completedUnackedRequests = new LRUQueue();
+		this.clientRequestsByIdentifier = new HashMap();
 	}
 	
 	/** The client's Name sent in the ClientHello message */
 	final String name;
 	/** The current connection handler, if any. */
 	private FCPConnectionHandler currentConnection;
+	/** Currently running persistent requests */
+	private final HashSet runningPersistentRequests;
+	/** Completed unacknowledged persistent requests */
+	private final LRUQueue completedUnackedRequests;
+	/** ClientRequest's by identifier */
+	private final HashMap clientRequestsByIdentifier;
 	
-	public FCPConnectionHandler getConnection() {
+	public synchronized FCPConnectionHandler getConnection() {
 		return currentConnection;
 	}
-
-	public void setConnection(FCPConnectionHandler handler) {
+	
+	public synchronized void setConnection(FCPConnectionHandler handler) {
 		this.currentConnection = handler;
+	}
+
+	public synchronized void onLostConnection(FCPConnectionHandler handler) {
+		if(currentConnection == handler)
+			currentConnection = null;
+	}
+
+	/**
+	 * Called when a client request has finished, but is persistent. It has not been
+	 * acked yet, so it should be moved to the unacked-completed-requests set.
+	 */
+	public void finishedClientRequest(ClientRequest get) {
+		ClientRequest dropped = null;
+		synchronized(this) {
+			runningPersistentRequests.remove(get);
+			completedUnackedRequests.push(get);
+			
+			if(completedUnackedRequests.size() > MAX_UNACKED_REQUESTS) {
+				dropped = (ClientRequest) completedUnackedRequests.pop();
+			}
+		}
+		if(dropped != null)
+			dropped.dropped();
+	}
+
+	/**
+	 * Queue any and all pending messages from already completed, unacknowledged, persistent
+	 * requests, to be immediately sent. This happens automatically on startup and hopefully
+	 * will encourage clients to acknowledge persistent requests!
+	 */
+	public void queuePendingMessagesOnConnectionRestart(FCPConnectionOutputHandler outputHandler) {
+		Object[] reqs;
+		synchronized(this) {
+			reqs = completedUnackedRequests.toArray();
+		}
+		for(int i=0;i<reqs.length;i++)
+			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true);
+	}
+	
+	/**
+	 * Queue any and all pending messages from running requests. Happens on demand.
+	 */
+	public void queuePendingMessagesFromRunningRequests(FCPConnectionOutputHandler outputHandler) {
+		Object[] reqs;
+		synchronized(this) {
+			reqs = runningPersistentRequests.toArray();
+		}
+		for(int i=0;i<reqs.length;i++)
+			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true);
+	}
+	
+	public void register(ClientRequest cg) {
+		synchronized(this) {
+			runningPersistentRequests.add(cg);
+			clientRequestsByIdentifier.put(cg.getIdentifier(), cg);
+		}
+	}
+
+	public void removeByIdentifier(String identifier) throws MessageInvalidException {
+		synchronized(this) {
+			ClientRequest req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
+			if(req == null)
+				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, null, identifier);
+			if(runningPersistentRequests.remove(req) || completedUnackedRequests.remove(req))
+				return;
+			throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, null, identifier);
+		}
 	}
 	
 }

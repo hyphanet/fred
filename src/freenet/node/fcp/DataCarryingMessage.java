@@ -14,6 +14,12 @@ public abstract class DataCarryingMessage extends FCPMessage {
 	protected Bucket bucket;
 	
 	abstract long dataLength();
+	
+	protected boolean freeOnSent;
+	
+	void setFreeOnSent() {
+		freeOnSent = true;
+	}
 
 	public void readFrom(InputStream is, BucketFactory bf) throws IOException {
 		long len = dataLength();
@@ -28,6 +34,7 @@ public abstract class DataCarryingMessage extends FCPMessage {
 	public void send(OutputStream os) throws IOException {
 		super.send(os);
 		BucketTools.copyTo(bucket, os, dataLength());
+		if(freeOnSent) bucket.free();
 	}
 
 	String getEndString() {

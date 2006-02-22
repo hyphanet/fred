@@ -1,0 +1,67 @@
+package freenet.node.fcp;
+
+import java.io.File;
+
+import freenet.keys.FreenetURI;
+import freenet.node.Node;
+import freenet.support.SimpleFieldSet;
+
+/**
+ * Sent by the node to a client when it asks for a list of current requests.
+ * PersistentGet
+ * End
+ */
+public class PersistentGet extends FCPMessage {
+
+	static final String name = "PersistentGet";
+	
+	final String identifier;
+	final FreenetURI uri;
+	final int verbosity;
+	final short priorityClass;
+	final short returnType;
+	final short persistenceType;
+	final File targetFile;
+	final File tempFile;
+	final String clientToken;
+	
+	public PersistentGet(String identifier, FreenetURI uri, int verbosity, 
+			short priorityClass, short returnType, short persistenceType, 
+			File targetFile, File tempFile, String clientToken) {
+		this.identifier = identifier;
+		this.uri = uri;
+		this.verbosity = verbosity;
+		this.priorityClass = priorityClass;
+		this.returnType = returnType;
+		this.persistenceType = persistenceType;
+		this.targetFile = targetFile;
+		this.tempFile = tempFile;
+		this.clientToken = clientToken;
+	}
+
+	public SimpleFieldSet getFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(false);
+		fs.put("Identifier", identifier);
+		fs.put("URI", uri.toString(false));
+		fs.put("Verbosity", Integer.toString(verbosity));
+		fs.put("ReturnType", ClientGetMessage.returnTypeString(returnType));
+		fs.put("PersistenceType", ClientGetMessage.persistenceTypeString(persistenceType));
+		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+			fs.put("Filename", targetFile.getAbsolutePath());
+			fs.put("TempFilename", tempFile.getAbsolutePath());
+		}
+		if(clientToken != null)
+			fs.put("ClientToken", clientToken);
+		return fs;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void run(FCPConnectionHandler handler, Node node)
+			throws MessageInvalidException {
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentGet goes from server to client not the other way around", identifier);
+	}
+
+}

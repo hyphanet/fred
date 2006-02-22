@@ -10,7 +10,7 @@ public class DataFoundMessage extends FCPMessage {
 	final String mimeType;
 	final long dataLength;
 	
-	public DataFoundMessage(FCPConnectionHandler handler, FetchResult fr, String identifier) {
+	public DataFoundMessage(FetchResult fr, String identifier) {
 		this.identifier = identifier;
 		this.mimeType = fr.getMimeType();
 		this.dataLength = fr.size();

@@ -33,12 +33,16 @@ public abstract class FCPMessage {
 			return new ClientPutMessage(fs);
 		if(name.equals(GenerateSSKMessage.name))
 			return new GenerateSSKMessage(fs);
+		if(name.equals(ListPersistentRequestsMessage.name))
+			return new ListPersistentRequestsMessage(fs);
+		if(name.equals(RemovePersistentRequest.name))
+			return new RemovePersistentRequest(fs);
 		if(name.equals("Void"))
 			return null;
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null);
 //		if(name.equals("ClientPut"))
 //			return new ClientPutFCPMessage(fs);
 		// TODO Auto-generated method stub
-		return null;
 	}
 
 	/** Do whatever it is that we do with this type of message. 

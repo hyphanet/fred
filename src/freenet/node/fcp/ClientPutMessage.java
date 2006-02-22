@@ -42,8 +42,11 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final int maxRetries;
 	final boolean getCHKOnly;
 	final short priorityClass;
+	final short persistenceType;
 	final boolean fromDisk;
 	final boolean dontCompress;
+	final String clientToken;
+	final File origFilename;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -105,6 +108,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			dataLength = f.length();
 			FileBucket fileBucket = new FileBucket(f, true, false, false);
 			this.bucket = fileBucket;
+			this.origFilename = f;
 		} else {
 			fromDisk = false;
 			String dataLengthString = fs.get("DataLength");
@@ -115,8 +119,24 @@ public class ClientPutMessage extends DataCarryingMessage {
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier);
 			}
+			this.origFilename = null;
 		}
 		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
+		String persistenceString = fs.get("Persistence");
+		if(persistenceString == null || persistenceString.equalsIgnoreCase("connection")) {
+			// Default: persists until connection loss.
+			persistenceType = ClientRequest.PERSIST_CONNECTION;
+		} else if(persistenceString.equalsIgnoreCase("reboot")) {
+			// Reports to client by name; persists over connection loss.
+			// Not saved to disk, so dies on reboot.
+			persistenceType = ClientRequest.PERSIST_REBOOT;
+		} else if(persistenceString.equalsIgnoreCase("forever")) {
+			// Same as reboot but saved to disk, persists forever.
+			persistenceType = ClientRequest.PERSIST_FOREVER;
+		} else {
+			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
+		}
+		clientToken = fs.get("ClientToken");
 	}
 
 	public SimpleFieldSet getFieldSet() {

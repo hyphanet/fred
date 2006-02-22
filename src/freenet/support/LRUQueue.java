@@ -90,12 +90,9 @@ public class LRUQueue {
             this.obj = obj;
         }
     }
+
+	public synchronized Object[] toArray() {
+		return hash.keySet().toArray();
+	}
 }
-
-
-
-
-
-
-
 
