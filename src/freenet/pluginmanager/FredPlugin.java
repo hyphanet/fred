@@ -1,12 +1,9 @@
 package freenet.pluginmanager;
 
 public interface FredPlugin {
-	public static int handleFproxy = 1;
-	
-	
-	public boolean handles(int thing);
+	// HTTP-stuff has been moved to FredPluginHTTP
 	
 	public void terminate();
-	public String handleHTTPGet(String path);
+	
 	public void runPlugin(PluginRespirator pr);
 }

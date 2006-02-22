@@ -39,8 +39,17 @@ public class PproxyToadlet extends Toadlet {
 		title +"</h1>" + content.replaceAll("\n", "<br/>\n") + "</body>";
 	}
 	
+	private String mkForwardPage(String title, String content, String nextpage, int interval) {
+		if (content == null) content = "null";
+		return "<html><head><title>" + title + "</title>"+
+		"<META HTTP-EQUIV=Refresh CONTENT=\"" + interval +
+		"; URL="+nextpage+"\"></head><body><h1>" + title +
+		"</h1>" + content.replaceAll("\n", "<br/>\n") + "</body>";
+	}
+	
 	public void handleGet(URI uri, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
+		//String basepath = "/plugins/";
 		String ks = uri.toString();
 		if(ks.startsWith("/"))
 			ks = ks.substring(1);
@@ -48,8 +57,20 @@ public class PproxyToadlet extends Toadlet {
 		Logger.minor(this, "Pproxy fetching "+ks);
 		try {
 			if (ks.equals("")) {
-				String ret = pm.dumpPlugins().replaceAll(",", "\n&nbsp; &nbsp; ");
+				String ret = "<hr/>";
+				ret = pm.dumpPlugins().replaceAll(",", "\n&nbsp; &nbsp; ").replaceAll("\"", " \" ");
+				if (ret.length() < 6)
+					ret += "<i>No plugins loaded</i>\n";
+				ret += "<hr/>";
+				ret += "<form method=\"GET\">Remove plugin: <input type=text name=\"remove\"/><input type=submit /></form>\n";
+				ret += "<form method=\"GET\">Load plugin: <input type=text name=\"load\"/><input type=submit /></form>\n";
 				writeReply(ctx, 200, "text/html", "OK", mkPage("Plugin list", ret));
+			} else if (ks.startsWith("?remove=")) {
+				pm.killPlugin(ks.substring("?remove=".length()));
+				writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Removing plugin", "Removing plugin...", ".", 5));
+			} else if (ks.startsWith("?load=")) {
+				pm.startPlugin(ks.substring("?load=".length()));
+				writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Loading plugin", "Loading plugin...", ".", 5));
 			} else {
 				int to = ks.indexOf("/");
 				String plugin, data;
@@ -64,7 +85,11 @@ public class PproxyToadlet extends Toadlet {
 				//pm.handleHTTPGet(plugin, data);
 				
 				//writeReply(ctx, 200, "text/html", "OK", mkPage("plugin", pm.handleHTTPGet(plugin, data)));
-				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, data));
+				try {
+					writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, data));
+				} catch (PluginHTTPException ex) {
+					writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getMessage());
+				}
 				
 			}
 			

@@ -13,13 +13,13 @@ public class TestPlugin implements FredPlugin {
 	boolean goon = true;
 	Random rnd = new Random();
 	PluginRespirator pr;
-	
+	/*
 	public boolean handles(int thing) {
 		return ((thing == FredPlugin.handleFproxy) ||
 				(thing == FredPlugin.handleFproxy) ||
 				(thing == FredPlugin.handleFproxy));
 	}
-	
+	*/
 	public void terminate() {
 		goon = false;
 	}

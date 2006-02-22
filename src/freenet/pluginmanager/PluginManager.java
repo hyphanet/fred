@@ -34,9 +34,11 @@ public class PluginManager {
 		//StartPlugin("misc@file:plugin.jar");
 		
 		// Needed to include plugin in jar-files
-		if (new Date().equals(null)){
+		/*
+		 if (new Date().equals(null)){
 			System.err.println(new TestPlugin());
 		}
+		*/
 	}
 	
 	public void startPlugin(String filename) {
@@ -97,15 +99,20 @@ public class PluginManager {
 		return out.toString();
 	}
 	
-	public String handleHTTPGet(String plugin, String path) {
+	public String handleHTTPGet(String plugin, String path) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized (toadletList) {
 			handler = (FredPlugin)toadletList.get(plugin);
 		}
-		if (handler == null)
+		/*if (handler == null)
 			return null;
+			*/
 		
-		return handler.handleHTTPGet(path);
+		if (handler instanceof FredPluginHTTP)
+			return ((FredPluginHTTP)handler).handleHTTPGet(path);
+		
+		// no plugin found
+		throw new PluginHTTPException();
 	}
 	
 	public void killPlugin(String name) {
