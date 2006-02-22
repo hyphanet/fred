@@ -103,7 +103,8 @@ public class TextModeClientInterface implements Runnable {
         System.out.println("MAKESSK - Create an SSK keypair.");
         System.out.println("PUTSSK:<insert uri>;<url to redirect to> - Insert an SSK redirect to a file already inserted.");
         System.out.println("PUTSSKDIR:<insert uri>#<path>[#<defaultfile>] - Insert an entire directory to an SSK.");
-        System.out.println("PLUGLOAD: <pkg.classname>[@file:<jarfile.jar>] - Load plugin.");
+        System.out.println("PLUGLOAD: - Load plugin. (use \"PLUGLOAD:?\" for more info)");
+        //System.out.println("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.");
         System.out.println("PLUGLIST - List all loaded plugins.");
         System.out.println("PLUGKILL: <pluginID> - Unload the plugin with the given ID (see PLUGLIST).");
 //        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
@@ -510,7 +511,20 @@ public class TextModeClientInterface implements Runnable {
         	disconnect(ipAndPort.trim());
         	
         } else if(uline.startsWith("PLUGLOAD:")) {
-        	n.pluginManager.startPlugin(line.substring("PLUGLOAD:".length()).trim());
+        	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
+        		System.out.println("  PLUGLOAD: pkg.Class                        - Load plugin from current classpath");        		
+        		System.out.println("  PLUGLOAD: pkg.Class@file:<filename>        - Load plugin from file");
+        		System.out.println("  PLUGLOAD: pkg.Class@http://...             - Load plugin from online file");
+        		System.out.println("");
+        		System.out.println("If the filename/url ends with \".url\", it" +
+        				" is treated as a link, meaning that the first line is" +
+        				" the accual URL. Else it is loaded as classpath and" +
+        				" the class it loaded from it (meaning the file could" +
+        				" be either a jar-file or a class-file).");
+        		
+        	} else
+        		n.pluginManager.startPlugin(line.substring("PLUGLOAD:".length()).trim());
+            //System.out.println("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.");
         } else if(uline.startsWith("PLUGLIST")) {
         	System.out.println(n.pluginManager.dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {

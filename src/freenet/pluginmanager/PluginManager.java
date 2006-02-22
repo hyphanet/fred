@@ -1,7 +1,10 @@
 package freenet.pluginmanager;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLConnection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -141,28 +144,51 @@ public class PluginManager {
 	 */
 	private FredPlugin LoadPlugin(String filename) throws PluginNotFoundException {
         Class cls = null;
+        if (filename.endsWith("*")) {
+        	filename = filename.substring(0,filename.length()-1) + 
+        	"<http://downloads.freenetproject.org/alpha/plugins/" + 
+        	filename.substring(filename.lastIndexOf(".")+1, filename.length()-1) +
+        	".jar.url";
+        	System.out.println(filename);
+        }
         
-        if (filename.indexOf("@file:") >= 0) {
-            // Open from extern file
+        if ((filename.indexOf("@") >= 0)) {
+            // Open from external file
             try {
-                // Load the jar-file
-                String[] parts = filename.split("@file:");
-                if (parts.length != 2) {
-                	throw new PluginNotFoundException("Could not split at \"@file:\".");
-                }
-                
-                // Load the class inside file
-                URL[] serverURLs = new URL[]{new URL("file:" + parts[1])};
-                ClassLoader cl = new URLClassLoader(serverURLs);
-                cls = cl.loadClass(parts[0]);
+            	String realURL = null;
+            	String realClass = null;
+            	
+            	// Load the jar-file
+            	String[] parts = filename.split("@");
+            	if (parts.length != 2) {
+            		throw new PluginNotFoundException("Could not split at \"@\".");
+            	}
+            	realClass = parts[0];
+            	realURL = parts[1];
+            	
+            	if (filename.endsWith(".url")) {
+                		// Load the txt-file
+                		BufferedReader in;
+                		URL url = new URL(parts[1]);
+                        URLConnection uc = url.openConnection();
+                    	in = new BufferedReader(
+                    			new InputStreamReader(uc.getInputStream()));
+                    	
+                    	realURL = in.readLine().trim();
+            	}
+            	
+            	// Load the class inside file
+            	URL[] serverURLs = new URL[]{new URL(realURL)};
+            	ClassLoader cl = new URLClassLoader(serverURLs);
+            	cls = cl.loadClass(realClass);
             } catch (Exception e) {
-                throw new PluginNotFoundException("Initialization error:"
-                		+ filename, e);
+            	throw new PluginNotFoundException("Initialization error:"
+            			+ filename, e);
             }
         } else {
-            // Load class
-            try {
-                cls = Class.forName(filename);
+        	// Load class
+        	try {
+        		cls = Class.forName(filename);
             } catch (ClassNotFoundException e) {
             	throw new PluginNotFoundException(filename);
             }
