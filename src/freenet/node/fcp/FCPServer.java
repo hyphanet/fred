@@ -6,9 +6,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.WeakHashMap;
 
+import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.support.Logger;
@@ -21,11 +23,27 @@ public class FCPServer implements Runnable {
 	final ServerSocket sock;
 	final Node node;
 	final int port;
+	final boolean enabled;
+	final String bindto;
 	final WeakHashMap clientsByName;
 	
 	public FCPServer(int port, Node node) throws IOException {
 		this.port = port;
-		this.sock = new ServerSocket(port, 0, InetAddress.getByName("127.0.0.1"));
+		this.enabled = true;
+		this.bindto = new String("127.0.0.1");
+		this.sock = new ServerSocket(port, 0, InetAddress.getByName(bindto));
+		this.node = node;
+		clientsByName = new WeakHashMap();
+		Thread t = new Thread(this, "FCP server");
+		t.setDaemon(true);
+		t.start();
+	}
+	
+	public FCPServer(String ipToBindTo, int port, Node node) throws IOException {
+		this.bindto = new String(ipToBindTo);
+		this.port = port;
+		this.enabled = true;
+		this.sock = new ServerSocket(port, 0, InetAddress.getByName(bindto));
 		this.node = node;
 		clientsByName = new WeakHashMap();
 		Thread t = new Thread(this, "FCP server");
@@ -68,16 +86,66 @@ public class FCPServer implements Runnable {
 				throw new InvalidConfigValueException("Cannot change FCP port number on the fly");
 			}
 		}
-		
 	}
+	
+	static class FCPEnabledCallback implements BooleanCallback{
+
+		final Node node;
+		
+		FCPEnabledCallback(Node node) {
+			this.node = node;
+		}
+		
+		public boolean get() {
+			return node.getFCPServer().enabled;
+		}
+//TODO: Allow it
+		public void set(boolean val) throws InvalidConfigValueException {
+			if(val != get()) {
+				throw new InvalidConfigValueException("Cannot change the status of the FCP server on the fly");
+			}
+		}
+	}
+
+	static class FCPBindtoCallback implements StringCallback{
+
+		final Node node;
+		
+		FCPBindtoCallback(Node node) {
+			this.node = node;
+		}
+		
+		public String get() {
+			// workaround for node startup
+			if(node.getFCPServer().bindto == null) return new String("Unaviable");
+			return node.getFCPServer().bindto;
+		}
+
+//TODO: Allow it
+		public void set(String val) throws InvalidConfigValueException {
+			if(val.equals(get())) {
+				throw new InvalidConfigValueException("Cannot change the ip address the server is binded to on the fly");
+			}
+		}
+	}
+
 	
 	public static FCPServer maybeCreate(Node node, Config config) throws IOException {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
-		// FIXME check enabled etc
+		fcpConfig.register("enabled", true, 2, true, "Is FCP server enabled ?", "Is FCP server enabled ?", new FCPEnabledCallback(node));
 		fcpConfig.register("port", 9481 /* anagram of 1984, and 1000 up from old number */,
 				2, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(node));
-		FCPServer fcp = new FCPServer(fcpConfig.getInt("port"), node);
-		node.setFCPServer(fcp);
+		fcpConfig.register("bindto", "127.0.0.1", 2, true, "Ip address to bind to", "Ip address to bind the FCP server to", new FCPBindtoCallback(node));
+		
+		FCPServer fcp;
+		if(fcpConfig.getBoolean("enabled")){
+			Logger.normal(node, "Starting FCP server on "+fcpConfig.getString("bindto")+":"+fcpConfig.getInt("port")+".");
+			fcp = new FCPServer(fcpConfig.getString("bindto"), fcpConfig.getInt("port"), node);
+			node.setFCPServer(fcp);	
+		}else{
+			Logger.normal(node, "Not starting FCP server as it's disabled");
+			fcp = null;
+		}
 		fcpConfig.finishedInitialization();
 		return fcp;
 	}
