@@ -16,7 +16,7 @@ public class FCPConnectionInputHandler implements Runnable {
 	}
 
 	void start() {
-		Thread t = new Thread(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress()+":"+handler.sock.getPort());
+		Thread t = new Thread(this, "FCP input handler for "+handler.sock.getRemoteSocketAddress());
 		t.setDaemon(true);
 		t.start();
 	}
@@ -28,6 +28,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			Logger.minor(this, "Caught "+e, e);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
+			t.printStackTrace();
 		}
 		handler.close();
 		handler.closedInput();
