@@ -68,8 +68,9 @@
 	<echo message="Compiling freenet-ext.jar"/>
 	<exec executable="gcj" failonerror="true">
 		<arg value="-c"/>
-		<arg value="-g"/>
-		<arg value="-O0"/>
+		<arg value="-O3"/>
+		<arg value="-fno-bounds-check"/>
+		<arg value="-fno-store-check"/>
 		<arg value="-fjni"/>
 		<arg value="-o"/>
 		<arg value="${build}/freenet-ext.o"/>
@@ -84,8 +85,9 @@
 	<echo message="Compiling freenet-cvs-snapshot.jar"/>
 	<exec executable="gcj" failonerror="true">
 		<arg value="-c"/>
-		<arg value="-g"/>
-		<arg value="-O0"/>
+		<arg value="-O3"/>
+		<arg value="-fno-bounds-check"/>
+		<arg value="-fno-store-check"/>
 		<arg value="-fjni"/>
 		<arg value="-o"/>
 		<arg value="${build}/freenet-cvs-snapshot.o"/>
@@ -108,12 +110,13 @@
 	<echo message="Linking"/>
 	<exec executable="gcj" failonerror="true">
 		<arg value="-combine"/>
-		<arg value="-g"/>
-		<arg value="-O0"/>
+		<arg value="-O3"/>
+		<arg value="-fno-bounds-check"/>
+		<arg value="-fno-store-check"/>
 		<arg value="-fjni"/>
 		<arg value="-o"/>
 		<arg value="freenet"/>
-		<arg value="--main=freenet.node.Node"/>
+		<arg value="--main=net.i2p.util.NativeBigInteger"/>
 		<arg value="-I${lib}/freenet-cvs-snapshot.jar"/>
 		<arg value="-I${lib}/freenet-ext.jar"/>
 		<arg value="-I${gnu-crypto.location}"/>
@@ -133,42 +136,14 @@
   </target>
   
   <target name="dist_gcj" depends="link_gcj"
-      description="generate the distribution" >
-	<echo message="Extracting libs from freenet-ext.jar"/>
-	<unzip src="${lib}/freenet-ext.jar" dest="${bin}"/>
-
-	<echo message="Linking"/>
-	<exec executable="gcj" failonerror="true">
-		<arg value="-combine"/>
-		<arg value="-g"/>
-		<arg value="-O0"/>
-		<arg value="-fjni"/>
-		<arg value="-o"/>
-		<arg value="freenet"/>
-		<arg value="--main=freenet.node.Node"/>
-		<arg value="-I${lib}/freenet-cvs-snapshot.jar"/>
-		<arg value="-I${lib}/freenet-ext.jar"/>
-		<arg value="-I${gnu-crypto.location}"/>
-		<arg value="-I${javax-crypto.location}"/>
-		<arg value="-I${javax-security.location}"/>
-		<arg value="-L${bin}/lib/linux/x86/"/>
-		<arg value="-L${bin}/net/i2p/util/"/>
-		<arg value="-lfec16"/>
-		<arg value="-lfec8"/>
-		<arg value="-ljbigi-linux-athlon"/>
-		<arg value="-l-javax-security"/>
-		<arg value="-l-javax-crypto"/>
-		<arg value="-l-gnu-crypto"/>
-		<arg value="${build}/freenet-ext.o"/>
-		<arg value="${build}/freenet-cvs-snapshot.o"/>
-	</exec>
-  </target>
+      description="generate the distribution" />
 
     <!-- ================================================== -->
     <target name="clean" description="Delete class files and docs dir.">
         <delete dir="${build}"/>
         <delete dir="${bin}"/>
         <delete file="freenet"/>
+        <delete file="*.o"/>
     </target>
     <target name="distclean" description="Delete class files, lib dir and docs dir.">
         <delete dir="${build}"/>
@@ -176,5 +151,6 @@
         <delete dir="${lib}"/>
         <delete dir="misc"/>
         <delete file="freenet"/>
+        <delete file="*.o"/>
     </target>
 </project>

@@ -36,7 +36,6 @@ public class PluginManager {
 		// Needed to include plugin in jar-files
 		if (new Date().equals(null)){
 			System.err.println(new TestPlugin());
-			System.err.println(new TestGalleryPlugin());
 		}
 	}
 	
