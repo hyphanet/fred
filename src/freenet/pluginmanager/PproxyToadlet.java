@@ -62,8 +62,8 @@ public class PproxyToadlet extends Toadlet {
 				if (ret.length() < 6)
 					ret += "<i>No plugins loaded</i>\n";
 				ret += "<hr/>";
-				ret += "<form method=\"GET\">Remove plugin: <input type=text name=\"remove\"/><input type=submit /></form>\n";
-				ret += "<form method=\"GET\">Load plugin: <input type=text name=\"load\"/><input type=submit /></form>\n";
+				ret += "<form method=\"GET\">Remove plugin: (enter ID) <input type=text name=\"remove\" size=40/><input type=submit value=\"Remove\"/></form>\n";
+				ret += "<form method=\"GET\">Load plugin: <input type=text name=\"load\" size=40/><input type=submit value=\"Load\" /></form>\n";
 				writeReply(ctx, 200, "text/html", "OK", mkPage("Plugin list", ret));
 			} else if (ks.startsWith("?remove=")) {
 				pm.killPlugin(ks.substring("?remove=".length()));

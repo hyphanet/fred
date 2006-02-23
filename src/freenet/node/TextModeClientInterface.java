@@ -512,9 +512,10 @@ public class TextModeClientInterface implements Runnable {
         	
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
-        		System.out.println("  PLUGLOAD: pkg.Class                        - Load plugin from current classpath");        		
-        		System.out.println("  PLUGLOAD: pkg.Class@file:<filename>        - Load plugin from file");
-        		System.out.println("  PLUGLOAD: pkg.Class@http://...             - Load plugin from online file");
+        		System.out.println("  PLUGLOAD: pkg.Class                  - Load plugin from current classpath");        		
+        		System.out.println("  PLUGLOAD: pkg.Class@file:<filename>  - Load plugin from file");
+        		System.out.println("  PLUGLOAD: pkg.Class@http://...       - Load plugin from online file");
+        		System.out.println("  PLUGLOAD:         *@...              - Load plugin from manifest in given jarfile");
         		System.out.println("");
         		System.out.println("If the filename/url ends with \".url\", it" +
         				" is treated as a link, meaning that the first line is" +

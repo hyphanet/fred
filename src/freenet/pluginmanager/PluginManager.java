@@ -1,15 +1,32 @@
 package freenet.pluginmanager;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.JarURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+
+import sun.net.www.protocol.jar.URLJarFile;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.support.Bucket;
+import freenet.support.BucketFactory;
+import freenet.support.BucketTools;
+import freenet.support.Buffer;
+import freenet.support.BucketTools.BucketFactoryWrapper;
 
 public class PluginManager {
 
@@ -182,7 +199,42 @@ public class PluginManager {
             	// Load the class inside file
             	URL[] serverURLs = new URL[]{new URL(realURL)};
             	ClassLoader cl = new URLClassLoader(serverURLs);
+            	
+         
+            	// Handle automatic fetching of pluginclassname
+            	if (realClass.equals("*")) {
+            		if (realURL.startsWith("file:")) {
+            			URI liburi = new File(realURL.substring("file:".length())).toURI();
+            			realURL = liburi.toString();
+            		}
+            		
+            		URL url = new URL("jar:"+realURL+"!/");
+            		JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
+            		JarFile jf = jarConnection.getJarFile();
+            		//URLJarFile jf = new URLJarFile(new File(liburi));
+            		//is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
+            		
+            		//BufferedReader manifest = new BufferedReader(new InputStreamReader(cl.getResourceAsStream("/META-INF/MANIFEST.MF")));
+            		
+            		//URL url = new URL(parts[1]);
+                    //URLConnection uc = cl.getResource("/META-INF/MANIFEST.MF").openConnection();
+                	
+            		InputStream is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
+            		BufferedReader in = new BufferedReader(new InputStreamReader(is));	
+            		String line;
+            		while ((line = in.readLine())!=null) {
+        			//	System.err.println(line + "\t\t\t" + realClass);
+            			if (line.startsWith("Plugin-Main-Class: ")) {
+            				realClass = line.substring("Plugin-Main-Class: ".length()).trim();
+            			}
+            		}
+            		//System.err.println("Real classname: " + realClass);
+            	}
+            	
+				
+            	
             	cls = cl.loadClass(realClass);
+            	
             } catch (Exception e) {
             	throw new PluginNotFoundException("Initialization error:"
             			+ filename, e);
