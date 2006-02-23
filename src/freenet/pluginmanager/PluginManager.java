@@ -115,7 +115,9 @@ public class PluginManager {
 			return ((FredPluginHTTP)handler).handleHTTPGet(path);
 		
 		// no plugin found
-		throw new PluginHTTPException();
+		PluginHTTPException t = new PluginHTTPException();
+		t.setReply("Plugin not found: " + plugin);
+		throw t;
 	}
 	
 	public void killPlugin(String name) {
@@ -146,10 +148,10 @@ public class PluginManager {
         Class cls = null;
         if (filename.endsWith("*")) {
         	filename = filename.substring(0,filename.length()-1) + 
-        	"<http://downloads.freenetproject.org/alpha/plugins/" + 
+        	"@http://downloads.freenetproject.org/alpha/plugins/" + 
         	filename.substring(filename.lastIndexOf(".")+1, filename.length()-1) +
         	".jar.url";
-        	System.out.println(filename);
+        	//System.out.println(filename);
         }
         
         if ((filename.indexOf("@") >= 0)) {

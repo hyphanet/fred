@@ -85,17 +85,18 @@ public class PproxyToadlet extends Toadlet {
 				//pm.handleHTTPGet(plugin, data);
 				
 				//writeReply(ctx, 200, "text/html", "OK", mkPage("plugin", pm.handleHTTPGet(plugin, data)));
-				try {
-					writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, data));
-				} catch (PluginHTTPException ex) {
-					writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getMessage());
-				}
+				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, data));
+	
+
 				
 			}
 			
 			//FetchResult result = fetch(key);
 			//writeReply(ctx, 200, result.getMimeType(), "OK", result.asBucket());
 			
+		} catch (PluginHTTPException ex) {
+			// TODO: make it into html
+			writeReply(ctx, ex.getCode(), ex.getMimeType(), ex.getDesc(), ex.getReply());
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			String msg = "<html><head><title>Internal Error</title></head><body><h1>Internal Error: please report</h1><pre>";
