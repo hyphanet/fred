@@ -31,12 +31,18 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 
 	final int port;
+	final String bindto;
 	private final ServerSocket sock;
 	private final LinkedList toadlets;
 	
 	public SimpleToadletServer(int i) throws IOException {
+		this(i, "127.0.0.1");
+	}
+	
+	public SimpleToadletServer(int i, String newbindto) throws IOException {
 		this.port = i;
-		this.sock = new ServerSocket(port, 0, InetAddress.getByName("127.0.0.1"));
+		this.bindto = newbindto;
+		this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindto));
 		toadlets = new LinkedList();
 		Thread t = new Thread(this, "SimpleToadletServer");
 		t.setDaemon(true);

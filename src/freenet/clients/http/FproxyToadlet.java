@@ -12,6 +12,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.IntCallback;
+import freenet.config.StringCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
@@ -111,6 +112,26 @@ public class FproxyToadlet extends Toadlet {
 		}
 	}
 	
+	static class FproxyBindtoCallback implements StringCallback {
+		
+		final Node node;
+		
+		FproxyBindtoCallback(Node n) {
+			this.node = n;
+		}
+		
+		public String get() {
+			SimpleToadletServer f = node.getToadletContainer();
+			if(f == null) return "127.0.0.1";
+			return f.bindto;
+		}
+		
+		public void set(String bindto) throws InvalidConfigValueException {
+			if(bindto != get())
+				throw new InvalidConfigValueException("Cannot change fproxy bind address on the fly");
+		}
+	}
+	
 	public static void maybeCreateFproxyEtc(Node node, Config config) throws IOException {
 		
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
@@ -127,10 +148,13 @@ public class FproxyToadlet extends Toadlet {
 		
 		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, "Fproxy port number", "Fproxy port number",
 				new FproxyPortCallback(node));
+		fproxyConfig.register("bindto", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
+				      new FproxyBindtoCallback(node));
 		
 		int port = fproxyConfig.getInt("port");
+		String bind_ip = fproxyConfig.getString("bindto");
 		
-        SimpleToadletServer server = new SimpleToadletServer(port);
+        SimpleToadletServer server = new SimpleToadletServer(port, bind_ip);
         node.setToadletContainer(server);
         FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
         node.setFproxy(fproxy);
