@@ -116,8 +116,6 @@ public class FCPServer implements Runnable {
 		}
 		
 		public String get() {
-			// workaround for node startup
-			if(node.getFCPServer().bindto == null) return new String("Unaviable");
 			return node.getFCPServer().bindto;
 		}
 

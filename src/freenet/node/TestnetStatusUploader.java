@@ -49,7 +49,7 @@ public class TestnetStatusUploader implements Runnable {
 				// Set up client socket
 				try
 				{
-					client = new Socket("sleon.dyndns.org", 23415);
+					client = new Socket("emu.freenetproject.org", 23415);
 					PrintStream output = new PrintStream(client.getOutputStream());
 	            		
 					output.println(node.exportFieldSet().toString());

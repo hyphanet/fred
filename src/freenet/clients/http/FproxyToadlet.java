@@ -143,6 +143,7 @@ public class FproxyToadlet extends Toadlet {
 		
 		if(!fproxyEnabled) {
 			fproxyConfig.finishedInitialization();
+			Logger.normal(node, "Not starting Fproxy as it's disabled");
 			return;
 		}
 		
@@ -163,6 +164,7 @@ public class FproxyToadlet extends Toadlet {
         server.register(pproxy, "/plugins/", true);
         fproxyConfig.finishedInitialization();
         System.out.println("Starting fproxy on port "+(port));
+        Logger.normal(node,"Starting fproxy on "+bind_ip+":"+port); 
 	}
 
 
