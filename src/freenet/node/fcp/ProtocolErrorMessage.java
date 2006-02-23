@@ -33,6 +33,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int COULD_NOT_WRITE_FILE = 13;
 	static final int COULD_NOT_RENAME_FILE = 14;
 	static final int NO_SUCH_IDENTIFIER = 15;
+	static final int NOT_SUPPORTED = 16;
 	
 	final int code;
 	final String extra;
@@ -71,6 +72,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Could not rename file";
 		case NO_SUCH_IDENTIFIER:
 			return "No such identifier";
+		case NOT_SUPPORTED:
+			return "Not supported";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";

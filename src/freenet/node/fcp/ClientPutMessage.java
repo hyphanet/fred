@@ -136,6 +136,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
 		}
+		if(persistenceType == ClientRequest.PERSIST_FOREVER && !fromDisk) {
+			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Persistence=forever AND UploadFrom=direct unsupported!", identifier);
+		}
 		clientToken = fs.get("ClientToken");
 	}
 
