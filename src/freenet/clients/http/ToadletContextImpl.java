@@ -151,6 +151,9 @@ public class ToadletContextImpl implements ToadletContext {
 					//System.out.println("Length="+line.length()+": "+line);
 					if(line.length() == 0) break;
 					int index = line.indexOf(':');
+					if (index < 0) {
+						throw new ParseException("Missing ':' in request header field");
+					}
 					String before = line.substring(0, index);
 					String after = line.substring(index+1);
 					after = after.trim();
