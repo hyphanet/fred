@@ -662,7 +662,6 @@ public class Node {
                 initNodeFileSettings(random);
             }
         }
-        writeNodeFile();
 
         // Then read the peers
         peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
@@ -810,6 +809,8 @@ public class Node {
 					}
         });
         myName = nodeConfig.getString("name");
+	
+        writeNodeFile();
         
         nodeConfig.finishedInitialization();
         
