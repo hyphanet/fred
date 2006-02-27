@@ -324,17 +324,17 @@ public class PeerNode implements PeerContext {
       		p= new Peer[1+nominalPeer.size()];
     		p[0]=detectedPeer;
     		for(int i=1;i<nominalPeer.size()+1;i++)
-    			p[i]=(Peer) nominalPeer.get(i);
+    			p[i]=(Peer) nominalPeer.get(i-1);
     	}else{
     		p = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);  		
     	}
     	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
     	InetAddress localhost = node.localhostAddress;
     	InetAddress nodeIP = node.getPrimaryIPAddress();
-    	if(nodeIP.equals(localhost)) return p;
+    	if(nodeIP != null && nodeIP.equals(localhost)) return p;
     	InetAddress peerIP = detectedPeer.getAddress();
     	if(peerIP.equals(localhost)) return p;
-    	if(nodeIP.equals(peerIP)) {
+	if(nodeIP != null && nodeIP.equals(peerIP)) {
     		Peer[] newPeers = new Peer[p.length+1];
     		System.arraycopy(p, 0, newPeers, 0, p.length);
     		newPeers[newPeers.length-1] = new Peer(node.localhostAddress, detectedPeer.getPort());
