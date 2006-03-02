@@ -104,8 +104,17 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		this.client = client2;
 		origHandler = null;
 		String mimeType = fs.get("Metadata.ContentType");
-		getCHKOnly = Boolean.parseBoolean(fs.get("GetCHKOnly"));
-		boolean dontCompress = Boolean.parseBoolean(fs.get("DontCompress"));
+                if(fs.get("GetCHKOnly").equalsIgnoreCase("true")){
+		       	getCHKOnly = true;
+	        }else{
+		       	getCHKOnly = false;
+		}
+		boolean dontCompress;
+                if(fs.get("DontCompress").equalsIgnoreCase("true")){
+		       	dontCompress = true;
+	        }else{
+		       	dontCompress = false;
+		}
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
 		clientToken = fs.get("ClientToken");
 		fromDisk = true;
