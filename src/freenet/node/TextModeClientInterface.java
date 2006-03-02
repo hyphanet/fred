@@ -557,7 +557,10 @@ public class TextModeClientInterface implements Runnable {
     	if(filelist == null)
     		throw new IllegalArgumentException("No such directory");
     	for(int i = 0 ; i < filelist.length ; i++) {
-    		if (filelist[i].isFile() && filelist[i].canRead()) {
+                //   Skip unreadable files and dirs
+		//   Skip files nonexistant (dangling symlinks) - check last 
+	        if (filelist[i].canRead() && filelist[i].exists()) {   	 
+    		if (filelist[i].isFile()) {
     			File f = filelist[i];
     			
     			FileBucket bucket = new FileBucket(f, true, false, false);
@@ -572,6 +575,7 @@ public class TextModeClientInterface implements Runnable {
     				ret.put(filelist[i].getName() + "/" + key, bucket);
     			}
     		}
+		}
     	}
     	return ret;
 	}
