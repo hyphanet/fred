@@ -1,5 +1,12 @@
 package freenet.node.fcp;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+
 /**
  * A request process carried out by the node for an FCP client.
  * Examples: ClientGet, ClientPut, MultiGet.
@@ -39,5 +46,44 @@ public abstract class ClientRequest {
 			return Short.toString(type);
 		}
 	}
+
+	public static short parsePersistence(String string) {
+		if(string == null || string.equalsIgnoreCase("connection"))
+			return PERSIST_CONNECTION;
+		if(string.equalsIgnoreCase("reboot"))
+			return PERSIST_REBOOT;
+		if(string.equalsIgnoreCase("forever"))
+			return PERSIST_FOREVER;
+		return Short.parseShort(string);
+	}
+
+	/**
+	 * Write a persistent request to disk.
+	 * @throws IOException 
+	 */
+	public abstract void write(BufferedWriter w) throws IOException;
+
+	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server) throws IOException {
+		SimpleFieldSet fs = new SimpleFieldSet(br, true);
+		String clientName = fs.get("ClientName");
+		FCPClient client = server.registerClient(clientName, server.node, null);
+		String type = fs.get("Type");
+		if(type.equals("GET")) {
+			ClientGet cg = new ClientGet(fs, client);
+			client.register(cg);
+			return cg;
+		} else if(type.equals("PUT")) {
+			ClientPut cp = new ClientPut(fs, client);
+			client.register(cp);
+			return cp;
+		} else {
+			Logger.error(ClientRequest.class, "Unrecognized type: "+type);
+			return null;
+		}
+	}
+
+	public abstract boolean hasFinished();
+	
+	public abstract boolean isPersistentForever();
 
 }

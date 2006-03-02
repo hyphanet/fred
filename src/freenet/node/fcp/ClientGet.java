@@ -1,9 +1,11 @@
 package freenet.node.fcp;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -18,7 +20,9 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * A simple client fetch. This can of course fetch arbitrarily large
@@ -64,13 +68,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		else
 			origHandler = null;
 		this.client = handler.getClient();
-		fctx = new FetcherContext(handler.defaultFetchContext, FetcherContext.IDENTICAL_MASK);
+		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;
 		fctx.ignoreStore = message.ignoreDS;
 		fctx.maxNonSplitfileRetries = message.maxRetries;
-		fctx.maxSplitfileBlockRetries = Math.max(fctx.maxSplitfileBlockRetries, message.maxRetries);
+		fctx.maxSplitfileBlockRetries = message.maxRetries;
 		this.identifier = message.identifier;
 		this.verbosity = message.verbosity;
 		// FIXME do something with verbosity !!
@@ -80,7 +84,51 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.maxTempLength = message.maxTempSize;
 		this.targetFile = message.diskFile;
 		this.tempFile = message.tempFile;
-		getter = new ClientGetter(this, handler.node.fetchScheduler, uri, fctx, priorityClass, handler);
+		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client);
+	}
+
+	/**
+	 * Create a ClientGet from a request serialized to a SimpleFieldSet.
+	 * Can throw, and does minimal verification, as is dealing with data 
+	 * supposedly serialized out by the node.
+	 * @throws MalformedURLException 
+	 */
+	public ClientGet(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
+		uri = new FreenetURI(fs.get("URI"));
+		identifier = fs.get("Identifier");
+		verbosity = Integer.parseInt(fs.get("Verbosity"));
+		priorityClass = Short.parseShort(fs.get("PriorityClass"));
+		returnType = ClientGetMessage.parseValidReturnType(fs.get("ReturnType"));
+		persistenceType = ClientRequest.parsePersistence(fs.get("Persistence"));
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
+			throw new IllegalArgumentException("Reading persistent get with type CONNECTION !!");
+		if(!(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT))
+			throw new IllegalArgumentException("Unknown persistence type "+ClientRequest.persistenceTypeString(persistenceType));
+		this.client = client2;
+		this.origHandler = null;
+		String f = fs.get("Filename");
+		if(f != null)
+			targetFile = new File(f);
+		else
+			targetFile = null;
+		f = fs.get("TempFilename");
+		if(f != null)
+			tempFile = new File(f);
+		else
+			tempFile = null;
+		clientToken = fs.get("ClientToken");
+		finished = Boolean.parseBoolean(fs.get("Finished"));
+		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
+		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
+		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
+		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK);
+		fctx.eventProducer.addEventListener(this);
+		// ignoreDS
+		fctx.localRequestOnly = dsOnly;
+		fctx.ignoreStore = ignoreDS;
+		fctx.maxNonSplitfileRetries = maxRetries;
+		fctx.maxSplitfileBlockRetries = maxRetries;
+		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client);
 	}
 
 	void start() {
@@ -260,6 +308,53 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	public String getIdentifier() {
 		return identifier;
+	}
+
+	public void write(BufferedWriter w) throws IOException {
+		if(persistenceType != ClientRequest.PERSIST_REBOOT) {
+			Logger.error(this, "Not persisting as persistenceType="+persistenceType);
+		}
+		// Persist the request to disk
+		SimpleFieldSet fs = getFieldSet();
+		fs.writeTo(w);
+	}
+	
+	// This is distinct from the ClientGetMessage code, as later on it will be radically
+	// different (it can store detailed state).
+	public SimpleFieldSet getFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true); // we will need multi-level later...
+		fs.put("Type", "GET");
+		fs.put("URI", uri.toString(false));
+		fs.put("Identifier", identifier);
+		fs.put("Verbosity", Integer.toString(verbosity));
+		fs.put("PriorityClass", Short.toString(priorityClass));
+		fs.put("ReturnType", ClientGetMessage.returnTypeString(returnType));
+		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));
+		fs.put("ClientName", client.name);
+		if(targetFile != null)
+			fs.put("Filename", targetFile.getPath());
+		if(tempFile != null)
+			fs.put("TempFilename", tempFile.getPath());
+		if(clientToken != null)
+			fs.put("ClientToken", clientToken);
+		if(returnType == ClientGetMessage.RETURN_TYPE_DISK && targetFile != null) {
+			// Otherwise we must re-run it anyway as we don't have the data.
+			
+			// finished => persistence of completion state, pending messages
+			//fs.put("Finished", Boolean.toString(finished));
+		}
+		fs.put("IgnoreDS", Boolean.toString(fctx.ignoreStore));
+		fs.put("DSOnly", Boolean.toString(fctx.localRequestOnly));
+		fs.put("MaxRetries", Integer.toString(fctx.maxNonSplitfileRetries));
+		return fs;
+	}
+
+	public boolean hasFinished() {
+		return finished;
+	}
+
+	public boolean isPersistentForever() {
+		return persistenceType == ClientRequest.PERSIST_FOREVER;
 	}
 
 }

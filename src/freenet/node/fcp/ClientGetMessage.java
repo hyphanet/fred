@@ -81,20 +81,18 @@ public class ClientGetMessage extends FCPMessage {
 			}
 		}
 		String returnTypeString = fs.get("ReturnType");
-		if(returnTypeString == null || returnTypeString.equalsIgnoreCase("direct")) {
-			returnType = RETURN_TYPE_DIRECT;
+		returnType = parseReturnType(returnTypeString);
+		if(returnType == RETURN_TYPE_DIRECT) {
 			diskFile = null;
 			tempFile = null;
 			// default just below fproxy
 			defaultPriority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
-		} else if(returnTypeString.equalsIgnoreCase("none")) {
+		} else if(returnType == RETURN_TYPE_NONE) {
 			diskFile = null;
 			tempFile = null;
-			returnType = RETURN_TYPE_NONE;
 			defaultPriority = RequestStarter.PREFETCH_PRIORITY_CLASS;
-		} else if(returnTypeString.equalsIgnoreCase("disk")) {
+		} else if(returnType == RETURN_TYPE_DISK) {
 			defaultPriority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
-			returnType = RETURN_TYPE_DISK;
 			String filename = fs.get("Filename");
 			if(filename == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Filename", identifier);
@@ -192,10 +190,7 @@ public class ClientGetMessage extends FCPMessage {
 	}
 
 	private String getReturnTypeString() {
-		if(returnType == RETURN_TYPE_DIRECT)
-			return "direct";
-		else
-			throw new IllegalStateException("Unknown return type: "+returnType);
+		return returnTypeString(returnType);
 	}
 
 	public String getName() {
@@ -219,6 +214,27 @@ public class ClientGetMessage extends FCPMessage {
 		default:
 			return Short.toString(type);
 		}
+	}
+
+	public static short parseReturnType(String string) {
+		if(string == null)
+			return RETURN_TYPE_DIRECT;
+		if(string.equalsIgnoreCase("direct"))
+			return RETURN_TYPE_DIRECT;
+		if(string.equalsIgnoreCase("none"))
+			return RETURN_TYPE_NONE;
+		if(string.equalsIgnoreCase("disk"))
+			return RETURN_TYPE_DISK;
+		if(string.equalsIgnoreCase("chunked"))
+			return RETURN_TYPE_CHUNKED;
+		return Short.parseShort(string);
+	}
+
+	public static short parseValidReturnType(String string) {
+		short s = parseReturnType(string);
+		if(s == RETURN_TYPE_DIRECT || s == RETURN_TYPE_NONE || s == RETURN_TYPE_DISK)
+			return s;
+		throw new IllegalArgumentException("Invalid or unsupported return type: "+returnTypeString(s));
 	}
 
 }

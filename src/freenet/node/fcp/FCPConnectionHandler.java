@@ -17,7 +17,6 @@ public class FCPConnectionHandler {
 	final Socket sock;
 	final FCPConnectionInputHandler inputHandler;
 	final FCPConnectionOutputHandler outputHandler;
-	final Node node;
 	private boolean isClosed;
 	private boolean inputClosed;
 	private boolean outputClosed;
@@ -25,19 +24,13 @@ public class FCPConnectionHandler {
 	private FCPClient client;
 	final BucketFactory bf;
 	final HashMap requestsByIdentifier;
-	final FetcherContext defaultFetchContext;
-	public InserterContext defaultInsertContext;
 	
-	public FCPConnectionHandler(Socket s, Node node, FCPServer server) {
+	public FCPConnectionHandler(Socket s, FCPServer server) {
 		this.sock = s;
-		this.node = node;
 		this.server = server;
 		isClosed = false;
-		this.bf = node.tempBucketFactory;
+		this.bf = server.node.tempBucketFactory;
 		requestsByIdentifier = new HashMap();
-		HighLevelSimpleClient client = node.makeClient((short)0);
-		defaultFetchContext = client.getFetcherContext();
-		defaultInsertContext = client.getInserterContext();
 		this.inputHandler = new FCPConnectionInputHandler(this);
 		this.outputHandler = new FCPConnectionOutputHandler(this);
 		inputHandler.start();
@@ -54,6 +47,8 @@ public class FCPConnectionHandler {
 		}
 		for(int i=0;i<requests.length;i++)
 			requests[i].onLostConnection();
+		if(client != null && !client.hasPersistentRequests())
+			server.unregisterClient(client);
 	}
 	
 	public boolean isClosed() {
@@ -96,7 +91,7 @@ public class FCPConnectionHandler {
 
 	public void setClientName(String name) {
 		this.clientName = name;
-		client = server.registerClient(name, this);
+		client = server.registerClient(name, server.node, this);
 	}
 	
 	public String getClientName() {
@@ -122,8 +117,11 @@ public class FCPConnectionHandler {
 			return;
 		} else {
 			cg.start();
-			if(cg.isPersistent())
+			if(cg.isPersistent()) {
 				client.register(cg);
+				if(cg.isPersistentForever())
+					server.forceStorePersistentRequests();
+			}
 		}
 	}
 
@@ -146,8 +144,11 @@ public class FCPConnectionHandler {
 			return;
 		} else {
 			cp.start();
-			if(cp.isPersistent())
+			if(cp.isPersistent()) {
 				client.register(cp);
+				if(cp.isPersistentForever())
+					server.forceStorePersistentRequests();
+			}
 		}
 	}
 

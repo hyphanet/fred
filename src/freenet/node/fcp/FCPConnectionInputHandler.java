@@ -74,7 +74,7 @@ public class FCPConnectionInputHandler implements Runnable {
 				continue;
 			}
 			try {
-				msg.run(handler, handler.node);
+				msg.run(handler, handler.server.node);
 			} catch (MessageInvalidException e) {
 				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);
 				handler.outputHandler.queue(err);

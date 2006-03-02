@@ -889,6 +889,8 @@ public class Node {
 			fcpServer = FCPServer.maybeCreate(this, config);
 		} catch (IOException e) {
 			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+		} catch (InvalidConfigValueException e) {
+			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
 		}
         
         // SNMP

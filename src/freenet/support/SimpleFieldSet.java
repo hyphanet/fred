@@ -180,6 +180,7 @@ public class SimpleFieldSet {
 
 	public void put(String key, String value) {
 		int idx;
+		if(value == null) return;
 		if((!multiLevel) || (idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
 			String x = (String) map.get(key);
 			
@@ -220,6 +221,7 @@ public class SimpleFieldSet {
                 w.write(prefix+key+"="+value+"\n");
             } else {
             	SimpleFieldSet sfs = (SimpleFieldSet) v;
+            	if(sfs == null) throw new NullPointerException();
             	sfs.writeTo(w, prefix+key+MULTI_LEVEL_CHAR, true);
             }
         }

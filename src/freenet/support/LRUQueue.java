@@ -94,5 +94,9 @@ public class LRUQueue {
 	public synchronized Object[] toArray() {
 		return hash.keySet().toArray();
 	}
+
+	public synchronized boolean isEmpty() {
+		return hash.isEmpty();
+	}
 }
 

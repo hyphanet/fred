@@ -1,6 +1,9 @@
 package freenet.node.fcp;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
@@ -19,7 +22,10 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
+import freenet.support.Bucket;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileBucket;
 
 public class ClientPut extends ClientRequest implements ClientCallback, ClientEventListener {
 
@@ -68,9 +74,8 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		else
 			this.origHandler = null;
 		client = handler.getClient();
-		ctx = new InserterContext(handler.defaultInsertContext, new SimpleEventProducer());
-		if(message.dontCompress)
-			ctx.dontCompress = true;
+		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer());
+		ctx.dontCompress = message.dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = message.maxRetries;
 		// Now go through the fields one at a time
@@ -78,7 +83,41 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		String mimeType = message.contentType;
 		clientToken = message.clientToken;
 		block = new InsertBlock(message.bucket, new ClientMetadata(mimeType), uri);
-		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, handler.node.putScheduler, priorityClass, getCHKOnly, false, handler);
+		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, client.node.putScheduler, priorityClass, getCHKOnly, false, client);
+	}
+	
+	/**
+	 * Create from a persisted SimpleFieldSet.
+	 * Not very tolerant of errors, as the input was generated
+	 * by the node.
+	 * @throws MalformedURLException 
+	 */
+	public ClientPut(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
+		uri = new FreenetURI(fs.get("URI"));
+		identifier = fs.get("Identifier");
+		verbosity = Integer.parseInt(fs.get("Verbosity"));
+		priorityClass = Short.parseShort(fs.get("PriorityClass"));
+		persistenceType = ClientRequest.parsePersistence(fs.get("Persistence"));
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION
+				|| persistenceType == ClientRequest.PERSIST_REBOOT)
+			throw new IllegalArgumentException("Reading in persistent ClientPut, but persistence type = "+ClientRequest.persistenceTypeString(persistenceType)+" so shouldn't have been saved in the first place");
+		this.client = client2;
+		origHandler = null;
+		String mimeType = fs.get("Metadata.ContentType");
+		getCHKOnly = Boolean.parseBoolean(fs.get("GetCHKOnly"));
+		boolean dontCompress = Boolean.parseBoolean(fs.get("DontCompress"));
+		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
+		clientToken = fs.get("ClientToken");
+		fromDisk = true;
+		origFilename = new File(fs.get("Filename"));
+		Bucket data = new FileBucket(origFilename, true, false, false);
+		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer());
+		ctx.dontCompress = dontCompress;
+		ctx.eventProducer.addEventListener(this);
+		ctx.maxInsertRetries = maxRetries;
+		block = new InsertBlock(data, new ClientMetadata(mimeType), uri);
+		inserter = new ClientPutter(this, data, uri, new ClientMetadata(mimeType), ctx, client.node.putScheduler, priorityClass, getCHKOnly, false, client);
+		start();
 	}
 
 	void start() {
@@ -212,6 +251,44 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	
 	public String getIdentifier() {
 		return identifier;
+	}
+
+	public void write(BufferedWriter w) throws IOException {
+		if(persistenceType != ClientRequest.PERSIST_REBOOT) {
+			Logger.error(this, "Not persisting as persistenceType="+persistenceType);
+		}
+		// Persist the request to disk
+		SimpleFieldSet fs = getFieldSet();
+		fs.writeTo(w);
+	}
+	
+	public SimpleFieldSet getFieldSet() throws IOException {
+		SimpleFieldSet fs = new SimpleFieldSet(true); // we will need multi-level later...
+		fs.put("Type", "PUT");
+		fs.put("URI", uri.toString(false));
+		fs.put("Identifier", identifier);
+		fs.put("Verbosity", Integer.toString(verbosity));
+		fs.put("PriorityClass", Short.toString(priorityClass));
+		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));
+		fs.put("ClientName", client.name);
+		fs.put("Metadata.ContentType", block.clientMetadata.getMIMEType());
+		fs.put("GetCHKOnly", Boolean.toString(getCHKOnly));
+		// finished => persistence of completion state, pending messages
+		//fs.put("Finished", Boolean.toString(finished));
+		fs.put("ClientToken", clientToken);
+		if(!fromDisk) throw new UnsupportedOperationException("Persistent insert not from disk - NOT SUPPORTED");
+		fs.put("Filename", origFilename.getPath());
+		fs.put("DontCompress", Boolean.toString(ctx.dontCompress));
+		fs.put("MaxRetries", Integer.toString(ctx.maxInsertRetries));
+		return fs;
+	}
+
+	public boolean hasFinished() {
+		return finished;
+	}
+
+	public boolean isPersistentForever() {
+		return persistenceType == ClientRequest.PERSIST_FOREVER;
 	}
 
 }

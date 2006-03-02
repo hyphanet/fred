@@ -56,6 +56,7 @@ public abstract class ClientRequest {
 			if(blockSetFinalized) return;
 			blockSetFinalized = true;
 		}
+		Logger.minor(this, "Finalized set of blocks for "+this, new Exception("debug"));
 		notifyClients();
 	}
 	
