@@ -64,7 +64,7 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	public void onSuccess(FetchResult result, ClientGetState state) {
 		finished = true;
 		currentState = null;
-		if(result.asBucket() != returnBucket) {
+		if(returnBucket != null && result.asBucket() != returnBucket) {
 			Bucket from = result.asBucket();
 			Bucket to = returnBucket;
 			try {
