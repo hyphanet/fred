@@ -114,17 +114,8 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		this.client = client2;
 		origHandler = null;
 		String mimeType = fs.get("Metadata.ContentType");
-                if(fs.get("GetCHKOnly").equalsIgnoreCase("true")){
-		       	getCHKOnly = true;
-	        }else{
-		       	getCHKOnly = false;
-		}
-		boolean dontCompress;
-                if(fs.get("DontCompress").equalsIgnoreCase("true")){
-		       	dontCompress = true;
-	        }else{
-		       	dontCompress = false;
-		}
+		getCHKOnly = Fields.stringToBool(fs.get("CHKOnly"), false);
+		boolean dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
 		clientToken = fs.get("ClientToken");
 		fromDisk = true;
@@ -166,26 +157,32 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	public void onSuccess(BaseClientPutter state) {
-		progressMessage = null;
-		succeeded = true;
-		finished = true;
+		synchronized(this) {
+			progressMessage = null;
+			succeeded = true;
+			finished = true;
+		}
 		trySendFinalMessage();
 		block.getData().free();
 		finish();
 	}
 
 	public void onFailure(InserterException e, BaseClientPutter state) {
-		finished = true;
-		putFailedMessage = new PutFailedMessage(e, identifier);
+		synchronized(this) {
+			finished = true;
+			putFailedMessage = new PutFailedMessage(e, identifier);
+		}
 		trySendFinalMessage();
 		block.getData().free();
 		finish();
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
-		if(generatedURI != null && !uri.equals(generatedURI))
-			Logger.error(this, "onGeneratedURI("+uri+","+state+") but already set generatedURI to "+generatedURI);
-		generatedURI = uri;
+		synchronized(this) {
+			if(generatedURI != null && !uri.equals(generatedURI))
+				Logger.error(this, "onGeneratedURI("+uri+","+state+") but already set generatedURI to "+generatedURI);
+			generatedURI = uri;
+		}
 		trySendGeneratedURIMessage();
 	}
 
@@ -302,7 +299,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		fs.writeTo(w);
 	}
 	
-	public SimpleFieldSet getFieldSet() throws IOException {
+	public synchronized SimpleFieldSet getFieldSet() throws IOException {
 		SimpleFieldSet fs = new SimpleFieldSet(true); // we will need multi-level later...
 		fs.put("Type", "PUT");
 		fs.put("URI", uri.toString(false));

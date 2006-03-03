@@ -177,70 +177,55 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
-		progressPending = null;
-		FCPMessage msg = new DataFoundMessage(result, identifier);
 		Bucket data = result.asBucket();
-		this.foundDataLength = data.size();
-		this.foundDataMimeType = result.getMimeType();
-		this.succeeded = true;
-		finished = true;
-		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
-			// Send all the data at once
-			// FIXME there should be other options
-			trySendDataFoundOrGetFailed();
-			AllDataMessage m = new AllDataMessage(data, identifier);
-			if(persistenceType == PERSIST_CONNECTION)
-				m.setFreeOnSent();
-			trySendAllDataMessage(m);
-			finish();
-			return;
-		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
-			// Do nothing
-			trySendDataFoundOrGetFailed();
-			data.free();
-			finish();
-			return;
-		} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-			// Write to temp file, then rename over filename
-			FileOutputStream fos;
-			try {
-				fos = new FileOutputStream(tempFile);
-			} catch (FileNotFoundException e) {
-				postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
+		boolean dontFree = false;
+		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
+		synchronized(this) {
+			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+				// Send all the data at once
+				// FIXME there should be other options
 				trySendDataFoundOrGetFailed();
-				data.free();
-				finish();
-				return;
-			}
-			try {
-				BucketTools.copyTo(data, fos, data.size());
-			} catch (IOException e) {
-				postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
-				trySendDataFoundOrGetFailed();
-				data.free();
+				AllDataMessage m = new AllDataMessage(data, identifier);
+				if(persistenceType == PERSIST_CONNECTION)
+					m.setFreeOnSent();
+				dontFree = true;
+				trySendAllDataMessage(m);
+			} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+				// Do nothing
+			} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+				// Write to temp file, then rename over filename
+				FileOutputStream fos = null;
 				try {
-					fos.close();
-				} catch (IOException e1) {
-					// Ignore
+					fos = new FileOutputStream(tempFile);
+					BucketTools.copyTo(data, fos, data.size());
+					if(!tempFile.renameTo(targetFile)) {
+						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
+						trySendDataFoundOrGetFailed();
+						// Don't delete temp file, user might want it.
+					}
+				} catch (FileNotFoundException e) {
+					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
+				} catch (IOException e) {
+					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
 				}
-				finish();
-				return;
+				try {
+					if(fos != null)
+						fos.close();
+				} catch (IOException e) {
+					Logger.error(this, "Caught "+e+" closing file "+tempFile, e);
+				}
 			}
-			try {
-				fos.close();
-			} catch (IOException e) {
-				Logger.error(this, "Caught "+e+" closing file "+tempFile, e);
-			}
-			if(!tempFile.renameTo(targetFile)) {
-				postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
-				trySendDataFoundOrGetFailed();
-				// Don't delete temp file, user might want it.
-			}
-			data.free();
-			trySendDataFoundOrGetFailed();
-			finish();
-			return;
+			progressPending = null;
+			FCPMessage msg = new DataFoundMessage(result, identifier);
+			this.foundDataLength = data.size();
+			this.foundDataMimeType = result.getMimeType();
+			this.succeeded = true;
+			finished = true;
 		}
+		trySendDataFoundOrGetFailed();
+		if(!dontFree)
+			data.free();
+		finish();
 	}
 
 	private void trySendDataFoundOrGetFailed() {
@@ -296,9 +281,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
-		succeeded = false;
-		getFailedMessage = new GetFailedMessage(e, identifier);
-		finished = true;
+		synchronized(this) {
+			succeeded = false;
+			getFailedMessage = new GetFailedMessage(e, identifier);
+			finished = true;
+		}
 		Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed();
 		finish();
@@ -360,7 +347,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	
 	// This is distinct from the ClientGetMessage code, as later on it will be radically
 	// different (it can store detailed state).
-	public SimpleFieldSet getFieldSet() {
+	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true); // we will need multi-level later...
 		fs.put("Type", "GET");
 		fs.put("URI", uri.toString(false));
