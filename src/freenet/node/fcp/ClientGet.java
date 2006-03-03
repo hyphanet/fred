@@ -133,6 +133,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.maxNonSplitfileRetries = maxRetries;
 		fctx.maxSplitfileBlockRetries = maxRetries;
 		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client);
+		start();
 	}
 
 	void start() {

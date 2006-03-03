@@ -101,7 +101,7 @@ public class ClientGetMessage extends FCPMessage {
 			if(tempFilename == null)
 				tempFilename = filename + ".freenet-tmp";
 			tempFile = new File(tempFilename);
-			if(!diskFile.getParentFile().equals(tempFile.getParentFile()))
+			if(!diskFile.getAbsoluteFile().getParentFile().equals(tempFile.getAbsoluteFile().getParentFile()))
 				throw new MessageInvalidException(ProtocolErrorMessage.FILENAME_AND_TEMP_FILENAME_MUST_BE_IN_SAME_DIR, null, identifier);
 			if(diskFile.exists())
 				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier);
