@@ -1,8 +1,12 @@
 package freenet.node.fcp;
 
+import java.net.MalformedURLException;
+
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
+import freenet.client.InserterException;
 import freenet.node.Node;
+import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 public class GetFailedMessage extends FCPMessage {
@@ -23,6 +27,38 @@ public class GetFailedMessage extends FCPMessage {
 		this.shortCodeDescription = FetchException.getShortMessage(code);
 		this.isFatal = e.isFatal();
 		this.identifier = identifier;
+	}
+
+	/**
+	 * Construct from a fieldset. Used in serialization of persistent requests.
+	 * Will need to be made more tolerant of syntax errors if is used in an FCP
+	 * client library. FIXME.
+	 * @param useVerboseFields If true, read in verbose fields (CodeDescription
+	 * etc), if false, reconstruct them from the error code.
+	 * @throws MalformedURLException 
+	 */
+	public GetFailedMessage(SimpleFieldSet fs, boolean useVerboseFields) {
+		identifier = fs.get("Identifier");
+		if(identifier == null) throw new NullPointerException();
+		code = Integer.parseInt(fs.get("Code"));
+		
+		if(useVerboseFields) {
+			codeDescription = fs.get("CodeDescription");
+			isFatal = Fields.stringToBool(fs.get("Fatal"), false);
+			shortCodeDescription = fs.get("ShortCodeDescription");
+		} else {
+			codeDescription = FetchException.getMessage(code);
+			isFatal = FetchException.isFatal(code);
+			shortCodeDescription = FetchException.getShortMessage(code);
+		}
+		
+		extraDescription = fs.get("ExtraDescription");
+		SimpleFieldSet trackerSubset = fs.subset("Errors");
+		if(trackerSubset != null) {
+			tracker = new FailureCodeTracker(true, trackerSubset);
+		} else {
+			tracker = null;
+		}
 	}
 
 	public SimpleFieldSet getFieldSet() {

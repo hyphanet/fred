@@ -14,7 +14,7 @@ public class PutFailedMessage extends FCPMessage {
 	final int code;
 	final String codeDescription;
 	final String extraDescription;
-	final String codeShortDescription;
+	final String shortCodeDescription;
 	final FailureCodeTracker tracker;
 	final FreenetURI expectedURI;
 	final String identifier;
@@ -23,7 +23,7 @@ public class PutFailedMessage extends FCPMessage {
 	public PutFailedMessage(InserterException e, String identifier) {
 		this.code = e.getMode();
 		this.codeDescription = InserterException.getMessage(code);
-		this.codeShortDescription = InserterException.getShortMessage(code);
+		this.shortCodeDescription = InserterException.getShortMessage(code);
 		this.extraDescription = e.extra;
 		this.tracker = e.errorCodes;
 		this.expectedURI = e.uri;
@@ -47,11 +47,11 @@ public class PutFailedMessage extends FCPMessage {
 		if(useVerboseFields) {
 			codeDescription = fs.get("CodeDescription");
 			isFatal = Fields.stringToBool(fs.get("Fatal"), false);
-			codeShortDescription = fs.get("ShortCodeDescription");
+			shortCodeDescription = fs.get("ShortCodeDescription");
 		} else {
 			codeDescription = InserterException.getMessage(code);
 			isFatal = InserterException.isFatal(code);
-			codeShortDescription = InserterException.getShortMessage(code);
+			shortCodeDescription = InserterException.getShortMessage(code);
 		}
 		
 		extraDescription = fs.get("ExtraDescription");
@@ -83,7 +83,7 @@ public class PutFailedMessage extends FCPMessage {
 		if(verbose)
 			fs.put("Fatal", Boolean.toString(isFatal));
 		if(verbose)
-			fs.put("ShortCodeDescription", codeShortDescription);
+			fs.put("ShortCodeDescription", shortCodeDescription);
 		if(expectedURI != null)
 			fs.put("ExpectedURI", expectedURI.toString());
 		return fs;

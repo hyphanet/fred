@@ -1,6 +1,7 @@
 package freenet.node.fcp;
 
 import freenet.node.Node;
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -85,6 +86,13 @@ public class ProtocolErrorMessage extends FCPMessage {
 		this.extra = extra;
 		this.fatal = fatal;
 		this.ident = ident;
+	}
+
+	public ProtocolErrorMessage(SimpleFieldSet fs) {
+		ident = fs.get("Identifier");
+		code = Integer.parseInt(fs.get("Code"));
+		extra = fs.get("ExtraDescription");
+		fatal = Fields.stringToBool(fs.get("Fatal"), false);
 	}
 
 	public SimpleFieldSet getFieldSet() {

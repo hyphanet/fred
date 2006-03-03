@@ -16,6 +16,12 @@ public class DataFoundMessage extends FCPMessage {
 		this.dataLength = fr.size();
 	}
 
+	public DataFoundMessage(long foundDataLength, String foundDataMimeType, String identifier2) {
+		this.mimeType = foundDataMimeType;
+		this.identifier = identifier2;
+		this.dataLength = foundDataLength;
+	}
+
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.put("Identifier", identifier);

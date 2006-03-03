@@ -51,8 +51,21 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
 	
 	// Stuff waiting for reconnection
-	private FCPMessage dataFoundOrGetFailedPending;
+	/** Did the request succeed? Valid if finished. */
+	private boolean succeeded;
+	/** Length of the found data */
+	private long foundDataLength;
+	/** MIME type of the found data */
+	private String foundDataMimeType;
+	/** Details of request failure */
+	private GetFailedMessage getFailedMessage;
+	/** Succeeded but failed to return data e.g. couldn't write to file */
+	private ProtocolErrorMessage postFetchProtocolErrorMessage;
+	/** AllData (the actual direct-send data) - do not persist, because the bucket
+	 * is not persistent. FIXME make the bucket persistent! */
 	private AllDataMessage allDataPending;
+	/** Last progress message. Not persistent - FIXME this will be made persistent
+	 * when we have proper persistence at the ClientGetter level. */
 	private SimpleProgressMessage progressPending;
 	
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) {
@@ -128,6 +141,19 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.ignoreStore = ignoreDS;
 		fctx.maxNonSplitfileRetries = maxRetries;
 		fctx.maxSplitfileBlockRetries = maxRetries;
+		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
+		if(finished) {
+			if(succeeded) {
+				foundDataLength = Long.parseLong(fs.get("FoundDataLength"));
+				foundDataMimeType = fs.get("FoundDataMimeType");
+				SimpleFieldSet fs1 = fs.subset("PostFetchProtocolError");
+				if(fs1 != null)
+					postFetchProtocolErrorMessage = new ProtocolErrorMessage(fs1);
+			} else {
+				getFailedMessage = new GetFailedMessage(fs.subset("GetFailed"), false);
+			}
+		}
+		
 		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client);
 		start();
 	}
@@ -152,13 +178,16 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		progressPending = null;
-		finished = true;
 		FCPMessage msg = new DataFoundMessage(result, identifier);
 		Bucket data = result.asBucket();
+		this.foundDataLength = data.size();
+		this.foundDataMimeType = result.getMimeType();
+		this.succeeded = true;
+		finished = true;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 			// Send all the data at once
 			// FIXME there should be other options
-			trySendDataFoundOrGetFailed(msg);
+			trySendDataFoundOrGetFailed();
 			AllDataMessage m = new AllDataMessage(data, identifier);
 			if(persistenceType == PERSIST_CONNECTION)
 				m.setFreeOnSent();
@@ -167,7 +196,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return;
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			// Do nothing
-			trySendDataFoundOrGetFailed(msg);
+			trySendDataFoundOrGetFailed();
 			data.free();
 			finish();
 			return;
@@ -177,8 +206,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			try {
 				fos = new FileOutputStream(tempFile);
 			} catch (FileNotFoundException e) {
-				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
-				trySendDataFoundOrGetFailed(pm);
+				postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
+				trySendDataFoundOrGetFailed();
 				data.free();
 				finish();
 				return;
@@ -186,8 +215,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			try {
 				BucketTools.copyTo(data, fos, data.size());
 			} catch (IOException e) {
-				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
-				trySendDataFoundOrGetFailed(pm);
+				postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
+				trySendDataFoundOrGetFailed();
 				data.free();
 				try {
 					fos.close();
@@ -203,21 +232,29 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				Logger.error(this, "Caught "+e+" closing file "+tempFile, e);
 			}
 			if(!tempFile.renameTo(targetFile)) {
-				ProtocolErrorMessage pm = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
-				trySendDataFoundOrGetFailed(pm);
+				postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
+				trySendDataFoundOrGetFailed();
 				// Don't delete temp file, user might want it.
 			}
 			data.free();
-			trySendDataFoundOrGetFailed(msg);
+			trySendDataFoundOrGetFailed();
 			finish();
 			return;
 		}
 	}
 
-	private void trySendDataFoundOrGetFailed(FCPMessage msg) {
-		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-			dataFoundOrGetFailedPending = msg;
+	private void trySendDataFoundOrGetFailed() {
+		
+		FCPMessage msg;
+
+		if(postFetchProtocolErrorMessage != null) {
+			msg = postFetchProtocolErrorMessage;
+		} else if(succeeded) {
+			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier);
+		} else {
+			msg = getFailedMessage;
 		}
+		
 		FCPConnectionHandler conn = client.getConnection();
 		if(conn != null)
 			conn.outputHandler.queue(msg);
@@ -252,17 +289,18 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		if(progressPending != null)
 			handler.queue(progressPending);
-		if(dataFoundOrGetFailedPending != null)
-			handler.queue(dataFoundOrGetFailedPending);
+		if(finished)
+			trySendDataFoundOrGetFailed();
 		if(allDataPending != null)
 			handler.queue(allDataPending);
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
+		succeeded = false;
+		getFailedMessage = new GetFailedMessage(e, identifier);
 		finished = true;
 		Logger.minor(this, "Caught "+e, e);
-		FCPMessage msg = new GetFailedMessage(e, identifier);
-		trySendDataFoundOrGetFailed(msg);
+		trySendDataFoundOrGetFailed();
 		finish();
 	}
 
@@ -347,6 +385,21 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fs.put("IgnoreDS", Boolean.toString(fctx.ignoreStore));
 		fs.put("DSOnly", Boolean.toString(fctx.localRequestOnly));
 		fs.put("MaxRetries", Integer.toString(fctx.maxNonSplitfileRetries));
+		fs.put("Finished", Boolean.toString(finished));
+		fs.put("Succeeded", Boolean.toString(succeeded));
+		if(finished) {
+			if(succeeded) {
+				fs.put("FoundDataLength", Long.toString(foundDataLength));
+				fs.put("FoundDataMimeType", foundDataMimeType);
+				if(postFetchProtocolErrorMessage != null) {
+					fs.put("PostFetchProtocolError", postFetchProtocolErrorMessage.getFieldSet());
+				}
+			} else {
+				if(getFailedMessage != null) {
+					fs.put("GetFailed", getFailedMessage.getFieldSet(false));
+				}
+			}
+		}
 		return fs;
 	}
 

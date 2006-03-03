@@ -171,6 +171,10 @@ public class ClientGetMessage extends FCPMessage {
 		} else if(persistenceString.equalsIgnoreCase("forever")) {
 			// Same as reboot but saved to disk, persists forever.
 			persistenceType = ClientRequest.PERSIST_FOREVER;
+			// FIXME for now we only support returntype=disk if persistenceType=forever.
+			if(returnType != RETURN_TYPE_DISK) {
+				throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "PersistenceType=forever implies ReturnType=disk", identifier);
+			}
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
 		}
