@@ -23,6 +23,7 @@ public class FileBucket implements Bucket {
 	protected File file;
 	protected boolean readOnly;
 	protected boolean deleteOnFinalize;
+	protected boolean deleteOnFree;
 	protected long length;
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
@@ -39,10 +40,11 @@ public class FileBucket implements Bucket {
 	 * @param deleteOnFinalize If true, delete the file on finalization. Reversible.
 	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
 	 */
-	public FileBucket(File file, boolean readOnly, boolean deleteOnFinalize, boolean deleteOnExit) {
+	public FileBucket(File file, boolean readOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
 		this.readOnly = readOnly;
 		this.file = file;
 		this.deleteOnFinalize = deleteOnFinalize;
+		this.deleteOnFree = deleteOnFree;
 		if(deleteOnExit)
 			file.deleteOnExit();
 		// Useful for finding temp file leaks.
@@ -188,20 +190,8 @@ public class FileBucket implements Bucket {
 	}
 
 	public void finalize() {
-		if (Logger.shouldLog(Logger.DEBUG, this))
-			Logger.debug(this,
-				"FileBucket Finalizing " + file.getName());
-		if (deleteOnFinalize && file.exists()) {
-			Logger.debug(this,
-				"Deleting bucket " + file.getName());
-			deleteFile();
-			if (file.exists())
-				Logger.error(this,
-					"Delete failed on bucket " + file.getName());
-		}
-		if (Logger.shouldLog(Logger.DEBUG, this))
-			Logger.debug(this,
-				"FileBucket Finalized " + file.getName());
+		if(deleteOnFinalize)
+			free(deleteOnFinalize);
 	}
 
 	/**
@@ -317,6 +307,17 @@ public class FileBucket implements Bucket {
 	}
 
 	public void free() {
-		finalize();
+		free(false);
+	}
+	
+	public void free(boolean forceFree) {
+		if ((deleteOnFree || forceFree) && file.exists()) {
+			Logger.debug(this,
+				"Deleting bucket " + file.getName());
+			deleteFile();
+			if (file.exists())
+				Logger.error(this,
+					"Delete failed on bucket " + file.getName());
+		}
 	}
 }

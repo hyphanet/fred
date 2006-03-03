@@ -84,6 +84,7 @@ import freenet.support.Logger;
 import freenet.support.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FilenameGenerator;
+import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
 import freenet.transport.IPAddressDetector;
 import freenet.transport.IPUtil;
@@ -246,6 +247,9 @@ public class Node {
     FCPServer fcpServer;
     FproxyToadlet fproxyServlet;
     SimpleToadletServer toadletContainer;
+    
+    // Persistent temporary buckets
+    public final PersistentTempBucketFactory persistentTempBucketFactory;
     
     // Things that's needed to keep track of
     public final PluginManager pluginManager;
@@ -681,7 +685,7 @@ public class Node {
 					public void set(String val) throws InvalidConfigValueException {
 						if(tempDir.equals(new File(val))) return;
 						// FIXME
-						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
+						throw new InvalidConfigValueException("Moving temp directory on the fly not supported at present");
 					}
         });
         
@@ -694,16 +698,35 @@ public class Node {
         try {
 			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
 		} catch (IOException e) {
-			Logger.error(this, "Could not create temp bucket factory: "+e, e);
-			System.exit(EXIT_TEMP_INIT_ERROR);
-			throw new Error();
+        	String msg = "Could not find or create temporary directory (filename generator)";
+        	throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
 		}
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
 
-        
+        // Persistent temp files
+		
+		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), 7, true, "Persistent temp files directory", "Name of directory to put persistent temp files in",
+				new StringCallback() {
+					public String get() {
+						return persistentTempBucketFactory.getDir().toString();
+					}
+					public void set(String val) throws InvalidConfigValueException {
+						if(!get().equals(val))
+							return;
+						// FIXME
+						throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
+					}
+		});
+		try {
+			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random);
+		} catch (IOException e2) {
+        	String msg = "Could not find or create persistent temporary directory";
+        	throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
+		}
+		
         // Datastore
         
-        nodeConfig.register("storeSize", "1G", 5, false, "Store size in bytes", "Store size in bytes", 
+        nodeConfig.register("storeSize", "1G", 8, false, "Store size in bytes", "Store size in bytes", 
         		new LongCallback() {
 
 					public long get() {
@@ -731,7 +754,7 @@ public class Node {
 
         maxStoreKeys = storeSize / sizePerKey;
         
-        nodeConfig.register("storeDir", ".", 6, true, "Store directory", "Name of directory to put store files in", 
+        nodeConfig.register("storeDir", ".", 9, true, "Store directory", "Name of directory to put store files in", 
         		new StringCallback() {
 					public String get() {
 						return storeDir.getPath();
@@ -772,7 +795,7 @@ public class Node {
         
         // Downloads directory
         
-        nodeConfig.register("downloadsDir", "downloads", 8, false, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
+        nodeConfig.register("downloadsDir", "downloads", 10, false, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
 
 			public String get() {
 				return downloadDir.getPath();
@@ -798,7 +821,7 @@ public class Node {
 
         // Name
         
-        nodeConfig.register("name", myName, 9, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
+        nodeConfig.register("name", myName, 11, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
         		new StringCallback() {
 					public String get() {
 						return myName;
@@ -813,6 +836,7 @@ public class Node {
         writeNodeFile();
         
         nodeConfig.finishedInitialization();
+        persistentTempBucketFactory.completedInit();
         
         // FIXME make all the below arbitrary constants configurable!
         

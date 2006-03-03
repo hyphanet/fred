@@ -37,7 +37,7 @@ public class TempFileBucket extends FileBucket {
 		long minAlloc,
 		float factor)
 		throws IOException {
-		super(f, false, true, true);
+		super(f, false, true, true, true);
 		logDebug = Logger.shouldLog(Logger.DEBUG, this);
 		if (minAlloc > 0)
 			this.minAlloc = minAlloc;

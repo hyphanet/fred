@@ -120,7 +120,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		clientToken = fs.get("ClientToken");
 		fromDisk = true;
 		origFilename = new File(fs.get("Filename"));
-		Bucket data = new FileBucket(origFilename, true, false, false);
+		Bucket data = new FileBucket(origFilename, true, false, false, false);
 		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);

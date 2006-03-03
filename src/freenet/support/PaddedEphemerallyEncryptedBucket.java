@@ -34,12 +34,34 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 	 * @param origRandom Hard random number generator from which to obtain a seed for padding.
 	 * @throws UnsupportedCipherException 
 	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource origRandom) throws UnsupportedCipherException {
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource origRandom) {
 		this.origRandom = origRandom;
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
-		aes = new Rijndael(256, 256);
+		try {
+			aes = new Rijndael(256, 256);
+		} catch (UnsupportedCipherException e) {
+			throw new Error(e);
+		}
 		byte[] key = new byte[32];
+		origRandom.nextBytes(key);
+		aes.initialize(key);
+		// Might as well blank it
+		for(int i=0;i<key.length;i++) key[i] = 0;
+		this.minPaddedSize = minSize;
+		readOnly = false;
+		lastOutputStream = 0;
+	}
+
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, byte[] key, RandomSource origRandom) {
+		this.origRandom = origRandom;
+		this.bucket = bucket;
+		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
+		try {
+			aes = new Rijndael(256, 256);
+		} catch (UnsupportedCipherException e) {
+			throw new Error(e);
+		}
 		origRandom.nextBytes(key);
 		aes.initialize(key);
 		// Might as well blank it

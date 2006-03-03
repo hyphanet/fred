@@ -355,16 +355,12 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 	 */
 	private TempStoreElement makeTempStoreBucket(long size) {
 		File myFile = filenameGenerator.makeRandomFilename();
-		FileBucket fb = new FileBucket(myFile, false, true, false);
+		FileBucket fb = new FileBucket(myFile, false, true, false, true);
 		
 		byte[] cipherKey = new byte[32];
 		random.nextBytes(cipherKey);
-		try {
-			PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random);
-			return new TempStoreElement(myFile, fb, encryptedBucket);
-		} catch (UnsupportedCipherException e) {
-			throw new Error("Unsupported cipher: AES 256/256!", e);
-		}
+		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random);
+		return new TempStoreElement(myFile, fb, encryptedBucket);
 	}
 
 	/**

@@ -387,7 +387,7 @@ public class TextModeClientInterface implements Runnable {
             	if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
             		mimeType = ""; // don't need to override it
             	
-            	FileBucket fb = new FileBucket(f, true, false, false);
+            	FileBucket fb = new FileBucket(f, true, false, false, false);
             	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
 
             	startTime = System.currentTimeMillis();
@@ -563,7 +563,7 @@ public class TextModeClientInterface implements Runnable {
     		if (filelist[i].isFile()) {
     			File f = filelist[i];
     			
-    			FileBucket bucket = new FileBucket(f, true, false, false);
+    			FileBucket bucket = new FileBucket(f, true, false, false, false);
     			
     			ret.put(f.getName(), bucket);
     		} else if(filelist[i].isDirectory()) {
