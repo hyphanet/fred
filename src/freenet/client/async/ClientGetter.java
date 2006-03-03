@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 
 import freenet.client.ArchiveContext;
@@ -9,6 +10,8 @@ import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
+import freenet.support.Bucket;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
 
 /**
@@ -23,10 +26,25 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	ClientGetState currentState;
 	private boolean finished;
 	private int archiveRestarts;
-	
-	public ClientGetter(ClientCallback client, ClientRequestScheduler sched, FreenetURI uri, FetcherContext ctx, short priorityClass, Object clientContext) {
+	/** If not null, Bucket to return the data in */
+	final Bucket returnBucket;
+
+	/**
+	 * Fetch a key.
+	 * @param client
+	 * @param sched
+	 * @param uri
+	 * @param ctx
+	 * @param priorityClass
+	 * @param clientContext The context object (can be anything). Used for round-robin query balancing.
+	 * @param returnBucket The bucket to return the data in. Can be null. If not null, the ClientGetter must either
+	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
+	 * former, obviously!
+	 */
+	public ClientGetter(ClientCallback client, ClientRequestScheduler sched, FreenetURI uri, FetcherContext ctx, short priorityClass, Object clientContext, Bucket returnBucket) {
 		super(priorityClass, sched, clientContext);
 		this.client = client;
+		this.returnBucket = returnBucket;
 		this.uri = uri;
 		this.ctx = ctx;
 		this.finished = false;
@@ -36,7 +54,7 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	
 	public void start() throws FetchException {
 		try {
-			currentState = new SingleFileFetcher(this, this, new ClientMetadata(), uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true);
+			currentState = new SingleFileFetcher(this, this, new ClientMetadata(), uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true, returnBucket);
 			currentState.schedule();
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
@@ -46,6 +64,20 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	public void onSuccess(FetchResult result, ClientGetState state) {
 		finished = true;
 		currentState = null;
+		if(result.asBucket() != returnBucket) {
+			Bucket from = result.asBucket();
+			Bucket to = returnBucket;
+			try {
+				Logger.minor(this, "Copying - returnBucket not respected by client.async");
+				BucketTools.copy(from, to);
+			} catch (IOException e) {
+				onFailure(new FetchException(FetchException.BUCKET_ERROR), state /* not strictly to blame, but we're not ako ClientGetState... */);
+			}
+			result = new FetchResult(result, to);
+		} else {
+			if(returnBucket != null)
+				Logger.minor(this, "client.async returned data in returnBucket");
+		}
 		client.onSuccess(result, this);
 	}
 

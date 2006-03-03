@@ -5,10 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.zip.DataFormatException;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.Inflater;
 
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
@@ -46,8 +44,12 @@ public class GzipCompressor extends Compressor {
 		return output;
 	}
 
-	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
-		Bucket output = bf.makeBucket(-1);
+	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
+		Bucket output;
+		if(preferred != null)
+			output = preferred;
+		else
+			output = bf.makeBucket(-1);
 		InputStream is = data.getInputStream();
 		OutputStream os = output.getOutputStream();
 		decompress(is, os, maxLength);

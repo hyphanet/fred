@@ -16,7 +16,17 @@ public abstract class Compressor {
 
 	public abstract Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException;
 
-	public abstract Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength) throws IOException, CompressionOutputSizeException;
+	/**
+	 * Decompress data.
+	 * @param data The data to decompress.
+	 * @param bucketFactory A BucketFactory to create a new Bucket with if necessary.
+	 * @param maxLength The maximum length to decompress (we throw if more is present).
+	 * @param preferred A Bucket to use instead. If null, we allocate one from the BucketFactory.
+	 * @return
+	 * @throws IOException
+	 * @throws CompressionOutputSizeException
+	 */
+	public abstract Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength, Bucket preferred) throws IOException, CompressionOutputSizeException;
 
 	public short codecNumberForMetadata() {
 		return Metadata.COMPRESS_GZIP;

@@ -23,6 +23,7 @@ import freenet.support.BucketTools;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileBucket;
 
 /**
  * A simple client fetch. This can of course fetch arbitrarily large
@@ -46,6 +47,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private final File targetFile;
 	private final File tempFile;
 	final String clientToken;
+	/** Bucket passed in to the ClientGetter to return data in. Null unless returntype=disk */
+	private final Bucket returnBucket;
 	
 	// Verbosity bitmasks
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
@@ -92,12 +95,19 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		this.verbosity = message.verbosity;
 		// FIXME do something with verbosity !!
 		// Has already been checked
-		this.returnType = message.returnType;
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
-		this.targetFile = message.diskFile;
-		this.tempFile = message.tempFile;
-		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client);
+		this.returnType = message.returnType;
+		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+			this.targetFile = message.diskFile;
+			this.tempFile = message.tempFile;
+			returnBucket = new FileBucket(message.tempFile, false, false, false, false);
+		} else {
+			returnBucket = null;
+			targetFile = null;
+			tempFile = null;
+		}
+		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 	}
 
 	/**
@@ -153,8 +163,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				getFailedMessage = new GetFailedMessage(fs.subset("GetFailed"), false);
 			}
 		}
-		
-		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client);
+		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+			returnBucket = new FileBucket(tempFile, false, false, false, false);
+		} else
+			returnBucket = null;
+
+		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		start();
 	}
 
@@ -195,9 +209,16 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 				// Write to temp file, then rename over filename
 				FileOutputStream fos = null;
+				boolean closed = false;
 				try {
-					fos = new FileOutputStream(tempFile);
-					BucketTools.copyTo(data, fos, data.size());
+					if(data != returnBucket) {
+						fos = new FileOutputStream(tempFile);
+						BucketTools.copyTo(data, fos, data.size());
+						if(fos != null) {
+							fos.close(); // must be closed before rename
+							closed = true;
+						}
+					}
 					if(!tempFile.renameTo(targetFile)) {
 						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
 						trySendDataFoundOrGetFailed();
@@ -209,7 +230,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
 				}
 				try {
-					if(fos != null)
+					if(fos != null && !closed)
 						fos.close();
 				} catch (IOException e) {
 					Logger.error(this, "Caught "+e+" closing file "+tempFile, e);

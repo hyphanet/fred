@@ -55,12 +55,15 @@ public class SplitFileFetcher extends ClientGetState {
 	private final long overrideLength;
 	/** Accept non-full splitfile chunks? */
 	private final boolean splitUseLengths;
+	/** Preferred bucket to return data in */
+	private final Bucket returnBucket;
 	private boolean finished;
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientGetter parent,
 			FetcherContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
-			ArchiveContext actx, int recursionLevel) throws FetchException, MetadataParseException {
+			ArchiveContext actx, int recursionLevel, Bucket returnBucket) throws FetchException, MetadataParseException {
 		this.finished = false;
+		this.returnBucket = returnBucket;
 		this.fetchContext = newCtx;
 		this.archiveContext = actx;
 		this.decompressors = decompressors;
@@ -141,7 +144,10 @@ public class SplitFileFetcher extends ClientGetState {
 		OutputStream os = null;
 		Bucket output;
 		try {
-			output = fetchContext.bucketFactory.makeBucket(finalLength);
+			if(returnBucket != null && decompressors.isEmpty())
+				output = returnBucket;
+			else
+				output = fetchContext.bucketFactory.makeBucket(finalLength);
 			os = output.getOutputStream();
 			for(int i=0;i<segments.length;i++) {
 				SplitFileFetcherSegment s = segments[i];
@@ -198,7 +204,9 @@ public class SplitFileFetcher extends ClientGetState {
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.removeLast();
 				try {
-					data = c.decompress(data, fetchContext.bucketFactory, Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength));
+					Bucket out = returnBucket;
+					if(!decompressors.isEmpty()) out = null;
+					data = c.decompress(data, fetchContext.bucketFactory, Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength), out);
 				} catch (IOException e) {
 					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this);
 					return;

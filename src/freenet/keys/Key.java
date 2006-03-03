@@ -111,7 +111,7 @@ public abstract class Key implements WritableToDataOutputStream {
             Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(compressionAlgorithm);
             Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, output.length-(shortLength?2:4));
             try {
-				return decompressor.decompress(inputBucket, bf, maxLength);
+				return decompressor.decompress(inputBucket, bf, maxLength, null);
 			} catch (CompressionOutputSizeException e) {
 				throw new CHKDecodeException("Too big");
 			}

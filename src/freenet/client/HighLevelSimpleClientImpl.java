@@ -94,7 +94,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(uri == null) throw new NullPointerException();
 		FetcherContext context = getFetcherContext();
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, node.fetchScheduler, uri, context, priorityClass, this);
+		ClientGetter get = new ClientGetter(fw, node.fetchScheduler, uri, context, priorityClass, this, null);
 		get.start();
 		return fw.waitForCompletion();
 	}

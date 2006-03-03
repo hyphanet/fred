@@ -22,6 +22,7 @@ import freenet.keys.KeyDecodeException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.support.Bucket;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
@@ -48,16 +49,17 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	private final boolean dontTellClientGet;
 	private boolean cancelled;
 	private Object token;
-	
+	private final Bucket returnBucket;
 	
 	/** Create a new SingleFileFetcher and register self.
 	 * Called when following a redirect, or direct from ClientGet.
 	 * @param token 
 	 * @param dontTellClientGet 
 	 */
-	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential) throws FetchException {
+	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws FetchException {
 		Logger.minor(this, "Creating SingleFileFetcher for "+key);
 		this.cancelled = false;
+		this.returnBucket = returnBucket;
 		this.dontTellClientGet = dontTellClientGet;
 		this.token = token;
 		this.parent = get;
@@ -83,14 +85,16 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	}
 
 	/** Called by ClientGet. */ 
-	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential) throws MalformedURLException, FetchException {
-		this(get, cb, metadata, ClientKey.getBaseKey(uri), uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential);
+	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
+		this(get, cb, metadata, ClientKey.getBaseKey(uri), uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
 	}
 	
-	/** Copy constructor, modifies a few given fields, don't call schedule() */
+	/** Copy constructor, modifies a few given fields, don't call schedule().
+	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket. */
 	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetcherContext ctx2) throws FetchException {
 		Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key);
 		this.token = fetcher.token;
+		this.returnBucket = null;
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
 		this.ah = fetcher.ah;
@@ -196,7 +200,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.removeLast();
 				try {
-					data = c.decompress(data, ctx.bucketFactory, Math.max(ctx.maxTempLength, ctx.maxOutputLength));
+					data = c.decompress(data, ctx.bucketFactory, Math.max(ctx.maxTempLength, ctx.maxOutputLength), decompressors.isEmpty() ? returnBucket : null);
 				} catch (IOException e) {
 					onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
 					return;
@@ -264,8 +268,23 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 					throw new FetchException(FetchException.NOT_ENOUGH_METASTRINGS);
 				Bucket dataBucket = ah.get((String) metaStrings.removeFirst(), actx, null, recursionLevel+1, true);
 				if(dataBucket != null) {
+					// The client may free it, which is bad, or it may hang on to it for so long that it gets
+					// freed by us, which is also bad.
+					// So copy it.
+					// FIXME this is stupid, reconsider how we determine when to free buckets; refcounts maybe?
+					Bucket out;
+					try {
+						if(returnBucket != null)
+							out = returnBucket;
+						else
+							out = ctx.bucketFactory.makeBucket(dataBucket.size());
+						BucketTools.copy(dataBucket, out);
+					} catch (IOException e) {
+						onFailure(new FetchException(FetchException.BUCKET_ERROR));
+						return;
+					}
 					// Return the data
-					onSuccess(new FetchResult(this.clientMetadata, dataBucket));
+					onSuccess(new FetchResult(this.clientMetadata, out));
 					return;
 				} else {
 					// Metadata cannot contain pointers to files which don't exist.
@@ -308,7 +327,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 					metaStrings.addFirst(o);
 				}
 
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, null, true);
+				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, null, true, returnBucket);
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
 					f.addDecompressor(codec);
@@ -330,7 +349,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
-						decompressors, clientMetadata, actx, recursionLevel);
+						decompressors, clientMetadata, actx, recursionLevel, returnBucket);
 				sf.schedule();
 				rcb.onBlockSetFinished(this);
 				// SplitFile will now run.
@@ -414,7 +433,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			parent.currentState = SingleFileFetcher.this;
 			try {
 				metadata = Metadata.construct(result.asBucket());
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, null, true);
+				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, null, true, returnBucket);
 				f.metadata = metadata;
 				f.handleMetadata();
 			} catch (MetadataParseException e) {
