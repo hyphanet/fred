@@ -22,7 +22,7 @@ public class PaddedEphemerallyEncryptedBucketFactory implements BucketFactory {
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
-		return new PaddedEphemerallyEncryptedBucket(baseFactory.makeBucket(size), minSize, random);
+		return new PaddedEphemerallyEncryptedBucket(baseFactory.makeBucket(size), minSize, random, true);
 	}
 
 	public void freeBucket(Bucket b) throws IOException {

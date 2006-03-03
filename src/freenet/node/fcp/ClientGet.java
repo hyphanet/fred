@@ -21,9 +21,12 @@ import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Fields;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FileBucket;
+import freenet.support.io.NullBucket;
 
 /**
  * A simple client fetch. This can of course fetch arbitrarily large
@@ -98,15 +101,28 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.maxOutputLength = message.maxSize;
 		fctx.maxTempLength = message.maxTempSize;
 		this.returnType = message.returnType;
+		Bucket ret = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = message.diskFile;
 			this.tempFile = message.tempFile;
-			returnBucket = new FileBucket(message.tempFile, false, false, false, false);
-		} else {
-			returnBucket = null;
+			ret = new FileBucket(message.tempFile, false, false, false, false);
+		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			targetFile = null;
 			tempFile = null;
+			ret = new NullBucket();
+		} else {
+			targetFile = null;
+			tempFile = null;
+			try {
+				ret = handler.server.node.persistentTempBucketFactory.makeEncryptedBucket();
+			} catch (IOException e) {
+				onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
+				getter = null;
+				returnBucket = null;
+				return;
+			}
 		}
+		returnBucket = ret;
 		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 	}
 
@@ -163,11 +179,20 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				getFailedMessage = new GetFailedMessage(fs.subset("GetFailed"), false);
 			}
 		}
+		Bucket ret = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-			returnBucket = new FileBucket(tempFile, false, false, false, false);
-		} else
-			returnBucket = null;
-
+			ret = new FileBucket(tempFile, false, false, false, false);
+		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+			ret = new NullBucket();
+		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+			byte[] key = HexUtil.hexToBytes(fs.get("ReturnBucket.DecryptKey"));
+			String fnam = fs.get("ReturnBucket.Filename");
+			ret = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key);
+		} else {
+			throw new IllegalArgumentException();
+		}
+		returnBucket = ret;
+		
 		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		start();
 	}
@@ -192,18 +217,19 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Bucket data = result.asBucket();
+		if(returnBucket != data)
+			Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data);
 		boolean dontFree = false;
 		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
+		AllDataMessage adm = null;
 		synchronized(this) {
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 				// Send all the data at once
 				// FIXME there should be other options
-				trySendDataFoundOrGetFailed();
-				AllDataMessage m = new AllDataMessage(data, identifier);
+				adm = new AllDataMessage(data, identifier);
 				if(persistenceType == PERSIST_CONNECTION)
-					m.setFreeOnSent();
+					adm.setFreeOnSent();
 				dontFree = true;
-				trySendAllDataMessage(m);
 			} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 				// Do nothing
 			} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
@@ -221,7 +247,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					}
 					if(!tempFile.renameTo(targetFile)) {
 						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
-						trySendDataFoundOrGetFailed();
 						// Don't delete temp file, user might want it.
 					}
 				} catch (FileNotFoundException e) {
@@ -237,13 +262,14 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				}
 			}
 			progressPending = null;
-			FCPMessage msg = new DataFoundMessage(result, identifier);
 			this.foundDataLength = data.size();
 			this.foundDataMimeType = result.getMimeType();
 			this.succeeded = true;
 			finished = true;
 		}
 		trySendDataFoundOrGetFailed();
+		if(adm != null)
+			trySendAllDataMessage(adm);
 		if(!dontFree)
 			data.free();
 		finish();
@@ -253,17 +279,18 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		
 		FCPMessage msg;
 
-		if(postFetchProtocolErrorMessage != null) {
-			msg = postFetchProtocolErrorMessage;
-		} else if(succeeded) {
+		if(succeeded) {
 			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier);
 		} else {
 			msg = getFailedMessage;
 		}
 		
 		FCPConnectionHandler conn = client.getConnection();
-		if(conn != null)
+		if(conn != null) {
 			conn.outputHandler.queue(msg);
+			if(postFetchProtocolErrorMessage != null)
+				conn.outputHandler.queue(postFetchProtocolErrorMessage);
+		}
 	}
 
 	private void trySendAllDataMessage(AllDataMessage msg) {
@@ -407,6 +434,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					fs.put("GetFailed", getFailedMessage.getFieldSet(false));
 				}
 			}
+		}
+		// Return bucket
+		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
+			PaddedEphemerallyEncryptedBucket b = (PaddedEphemerallyEncryptedBucket) returnBucket;
+			fs.put("ReturnBucket.DecryptKey", HexUtil.bytesToHex(b.getKey()));
+			fs.put("ReturnBucket.Filename", ((FileBucket)b.getUnderlying()).getName());
 		}
 		return fs;
 	}

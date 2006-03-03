@@ -85,8 +85,7 @@ public class PersistentTempBucketFactory implements BucketFactory {
 	public void completedInit() {
 		Iterator i = originalFiles.iterator();
 		while(i.hasNext()) {
-			String s = (String) (i.next());
-			File f = new File(s);
+			File f = (File) (i.next());
 			f.delete();
 		}
 	}
@@ -97,7 +96,7 @@ public class PersistentTempBucketFactory implements BucketFactory {
 
 	public Bucket makeEncryptedBucket() throws IOException {
 		Bucket b = makeBucket(-1);
-		return new PaddedEphemerallyEncryptedBucket(b, 1024, rand);
+		return new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false);
 	}
 
 	public Bucket registerEncryptedBucket(String filename, byte[] key) {

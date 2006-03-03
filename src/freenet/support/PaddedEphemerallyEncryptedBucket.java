@@ -22,6 +22,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 	private final int minPaddedSize;
 	private final RandomSource origRandom;
 	private final Rijndael aes;
+	/** The decryption key. May be null. */
+	private final byte[] key;
 	private long dataLength;
 	private boolean readOnly;
 	private int lastOutputStream;
@@ -34,7 +36,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 	 * @param origRandom Hard random number generator from which to obtain a seed for padding.
 	 * @throws UnsupportedCipherException 
 	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource origRandom) {
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource origRandom, boolean forgetKey) {
 		this.origRandom = origRandom;
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
@@ -46,8 +48,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		byte[] key = new byte[32];
 		origRandom.nextBytes(key);
 		aes.initialize(key);
-		// Might as well blank it
-		for(int i=0;i<key.length;i++) key[i] = 0;
+		if(forgetKey) {
+			// Might as well blank it
+			for(int i=0;i<key.length;i++) key[i] = 0;
+			this.key = null;
+		} else {
+			this.key = key;
+		}
 		this.minPaddedSize = minSize;
 		readOnly = false;
 		lastOutputStream = 0;
@@ -64,8 +71,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		}
 		origRandom.nextBytes(key);
 		aes.initialize(key);
-		// Might as well blank it
-		for(int i=0;i<key.length;i++) key[i] = 0;
+		this.key = key;
 		this.minPaddedSize = minSize;
 		readOnly = false;
 		lastOutputStream = 0;
@@ -258,6 +264,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 
 	public void free() {
 		bucket.free();
+	}
+
+	/**
+	 * Get the decryption key. May have been blanked out.
+	 */
+	public byte[] getKey() {
+		return key;
 	}
 
 }

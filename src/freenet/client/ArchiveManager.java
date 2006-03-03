@@ -359,7 +359,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		
 		byte[] cipherKey = new byte[32];
 		random.nextBytes(cipherKey);
-		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random);
+		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random, true);
 		return new TempStoreElement(myFile, fb, encryptedBucket);
 	}
 

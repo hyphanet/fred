@@ -70,6 +70,7 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 			try {
 				Logger.minor(this, "Copying - returnBucket not respected by client.async");
 				BucketTools.copy(from, to);
+				from.free();
 			} catch (IOException e) {
 				onFailure(new FetchException(FetchException.BUCKET_ERROR), state /* not strictly to blame, but we're not ako ClientGetState... */);
 			}
