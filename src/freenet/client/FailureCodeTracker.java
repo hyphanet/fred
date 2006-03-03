@@ -19,7 +19,36 @@ public class FailureCodeTracker {
 		this.insert = insert;
 	}
 	
-	public class Item {
+	/**
+	 * Create a FailureCodeTracker from a SimpleFieldSet.
+	 * @param isInsert Whether this is an insert.
+	 * @param fs The SimpleFieldSet containing the FieldSet (non-verbose) form of 
+	 * the tracker.
+	 */
+	public FailureCodeTracker(boolean isInsert, SimpleFieldSet fs) {
+		this.insert = isInsert;
+		Iterator i = fs.directSubsetNameIterator();
+		while(i.hasNext()) {
+			String name = (String) i.next();
+			SimpleFieldSet f = fs.subset(name);
+			// We ignore the Description, if there is one; we just want the count
+			int num = Integer.parseInt(name);
+			int count = Integer.parseInt(f.get("Count"));
+			if(count < 0) throw new IllegalArgumentException("Count < 0");
+			map.put(new Integer(num), new Item(count));
+			total += count;
+		}
+	}
+	
+	class Item {
+		Item(int count) {
+			this.x = count;
+		}
+
+		Item() {
+			this.x = 0;
+		}
+
 		int x;
 	}
 
@@ -85,7 +114,7 @@ public class FailureCodeTracker {
 	}
 
 	/** Copy verbosely to a SimpleFieldSet */
-	public synchronized void copyToFieldSet(SimpleFieldSet sfs, String prefix) {
+	public synchronized void copyToFieldSet(SimpleFieldSet sfs, String prefix, boolean verbose) {
 		Iterator keys = map.keySet().iterator();
 		while(keys.hasNext()) {
 			Integer k = (Integer) keys.next();
@@ -93,9 +122,10 @@ public class FailureCodeTracker {
 			int code = k.intValue();
 			// prefix.num.Description=<code description>
 			// prefix.num.Count=<count>
-			sfs.put(prefix+Integer.toHexString(code)+".Description", 
-					insert ? InserterException.getMessage(code) : FetchException.getMessage(code));
-			sfs.put(prefix+Integer.toHexString(code)+".Count", Integer.toHexString(item.x));
+			if(verbose)
+				sfs.put(prefix+Integer.toString(code)+".Description", 
+						insert ? InserterException.getMessage(code) : FetchException.getMessage(code));
+			sfs.put(prefix+Integer.toString(code)+".Count", Integer.toString(item.x));
 		}
 	}
 

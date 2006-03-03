@@ -350,4 +350,46 @@ public class SimpleFieldSet {
 		return map.isEmpty();
 	}
 
+	public Iterator directSubsetNameIterator() {
+		return new DirectSubsetNameIterator();
+	}
+
+	public class DirectSubsetNameIterator implements Iterator {
+
+		Iterator mapIterator;
+		String nextName;
+		
+		DirectSubsetNameIterator() {
+			mapIterator = map.keySet().iterator();
+			fetchNext();
+		}
+		
+		public boolean hasNext() {
+			return nextName != null;
+		}
+
+		public Object next() {
+			String next = nextName;
+			fetchNext();
+			return next;
+		}
+
+		public void remove() {
+			throw new UnsupportedOperationException();
+		}
+		
+		void fetchNext() {
+			// Maybe more efficient with Entry's???
+			while(mapIterator.hasNext()) {
+				String name = (String) mapIterator.next();
+				Object target = map.get(name);
+				if(target instanceof SimpleFieldSet) {
+					nextName = name;
+					return;
+				}
+			}
+			nextName = null;
+		}
+	}
+
 }

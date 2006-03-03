@@ -23,6 +23,7 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FileBucket;
@@ -56,9 +57,18 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	private int VERBOSITY_COMPRESSION_START_END = 512;
 	
 	// Stuff waiting for reconnection
-	private FCPMessage finalMessage;
-	private FCPMessage generatedURIMessage;
-	// This could be a SimpleProgress, or it could be started/finished compression
+	/** Has the request succeeded? */
+	private boolean succeeded;
+	/** If the request failed, how did it fail? PutFailedMessage is the most
+	 * convenient way to store this (InserterException has a stack trace!).
+	 */
+	private PutFailedMessage putFailedMessage;
+	/** URI generated for the insert. */
+	private FreenetURI generatedURI;
+	// This could be a SimpleProgress, or it could be started/finished compression.
+	// Not that important, so not saved on persistence.
+	// Probably saving it would conflict with later changes (full persistence at
+	// ClientPutter level).
 	private FCPMessage progressMessage;
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) {
@@ -125,8 +135,16 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
 		block = new InsertBlock(data, new ClientMetadata(mimeType), uri);
+		finished = Fields.stringToBool(fs.get("Finished"), false);
+		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
+		String genURI = fs.get("GeneratedURI");
+		if(genURI != null)
+			generatedURI = new FreenetURI(genURI);
+		if(finished && (!succeeded))
+			putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
 		inserter = new ClientPutter(this, data, uri, new ClientMetadata(mimeType), ctx, client.node.putScheduler, priorityClass, getCHKOnly, false, client);
-		start();
+		if(!finished)
+			start();
 	}
 
 	void start() {
@@ -149,23 +167,26 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 
 	public void onSuccess(BaseClientPutter state) {
 		progressMessage = null;
+		succeeded = true;
 		finished = true;
-		FCPMessage msg = new PutSuccessfulMessage(identifier, state.getURI());
-		trySendFinalMessage(msg);
+		trySendFinalMessage();
 		block.getData().free();
 		finish();
 	}
 
 	public void onFailure(InserterException e, BaseClientPutter state) {
 		finished = true;
-		FCPMessage msg = new PutFailedMessage(e, identifier);
-		trySendFinalMessage(msg);
+		putFailedMessage = new PutFailedMessage(e, identifier);
+		trySendFinalMessage();
 		block.getData().free();
 		finish();
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
-		trySendGeneratedURIMessage(new URIGeneratedMessage(uri, identifier));
+		if(generatedURI != null && !uri.equals(generatedURI))
+			Logger.error(this, "onGeneratedURI("+uri+","+state+") but already set generatedURI to "+generatedURI);
+		generatedURI = uri;
+		trySendGeneratedURIMessage();
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
@@ -199,17 +220,27 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		}
 	}
 	
-	private void trySendFinalMessage(FCPMessage msg) {
-		if(persistenceType != PERSIST_CONNECTION)
-			finalMessage = msg;
-		FCPConnectionHandler conn = client.getConnection();
-		if(conn != null)
-			conn.outputHandler.queue(msg);
+	private void trySendFinalMessage() {
+		
+		FCPMessage msg;
+		
+		if(succeeded) {
+			msg = new PutSuccessfulMessage(identifier, generatedURI);
+		} else {
+			msg = putFailedMessage;
+		}
+		
+		if(msg == null) {
+			Logger.error(this, "Trying to send null message on "+this, new Exception("error"));
+		} else {
+			FCPConnectionHandler conn = client.getConnection();
+			if(conn != null)
+				conn.outputHandler.queue(msg);
+		}
 	}
 
-	private void trySendGeneratedURIMessage(URIGeneratedMessage msg) {
-		if(persistenceType != PERSIST_CONNECTION)
-			generatedURIMessage = msg;
+	private void trySendGeneratedURIMessage() {
+		FCPMessage msg = new URIGeneratedMessage(generatedURI, identifier);
 		FCPConnectionHandler conn = client.getConnection();
 		if(conn != null)
 			conn.outputHandler.queue(msg);
@@ -232,12 +263,12 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 			FCPMessage msg = new PersistentPut(identifier, uri, verbosity, priorityClass, fromDisk, persistenceType, origFilename, block.clientMetadata.getMIMEType());
 			handler.queue(msg);
 		}
-		if(generatedURIMessage != null)
-			handler.queue(generatedURIMessage);
+		if(generatedURI != null)
+			trySendGeneratedURIMessage();
 		if(progressMessage != null)
 			handler.queue(progressMessage);
-		if(finalMessage != null)
-			handler.queue(finalMessage);
+		if(finished)
+			trySendFinalMessage();
 	}
 	
 	/** Request completed. But we may have to stick around until we are acked. */
@@ -289,6 +320,13 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		fs.put("Filename", origFilename.getPath());
 		fs.put("DontCompress", Boolean.toString(ctx.dontCompress));
 		fs.put("MaxRetries", Integer.toString(ctx.maxInsertRetries));
+		fs.put("Finished", Boolean.toString(finished));
+		fs.put("Succeeded", Boolean.toString(succeeded));
+		if(generatedURI != null)
+			fs.put("GeneratedURI", generatedURI.toString(false));
+		if(finished && (!succeeded))
+			// Should have a putFailedMessage... unless there is a race condition.
+			fs.put("PutFailed", putFailedMessage.getFieldSet(false));
 		return fs;
 	}
 

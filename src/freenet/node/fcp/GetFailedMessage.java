@@ -26,16 +26,29 @@ public class GetFailedMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
+		return getFieldSet(true);
+	}
+	
+	/**
+	 * Write to a SimpleFieldSet for storage or transmission.
+	 * @param verbose If true, include fields which derive directly from static
+	 * stuff on InserterException (and therefore can be omitted if talking to self
+	 * or another node).
+	 */
+	public SimpleFieldSet getFieldSet(boolean verbose) {
 		SimpleFieldSet sfs = new SimpleFieldSet(false);
 		sfs.put("Code", Integer.toString(code));
-		sfs.put("CodeDescription", codeDescription);
+		if(verbose)
+			sfs.put("CodeDescription", codeDescription);
 		if(extraDescription != null)
 			sfs.put("ExtraDescription", extraDescription);
-		sfs.put("Fatal", Boolean.toString(isFatal));
+		if(verbose)
+			sfs.put("Fatal", Boolean.toString(isFatal));
 		if(tracker != null) {
-			tracker.copyToFieldSet(sfs, "Errors.");
+			tracker.copyToFieldSet(sfs, "Errors.", verbose);
 		}
-		sfs.put("ShortCodeDescription", shortCodeDescription);
+		if(verbose)
+			sfs.put("ShortCodeDescription", shortCodeDescription);
 		sfs.put("Identifier", identifier);
 		return sfs;
 	}

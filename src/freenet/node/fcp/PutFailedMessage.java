@@ -1,9 +1,12 @@
 package freenet.node.fcp;
 
+import java.net.MalformedURLException;
+
 import freenet.client.FailureCodeTracker;
 import freenet.client.InserterException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 public class PutFailedMessage extends FCPMessage {
@@ -25,21 +28,62 @@ public class PutFailedMessage extends FCPMessage {
 		this.tracker = e.errorCodes;
 		this.expectedURI = e.uri;
 		this.identifier = identifier;
-		this.isFatal = e.isFatal();
+		this.isFatal = InserterException.isFatal(code);
+	}
+
+	/**
+	 * Construct from a fieldset. Used in serialization of persistent requests.
+	 * Will need to be made more tolerant of syntax errors if is used in an FCP
+	 * client library. FIXME.
+	 * @param useVerboseFields If true, read in verbose fields (CodeDescription
+	 * etc), if false, reconstruct them from the error code.
+	 * @throws MalformedURLException 
+	 */
+	public PutFailedMessage(SimpleFieldSet fs, boolean useVerboseFields) throws MalformedURLException {
+		identifier = fs.get("Identifier");
+		if(identifier == null) throw new NullPointerException();
+		code = Integer.parseInt(fs.get("Code"));
+		
+		if(useVerboseFields) {
+			codeDescription = fs.get("CodeDescription");
+			isFatal = Fields.stringToBool(fs.get("Fatal"), false);
+			codeShortDescription = fs.get("ShortCodeDescription");
+		} else {
+			codeDescription = InserterException.getMessage(code);
+			isFatal = InserterException.isFatal(code);
+			codeShortDescription = InserterException.getShortMessage(code);
+		}
+		
+		extraDescription = fs.get("ExtraDescription");
+		String euri = fs.get("ExpectedURI");
+		expectedURI = new FreenetURI(euri);
+		SimpleFieldSet trackerSubset = fs.subset("Errors");
+		if(trackerSubset != null) {
+			tracker = new FailureCodeTracker(true, trackerSubset);
+		} else {
+			tracker = null;
+		}
 	}
 
 	public SimpleFieldSet getFieldSet() {
+		return getFieldSet(true);
+	}
+	
+	public SimpleFieldSet getFieldSet(boolean verbose) {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.put("Identifier", identifier);
 		fs.put("Code", Integer.toString(code));
-		fs.put("CodeDescription", codeDescription);
+		if(verbose)
+			fs.put("CodeDescription", codeDescription);
 		if(extraDescription != null)
 			fs.put("ExtraDescription", extraDescription);
 		if(tracker != null) {
-			tracker.copyToFieldSet(fs, "Errors.");
+			tracker.copyToFieldSet(fs, "Errors.", verbose);
 		}
-		fs.put("Fatal", Boolean.toString(isFatal));
-		fs.put("ShortCodeDescription", codeShortDescription);
+		if(verbose)
+			fs.put("Fatal", Boolean.toString(isFatal));
+		if(verbose)
+			fs.put("ShortCodeDescription", codeShortDescription);
 		if(expectedURI != null)
 			fs.put("ExpectedURI", expectedURI.toString());
 		return fs;

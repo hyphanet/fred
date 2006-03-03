@@ -80,6 +80,8 @@ public class FCPClient {
 		}
 		if(dropped != null)
 			dropped.dropped();
+		if(get.isPersistentForever())
+			server.forceStorePersistentRequests();
 	}
 
 	/**
@@ -124,10 +126,10 @@ public class FCPClient {
 			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
 			if(req == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, null, identifier);
-			if(runningPersistentRequests.remove(req) || completedUnackedRequests.remove(req))
-				return;
-			throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, null, identifier);
+			else if(!(runningPersistentRequests.remove(req) || completedUnackedRequests.remove(req)))
+				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, null, identifier);
 		}
+		server.forceStorePersistentRequests();
 	}
 
 	public boolean hasPersistentRequests() {

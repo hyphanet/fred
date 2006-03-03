@@ -117,11 +117,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		else
 			tempFile = null;
 		clientToken = fs.get("ClientToken");
-                if(fs.get("Finished").equalsIgnoreCase("true")){
-		       	finished = true;
-	        }else{
-		       	finished = false;
-		}
+		finished = Fields.stringToBool(fs.get("Finished"), false);
 		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
