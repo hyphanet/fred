@@ -122,28 +122,29 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
 		clientToken = fs.get("ClientToken");
 		fromDisk = Fields.stringToBool(fs.get("FromDisk"), false);
+		finished = Fields.stringToBool(fs.get("Finished"), false);
+		//finished = false;
+		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
 		Bucket data;
 		if(fromDisk) {
 			origFilename = new File(fs.get("Filename"));
 			data = new FileBucket(origFilename, true, false, false, false);
 		} else {
 			origFilename = null;
-			byte[] key = HexUtil.hexToBytes(fs.get("TempBucket.DecryptKey"));
-			String fnam = fs.get("TempBucket.Filename");
-			long sz = Long.parseLong(fs.get("TempBucket.Size"));
-			data = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
-			if(data.size() != sz)
-				throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
+			if(!succeeded) {
+				byte[] key = HexUtil.hexToBytes(fs.get("TempBucket.DecryptKey"));
+				String fnam = fs.get("TempBucket.Filename");
+				long sz = Long.parseLong(fs.get("TempBucket.Size"));
+				data = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
+				if(data.size() != sz)
+					throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
+			} else data = null;
 		}
 		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
 		block = new InsertBlock(data, new ClientMetadata(mimeType), uri);
-		// FIXME uncomment after testing
-		finished = Fields.stringToBool(fs.get("Finished"), false);
-		//finished = false;
-		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
 		String genURI = fs.get("GeneratedURI");
 		if(genURI != null)
 			generatedURI = new FreenetURI(genURI);
