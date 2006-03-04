@@ -23,10 +23,16 @@ import java.util.jar.Manifest;
 import sun.net.www.protocol.jar.URLJarFile;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.config.InvalidConfigValueException;
+import freenet.config.StringCallback;
+import freenet.config.SubConfig;
+import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.BucketTools;
 import freenet.support.Buffer;
+import freenet.support.Logger;
 import freenet.support.BucketTools.BucketFactoryWrapper;
 
 public class PluginManager {
@@ -45,22 +51,32 @@ public class PluginManager {
 	private HashMap pluginInfo;
 	private PluginManager pluginManager = null;
 	private PluginRespirator pluginRespirator = null;
+	private Node node;
 	
-	public PluginManager(PluginRespirator pluginRespirator) {
+	public PluginManager(Node node) {
 		pluginInfo = new HashMap();
 		toadletList = new HashMap();
 		
-		this.pluginRespirator = pluginRespirator;
-		pluginRespirator.setPluginManager(this);
-		//StartPlugin("misc@file:plugin.jar");
+		pluginRespirator = new PluginRespirator(node, this);
 		
-		// Needed to include plugin in jar-files
 		/*
-		 if (new Date().equals(null)){
-			System.err.println(new TestPlugin());
-		}
-		*/
+		SubConfig plugConfig = new SubConfig("pluginmanager", node.config);
+		// Start plugins in the config
+		plugConfig.register("loadplugin", null, 9, true, "Plugins  load on startup ", "Classpath, name and location for plugins to load when node starts up", 
+        		new StringCallback() {
+					public String get() {
+						return storeDir.getPath();
+					}
+					public void set(String val) throws InvalidConfigValueException {
+						if(storeDir.equals(new File(val))) return;
+						// FIXME
+						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
+					}
+        });
+        */
 	}
+	
+	
 	
 	public void startPlugin(String filename) {
 		FredPlugin plug;
@@ -85,7 +101,7 @@ public class PluginManager {
 		synchronized (toadletList) {
 			toadletList.put(pl.getClass().getName(), pl);
 		}
-		System.err.println("Added HTTP handler for /plugins/"+pl.getClass().getName()+"/");
+		Logger.normal(this, "Added HTTP handler for /plugins/"+pl.getClass().getName()+"/");
 	}
 	
 	public void removePlugin(Thread t) {
@@ -100,7 +116,7 @@ public class PluginManager {
 					synchronized (toadletList) {
 						try {
 							toadletList.remove(pi.getPluginClassName());
-							System.err.println("Removed HTTP handler for /plugins/"+
+							Logger.normal(this, "Removed HTTP handler for /plugins/"+
 									pi.getPluginClassName()+"/");
 						} catch (Throwable ex) {
 						}

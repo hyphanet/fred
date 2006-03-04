@@ -852,20 +852,9 @@ public class Node {
 		putScheduler = new ClientRequestScheduler(true, random, insertStarter, this);
 		insertStarter.setScheduler(putScheduler);
 		insertStarter.start();
+		
 		// And finally, Initialize the plugin manager
-		PluginManager pm = null;
-		try {
-			HighLevelSimpleClient hlsc = makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
-			/*new HighLevelSimpleClientImpl(this, 
-					archiveManager, tempBucketFactory, random, false, (short)0);
-					*/
-			PluginRespirator pluginRespirator = new PluginRespirator(hlsc);
-			pm = new PluginManager(pluginRespirator);
-		} catch (Throwable e) {
-			e.printStackTrace();
-			System.err.println("THIS SHOULDN'T OCCUR!!!! (plugin system now disabled)");
-		}
-		pluginManager = pm;
+		pluginManager = new PluginManager(this);
     }
     
 	private InetAddress resolve(String val) {
