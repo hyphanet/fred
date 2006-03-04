@@ -58,6 +58,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		} catch (InserterException e) {
 			finished = true;
 			currentState = null;
+			// notify the client that the insert could not even be started
+			if (this.client!=null) {
+				this.client.onFailure(e, this);
+			}
 		}
 	}
 
