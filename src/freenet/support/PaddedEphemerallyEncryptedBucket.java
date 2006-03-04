@@ -60,16 +60,28 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		lastOutputStream = 0;
 	}
 
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, byte[] key, RandomSource origRandom) {
+	/**
+	 * Load an existing PaddedEphemerallyEncryptedBucket, with a key.
+	 * The bucket can and should already exist.
+	 * @param bucket
+	 * @param minSize
+	 * @param knownSize The size of the data. This cannot be deduced from the bucket
+	 * alone and must be specified. If the bucket is smaller than this, we throw.
+	 * @param key
+	 * @param origRandom
+	 * @throws IOException 
+	 */
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom) throws IOException {
+		if(bucket.size() < knownSize)
+			throw new IOException("Bucket is too small on disk");
+		this.dataLength = knownSize;
 		this.origRandom = origRandom;
 		this.bucket = bucket;
-		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
 		try {
 			aes = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
-		origRandom.nextBytes(key);
 		aes.initialize(key);
 		this.key = key;
 		this.minPaddedSize = minSize;

@@ -66,7 +66,14 @@ public class FCPConnectionInputHandler implements Runnable {
 				continue;
 			}
 			if(msg instanceof DataCarryingMessage) {
-				((DataCarryingMessage)msg).readFrom(lis, handler.bf);
+				// FIXME tidy up - coalesce with above and below try { } catch (MIE) {}'s?
+				try {
+					((DataCarryingMessage)msg).readFrom(lis, handler.bf, handler.server);
+				} catch (MessageInvalidException e) {
+					FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);
+					handler.outputHandler.queue(err);
+					continue;
+				}
 			}
 			if((!firstMessage) && msg instanceof ClientHelloMessage) {
 				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.NO_LATE_CLIENT_HELLOS, false, null, null);

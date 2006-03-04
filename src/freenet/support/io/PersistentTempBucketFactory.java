@@ -72,7 +72,7 @@ public class PersistentTempBucketFactory implements BucketFactory {
 	 * and to register this fact so that it is not deleted on startup completion.
 	 */
 	public Bucket register(String filename) {
-		File f = new File(filename);
+		File f = new File(dir, filename);
 		Bucket b = new FileBucket(f, false, false, false, true);
 		originalFiles.remove(f);
 		return b;
@@ -99,9 +99,9 @@ public class PersistentTempBucketFactory implements BucketFactory {
 		return new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false);
 	}
 
-	public Bucket registerEncryptedBucket(String filename, byte[] key) {
+	public Bucket registerEncryptedBucket(String filename, byte[] key, long len) throws IOException {
 		Bucket fileBucket = register(filename);
-		return new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, key, rand);
+		return new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, len, key, rand);
 	}
 	
 	public void freeBucket(Bucket b) throws IOException {

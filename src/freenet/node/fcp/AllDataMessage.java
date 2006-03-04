@@ -39,4 +39,8 @@ public class AllDataMessage extends DataCarryingMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "AllData goes from server to client not the other way around", identifier);
 	}
 
+	String getIdentifier() {
+		return identifier;
+	}
+
 }

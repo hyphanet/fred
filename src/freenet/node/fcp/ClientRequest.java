@@ -67,17 +67,22 @@ public abstract class ClientRequest {
 		SimpleFieldSet fs = new SimpleFieldSet(br, true);
 		String clientName = fs.get("ClientName");
 		FCPClient client = server.registerClient(clientName, server.node, null);
-		String type = fs.get("Type");
-		if(type.equals("GET")) {
-			ClientGet cg = new ClientGet(fs, client);
-			client.register(cg);
-			return cg;
-		} else if(type.equals("PUT")) {
-			ClientPut cp = new ClientPut(fs, client);
-			client.register(cp);
-			return cp;
-		} else {
-			Logger.error(ClientRequest.class, "Unrecognized type: "+type);
+		try {
+			String type = fs.get("Type");
+			if(type.equals("GET")) {
+				ClientGet cg = new ClientGet(fs, client);
+				client.register(cg);
+				return cg;
+			} else if(type.equals("PUT")) {
+				ClientPut cp = new ClientPut(fs, client);
+				client.register(cp);
+				return cp;
+			} else {
+				Logger.error(ClientRequest.class, "Unrecognized type: "+type);
+				return null;
+			}
+		} catch (Throwable t) {
+			Logger.error(ClientRequest.class, "Failed to parse: "+t, t);
 			return null;
 		}
 	}

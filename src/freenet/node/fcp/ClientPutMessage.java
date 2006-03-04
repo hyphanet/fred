@@ -1,13 +1,15 @@
 package freenet.node.fcp;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.support.Bucket;
+import freenet.support.BucketFactory;
 import freenet.support.Fields;
-import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FileBucket;
 
@@ -136,9 +138,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
 		}
-		if(persistenceType == ClientRequest.PERSIST_FOREVER && !fromDisk) {
-			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Persistence=forever AND UploadFrom=direct unsupported!", identifier);
-		}
 		clientToken = fs.get("ClientToken");
 	}
 
@@ -167,4 +166,16 @@ public class ClientPutMessage extends DataCarryingMessage {
 		return dataLength;
 	}
 
+	String getIdentifier() {
+		return identifier;
+	}
+
+	Bucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
+		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+			return server.node.persistentTempBucketFactory.makeEncryptedBucket();
+		} else {
+			return super.createBucket(bf, length, server);
+		}
+	}
+	
 }

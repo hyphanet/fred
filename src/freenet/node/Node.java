@@ -836,7 +836,6 @@ public class Node {
         writeNodeFile();
         
         nodeConfig.finishedInitialization();
-        persistentTempBucketFactory.completedInit();
         
         // FIXME make all the below arbitrary constants configurable!
         
@@ -928,6 +927,8 @@ public class Node {
 		if(testnetHandler != null)
 			testnetHandler.start();
 		
+        persistentTempBucketFactory.completedInit();
+        
 		Thread t = new Thread(ipDetector, "IP address re-detector");
 		t.setDaemon(true);
 		t.start();

@@ -130,9 +130,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 * Create a ClientGet from a request serialized to a SimpleFieldSet.
 	 * Can throw, and does minimal verification, as is dealing with data 
 	 * supposedly serialized out by the node.
-	 * @throws MalformedURLException 
+	 * @throws IOException 
 	 */
-	public ClientGet(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
+	public ClientGet(SimpleFieldSet fs, FCPClient client2) throws IOException {
 		uri = new FreenetURI(fs.get("URI"));
 		identifier = fs.get("Identifier");
 		verbosity = Integer.parseInt(fs.get("Verbosity"));
@@ -187,7 +187,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 			byte[] key = HexUtil.hexToBytes(fs.get("ReturnBucket.DecryptKey"));
 			String fnam = fs.get("ReturnBucket.Filename");
-			ret = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key);
+			ret = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, succeeded ? foundDataLength : 0);
 		} else {
 			throw new IllegalArgumentException();
 		}

@@ -35,6 +35,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int COULD_NOT_RENAME_FILE = 14;
 	static final int NO_SUCH_IDENTIFIER = 15;
 	static final int NOT_SUPPORTED = 16;
+	static final int INTERNAL_ERROR = 17;
 	
 	final int code;
 	final String extra;
@@ -75,6 +76,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "No such identifier";
 		case NOT_SUPPORTED:
 			return "Not supported";
+		case INTERNAL_ERROR:
+			return "Internal error";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";

@@ -24,7 +24,9 @@ import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Fields;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FileBucket;
 
@@ -100,9 +102,10 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	 * Create from a persisted SimpleFieldSet.
 	 * Not very tolerant of errors, as the input was generated
 	 * by the node.
-	 * @throws MalformedURLException 
+	 * @throws PersistenceParseException 
+	 * @throws IOException 
 	 */
-	public ClientPut(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
+	public ClientPut(SimpleFieldSet fs, FCPClient client2) throws PersistenceParseException, IOException {
 		uri = new FreenetURI(fs.get("URI"));
 		identifier = fs.get("Identifier");
 		verbosity = Integer.parseInt(fs.get("Verbosity"));
@@ -118,15 +121,28 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		boolean dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
 		clientToken = fs.get("ClientToken");
-		fromDisk = true;
-		origFilename = new File(fs.get("Filename"));
-		Bucket data = new FileBucket(origFilename, true, false, false, false);
+		fromDisk = Fields.stringToBool(fs.get("FromDisk"), false);
+		Bucket data;
+		if(fromDisk) {
+			origFilename = new File(fs.get("Filename"));
+			data = new FileBucket(origFilename, true, false, false, false);
+		} else {
+			origFilename = null;
+			byte[] key = HexUtil.hexToBytes(fs.get("TempBucket.DecryptKey"));
+			String fnam = fs.get("TempBucket.Filename");
+			long sz = Long.parseLong(fs.get("TempBucket.Size"));
+			data = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
+			if(data.size() != sz)
+				throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
+		}
 		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
 		block = new InsertBlock(data, new ClientMetadata(mimeType), uri);
+		// FIXME uncomment after testing
 		finished = Fields.stringToBool(fs.get("Finished"), false);
+		//finished = false;
 		succeeded = Fields.stringToBool(fs.get("Succeeded"), false);
 		String genURI = fs.get("GeneratedURI");
 		if(genURI != null)
@@ -313,8 +329,16 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		// finished => persistence of completion state, pending messages
 		//fs.put("Finished", Boolean.toString(finished));
 		fs.put("ClientToken", clientToken);
-		if(!fromDisk) throw new UnsupportedOperationException("Persistent insert not from disk - NOT SUPPORTED");
-		fs.put("Filename", origFilename.getPath());
+		fs.put("FromDisk", Boolean.toString(fromDisk));
+		if(fromDisk) {
+			fs.put("Filename", origFilename.getPath());
+		} else {
+			// the bucket is a persistent encrypted temp bucket
+			PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) block.getData();
+			fs.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
+			fs.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
+			fs.put("TempBucket.Size", Long.toString(bucket.size()));
+		}
 		fs.put("DontCompress", Boolean.toString(ctx.dontCompress));
 		fs.put("MaxRetries", Integer.toString(ctx.maxInsertRetries));
 		fs.put("Finished", Boolean.toString(finished));
