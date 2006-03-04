@@ -11,19 +11,19 @@ public class PluginInfoWrapper {
 	private long start;
 	private String threadName;
 	private FredPlugin plug;
+	private boolean isPproxyPlugin;
 	//public String 
 	
 	public void putPluginThread(FredPlugin plug, Thread ps) {
 		if (fedPluginThread) return;
-		
 		className = plug.getClass().toString();
 		thread = ps;
 		this.plug = plug;
 		threadName = "p" + className.replaceAll("^class ", "") + "_" + ps.hashCode();
 		start = System.currentTimeMillis();
 		ps.setName(threadName);
-		
 		fedPluginThread = true;
+		isPproxyPlugin = (plug instanceof FredPluginHTTP);
 	}
 	
 	public String toString() {
@@ -32,6 +32,10 @@ public class PluginInfoWrapper {
 	
 	public String getThreadName() {
 		return threadName;
+	}
+	
+	public long getStarted() {
+		return start;
 	}
 	
 	public String getPluginClassName(){
@@ -45,6 +49,10 @@ public class PluginInfoWrapper {
 	
 	public boolean sameThread(Thread t){
 		return (t == thread);
+	}
+
+	public boolean isPproxyPlugin() {
+		return isPproxyPlugin;
 	}
 	
 }

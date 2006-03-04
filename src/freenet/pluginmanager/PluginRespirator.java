@@ -17,15 +17,12 @@ public class PluginRespirator {
 	}
 	
 	public void setPluginManager(PluginManager pm) {
+		// Write once only
 		if (this.pm == null)
 			this.pm = pm;
 	}
 	
-	/*// TODO:.. really best solution?
-	public void registerToadlet(FredPlugin pl){
-		pm.registerToadlet(pl);
-	}*/
-	
+	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {
 	public HighLevelSimpleClient getHLSimpleClient() {
 		return hlsc;
 	}

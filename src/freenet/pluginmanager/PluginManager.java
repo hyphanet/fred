@@ -12,6 +12,7 @@ import java.net.URLConnection;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -66,6 +67,11 @@ public class PluginManager {
 		try {
 			plug = LoadPlugin(filename);
 			PluginInfoWrapper pi = PluginHandler.startPlugin(this, plug, pluginRespirator);
+			// handles fproxy? If so, register
+			
+			if (pi.isPproxyPlugin())
+				registerToadlet(plug);
+			
 			synchronized (pluginInfo) {
 				pluginInfo.put(pi.getThreadName(), pi);
 			}
@@ -74,8 +80,7 @@ public class PluginManager {
 		}
 	}
 	
-	public void registerToadlet(FredPlugin pl){
-		Exception e = new Exception();
+	private void registerToadlet(FredPlugin pl){
 		//toadletList.put(e.getStackTrace()[1].getClass().toString(), pl);
 		synchronized (toadletList) {
 			toadletList.put(pl.getClass().getName(), pl);
@@ -95,6 +100,8 @@ public class PluginManager {
 					synchronized (toadletList) {
 						try {
 							toadletList.remove(pi.getPluginClassName());
+							System.err.println("Removed HTTP handler for /plugins/"+
+									pi.getPluginClassName()+"/");
 						} catch (Throwable ex) {
 						}
 					}
@@ -117,6 +124,19 @@ public class PluginManager {
 			}
 		}
 		return out.toString();
+	}
+	
+	public Set getPlugins() {
+		
+		HashSet out = new HashSet();
+		synchronized (pluginInfo) {
+			Iterator it = pluginInfo.keySet().iterator();
+			while (it.hasNext()) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(it.next());
+				out.add(pi);
+			}
+		}
+		return out;
 	}
 	
 	public String handleHTTPGet(String plugin, String path) throws PluginHTTPException {

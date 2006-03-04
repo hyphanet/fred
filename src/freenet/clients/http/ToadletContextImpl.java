@@ -133,13 +133,16 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				URI uri;
 				try {
-					uri = new URI(URLDecoder.decode(split[1]));
+					//uri = new URI(URLDecoder.decode(split[1]));
+					uri = new URI(split[1]);
 				} catch (URISyntaxException e) {
 					sendURIParseError(sock.getOutputStream(), true);
 					return;
+				/*
 				} catch (URLEncodedFormatException e) {
 					sendURIParseError(sock.getOutputStream(), true);
 					return;
+					*/
 				}
 				
 				String method = split[0];

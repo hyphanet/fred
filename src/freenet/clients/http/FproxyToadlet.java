@@ -31,7 +31,8 @@ public class FproxyToadlet extends Toadlet {
 
 	public void handleGet(URI uri, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
-		String ks = uri.toString();
+		//String ks = uri.toString();
+		String ks = uri.getPath();
 		if(ks.startsWith("/"))
 			ks = ks.substring(1);
 		FreenetURI key;

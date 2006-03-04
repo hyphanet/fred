@@ -53,10 +53,8 @@ public class PluginHandler {
 			
 			if (plugin instanceof FredPlugin) {
 				FredPlugin plug = ((FredPlugin)plugin);
-				// handles fproxy? If so, register
 				//if (plug.handles(FredPlugin.handleFproxy))
-				if (plug instanceof FredPluginHTTP)
-					pm.registerToadlet(plug);
+
 				((FredPlugin)plugin).runPlugin(pr);
 			}
 			// If not FredPlugin, then the whole thing is aborted,
