@@ -20,6 +20,7 @@ package freenet.io.xfer;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -202,8 +203,13 @@ public class BlockTransmitter {
 						long startDelayTime = System.currentTimeMillis();
 						delay(startCycleTime);
 						int packetNo;
-						synchronized(_unsent) {
-							packetNo = ((Integer) _unsent.removeFirst()).intValue();
+						try {
+							synchronized(_unsent) {
+								packetNo = ((Integer) _unsent.removeFirst()).intValue();
+							}
+						} catch (NoSuchElementException nsee) {
+							// back up to the top to check for completion
+							continue;
 						}
 						_sentPackets.setBit(packetNo, true);
 						try {
