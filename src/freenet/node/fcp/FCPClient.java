@@ -181,6 +181,10 @@ public class FCPClient {
 			watchGlobal = false;
 		} else if(enabled && !watchGlobal) {
 			server.globalClient.watch(this);
+			FCPConnectionHandler connHandler = currentConnection;
+			if(connHandler != null) {
+				server.globalClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler);
+			}
 			watchGlobal = true;
 		}
 		// Otherwise the status is unchanged.

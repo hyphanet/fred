@@ -1,6 +1,7 @@
 package freenet.node.fcp;
 
 import freenet.node.Node;
+import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -11,11 +12,13 @@ public class RemovePersistentRequest extends FCPMessage {
 	final static String name = "RemovePersistentRequest";
 	
 	final String identifier;
+	final boolean global;
 	
 	public RemovePersistentRequest(SimpleFieldSet fs) throws MessageInvalidException {
 		this.identifier = fs.get("Identifier");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must have Identifier", null);
+		this.global = Fields.stringToBool(fs.get("Global"), false);
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -30,7 +33,8 @@ public class RemovePersistentRequest extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		handler.getClient().removeByIdentifier(identifier);
+		FCPClient client = global ? handler.server.globalClient : handler.getClient();
+		client.removeByIdentifier(identifier);
 	}
 
 }
