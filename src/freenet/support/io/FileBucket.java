@@ -320,4 +320,8 @@ public class FileBucket implements Bucket {
 					"Delete failed on bucket " + file.getName());
 		}
 	}
+	
+	public String toString() {
+		return super.toString()+":"+file.getPath();
+	}
 }

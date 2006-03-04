@@ -101,6 +101,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		final PCFBMode pcfb;
 		final OutputStream out;
 		final int streamNumber;
+		private boolean closed;
 		
 		public PaddedEphemerallyEncryptedOutputStream(OutputStream out, int streamNumber) {
 			this.out = out;
@@ -110,6 +111,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		}
 		
 		public void write(int b) throws IOException {
+			if(closed) throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
 				throw new IllegalStateException("Writing to old stream in "+getName());
 			if(b < 0 || b > 255)
@@ -122,6 +124,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		}
 		
 		public void write(byte[] buf, int offset, int length) throws IOException {
+			if(closed) throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
 				throw new IllegalStateException("Writing to old stream in "+getName());
 			byte[] enc = new byte[length];
@@ -135,12 +138,14 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		
 		// Override this or FOS will use write(int)
 		public void write(byte[] buf) throws IOException {
+			if(closed) throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
 				throw new IllegalStateException("Writing to old stream in "+getName());
 			write(buf, 0, buf.length);
 		}
 		
 		public void close() throws IOException {
+			if(closed) return;
 			try {
 				if(streamNumber != lastOutputStream) {
 					Logger.normal(this, "Not padding out to length because have been superceded: "+getName());
@@ -160,6 +165,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 					}
 				}
 			} finally {
+				closed = true;
 				out.close();
 			}
 		}
@@ -255,6 +261,10 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		return "Encrypted:"+bucket.getName();
 	}
 
+	public String toString() {
+		return super.toString()+":"+bucket.toString();
+	}
+	
 	public long size() {
 		return dataLength;
 	}

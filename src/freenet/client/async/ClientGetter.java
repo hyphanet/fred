@@ -72,7 +72,8 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 				BucketTools.copy(from, to);
 				from.free();
 			} catch (IOException e) {
-				onFailure(new FetchException(FetchException.BUCKET_ERROR), state /* not strictly to blame, but we're not ako ClientGetState... */);
+				Logger.error(this, "Error copying from "+from+" to "+to+" : "+e.toString(), e);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */);
 			}
 			result = new FetchResult(result, to);
 		} else {

@@ -89,11 +89,13 @@ public class FCPClient {
 			completedUnackedRequests.push(get);
 			
 			if(completedUnackedRequests.size() > MAX_UNACKED_REQUESTS) {
+				clientRequestsByIdentifier.remove(dropped.getIdentifier());
 				dropped = (ClientRequest) completedUnackedRequests.pop();
 			}
 		}
-		if(dropped != null)
+		if(dropped != null) {
 			dropped.dropped();
+		}
 		if(get.isPersistentForever())
 			server.forceStorePersistentRequests();
 	}
@@ -139,9 +141,9 @@ public class FCPClient {
 		synchronized(this) {
 			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
 			if(req == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, null, identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not in hash", identifier);
 			else if(!(runningPersistentRequests.remove(req) | completedUnackedRequests.remove(req)))
-				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, null, identifier);
+				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not found", identifier);
 			clientRequestsByIdentifier.remove(identifier);
 		}
 		server.forceStorePersistentRequests();

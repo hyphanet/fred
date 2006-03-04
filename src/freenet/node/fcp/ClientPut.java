@@ -99,6 +99,8 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		String mimeType = message.contentType;
 		clientToken = message.clientToken;
 		block = new InsertBlock(message.bucket, new ClientMetadata(mimeType), uri);
+		if(persistenceType != PERSIST_CONNECTION)
+			client.register(this);
 		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, client.node.putScheduler, priorityClass, getCHKOnly, false, client);
 		if(persistenceType != PERSIST_CONNECTION && handler != null)
 			sendPendingMessages(handler.outputHandler, true);
