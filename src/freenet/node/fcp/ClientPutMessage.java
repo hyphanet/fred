@@ -49,6 +49,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final boolean dontCompress;
 	final String clientToken;
 	final File origFilename;
+	final boolean global;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -62,6 +63,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		} catch (MalformedURLException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier);
 		}
+		global = Fields.stringToBool(fs.get("Global"), false);
 		String verbosityString = fs.get("Verbosity");
 		if(verbosityString == null)
 			verbosity = 0;

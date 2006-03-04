@@ -86,7 +86,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			this.origHandler = handler;
 		else
 			origHandler = null;
-		this.client = handler.getClient();
+		if(message.global) {
+			client = handler.server.globalClient;
+		} else {
+			client = handler.getClient();
+		}
 		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
@@ -124,6 +128,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		returnBucket = ret;
 		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		if(persistenceType != PERSIST_CONNECTION && handler != null)
+			sendPendingMessages(handler.outputHandler, true);
+			
 	}
 
 	/**
@@ -267,15 +274,15 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			this.succeeded = true;
 			finished = true;
 		}
-		trySendDataFoundOrGetFailed();
+		trySendDataFoundOrGetFailed(null);
 		if(adm != null)
-			trySendAllDataMessage(adm);
+			trySendAllDataMessage(adm, null);
 		if(!dontFree)
 			data.free();
 		finish();
 	}
 
-	private void trySendDataFoundOrGetFailed() {
+	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
 		
 		FCPMessage msg;
 
@@ -284,31 +291,32 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else {
 			msg = getFailedMessage;
 		}
-		
-		FCPConnectionHandler conn = client.getConnection();
-		if(conn != null) {
-			conn.outputHandler.queue(msg);
-			if(postFetchProtocolErrorMessage != null)
-				conn.outputHandler.queue(postFetchProtocolErrorMessage);
+
+		if(handler != null)
+			handler.queue(msg);
+		else
+			client.queueClientRequestMessage(msg, 0);
+		if(postFetchProtocolErrorMessage != null) {
+			if(handler != null)
+				handler.queue(postFetchProtocolErrorMessage);
+			else
+				client.queueClientRequestMessage(postFetchProtocolErrorMessage, 0);
 		}
+
 	}
 
-	private void trySendAllDataMessage(AllDataMessage msg) {
+	private void trySendAllDataMessage(AllDataMessage msg, FCPConnectionOutputHandler handler) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			allDataPending = msg;
 		}
-		FCPConnectionHandler conn = client.getConnection();
-		if(conn != null)
-			conn.outputHandler.queue(msg);
+		client.queueClientRequestMessage(msg, 0);
 	}
 	
-	private void trySendProgress(SimpleProgressMessage msg) {
+	private void trySendProgress(SimpleProgressMessage msg, FCPConnectionOutputHandler handler) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			progressPending = msg;
 		}
-		FCPConnectionHandler conn = client.getConnection();
-		if(conn != null)
-			conn.outputHandler.queue(msg);
+		client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS);
 	}
 	
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest) {
@@ -317,13 +325,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return;
 		}
 		if(includePersistentRequest) {
-			FCPMessage msg = new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken);
+			FCPMessage msg = new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue);
 			handler.queue(msg);
 		}
 		if(progressPending != null)
 			handler.queue(progressPending);
 		if(finished)
-			trySendDataFoundOrGetFailed();
+			trySendDataFoundOrGetFailed(handler);
 		if(allDataPending != null)
 			handler.queue(allDataPending);
 	}
@@ -335,7 +343,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			finished = true;
 		}
 		Logger.minor(this, "Caught "+e, e);
-		trySendDataFoundOrGetFailed();
+		trySendDataFoundOrGetFailed(null);
 		finish();
 	}
 
@@ -367,7 +375,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return;
 		SimpleProgressMessage progress = 
 			new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
-		trySendProgress(progress);
+		trySendProgress(progress, null);
 	}
 
 	public boolean isPersistent() {
@@ -441,6 +449,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			fs.put("ReturnBucket.DecryptKey", HexUtil.bytesToHex(b.getKey()));
 			fs.put("ReturnBucket.Filename", ((FileBucket)b.getUnderlying()).getName());
 		}
+		fs.put("Global", Boolean.toString(client.isGlobalQueue));
 		return fs;
 	}
 

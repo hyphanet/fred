@@ -85,7 +85,11 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 			this.origHandler = handler;
 		else
 			this.origHandler = null;
-		client = handler.getClient();
+		if(message.global) {
+			client = handler.server.globalClient;
+		} else {
+			client = handler.getClient();
+		}
 		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer());
 		ctx.dontCompress = message.dontCompress;
 		ctx.eventProducer.addEventListener(this);
@@ -96,6 +100,8 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		clientToken = message.clientToken;
 		block = new InsertBlock(message.bucket, new ClientMetadata(mimeType), uri);
 		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, client.node.putScheduler, priorityClass, getCHKOnly, false, client);
+		if(persistenceType != PERSIST_CONNECTION && handler != null)
+			sendPendingMessages(handler.outputHandler, true);
 	}
 	
 	/**
@@ -179,7 +185,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 			succeeded = true;
 			finished = true;
 		}
-		trySendFinalMessage();
+		trySendFinalMessage(null);
 		block.getData().free();
 		finish();
 	}
@@ -189,7 +195,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 			finished = true;
 			putFailedMessage = new PutFailedMessage(e, identifier);
 		}
-		trySendFinalMessage();
+		trySendFinalMessage(null);
 		block.getData().free();
 		finish();
 	}
@@ -200,7 +206,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 				Logger.error(this, "onGeneratedURI("+uri+","+state+") but already set generatedURI to "+generatedURI);
 			generatedURI = uri;
 		}
-		trySendGeneratedURIMessage();
+		trySendGeneratedURIMessage(null);
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
@@ -217,24 +223,24 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
 				SimpleProgressMessage progress = 
 					new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
-				trySendProgressMessage(progress);
+				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null);
 			}
 		} else if(ce instanceof StartedCompressionEvent) {
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				StartedCompressionMessage msg =
 					new StartedCompressionMessage(identifier, ((StartedCompressionEvent)ce).codec);
-				trySendProgressMessage(msg);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null);
 			}
 		} else if(ce instanceof FinishedCompressionEvent) {
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				FinishedCompressionMessage msg = 
 					new FinishedCompressionMessage(identifier, (FinishedCompressionEvent)ce);
-				trySendProgressMessage(msg);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null);
 			}
 		}
 	}
 	
-	private void trySendFinalMessage() {
+	private void trySendFinalMessage(FCPConnectionOutputHandler handler) {
 		
 		FCPMessage msg;
 		
@@ -247,25 +253,28 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		if(msg == null) {
 			Logger.error(this, "Trying to send null message on "+this, new Exception("error"));
 		} else {
-			FCPConnectionHandler conn = client.getConnection();
-			if(conn != null)
-				conn.outputHandler.queue(msg);
+			if(handler != null)
+				handler.queue(msg);
+			else
+				client.queueClientRequestMessage(msg, 0);
 		}
 	}
 
-	private void trySendGeneratedURIMessage() {
+	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler) {
 		FCPMessage msg = new URIGeneratedMessage(generatedURI, identifier);
-		FCPConnectionHandler conn = client.getConnection();
-		if(conn != null)
-			conn.outputHandler.queue(msg);
+		if(handler != null)
+			handler.queue(msg);
+		else
+			client.queueClientRequestMessage(msg, 0);
 	}
 
-	private void trySendProgressMessage(FCPMessage msg) {
+	private void trySendProgressMessage(FCPMessage msg, int verbosity, FCPConnectionOutputHandler handler) {
 		if(persistenceType != PERSIST_CONNECTION)
 			progressMessage = msg;
-		FCPConnectionHandler conn = client.getConnection();
-		if(conn != null)
-			conn.outputHandler.queue(msg);
+		if(handler != null)
+			handler.queue(msg);
+		else
+			client.queueClientRequestMessage(msg, verbosity);
 	}
 	
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest) {
@@ -274,15 +283,15 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 			return;
 		}
 		if(includePersistentRequest) {
-			FCPMessage msg = new PersistentPut(identifier, uri, verbosity, priorityClass, fromDisk, persistenceType, origFilename, block.clientMetadata.getMIMEType());
+			FCPMessage msg = new PersistentPut(identifier, uri, verbosity, priorityClass, fromDisk, persistenceType, origFilename, block.clientMetadata.getMIMEType(), client.isGlobalQueue);
 			handler.queue(msg);
 		}
 		if(generatedURI != null)
-			trySendGeneratedURIMessage();
+			trySendGeneratedURIMessage(handler);
 		if(progressMessage != null)
 			handler.queue(progressMessage);
 		if(finished)
-			trySendFinalMessage();
+			trySendFinalMessage(handler);
 	}
 	
 	/** Request completed. But we may have to stick around until we are acked. */
@@ -308,8 +317,9 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	public void write(BufferedWriter w) throws IOException {
-		if(persistenceType != ClientRequest.PERSIST_REBOOT) {
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
 			Logger.error(this, "Not persisting as persistenceType="+persistenceType);
+			return;
 		}
 		// Persist the request to disk
 		SimpleFieldSet fs = getFieldSet();
@@ -349,6 +359,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		if(finished && (!succeeded))
 			// Should have a putFailedMessage... unless there is a race condition.
 			fs.put("PutFailed", putFailedMessage.getFieldSet(false));
+		fs.put("Global", Boolean.toString(client.isGlobalQueue));
 		return fs;
 	}
 

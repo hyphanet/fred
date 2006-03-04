@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -66,7 +67,12 @@ public abstract class ClientRequest {
 	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server) throws IOException {
 		SimpleFieldSet fs = new SimpleFieldSet(br, true);
 		String clientName = fs.get("ClientName");
-		FCPClient client = server.registerClient(clientName, server.node, null);
+		boolean isGlobal = Fields.stringToBool(fs.get("Global"), false);
+		FCPClient client;
+		if(!isGlobal)
+			client = server.registerClient(clientName, server.node, null);
+		else
+			client = server.globalClient;
 		try {
 			String type = fs.get("Type");
 			if(type.equals("GET")) {

@@ -42,6 +42,7 @@ public class FCPServer implements Runnable {
 	final boolean enabled;
 	final String bindto;
 	final WeakHashMap clientsByName;
+	final FCPClient globalClient;
 	private boolean enablePersistentDownloads;
 	private File persistentDownloadsFile;
 	private File persistentDownloadsTempFile;
@@ -81,6 +82,7 @@ public class FCPServer implements Runnable {
 		defaultInsertContext = client.getInserterContext();
 		Thread t = new Thread(this, "FCP server");
 		this.enablePersistentDownloads = persistentDownloadsEnabled;
+		globalClient = new FCPClient("Global Queue", this, null, true);
 		setPersistentDownloadsFile(new File(persistentDownloadsDir));
 		t.setDaemon(true);
 		t.start();
@@ -315,7 +317,7 @@ public class FCPServer implements Runnable {
 			oldClient = (FCPClient) clientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
-				FCPClient client = new FCPClient(name, this, handler);
+				FCPClient client = new FCPClient(name, this, handler, false);
 				clientsByName.put(name, client);
 				return client;
 			} else {
@@ -433,35 +435,30 @@ public class FCPServer implements Runnable {
 				Logger.normal(this, "Not reading any persistent requests from disk because no file exists");
 				return;
 			}
-			BufferedInputStream bis = new BufferedInputStream(fis);
-			InputStreamReader ris = new InputStreamReader(bis);
-			BufferedReader br = new BufferedReader(ris);
 			try {
+				BufferedInputStream bis = new BufferedInputStream(fis);
+				InputStreamReader ris = new InputStreamReader(bis);
+				BufferedReader br = new BufferedReader(ris);
 				String r = br.readLine();
 				int count;
 				try {
 					count = Integer.parseInt(r);
 				} catch (NumberFormatException e) {
 					Logger.error(this, "Corrupt persistent downloads file: "+persistentDownloadsFile);
-					try {
-						br.close();
-					} catch (IOException e1) {
-						Logger.error(this, "Error closing: "+e1, e1);
-					}
 					return;
 				}
 				for(int i=0;i<count;i++) {
 					ClientRequest req = ClientRequest.readAndRegister(br, this);
 				}
-				br.close();
 			} catch (IOException e) {
 				Logger.error(this, "Error reading persistent downloads file: "+persistentDownloadsFile+" : "+e, e);
+				return;
+			} finally {
 				try {
-					br.close();
+					fis.close();
 				} catch (IOException e1) {
 					Logger.error(this, "Error closing: "+e1, e1);
 				}
-				return;
 			}
 			return;
 		}
@@ -475,6 +472,7 @@ public class FCPServer implements Runnable {
 				FCPClient client = (FCPClient) (i.next());
 				client.addPersistentRequests(v);
 			}
+			globalClient.addPersistentRequests(v);
 		}
 		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
 	}

@@ -50,6 +50,7 @@ public class ClientGetMessage extends FCPMessage {
 	final File diskFile;
 	final File tempFile;
 	final String clientToken;
+	final boolean global;
 	
 	// FIXME move these to the actual getter process
 	static final short RETURN_TYPE_DIRECT = 0; // over FCP
@@ -60,6 +61,7 @@ public class ClientGetMessage extends FCPMessage {
 	public ClientGetMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		short defaultPriority;
 		clientToken = fs.get("ClientToken");
+		global = Fields.stringToBool(fs.get("Global"), false);
 		ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		identifier = fs.get("Identifier");
