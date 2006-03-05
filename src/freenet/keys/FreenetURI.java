@@ -130,6 +130,9 @@ public class FreenetURI {
 	}
 
 	public FreenetURI(String URI) throws MalformedURLException {
+		if (URI == null) {
+			throw new MalformedURLException("No URI specified");
+		}
 		// check scheme
 		int colon = URI.indexOf(':');
 		if (colon != -1

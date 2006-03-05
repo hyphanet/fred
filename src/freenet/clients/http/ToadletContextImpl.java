@@ -126,6 +126,12 @@ public class ToadletContextImpl implements ToadletContext {
 			while(true) {
 				
 				String firstLine = lis.readLine(32768, 128);
+				if (firstLine == null) {
+					sock.close();
+					return;
+				} else if (firstLine.equals("")) {
+					continue;
+				}
 				
 				Logger.minor(ToadletContextImpl.class, "first line: "+firstLine);
 				
@@ -157,6 +163,10 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				while(true) {
 					String line = lis.readLine(32768, 128);
+					if (line == null) {
+						sock.close();
+						return;
+					}
 					//System.out.println("Length="+line.length()+": "+line);
 					if(line.length() == 0) break;
 					int index = line.indexOf(':');

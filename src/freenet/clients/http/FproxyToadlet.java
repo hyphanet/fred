@@ -175,24 +175,29 @@ public class FproxyToadlet extends Toadlet {
 		int port = fproxyConfig.getInt("port");
 		String bind_ip = fproxyConfig.getString("bindto");
 		
-        SimpleToadletServer server = new SimpleToadletServer(port, bind_ip);
-        node.setToadletContainer(server);
-        FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
-        node.setFproxy(fproxy);
-        server.register(fproxy, "/", false);
-	
-        PproxyToadlet pproxy = new PproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node.pluginManager);
-        server.register(pproxy, "/plugins/", true);
-	
-	WelcomeToadlet welcometoadlet = new WelcomeToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
-	server.register(welcometoadlet, "/welcome/", true);
-	
-	StaticToadlet statictoadlet = new StaticToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
-	server.register(statictoadlet, "/static/", true);
-	
-        fproxyConfig.finishedInitialization();
-        System.out.println("Starting fproxy on port "+(port));
-        Logger.normal(node,"Starting fproxy on "+bind_ip+":"+port); 
+		System.out.println("Starting fproxy on port "+(port));
+		Logger.normal(node,"Starting fproxy on "+bind_ip+":"+port);
+		
+		try {
+			SimpleToadletServer server = new SimpleToadletServer(port, bind_ip);
+			node.setToadletContainer(server);
+			FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+			node.setFproxy(fproxy);
+			server.register(fproxy, "/", false);
+			
+			PproxyToadlet pproxy = new PproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node.pluginManager);
+			server.register(pproxy, "/plugins/", true);
+			
+			WelcomeToadlet welcometoadlet = new WelcomeToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+			server.register(welcometoadlet, "/welcome/", true);
+			
+			StaticToadlet statictoadlet = new StaticToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+			server.register(statictoadlet, "/static/", true);
+		} catch (IOException ioe) {
+			Logger.error(node,"Failed to start fproxy on "+bind_ip+":"+port);
+		}
+		
+		fproxyConfig.finishedInitialization();
 	}
 
 
