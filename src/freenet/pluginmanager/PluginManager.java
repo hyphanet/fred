@@ -84,6 +84,8 @@ public class PluginManager {
 				//System.err.println("Load: " + StringArrOption.decode(fns[i]));
 				startPlugin(StringArrOption.decode(fns[i]));
 			}
+			
+			pmconfig.finishedInitialization();
 		/*System.err.println("=================================");
 		pmconfig.finishedInitialization();
 		fns = pmconfig.getStringArr("loadplugin");
@@ -96,6 +98,7 @@ public class PluginManager {
 	private String getConfigLoadString() {
 		StringBuffer out = new StringBuffer();
 		Iterator it = getPlugins().iterator();
+		
 		if (it.hasNext())
 			out.append(StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
 		while (it.hasNext())
@@ -105,11 +108,6 @@ public class PluginManager {
 	}
 	
 	private void saveConfig() {
-		try {
-			pmconfig.set("loadplugin", this.getConfigLoadString());
-		} catch (InvalidConfigValueException e) {
-			Logger.error(this, "Failed to marshal plugin list to config file!");
-		}
 		node.config.store();
 	}
 	
@@ -308,7 +306,6 @@ public class PluginManager {
             		//System.err.println("Real classname: " + realClass);
             	}
             	
-				
             	cls = cl.loadClass(realClass);
             	
             } catch (Exception e) {
