@@ -72,6 +72,11 @@ public class SubConfig {
 		register(new ShortOption(this, optionName, defaultValue, sortOrder, expert, shortDesc, longDesc, cb));
 	}
 	
+	public void register(String optionName, String[] defaultValue, int sortOrder,
+			boolean expert, String shortDesc, String longDesc, StringArrCallback cb) {
+		register(new StringArrOption(this, optionName, defaultValue, sortOrder, expert, shortDesc, longDesc, cb));
+	}
+	
 	public int getInt(String optionName) {
 		IntOption o;
 		synchronized(this) {
@@ -100,6 +105,14 @@ public class SubConfig {
 		StringOption o;
 		synchronized(this) {
 			o = (StringOption) map.get(optionName);
+		}
+		return o.getValue();
+	}
+	
+	public String[] getStringArr(String optionName) {
+		StringArrOption o;
+		synchronized(this) {
+			o = (StringArrOption) map.get(optionName);
 		}
 		return o.getValue();
 	}

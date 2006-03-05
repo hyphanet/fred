@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -24,6 +25,8 @@ import sun.net.www.protocol.jar.URLJarFile;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.StringArrCallback;
+import freenet.config.StringArrOption;
 import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.node.Node;
@@ -52,37 +55,64 @@ public class PluginManager {
 	private PluginManager pluginManager = null;
 	private PluginRespirator pluginRespirator = null;
 	private Node node;
+	SubConfig pmconfig;
+	
 	
 	public PluginManager(Node node) {
 		pluginInfo = new HashMap();
 		toadletList = new HashMap();
-		
+		this.node = node;
 		pluginRespirator = new PluginRespirator(node, this);
 		
-		/*
-		SubConfig plugConfig = new SubConfig("pluginmanager", node.config);
+		pmconfig = new SubConfig("pluginmanager", node.config);
 		// Start plugins in the config
-		plugConfig.register("loadplugin", null, 9, true, "Plugins  load on startup ", "Classpath, name and location for plugins to load when node starts up", 
-        		new StringCallback() {
+		pmconfig.register("loadplugin", null, 9, true, "Plugins to load on startup ", "Classpath, name and location for plugins to load when node starts up", 
+        		new StringArrCallback() {
 					public String get() {
-						return storeDir.getPath();
+						StringBuffer out = new StringBuffer();
+						Iterator it = getPlugins().iterator();
+						if (it.hasNext())
+							out.append(StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
+						while (it.hasNext())
+							out.append(StringArrOption.delimiter + StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
+						System.err.println("asdasd : "+ out.toString());
+						return out.toString();
 					}
 					public void set(String val) throws InvalidConfigValueException {
-						if(storeDir.equals(new File(val))) return;
+						//if(storeDir.equals(new File(val))) return;
 						// FIXME
-						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
+						throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
 					}
         });
-        */
+		
+		String fns[] = pmconfig.getStringArr("loadplugin");
+		if (fns != null)
+			for (int i = 0 ; i < fns.length ; i++) {
+				//System.err.println("Load: " + StringArrOption.decode(fns[i]));
+				startPlugin(StringArrOption.decode(fns[i]));
+			}
+		/*System.err.println("=================================");
+		pmconfig.finishedInitialization();
+		fns = pmconfig.getStringArr("loadplugin");
+		for (int i = 0 ; i < fns.length ; i++)
+			System.err.println("Load: " + StringArrOption.decode(fns[i]));
+		System.err.println("=================================");
+		*/
+	}
+	
+	private void saveConfig() {
+		node.config.store();
 	}
 	
 	
-	
 	public void startPlugin(String filename) {
+		if (filename.trim().length() == 0)
+			return;
+		Logger.normal(this, "Loading plugin: " + filename);
 		FredPlugin plug;
 		try {
 			plug = LoadPlugin(filename);
-			PluginInfoWrapper pi = PluginHandler.startPlugin(this, plug, pluginRespirator);
+			PluginInfoWrapper pi = PluginHandler.startPlugin(this, filename, plug, pluginRespirator);
 			// handles fproxy? If so, register
 			
 			if (pi.isPproxyPlugin())
@@ -91,9 +121,11 @@ public class PluginManager {
 			synchronized (pluginInfo) {
 				pluginInfo.put(pi.getThreadName(), pi);
 			}
+			Logger.normal(this, "Plugin loaded: " + filename);
 		} catch (PluginNotFoundException e) {
-			e.printStackTrace();
+			Logger.normal(this, "Loading plugin failed (" + filename + ")", e);
 		}
+		saveConfig();
 	}
 	
 	private void registerToadlet(FredPlugin pl){
@@ -127,6 +159,7 @@ public class PluginManager {
 			if (removeKey != null)
 				pluginInfo.remove(removeKey);
 		}
+		saveConfig();
 	}
 
 	public String dumpPlugins() {
@@ -143,7 +176,6 @@ public class PluginManager {
 	}
 	
 	public Set getPlugins() {
-		
 		HashSet out = new HashSet();
 		synchronized (pluginInfo) {
 			Iterator it = pluginInfo.keySet().iterator();

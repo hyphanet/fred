@@ -12,13 +12,15 @@ public class PluginInfoWrapper {
 	private String threadName;
 	private FredPlugin plug;
 	private boolean isPproxyPlugin;
+	private String filename;
 	//public String 
 	
-	public void putPluginThread(FredPlugin plug, Thread ps) {
+	public PluginInfoWrapper(FredPlugin plug, Thread ps, String filename) {
 		if (fedPluginThread) return;
 		className = plug.getClass().toString();
 		thread = ps;
 		this.plug = plug;
+		this.filename = filename;
 		threadName = "p" + className.replaceAll("^class ", "") + "_" + ps.hashCode();
 		start = System.currentTimeMillis();
 		ps.setName(threadName);
@@ -53,6 +55,10 @@ public class PluginInfoWrapper {
 
 	public boolean isPproxyPlugin() {
 		return isPproxyPlugin;
+	}
+
+	public String getFilename() {
+		return filename;
 	}
 	
 }

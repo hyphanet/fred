@@ -16,10 +16,9 @@ public class PluginHandler {
 	 * 
 	 * @param plug
 	 */
-	public static PluginInfoWrapper startPlugin(PluginManager pm, FredPlugin plug, PluginRespirator pr) {
+	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr) {
 		PluginStarter ps = new PluginStarter(pr);
-		PluginInfoWrapper pi = new PluginInfoWrapper();
-		pi.putPluginThread(plug, ps);
+		PluginInfoWrapper pi = new PluginInfoWrapper(plug, ps, filename);
 		ps.setPlugin(pm, plug);
 		ps.start();
 		return pi;
