@@ -9,7 +9,7 @@ public class PageMaker {
 	public void makeTopHead(StringBuffer buf) {
 		buf.append("<!DOCTYPE\n"
 				+ "	html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"\n"
-				+ "	\"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n"
+				+ "	\"/static/xhtml11.dtd\">\n"
 				+ "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n"
 				+ "<head>\n"
 				+ "<meta http-equiv=\"Content-Type\" content=\"text/html;\" />\n"
