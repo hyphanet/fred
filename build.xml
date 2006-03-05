@@ -52,6 +52,10 @@
       <exclude name="org/**/MersenneTwisterTest.java"/>
       <exclude name="freenet/node/*Test.java"/>
     </javac>
+    <!-- Copy web interface static files to the build dir -->
+    <copy todir="${build}/freenet/clients/http/staticfiles">
+      <fileset dir="${src}/freenet/clients/http/staticfiles"/>
+    </copy>
   </target>
 
 
