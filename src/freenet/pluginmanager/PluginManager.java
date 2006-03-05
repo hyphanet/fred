@@ -69,14 +69,7 @@ public class PluginManager {
 		pmconfig.register("loadplugin", null, 9, true, "Plugins to load on startup ", "Classpath, name and location for plugins to load when node starts up", 
         		new StringArrCallback() {
 					public String get() {
-						StringBuffer out = new StringBuffer();
-						Iterator it = getPlugins().iterator();
-						if (it.hasNext())
-							out.append(StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
-						while (it.hasNext())
-							out.append(StringArrOption.delimiter + StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
-						System.err.println("asdasd : "+ out.toString());
-						return out.toString();
+						return getConfigLoadString();
 					}
 					public void set(String val) throws InvalidConfigValueException {
 						//if(storeDir.equals(new File(val))) return;
@@ -100,7 +93,23 @@ public class PluginManager {
 		*/
 	}
 	
+	private String getConfigLoadString() {
+		StringBuffer out = new StringBuffer();
+		Iterator it = getPlugins().iterator();
+		if (it.hasNext())
+			out.append(StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
+		while (it.hasNext())
+			out.append(StringArrOption.delimiter + StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
+		
+		return out.toString();
+	}
+	
 	private void saveConfig() {
+		try {
+			pmconfig.set("loadplugin", this.getConfigLoadString());
+		} catch (InvalidConfigValueException e) {
+			Logger.error(this, "Failed to marshal plugin list to config file!");
+		}
 		node.config.store();
 	}
 	
@@ -300,7 +309,6 @@ public class PluginManager {
             	}
             	
 				
-            	
             	cls = cl.loadClass(realClass);
             	
             } catch (Exception e) {
