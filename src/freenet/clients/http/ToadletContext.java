@@ -30,5 +30,10 @@ public interface ToadletContext {
 	 * Write data from a bucket. You must send reply headers first.
 	 */
 	void writeData(Bucket data) throws ToadletContextClosedException, IOException;
-
+	
+	/**
+	 * Get the page maker object.
+	 */
+	PageMaker getPageMaker();
 }
+

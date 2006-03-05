@@ -1,0 +1,66 @@
+body {
+	margin: 10px;
+	border: 3px double #356ace;
+	background-image: url(/static/themes/default/background.png);
+	background-repeat: repeat;
+	padding: 10px;
+	padding-top: 0px;
+	min-height: 400px;
+}
+
+#topbar {
+	margin: 0px;
+	margin-bottom: 10px;
+	background-image: url(/static/themes/default/logo.png);
+	background-repeat: no-repeat;
+	background-position: top left;
+	min-height: 51px;
+	padding-left: 100px;
+}
+
+#navbar {
+	float: left;
+	border: 2px solid #5e88d8;
+	margin-right: 10px;
+	text-align: center;
+	padding: 5px;
+}
+
+#navlist {
+	display: inline;
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+
+#navlist li {
+	display: inline;
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+	list-style-position: outside;
+	font-weight: bold;
+}
+
+#navlist a {
+	display: block;
+	color: black;
+}
+
+#navlist a:visited {
+	display: block;
+	color: black;
+}
+
+#navlist a:active {
+	display: block;
+	color: black;
+}
+
+.infobox {
+	border: 1px solid #5e88d8;
+	padding: 5px;
+	float: left;
+	margin-bottom: 10px;
+}
+

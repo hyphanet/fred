@@ -29,6 +29,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private final Socket sock;
 	private final MultiValueTable headers;
 	private final OutputStream sockOutputStream;
+	private final PageMaker pagemaker;
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
 	 */
@@ -39,6 +40,7 @@ public class ToadletContextImpl implements ToadletContext {
 		this.headers = headers;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
+		pagemaker = new PageMaker();
 	}
 
 	private void close() {
@@ -77,6 +79,10 @@ public class ToadletContextImpl implements ToadletContext {
 	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength);
+	}
+	
+	public PageMaker getPageMaker() {
+		return pagemaker;
 	}
 
 	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws IOException {
@@ -163,38 +169,50 @@ public class ToadletContextImpl implements ToadletContext {
 					headers.put(before, after);
 				}
 				
-				// Handle it.
-				
-				Toadlet t = container.findToadlet(uri);
+				boolean shouldDisconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
 				
 				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers);
 				
-				boolean shouldDisconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
-				
-				if(t == null)
-					ctx.sendNoToadletError(shouldDisconnect);
-				
-				if(method.equals("GET")) {
+				// Handle it.
+				boolean redirect = true;
+				while (redirect) {
+					// don't go around the loop unless set explicitly
+					redirect = false;
 					
-					t.handleGet(uri, ctx);
-					ctx.close();
+					Toadlet t = container.findToadlet(uri);
 					
-				} else if(method.equals("PUT")) {
-			
-					t.handlePut(uri, null, ctx);
-					ctx.close();
-
-				} else if(method.equals("POST")) {
+					if(t == null)
+						ctx.sendNoToadletError(shouldDisconnect);
 					
-					Logger.error(ToadletContextImpl.class, "POST not supported");
-					ctx.sendMethodNotAllowed(method, shouldDisconnect);
-					ctx.close();
-					
-				} else {
-					ctx.sendMethodNotAllowed(method, shouldDisconnect);
-					ctx.close();
+					if(method.equals("GET")) {
+						try {
+							t.handleGet(uri, ctx);
+							ctx.close();
+						} catch (RedirectException re) {
+							uri = re.newuri;
+							redirect = true;
+						}
+						
+					} else if(method.equals("PUT")) {
+						try {
+							t.handlePut(uri, null, ctx);
+							ctx.close();
+						} catch (RedirectException re) {
+							uri = re.newuri;
+							redirect = true;
+						}
+	
+					} else if(method.equals("POST")) {
+						
+						Logger.error(ToadletContextImpl.class, "POST not supported");
+						ctx.sendMethodNotAllowed(method, shouldDisconnect);
+						ctx.close();
+						
+					} else {
+						ctx.sendMethodNotAllowed(method, shouldDisconnect);
+						ctx.close();
+					}
 				}
-				
 				if(shouldDisconnect) {
 					sock.close();
 					return;

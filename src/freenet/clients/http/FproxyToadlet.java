@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -19,22 +20,49 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PproxyToadlet;
+import freenet.pluginmanager.PluginHTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.MultiValueTable;
 
 public class FproxyToadlet extends Toadlet {
 
 	public FproxyToadlet(HighLevelSimpleClient client) {
 		super(client);
 	}
+	
+	public String supportedMethods() {
+		return "GET";
+	}
 
-	public void handleGet(URI uri, ToadletContext ctx)
-			throws ToadletContextClosedException, IOException {
+	public void handleGet(URI uri, ToadletContext ctx) 
+			throws ToadletContextClosedException, IOException, RedirectException {
 		//String ks = uri.toString();
 		String ks = uri.getPath();
+		
+		if (ks.equals("/")) {
+			PluginHTTPRequest httprequest = new PluginHTTPRequest(uri);
+			if (httprequest.isParameterSet("key")) {
+				MultiValueTable headers = new MultiValueTable();
+				
+				headers.put("Location", "/"+httprequest.getParam("key"));
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
+			
+			RedirectException re = new RedirectException();
+			try {
+				re.newuri = new URI("/welcome/");
+			} catch (URISyntaxException e) {
+				// HUH!?!
+			}
+			throw re;
+		}
+		
 		if(ks.startsWith("/"))
 			ks = ks.substring(1);
+		
 		FreenetURI key;
 		try {
 			key = new FreenetURI(ks);
@@ -64,15 +92,6 @@ public class FproxyToadlet extends Toadlet {
 			this.writeReply(ctx, 500, "text/html", "Internal Error", msg);
 		}
 	}
-
-	public void handlePut(URI uri, Bucket data, ToadletContext ctx)
-			throws ToadletContextClosedException, IOException {
-		String notSupported = "<html><head><title>Not supported</title></head><body>"+
-		"Operation not supported</body>";
-		// FIXME should be 405? Need to let toadlets indicate what is allowed maybe in a callback?
-		this.writeReply(ctx, 200, "text/html", "OK", notSupported);
-	}
-
 
 	static class FproxyEnabledCallback implements BooleanCallback {
 		
@@ -161,8 +180,16 @@ public class FproxyToadlet extends Toadlet {
         FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
         node.setFproxy(fproxy);
         server.register(fproxy, "/", false);
+	
         PproxyToadlet pproxy = new PproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node.pluginManager);
         server.register(pproxy, "/plugins/", true);
+	
+	WelcomeToadlet welcometoadlet = new WelcomeToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+	server.register(welcometoadlet, "/welcome/", true);
+	
+	StaticToadlet statictoadlet = new StaticToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+	server.register(statictoadlet, "/static/", true);
+	
         fproxyConfig.finishedInitialization();
         System.out.println("Starting fproxy on port "+(port));
         Logger.normal(node,"Starting fproxy on "+bind_ip+":"+port); 

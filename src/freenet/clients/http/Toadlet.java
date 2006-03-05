@@ -10,6 +10,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
+import freenet.support.MultiValueTable;
 
 /**
  * Replacement for servlets. Just an easy to use HTTP interface, which is
@@ -38,18 +39,51 @@ public abstract class Toadlet {
 	
 	/**
 	 * Handle a GET request.
-	 * Must be implemented by the client.
+	 * If not overridden by the client, send 'Method not supported'
 	 * @param uri The URI (relative to this client's document root) to
 	 * be fetched.
 	 * @throws IOException 
 	 * @throws ToadletContextClosedException 
 	 */
-	abstract public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException;
+	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		StringBuffer buf = new StringBuffer();
+		
+		ctx.getPageMaker().makeHead(buf, "Not supported");
+		
+		buf.append("Operation not supported");
+		ctx.getPageMaker().makeTail(buf);
+		
+		MultiValueTable hdrtbl = new MultiValueTable();
+		hdrtbl.put("Allow", this.supportedMethods());
+		ctx.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html", buf.length());
+		ctx.writeData(buf.toString().getBytes(), 0, buf.length());
+	}
+	
 
 	/**
 	 * Likewise for a PUT request.
 	 */
-	abstract public void handlePut(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException;
+	public void handlePut(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		StringBuffer buf = new StringBuffer();
+		
+		ctx.getPageMaker().makeHead(buf, "Not supported");
+		
+		buf.append("Operation not supported");
+		ctx.getPageMaker().makeTail(buf);
+		
+		MultiValueTable hdrtbl = new MultiValueTable();
+		hdrtbl.put("Allow", this.supportedMethods());
+		ctx.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html", buf.length());
+		ctx.writeData(buf.toString().getBytes(), 0, buf.length());
+	}
+	
+	/**
+	 * Which methods are supported by this Toadlet.
+	 * Should return a string containing the methods supported, separated by commas
+	 * For example: "GET, PUT" (in which case both 'handleGet()' and 'handlePut()'
+	 * must be overridden).
+	 */					
+	abstract public String supportedMethods();
 	
 	/**
 	 * Client calls from the above messages to run a freenet request.
@@ -85,6 +119,18 @@ public abstract class Toadlet {
 		byte[] buf = reply.getBytes("ISO-8859-1");
 		ctx.sendReplyHeaders(code, desc, null, mimeType, buf.length);
 		ctx.writeData(buf, 0, buf.length);
+	}
+	
+	/**
+	 * Send a simple error page.
+	 */
+	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message) throws ToadletContextClosedException, IOException {
+		StringBuffer buf = new StringBuffer();
+			
+		ctx.getPageMaker().makeHead(buf, desc);
+		buf.append(message);
+		ctx.getPageMaker().makeTail(buf);
+		writeReply(ctx, code, "text/html", desc, buf.toString());
 	}
 	
 	/**

@@ -18,11 +18,13 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.clients.http.PageMaker;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
+import freenet.support.MultiValueTable;
 
 public class PproxyToadlet extends Toadlet {
 	private PluginManager pm = null;
@@ -31,20 +33,11 @@ public class PproxyToadlet extends Toadlet {
 		super(client);
 		this.pm = pm;
 	}
-
-	/**
-	 * TODO: Remove me eventually!!!!
-	 * 
-	 * @param title
-	 * @param content
-	 * @return
-	 */
-	private String mkPage(String title, String content) {
-		if (content == null) content = "null";
-		return "<html><head><title>" + title + "</title></head><body><h1>"+
-		title +"</h1>" + content + "</body>";
-	}
 	
+	public String supportedMethods() {
+		return "GET";
+	}
+
 	private String mkForwardPage(String title, String content, String nextpage, int interval) {
 		if (content == null) content = "null";
 		return "<html><head><title>" + title + "</title>"+
@@ -61,7 +54,7 @@ public class PproxyToadlet extends Toadlet {
 			ks = URLDecoder.decode(uri.toString());
 		} catch (URLEncodedFormatException e) {
 			// TODO Auto-generated catch block
-			writeReply(ctx, 500, "text/html", "OK", mkPage("Internal Server Error", "Could not parse URI"));
+			this.sendErrorPage(ctx, 500, "Internal Server Error", "Could not parse URI");
 			return;
 		}
 		
@@ -72,12 +65,13 @@ public class PproxyToadlet extends Toadlet {
 		try {
 			if (ks.equals("")) {
 				StringBuffer out = new StringBuffer();
+				ctx.getPageMaker().makeHead(out, "Plugin List");
 				out.append("<table style=\"border: 1pt solid #c0c0c0;\">");
 				out.append("  <tr>\n");
-				out.append("    <td align=\"center\">Name</td>\n");
-				out.append("    <td align=\"center\">ID</td>\n");
-				out.append("    <td align=\"center\">Started</td>\n");
-				out.append("    <td align=\"center\"></td>\n");
+				out.append("    <th>Name</th>\n");
+				out.append("    <th>ID</th>\n");
+				out.append("    <th>Started</th>\n");
+				out.append("    <th></th>\n");
 				out.append("  </tr>\n");
 				Iterator it = pm.getPlugins().iterator();
 				while (it.hasNext()) {
@@ -88,26 +82,48 @@ public class PproxyToadlet extends Toadlet {
 					out.append("    <td style=\"border: 1pt solid #c0c0c0;\">" + (new Date(pi.getStarted())) + "</td>\n");
 					out.append("    <td style=\"border: 1pt solid #c0c0c0;\">");
 					if (pi.isPproxyPlugin())
-						out.append("&nbsp;<A HREF=\""+pi.getPluginClassName()+"/\">[VISIT]</A>&nbsp;");
-					out.append("&nbsp;<A HREF=\"?remove="+pi.getThreadName()+"\">[UNLOAD]</A>&nbsp;");
+						out.append("&nbsp;<a href=\""+pi.getPluginClassName()+"/\">[VISIT]</a>&nbsp;");
+					out.append("&nbsp;<a href=\"?remove="+pi.getThreadName()+"\">[UNLOAD]</a>&nbsp;");
 					out.append("</td>\n");
 					out.append("  </tr>\n");
 				}
+				
+				if (pm.getPlugins().isEmpty()) {
+					out.append("<tr>\n");
+					out.append("<td colspan=\"4\"\n");
+					out.append("<i>No plugins loaded</i>\n");
+					out.append("</td>\n");
+					out.append("</tr>\n");
+				}
+				
 				out.append("</table>");
-				String ret = "<hr/>" + out.toString();
+				//String ret = "<hr/>" + out.toString();
 				//ret = pm.dumpPlugins().replaceAll(",", "\n&nbsp; &nbsp; ").replaceAll("\"", " \" ");
-				if (ret.length() < 6)
+				/*if (ret.length() < 6)
 					ret += "<i>No plugins loaded</i>\n";
-				ret += "<hr/>";
-				ret += "<form method=\"GET\">Remove plugin: (enter ID) <input type=text name=\"remove\" size=40/><input type=submit value=\"Remove\"/></form>\n";
-				ret += "<form method=\"GET\">Load plugin: <input type=text name=\"load\" size=40/><input type=submit value=\"Load\" /></form>\n";
-				writeReply(ctx, 200, "text/html", "OK", mkPage("Plugin list", ret));
+				ret += "<hr/>";*/
+				
+				
+				// Obsolete
+				//out.append("<form method=\"get\"><div>Remove plugin: (enter ID) <input type=\"text\" name=\"remove\" size=40/><input type=\"submit\" value=\"Remove\"/></div></form>\n");
+				out.append("<form method=\"get\" action=\".\"><div>Load plugin: <input type=\"text\" name=\"load\" size=\"40\"/><input type=\"submit\" value=\"Load\" /></div></form>\n");
+				ctx.getPageMaker().makeTail(out);
+				writeReply(ctx, 200, "text/html", "OK", out.toString());
 			} else if (ks.startsWith("?remove=")) {
 				pm.killPlugin(ks.substring("?remove=".length()));
-				writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Removing plugin", "Removing plugin...", ".", 5));
+				
+				MultiValueTable headers = new MultiValueTable();
+				
+				headers.put("Location", ".");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Removing plugin", "Removing plugin...", ".", 5));
 			} else if (ks.startsWith("?load=")) {
 				pm.startPlugin(ks.substring("?load=".length()));
-				writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Loading plugin", "Loading plugin...", ".", 5));
+				//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Loading plugin", "Loading plugin...", ".", 5));
+				MultiValueTable headers = new MultiValueTable();
+				
+				headers.put("Location", ".");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			} else {
 				int to = ks.indexOf("/");
 				String plugin, data;
@@ -145,13 +161,4 @@ public class PproxyToadlet extends Toadlet {
 			this.writeReply(ctx, 500, "text/html", "Internal Error", msg);
 		}
 	}
-
-	public void handlePut(URI uri, Bucket data, ToadletContext ctx)
-			throws ToadletContextClosedException, IOException {
-		String notSupported = "<html><head><title>Not supported</title></head><body>"+
-		"Operation not supported</body>";
-		// FIXME should be 405? Need to let toadlets indicate what is allowed maybe in a callback?
-		super.writeReply(ctx, 200, "text/html", "OK", notSupported);
-	}
-
 }
