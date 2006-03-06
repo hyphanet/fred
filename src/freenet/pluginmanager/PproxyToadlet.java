@@ -8,10 +8,6 @@ import java.net.URI;
 import java.util.Date;
 import java.util.Iterator;
 
-import sun.security.krb5.internal.crypto.c;
-
-
-
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
