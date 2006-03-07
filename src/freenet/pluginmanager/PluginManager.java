@@ -247,71 +247,77 @@ public class PluginManager {
         }
         
         if ((filename.indexOf("@") >= 0)) {
-            // Open from external file
-            try {
-            	String realURL = null;
-            	String realClass = null;
-            	
-            	// Load the jar-file
-            	String[] parts = filename.split("@");
-            	if (parts.length != 2) {
-            		throw new PluginNotFoundException("Could not split at \"@\".");
-            	}
-            	realClass = parts[0];
-            	realURL = parts[1];
-            	
-            	if (filename.endsWith(".url")) {
-                		// Load the txt-file
-                		BufferedReader in;
-                		URL url = new URL(parts[1]);
-                        URLConnection uc = url.openConnection();
-                    	in = new BufferedReader(
-                    			new InputStreamReader(uc.getInputStream()));
-                    	
-                    	realURL = in.readLine().trim();
-            	}
-            	
-            	// Load the class inside file
-            	URL[] serverURLs = new URL[]{new URL(realURL)};
-            	ClassLoader cl = new URLClassLoader(serverURLs);
-            	
-         
-            	// Handle automatic fetching of pluginclassname
-            	if (realClass.equals("*")) {
-            		if (realURL.startsWith("file:")) {
-            			URI liburi = new File(realURL.substring("file:".length())).toURI();
-            			realURL = liburi.toString();
-            		}
-            		
-            		URL url = new URL("jar:"+realURL+"!/");
-            		JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
-            		JarFile jf = jarConnection.getJarFile();
-            		//URLJarFile jf = new URLJarFile(new File(liburi));
-            		//is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
-            		
-            		//BufferedReader manifest = new BufferedReader(new InputStreamReader(cl.getResourceAsStream("/META-INF/MANIFEST.MF")));
-            		
-            		//URL url = new URL(parts[1]);
-                    //URLConnection uc = cl.getResource("/META-INF/MANIFEST.MF").openConnection();
-                	
-            		InputStream is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
-            		BufferedReader in = new BufferedReader(new InputStreamReader(is));	
-            		String line;
-            		while ((line = in.readLine())!=null) {
-        			//	System.err.println(line + "\t\t\t" + realClass);
-            			if (line.startsWith("Plugin-Main-Class: ")) {
-            				realClass = line.substring("Plugin-Main-Class: ".length()).trim();
-            			}
-            		}
-            		//System.err.println("Real classname: " + realClass);
-            	}
-            	
-            	cls = cl.loadClass(realClass);
-            	
-            } catch (Exception e) {
-            	throw new PluginNotFoundException("Initialization error:"
-            			+ filename, e);
-            }
+        	// Open from external file
+        	for (int tries = 0 ; tries <= 5 && cls == null ; tries++)
+        		try {
+        			String realURL = null;
+        			String realClass = null;
+        			
+        			// Load the jar-file
+        			String[] parts = filename.split("@");
+        			if (parts.length != 2) {
+        				throw new PluginNotFoundException("Could not split at \"@\".");
+        			}
+        			realClass = parts[0];
+        			realURL = parts[1];
+        			
+        			if (filename.endsWith(".url")) {
+        				// Load the txt-file
+        				BufferedReader in;
+        				URL url = new URL(parts[1]);
+        				URLConnection uc = url.openConnection();
+        				in = new BufferedReader(
+        						new InputStreamReader(uc.getInputStream()));
+        				
+        				realURL = in.readLine().trim();
+        			}
+        			
+        			// Load the class inside file
+        			URL[] serverURLs = new URL[]{new URL(realURL)};
+        			ClassLoader cl = new URLClassLoader(serverURLs);
+        			
+        			
+        			// Handle automatic fetching of pluginclassname
+        			if (realClass.equals("*")) {
+        				if (realURL.startsWith("file:")) {
+        					URI liburi = new File(realURL.substring("file:".length())).toURI();
+        					realURL = liburi.toString();
+        				}
+        				
+        				URL url = new URL("jar:"+realURL+"!/");
+        				JarURLConnection jarConnection = (JarURLConnection)url.openConnection();
+        				JarFile jf = jarConnection.getJarFile();
+        				//URLJarFile jf = new URLJarFile(new File(liburi));
+        				//is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
+        				
+        				//BufferedReader manifest = new BufferedReader(new InputStreamReader(cl.getResourceAsStream("/META-INF/MANIFEST.MF")));
+        				
+        				//URL url = new URL(parts[1]);
+        				//URLConnection uc = cl.getResource("/META-INF/MANIFEST.MF").openConnection();
+        				
+        				InputStream is = jf.getInputStream(jf.getJarEntry("META-INF/MANIFEST.MF"));
+        				BufferedReader in = new BufferedReader(new InputStreamReader(is));	
+        				String line;
+        				while ((line = in.readLine())!=null) {
+        					//	System.err.println(line + "\t\t\t" + realClass);
+        					if (line.startsWith("Plugin-Main-Class: ")) {
+        						realClass = line.substring("Plugin-Main-Class: ".length()).trim();
+        					}
+        				}
+        				//System.err.println("Real classname: " + realClass);
+        			}
+        			
+        			cls = cl.loadClass(realClass);
+        			
+        		} catch (Exception e) {
+        			if (tries >= 5)
+        				throw new PluginNotFoundException("Initialization error:"
+        						+ filename, e);
+        			
+        			try {
+        				Thread.sleep(100);
+        			} catch (Exception ee) {}
+        		}
         } else {
         	// Load class
         	try {

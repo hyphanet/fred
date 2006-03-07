@@ -3,7 +3,6 @@ package freenet.pluginmanager;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Date;
 import java.util.Iterator;
@@ -80,6 +79,7 @@ public class PproxyToadlet extends Toadlet {
 					if (pi.isPproxyPlugin())
 						out.append("&nbsp;<a href=\""+pi.getPluginClassName()+"/\">[VISIT]</a>&nbsp;");
 					out.append("&nbsp;<a href=\"?remove="+pi.getThreadName()+"\">[UNLOAD]</a>&nbsp;");
+					out.append("&nbsp;<a href=\"?reload="+pi.getThreadName()+"\">[RELOAD]</a>&nbsp;");
 					out.append("</td>\n");
 					out.append("  </tr>\n");
 				}
@@ -120,6 +120,27 @@ public class PproxyToadlet extends Toadlet {
 				
 				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			} else if (ks.startsWith("?reload=")) {
+				String fn = null;
+				Iterator it = pm.getPlugins().iterator();
+				while (it.hasNext()) {
+					PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
+					if (pi.getThreadName().equals(ks.substring("?reload=".length()))) {
+						fn = pi.getFilename();
+						break;
+					}
+				}
+				
+				if (fn == null) {
+					writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Error", "Plugin not found...", ".", 5));
+				} else {
+					pm.killPlugin(ks.substring("?reload=".length()));
+					pm.startPlugin(fn);
+					
+					MultiValueTable headers = new MultiValueTable();
+					headers.put("Location", ".");
+					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				}
 			} else {
 				int to = ks.indexOf("/");
 				String plugin, data;
