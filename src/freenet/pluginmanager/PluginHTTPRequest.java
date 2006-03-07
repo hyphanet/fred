@@ -1,6 +1,8 @@
 package freenet.pluginmanager;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,6 +12,7 @@ import java.util.StringTokenizer;
 
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
+import freenet.support.URLEncoder;
 
 /**
  * Used for passing all HTTP request information to the FredPlugin that handles
@@ -32,7 +35,7 @@ public class PluginHTTPRequest {
 	/**
 	 * the original URI as given to the constructor
 	 */
-	private final URI uri;
+	private URI uri;
 
 	/**
 	 * Create a new PluginHTTPRequest for the given URI and parse its request
@@ -43,7 +46,22 @@ public class PluginHTTPRequest {
 	 */
 	public PluginHTTPRequest(URI uri) {
 		this.uri = uri;
-		this.parseRequestParameters(uri.getRawQuery());
+		this.parseRequestParameters(uri.getRawQuery(), true);
+	}
+
+	/**
+	 * This constructor can be used if you don't have the original URI at hand,
+	 * but only the path that was already URLdecoded by PProxyToadlet
+	 * 
+	 * @deprecated don't use this, it is hack
+	 * @param path
+	 * @throws URISyntaxException
+	 */
+	public PluginHTTPRequest(String path) throws URISyntaxException {
+
+		this.uri = new URI(path.replace(' ', '+'));
+
+		this.parseRequestParameters(uri.getRawQuery(), true);
 	}
 
 	/**
@@ -62,8 +80,9 @@ public class PluginHTTPRequest {
 	 * 
 	 * @param queryString
 	 *            the query string in its raw form (not yet url-decoded)
+	 * @param doUrlDecoding TODO
 	 */
-	private void parseRequestParameters(String queryString) {
+	private void parseRequestParameters(String queryString, boolean doUrlDecoding) {
 
 		// nothing to do if there was no query string in the URI
 		if (queryString == null || queryString.length() == 0) {
@@ -94,8 +113,10 @@ public class PluginHTTPRequest {
 
 			// url-decode the name and value
 			try {
-				name = URLDecoder.decode(name);
-				value = URLDecoder.decode(value);
+				if (doUrlDecoding) {
+					name = URLDecoder.decode(name);
+					value = URLDecoder.decode(value);
+				}
 
 				// get the list of values for this parameter that were parsed so
 				// far
