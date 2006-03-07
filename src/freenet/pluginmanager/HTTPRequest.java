@@ -21,7 +21,7 @@ import freenet.support.URLEncoder;
  * 
  * @author nacktschneck
  */
-public class PluginHTTPRequest {
+public class HTTPRequest {
 
 	/**
 	 * This map is used to store all parameter values. The name (as String) of
@@ -38,29 +38,31 @@ public class PluginHTTPRequest {
 	private URI uri;
 
 	/**
-	 * Create a new PluginHTTPRequest for the given URI and parse its request
+	 * Create a new HTTPRequest for the given URI and parse its request
 	 * parameters.
 	 * 
 	 * @param uri
 	 *            the URI being requested
 	 */
-	public PluginHTTPRequest(URI uri) {
+	public HTTPRequest(URI uri) {
 		this.uri = uri;
 		this.parseRequestParameters(uri.getRawQuery(), true);
 	}
 
 	/**
-	 * This constructor can be used if you don't have the original URI at hand,
-	 * but only the path that was already URLdecoded by PProxyToadlet
+	 * Creates a new HTTPRequest for the given path and url-encoded query string
 	 * 
-	 * @deprecated don't use this, it is hack
-	 * @param path
-	 * @throws URISyntaxException
+	 * @param path i.e. /test/test.html
+	 * @param encodedQueryString a=some+text&b=abc%40def.de
+	 * @throws URISyntaxException if the URI is invalid
 	 */
-	public PluginHTTPRequest(String path) throws URISyntaxException {
+	public HTTPRequest(String path, String encodedQueryString) throws URISyntaxException {
 
-		this.uri = new URI(path.replace(' ', '+'));
-
+		if (encodedQueryString!=null && encodedQueryString.length()>0) {
+			this.uri = new URI(path+"?"+encodedQueryString);
+		} else {
+			this.uri = new URI(path);
+		}
 		this.parseRequestParameters(uri.getRawQuery(), true);
 	}
 
@@ -71,6 +73,7 @@ public class PluginHTTPRequest {
 	public String getPath() {
 		return this.uri.getPath();
 	}
+
 
 	/**
 	 * Parse the query string and populate {@link #parameterNameValuesMap} with

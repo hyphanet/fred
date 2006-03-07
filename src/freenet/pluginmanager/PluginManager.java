@@ -194,7 +194,7 @@ public class PluginManager {
 		return out;
 	}
 	
-	public String handleHTTPGet(String plugin, String path) throws PluginHTTPException {
+	public String handleHTTPGet(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized (toadletList) {
 			handler = (FredPlugin)toadletList.get(plugin);
@@ -204,7 +204,7 @@ public class PluginManager {
 			*/
 		
 		if (handler instanceof FredPluginHTTP)
-			return ((FredPluginHTTP)handler).handleHTTPGet(path);
+			return ((FredPluginHTTP)handler).handleHTTPGet(request);
 		
 		// no plugin found
 		PluginHTTPException t = new PluginHTTPException();

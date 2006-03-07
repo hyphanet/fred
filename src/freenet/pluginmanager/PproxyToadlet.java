@@ -44,14 +44,8 @@ public class PproxyToadlet extends Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
 		//String basepath = "/plugins/";
-		String ks;
-		try {
-			ks = URLDecoder.decode(uri.toString());
-		} catch (URLEncodedFormatException e) {
-			// TODO Auto-generated catch block
-			this.sendErrorPage(ctx, 500, "Internal Server Error", "Could not parse URI");
-			return;
-		}
+		String ks = uri.getPath();
+
 		
 		if(ks.startsWith("/"))
 			ks = ks.substring(1);
@@ -154,8 +148,9 @@ public class PproxyToadlet extends Toadlet {
 				
 				//pm.handleHTTPGet(plugin, data);
 				
+				HTTPRequest request = new HTTPRequest(data, uri.getRawQuery());
 				//writeReply(ctx, 200, "text/html", "OK", mkPage("plugin", pm.handleHTTPGet(plugin, data)));
-				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, data));
+				writeReply(ctx, 200, "text/html", "OK", pm.handleHTTPGet(plugin, request));
 	
 
 				
