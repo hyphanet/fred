@@ -36,5 +36,10 @@ public class Config {
 	public void onRegister(SubConfig config, Option o) {
 		// Do nothing
 	}
+
+	/** Fetch all the SubConfig's. Used by user-facing config thingies. */
+	public synchronized SubConfig[] getConfigs() {
+		return (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
+	}
 	
 }

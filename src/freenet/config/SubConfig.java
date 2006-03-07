@@ -26,6 +26,14 @@ public class SubConfig {
 		config.register(this);
 	}
 	
+	/**
+	 * Return all the options registered. Each includes its name.
+	 * Used by e.g. webconfig.
+	 */
+	public Option[] getOptions() {
+		return (Option[]) map.values().toArray(new Option[map.size()]);
+	}
+	
 	public void register(Option o) {
 		synchronized(this) {
 			if(o.name.indexOf(SimpleFieldSet.MULTI_LEVEL_CHAR) != -1)
