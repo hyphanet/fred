@@ -20,7 +20,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.PproxyToadlet;
-import freenet.pluginmanager.PluginHTTPRequest;
+import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
@@ -42,7 +42,7 @@ public class FproxyToadlet extends Toadlet {
 		String ks = uri.getPath();
 		
 		if (ks.equals("/")) {
-			PluginHTTPRequest httprequest = new PluginHTTPRequest(uri);
+			HTTPRequest httprequest = new HTTPRequest(uri);
 			if (httprequest.isParameterSet("key")) {
 				MultiValueTable headers = new MultiValueTable();
 				
