@@ -40,7 +40,22 @@ public class ToadletContextImpl implements ToadletContext {
 		this.headers = headers;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
-		pagemaker = new PageMaker();
+		
+		Enumeration cookieheaders = headers.getAll("Cookie");
+		String current;
+		String theme = new String("");
+		while (cookieheaders.hasMoreElements()) {
+			current = (String) cookieheaders.nextElement();
+			String[] parts = current.split("=");
+			if (parts.length == 2 && parts[0].equals("theme")) {
+				theme = parts[1];
+			}
+		}
+		if (theme.equals("")) {
+			pagemaker = new PageMaker(null);
+		} else {
+			pagemaker = new PageMaker(theme);
+		}
 	}
 
 	private void close() {

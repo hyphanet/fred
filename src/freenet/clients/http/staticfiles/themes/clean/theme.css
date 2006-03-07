@@ -1,0 +1,94 @@
+body {
+  margin:0;
+  padding:0;
+  background-color:#f0f0f0;
+  position: relative;
+}
+
+#topbar {
+  margin:0 0 5px 0;
+  padding:5px;
+  height:50px;
+  background-color:#e8e8e8;
+  background-image:url(logo.png);
+  background-repeat:no-repeat;
+  background-position:30px 3px;
+  border-bottom:1px solid #d0d0d0;
+  font-family:Arial;
+}
+
+#topbar h1 {
+  margin:0;
+  padding:7px 0 0 0;
+  text-align:center;
+  font-weight:normal;
+  font-size:20pt;
+}
+
+#navbar {
+  margin:0 5px 0 0;
+  padding:10px;
+  width:150px;
+  float:left;
+  background-color:#e8e8e8;
+  border:1px solid #d0d0d0;
+}
+
+#navbar a {
+  font-family:Arial;
+  color:#000000;
+  text-decoration:underline;
+}
+
+#navbar a:hover {
+  color:#ff0000;
+}
+
+#content {
+  float:left;
+}
+
+.infobox {
+  margin:0 0 5px 0;
+  padding:10px;
+  background-color:#f0f0f0;
+  border:1px solid #d0d0d0;
+}
+
+.infobox h2 {
+  margin:0 0 15px 0;
+  padding:0;
+  border-bottom:1px dotted #000000;
+  font-family:Arial;
+  font-weight:normal;
+  font-size:13pt;
+}
+
+#themeselect {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+}
+
+#themeselect ul {
+        display: inline;
+        margin: 0;
+        padding: 0;
+}
+
+#themeselect ul li {
+        display: inline;
+        margin: 0;
+        padding: 0;
+        list-style-type: none;
+        list-style-position: outside;
+}
+
+.themeitem a {
+        text-decoration: none;
+        color: black;
+}
+
+.currentthemeitem a {
+	font-weight: bold;
+}

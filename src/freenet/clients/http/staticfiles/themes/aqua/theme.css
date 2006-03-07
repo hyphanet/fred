@@ -1,17 +1,21 @@
 body {
 	margin: 10px;
 	border: 3px double #356ace;
-	background-image: url(/static/themes/default/background.png);
+	background-image: url(background.png);
 	background-repeat: repeat;
 	padding: 10px;
 	padding-top: 0px;
 	min-height: 400px;
+	position: relative;
+}
+
+#page {
 }
 
 #topbar {
 	margin: 0px;
 	margin-bottom: 10px;
-	background-image: url(/static/themes/default/logo.png);
+	background-image: url(logo.png);
 	background-repeat: no-repeat;
 	background-position: top left;
 	min-height: 51px;
@@ -60,7 +64,36 @@ body {
 .infobox {
 	border: 1px solid #5e88d8;
 	padding: 5px;
-	float: left;
 	margin-bottom: 10px;
+	display: table-cell;
 }
 
+#themeselect {
+	position: absolute;
+	bottom: 0px;
+	right: 0px;
+}
+
+#themeselect ul {
+	display: inline;
+	margin: 0;
+	padding: 0;
+}
+
+#themeselect ul li {
+	display: inline;
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+	list-style-position: outside;
+}
+
+.themeitem a {
+	text-decoration: none;
+	color: black;
+}
+
+.currentthemeitem a {
+	color: #356ace;
+	font-weight: bold;
+}
