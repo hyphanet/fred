@@ -199,5 +199,9 @@ public class SubConfig {
 		Option o = (Option) map.get(name);
 		o.setValue(value);
 	}
+	
+	public String getPrefix(){
+		return prefix;
+	}
 
 }

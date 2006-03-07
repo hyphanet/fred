@@ -71,6 +71,7 @@ public class PageMaker {
 				+ "<ul id=\"navlist\">\n"
 				+ "<li><a href=\"/\" title=\"Homepage\">Home</a></li>\n"
 				+ "<li><a href=\"/plugins/\" title=\"Configure Plugins\">Plugins</a></li>\n"
+				+ "<li><a href=\"/config/\" title=\"Configure your node\">Configuration</a></li>\n"
 				+ "</ul>\n"
 				+ "</div>\n");
 	}

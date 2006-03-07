@@ -27,7 +27,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 
 public class FproxyToadlet extends Toadlet {
-
+	
 	public FproxyToadlet(HighLevelSimpleClient client) {
 		super(client);
 	}
@@ -190,6 +190,9 @@ public class FproxyToadlet extends Toadlet {
 			
 			WelcomeToadlet welcometoadlet = new WelcomeToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
 			server.register(welcometoadlet, "/welcome/", true);
+			
+			ConfigToadlet configtoadlet = new ConfigToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node, config);
+			server.register(configtoadlet, "/config/", true);
 			
 			StaticToadlet statictoadlet = new StaticToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
 			server.register(statictoadlet, "/static/", true);

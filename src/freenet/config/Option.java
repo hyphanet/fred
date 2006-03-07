@@ -52,4 +52,12 @@ public abstract class Option {
 		setValue(getValueString());
 	}
 	
+	public String getName(){
+		return name;
+	}
+	
+	public String getShortDesc(){
+		return shortDesc;
+	}
+	
 }
