@@ -97,4 +97,6 @@ public abstract class ClientRequest {
 	
 	public abstract boolean isPersistentForever();
 
+	public abstract void cancel();
+
 }

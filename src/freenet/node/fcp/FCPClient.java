@@ -136,7 +136,7 @@ public class FCPClient {
 		}
 	}
 
-	public void removeByIdentifier(String identifier) throws MessageInvalidException {
+	public void removeByIdentifier(String identifier, boolean kill) throws MessageInvalidException {
 		ClientRequest req;
 		synchronized(this) {
 			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
@@ -146,6 +146,8 @@ public class FCPClient {
 				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not found", identifier);
 			clientRequestsByIdentifier.remove(identifier);
 		}
+		if(kill)
+			req.cancel();
 		server.forceStorePersistentRequests();
 	}
 

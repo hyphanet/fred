@@ -34,7 +34,7 @@ public class RemovePersistentRequest extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		FCPClient client = global ? handler.server.globalClient : handler.getClient();
-		client.removeByIdentifier(identifier);
+		client.removeByIdentifier(identifier, true);
 	}
 
 }
