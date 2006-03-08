@@ -101,7 +101,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 		block = new InsertBlock(message.bucket, new ClientMetadata(mimeType), uri);
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this);
-		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, client.node.putScheduler, priorityClass, getCHKOnly, false, client);
+		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, getCHKOnly, false, client);
 		if(persistenceType != PERSIST_CONNECTION && handler != null)
 			sendPendingMessages(handler.outputHandler, true);
 	}
@@ -158,7 +158,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 			generatedURI = new FreenetURI(genURI);
 		if(finished && (!succeeded))
 			putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
-		inserter = new ClientPutter(this, data, uri, new ClientMetadata(mimeType), ctx, client.node.putScheduler, priorityClass, getCHKOnly, false, client);
+		inserter = new ClientPutter(this, data, uri, new ClientMetadata(mimeType), ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, getCHKOnly, false, client);
 		if(!finished)
 			start();
 	}

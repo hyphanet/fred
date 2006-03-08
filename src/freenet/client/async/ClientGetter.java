@@ -41,8 +41,8 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
 	 */
-	public ClientGetter(ClientCallback client, ClientRequestScheduler sched, FreenetURI uri, FetcherContext ctx, short priorityClass, Object clientContext, Bucket returnBucket) {
-		super(priorityClass, sched, clientContext);
+	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched, FreenetURI uri, FetcherContext ctx, short priorityClass, Object clientContext, Bucket returnBucket) {
+		super(priorityClass, chkSched, sskSched, clientContext);
 		this.client = client;
 		this.returnBucket = returnBucket;
 		this.uri = uri;

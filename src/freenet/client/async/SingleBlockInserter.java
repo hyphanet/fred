@@ -12,6 +12,7 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.keys.SSKEncodeException;
@@ -159,15 +160,23 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 				fail(new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, errors, getURI()));
 		}
 		retries++;
-		parent.scheduler.register(this);
+		try {
+			getScheduler(encode()).register(this);
+		} catch (InserterException e1) {
+			fail(e1, true);
+		}
 	}
 
 	private void fail(InserterException e) {
+		fail(e, false);
+	}
+	
+	private void fail(InserterException e, boolean forceFatal) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
-		if(e.isFatal())
+		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock();
 		else
 			parent.failedBlock();
@@ -197,8 +206,16 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			parent.completedBlock(false);
 			finished = true;
 		} else {
-			parent.scheduler.register(this);
+			getScheduler(encode()).register(this);
 		}
+	}
+
+	private ClientRequestScheduler getScheduler(ClientKeyBlock block) {
+		if(block instanceof ClientCHKBlock)
+			return parent.chkScheduler;
+		else if(block instanceof ClientSSKBlock)
+			return parent.sskScheduler;
+		else throw new IllegalArgumentException();
 	}
 
 	public FreenetURI getURI() {

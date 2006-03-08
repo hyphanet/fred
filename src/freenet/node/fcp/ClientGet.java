@@ -129,7 +129,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		returnBucket = ret;
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this);
-		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION && handler != null)
 			sendPendingMessages(handler.outputHandler, true);
 			
@@ -202,7 +202,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		returnBucket = ret;
 		
-		getter = new ClientGetter(this, client.node.fetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		start();
 	}
 

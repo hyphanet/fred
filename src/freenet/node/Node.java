@@ -236,13 +236,20 @@ public class Node {
     // Client stuff
     final ArchiveManager archiveManager;
     public final BucketFactory tempBucketFactory;
-    final RequestThrottle requestThrottle;
-    final RequestStarter requestStarter;
-    final RequestThrottle insertThrottle;
-    final RequestStarter insertStarter;
+    final RequestThrottle chkRequestThrottle;
+    final RequestStarter chkRequestStarter;
+    final RequestThrottle chkInsertThrottle;
+    final RequestStarter chkInsertStarter;
+    final RequestThrottle sskRequestThrottle;
+    final RequestStarter sskRequestStarter;
+    final RequestThrottle sskInsertThrottle;
+    final RequestStarter sskInsertStarter;
+
     File downloadDir;
-    public final ClientRequestScheduler fetchScheduler;
-    public final ClientRequestScheduler putScheduler;
+    public final ClientRequestScheduler chkFetchScheduler;
+    public final ClientRequestScheduler chkPutScheduler;
+    public final ClientRequestScheduler sskFetchScheduler;
+    public final ClientRequestScheduler sskPutScheduler;
     TextModeClientInterface tmci;
     FCPServer fcpServer;
     FproxyToadlet fproxyServlet;
@@ -840,18 +847,31 @@ public class Node {
         // FIXME make all the below arbitrary constants configurable!
         
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
-		requestThrottle = new RequestThrottle(5000, 2.0F);
-		requestStarter = new RequestStarter(this, requestThrottle, "Request starter ("+portNumber+")");
-		fetchScheduler = new ClientRequestScheduler(false, random, requestStarter, this);
-		requestStarter.setScheduler(fetchScheduler);
-		requestStarter.start();
+		chkRequestThrottle = new RequestThrottle(5000, 2.0F);
+		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "Request starter ("+portNumber+")");
+		chkFetchScheduler = new ClientRequestScheduler(false, random, chkRequestStarter, this);
+		chkRequestStarter.setScheduler(chkFetchScheduler);
+		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
-		insertThrottle = new RequestThrottle(10000, 2.0F);
-		insertStarter = new RequestStarter(this, insertThrottle, "Insert starter ("+portNumber+")");
-		putScheduler = new ClientRequestScheduler(true, random, insertStarter, this);
-		insertStarter.setScheduler(putScheduler);
-		insertStarter.start();
+		chkInsertThrottle = new RequestThrottle(10000, 2.0F);
+		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "Insert starter ("+portNumber+")");
+		chkPutScheduler = new ClientRequestScheduler(true, random, chkInsertStarter, this);
+		chkInsertStarter.setScheduler(chkPutScheduler);
+		chkInsertStarter.start();
+
+		sskRequestThrottle = new RequestThrottle(5000, 2.0F);
+		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "Request starter ("+portNumber+")");
+		sskFetchScheduler = new ClientRequestScheduler(false, random, sskRequestStarter, this);
+		sskRequestStarter.setScheduler(sskFetchScheduler);
+		sskRequestStarter.start();
+		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
+		// FIXME reenable the above
+		sskInsertThrottle = new RequestThrottle(10000, 2.0F);
+		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "Insert starter ("+portNumber+")");
+		sskPutScheduler = new ClientRequestScheduler(true, random, sskInsertStarter, this);
+		sskInsertStarter.setScheduler(sskPutScheduler);
+		sskInsertStarter.start();
 		
 		// And finally, Initialize the plugin manager
 		pluginManager = new PluginManager(this);
@@ -959,7 +979,7 @@ public class Node {
         boolean rejectedOverload = false;
         while(true) {
         	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
-        		requestThrottle.requestRejectedOverload();
+        		chkRequestThrottle.requestRejectedOverload();
         		rejectedOverload = true;
         	}
 
@@ -971,7 +991,7 @@ public class Node {
         	if(status == RequestSender.TIMED_OUT ||
         			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
         		if(!rejectedOverload) {
-            		requestThrottle.requestRejectedOverload();
+            		chkRequestThrottle.requestRejectedOverload();
         			rejectedOverload = true;
         		}
         	} else {
@@ -980,7 +1000,7 @@ public class Node {
         				status == RequestSender.ROUTE_NOT_FOUND ||
         				status == RequestSender.VERIFY_FAILURE) {
         			long rtt = System.currentTimeMillis() - startTime;
-        			requestThrottle.requestCompleted(rtt);
+        			chkRequestThrottle.requestCompleted(rtt);
         		}
         	}
         	
@@ -1049,7 +1069,7 @@ public class Node {
         boolean rejectedOverload = false;
         while(true) {
         	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
-        		requestThrottle.requestRejectedOverload();
+        		sskRequestThrottle.requestRejectedOverload();
         		rejectedOverload = true;
         	}
 
@@ -1061,7 +1081,7 @@ public class Node {
         	if(status == RequestSender.TIMED_OUT ||
         			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
         		if(!rejectedOverload) {
-            		requestThrottle.requestRejectedOverload();
+            		sskRequestThrottle.requestRejectedOverload();
         			rejectedOverload = true;
         		}
         	} else {
@@ -1070,7 +1090,7 @@ public class Node {
         				status == RequestSender.ROUTE_NOT_FOUND ||
         				status == RequestSender.VERIFY_FAILURE) {
         			long rtt = System.currentTimeMillis() - startTime;
-        			requestThrottle.requestCompleted(rtt);
+        			sskRequestThrottle.requestCompleted(rtt);
         		}
         	}
         	
@@ -1155,7 +1175,7 @@ public class Node {
         	}
     		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
     			hasForwardedRejectedOverload = true;
-    			insertThrottle.requestRejectedOverload();
+    			chkInsertThrottle.requestRejectedOverload();
     		}
         }
         
@@ -1171,7 +1191,7 @@ public class Node {
         	}
     		if(is.anyTransfersFailed() && (!hasForwardedRejectedOverload)) {
     			hasForwardedRejectedOverload = true; // not strictly true but same effect
-    			insertThrottle.requestRejectedOverload();
+    			chkInsertThrottle.requestRejectedOverload();
     		}        		
         }
         
@@ -1185,7 +1205,7 @@ public class Node {
         		// It worked!
         		long endTime = System.currentTimeMillis();
         		long len = endTime - startTime;
-        		insertThrottle.requestCompleted(len);
+        		chkInsertThrottle.requestCompleted(len);
         	}
         }
         
@@ -1257,7 +1277,7 @@ public class Node {
         	}
     		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
     			hasForwardedRejectedOverload = true;
-    			insertThrottle.requestRejectedOverload();
+    			sskInsertThrottle.requestRejectedOverload();
     		}
         }
         
@@ -1283,7 +1303,7 @@ public class Node {
         		// It worked!
         		long endTime = System.currentTimeMillis();
         		long len = endTime - startTime;
-        		insertThrottle.requestCompleted(len);
+        		sskInsertThrottle.requestCompleted(len);
         	}
         }
 
@@ -1902,12 +1922,20 @@ public class Node {
 		}
 	}
 
-	public RequestThrottle getRequestThrottle() {
-		return requestThrottle;
+	public RequestThrottle getCHKRequestThrottle() {
+		return chkRequestThrottle;
 	}
 
-	public RequestThrottle getInsertThrottle() {
-		return insertThrottle;
+	public RequestThrottle getCHKInsertThrottle() {
+		return chkInsertThrottle;
+	}
+	
+	public RequestThrottle getSSKRequestThrottle() {
+		return sskRequestThrottle;
+	}
+	
+	public RequestThrottle getSSKInsertThrottle() {
+		return sskInsertThrottle;
 	}
 
 	InetAddress lastIP;

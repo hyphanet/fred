@@ -13,16 +13,18 @@ public abstract class ClientRequest {
 	// FIXME move the priority classes from RequestStarter here
 	protected short priorityClass;
 	protected boolean cancelled;
-	final ClientRequestScheduler scheduler;
+	final ClientRequestScheduler chkScheduler;
+	final ClientRequestScheduler sskScheduler;
 	protected final Object client;
 	
 	public short getPriorityClass() {
 		return priorityClass;
 	}
 	
-	protected ClientRequest(short priorityClass, ClientRequestScheduler scheduler, Object client) {
+	protected ClientRequest(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, Object client) {
 		this.priorityClass = priorityClass;
-		this.scheduler = scheduler;
+		this.chkScheduler = chkScheduler;
+		this.sskScheduler = sskScheduler;
 		this.client = client;
 	}
 	

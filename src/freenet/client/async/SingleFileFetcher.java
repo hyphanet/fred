@@ -17,6 +17,7 @@ import freenet.client.MetadataParseException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.KeyDecodeException;
 import freenet.node.LowLevelGetException;
@@ -117,7 +118,12 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	public void schedule() {
 		if(!dontTellClientGet)
 			this.parent.currentState = this;
-		parent.scheduler.register(this);
+		if(key instanceof ClientCHK)
+			parent.chkScheduler.register(this);
+		else if(key instanceof ClientSSK)
+			parent.sskScheduler.register(this);
+		else
+			throw new IllegalStateException(String.valueOf(key));
 	}
 
 	public ClientGetter getParent() {
@@ -479,7 +485,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 					return;
 				}
 				retryCount++;
-				parent.scheduler.register(this);
+				schedule();
 				return;
 			}
 		}

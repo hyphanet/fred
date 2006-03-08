@@ -37,8 +37,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param clientContext The client object for purposs of round-robin client balancing.
 	 */
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InserterContext ctx,
-			ClientRequestScheduler scheduler, short priorityClass, boolean getCHKOnly, boolean isMetadata, Object clientContext) {
-		super(priorityClass, scheduler, clientContext);
+			ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
+			boolean isMetadata, Object clientContext) {
+		super(priorityClass, chkScheduler, sskScheduler, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
 		this.getCHKOnly = getCHKOnly;
