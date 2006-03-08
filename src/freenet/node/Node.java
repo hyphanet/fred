@@ -1781,6 +1781,18 @@ public class Node {
     	return sb.toString();
     }
     
+    public int getNumInserts() {
+        return insertSenders.size();
+    }
+    
+    public int getNumRequests() {
+	return requestSenders.size();
+    }
+
+    public int getNumTransferringRequests() {
+	return transferringRequestSenders.size();
+    }
+    
     /**
      * @return Data String for freeviz.
      */

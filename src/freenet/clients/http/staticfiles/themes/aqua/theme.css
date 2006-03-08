@@ -97,3 +97,12 @@ body {
 	color: #356ace;
 	font-weight: bold;
 }
+
+#activity {
+	border: 1px solid #5e88d8;
+	padding: 5px;
+	margin-bottom: 10px;
+	display: table-cell;
+	list-style-position: inside;
+}
+

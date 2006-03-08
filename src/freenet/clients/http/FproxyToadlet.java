@@ -188,7 +188,7 @@ public class FproxyToadlet extends Toadlet {
 			PproxyToadlet pproxy = new PproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node.pluginManager);
 			server.register(pproxy, "/plugins/", true);
 			
-			WelcomeToadlet welcometoadlet = new WelcomeToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+			WelcomeToadlet welcometoadlet = new WelcomeToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node);
 			server.register(welcometoadlet, "/welcome/", true);
 			
 			ConfigToadlet configtoadlet = new ConfigToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node, config);

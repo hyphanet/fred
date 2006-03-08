@@ -9,10 +9,14 @@ import freenet.support.HTMLEncoder;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.node.Version;
+import freenet.node.Node;
 
 public class WelcomeToadlet extends Toadlet {
-	WelcomeToadlet(HighLevelSimpleClient client) {
+	Node node;
+
+	WelcomeToadlet(HighLevelSimpleClient client, Node n) {
 		super(client);
+		this.node = n;
 	}
 
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -35,10 +39,17 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("<form action=\"/\" method=\"get\">\n");
 		buf.append("<div class=\"infobox\">\n");
 		buf.append("<h2>Fetch a Key</h2>\n");
-		buf.append("Key: <input type=\"text\" size=\"100\" name=\"key\"/>\n");
+		buf.append("Key: <input type=\"text\" size=\"80\" name=\"key\"/>\n");
 		buf.append("<input type=\"submit\" value=\"Fetch\" />\n");
 		buf.append("</div>\n");
 		buf.append("</form>\n");
+		
+		// Activity
+		buf.append("<ul id=\"activity\">\n"
+				+ "<li>Inserts: "+this.node.getNumInserts()+"</li>\n"
+				+ "<li>Requests: "+this.node.getNumRequests()+"</li>\n"
+				+ "<li>Transferring Requests: "+this.node.getNumTransferringRequests()+"</li>\n"
+				+ "</ul>\n");
 		
 		ctx.getPageMaker().makeTail(buf);
 		
