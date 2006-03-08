@@ -1,6 +1,5 @@
 package freenet.pluginmanager;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -12,7 +11,6 @@ import java.util.StringTokenizer;
 
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
-import freenet.support.URLEncoder;
 
 /**
  * Used for passing all HTTP request information to the FredPlugin that handles
@@ -74,6 +72,14 @@ public class HTTPRequest {
 		return this.uri.getPath();
 	}
 
+
+	/**
+	 * 
+	 * @return true if the query string was totally empty
+	 */
+	public boolean hasParameters() {
+		return ! this.parameterNameValuesMap.isEmpty();
+	}
 
 	/**
 	 * Parse the query string and populate {@link #parameterNameValuesMap} with
@@ -310,6 +316,7 @@ public class HTTPRequest {
 		}
 		return values;
 	}
+
 
 	// TODO: add similar methods for multiple long, boolean etc.
 
