@@ -51,6 +51,8 @@ public class ModifyPersistentRequest extends FCPMessage {
 		fs.put("Identifier", identifier);
 		fs.put("Global", Boolean.toString(global));
 		fs.put("PriorityClass", Short.toString(priorityClass));
+		if(clientToken != null)
+			fs.put("ClientToken", clientToken);
 		return fs;
 	}
 
