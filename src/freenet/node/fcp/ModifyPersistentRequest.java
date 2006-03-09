@@ -66,7 +66,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 		ClientRequest req = client.getRequest(identifier);
 		if(clientToken != null)
 			req.setClientToken(clientToken);
-		if(priorityClass > 0)
+		if(priorityClass >= 0)
 			req.setPriorityClass(priorityClass);
 		if(req.isPersistentForever())
 			client.server.forceStorePersistentRequests();
