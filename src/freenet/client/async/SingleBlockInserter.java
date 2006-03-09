@@ -153,7 +153,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		} else
 			consecutiveRNFs = 0;
 		Logger.minor(this, "Failed: "+e);
-		if(retries > ctx.maxInsertRetries) {
+		if(retries > ctx.maxInsertRetries && ctx.maxInsertRetries != -1) {
 			if(errors.isOneCodeOnly())
 				fail(new InserterException(errors.getFirstCode()));
 			else
