@@ -91,7 +91,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else {
 			client = handler.getClient();
 		}
-		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK);
+		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;
@@ -169,7 +169,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
-		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK);
+		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = dsOnly;

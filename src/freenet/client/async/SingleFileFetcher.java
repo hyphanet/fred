@@ -383,7 +383,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		Metadata newMeta = (Metadata) metadata.clone();
 		newMeta.setSimpleRedirect();
 		SingleFileFetcher f;
-		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData), new FetcherContext(ctx, FetcherContext.SET_RETURN_ARCHIVES));
+		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData), new FetcherContext(ctx, FetcherContext.SET_RETURN_ARCHIVES, true));
 		f.handleMetadata();
 		// When it is done (if successful), the ArchiveCallback will re-call this function.
 		// Which will then discover that the metadata *is* available.

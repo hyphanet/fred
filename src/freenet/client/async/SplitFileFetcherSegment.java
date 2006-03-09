@@ -79,10 +79,10 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		this.fetcherContext = fetchContext;
 		maxBlockLength = maxTempLength;
 		if(splitUseLengths) {
-			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_USE_LENGTHS_MASK);
+			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_USE_LENGTHS_MASK, true);
 			this.recursionLevel = recursionLevel + 1;
 		} else {
-			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK);
+			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
 			this.recursionLevel = 0;
 		}
 	}

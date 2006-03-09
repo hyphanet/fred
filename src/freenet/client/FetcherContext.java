@@ -1,6 +1,7 @@
 package freenet.client;
 
 import freenet.client.events.ClientEventProducer;
+import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.support.BucketFactory;
 
@@ -70,7 +71,11 @@ public class FetcherContext implements Cloneable {
 		this.cacheLocalRequests = cacheLocalRequests;
 	}
 
-	public FetcherContext(FetcherContext ctx, int maskID) {
+	public FetcherContext(FetcherContext ctx, int maskID, boolean keepProducer) {
+		if(keepProducer)
+			this.eventProducer = ctx.eventProducer;
+		else
+			this.eventProducer = new SimpleEventProducer();
 		if(maskID == IDENTICAL_MASK) {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
@@ -88,7 +93,6 @@ public class FetcherContext implements Cloneable {
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = ctx.splitfileUseLengths;
-			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
@@ -110,7 +114,6 @@ public class FetcherContext implements Cloneable {
 			this.followRedirects = false;
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = false;
-			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = 0;
 			this.maxCheckBlocksPerSegment = 0;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
@@ -132,7 +135,6 @@ public class FetcherContext implements Cloneable {
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = false;
-			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
@@ -154,7 +156,6 @@ public class FetcherContext implements Cloneable {
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = true;
-			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
@@ -176,7 +177,6 @@ public class FetcherContext implements Cloneable {
 			this.followRedirects = ctx.followRedirects;
 			this.localRequestOnly = ctx.localRequestOnly;
 			this.splitfileUseLengths = ctx.splitfileUseLengths;
-			this.eventProducer = ctx.eventProducer;
 			this.maxDataBlocksPerSegment = ctx.maxDataBlocksPerSegment;
 			this.maxCheckBlocksPerSegment = ctx.maxCheckBlocksPerSegment;
 			this.cacheLocalRequests = ctx.cacheLocalRequests;
