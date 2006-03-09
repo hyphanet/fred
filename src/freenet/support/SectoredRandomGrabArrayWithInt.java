@@ -1,5 +1,6 @@
 package freenet.support;
 
+import freenet.client.async.SendableRequest;
 import freenet.crypt.RandomSource;
 
 public class SectoredRandomGrabArrayWithInt extends SectoredRandomGrabArray implements IntNumberedItem {
@@ -14,5 +15,5 @@ public class SectoredRandomGrabArrayWithInt extends SectoredRandomGrabArray impl
 	public int getNumber() {
 		return number;
 	}
-	
+
 }

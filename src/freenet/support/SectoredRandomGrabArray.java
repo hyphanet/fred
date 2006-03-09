@@ -2,6 +2,7 @@ package freenet.support;
 
 import java.util.HashMap;
 
+import freenet.client.async.SendableRequest;
 import freenet.crypt.RandomSource;
 
 /**
@@ -60,4 +61,5 @@ public class SectoredRandomGrabArray {
 	public synchronized boolean isEmpty() {
 		return grabArrays.length == 0;
 	}
+	
 }

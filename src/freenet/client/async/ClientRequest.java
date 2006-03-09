@@ -108,4 +108,11 @@ public abstract class ClientRequest {
 		return client;
 	}
 
+	public void setPriorityClass(short newPriorityClass) {
+		short oldPriorityClass = priorityClass;
+		this.priorityClass = newPriorityClass;
+		chkScheduler.reregisterAll(this);
+		sskScheduler.reregisterAll(this);
+	}
+
 }

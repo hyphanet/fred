@@ -39,6 +39,8 @@ public abstract class FCPMessage {
 			return new RemovePersistentRequest(fs);
 		if(name.equals(WatchGlobal.name))
 			return new WatchGlobal(fs);
+		if(name.equals(ModifyPersistentRequest.name))
+			return new ModifyPersistentRequest(fs);
 		if(name.equals("Void"))
 			return null;
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null);

@@ -42,7 +42,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	final FCPClient client;
 	final String identifier;
 	final boolean getCHKOnly;
-	final short priorityClass;
+	short priorityClass;
 	private final short persistenceType;
 	final int verbosity;
 	/** Has the request finished? */
@@ -371,6 +371,11 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 
 	public boolean isPersistentForever() {
 		return persistenceType == ClientRequest.PERSIST_FOREVER;
+	}
+
+	public void setPriorityClass(short priorityClass) {
+		this.priorityClass = priorityClass;
+		inserter.setPriorityClass(priorityClass);
 	}
 
 }

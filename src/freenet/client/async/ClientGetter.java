@@ -129,5 +129,5 @@ public class ClientGetter extends ClientRequest implements GetCompletionCallback
 		Logger.minor(this, "Set finished", new Exception("debug"));
 		blockSetFinalized();
 	}
-	
+
 }

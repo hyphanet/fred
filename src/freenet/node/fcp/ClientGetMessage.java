@@ -108,8 +108,8 @@ public class ClientGetMessage extends FCPMessage {
 			if(diskFile.exists())
 				throw new MessageInvalidException(ProtocolErrorMessage.DISK_TARGET_EXISTS, null, identifier);
 			try {
-				if(!tempFile.createNewFile())
-					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, null, identifier);
+				if(!(tempFile.createNewFile() || (tempFile.exists() && tempFile.canRead() && tempFile.canWrite())))
+					throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, "Could not create temp file "+tempFile, identifier);
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_CREATE_FILE, e.getMessage(), identifier);
 			}

@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import freenet.node.Node;
 import freenet.support.RandomGrabArrayItem;
+import freenet.support.SectoredRandomGrabArrayWithInt;
 
 /**
  * A low-level request which can be sent immediately. These are registered
@@ -19,4 +20,7 @@ public interface SendableRequest extends RandomGrabArrayItem {
 	/** Get client context object */
 	public Object getClient();
 	
+	/** Get the ClientRequest */
+	public ClientRequest getClientRequest();
+
 }

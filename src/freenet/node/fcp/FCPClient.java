@@ -85,8 +85,8 @@ public class FCPClient {
 	public void finishedClientRequest(ClientRequest get) {
 		ClientRequest dropped = null;
 		synchronized(this) {
-			runningPersistentRequests.remove(get);
-			completedUnackedRequests.push(get);
+			if(runningPersistentRequests.remove(get))
+				completedUnackedRequests.push(get);
 			
 			if(completedUnackedRequests.size() > MAX_UNACKED_REQUESTS) {
 				clientRequestsByIdentifier.remove(dropped.getIdentifier());
@@ -224,6 +224,10 @@ public class FCPClient {
 		synchronized(clientsWatching) {
 			clientsWatching.add(client);
 		}
+	}
+
+	public synchronized ClientRequest getRequest(String identifier) {
+		return (ClientRequest) clientRequestsByIdentifier.get(identifier);
 	}
 
 }

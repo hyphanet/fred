@@ -571,4 +571,8 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		return ctx.ignoreStore;
 	}
 
+	public ClientRequest getClientRequest() {
+		return parent;
+	}
+
 }

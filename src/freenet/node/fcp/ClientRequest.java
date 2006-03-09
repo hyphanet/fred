@@ -99,4 +99,6 @@ public abstract class ClientRequest {
 
 	public abstract void cancel();
 
+	public abstract void setPriorityClass(short priorityClass);
+
 }

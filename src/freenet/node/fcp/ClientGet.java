@@ -42,7 +42,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private final FCPConnectionHandler origHandler;
 	private final FCPClient client;
 	private final ClientGetter getter;
-	private final short priorityClass;
+	private short priorityClass;
 	private final short returnType;
 	private final short persistenceType;
 	/** Has the request finished? */
@@ -395,8 +395,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	public void write(BufferedWriter w) throws IOException {
-		if(persistenceType != ClientRequest.PERSIST_REBOOT) {
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
 			Logger.error(this, "Not persisting as persistenceType="+persistenceType);
+			return;
 		}
 		// Persist the request to disk
 		SimpleFieldSet fs = getFieldSet();
@@ -461,6 +462,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	public boolean isPersistentForever() {
 		return persistenceType == ClientRequest.PERSIST_FOREVER;
+	}
+
+	public void setPriorityClass(short priorityClass) {
+		this.priorityClass = priorityClass;
+		getter.setPriorityClass(priorityClass);
 	}
 
 }

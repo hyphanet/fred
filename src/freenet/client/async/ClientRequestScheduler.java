@@ -1,5 +1,9 @@
 package freenet.client.async;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyVerifyException;
@@ -25,10 +29,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * 
 	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
 	 */
-	final SortedVectorByNumber[] priorities;
+	private final SortedVectorByNumber[] priorities;
 	// we have one for inserts and one for requests
 	final boolean isInsertScheduler;
 	final RandomSource random;
+	private final HashMap allRequestsByClientRequest;
 	private final RequestStarter starter;
 	private final Node node;
 	
@@ -38,6 +43,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.node = node;
 		this.isInsertScheduler = forInserts;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
+		allRequestsByClientRequest = new HashMap();
 	}
 	
 	public void register(SendableRequest req) {
@@ -63,17 +69,25 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 		}
-		synchronized(this) {
-			SectoredRandomGrabArrayWithInt grabber = 
-				makeGrabArray(req.getPriorityClass(), req.getRetryCount());
-			grabber.add(req.getClient(), req);
-			Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount());
-		}
+		innerRegister(req);
 		synchronized(starter) {
 			starter.notifyAll();
 		}
 	}
 	
+	private synchronized void innerRegister(SendableRequest req) {
+		SectoredRandomGrabArrayWithInt grabber = 
+			makeGrabArray(req.getPriorityClass(), req.getRetryCount());
+		grabber.add(req.getClient(), req);
+		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
+		if(v == null) {
+			v = new HashSet();
+			allRequestsByClientRequest.put(req.getClientRequest(), v);
+		}
+		v.add(req);
+		Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount());
+	}
+
 	private synchronized SectoredRandomGrabArrayWithInt makeGrabArray(short priorityClass, int retryCount) {
 		if(priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS || priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS)
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
@@ -120,11 +134,41 @@ public class ClientRequestScheduler implements RequestScheduler {
 					Logger.minor(this, "No requests in priority "+i+", retrycount "+rga.getNumber()+" ("+rga+")");
 					continue;
 				}
+				if(req.getPriorityClass() > i) {
+					// Reinsert it
+					Logger.minor(this, "In wrong priority class: "+req);
+					innerRegister(req);
+					continue;
+				}
 				Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+")");
+				ClientRequest cr = req.getClientRequest();
+				HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
+				v.remove(req);
+				if(v.isEmpty())
+					allRequestsByClientRequest.remove(cr);
 				return req;
 			}
 		}
 		Logger.minor(this, "No requests to run");
 		return null;
+	}
+
+	public void reregisterAll(ClientRequest request) {
+		synchronized(this) {
+			HashSet h = (HashSet) allRequestsByClientRequest.get(request);
+			if(h != null) {
+				Iterator i = h.iterator();
+				while(i.hasNext()) {
+					SendableRequest req = (SendableRequest) i.next();
+					// Don't actually remove it as removing it is a rather slow operation
+					// It will be removed when removeFirst() reaches it.
+					//grabArray.remove(req);
+					innerRegister(req);
+				}
+			}
+		}
+		synchronized(starter) {
+			starter.notifyAll();
+		}
 	}
 }

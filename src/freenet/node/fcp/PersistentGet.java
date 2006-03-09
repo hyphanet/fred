@@ -52,6 +52,7 @@ public class PersistentGet extends FCPMessage {
 			fs.put("Filename", targetFile.getAbsolutePath());
 			fs.put("TempFilename", tempFile.getAbsolutePath());
 		}
+		fs.put("PriorityClass", Short.toString(priorityClass));
 		if(clientToken != null)
 			fs.put("ClientToken", clientToken);
 		fs.put("Global", Boolean.toString(global));
