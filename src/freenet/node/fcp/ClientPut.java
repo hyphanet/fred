@@ -48,7 +48,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	/** Has the request finished? */
 	private boolean finished;
 	/** Client token - opaque string returned to client in PersistentPut */
-	private final String clientToken;
+	private String clientToken;
 	/** Was this from disk? Purely for PersistentPut */
 	private final boolean fromDisk;
 	/** Original filename if from disk, otherwise null. Purely for PersistentPut. */
@@ -376,6 +376,10 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	public void setPriorityClass(short priorityClass) {
 		this.priorityClass = priorityClass;
 		inserter.setPriorityClass(priorityClass);
+	}
+
+	public void setClientToken(String clientToken) {
+		this.clientToken = clientToken;
 	}
 
 }

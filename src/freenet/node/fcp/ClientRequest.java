@@ -101,4 +101,6 @@ public abstract class ClientRequest {
 
 	public abstract void setPriorityClass(short priorityClass);
 
+	public abstract void setClientToken(String clientToken);
+
 }

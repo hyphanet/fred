@@ -25,9 +25,11 @@ public class ModifyPersistentRequest extends FCPMessage {
 	final boolean global;
 	// negative means don't change
 	final short priorityClass;
+	final String clientToken;
 	
 	ModifyPersistentRequest(SimpleFieldSet fs) throws MessageInvalidException {
 		this.identifier = fs.get("Identifier");
+		this.clientToken = fs.get("ClientToken");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field: Identifier", null);
 		this.global = Fields.stringToBool(fs.get("Global"), false);
@@ -60,6 +62,8 @@ public class ModifyPersistentRequest extends FCPMessage {
 			throws MessageInvalidException {
 		FCPClient client = global ? handler.server.globalClient : handler.getClient();
 		ClientRequest req = client.getRequest(identifier);
+		if(clientToken != null)
+			req.setClientToken(clientToken);
 		if(priorityClass > 0)
 			req.setPriorityClass(priorityClass);
 		if(req.isPersistentForever())

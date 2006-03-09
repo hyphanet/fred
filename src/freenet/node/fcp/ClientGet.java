@@ -49,7 +49,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private boolean finished;
 	private final File targetFile;
 	private final File tempFile;
-	final String clientToken;
+	String clientToken;
 	/** Bucket passed in to the ClientGetter to return data in. Null unless returntype=disk */
 	private final Bucket returnBucket;
 	
@@ -467,6 +467,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public void setPriorityClass(short priorityClass) {
 		this.priorityClass = priorityClass;
 		getter.setPriorityClass(priorityClass);
+	}
+
+	public void setClientToken(String clientToken) {
+		this.clientToken = clientToken;
 	}
 
 }
