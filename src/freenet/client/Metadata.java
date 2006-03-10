@@ -385,7 +385,10 @@ public class Metadata implements Cloneable {
 	}
 
 	/**
-	 * Create a Metadata object and add manifest entries from the given array. */
+	 * Create a Metadata object and add manifest entries from the given map.
+	 * The map can contain either string -> byte[], or string -> map, the latter
+	 * indicating subdirs. 
+	 */
 	public static Metadata mkRedirectionManifestWithMetadata(HashMap dir) {
 		Metadata ret = new Metadata();
 		ret.addRedirectionManifestWithMetadata(dir);
@@ -403,11 +406,20 @@ public class Metadata implements Cloneable {
 		int count = 0;
 		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
 			String key = (String) i.next();
+			if(key.indexOf('/') != -1)
+				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests)");
 			count++;
-			byte[] data = (byte[]) dir.get(key);
-			if(data == null)
-				throw new NullPointerException();
-			manifestEntries.put(key, data);
+			Object o = dir.get(key);
+			if(o instanceof byte[]) {
+				byte[] data = (byte[]) dir.get(key);
+				if(data == null)
+					throw new NullPointerException();
+				manifestEntries.put(key, data);
+			} else if(o instanceof HashMap) {
+				HashMap hm = (HashMap)o;
+				Metadata subMap = mkRedirectionManifestWithMetadata(hm);
+				manifestEntries.put(key, subMap.writeToByteArray());
+			}
 		}
 		manifestEntryCount = count;
 	}

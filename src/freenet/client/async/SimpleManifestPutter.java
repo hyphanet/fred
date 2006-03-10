@@ -158,7 +158,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
-			ClientRequestScheduler sskSched, HashSet manifestElements, short prioClass, FreenetURI target, 
+			ClientRequestScheduler sskSched, HashMap manifestElements, short prioClass, FreenetURI target, 
 			String defaultName, InserterContext ctx, boolean getCHKOnly, Object clientContext) throws InserterException {
 		super(prioClass, chkSched, sskSched, clientContext);
 		this.defaultName = defaultName;
@@ -170,31 +170,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		runningPutHandlers = new HashSet();
 		putHandlersWaitingForMetadata = new HashSet();
 		waitingForBlockSets = new HashSet();
-		Iterator it = manifestElements.iterator();
-		while(it.hasNext()) {
-			ManifestElement element = (ManifestElement) it.next();
-			String name = element.name;
-			Bucket data = element.data;
-			String mimeType = element.mimeOverride;
-			if(mimeType == null)
-				mimeType = DefaultMIMETypes.guessMIMEType(name);
-			ClientMetadata cm;
-			if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
-				cm = null;
-			else
-				cm = new ClientMetadata(mimeType);
-			PutHandler ph;
-			try {
-				ph = new PutHandler(name, data, cm, getCHKOnly);
-			} catch (InserterException e) {
-				cancelAndFinish();
-				throw e;
-			}
-			putHandlersByName.put(name, ph);
-			runningPutHandlers.add(ph);
-			putHandlersWaitingForMetadata.add(ph);
-		}
-		it = putHandlersByName.values().iterator();
+		makePutHandlers(manifestElements, putHandlersByName);
+		Iterator it = runningPutHandlers.iterator();
 		while(it.hasNext()) {
 			PutHandler ph = (PutHandler) it.next();
 			try {
@@ -206,6 +183,40 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}		
 	}
 	
+	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InserterException {
+		Iterator it = manifestElements.keySet().iterator();
+		while(it.hasNext()) {
+			String name = (String) it.next();
+			Object o = manifestElements.get(name);
+			if(o instanceof HashMap) {
+				HashMap subMap = new HashMap();
+				putHandlersByName.put(name, subMap);
+				makePutHandlers((HashMap)o, subMap);
+			} else {
+				ManifestElement element = (ManifestElement) o;
+				Bucket data = element.data;
+				String mimeType = element.mimeOverride;
+				if(mimeType == null)
+					mimeType = DefaultMIMETypes.guessMIMEType(name);
+				ClientMetadata cm;
+				if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
+					cm = null;
+				else
+					cm = new ClientMetadata(mimeType);
+				PutHandler ph;
+				try {
+					ph = new PutHandler(name, data, cm, getCHKOnly);
+				} catch (InserterException e) {
+					cancelAndFinish();
+					throw e;
+				}
+				putHandlersByName.put(name, ph);
+				runningPutHandlers.add(ph);
+				putHandlersWaitingForMetadata.add(ph);
+			}
+		}
+	}
+
 	public FreenetURI getURI() {
 		return finalURI;
 	}
@@ -217,13 +228,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private void gotAllMetadata() {
 		Logger.minor(this, "Got all metadata");
 		HashMap namesToByteArrays = new HashMap();
-		Iterator i = putHandlersByName.values().iterator();
-		while(i.hasNext()) {
-			PutHandler ph = (PutHandler) i.next();
-			String name = ph.name;
-			byte[] meta = ph.metadata;
-			namesToByteArrays.put(name, meta);
-		}
+		namesToByteArrays(putHandlersByName, namesToByteArrays);
 		if(defaultName != null) {
 			byte[] meta = (byte[]) namesToByteArrays.get(defaultName);
 			if(meta == null) {
@@ -262,6 +267,24 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
+	private void namesToByteArrays(HashMap putHandlersByName, HashMap namesToByteArrays) {
+		Iterator i = putHandlersByName.keySet().iterator();
+		while(i.hasNext()) {
+			String name = (String) i.next();
+			Object o = putHandlersByName.get(name);
+			if(o instanceof PutHandler) {
+				PutHandler ph = (PutHandler) o;
+				byte[] meta = ph.metadata;
+				namesToByteArrays.put(name, meta);
+			} else if(o instanceof HashMap) {
+				HashMap subMap = new HashMap();
+				namesToByteArrays.put(name, subMap);
+				namesToByteArrays((HashMap)o, subMap);
+			} else
+				throw new IllegalStateException();
+		}
+	}
+
 	private void insertedAllFiles() {
 		synchronized(this) {
 			insertedAllFiles = true;
@@ -343,13 +366,19 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	 * All are to have mimeOverride=null, i.e. we use the auto-detected mime type
 	 * from the filename.
 	 */
-	public static HashSet bucketsByNameToManifestEntries(HashMap bucketsByName) {
-		HashSet manifestEntries = new HashSet();
+	public static HashMap bucketsByNameToManifestEntries(HashMap bucketsByName) {
+		HashMap manifestEntries = new HashMap();
 		Iterator i = bucketsByName.keySet().iterator();
 		while(i.hasNext()) {
 			String name = (String) i.next();
-			Bucket data = (Bucket) bucketsByName.get(name);
-			manifestEntries.add(new ManifestElement(name, data, null));
+			Object o = bucketsByName.get(name);
+			if(o instanceof Bucket) {
+				Bucket data = (Bucket) bucketsByName.get(name);
+				manifestEntries.put(name, new ManifestElement(name, data, null));
+			} else if(o instanceof HashMap) {
+				manifestEntries.put(name, bucketsByNameToManifestEntries((HashMap)o));
+			} else
+				throw new IllegalArgumentException(String.valueOf(o));
 		}
 		return manifestEntries;
 	}

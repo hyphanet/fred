@@ -568,12 +568,7 @@ public class TextModeClientInterface implements Runnable {
     			ret.put(f.getName(), bucket);
     		} else if(filelist[i].isDirectory()) {
     			HashMap subdir = makeBucketsByName(directory + filelist[i].getName());
-    			Iterator it = subdir.keySet().iterator();
-    			while(it.hasNext()) {
-    				String key = (String) it.next();
-    				Bucket bucket = (Bucket) subdir.get(key);
-    				ret.put(filelist[i].getName() + "/" + key, bucket);
-    			}
+    			ret.put(filelist[i].getName(), subdir);
     		}
 		}
     	}
