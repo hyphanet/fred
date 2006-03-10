@@ -21,8 +21,8 @@ public class ConfigToadlet extends Toadlet {
 	private Config config;
 	private Node node;
 	
-	ConfigToadlet(HighLevelSimpleClient client, Node n, Config conf) {
-		super(client);
+	ConfigToadlet(HighLevelSimpleClient client, Node n, Config conf, String CSSName) {
+		super(client, CSSName);
 		config=conf;
 		node=n;
 	}
@@ -31,7 +31,7 @@ public class ConfigToadlet extends Toadlet {
 		StringBuffer buf = new StringBuffer();
 		SubConfig[] sc = config.getConfigs();
 		
-		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration");
+		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration", CSSName);
 		buf.append("<h1 class=\"title\">test</h1>\n");
 		buf.append("<div class=\"config\">\n");
 		buf.append("	<ul class=\"config\">\n");

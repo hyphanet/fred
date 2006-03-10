@@ -30,8 +30,9 @@ import freenet.support.MultiValueTable;
  */
 public abstract class Toadlet {
 
-	protected Toadlet(HighLevelSimpleClient client) {
+	protected Toadlet(HighLevelSimpleClient client, String CSSName) {
 		this.client = client;
+		this.CSSName = CSSName;
 	}
 	
 	private final HighLevelSimpleClient client;
@@ -48,7 +49,7 @@ public abstract class Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		StringBuffer buf = new StringBuffer();
 		
-		ctx.getPageMaker().makeHead(buf, "Not supported");
+		ctx.getPageMaker().makeHead(buf, "Not supported", CSSName);
 		
 		buf.append("Operation not supported");
 		ctx.getPageMaker().makeTail(buf);
@@ -66,7 +67,7 @@ public abstract class Toadlet {
 	public void handlePut(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		StringBuffer buf = new StringBuffer();
 		
-		ctx.getPageMaker().makeHead(buf, "Not supported");
+		ctx.getPageMaker().makeHead(buf, "Not supported", CSSName);
 		
 		buf.append("Operation not supported");
 		ctx.getPageMaker().makeTail(buf);
@@ -127,7 +128,7 @@ public abstract class Toadlet {
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message) throws ToadletContextClosedException, IOException {
 		StringBuffer buf = new StringBuffer();
 			
-		ctx.getPageMaker().makeHead(buf, desc);
+		ctx.getPageMaker().makeHead(buf, desc, CSSName);
 		buf.append(message);
 		ctx.getPageMaker().makeTail(buf);
 		writeReply(ctx, code, "text/html", desc, buf.toString());
@@ -141,4 +142,13 @@ public abstract class Toadlet {
 		return client;
 	}
 	
+	public String CSSName;
+	
+	public void setCSSName(String name){
+		CSSName = name;
+	}
+	
+	public String getCSSName(){
+		return CSSName;
+	}
 }

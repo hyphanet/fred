@@ -18,6 +18,14 @@ public class PageMaker {
 		}
 	}
 	
+	public void setCSSName(String name){
+		if (name == null || !this.getThemes().contains(name)) {
+			this.theme = this.defaulttheme;
+		} else {
+			this.theme = name;
+		}
+	}
+
 	public void makeTopHead(StringBuffer buf) {
 		buf.append("<!DOCTYPE\n"
 				+ "	html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\">\n"
@@ -39,7 +47,8 @@ public class PageMaker {
 		buf.append("<div id=\"content\">\n");
 	}
 	
-	public void makeHead(StringBuffer buf, String title) {
+	public void makeHead(StringBuffer buf, String title, String CSSName) {
+		setCSSName(CSSName);
 		makeTopHead(buf);
 		makeBottomHead(buf, title);
 	}
@@ -47,9 +56,6 @@ public class PageMaker {
 	public void makeTail(StringBuffer buf) {
 		buf.append("<br style=\"clear: all;\"/>\n"
 				+ "</div>\n"
-				+ "<div id=\"themeselect\">\n");
-		this.makeThemeSelect(buf);
-		buf.append("</div>\n"
 				+"</div>\n"
 				+"</body>\n"
 				+ "</html>\n");
@@ -74,28 +80,5 @@ public class PageMaker {
 				+ "<li><a href=\"/config/\" title=\"Configure your node\">Configuration</a></li>\n"
 				+ "</ul>\n"
 				+ "</div>\n");
-	}
-	
-	private void makeThemeSelect(StringBuffer buf) {
-		Collection themes = this.getThemes();
-		
-		Iterator i = themes.iterator();
-		
-		buf.append("Theme: <ul>\n");
-		String liclass = new String("");
-		while (i.hasNext()) {
-			String t = (String) i.next();
-			
-			if (t.equals(this.theme)) {
-				liclass = "currentthemeitem";
-			} else {
-				liclass = "themeitem";
-			}
-			buf.append("<li class=\""+liclass+"\">\n"
-					+"<a href=\"javascript:document.cookie = 'theme="+t+"; expires=Mon, 04 Mar 2030 00:00:00 GMT; path=/';window.location.reload(true)\" title=\""+t+" theme\">\n"
-					+ t+"</a>\n"
-					+ "</li>\n");
-		}
-		buf.append("</ul>\n");
 	}
 }

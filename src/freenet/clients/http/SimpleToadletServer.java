@@ -20,7 +20,7 @@ import freenet.support.Logger;
 import freenet.support.FileLoggerHook.IntervalParseException;
 
 public class SimpleToadletServer implements ToadletContainer, Runnable {
-
+	
 	public class ToadletElement {
 		public ToadletElement(Toadlet t2, String urlPrefix) {
 			t = t2;
@@ -34,10 +34,6 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	final String bindto;
 	private final ServerSocket sock;
 	private final LinkedList toadlets;
-	
-	public SimpleToadletServer(int i) throws IOException {
-		this(i, "127.0.0.1");
-	}
 	
 	public SimpleToadletServer(int i, String newbindto) throws IOException {
 		this.port = i;
@@ -78,8 +74,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
         Logger.globalSetThreshold(Logger.MINOR);
         Logger.globalAddHook(logger);
         logger.start();
-		SimpleToadletServer server = new SimpleToadletServer(1111);
-		server.register(new TrivialToadlet(null), "", true);
+		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1");
+		server.register(new TrivialToadlet(null,null), "", true);
 		System.out.println("Bound to port 1111.");
 		while(true) {
 			try {
@@ -122,5 +118,4 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 
 	}
-
 }

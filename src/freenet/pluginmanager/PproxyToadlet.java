@@ -17,8 +17,8 @@ import freenet.support.MultiValueTable;
 public class PproxyToadlet extends Toadlet {
 	private PluginManager pm = null;
 
-	public PproxyToadlet(HighLevelSimpleClient client, PluginManager pm) {
-		super(client);
+	public PproxyToadlet(HighLevelSimpleClient client, PluginManager pm, String CSSName) {
+		super(client, CSSName);
 		this.pm = pm;
 	}
 	
@@ -91,7 +91,7 @@ public class PproxyToadlet extends Toadlet {
 	private void showPluginList(ToadletContext ctx, HTTPRequest request) throws ToadletContextClosedException, IOException {
 		if (!request.hasParameters()) {
 			StringBuffer out = new StringBuffer();
-			ctx.getPageMaker().makeHead(out, "Plugin List");
+			ctx.getPageMaker().makeHead(out, "Plugin List", CSSName);
 			out.append("<table style=\"border: 1pt solid #c0c0c0;\">");
 			out.append("  <tr>\n");
 			out.append("    <th>Name</th>\n");

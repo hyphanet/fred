@@ -13,8 +13,8 @@ import freenet.support.MultiValueTable;
  * Serve up static files
  */
 public class StaticToadlet extends Toadlet {
-	StaticToadlet(HighLevelSimpleClient client) {
-		super(client);
+	StaticToadlet(HighLevelSimpleClient client, String CSSName) {
+		super(client, CSSName);
 	}
 	
 	final String rootURL = new String("/static/");

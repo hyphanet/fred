@@ -14,16 +14,16 @@ import freenet.node.Node;
 public class WelcomeToadlet extends Toadlet {
 	Node node;
 
-	WelcomeToadlet(HighLevelSimpleClient client, Node n) {
-		super(client);
+	WelcomeToadlet(HighLevelSimpleClient client, Node n, String CSSName) {
+		super(client, CSSName);
 		this.node = n;
 	}
 
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		StringBuffer buf = new StringBuffer();
 		
-		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage");
-		
+		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage", CSSName);
+
 		// Version info
 		buf.append("<div class=\"infobox\">\n");
 		buf.append("<h2>Version</h2>");

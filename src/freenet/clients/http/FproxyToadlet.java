@@ -19,17 +19,16 @@ import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
-import freenet.pluginmanager.PproxyToadlet;
 import freenet.pluginmanager.HTTPRequest;
-import freenet.support.Bucket;
+import freenet.pluginmanager.PproxyToadlet;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 
 public class FproxyToadlet extends Toadlet {
 	
-	public FproxyToadlet(HighLevelSimpleClient client) {
-		super(client);
+	public FproxyToadlet(HighLevelSimpleClient client, String CSSName) {
+		super(client, CSSName);
 	}
 	
 	public String supportedMethods() {
@@ -40,6 +39,7 @@ public class FproxyToadlet extends Toadlet {
 			throws ToadletContextClosedException, IOException, RedirectException {
 		//String ks = uri.toString();
 		String ks = uri.getPath();
+		
 		
 		if (ks.equals("/")) {
 			HTTPRequest httprequest = new HTTPRequest(uri);
@@ -152,6 +152,24 @@ public class FproxyToadlet extends Toadlet {
 		}
 	}
 	
+	static class FproxyCSSNameCallback implements StringCallback {
+		
+		final Node node;
+		
+		FproxyCSSNameCallback(Node n) {
+			this.node = n;
+		}
+		
+		public String get() {
+			return node.getFproxy().getCSSName();
+		}
+		
+		public void set(String CSSName) throws InvalidConfigValueException {
+			FproxyToadlet f = node.getFproxy();
+			f.setCSSName(CSSName);
+		}
+	}
+	
 	public static void maybeCreateFproxyEtc(Node node, Config config) throws IOException {
 		
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
@@ -170,10 +188,13 @@ public class FproxyToadlet extends Toadlet {
 		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, "Fproxy port number", "Fproxy port number",
 				new FproxyPortCallback(node));
 		fproxyConfig.register("bindto", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
-				      new FproxyBindtoCallback(node));
+				new FproxyBindtoCallback(node));
+		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS Fproxy should use",
+				new FproxyCSSNameCallback(node));
 		
 		int port = fproxyConfig.getInt("port");
 		String bind_ip = fproxyConfig.getString("bindto");
+		String CSSName = fproxyConfig.getString("css");
 		
 		System.out.println("Starting fproxy on port "+(port));
 		Logger.normal(node,"Starting fproxy on "+bind_ip+":"+port);
@@ -181,20 +202,20 @@ public class FproxyToadlet extends Toadlet {
 		try {
 			SimpleToadletServer server = new SimpleToadletServer(port, bind_ip);
 			node.setToadletContainer(server);
-			FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+			FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), CSSName);
 			node.setFproxy(fproxy);
 			server.register(fproxy, "/", false);
 			
-			PproxyToadlet pproxy = new PproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node.pluginManager);
+			PproxyToadlet pproxy = new PproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node.pluginManager, CSSName);
 			server.register(pproxy, "/plugins/", true);
 			
-			WelcomeToadlet welcometoadlet = new WelcomeToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node);
+			WelcomeToadlet welcometoadlet = new WelcomeToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node, CSSName);
 			server.register(welcometoadlet, "/welcome/", true);
 			
-			ConfigToadlet configtoadlet = new ConfigToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node, config);
+			ConfigToadlet configtoadlet = new ConfigToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node, config, CSSName);
 			server.register(configtoadlet, "/config/", true);
 			
-			StaticToadlet statictoadlet = new StaticToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+			StaticToadlet statictoadlet = new StaticToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), CSSName);
 			server.register(statictoadlet, "/static/", true);
 		} catch (IOException ioe) {
 			Logger.error(node,"Failed to start fproxy on "+bind_ip+":"+port);
@@ -202,7 +223,4 @@ public class FproxyToadlet extends Toadlet {
 		
 		fproxyConfig.finishedInitialization();
 	}
-
-
-	
 }

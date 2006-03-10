@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
 
+import freenet.config.Config;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
@@ -30,6 +31,8 @@ public class ToadletContextImpl implements ToadletContext {
 	private final MultiValueTable headers;
 	private final OutputStream sockOutputStream;
 	private final PageMaker pagemaker;
+	private String CSSName;
+	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
 	 */
@@ -41,21 +44,7 @@ public class ToadletContextImpl implements ToadletContext {
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
 		
-		Enumeration cookieheaders = headers.getAll("Cookie");
-		String current;
-		String theme = new String("");
-		while (cookieheaders.hasMoreElements()) {
-			current = (String) cookieheaders.nextElement();
-			String[] parts = current.split("=");
-			if (parts.length == 2 && parts[0].equals("theme")) {
-				theme = parts[1];
-			}
-		}
-		if (theme.equals("")) {
-			pagemaker = new PageMaker(null);
-		} else {
-			pagemaker = new PageMaker(theme);
-		}
+		pagemaker = new PageMaker(CSSName);
 	}
 
 	private void close() {
@@ -295,5 +284,4 @@ public class ToadletContextImpl implements ToadletContext {
 		if(closed) throw new ToadletContextClosedException();
 		BucketTools.copyTo(data, sockOutputStream, Long.MAX_VALUE);
 	}
-
 }
