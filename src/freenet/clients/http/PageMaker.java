@@ -33,6 +33,9 @@ public class PageMaker {
 				+ "<head>\n"
 				+ "<meta http-equiv=\"Content-Type\" content=\"text/html;\" />\n"
 				+"<link rel=\"stylesheet\" href=\"/static/themes/"+this.theme+"/theme.css\" type=\"text/css\" />\n");
+		for(int i=0; i<getThemes().size() ; i++){
+			buf.append("<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"/static/themes/"+getThemes().toArray()[i].toString()+"/theme.css\" media=\"screen\" title=\""+getThemes().toArray()[i].toString()+"\" />\n");
+		}
 	}
 	
 	public void makeBottomHead(StringBuffer buf, String title) {
