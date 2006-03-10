@@ -16,6 +16,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.node.Node;
 import freenet.node.Version;
+import freenet.pluginmanager.HTTPRequest;
 
 public class ConfigToadlet extends Toadlet {
 	private Config config;
@@ -32,36 +33,68 @@ public class ConfigToadlet extends Toadlet {
 		SubConfig[] sc = config.getConfigs();
 		
 		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration", CSSName);
-		buf.append("<h1 class=\"title\">test</h1>\n");
-		buf.append("<div class=\"config\">\n");
-		buf.append("	<ul class=\"config\">\n");
-		String last = null;
-		
-		for(int i=0; i<sc.length;i++){
-			Option[] o = sc[i].getOptions();
-			String prefix = new String(sc[i].getPrefix());
+		HTTPRequest request = new HTTPRequest(uri);
+		if (request.hasParameters() == false) {
+			buf.append("<h1 class=\"title\">Node Configuration</h1>\n");
+			buf.append("<div class=\"config\">\n");
+			buf.append("	<ul class=\"config\">\n");
+			// FIXME: Use POST insteed !
+			buf.append("<form method=\"get\">");
+			String last = null;
 			
-			if(last == null || ! last.equalsIgnoreCase(prefix)){
-				buf.append("</p>\n");
-				buf.append("</span>\n");
-				buf.append("<span id=\""+prefix+"\">\n");
-				buf.append("<p>\n");
+			for(int i=0; i<sc.length;i++){
+				Option[] o = sc[i].getOptions();
+				String prefix = new String(sc[i].getPrefix());
+				
+				if(last == null || ! last.equalsIgnoreCase(prefix)){
+					buf.append("</p>\n");
+					buf.append("</span>\n");
+					buf.append("<span id=\""+prefix+"\">\n");
+					buf.append("<p>\n");
+				}
+				
+				for(int j=0; j<o.length; j++){
+					String configName = new String(o[j].getName());
+					/*
+					if(prefix.equals("node") && configName.equals("name")){
+						buf.append("<form method=\"post\"><input alt=\"node name\" class=\"config\"" +
+								" type=\"text\" name=\"__node_name\" value=\""+o[j].getValueString()+"\"/></form>\n");
+					}
+					*/
+						
+					buf.append(o[j].getShortDesc()+":\n");
+					buf.append("		<li>"+prefix+"."+configName+"=><input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
+							" type=\"text\" name=\""+prefix+"."+configName+"\" value=\""+o[j].getValueString()+"\"></li>\n");
+				}
 			}
 			
-			for(int j=0; j<o.length; j++){
-				String configName = new String(o[j].getName());
-				if(prefix.equals("node") && configName.equals("name")){
-					buf.append("<form method=\"post\"><input alt=\"node name\" class=\"config\"" +
-							" type=\"text\" name=\"__node_name\" value=\""+o[j].getValueString()+"\"/></form>\n");
-				}
+			buf.append("<hr><br>");
+			buf.append("<input type=\"submit\" value=\"Apply\">");
+			buf.append("<input type=\"reset\" value=\"Cancel\">");
+			buf.append("</form>");
+			buf.append("	</ul>\n");
+			buf.append("</div>\n");
+		
+		} else {
+			buf.append("Applying configuration");
+			
+			for(int i=0; i<sc.length ; i++){
+				Option[] o = sc[i].getOptions();
+				String prefix = new String(sc[i].getPrefix());
+				String configName;
+				
+				for(int j=0; j<o.length; j++){
+					configName=o[j].getName();
 					
-				buf.append(o[j].getShortDesc()+":\n");
-				buf.append("		<li>"+prefix+"."+configName+"=>"+o[j].getValueString()+"</li>\n");
+					// we ignore unreconized parameters 
+					if(request.getParam(prefix+"."+configName) != ""){
+						if(o[j].getValueString() != request.getParam(prefix+"."+configName))
+							buf.append(o[j].getShortDesc()+":\n");
+					}
+				}
 			}
 		}
 		
-		buf.append("	</ul>\n");
-		buf.append("</div>\n");
 		
 		ctx.getPageMaker().makeTail(buf);
 		

@@ -142,6 +142,14 @@ public abstract class Toadlet {
 		return client;
 	}
 	
+	public String mkForwardPage(String title, String content, String nextpage, int interval) {
+		if (content == null) content = "null";
+		return "<html><head><title>" + title + "</title>"+
+		"<META HTTP-EQUIV=Refresh CONTENT=\"" + interval +
+		"; URL="+nextpage+"\"></head><body><h1>" + title +
+		"</h1>" + content.replaceAll("\n", "<br/>\n") + "</body>";
+	}
+	
 	public String CSSName;
 	
 	public void setCSSName(String name){

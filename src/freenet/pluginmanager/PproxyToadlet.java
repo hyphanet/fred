@@ -25,14 +25,6 @@ public class PproxyToadlet extends Toadlet {
 	public String supportedMethods() {
 		return "GET";
 	}
-
-	private String mkForwardPage(String title, String content, String nextpage, int interval) {
-		if (content == null) content = "null";
-		return "<html><head><title>" + title + "</title>"+
-		"<META HTTP-EQUIV=Refresh CONTENT=\"" + interval +
-		"; URL="+nextpage+"\"></head><body><h1>" + title +
-		"</h1>" + content.replaceAll("\n", "<br/>\n") + "</body>";
-	}
 	
 	public void handleGet(URI uri, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException {
