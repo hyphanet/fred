@@ -41,6 +41,8 @@ public abstract class FCPMessage {
 			return new WatchGlobal(fs);
 		if(name.equals(ModifyPersistentRequest.name))
 			return new ModifyPersistentRequest(fs);
+		if(name.equals(ClientPutDiskDirMessage.name))
+			return new ClientPutDiskDirMessage(fs);
 		if(name.equals("Void"))
 			return null;
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null);

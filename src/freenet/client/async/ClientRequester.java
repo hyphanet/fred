@@ -8,7 +8,7 @@ import freenet.support.Logger;
  * we have followed all the redirects etc, or have an error. Can be 
  * retried.
  */
-public abstract class ClientRequest {
+public abstract class ClientRequester {
 
 	// FIXME move the priority classes from RequestStarter here
 	protected short priorityClass;
@@ -21,7 +21,7 @@ public abstract class ClientRequest {
 		return priorityClass;
 	}
 	
-	protected ClientRequest(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, Object client) {
+	protected ClientRequester(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, Object client) {
 		this.priorityClass = priorityClass;
 		this.chkScheduler = chkScheduler;
 		this.sskScheduler = sskScheduler;
@@ -109,7 +109,6 @@ public abstract class ClientRequest {
 	}
 
 	public void setPriorityClass(short newPriorityClass) {
-		short oldPriorityClass = priorityClass;
 		this.priorityClass = newPriorityClass;
 		chkScheduler.reregisterAll(this);
 		sskScheduler.reregisterAll(this);

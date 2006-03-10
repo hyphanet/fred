@@ -270,7 +270,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		return parent.getClient();
 	}
 
-	public ClientRequest getClientRequest() {
+	public ClientRequester getClientRequest() {
 		return parent;
 	}
 

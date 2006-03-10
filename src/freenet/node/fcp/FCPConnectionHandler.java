@@ -174,6 +174,44 @@ public class FCPConnectionHandler {
 		}
 	}
 
+	public void startClientPutDir(ClientPutDiskDirMessage message, HashMap buckets) {
+		String id = message.identifier;
+		ClientPutDir cp = null;
+		boolean success;
+		boolean persistent = message.persistenceType != ClientGet.PERSIST_CONNECTION;
+		synchronized(this) {
+			if(isClosed) return;
+			// We need to track non-persistent requests anyway, so we may as well check
+			if(persistent)
+				success = true;
+			else
+				success = !requestsByIdentifier.containsKey(id);
+			if(success) {
+				try {
+					cp = new ClientPutDir(this, message, buckets);
+				} catch (IdentifierCollisionException e) {
+					success = false;
+				}
+				if(!persistent)
+					requestsByIdentifier.put(id, cp);
+			}
+		}
+		if(!success) {
+			Logger.normal(this, "Identifier collision on "+this);
+			FCPMessage msg = new IdentifierCollisionMessage(id);
+			outputHandler.queue(msg);
+			return;
+		} else {
+			// Register before starting, because it may complete immediately, and if it does,
+			// we may end up with it not being removable because it wasn't registered!
+			if(cp.isPersistent()) {
+				if(cp.isPersistentForever())
+					server.forceStorePersistentRequests();
+			}
+			cp.start();
+		}
+	}
+	
 	public FCPClient getClient() {
 		return client;
 	}
@@ -183,5 +221,5 @@ public class FCPConnectionHandler {
 			requestsByIdentifier.remove(get.getIdentifier());
 		}
 	}
-	
+
 }

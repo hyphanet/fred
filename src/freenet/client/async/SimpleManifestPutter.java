@@ -171,6 +171,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		putHandlersWaitingForMetadata = new HashSet();
 		waitingForBlockSets = new HashSet();
 		makePutHandlers(manifestElements, putHandlersByName);
+	}
+
+	public void start() throws InserterException {
 		Iterator it = runningPutHandlers.iterator();
 		while(it.hasNext()) {
 			PutHandler ph = (PutHandler) it.next();

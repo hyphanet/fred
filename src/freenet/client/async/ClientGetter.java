@@ -17,7 +17,7 @@ import freenet.support.Logger;
 /**
  * A high level data request.
  */
-public class ClientGetter extends ClientRequest implements GetCompletionCallback {
+public class ClientGetter extends ClientRequester implements GetCompletionCallback {
 
 	final ClientCallback client;
 	final FreenetURI uri;

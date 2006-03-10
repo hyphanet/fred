@@ -33,4 +33,8 @@ public class ManifestElement {
 		}
 		return false;
 	}
+
+	public void freeData() {
+		data.free();
+	}
 }

@@ -1,58 +1,47 @@
 package freenet.node.fcp;
 
-import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
 import freenet.node.RequestStarter;
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.FileBucket;
 
 /**
+ * Put a directory, rather than a file.
+ * Base class.
  * 
- * ClientPut
- * URI=CHK@ // could as easily be an insertable SSK URI
- * Metadata.ContentType=text/html
- * Identifier=Insert-1 // identifier, as always
- * Verbosity=0 // just report when complete
- * MaxRetries=999999 // lots of retries
- * PriorityClass=1 // fproxy priority level
- * 
- * UploadFrom=direct // attached directly to this message
- * DataLength=100 // 100kB
- * or
- * UploadFrom=disk // upload a file from disk
- * Filename=/home/toad/something.html
- * Data
- * 
- * Neither IgnoreDS nor DSOnly make sense for inserts.
+ * Two forms: ClientPutDiskDir and ClientPutComplexDir
+ *
+ * Both share:
+ * Identifier=<identifier>
+ * Verbosity=<verbosity as ClientPut>
+ * MaxRetries=<max retries as ClientPut>
+ * PriorityClass=<priority class>
+ * URI=<target URI>
+ * GetCHKOnly=<GetCHKOnly as ClientPut>
+ * DontCompress=<DontCompress as ClientPut>
+ * ClientToken=<ClientToken as ClientPut>
+ * Persistence=<Persistence as ClientPut>
+ * Global=<Global as ClientPut>
  */
-public class ClientPutMessage extends DataCarryingMessage {
+public abstract class ClientPutDirMessage extends FCPMessage {
 
-	public final static String name = "ClientPut";
-	
-	final FreenetURI uri;
-	final String contentType;
-	final long dataLength;
 	final String identifier;
+	final FreenetURI uri;
 	final int verbosity;
 	final int maxRetries;
 	final boolean getCHKOnly;
 	final short priorityClass;
 	final short persistenceType;
-	final boolean fromDisk;
 	final boolean dontCompress;
 	final String clientToken;
-	final File origFilename;
 	final boolean global;
+	final String defaultName;
 	
-	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
+	public ClientPutDirMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
+		defaultName = fs.get("DefaultName");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null);
 		try {
@@ -74,7 +63,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Verbosity field: "+e.getMessage(), identifier);
 			}
 		}
-		contentType = fs.get("Metadata.ContentType");
 		String maxRetriesString = fs.get("MaxRetries");
 		if(maxRetriesString == null)
 			// default to 0
@@ -100,31 +88,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
 			}
 		}
-		String uploadFrom = fs.get("UploadFrom");
-		if(uploadFrom != null && uploadFrom.equalsIgnoreCase("disk")) {
-			fromDisk = true;
-			String filename = fs.get("Filename");
-			if(filename == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Filename", identifier);
-			File f = new File(filename);
-			if(!(f.exists() && f.isFile() && f.canRead()))
-				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, null, identifier);
-			dataLength = f.length();
-			FileBucket fileBucket = new FileBucket(f, true, false, false, false);
-			this.bucket = fileBucket;
-			this.origFilename = f;
-		} else {
-			fromDisk = false;
-			String dataLengthString = fs.get("DataLength");
-			if(dataLengthString == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut", identifier);
-			try {
-				dataLength = Long.parseLong(dataLengthString, 10);
-			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier);
-			}
-			this.origFilename = null;
-		}
 		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		String persistenceString = fs.get("Persistence");
 		if(persistenceString == null || persistenceString.equalsIgnoreCase("connection")) {
@@ -149,15 +112,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		sfs.put("Identifier", identifier);
 		sfs.put("Verbosity", Integer.toString(verbosity));
 		sfs.put("MaxRetries", Integer.toString(maxRetries));
-		sfs.put("Metadata.ContentType", contentType);
 		sfs.put("ClientToken", clientToken);
-		if(fromDisk) {
-			sfs.put("UploadFrom", "disk");
-			sfs.put("Filename", origFilename.getAbsolutePath());
-		} else {
-			sfs.put("UploadFrom", "direct");
-			sfs.put("DataLength", Long.toString(dataLength));
-		}
 		sfs.put("GetCHKOnly", Boolean.toString(getCHKOnly));
 		sfs.put("PriorityClass", Short.toString(priorityClass));
 		sfs.put("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
@@ -166,30 +121,4 @@ public class ClientPutMessage extends DataCarryingMessage {
 		return sfs;
 	}
 
-	public String getName() {
-		return name;
-	}
-
-	public void run(FCPConnectionHandler handler, Node node)
-			throws MessageInvalidException {
-		handler.startClientPut(this);
-	}
-
-	long dataLength() {
-		if(fromDisk) return 0;
-		return dataLength;
-	}
-
-	String getIdentifier() {
-		return identifier;
-	}
-
-	Bucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
-		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
-			return server.node.persistentTempBucketFactory.makeEncryptedBucket();
-		} else {
-			return super.createBucket(bf, length, server);
-		}
-	}
-	
 }

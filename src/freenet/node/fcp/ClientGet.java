@@ -13,6 +13,7 @@ import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientRequester;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SplitfileProgressEvent;
@@ -33,22 +34,11 @@ import freenet.support.io.NullBucket;
  */
 public class ClientGet extends ClientRequest implements ClientCallback, ClientEventListener {
 
-	private final FreenetURI uri;
 	private final FetcherContext fctx;
-	private final String identifier;
-	private final int verbosity;
-	/** Original FCPConnectionHandler. Null if persistence != connection */
-	private final FCPConnectionHandler origHandler;
-	private final FCPClient client;
 	private final ClientGetter getter;
-	private short priorityClass;
 	private final short returnType;
-	private final short persistenceType;
-	/** Has the request finished? */
-	private boolean finished;
 	private final File targetFile;
 	private final File tempFile;
-	String clientToken;
 	/** Bucket passed in to the ClientGetter to return data in. Null unless returntype=disk */
 	private final Bucket returnBucket;
 	
@@ -74,22 +64,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private SimpleProgressMessage progressPending;
 	
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException {
-		uri = message.uri;
-		clientToken = message.clientToken;
-		// FIXME
-		this.priorityClass = message.priorityClass;
-		this.persistenceType = message.persistenceType;
+		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
+				message.persistenceType, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
-		if(persistenceType == PERSIST_CONNECTION)
-			this.origHandler = handler;
-		else
-			origHandler = null;
-		if(message.global) {
-			client = handler.server.globalClient;
-		} else {
-			client = handler.getClient();
-		}
 		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
@@ -97,8 +75,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.ignoreStore = message.ignoreDS;
 		fctx.maxNonSplitfileRetries = message.maxRetries;
 		fctx.maxSplitfileBlockRetries = message.maxRetries;
-		this.identifier = message.identifier;
-		this.verbosity = message.verbosity;
 		// FIXME do something with verbosity !!
 		// Has already been checked
 		fctx.maxOutputLength = message.maxSize;
@@ -141,18 +117,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 * @throws IOException 
 	 */
 	public ClientGet(SimpleFieldSet fs, FCPClient client2) throws IOException {
-		uri = new FreenetURI(fs.get("URI"));
-		identifier = fs.get("Identifier");
-		verbosity = Integer.parseInt(fs.get("Verbosity"));
+		super(fs, client2);
 		priorityClass = Short.parseShort(fs.get("PriorityClass"));
 		returnType = ClientGetMessage.parseValidReturnType(fs.get("ReturnType"));
-		persistenceType = ClientRequest.parsePersistence(fs.get("Persistence"));
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
-			throw new IllegalArgumentException("Reading persistent get with type CONNECTION !!");
-		if(!(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT))
-			throw new IllegalArgumentException("Unknown persistence type "+ClientRequest.persistenceTypeString(persistenceType));
-		this.client = client2;
-		this.origHandler = null;
 		String f = fs.get("Filename");
 		if(f != null)
 			targetFile = new File(f);
@@ -163,8 +130,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = new File(f);
 		else
 			tempFile = null;
-		clientToken = fs.get("ClientToken");
-		finished = Fields.stringToBool(fs.get("Finished"), false);
 		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
@@ -349,13 +314,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		finish();
 	}
 
-	/** Request completed. But we may have to stick around until we are acked. */
-	private void finish() {
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
-			origHandler.finishedClientRequest(this);
-		client.finishedClientRequest(this);
-	}
-
 	public void onSuccess(BaseClientPutter state) {
 		// Ignore
 	}
@@ -378,30 +336,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		trySendProgress(progress, null);
 	}
 
-	public boolean isPersistent() {
-		return persistenceType != ClientRequest.PERSIST_CONNECTION;
-	}
-
-	public void dropped() {
-		cancel();
-		if(allDataPending != null)
-			allDataPending.bucket.free();
-	}
-
-	public String getIdentifier() {
-		return identifier;
-	}
-
-	public void write(BufferedWriter w) throws IOException {
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
-			Logger.error(this, "Not persisting as persistenceType="+persistenceType);
-			return;
-		}
-		// Persist the request to disk
-		SimpleFieldSet fs = getFieldSet();
-		fs.writeTo(w);
-	}
-	
 	// This is distinct from the ClientGetMessage code, as later on it will be radically
 	// different (it can store detailed state).
 	public synchronized SimpleFieldSet getFieldSet() {
@@ -412,7 +346,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fs.put("Verbosity", Integer.toString(verbosity));
 		fs.put("PriorityClass", Short.toString(priorityClass));
 		fs.put("ReturnType", ClientGetMessage.returnTypeString(returnType));
-		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));
+		fs.put("Persistence", persistenceTypeString(persistenceType));
 		fs.put("ClientName", client.name);
 		if(targetFile != null)
 			fs.put("Filename", targetFile.getPath());
@@ -454,21 +388,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return fs;
 	}
 
-	public boolean hasFinished() {
-		return finished;
+	protected ClientRequester getClientRequest() {
+		return getter;
 	}
 
-	public boolean isPersistentForever() {
-		return persistenceType == ClientRequest.PERSIST_FOREVER;
-	}
-
-	public void setPriorityClass(short priorityClass) {
-		this.priorityClass = priorityClass;
-		getter.setPriorityClass(priorityClass);
-	}
-
-	public void setClientToken(String clientToken) {
-		this.clientToken = clientToken;
+	protected void freeData() {
+		if(returnBucket != null)
+			returnBucket.free();
 	}
 
 }

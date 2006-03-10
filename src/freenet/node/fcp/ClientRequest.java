@@ -3,7 +3,10 @@ package freenet.node.fcp;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
+import freenet.client.async.ClientRequester;
+import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -14,17 +17,68 @@ import freenet.support.SimpleFieldSet;
  */
 public abstract class ClientRequest {
 
+	/** URI to fetch, or target URI to insert to */
+	protected final FreenetURI uri;
+	/** Unique request identifier */
+	protected final String identifier;
+	/** Verbosity level. Relevant to all ClientRequests, although they interpret it
+	 * differently. */
+	protected final int verbosity;
+	/** Original FCPConnectionHandler. Null if persistence != connection */
+	protected final FCPConnectionHandler origHandler;
+	/** Client */
+	protected final FCPClient client;
+	/** Priority class */
+	protected short priorityClass;
+	/** Persistence type */
+	protected final short persistenceType;
+	/** Has the request finished? */
+	protected boolean finished;
+	/** Client token (string to feed back to the client on a Persistent* when he does a
+	 * ListPersistentRequests). */
+	protected String clientToken;
+	/** Is the request on the global queue? */
+	protected final boolean global;
+	
+	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
+			short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
+		this.uri = uri2;
+		this.identifier = identifier2;
+		this.verbosity = verbosity2;
+		this.finished = false;
+		this.priorityClass = priorityClass2;
+		this.persistenceType = persistenceType2;
+		this.clientToken = clientToken2;
+		this.global = global;
+		if(persistenceType == PERSIST_CONNECTION)
+			this.origHandler = handler;
+		else
+			origHandler = null;
+		if(global) {
+			client = handler.server.globalClient;
+		} else {
+			client = handler.getClient();
+		}
+	}
+
+	public ClientRequest(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
+		uri = new FreenetURI(fs.get("URI"));
+		identifier = fs.get("Identifier");
+		verbosity = Integer.parseInt(fs.get("Verbosity"));
+		persistenceType = ClientRequest.parsePersistence(fs.get("Persistence"));
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
+			throw new IllegalArgumentException("Reading persistent get with type CONNECTION !!");
+		if(!(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT))
+			throw new IllegalArgumentException("Unknown persistence type "+ClientRequest.persistenceTypeString(persistenceType));
+		this.client = client2;
+		this.origHandler = null;
+		clientToken = fs.get("ClientToken");
+		finished = Fields.stringToBool(fs.get("Finished"), false);
+		global = Fields.stringToBool(fs.get("Global"), false);
+	}
+
 	/** Lost connection */
 	public abstract void onLostConnection();
-	
-	/** Is the request persistent? False = we can drop the request if we lose the connection */
-	public abstract boolean isPersistent();
-
-	/** Completed request dropped off the end without being acknowledged */
-	public abstract void dropped();
-
-	/** Get identifier string for request */
-	public abstract String getIdentifier();
 	
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
 	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest);
@@ -58,12 +112,6 @@ public abstract class ClientRequest {
 		return Short.parseShort(string);
 	}
 
-	/**
-	 * Write a persistent request to disk.
-	 * @throws IOException 
-	 */
-	public abstract void write(BufferedWriter w) throws IOException;
-
 	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server) throws IOException {
 		SimpleFieldSet fs = new SimpleFieldSet(br, true);
 		String clientName = fs.get("ClientName");
@@ -93,14 +141,71 @@ public abstract class ClientRequest {
 		}
 	}
 
-	public abstract boolean hasFinished();
+	public void cancel() {
+		getClientRequest().cancel();
+	}
+
+	public boolean isPersistentForever() {
+		return persistenceType == ClientRequest.PERSIST_FOREVER;
+	}
+
+	/** Is the request persistent? False = we can drop the request if we lose the connection */
+	public boolean isPersistent() {
+		return persistenceType != ClientRequest.PERSIST_CONNECTION;
+	}
+
+	public boolean hasFinished() {
+		return finished;
+	}
+
+	/** Get identifier string for request */
+	public String getIdentifier() {
+		return identifier;
+	}
+
+	public void setPriorityClass(short priorityClass) {
+		this.priorityClass = priorityClass;
+		getClientRequest().setPriorityClass(priorityClass);
+	}
+
+	public void setClientToken(String clientToken) {
+		this.clientToken = clientToken;
+	}
+
+	protected abstract ClientRequester getClientRequest();
 	
-	public abstract boolean isPersistentForever();
+	/** Completed request dropped off the end without being acknowledged */
+	public void dropped() {
+		cancel();
+		freeData();
+	}
 
-	public abstract void cancel();
+	/** Free cached data bucket(s) */
+	protected abstract void freeData(); 
 
-	public abstract void setPriorityClass(short priorityClass);
-
-	public abstract void setClientToken(String clientToken);
-
+	/** Request completed. But we may have to stick around until we are acked. */
+	protected void finish() {
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
+			origHandler.finishedClientRequest(this);
+		client.finishedClientRequest(this);
+	}
+	
+	/**
+	 * Write a persistent request to disk.
+	 * @throws IOException 
+	 */
+	public void write(BufferedWriter w) throws IOException {
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
+			Logger.error(this, "Not persisting as persistenceType="+persistenceType);
+			return;
+		}
+		// Persist the request to disk
+		SimpleFieldSet fs = getFieldSet();
+		fs.writeTo(w);
+	}
+	
+	/**
+	 * Get a SimpleFieldSet representing this request.
+	 */
+	public abstract SimpleFieldSet getFieldSet() throws IOException;
 }

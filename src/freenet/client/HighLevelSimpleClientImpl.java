@@ -130,6 +130,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
 			new SimpleManifestPutter(pw, node.chkPutScheduler, node.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(), false, this);
+		putter.start();
 		return pw.waitForCompletion();
 	}
 	

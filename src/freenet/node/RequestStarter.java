@@ -3,7 +3,7 @@ package freenet.node;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import freenet.client.async.ClientRequest;
+import freenet.client.async.ClientRequester;
 import freenet.client.async.RequestScheduler;
 import freenet.client.async.SendableRequest;
 import freenet.support.Logger;
