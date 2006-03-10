@@ -40,6 +40,13 @@ public class FproxyToadlet extends Toadlet {
 		//String ks = uri.toString();
 		String ks = uri.getPath();
 		
+		HTTPRequest request = new HTTPRequest(uri);
+		
+		if(request.hasParameters() && request.getParam("exit").equalsIgnoreCase("true")){	
+			System.out.println("Goodbye.");
+			writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx, "Shutting down the node", "" , "/", 5));
+			System.exit(0);
+		}
 		
 		if (ks.equals("/")) {
 			HTTPRequest httprequest = new HTTPRequest(uri);
