@@ -152,6 +152,7 @@ public class FproxyToadlet extends Toadlet {
 		}
 	}
 	
+	// FIXME: Not changed on the fly :-S Should be done in SimpleToadletServer
 	static class FproxyCSSNameCallback implements StringCallback {
 		
 		final Node node;
@@ -212,7 +213,7 @@ public class FproxyToadlet extends Toadlet {
 			WelcomeToadlet welcometoadlet = new WelcomeToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node, CSSName);
 			server.register(welcometoadlet, "/welcome/", true);
 			
-			ConfigToadlet configtoadlet = new ConfigToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), node, config, CSSName);
+			ConfigToadlet configtoadlet = new ConfigToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), config, CSSName);
 			server.register(configtoadlet, "/config/", true);
 			
 			StaticToadlet statictoadlet = new StaticToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), CSSName);

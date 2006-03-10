@@ -18,23 +18,23 @@ import freenet.node.Node;
 import freenet.node.Version;
 import freenet.pluginmanager.HTTPRequest;
 
+
+// FIXME: add logging, comments
 public class ConfigToadlet extends Toadlet {
 	private Config config;
-	private Node node;
 	
-	ConfigToadlet(HighLevelSimpleClient client, Node n, Config conf, String CSSName) {
+	ConfigToadlet(HighLevelSimpleClient client, Config conf, String CSSName) {
 		super(client, CSSName);
 		config=conf;
-		node=n;
 	}
 
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		StringBuffer buf = new StringBuffer();
 		SubConfig[] sc = config.getConfigs();
 		
-		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration", CSSName);
 		HTTPRequest request = new HTTPRequest(uri);
 		if (request.hasParameters() == false) {
+			ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration", CSSName);
 			buf.append("<h1 class=\"title\">Node Configuration</h1>\n");
 			buf.append("<div class=\"config\">\n");
 			buf.append("	<ul class=\"config\">\n");
@@ -66,18 +66,22 @@ public class ConfigToadlet extends Toadlet {
 					buf.append("		<li>"+prefix+"."+configName+"=><input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
 							" type=\"text\" name=\""+prefix+"."+configName+"\" value=\""+o[j].getValueString()+"\"></li>\n");
 				}
+				
+				buf.append("<br><hr>");
 			}
 			
-			buf.append("<hr><br>");
+			buf.append("<br>");
 			buf.append("<input type=\"submit\" value=\"Apply\">");
 			buf.append("<input type=\"reset\" value=\"Cancel\">");
 			buf.append("</form>");
 			buf.append("	</ul>\n");
 			buf.append("</div>\n");
+			
+			ctx.getPageMaker().makeTail(buf);
+			
+			this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
 		
 		} else {
-			buf.append("Applying configuration");
-			
 			for(int i=0; i<sc.length ; i++){
 				Option[] o = sc[i].getOptions();
 				String prefix = new String(sc[i].getPrefix());
@@ -88,17 +92,19 @@ public class ConfigToadlet extends Toadlet {
 					
 					// we ignore unreconized parameters 
 					if(request.getParam(prefix+"."+configName) != ""){
-						if(o[j].getValueString() != request.getParam(prefix+"."+configName))
-							buf.append(o[j].getShortDesc()+":\n");
+						if(o[j].getValueString() != request.getParam(prefix+"."+configName)){
+							try{
+								o[j].setValue(request.getParam(prefix+"."+configName));
+							}catch(Exception e){
+								buf.append(e+"\n");
+							}
+						}
 					}
 				}
 			}
+			config.store();
+			writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx, "Applying configuration", buf.toString(), "/config/", 10));
 		}
-		
-		
-		ctx.getPageMaker().makeTail(buf);
-		
-		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
 	}
 	
 	public void handlePut(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
