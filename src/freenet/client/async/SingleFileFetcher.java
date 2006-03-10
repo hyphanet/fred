@@ -355,7 +355,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
-						decompressors, clientMetadata, actx, recursionLevel, returnBucket);
+						decompressors, clientMetadata, actx, recursionLevel, returnBucket, false);
 				sf.schedule();
 				rcb.onBlockSetFinished(this);
 				// SplitFile will now run.

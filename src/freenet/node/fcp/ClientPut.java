@@ -73,7 +73,7 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	// ClientPutter level).
 	private FCPMessage progressMessage;
 	
-	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) {
+	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException {
 		this.verbosity = message.verbosity;
 		this.identifier = message.identifier;
 		this.getCHKOnly = message.getCHKOnly;
@@ -298,11 +298,9 @@ public class ClientPut extends ClientRequest implements ClientCallback, ClientEv
 	
 	/** Request completed. But we may have to stick around until we are acked. */
 	private void finish() {
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
-		} else {
-			client.finishedClientRequest(this);
-		}
+		client.finishedClientRequest(this);
 	}
 	
 	public boolean isPersistent() {

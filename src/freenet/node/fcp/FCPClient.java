@@ -126,18 +126,23 @@ public class FCPClient {
 			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true);
 	}
 	
-	public void register(ClientRequest cg) {
+	public void register(ClientRequest cg) throws IdentifierCollisionException {
 		synchronized(this) {
+			String ident = cg.getIdentifier();
+			ClientRequest old = (ClientRequest) clientRequestsByIdentifier.get(ident);
+			if(old != null && old != cg)
+				throw new IdentifierCollisionException();
 			if(cg.hasFinished())
 				completedUnackedRequests.push(cg);
 			else
 				runningPersistentRequests.add(cg);
-			clientRequestsByIdentifier.put(cg.getIdentifier(), cg);
+			clientRequestsByIdentifier.put(ident, cg);
 		}
 	}
 
 	public void removeByIdentifier(String identifier, boolean kill) throws MessageInvalidException {
 		ClientRequest req;
+		Logger.minor(this, "removeByIdentifier("+identifier+","+kill+")");
 		synchronized(this) {
 			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
 			if(req == null)
@@ -146,8 +151,10 @@ public class FCPClient {
 				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not found", identifier);
 			clientRequestsByIdentifier.remove(identifier);
 		}
-		if(kill)
+		if(kill) {
+			Logger.minor(this, "Killing request "+req);
 			req.cancel();
+		}
 		server.forceStorePersistentRequests();
 	}
 

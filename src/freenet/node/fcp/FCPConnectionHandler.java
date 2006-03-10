@@ -102,12 +102,22 @@ public class FCPConnectionHandler {
 		String id = message.identifier;
 		ClientGet cg = null;
 		boolean success;
+		boolean persistent = message.persistenceType != ClientGet.PERSIST_CONNECTION;
 		synchronized(this) {
 			if(isClosed) return;
-			success = !requestsByIdentifier.containsKey(id);
+			// We need to track non-persistent requests anyway, so we may as well check
+			if(persistent)
+				success = true;
+			else
+				success = !requestsByIdentifier.containsKey(id);
 			if(success) {
-				cg = new ClientGet(this, message);
-				requestsByIdentifier.put(id, cg);
+				try {
+					cg = new ClientGet(this, message);
+					if(!persistent)
+						requestsByIdentifier.put(id, cg);
+				} catch (IdentifierCollisionException e) {
+					success = false;
+				}
 			}
 		}
 		if(!success) {
@@ -130,12 +140,22 @@ public class FCPConnectionHandler {
 		String id = message.identifier;
 		ClientPut cp = null;
 		boolean success;
+		boolean persistent = message.persistenceType != ClientGet.PERSIST_CONNECTION;
 		synchronized(this) {
 			if(isClosed) return;
-			success = !requestsByIdentifier.containsKey(id);
+			// We need to track non-persistent requests anyway, so we may as well check
+			if(persistent)
+				success = true;
+			else
+				success = !requestsByIdentifier.containsKey(id);
 			if(success) {
-				cp = new ClientPut(this, message);
-				requestsByIdentifier.put(id, cp);
+				try {
+					cp = new ClientPut(this, message);
+				} catch (IdentifierCollisionException e) {
+					success = false;
+				}
+				if(!persistent)
+					requestsByIdentifier.put(id, cp);
 			}
 		}
 		if(!success) {

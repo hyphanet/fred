@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -74,7 +73,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 * when we have proper persistence at the ClientGetter level. */
 	private SimpleProgressMessage progressPending;
 	
-	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) {
+	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException {
 		uri = message.uri;
 		clientToken = message.clientToken;
 		// FIXME
@@ -221,6 +220,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 	
 	public void cancel() {
+		Logger.minor(this, "Cancelling "+this);
 		getter.cancel();
 	}
 
@@ -351,11 +351,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	/** Request completed. But we may have to stick around until we are acked. */
 	private void finish() {
-		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
+		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
-		} else {
-			client.finishedClientRequest(this);
-		}
+		client.finishedClientRequest(this);
 	}
 
 	public void onSuccess(BaseClientPutter state) {
