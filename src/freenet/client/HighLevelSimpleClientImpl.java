@@ -129,7 +129,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, node.chkPutScheduler, node.sskPutScheduler, bucketsByName, priorityClass, insertURI, defaultName, getInserterContext(), false, this);
+			new SimpleManifestPutter(pw, node.chkPutScheduler, node.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(), false, this);
 		return pw.waitForCompletion();
 	}
 	

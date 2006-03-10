@@ -158,7 +158,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
-			ClientRequestScheduler sskSched, HashMap bucketsByName, short prioClass, FreenetURI target, 
+			ClientRequestScheduler sskSched, HashSet manifestElements, short prioClass, FreenetURI target, 
 			String defaultName, InserterContext ctx, boolean getCHKOnly, Object clientContext) throws InserterException {
 		super(prioClass, chkSched, sskSched, clientContext);
 		this.defaultName = defaultName;
@@ -170,11 +170,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		runningPutHandlers = new HashSet();
 		putHandlersWaitingForMetadata = new HashSet();
 		waitingForBlockSets = new HashSet();
-		Iterator it = bucketsByName.keySet().iterator();
+		Iterator it = manifestElements.iterator();
 		while(it.hasNext()) {
-			String name = (String) it.next();
-			Bucket data = (Bucket) bucketsByName.get(name);
-			String mimeType = DefaultMIMETypes.guessMIMEType(name);
+			ManifestElement element = (ManifestElement) it.next();
+			String name = element.name;
+			Bucket data = element.data;
+			String mimeType = element.mimeOverride;
+			if(mimeType == null)
+				mimeType = DefaultMIMETypes.guessMIMEType(name);
 			ClientMetadata cm;
 			if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
 				cm = null;
@@ -333,6 +336,22 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	public void onBlockSetFinished(ClientPutState state) {
 		this.blockSetFinalized();
+	}
+
+	/**
+	 * Convert a HashMap of name -> bucket to a HashSet of ManifestEntry's.
+	 * All are to have mimeOverride=null, i.e. we use the auto-detected mime type
+	 * from the filename.
+	 */
+	public static HashSet bucketsByNameToManifestEntries(HashMap bucketsByName) {
+		HashSet manifestEntries = new HashSet();
+		Iterator i = bucketsByName.keySet().iterator();
+		while(i.hasNext()) {
+			String name = (String) i.next();
+			Bucket data = (Bucket) bucketsByName.get(name);
+			manifestEntries.add(new ManifestElement(name, data, null));
+		}
+		return manifestEntries;
 	}
 
 }
