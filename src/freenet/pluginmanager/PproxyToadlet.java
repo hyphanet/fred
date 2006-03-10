@@ -155,7 +155,7 @@ public class PproxyToadlet extends Toadlet {
 			}
 			
 			if (fn == null) {
-				writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Error", "Plugin not found...", ".", 5));
+				writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx,"Error", "Plugin not found...", ".", 5));
 			} else {
 				pm.killPlugin(request.getParam("reload"));
 				pm.startPlugin(fn);
