@@ -119,6 +119,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		sfs.put("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
 		sfs.put("DontCompress", Boolean.toString(dontCompress));
 		sfs.put("Global", Boolean.toString(global));
+		sfs.put("DefaultName", defaultName);
 		return sfs;
 	}
 
