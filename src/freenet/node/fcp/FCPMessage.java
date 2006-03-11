@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import freenet.node.Node;
+import freenet.support.BucketFactory;
 import freenet.support.SimpleFieldSet;
 
 public abstract class FCPMessage {
@@ -24,7 +25,10 @@ public abstract class FCPMessage {
 
 	public abstract String getName();
 	
-	public static FCPMessage create(String name, SimpleFieldSet fs) throws MessageInvalidException {
+	/**
+	 * Create a message from a SimpleFieldSet, and the message's name, if possible. 
+	 */
+	public static FCPMessage create(String name, SimpleFieldSet fs, BucketFactory bfTemp, BucketFactory bfPersistent) throws MessageInvalidException {
 		if(name.equals(ClientHelloMessage.name))
 			return new ClientHelloMessage(fs);
 		if(name.equals(ClientGetMessage.name))
@@ -43,6 +47,8 @@ public abstract class FCPMessage {
 			return new ModifyPersistentRequest(fs);
 		if(name.equals(ClientPutDiskDirMessage.name))
 			return new ClientPutDiskDirMessage(fs);
+		if(name.equals(ClientPutComplexDirMessage.name))
+			return new ClientPutComplexDirMessage(fs, bfTemp, bfPersistent);
 		if(name.equals("Void"))
 			return null;
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null);

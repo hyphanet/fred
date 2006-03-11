@@ -52,7 +52,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			fs = new SimpleFieldSet(lis, 4096, 128, false, false);
 			FCPMessage msg;
 			try {
-				msg = FCPMessage.create(messageType, fs);
+				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.node.persistentTempBucketFactory);
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
 				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);
@@ -65,10 +65,10 @@ public class FCPConnectionInputHandler implements Runnable {
 				handler.close();
 				continue;
 			}
-			if(msg instanceof DataCarryingMessage) {
+			if(msg instanceof BaseDataCarryingMessage) {
 				// FIXME tidy up - coalesce with above and below try { } catch (MIE) {}'s?
 				try {
-					((DataCarryingMessage)msg).readFrom(lis, handler.bf, handler.server);
+					((BaseDataCarryingMessage)msg).readFrom(lis, handler.bf, handler.server);
 				} catch (MessageInvalidException e) {
 					FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);
 					handler.outputHandler.queue(err);

@@ -1,10 +1,14 @@
 package freenet.node.fcp;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
+import freenet.support.BucketFactory;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -82,6 +86,22 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	        }
     	}
     	return ret;
+	}
+
+	long dataLength() {
+		return 0;
+	}
+
+	String getIdentifier() {
+		return identifier;
+	}
+
+	public void readFrom(InputStream is, BucketFactory bf, FCPServer server) throws IOException, MessageInvalidException {
+		// Do nothing
+	}
+
+	protected void writeData(OutputStream os) throws IOException {
+		// Do nothing
 	}
 
 }

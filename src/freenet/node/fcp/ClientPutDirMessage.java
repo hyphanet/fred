@@ -25,7 +25,8 @@ import freenet.support.SimpleFieldSet;
  * Persistence=<Persistence as ClientPut>
  * Global=<Global as ClientPut>
  */
-public abstract class ClientPutDirMessage extends FCPMessage {
+public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
+	// Some subtypes of this (ClientPutComplexDirMessage) may carry a payload.
 
 	final String identifier;
 	final FreenetURI uri;

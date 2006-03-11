@@ -10,11 +10,9 @@ import freenet.support.BucketTools;
 import freenet.support.Logger;
 
 
-public abstract class DataCarryingMessage extends FCPMessage {
+public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 
 	protected Bucket bucket;
-	
-	abstract long dataLength();
 	
 	Bucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
 		return bf.makeBucket(length);
@@ -44,12 +42,11 @@ public abstract class DataCarryingMessage extends FCPMessage {
 		this.bucket = bucket;
 	}
 	
-	public void send(OutputStream os) throws IOException {
-		super.send(os);
+	protected void writeData(OutputStream os) throws IOException {
 		BucketTools.copyTo(bucket, os, dataLength());
 		if(freeOnSent) bucket.free();
 	}
-
+	
 	String getEndString() {
 		return "Data";
 	}
