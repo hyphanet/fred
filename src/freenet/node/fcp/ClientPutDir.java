@@ -19,7 +19,11 @@ import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SimpleEventProducer;
 import freenet.keys.FreenetURI;
+import freenet.support.Bucket;
+import freenet.support.HexUtil;
+import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileBucket;
 
 public class ClientPutDir extends ClientPutBase implements ClientEventListener, ClientCallback {
 
@@ -83,7 +87,40 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		throw new UnsupportedOperationException();
+		SimpleFieldSet fs = super.getFieldSet();
+		// Translate manifestElements directly into a fieldset
+		SimpleFieldSet files = new SimpleFieldSet(true);
+		// Flatten the hierarchy, it can be reconstructed on restarting.
+		// Storing it directly would be a PITA.
+		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
+		for(int i=0;i<elements.length;i++) {
+			String num = Integer.toString(i);
+			ManifestElement e = elements[i];
+			String name = e.getName();
+			String mimeOverride = e.getMimeTypeOverride();
+			Bucket data = e.getData();
+			SimpleFieldSet subset = new SimpleFieldSet(true);
+			subset.put("Name", name);
+			if(mimeOverride != null)
+				subset.put("Metadata.ContentType", mimeOverride);
+			// What to do with the bucket?
+			// It is either a persistent encrypted bucket or a file bucket ...
+			if(data instanceof FileBucket) {
+				subset.put("UploadFrom", "disk");
+				subset.put("Filename", ((FileBucket)data).getFile().getPath());
+			} else if(data instanceof PaddedEphemerallyEncryptedBucket) {
+				// the bucket is a persistent encrypted temp bucket
+				PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) data;
+				subset.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
+				subset.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
+				subset.put("TempBucket.Size", Long.toString(bucket.size()));
+			} else {
+				throw new IllegalStateException("Don't know what to do with bucket: "+data);
+			}
+			files.put(num, subset);
+		}
+		fs.put("Files", files);
+		return fs;
 	}
 
 	protected FCPMessage persistentTagMessage() {

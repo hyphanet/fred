@@ -16,22 +16,22 @@ import freenet.support.SimpleFieldSet;
 /**
  * ClientPutComplexDir
  * < ... standard ClientPutDir headers ... >
- * Files.1.Name=hello.txt
- * Files.1.UploadFrom=direct
- * Files.1.Metadata.ContentType=text/plain
- * Files.1.DataLength=6
+ * Files.0.Name=hello.txt
+ * Files.0.UploadFrom=direct
+ * Files.0.Metadata.ContentType=text/plain
+ * Files.0.DataLength=6
  *  ( upload the 6 bytes following this message as hello.txt, type plain text)
- * Files.2.Name=something.pdf
- * Files.2.UploadFrom=disk
- * Files.2.Filename=something.pdf
+ * Files.1.Name=something.pdf
+ * Files.1.UploadFrom=disk
+ * Files.1.Filename=something.pdf
  *  ( upload something.pdf, guess the mime type from the filename )
- * Files.3.Name=toad.jpeg
- * Files.3.UploadFrom=redirect
- * Files.3.TargetURI=CHK@...,...,...
- * Files.3.Metadata.ContentType=image/jpeg
+ * Files.2.Name=toad.jpeg
+ * Files.2.UploadFrom=redirect
+ * Files.2.TargetURI=CHK@...,...,...
+ * Files.2.Metadata.ContentType=image/jpeg
  *  ( not yet supported, but would be really useful! FIXME ! )
  * (note that the Files.x must always be a decimal integer. We use these for sort 
- *  order for UploadFrom=direct. they must be sequential and start at 1).
+ *  order for UploadFrom=direct. they must be sequential and start at 0).
  * ...
  * End
  * <data from above direct uploads, ***in alphabetical order***>
@@ -56,7 +56,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		SimpleFieldSet files = fs.subset("Files");
 		if(files == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Files section", identifier);
-		for(int i=1;;i++) {
+		for(int i=0;;i++) {
 			String name = Integer.toString(i);
 			SimpleFieldSet subset = files.subset(name);
 			if(subset == null) break;

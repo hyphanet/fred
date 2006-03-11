@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Vector;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -386,4 +387,30 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return manifestEntries;
 	}
 
+	/**
+	 * Convert a hierarchy of HashMap's of ManifestEntries into a series of 
+	 * ManifestElement's, each of which has a full path.
+	 */
+	public static ManifestElement[] flatten(HashMap manifestElements) {
+		Vector v = new Vector();
+		flatten(manifestElements, v, "");
+		return (ManifestElement[]) v.toArray(new ManifestElement[v.size()]);
+	}
+
+	public static void flatten(HashMap manifestElements, Vector v, String prefix) {
+		Iterator i = manifestElements.keySet().iterator();
+		while(i.hasNext()) {
+			String name = (String) i.next();
+			String fullName = prefix.length() == 0 ? name : prefix+"/"+name;
+			Object o = manifestElements.get(name);
+			if(o instanceof HashMap) {
+				flatten((HashMap)o, v, fullName);
+			} else if(o instanceof ManifestElement) {
+				ManifestElement me = (ManifestElement) o;
+				v.add(new ManifestElement(me, fullName));
+			} else
+				throw new IllegalStateException(String.valueOf(o));
+		}
+	}
+	
 }

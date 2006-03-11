@@ -22,6 +22,12 @@ public class ManifestElement {
 		this.mimeOverride = mimeOverride;
 	}
 	
+	public ManifestElement(ManifestElement me, String fullName) {
+		this.name = fullName;
+		this.data = me.data;
+		this.mimeOverride = me.mimeOverride;
+	}
+
 	public int hashCode() {
 		return name.hashCode();
 	}
@@ -36,5 +42,17 @@ public class ManifestElement {
 
 	public void freeData() {
 		data.free();
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getMimeTypeOverride() {
+		return mimeOverride;
+	}
+
+	public Bucket getData() {
+		return data;
 	}
 }

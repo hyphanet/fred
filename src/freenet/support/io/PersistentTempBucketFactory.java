@@ -90,10 +90,15 @@ public class PersistentTempBucketFactory implements BucketFactory {
 		}
 	}
 
-	public Bucket makeBucket(long size) throws IOException {
+	public Bucket makeRawBucket(long size) throws IOException {
 		return new FileBucket(fg.makeRandomFilename(), false, false, false, true);
 	}
 
+	public Bucket makeBucket(long size) throws IOException {
+		Bucket b = makeRawBucket(size);
+		return new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false);
+	}
+	
 	public Bucket makeEncryptedBucket() throws IOException {
 		Bucket b = makeBucket(-1);
 		return new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false);
