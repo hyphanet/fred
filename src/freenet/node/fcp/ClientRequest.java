@@ -131,6 +131,10 @@ public abstract class ClientRequest {
 				ClientPut cp = new ClientPut(fs, client);
 				client.register(cp);
 				return cp;
+			} else if(type.equals("PUTDIR")) {
+				ClientPutDir cp = new ClientPutDir(fs, client);
+				client.register(cp);
+				return cp;
 			} else {
 				Logger.error(ClientRequest.class, "Unrecognized type: "+type);
 				return null;

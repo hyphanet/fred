@@ -73,7 +73,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 	 */
 	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, long knownSize, byte[] key, RandomSource origRandom) throws IOException {
 		if(bucket.size() < knownSize)
-			throw new IOException("Bucket is too small on disk");
+			throw new IOException("Bucket is too small on disk - knownSize="+knownSize+" but bucket.size="+bucket.size()+" for "+bucket);
 		this.dataLength = knownSize;
 		this.origRandom = origRandom;
 		this.bucket = bucket;

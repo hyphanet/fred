@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import freenet.node.Node;
 import freenet.support.BucketFactory;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.PersistentTempBucketFactory;
 
 public abstract class FCPMessage {
 
@@ -28,7 +29,7 @@ public abstract class FCPMessage {
 	/**
 	 * Create a message from a SimpleFieldSet, and the message's name, if possible. 
 	 */
-	public static FCPMessage create(String name, SimpleFieldSet fs, BucketFactory bfTemp, BucketFactory bfPersistent) throws MessageInvalidException {
+	public static FCPMessage create(String name, SimpleFieldSet fs, BucketFactory bfTemp, PersistentTempBucketFactory bfPersistent) throws MessageInvalidException {
 		if(name.equals(ClientHelloMessage.name))
 			return new ClientHelloMessage(fs);
 		if(name.equals(ClientGetMessage.name))

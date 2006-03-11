@@ -412,5 +412,34 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				throw new IllegalStateException(String.valueOf(o));
 		}
 	}
+
+	/**
+	 * Opposite of flatten(...).
+	 * Note that this can throw a ClassCastException if the vector passed in is
+	 * bogus (has files pretending to be directories).
+	 */
+	public static HashMap unflatten(Vector v) {
+		HashMap manifestElements = new HashMap();
+		for(int i=0;i<v.size();i++) {
+			ManifestElement oldElement = (ManifestElement)v.get(i);
+			add(oldElement, oldElement.getName(), manifestElements);
+		}
+		return manifestElements;
+	}
 	
+	private static void add(ManifestElement e, String namePart, HashMap target) {
+		int idx = namePart.indexOf('/');
+		if(idx < 0) {
+			target.put(namePart, new ManifestElement(e, namePart));
+		} else {
+			String before = namePart.substring(0, idx);
+			String after = namePart.substring(idx+1);
+			HashMap hm = (HashMap) (target.get(before));
+			if(hm == null) {
+				hm = new HashMap();
+				target.put(before, hm);
+			}
+			add(e, after, hm);
+		}
+	}
 }

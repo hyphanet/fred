@@ -219,6 +219,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		fs.put("MaxRetries", Integer.toString(ctx.maxInsertRetries));
 		fs.put("Finished", Boolean.toString(finished));
 		fs.put("Succeeded", Boolean.toString(succeeded));
+		fs.put("GetCHKOnly", Boolean.toString(getCHKOnly));
 		if(generatedURI != null)
 			fs.put("GeneratedURI", generatedURI.toString(false));
 		if(finished && (!succeeded))

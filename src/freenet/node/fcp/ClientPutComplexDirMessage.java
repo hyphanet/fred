@@ -12,6 +12,7 @@ import freenet.node.Node;
 import freenet.support.BucketFactory;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.PersistentTempBucketFactory;
 
 /**
  * ClientPutComplexDir
@@ -45,7 +46,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 	/** Total number of bytes of attached data */
 	private final long attachedBytes;
 	
-	public ClientPutComplexDirMessage(SimpleFieldSet fs, BucketFactory bfTemp, BucketFactory bfPersistent) throws MessageInvalidException {
+	public ClientPutComplexDirMessage(SimpleFieldSet fs, BucketFactory bfTemp, PersistentTempBucketFactory bfPersistent) throws MessageInvalidException {
 		// Parse the standard ClientPutDir headers - URI, etc.
 		super(fs);
 		
