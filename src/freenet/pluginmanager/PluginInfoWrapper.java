@@ -1,6 +1,8 @@
 package freenet.pluginmanager;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class PluginInfoWrapper {
 	// Parameters to make the object OTP
@@ -12,7 +14,9 @@ public class PluginInfoWrapper {
 	private String threadName;
 	private FredPlugin plug;
 	private boolean isPproxyPlugin;
+	private boolean isThreadlessPlugin;
 	private String filename;
+	private HashSet toadletLinks=new HashSet(); 
 	//public String 
 	
 	public PluginInfoWrapper(FredPlugin plug, Thread ps, String filename) {
@@ -26,6 +30,7 @@ public class PluginInfoWrapper {
 		ps.setName(threadName);
 		fedPluginThread = true;
 		isPproxyPlugin = (plug instanceof FredPluginHTTP);
+		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
 	}
 	
 	public String toString() {
@@ -43,7 +48,29 @@ public class PluginInfoWrapper {
 	public String getPluginClassName(){
 		return plug.getClass().getName().toString();
 	}
-
+	
+	public String[] getPluginToadletSymlinks(){
+		synchronized (toadletLinks) {
+			return (String[])toadletLinks.toArray();
+		}
+	}
+	
+	public boolean addPluginToadletSymlink(String linkfrom){
+		synchronized (toadletLinks) {
+			if (toadletLinks.size() < 1)
+				toadletLinks = new HashSet();
+			return toadletLinks.add(linkfrom);
+		}
+	}
+	
+	public boolean removePluginToadletSymlink(String linkfrom){
+		synchronized (toadletLinks) {
+			if (toadletLinks.size() < 1)
+				return false;
+			return toadletLinks.remove(linkfrom);
+		}
+	}
+	
 	public void stopPlugin() {
 		plug.terminate();
 		thread.interrupt();
@@ -59,6 +86,14 @@ public class PluginInfoWrapper {
 
 	public String getFilename() {
 		return filename;
+	}
+
+	public boolean isThreadlessPlugin() {
+		return isThreadlessPlugin;
+	}
+
+	public Thread getThread() {
+		return thread;
 	}
 	
 }

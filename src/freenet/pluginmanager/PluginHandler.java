@@ -19,8 +19,13 @@ public class PluginHandler {
 	public static PluginInfoWrapper startPlugin(PluginManager pm, String filename, FredPlugin plug, PluginRespirator pr) {
 		PluginStarter ps = new PluginStarter(pr);
 		PluginInfoWrapper pi = new PluginInfoWrapper(plug, ps, filename);
+		
+		// This is an ugly trick... sorry ;o)
+		// The thread still exists as an identifier, but is never started if the
+		// plugin doesn't require it
 		ps.setPlugin(pm, plug);
-		ps.start();
+		if (!pi.isThreadlessPlugin())
+			ps.start();
 		return pi;
 	}
 	

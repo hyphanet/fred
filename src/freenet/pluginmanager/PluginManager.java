@@ -158,6 +158,7 @@ public class PluginManager {
 							Logger.normal(this, "Removed HTTP handler for /plugins/"+
 									pi.getPluginClassName()+"/");
 						} catch (Throwable ex) {
+							Logger.error(this, "removing Plugin", ex);
 						}
 					}
 				}
@@ -165,6 +166,47 @@ public class PluginManager {
 			
 			if (removeKey != null)
 				pluginInfo.remove(removeKey);
+		}
+		saveConfig();
+	}
+	
+	public void addToadletSymlinks(PluginInfoWrapper pi) {
+		synchronized (toadletList) {
+			try {
+				String targets[] = pi.getPluginToadletSymlinks();
+				if (targets == null)
+					return;
+				
+				for (int i = 0 ; i < targets.length ; i++) {
+					toadletList.remove(targets[i]);
+					Logger.normal(this, "Removed HTTP symlink: " + targets[i] +
+							" => /plugins/"+pi.getPluginClassName()+"/");
+				}
+			} catch (Throwable ex) {
+				Logger.error(this, "removing Toadlet-link", ex);
+			}
+		}
+		saveConfig();
+	}
+	
+	public void removeToadletSymlinks(PluginInfoWrapper pi) {
+		synchronized (toadletList) {
+			String rm = null;
+			try {
+				String targets[] = pi.getPluginToadletSymlinks();
+				if (targets == null)
+					return;
+				
+				for (int i = 0 ; i < targets.length ; i++) {
+					rm = targets[i];
+					toadletList.remove(targets[i]);
+					pi.removePluginToadletSymlink(targets[i]);
+					Logger.normal(this, "Removed HTTP symlink: " + targets[i] +
+							" => /plugins/"+pi.getPluginClassName()+"/");
+				}
+			} catch (Throwable ex) {
+				Logger.error(this, "removing Toadlet-link: " + rm, ex);
+			}
 		}
 		saveConfig();
 	}
@@ -213,16 +255,21 @@ public class PluginManager {
 	}
 	
 	public void killPlugin(String name) {
+		PluginInfoWrapper pi = null;
+		boolean found = false;
 		synchronized (pluginInfo) {
 			Iterator it = pluginInfo.keySet().iterator();
-			while (it.hasNext()) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(it.next());
+			while (it.hasNext() && !found) {
+				pi = (PluginInfoWrapper) pluginInfo.get(it.next());
 				if (pi.getThreadName().equals(name))
-				{
-					pi.stopPlugin();
-				}
+					found = true;
 			}
 		}
+		if (found)
+			if (pi.isThreadlessPlugin())
+				removePlugin(pi.getThread());
+			else
+				pi.stopPlugin();
 	}
 	
 	

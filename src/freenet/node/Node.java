@@ -31,6 +31,7 @@ import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.clients.http.FproxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.SymlinkerToadlet;
 import freenet.config.Config;
 import freenet.config.FilePersistentConfig;
 import freenet.config.IntCallback;
@@ -253,6 +254,7 @@ public class Node {
     TextModeClientInterface tmci;
     FCPServer fcpServer;
     FproxyToadlet fproxyServlet;
+    private SymlinkerToadlet symlinkerToadlet;
     SimpleToadletServer toadletContainer;
     
     // Persistent temporary buckets
@@ -908,6 +910,9 @@ public class Node {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);
 		}
+		
+		symlinkerToadlet = new SymlinkerToadlet(makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS),"", this);
+		toadletContainer.register(symlinkerToadlet, "/sl/", true);
 		/*
         SimpleToadletServer server = new SimpleToadletServer(port+2000);
         FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
@@ -2075,5 +2080,9 @@ public class Node {
 
 	public void setFCPServer(FCPServer fcp) {
 		this.fcpServer = fcp;
+	}
+
+	public SymlinkerToadlet getSymlinkerToadlet() {
+		return symlinkerToadlet;
 	}
 }
