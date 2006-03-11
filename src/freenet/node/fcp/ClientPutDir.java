@@ -73,14 +73,18 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			String uploadFrom = subset.get("UploadFrom");
 			Bucket data;
 			Logger.minor(this, "Parsing "+i);
+			long sz = Long.parseLong(subset.get("DataLength"));
 			if(uploadFrom == null || uploadFrom.equalsIgnoreCase("direct")) {
-				// Direct (persistent temp bucket)
-				byte[] key = HexUtil.hexToBytes(subset.get("TempBucket.DecryptKey"));
-				String fnam = subset.get("TempBucket.Filename");
-				long sz = Long.parseLong(subset.get("TempBucket.Size"));
-				data = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
-				if(data.size() != sz)
-					throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
+				if(!finished) {
+					// Direct (persistent temp bucket)
+					byte[] key = HexUtil.hexToBytes(subset.get("TempBucket.DecryptKey"));
+					String fnam = subset.get("TempBucket.Filename");
+					data = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
+					if(data.size() != sz)
+						throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
+				} else {
+					data = null;
+				}
 			} else {
 				// Disk
 				String f = subset.get("Filename");
@@ -93,14 +97,15 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 				}
 				data = new FileBucket(ff, true, false, false, false);
 			}
-			ManifestElement me = new ManifestElement(name, data, contentTypeOverride);
+			ManifestElement me = new ManifestElement(name, data, contentTypeOverride, sz);
 			v.add(me);
 		}
 		manifestElements = SimpleManifestPutter.unflatten(v);
-		SimpleManifestPutter p;
+		SimpleManifestPutter p = null;
 		try {
-			p = new SimpleManifestPutter(this, client.node.chkPutScheduler, client.node.sskPutScheduler,
-					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client);
+			if(!finished)
+				p = new SimpleManifestPutter(this, client.node.chkPutScheduler, client.node.sskPutScheduler,
+						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client);
 		} catch (InserterException e) {
 			onFailure(e, null);
 			p = null;
@@ -166,16 +171,18 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 				subset.put("Metadata.ContentType", mimeOverride);
 			// What to do with the bucket?
 			// It is either a persistent encrypted bucket or a file bucket ...
+			subset.put("DataLength", Long.toString(e.getSize()));
 			if(data instanceof FileBucket) {
 				subset.put("UploadFrom", "disk");
 				subset.put("Filename", ((FileBucket)data).getFile().getPath());
+			} else if(finished) {
+				subset.put("UploadFrom", "direct");
 			} else if(data instanceof PaddedEphemerallyEncryptedBucket) {
 				subset.put("UploadFrom", "direct");
 				// the bucket is a persistent encrypted temp bucket
 				PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) data;
 				subset.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
 				subset.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
-				subset.put("TempBucket.Size", Long.toString(bucket.size()));
 			} else {
 				throw new IllegalStateException("Don't know what to do with bucket: "+data);
 			}
@@ -186,7 +193,8 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 	}
 
 	protected FCPMessage persistentTagMessage() {
-		throw new UnsupportedOperationException();
+		return new PersistentPutDir(identifier, uri, verbosity, priorityClass,
+				persistenceType, global, defaultName, manifestElements);
 	}
 
 	protected String getTypeName() {

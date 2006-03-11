@@ -74,7 +74,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	        		
 	        		FileBucket bucket = new FileBucket(f, true, false, false, false);
 	        		
-	        		ret.put(f.getName(), new ManifestElement(f.getName(), bucket, null));
+	        		ret.put(f.getName(), new ManifestElement(f.getName(), bucket, null, f.length()));
 	        	} else if(filelist[i].isDirectory()) {
 	        		HashMap subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()));
 	        		ret.put(filelist[i].getName(), subdir);

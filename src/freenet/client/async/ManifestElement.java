@@ -10,22 +10,27 @@ public class ManifestElement {
 	/** Filename */
 	final String name;
 	
-	/** Data to be inserted */
+	/** Data to be inserted. Can be null, if the insert has completed. */
 	final Bucket data;
 	
 	/** MIME type override. null => use default for filename */
 	final String mimeOverride;
 	
-	public ManifestElement(String name, Bucket data, String mimeOverride) {
+	/** Original size of the bucket. Can be set explicitly even if data == null. */
+	final long dataSize;
+	
+	public ManifestElement(String name, Bucket data, String mimeOverride, long size) {
 		this.name = name;
 		this.data = data;
 		this.mimeOverride = mimeOverride;
+		this.dataSize = size;
 	}
 	
 	public ManifestElement(ManifestElement me, String fullName) {
 		this.name = fullName;
 		this.data = me.data;
 		this.mimeOverride = me.mimeOverride;
+		this.dataSize = me.dataSize;
 	}
 
 	public int hashCode() {
@@ -41,7 +46,8 @@ public class ManifestElement {
 	}
 
 	public void freeData() {
-		data.free();
+		if(data != null)
+			data.free();
 	}
 
 	public String getName() {
@@ -54,5 +60,9 @@ public class ManifestElement {
 
 	public Bucket getData() {
 		return data;
+	}
+	
+	public long getSize() {
+		return dataSize;
 	}
 }
