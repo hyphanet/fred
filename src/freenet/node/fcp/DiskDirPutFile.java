@@ -3,7 +3,9 @@ package freenet.node.fcp;
 import java.io.File;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.support.Bucket;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileBucket;
 
 public class DiskDirPutFile extends DirPutFile {
 
@@ -23,6 +25,10 @@ public class DiskDirPutFile extends DirPutFile {
 			mime = DefaultMIMETypes.guessMIMEType(file.getName());
 		}
 		return mime;
+	}
+
+	public Bucket getData() {
+		return new FileBucket(file, true, false, false, false);
 	}
 
 }

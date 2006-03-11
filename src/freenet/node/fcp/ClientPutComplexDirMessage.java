@@ -7,8 +7,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import freenet.client.async.ManifestElement;
 import freenet.node.Node;
 import freenet.support.BucketFactory;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -23,12 +25,16 @@ import freenet.support.SimpleFieldSet;
  * Files.2.UploadFrom=disk
  * Files.2.Filename=something.pdf
  *  ( upload something.pdf, guess the mime type from the filename )
- * Files.AnythingNotIncludingADotInIt.Name=toad.jpeg
- * Files.AnythingNotIncludingADotInIt.UploadFrom=redirect
- * Files.AnythingNotIncludingADotInIt.TargetURI=CHK@...,...,...
- * Files.AnythingNotIncludingADotInIt.Metadata.ContentType=image/jpeg
+ * Files.3.Name=toad.jpeg
+ * Files.3.UploadFrom=redirect
+ * Files.3.TargetURI=CHK@...,...,...
+ * Files.3.Metadata.ContentType=image/jpeg
  *  ( not yet supported, but would be really useful! FIXME ! )
+ * (note that the Files.x must always be a decimal integer. We use these for sort 
+ *  order for UploadFrom=direct. they must be sequential and start at 1).
  * ...
+ * End
+ * <data from above direct uploads, ***in alphabetical order***>
  */
 public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 
@@ -50,14 +56,17 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		SimpleFieldSet files = fs.subset("Files");
 		if(files == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Files section", identifier);
-		Iterator i = files.directSubsetNameIterator();
-		while(i.hasNext()) {
-			String name = (String) i.next();
+		for(int i=1;;i++) {
+			String name = Integer.toString(i);
 			SimpleFieldSet subset = files.subset(name);
+			if(subset == null) break;
 			DirPutFile f = DirPutFile.create(subset, identifier, (persistenceType == ClientRequest.PERSIST_FOREVER) ? bfPersistent : bfTemp);
 			addFile(f);
+			Logger.minor(this, "Adding "+f);
 			if(f instanceof DirectDirPutFile) {
 				totalBytes += ((DirectDirPutFile)f).bytesToRead();
+				filesToRead.addLast(f);
+				Logger.minor(this, "totalBytes now "+totalBytes);
 			}
 		}
 		attachedBytes = totalBytes;
@@ -121,8 +130,34 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
-		// TODO Auto-generated method stub
-		
+		// Convert the hierarchical hashmap's of DirPutFile's to hierarchical hashmap's
+		// of ManifestElement's.
+		// Then simply create the ClientPutDir.
+		HashMap manifestElements = new HashMap();
+		convertFilesByNameToManifestElements(filesByName, manifestElements);
+		handler.startClientPutDir(this, manifestElements);
+	}
+
+	/**
+	 * Convert a hierarchy of HashMap's containing DirPutFile's into a hierarchy of
+	 * HashMap's containing ManifestElement's.
+	 */
+	private void convertFilesByNameToManifestElements(HashMap filesByName, HashMap manifestElements) {
+		Iterator i = filesByName.keySet().iterator();
+		while(i.hasNext()) {
+			String name = (String) (i.next());
+			Object val = filesByName.get(name);
+			if(val instanceof HashMap) {
+				HashMap h = (HashMap) val;
+				HashMap manifests = new HashMap();
+				manifestElements.put(name, manifests);
+				convertFilesByNameToManifestElements(h, manifests);
+			} else {
+				DirPutFile f = (DirPutFile) val;
+				ManifestElement e = new ManifestElement(name, f.getData(), f.getMIMEType());
+				manifestElements.put(name, e);
+			}
+		}
 	}
 
 }

@@ -49,7 +49,7 @@ public class FCPConnectionInputHandler implements Runnable {
 				return;
 			}
 			if(messageType.equals("")) continue;
-			fs = new SimpleFieldSet(lis, 4096, 128, false, false);
+			fs = new SimpleFieldSet(lis, 4096, 128, true, false);
 			FCPMessage msg;
 			try {
 				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.node.persistentTempBucketFactory);

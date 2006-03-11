@@ -46,4 +46,8 @@ public class DirectDirPutFile extends DirPutFile {
 		BucketTools.copyTo(data, os, length);
 	}
 
+	public Bucket getData() {
+		return data;
+	}
+
 }

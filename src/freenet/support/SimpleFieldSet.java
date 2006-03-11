@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
 import freenet.support.io.LineReader;
 
@@ -391,5 +392,13 @@ public class SimpleFieldSet {
 			nextName = null;
 		}
 	}
+
+	public String[] namesOfDirectSubsets() {
+		Iterator i = new DirectSubsetNameIterator();
+		Vector v = new Vector();
+		while(i.hasNext()) v.add(i.next());
+		return (String[]) v.toArray(new String[v.size()]);
+	}
+	
 
 }

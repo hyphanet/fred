@@ -2,6 +2,7 @@ package freenet.node.fcp;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
+import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.SimpleFieldSet;
 
@@ -48,5 +49,11 @@ abstract class DirPutFile {
 	public String getName() {
 		return name;
 	}
+
+	public String getMIMEType() {
+		return meta.getMIMEType();
+	}
+
+	public abstract Bucket getData();
 
 }

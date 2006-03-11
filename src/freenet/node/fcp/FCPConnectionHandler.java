@@ -174,7 +174,7 @@ public class FCPConnectionHandler {
 		}
 	}
 
-	public void startClientPutDir(ClientPutDiskDirMessage message, HashMap buckets) {
+	public void startClientPutDir(ClientPutDirMessage message, HashMap buckets) {
 		String id = message.identifier;
 		ClientPutDir cp = null;
 		boolean success;
