@@ -378,7 +378,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Object o = bucketsByName.get(name);
 			if(o instanceof Bucket) {
 				Bucket data = (Bucket) bucketsByName.get(name);
-				manifestEntries.put(name, new ManifestElement(name, data, null));
+				manifestEntries.put(name, new ManifestElement(name, data, null,data.size()));
 			} else if(o instanceof HashMap) {
 				manifestEntries.put(name, bucketsByNameToManifestEntries((HashMap)o));
 			} else
