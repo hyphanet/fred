@@ -31,11 +31,22 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block = 
 				new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, false);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true);
 			currentState = origSFI;
 			metadata = null;
 		}
 
+		protected PutHandler(String name, FreenetURI target, ClientMetadata cm) {
+			super(SimpleManifestPutter.this.getPriorityClass(), SimpleManifestPutter.this.chkScheduler, SimpleManifestPutter.this.sskScheduler, SimpleManifestPutter.this.client);
+			this.name = name;
+			this.cm = cm;
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, target, cm);
+			cm = null;
+			metadata = m.writeToByteArray();
+			origSFI = null;
+			currentState = null;
+		}
+		
 		private SingleFileInserter origSFI;
 		private ClientPutState currentState;
 		private ClientMetadata cm;
@@ -44,6 +55,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private boolean finished;
 		
 		public void start() throws InserterException {
+			if(origSFI == null && metadata != null) return;
 			origSFI.start();
 			origSFI = null;
 		}
@@ -198,7 +210,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				makePutHandlers((HashMap)o, subMap);
 			} else {
 				ManifestElement element = (ManifestElement) o;
-				Bucket data = element.data;
 				String mimeType = element.mimeOverride;
 				if(mimeType == null)
 					mimeType = DefaultMIMETypes.guessMIMEType(name);
@@ -208,15 +219,21 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				else
 					cm = new ClientMetadata(mimeType);
 				PutHandler ph;
-				try {
-					ph = new PutHandler(name, data, cm, getCHKOnly);
-				} catch (InserterException e) {
-					cancelAndFinish();
-					throw e;
+				Bucket data = element.data;
+				if(element.targetURI != null) {
+					ph = new PutHandler(name, element.targetURI, cm);
+					// Just a placeholder, don't actually run it
+				} else {
+					try {
+						ph = new PutHandler(name, data, cm, getCHKOnly);
+					} catch (InserterException e) {
+						cancelAndFinish();
+						throw e;
+					}
+					runningPutHandlers.add(ph);
+					putHandlersWaitingForMetadata.add(ph);
 				}
 				putHandlersByName.put(name, ph);
-				runningPutHandlers.add(ph);
-				putHandlersWaitingForMetadata.add(ph);
 			}
 		}
 	}

@@ -155,7 +155,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 				convertFilesByNameToManifestElements(h, manifests);
 			} else {
 				DirPutFile f = (DirPutFile) val;
-				ManifestElement e = new ManifestElement(name, f.getData(), f.getMIMEType(), f.getData().size());
+				ManifestElement e = f.getElement();
 				manifestElements.put(name, e);
 			}
 		}

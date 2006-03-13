@@ -2,6 +2,7 @@ package freenet.node.fcp;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
+import freenet.client.async.ManifestElement;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.SimpleFieldSet;
@@ -13,7 +14,7 @@ import freenet.support.SimpleFieldSet;
 abstract class DirPutFile {
 
 	final String name;
-	final ClientMetadata meta;
+	ClientMetadata meta;
 	
 	public DirPutFile(SimpleFieldSet subset, String identifier) throws MessageInvalidException {
 		this.name = subset.get("Name");
@@ -41,6 +42,8 @@ abstract class DirPutFile {
 			return new DirectDirPutFile(subset, identifier, bf);
 		} else if(type.equalsIgnoreCase("disk")) {
 			return new DiskDirPutFile(subset, identifier);
+		} else if(type.equalsIgnoreCase("redirect")) {
+			return new RedirectDirPutFile(subset, identifier);
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Unsupported or unknown UploadFrom: "+type, identifier);
 		}
@@ -55,5 +58,9 @@ abstract class DirPutFile {
 	}
 
 	public abstract Bucket getData();
+
+	public ManifestElement getElement() {
+		return new ManifestElement(name, getData(), getMIMEType(), getData().size());
+	}
 
 }

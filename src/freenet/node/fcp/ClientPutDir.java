@@ -1,26 +1,17 @@
 package freenet.node.fcp;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
-import freenet.client.FetchException;
-import freenet.client.FetchResult;
-import freenet.client.InserterContext;
 import freenet.client.InserterException;
-import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
-import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
-import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
-import freenet.client.events.SimpleEventProducer;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.HexUtil;
@@ -164,27 +155,33 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			ManifestElement e = elements[i];
 			String name = e.getName();
 			String mimeOverride = e.getMimeTypeOverride();
-			Bucket data = e.getData();
 			SimpleFieldSet subset = new SimpleFieldSet(true);
 			subset.put("Name", name);
 			if(mimeOverride != null)
 				subset.put("Metadata.ContentType", mimeOverride);
-			// What to do with the bucket?
-			// It is either a persistent encrypted bucket or a file bucket ...
-			subset.put("DataLength", Long.toString(e.getSize()));
-			if(data instanceof FileBucket) {
-				subset.put("UploadFrom", "disk");
-				subset.put("Filename", ((FileBucket)data).getFile().getPath());
-			} else if(finished) {
-				subset.put("UploadFrom", "direct");
-			} else if(data instanceof PaddedEphemerallyEncryptedBucket) {
-				subset.put("UploadFrom", "direct");
-				// the bucket is a persistent encrypted temp bucket
-				PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) data;
-				subset.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
-				subset.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
+			FreenetURI target = e.getTargetURI();
+			if(target != null) {
+				subset.put("UploadFrom", "redirect");
+				subset.put("TargetURI", target.toString());
 			} else {
-				throw new IllegalStateException("Don't know what to do with bucket: "+data);
+				Bucket data = e.getData();
+				// What to do with the bucket?
+				// It is either a persistent encrypted bucket or a file bucket ...
+				subset.put("DataLength", Long.toString(e.getSize()));
+				if(data instanceof FileBucket) {
+					subset.put("UploadFrom", "disk");
+					subset.put("Filename", ((FileBucket)data).getFile().getPath());
+				} else if(finished) {
+					subset.put("UploadFrom", "direct");
+				} else if(data instanceof PaddedEphemerallyEncryptedBucket) {
+					subset.put("UploadFrom", "direct");
+					// the bucket is a persistent encrypted temp bucket
+					PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) data;
+					subset.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
+					subset.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
+				} else {
+					throw new IllegalStateException("Don't know what to do with bucket: "+data);
+				}
 			}
 			files.put(num, subset);
 		}

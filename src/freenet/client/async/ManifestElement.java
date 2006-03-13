@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 
 /**
@@ -19,11 +20,15 @@ public class ManifestElement {
 	/** Original size of the bucket. Can be set explicitly even if data == null. */
 	final long dataSize;
 	
+	/** Redirect target */
+	final FreenetURI targetURI;
+	
 	public ManifestElement(String name, Bucket data, String mimeOverride, long size) {
 		this.name = name;
 		this.data = data;
 		this.mimeOverride = mimeOverride;
 		this.dataSize = size;
+		this.targetURI = null;
 	}
 	
 	public ManifestElement(ManifestElement me, String fullName) {
@@ -31,8 +36,17 @@ public class ManifestElement {
 		this.data = me.data;
 		this.mimeOverride = me.mimeOverride;
 		this.dataSize = me.dataSize;
+		this.targetURI = me.targetURI;
 	}
 
+	public ManifestElement(String name, FreenetURI targetURI, String mimeOverride) {
+		this.name = name;
+		this.data = null;
+		this.mimeOverride = mimeOverride;
+		this.dataSize = -1;
+		this.targetURI = targetURI;
+	}
+	
 	public int hashCode() {
 		return name.hashCode();
 	}
@@ -64,5 +78,9 @@ public class ManifestElement {
 	
 	public long getSize() {
 		return dataSize;
+	}
+
+	public FreenetURI getTargetURI() {
+		return targetURI;
 	}
 }
