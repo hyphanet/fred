@@ -523,6 +523,8 @@ public class Metadata implements Cloneable {
 				noMIME = true;
 			}
 			simpleRedirectKey = uri;
+			if(!(uri.getKeyType().equals("CHK") && (uri.getAllMetaStrings() == null || uri.getAllMetaStrings().length == 0)))
+				fullKeys = true;
 		} else
 			throw new IllegalArgumentException();
 	}
@@ -610,6 +612,7 @@ public class Metadata implements Cloneable {
 			} else throw new IllegalArgumentException("Full keys must be enabled to write non-CHKs");
 		}
 	}
+	
 	/** Is a manifest? */
 	public boolean isSimpleManifest() {
 		return documentType == SIMPLE_MANIFEST;

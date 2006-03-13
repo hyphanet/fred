@@ -14,20 +14,23 @@ public class PersistentPut extends FCPMessage {
 	final FreenetURI uri;
 	final int verbosity; 
 	final short priorityClass;
-	final boolean fromDisk;
+	final short uploadFrom;
 	final short persistenceType; 
 	final File origFilename;
 	final String mimeType;
 	final boolean global;
+	final FreenetURI targetURI;
 	
 	public PersistentPut(String identifier, FreenetURI uri, int verbosity, 
-			short priorityClass, boolean fromDisk, short persistenceType, 
-			File origFilename, String mimeType, boolean global) {
+			short priorityClass, short uploadFrom, FreenetURI targetURI, 
+			short persistenceType, File origFilename, String mimeType, 
+			boolean global) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
 		this.priorityClass = priorityClass;
-		this.fromDisk = fromDisk;
+		this.uploadFrom = uploadFrom;
+		this.targetURI = targetURI;
 		this.persistenceType = persistenceType;
 		this.origFilename = origFilename;
 		this.mimeType = mimeType;
@@ -40,10 +43,12 @@ public class PersistentPut extends FCPMessage {
 		fs.put("URI", uri.toString(false));
 		fs.put("Verbosity", Integer.toString(verbosity));
 		fs.put("PriorityClass", Short.toString(priorityClass));
-		fs.put("UploadFrom", (fromDisk ? "disk" : "direct"));
+		fs.put("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
 		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		if(origFilename != null)
 			fs.put("Filename", origFilename.getAbsolutePath());
+		if(targetURI != null)
+			fs.put("TargetURI", targetURI.toString());
 		if(mimeType != null)
 			fs.put("Metadata.ContentType", mimeType);
 		fs.put("PriorityClass", Short.toString(priorityClass));

@@ -45,11 +45,16 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final boolean getCHKOnly;
 	final short priorityClass;
 	final short persistenceType;
-	final boolean fromDisk;
+	final short uploadFromType;
 	final boolean dontCompress;
 	final String clientToken;
 	final File origFilename;
 	final boolean global;
+	final FreenetURI redirectTarget;
+	
+	static final short UPLOAD_FROM_DIRECT = 0;
+	static final short UPLOAD_FROM_DISK = 1;
+	static final short UPLOAD_FROM_REDIRECT = 2;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");
@@ -101,8 +106,20 @@ public class ClientPutMessage extends DataCarryingMessage {
 			}
 		}
 		String uploadFrom = fs.get("UploadFrom");
-		if(uploadFrom != null && uploadFrom.equalsIgnoreCase("disk")) {
-			fromDisk = true;
+		if(uploadFrom == null || uploadFrom.equalsIgnoreCase("direct")) {
+			uploadFromType = UPLOAD_FROM_DIRECT;
+			String dataLengthString = fs.get("DataLength");
+			if(dataLengthString == null)
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut", identifier);
+			try {
+				dataLength = Long.parseLong(dataLengthString, 10);
+			} catch (NumberFormatException e) {
+				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier);
+			}
+			this.origFilename = null;
+			redirectTarget = null;
+		} else if(uploadFrom.equalsIgnoreCase("disk")) {
+			uploadFromType = UPLOAD_FROM_DISK;
 			String filename = fs.get("Filename");
 			if(filename == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Filename", identifier);
@@ -113,18 +130,22 @@ public class ClientPutMessage extends DataCarryingMessage {
 			FileBucket fileBucket = new FileBucket(f, true, false, false, false);
 			this.bucket = fileBucket;
 			this.origFilename = f;
-		} else {
-			fromDisk = false;
-			String dataLengthString = fs.get("DataLength");
-			if(dataLengthString == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Need DataLength on a ClientPut", identifier);
+			redirectTarget = null;
+		} else if(uploadFrom.equalsIgnoreCase("redirect")) {
+			uploadFromType = UPLOAD_FROM_REDIRECT;
+			String target = fs.get("TargetURI");
+			if(target == null)
+				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "TargetURI missing but UploadFrom=redirect", identifier);
 			try {
-				dataLength = Long.parseLong(dataLengthString, 10);
-			} catch (NumberFormatException e) {
-				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing DataLength field: "+e.getMessage(), identifier);
+				redirectTarget = new FreenetURI(target);
+			} catch (MalformedURLException e) {
+				throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier);
 			}
-			this.origFilename = null;
-		}
+			dataLength = 0;
+			origFilename = null;
+			bucket = null;
+		} else
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "UploadFrom invalid or unrecognized: "+uploadFrom, identifier);
 		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		String persistenceString = fs.get("Persistence");
 		if(persistenceString == null || persistenceString.equalsIgnoreCase("connection")) {
@@ -151,12 +172,16 @@ public class ClientPutMessage extends DataCarryingMessage {
 		sfs.put("MaxRetries", Integer.toString(maxRetries));
 		sfs.put("Metadata.ContentType", contentType);
 		sfs.put("ClientToken", clientToken);
-		if(fromDisk) {
-			sfs.put("UploadFrom", "disk");
-			sfs.put("Filename", origFilename.getAbsolutePath());
-		} else {
+		if(uploadFromType == UPLOAD_FROM_DIRECT) {
 			sfs.put("UploadFrom", "direct");
 			sfs.put("DataLength", Long.toString(dataLength));
+		} else if(uploadFromType == UPLOAD_FROM_DISK) {
+			sfs.put("UploadFrom", "disk");
+			sfs.put("Filename", origFilename.getAbsolutePath());
+			sfs.put("DataLength", Long.toString(dataLength));
+		} else if(uploadFromType == UPLOAD_FROM_REDIRECT) {
+			sfs.put("UploadFrom", "redirect");
+			sfs.put("TargetURI", redirectTarget.toString());
 		}
 		sfs.put("GetCHKOnly", Boolean.toString(getCHKOnly));
 		sfs.put("PriorityClass", Short.toString(priorityClass));
@@ -176,7 +201,6 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	long dataLength() {
-		if(fromDisk) return 0;
 		return dataLength;
 	}
 
@@ -189,6 +213,19 @@ public class ClientPutMessage extends DataCarryingMessage {
 			return server.node.persistentTempBucketFactory.makeEncryptedBucket();
 		} else {
 			return super.createBucket(bf, length, server);
+		}
+	}
+
+	public static String uploadFromString(short uploadFrom) {
+		switch(uploadFrom) {
+		case UPLOAD_FROM_DIRECT:
+			return "direct";
+		case UPLOAD_FROM_DISK:
+			return "disk";
+		case UPLOAD_FROM_REDIRECT:
+			return "redirect";
+		default:
+			throw new IllegalArgumentException();
 		}
 	}
 	

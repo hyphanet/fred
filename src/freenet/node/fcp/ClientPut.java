@@ -2,41 +2,64 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 
 import freenet.client.ClientMetadata;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
+import freenet.client.Metadata;
 import freenet.client.async.ClientPutter;
+import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.io.FileBucket;
 
 public class ClientPut extends ClientPutBase {
 
 	final ClientPutter inserter;
-	final InsertBlock block;
-	/** Was this from disk? Purely for PersistentPut */
-	private final boolean fromDisk;
+	private final short uploadFrom;
 	/** Original filename if from disk, otherwise null. Purely for PersistentPut. */
 	private final File origFilename;
+	/** If uploadFrom==UPLOAD_FROM_REDIRECT, this is the target URI */
+	private final FreenetURI targetURI;
+	private final Bucket data;
+	private final ClientMetadata clientMetadata;
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries);
-		this.fromDisk = message.fromDisk;
+		this.uploadFrom = message.uploadFromType;
 		this.origFilename = message.origFilename;
 		// Now go through the fields one at a time
 		String mimeType = message.contentType;
 		clientToken = message.clientToken;
-		block = new InsertBlock(message.bucket, new ClientMetadata(mimeType), uri);
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this);
-		inserter = new ClientPutter(this, message.bucket, uri, new ClientMetadata(mimeType), 
-				ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, getCHKOnly, false, client);
+		Bucket data = message.bucket;
+		ClientMetadata cm = new ClientMetadata(mimeType);
+		boolean isMetadata = false;
+		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
+			this.targetURI = message.redirectTarget;
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
+			cm = null;
+			byte[] d = m.writeToByteArray();
+			data = new SimpleReadOnlyArrayBucket(d);
+			isMetadata = true;
+		} else
+			targetURI = null;
+		this.data = data;
+		this.clientMetadata = cm;
+		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		inserter = new ClientPutter(this, data, uri, cm, 
+				ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, 
+				getCHKOnly, isMetadata, client);
 		if(persistenceType != PERSIST_CONNECTION && handler != null)
 			sendPendingMessages(handler.outputHandler, true);
 	}
@@ -51,12 +74,35 @@ public class ClientPut extends ClientPutBase {
 	public ClientPut(SimpleFieldSet fs, FCPClient client2) throws PersistenceParseException, IOException {
 		super(fs, client2);
 		String mimeType = fs.get("Metadata.ContentType");
-		fromDisk = Fields.stringToBool(fs.get("FromDisk"), false);
-		Bucket data;
-		if(fromDisk) {
+
+		String from = fs.get("UploadFrom");
+		
+		if(from.equals("direct")) {
+			uploadFrom = ClientPutMessage.UPLOAD_FROM_DIRECT;
+		} else if(from.equals("disk")) {
+			uploadFrom = ClientPutMessage.UPLOAD_FROM_DISK;
+		} else if(from.equals("redirect")) {
+			uploadFrom = ClientPutMessage.UPLOAD_FROM_REDIRECT;
+		} else {
+			// FIXME remove this back compatibility hack in a few builds' time
+			String s = fs.get("FromDisk");
+			if(s.equalsIgnoreCase("true"))
+				uploadFrom = ClientPutMessage.UPLOAD_FROM_DISK;
+			else if(s.equalsIgnoreCase("false"))
+				uploadFrom = ClientPutMessage.UPLOAD_FROM_DIRECT;
+			else
+				throw new PersistenceParseException("Unknown UploadFrom: "+from);
+		}
+		
+		ClientMetadata cm = new ClientMetadata(mimeType);
+		
+		boolean isMetadata = false;
+		
+		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			origFilename = new File(fs.get("Filename"));
 			data = new FileBucket(origFilename, true, false, false, false);
-		} else {
+			targetURI = null;
+		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;
 			if(!succeeded) {
 				byte[] key = HexUtil.hexToBytes(fs.get("TempBucket.DecryptKey"));
@@ -66,9 +112,22 @@ public class ClientPut extends ClientPutBase {
 				if(data.size() != sz)
 					throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
 			} else data = null;
+			targetURI = null;
+		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
+			String target = fs.get("TargetURI");
+			targetURI = new FreenetURI(target);
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
+			cm = null;
+			byte[] d = m.writeToByteArray();
+			data = new SimpleReadOnlyArrayBucket(d);
+			origFilename = null;
+			isMetadata = true;
+		} else {
+			throw new PersistenceParseException("shouldn't happen");
 		}
-		block = new InsertBlock(data, new ClientMetadata(mimeType), uri);
-		inserter = new ClientPutter(this, data, uri, new ClientMetadata(mimeType), ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, getCHKOnly, false, client);
+		this.clientMetadata = cm;
+		inserter = new ClientPutter(this, data, uri, cm, ctx, client.node.chkPutScheduler, 
+				client.node.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client);
 		if(!finished)
 			start();
 	}
@@ -82,22 +141,24 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	protected void freeData() {
-		block.getData().free();
+		data.free();
 	}
 	
 	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
-		fs.put("Metadata.ContentType", block.clientMetadata.getMIMEType());
+		fs.put("Metadata.ContentType", clientMetadata.getMIMEType());
 		fs.put("GetCHKOnly", Boolean.toString(getCHKOnly));
-		fs.put("FromDisk", Boolean.toString(fromDisk));
-		if(fromDisk) {
+		fs.put("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
+		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			fs.put("Filename", origFilename.getPath());
-		} else {
+		}  else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			// the bucket is a persistent encrypted temp bucket
-			PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) block.getData();
+			PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) data;
 			fs.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
 			fs.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
 			fs.put("TempBucket.Size", Long.toString(bucket.size()));
+		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
+			fs.put("TargetURI", targetURI.toString());
 		}
 		return fs;
 	}
@@ -107,8 +168,8 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	protected FCPMessage persistentTagMessage() {
-		return new PersistentPut(identifier, uri, verbosity, priorityClass, fromDisk, persistenceType, origFilename, 
-				block.clientMetadata.getMIMEType(), client.isGlobalQueue);
+		return new PersistentPut(identifier, uri, verbosity, priorityClass, uploadFrom, targetURI, 
+				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue);
 	}
 
 	protected String getTypeName() {

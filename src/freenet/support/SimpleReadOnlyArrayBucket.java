@@ -23,6 +23,10 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 		this.length = length;
 	}
 	
+	public SimpleReadOnlyArrayBucket(byte[] buf) {
+		this(buf, 0, buf.length);
+	}
+	
 	public OutputStream getOutputStream() throws IOException {
 		throw new IOException("Read only");
 	}

@@ -25,6 +25,7 @@ public class ClientSSK extends ClientKey {
 	public final byte[] ehDocname;
 	
 	static final int CRYPTO_KEY_LENGTH = 32;
+	public static final int EXTRA_LENGTH = 5;
 	
 	public ClientSSK(String docName, byte[] pubKeyHash, byte[] extras, DSAPublicKey pubKey, byte[] cryptoKey) throws MalformedURLException {
 		this.docName = docName;
@@ -83,7 +84,7 @@ public class ClientSSK extends ClientKey {
 	}
 	
 	protected static final byte[] getExtraBytes() {
-		// 3 bytes.
+		// 5 bytes.
 		byte[] extra = new byte[5];
 
 		short cryptoAlgorithm = NodeSSK.ALGO_AES_PCFB_256_SHA256;

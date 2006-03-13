@@ -7,6 +7,7 @@ import freenet.client.FetchException;
 import freenet.client.InserterException;
 import freenet.node.Node;
 import freenet.support.Fields;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class GetFailedMessage extends FCPMessage {
@@ -20,6 +21,7 @@ public class GetFailedMessage extends FCPMessage {
 	final String identifier;
 	
 	public GetFailedMessage(FetchException e, String identifier) {
+		Logger.minor(this, "Creating get failed from "+e+" for "+identifier, e);
 		this.tracker = e.errorCodes;
 		this.code = e.mode;
 		this.codeDescription = FetchException.getMessage(code);

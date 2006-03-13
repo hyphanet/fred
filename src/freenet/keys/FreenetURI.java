@@ -13,6 +13,7 @@ import java.util.Vector;
 import freenet.support.Base64;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
+import freenet.support.Logger;
 
 /**
  * Note that the metadata pairs below are not presently supported. They are supported
@@ -384,9 +385,10 @@ public class FreenetURI {
 	static final byte SSK = 2;
 	
 	public static FreenetURI readFullBinaryKeyWithLength(DataInputStream dis) throws IOException {
-		int len = dis.readShort() & 0xffff;
+		int len = dis.readShort();
 		byte[] buf = new byte[len];
 		dis.readFully(buf);
+		Logger.minor(FreenetURI.class, "Read "+len+" bytes for key");
 		return fromFullBinaryKey(buf);
 	}
 	
@@ -397,7 +399,6 @@ public class FreenetURI {
 	}
 	
 	public static FreenetURI readFullBinaryKey(DataInputStream dis) throws IOException {
-		int x = 0;
 		byte type = dis.readByte();
 		String keyType;
 		if(type == CHK)
@@ -416,13 +417,14 @@ public class FreenetURI {
 		int extraLen;
 		if(type == CHK)
 			extraLen = ClientCHK.EXTRA_LENGTH;
-		else
-			throw new UnsupportedOperationException("SSKs not implemented yet!");
-			//extraLen = ClientSSK.EXTRA_LENGTH;
+		else //if(type == SSK)
+			extraLen = ClientSSK.EXTRA_LENGTH;
 		byte[] extra = new byte[extraLen];
 		dis.readFully(extra);
-		String docName = dis.readUTF();
-		int count = dis.readByte() & 0xff;
+		String docName = null;
+		if(type != CHK)
+			docName = dis.readUTF();
+		int count = dis.readInt();
 		String[] metaStrings = new String[count];
 		for(int i=0;i<metaStrings.length;i++) metaStrings[i] = dis.readUTF();
 		return new FreenetURI(keyType, docName, metaStrings, routingKey, cryptoKey, extra);
@@ -441,9 +443,10 @@ public class FreenetURI {
 		writeFullBinaryKey(ndos);
 		ndos.close();
 		byte[] data = baos.toByteArray();
-		if(data.length > 0xffff)
+		if(data.length > Short.MAX_VALUE)
 			throw new MalformedURLException("Full key too long: "+data.length+" - "+this);
 		dos.writeShort((short)data.length);
+		Logger.minor(this, "Written "+data.length+" bytes");
 		dos.write(data);
 	}
 
@@ -463,14 +466,17 @@ public class FreenetURI {
 			throw new MalformedURLException("Cannot write key of type "+keyType+" - do not know how");
 		if(routingKey.length != 32)
 			throw new MalformedURLException("Routing key must be of length 32");
+		dos.write(routingKey);
 		if(cryptoKey.length != 32)
 			throw new MalformedURLException("Crypto key must be of length 32");
+		dos.write(cryptoKey);
 		if(keyType.equals("CHK") && extra.length != ClientCHK.EXTRA_LENGTH)
 			throw new MalformedURLException("Wrong number of extra bytes for CHK");
 		if(keyType.equals("SSK"))
 			throw new UnsupportedOperationException("SSK support not yet implemented");
 		dos.write(extra);
-		dos.writeUTF(docName);
+		if(!keyType.equals("CHK"))
+			dos.writeUTF(docName);
 		if(metaStr != null) {
 			dos.writeInt(metaStr.length);
 			for(int i=0;i<metaStr.length;i++)
