@@ -53,7 +53,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final TupleBinding storeBlockTupleBinding;
 	private final TupleBinding longTupleBinding;
 	
-	private int chkBlocksInStore;
+	private long chkBlocksInStore;
 	private long maxChkBlocks;
 	private final Database chkDB;
 	private final Database chkDB_accessTime;
@@ -645,12 +645,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
     }
     
-    private int countCHKBlocks() {
-    	int count =0;
+    private long countCHKBlocks() {
+    	long count =0;
     	try{
     		Logger.minor(this, "Started counting items in database");
     		
-    		count = (int)((BtreeStats)chkDB.getStats(null)).getLeafNodeCount();
+    		count = ((BtreeStats)chkDB.getStats(null)).getLeafNodeCount();
     		
     		Logger.minor(this, "Counted "+count+" items in database");
     	}catch(DatabaseException ex){
