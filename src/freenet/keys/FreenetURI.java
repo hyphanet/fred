@@ -383,6 +383,7 @@ public class FreenetURI {
 	
 	static final byte CHK = 1;
 	static final byte SSK = 2;
+	static final byte KSK = 3;
 	
 	public static FreenetURI readFullBinaryKeyWithLength(DataInputStream dis) throws IOException {
 		int len = dis.readShort();
@@ -405,22 +406,29 @@ public class FreenetURI {
 			keyType = "CHK";
 		else if(type == SSK)
 			keyType = "SSK";
-		else 
+		else if(type == KSK)
+			keyType = "KSK";
+		else
 			throw new MalformedURLException("Unrecognized type "+type);
-		// routingKey is a hash, so is exactly 32 bytes
-		byte[] routingKey = new byte[32];
-		dis.readFully(routingKey);
-		// cryptoKey is a 256 bit AES key, so likewise
-		byte[] cryptoKey = new byte[32];
-		dis.readFully(cryptoKey);
-		// Number of bytes of extra depends on key type
-		int extraLen;
-		if(type == CHK)
-			extraLen = ClientCHK.EXTRA_LENGTH;
-		else //if(type == SSK)
-			extraLen = ClientSSK.EXTRA_LENGTH;
-		byte[] extra = new byte[extraLen];
-		dis.readFully(extra);
+		byte[] routingKey = null;
+		byte[] cryptoKey = null;
+		byte[] extra = null;
+		if(type == CHK || type == SSK) {
+			// routingKey is a hash, so is exactly 32 bytes
+			routingKey = new byte[32];
+			dis.readFully(routingKey);
+			// cryptoKey is a 256 bit AES key, so likewise
+			cryptoKey = new byte[32];
+			dis.readFully(cryptoKey);
+			// Number of bytes of extra depends on key type
+			int extraLen;
+			if(type == CHK)
+				extraLen = ClientCHK.EXTRA_LENGTH;
+			else //if(type == SSK)
+				extraLen = ClientSSK.EXTRA_LENGTH;
+			extra = new byte[extraLen];
+			dis.readFully(extra);
+		}
 		String docName = null;
 		if(type != CHK)
 			docName = dis.readUTF();
@@ -462,19 +470,23 @@ public class FreenetURI {
 			dos.writeByte(CHK);
 		} else if(keyType.equals("SSK")) {
 			dos.writeByte(SSK);
+		} else if(keyType.equals("KSK")) {
+			dos.writeByte(KSK);
 		} else
 			throw new MalformedURLException("Cannot write key of type "+keyType+" - do not know how");
-		if(routingKey.length != 32)
-			throw new MalformedURLException("Routing key must be of length 32");
-		dos.write(routingKey);
-		if(cryptoKey.length != 32)
-			throw new MalformedURLException("Crypto key must be of length 32");
-		dos.write(cryptoKey);
-		if(keyType.equals("CHK") && extra.length != ClientCHK.EXTRA_LENGTH)
-			throw new MalformedURLException("Wrong number of extra bytes for CHK");
-		if(keyType.equals("SSK"))
-			throw new UnsupportedOperationException("SSK support not yet implemented");
-		dos.write(extra);
+		if(!keyType.equals("KSK")) {
+			if(routingKey.length != 32)
+				throw new MalformedURLException("Routing key must be of length 32");
+			dos.write(routingKey);
+			if(cryptoKey.length != 32)
+				throw new MalformedURLException("Crypto key must be of length 32");
+			dos.write(cryptoKey);
+			if(keyType.equals("CHK") && extra.length != ClientCHK.EXTRA_LENGTH)
+				throw new MalformedURLException("Wrong number of extra bytes for CHK");
+			if(keyType.equals("SSK") && extra.length != ClientSSK.EXTRA_LENGTH)
+				throw new MalformedURLException("Wrong number of extra bytes for SSK");
+			dos.write(extra);
+		}
 		if(!keyType.equals("CHK"))
 			dos.writeUTF(docName);
 		if(metaStr != null) {

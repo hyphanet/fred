@@ -200,8 +200,13 @@ public class ClientPutMessage extends DataCarryingMessage {
 		handler.startClientPut(this);
 	}
 
+	/**
+	 * Get the length of the trailing field.
+	 */
 	long dataLength() {
-		return dataLength;
+		if(uploadFromType == UPLOAD_FROM_DIRECT)
+			return dataLength;
+		else return 0;
 	}
 
 	String getIdentifier() {
