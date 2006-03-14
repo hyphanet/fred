@@ -12,6 +12,8 @@ import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
+import freenet.support.BucketTools;
+import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 
 /**
@@ -78,6 +80,21 @@ public abstract class Toadlet {
 		hdrtbl.put("Allow", this.supportedMethods());
 		ctx.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html", buf.length());
 		ctx.writeData(buf.toString().getBytes(), 0, buf.length());
+	}
+	
+	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		StringBuffer buf = new StringBuffer();
+		
+		ctx.getPageMaker().makeHead(buf, "Not supported", CSSName);
+		
+		buf.append("Operation not supported");
+		ctx.getPageMaker().makeTail(buf);
+		
+		MultiValueTable hdrtbl = new MultiValueTable();
+		hdrtbl.put("Allow", this.supportedMethods());
+		ctx.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html", buf.length());
+		ctx.writeData(buf.toString().getBytes(), 0, buf.length());
+		Logger.minor(this, "POSTed data to "+uri+":\n"+BucketTools.toByteArray(data));
 	}
 	
 	/**
@@ -162,4 +179,5 @@ public abstract class Toadlet {
 	public String getCSSName(){
 		return CSSName;
 	}
+
 }

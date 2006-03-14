@@ -10,6 +10,7 @@ import java.util.Enumeration;
 
 import freenet.config.Config;
 import freenet.support.Bucket;
+import freenet.support.BucketFactory;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -121,7 +122,7 @@ public class ToadletContextImpl implements ToadletContext {
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
-	public static void handle(Socket sock, ToadletContainer container) {
+	public static void handle(Socket sock, ToadletContainer container, BucketFactory bf) {
 		try {
 			InputStream is = sock.getInputStream();
 			
@@ -177,7 +178,7 @@ public class ToadletContextImpl implements ToadletContext {
 					if (index < 0) {
 						throw new ParseException("Missing ':' in request header field");
 					}
-					String before = line.substring(0, index);
+					String before = line.substring(0, index).toLowerCase();
 					String after = line.substring(index+1);
 					after = after.trim();
 					headers.put(before, after);
@@ -217,10 +218,28 @@ public class ToadletContextImpl implements ToadletContext {
 						}
 	
 					} else if(method.equals("POST")) {
-						
-						Logger.error(ToadletContextImpl.class, "POST not supported");
-						ctx.sendMethodNotAllowed(method, shouldDisconnect);
-						ctx.close();
+						String slen = (String) headers.get("content-length");
+						if(slen == null) {
+							sendError(sock.getOutputStream(), 400, "No content-length in POST", true, null);
+							return;
+						}
+						long len;
+						try {
+							len = Integer.parseInt(slen);
+							if(len < 0) throw new NumberFormatException("content-length less than 0");
+						} catch (NumberFormatException e) {
+							sendError(sock.getOutputStream(), 400, "content-length parse error: "+e, true, null);
+							return;
+						}
+						Bucket data = bf.makeBucket(len);
+						BucketTools.copyFrom(data, is, len);
+
+						try {
+							t.handlePost(uri, data, ctx);
+						} catch (RedirectException re) {
+							uri = re.newuri;
+							redirect = true;
+						}
 						
 					} else {
 						ctx.sendMethodNotAllowed(method, shouldDisconnect);

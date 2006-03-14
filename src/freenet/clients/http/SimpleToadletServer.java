@@ -13,11 +13,15 @@ import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.crypt.DummyRandomSource;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.support.BucketFactory;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.FileLoggerHook.IntervalParseException;
+import freenet.support.io.FilenameGenerator;
+import freenet.support.io.TempBucketFactory;
 
 public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
@@ -32,12 +36,14 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	final int port;
 	final String bindto;
+	final BucketFactory bf;
 	private final ServerSocket sock;
 	private final LinkedList toadlets;
 	
-	public SimpleToadletServer(int i, String newbindto) throws IOException {
+	public SimpleToadletServer(int i, String newbindto, BucketFactory bf) throws IOException {
 		this.port = i;
 		this.bindto = newbindto;
+		this.bf = bf;
 		this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindto));
 		toadlets = new LinkedList();
 		Thread t = new Thread(this, "SimpleToadletServer");
@@ -74,7 +80,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
         Logger.globalSetThreshold(Logger.MINOR);
         Logger.globalAddHook(logger);
         logger.start();
-		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1");
+		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1", new TempBucketFactory(new FilenameGenerator(new DummyRandomSource(), true, new File("temp-test"), "test-temp-")));
 		server.register(new TrivialToadlet(null,null), "", true);
 		System.out.println("Bound to port 1111.");
 		while(true) {
@@ -113,7 +119,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 		public void run() {
 			Logger.minor(this, "Handling connection");
-			ToadletContextImpl.handle(sock, SimpleToadletServer.this);
+			ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf);
 			Logger.minor(this, "Handled connection");
 		}
 

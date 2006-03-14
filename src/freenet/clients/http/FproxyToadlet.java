@@ -21,6 +21,8 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.pluginmanager.PproxyToadlet;
+import freenet.support.Bucket;
+import freenet.support.BucketTools;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -35,18 +37,36 @@ public class FproxyToadlet extends Toadlet {
 		return "GET";
 	}
 
-	public void handleGet(URI uri, ToadletContext ctx) 
-			throws ToadletContextClosedException, IOException, RedirectException {
-		//String ks = uri.toString();
-		String ks = uri.getPath();
+	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
-		HTTPRequest request = new HTTPRequest(uri);
+		if(data.size() > 1024*1024) {
+			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, config servlet limited to 1MB");
+			return;
+		}
+		byte[] d = BucketTools.toByteArray(data);
+		String s = new String(d, "us-ascii");
+		HTTPRequest request;
+		try {
+			request = new HTTPRequest("/", s);
+		} catch (URISyntaxException e) {
+			Logger.error(this, "Impossible: "+e, e);
+			return;
+		}
 		
 		if(request.hasParameters() && request.getParam("exit").equalsIgnoreCase("true")){	
 			System.out.println("Goodbye.");
 			writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx, "Shutting down the node", "" , "/", 5));
 			System.exit(0);
 		}
+		
+	}
+	
+	public void handleGet(URI uri, ToadletContext ctx) 
+			throws ToadletContextClosedException, IOException, RedirectException {
+		//String ks = uri.toString();
+		String ks = uri.getPath();
+		
+		HTTPRequest request = new HTTPRequest(uri);
 		
 		if (ks.equals("/")) {
 			HTTPRequest httprequest = new HTTPRequest(uri);
@@ -208,7 +228,7 @@ public class FproxyToadlet extends Toadlet {
 		Logger.normal(node,"Starting fproxy on "+bind_ip+":"+port);
 		
 		try {
-			SimpleToadletServer server = new SimpleToadletServer(port, bind_ip);
+			SimpleToadletServer server = new SimpleToadletServer(port, bind_ip, node.tempBucketFactory);
 			node.setToadletContainer(server);
 			FproxyToadlet fproxy = new FproxyToadlet(node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), CSSName);
 			node.setFproxy(fproxy);

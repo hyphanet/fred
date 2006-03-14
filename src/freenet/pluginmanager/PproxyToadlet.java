@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -11,6 +12,8 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
+import freenet.support.Bucket;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 
@@ -23,7 +26,40 @@ public class PproxyToadlet extends Toadlet {
 	}
 	
 	public String supportedMethods() {
-		return "GET";
+		return "GET, POST";
+	}
+
+	public void handlePost(URI uri, Bucket data, ToadletContext ctx)
+		throws ToadletContextClosedException, IOException {
+		
+		if(data.size() > 1024*1024) {
+			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, config servlet limited to 1MB");
+			return;
+		}
+		byte[] d = BucketTools.toByteArray(data);
+		String s = new String(d, "us-ascii");
+		HTTPRequest request;
+		try {
+			request = new HTTPRequest("/", s);
+		} catch (URISyntaxException e) {
+			Logger.error(this, "Impossible: "+e, e);
+			return;
+		}
+		
+		if (request.isParameterSet("load")) {
+			pm.startPlugin(request.getParam("load"));
+			//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Loading plugin", "Loading plugin...", ".", 5));
+			MultiValueTable headers = new MultiValueTable();
+			
+			headers.put("Location", ".");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+		} else {
+			// Ignore
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", ".");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+		}
+
 	}
 	
 	public void handleGet(URI uri, ToadletContext ctx)
@@ -125,7 +161,7 @@ public class PproxyToadlet extends Toadlet {
 			
 			// Obsolete
 			//out.append("<form method=\"get\"><div>Remove plugin: (enter ID) <input type=\"text\" name=\"remove\" size=40/><input type=\"submit\" value=\"Remove\"/></div></form>\n");
-			out.append("<form method=\"get\" action=\".\"><div>Load plugin: <input type=\"text\" name=\"load\" size=\"40\"/><input type=\"submit\" value=\"Load\" /></div></form>\n");
+			out.append("<form method=\"post\" action=\".\"><div>Load plugin: <input type=\"text\" name=\"load\" size=\"40\"/><input type=\"submit\" value=\"Load\" /></div></form>\n");
 			ctx.getPageMaker().makeTail(out);
 			writeReply(ctx, 200, "text/html", "OK", out.toString());
 		} else if (request.isParameterSet("remove")) {
@@ -136,13 +172,6 @@ public class PproxyToadlet extends Toadlet {
 			headers.put("Location", ".");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Removing plugin", "Removing plugin...", ".", 5));
-		} else if (request.isParameterSet("load")) {
-			pm.startPlugin(request.getParam("load"));
-			//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Loading plugin", "Loading plugin...", ".", 5));
-			MultiValueTable headers = new MultiValueTable();
-			
-			headers.put("Location", ".");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		} else if (request.isParameterSet("reload")) {
 			String fn = null;
 			Iterator it = pm.getPlugins().iterator();
