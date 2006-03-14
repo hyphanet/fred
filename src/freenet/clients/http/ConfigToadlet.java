@@ -82,28 +82,29 @@ public class ConfigToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
 		
 		} else {
-			for(int i=0; i<sc.length ; i++){
-				Option[] o = sc[i].getOptions();
-				String prefix = new String(sc[i].getPrefix());
-				String configName;
-				
-				for(int j=0; j<o.length; j++){
-					configName=o[j].getName();
-					
-					// we ignore unreconized parameters 
-					if(request.getParam(prefix+"."+configName) != ""){
-						if(o[j].getValueString() != request.getParam(prefix+"."+configName)){
-							try{
-								o[j].setValue(request.getParam(prefix+"."+configName));
-							}catch(Exception e){
-								buf.append(e+"\n");
-							}
-						}
-					}
-				}
-			}
-			config.store();
-			writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx, "Applying configuration", buf.toString(), "/config/", 10));
+			return;
+//			for(int i=0; i<sc.length ; i++){
+//				Option[] o = sc[i].getOptions();
+//				String prefix = new String(sc[i].getPrefix());
+//				String configName;
+//				
+//				for(int j=0; j<o.length; j++){
+//					configName=o[j].getName();
+//					
+//					// we ignore unreconized parameters 
+//					if(request.getParam(prefix+"."+configName) != ""){
+//						if(o[j].getValueString() != request.getParam(prefix+"."+configName)){
+//							try{
+//								o[j].setValue(request.getParam(prefix+"."+configName));
+//							}catch(Exception e){
+//								buf.append(o[j].getName()+" "+e+"\n");
+//							}
+//						}
+//					}
+//				}
+//			}
+//			config.store();
+//			writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx, "Applying configuration", buf.toString(), "/config/", 10));
 		}
 	}
 	
