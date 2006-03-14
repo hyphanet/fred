@@ -64,8 +64,10 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			String uploadFrom = subset.get("UploadFrom");
 			Bucket data;
 			Logger.minor(this, "Parsing "+i);
-			long sz = Long.parseLong(subset.get("DataLength"));
+			Logger.minor(this, "UploadFrom="+uploadFrom);
+			ManifestElement me;
 			if(uploadFrom == null || uploadFrom.equalsIgnoreCase("direct")) {
+				long sz = Long.parseLong(subset.get("DataLength"));
 				if(!finished) {
 					// Direct (persistent temp bucket)
 					byte[] key = HexUtil.hexToBytes(subset.get("TempBucket.DecryptKey"));
@@ -76,7 +78,9 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 				} else {
 					data = null;
 				}
-			} else {
+				me = new ManifestElement(name, data, contentTypeOverride, sz);
+			} else if(uploadFrom.equalsIgnoreCase("disk")) {
+				long sz = Long.parseLong(subset.get("DataLength"));
 				// Disk
 				String f = subset.get("Filename");
 				if(f == null)
@@ -87,8 +91,12 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 					throw new IOException("File no longer exists, cancelling upload: "+ff);
 				}
 				data = new FileBucket(ff, true, false, false, false);
-			}
-			ManifestElement me = new ManifestElement(name, data, contentTypeOverride, sz);
+				me = new ManifestElement(name, data, contentTypeOverride, sz);
+			} else if(uploadFrom.equalsIgnoreCase("redirect")) {
+				FreenetURI targetURI = new FreenetURI(subset.get("TargetURI"));
+				me = new ManifestElement(name, targetURI, contentTypeOverride);
+			} else
+				throw new PersistenceParseException("Don't know UploadFrom="+uploadFrom);
 			v.add(me);
 		}
 		manifestElements = SimpleManifestPutter.unflatten(v);

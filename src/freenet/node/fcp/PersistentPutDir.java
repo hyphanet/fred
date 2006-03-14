@@ -56,21 +56,27 @@ public class PersistentPutDir extends FCPMessage {
 			ManifestElement e = elements[i];
 			String name = e.getName();
 			String mimeOverride = e.getMimeTypeOverride();
-			Bucket data = e.getData();
 			SimpleFieldSet subset = new SimpleFieldSet(true);
+			FreenetURI uri = e.getTargetURI();
 			subset.put("Name", name);
-			subset.put("DataLength", Long.toString(e.getSize()));
-			if(mimeOverride != null)
-				subset.put("Metadata.ContentType", mimeOverride);
-			// What to do with the bucket?
-			// It is either a persistent encrypted bucket or a file bucket ...
-			if(data instanceof FileBucket) {
-				subset.put("UploadFrom", "disk");
-				subset.put("Filename", ((FileBucket)data).getFile().getPath());
-			} else if(data instanceof PaddedEphemerallyEncryptedBucket || data == null) {
-				subset.put("UploadFrom", "direct");
+			if(uri != null) {
+				subset.put("UploadFrom", "redirect");
+				subset.put("TargetURI", uri.toString());
 			} else {
-				throw new IllegalStateException("Don't know what to do with bucket: "+data);
+				Bucket data = e.getData();
+				subset.put("DataLength", Long.toString(e.getSize()));
+				if(mimeOverride != null)
+					subset.put("Metadata.ContentType", mimeOverride);
+				// What to do with the bucket?
+				// It is either a persistent encrypted bucket or a file bucket ...
+				if(data instanceof FileBucket) {
+					subset.put("UploadFrom", "disk");
+					subset.put("Filename", ((FileBucket)data).getFile().getPath());
+				} else if(data instanceof PaddedEphemerallyEncryptedBucket || data == null) {
+					subset.put("UploadFrom", "direct");
+				} else {
+					throw new IllegalStateException("Don't know what to do with bucket: "+data);
+				}
 			}
 			files.put(num, subset);
 		}
