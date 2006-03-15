@@ -167,7 +167,7 @@ public class TextModeClientInterface implements Runnable {
             return;
         }
         boolean getCHKOnly = false;
-        if(line == null) line = "QUIT";
+        if(line == null) return;
         String uline = line.toUpperCase();
         Logger.minor(this, "Command: "+line);
         if(uline.startsWith("GET:")) {
