@@ -70,9 +70,6 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.fcp.FCPServer;
 import freenet.pluginmanager.PluginManager;
-import freenet.pluginmanager.PluginRespirator;
-import freenet.pluginmanager.PproxyToadlet;
-import freenet.snmplib.SNMPAgent;
 import freenet.snmplib.SNMPStarter;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
@@ -229,6 +226,7 @@ public class Node {
 	static final int EXIT_BAD_TEMP_DIR = 16;
 	static final int EXIT_COULD_NOT_START_FCP = 17;
 	static final int EXIT_COULD_NOT_START_FPROXY = 18;
+	static final int EXIT_COULD_NOT_START_TMCI = 19;
     
     
     public final long bootID;
@@ -251,7 +249,8 @@ public class Node {
     public final ClientRequestScheduler chkPutScheduler;
     public final ClientRequestScheduler sskFetchScheduler;
     public final ClientRequestScheduler sskPutScheduler;
-    TextModeClientInterface tmci;
+    TextModeClientInterfaceServer tmci;
+    TextModeClientInterface directTMCI;
     FCPServer fcpServer;
     FproxyToadlet fproxyServlet;
     private SymlinkerToadlet symlinkerToadlet;
@@ -900,7 +899,12 @@ public class Node {
         // Start services
         
         // TMCI
-        TextModeClientInterface.maybeCreate(this, config);
+        try{
+        	TextModeClientInterfaceServer.maybeCreate(this, config);
+        } catch (IOException e) {
+			e.printStackTrace();
+			throw new NodeInitException(EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
+		}
         
         // Fproxy
         // FIXME this is a hack, the real way to do this is plugins
@@ -2073,6 +2077,10 @@ public class Node {
 	public SimpleToadletServer getToadletContainer() {
 		return toadletContainer;
 	}
+	
+	public TextModeClientInterfaceServer getTextModeClientInterface(){
+		return tmci;
+	}
 
 	public void setFproxy(FproxyToadlet fproxy) {
 		this.fproxyServlet = fproxy;
@@ -2081,8 +2089,26 @@ public class Node {
 	public void setFCPServer(FCPServer fcp) {
 		this.fcpServer = fcp;
 	}
+	
+	public void exit(){
+		config.store();
+        System.out.println("Goodbye.");
+        System.exit(0);
+	}
 
 	public SymlinkerToadlet getSymlinkerToadlet() {
 		return symlinkerToadlet;
+	}
+
+	public void setTMCI(TextModeClientInterfaceServer server) {
+		this.tmci = server;
+	}
+
+	public TextModeClientInterface getDirectTMCI() {
+		return directTMCI;
+	}
+	
+	public void setDirectTMCI(TextModeClientInterface i) {
+		this.directTMCI = i;
 	}
 }

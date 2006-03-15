@@ -7,13 +7,16 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -22,12 +25,6 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
-import freenet.client.Metadata;
-import freenet.client.events.EventDumper;
-import freenet.config.BooleanCallback;
-import freenet.config.Config;
-import freenet.config.InvalidConfigValueException;
-import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -55,71 +52,103 @@ public class TextModeClientInterface implements Runnable {
     final HighLevelSimpleClient client;
     final Hashtable streams;
     final File downloadsDir;
+    final InputStream in;
+    final OutputStream out;
     
-    TextModeClientInterface(Node n) {
-        this.n = n;
-        client = n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
-        client.addGlobalHook(new EventDumper());
-        this.r = n.random;
-        streams = new Hashtable();
-        new Thread(this, "Text mode client interface").start();
-        this.downloadsDir = n.downloadDir;
+    public TextModeClientInterface(TextModeClientInterfaceServer server, InputStream in, OutputStream out) {
+    	this.n = server.n;
+    	this.r = server.r;
+    	this.client = server.client;
+    	this.streams = new Hashtable();
+    	this.downloadsDir = server.downloadsDir;
+    	this.in = in;
+    	this.out = out;
+	}
+
+    public TextModeClientInterface(Node n, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
+    	this.n = n;
+    	this.r = n.random;
+    	this.client = c;
+    	this.streams = new Hashtable();
+    	this.downloadsDir = downloadDir;
+    	this.in = in;
+    	this.out = out;
     }
     
-    /**
-     * Read commands, run them
-     */
     public void run() {
-    	printHeader();
-        // Read command, and data
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+    	try {
+    		realRun();
+    	} catch (IOException e) {
+    		Logger.minor(this, "Caught "+e, e);
+    	} catch (Throwable t) {
+    		Logger.error(this, "Caught "+t, t);
+    	}
+    }
+    
+    public void realRun() throws IOException {
+		printHeader(out);
+
+		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         while(true) {
             try {
-                processLine(reader);
+                processLine(reader,out);
+            } catch (IOException e) {
+            	Logger.error(this, "Socket error: "+e, e);
+            	return;
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);
                 System.out.println("Caught: "+t);
-                t.printStackTrace();
+                StringWriter sw = new StringWriter();
+                t.printStackTrace(new PrintWriter(sw));
+                try {
+					out.write(sw.toString().getBytes());
+				} catch (IOException e) {
+	            	Logger.error(this, "Socket error: "+e, e);
+					return;
+				}
             }
         }
     }
-
-    private void printHeader() {
-        System.out.println("Freenet 0.7 Trivial Node Test Interface");
-        System.out.println("---------------------------------------");
-        System.out.println();
-        System.out.println("Build "+Version.buildNumber());
-        System.out.println("Enter one of the following commands:");
-        System.out.println("GET:<Freenet key> - Fetch a key");
-        System.out.println("PUT:\n<text, until a . on a line by itself> - Insert the document and return the key.");
-        System.out.println("PUT:<text> - Put a single line of text to a CHK and return the key.");
-        System.out.println("GETCHK:\n<text, until a . on a line by itself> - Get the key that would be returned if the document was inserted.");
-        System.out.println("GETCHK:<text> - Get the key that would be returned if the line was inserted.");
-        System.out.println("PUTFILE:<filename> - Put a file from disk.");
-        System.out.println("GETFILE:<filename> - Fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.");
-        System.out.println("GETCHKFILE:<filename> - Get the key that would be returned if we inserted the file.");
-        System.out.println("PUTDIR:<path>[#<defaultfile>] - Put the entire directory from disk.");
-        System.out.println("GETCHKDIR:<path>[#<defaultfile>] - Get the key that would be returned if we'd put the entire directory from disk.");
-        System.out.println("MAKESSK - Create an SSK keypair.");
-        System.out.println("PUTSSK:<insert uri>;<url to redirect to> - Insert an SSK redirect to a file already inserted.");
-        System.out.println("PUTSSKDIR:<insert uri>#<path>[#<defaultfile>] - Insert an entire directory to an SSK.");
-        System.out.println("PLUGLOAD: - Load plugin. (use \"PLUGLOAD:?\" for more info)");
-        //System.out.println("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.");
-        System.out.println("PLUGLIST - List all loaded plugins.");
-        System.out.println("PLUGKILL: <pluginID> - Unload the plugin with the given ID (see PLUGLIST).");
-//        System.out.println("PUBLISH:<name> - create a publish/subscribe stream called <name>");
-//        System.out.println("PUSH:<name>:<text> - publish a single line of text to the stream named");
-//        System.out.println("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key");
-        System.out.println("CONNECT:<filename|URL> - connect to a node from its ref in a file/url.");
-        System.out.println("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.");
-        System.out.println("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port or name");
-        System.out.println("NAME:<new node name> - change the node's name.");
-//        System.out.println("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.");
-//        System.out.println("SAY:<text> - send text to the last created/pushed stream");
-        System.out.println("STATUS - display some status information on the node including its reference and connections.");
-        System.out.println("QUIT - exit the program");
+    
+	private void printHeader(OutputStream s) throws IOException {
+    	StringBuffer sb = new StringBuffer();
+    	
+        sb.append("Freenet 0.7 Trivial Node Test Interface\n");
+        sb.append("---------------------------------------\n");
+        sb.append("Build "+Version.buildNumber());
+        sb.append("Enter one of the following commands:\n");
+        sb.append("GET:<Freenet key> - Fetch a key\n");
+        sb.append("PUT:\n<text, until a . on a line by itself> - Insert the document and return the key.\n");
+        sb.append("PUT:<text> - Put a single line of text to a CHK and return the key.\n");
+        sb.append("GETCHK:\n<text, until a . on a line by itself> - Get the key that would be returned if the document was inserted.\n");
+        sb.append("GETCHK:<text> - Get the key that would be returned if the line was inserted.\n");
+        sb.append("PUTFILE:<filename> - Put a file from disk.\n");
+        sb.append("GETFILE:<filename> - Fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.\n");
+        sb.append("GETCHKFILE:<filename> - Get the key that would be returned if we inserted the file.\n");
+        sb.append("PUTDIR:<path>[#<defaultfile>] - Put the entire directory from disk.\n");
+        sb.append("GETCHKDIR:<path>[#<defaultfile>] - Get the key that would be returned if we'd put the entire directory from disk.\n");
+        sb.append("MAKESSK - Create an SSK keypair.\n");
+        sb.append("PUTSSK:<insert uri>;<url to redirect to> - Insert an SSK redirect to a file already inserted.\n");
+        sb.append("PUTSSKDIR:<insert uri>#<path>[#<defaultfile>] - Insert an entire directory to an SSK.\n");
+        sb.append("PLUGLOAD: - Load plugin. (use \"PLUGLOAD:?\" for more info)\n");
+        //sb.append("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.\n");
+        sb.append("PLUGLIST - List all loaded plugins.\n");
+        sb.append("PLUGKILL: <pluginID> - Unload the plugin with the given ID (see PLUGLIST).\n");
+//        sb.append("PUBLISH:<name> - create a publish/subscribe stream called <name>\n");
+//        sb.append("PUSH:<name>:<text> - publish a single line of text to the stream named\n");
+//        sb.append("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key\n");
+        sb.append("CONNECT:<filename|URL> - connect to a node from its ref in a file/url.\n");
+        sb.append("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.\n");
+        sb.append("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port or name\n");
+        sb.append("NAME:<new node name> - change the node's name.\n");
+//        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\n");
+//        sb.append("SAY:<text> - send text to the last created/pushed stream\n");
+        sb.append("STATUS - display some status information on the node including its reference and connections.\n");
+        sb.append("QUIT - exit the program\n");
         if(n.testnetEnabled) {
-        	System.out.println("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.");
+        	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\n");
+        
+        s.write(sb.toString().getBytes());
         }
     }
 
@@ -127,11 +156,13 @@ public class TextModeClientInterface implements Runnable {
      * Process a single command.
      * @throws IOException If we could not write the data to stdout.
      */
-    private void processLine(BufferedReader reader) throws IOException {
+    private void processLine(BufferedReader reader, OutputStream out) throws IOException {
         String line;
+        StringBuffer outsb = new StringBuffer();
         try {
             line = reader.readLine();
         } catch (IOException e) {
+            outsb.append("Bye... ("+e+")");
             System.err.println("Bye... ("+e+")");
             return;
         }
@@ -152,17 +183,18 @@ public class TextModeClientInterface implements Runnable {
                 uri = new FreenetURI(key);
                 Logger.normal(this, "Key: "+uri);
             } catch (MalformedURLException e2) {
-                System.out.println("Malformed URI: "+key+" : "+e2);
+                outsb.append("Malformed URI: "+key+" : "+e2);
                 return;
             }
             try {
 				FetchResult result = client.fetch(uri);
 				ClientMetadata cm = result.getMetadata();
-				System.out.println("Content MIME type: "+cm.getMIMEType());
+				outsb.append("Content MIME type: "+cm.getMIMEType());
 				Bucket data = result.asBucket();
 				// FIXME limit it above
 				if(data.size() > 32*1024) {
 					System.err.println("Data is more than 32K: "+data.size());
+					outsb.append("Data is more than 32K: "+data.size());
 					return;
 				}
 				byte[] dataBytes = BucketTools.toByteArray(data);
@@ -175,15 +207,15 @@ public class TextModeClientInterface implements Runnable {
 				}
 				if(evil) {
 					System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
-					return;
+					outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
+						return;
 				}
-				System.out.println("Data:\n");
-				System.out.println(new String(dataBytes));
-				System.out.println();
+				outsb.append("Data:\n");
+				outsb.append(new String(dataBytes));
 			} catch (FetchException e) {
-				System.out.println("Error: "+e.getMessage());
+				outsb.append("Error: "+e.getMessage());
             	if(e.getMode() == e.SPLITFILE_ERROR && e.errorCodes != null) {
-            		System.out.println(e.errorCodes.toVerboseString());
+            		outsb.append(e.errorCodes.toVerboseString());
             	}
 			}
         } else if(uline.startsWith("GETFILE:")) {
@@ -198,14 +230,14 @@ public class TextModeClientInterface implements Runnable {
             try {
                 uri = new FreenetURI(key);
             } catch (MalformedURLException e2) {
-                System.out.println("Malformed URI: "+key+" : "+e2);
+                outsb.append("Malformed URI: "+key+" : "+e2);
                 return;
             }
             try {
             	long startTime = System.currentTimeMillis();
 				FetchResult result = client.fetch(uri);
 				ClientMetadata cm = result.getMetadata();
-				System.out.println("Content MIME type: "+cm.getMIMEType());
+				outsb.append("Content MIME type: "+cm.getMIMEType());
 				Bucket data = result.asBucket();
                 // Now calculate filename
                 String fnam = uri.getDocName();
@@ -218,7 +250,7 @@ public class TextModeClientInterface implements Runnable {
                 }
                 File f = new File(downloadsDir, fnam);
                 if(f.exists()) {
-                    System.out.println("File exists already: "+fnam);
+                    outsb.append("File exists already: "+fnam);
                     fnam = "freenet-"+System.currentTimeMillis()+"-"+fnam;
                 }
                 FileOutputStream fos = null;
@@ -226,9 +258,9 @@ public class TextModeClientInterface implements Runnable {
                     fos = new FileOutputStream(f);
                     BucketTools.copyTo(data, fos, Long.MAX_VALUE);
                     fos.close();
-                    System.out.println("Written to "+fnam);
+                    outsb.append("Written to "+fnam);
                 } catch (IOException e) {
-                    System.out.println("Could not write file: caught "+e);
+                    outsb.append("Could not write file: caught "+e);
                     e.printStackTrace();
                 } finally {
                     if(fos != null) try {
@@ -240,16 +272,15 @@ public class TextModeClientInterface implements Runnable {
                 long endTime = System.currentTimeMillis();
                 long sz = data.size();
                 double rate = 1000.0 * sz / (endTime-startTime);
-                System.out.println("Download rate: "+rate+" bytes / second");
+                outsb.append("Download rate: "+rate+" bytes / second");
 			} catch (FetchException e) {
-				System.out.println("Error: "+e.getMessage());
+				outsb.append("Error: "+e.getMessage());
             	if(e.getMode() == e.SPLITFILE_ERROR && e.errorCodes != null) {
-            		System.out.println(e.errorCodes.toVerboseString());
+            		outsb.append(e.errorCodes.toVerboseString());
             	}
 			}
         } else if(uline.startsWith("QUIT")) {
-            System.out.println("Goodbye.");
-            System.exit(0);
+            n.exit();
         } else if(uline.startsWith("PUT:") || (getCHKOnly = uline.startsWith("GETCHK:"))) {
             // Just insert to local store
         	if(getCHKOnly)
@@ -277,17 +308,17 @@ public class TextModeClientInterface implements Runnable {
             try {
             	uri = client.insert(block, getCHKOnly);
             } catch (InserterException e) {
-            	System.out.println("Error: "+e.getMessage());
+            	outsb.append("Error: "+e.getMessage());
             	if(e.uri != null)
-            		System.out.println("URI would have been: "+e.uri);
+            		outsb.append("URI would have been: "+e.uri);
             	int mode = e.getMode();
             	if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
-            		System.out.println("Splitfile-specific error:\n"+e.errorCodes.toVerboseString());
+            		outsb.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString());
             	}
             	return;
             }
             
-            System.out.println("URI: "+uri);
+            outsb.append("URI: "+uri);
             ////////////////////////////////////////////////////////////////////////////////
         } else if(uline.startsWith("PUTDIR:") || (uline.startsWith("PUTSSKDIR")) || (getCHKOnly = uline.startsWith("GETCHKDIR:"))) {
         	// TODO: Check for errors?
@@ -299,13 +330,15 @@ public class TextModeClientInterface implements Runnable {
         		ssk = true;
         	} else if(uline.startsWith("GETCHKDIR:"))
         		line = line.substring(("GETCHKDIR:").length());
-        	else
+        	else {
         		System.err.println("Impossible");
+        		outsb.append("Impossible");
+        	}
         	
         	line = line.trim();
         	
         	if(line.length() < 1) {
-        		printHeader();
+        		printHeader(out);
         		return;
         	}
         	
@@ -345,19 +378,19 @@ public class TextModeClientInterface implements Runnable {
 			try {
 				uri = client.insertManifest(insertURI, bucketsByName, defaultFile);
 				uri = uri.addMetaStrings(new String[] { "" });
-	        	System.out.println("=======================================================");
-	            System.out.println("URI: "+uri);
-	        	System.out.println("=======================================================");
+	        	outsb.append("=======================================================");
+	            outsb.append("URI: "+uri);
+	        	outsb.append("=======================================================");
 			} catch (InserterException e) {
-            	System.out.println("Finished insert but: "+e.getMessage());
+            	outsb.append("Finished insert but: "+e.getMessage());
             	if(e.uri != null) {
             		uri = e.uri;
     				uri = uri.addMetaStrings(new String[] { "" });
-            		System.out.println("URI would have been: "+uri);
+            		outsb.append("URI would have been: "+uri);
             	}
             	if(e.errorCodes != null) {
-            		System.out.println("Splitfile errors breakdown:");
-            		System.out.println(e.errorCodes.toVerboseString());
+            		outsb.append("Splitfile errors breakdown:");
+            		outsb.append(e.errorCodes.toVerboseString());
             	}
             	Logger.error(this, "Caught "+e, e);
 			}
@@ -374,7 +407,7 @@ public class TextModeClientInterface implements Runnable {
             while(line.length() > 0 && line.charAt(line.length()-1) == ' ')
                 line = line.substring(0, line.length()-2);
             File f = new File(line);
-            System.out.println("Attempting to read file "+line);
+            outsb.append("Attempting to read file "+line);
             long startTime = System.currentTimeMillis();
             try {
             	if(!(f.exists() && f.canRead())) {
@@ -383,7 +416,7 @@ public class TextModeClientInterface implements Runnable {
             	
             	// Guess MIME type
             	String mimeType = DefaultMIMETypes.guessMIMEType(line);
-            	System.out.println("Using MIME type: "+mimeType);
+            	outsb.append("Using MIME type: "+mimeType);
             	if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
             		mimeType = ""; // don't need to override it
             	
@@ -396,74 +429,73 @@ public class TextModeClientInterface implements Runnable {
             	// FIXME depends on CHK's still being renamable
                 //uri = uri.setDocName(f.getName());
             	
-                System.out.println("URI: "+uri);
+                outsb.append("URI: "+uri);
             	long endTime = System.currentTimeMillis();
                 long sz = f.length();
                 double rate = 1000.0 * sz / (endTime-startTime);
-                System.out.println("Upload rate: "+rate+" bytes / second");
+                outsb.append("Upload rate: "+rate+" bytes / second");
             } catch (FileNotFoundException e1) {
-                System.out.println("File not found");
+                outsb.append("File not found");
             } catch (InserterException e) {
-            	System.out.println("Finished insert but: "+e.getMessage());
+            	outsb.append("Finished insert but: "+e.getMessage());
             	if(e.uri != null) {
-            		System.out.println("URI would have been: "+e.uri);
+            		outsb.append("URI would have been: "+e.uri);
                 	long endTime = System.currentTimeMillis();
                     long sz = f.length();
                     double rate = 1000.0 * sz / (endTime-startTime);
-                    System.out.println("Upload rate: "+rate+" bytes / second");
+                    outsb.append("Upload rate: "+rate+" bytes / second");
             	}
             	if(e.errorCodes != null) {
-            		System.out.println("Splitfile errors breakdown:");
-            		System.out.println(e.errorCodes.toVerboseString());
+            		outsb.append("Splitfile errors breakdown:");
+            		outsb.append(e.errorCodes.toVerboseString());
             	}
             } catch (Throwable t) {
-                System.out.println("Insert threw: "+t);
+                outsb.append("Insert threw: "+t);
                 t.printStackTrace();
             }
         } else if(uline.startsWith("MAKESSK")) {
         	InsertableClientSSK key = InsertableClientSSK.createRandom(r);
-        	System.out.println("Insert URI: "+key.getInsertURI().toString(false));
-        	System.out.println("Request URI: "+key.getURI().toString(false));
+        	outsb.append("Insert URI: "+key.getInsertURI().toString(false));
+        	outsb.append("Request URI: "+key.getURI().toString(false));
         	FreenetURI insertURI = key.getInsertURI().setDocName("testsite");
         	String fixedInsertURI = insertURI.toString(false);
-        	System.out.println("Note that you MUST add a filename to the end of the above URLs e.g.:\n"+fixedInsertURI);
-        	System.out.println("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\nPUTSSKDIR:"+fixedInsertURI+"#directoryToUpload/");
-        	System.out.println("This will then produce a manifest site containing all the files, the default document can be accessed at\n"+insertURI.addMetaStrings(new String[] { "" }).toString(false));
+        	outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\n"+fixedInsertURI);
+        	outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\nPUTSSKDIR:"+fixedInsertURI+"#directoryToUpload/");
+        	outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\n"+insertURI.addMetaStrings(new String[] { "" }).toString(false));
         } else if(uline.startsWith("PUTSSK:")) {
         	String cmd = line.substring("PUTSSK:".length());
         	cmd = cmd.trim();
         	if(cmd.indexOf(';') <= 0) {
-        		System.out.println("No target URI provided.");
-        		System.out.println("PUTSSK:<insert uri>;<url to redirect to>");
+        		outsb.append("No target URI provided.");
+        		outsb.append("PUTSSK:<insert uri>;<url to redirect to>");
         		return;
         	}
         	String[] split = cmd.split(";");
         	String insertURI = split[0];
         	String targetURI = split[1];
-        	System.out.println("Insert URI: "+insertURI);
-        	System.out.println("Target URI: "+targetURI);
+        	outsb.append("Insert URI: "+insertURI);
+        	outsb.append("Target URI: "+targetURI);
         	FreenetURI insert = new FreenetURI(insertURI);
         	FreenetURI target = new FreenetURI(targetURI);
         	InsertableClientSSK key = InsertableClientSSK.create(insert);
-        	System.out.println("Fetch URI: "+key.getURI());
+        	outsb.append("Fetch URI: "+key.getURI());
         	try {
 				FreenetURI result = client.insertRedirect(insert, target);
-				System.out.println("Successfully inserted to fetch URI: "+key.getURI());
+				outsb.append("Successfully inserted to fetch URI: "+key.getURI());
 			} catch (InserterException e) {
-            	System.out.println("Finished insert but: "+e.getMessage());
+            	outsb.append("Finished insert but: "+e.getMessage());
             	Logger.normal(this, "Error: "+e, e);
             	if(e.uri != null) {
-            		System.out.println("URI would have been: "+e.uri);
+            		outsb.append("URI would have been: "+e.uri);
             	}
 			}
         	
         } else if(uline.startsWith("STATUS")) {
             SimpleFieldSet fs = n.exportFieldSet();
-            System.out.println(fs.toString());
-            System.out.println();
-            System.out.println(n.getStatus());
+            outsb.append(fs.toString());
+            outsb.append(n.getStatus());
 	    if(Version.buildNumber()<Version.highestSeenBuild){
-	            System.out.println("The latest version is : "+Version.highestSeenBuild);
+	            outsb.append("The latest version is : "+Version.highestSeenBuild);
 	    }
         } else if(uline.startsWith("CONNECT:")) {
             String key = line.substring("CONNECT:".length());
@@ -476,13 +508,13 @@ public class TextModeClientInterface implements Runnable {
             if(key.length() > 0) {
                 // Filename
             	BufferedReader in;
-                System.out.println("Trying to connect to noderef in "+key);
+                outsb.append("Trying to connect to noderef in "+key);
                 File f = new File(key);
                 if (f.isFile()) {
-                	System.out.println("Given string seems to be a file, loading...");
+                	outsb.append("Given string seems to be a file, loading...");
                 	in = new BufferedReader(new FileReader(f));
                 } else {
-                	System.out.println("Given string seems to be an URL, loading...");
+                	outsb.append("Given string seems to be an URL, loading...");
                     URL url = new URL(key);
                     URLConnection uc = url.openConnection();
                 	in = new BufferedReader(
@@ -498,13 +530,13 @@ public class TextModeClientInterface implements Runnable {
             connect(content);
         
         } else if(uline.startsWith("NAME:")) {
-            System.out.println("Node name currently: "+n.myName);
+            outsb.append("Node name currently: "+n.myName);
             String key = line.substring("NAME:".length());
             while(key.length() > 0 && key.charAt(0) == ' ')
                 key = key.substring(1);
             while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
                 key = key.substring(0, key.length()-2);
-            System.out.println("New name: "+key);
+            outsb.append("New name: "+key);
             n.setName(key);
         } else if(uline.startsWith("DISCONNECT:")) {
         	String ipAndPort = line.substring("DISCONNECT:".length());
@@ -512,31 +544,34 @@ public class TextModeClientInterface implements Runnable {
         	
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
-        		System.out.println("  PLUGLOAD: pkg.Class                  - Load plugin from current classpath");        		
-        		System.out.println("  PLUGLOAD: pkg.Class@file:<filename>  - Load plugin from file");
-        		System.out.println("  PLUGLOAD: pkg.Class@http://...       - Load plugin from online file");
-        		System.out.println("  PLUGLOAD:         *@...              - Load plugin from manifest in given jarfile");
-        		System.out.println("");
-        		System.out.println("If the filename/url ends with \".url\", it" +
+        		outsb.append("  PLUGLOAD: pkg.Class                  - Load plugin from current classpath");        		
+        		outsb.append("  PLUGLOAD: pkg.Class@file:<filename>  - Load plugin from file");
+        		outsb.append("  PLUGLOAD: pkg.Class@http://...       - Load plugin from online file");
+        		outsb.append("  PLUGLOAD:         *@...              - Load plugin from manifest in given jarfile");
+        		outsb.append("");
+        		outsb.append("If the filename/url ends with \".url\", it" +
         				" is treated as a link, meaning that the first line is" +
         				" the accual URL. Else it is loaded as classpath and" +
         				" the class it loaded from it (meaning the file could" +
         				" be either a jar-file or a class-file).");
-        		System.out.println("");
-        		System.out.println("  PLUGLOAD: pkg.Class*  - Load newest version of plugin from http://downloads.freenetproject.org/alpha/plugins/");        		
-        		System.out.println("");
+        		outsb.append("");
+        		outsb.append("  PLUGLOAD: pkg.Class*  - Load newest version of plugin from http://downloads.freenetproject.org/alpha/plugins/");        		
+        		outsb.append("");
         		
         	} else
         		n.pluginManager.startPlugin(line.substring("PLUGLOAD:".length()).trim());
-            //System.out.println("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.");
+            //outsb.append("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.");
         } else if(uline.startsWith("PLUGLIST")) {
-        	System.out.println(n.pluginManager.dumpPlugins());
+        	outsb.append(n.pluginManager.dumpPlugins());
         } else if(uline.startsWith("PLUGKILL:")) {
         	n.pluginManager.killPlugin(line.substring("PLUGKILL:".length()).trim());
         } else {
         	if(uline.length() > 0)
-        		printHeader();
+        		printHeader(out);
         }
+        outsb.append("\n");
+        out.write(outsb.toString().getBytes());
+        out.flush();
     }
 
     /**
@@ -709,9 +744,4 @@ public class TextModeClientInterface implements Runnable {
         return sb.toString();
     }
 
-	public static void maybeCreate(Node node, Config config) {
-		// FIXME make this configurable.
-		// Depends on fixing QUIT issues. (bug #81)
-		new TextModeClientInterface(node);
-	}
 }

@@ -247,17 +247,17 @@ public class FCPServer implements Runnable {
 			Logger.normal(node, "Starting FCP server on "+fcpConfig.getString("bindto")+":"+fcpConfig.getInt("port")+".");
 			fcp = new FCPServer(fcpConfig.getString("bindto"), fcpConfig.getInt("port"), node, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval);
 			node.setFCPServer(fcp);	
+			
+			if(fcp != null) {
+				cb1.server = fcp;
+				cb2.server = fcp;
+				cb3.server = fcp;
+			}
 		}else{
 			Logger.normal(node, "Not starting FCP server as it's disabled");
 			fcp = null;
 		}
-		
-		if(fcp != null) {
-			cb1.server = fcp;
-			cb2.server = fcp;
-			cb3.server = fcp;
-		}
-		
+	
 		fcpConfig.finishedInitialization();
 		return fcp;
 	}
