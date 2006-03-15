@@ -98,13 +98,15 @@ public class ConfigToadlet extends Toadlet {
 							" type=\"text\" name=\"__node_name\" value=\""+o[j].getValueString()+"\"/></form>\n");
 				}
 				*/
-					
-				buf.append(o[j].getShortDesc()+":\n");
-				buf.append("		<li>"+prefix+"."+configName+"=><input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
+				
+				buf.append("<li>");
+				buf.append(o[j].getShortDesc());
+				buf.append("<br> <i>");
+				buf.append(prefix+"."+configName+"</i>=&gt;<input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
 						" type=\"text\" name=\""+prefix+"."+configName+"\" value=\""+o[j].getValueString()+"\"></li>\n");
 			}
 			
-			buf.append("<br><hr>");
+			buf.append("<hr>");
 		}
 		
 		buf.append("<br>");
