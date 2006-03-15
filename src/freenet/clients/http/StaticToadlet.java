@@ -2,18 +2,18 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.FileNameMap;
+import java.net.URI;
 import java.net.URLConnection;
+
 import freenet.client.HighLevelSimpleClient;
-import freenet.support.MultiValueTable;
 
 /**
  * Static Toadlet.
  * Serve up static files
  */
 public class StaticToadlet extends Toadlet {
-	StaticToadlet(HighLevelSimpleClient client, String CSSName) {
+	StaticToadlet(HighLevelSimpleClient client, CSSNameCallback CSSName) {
 		super(client, CSSName);
 	}
 	

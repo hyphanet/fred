@@ -3,23 +3,19 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.Format.Field;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.node.Node;
+import freenet.node.Version;
+import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
-import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
-import freenet.support.MultiValueTable;
-import freenet.support.SimpleFieldSet;
-import freenet.node.Version;
-import freenet.node.Node;
-import freenet.pluginmanager.HTTPRequest;
 
 public class WelcomeToadlet extends Toadlet {
 	Node node;
 
-	WelcomeToadlet(HighLevelSimpleClient client, Node n, String CSSName) {
+	WelcomeToadlet(HighLevelSimpleClient client, Node n, CSSNameCallback CSSName) {
 		super(client, CSSName);
 		this.node = n;
 	}
@@ -53,7 +49,7 @@ public class WelcomeToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri);
 		
 		
-		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage", CSSName);
+		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage", getCSSName());
 		
 		// Version info
 		buf.append("<div class=\"infobox\">\n");

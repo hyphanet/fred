@@ -18,8 +18,8 @@ import freenet.support.Logger;
 public class ConfigToadlet extends Toadlet {
 	private Config config;
 	
-	ConfigToadlet(HighLevelSimpleClient client, Config conf, String CSSName) {
-		super(client, CSSName);
+	ConfigToadlet(HighLevelSimpleClient client, Config conf, CSSNameCallback cb) {
+		super(client, cb);
 		config=conf;
 	}
 
@@ -72,7 +72,7 @@ public class ConfigToadlet extends Toadlet {
 		SubConfig[] sc = config.getConfigs();
 		
 		HTTPRequest request = new HTTPRequest(uri);
-		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration", CSSName);
+		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration", getCSSName());
 		buf.append("<h1 class=\"title\">Node Configuration</h1>\n");
 		buf.append("<div class=\"config\">\n");
 		buf.append("	<ul class=\"config\">\n");

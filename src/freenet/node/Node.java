@@ -253,7 +253,6 @@ public class Node {
     TextModeClientInterface directTMCI;
     FCPServer fcpServer;
     FproxyToadlet fproxyServlet;
-    private SymlinkerToadlet symlinkerToadlet;
     SimpleToadletServer toadletContainer;
     
     // Persistent temporary buckets
@@ -913,10 +912,10 @@ public class Node {
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);
+		} catch (InvalidConfigValueException e) {
+			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);			
 		}
 		
-		symlinkerToadlet = new SymlinkerToadlet(makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS),"", this);
-		toadletContainer.register(symlinkerToadlet, "/sl/", true);
 		/*
         SimpleToadletServer server = new SimpleToadletServer(port+2000);
         FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
@@ -2094,10 +2093,6 @@ public class Node {
 		config.store();
         System.out.println("Goodbye.");
         System.exit(0);
-	}
-
-	public SymlinkerToadlet getSymlinkerToadlet() {
-		return symlinkerToadlet;
 	}
 
 	public void setTMCI(TextModeClientInterfaceServer server) {

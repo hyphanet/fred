@@ -9,7 +9,7 @@ import freenet.support.HTMLEncoder;
 
 public class TrivialToadlet extends Toadlet {
 
-	TrivialToadlet(HighLevelSimpleClient client, String CSSName) {
+	TrivialToadlet(HighLevelSimpleClient client, CSSNameCallback CSSName) {
 		super(client, CSSName);
 	}
 
