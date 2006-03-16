@@ -85,7 +85,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			
 			row[0] = status;
 			row[1] = HTMLEncoder.encode(pn.getName());
-			row[2] = pn.getDetectedPeer().toString();
+			row[2] = pn.getDetectedPeer() != null ? pn.getDetectedPeer().toString() : "(address unknown)";
 			row[3] = pn.getVersion();
 			row[4] = new Double(pn.getLocation().getValue());
 			row[5] = new Long(Math.max(backedOffUntil - now, 0));
