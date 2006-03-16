@@ -9,8 +9,8 @@ import freenet.support.HTMLEncoder;
 
 public class TrivialToadlet extends Toadlet {
 
-	TrivialToadlet(HighLevelSimpleClient client, CSSNameCallback CSSName) {
-		super(client, CSSName);
+	TrivialToadlet(HighLevelSimpleClient client) {
+		super(client);
 	}
 
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {

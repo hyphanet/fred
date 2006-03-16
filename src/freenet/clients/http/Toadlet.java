@@ -32,19 +32,13 @@ import freenet.support.MultiValueTable;
  */
 public abstract class Toadlet {
 
-	protected Toadlet(HighLevelSimpleClient client, CSSNameCallback cb) {
+	protected Toadlet(HighLevelSimpleClient client) {
 		this.client = client;
-		this.cssName = cb;
 	}
 
-	private final CSSNameCallback cssName;
 	private final HighLevelSimpleClient client;
 	ToadletContainer container;
 
-	public final String getCSSName() {
-		return cssName.getCSSName();
-	}
-	
 	/**
 	 * Handle a GET request.
 	 * If not overridden by the client, send 'Method not supported'
@@ -56,7 +50,7 @@ public abstract class Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		StringBuffer buf = new StringBuffer();
 		
-		ctx.getPageMaker().makeHead(buf, "Not supported", getCSSName());
+		ctx.getPageMaker().makeHead(buf, "Not supported");
 		
 		buf.append("Operation not supported");
 		ctx.getPageMaker().makeTail(buf);
@@ -74,7 +68,7 @@ public abstract class Toadlet {
 	public void handlePut(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		StringBuffer buf = new StringBuffer();
 		
-		ctx.getPageMaker().makeHead(buf, "Not supported", getCSSName());
+		ctx.getPageMaker().makeHead(buf, "Not supported");
 		
 		buf.append("Operation not supported");
 		ctx.getPageMaker().makeTail(buf);
@@ -88,7 +82,7 @@ public abstract class Toadlet {
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		StringBuffer buf = new StringBuffer();
 		
-		ctx.getPageMaker().makeHead(buf, "Not supported", getCSSName());
+		ctx.getPageMaker().makeHead(buf, "Not supported");
 		
 		buf.append("Operation not supported");
 		ctx.getPageMaker().makeTail(buf);
@@ -150,7 +144,7 @@ public abstract class Toadlet {
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message) throws ToadletContextClosedException, IOException {
 		StringBuffer buf = new StringBuffer();
 			
-		ctx.getPageMaker().makeHead(buf, desc, getCSSName());
+		ctx.getPageMaker().makeHead(buf, desc);
 		buf.append(message);
 		ctx.getPageMaker().makeTail(buf);
 		writeReply(ctx, code, "text/html", desc, buf.toString());

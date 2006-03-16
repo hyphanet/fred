@@ -18,14 +18,6 @@ public class PageMaker {
 		}
 	}
 	
-	public void setCSSName(String name){
-		if (name == null || !this.getThemes().contains(name)) {
-			this.theme = this.defaulttheme;
-		} else {
-			this.theme = name;
-		}
-	}
-
 	public void makeTopHead(StringBuffer buf) {
 		buf.append("<!DOCTYPE\n"
 				+ "	html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\">\n"
@@ -38,7 +30,7 @@ public class PageMaker {
 		}
 	}
 	
-	public void makeBottomHead(StringBuffer buf, String title) {
+	public void makeBottomHead(StringBuffer buf, String title, boolean navbars) {
 		buf.append("<title>"+title+" - Freenet</title>\n"
 				+ "</head>\n"
 				+ "<body>\n"
@@ -46,14 +38,22 @@ public class PageMaker {
 				+ "<div id=\"topbar\">\n"
 				+ "<h1>"+title+"</h1>\n"
 				+ "</div>\n");
-		this.makeNavBar(buf);
+		if (navbars) this.makeNavBar(buf);
 		buf.append("<div id=\"content\">\n");
 	}
 	
-	public void makeHead(StringBuffer buf, String title, String CSSName) {
-		setCSSName(CSSName);
+	public void makeBottomHead(StringBuffer buf, String title) {
+		makeBottomHead(buf, title, true);
+	}
+	
+	public void makeHead(StringBuffer buf, String title) {
 		makeTopHead(buf);
 		makeBottomHead(buf, title);
+	}
+	
+	public void makeHead(StringBuffer buf, String title, boolean navbars) {
+		makeTopHead(buf);
+		makeBottomHead(buf, title, navbars);
 	}
 	
 	public void makeTail(StringBuffer buf) {

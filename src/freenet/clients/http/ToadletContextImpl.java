@@ -32,14 +32,13 @@ public class ToadletContextImpl implements ToadletContext {
 	private final MultiValueTable headers;
 	private final OutputStream sockOutputStream;
 	private final PageMaker pagemaker;
-	private String CSSName;
 	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
 	 */
 	private boolean closed;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable headers) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName) throws IOException {
 		this.sock = sock;
 		this.headers = headers;
 		this.closed = false;
@@ -186,7 +185,36 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				boolean shouldDisconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers);
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName());
+				
+				/*
+				 * if we're handling a POST, copy the data into a bucket now,
+				 * before we go into the redirect loop
+				 */
+				
+				Bucket data;
+				
+				if(method.equals("POST")) {
+					String slen = (String) headers.get("content-length");
+					if(slen == null) {
+						sendError(sock.getOutputStream(), 400, "No content-length in POST", true, null);
+						return;
+					}
+					long len;
+					try {
+						len = Integer.parseInt(slen);
+						if(len < 0) throw new NumberFormatException("content-length less than 0");
+					} catch (NumberFormatException e) {
+						sendError(sock.getOutputStream(), 400, "content-length parse error: "+e, true, null);
+						return;
+					}
+					data = bf.makeBucket(len);
+					BucketTools.copyFrom(data, is, len);
+				} else {
+					// we're not doing to use it, but we have to keep
+					// the compiler happy
+					data = null;
+				}
 				
 				// Handle it.
 				boolean redirect = true;
@@ -218,22 +246,6 @@ public class ToadletContextImpl implements ToadletContext {
 						}
 	
 					} else if(method.equals("POST")) {
-						String slen = (String) headers.get("content-length");
-						if(slen == null) {
-							sendError(sock.getOutputStream(), 400, "No content-length in POST", true, null);
-							return;
-						}
-						long len;
-						try {
-							len = Integer.parseInt(slen);
-							if(len < 0) throw new NumberFormatException("content-length less than 0");
-						} catch (NumberFormatException e) {
-							sendError(sock.getOutputStream(), 400, "content-length parse error: "+e, true, null);
-							return;
-						}
-						Bucket data = bf.makeBucket(len);
-						BucketTools.copyFrom(data, is, len);
-
 						try {
 							t.handlePost(uri, data, ctx);
 						} catch (RedirectException re) {

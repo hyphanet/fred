@@ -25,7 +25,7 @@ import freenet.support.FileLoggerHook.IntervalParseException;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.TempBucketFactory;
 
-public class SimpleToadletServer implements ToadletContainer, Runnable, CSSNameCallback {
+public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	public class ToadletElement {
 		public ToadletElement(Toadlet t2, String urlPrefix) {
@@ -190,7 +190,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable, CSSNameC
         Logger.globalAddHook(logger);
         logger.start();
 		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1", new TempBucketFactory(new FilenameGenerator(new DummyRandomSource(), true, new File("temp-test"), "test-temp-")), "aqua");
-		server.register(new TrivialToadlet(null,null), "", true);
+		server.register(new TrivialToadlet(null), "", true);
 		System.out.println("Bound to port 1111.");
 		while(true) {
 			try {

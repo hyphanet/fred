@@ -18,14 +18,15 @@ import freenet.support.Logger;
 public class ConfigToadlet extends Toadlet {
 	private Config config;
 	
-	ConfigToadlet(HighLevelSimpleClient client, Config conf, CSSNameCallback cb) {
-		super(client, cb);
+	ConfigToadlet(HighLevelSimpleClient client, Config conf) {
+		super(client);
 		config=conf;
 	}
 
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		StringBuffer buf = new StringBuffer();
+		StringBuffer errbuf = new StringBuffer();
 		SubConfig[] sc = config.getConfigs();
+		
 		
 		if(data.size() > 1024*1024) {
 			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, config servlet limited to 1MB");
@@ -56,14 +57,33 @@ public class ConfigToadlet extends Toadlet {
 						try{
 							o[j].setValue(request.getParam(prefix+"."+configName));
 						}catch(Exception e){
-							buf.append(o[j].getName()+" "+e+"\n");
+							errbuf.append(o[j].getName()+" "+e+"\n");
 						}
 					}
 				}
 			}
 		}
 		config.store();
-		writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx, "Applying configuration", buf.toString(), "/config/", 10));
+		
+		StringBuffer outbuf = new StringBuffer();
+		
+		ctx.getPageMaker().makeHead(outbuf, "Configuration Applied");
+		outbuf.append("<div class=\"infobox\">\n");
+		if (errbuf.length() == 0) {
+			outbuf.append("Your configuration changes were applied successfully<br />\n");
+		} else {
+			outbuf.append("Your configuration changes were applied with the following exceptions:<br />\n");
+			outbuf.append(errbuf.toString());
+			outbuf.append("<br />\n");
+		}
+		
+		outbuf.append("<a href=\".\" title=\"Configuration\">Return to Node Configuration</a><br />\n");
+		outbuf.append("<a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
+		
+		outbuf.append("</div>\n");
+		
+		ctx.getPageMaker().makeTail(outbuf);
+		writeReply(ctx, 200, "text/html", "OK", outbuf.toString());
 		
 	}
 	
@@ -72,23 +92,26 @@ public class ConfigToadlet extends Toadlet {
 		SubConfig[] sc = config.getConfigs();
 		
 		HTTPRequest request = new HTTPRequest(uri);
-		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration", getCSSName());
-		buf.append("<h1 class=\"title\">Node Configuration</h1>\n");
+		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration");
+		buf.append("<form method=\"post\" action=\".\">");
 		buf.append("<div class=\"config\">\n");
-		buf.append("	<ul class=\"config\">\n");
-		buf.append("<form method=\"post\">");
+		
 		String last = null;
 		
 		for(int i=0; i<sc.length;i++){
 			Option[] o = sc[i].getOptions();
-			String prefix = new String(sc[i].getPrefix());
+			//String prefix = new String(sc[i].getPrefix());
 			
+			/*
 			if(last == null || ! last.equalsIgnoreCase(prefix)){
-				buf.append("</p>\n");
+				//buf.append("</p>\n");
 				buf.append("</span>\n");
 				buf.append("<span id=\""+prefix+"\">\n");
-				buf.append("<p>\n");
+				//buf.append("<p>\n");
 			}
+			*/
+			
+			buf.append("<ul class=\"config\">\n");
 			
 			for(int j=0; j<o.length; j++){
 				String configName = new String(o[j].getName());
@@ -101,20 +124,20 @@ public class ConfigToadlet extends Toadlet {
 				
 				buf.append("<li>");
 				buf.append(o[j].getShortDesc());
-				buf.append("<br> <i>");
-				buf.append(prefix+"."+configName+"</i>=&gt;<input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
-						" type=\"text\" name=\""+prefix+"."+configName+"\" value=\""+o[j].getValueString()+"\"></li>\n");
+				buf.append("<br /> <i>");
+				buf.append(sc[i].getPrefix()+"."+configName+"</i>=&gt;<input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
+						" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+o[j].getValueString()+"\" /></li>\n");
 			}
 			
-			buf.append("<hr>");
+			
+			buf.append("</ul>\n");
 		}
 		
-		buf.append("<br>");
-		buf.append("<input type=\"submit\" value=\"Apply\">");
-		buf.append("<input type=\"reset\" value=\"Cancel\">");
-		buf.append("</form>");
-		buf.append("	</ul>\n");
+		buf.append("<br />");
+		buf.append("<input type=\"submit\" value=\"Apply\" />");
+		buf.append("<input type=\"reset\" value=\"Reset\" />");
 		buf.append("</div>\n");
+		buf.append("</form>");
 		
 		ctx.getPageMaker().makeTail(buf);
 		

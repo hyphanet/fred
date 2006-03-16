@@ -15,8 +15,8 @@ import freenet.support.Logger;
 public class WelcomeToadlet extends Toadlet {
 	Node node;
 
-	WelcomeToadlet(HighLevelSimpleClient client, Node n, CSSNameCallback CSSName) {
-		super(client, CSSName);
+	WelcomeToadlet(HighLevelSimpleClient client, Node n) {
+		super(client);
 		this.node = n;
 	}
 
@@ -36,23 +36,48 @@ public class WelcomeToadlet extends Toadlet {
 			return;
 		}
 		
-		if(request.hasParameters() && request.getParam("exit").equalsIgnoreCase("true")){	
-			System.out.println("Goodbye.");
-			writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx, "Shutting down the node", "" , "/", 5));
-			System.exit(0);
-		}
+		StringBuffer buf = new StringBuffer();
 		
+		if (request.getParam("shutdownconfirm").length() > 0) {
+			// false for no navigation bars, because that would be very silly
+			ctx.getPageMaker().makeHead(buf, "Node Shut down", false);
+			buf.append("<div class=\"infobox\">\n");
+			buf.append("The Freenet node has been successfully shut down\n");
+			buf.append("<br />\n");
+			buf.append("Thank you for using Freenet\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+				
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			this.node.exit();
+		} else if (request.getParam("exit").equalsIgnoreCase("true")) {
+			ctx.getPageMaker().makeHead(buf, "Node Shutdown");
+			buf.append("<form action=\"/\" method=\"post\">\n");
+			buf.append("<div class=\"infobox\">\n");
+			buf.append("Are you sure you wish to shut down your Freenet node?<br />\n");
+			buf.append("<div class=\"cancel\">\n");
+			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"confirm\">\n");
+			buf.append("<input type=\"submit\" name=\"shutdownconfirm\" value=\"Shut Down\" />\n");
+			buf.append("</div>\n");
+			buf.append("<br style=\"clear: all;\">\n");
+			buf.append("</div>\n");
+			buf.append("</form>\n");
+			ctx.getPageMaker().makeTail(buf);
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		} else {
+			this.handleGet(uri, ctx);
+		}
 	}
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		StringBuffer buf = new StringBuffer();
-		HTTPRequest request = new HTTPRequest(uri);
 		
 		
-		String name = "Freenet FProxy Homepage";
+		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage");
 		if(node.isTestnetEnabled())
-			name = name +"<br><font color=red>WARNING: TESTNET MODE ENABLED</font>";
-		ctx.getPageMaker().makeHead(buf, name, getCSSName());
+			buf.append("<div style=\"color: red; font-size: 200%; \">WARNING: TESTNET MODE ENABLED</div>");
 		
 		// Version info
 		buf.append("<div class=\"infobox\">\n");
@@ -75,11 +100,11 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("</form>\n");
 		
 		// Quit Form
-		buf.append("<div class=\"exit\" target=\".\">\n");
-		buf.append("<form method=\"post\">\n");
-		buf.append("<input type=\"hidden\" name=\"exit\" value=\"true\"><input type=\"submit\" value=\"Shutdown the node\">\n");
-		buf.append("</form>\n");
+		buf.append("<form method=\"post\" action=\".\">\n");
+		buf.append("<div class=\"exit\">\n");
+		buf.append("<input type=\"hidden\" name=\"exit\" value=\"true\" /><input type=\"submit\" value=\"Shut down the node\" />\n");
 		buf.append("</div>\n");
+		buf.append("</form>\n");
 		
 		// Activity
 		buf.append("<ul id=\"activity\">\n"

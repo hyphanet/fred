@@ -32,8 +32,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 	Node node;
 	
-	protected DarknetConnectionsToadlet(Node n, HighLevelSimpleClient client, CSSNameCallback cb) {
-		super(client, cb);
+	protected DarknetConnectionsToadlet(Node n, HighLevelSimpleClient client) {
+		super(client);
 		this.node = n;
 	}
 
@@ -45,8 +45,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		StringBuffer buf = new StringBuffer();
 		
 		HTTPRequest request = new HTTPRequest(uri);
-		ctx.getPageMaker().makeHead(buf, "Darknet Connections", getCSSName());
-		buf.append("<h1 class=\"title\">Darknet Connections</h1>\n");
+		ctx.getPageMaker().makeHead(buf, "Darknet Connections");
 		// FIXME! 1) Probably would be better to use CSS
 		// FIXME! 2) We need some nice images
 		PeerNode[] peerNodes = node.getDarknetConnections();

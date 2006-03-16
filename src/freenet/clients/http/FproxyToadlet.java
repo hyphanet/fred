@@ -26,34 +26,25 @@ import freenet.support.MultiValueTable;
 
 public class FproxyToadlet extends Toadlet {
 	
-	public FproxyToadlet(HighLevelSimpleClient client, CSSNameCallback server) {
-		super(client, server);
+	public FproxyToadlet(HighLevelSimpleClient client) {
+		super(client);
 	}
 	
 	public String supportedMethods() {
 		return "GET";
 	}
 
-	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		String ks = uri.getPath();
 		
-		if(data.size() > 1024*1024) {
-			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, config servlet limited to 1MB");
-			return;
-		}
-		byte[] d = BucketTools.toByteArray(data);
-		String s = new String(d, "us-ascii");
-		HTTPRequest request;
-		try {
-			request = new HTTPRequest("/", s);
-		} catch (URISyntaxException e) {
-			Logger.error(this, "Impossible: "+e, e);
-			return;
-		}
-		
-		if(request.hasParameters() && request.getParam("exit").equalsIgnoreCase("true")){	
-			System.out.println("Goodbye.");
-			writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx, "Shutting down the node", "" , "/", 5));
-			System.exit(0);
+		if (ks.equals("/")) {
+			RedirectException re = new RedirectException();
+			try {
+				re.newuri = new URI("/welcome/");
+			} catch (URISyntaxException e) {
+				// HUH!?!
+			}
+			throw re;
 		}
 		
 	}
@@ -127,26 +118,26 @@ public class FproxyToadlet extends Toadlet {
 			HighLevelSimpleClient client = node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			
 			node.setToadletContainer(server);
-			FproxyToadlet fproxy = new FproxyToadlet(client, server);
+			FproxyToadlet fproxy = new FproxyToadlet(client);
 			node.setFproxy(fproxy);
 			server.register(fproxy, "/", false);
 			
-			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, server);
+			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager);
 			server.register(pproxy, "/plugins/", true);
 			
-			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node, server);
+			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node);
 			server.register(welcometoadlet, "/welcome/", true);
 			
-			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, server);
+			ConfigToadlet configtoadlet = new ConfigToadlet(client, config);
 			server.register(configtoadlet, "/config/", true);
 			
-			StaticToadlet statictoadlet = new StaticToadlet(client, server);
+			StaticToadlet statictoadlet = new StaticToadlet(client);
 			server.register(statictoadlet, "/static/", true);
 			
-			SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, server, node);
+			SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
 			server.register(symlinkToadlet, "/sl/", true);
 			
-			DarknetConnectionsToadlet darknetToadlet = new DarknetConnectionsToadlet(node, client, server);
+			DarknetConnectionsToadlet darknetToadlet = new DarknetConnectionsToadlet(node, client);
 			server.register(darknetToadlet, "/darknet/", true);
 
 		} catch (IOException ioe) {

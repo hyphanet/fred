@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.CSSNameCallback;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;
@@ -21,8 +20,8 @@ import freenet.support.MultiValueTable;
 public class PproxyToadlet extends Toadlet {
 	private PluginManager pm = null;
 
-	public PproxyToadlet(HighLevelSimpleClient client, PluginManager pm, CSSNameCallback CSSName) {
-		super(client, CSSName);
+	public PproxyToadlet(HighLevelSimpleClient client, PluginManager pm) {
+		super(client);
 		this.pm = pm;
 	}
 	
@@ -120,7 +119,7 @@ public class PproxyToadlet extends Toadlet {
 	private void showPluginList(ToadletContext ctx, HTTPRequest request) throws ToadletContextClosedException, IOException {
 		if (!request.hasParameters()) {
 			StringBuffer out = new StringBuffer();
-			ctx.getPageMaker().makeHead(out, "Plugin List", getCSSName());
+			ctx.getPageMaker().makeHead(out, "Plugin List");
 			out.append("<table style=\"border: 1pt solid #c0c0c0;\">");
 			out.append("  <tr>\n");
 			out.append("    <th>Name</th>\n");

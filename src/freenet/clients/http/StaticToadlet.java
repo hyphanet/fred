@@ -13,8 +13,8 @@ import freenet.client.HighLevelSimpleClient;
  * Serve up static files
  */
 public class StaticToadlet extends Toadlet {
-	StaticToadlet(HighLevelSimpleClient client, CSSNameCallback CSSName) {
-		super(client, CSSName);
+	StaticToadlet(HighLevelSimpleClient client) {
+		super(client);
 	}
 	
 	final String rootURL = new String("/static/");

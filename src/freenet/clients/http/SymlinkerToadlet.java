@@ -32,8 +32,8 @@ public class SymlinkerToadlet extends Toadlet {
 	private final Node node;
 	SubConfig tslconfig;
 	
-	public SymlinkerToadlet(HighLevelSimpleClient client, CSSNameCallback CSSName, Node node) {
-		super(client, CSSName);
+	public SymlinkerToadlet(HighLevelSimpleClient client, Node node) {
+		super(client);
 		this.node = node;
 		tslconfig = new SubConfig("toadletsymlinker", node.config);
 		tslconfig.register("symlinks", null, 9, true, "Symlinks in ToadletServer", 

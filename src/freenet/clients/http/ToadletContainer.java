@@ -16,4 +16,9 @@ public interface ToadletContainer {
 	 * Find a Toadlet by URI.
 	 */
 	public Toadlet findToadlet(URI uri);
+	
+	/**
+	 * Get the name of the theme to be used by all the Toadlets
+	 */
+	public String getCSSName();
 }

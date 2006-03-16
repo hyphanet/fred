@@ -9,9 +9,6 @@ body {
 	position: relative;
 }
 
-#page {
-}
-
 #topbar {
 	margin: 0px;
 	margin-bottom: 10px;
@@ -23,22 +20,21 @@ body {
 }
 
 #navbar {
-	float: left;
+	margin:0 5px 0 0;
+	padding:10px;
+	width:150px;
+	float:right;
 	border: 2px solid #5e88d8;
-	margin-right: 10px;
-	text-align: center;
-	padding: 5px;
 }
 
 #navlist {
-	display: inline;
 	margin: 0;
 	padding: 0;
 	text-align: center;
+	text-align: left;
 }
 
 #navlist li {
-	display: inline;
 	margin: 0;
 	padding: 0;
 	list-style-type: none;
@@ -47,17 +43,14 @@ body {
 }
 
 #navlist a {
-	display: block;
 	color: black;
 }
 
 #navlist a:visited {
-	display: block;
 	color: black;
 }
 
 #navlist a:active {
-	display: block;
 	color: black;
 }
 
@@ -68,36 +61,6 @@ body {
 	display: table-cell;
 }
 
-#themeselect {
-	position: absolute;
-	bottom: 0px;
-	right: 0px;
-}
-
-#themeselect ul {
-	display: inline;
-	margin: 0;
-	padding: 0;
-}
-
-#themeselect ul li {
-	display: inline;
-	margin: 0;
-	padding: 0;
-	list-style-type: none;
-	list-style-position: outside;
-}
-
-.themeitem a {
-	text-decoration: none;
-	color: black;
-}
-
-.currentthemeitem a {
-	color: #356ace;
-	font-weight: bold;
-}
-
 #activity {
 	border: 1px solid #5e88d8;
 	padding: 5px;
@@ -106,3 +69,18 @@ body {
 	list-style-position: inside;
 }
 
+.config ul {
+	border: 1px solid #5e88d8;
+	padding: 5px;
+	margin: 15px;
+	list-style-position: inside;
+	display: table;
+}
+
+.cancel {
+	float: left;
+}
+
+.confirm {
+	float: right;
+}
