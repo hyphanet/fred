@@ -48,6 +48,9 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class PeerNode implements PeerContext {
 
+    /** Set to true when we complete a handshake. */
+    private boolean completedHandshake = false;
+    
 	private String lastGoodVersion; 
 	
     /** For debugging/testing, set this to true to stop the
@@ -673,6 +676,7 @@ public class PeerNode implements PeerContext {
      * @return True unless we rejected the handshake, or it failed to parse.
      */
     public synchronized boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
+    	completedHandshake = true;
         bogusNoderef = false;
         try {
             // First, the new noderef
@@ -1184,6 +1188,22 @@ public class PeerNode implements PeerContext {
 	
 	public Peer getRemoteDetectedPeer() {
 		return remoteDetectedPeer;
+	}
+
+	public String getName() {
+		return myName;
+	}
+
+	public int getBackoffLength() {
+		return this.backoffLength;
+	}
+
+	public long getBackedOffUntil() {
+		return backedOffUntil;
+	}
+
+	public boolean hasCompletedHandshake() {
+		return completedHandshake;
 	}
 }
 

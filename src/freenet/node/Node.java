@@ -2106,4 +2106,8 @@ public class Node {
 	public void setDirectTMCI(TextModeClientInterface i) {
 		this.directTMCI = i;
 	}
+
+	public PeerNode[] getDarknetConnections() {
+		return peers.myPeers;
+	}
 }
