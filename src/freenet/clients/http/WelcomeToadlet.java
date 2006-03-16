@@ -49,7 +49,10 @@ public class WelcomeToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri);
 		
 		
-		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage", getCSSName());
+		String name = "Freenet FProxy Homepage";
+		if(node.isTestnetEnabled())
+			name = name +"<br><font color=red>WARNING: TESTNET MODE ENABLED</font>";
+		ctx.getPageMaker().makeHead(buf, name, getCSSName());
 		
 		// Version info
 		buf.append("<div class=\"infobox\">\n");
