@@ -141,7 +141,7 @@ public class FproxyToadlet extends Toadlet {
 			server.register(darknetToadlet, "/darknet/", true);
 
 		} catch (IOException ioe) {
-			Logger.error(node,"Failed to start fproxy on "+fproxyConfig.getString("bindTo")+":"+fproxyConfig.getInt("port"));
+			Logger.error(node,"Failed to start fproxy on "+fproxyConfig.getString("bindto")+":"+fproxyConfig.getInt("port"));
 		}
 		
 		fproxyConfig.finishedInitialization();
