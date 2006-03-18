@@ -95,11 +95,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		InputStream strm = bucket.getInputStream();
 		Writer w = new NullWriter();
 		Reader r;
-		try {
-			r = new BufferedReader(new InputStreamReader(strm, parseCharset), 32768);
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
+		r = new BufferedReader(new InputStreamReader(strm, parseCharset), 32768);
 		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback());
 		try {
 			pc.run(null);
