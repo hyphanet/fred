@@ -48,6 +48,10 @@ body {
 	float:left;
 }
 
+pre, textarea {
+	font-size: 70%;
+}
+
 .infobox {
 	margin:0 0 5px 0;
 	padding:10px;
@@ -62,6 +66,15 @@ body {
 	font-family:Arial;
 	font-weight:normal;
 	font-size:13pt;
+}
+
+.boxhead {
+	background-color:#e8e8e8;
+	text-align: left;
+	font-weight: bold;
+	margin: -10px;
+	margin-bottom: 10px;
+	padding-left: 5px;
 }
 
 #activity {

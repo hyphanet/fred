@@ -57,8 +57,22 @@ body {
 .infobox {
 	border: 1px solid #5e88d8;
 	padding: 5px;
+	margin: 10px;
 	margin-bottom: 10px;
 	display: table-cell;
+}
+
+pre, textarea {
+	font-size: 70%;
+}
+
+.boxhead {
+	text-align: left;
+	font-weight: bold;
+	margin: -5px;
+	margin-bottom: 10px;
+	border-bottom: 1px solid #5e88d8;
+	padding-left: 5px;
 }
 
 #activity {

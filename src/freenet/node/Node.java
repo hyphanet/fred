@@ -2110,4 +2110,10 @@ public class Node {
 	public PeerNode[] getDarknetConnections() {
 		return peers.myPeers;
 	}
+	
+	public boolean addDarknetConnection(PeerNode pn) {
+		boolean retval = peers.addPeer(pn);
+		peers.writePeers();
+		return retval;
+	}
 }

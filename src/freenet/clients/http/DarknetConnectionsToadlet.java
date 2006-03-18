@@ -1,7 +1,12 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -9,8 +14,14 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.Version;
+import freenet.node.FSParseException;
+import freenet.io.comm.PeerParseException;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.support.HTMLEncoder;
+import freenet.support.Bucket;
+import freenet.support.BucketTools;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 public class DarknetConnectionsToadlet extends Toadlet {
 
@@ -46,6 +57,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		HTTPRequest request = new HTTPRequest(uri);
 		ctx.getPageMaker().makeHead(buf, "Darknet Connections");
+		
+		// our reference
+		buf.append("<div class=\"infobox\">\n");
+		buf.append("<h2 class=\"boxhead\">My Reference</h2>\n");
+		buf.append("<pre>\n");
+		buf.append(this.node.exportFieldSet());
+		buf.append("</pre>\n");
+		buf.append("</div>\n");
+		
 		// FIXME! 1) Probably would be better to use CSS
 		// FIXME! 2) We need some nice images
 		PeerNode[] peerNodes = node.getDarknetConnections();
@@ -53,7 +73,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 		
 		buf.append("<table border=\"0\">\n");
-		buf.append("<tr><th>Status</th><th>Name</th><th>Address</th><th>Version</th><th>Location</th><th>Backoff</th><th>Backoff length</th></tr>\n");
+		buf.append("<tr><th>Status</th><th>Name</th><th>Address</th><th>Version</th><th>Location</th><th>Backoff</th><th>Backoff length</th><th></th></tr>\n");
 
 		final Integer CONNECTED = new Integer(0);
 		final Integer BACKED_OFF = new Integer(1);
@@ -68,7 +88,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			int backoffLength = pn.getBackoffLength();
 			boolean backedOffNow = (now < backedOffUntil);
 			
-			Object[] row = new Object[7];
+			Object[] row = new Object[8];
 			rows[i] = row;
 			
 			Object status;
@@ -90,6 +110,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			row[4] = new Double(pn.getLocation().getValue());
 			row[5] = new Long(Math.max(backedOffUntil - now, 0));
 			row[6] = new Long(backoffLength);
+			// TODO: Best way of identifying peers? Name isn't unique and host/port can be null.
+			row[7] = new String("<form action=\".\" method=\"post\">\n"
+					+"<span>"
+					+"<input type=\"hidden\" name=\"node\" value=\"\" />"
+					+"<input type=\"submit\" name=\"disconnect\" value=\"Disconnect\" />\n"
+					+"</span>\n"
+					+"</form>\n");
 		}
 
 		// Sort array
@@ -118,9 +145,96 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		buf.append("</table>");
 		
+		// new connection box
+		buf.append("<form action=\".\" method=\"post\">\n");
+		buf.append("<div class=\"infobox\">\n");
+		buf.append("<h2 class=\"boxhead\">\n");
+		buf.append("Connect to another node\n");
+		buf.append("</h2>\n");
+		buf.append("Reference:<br />\n");
+		buf.append("<textarea name=\"ref\" rows=\"8\" cols=\"74\"></textarea>\n");
+		buf.append("<br />\n");
+		buf.append("or URL:\n");
+		buf.append("<input type=\"text\" name=\"url\" style=\"width: 100%\"/>\n");
+		buf.append("<br />\n");
+		buf.append("<input type=\"submit\" name=\"connect\" value=\"Connect\" />\n");
+		buf.append("</div>\n");
+		buf.append("</form>\n");
+		
 		ctx.getPageMaker().makeTail(buf);
 		
 		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
 	}
 	
+	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		if(data.size() > 1024*1024) {
+			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, darknet toadlet limited to 1MB");
+			return;
+		}
+		byte[] d = BucketTools.toByteArray(data);
+		String s = new String(d, "us-ascii");
+		HTTPRequest request;
+		try {
+			request = new HTTPRequest("/", s);
+		} catch (URISyntaxException e) {
+			Logger.error(this, "Impossible: "+e, e);
+			return;
+		}
+		
+		if (request.getParam("connect").length() > 0) {
+			// connect to a new node
+			String urltext = request.getParam("url");
+			urltext = urltext.trim();
+			String reftext = request.getParam("ref");
+			reftext = reftext.trim();
+			
+			String ref = new String("");
+			
+			if (urltext.length() > 0) {
+				// fetch reference from a URL
+				try {
+					URL url = new URL(urltext);
+					URLConnection uc = url.openConnection();
+					BufferedReader in = new BufferedReader(
+							new InputStreamReader(uc.getInputStream()));
+					String line;
+					while ( (line = in.readLine()) != null) {
+						ref += line+"\n";
+					}
+				} catch (Exception e) {
+					this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to retrieve node reference from "+urltext+".");
+				}
+			} else if (reftext.length() > 0) {
+				// read directly from post data
+				// FIXME: The regexp don't work.
+				ref = reftext.replaceAll("\\.*(\\w)\\=(\\w)(\\r?\\n)+", "\\1=\\2\\n");
+			} else {
+				this.sendErrorPage(ctx, 200, "Failed to add node", "Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
+				return;
+			}
+			// we have a node reference in ref
+			SimpleFieldSet fs;
+			
+			try {
+				fs = new SimpleFieldSet(ref, false);
+			} catch (IOException e) {
+				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+reftext+"</pre> as a node reference. Please <a href=\".\">Try again</a>.");
+				return;
+			}
+			PeerNode pn;
+			try {
+				pn = new PeerNode(fs, this.node);
+			} catch (FSParseException e1) {
+				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+reftext+"</pre> as a node reference. Please <a href=\".\">Try again</a>.");
+				return;
+			} catch (PeerParseException e1) {
+				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+reftext+"</pre> as a node reference. Please <a href=\".\">Try again</a>.");
+				return;
+			}
+			if(!this.node.addDarknetConnection(pn)) {
+				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to add the given reference as a peer. Please <a href=\".\">Try again</a>.");
+			}
+		}
+		this.handleGet(uri, ctx);
+	}
 }
