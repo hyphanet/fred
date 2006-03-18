@@ -46,7 +46,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     }
     
 	public static void maybeCreate(Node node, Config config) throws IOException {
-		SubConfig TMCIConfig = new SubConfig("tmci", config);
+		SubConfig TMCIConfig = new SubConfig("console", config);
 		
 		TMCIConfig.register("enabled", true, 1, true, "Enable TMCI", "Whether to enable the TMCI",
 				new TMCIEnabledCallback(node));
