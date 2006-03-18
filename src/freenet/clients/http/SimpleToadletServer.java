@@ -37,7 +37,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 
 	final int port;
-	final String bindto;
+	final String bindTo;
 	final BucketFactory bf;
 	private final ServerSocket sock;
 	private final LinkedList toadlets;
@@ -62,11 +62,11 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	class FproxyBindtoCallback implements StringCallback {
 		
 		public String get() {
-			return bindto;
+			return bindTo;
 		}
 		
-		public void set(String bindto) throws InvalidConfigValueException {
-			if(bindto != get())
+		public void set(String bindTo) throws InvalidConfigValueException {
+			if(bindTo != get())
 				throw new InvalidConfigValueException("Cannot change fproxy bind address on the fly");
 		}
 	}
@@ -120,19 +120,19 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, "Fproxy port number", "Fproxy port number",
 				new FproxyPortCallback());
-		fproxyConfig.register("bindto", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
+		fproxyConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
 				new FproxyBindtoCallback());
 		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS Fproxy should use",
 				new FproxyCSSNameCallback());
 
 		this.bf = node.tempBucketFactory;
 		port = fproxyConfig.getInt("port");
-		bindto = fproxyConfig.getString("bindto");
+		bindTo = fproxyConfig.getString("bindTo");
 		cssName = fproxyConfig.getString("css");
 		if(cssName.indexOf(':') != -1 || cssName.indexOf('/') != -1)
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 		
-		this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindto));
+		this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindTo));
 		toadlets = new LinkedList();
 		
 		node.setToadletContainer(this); // even if not enabled, because of config
@@ -144,15 +144,15 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			myThread.setDaemon(true);
 			myThread.start();
 			System.out.println("Starting fproxy on port "+(port));
-			Logger.normal(this, "Starting fproxy on "+bindto+":"+port);
+			Logger.normal(this, "Starting fproxy on "+bindTo+":"+port);
 		}
 	}
 	
-	public SimpleToadletServer(int i, String newbindto, BucketFactory bf, String cssName) throws IOException {
+	public SimpleToadletServer(int i, String newbindTo, BucketFactory bf, String cssName) throws IOException {
 		this.port = i;
-		this.bindto = newbindto;
+		this.bindTo = newbindTo;
 		this.bf = bf;
-		this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindto));
+		this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindTo));
 		toadlets = new LinkedList();
 		this.cssName = cssName;
 		Thread t = new Thread(this, "SimpleToadletServer");

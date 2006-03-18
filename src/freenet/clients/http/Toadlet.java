@@ -157,14 +157,4 @@ public abstract class Toadlet {
 	protected HighLevelSimpleClient getClientImpl() {
 		return client;
 	}
-	
-	public String mkForwardPage(ToadletContext ctx, String title, String content, String nextpage, int interval) {
-		if (content == null) content = "null";
-		
-		return  	"<HTML><HEAD><link rel=\"stylesheet\" href=\"/static/themes/"+ctx.getPageMaker().theme+"/theme.css\" type=\"text/css\" /><head><title>" + title + "</title>"+
-		"<META HTTP-EQUIV=Refresh CONTENT=\"" + interval +
-		"; URL="+nextpage+"\"></head><body><h1>" + title +
-		"</h1>" + content.replaceAll("\n", "<br/>\n") + "</body>";
-	}
-	
 }

@@ -40,7 +40,7 @@ public class FCPServer implements Runnable {
 	final Node node;
 	final int port;
 	final boolean enabled;
-	final String bindto;
+	final String bindTo;
 	final WeakHashMap clientsByName;
 	final FCPClient globalClient;
 	private boolean enablePersistentDownloads;
@@ -68,11 +68,11 @@ public class FCPServer implements Runnable {
 	}
 
 	public FCPServer(String ipToBindTo, int port, Node node, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval) throws IOException, InvalidConfigValueException {
-		this.bindto = new String(ipToBindTo);
+		this.bindTo = new String(ipToBindTo);
 		this.persistenceInterval = persistenceInterval;
 		this.port = port;
 		this.enabled = true;
-		this.sock = new ServerSocket(port, 0, InetAddress.getByName(bindto));
+		this.sock = new ServerSocket(port, 0, InetAddress.getByName(bindTo));
 		this.node = node;
 		clientsByName = new WeakHashMap();
 		// This one is only used to get the default settings. Individual FCP conns
@@ -160,7 +160,7 @@ public class FCPServer implements Runnable {
 		}
 		
 		public String get() {
-			return node.getFCPServer().bindto;
+			return node.getFCPServer().bindTo;
 		}
 
 //TODO: Allow it
@@ -225,7 +225,7 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("enabled", true, 2, true, "Is FCP server enabled ?", "Is FCP server enabled ?", new FCPEnabledCallback(node));
 		fcpConfig.register("port", 9481 /* anagram of 1984, and 1000 up from old number */,
 				2, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(node));
-		fcpConfig.register("bindto", "127.0.0.1", 2, true, "Ip address to bind to", "Ip address to bind the FCP server to", new FCPBindtoCallback(node));
+		fcpConfig.register("bindTo", "127.0.0.1", 2, true, "Ip address to bind to", "Ip address to bind the FCP server to", new FCPBindtoCallback(node));
 		PersistentDownloadsEnabledCallback cb1;
 		PersistentDownloadsFileCallback cb2;
 		PersistentDownloadsIntervalCallback cb3;
@@ -244,8 +244,8 @@ public class FCPServer implements Runnable {
 		
 		FCPServer fcp;
 		if(fcpConfig.getBoolean("enabled")){
-			Logger.normal(node, "Starting FCP server on "+fcpConfig.getString("bindto")+":"+fcpConfig.getInt("port")+".");
-			fcp = new FCPServer(fcpConfig.getString("bindto"), fcpConfig.getInt("port"), node, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval);
+			Logger.normal(node, "Starting FCP server on "+fcpConfig.getString("bindTo")+":"+fcpConfig.getInt("port")+".");
+			fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getInt("port"), node, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval);
 			node.setFCPServer(fcp);	
 			
 			if(fcp != null) {

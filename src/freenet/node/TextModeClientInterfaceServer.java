@@ -30,10 +30,10 @@ public class TextModeClientInterfaceServer implements Runnable {
     final Hashtable streams;
     final File downloadsDir;
     int port;
-    final String bindto;
+    final String bindTo;
     boolean isEnabled;
 
-    TextModeClientInterfaceServer(Node n, HighLevelSimpleClient client, int port, String bindto) {
+    TextModeClientInterfaceServer(Node n, HighLevelSimpleClient client, int port, String bindTo) {
         this.n = n;
         this.client = client;
         client.addGlobalHook(new EventDumper());
@@ -41,7 +41,7 @@ public class TextModeClientInterfaceServer implements Runnable {
         streams = new Hashtable();
         this.downloadsDir = n.downloadDir;
         this.port=port;
-        this.bindto=bindto;
+        this.bindTo=bindTo;
         this.isEnabled=true;
         n.setTMCI(this);
         new Thread(this, "Text mode client interface").start();
@@ -52,7 +52,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		
 		TMCIConfig.register("enabled", true, 1, true, "Enable TMCI", "Whether to enable the TMCI",
 				new TMCIEnabledCallback(node));
-		TMCIConfig.register("bindto", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
+		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
 				new TMCIBindtoCallback(node));
 		TMCIConfig.register("port", 2323, 1, true, "Testnet port", "Testnet port number",
         		new TCMIPortNumberCallback(node));
@@ -61,7 +61,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		
 		boolean TMCIEnabled = TMCIConfig.getBoolean("enabled");
 		int port =  TMCIConfig.getInt("port");
-		String bind_ip = TMCIConfig.getString("bindto");
+		String bind_ip = TMCIConfig.getString("bindTo");
 		boolean direct = TMCIConfig.getBoolean("directEnabled");
         HighLevelSimpleClient client = node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 
@@ -135,7 +135,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     	
     	public String get() {
     		if(node.getTextModeClientInterface()!=null)
-    			return node.getTextModeClientInterface().bindto;
+    			return node.getTextModeClientInterface().bindTo;
     		else
     			return "127.0.0.1";
     	}
@@ -174,12 +174,12 @@ public class TextModeClientInterfaceServer implements Runnable {
     public void run() {
     	while(true) {
     		int curPort = port;
-    		String bindTo = this.bindto;
+    		String bindTo = this.bindTo;
     		ServerSocket server;
     		try {
     			server = new ServerSocket(curPort, 0, InetAddress.getByName(bindTo));
     		} catch (IOException e) {
-    			Logger.error(this, "Could not bind to TMCI port: "+bindto+":"+port);
+    			Logger.error(this, "Could not bind to TMCI port: "+bindTo+":"+port);
     			System.exit(-1);
     			return;
     		}
@@ -194,7 +194,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     		while(isEnabled) {
     			// Maybe something has changed?
 				if(port != curPort) break;
-				if(!(this.bindto.equals(bindTo))) break;
+				if(!(this.bindTo.equals(bindTo))) break;
     			try {
     				Socket s = server.accept();
     				InputStream in = s.getInputStream();
