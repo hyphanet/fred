@@ -5,49 +5,49 @@ package freenet.clients.http.filter;
  */
 public class MIMEType {
 	
-	final String primaryMimeType;
-	final String[] alternateMimeTypes;
+	public final String primaryMimeType;
+	public final String[] alternateMimeTypes;
 	
-	final String primaryExtension;
-	final String[] alternateExtensions;
+	public final String primaryExtension;
+	public final String[] alternateExtensions;
 	
 	/** Is the data safe to read as-is? This is true for text/plain. */
-	final boolean safeToRead;
+	public final boolean safeToRead;
 	
 	/** Is the data safe to write as-is? */
-	final boolean safeToWrite;
+	public final boolean safeToWrite;
 	
 	/** Content filter to make data safe to read */
-	final ContentDataFilter readFilter;
+	public final ContentDataFilter readFilter;
 	
 	/** Content filter to make data safe to write */
-	final ContentDataFilter writeFilter;
+	public final ContentDataFilter writeFilter;
 
 	// Detail. Not necessarily an exhaustive list.
 	
-	final boolean dangerousLinks;
+	public final boolean dangerousLinks;
 	
-	final boolean dangerousInlines;
+	public final boolean dangerousInlines;
 	
-	final boolean dangerousScripting;
+	public final boolean dangerousScripting;
 	
-	final boolean dangerousReadMetadata;
+	public final boolean dangerousReadMetadata;
 	
-	final boolean dangerousWriteMetadata;
+	public final boolean dangerousWriteMetadata;
 	
-	final boolean dangerousToWriteEvenWithFilter;
+	public final boolean dangerousToWriteEvenWithFilter;
 	
 	// These are in addition to the above
 	
-	final String readDescription;
+	public final String readDescription;
 	
-	final String writeDescription;
+	public final String writeDescription;
 	
-	final boolean takesACharset;
+	public final boolean takesACharset;
 	
-	final String defaultCharset;
+	public final String defaultCharset;
 	
-	final CharsetExtractor charsetExtractor;
+	public final CharsetExtractor charsetExtractor;
 	
 	MIMEType(String type, String ext, String[] extraTypes, String[] extraExts,
 			boolean safeToRead, boolean safeToWrite, ContentDataFilter readFilter,
@@ -75,5 +75,12 @@ public class MIMEType {
 		this.takesACharset = takesACharset;
 		this.defaultCharset = defaultCharset;
 		this.charsetExtractor = charsetExtractor;
+	}
+
+	/**
+	 * Throw an exception indicating that this is a dangerous content type.
+	 */
+	public void throwUnsafeContentTypeException() throws KnownUnsafeContentTypeException {
+		throw new KnownUnsafeContentTypeException(this);
 	}
 }

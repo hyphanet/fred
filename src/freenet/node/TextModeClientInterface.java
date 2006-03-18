@@ -429,11 +429,11 @@ public class TextModeClientInterface implements Runnable {
             	// FIXME depends on CHK's still being renamable
                 //uri = uri.setDocName(f.getName());
             	
-                outsb.append("URI: "+uri);
+                outsb.append("URI: "+uri+"\n");
             	long endTime = System.currentTimeMillis();
                 long sz = f.length();
                 double rate = 1000.0 * sz / (endTime-startTime);
-                outsb.append("Upload rate: "+rate+" bytes / second");
+                outsb.append("Upload rate: "+rate+" bytes / second\n");
             } catch (FileNotFoundException e1) {
                 outsb.append("File not found");
             } catch (InserterException e) {

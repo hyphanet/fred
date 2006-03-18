@@ -32,18 +32,19 @@ public class ToadletContextImpl implements ToadletContext {
 	private final MultiValueTable headers;
 	private final OutputStream sockOutputStream;
 	private final PageMaker pagemaker;
+	private final BucketFactory bf;
 	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
 	 */
 	private boolean closed;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName, BucketFactory bf) throws IOException {
 		this.sock = sock;
 		this.headers = headers;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
-		
+		this.bf = bf;
 		pagemaker = new PageMaker(CSSName);
 	}
 
@@ -185,7 +186,7 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				boolean shouldDisconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName());
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName(), bf);
 				
 				/*
 				 * if we're handling a POST, copy the data into a bucket now,
@@ -314,5 +315,9 @@ public class ToadletContextImpl implements ToadletContext {
 	public void writeData(Bucket data) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		BucketTools.copyTo(data, sockOutputStream, Long.MAX_VALUE);
+	}
+
+	public BucketFactory getBucketFactory() {
+		return bf;
 	}
 }

@@ -1,5 +1,7 @@
 package freenet.clients.http.filter;
 
+import java.io.IOException;
+
 import freenet.support.Bucket;
 
 /**
@@ -8,6 +10,6 @@ import freenet.support.Bucket;
  */
 public interface CharsetExtractor {
 	
-	String getCharset(Bucket data);
+	String getCharset(Bucket data, String parseCharset) throws DataFilterException, IOException;
 
 }

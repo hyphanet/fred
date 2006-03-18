@@ -3,6 +3,7 @@ package freenet.clients.http;
 import java.io.IOException;
 
 import freenet.support.Bucket;
+import freenet.support.BucketFactory;
 import freenet.support.MultiValueTable;
 
 /**
@@ -35,5 +36,7 @@ public interface ToadletContext {
 	 * Get the page maker object.
 	 */
 	PageMaker getPageMaker();
+
+	BucketFactory getBucketFactory();
 }
 
