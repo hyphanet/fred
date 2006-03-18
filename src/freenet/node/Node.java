@@ -2116,4 +2116,8 @@ public class Node {
 		peers.writePeers();
 		return retval;
 	}
+	
+	public void removeDarknetConnection(PeerNode pn) {
+		peers.disconnect(pn);
+	}
 }

@@ -59,27 +59,24 @@ body {
 	padding: 5px;
 	margin: 10px;
 	margin-bottom: 10px;
-	display: table-cell;
+	display: table;
 }
 
 pre, textarea {
 	font-size: 70%;
 }
 
-.boxhead {
+.infobox h2 {
 	text-align: left;
 	font-weight: bold;
 	margin: -5px;
 	margin-bottom: 10px;
 	border-bottom: 1px solid #5e88d8;
 	padding-left: 5px;
+	font-size: 110%;
 }
 
 #activity {
-	border: 1px solid #5e88d8;
-	padding: 5px;
-	margin-bottom: 10px;
-	display: table-cell;
 	list-style-position: inside;
 }
 
@@ -97,4 +94,24 @@ pre, textarea {
 
 .confirm {
 	float: right;
+}
+
+.darknet_connections {
+	font-size: 80%;
+}
+
+.peer_connected {
+	color: green;
+}
+
+.peer_backedoff {
+	color: red;
+}
+
+.peer_incompatable {
+	color: blue;
+}
+
+.peer_disconnected {
+	color: black;
 }

@@ -107,11 +107,14 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("</form>\n");
 		
 		// Activity
+		buf.append("<div class=\"infobox\">\n");
+		buf.append("<h2>Current Activity</h2>\n");
 		buf.append("<ul id=\"activity\">\n"
 				+ "<li>Inserts: "+this.node.getNumInserts()+"</li>\n"
 				+ "<li>Requests: "+this.node.getNumRequests()+"</li>\n"
 				+ "<li>Transferring Requests: "+this.node.getNumTransferringRequests()+"</li>\n"
 				+ "</ul>\n");
+		buf.append("</div>\n");
 		
 		ctx.getPageMaker().makeTail(buf);
 		

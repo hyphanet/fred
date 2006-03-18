@@ -60,19 +60,20 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		// our reference
 		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2 class=\"boxhead\">My Reference</h2>\n");
+		buf.append("<h2>My Reference</h2>\n");
 		buf.append("<pre>\n");
 		buf.append(this.node.exportFieldSet());
 		buf.append("</pre>\n");
 		buf.append("</div>\n");
 		
-		// FIXME! 1) Probably would be better to use CSS
-		// FIXME! 2) We need some nice images
+		// FIXME! We need some nice images
 		PeerNode[] peerNodes = node.getDarknetConnections();
 		
 		long now = System.currentTimeMillis();
 		
-		buf.append("<table border=\"0\">\n");
+		buf.append("<div class=\"infobox\">\n");
+		buf.append("<h2>My Connections</h2>\n");
+		buf.append("<table class=\"darknet_connections\">\n");
 		buf.append("<tr><th>Status</th><th>Name</th><th>Address</th><th>Version</th><th>Location</th><th>Backoff</th><th>Backoff length</th><th></th></tr>\n");
 
 		final Integer CONNECTED = new Integer(0);
@@ -110,12 +111,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			row[4] = new Double(pn.getLocation().getValue());
 			row[5] = new Long(Math.max(backedOffUntil - now, 0));
 			row[6] = new Long(backoffLength);
-			// TODO: Best way of identifying peers? Name isn't unique and host/port can be null.
 			row[7] = new String("<form action=\".\" method=\"post\">\n"
-					+"<span>"
-					+"<input type=\"hidden\" name=\"node\" value=\"\" />"
+					+"<div>"
+					+"<input type=\"hidden\" name=\"node\" value=\""+pn.hashCode()+"\" />"
 					+"<input type=\"submit\" name=\"disconnect\" value=\"Disconnect\" />\n"
-					+"</span>\n"
+					+"</div>\n"
 					+"</form>\n");
 		}
 
@@ -126,10 +126,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		for(int i=0;i<rows.length;i++) {
 			Object[] row = rows[i];
 			Integer x = (Integer) row[0];
-			if(x == CONNECTED) row[0] = "<font color=\"green\">CONNECTED</font>";
-			else if(x == BACKED_OFF) row[0] = "<font color=\"red\">BACKED OFF</font>";
-			else if(x == INCOMPATIBLE) row[0] = "<font color=\"blue\">INCOMPATIBLE</font>";
-			else if(x == DISCONNECTED) row[0] = "<font color=\"black\">DISCONNECTED</font>";
+			if(x == CONNECTED) row[0] = "<span class=\"peer_connected\">CONNECTED</span>";
+			else if(x == BACKED_OFF) row[0] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
+			else if(x == INCOMPATIBLE) row[0] = "<span span=\"peer_incompatable\">INCOMPATIBLE</span>";
+			else if(x == DISCONNECTED) row[0] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
 		}
 		
 		// Turn array into HTML
@@ -144,11 +144,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf.append("</td></tr>");
 		}
 		buf.append("</table>");
+		buf.append("</div>");
 		
 		// new connection box
 		buf.append("<form action=\".\" method=\"post\">\n");
 		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2 class=\"boxhead\">\n");
+		buf.append("<h2>\n");
 		buf.append("Connect to another node\n");
 		buf.append("</h2>\n");
 		buf.append("Reference:<br />\n");
@@ -206,8 +207,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			} else if (reftext.length() > 0) {
 				// read directly from post data
-				// FIXME: The regexp don't work.
-				ref = reftext.replaceAll("\\.*(\\w)\\=(\\w)(\\r?\\n)+", "\\1=\\2\\n");
+				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
+				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[\\w,\\.:]+)|(?:End)).*?(?:\\r?\\n)*", "$1\n");
 			} else {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
 				return;
@@ -233,6 +234,16 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			if(!this.node.addDarknetConnection(pn)) {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to add the given reference as a peer. Please <a href=\".\">Try again</a>.");
+			}
+		} else if (request.getParam("disconnect").length() > 0) {
+			int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (hashcode == peerNodes[i].hashCode()) {
+					this.node.removeDarknetConnection(peerNodes[i]);
+					break;
+				}
 			}
 		}
 		this.handleGet(uri, ctx);
