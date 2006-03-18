@@ -121,6 +121,11 @@ public class FproxyToadlet extends Toadlet {
 						forceString.equals(getForceValue(key, now-FORCE_GRAIN_INTERVAL)))
 					force = true;
 			}
+
+			if(typeName.equals("application/x-msdownload")) {
+				// Download to disk, this should be safe, and is set when we do "force download to disk" from a dangerous-content-warning page.
+				force = true;
+			}
 			
 			try {
 				if(!force)

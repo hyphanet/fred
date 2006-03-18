@@ -3,6 +3,7 @@ package freenet.clients.http.filter;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Hashtable;
 
@@ -193,6 +194,9 @@ public class ContentFilter {
 			try {
 				if((charset = handler.charsetExtractor.getCharset(data, "UTF-32")) != null)
 					return charset;
+			} catch (UnsupportedEncodingException e) {
+				// Doesn't seem to be supported by prior to 1.6.
+				Logger.minor(ContentFilter.class, "UTF-32 not supported");
 			} catch (DataFilterException e) {
 				// Ignore
 			}
