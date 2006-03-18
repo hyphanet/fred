@@ -26,17 +26,15 @@ public class TextModeClientInterfaceServer implements Runnable {
 
     final RandomSource r;
     final Node n;
-    final HighLevelSimpleClient client;
+//    final HighLevelSimpleClient client;
     final Hashtable streams;
     final File downloadsDir;
     int port;
     final String bindTo;
     boolean isEnabled;
 
-    TextModeClientInterfaceServer(Node n, HighLevelSimpleClient client, int port, String bindTo) {
+    TextModeClientInterfaceServer(Node n, int port, String bindTo) {
         this.n = n;
-        this.client = client;
-        client.addGlobalHook(new EventDumper());
         this.r = n.random;
         streams = new Hashtable();
         this.downloadsDir = n.downloadDir;
@@ -63,10 +61,9 @@ public class TextModeClientInterfaceServer implements Runnable {
 		int port =  TMCIConfig.getInt("port");
 		String bind_ip = TMCIConfig.getString("bindTo");
 		boolean direct = TMCIConfig.getBoolean("directEnabled");
-        HighLevelSimpleClient client = node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 
 		if(TMCIEnabled){
-			new TextModeClientInterfaceServer(node, client, port, bind_ip);
+			new TextModeClientInterfaceServer(node, port, bind_ip);
 			Logger.normal(node, "TMCI started on "+bind_ip+":"+port);
 			System.out.println("TMCI started on "+bind_ip+":"+port);
 		}
@@ -75,6 +72,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		}
 		
 		if(direct) {
+	        HighLevelSimpleClient client = node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			TextModeClientInterface directTMCI =
 				new TextModeClientInterface(node, client, node.downloadDir, System.in, System.out);
 			Thread t = new Thread(directTMCI, "Direct text mode interface");

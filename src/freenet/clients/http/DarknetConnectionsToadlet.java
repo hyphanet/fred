@@ -128,7 +128,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			Integer x = (Integer) row[0];
 			if(x == CONNECTED) row[0] = "<span class=\"peer_connected\">CONNECTED</span>";
 			else if(x == BACKED_OFF) row[0] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
-			else if(x == INCOMPATIBLE) row[0] = "<span span=\"peer_incompatable\">INCOMPATIBLE</span>";
+			else if(x == INCOMPATIBLE) row[0] = "<span class=\"peer_incompatable\">INCOMPATIBLE</span>";
 			else if(x == DISCONNECTED) row[0] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
 		}
 		

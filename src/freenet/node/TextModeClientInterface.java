@@ -25,6 +25,7 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
+import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -58,11 +59,12 @@ public class TextModeClientInterface implements Runnable {
     public TextModeClientInterface(TextModeClientInterfaceServer server, InputStream in, OutputStream out) {
     	this.n = server.n;
     	this.r = server.r;
-    	this.client = server.client;
+        client = server.n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
     	this.streams = new Hashtable();
     	this.downloadsDir = server.downloadsDir;
     	this.in = in;
     	this.out = out;
+        client.addGlobalHook(new EventDumper(new PrintWriter(out)));
 	}
 
     public TextModeClientInterface(Node n, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
@@ -73,6 +75,7 @@ public class TextModeClientInterface implements Runnable {
     	this.downloadsDir = downloadDir;
     	this.in = in;
     	this.out = out;
+        client.addGlobalHook(new EventDumper(new PrintWriter(out)));
     }
     
     public void run() {
