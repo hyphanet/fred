@@ -146,7 +146,9 @@ public abstract class ClientRequest {
 	}
 
 	public void cancel() {
-		getClientRequest().cancel();
+		ClientRequester cr = getClientRequest();
+		// It might have been finished on startup.
+		if(cr != null) cancel();
 	}
 
 	public boolean isPersistentForever() {

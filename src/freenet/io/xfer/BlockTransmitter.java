@@ -342,6 +342,7 @@ public class BlockTransmitter {
 		PartiallyReceivedBlock.PacketReceivedListener myListener;
 		
 		try {
+			synchronized(_prb) {
 		_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
 
 			public void packetReceived(int packetNo) {
@@ -359,7 +360,7 @@ public class BlockTransmitter {
                     Logger.minor(this, "Receive aborted and receiver is not connected");
                 }
 			} });
-
+			}
 		_senderThread.start();
 		
 		while (true) {
