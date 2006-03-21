@@ -43,9 +43,9 @@ public class ContentFilter {
 		
 		// JPEG - probably safe - FIXME check this out, write filters
 		register(new MIMEType("image/jpeg", "jpeg", new String[0], new String[] { "jpg" },
-				true, true, null, null, false, false, false, false, false, false,
+				true, false, null, null, false, false, false, false, false, false,
 				"JPEG image - probably not dangerous",
-				"JPEG image - probably not dangerous", false, null, null));
+				"JPEG image - probably not dangerous but can contain EXIF data", false, null, null));
 		
 		// PNG - probably safe - FIXME check this out, write filters
 		register(new MIMEType("image/png", "png", new String[0], new String[0],
