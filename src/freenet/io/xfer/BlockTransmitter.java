@@ -251,6 +251,7 @@ public class BlockTransmitter {
 				
 				// Get the current inter-packet delay
 				long delay = throttle.getDelay();
+				Logger.minor(this, "Throttle delay: "+delay);
 				
 				while(true) {
 					
@@ -309,7 +310,7 @@ public class BlockTransmitter {
 					
 					long now = nowNS / (1000 * 1000);
 					
-					while(nowNS < endTime) {
+					while(now < endTime) {
 						synchronized(_senderThread) {
 							if(_sendComplete)
 								return true;
