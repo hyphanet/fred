@@ -51,7 +51,6 @@ public class PersistentPut extends FCPMessage {
 			fs.put("TargetURI", targetURI.toString());
 		if(mimeType != null)
 			fs.put("Metadata.ContentType", mimeType);
-		fs.put("PriorityClass", Short.toString(priorityClass));
 		fs.put("Global", Boolean.toString(global));
 		return fs;
 	}
