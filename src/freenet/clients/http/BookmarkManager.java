@@ -111,21 +111,15 @@ public class BookmarkManager {
 		}
 	}
 	
-	public void removeBookmark(int hashcode) {
-		for (Enumeration e = this.bookmarks.elements(); e.hasMoreElements(); ) {
-			Bookmark i = (Bookmark) e.nextElement();
+	public void removeBookmark(Bookmark b) {
+		if (b.getKeyType().equals("USK")) {
+			try {
+				USK u = new USK(b.key);
+				this.node.uskManager.subscribe(u, this.uskcb, true);
+			} catch (MalformedURLException mue) {
 			
-			if (i.hashCode() == hashcode) {
-				if (i.getKeyType().equals("USK")) {
-					try {
-						USK u = new USK(i.key);
-						this.node.uskManager.subscribe(u, this.uskcb, true);
-					} catch (MalformedURLException mue) {
-					
-					}
-				}
-				this.bookmarks.remove(i);
 			}
 		}
+		this.bookmarks.remove(b);
 	}
 }

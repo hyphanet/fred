@@ -76,6 +76,10 @@ pre, textarea {
 	font-size: 110%;
 }
 
+.interfacelink {
+	color: black;
+}
+
 #activity {
 	list-style-position: inside;
 }

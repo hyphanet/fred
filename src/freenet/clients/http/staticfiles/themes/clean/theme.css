@@ -3,6 +3,7 @@ body {
 	padding:0;
 	background-color:#f0f0f0;
 	position: relative;
+	font-family:Arial;
 }
 
 #topbar {
@@ -35,7 +36,6 @@ body {
 }
 
 #navbar a {
-	font-family:Arial;
 	color:#000000;
 	text-decoration:underline;
 }
@@ -46,6 +46,7 @@ body {
 
 #content {
 	float:left;
+	max-width: 80%;
 }
 
 pre, textarea {
@@ -68,6 +69,11 @@ pre, textarea {
 	font-weight:bold;
 	font-size:110%;
 	background-color:#e8e8e8;
+}
+
+.interfacelink {
+	color:#000000;
+	text-decoration:underline;
 }
 
 #activity {

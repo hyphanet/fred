@@ -99,7 +99,25 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 			
-			this.handleGet(uri, ctx);
+			try {
+				this.handleGet(new URI("/welcome/?managebookmarks"), ctx);
+			} catch (URISyntaxException ex) {
+				
+			}
+		} else if (request.isParameterSet("managebookmarks")) {
+			Enumeration e = bookmarks.getBookmarks();
+			while (e.hasMoreElements()) {
+				Bookmark b = (Bookmark)e.nextElement();
+			
+				if (request.isParameterSet("delete_"+b.hashCode())) {
+					bookmarks.removeBookmark(b);
+				}
+			}
+			try {
+				this.handleGet(new URI("/welcome/?managebookmarks"), ctx);
+			} catch (URISyntaxException ex) {
+				
+			}
 		} else {
 			this.handleGet(uri, ctx);
 		}
@@ -121,6 +139,49 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("<input type=\"text\" name=\"name\" value=\""+HTMLEncoder.encode(request.getParam("desc"))+"\" style=\"width: 100%; \" />\n");
 			buf.append("<input type=\"hidden\" name=\"newbookmark\" value=\""+HTMLEncoder.encode(request.getParam("newbookmark"))+"\" />\n");
 			buf.append("<input type=\"submit\" value=\"Add Bookmark\" />\n");
+			buf.append("</div>\n");
+			buf.append("</form>\n");
+			
+			ctx.getPageMaker().makeTail(buf);
+		
+			this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
+		} else if (request.isParameterSet("managebookmarks")) {
+			ctx.getPageMaker().makeHead(buf, "Bookmark Manager");
+			
+			// existing bookmarks
+			buf.append("<form action=\".\" method=\"post\">\n");
+			buf.append("<div class=\"infobox\">\n");
+			buf.append("<h2>My Bookmarks</h2>\n");
+			Enumeration e = bookmarks.getBookmarks();
+			if (!e.hasMoreElements()) {
+				buf.append("<i>You currently have no bookmarks defined</i>");
+			} else {
+				buf.append("<ul id=\"bookmarks\">\n");
+				while (e.hasMoreElements()) {
+					Bookmark b = (Bookmark)e.nextElement();
+				
+					buf.append("<li><a href=\"/"+HTMLEncoder.encode(b.getKey())+"\">");
+					buf.append(HTMLEncoder.encode(b.getDesc()));
+					buf.append("</a>\n");
+					buf.append("<input type=\"submit\" name=\"delete_"+b.hashCode()+"\" value=\"Delete\" style=\"float: right; \" />\n");
+					buf.append("</li>\n");
+				}
+				buf.append("</ul>\n");
+			}
+			buf.append("<input type=\"hidden\" name=\"managebookmarks\" value=\"yes\" />\n");
+			buf.append("</div>\n");
+			buf.append("</form>\n");
+			
+			// new bookmark
+			buf.append("<form action=\".\" method=\"post\">\n");
+			buf.append("<div class=\"infobox\">\n");
+			buf.append("<h2>New Bookmark</h2>\n");
+			buf.append("Key: \n");
+			buf.append("<input type=\"text\" name=\"newbookmark\" style=\"width: 100%; \"/>\n");
+			buf.append("Description: \n");
+			buf.append("<input type=\"text\" name=\"name\" style=\"width: 100%; \"/>\n");
+			buf.append("<input type=\"submit\" value=\"Add Bookmark\"/>\n");
 			buf.append("</div>\n");
 			buf.append("</form>\n");
 			
@@ -153,27 +214,20 @@ public class WelcomeToadlet extends Toadlet {
 		Enumeration e = bookmarks.getBookmarks();
 		if (!e.hasMoreElements()) {
 			buf.append("<i>You currently have no bookmarks defined</i>");
+		} else {
+			buf.append("<ul id=\"bookmarks\">\n");
+			while (e.hasMoreElements()) {
+				Bookmark b = (Bookmark)e.nextElement();
+				
+				buf.append("<li><a href=\"/"+HTMLEncoder.encode(b.getKey())+"\">");
+				buf.append(HTMLEncoder.encode(b.getDesc()));
+				buf.append("</a></li>\n");
+			}
+			buf.append("</ul>\n");
 		}
-		while (e.hasMoreElements()) {
-			Bookmark b = (Bookmark)e.nextElement();
-			
-			buf.append("<a href=\"/"+HTMLEncoder.encode(b.getKey())+"\">");
-			buf.append(HTMLEncoder.encode(b.getDesc()));
-			buf.append("</a><br />\n");
-		}
-		
-		buf.append("<br />\n");
-		buf.append("<div>\n");
-		buf.append("<form action=\".\" method=\"post\">\n");
-		buf.append("<b>New Bookmark</b>\n");
-		buf.append("<br />\n");
-		buf.append("Key: \n");
-		buf.append("<input type=\"text\" name=\"newbookmark\" style=\"width: 100%; \"/>\n");
-		buf.append("Description: \n");
-		buf.append("<input type=\"text\" name=\"name\" style=\"width: 100%; \"/>\n");
-		buf.append("<input type=\"submit\" value=\"Add Bookmark\"/>\n");
+		buf.append("<div id=\"bookmarkedit\">\n");
+		buf.append("<a href=\"?managebookmarks\" class=\"interfacelink\">Edit My Bookmarks</a>\n");
 		buf.append("</div>\n");
-		buf.append("</form>\n");
 		buf.append("</div>\n");
 		
 		// Version info
