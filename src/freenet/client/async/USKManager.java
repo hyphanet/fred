@@ -1,14 +1,9 @@
 package freenet.client.async;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 
-import freenet.client.ArchiveContext;
-import freenet.client.ClientMetadata;
 import freenet.client.FetcherContext;
-import freenet.keys.ClientSSK;
 import freenet.keys.USK;
-import freenet.support.Bucket;
 import freenet.support.Logger;
 
 /**
@@ -20,6 +15,9 @@ public class USKManager {
 	/** Latest version by blanked-edition-number USK */
 	final HashMap latestVersionByClearUSK;
 	
+	/** Subscribers by clear USK */
+	final HashMap subscribersByClearUSK;
+	
 	/** USKFetcher's by USK. USK includes suggested edition number, so there is one
 	 * USKFetcher for each {USK, edition number}. */
 	final HashMap fetchersByUSK;
@@ -29,6 +27,7 @@ public class USKManager {
 	
 	public USKManager() {
 		latestVersionByClearUSK = new HashMap();
+		subscribersByClearUSK = new HashMap();
 		fetchersByUSK = new HashMap();
 		checkersByUSK = new HashMap();
 	}
@@ -61,15 +60,39 @@ public class USKManager {
 		fetchersByUSK.remove(u);
 	}
 	
-	synchronized void update(USK origUSK, long number) {
+	void update(USK origUSK, long number) {
 		Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
-		Long l = (Long) latestVersionByClearUSK.get(clear);
-		Logger.minor(this, "Old value: "+l);
-		if(!(l != null && l.longValue() > number)) {
-			l = new Long(number);
-			latestVersionByClearUSK.put(clear, l);
-			Logger.minor(this, "Put "+number);
+		USKCallback[] callbacks;
+		synchronized(this) {
+			Long l = (Long) latestVersionByClearUSK.get(clear);
+			Logger.minor(this, "Old value: "+l);
+			if(!(l != null && l.longValue() > number)) {
+				l = new Long(number);
+				latestVersionByClearUSK.put(clear, l);
+				Logger.minor(this, "Put "+number);
+			} else return;
+			callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
 		}
+		if(callbacks != null) {
+			USK usk = origUSK.copy(number);
+			for(int i=0;i<callbacks.length;i++)
+				callbacks[i].onFoundEdition(number, usk);
+		}
+	}
+	
+	/**
+	 * Subscribe to a given USK. Callback will be notified when it is
+	 * updated. Note that this does not imply that the USK will be
+	 * checked on a regular basis!
+	 */
+	public synchronized void subscribe(USK origUSK, USKCallback cb) {
+		USK clear = origUSK.clearCopy();
+		USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
+		if(callbacks == null)
+			callbacks = new USKCallback[1];
+		else
+			callbacks = new USKCallback[callbacks.length+1];
+		callbacks[callbacks.length-1] = cb;
 	}
 }

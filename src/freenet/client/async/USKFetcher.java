@@ -4,13 +4,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import freenet.client.ArchiveContext;
-import freenet.client.ClientMetadata;
-import freenet.client.FetchException;
 import freenet.client.FetcherContext;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.support.Bucket;
 import freenet.support.Logger;
 
 /**
@@ -188,7 +184,7 @@ public class USKFetcher implements ClientGetState {
 			cb = (USKFetcherCallback[]) callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 		}
 		for(int i=0;i<cb.length;i++)
-			cb[i].onFoundEdition(ed);
+			cb[i].onFoundEdition(ed, origUSK.copy(ed));
 	}
 
 	void onSuccess(USKAttempt att, boolean dontUpdate) {

@@ -535,9 +535,9 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 							metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet,
 							token, false, returnBucket);
 				sf.schedule();
-				// Background fetch
-				USKFetcher fetcher =
-					ctx.uskManager.getFetcher(usk, ctx, parent);
+//				// Background fetch
+//				USKFetcher fetcher =
+//					ctx.uskManager.getFetcher(usk, ctx, parent);
 				return sf;
 			} else {
 				cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null);
@@ -584,7 +584,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			this.returnBucket = returnBucket;
 		}
 
-		public void onFoundEdition(long l) {
+		public void onFoundEdition(long l, USK usk) {
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == Math.abs(usk.suggestedEdition)) {

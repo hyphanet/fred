@@ -28,6 +28,7 @@ import freenet.support.HTMLEncoder;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.URLEncoder;
 
 public class FproxyToadlet extends Toadlet {
 	
@@ -161,7 +162,9 @@ public class FproxyToadlet extends Toadlet {
 		} catch (FetchException e) {
 			String msg = e.getMessage();
 			String extra = "";
-			if(e.newURI != null) {
+			if(e.mode == FetchException.NOT_ENOUGH_METASTRINGS) {
+				this.writePermanentRedirect(ctx, "Not enough meta-strings", "/" + URLEncoder.encode(key.toString(false)) + "/");
+			} else if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, "/"+e.newURI.toString());
 			} else {
 				if(e.errorCodes != null)

@@ -5,11 +5,8 @@ package freenet.client.async;
  * USKManager.getFetcher, then register yourself on it as a listener, then you
  * must implement these callback methods.
  */
-public interface USKFetcherCallback {
+public interface USKFetcherCallback extends USKCallback {
 
-	/** Found the latest edition */
-	void onFoundEdition(long l);
-	
 	/** Failed to find any edition at all (later than or equal to the specified hint) */
 	void onFailure();
 
