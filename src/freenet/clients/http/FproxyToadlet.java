@@ -78,7 +78,15 @@ public class FproxyToadlet extends Toadlet {
 			
 			RedirectException re = new RedirectException();
 			try {
-				re.newuri = new URI("/welcome/"+(uri.getQuery() == null? "" : "?"+uri.getQuery()));
+				String querystring = uri.getQuery();
+				
+				if (querystring == null) {
+					re.newuri = new URI("/welcome/");
+				} else {
+					// TODP possibly a proper URLEncode method
+					querystring = querystring.replace(" ", "+");
+					re.newuri = new URI("/welcome/?"+querystring);
+				}
 			} catch (URISyntaxException e) {
 				// HUH!?!
 			}

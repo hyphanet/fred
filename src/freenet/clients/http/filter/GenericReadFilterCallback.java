@@ -7,6 +7,7 @@ import java.net.URISyntaxException;
 import freenet.keys.FreenetURI;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Logger;
+import freenet.support.HTMLEncoder;
 
 public class GenericReadFilterCallback implements FilterCallback {
 
@@ -26,13 +27,25 @@ public class GenericReadFilterCallback implements FilterCallback {
 			return null;
 		}
 		String path = uri.getPath();
-		if(path.startsWith("/")) {
+		if (path.startsWith("/") && path.substring(1).indexOf("/") == -1) {
+			// allow links to the root to add bookmarks
+			HTTPRequest req = new HTTPRequest(uri);
+			
+			String bookmark_key = req.getParam("newbookmark");
+			String bookmark_desc = req.getParam("desc");
+			
+			bookmark_key = HTMLEncoder.encode(bookmark_key);
+			bookmark_desc = HTMLEncoder.encode(bookmark_desc);
+			
+			return path+"?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
+		} else if(path.startsWith("/")) {
 			// Try to make it into a FreenetURI
 			try {
 				FreenetURI furi = new FreenetURI(path.substring(1));
 				return processURI(furi, uri, overrideType);
 			} catch (MalformedURLException e) {
 				// Obviously not a Freenet URI!
+					
 			}
 		} else {
 			// Relative URI

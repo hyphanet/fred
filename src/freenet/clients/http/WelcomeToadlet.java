@@ -17,6 +17,7 @@ import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.HTMLEncoder;
 
 public class WelcomeToadlet extends Toadlet {
 	private static final String[] DEFAULT_BOOKMARKS = {
@@ -167,8 +168,8 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("<i>"+request.getParam("newbookmark")+"</i><br />");
 			buf.append("To your bookmarks, and enter the description that you would prefer:<br />\n");
 			buf.append("Description:\n");
-			buf.append("<input type=\"text\" name=\"name\" value=\""+request.getParam("desc")+"\" style=\"width: 100%; \" />\n");
-			buf.append("<input type=\"hidden\" name=\"newbookmark\" value=\""+request.getParam("newbookmark")+"\" />\n");
+			buf.append("<input type=\"text\" name=\"name\" value=\""+HTMLEncoder.encode(request.getParam("desc"))+"\" style=\"width: 100%; \" />\n");
+			buf.append("<input type=\"hidden\" name=\"newbookmark\" value=\""+HTMLEncoder.encode(request.getParam("newbookmark"))+"\" />\n");
 			buf.append("<input type=\"submit\" value=\"Add Bookmark\" />\n");
 			buf.append("</div>\n");
 			buf.append("</form>\n");
@@ -195,8 +196,8 @@ public class WelcomeToadlet extends Toadlet {
 		while (e.hasMoreElements()) {
 			Bookmark b = (Bookmark)e.nextElement();
 			
-			buf.append("<a href=\"/"+b.getKey()+"\">");
-			buf.append(b.getDesc());
+			buf.append("<a href=\"/"+HTMLEncoder.encode(b.getKey())+"\">");
+			buf.append(HTMLEncoder.encode(b.getDesc()));
 			buf.append("</a><br />\n");
 		}
 		
