@@ -62,7 +62,7 @@ public class USK extends BaseClientKey {
 	}
 
 	public FreenetURI getURI() {
-		return new FreenetURI(pubKeyHash, cryptoKey, siteName, suggestedEdition);
+		return new FreenetURI(pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(), siteName, suggestedEdition);
 	}
 
 	public ClientSSK getSSK(long ver) {

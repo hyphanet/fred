@@ -540,7 +540,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					ctx.uskManager.getFetcher(usk, ctx, parent);
 				return sf;
 			} else {
-				cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI()), null);
+				cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null);
 				return null;
 			}
 		} else {
@@ -593,7 +593,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 							token, false, returnBucket);
 					sf.schedule();
 				} else {
-					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(l).getURI()), null);
+					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(l).getURI().addMetaStrings(metaStrings)), null);
 				}
 			} catch (FetchException e) {
 				cb.onFailure(e, null);

@@ -161,10 +161,14 @@ public class FproxyToadlet extends Toadlet {
 		} catch (FetchException e) {
 			String msg = e.getMessage();
 			String extra = "";
-			if(e.errorCodes != null)
-				extra = "<pre>"+e.errorCodes.toVerboseString()+"</pre>";
-			this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
-					"text/html", msg, "<html><head><title>"+msg+"</title></head><body>Error: "+HTMLEncoder.encode(msg)+extra+"</body></html>");
+			if(e.newURI != null) {
+				this.writePermanentRedirect(ctx, msg, "/"+e.newURI.toString());
+			} else {
+				if(e.errorCodes != null)
+					extra = "<pre>"+e.errorCodes.toVerboseString()+"</pre>";
+				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
+						"text/html", msg, "<html><head><title>"+msg+"</title></head><body>Error: "+HTMLEncoder.encode(msg)+extra+"</body></html>");
+			}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			String msg = "<html><head><title>Internal Error</title></head><body><h1>Internal Error: please report</h1><pre>";

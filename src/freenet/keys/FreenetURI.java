@@ -131,6 +131,22 @@ public class FreenetURI {
 		this.extra = extra2;
 	}
 
+	public FreenetURI(
+			String keyType,
+			String docName,
+			String[] metaStr,
+			byte[] routingKey,
+			byte[] cryptoKey, byte[] extra2,
+			long suggestedEdition) {
+			this.keyType = keyType.trim().toUpperCase();
+			this.docName = docName;
+			this.metaStr = metaStr;
+			this.routingKey = routingKey;
+			this.cryptoKey = cryptoKey;
+			this.extra = extra2;
+			this.suggestedEdition = suggestedEdition;
+		}
+
 	public FreenetURI(String URI) throws MalformedURLException {
 		if (URI == null) {
 			throw new MalformedURLException("No URI specified");
@@ -214,10 +230,11 @@ public class FreenetURI {
 	}
 
 	/** USK constructor from components. */
-	public FreenetURI(byte[] pubKeyHash, byte[] cryptoKey2, String siteName, long suggestedEdition2) {
+	public FreenetURI(byte[] pubKeyHash, byte[] cryptoKey, byte[] extra, String siteName, long suggestedEdition2) {
 		this.keyType = "USK";
 		this.routingKey = pubKeyHash;
-		this.cryptoKey = cryptoKey2;
+		this.cryptoKey = cryptoKey;
+		this.extra = extra;
 		this.docName = siteName;
 		this.suggestedEdition = suggestedEdition2;
 	}
@@ -327,6 +344,10 @@ public class FreenetURI {
 		}
 	}
 
+	public FreenetURI addMetaStrings(LinkedList metaStrings) {
+		return addMetaStrings((String[])metaStrings.toArray(new String[metaStrings.size()]));
+	}
+	
 	/**
 	 * Returns a copy of this URI with a new Document name set.
 	 */
@@ -348,7 +369,8 @@ public class FreenetURI {
 			newMetaStr,
 			routingKey,
 			cryptoKey,
-			extra);
+			extra,
+			suggestedEdition);
 	}
 
 	public String toString() {
@@ -531,4 +553,5 @@ public class FreenetURI {
 			return suggestedEdition;
 		else throw new IllegalArgumentException("Not a USK requesting suggested edition");
 	}
+
 }

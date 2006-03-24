@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 
 import freenet.client.FetchException;
@@ -11,6 +12,7 @@ import freenet.client.InserterException;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 
@@ -135,6 +137,25 @@ public abstract class Toadlet {
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, String reply) throws ToadletContextClosedException, IOException {
 		byte[] buf = reply.getBytes("ISO-8859-1");
 		ctx.sendReplyHeaders(code, desc, null, mimeType, buf.length);
+		ctx.writeData(buf, 0, buf.length);
+	}
+	
+	protected void writePermanentRedirect(ToadletContext ctx, String msg, String string) throws ToadletContextClosedException, IOException {
+		MultiValueTable mvt = new MultiValueTable();
+		mvt.put("Location", string);
+		if(msg == null) msg = "";
+		else msg = HTMLEncoder.encode(msg);
+		String redirDoc =
+			"<html><head><title>"+msg+"</title></head><body><h1>Permanent redirect: "+
+			msg+"</h1><a href=\""+string+"\">Click here</a></body></html>";
+		byte[] buf;
+		try {
+			buf = redirDoc.getBytes("ISO-8859-1");
+		} catch (UnsupportedEncodingException e) {
+			// No way!
+			throw new Error(e);
+		}
+		ctx.sendReplyHeaders(301, "Permanent redirect", mvt, "text/html;charset=ISO-8859-1", buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}
 	
