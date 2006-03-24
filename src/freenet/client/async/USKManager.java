@@ -79,6 +79,9 @@ public class USKManager {
 	public synchronized USKFetcher getFetcher(USK usk, FetcherContext ctx,
 			ClientGetter parent) {
 		USKFetcher f = (USKFetcher) fetchersByUSK.get(usk);
+		USK clear = usk.clearCopy();
+		if(temporaryBackgroundFetchersLRU.contains(clear))
+		temporaryBackgroundFetchersLRU.push(clear);
 		if(f != null) {
 			if(f.parent.priorityClass == parent.priorityClass && f.ctx.equals(ctx))
 				return f;
