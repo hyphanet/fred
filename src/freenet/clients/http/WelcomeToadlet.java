@@ -92,7 +92,12 @@ public class WelcomeToadlet extends Toadlet {
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 		} else if (request.getParam("newbookmark").length() > 0) {
-			bookmarks.addBookmark(new Bookmark(request.getParam("newbookmark"), request.getParam("name")));
+			try {
+				bookmarks.addBookmark(new Bookmark(request.getParam("newbookmark"), request.getParam("name")));
+			} catch (MalformedURLException mue) {
+				this.sendErrorPage(ctx, 200, "Invalid freenet key", "Could not add the given item as a bookmark since it was not possible to interpret it as a freenet key. Please <a href=\"/\">Try Again</a>");
+				return;
+			}
 			
 			this.handleGet(uri, ctx);
 		} else {

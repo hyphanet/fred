@@ -101,11 +101,13 @@ public class BookmarkManager {
 	
 	public void addBookmark(Bookmark b) {
 		this.bookmarks.add(b);
-		try {
-			USK u = new USK(b.key);
-			this.node.uskManager.subscribe(u, this.uskcb, true);
-		} catch (MalformedURLException mue) {
+		if (b.getKeyType().equals("USK")) {
+			try {
+				USK u = new USK(b.key);
+				this.node.uskManager.subscribe(u, this.uskcb, true);
+			} catch (MalformedURLException mue) {
 				
+			}
 		}
 	}
 	
@@ -114,11 +116,13 @@ public class BookmarkManager {
 			Bookmark i = (Bookmark) e.nextElement();
 			
 			if (i.hashCode() == hashcode) {
-				try {
-					USK u = new USK(i.key);
-					this.node.uskManager.subscribe(u, this.uskcb, true);
-				} catch (MalformedURLException mue) {
-				
+				if (i.getKeyType().equals("USK")) {
+					try {
+						USK u = new USK(i.key);
+						this.node.uskManager.subscribe(u, this.uskcb, true);
+					} catch (MalformedURLException mue) {
+					
+					}
 				}
 				this.bookmarks.remove(i);
 			}
