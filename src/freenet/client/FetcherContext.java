@@ -19,7 +19,7 @@ public class FetcherContext implements Cloneable {
 	public long maxTempLength;
 	public final ArchiveManager archiveManager;
 	public final BucketFactory bucketFactory;
-	public final USKManager uskManager;
+	public USKManager uskManager;
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
 	public boolean dontEnterImplicitArchives;

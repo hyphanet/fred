@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
@@ -7,6 +8,7 @@ import java.util.Vector;
 import freenet.client.FetcherContext;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 
 /**
@@ -71,7 +73,7 @@ public class USKFetcher implements ClientGetState {
 	/** Cancelled? */
 	private boolean cancelled;
 
-	final ClientGetter parent;
+	final ClientRequester parent;
 	
 	public synchronized boolean addCallback(USKFetcherCallback cb) {
 		if(completed) return false; 
@@ -136,24 +138,49 @@ public class USKFetcher implements ClientGetState {
 		public String toString() {
 			return "USKAttempt for "+number+" for "+origUSK.getURI();
 		}
+		
+		public short getPriority() {
+			if(backgroundPoll)
+				return RequestStarter.UPDATE_PRIORITY_CLASS;
+			else
+				return parent.getPriorityClass();
+		}
 	}
 	
 	private final Vector runningAttempts;
 	
 	private long lastFetchedEdition;
 	private long lastAddedEdition;
+
+	/** Number of keys to probe ahead. If they are all empty, then
+	 * we have finished (unless in background poll mode) */
+	long minFailures;
+	final long origMinFailures;
 	
-	static final long MIN_FAILURES = 3;
+	final long origSleepTime = 1000;
+	final long maxSleepTime = 60 * 60 * 1000;
+	long sleepTime = origSleepTime;
+
+	// At most, probe 1000 editions ahead!
+	private static final long MAX_MIN_FAILURES = 1000;
+
+	private long valueAtSchedule;
 	
-	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientGetter parent) {
+	/** Keep going forever? */
+	private final boolean backgroundPoll;
+	
+	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever) {
 		this.parent = parent;
 		this.origUSK = origUSK;
 		this.uskManager = manager;
+		this.minFailures = this.origMinFailures = minFailures;
 		runningAttempts = new Vector();
 		callbacks = new LinkedList();
+		subscribers = new HashSet();
 		lastFetchedEdition = -1;
 		lastAddedEdition = -1;
 		this.ctx = ctx;
+		this.backgroundPoll = pollForever;
 	}
 	
 	void onDNF(USKAttempt att) {
@@ -164,8 +191,8 @@ public class USKFetcher implements ClientGetState {
 			runningAttempts.remove(att);
 			if(runningAttempts.isEmpty()) {
 				long curLatest = uskManager.lookup(origUSK);
-				Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+MIN_FAILURES));
-				if(curLatest + MIN_FAILURES >= lastFetchedEdition) {
+				Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+minFailures));
+				if(curLatest + minFailures >= lastFetchedEdition) {
 					finished = true;
 				}
 			} else 
@@ -177,14 +204,52 @@ public class USKFetcher implements ClientGetState {
 	}
 	
 	private void finishSuccess() {
-		long ed = uskManager.lookup(origUSK);
-		USKFetcherCallback[] cb;
-		synchronized(this) {
-			completed = true;
-			cb = (USKFetcherCallback[]) callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
+		if(backgroundPoll) {
+			synchronized(this) {
+				long valAtEnd = uskManager.lookup(origUSK);
+				if(valAtEnd > valueAtSchedule) {
+					// Have advanced.
+					minFailures = origMinFailures;
+					sleepTime = origSleepTime;
+				} else {
+					long newMinFailures = minFailures * 2;
+					if(newMinFailures > MAX_MIN_FAILURES)
+						newMinFailures = MAX_MIN_FAILURES;
+					minFailures = newMinFailures;
+				}
+				long newSleepTime = sleepTime * 2;
+				if(newSleepTime > maxSleepTime) newSleepTime = maxSleepTime;
+				sleepTime = newSleepTime;
+				long now = System.currentTimeMillis();
+				long end = now + sleepTime;
+				long newValAtEnd = valAtEnd;
+				// FIXME do this without occupying a thread
+				while(now < end && ((newValAtEnd = uskManager.lookup(origUSK)) == valAtEnd)) {
+					long d = end - now;
+					if(d > 0)
+						try {
+							wait(d);
+						} catch (InterruptedException e) {
+							// Maybe break? Go around loop.
+						}
+					now = System.currentTimeMillis();
+				}
+				if(newValAtEnd != valAtEnd) {
+					minFailures = origMinFailures;
+					sleepTime = origSleepTime;
+				}
+			}
+			schedule();
+		} else {
+			long ed = uskManager.lookup(origUSK);
+			USKFetcherCallback[] cb;
+			synchronized(this) {
+				completed = true;
+				cb = (USKFetcherCallback[]) callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
+			}
+			for(int i=0;i<cb.length;i++)
+				cb[i].onFoundEdition(ed, origUSK.copy(ed));
 		}
-		for(int i=0;i<cb.length;i++)
-			cb[i].onFoundEdition(ed, origUSK.copy(ed));
 	}
 
 	void onSuccess(USKAttempt att, boolean dontUpdate) {
@@ -196,7 +261,7 @@ public class USKFetcher implements ClientGetState {
 				uskManager.update(origUSK, curLatest);
 			curLatest = Math.max(uskManager.lookup(origUSK), curLatest);
 			Logger.minor(this, "Latest: "+curLatest);
-			long addTo = curLatest + MIN_FAILURES;
+			long addTo = curLatest + minFailures;
 			long addFrom = Math.max(lastAddedEdition + 1, curLatest + 1);
 			if(addTo >= addFrom) {
 				l = new LinkedList();
@@ -206,7 +271,7 @@ public class USKFetcher implements ClientGetState {
 			cancelBefore(curLatest);
 		}
 		if(l == null) return;
-		else {
+		else if(!cancelled) {
 			for(Iterator i=l.iterator();i.hasNext();) {
 				USKAttempt a = (USKAttempt) i.next();
 				a.schedule();
@@ -254,6 +319,7 @@ public class USKFetcher implements ClientGetState {
 	 * Caller is responsible for calling .schedule().
 	 */
 	private synchronized USKAttempt add(long i) {
+		if(cancelled) return null;
 		Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
 		if(!runningAttempts.isEmpty()) {
 			USKAttempt last = (USKAttempt) runningAttempts.lastElement();
@@ -278,19 +344,19 @@ public class USKFetcher implements ClientGetState {
 		return origUSK;
 	}
 
-	public ClientGetter getParent() {
-		return parent;
-	}
-
 	public void schedule() {
 		USKAttempt[] attempts;
 		synchronized(this) {
-			for(long i=origUSK.suggestedEdition;i<origUSK.suggestedEdition+MIN_FAILURES;i++)
+			if(cancelled) return;
+			valueAtSchedule = uskManager.lookup(origUSK);
+			long startPoint = Math.max(origUSK.suggestedEdition, valueAtSchedule);
+			for(long i=startPoint;i<startPoint+minFailures;i++)
 				add(i);
 			attempts = (USKAttempt[]) runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
 		}
-		for(int i=0;i<attempts.length;i++)
-			attempts[i].schedule();
+		if(!cancelled)
+			for(int i=0;i<attempts.length;i++)
+				attempts[i].schedule();
 	}
 
 	public void cancel() {
@@ -301,6 +367,25 @@ public class USKFetcher implements ClientGetState {
 		}
 		for(int i=0;i<attempts.length;i++)
 			attempts[i].cancel();
+	}
+
+	/** Set of interested USKCallbacks. Note that we don't actually
+	 * send them any information - they are essentially placeholders,
+	 * an alternative to a refcount. This could be replaced with a 
+	 * Bloom filter or whatever, we only need .exists and .count.
+	 */
+	final HashSet subscribers;
+	
+	public synchronized void addSubscriber(USKCallback cb) {
+		subscribers.add(cb);
+	}
+
+	public synchronized boolean hasSubscribers() {
+		return !subscribers.isEmpty();
+	}
+	
+	public synchronized void removeSubscriber(USKCallback cb) {
+		subscribers.remove(cb);
 	}
 
 }

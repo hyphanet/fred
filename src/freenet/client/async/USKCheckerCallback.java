@@ -20,4 +20,7 @@ interface USKCheckerCallback {
 	/** Request cancelled */
 	public void onCancelled();
 	
+	/** Get priority to run the request at */
+	public short getPriority();
+	
 }

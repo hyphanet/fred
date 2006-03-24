@@ -6,8 +6,6 @@ package freenet.client.async;
  */
 public abstract interface ClientGetState {
 
-	public ClientGetter getParent();
-
 	public void schedule();
 
 	public void cancel();

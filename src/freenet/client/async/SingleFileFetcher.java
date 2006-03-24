@@ -535,9 +535,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 							metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet,
 							token, false, returnBucket);
 				sf.schedule();
-//				// Background fetch
-//				USKFetcher fetcher =
-//					ctx.uskManager.getFetcher(usk, ctx, parent);
+				// Background fetch
+				ctx.uskManager.startTemporaryBackgroundFetcher(usk);
 				return sf;
 			} else {
 				cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null);

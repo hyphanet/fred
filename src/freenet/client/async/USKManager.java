@@ -4,6 +4,9 @@ import java.util.HashMap;
 
 import freenet.client.FetcherContext;
 import freenet.keys.USK;
+import freenet.node.Node;
+import freenet.node.RequestStarter;
+import freenet.support.LRUQueue;
 import freenet.support.Logger;
 
 /**
@@ -22,16 +25,46 @@ public class USKManager {
 	 * USKFetcher for each {USK, edition number}. */
 	final HashMap fetchersByUSK;
 	
+	/** Backgrounded USKFetchers by USK. */
+	final HashMap backgroundFetchersByClearUSK;
+	
+	// FIXME make this configurable
+	static final int MAX_BACKGROUND_FETCHERS = 64;
+	final LRUQueue temporaryBackgroundFetchersLRU;
+	
 	/** USKChecker's by USK. Deleted immediately on completion. */
 	final HashMap checkersByUSK;
+
+	final FetcherContext backgroundFetchContext;
+	final ClientRequestScheduler chkRequestScheduler;
+	final ClientRequestScheduler sskRequestScheduler;
 	
-	public USKManager() {
+	public USKManager(FetcherContext backgroundFetchContext, ClientRequestScheduler chkRequestScheduler, ClientRequestScheduler sskRequestScheduler) {
 		latestVersionByClearUSK = new HashMap();
 		subscribersByClearUSK = new HashMap();
 		fetchersByUSK = new HashMap();
 		checkersByUSK = new HashMap();
+		backgroundFetchersByClearUSK = new HashMap();
+		temporaryBackgroundFetchersLRU = new LRUQueue();
+		this.backgroundFetchContext = backgroundFetchContext;
+		this.chkRequestScheduler = chkRequestScheduler;
+		this.sskRequestScheduler = sskRequestScheduler;
 	}
 	
+	public USKManager(Node node) {
+		backgroundFetchContext = node.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetcherContext();
+		backgroundFetchContext.followRedirects = false;
+		backgroundFetchContext.uskManager = this;
+		this.chkRequestScheduler = node.chkFetchScheduler;
+		this.sskRequestScheduler = node.sskFetchScheduler;
+		latestVersionByClearUSK = new HashMap();
+		subscribersByClearUSK = new HashMap();
+		fetchersByUSK = new HashMap();
+		checkersByUSK = new HashMap();
+		backgroundFetchersByClearUSK = new HashMap();
+		temporaryBackgroundFetchersLRU = new LRUQueue();
+	}
+
 	/**
 	 * Look up the latest known version of the given USK.
 	 * @return The latest known edition number, or -1.
@@ -50,11 +83,32 @@ public class USKManager {
 			if(f.parent.priorityClass == parent.priorityClass && f.ctx.equals(ctx))
 				return f;
 		}
-		f = new USKFetcher(usk, this, ctx, parent);
+		f = new USKFetcher(usk, this, ctx, parent, 3, false);
 		fetchersByUSK.put(usk, f);
 		return f;
 	}
 
+	public void startTemporaryBackgroundFetcher(USK usk) {
+		USK clear = usk.clearCopy();
+		USKFetcher sched = null;
+		synchronized(this) {
+			USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
+			if(f == null) {
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, chkRequestScheduler, sskRequestScheduler), 10, false);
+				sched = f;
+				backgroundFetchersByClearUSK.put(clear, f);
+			}
+			temporaryBackgroundFetchersLRU.push(clear);
+			while(temporaryBackgroundFetchersLRU.size() > MAX_BACKGROUND_FETCHERS) {
+				USK del = (USK) temporaryBackgroundFetchersLRU.pop();
+				USKFetcher fetcher = (USKFetcher) backgroundFetchersByClearUSK.get(del.clearCopy());
+				if(!fetcher.hasSubscribers())
+					fetcher.cancel();
+			}
+		}
+		if(sched != null) sched.schedule();
+	}
+	
 	synchronized void finished(USKFetcher f) {
 		USK u = f.getOriginalUSK();
 		fetchersByUSK.remove(u);
@@ -84,15 +138,60 @@ public class USKManager {
 	/**
 	 * Subscribe to a given USK. Callback will be notified when it is
 	 * updated. Note that this does not imply that the USK will be
-	 * checked on a regular basis!
+	 * checked on a regular basis, unless runBackgroundFetch=true.
 	 */
-	public synchronized void subscribe(USK origUSK, USKCallback cb) {
-		USK clear = origUSK.clearCopy();
-		USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
-		if(callbacks == null)
-			callbacks = new USKCallback[1];
-		else
-			callbacks = new USKCallback[callbacks.length+1];
-		callbacks[callbacks.length-1] = cb;
+	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch) {
+		USKFetcher sched = null;
+		synchronized(this) {
+			USK clear = origUSK.clearCopy();
+			USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
+			if(callbacks == null)
+				callbacks = new USKCallback[1];
+			else
+				callbacks = new USKCallback[callbacks.length+1];
+			callbacks[callbacks.length-1] = cb;
+			subscribersByClearUSK.put(clear, callbacks);
+			if(runBackgroundFetch) {
+				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
+				if(f == null) {
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, chkRequestScheduler, sskRequestScheduler), 10, false);
+					sched = f;
+					backgroundFetchersByClearUSK.put(clear, f);
+				}
+				f.addSubscriber(cb);
+			}
+		}
+		if(sched != null)
+			sched.schedule();
+	}
+	
+	public void unsubscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch) {
+		synchronized(this) {
+			USK clear = origUSK.clearCopy();
+			USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
+			int j=0;
+			for(int i=0;i<callbacks.length;i++) {
+				USKCallback c = callbacks[i];
+				if(c != null && c != cb) {
+					callbacks[j++] = c;
+				}
+			}
+			USKCallback[] newCallbacks = new USKCallback[j];
+			System.arraycopy(callbacks, 0, newCallbacks, 0, j);
+			if(newCallbacks.length > 0)
+				subscribersByClearUSK.put(clear, callbacks);
+			else
+				subscribersByClearUSK.remove(clear);
+			if(runBackgroundFetch) {
+				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
+				f.removeSubscriber(cb);
+				if(!f.hasSubscribers()) {
+					if(!temporaryBackgroundFetchersLRU.contains(clear)) {
+						f.cancel();
+						backgroundFetchersByClearUSK.remove(clear);
+					}
+				}
+			}
+		}
 	}
 }

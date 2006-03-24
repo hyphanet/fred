@@ -26,9 +26,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import freenet.client.ArchiveManager;
+import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.RequestScheduler;
 import freenet.client.async.USKManager;
 import freenet.clients.http.FproxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
@@ -454,7 +456,6 @@ public class Node {
     private Node(Config config, RandomSource random) throws NodeInitException {
     	
     	// Easy stuff
-    	uskManager = new USKManager();
         startupTime = System.currentTimeMillis();
         recentlyCompletedIDs = new LRUQueue();
     	this.config = config;
@@ -874,6 +875,8 @@ public class Node {
 		sskPutScheduler = new ClientRequestScheduler(true, random, sskInsertStarter, this);
 		sskInsertStarter.setScheduler(sskPutScheduler);
 		sskInsertStarter.start();
+
+		uskManager = new USKManager(this);
 		
 		// And finally, Initialize the plugin manager
 		pluginManager = new PluginManager(this);
