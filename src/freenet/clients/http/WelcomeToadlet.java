@@ -4,159 +4,45 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.MalformedURLException;
-import java.util.Vector;
 import java.util.Enumeration;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.USKCallback;
 import freenet.node.Node;
 import freenet.node.Version;
 import freenet.config.Option;
 import freenet.config.SubConfig;
-import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
-import freenet.config.InvalidConfigValueException;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.HTMLEncoder;
-import freenet.keys.USK;
 import freenet.keys.FreenetURI;
 
 public class WelcomeToadlet extends Toadlet {
 	private static final String[] DEFAULT_BOOKMARKS = {
-		"SSK@60I8H8HinpgZSOuTSD66AVlIFAy-xsppFr0YCzCar7c,NzdivUGCGOdlgngOGRbbKDNfSCnjI0FXjHLzJM4xkJ4,AQABAAE/index-4/=INDEX.7-freesite"
+		"USK@60I8H8HinpgZSOuTSD66AVlIFAy-xsppFr0YCzCar7c,NzdivUGCGOdlgngOGRbbKDNfSCnjI0FXjHLzJM4xkJ4,AQABAAE/index/4/=INDEX.7-freesite"
 	};
 	Node node;
 	SubConfig config;
-	Vector bookmarks = new Vector();
+	BookmarkManager bookmarks;
 	
-	private class Bookmark {
-		private FreenetURI key;
-		private String desc;
-		
-		Bookmark(String k, String d) throws MalformedURLException {
-			this.key = new FreenetURI(k);
-			this.desc = d;
-		}
-		
-		Bookmark(String from) throws MalformedURLException {
-			int eqpos = from.indexOf("=");
-			
-			if (eqpos < 0) {
-				this.key = new FreenetURI(from);
-				this.desc = from;
-			} else {
-				this.key = new FreenetURI(from.substring(0, eqpos));
-				this.desc = from.substring(eqpos + 1);
-			}
-		}
-		
-		public String getKey() {
-			return key.toString();
-		}
-		
-		public void setKey(FreenetURI uri) {
-			key = uri;
-		}
-		
-		public String getKeyType() {
-			return key.getKeyType();
-		}
-		
-		public String getDesc() {
-			if (desc == "") {
-				return "Unnamed Bookmark";
-			} else {
-				return desc;
-			}
-		}
-		
-		public String toString() {
-			return this.key.toString() + "=" + this.desc;
-		}
-	}
-	
-	private class BookmarkCallback implements StringArrCallback {
-		public String get() {
-			StringBuffer buf = new StringBuffer("");
-			
-			for (Enumeration e = bookmarks.elements(); e.hasMoreElements(); ) {
-				buf.append((String)e.nextElement().toString());
-				buf.append(StringArrOption.delimiter);
-			}
-			
-			
-			return buf.substring(0, buf.length() - 1);
-		}
-		
-		public void set(String newval) throws InvalidConfigValueException {
-			String[] newvals = newval.split(StringArrOption.delimiter);
-			bookmarks.clear();
-			for (int i = 0; i < newvals.length; i++) {
-				try {
-					bookmarks.add(new Bookmark(newvals[i]));
-				} catch (MalformedURLException mue) {
-					throw new InvalidConfigValueException(mue.getMessage());
-				}
-			}
-		}
-	}
-	
-	private class USKUpdatedCallback implements USKCallback {
-		public void onFoundEdition(long edition, USK key) {
-			
-			for (Enumeration e = bookmarks.elements(); e.hasMoreElements(); ) {
-				Bookmark i = (Bookmark) e.nextElement();
-				
-				if (!i.getKeyType().equals("USK")) continue;
-				
-				try {
-					FreenetURI furi = new FreenetURI(i.getKey());
-					USK usk = new USK(furi);
-					
-					if (usk.equals(key, false)) {
-						i.setKey(key.getURI());
-					} else {
-					}
-				} catch (MalformedURLException mue) {
-				}
-			}
-		}
-	}
-	
-	private void subscribeUSKs() {
-		for (Enumeration e = bookmarks.elements(); e.hasMoreElements(); ) {
-			Bookmark i = (Bookmark)e.nextElement();
-			
-			if (i.getKeyType().equals("USK")) {
-				try {
-					FreenetURI furi = new FreenetURI(i.getKey());
-					USK usk = new USK(furi);
-					node.uskManager.subscribe(usk, new USKUpdatedCallback(), true);
-				} catch (MalformedURLException mue) {
-				}
-			}
-		}
-	}
-
 	WelcomeToadlet(HighLevelSimpleClient client, Node n, SubConfig sc) {
 		super(client);
 		this.node = n;
 		this.config = sc;
+		this.bookmarks = new BookmarkManager(n);
 		
-		sc.register("bookmarks", DEFAULT_BOOKMARKS, 0, false, "List of bookmarks", "A list of bookmarked freesites", new BookmarkCallback());
+		sc.register("bookmarks", DEFAULT_BOOKMARKS, 0, false, "List of bookmarks", "A list of bookmarked freesites", this.bookmarks.makeCB());
 		
 		String[] initialbookmarks = sc.getStringArr("bookmarks");
 		for (int i = 0; i < initialbookmarks.length; i++) {
 			try {
-				bookmarks.add(new Bookmark(initialbookmarks[i]));
+				bookmarks.addBookmark(new Bookmark(initialbookmarks[i]));
 			} catch (MalformedURLException mue) {
 				// just ignore that one
 			}
 		}
-		subscribeUSKs();
 	}
 
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -206,7 +92,7 @@ public class WelcomeToadlet extends Toadlet {
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 		} else if (request.getParam("newbookmark").length() > 0) {
-			bookmarks.add(new Bookmark(request.getParam("newbookmark"), request.getParam("name")));
+			bookmarks.addBookmark(new Bookmark(request.getParam("newbookmark"), request.getParam("name")));
 			
 			this.handleGet(uri, ctx);
 		} else {
@@ -259,9 +145,9 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("<div class=\"infobox\">\n");
 		buf.append("<h2>My Bookmarks</h2>");
 		
-		Enumeration e = bookmarks.elements();
+		Enumeration e = bookmarks.getBookmarks();
 		if (!e.hasMoreElements()) {
-			buf.append("<i>You have currently have no bookmarks defined</i>");
+			buf.append("<i>You currently have no bookmarks defined</i>");
 		}
 		while (e.hasMoreElements()) {
 			Bookmark b = (Bookmark)e.nextElement();
@@ -318,6 +204,6 @@ public class WelcomeToadlet extends Toadlet {
 	}
 	
 	public String supportedMethods() {
-		return "GET";
+		return "GET, POST";
 	}
 }
