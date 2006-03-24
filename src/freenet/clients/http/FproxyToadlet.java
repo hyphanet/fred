@@ -78,7 +78,7 @@ public class FproxyToadlet extends Toadlet {
 			
 			RedirectException re = new RedirectException();
 			try {
-				re.newuri = new URI("/welcome/");
+				re.newuri = new URI("/welcome/"+(uri.getQuery() == null? "" : "?"+uri.getQuery()));
 			} catch (URISyntaxException e) {
 				// HUH!?!
 			}
@@ -200,7 +200,7 @@ public class FproxyToadlet extends Toadlet {
 			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager);
 			server.register(pproxy, "/plugins/", true);
 			
-			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node);
+			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node, fproxyConfig);
 			server.register(welcometoadlet, "/welcome/", true);
 			
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config);

@@ -3,21 +3,100 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Vector;
+import java.util.Enumeration;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.Node;
 import freenet.node.Version;
+import freenet.config.Option;
+import freenet.config.SubConfig;
+import freenet.config.StringArrCallback;
+import freenet.config.StringArrOption;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
 
 public class WelcomeToadlet extends Toadlet {
+	private static final String[] DEFAULT_BOOKMARKS = {
+		"SSK@60I8H8HinpgZSOuTSD66AVlIFAy-xsppFr0YCzCar7c,NzdivUGCGOdlgngOGRbbKDNfSCnjI0FXjHLzJM4xkJ4,AQABAAE/index-4/=INDEX.7-freesite"
+	};
 	Node node;
+	SubConfig config;
+	Vector bookmarks = new Vector();
+	
+	private class Bookmark {
+		private final String key;
+		private final String desc;
+		
+		Bookmark(String k, String d) {
+			this.key = k;
+			this.desc = d;
+		}
+		
+		Bookmark(String from) {
+			int eqpos = from.indexOf("=");
+			
+			if (eqpos < 0) {
+				this.key = from;
+				this.desc = from;
+			} else {
+				this.key = from.substring(0, eqpos);
+				this.desc = from.substring(eqpos + 1);
+			}
+		}
+		
+		public String getKey() {
+			return key;
+		}
+		
+		public String getDesc() {
+			if (desc == "") {
+				return "Unnamed Bookmark";
+			} else {
+				return desc;
+			}
+		}
+		
+		public String toString() {
+			return this.key + "=" + this.desc;
+		}
+	}
+	
+	private class BookmarkCallback implements StringArrCallback {
+		public String get() {
+			StringBuffer buf = new StringBuffer("");
+			
+			for (Enumeration e = bookmarks.elements(); e.hasMoreElements(); ) {
+				buf.append((String)e.nextElement().toString());
+				buf.append(StringArrOption.delimiter);
+			}
+			
+			
+			return buf.substring(0, buf.length() - 1);
+		}
+		
+		public void set(String newval) {
+			String[] newvals = newval.split(StringArrOption.delimiter);
+			bookmarks.clear();
+			for (int i = 0; i < newvals.length; i++) {
+				bookmarks.add(new Bookmark(newvals[i]));
+			}
+		}
+	}
 
-	WelcomeToadlet(HighLevelSimpleClient client, Node n) {
+	WelcomeToadlet(HighLevelSimpleClient client, Node n, SubConfig sc) {
 		super(client);
 		this.node = n;
+		this.config = sc;
+		
+		sc.register("bookmarks", DEFAULT_BOOKMARKS, 0, false, "List of bookmarks", "A list of bookmarked freesites", new BookmarkCallback());
+		
+		String[] initialbookmarks = sc.getStringArr("bookmarks");
+		for (int i = 0; i < initialbookmarks.length; i++) {
+			bookmarks.add(new Bookmark(initialbookmarks[i]));
+		}
 	}
 
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -66,6 +145,10 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("</form>\n");
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		} else if (request.getParam("newbookmark").length() > 0) {
+			bookmarks.add(new Bookmark(request.getParam("newbookmark"), request.getParam("name")));
+			
+			this.handleGet(uri, ctx);
 		} else {
 			this.handleGet(uri, ctx);
 		}
@@ -74,10 +157,62 @@ public class WelcomeToadlet extends Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		StringBuffer buf = new StringBuffer();
 		
+		HTTPRequest request = new HTTPRequest(uri);
+		if (request.getParam("newbookmark").length() > 0) {
+			ctx.getPageMaker().makeHead(buf, "Add a Bookmark");
+			
+			buf.append("<form action=\".\" method=\"post\">\n");
+			buf.append("<div>\n");
+			buf.append("Please confirm that you wish to add the key:<br />\n");
+			buf.append("<i>"+request.getParam("newbookmark")+"</i><br />");
+			buf.append("To your bookmarks, and enter the description that you would prefer:<br />\n");
+			buf.append("Description:\n");
+			buf.append("<input type=\"text\" name=\"name\" value=\""+request.getParam("desc")+"\" style=\"width: 100%; \" />\n");
+			buf.append("<input type=\"hidden\" name=\"newbookmark\" value=\""+request.getParam("newbookmark")+"\" />\n");
+			buf.append("<input type=\"submit\" value=\"Add Bookmark\" />\n");
+			buf.append("</div>\n");
+			buf.append("</form>\n");
+			
+			ctx.getPageMaker().makeTail(buf);
+		
+			this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
+		}
+		
 		
 		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage");
 		if(node.isTestnetEnabled())
 			buf.append("<div style=\"color: red; font-size: 200%; \">WARNING: TESTNET MODE ENABLED</div>");
+		
+		// Bookmarks
+		buf.append("<div class=\"infobox\">\n");
+		buf.append("<h2>My Bookmarks</h2>");
+		
+		Enumeration e = bookmarks.elements();
+		if (!e.hasMoreElements()) {
+			buf.append("<i>You have currently have no bookmarks defined</i>");
+		}
+		while (e.hasMoreElements()) {
+			Bookmark b = (Bookmark)e.nextElement();
+			
+			buf.append("<a href=\"/"+b.getKey()+"\">");
+			buf.append(b.getDesc());
+			buf.append("</a><br />\n");
+		}
+		
+		buf.append("<br />\n");
+		buf.append("<div>\n");
+		buf.append("<form action=\".\" method=\"post\">\n");
+		buf.append("<b>New Bookmark</b>\n");
+		buf.append("<br />\n");
+		buf.append("Key: \n");
+		buf.append("<input type=\"text\" name=\"newbookmark\" style=\"width: 100%; \"/>\n");
+		buf.append("Description: \n");
+		buf.append("<input type=\"text\" name=\"name\" style=\"width: 100%; \"/>\n");
+		buf.append("<input type=\"submit\" value=\"Add Bookmark\"/>\n");
+		buf.append("</div>\n");
+		buf.append("</form>\n");
+		buf.append("</div>\n");
 		
 		// Version info
 		buf.append("<div class=\"infobox\">\n");
