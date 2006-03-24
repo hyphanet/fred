@@ -8,6 +8,7 @@ import freenet.keys.FreenetURI;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Logger;
 import freenet.support.HTMLEncoder;
+import freenet.support.URLEncoder;
 
 public class GenericReadFilterCallback implements FilterCallback {
 
@@ -27,6 +28,15 @@ public class GenericReadFilterCallback implements FilterCallback {
 			return null;
 		}
 		String path = uri.getPath();
+		if (path == null) {
+			// Only fragment?
+			if(uri.getScheme() == null && uri.getFragment() != null && 
+					uri.getHost() == null) {
+				return "#" + URLEncoder.encode(uri.getFragment());
+			}
+			return null;
+		}
+		// mailto: not supported yet - FIXME what to do with it? what queries are allowed? can it possibly hurt us? how to construct safely? etc
 		if (path.startsWith("/") && path.substring(1).indexOf("/") == -1) {
 			// allow links to the root to add bookmarks
 			HTTPRequest req = new HTTPRequest(uri);
