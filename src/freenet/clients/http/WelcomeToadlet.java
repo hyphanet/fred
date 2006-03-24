@@ -3,21 +3,26 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.MalformedURLException;
 import java.util.Vector;
 import java.util.Enumeration;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.USKCallback;
 import freenet.node.Node;
 import freenet.node.Version;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
+import freenet.config.InvalidConfigValueException;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.HTMLEncoder;
+import freenet.keys.USK;
+import freenet.keys.FreenetURI;
 
 public class WelcomeToadlet extends Toadlet {
 	private static final String[] DEFAULT_BOOKMARKS = {
@@ -28,28 +33,36 @@ public class WelcomeToadlet extends Toadlet {
 	Vector bookmarks = new Vector();
 	
 	private class Bookmark {
-		private final String key;
-		private final String desc;
+		private FreenetURI key;
+		private String desc;
 		
-		Bookmark(String k, String d) {
-			this.key = k;
+		Bookmark(String k, String d) throws MalformedURLException {
+			this.key = new FreenetURI(k);
 			this.desc = d;
 		}
 		
-		Bookmark(String from) {
+		Bookmark(String from) throws MalformedURLException {
 			int eqpos = from.indexOf("=");
 			
 			if (eqpos < 0) {
-				this.key = from;
+				this.key = new FreenetURI(from);
 				this.desc = from;
 			} else {
-				this.key = from.substring(0, eqpos);
+				this.key = new FreenetURI(from.substring(0, eqpos));
 				this.desc = from.substring(eqpos + 1);
 			}
 		}
 		
 		public String getKey() {
-			return key;
+			return key.toString();
+		}
+		
+		public void setKey(FreenetURI uri) {
+			key = uri;
+		}
+		
+		public String getKeyType() {
+			return key.getKeyType();
 		}
 		
 		public String getDesc() {
@@ -61,7 +74,7 @@ public class WelcomeToadlet extends Toadlet {
 		}
 		
 		public String toString() {
-			return this.key + "=" + this.desc;
+			return this.key.toString() + "=" + this.desc;
 		}
 	}
 	
@@ -78,11 +91,52 @@ public class WelcomeToadlet extends Toadlet {
 			return buf.substring(0, buf.length() - 1);
 		}
 		
-		public void set(String newval) {
+		public void set(String newval) throws InvalidConfigValueException {
 			String[] newvals = newval.split(StringArrOption.delimiter);
 			bookmarks.clear();
 			for (int i = 0; i < newvals.length; i++) {
-				bookmarks.add(new Bookmark(newvals[i]));
+				try {
+					bookmarks.add(new Bookmark(newvals[i]));
+				} catch (MalformedURLException mue) {
+					throw new InvalidConfigValueException(mue.getMessage());
+				}
+			}
+		}
+	}
+	
+	private class USKUpdatedCallback implements USKCallback {
+		public void onFoundEdition(long edition, USK key) {
+			
+			for (Enumeration e = bookmarks.elements(); e.hasMoreElements(); ) {
+				Bookmark i = (Bookmark) e.nextElement();
+				
+				if (!i.getKeyType().equals("USK")) continue;
+				
+				try {
+					FreenetURI furi = new FreenetURI(i.getKey());
+					USK usk = new USK(furi);
+					
+					if (usk.equals(key, false)) {
+						i.setKey(key.getURI());
+					} else {
+					}
+				} catch (MalformedURLException mue) {
+				}
+			}
+		}
+	}
+	
+	private void subscribeUSKs() {
+		for (Enumeration e = bookmarks.elements(); e.hasMoreElements(); ) {
+			Bookmark i = (Bookmark)e.nextElement();
+			
+			if (i.getKeyType().equals("USK")) {
+				try {
+					FreenetURI furi = new FreenetURI(i.getKey());
+					USK usk = new USK(furi);
+					node.uskManager.subscribe(usk, new USKUpdatedCallback(), true);
+				} catch (MalformedURLException mue) {
+				}
 			}
 		}
 	}
@@ -96,8 +150,13 @@ public class WelcomeToadlet extends Toadlet {
 		
 		String[] initialbookmarks = sc.getStringArr("bookmarks");
 		for (int i = 0; i < initialbookmarks.length; i++) {
-			bookmarks.add(new Bookmark(initialbookmarks[i]));
+			try {
+				bookmarks.add(new Bookmark(initialbookmarks[i]));
+			} catch (MalformedURLException mue) {
+				// just ignore that one
+			}
 		}
+		subscribeUSKs();
 	}
 
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -185,6 +244,17 @@ public class WelcomeToadlet extends Toadlet {
 		if(node.isTestnetEnabled())
 			buf.append("<div style=\"color: red; font-size: 200%; \">WARNING: TESTNET MODE ENABLED</div>");
 		
+		
+		// Fetch-a-key box
+		buf.append("<br style=\"clear: all; \" />\n");
+		buf.append("<form action=\"/\" method=\"get\">\n");
+		buf.append("<div class=\"infobox\">\n");
+		buf.append("<h2>Fetch a Key</h2>\n");
+		buf.append("Key: <input type=\"text\" size=\"80\" name=\"key\"/>\n");
+		buf.append("<input type=\"submit\" value=\"Fetch\" />\n");
+		buf.append("</div>\n");
+		buf.append("</form>\n");
+		
 		// Bookmarks
 		buf.append("<div class=\"infobox\">\n");
 		buf.append("<h2>My Bookmarks</h2>");
@@ -224,16 +294,6 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("<b>A newer version is available! (Build #"+Version.highestSeenBuild+")</b>");
 		}
 		buf.append("</div>\n");
-		
-		// Fetch-a-key box
-		buf.append("<br style=\"clear: all; \" />\n");
-		buf.append("<form action=\"/\" method=\"get\">\n");
-		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2>Fetch a Key</h2>\n");
-		buf.append("Key: <input type=\"text\" size=\"80\" name=\"key\"/>\n");
-		buf.append("<input type=\"submit\" value=\"Fetch\" />\n");
-		buf.append("</div>\n");
-		buf.append("</form>\n");
 		
 		// Quit Form
 		buf.append("<form method=\"post\" action=\".\">\n");

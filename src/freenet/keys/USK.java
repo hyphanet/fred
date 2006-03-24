@@ -84,12 +84,16 @@ public class USK extends BaseClientKey {
 	}
 	
 	public boolean equals(Object o) {
+		return equals(o, true);
+	}
+	
+	public boolean equals(Object o, boolean includeVersion) {
 		if(o instanceof USK) {
 			USK u = (USK)o;
 			if(!Arrays.equals(pubKeyHash, u.pubKeyHash)) return false;
 			if(!Arrays.equals(cryptoKey, u.cryptoKey)) return false;
 			if(!siteName.equals(u.siteName)) return false;
-			if(suggestedEdition != u.suggestedEdition) return false;
+			if(includeVersion && suggestedEdition != u.suggestedEdition) return false;
 			return true;
 		}
 		return false;
