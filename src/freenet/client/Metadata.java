@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
@@ -606,7 +607,7 @@ public class Metadata implements Cloneable {
 			String[] meta = freenetURI.getAllMetaStrings();
 			if(meta != null && meta.length > 0)
 				throw new MalformedURLException("Not a plain CHK");
-			ClientKey key = ClientKey.getBaseKey(freenetURI);
+			BaseClientKey key = BaseClientKey.getBaseKey(freenetURI);
 			if(key instanceof ClientCHK) {
 				((ClientCHK)key).writeRawBinaryKey(dos);
 			} else throw new IllegalArgumentException("Full keys must be enabled to write non-CHKs");

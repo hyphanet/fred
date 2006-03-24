@@ -14,12 +14,14 @@ import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.KeyDecodeException;
+import freenet.keys.USK;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.support.Bucket;
@@ -28,27 +30,21 @@ import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 
-public class SingleFileFetcher extends ClientGetState implements SendableGet {
+public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
 
-	final ClientGetter parent;
 	//final FreenetURI uri;
-	final ClientKey key;
 	final LinkedList metaStrings;
-	final FetcherContext ctx;
 	final GetCompletionCallback rcb;
 	final ClientMetadata clientMetadata;
 	private Metadata metadata;
-	final int maxRetries;
 	final ArchiveContext actx;
 	/** Archive handler. We can only have one archive handler at a time. */
 	private ArchiveStoreContext ah;
 	private int recursionLevel;
 	/** The URI of the currently-being-processed data, for archives etc. */
 	private FreenetURI thisKey;
-	private int retryCount;
 	private final LinkedList decompressors;
 	private final boolean dontTellClientGet;
-	private boolean cancelled;
 	private Object token;
 	private final Bucket returnBucket;
 	
@@ -57,23 +53,23 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	 * @param token 
 	 * @param dontTellClientGet 
 	 */
-	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, ClientKey key, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws FetchException {
+	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, 
+			ClientKey key, LinkedList metaStrings, FetcherContext ctx, 
+			ArchiveContext actx, int maxRetries, int recursionLevel, 
+			boolean dontTellClientGet, Object token, boolean isEssential, 
+			Bucket returnBucket) throws FetchException {
+		super(key, maxRetries, ctx, get);
 		Logger.minor(this, "Creating SingleFileFetcher for "+key);
 		this.cancelled = false;
 		this.returnBucket = returnBucket;
 		this.dontTellClientGet = dontTellClientGet;
 		this.token = token;
-		this.parent = get;
 		//this.uri = uri;
 		//this.key = ClientKey.getBaseKey(uri);
 		//metaStrings = uri.listMetaStrings();
-		this.key = key;
 		this.metaStrings = metaStrings;
-		this.ctx = ctx;
-		retryCount = 0;
 		this.rcb = cb;
 		this.clientMetadata = metadata;
-		this.maxRetries = maxRetries;
 		thisKey = key.getURI();
 		this.actx = actx;
 		this.recursionLevel = recursionLevel + 1;
@@ -85,14 +81,10 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 			parent.addMustSucceedBlocks(1);
 	}
 
-	/** Called by ClientGet. */ 
-	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
-		this(get, cb, metadata, ClientKey.getBaseKey(uri), uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
-	}
-	
 	/** Copy constructor, modifies a few given fields, don't call schedule().
 	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket. */
 	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetcherContext ctx2) throws FetchException {
+		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent);
 		Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key);
 		this.token = fetcher.token;
 		this.returnBucket = null;
@@ -100,46 +92,14 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		this.actx = fetcher.actx;
 		this.ah = fetcher.ah;
 		this.clientMetadata = fetcher.clientMetadata;
-		this.ctx = ctx2;
-		this.key = fetcher.key;
-		this.maxRetries = fetcher.maxRetries;
 		this.metadata = newMeta;
 		this.metaStrings = fetcher.metaStrings;
-		this.parent = fetcher.parent;
 		this.rcb = callback;
-		this.retryCount = 0;
 		this.recursionLevel = fetcher.recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
 		this.thisKey = fetcher.thisKey;
 		this.decompressors = fetcher.decompressors;
-	}
-
-	public void schedule() {
-		if(!dontTellClientGet)
-			this.parent.currentState = this;
-		if(key instanceof ClientCHK)
-			parent.chkScheduler.register(this);
-		else if(key instanceof ClientSSK)
-			parent.sskScheduler.register(this);
-		else
-			throw new IllegalStateException(String.valueOf(key));
-	}
-
-	public ClientGetter getParent() {
-		return parent;
-	}
-
-	public ClientKey getKey() {
-		return key;
-	}
-
-	public short getPriorityClass() {
-		return parent.getPriorityClass();
-	}
-
-	public int getRetryCount() {
-		return retryCount;
 	}
 
 	// Process the completed data. May result in us going to a
@@ -319,7 +279,14 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 				Logger.minor(this, "Redirecting to "+uri);
 				ClientKey key;
 				try {
-					key = ClientKey.getBaseKey(uri);
+					BaseClientKey k = ClientKey.getBaseKey(uri);
+					if(k instanceof ClientKey)
+						key = (ClientKey) k;
+					else
+						// FIXME do we want to allow redirects to USKs?
+						// Without redirects to USKs, all SSK and CHKs are static.
+						// This may be a desirable property.
+						throw new FetchException(FetchException.UNKNOWN_METADATA, "Redirect to a USK");
 				} catch (MalformedURLException e) {
 					throw new FetchException(FetchException.INVALID_URI, e);
 				}
@@ -333,7 +300,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 					metaStrings.addFirst(o);
 				}
 
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, null, true, returnBucket);
+				SingleFileFetcher f = new SingleFileFetcher((ClientGetter)parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, null, true, returnBucket);
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
 					f.addDecompressor(codec);
@@ -354,7 +321,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 					addDecompressor(codec);
 				}
 				
-				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
+				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, (ClientGetter)parent, ctx, 
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, false);
 				sf.schedule();
 				rcb.onBlockSetFinished(this);
@@ -399,7 +366,7 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		}
 		
 		public void onSuccess(FetchResult result, ClientGetState state) {
-			parent.currentState = SingleFileFetcher.this;
+			((ClientGetter)parent).currentState = SingleFileFetcher.this;
 			try {
 				ctx.archiveManager.extractToCache(thisKey, ah.getArchiveType(), result.asBucket(), actx, ah);
 			} catch (ArchiveFailureException e) {
@@ -436,10 +403,10 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 	class MultiLevelMetadataCallback implements GetCompletionCallback {
 		
 		public void onSuccess(FetchResult result, ClientGetState state) {
-			parent.currentState = SingleFileFetcher.this;
+			((ClientGetter)parent).currentState = SingleFileFetcher.this;
 			try {
 				metadata = Metadata.construct(result.asBucket());
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, null, true, returnBucket);
+				SingleFileFetcher f = new SingleFileFetcher((ClientGetter)parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, null, true, returnBucket);
 				f.metadata = metadata;
 				f.handleMetadata();
 			} catch (MetadataParseException e) {
@@ -469,25 +436,18 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		
 	}
 	
-	private final void onFailure(FetchException e) {
+	final void onFailure(FetchException e) {
 		onFailure(e, false);
 	}
 	
 	// Real onFailure
-	private void onFailure(FetchException e, boolean forceFatal) {
+	protected void onFailure(FetchException e, boolean forceFatal) {
 		if(parent.isCancelled() || cancelled) {
 			e = new FetchException(FetchException.CANCELLED);
+			forceFatal = true;
 		}
 		if(!(e.isFatal() || forceFatal) ) {
-			if((retryCount <= maxRetries) && maxRetries != -1) {
-				if(parent.isCancelled()) {
-					onFailure(new FetchException(FetchException.CANCELLED));
-					return;
-				}
-				retryCount++;
-				schedule();
-				return;
-			}
+			if(retry()) return;
 		}
 		// :(
 		if(e.isFatal() || forceFatal)
@@ -524,6 +484,9 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		case LowLevelGetException.VERIFY_FAILED:
 			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR));
 			return;
+		case LowLevelGetException.CANCELLED:
+			onFailure(new FetchException(FetchException.CANCELLED));
+			return;
 		default:
 			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR));
@@ -531,48 +494,120 @@ public class SingleFileFetcher extends ClientGetState implements SendableGet {
 		}
 	}
 
+	public void schedule() {
+		if(!dontTellClientGet)
+			((ClientGetter)parent).currentState = this;
+		super.schedule();
+	}
+	
 	public Object getToken() {
 		return token;
-	}
-
-	public synchronized void cancel() {
-		cancelled = true;
-	}
-
-	public boolean isFinished() {
-		return cancelled;
-	}
-
-	/** Do the request, blocking. Called by RequestStarter. */
-	public void send(Node node) {
-		if(cancelled) {
-			onFailure(new FetchException(FetchException.CANCELLED), false);
-			return;
-		}
-		// Do we need to support the last 3?
-		ClientKeyBlock block;
-		try {
-			block = node.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
-		} catch (LowLevelGetException e) {
-			onFailure(e);
-			return;
-		} catch (Throwable t) {
-			onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR));
-			return;
-		}
-		onSuccess(block, false);
-	}
-
-	public Object getClient() {
-		return parent.getClient();
 	}
 
 	public boolean ignoreStore() {
 		return ctx.ignoreStore;
 	}
 
-	public ClientRequester getClientRequest() {
-		return parent;
+	public ClientGetter getParent() {
+		return (ClientGetter) parent;
+	}
+
+	public static ClientGetState create(ClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
+		BaseClientKey key = ClientKey.getBaseKey(uri);
+		if(key instanceof ClientKey)
+			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
+		else {
+			return uskCreate(parent, cb, clientMetadata, (USK)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
+		}
+	}
+
+	private static ClientGetState uskCreate(ClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws FetchException {
+		if(usk.suggestedEdition > 0) {
+			// Return the latest known version but at least suggestedEdition.
+			long edition = ctx.uskManager.lookup(usk);
+			if(edition <= usk.suggestedEdition) {
+				// Transition to SingleFileFetcher
+				GetCompletionCallback myCB =
+					new USKProxyCompletionCallback(usk, ctx.uskManager, cb);
+				// Want to update the latest known good iff the fetch succeeds.
+				SingleFileFetcher sf = 
+					new SingleFileFetcher(parent, myCB, clientMetadata, usk.getSSK(usk.suggestedEdition),
+							metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet,
+							token, false, returnBucket);
+				sf.schedule();
+				// Background fetch
+				USKFetcher fetcher =
+					ctx.uskManager.getFetcher(usk, ctx, parent);
+				return sf;
+			} else {
+				cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI()), null);
+				return null;
+			}
+		} else {
+			// Do a thorough, blocking search
+			USKFetcher fetcher =
+				ctx.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, parent);
+			if(isEssential)
+				parent.addMustSucceedBlocks(1);
+			fetcher.addCallback(new MyUSKFetcherCallback(parent, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, returnBucket));
+			return fetcher;
+		}
+	}
+
+	public static class MyUSKFetcherCallback implements USKFetcherCallback {
+
+		final ClientGetter parent;
+		final GetCompletionCallback cb;
+		final ClientMetadata clientMetadata;
+		final USK usk;
+		final LinkedList metaStrings;
+		final FetcherContext ctx;
+		final ArchiveContext actx;
+		final int maxRetries;
+		final int recursionLevel;
+		final boolean dontTellClientGet;
+		final Object token;
+		final Bucket returnBucket;
+		
+		public MyUSKFetcherCallback(ClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, Bucket returnBucket) {
+			this.parent = parent;
+			this.cb = cb;
+			this.clientMetadata = clientMetadata;
+			this.usk = usk;
+			this.metaStrings = metaStrings;
+			this.ctx = ctx;
+			this.actx = actx;
+			this.maxRetries = maxRetries;
+			this.recursionLevel = recursionLevel;
+			this.dontTellClientGet = dontTellClientGet;
+			this.token = token;
+			this.returnBucket = returnBucket;
+		}
+
+		public void onFoundEdition(long l) {
+			ClientSSK key = usk.getSSK(l);
+			try {
+				if(l == Math.abs(usk.suggestedEdition)) {
+					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, clientMetadata, key, metaStrings,
+							ctx, actx, maxRetries, recursionLevel+1, dontTellClientGet,
+							token, false, returnBucket);
+					sf.schedule();
+				} else {
+					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(l).getURI()), null);
+				}
+			} catch (FetchException e) {
+				cb.onFailure(e, null);
+			}
+		}
+
+		public void onFailure() {
+			cb.onFailure(new FetchException(FetchException.DATA_NOT_FOUND, "No USK found"), null);
+		}
+
+		public void onCancelled() {
+			cb.onFailure(new FetchException(FetchException.CANCELLED, (String)null), null);
+		}
+
 	}
 
 }

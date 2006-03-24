@@ -321,13 +321,19 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	public void schedule() {
 		try {
 			for(int i=0;i<dataBlocks.length;i++) {
+				// FIXME maybe within a non-FECced splitfile at least?
+				if(dataBlocks[i].getKeyType().equals("USK"))
+					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
 				dataBlockStatus[i] =
-					new SingleFileFetcher(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(i), true, null);
+					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(i), true, null);
 				dataBlockStatus[i].schedule();
 			}
 			for(int i=0;i<checkBlocks.length;i++) {
+				// FIXME maybe within a non-FECced splitfile at least?
+				if(checkBlocks[i].getKeyType().equals("USK"))
+					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
 				checkBlockStatus[i] =
-					new SingleFileFetcher(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null);
+					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null);
 				checkBlockStatus[i].schedule();
 			}
 		} catch (MalformedURLException e) {

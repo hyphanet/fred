@@ -145,7 +145,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				random, archiveManager, bucketFactory, globalEventProducer, cacheLocalRequests);
+				random, archiveManager, bucketFactory, globalEventProducer, cacheLocalRequests, node.uskManager);
 	}
 
 	public InserterContext getInserterContext() {

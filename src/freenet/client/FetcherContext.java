@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
@@ -18,6 +19,7 @@ public class FetcherContext implements Cloneable {
 	public long maxTempLength;
 	public final ArchiveManager archiveManager;
 	public final BucketFactory bucketFactory;
+	public final USKManager uskManager;
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
 	public boolean dontEnterImplicitArchives;
@@ -48,8 +50,9 @@ public class FetcherContext implements Cloneable {
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
-			ClientEventProducer producer, boolean cacheLocalRequests) {
+			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager) {
 		this.maxOutputLength = curMaxLength;
+		this.uskManager = uskManager;
 		this.maxTempLength = curMaxTempLength;
 		this.maxMetadataSize = maxMetadataSize;
 		this.archiveManager = archiveManager;
@@ -76,6 +79,7 @@ public class FetcherContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 		else
 			this.eventProducer = new SimpleEventProducer();
+		this.uskManager = ctx.uskManager;
 		if(maskID == IDENTICAL_MASK) {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;

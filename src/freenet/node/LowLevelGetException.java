@@ -24,6 +24,8 @@ public class LowLevelGetException extends Exception {
 	/** Data successfully transferred, but was not valid (at the node key level
 	 * i.e. before decode) */
 	public static final int VERIFY_FAILED = 8;
+	/** Request cancelled by user */
+	public static final int CANCELLED = 9;
 	
 	static final String getMessage(int reason) {
 		switch(reason) {
@@ -43,6 +45,8 @@ public class LowLevelGetException extends Exception {
 			return "Started to transfer data, then failed (should be rare)";
 		case VERIFY_FAILED:
 			return "Node sent us invalid data";
+		case CANCELLED:
+			return "Request cancelled";
 		default:
 			return "Unknown error code: "+reason;
 		}

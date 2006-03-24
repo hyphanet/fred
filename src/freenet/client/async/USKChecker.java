@@ -1,0 +1,76 @@
+package freenet.client.async;
+
+import freenet.client.FetcherContext;
+import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
+import freenet.node.LowLevelGetException;
+import freenet.support.Logger;
+
+/**
+ * Checks a single USK slot.
+ */
+class USKChecker extends BaseSingleFileFetcher {
+
+	final USKCheckerCallback cb;
+	private int dnfs;
+
+	USKChecker(USKCheckerCallback cb, ClientKey key, int maxRetries, FetcherContext ctx, ClientRequester parent) {
+		super(key, maxRetries, ctx, parent);
+		Logger.minor(this, "Created USKChecker for "+key);
+		this.cb = cb;
+	}
+	
+	public void onSuccess(ClientKeyBlock block, boolean fromStore) {
+		cb.onSuccess();
+	}
+
+	public void onFailure(LowLevelGetException e) {
+		Logger.minor(this, "onFailure: "+e+" for "+this);
+		// Firstly, can we retry?
+		boolean canRetry;
+		switch(e.code) {
+		case LowLevelGetException.CANCELLED:
+		case LowLevelGetException.DECODE_FAILED:
+			// Cannot retry
+			canRetry = false;
+			break;
+		case LowLevelGetException.DATA_NOT_FOUND:
+		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
+			dnfs++;
+		case LowLevelGetException.INTERNAL_ERROR:
+		case LowLevelGetException.REJECTED_OVERLOAD:
+		case LowLevelGetException.ROUTE_NOT_FOUND:
+		case LowLevelGetException.TRANSFER_FAILED:
+		case LowLevelGetException.VERIFY_FAILED:
+			// Can retry
+			canRetry = true;
+			break;
+		default:
+			Logger.error(this, "Unknown low-level fetch error code: "+e.code, new Exception("error"));
+			canRetry = true;
+		}
+
+		if(canRetry && retry()) return;
+		
+		// Ran out of retries.
+		
+		switch(e.code) {
+		case LowLevelGetException.CANCELLED:
+			cb.onCancelled();
+			return;
+		case LowLevelGetException.DECODE_FAILED:
+			cb.onFatalAuthorError();
+			return;
+		}
+		// Rest are non-fatal. If have DNFs, DNF, else network error.
+		if(dnfs > 0)
+			cb.onDNF();
+		else
+			cb.onNetworkError();
+	}
+
+	public String toString() {
+		return "USKChecker for "+key.getURI();
+	}
+	
+}

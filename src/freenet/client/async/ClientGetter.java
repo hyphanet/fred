@@ -54,8 +54,11 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 	
 	public void start() throws FetchException {
 		try {
-			currentState = new SingleFileFetcher(this, this, new ClientMetadata(), uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true, returnBucket);
-			currentState.schedule();
+			currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
+					uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true,
+					returnBucket);
+			if(currentState != null)
+				currentState.schedule();
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
 		}

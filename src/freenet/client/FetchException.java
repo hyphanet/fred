@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
 /**
@@ -11,6 +12,8 @@ public class FetchException extends Exception {
 	private static final long serialVersionUID = -1106716067841151962L;
 	
 	public final int mode;
+	
+	public final FreenetURI newURI;
 
 	/** For collection errors */
 	public final FailureCodeTracker errorCodes;
@@ -27,6 +30,7 @@ public class FetchException extends Exception {
 		extraMessage = null;
 		mode = m;
 		errorCodes = null;
+		newURI = null;
 		Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
 	}
 
@@ -36,6 +40,7 @@ public class FetchException extends Exception {
 		mode = INVALID_METADATA;
 		errorCodes = null;
 		initCause(e);
+		newURI = null;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
 
@@ -44,6 +49,7 @@ public class FetchException extends Exception {
 		extraMessage = e.getMessage();
 		mode = ARCHIVE_FAILURE;
 		errorCodes = null;
+		newURI = null;
 		initCause(e);
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
@@ -54,6 +60,7 @@ public class FetchException extends Exception {
 		mode = ARCHIVE_FAILURE;
 		errorCodes = null;
 		initCause(e);
+		newURI = null;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);	}
 
 	public FetchException(int mode, Throwable t) {
@@ -62,6 +69,7 @@ public class FetchException extends Exception {
 		this.mode = mode;
 		errorCodes = null;
 		initCause(t);
+		newURI = null;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
 	}
 
@@ -70,8 +78,8 @@ public class FetchException extends Exception {
 		extraMessage = null;
 		this.mode = mode;
 		this.errorCodes = errorCodes;
+		newURI = null;
 		Logger.minor(this, "FetchException("+getMessage(mode)+")");
-		
 	}
 	
 	public FetchException(int mode, String msg) {
@@ -79,9 +87,19 @@ public class FetchException extends Exception {
 		extraMessage = msg;
 		errorCodes = null;
 		this.mode = mode;
+		newURI = null;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
 	}
 
+	public FetchException(int mode, FreenetURI newURI) {
+		super(getMessage(mode));
+		extraMessage = null;
+		this.mode = mode;
+		errorCodes = null;
+		this.newURI = newURI;
+		Logger.minor(this, "FetchException("+getMessage(mode)+") -> "+newURI, this);
+	}
+	
 	public static String getShortMessage(int mode) {
 		switch(mode) {
 		case TOO_DEEP_ARCHIVE_RECURSION:
@@ -136,6 +154,8 @@ public class FetchException extends Exception {
 			return "Cancelled";
 		case ARCHIVE_RESTART:
 			return "Archive restarted";
+		case PERMANENT_REDIRECT:
+			return "New URI";
 		default:
 			return "Unknown code "+mode;
 		}
@@ -196,6 +216,8 @@ public class FetchException extends Exception {
 			return "Cancelled by caller";
 		case ARCHIVE_RESTART:
 			return "Archive restarted";
+		case PERMANENT_REDIRECT:
+			return "Permanent redirect: use the new URI";
 		default:
 			return "Unknown fetch error code: "+mode;
 		}
@@ -255,6 +277,8 @@ public class FetchException extends Exception {
 	public static final int CANCELLED = 25;
 	/** Archive restart */
 	public static final int ARCHIVE_RESTART = 26;
+	/** There is a more recent version of the USK, ~= HTTP 301; fproxy will turn this into a 301 */
+	public static final int PERMANENT_REDIRECT = 27;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {

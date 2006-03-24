@@ -216,10 +216,12 @@ public class TextModeClientInterface implements Runnable {
 				outsb.append("Data:\n");
 				outsb.append(new String(dataBytes));
 			} catch (FetchException e) {
-				outsb.append("Error: "+e.getMessage());
+				outsb.append("Error: "+e.getMessage()+"\n");
             	if(e.getMode() == e.SPLITFILE_ERROR && e.errorCodes != null) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
+            	if(e.newURI != null)
+            		outsb.append("Permanent redirect: "+e.newURI+"\n");
 			}
         } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
@@ -281,6 +283,8 @@ public class TextModeClientInterface implements Runnable {
             	if(e.getMode() == e.SPLITFILE_ERROR && e.errorCodes != null) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
+            	if(e.newURI != null)
+            		outsb.append("Permanent redirect: "+e.newURI+"\n");
 			}
         } else if(uline.startsWith("QUIT")) {
             n.exit();

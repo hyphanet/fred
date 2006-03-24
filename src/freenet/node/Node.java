@@ -29,6 +29,7 @@ import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.USKManager;
 import freenet.clients.http.FproxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.Config;
@@ -232,6 +233,7 @@ public class Node {
     public final long startupTime;
     
     // Client stuff
+    public final USKManager uskManager;
     final ArchiveManager archiveManager;
     public final BucketFactory tempBucketFactory;
     final RequestThrottle chkRequestThrottle;
@@ -452,6 +454,7 @@ public class Node {
     private Node(Config config, RandomSource random) throws NodeInitException {
     	
     	// Easy stuff
+    	uskManager = new USKManager();
         startupTime = System.currentTimeMillis();
         recentlyCompletedIDs = new LRUQueue();
     	this.config = config;

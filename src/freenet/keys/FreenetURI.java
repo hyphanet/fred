@@ -61,6 +61,7 @@ public class FreenetURI {
 	private String keyType, docName;
 	private String[] metaStr;
 	private byte[] routingKey, cryptoKey, extra;
+	private long suggestedEdition; // for USKs
 
 	public Object clone() {
 		return new FreenetURI(this);
@@ -159,12 +160,23 @@ public class FreenetURI {
 				sv.addElement(s);
 			URI = URI.substring(0, slash2);
 		}
-		if("SSK".equals(keyType)) {
+		boolean b = false;
+		if("SSK".equals(keyType) || (b="USK".equals(keyType))) {
 			// docName not necessary, nor is it supported, for CHKs.
 			
 			if(sv.isEmpty())
 				throw new MalformedURLException("No docname");
 			docName = (String) sv.remove(sv.size()-1);
+			if(b) {
+				if(sv.isEmpty()) throw new MalformedURLException("No suggested edition number for USK");
+				try {
+					suggestedEdition = Long.parseLong((String)sv.remove(sv.size()-1));
+				} catch (NumberFormatException e) {
+					MalformedURLException e1 = new MalformedURLException("Invalid suggested edition: "+e);
+					e1.initCause(e);
+					throw e1;
+				}
+			}
 		}
 		
 		if (!sv.isEmpty()) {
@@ -199,6 +211,15 @@ public class FreenetURI {
 		} catch (IllegalBase64Exception e) {
 			throw new MalformedURLException("Invalid Base64 quantity: " + e);
 		}
+	}
+
+	/** USK constructor from components. */
+	public FreenetURI(byte[] pubKeyHash, byte[] cryptoKey2, String siteName, long suggestedEdition2) {
+		this.keyType = "USK";
+		this.routingKey = pubKeyHash;
+		this.cryptoKey = cryptoKey2;
+		this.docName = siteName;
+		this.suggestedEdition = suggestedEdition2;
 	}
 
 	public void decompose() {
@@ -356,6 +377,10 @@ public class FreenetURI {
 
 		if (docName != null)
 			b.append(docName);
+		if(keyType.equals("USK")) {
+			b.append('/');
+			b.append(suggestedEdition);
+		}
 		if (metaStr != null) {
 			for (int i = 0; i < metaStr.length; i++) {
 				b.append("/").append(metaStr[i]);
@@ -384,6 +409,7 @@ public class FreenetURI {
 	static final byte CHK = 1;
 	static final byte SSK = 2;
 	static final byte KSK = 3;
+	static final byte USK = 4;
 	
 	public static FreenetURI readFullBinaryKeyWithLength(DataInputStream dis) throws IOException {
 		int len = dis.readShort();
@@ -472,6 +498,8 @@ public class FreenetURI {
 			dos.writeByte(SSK);
 		} else if(keyType.equals("KSK")) {
 			dos.writeByte(KSK);
+		} else if(keyType.equals("USK")) {
+			throw new MalformedURLException("Cannot write USKs as binary keys");
 		} else
 			throw new MalformedURLException("Cannot write key of type "+keyType+" - do not know how");
 		if(!keyType.equals("KSK")) {
@@ -495,5 +523,12 @@ public class FreenetURI {
 				dos.writeUTF(metaStr[i]);
 		} else
 			dos.writeInt(0);
+	}
+
+	/** Get suggested edition. Only valid for USKs. */
+	public long getSuggestedEdition() {
+		if(keyType.equals("USK"))
+			return suggestedEdition;
+		else throw new IllegalArgumentException("Not a USK requesting suggested edition");
 	}
 }

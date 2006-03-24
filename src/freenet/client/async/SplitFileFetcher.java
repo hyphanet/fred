@@ -11,7 +11,6 @@ import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
-import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
 import freenet.keys.NodeCHK;
 import freenet.support.Bucket;
@@ -24,7 +23,7 @@ import freenet.support.compress.Compressor;
  * Fetch a splitfile, decompress it if need be, and return it to the GetCompletionCallback.
  * Most of the work is done by the segments, and we do not need a thread.
  */
-public class SplitFileFetcher extends ClientGetState {
+public class SplitFileFetcher implements ClientGetState {
 
 	final FetcherContext fetchContext;
 	final ArchiveContext archiveContext;
