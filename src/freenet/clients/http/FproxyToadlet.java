@@ -85,7 +85,7 @@ public class FproxyToadlet extends Toadlet {
 					re.newuri = new URI("/welcome/");
 				} else {
 					// TODP possibly a proper URLEncode method
-					querystring = querystring.replace(" ", "+");
+					querystring = querystring.replace(' ', '+');
 					re.newuri = new URI("/welcome/?"+querystring);
 				}
 			} catch (URISyntaxException e) {
