@@ -64,11 +64,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		InputStream strm = bucket.getInputStream();
 		Writer w = new NullWriter();
 		Reader r;
-		try {
-			r = new BufferedReader(new InputStreamReader(strm, parseCharset), 32768);
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
+		r = new BufferedReader(new InputStreamReader(strm, parseCharset), 32768);
 		CSSParser parser = new CSSParser(r, w, false, new NullFilterCallback());
 		try {
 			parser.parse();
