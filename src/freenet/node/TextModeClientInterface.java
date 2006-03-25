@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.net.SocketException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
@@ -95,7 +96,7 @@ public class TextModeClientInterface implements Runnable {
         while(true) {
             try {
                 processLine(reader,out);
-            } catch (IOException e) {
+            } catch (SocketException e) {
             	Logger.error(this, "Socket error: "+e, e);
             	return;
             } catch (Throwable t) {
@@ -484,11 +485,9 @@ public class TextModeClientInterface implements Runnable {
         	outsb.append("Target URI: "+targetURI);
         	FreenetURI insert = new FreenetURI(insertURI);
         	FreenetURI target = new FreenetURI(targetURI);
-        	InsertableClientSSK key = InsertableClientSSK.create(insert);
-        	outsb.append("Fetch URI: "+key.getURI());
         	try {
 				FreenetURI result = client.insertRedirect(insert, target);
-				outsb.append("Successfully inserted to fetch URI: "+key.getURI());
+				outsb.append("Successfully inserted to fetch URI: "+result);
 			} catch (InserterException e) {
             	outsb.append("Finished insert but: "+e.getMessage());
             	Logger.normal(this, "Error: "+e, e);

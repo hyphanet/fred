@@ -131,7 +131,6 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
 			boolean getCHKOnly, boolean addToParent) throws MalformedURLException {
-		edition = -1;
 		this.parent = parent;
 		this.data = data;
 		this.compressionCodec = compressionCodec;
@@ -148,6 +147,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		}
 		privUSK = InsertableUSK.create(uri);
 		pubUSK = privUSK.getUSK();
+		edition = pubUSK.suggestedEdition;
 	}
 
 	public BaseClientPutter getParent() {
