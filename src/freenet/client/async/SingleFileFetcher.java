@@ -522,7 +522,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	}
 
 	private static ClientGetState uskCreate(ClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws FetchException {
-		if(usk.suggestedEdition > 0) {
+		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = ctx.uskManager.lookup(usk);
 			if(edition <= usk.suggestedEdition) {
@@ -583,7 +583,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			this.returnBucket = returnBucket;
 		}
 
-		public void onFoundEdition(long l, USK usk) {
+		public void onFoundEdition(long l, USK newUSK) {
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == Math.abs(usk.suggestedEdition)) {
@@ -592,7 +592,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 							token, false, returnBucket);
 					sf.schedule();
 				} else {
-					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(l).getURI().addMetaStrings(metaStrings)), null);
+					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null);
 				}
 			} catch (FetchException e) {
 				cb.onFailure(e, null);

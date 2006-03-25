@@ -39,6 +39,8 @@ public class InsertableClientSSK extends ClientSSK {
 			throw new MalformedURLException();
 		if(uri.getDocName() == null || uri.getDocName().length() == 0)
 			throw new MalformedURLException("SSK URIs must have a document name (to avoid ambiguity)");
+		if(uri.getExtra() != null)
+			throw new MalformedURLException("Insertable SSK URIs must NOT have ,extra - inserting from a pubkey rather than the privkey perhaps?");
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getKeyVal()));
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);

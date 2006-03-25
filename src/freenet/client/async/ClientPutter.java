@@ -6,6 +6,7 @@ import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.keys.BaseClientKey;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
@@ -78,7 +79,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onFailure(e, this);
 	}
 
-	public void onEncode(ClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state) {
 		this.uri = key.getURI();
 		client.onGeneratedURI(uri, this);
 	}

@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
@@ -21,11 +22,13 @@ public class InserterContext {
 	public final ClientEventProducer eventProducer;
 	/** Interesting tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
+	public final USKManager uskManager;
 	
 	public InserterContext(BucketFactory bf, RandomSource random,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests) {
+			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager) {
 		this.bf = bf;
+		this.uskManager = uskManager;
 		this.random = random;
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
@@ -39,6 +42,7 @@ public class InserterContext {
 	}
 
 	public InserterContext(InserterContext ctx) {
+		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
 		this.random = ctx.random;
 		this.dontCompress = ctx.dontCompress;
@@ -53,6 +57,7 @@ public class InserterContext {
 	}
 
 	public InserterContext(InserterContext ctx, SimpleEventProducer producer) {
+		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
 		this.random = ctx.random;
 		this.dontCompress = ctx.dontCompress;

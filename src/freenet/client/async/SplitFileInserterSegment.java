@@ -7,6 +7,7 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
+import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
@@ -117,7 +118,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		parent.segmentFinished(this);
 	}
 	
-	public void onEncode(ClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		int x = sbi.token;
 		FreenetURI uri = key.getURI();

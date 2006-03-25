@@ -32,16 +32,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final SortedVectorByNumber[] priorities;
 	// we have one for inserts and one for requests
 	final boolean isInsertScheduler;
+	final boolean isSSKScheduler;
 	final RandomSource random;
 	private final HashMap allRequestsByClientRequest;
 	private final RequestStarter starter;
 	private final Node node;
 	
-	public ClientRequestScheduler(boolean forInserts, RandomSource random, RequestStarter starter, Node node) {
+	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node) {
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
 		this.isInsertScheduler = forInserts;
+		this.isSSKScheduler = forSSKs;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		allRequestsByClientRequest = new HashMap();
 	}

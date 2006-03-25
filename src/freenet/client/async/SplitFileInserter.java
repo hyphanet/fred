@@ -268,4 +268,8 @@ public class SplitFileInserter implements ClientPutState {
 			segments[i].cancel();
 	}
 
+	public void schedule() throws InserterException {
+		start();
+	}
+
 }

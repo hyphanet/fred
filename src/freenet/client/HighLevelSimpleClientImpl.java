@@ -145,11 +145,13 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				random, archiveManager, bucketFactory, globalEventProducer, cacheLocalRequests, node.uskManager);
+				random, archiveManager, bucketFactory, globalEventProducer, 
+				cacheLocalRequests, node.uskManager);
 	}
 
 	public InserterContext getInserterContext() {
 		return new InserterContext(bucketFactory, random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
-				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, globalEventProducer, cacheLocalRequests);
+				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
+				globalEventProducer, cacheLocalRequests, node.uskManager);
 	}
 }

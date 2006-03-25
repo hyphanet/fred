@@ -13,6 +13,7 @@ import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.events.SplitfileProgressEvent;
+import freenet.keys.BaseClientKey;
 import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
@@ -84,7 +85,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			fail(e);
 		}
 
-		public void onEncode(ClientKey key, ClientPutState state) {
+		public void onEncode(BaseClientKey key, ClientPutState state) {
 			if(metadata == null) {
 				// Don't have metadata yet
 				// Do have key
@@ -355,7 +356,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		fail(e);
 	}
 	
-	public void onEncode(ClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state) {
 		this.finalURI = key.getURI();
 		Logger.minor(this, "Got metadata key: "+finalURI);
 		cb.onGeneratedURI(finalURI, this);

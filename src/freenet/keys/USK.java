@@ -21,7 +21,7 @@ public class USK extends BaseClientKey {
 	 * I chose "-", because it makes it ludicrously easy to go from the USK form to the
 	 * SSK form, and we don't need to go vice versa.
 	 */
-	private static final String SEPARATOR = "-";
+	static protected final String SEPARATOR = "-";
 	/** Public key hash */
 	public final byte[] pubKeyHash;
 	/** Encryption key */
@@ -52,7 +52,7 @@ public class USK extends BaseClientKey {
 		this(uri.getRoutingKey(), uri.getCryptoKey(), uri.getExtra(), uri.getDocName(), uri.getSuggestedEdition());
 	}
 
-	private USK(byte[] pubKeyHash2, byte[] cryptoKey2, String siteName2, long suggestedEdition2) {
+	protected USK(byte[] pubKeyHash2, byte[] cryptoKey2, String siteName2, long suggestedEdition2) {
 		this.pubKeyHash = pubKeyHash2;
 		this.cryptoKey = cryptoKey2;
 		this.siteName = siteName2;

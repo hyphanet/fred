@@ -72,7 +72,7 @@ public class USKFetcher implements ClientGetState {
 	
 	/** Cancelled? */
 	private boolean cancelled;
-
+	
 	final ClientRequester parent;
 	
 	public synchronized boolean addCallback(USKFetcherCallback cb) {
@@ -169,6 +169,8 @@ public class USKFetcher implements ClientGetState {
 	/** Keep going forever? */
 	private final boolean backgroundPoll;
 	
+	private boolean started = false;
+	
 	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever) {
 		this.parent = parent;
 		this.origUSK = origUSK;
@@ -187,13 +189,15 @@ public class USKFetcher implements ClientGetState {
 		Logger.minor(this, "DNF: "+att);
 		boolean finished = false;
 		synchronized(this) {
+			if(completed || cancelled) return;
 			lastFetchedEdition = Math.max(lastFetchedEdition, att.number);
 			runningAttempts.remove(att);
 			if(runningAttempts.isEmpty()) {
 				long curLatest = uskManager.lookup(origUSK);
 				Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+minFailures));
-				if(curLatest + minFailures >= lastFetchedEdition) {
+				if(started) {
 					finished = true;
+					completed = true;
 				}
 			} else 
 				Logger.minor(this, "Remaining: "+runningAttempts.size());
@@ -206,6 +210,7 @@ public class USKFetcher implements ClientGetState {
 	private void finishSuccess() {
 		if(backgroundPoll) {
 			synchronized(this) {
+				started = false; // don't finish before have rescheduled
 				long valAtEnd = uskManager.lookup(origUSK);
 				if(valAtEnd > valueAtSchedule) {
 					// Have advanced.
@@ -255,6 +260,7 @@ public class USKFetcher implements ClientGetState {
 	void onSuccess(USKAttempt att, boolean dontUpdate) {
 		LinkedList l = null;
 		synchronized(this) {
+			if(completed || cancelled) return;
 			runningAttempts.remove(att);
 			long curLatest = att.number;
 			if(!dontUpdate)
@@ -353,6 +359,7 @@ public class USKFetcher implements ClientGetState {
 			for(long i=startPoint;i<startPoint+minFailures;i++)
 				add(i);
 			attempts = (USKAttempt[]) runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
+			started = true;
 		}
 		if(!cancelled)
 			for(int i=0;i<attempts.length;i++)

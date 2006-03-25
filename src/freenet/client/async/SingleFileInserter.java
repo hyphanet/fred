@@ -1,6 +1,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 import freenet.client.InsertBlock;
 import freenet.client.InserterContext;
@@ -8,6 +9,7 @@ import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.StartedCompressionEvent;
+import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
@@ -96,12 +98,12 @@ class SingleFileInserter implements ClientPutState {
 		
 		long origSize = data.size();
 		String type = block.desiredURI.getKeyType().toUpperCase();
-		if(type.equals("SSK") || type.equals("KSK")) {
+		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
 			blockSize = SSKBlock.DATA_LENGTH;
 		} else if(type.equals("CHK")) {
 			blockSize = CHKBlock.DATA_LENGTH;
 		} else {
-			throw new InserterException(InserterException.INVALID_URI);
+			throw new InserterException(InserterException.INVALID_URI, "Unknown key type: "+type, null);
 		}
 		
 		Compressor bestCodec = null;
@@ -162,7 +164,8 @@ class SingleFileInserter implements ClientPutState {
 		if((block.clientMetadata == null || block.clientMetadata.isTrivial())) {
 			if(data.size() < blockSize) {
 				// Just insert it
-				SingleBlockInserter bi = new SingleBlockInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true);
+				ClientPutState bi =
+					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true);
 				cb.onTransition(this, bi);
 				bi.schedule();
 				cb.onBlockSetFinished(this);
@@ -189,7 +192,7 @@ class SingleFileInserter implements ClientPutState {
 				} catch (IOException e) {
 					throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 				}
-				SingleBlockInserter metaPutter = new SingleBlockInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true);
+				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true);
 				mcb.addURIGenerator(metaPutter);
 				mcb.add(dataPutter);
 				cb.onTransition(this, mcb);
@@ -219,6 +222,22 @@ class SingleFileInserter implements ClientPutState {
 		return;
 	}
 	
+	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
+			InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
+			boolean addToParent) throws InserterException {
+		if(uri.getKeyType().equals("USK")) {
+			try {
+				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
+					getCHKOnly, addToParent);
+			} catch (MalformedURLException e) {
+				throw new InserterException(InserterException.INVALID_URI, e, null);
+			}
+		} else {
+			return new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
+				getCHKOnly, addToParent);
+		}
+	}
+
 	/**
 	 * When we get the metadata, start inserting it to our target key.
 	 * When we have inserted both the metadata and the splitfile,
@@ -323,7 +342,7 @@ class SingleFileInserter implements ClientPutState {
 			return parent;
 		}
 
-		public void onEncode(ClientKey key, ClientPutState state) {
+		public void onEncode(BaseClientKey key, ClientPutState state) {
 			if(state == metadataPutter)
 				cb.onEncode(key, this);
 		}
@@ -346,6 +365,10 @@ class SingleFileInserter implements ClientPutState {
 			}
 			cb.onBlockSetFinished(this);
 		}
+
+		public void schedule() throws InserterException {
+			// Do nothing
+		}
 		
 	}
 
@@ -355,5 +378,9 @@ class SingleFileInserter implements ClientPutState {
 
 	public void cancel() {
 		cancelled = true;
+	}
+
+	public void schedule() throws InserterException {
+		start();
 	}
 }

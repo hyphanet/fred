@@ -5,6 +5,7 @@ import java.util.ListIterator;
 
 import freenet.client.InserterException;
 import freenet.client.Metadata;
+import freenet.keys.BaseClientKey;
 import freenet.keys.ClientKey;
 import freenet.support.Logger;
 
@@ -90,7 +91,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		return parent;
 	}
 
-	public void onEncode(ClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state) {
 		synchronized(this) {
 			if(state != generator) return;
 		}
@@ -132,6 +133,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			if(!started) return;
 		}
 		cb.onBlockSetFinished(this);
+	}
+
+	public void schedule() throws InserterException {
+		// Do nothing
 	}
 
 }

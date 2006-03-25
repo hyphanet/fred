@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import freenet.client.InserterException;
+
 /**
  * ClientPutState
  * 
@@ -11,4 +13,5 @@ public interface ClientPutState {
 
 	public abstract void cancel();
 
+	public abstract void schedule() throws InserterException;
 }

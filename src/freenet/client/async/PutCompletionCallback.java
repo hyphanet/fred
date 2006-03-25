@@ -2,7 +2,9 @@ package freenet.client.async;
 
 import freenet.client.InserterException;
 import freenet.client.Metadata;
+import freenet.keys.BaseClientKey;
 import freenet.keys.ClientKey;
+import freenet.keys.USK;
 
 /**
  * Callback called when part of a put request completes.
@@ -13,7 +15,7 @@ public interface PutCompletionCallback {
 	
 	public void onFailure(InserterException e, ClientPutState state);
 
-	public void onEncode(ClientKey key, ClientPutState state);
+	public void onEncode(BaseClientKey usk, ClientPutState state);
 	
 	public void onTransition(ClientPutState oldState, ClientPutState newState);
 	

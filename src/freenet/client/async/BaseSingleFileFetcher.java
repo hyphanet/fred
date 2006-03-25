@@ -84,8 +84,7 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 	}
 
 	public boolean ignoreStore() {
-		// TODO Auto-generated method stub
-		return false;
+		return ctx.ignoreStore;
 	}
 
 	public synchronized void cancel() {

@@ -851,28 +851,28 @@ public class Node {
         
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
 		chkRequestThrottle = new RequestThrottle(5000, 2.0F);
-		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "Request starter ("+portNumber+")");
-		chkFetchScheduler = new ClientRequestScheduler(false, random, chkRequestStarter, this);
+		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "CHK Request starter ("+portNumber+")");
+		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, this);
 		chkRequestStarter.setScheduler(chkFetchScheduler);
 		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		chkInsertThrottle = new RequestThrottle(10000, 2.0F);
-		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "Insert starter ("+portNumber+")");
-		chkPutScheduler = new ClientRequestScheduler(true, random, chkInsertStarter, this);
+		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "CHK Insert starter ("+portNumber+")");
+		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, this);
 		chkInsertStarter.setScheduler(chkPutScheduler);
 		chkInsertStarter.start();
 
 		sskRequestThrottle = new RequestThrottle(5000, 2.0F);
-		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "Request starter ("+portNumber+")");
-		sskFetchScheduler = new ClientRequestScheduler(false, random, sskRequestStarter, this);
+		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "SSK Request starter ("+portNumber+")");
+		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, this);
 		sskRequestStarter.setScheduler(sskFetchScheduler);
 		sskRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		sskInsertThrottle = new RequestThrottle(10000, 2.0F);
-		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "Insert starter ("+portNumber+")");
-		sskPutScheduler = new ClientRequestScheduler(true, random, sskInsertStarter, this);
+		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "SSK Insert starter ("+portNumber+")");
+		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, this);
 		sskInsertStarter.setScheduler(sskPutScheduler);
 		sskInsertStarter.start();
 
