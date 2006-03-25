@@ -37,17 +37,17 @@ public class GenericReadFilterCallback implements FilterCallback {
 			return null;
 		}
 		// mailto: not supported yet - FIXME what to do with it? what queries are allowed? can it possibly hurt us? how to construct safely? etc
-		if (path.startsWith("/") && path.substring(1).indexOf("/") == -1) {
+		
+		HTTPRequest req = new HTTPRequest(uri);
+		if (path.equals("/") && req.isParameterSet("newbookmark")) {
 			// allow links to the root to add bookmarks
-			HTTPRequest req = new HTTPRequest(uri);
-			
 			String bookmark_key = req.getParam("newbookmark");
 			String bookmark_desc = req.getParam("desc");
 			
 			bookmark_key = HTMLEncoder.encode(bookmark_key);
 			bookmark_desc = HTMLEncoder.encode(bookmark_desc);
 			
-			return path+"?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
+			return "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
 		} else if(path.startsWith("/")) {
 			// Try to make it into a FreenetURI
 			try {
@@ -62,7 +62,6 @@ public class GenericReadFilterCallback implements FilterCallback {
 			// FIXME resolve it
 			// FIXME Note that we allow links to / inlines from fproxy services.
 			// This is okay because we don't allow forms.
-			HTTPRequest req = new HTTPRequest(uri);
 			return finishProcess(req, overrideType, path);
 		}
 		Logger.normal(this, "Unrecognized URI, dropped: "+uri);
