@@ -50,10 +50,8 @@ public abstract class FCPMessage {
 			return new ClientPutDiskDirMessage(fs);
 		if(name.equals(ClientPutComplexDirMessage.name))
 			return new ClientPutComplexDirMessage(fs, bfTemp, bfPersistent);
-		// FIXME : Disable SubscribeUSKMessage until class is present in SVN
-		//         allowing build to work
-		//if(name.equals(SubscribeUSKMessage.name))
-			//return new SubscribeUSKMessage(fs);
+		if(name.equals(SubscribeUSKMessage.name))
+			return new SubscribeUSKMessage(fs);
 		if(name.equals("Void"))
 			return null;
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null);
