@@ -53,8 +53,9 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 
 	/** Try again - returns true if we can retry */
 	protected boolean retry() {
+		retryCount++;
+		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once)
 		if(retryCount <= maxRetries || maxRetries == -1) {
-			retryCount++;
 			schedule();
 			return true;
 		}

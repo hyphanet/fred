@@ -1,7 +1,6 @@
 package freenet.client.async;
 
 import java.io.IOException;
-import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 
@@ -153,13 +152,13 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		} else
 			consecutiveRNFs = 0;
 		Logger.minor(this, "Failed: "+e);
+		retries++;
 		if(retries > ctx.maxInsertRetries && ctx.maxInsertRetries != -1) {
 			if(errors.isOneCodeOnly())
 				fail(new InserterException(errors.getFirstCode()));
 			else
 				fail(new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, errors, getURI()));
 		}
-		retries++;
 		try {
 			getScheduler(encode()).register(this);
 		} catch (InserterException e1) {
