@@ -131,7 +131,7 @@ public class USKManager {
 		synchronized(this) {
 			Long l = (Long) latestVersionByClearUSK.get(clear);
 			Logger.minor(this, "Old value: "+l);
-			if(!(l != null && l.longValue() > number)) {
+			if(l == null || number > l.longValue()) {
 				l = new Long(number);
 				latestVersionByClearUSK.put(clear, l);
 				Logger.minor(this, "Put "+number);
@@ -152,13 +152,19 @@ public class USKManager {
 	 */
 	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch) {
 		USKFetcher sched = null;
+		long ed = origUSK.suggestedEdition;
+		long curEd;
 		synchronized(this) {
+			curEd = lookup(origUSK);
 			USK clear = origUSK.clearCopy();
 			USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
 			if(callbacks == null)
 				callbacks = new USKCallback[1];
-			else
-				callbacks = new USKCallback[callbacks.length+1];
+			else {
+				USKCallback[] newCallbacks = new USKCallback[callbacks.length+1];
+				System.arraycopy(callbacks, 0, newCallbacks, 0, callbacks.length);
+				callbacks = newCallbacks;
+			}
 			callbacks[callbacks.length-1] = cb;
 			subscribersByClearUSK.put(clear, callbacks);
 			if(runBackgroundFetch) {
@@ -171,6 +177,8 @@ public class USKManager {
 				f.addSubscriber(cb);
 			}
 		}
+		if(curEd > ed)
+			cb.onFoundEdition(curEd, origUSK.copy(curEd));
 		if(sched != null)
 			sched.schedule();
 	}

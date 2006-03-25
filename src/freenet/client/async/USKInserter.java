@@ -105,12 +105,14 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			finished = true;
 			sbi = null;
 		}
-		FreenetURI targetURI = pubUSK.copy(edition).getURI();
+		FreenetURI targetURI = pubUSK.getSSK(edition).getURI();
 		FreenetURI realURI = ((SingleBlockInserter)state).getURI();
 		if(!targetURI.equals(realURI))
 			Logger.error(this, "URI should be "+targetURI+" actually is "+realURI);
-		else
+		else {
 			Logger.minor(this, "URI should be "+targetURI+" actually is "+realURI);
+			ctx.uskManager.update(pubUSK, edition);
+		}
 		// FINISHED!!!! Yay!!!
 	}
 
@@ -145,7 +147,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			parent.addMustSucceedBlocks(1);
 			parent.notifyClients();
 		}
-		privUSK = InsertableUSK.create(uri);
+		privUSK = InsertableUSK.createInsertable(uri);
 		pubUSK = privUSK.getUSK();
 		edition = pubUSK.suggestedEdition;
 	}

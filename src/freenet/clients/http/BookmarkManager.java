@@ -56,7 +56,7 @@ public class BookmarkManager {
 				
 				try {
 					FreenetURI furi = new FreenetURI(i.getKey());
-					USK usk = new USK(furi);
+					USK usk = USK.create(furi);
 					
 					if (usk.equals(key, false)) {
 						i.setKey(key.getURI());
@@ -90,7 +90,7 @@ public class BookmarkManager {
 			if (!i.getKeyType().equals("USK")) continue;
 			
 			try {
-				USK u = new USK(i.key);
+				USK u = USK.create(i.key);
 				this.node.uskManager.unsubscribe(u, this.uskcb, true);
 			} catch (MalformedURLException mue) {
 				
@@ -103,7 +103,7 @@ public class BookmarkManager {
 		this.bookmarks.add(b);
 		if (b.getKeyType().equals("USK")) {
 			try {
-				USK u = new USK(b.key);
+				USK u = USK.create(b.key);
 				this.node.uskManager.subscribe(u, this.uskcb, true);
 			} catch (MalformedURLException mue) {
 				
@@ -114,7 +114,7 @@ public class BookmarkManager {
 	public void removeBookmark(Bookmark b) {
 		if (b.getKeyType().equals("USK")) {
 			try {
-				USK u = new USK(b.key);
+				USK u = USK.create(b.key);
 				this.node.uskManager.subscribe(u, this.uskcb, true);
 			} catch (MalformedURLException mue) {
 			

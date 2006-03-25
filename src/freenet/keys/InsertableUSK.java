@@ -26,11 +26,13 @@ public class InsertableUSK extends USK {
 	public final DSAPrivateKey privKey;
 	public final DSAGroup group;
 	
-	public static InsertableUSK create(FreenetURI uri) throws MalformedURLException {
+	public static InsertableUSK createInsertable(FreenetURI uri) throws MalformedURLException {
 		if(!uri.getKeyType().equalsIgnoreCase("USK"))
 			throw new MalformedURLException();
 		if(uri.getDocName() == null || uri.getDocName().length() == 0)
 			throw new MalformedURLException("USK URIs must have a document name (to avoid ambiguity)");
+		if(uri.getExtra() != null)
+			throw new MalformedURLException("Insertable SSK URIs must NOT have ,extra - inserting from a pubkey rather than the privkey perhaps?");
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getKeyVal()));
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);

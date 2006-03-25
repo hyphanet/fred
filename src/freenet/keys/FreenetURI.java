@@ -6,6 +6,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -58,10 +59,33 @@ import freenet.support.Logger;
  */
 public class FreenetURI {
 
-	private String keyType, docName;
-	private String[] metaStr;
-	private byte[] routingKey, cryptoKey, extra;
-	private long suggestedEdition; // for USKs
+	private final String keyType, docName;
+	private final String[] metaStr;
+	private final byte[] routingKey, cryptoKey, extra;
+	private final long suggestedEdition; // for USKs
+
+	public boolean equals(Object o) {
+		if(!(o instanceof FreenetURI))
+			return false;
+		else {
+			FreenetURI f = (FreenetURI)o;
+			if(!keyType.equals(f.keyType)) return false;
+			if(keyType.equals("USK")) {
+				if(!(suggestedEdition == f.suggestedEdition)) return false;
+			}
+			if(docName == null ^ f.docName == null) return false;
+			if(metaStr == null ^ f.metaStr == null) return false;
+			if(routingKey == null ^ f.routingKey == null) return false;
+			if(cryptoKey == null ^ f.cryptoKey == null) return false;
+			if(extra == null ^ f.extra == null) return false;
+			if(docName != null && !docName.equals(f.docName)) return false;
+			if(metaStr != null && !Arrays.equals(metaStr, f.metaStr)) return false;
+			if(routingKey != null && !Arrays.equals(routingKey, f.routingKey)) return false;
+			if(cryptoKey != null && !Arrays.equals(cryptoKey, f.cryptoKey)) return false;
+			if(extra != null && !Arrays.equals(extra, f.extra)) return false;
+			return true;
+		}
+	}
 
 	public Object clone() {
 		return new FreenetURI(this);
@@ -76,15 +100,22 @@ public class FreenetURI {
 		if(uri.routingKey != null) {
 			routingKey = new byte[uri.routingKey.length];
 			System.arraycopy(uri.routingKey, 0, routingKey, 0, routingKey.length);
+		} else {
+			routingKey = null;
 		}
 		if(uri.cryptoKey != null) {
 			cryptoKey = new byte[uri.cryptoKey.length];
 			System.arraycopy(uri.cryptoKey, 0, cryptoKey, 0, cryptoKey.length);
+		} else {
+			cryptoKey = null;
 		}
 		if(uri.extra != null) {
 			extra = new byte[uri.extra.length];
 			System.arraycopy(uri.extra, 0, extra, 0, extra.length);
+		} else {
+			extra = null;
 		}
+		this.suggestedEdition = uri.suggestedEdition;
 	}
 	
 	public FreenetURI(String keyType, String docName) {
@@ -129,6 +160,7 @@ public class FreenetURI {
 		this.routingKey = routingKey;
 		this.cryptoKey = cryptoKey;
 		this.extra = extra2;
+		this.suggestedEdition = -1;
 	}
 
 	public FreenetURI(
@@ -178,7 +210,6 @@ public class FreenetURI {
 		}
 		boolean b = false;
 		if("SSK".equals(keyType) || (b="USK".equals(keyType))) {
-			// docName not necessary, nor is it supported, for CHKs.
 			
 			if(sv.isEmpty())
 				throw new MalformedURLException("No docname");
@@ -192,27 +223,42 @@ public class FreenetURI {
 					e1.initCause(e);
 					throw e1;
 				}
-			}
+			} else
+				suggestedEdition = -1;
+		} else if(keyType.equalsIgnoreCase("KSK")) {
+			docName = URI;
+			metaStr = null;
+			routingKey = null;
+			cryptoKey = null;
+			extra = null;
+			suggestedEdition = -1;
+			return;
+		} else {
+			// docName not necessary, nor is it supported, for CHKs.
+			docName = null;
+			suggestedEdition = -1;
 		}
 		
 		if (!sv.isEmpty()) {
 			metaStr = new String[sv.size()];
 			for (int i = 0; i < metaStr.length; i++)
 				metaStr[i] = (String) sv.elementAt(metaStr.length - 1 - i);
+		} else {
+			metaStr = null;
 		}
 
-		if(keyType.equalsIgnoreCase("KSK")) {
-			docName = URI;
-			return;
-		}
 		
 		// URI now contains: routingKey[,cryptoKey][,metaInfo]
 		StringTokenizer st = new StringTokenizer(URI, ",");
 		try {
 			if (st.hasMoreTokens()) {
 				routingKey = Base64.decode(st.nextToken());
+			} else {
+				routingKey = cryptoKey = extra = null;
+				return;
 			}
 			if (!st.hasMoreTokens()) {
+				cryptoKey = extra = null;
 				return;
 			}
 
@@ -220,6 +266,7 @@ public class FreenetURI {
 			String t = st.nextToken();
 			cryptoKey = Base64.decode(t);
 			if (!st.hasMoreTokens()) {
+				extra = null;
 				return;
 			}
 			extra = Base64.decode(st.nextToken());
@@ -237,6 +284,7 @@ public class FreenetURI {
 		this.extra = extra;
 		this.docName = siteName;
 		this.suggestedEdition = suggestedEdition2;
+		metaStr = null;
 	}
 
 	public void decompose() {

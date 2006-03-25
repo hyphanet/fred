@@ -17,7 +17,7 @@ public abstract class BaseClientKey {
 		if(origURI.getKeyType().equals("KSK"))
 			return ClientKSK.create(origURI.getDocName());
 		if(origURI.getKeyType().equals("USK"))
-			return new USK(origURI);
+			return USK.create(origURI);
 		throw new UnsupportedOperationException("Unknown keytype from "+origURI);
 	}
 	

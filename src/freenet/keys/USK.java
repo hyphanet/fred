@@ -47,11 +47,12 @@ public class USK extends BaseClientKey {
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
-	
-	public USK(FreenetURI uri) throws MalformedURLException {
-		this(uri.getRoutingKey(), uri.getCryptoKey(), uri.getExtra(), uri.getDocName(), uri.getSuggestedEdition());
-	}
 
+	public static USK create(FreenetURI uri) throws MalformedURLException {
+		if(!uri.getKeyType().equals("USK")) throw new MalformedURLException("Not a USK");
+		return new USK(uri.getRoutingKey(), uri.getCryptoKey(), uri.getExtra(), uri.getDocName(), uri.getSuggestedEdition());
+	}
+	
 	protected USK(byte[] pubKeyHash2, byte[] cryptoKey2, String siteName2, long suggestedEdition2) {
 		this.pubKeyHash = pubKeyHash2;
 		this.cryptoKey = cryptoKey2;
