@@ -73,6 +73,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		buf.append("<div class=\"infobox\">\n");
 		buf.append("<h2>My Connections</h2>\n");
+		buf.append("<form action\".\" method=\"post\">\n");
 		buf.append("<table class=\"darknet_connections\">\n");
 		buf.append("<tr><th>Status</th><th>Name</th><th>Address</th><th>Version</th><th>Location</th><th>Backoff</th><th>Backoff length</th><th></th></tr>\n");
 
@@ -111,12 +112,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			row[4] = new Double(pn.getLocation().getValue());
 			row[5] = new Long(Math.max(backedOffUntil - now, 0));
 			row[6] = new Long(backoffLength);
-			row[7] = new String("<form action=\".\" method=\"post\">\n"
-					+"<div>"
-					+"<input type=\"hidden\" name=\"node\" value=\""+pn.hashCode()+"\" />"
-					+"<input type=\"submit\" name=\"disconnect\" value=\"Disconnect\" />\n"
-					+"</div>\n"
-					+"</form>\n");
+			row[7] = new String("<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />");
 		}
 
 		// Sort array
@@ -144,6 +140,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf.append("</td></tr>");
 		}
 		buf.append("</table>");
+		buf.append("<input type=\"submit\" name =\"disconnect\" value=\"Disconnect from Selected Peers\" />");
+		buf.append("</form>");
 		buf.append("</div>");
 		
 		// new connection box
@@ -208,7 +206,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			} else if (reftext.length() > 0) {
 				// read directly from post data
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
-				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[\\w,\\.:\\-_]+)|(?:End)).*(?:\\r?\\n)*", "$1\n");
+				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[\\w,\\.:\\-_\\ ]+)|(?:End)).*(?:\\r?\\n)*", "$1\n");
+				if (ref.endsWith("\n")) {
+					ref = ref.substring(0, ref.length() - 1);
+				}
 			} else {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
 				return;
@@ -235,14 +236,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			if(!this.node.addDarknetConnection(pn)) {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to add the given reference as a peer. Please <a href=\".\">Try again</a>.");
 			}
-		} else if (request.getParam("disconnect").length() > 0) {
-			int hashcode = Integer.decode(request.getParam("node")).intValue();
+		} else if (request.isParameterSet("disconnect")) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			for(int i = 0; i < peerNodes.length; i++) {
-				if (hashcode == peerNodes[i].hashCode()) {
+				if (request.isParameterSet("delete_node_"+peerNodes[i].hashCode())) {
 					this.node.removeDarknetConnection(peerNodes[i]);
-					break;
 				}
 			}
 		}
