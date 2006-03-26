@@ -96,6 +96,10 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 				} else {
 					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Cannot be both a file and a directory: "+before, identifier);
 				}
+			} else {
+				o = new HashMap();
+				byName.put(before, o);
+				addFile((HashMap)o, after, f);
 			}
 		}
 	}

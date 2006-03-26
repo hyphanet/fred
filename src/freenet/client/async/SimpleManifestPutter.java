@@ -14,7 +14,6 @@ import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
-import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;

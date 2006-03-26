@@ -408,7 +408,7 @@ public class Metadata implements Cloneable {
 		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
 			String key = (String) i.next();
 			if(key.indexOf('/') != -1)
-				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests)");
+				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests): "+key);
 			count++;
 			Object o = dir.get(key);
 			if(o instanceof byte[]) {
