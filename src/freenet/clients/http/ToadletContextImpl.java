@@ -225,8 +225,10 @@ public class ToadletContextImpl implements ToadletContext {
 					
 					Toadlet t = container.findToadlet(uri);
 					
-					if(t == null)
+					if(t == null) {
 						ctx.sendNoToadletError(shouldDisconnect);
+						break;
+					}
 					
 					if(method.equals("GET")) {
 						try {

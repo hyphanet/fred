@@ -534,7 +534,6 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					new SingleFileFetcher(parent, myCB, clientMetadata, usk.getSSK(usk.suggestedEdition),
 							metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet,
 							token, false, returnBucket);
-				sf.schedule();
 				// Background fetch
 				ctx.uskManager.startTemporaryBackgroundFetcher(usk);
 				return sf;
