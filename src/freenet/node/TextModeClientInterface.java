@@ -117,40 +117,40 @@ public class TextModeClientInterface implements Runnable {
 	private void printHeader(OutputStream s) throws IOException {
     	StringBuffer sb = new StringBuffer();
     	
-        sb.append("Freenet 0.7 Trivial Node Test Interface\n");
-        sb.append("---------------------------------------\n");
+        sb.append("Freenet 0.7 Trivial Node Test Interface\r\n");
+        sb.append("---------------------------------------\r\n");
         sb.append("Build "+Version.buildNumber());
-        sb.append("Enter one of the following commands:\n");
-        sb.append("GET:<Freenet key> - Fetch a key\n");
-        sb.append("PUT:\n<text, until a . on a line by itself> - Insert the document and return the key.\n");
-        sb.append("PUT:<text> - Put a single line of text to a CHK and return the key.\n");
-        sb.append("GETCHK:\n<text, until a . on a line by itself> - Get the key that would be returned if the document was inserted.\n");
-        sb.append("GETCHK:<text> - Get the key that would be returned if the line was inserted.\n");
-        sb.append("PUTFILE:<filename> - Put a file from disk.\n");
-        sb.append("GETFILE:<filename> - Fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.\n");
-        sb.append("GETCHKFILE:<filename> - Get the key that would be returned if we inserted the file.\n");
-        sb.append("PUTDIR:<path>[#<defaultfile>] - Put the entire directory from disk.\n");
-        sb.append("GETCHKDIR:<path>[#<defaultfile>] - Get the key that would be returned if we'd put the entire directory from disk.\n");
-        sb.append("MAKESSK - Create an SSK keypair.\n");
-        sb.append("PUTSSK:<insert uri>;<url to redirect to> - Insert an SSK redirect to a file already inserted.\n");
-        sb.append("PUTSSKDIR:<insert uri>#<path>[#<defaultfile>] - Insert an entire directory to an SSK.\n");
-        sb.append("PLUGLOAD: - Load plugin. (use \"PLUGLOAD:?\" for more info)\n");
-        //sb.append("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.\n");
-        sb.append("PLUGLIST - List all loaded plugins.\n");
-        sb.append("PLUGKILL: <pluginID> - Unload the plugin with the given ID (see PLUGLIST).\n");
-//        sb.append("PUBLISH:<name> - create a publish/subscribe stream called <name>\n");
-//        sb.append("PUSH:<name>:<text> - publish a single line of text to the stream named\n");
-//        sb.append("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key\n");
-        sb.append("CONNECT:<filename|URL> - connect to a node from its ref in a file/url.\n");
-        sb.append("CONNECT:\n<noderef including an End on a line by itself> - enter a noderef directly.\n");
-        sb.append("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port or name\n");
-        sb.append("NAME:<new node name> - change the node's name.\n");
-//        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\n");
-//        sb.append("SAY:<text> - send text to the last created/pushed stream\n");
-        sb.append("STATUS - display some status information on the node including its reference and connections.\n");
-        sb.append("QUIT - exit the program\n");
+        sb.append("Enter one of the following commands:\r\n");
+        sb.append("GET:<Freenet key> - Fetch a key\r\n");
+        sb.append("PUT:\r\n<text, until a . on a line by itself> - Insert the document and return the key.\r\n");
+        sb.append("PUT:<text> - Put a single line of text to a CHK and return the key.\r\n");
+        sb.append("GETCHK:\r\n<text, until a . on a line by itself> - Get the key that would be returned if the document was inserted.\r\n");
+        sb.append("GETCHK:<text> - Get the key that would be returned if the line was inserted.\r\n");
+        sb.append("PUTFILE:<filename> - Put a file from disk.\r\n");
+        sb.append("GETFILE:<filename> - Fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.\r\n");
+        sb.append("GETCHKFILE:<filename> - Get the key that would be returned if we inserted the file.\r\n");
+        sb.append("PUTDIR:<path>[#<defaultfile>] - Put the entire directory from disk.\r\n");
+        sb.append("GETCHKDIR:<path>[#<defaultfile>] - Get the key that would be returned if we'd put the entire directory from disk.\r\n");
+        sb.append("MAKESSK - Create an SSK keypair.\r\n");
+        sb.append("PUTSSK:<insert uri>;<url to redirect to> - Insert an SSK redirect to a file already inserted.\r\n");
+        sb.append("PUTSSKDIR:<insert uri>#<path>[#<defaultfile>] - Insert an entire directory to an SSK.\r\n");
+        sb.append("PLUGLOAD: - Load plugin. (use \"PLUGLOAD:?\" for more info)\r\n");
+        //sb.append("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.\r\n");
+        sb.append("PLUGLIST - List all loaded plugins.\r\n");
+        sb.append("PLUGKILL: <pluginID> - Unload the plugin with the given ID (see PLUGLIST).\r\n");
+//        sb.append("PUBLISH:<name> - create a publish/subscribe stream called <name>\r\n");
+//        sb.append("PUSH:<name>:<text> - publish a single line of text to the stream named\r\n");
+//        sb.append("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key\r\n");
+        sb.append("CONNECT:<filename|URL> - connect to a node from its ref in a file/url.\r\n");
+        sb.append("CONNECT:\r\n<noderef including an End on a line by itself> - enter a noderef directly.\r\n");
+        sb.append("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port or name\r\n");
+        sb.append("NAME:<new node name> - change the node's name.\r\n");
+//        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\r\n");
+//        sb.append("SAY:<text> - send text to the last created/pushed stream\r\n");
+        sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
+        sb.append("QUIT - exit the program\r\n");
         if(n.testnetEnabled) {
-        	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\n");
+        	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         
         s.write(sb.toString().getBytes());
         }
@@ -214,15 +214,15 @@ public class TextModeClientInterface implements Runnable {
 					outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
 						return;
 				}
-				outsb.append("Data:\n");
+				outsb.append("Data:\r\n");
 				outsb.append(new String(dataBytes));
 			} catch (FetchException e) {
-				outsb.append("Error: "+e.getMessage()+"\n");
+				outsb.append("Error: "+e.getMessage()+"\r\n");
             	if(e.getMode() == e.SPLITFILE_ERROR && e.errorCodes != null) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
-            		outsb.append("Permanent redirect: "+e.newURI+"\n");
+            		outsb.append("Permanent redirect: "+e.newURI+"\r\n");
 			}
         } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
@@ -285,7 +285,7 @@ public class TextModeClientInterface implements Runnable {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
-            		outsb.append("Permanent redirect: "+e.newURI+"\n");
+            		outsb.append("Permanent redirect: "+e.newURI+"\r\n");
 			}
         } else if(uline.startsWith("QUIT")) {
             n.exit();
@@ -437,11 +437,11 @@ public class TextModeClientInterface implements Runnable {
             	// FIXME depends on CHK's still being renamable
                 //uri = uri.setDocName(f.getName());
             	
-                outsb.append("URI: "+uri+"\n");
+                outsb.append("URI: "+uri+"\r\n");
             	long endTime = System.currentTimeMillis();
                 long sz = f.length();
                 double rate = 1000.0 * sz / (endTime-startTime);
-                outsb.append("Upload rate: "+rate+" bytes / second\n");
+                outsb.append("Upload rate: "+rate+" bytes / second\r\n");
             } catch (FileNotFoundException e1) {
                 outsb.append("File not found");
             } catch (InserterException e) {
@@ -467,9 +467,9 @@ public class TextModeClientInterface implements Runnable {
         	outsb.append("Request URI: "+key.getURI().toString(false));
         	FreenetURI insertURI = key.getInsertURI().setDocName("testsite");
         	String fixedInsertURI = insertURI.toString(false);
-        	outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\n"+fixedInsertURI);
-        	outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\nPUTSSKDIR:"+fixedInsertURI+"#directoryToUpload/");
-        	outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\n"+insertURI.addMetaStrings(new String[] { "" }).toString(false));
+        	outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\r\n"+fixedInsertURI);
+        	outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\r\nPUTSSKDIR:"+fixedInsertURI+"#directoryToUpload/");
+        	outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\r\n"+insertURI.addMetaStrings(new String[] { "" }).toString(false));
         } else if(uline.startsWith("PUTSSK:")) {
         	String cmd = line.substring("PUTSSK:".length());
         	cmd = cmd.trim();
@@ -575,7 +575,7 @@ public class TextModeClientInterface implements Runnable {
         	if(uline.length() > 0)
         		printHeader(out);
         }
-        outsb.append("\n");
+        outsb.append("\r\n");
         out.write(outsb.toString().getBytes());
         out.flush();
     }
@@ -680,7 +680,7 @@ public class TextModeClientInterface implements Runnable {
                     }
                 }
             }
-            sb.append(line).append('\n');
+            sb.append(line).append("\r\n");
             if(breakflag) break;
         }
         return sb.toString();
@@ -691,7 +691,7 @@ public class TextModeClientInterface implements Runnable {
      */
     private void connect(String content) {
         SimpleFieldSet fs;
-        System.out.println("Connecting to:\n"+content);
+        System.out.println("Connecting to:\r\n"+content);
         try {
             fs = new SimpleFieldSet(content, false);
         } catch (IOException e) {
