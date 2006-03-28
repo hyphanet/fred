@@ -122,9 +122,9 @@ public class ConfigToadlet extends Toadlet {
 				}
 				*/
 				
-				buf.append("<li><span class\"configdesc\">");
+				buf.append("<li><span class=\"configdesc\">");
 				buf.append(o[j].getShortDesc());
-				buf.append("</span><span class=\"configkey\">");
+				buf.append("</span> <span class=\"configkey\">");
 				buf.append(sc[i].getPrefix()+"."+configName+"</span><input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
 						" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+o[j].getValueString()+"\" /></li>\n");
 			}
