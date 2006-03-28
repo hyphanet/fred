@@ -1,6 +1,6 @@
 /* overall settings */
 
-p, span, div, td, li {
+p, span, div, td, th, li, h1, h2, h3, h4, h5 {
 	font-family: Arial;
 	font-weight: normal;
 	font-size: 11pt;
@@ -78,7 +78,6 @@ body {
 
 #content {
 	float: left;
-	max-width: 80%;
 }
 
 a {
