@@ -22,6 +22,7 @@ import freenet.config.SubConfig;
 import freenet.node.Node.NodeInitException;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * Testnet handler.
@@ -143,6 +144,15 @@ public class TestnetHandler implements Runnable {
 					Logger.minor(this, "Sending status");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					osw.write(node.getStatus());
+					osw.close();
+				} else if(command.equalsIgnoreCase("PEERS")) {
+					Logger.minor(this, "Sending references");
+					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
+					osw.write("My ref:\n\n");
+					SimpleFieldSet fs = node.exportFieldSet();
+					fs.writeTo(osw);
+					osw.write("\n\nMy peers:\n");
+					node.peers.writePeers(osw);
 					osw.close();
 				}else {
 					Logger.error(this, "Unknown testnet command: "+command);

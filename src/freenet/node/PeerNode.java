@@ -262,7 +262,8 @@ public class PeerNode implements PeerContext {
         		                "\nNode:      "+HexUtil.bytesToHex(nodeKey)+
                                 "\nNode hash: "+HexUtil.bytesToHex(nodeKeyHash)+
                                 "\nThis:      "+HexUtil.bytesToHex(identityHash)+
-                                "\nThis hash: "+HexUtil.bytesToHex(setupKeyHash));
+                                "\nThis hash: "+HexUtil.bytesToHex(setupKeyHash)+
+                                "\nFor:       "+getDetectedPeer());
         
         try {
             incomingSetupCipher = new Rijndael(256,256);

@@ -428,23 +428,10 @@ public class PeerManager {
                 return;
             }
             OutputStreamWriter w = new OutputStreamWriter(fos);
-            PeerNode[] peers = myPeers;
-            for (int i = 0; i < peers.length; i++) {
-                try {
-                    peers[i].write(w);
-                    w.flush();
-                } catch (IOException e) {
-                    try {
-                        w.close();
-                    } catch (IOException e1) {
-                        Logger.error(this, "Cannot close file!: " + e1, e1);
-                    }
-                    Logger.error(this, "Cannot write peers to disk: " + e, e);
-                    return;
-                }
-            }
             try {
+            	boolean succeeded = writePeers(w);
                 w.close();
+                if(!succeeded) return;
             } catch (IOException e) {
                 Logger.error(this, "Cannot close file!: " + e, e);
             }
@@ -457,4 +444,23 @@ public class PeerManager {
             }
         }
     }
+
+	public boolean writePeers(OutputStreamWriter w) {
+        PeerNode[] peers = myPeers;
+        for (int i = 0; i < peers.length; i++) {
+            try {
+                peers[i].write(w);
+                w.flush();
+            } catch (IOException e) {
+                try {
+                    w.close();
+                } catch (IOException e1) {
+                    Logger.error(this, "Cannot close file!: " + e1, e1);
+                }
+                Logger.error(this, "Cannot write peers to disk: " + e, e);
+                return false;
+            }
+        }
+        return true;
+	}
 }
