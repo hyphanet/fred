@@ -154,7 +154,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<textarea name=\"ref\" rows=\"8\" cols=\"74\"></textarea>\n");
 		buf.append("<br />\n");
 		buf.append("or URL:\n");
-		buf.append("<input type=\"text\" name=\"url\" style=\"width: 100%\"/>\n");
+		buf.append("<input type=\"text\" name=\"url\" />\n");
 		buf.append("<br />\n");
 		buf.append("<input type=\"submit\" name=\"connect\" value=\"Connect\" />\n");
 		buf.append("</div>\n");
