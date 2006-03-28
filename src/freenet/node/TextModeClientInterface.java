@@ -95,7 +95,10 @@ public class TextModeClientInterface implements Runnable {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         while(true) {
             try {
-                processLine(reader,out);
+                if(processLine(reader,out)) {
+                	reader.close();
+                	return;
+                }
             } catch (SocketException e) {
             	Logger.error(this, "Socket error: "+e, e);
             	return;
@@ -160,7 +163,7 @@ public class TextModeClientInterface implements Runnable {
      * Process a single command.
      * @throws IOException If we could not write the data to stdout.
      */
-    private void processLine(BufferedReader reader, OutputStream out) throws IOException {
+    private boolean processLine(BufferedReader reader, OutputStream out) throws IOException {
         String line;
         StringBuffer outsb = new StringBuffer();
         try {
@@ -168,10 +171,10 @@ public class TextModeClientInterface implements Runnable {
         } catch (IOException e) {
             outsb.append("Bye... ("+e+")");
             System.err.println("Bye... ("+e+")");
-            return;
+            return true;
         }
         boolean getCHKOnly = false;
-        if(line == null) return;
+        if(line == null) return true;
         String uline = line.toUpperCase();
         Logger.minor(this, "Command: "+line);
         if(uline.startsWith("GET:")) {
@@ -188,7 +191,7 @@ public class TextModeClientInterface implements Runnable {
                 Logger.normal(this, "Key: "+uri);
             } catch (MalformedURLException e2) {
                 outsb.append("Malformed URI: "+key+" : "+e2);
-                return;
+                return false;
             }
             try {
 				FetchResult result = client.fetch(uri);
@@ -199,7 +202,7 @@ public class TextModeClientInterface implements Runnable {
 				if(data.size() > 32*1024) {
 					System.err.println("Data is more than 32K: "+data.size());
 					outsb.append("Data is more than 32K: "+data.size());
-					return;
+					return false;
 				}
 				byte[] dataBytes = BucketTools.toByteArray(data);
 				boolean evil = false;
@@ -212,7 +215,7 @@ public class TextModeClientInterface implements Runnable {
 				if(evil) {
 					System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
 					outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
-						return;
+						return false;
 				}
 				outsb.append("Data:\r\n");
 				outsb.append(new String(dataBytes));
@@ -237,7 +240,7 @@ public class TextModeClientInterface implements Runnable {
                 uri = new FreenetURI(key);
             } catch (MalformedURLException e2) {
                 outsb.append("Malformed URI: "+key+" : "+e2);
-                return;
+                return false;
             }
             try {
             	long startTime = System.currentTimeMillis();
@@ -323,7 +326,7 @@ public class TextModeClientInterface implements Runnable {
             	if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
             		outsb.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString());
             	}
-            	return;
+            	return false;
             }
             
             outsb.append("URI: "+uri);
@@ -347,7 +350,7 @@ public class TextModeClientInterface implements Runnable {
         	
         	if(line.length() < 1) {
         		printHeader(out);
-        		return;
+        		return false;
         	}
         	
         	String defaultFile = null;
@@ -476,7 +479,7 @@ public class TextModeClientInterface implements Runnable {
         	if(cmd.indexOf(';') <= 0) {
         		outsb.append("No target URI provided.");
         		outsb.append("PUTSSK:<insert uri>;<url to redirect to>");
-        		return;
+        		return false;
         	}
         	String[] split = cmd.split(";");
         	String insertURI = split[0];
@@ -531,8 +534,8 @@ public class TextModeClientInterface implements Runnable {
             } else {
                 content = readLines(reader, true);
             }
-            if(content == null) return;
-            if(content.equals("")) return;
+            if(content == null) return false;
+            if(content.equals("")) return false;
             connect(content);
         
         } else if(uline.startsWith("NAME:")) {
@@ -578,6 +581,7 @@ public class TextModeClientInterface implements Runnable {
         outsb.append("\r\n");
         out.write(outsb.toString().getBytes());
         out.flush();
+        return false;
     }
 
     /**
