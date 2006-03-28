@@ -14,7 +14,21 @@ public class FetchException extends Exception {
 	public final int mode;
 	
 	public final FreenetURI newURI;
+	
+	public final long expectedSize;
+	
+	String expectedMimeType;
+	
+	boolean finalizedSizeAndMimeType;
+	
+	public String getExpectedMimeType() {
+		return expectedMimeType;
+	}
 
+	public boolean finalizedSize() {
+		return finalizedSizeAndMimeType;
+	}
+	
 	/** For collection errors */
 	public final FailureCodeTracker errorCodes;
 	
@@ -31,9 +45,23 @@ public class FetchException extends Exception {
 		mode = m;
 		errorCodes = null;
 		newURI = null;
+		expectedSize = -1;
 		Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
 	}
 
+	public FetchException(int m, long expectedSize, boolean finalizedSize, String expectedMimeType) {
+		super(getMessage(m));
+		extraMessage = null;
+		this.finalizedSizeAndMimeType = finalizedSize;
+		mode = m;
+		errorCodes = null;
+		newURI = null;
+		this.expectedSize = expectedSize;
+		this.expectedMimeType = expectedMimeType;
+		Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
+		
+	}
+	
 	public FetchException(MetadataParseException e) {
 		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		extraMessage = e.getMessage();
@@ -41,6 +69,7 @@ public class FetchException extends Exception {
 		errorCodes = null;
 		initCause(e);
 		newURI = null;
+		expectedSize = -1;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
 
@@ -51,6 +80,7 @@ public class FetchException extends Exception {
 		errorCodes = null;
 		newURI = null;
 		initCause(e);
+		expectedSize = -1;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);
 	}
 
@@ -61,6 +91,7 @@ public class FetchException extends Exception {
 		errorCodes = null;
 		initCause(e);
 		newURI = null;
+		expectedSize = -1;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+e,e);	}
 
 	public FetchException(int mode, Throwable t) {
@@ -70,6 +101,7 @@ public class FetchException extends Exception {
 		errorCodes = null;
 		initCause(t);
 		newURI = null;
+		expectedSize = -1;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+t.getMessage(),t);
 	}
 
@@ -79,6 +111,7 @@ public class FetchException extends Exception {
 		this.mode = mode;
 		this.errorCodes = errorCodes;
 		newURI = null;
+		expectedSize = -1;
 		Logger.minor(this, "FetchException("+getMessage(mode)+")");
 	}
 	
@@ -88,6 +121,7 @@ public class FetchException extends Exception {
 		errorCodes = null;
 		this.mode = mode;
 		newURI = null;
+		expectedSize = -1;
 		Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
 	}
 
@@ -97,6 +131,7 @@ public class FetchException extends Exception {
 		this.mode = mode;
 		errorCodes = null;
 		this.newURI = newURI;
+		expectedSize = -1;
 		Logger.minor(this, "FetchException("+getMessage(mode)+") -> "+newURI, this);
 	}
 	

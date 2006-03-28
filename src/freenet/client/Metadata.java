@@ -839,4 +839,8 @@ public class Metadata implements Cloneable {
 	public byte[] splitfileParams() {
 		return splitfileParams;
 	}
+
+	public long uncompressedDataLength() {
+		return this.decompressedLength;
+	}
 }

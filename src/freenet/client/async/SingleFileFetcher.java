@@ -23,7 +23,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.USK;
 import freenet.node.LowLevelGetException;
-import freenet.node.Node;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
@@ -177,7 +176,11 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			}
 			result = new FetchResult(result, data);
 		}
-		rcb.onSuccess(result, this);
+		if(result.size() > ctx.maxOutputLength) {
+			rcb.onFailure(new FetchException(FetchException.TOO_BIG, result.size(), (rcb == parent), result.getMimeType()), this);
+		} else {
+			rcb.onSuccess(result, this);
+		}
 	}
 
 	private void handleMetadata() throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
@@ -319,6 +322,19 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
 					addDecompressor(codec);
+				}
+				
+				long len = metadata.dataLength();
+				if(metadata.uncompressedDataLength() > len)
+					len = metadata.uncompressedDataLength();
+				
+				if(len > ctx.maxOutputLength ||
+						len > ctx.maxTempLength) {
+					
+					boolean finished = (rcb == parent);
+					
+					onFailure(new FetchException(FetchException.TOO_BIG, len, finished, clientMetadata.getMIMEType()));
+					return;
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, (ClientGetter)parent, ctx, 

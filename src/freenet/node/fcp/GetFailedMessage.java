@@ -4,7 +4,6 @@ import java.net.MalformedURLException;
 
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
-import freenet.client.InserterException;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -19,6 +18,9 @@ public class GetFailedMessage extends FCPMessage {
 	final FailureCodeTracker tracker;
 	final boolean isFatal;
 	final String identifier;
+	final long expectedDataLength;
+	final String expectedMimeType;
+	final boolean finalizedExpected;
 	
 	public GetFailedMessage(FetchException e, String identifier) {
 		Logger.minor(this, "Creating get failed from "+e+" for "+identifier, e);
@@ -29,6 +31,9 @@ public class GetFailedMessage extends FCPMessage {
 		this.shortCodeDescription = FetchException.getShortMessage(code);
 		this.isFatal = e.isFatal();
 		this.identifier = identifier;
+		this.expectedDataLength = e.expectedSize;
+		this.expectedMimeType = e.getExpectedMimeType();
+		this.finalizedExpected = e.finalizedSize();
 	}
 
 	/**
@@ -61,6 +66,13 @@ public class GetFailedMessage extends FCPMessage {
 		} else {
 			tracker = null;
 		}
+		expectedMimeType = fs.get("ExpectedMimeType");
+		finalizedExpected = Fields.stringToBool(fs.get("FinalizedExpected"), false);
+		String s = fs.get("ExpectedDataLength");
+		if(s != null) {
+			expectedDataLength = Long.parseLong(s);
+		} else
+			expectedDataLength = -1;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -88,6 +100,13 @@ public class GetFailedMessage extends FCPMessage {
 		if(verbose)
 			sfs.put("ShortCodeDescription", shortCodeDescription);
 		sfs.put("Identifier", identifier);
+		if(expectedDataLength > -1) {
+			sfs.put("ExpectedDataLength", Long.toString(expectedDataLength));
+		}
+		if(expectedMimeType != null)
+			sfs.put("ExpectedMetadata.ContentType", expectedMimeType);
+		if(finalizedExpected)
+			sfs.put("FinalizedExpected", "true");
 		return sfs;
 	}
 
