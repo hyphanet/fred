@@ -120,7 +120,6 @@ a:hover {
 .config ul {
 	margin: 5px 0 5px 0;
 	padding: 0;
-	background-color: #f0f0f0;
 	border: 1px solid #d0d0d0;
 }
 
@@ -128,10 +127,24 @@ a:hover {
 	margin: 0;
 	padding: 15px;
 	list-style: none;
-	text-align: right;
+	width: 600px; /* FF hack */
 }
 
-.config li input {
+.config span.configdesc {
+	display: block;
+}
+
+.config span.configkey {
+	font-family: Courier;
+/*
+	display: inline-block;  /* doesn't work with FireFox 1.5, therefore we added absolute positioning of the input fields
+*/
+	width: 300px;
+}
+
+.config input[type=text] {
+	position: absolute;  /* FF hack */
+	left: 490px;  /* FF hack */
 	width: 300px;
 }
 
