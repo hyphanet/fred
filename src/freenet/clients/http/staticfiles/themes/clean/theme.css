@@ -1,3 +1,21 @@
+/* overall settings */
+
+p, span, div, td, li {
+	font-family: Arial;
+	font-weight: normal;
+	font-size: 11pt;
+}
+
+th {
+	font-weight: bold;
+}
+
+pre, textarea {
+	font-family: Courier;
+	font-weight: normal;
+	font-size: 8pt;
+}
+
 /* body and page header */
 
 body {
@@ -5,11 +23,10 @@ body {
 	padding: 0;
 	background-color: #f0f0f0;
 	position: relative;
-	font-family: Arial;
 }
 
 #topbar {
-	margin: 0 0 5px 0;
+	margin: 0;
 	padding: 5px;
 	min-height: 50px;
 	background-color: #e8e8e8;
@@ -17,26 +34,24 @@ body {
 	background-repeat: no-repeat;
 	background-position: 30px 3px;
 	border-bottom: 1px solid #d0d0d0;
-	font-family: Arial;
 }
 
 #topbar h1 {
 	margin: 0;
 	padding: 7px 0 0 0;
 	text-align: center;
-	font-weight: normal;
 	font-size: 20pt;
 }
 
 /* navigation */
 
 #navbar {
-	margin:0 5px 0 0;
-	padding:10px;
-	width:150px;
-	float:left;
-	background-color:#e8e8e8;
-	border:1px solid #d0d0d0;
+	margin: 5px 5px 0 0;
+	padding: 10px;
+	width: 150px;
+	float: left;
+	background-color: #e8e8e8;
+	border: 1px solid #d0d0d0;
 }
 
 #navbar ul {
@@ -47,14 +62,12 @@ body {
 #navbar li {
 	margin: 0;
 	padding: 0;
-  list-style-type: none;
+	list-style-type: none;
 }
 
 #navbar a {
 	color: #000000;
 	text-decoration: none;
-	font-family: Arial;
-	font-size: 14px;
 }
 
 #navbar a:hover {
@@ -68,25 +81,27 @@ body {
 	max-width: 80%;
 }
 
-pre, textarea {
-	font-size: 70%;
+a {
+	color: #000000;
 }
 
-.infobox, .config ul {
-	margin: 0 0 5px 0;
+a:hover {
+	color: #ff0000;
+}
+
+.infobox {
+	margin: 5px 0 5px 0;
 	padding: 10px;
 	background-color: #f0f0f0;
 	border: 1px solid #d0d0d0;
 }
 
 .infobox h2 {
-	margin: -10px;
-	margin-bottom: 10px;
+	margin: -10px -10px 10px -10px;
 	padding: 10px;
-	border-bottom: 1px dotted #000000;
-	font-family: Arial;
+	border-bottom: 1px dotted #a0a0a0;
 	font-weight: bold;
-	font-size: 110%;
+	font-size: 11pt;
 	background-color: #e8e8e8;
 }
 
@@ -96,12 +111,29 @@ pre, textarea {
 }
 
 #activity {
-	list-style-position: inside;
+	margin: 0;
+	padding: 0;
+	list-style: none;
 }
 
+/* configuration page */
+
 .config ul {
-	margin: 0 0 15px 0;
-	padding: 10px 10px 10px 20px;
+	margin: 5px 0 5px 0;
+	padding: 0;
+	background-color: #f0f0f0;
+	border: 1px solid #d0d0d0;
+}
+
+.config li {
+	margin: 0;
+	padding: 15px;
+	list-style: none;
+	text-align: right;
+}
+
+.config li input {
+	width: 300px;
 }
 
 .cancel {
@@ -112,28 +144,38 @@ pre, textarea {
 	float: right;
 }
 
+/* darknet page */
+
 table.darknet_connections {
-	font-size: 80%;
-	margin: 0px;
-	padding: -5px;
+	margin: 0;
+	padding: 0;
+	border-collapse: collapse;
 }
 
-/*.darknet_connections td {
+table.darknet_connections th, table.darknet_connections td {
+	margin: 0;
+	padding: 5px;
 	border: 1px solid #d0d0d0;
-}*/
-
-.peer_connected {
-	color: green;
+	font-size: 8pt;
 }
 
-.peer_backedoff {
-	color: red;
+table.darknet_connections span {
+	font-weight: bold;
+	font-size: 8pt;
 }
 
-.peer_incompatable {
-	color: blue;
+table.darknet_connections span.peer_connected {
+	color: #008000;
 }
 
-.peer_disconnected {
-	color: black;
+table.darknet_connections span.peer_backedoff {
+	color: #ff0000;
+}
+
+table.darknet_connections span.peer_incompatable {
+	color: #d0a0d0;
+}
+
+table.darknet_connections span.peer_disconnected {
+	color: #d0d0d0;
 }
