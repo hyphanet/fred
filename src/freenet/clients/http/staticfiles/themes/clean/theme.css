@@ -22,8 +22,12 @@ body {
 	margin: 0;
 	padding: 0;
 	background-color: #f0f0f0;
-	position: relative;
 }
+
+#page {
+}
+
+/* page's topbar */
 
 #topbar {
 	margin: 0;
@@ -48,8 +52,8 @@ body {
 #navbar {
 	margin: 5px 5px 0 0;
 	padding: 10px;
+	position: absolute;
 	width: 150px;
-	float: left;
 	background-color: #e8e8e8;
 	border: 1px solid #d0d0d0;
 }
@@ -77,7 +81,10 @@ body {
 /* content */
 
 #content {
-	float: left;
+	margin: 0 5px 5px 0;
+	padding: 0;
+	position: absolute;
+	left: 177px;
 }
 
 a {
@@ -127,24 +134,21 @@ a:hover {
 	margin: 0;
 	padding: 15px;
 	list-style: none;
-	width: 600px; /* FF hack */
+	text-align: right;
 }
 
 .config span.configdesc {
 	display: block;
+	text-align: center;
+	font-weight: bold;
 }
 
 .config span.configkey {
+	padding: 0 10px 0 0;
 	font-family: Courier;
-/*
-	display: inline-block;  /* doesn't work with FireFox 1.5, therefore we added absolute positioning of the input fields
-*/
-	width: 300px;
 }
 
 .config input[type=text] {
-	position: absolute;  /* FF hack */
-	left: 490px;  /* FF hack */
 	width: 300px;
 }
 
