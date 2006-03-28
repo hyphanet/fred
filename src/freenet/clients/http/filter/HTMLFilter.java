@@ -328,6 +328,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		boolean inStyle = false; // has to be set on or off explicitly by tags
 		boolean inScript = false; // has to be set on or off explicitly by tags
 		boolean killText = false; // has to be set on or off explicitly by tags
+		boolean killStyle = false;
 		int styleScriptRecurseCount = 0;
 		String currentStyleScriptChunk = new String();
 		String writeAfterTag = "";
@@ -340,7 +341,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		for(int i=0;i<s.length();i++) {
-			if(s.charAt(i) < 32) {
+			char c = s.charAt(i);
+			if(c < 32 && c != '\n' && c != '\r' ) {
 				// Not a real character
 				// STRONGLY suggests somebody is using a bogus charset.
 				// This could be in order to break the filter.
@@ -349,7 +351,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 		
 		String style = s.toString();
-		if (pc.inStyle) {
+		if (pc.inStyle || pc.inScript) {
 			pc.currentStyleScriptChunk += style;
 			return; // is parsed and written elsewhere
 		}
@@ -359,6 +361,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	void processTag(Vector splitTag, Writer w, HTMLParseContext pc)
 		throws IOException, DataFilterException {
 		// First, check that it is a recognized tag
+		for(int i=0;i<splitTag.size();i++)
+			Logger.minor(this, "Tag["+i+"]="+splitTag.get(i));
 		ParsedTag t = new ParsedTag(splitTag);
 		if (!pc.killTag) {
 			t = t.sanitize(pc);
@@ -392,13 +396,25 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return; // ignore it
 
 		if (pc.inStyle || pc.inScript) {
-			pc.currentStyleScriptChunk += "<" + s + ">";
+			pc.currentStyleScriptChunk += s;
 			return; // </style> handler should write
 		}
 		if (pc.killTag) {
 			pc.killTag = false;
 			return;
 		}
+		StringBuffer sb = new StringBuffer();
+		for(int i=0;i<s.length();i++) {
+			char c = s.charAt(i);
+			if(c == '<') {
+				sb.append("&lt;");
+			} else if(c == '>') {
+				sb.append("&gt;");
+			} else {
+				sb.append(c);
+			}
+		}
+		s = sb;
 		w.write('<');
 		w.write(s.toString());
 		w.write('>');
@@ -452,11 +468,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				for (int x = 1; x < len; x++)
 					unparsedAttrs[x - 1] = (String) v.elementAt(x);
 			}
+			Logger.minor(this, "Element = "+element);
 		}
 
 		public ParsedTag sanitize(HTMLParseContext pc) throws DataFilterException {
 			TagVerifier tv =
 				(TagVerifier) allowedTagsVerifiers.get(element.toLowerCase());
+			Logger.minor(this, "Got verifier: "+tv+" for "+element);
 			if (tv == null) {
 				if (deleteWierdStuff) {
 					return null;
@@ -1208,7 +1226,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Hashtable h,
 			Hashtable hn,
 			HTMLParseContext pc) throws DataFilterException {
+			Logger.minor(this, "Finishing script/style");
 			// Finishing
+			setStyle(false, pc);
 			pc.styleScriptRecurseCount--;
 			if (pc.styleScriptRecurseCount < 0) {
 				if (deleteErrors)
@@ -1218,15 +1238,20 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					throwFilterException("Too many nested </style> tags - ambiguous or invalid parsing, can't reliably filter so removing the inner tags - garbage may appear in browser");
 				return null;
 			}
-			setStyle(false, pc);
-			processStyle(pc);
+			if(!pc.killStyle) {
+				processStyle(pc);
+				pc.writeStyleScriptWithTag = true;
+			} else {
+				pc.killStyle = false;
+				pc.currentStyleScriptChunk = "";
+			}
 			pc.expectingBadComment = false;
-			pc.writeStyleScriptWithTag = true;
 			// Pass it on, no params for </style>
 			return hn;
 		}
 
 		Hashtable start(Hashtable h, Hashtable hn, HTMLParseContext pc) throws DataFilterException {
+			Logger.minor(this, "Starting script/style");
 			pc.styleScriptRecurseCount++;
 			if (pc.styleScriptRecurseCount > 1) {
 				if (deleteErrors)
@@ -1241,7 +1266,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (type != null) {
 				if (!type.equalsIgnoreCase("text/css") /* FIXME */
 					) {
-					pc.killText = true;
+					pc.killStyle = true;
 					pc.expectingBadComment = true;
 					return null; // kill the tag
 				}
@@ -1299,8 +1324,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable hn,
 			ParsedTag p,
-			HTMLParseContext pc) {
-			//Hashtable h = super.sanitizeHash(hn, p, pc);
+			HTMLParseContext pc) throws DataFilterException {
+			// Call parent so we swallow the scripting
+			Hashtable h = super.sanitizeHash(hn, p, pc);
 			return null; // Lose the tags
 		}
 
@@ -1508,8 +1534,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			HTMLParseContext pc,
-			int linkHtl) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			/*
 			 * Several possibilities: a) meta http-equiv=X content=Y b) meta
@@ -1519,6 +1544,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String name = getHashString(h, "name");
 			String content = getHashString(h, "content");
 			String scheme = getHashString(h, "scheme");
+			Logger.minor(this, "meta: name="+name+", content="+content+", http-equiv="+http_equiv+", scheme="+scheme);
 			if (content != null) {
 				if (name != null && http_equiv == null) {
 					if (name.equalsIgnoreCase("Author")) {
@@ -1554,7 +1580,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						}
 						// FIXME: add some more headers - Dublin Core?
 					} else if (http_equiv.equalsIgnoreCase("Content-Type")) {
+						Logger.minor(this, "Found http-equiv content-type="+content);
 						String[] typesplit = splitType(content);
+						for(int i=0;i<typesplit.length;i++)
+							Logger.minor(this, "["+i+"] = "+typesplit[i]);
 						if (typesplit[0].equalsIgnoreCase("text/html")
 							&& (typesplit[1] == null
 								|| typesplit[1].equalsIgnoreCase(pc.charset))) {
@@ -1567,7 +1596,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 										: ""));
 						}
 						if(typesplit[1] != null)
-							pc.detectedCharset = typesplit[1];
+							pc.detectedCharset = typesplit[1].trim();
 					} else if (
 						http_equiv.equalsIgnoreCase("Content-Language")) {
 						hn.put("http-equiv", "Content-Language");
@@ -1660,8 +1689,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			HTMLParseContext pc,
-			int linkHtl) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			String xmlns = getHashString(h, "xmlns");
 			if (xmlns != null && xmlns.equals("http://www.w3.org/1999/xhtml"))
@@ -1674,6 +1702,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Logger.debug(
 			HTMLFilter.class,
 			"Sanitizing style: " + style);
+		if(style == null) return null;
 		Reader r = new StringReader(style);
 		Writer w = new StringWriter();
 		CSSParser pc = new CSSParser(r, w, false, cb);

@@ -9,7 +9,6 @@ import java.util.Hashtable;
 
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
 import freenet.support.Logger;
 
 /**
@@ -167,8 +166,10 @@ public class ContentFilter {
 			
 			if(handler.defaultCharset != null) {
 				try {
-					if((charset = handler.charsetExtractor.getCharset(data, handler.defaultCharset)) != null)
+					if((charset = handler.charsetExtractor.getCharset(data, handler.defaultCharset)) != null) {
+						Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 						return charset;
+					}
 				} catch (DataFilterException e) {
 					// Ignore
 				}
