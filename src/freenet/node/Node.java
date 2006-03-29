@@ -80,6 +80,7 @@ import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.BucketFactory;
 import freenet.support.Fields;
+import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
 import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
@@ -673,7 +674,8 @@ public class Node {
         	Logger.normal(this, s);
         	System.err.println(s);
         	testnetEnabled = false;
-        	logConfigHandler.getFileLoggerHook().deleteAllOldLogFiles();
+        	FileLoggerHook flh = logConfigHandler.getFileLoggerHook();
+        	if(flh != null) flh.deleteAllOldLogFiles();
         }
         
         if(wasTestnet != testnetEnabled) {
