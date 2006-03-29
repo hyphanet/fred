@@ -26,6 +26,7 @@ public class PluginHandler {
 		ps.setPlugin(pm, plug);
 		if (!pi.isThreadlessPlugin())
 			ps.start();
+		ps.run();
 		return pi;
 	}
 	
@@ -58,7 +59,7 @@ public class PluginHandler {
 			if (plugin instanceof FredPlugin) {
 				FredPlugin plug = ((FredPlugin)plugin);
 				//if (plug.handles(FredPlugin.handleFproxy))
-
+				
 				((FredPlugin)plugin).runPlugin(pr);
 			}
 			// If not FredPlugin, then the whole thing is aborted,
