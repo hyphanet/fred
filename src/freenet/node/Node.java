@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
 
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
@@ -77,6 +79,7 @@ import freenet.snmplib.SNMPStarter;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.BucketFactory;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
@@ -280,7 +283,9 @@ public class Node {
 
     // Helpers
 	public final InetAddress localhostAddress;
-    
+
+	private boolean wasTestnet;
+	
     /**
      * Read all storable settings (identity etc) from the node file.
      * @param filename The name of the file to read from.
@@ -344,6 +349,7 @@ public class Node {
             this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
             this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
         }
+        wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
     }
 
     private String newName() {
@@ -667,6 +673,16 @@ public class Node {
         	Logger.normal(this, s);
         	System.err.println(s);
         	testnetEnabled = false;
+        	logConfigHandler.getFileLoggerHook().deleteAllOldLogFiles();
+        }
+        
+        if(wasTestnet != testnetEnabled) {
+        	Logger.error(this, "Switched from testnet mode to non-testnet mode or vice versa! Regenerating pubkey, privkey, and deleting logs.");
+            this.myCryptoGroup = Global.DSAgroupBigA;
+            this.myPrivKey = new DSAPrivateKey(myCryptoGroup, random);
+            this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+        	
+        	
         }
 
         // Directory for node-related files other than store
@@ -1886,7 +1902,9 @@ public class Node {
     public byte[] myPublicRefCompressed() {
         SimpleFieldSet fs = exportPublicFieldSet();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        OutputStreamWriter osw = new OutputStreamWriter(baos);
+        DeflaterOutputStream gis;
+		gis = new DeflaterOutputStream(baos);
+        OutputStreamWriter osw = new OutputStreamWriter(gis);
         try {
             fs.writeTo(osw);
         } catch (IOException e) {
@@ -1899,7 +1917,7 @@ public class Node {
         }
         byte[] buf = baos.toByteArray();
         byte[] obuf = new byte[buf.length + 1];
-        obuf[0] = 0;
+        obuf[0] = 1;
         System.arraycopy(buf, 0, obuf, 1, buf.length);
         return obuf;
         // FIXME support compression when noderefs get big enough for it to be useful

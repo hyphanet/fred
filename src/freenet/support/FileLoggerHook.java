@@ -963,4 +963,20 @@ public class FileLoggerHook extends LoggerHook {
 			}
 		}
 	}
+
+	public void deleteAllOldLogFiles() {
+		synchronized(trimOldLogFilesLock) {
+			while(true) {
+				OldLogFile olf;
+				synchronized(logFiles) {
+					if(logFiles.isEmpty()) return;
+					olf = (OldLogFile) logFiles.removeFirst();
+				}
+				olf.filename.delete();
+				oldLogFilesDiskSpaceUsage -= olf.size;
+				Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
+						" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
+			}
+		}
+	}
 }
