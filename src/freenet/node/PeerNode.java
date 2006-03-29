@@ -809,7 +809,7 @@ public class PeerNode implements PeerContext {
             Inflater i = new Inflater();
             i.setInput(data, offset+1, length-1);
             byte[] output = new byte[4096];
-            int outputPointer = 0;
+            int outputPointer = 1;
             while(true) {
                 try {
                     int x = i.inflate(output, outputPointer, output.length-outputPointer);
@@ -830,6 +830,7 @@ public class PeerNode implements PeerContext {
                 }
             }
         }
+        Logger.minor(this, "Reference: "+new String(data, offset, length)+"("+length+")");
         // Now decode it
         ByteArrayInputStream bais = new ByteArrayInputStream(data, offset+1, length-1);
         InputStreamReader isr;

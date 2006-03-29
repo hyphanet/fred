@@ -1912,6 +1912,7 @@ public class Node {
         }
         try {
             osw.flush();
+            gis.close();
         } catch (IOException e1) {
             throw new Error(e1);
         }

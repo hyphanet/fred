@@ -1275,7 +1275,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         Logger.minor(this, "Possibly sending handshake to "+pn);
         DiffieHellmanContext ctx;
         synchronized(pn) {
-            if(!pn.shouldSendHandshake() || pn.getHandshakeIPs().length == 0) {
+            if((!pn.shouldSendHandshake()) || pn.getHandshakeIPs().length == 0) {
                 return;
             } else {
                 ctx = DiffieHellman.generateContext();
