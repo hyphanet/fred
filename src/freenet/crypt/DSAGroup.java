@@ -9,6 +9,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 import freenet.support.HexUtil;
+import freenet.support.SimpleFieldSet;
 
 import net.i2p.util.NativeBigInteger;
 
@@ -325,4 +326,19 @@ public class DSAGroup extends CryptoKey {
     public void destroy() {
         p = q = g = null;
     }
+
+	public SimpleFieldSet asFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("p", getPAsHexString());
+		fs.put("q", getQAsHexString());
+		fs.put("g", getGAsHexString());
+		return fs;
+	}
+
+	public static DSAGroup create(SimpleFieldSet fs) {
+		BigInteger p = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("p")));
+		BigInteger q = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("q")));
+		BigInteger g = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("g")));
+		return new DSAGroup(p, q, g);
+	}
 }

@@ -48,7 +48,7 @@ public class RealNodeRequestInsertTest {
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];
         for(int i=0;i<NUMBER_OF_NODES;i++)
-            refs[i] = nodes[i].exportFieldSet();
+            refs[i] = nodes[i].exportPublicFieldSet();
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");
         // Now link them up
         // Connect the set
@@ -69,8 +69,8 @@ public class RealNodeRequestInsertTest {
             //System.out.println(""+nodeA+" -> "+nodeB);
             Node a = nodes[nodeA];
             Node b = nodes[nodeB];
-            a.peers.connect(b.exportFieldSet());
-            b.peers.connect(a.exportFieldSet());
+            a.peers.connect(b.exportPublicFieldSet());
+            b.peers.connect(a.exportPublicFieldSet());
         }
         
         Logger.normal(RealNodeRoutingTest.class, "Added random links");

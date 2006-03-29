@@ -149,7 +149,7 @@ public class TestnetHandler implements Runnable {
 					Logger.minor(this, "Sending references");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					osw.write("My ref:\n\n");
-					SimpleFieldSet fs = node.exportFieldSet();
+					SimpleFieldSet fs = node.exportPublicFieldSet();
 					fs.writeTo(osw);
 					osw.write("\n\nMy peers:\n");
 					node.peers.writePeers(osw);
@@ -230,29 +230,21 @@ public class TestnetHandler implements Runnable {
         		new TestnetEnabledCallback(node));
         
         boolean enabled = testnetConfig.getBoolean("enabled");
-        
-        if(!enabled) {
-        	// FIXME
-        	String msg = "Sorry, testnet must be enabled while Freenet 0.7 is in pre-alpha testing phase.";
-        	Logger.error(TestnetHandler.class, msg);
-        	System.err.println(msg);
-        	throw new Node.NodeInitException(Node.EXIT_TESTNET_DISABLED_NOT_SUPPORTED, msg);
-        }
-        
-        // Testnet is enabled.
-        
-        // Get the testnet port
-        
-        // Default to node port plus 1000
-        
-        int defaultPort = 1024 + (node.portNumber-1024+1000) % (65536 - 1024);
-        
-        testnetConfig.register("port", defaultPort, 2, true, "Testnet port", "Testnet port number",
-        		new TestnetPortNumberCallback(node));
-        
-        testnetConfig.finishedInitialization();
-        
-        return new TestnetHandler(node, testnetConfig.getInt("port"));
+
+        if(enabled) {
+        	// Get the testnet port
+        	
+        	// Default to node port plus 1000
+        	
+        	int defaultPort = 1024 + (node.portNumber-1024+1000) % (65536 - 1024);
+        	
+        	testnetConfig.register("port", defaultPort, 2, true, "Testnet port", "Testnet port number",
+        			new TestnetPortNumberCallback(node));
+        	
+        	testnetConfig.finishedInitialization();
+        	
+        	return new TestnetHandler(node, testnetConfig.getInt("port"));
+        } else return null;
 	}
 
 }

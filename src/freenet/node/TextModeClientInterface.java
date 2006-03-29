@@ -500,7 +500,7 @@ public class TextModeClientInterface implements Runnable {
 			}
         	
         } else if(uline.startsWith("STATUS")) {
-            SimpleFieldSet fs = n.exportFieldSet();
+            SimpleFieldSet fs = n.exportPublicFieldSet();
             outsb.append(fs.toString());
             outsb.append(n.getStatus());
 	    if(Version.buildNumber()<Version.highestSeenBuild){

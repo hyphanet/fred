@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.io.*;
 
 import freenet.support.HexUtil;
+import freenet.support.SimpleFieldSet;
 
 import net.i2p.util.NativeBigInteger;
 
@@ -182,4 +183,15 @@ public class DSAPublicKey extends CryptoKey {
 	    	return getY().compareTo(((DSAPublicKey)other).getY());
 		} else return -1;
     }
+
+	public SimpleFieldSet asFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("y", getYAsHexString());
+		return fs;
+	}
+
+	public static DSAPrivateKey create(SimpleFieldSet fs, DSAGroup group) {
+		NativeBigInteger y = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("y")));
+		return new DSAPrivateKey(y);
+	}
 }

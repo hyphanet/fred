@@ -283,7 +283,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         PCFBMode pcfb = new PCFBMode(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
         
-        byte[] myRef = node.myRefCompressed();
+        byte[] myRef = node.myPublicRefCompressed();
         byte[] data = new byte[myRef.length + 8];
         System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
         System.arraycopy(myRef, 0, data, 8, myRef.length);

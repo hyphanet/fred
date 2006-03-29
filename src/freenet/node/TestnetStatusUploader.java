@@ -52,7 +52,7 @@ public class TestnetStatusUploader implements Runnable {
 					client = new Socket("emu.freenetproject.org", 23415);
 					PrintStream output = new PrintStream(client.getOutputStream());
 	            		
-					output.println(node.exportFieldSet().toString());
+					output.println(node.exportPublicFieldSet().toString());
 					output.println();
 					output.println(node.getFreevizOutput());
 					output.close();

@@ -26,11 +26,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 
 import freenet.client.ArchiveManager;
-import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.async.ClientRequestScheduler;
-import freenet.client.async.RequestScheduler;
 import freenet.client.async.USKManager;
 import freenet.clients.http.FproxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
@@ -41,8 +39,11 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.LongCallback;
 import freenet.config.StringCallback;
 import freenet.config.SubConfig;
+import freenet.crypt.DSAGroup;
+import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DiffieHellman;
+import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
@@ -183,6 +184,12 @@ public class Node {
     private final HashMap insertSenders;
     /** IP address detector */
     private final IPAddressDetector ipDetector;
+    /** My crypto group */
+    private DSAGroup myCryptoGroup;
+    /** My private key */
+    private DSAPrivateKey myPrivKey;
+    /** My public key */
+    private DSAPublicKey myPubKey;
     
     private final HashSet runningUIDs;
     
@@ -278,12 +285,12 @@ public class Node {
      * Read all storable settings (identity etc) from the node file.
      * @param filename The name of the file to read from.
      */
-    private void readNodeFile(String filename) throws IOException {
+    private void readNodeFile(String filename, RandomSource r) throws IOException {
     	// REDFLAG: Any way to share this code with NodePeer?
         FileInputStream fis = new FileInputStream(filename);
         InputStreamReader isr = new InputStreamReader(fis);
         BufferedReader br = new BufferedReader(isr);
-        SimpleFieldSet fs = new SimpleFieldSet(br, false);
+        SimpleFieldSet fs = new SimpleFieldSet(br, true);
         br.close();
         // Read contents
         String physical = fs.get("physical.udp");
@@ -327,6 +334,16 @@ public class Node {
         if(myName == null) {
             myName = newName();
         }
+        // FIXME: Back compatibility; REMOVE !!
+        try {
+        	this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
+        	this.myPrivKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup);
+        	this.myPubKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup);
+        } catch (NullPointerException e) {
+            this.myCryptoGroup = Global.DSAgroupBigA;
+            this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
+            this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+        }
     }
 
     private String newName() {
@@ -342,7 +359,7 @@ public class Node {
     }
     
     private void writeNodeFile(File orig, File backup) throws IOException {
-        SimpleFieldSet fs = exportFieldSet();
+        SimpleFieldSet fs = exportPrivateFieldSet();
         orig.renameTo(backup);
         FileOutputStream fos = new FileOutputStream(orig);
         OutputStreamWriter osr = new OutputStreamWriter(fos);
@@ -365,6 +382,9 @@ public class Node {
         identityHash = md.digest(myIdentity);
         identityHashHash = md.digest(identityHash);
         myName = newName();
+        this.myCryptoGroup = Global.DSAgroupBigA;
+        this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
+        this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
     }
 
     /**
@@ -641,7 +661,11 @@ public class Node {
 				}
         	}
         } else {
-        	Logger.normal(this, "Testnet mode DISABLED. You may have some level of anonymity. :)");
+        	String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
+        		"Note that while we no longer have explicit back-doors enabled, this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
+        		"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE DARKNET PEERS! They can eavesdrop on your requests with very little difficulty at present.";
+        	Logger.normal(this, s);
+        	System.err.println(s);
         	testnetEnabled = false;
         }
 
@@ -668,10 +692,10 @@ public class Node {
         // After we have set up testnet and IP address, load the node file
         try {
         	// FIXME should take file directly?
-        	readNodeFile(new File(nodeDir, "node-"+portNumber).getPath());
+        	readNodeFile(new File(nodeDir, "node-"+portNumber).getPath(), random);
         } catch (IOException e) {
             try {
-                readNodeFile(new File("node-"+portNumber+".bak").getPath());
+                readNodeFile(new File("node-"+portNumber+".bak").getPath(), random);
             } catch (IOException e1) {
                 initNodeFileSettings(random);
             }
@@ -1379,12 +1403,18 @@ public class Node {
     	return false;
     }
     
+    public SimpleFieldSet exportPrivateFieldSet() {
+    	SimpleFieldSet fs = exportPublicFieldSet();
+    	fs.put("dsaPrivKey", myPrivKey.asFieldSet());
+    	return fs;
+    }
+    
     /**
      * Export my reference so that another node can connect to me.
      * @return
      */
-    public SimpleFieldSet exportFieldSet() {
-        SimpleFieldSet fs = new SimpleFieldSet(false);
+    public SimpleFieldSet exportPublicFieldSet() {
+        SimpleFieldSet fs = new SimpleFieldSet(true);
         InetAddress ip = getPrimaryIPAddress();
         if(ip != null)
         	fs.put("physical.udp", Peer.getHostName(ip)+":"+portNumber);
@@ -1396,6 +1426,8 @@ public class Node {
         if(testnetEnabled)
         	fs.put("testnetPort", Integer.toString(testnetHandler.testnetPort));
         fs.put("myName", myName);
+        fs.put("dsaGroup", myCryptoGroup.asFieldSet());
+        fs.put("dsaPubKey", myPubKey.asFieldSet());
         Logger.minor(this, "My reference: "+fs);
         return fs;
     }
@@ -1851,8 +1883,8 @@ public class Node {
     /**
      * @return Our reference, compressed
      */
-    public byte[] myRefCompressed() {
-        SimpleFieldSet fs = exportFieldSet();
+    public byte[] myPublicRefCompressed() {
+        SimpleFieldSet fs = exportPublicFieldSet();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStreamWriter osw = new OutputStreamWriter(baos);
         try {

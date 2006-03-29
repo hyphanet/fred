@@ -5,6 +5,7 @@ import java.io.*;
 import java.util.Random;
 
 import freenet.support.HexUtil;
+import freenet.support.SimpleFieldSet;
 
 import net.i2p.util.NativeBigInteger;
 
@@ -59,6 +60,17 @@ public class DSAPrivateKey extends CryptoKey {
     public byte[] fingerprint() {
         return fingerprint(new BigInteger[] {x});
     }
+
+	public SimpleFieldSet asFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("x", x.toString(16));
+		return fs;
+	}
+
+	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group) {
+		NativeBigInteger x = new NativeBigInteger(1, HexUtil.hexToBytes(set.get("x")));
+		return new DSAPublicKey(group, x);
+	}
     
 //    public static void main(String[] args) throws Exception {
 //        Yarrow y=new Yarrow();
