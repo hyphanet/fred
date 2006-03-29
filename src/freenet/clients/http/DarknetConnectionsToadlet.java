@@ -220,21 +220,21 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			try {
 				fs = new SimpleFieldSet(ref, false);
 			} catch (IOException e) {
-				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+reftext+"</pre> as a node reference. Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e+" Please <a href=\".\">Try again</a>.");
 				return;
 			}
 			PeerNode pn;
 			try {
 				pn = new PeerNode(fs, this.node);
 			} catch (FSParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+reftext+"</pre> as a node reference. Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e1+". Please <a href=\".\">Try again</a>.");
 				return;
 			} catch (PeerParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+reftext+"</pre> as a node reference. Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e1+". Please <a href=\".\">Try again</a>.");
 				return;
 			}
 			if(!this.node.addDarknetConnection(pn)) {
-				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to add the given reference as a peer. Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed to add node", "We already have the given reference. Return to the connections page <a href=\".\">here</a>.");
 			}
 		} else if (request.isParameterSet("disconnect")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
