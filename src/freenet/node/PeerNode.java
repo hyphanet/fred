@@ -985,7 +985,8 @@ public class PeerNode implements PeerContext {
     
     public String getFreevizOutput() {
     	return
-       		getStatus()+"|"+ HexUtil.bytesToHex(identity);
+    	
+       		getStatus()+"|"+ Base64.encode(identity);
     }
     public String getVersion(){
 	    return version;
