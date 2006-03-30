@@ -1,23 +1,20 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.MalformedURLException;
 import java.util.Enumeration;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.config.SubConfig;
 import freenet.node.Node;
 import freenet.node.Version;
-import freenet.config.Option;
-import freenet.config.SubConfig;
-import freenet.config.StringArrOption;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
-import freenet.support.Logger;
 import freenet.support.HTMLEncoder;
-import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 
 public class WelcomeToadlet extends Toadlet {
 	private static final String[] DEFAULT_BOOKMARKS = {
@@ -195,7 +192,10 @@ public class WelcomeToadlet extends Toadlet {
 		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage");
 		if(node.isTestnetEnabled())
 			buf.append("<div style=\"color: red; font-size: 200%; \">WARNING: TESTNET MODE ENABLED</div>");
+
+		// Alerts
 		
+		node.alerts.toHtml(buf);
 		
 		// Fetch-a-key box
 		buf.append("<br style=\"clear: all; \" />\n");

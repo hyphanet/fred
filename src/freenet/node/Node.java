@@ -258,6 +258,7 @@ public class Node {
     final RequestStarter sskRequestStarter;
     final RequestThrottle sskInsertThrottle;
     final RequestStarter sskInsertStarter;
+	public final UserAlertManager alerts;
 
     File downloadDir;
     public final ClientRequestScheduler chkFetchScheduler;
@@ -493,6 +494,7 @@ public class Node {
     	
     	// Easy stuff
         startupTime = System.currentTimeMillis();
+        alerts = new UserAlertManager();
         recentlyCompletedIDs = new LRUQueue();
     	this.config = config;
     	this.random = random;
@@ -731,6 +733,7 @@ public class Node {
         // Then read the peers
         peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
         peers.writePeers();
+        peers.checkEmpty();
         nodePinger = new NodePinger(this);
 
         usm.setDispatcher(dispatcher=new NodeDispatcher(this));
@@ -2016,7 +2019,7 @@ public class Node {
 	}
 
 	InetAddress lastIP;
-	
+
 	public void redetectAddress() {
 		InetAddress newIP = detectPrimaryIPAddress();
 		if(newIP.equals(lastIP)) return;

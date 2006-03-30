@@ -23,12 +23,18 @@ public interface UserAlert {
 	 */
 	public short getPriorityClass();
 	
+	/**
+	 * Is the alert valid right now? Suggested use is to synchronize on the
+	 * alert, then check this, then get the data.
+	 */
+	public boolean isValid();
+	
 	/** An error which prevents normal operation */
 	public final static short CRITICAL_ERROR = 0;
-	/** A less serious error */
+	/** An error which prevents normal operation but might be temporary */
 	public final static short ERROR = 1;
-	/** A non-immediate problem */
-	public final static short NORMAL = 2;
+	/** An error; limited anonymity due to not enough connections, for example */
+	public final static short WARNING = 2;
 	/** Something minor */
 	public final static short MINOR = 3;
 }

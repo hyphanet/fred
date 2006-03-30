@@ -401,6 +401,7 @@ public class PeerNode implements PeerContext {
     public void disconnected() {
         Logger.normal(this, "Disconnected "+this);
         node.usm.onDisconnect(this);
+        node.peers.disconnected(this);
         synchronized(this) {
             isConnected = false;
             if(currentTracker != null)
@@ -700,6 +701,7 @@ public class PeerNode implements PeerContext {
             // Update the next time to check
             sentHandshake();
             isConnected = false;
+            node.peers.disconnected(this);
             return false;
         }
         KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
@@ -736,6 +738,8 @@ public class PeerNode implements PeerContext {
             isConnected = true;
             ctx = null;
         }
+        if(!isConnected)
+        	node.peers.disconnected(this);
         Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID);
         try {
 			receivedPacket();

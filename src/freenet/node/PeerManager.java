@@ -41,6 +41,8 @@ public class PeerManager {
     PeerNode[] connectedPeers;
     
     final String filename;
+
+    private final PeerManagerUserAlert ua;
     
     /**
      * Create a PeerManager by reading a list of peers from
@@ -50,6 +52,8 @@ public class PeerManager {
      */
     public PeerManager(Node node, String filename) {
         this.filename = filename;
+		ua = new PeerManagerUserAlert(node);
+		node.alerts.register(ua);
         myPeers = new PeerNode[0];
         connectedPeers = new PeerNode[0];
         this.node = node;
@@ -92,29 +96,35 @@ public class PeerManager {
         }
     }
 
-    public synchronized boolean addPeer(PeerNode pn) {
+    public boolean addPeer(PeerNode pn) {
+    	synchronized(this) {
         for(int i=0;i<myPeers.length;i++) {
-            if(myPeers[i].equals(pn)) return false;
+            if(myPeers[i].equals(pn)) {
+            	return false;
+            }
         }
         PeerNode[] newMyPeers = new PeerNode[myPeers.length+1];
         System.arraycopy(myPeers, 0, newMyPeers, 0, myPeers.length);
         newMyPeers[myPeers.length] = pn;
         myPeers = newMyPeers;
         Logger.normal(this, "Added "+pn);
+    	}
+        checkEmpty();
         return true;
     }
     
-    private synchronized boolean removePeer(PeerNode pn) {
+    private boolean removePeer(PeerNode pn) {
+    	synchronized(this) {
     	boolean isInPeers = false;
         for(int i=0;i<myPeers.length;i++) {
-            if(myPeers[i].equals(pn)) isInPeers=true;
+            if(myPeers[i] == pn) isInPeers=true;
         }
         if(!isInPeers) return false;
                 
         // removing from connectedPeers
         ArrayList a = new ArrayList();
         for(int i=0;i<myPeers.length;i++) {
-        	if(myPeers[i]!=pn)
+        	if(myPeers[i]!=pn && myPeers[i].isConnected())
         		a.add(myPeers[i]);
         }
         
@@ -133,14 +143,39 @@ public class PeerManager {
         }
         myPeers = newMyPeers;
         Logger.normal(this, "Removed "+pn);
+    	}
+        checkEmpty();
         return true;
     }
 
-    public synchronized void addConnectedPeer(PeerNode pn) {
+	public boolean disconnected(PeerNode pn) {
+		synchronized(this) {
+		boolean isInPeers = false;
+		for(int i=0;i<connectedPeers.length;i++) {
+			if(connectedPeers[i] == pn) isInPeers=true;
+		}
+		if(!isInPeers) return false;
+		// removing from connectedPeers
+		ArrayList a = new ArrayList();
+		for(int i=0;i<myPeers.length;i++) {
+			if(myPeers[i]!=pn && myPeers[i].isConnected())
+				a.add(myPeers[i]);
+		}
+        
+        PeerNode[] newConnectedPeers = new PeerNode[a.size()];
+        newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
+	    connectedPeers = newConnectedPeers;
+		}
+	    checkEmpty();
+	    return true;
+	}
+	
+    public void addConnectedPeer(PeerNode pn) {
     	if(!pn.isConnected()) {
     		Logger.minor(this, "Not connected: "+pn);
     		return;
     	}
+    	synchronized(this) {
         for(int i=0;i<connectedPeers.length;i++) {
             if(connectedPeers[i] == pn) {
                 Logger.minor(this, "Already connected: "+pn);
@@ -164,6 +199,8 @@ public class PeerManager {
         newConnectedPeers[connectedPeers.length] = pn;
         connectedPeers = newConnectedPeers;
         Logger.minor(this, "Connected peers: "+connectedPeers.length);
+    	}
+        checkEmpty();
     }
     
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
@@ -463,4 +500,20 @@ public class PeerManager {
         }
         return true;
 	}
+
+	/**
+	 * Check whether the PM is empty. If so, file a PeerManagerUserAlert on the UAM.
+	 */
+	public void checkEmpty() {
+		int conns, peers;
+		synchronized(this) {
+			conns = this.connectedPeers.length;
+			peers = this.myPeers.length;
+		}
+		synchronized(ua) {
+			ua.conns = conns;
+			ua.peers = peers;
+		}
+	}
+
 }
