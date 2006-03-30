@@ -73,7 +73,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		buf.append("<div class=\"infobox\">\n");
 		buf.append("<h2>My Connections</h2>\n");
-		buf.append("<form action\".\" method=\"post\">\n");
+		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("<table class=\"darknet_connections\">\n");
 		buf.append("<tr><th>Status</th><th>Name</th><th>Address</th><th>Version</th><th>Location</th><th>Backoff</th><th>Backoff length</th><th></th></tr>\n");
 
@@ -145,7 +145,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>");
 		
 		// new connection box
-		buf.append("<form action=\".\" method=\"post\">\n");
+		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("<div class=\"infobox\">\n");
 		buf.append("<h2>\n");
 		buf.append("Connect to another node\n");
@@ -155,6 +155,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<br />\n");
 		buf.append("or URL:\n");
 		buf.append("<input type=\"text\" name=\"url\" />\n");
+		buf.append("<br />\n");
+		buf.append("or file:\n");
+		buf.append("<input type=\"file\" name=\"reffile\" />\n");
 		buf.append("<br />\n");
 		buf.append("<input type=\"submit\" name=\"connect\" value=\"Connect\" />\n");
 		buf.append("</div>\n");
@@ -170,22 +173,19 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, darknet toadlet limited to 1MB");
 			return;
 		}
-		byte[] d = BucketTools.toByteArray(data);
-		String s = new String(d, "us-ascii");
 		HTTPRequest request;
-		try {
-			request = new HTTPRequest("/", s);
-		} catch (URISyntaxException e) {
-			Logger.error(this, "Impossible: "+e, e);
-			return;
-		}
+		request = new HTTPRequest(uri, data, ctx);
 		
-		if (request.getParam("connect").length() > 0) {
+		if (request.isPartSet("connect")) {
 			// connect to a new node
-			String urltext = request.getParam("url");
+			String urltext = request.getPartAsString("url", 100);
 			urltext = urltext.trim();
-			String reftext = request.getParam("ref");
+			String reftext = request.getPartAsString("ref", 2000);
 			reftext = reftext.trim();
+			if (reftext.length() < 200) {
+				reftext = request.getPartAsString("reffile", 2000);
+			}
+			reftext.trim();
 			
 			String ref = new String("");
 			
@@ -204,7 +204,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to retrieve node reference from "+urltext+".");
 				}
 			} else if (reftext.length() > 0) {
-				// read directly from post data
+				// read from post data or file upload
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+)|(?:End)).*(?:\\r?\\n)*", "$1\n");
 				if (ref.endsWith("\n")) {
@@ -212,8 +212,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			} else {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
+				request.freeParts();
 				return;
 			}
+			
+			request.freeParts();
 			// we have a node reference in ref
 			SimpleFieldSet fs;
 			
@@ -236,12 +239,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			if(!this.node.addDarknetConnection(pn)) {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "We already have the given reference. Return to the connections page <a href=\".\">here</a>.");
 			}
-		} else if (request.isParameterSet("disconnect")) {
+		} else if (request.isPartSet("disconnect")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isParameterSet("delete_node_"+peerNodes[i].hashCode())) {
+				if (request.isPartSet("delete_node_"+peerNodes[i].hashCode())) {
 					this.node.removeDarknetConnection(peerNodes[i]);
 				}
 			}

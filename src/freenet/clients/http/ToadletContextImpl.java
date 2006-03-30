@@ -89,6 +89,10 @@ public class ToadletContextImpl implements ToadletContext {
 	public PageMaker getPageMaker() {
 		return pagemaker;
 	}
+	
+	public MultiValueTable getHeaders() {
+		return headers;
+	}
 
 	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws IOException {
 		// Construct headers

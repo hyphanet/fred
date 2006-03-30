@@ -38,5 +38,7 @@ public interface ToadletContext {
 	PageMaker getPageMaker();
 
 	BucketFactory getBucketFactory();
+	
+	MultiValueTable getHeaders();
 }
 

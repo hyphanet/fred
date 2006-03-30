@@ -7,11 +7,22 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Iterator;
 import java.util.StringTokenizer;
+import java.io.InputStream;
+import java.io.DataInputStream;
+import java.io.OutputStream;
+import java.io.IOException;
 
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
+import freenet.support.Bucket;
+import freenet.support.BucketFactory;
+import freenet.support.BucketTools;
+import freenet.support.MultiValueTable;
+import freenet.support.io.LineReadingInputStream;
+import freenet.clients.http.ToadletContext;
 
 /**
  * Used for passing all HTTP request information to the FredPlugin that handles
@@ -35,6 +46,23 @@ public class HTTPRequest {
 	 * the original URI as given to the constructor
 	 */
 	private URI uri;
+	
+	/**
+	 * The headers sent by the client
+	 */
+	private MultiValueTable headers;
+	
+	/**
+	 * The data sent in the connection
+	 */
+	private Bucket data;
+	
+	/**
+	 * A hasmap of buckets that we use to store all the parts for a multipart/form-data request
+	 */
+	private HashMap parts;
+	
+	private final BucketFactory bucketfactory;
 
 	/**
 	 * Create a new HTTPRequest for the given URI and parse its request
@@ -46,6 +74,9 @@ public class HTTPRequest {
 	public HTTPRequest(URI uri) {
 		this.uri = uri;
 		this.parseRequestParameters(uri.getRawQuery(), true);
+		this.data = null;
+		this.parts = null;
+		this.bucketfactory = null;
 	}
 
 	/**
@@ -56,7 +87,9 @@ public class HTTPRequest {
 	 * @throws URISyntaxException if the URI is invalid
 	 */
 	public HTTPRequest(String path, String encodedQueryString) throws URISyntaxException {
-
+		this.data = null;
+		this.parts = null;
+		this.bucketfactory = null;
 		if (encodedQueryString!=null && encodedQueryString.length()>0) {
 			this.uri = new URI(path+"?"+encodedQueryString);
 		} else {
@@ -64,6 +97,29 @@ public class HTTPRequest {
 		}
 		this.parseRequestParameters(uri.getRawQuery(), true);
 	}
+	
+	/**
+	 * Creates a new HTTPRequest for the given URI and data (for multipart/form-data)
+	 * 
+	 * @param uri The URI being requested
+	 * @param h Client headers
+	 * @param d The data
+	 * @param ctx The toadlet context (for headers and bucket factory)
+	 * @throws URISyntaxException if the URI is invalid
+	 */
+	public HTTPRequest(URI uri, Bucket d, ToadletContext ctx) {
+		this.headers = ctx.getHeaders();
+		this.parseRequestParameters(uri.getRawQuery(), true);
+		this.data = d;
+		this.parts = new HashMap();
+		this.bucketfactory = ctx.getBucketFactory();
+		try {
+			this.parseMultiPartData();
+		} catch (IOException ioe) {
+			
+		}
+	}
+	
 
 	/**
 	 * The path of this request, where the part of the path the specified the
@@ -329,5 +385,146 @@ public class HTTPRequest {
 
 
 	// TODO: add similar methods for multiple long, boolean etc.
-
+	
+	
+	private void parseMultiPartData() throws IOException {
+		String ctype = (String) this.headers.get("content-type");
+		if (ctype == null) return;
+		String[] ctypeparts = ctype.split(";");
+		if (!ctypeparts[0].trim().equalsIgnoreCase("multipart/form-data") || ctypeparts.length < 2) {
+			return;
+		}
+		
+		String boundary = null;
+		for (int i = 0; i < ctypeparts.length; i++) {
+			String[] subparts = ctypeparts[i].split("=");
+			if (subparts.length == 2 && subparts[0].trim().equalsIgnoreCase("boundary")) {
+				boundary = subparts[1];
+			}
+		}
+		
+		if (boundary == null || boundary.length() == 0) return;
+		if (boundary.charAt(0) == '"') boundary = boundary.substring(1);
+		if (boundary.charAt(boundary.length() - 1) == '"')
+			boundary = boundary.substring(0, boundary.length() - 1);
+		
+		boundary = "--"+boundary;
+		
+		InputStream is = this.data.getInputStream();
+		LineReadingInputStream lis = new LineReadingInputStream(is);
+		
+		String line;
+		line = lis.readLine(100, 100);
+		while (is.available() > 0 && !line.equals(boundary)) {
+			line = lis.readLine(100, 100);
+		}
+		
+		boundary  = "\r\n"+boundary;
+		
+		Bucket filedata = null;
+		String name = null;
+		
+		while(is.available() > 0) {
+			name = null;
+			// chomp headers
+			while( (line = lis.readLine(100, 100)) != null) {
+				if (line.length() == 0) break;
+				
+				String[] lineparts = line.split(":");
+				if (lineparts == null) continue;
+				String hdrname = lineparts[0].trim();
+				
+				if (lineparts.length < 2) continue;
+				String[] valueparts = lineparts[1].split(";");
+				
+				for (int i = 0; i < valueparts.length; i++) {
+					String[] subparts = valueparts[i].split("=");
+					if (subparts.length != 2) {
+						continue;
+					}
+					if (hdrname.equalsIgnoreCase("Content-Disposition")) {
+						if (subparts[0].trim().equalsIgnoreCase("name")) {
+							name = subparts[1].trim();
+							if (name.charAt(0) == '"') name = name.substring(1);
+							if (name.charAt(name.length() - 1) == '"')
+								name = name.substring(0, name.length() - 1);
+						}
+					}
+				}
+			}
+			
+			if (name == null) continue;
+			
+			// we should be at the data now. Start reading it in, checking for the
+			// boundary string
+			
+			// we can only give an upper bound for the size of the bucket
+			filedata = this.bucketfactory.makeBucket(is.available());
+			OutputStream bucketos = filedata.getOutputStream();
+			// buffer characters that match the boundary so far
+			byte[] buf = new byte[boundary.length()];
+			byte[] bbound = boundary.getBytes();
+			int offset = 0;
+			while (is.available() > 0 && !boundary.equals(new String(buf))) {
+				byte b = (byte)is.read();
+				
+				if (b == bbound[offset]) {
+					buf[offset] = b;
+					offset++;
+				} else if (b != bbound[offset] && offset > 0) {
+					// empty the buffer out
+					bucketos.write(buf, 0, offset);
+					bucketos.write(b);
+					offset = 0;
+				} else {
+					bucketos.write(b);
+				}
+			}
+			
+			bucketos.close();
+			
+			this.parts.put(name, filedata);
+		}
+		
+		if (filedata != null) {
+			this.bucketfactory.freeBucket(filedata);
+		}
+	}
+	
+	public Bucket getPart(String name) {
+		return (Bucket)this.parts.get(name);
+	}
+	
+	public boolean isPartSet(String name) {
+		return this.parts.containsKey(name);
+	}
+	
+	public String getPartAsString(String name, int maxlength) {
+		Bucket part = (Bucket)this.parts.get(name);
+		
+		if (part.size() > maxlength) return new String("");
+		
+		try {
+			InputStream is = part.getInputStream();
+			DataInputStream dis = new DataInputStream(is);
+			byte[] buf = new byte[is.available()];
+			dis.readFully(buf);
+			is.close();
+			return new String(buf);
+		} catch (IOException ioe) {
+			
+		}
+		return new String("");
+	}
+	
+	public void freeParts() {
+		if (this.parts == null) return;
+		Iterator i = this.parts.keySet().iterator();
+		
+		while (i.hasNext()) {
+			String key = (String) i.next();
+			Bucket b = (Bucket)this.parts.get(key);
+			b.free();
+		}
+	}
 }
