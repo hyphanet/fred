@@ -16,6 +16,10 @@ pre, textarea {
 	font-size: 8pt;
 }
 
+pre#reference {
+	overflow:auto;
+}
+
 /* body and page header */
 
 body {
