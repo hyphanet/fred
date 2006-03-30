@@ -8,7 +8,9 @@ import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
+import freenet.support.Base64;
 import freenet.support.HexUtil;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
 
 import net.i2p.util.NativeBigInteger;
@@ -329,16 +331,23 @@ public class DSAGroup extends CryptoKey {
 
 	public SimpleFieldSet asFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("p", getPAsHexString());
-		fs.put("q", getQAsHexString());
-		fs.put("g", getGAsHexString());
+		fs.put("p", Base64.encode(p.toByteArray()));
+		fs.put("q", Base64.encode(q.toByteArray()));
+		fs.put("g", Base64.encode(g.toByteArray()));
 		return fs;
 	}
 
-	public static DSAGroup create(SimpleFieldSet fs) {
-		BigInteger p = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("p")));
-		BigInteger q = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("q")));
-		BigInteger g = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("g")));
-		return new DSAGroup(p, q, g);
+	public static DSAGroup create(SimpleFieldSet fs, boolean base64) throws IllegalBase64Exception {
+		if(base64) {
+			BigInteger p = new NativeBigInteger(1, Base64.decode(fs.get("p")));
+			BigInteger q = new NativeBigInteger(1, Base64.decode(fs.get("q")));
+			BigInteger g = new NativeBigInteger(1, Base64.decode(fs.get("g")));
+			return new DSAGroup(p, q, g);
+		} else {
+			BigInteger p = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("p")));
+			BigInteger q = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("q")));
+			BigInteger g = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("g")));
+			return new DSAGroup(p, q, g);
+		}
 	}
 }

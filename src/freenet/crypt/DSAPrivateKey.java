@@ -4,7 +4,9 @@ import java.math.BigInteger;
 import java.io.*;
 import java.util.Random;
 
+import freenet.support.Base64;
 import freenet.support.HexUtil;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
 
 import net.i2p.util.NativeBigInteger;
@@ -63,12 +65,15 @@ public class DSAPrivateKey extends CryptoKey {
 
 	public SimpleFieldSet asFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("x", x.toString(16));
+		fs.put("x", Base64.encode(x.toByteArray()));
 		return fs;
 	}
 
-	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group) {
-		NativeBigInteger x = new NativeBigInteger(1, HexUtil.hexToBytes(set.get("x")));
+	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group, boolean base64) throws IllegalBase64Exception {
+		NativeBigInteger x = 
+			new NativeBigInteger(1,
+					base64 ? Base64.decode(set.get("x")) :
+					HexUtil.hexToBytes(set.get("x")));
 		return new DSAPublicKey(group, x);
 	}
     

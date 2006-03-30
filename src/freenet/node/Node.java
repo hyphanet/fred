@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.zip.DeflaterOutputStream;
-import java.util.zip.GZIPOutputStream;
 
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
@@ -78,10 +77,12 @@ import freenet.pluginmanager.PluginManager;
 import freenet.snmplib.SNMPStarter;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
+import freenet.support.Base64;
 import freenet.support.BucketFactory;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
@@ -317,7 +318,12 @@ public class Node {
         String identity = fs.get("identity");
         if(identity == null)
             throw new IOException();
-        myIdentity = HexUtil.hexToBytes(identity);
+        boolean base64 = Fields.stringToBool(fs.get("base64"), false);
+        try {
+			myIdentity = base64 ? Base64.decode(identity) : HexUtil.hexToBytes(identity);
+		} catch (IllegalBase64Exception e2) {
+			throw new IOException();
+		}
         MessageDigest md;
         try {
             md = MessageDigest.getInstance("SHA-256");
@@ -340,16 +346,19 @@ public class Node {
         if(myName == null) {
             myName = newName();
         }
+
         // FIXME: Back compatibility; REMOVE !!
         try {
-        	this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
-        	this.myPrivKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup);
-        	this.myPubKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup);
+        	this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"), base64);
+        	this.myPrivKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup, base64);
+        	this.myPubKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup, base64);
         } catch (NullPointerException e) {
             this.myCryptoGroup = Global.DSAgroupBigA;
             this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
             this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
-        }
+        } catch (IllegalBase64Exception e) {
+        	throw new IOException();
+		}
         wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
     }
 
@@ -1434,9 +1443,10 @@ public class Node {
     public SimpleFieldSet exportPublicFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet(true);
         InetAddress ip = getPrimaryIPAddress();
+        fs.put("base64", "true");
         if(ip != null)
         	fs.put("physical.udp", Peer.getHostName(ip)+":"+portNumber);
-        fs.put("identity", HexUtil.bytesToHex(myIdentity));
+        fs.put("identity", Base64.encode(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());
         fs.put("testnet", Boolean.toString(testnetEnabled));
@@ -1861,6 +1871,7 @@ public class Node {
     	sb.append(requestSenders.size());
     	sb.append("\nTransferring requests: ");
     	sb.append(this.transferringRequestSenders.size());
+    	sb.append('\n');
     	return sb.toString();
     }
     

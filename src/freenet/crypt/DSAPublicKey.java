@@ -6,7 +6,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.io.*;
 
+import freenet.support.Base64;
 import freenet.support.HexUtil;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.SimpleFieldSet;
 
 import net.i2p.util.NativeBigInteger;
@@ -186,12 +188,14 @@ public class DSAPublicKey extends CryptoKey {
 
 	public SimpleFieldSet asFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("y", getYAsHexString());
+		fs.put("y", Base64.encode(y.toByteArray()));
 		return fs;
 	}
 
-	public static DSAPrivateKey create(SimpleFieldSet fs, DSAGroup group) {
-		NativeBigInteger y = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("y")));
+	public static DSAPrivateKey create(SimpleFieldSet fs, DSAGroup group, boolean base64) throws IllegalBase64Exception {
+		NativeBigInteger y = new NativeBigInteger(1, 
+				base64 ? Base64.decode(fs.get("y")) :
+				HexUtil.hexToBytes(fs.get("y")));
 		return new DSAPrivateKey(y);
 	}
 }

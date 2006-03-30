@@ -27,8 +27,10 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
+import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
+import freenet.support.IllegalBase64Exception;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -183,14 +185,20 @@ public class PeerNode implements PeerContext {
      */
     public PeerNode(SimpleFieldSet fs, Node node2) throws FSParseException, PeerParseException {
         this.node = node2;
+        boolean base64 = Fields.stringToBool(fs.get("base64"), false);
         String identityString = fs.get("identity");
     	if(identityString == null)
     		throw new PeerParseException("No identity!");
         try {
-            identity = HexUtil.hexToBytes(identityString);
+        	if(base64)
+        		identity = Base64.decode(identityString);
+        	else
+        		identity = HexUtil.hexToBytes(identityString);
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
-        }
+        } catch (IllegalBase64Exception e) {
+            throw new FSParseException(e);
+		}
         
         MessageDigest md;
         try {
@@ -858,12 +866,16 @@ public class PeerNode implements PeerContext {
         boolean changedAnything = false;
         String identityString = fs.get("identity");
         try {
-            byte[] newIdentity = HexUtil.hexToBytes(identityString);
+            boolean base64 = Fields.stringToBool(fs.get("base64"), false);
+            byte[] newIdentity = base64 ? Base64.decode(identityString) :
+            	HexUtil.hexToBytes(identityString);
             if(!Arrays.equals(newIdentity, identity))
                 throw new FSParseException("Identity changed!!");
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
-        }
+        } catch (IllegalBase64Exception e) {
+            throw new FSParseException(e);
+		}
         String newVersion = fs.get("version");
         if(newVersion == null) throw new FSParseException("No version");
         if(!newVersion.equals(version))
@@ -992,7 +1004,8 @@ public class PeerNode implements PeerContext {
         	fs.put("lastGoodVersion", lastGoodVersion);
         for(int i=0;i<nominalPeer.size();i++)
         	fs.put("physical.udp", nominalPeer.get(i).toString());
-        fs.put("identity", HexUtil.bytesToHex(identity));
+        fs.put("base64", "true");
+        fs.put("identity", Base64.encode(identity));
         fs.put("location", Double.toString(currentLocation.getValue()));
         fs.put("testnet", Boolean.toString(testnetEnabled));
         fs.put("version", version);
