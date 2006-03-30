@@ -206,7 +206,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			} else if (reftext.length() > 0) {
 				// read directly from post data
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
-				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[\\w,\\.:\\-_\\ ]+)|(?:End)).*(?:\\r?\\n)*", "$1\n");
+				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+)|(?:End)).*(?:\\r?\\n)*", "$1\n");
 				if (ref.endsWith("\n")) {
 					ref = ref.substring(0, ref.length() - 1);
 				}
