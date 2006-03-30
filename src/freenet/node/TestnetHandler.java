@@ -238,12 +238,14 @@ public class TestnetHandler implements Runnable {
         	
         	int defaultPort = 1024 + (node.portNumber-1024+1000) % (65536 - 1024);
         	
-        	testnetConfig.register("port", defaultPort, 2, true, "Testnet port", "Testnet port number",
+        	testnetConfig.register("port", defaultPort, 2, true, "Testnet port", "Testnet port number (-1 = listenPort+1000)",
         			new TestnetPortNumberCallback(node));
         	
         	testnetConfig.finishedInitialization();
         	
-        	return new TestnetHandler(node, testnetConfig.getInt("port"));
+        	int port = testnetConfig.getInt("port");
+        	if(port == -1) port = defaultPort;
+        	return new TestnetHandler(node, port);
         } else return null;
 	}
 
