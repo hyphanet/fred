@@ -48,15 +48,22 @@ public class GenericReadFilterCallback implements FilterCallback {
 			bookmark_desc = HTMLEncoder.encode(bookmark_desc);
 			
 			return "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
-		} else if(path.startsWith("/")) {
+		} else if(path.startsWith("/") || path.indexOf('@') != -1) {
 			// Try to make it into a FreenetURI
 			try {
-				FreenetURI furi = new FreenetURI(path.substring(1));
+				String p = path;
+				while(p.startsWith("/")) p = p.substring(1);
+				FreenetURI furi = new FreenetURI(p);
 				return processURI(furi, uri, overrideType);
 			} catch (MalformedURLException e) {
 				// Obviously not a Freenet URI!
-					
 			}
+		}
+		if(path.startsWith("/")) {
+			// Still here. It's an absolute URI and *NOT* a freenet URI.
+			// Kill it.
+			Logger.normal(this, "Unrecognized URI, dropped: "+uri);
+			return null;
 		} else {
 			// Relative URI
 			// FIXME resolve it
@@ -64,8 +71,6 @@ public class GenericReadFilterCallback implements FilterCallback {
 			// This is okay because we don't allow forms.
 			return finishProcess(req, overrideType, path);
 		}
-		Logger.normal(this, "Unrecognized URI, dropped: "+uri);
-		return null;
 	}
 
 	private String finishProcess(HTTPRequest req, String overrideType, String path) {
