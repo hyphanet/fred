@@ -501,8 +501,9 @@ public class HTTPRequest {
 	
 	public String getPartAsString(String name, int maxlength) {
 		Bucket part = (Bucket)this.parts.get(name);
+		if(part == null) return "";
 		
-		if (part.size() > maxlength) return new String("");
+		if (part.size() > maxlength) return "";
 		
 		try {
 			InputStream is = part.getInputStream();
