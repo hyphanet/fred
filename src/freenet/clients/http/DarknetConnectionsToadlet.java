@@ -3,6 +3,7 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -53,6 +54,16 @@ public class DarknetConnectionsToadlet extends Toadlet {
 	}
 
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		
+		String path = uri.getPath();
+		if(path.endsWith("myref.txt")) {
+			SimpleFieldSet fs = node.exportPublicFieldSet();
+			StringWriter sw = new StringWriter();
+			fs.writeTo(sw);
+			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
+			return;
+		}
+		
 		StringBuffer buf = new StringBuffer();
 		
 		HTTPRequest request = new HTTPRequest(uri);
@@ -60,7 +71,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		// our reference
 		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2>My Reference</h2>\n");
+		buf.append("<h2><a href=\"myref.txt\">My Reference</a></h2>\n");
 		buf.append("<pre id=\"reference\">\n");
 		buf.append(this.node.exportPublicFieldSet());
 		buf.append("</pre>\n");
