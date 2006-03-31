@@ -6,8 +6,19 @@ p, span, div, td, th, li, h1, h2, h3, h4, h5 {
 	font-size: 11pt;
 }
 
+table {
+	border-collapse: collapse;
+}
+
 th {
 	font-weight: bold;
+	background-color: #e8e8e8;
+}
+
+th, td {
+	margin: 0;
+	padding: 5px;
+	border: 1px solid #d0d0d0;
 }
 
 pre, textarea {
@@ -16,8 +27,14 @@ pre, textarea {
 	font-size: 8pt;
 }
 
-pre#reference {
-	overflow:auto;
+table, pre {
+	margin: 0 0 5px 0;
+	padding: 0;
+}
+
+form {
+	margin: 0;
+	padding: 0;
 }
 
 /* body and page header */
@@ -85,7 +102,7 @@ body {
 /* content */
 
 #content {
-	margin: 0 5px 5px 0;
+	margin: 5px 5px 5px 0;
 	padding: 0;
 	position: absolute;
 	left: 177px;
@@ -100,7 +117,7 @@ a:hover {
 }
 
 .infobox {
-	margin: 5px 0 5px 0;
+	margin: 0 0 5px 0;
 	padding: 10px;
 	background-color: #f0f0f0;
 	border: 1px solid #d0d0d0;
@@ -166,16 +183,7 @@ a:hover {
 
 /* darknet page */
 
-table.darknet_connections {
-	margin: 0;
-	padding: 0;
-	border-collapse: collapse;
-}
-
 table.darknet_connections th, table.darknet_connections td {
-	margin: 0;
-	padding: 5px;
-	border: 1px solid #d0d0d0;
 	font-size: 8pt;
 }
 

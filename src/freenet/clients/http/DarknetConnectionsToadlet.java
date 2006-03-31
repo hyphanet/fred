@@ -156,8 +156,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>");
 		
 		// new connection box
-		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("<div class=\"infobox\">\n");
+		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("<h2>\n");
 		buf.append("Connect to another node\n");
 		buf.append("</h2>\n");
@@ -171,8 +171,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<input type=\"file\" name=\"reffile\" />\n");
 		buf.append("<br />\n");
 		buf.append("<input type=\"submit\" name=\"connect\" value=\"Connect\" />\n");
-		buf.append("</div>\n");
 		buf.append("</form>\n");
+		buf.append("</div>\n");
 		
 		ctx.getPageMaker().makeTail(buf);
 		
