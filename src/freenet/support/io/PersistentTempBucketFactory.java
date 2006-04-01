@@ -100,7 +100,7 @@ public class PersistentTempBucketFactory implements BucketFactory {
 	}
 	
 	public Bucket makeEncryptedBucket() throws IOException {
-		Bucket b = makeBucket(-1);
+		Bucket b = makeRawBucket(-1);
 		return new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false);
 	}
 

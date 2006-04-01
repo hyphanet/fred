@@ -382,9 +382,13 @@ public class FCPServer implements Runnable {
 						}
 						if(killed) return;
 					}
+					storeNow = false;
 				}
-				storeNow = false;
-				storePersistentRequests();
+				try {
+					storePersistentRequests();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+				}
 			}
 		}
 		
@@ -403,6 +407,7 @@ public class FCPServer implements Runnable {
 	public void storePersistentRequests() {
 		Logger.minor(this, "Storing persistent requests");
 		ClientRequest[] persistentRequests = getPersistentRequests();
+		Logger.minor(this, "Persistent requests count: "+persistentRequests.length);
 		synchronized(persistenceSync) {
 			try {
 				FileOutputStream fos = new FileOutputStream(persistentDownloadsTempFile);
@@ -424,6 +429,7 @@ public class FCPServer implements Runnable {
 				Logger.error(this, "Cannot write persistent requests to disk: "+e);
 			}
 		}
+		Logger.minor(this, "Stored persistent requests");
 	}
 
 	private void loadPersistentRequests() {

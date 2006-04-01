@@ -105,7 +105,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			client.register(this);
 		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION && handler != null)
-			sendPendingMessages(handler.outputHandler, true);
+			sendPendingMessages(handler.outputHandler, true, true);
 			
 	}
 
@@ -274,8 +274,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private void trySendAllDataMessage(AllDataMessage msg, FCPConnectionOutputHandler handler) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			allDataPending = msg;
+		} else {
+			client.queueClientRequestMessage(msg, 0);
 		}
-		client.queueClientRequestMessage(msg, 0);
 	}
 	
 	private void trySendProgress(SimpleProgressMessage msg, FCPConnectionOutputHandler handler) {
@@ -285,7 +286,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS);
 	}
 	
-	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest) {
+	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData) {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
 			return;
@@ -298,7 +299,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			handler.queue(progressPending);
 		if(finished)
 			trySendDataFoundOrGetFailed(handler);
-		if(allDataPending != null)
+		if(includeData && allDataPending != null)
 			handler.queue(allDataPending);
 	}
 
@@ -380,8 +381,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Return bucket
 		if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 			PaddedEphemerallyEncryptedBucket b = (PaddedEphemerallyEncryptedBucket) returnBucket;
+			FileBucket underlying = (FileBucket) (b.getUnderlying());
 			fs.put("ReturnBucket.DecryptKey", HexUtil.bytesToHex(b.getKey()));
-			fs.put("ReturnBucket.Filename", ((FileBucket)b.getUnderlying()).getName());
+			fs.put("ReturnBucket.Filename", underlying.getName());
 		}
 		fs.put("Global", Boolean.toString(client.isGlobalQueue));
 		return fs;

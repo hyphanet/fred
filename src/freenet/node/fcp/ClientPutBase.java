@@ -186,7 +186,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			client.queueClientRequestMessage(msg, verbosity);
 	}
 	
-	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest) {
+	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData) {
 		if(persistenceType == PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
 			return;

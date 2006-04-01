@@ -111,7 +111,7 @@ public class FCPClient {
 			reqs = completedUnackedRequests.toArray();
 		}
 		for(int i=0;i<reqs.length;i++)
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true);
+			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false);
 	}
 	
 	/**
@@ -123,7 +123,7 @@ public class FCPClient {
 			reqs = runningPersistentRequests.toArray();
 		}
 		for(int i=0;i<reqs.length;i++)
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true);
+			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false);
 	}
 	
 	public void register(ClientRequest cg) throws IdentifierCollisionException {

@@ -2,16 +2,13 @@ package freenet.node.fcp;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 
 import freenet.client.ClientMetadata;
-import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
-import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.PaddedEphemerallyEncryptedBucket;
@@ -61,7 +58,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client);
 		if(persistenceType != PERSIST_CONNECTION && handler != null)
-			sendPendingMessages(handler.outputHandler, true);
+			sendPendingMessages(handler.outputHandler, true, false);
 	}
 	
 	/**

@@ -52,6 +52,8 @@ public abstract class FCPMessage {
 			return new ClientPutComplexDirMessage(fs, bfTemp, bfPersistent);
 		if(name.equals(SubscribeUSKMessage.name))
 			return new SubscribeUSKMessage(fs);
+		if(name.equals(GetResultsMessage.name))
+			return new GetResultsMessage(fs);
 		if(name.equals("Void"))
 			return null;
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null);
