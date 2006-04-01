@@ -102,6 +102,14 @@ public class ToadletContextImpl implements ToadletContext {
 			mvt.put("content-type", mimeType);
 		if(contentLength >= 0)
 			mvt.put("content-length", Long.toString(contentLength));
+		// FIXME allow caching on a config option.
+		// For now cater to the paranoid.
+		// Also this may fix a wierd bug...
+		// All keys are lower-case
+		mvt.put("expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+		mvt.put("last-modified", Long.toString(System.currentTimeMillis()-1000));
+		mvt.put("pragma", "no-cache");
+		mvt.put("cache-control", "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0");
 		StringBuffer buf = new StringBuffer(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);
@@ -111,6 +119,7 @@ public class ToadletContextImpl implements ToadletContext {
 		for(Enumeration e = mvt.keys();e.hasMoreElements();) {
 			String key = (String) e.nextElement();
 			Object[] list = mvt.getArray(key);
+			key = fixKey(key);
 			for(int i=0;i<list.length;i++) {
 				String val = (String) list[i];
 				buf.append(key);
@@ -123,6 +132,24 @@ public class ToadletContextImpl implements ToadletContext {
 		sockOutputStream.write(buf.toString().getBytes("US-ASCII"));
 	}
 	
+	/** Fix key case to be conformant to HTTP expectations.
+	 * Note that HTTP is case insensitive on header names, but we may as well
+	 * send something as close to the spec as possible in case of broken clients... 
+	 */
+	private static String fixKey(String key) {
+		StringBuffer sb = new StringBuffer(key.length());
+		char prev = 0;
+		for(int i=0;i<key.length();i++) {
+			char c = key.charAt(i);
+			if(i == 0 || prev == '-') {
+				c = Character.toUpperCase(c);
+			}
+			sb.append(c);
+			prev = c;
+		}
+		return sb.toString();
+	}
+
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
