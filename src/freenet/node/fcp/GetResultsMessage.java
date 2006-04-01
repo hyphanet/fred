@@ -1,19 +1,18 @@
 package freenet.node.fcp;
 
 import freenet.node.Node;
+import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 public class GetResultsMessage extends FCPMessage {
 
 	final String identifier;
+	final boolean global;
 	final static String name = "GetResults";
-	
-	GetResultsMessage(String id) {
-		this.identifier = id;
-	}
 	
 	public GetResultsMessage(SimpleFieldSet fs) {
 		this.identifier = fs.get("Identifier");
+		this.global = Fields.stringToBool(fs.get("Global"), false);
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -28,8 +27,12 @@ public class GetResultsMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		ClientRequest req = (ClientRequest) 
-			handler.getClient().getRequest(identifier);
+		ClientRequest req;
+		if(global)
+			req = handler.server.globalClient.getRequest(identifier);
+		else
+			req = (ClientRequest) 
+				handler.getClient().getRequest(identifier);
 		if(req == null) {
 			ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier);
 			handler.outputHandler.queue(msg);
