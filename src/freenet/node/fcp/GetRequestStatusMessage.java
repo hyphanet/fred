@@ -4,13 +4,13 @@ import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
-public class GetResultsMessage extends FCPMessage {
+public class GetRequestStatusMessage extends FCPMessage {
 
 	final String identifier;
 	final boolean global;
-	final static String name = "GetResults";
+	final static String name = "GetRequestStatus";
 	
-	public GetResultsMessage(SimpleFieldSet fs) {
+	public GetRequestStatusMessage(SimpleFieldSet fs) {
 		this.identifier = fs.get("Identifier");
 		this.global = Fields.stringToBool(fs.get("Global"), false);
 	}
