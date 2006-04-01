@@ -141,7 +141,7 @@ public class SimpleFieldSet {
     
     public String get(String key) {
     	if(multiLevel) {
-    		int idx = key.indexOf(MULTI_LEVEL_CHAR);
+    		int idx = key.lastIndexOf(MULTI_LEVEL_CHAR);
     		if(idx == -1)
     			return (String) map.get(key);
     		else {
