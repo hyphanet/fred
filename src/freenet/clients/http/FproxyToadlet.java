@@ -92,6 +92,8 @@ public class FproxyToadlet extends Toadlet {
 				// HUH!?!
 			}
 			throw re;
+		}else if(ks.equals("/favicon.ico")){
+			this.writePermanentRedirect(ctx, "/static/favicon.ico", "/static/favicon.ico");
 		}
 		
 		if(ks.startsWith("/"))
