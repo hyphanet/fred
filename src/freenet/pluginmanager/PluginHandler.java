@@ -26,7 +26,8 @@ public class PluginHandler {
 		ps.setPlugin(pm, plug);
 		if (!pi.isThreadlessPlugin())
 			ps.start();
-		ps.run();
+		else
+			ps.run();
 		return pi;
 	}
 	
