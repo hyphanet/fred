@@ -96,17 +96,18 @@ public class FproxyToadlet extends Toadlet {
 		}else if(ks.equals("/favicon.ico")){
 			byte[] buf = new byte[1024];
 			int len;
-			InputStream strm = getClass().getResourceAsStream("/static/favicon.ico");
+			InputStream strm = getClass().getResourceAsStream("staticfiles/favicon.ico");
 			
 			if (strm == null) {
 				this.sendErrorPage(ctx, 404, "Path not found", "The specified path does not exist.");
 				return;
 			}
-			ctx.sendReplyHeaders(200, "OK", null, "image/png", strm.available());
+			ctx.sendReplyHeaders(200, "OK", null, "image/x-icon", strm.available());
 			
 			while ( (len = strm.read(buf)) > 0) {
 				ctx.writeData(buf, 0, len);
 			}
+			return;
 		}
 		
 		if(ks.startsWith("/"))
