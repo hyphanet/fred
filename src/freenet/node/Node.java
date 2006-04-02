@@ -578,7 +578,12 @@ public class Node {
 					}
     	});
     	
-    	int port = nodeConfig.getInt("listenPort");
+    	int port=-1;
+    	try{
+    		port=nodeConfig.getInt("listenPort");
+    	}catch (Exception e){
+    		port=-1;
+    	}
     	
     	UdpSocketManager u = null;
     	
@@ -896,10 +901,9 @@ public class Node {
 					}
         });
         myName = nodeConfig.getString("name");
-	
-        writeNodeFile();
-        
+	    
         nodeConfig.finishedInitialization();
+        writeNodeFile();
         
         // FIXME make all the below arbitrary constants configurable!
         
