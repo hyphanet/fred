@@ -1,6 +1,7 @@
 package freenet.clients.http;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
@@ -93,7 +94,19 @@ public class FproxyToadlet extends Toadlet {
 			}
 			throw re;
 		}else if(ks.equals("/favicon.ico")){
-			this.writePermanentRedirect(ctx, "/static/favicon.ico", "/static/favicon.ico");
+			byte[] buf = new byte[1024];
+			int len;
+			InputStream strm = getClass().getResourceAsStream("/static/favicon.ico");
+			
+			if (strm == null) {
+				this.sendErrorPage(ctx, 404, "Path not found", "The specified path does not exist.");
+				return;
+			}
+			ctx.sendReplyHeaders(200, "OK", null, "image/png", strm.available());
+			
+			while ( (len = strm.read(buf)) > 0) {
+				ctx.writeData(buf, 0, len);
+			}
 		}
 		
 		if(ks.startsWith("/"))
