@@ -154,9 +154,8 @@ public class TextModeClientInterface implements Runnable {
         sb.append("QUIT - exit the program\r\n");
         if(n.testnetEnabled) {
         	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
-        
-        s.write(sb.toString().getBytes());
         }
+        s.write(sb.toString().getBytes());
     }
 
 	/**
