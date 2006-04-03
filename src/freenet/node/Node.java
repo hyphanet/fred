@@ -314,7 +314,7 @@ public class Node {
         	if(myOldPeer.getPort() != portNumber)
         		throw new IllegalArgumentException("Wrong port number "+
         				myOldPeer.getPort()+" should be "+portNumber);
-        	lastIPAddress = myOldPeer.getAddress();
+        	oldIPAddress = myOldPeer.getAddress();
         }
         String identity = fs.get("identity");
         if(identity == null)
@@ -1468,6 +1468,8 @@ public class Node {
     }
 
     InetAddress overrideIPAddress;
+    /** IP address from last time */
+    InetAddress oldIPAddress;
     /** Last detected IP address */
     InetAddress lastIPAddress;
     
@@ -1526,7 +1528,8 @@ public class Node {
        		lastIPAddress = best;
            	return best;
        	}
-       	return lastIPAddress;
+       	lastIPAddress = oldIPAddress;
+       	return oldIPAddress;
     }
 
     InetAddress getPrimaryIPAddress() {
