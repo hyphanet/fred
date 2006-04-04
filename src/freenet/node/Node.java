@@ -535,6 +535,7 @@ public class Node {
 				if(val.length() == 0) {
 					// Set to null
 					overrideIPAddress = null;
+					lastIPAddress = null;
 					return;
 				}
 				InetAddress addr;
@@ -544,6 +545,7 @@ public class Node {
 					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
 				}
 				overrideIPAddress = addr;
+				lastIPAddress = null;
 			}
     		
     	});
