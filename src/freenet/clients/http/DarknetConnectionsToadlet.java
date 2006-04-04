@@ -212,7 +212,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						ref += line+"\n";
 					}
 				} catch (Exception e) {
-					this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to retrieve node reference from "+urltext+".");
+					this.sendErrorPage(ctx, 200, "OK", "Failed to add node: Unable to retrieve node reference from "+urltext+".");
 				}
 			} else if (reftext.length() > 0) {
 				// read from post data or file upload
@@ -222,7 +222,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					ref = ref.substring(0, ref.length() - 1);
 				}
 			} else {
-				this.sendErrorPage(ctx, 200, "Failed to add node", "Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "OK", "Failed to add node: Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
 				request.freeParts();
 				return;
 			}
@@ -249,6 +249,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			if(!this.node.addDarknetConnection(pn)) {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "We already have the given reference. Return to the connections page <a href=\".\">here</a>.");
+				return;
 			}
 		} else if (request.isPartSet("disconnect")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
