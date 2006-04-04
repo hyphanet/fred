@@ -3,6 +3,8 @@ package freenet.node;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -276,7 +278,7 @@ class LocationManager {
                 Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                 return;
             }
-            Logger.minor(this, "Known Location: "+hisLoc);
+            registerKnownLocation(hisLoc);
             
             double[] hisFriendLocs = new double[hisBufLong.length-2];
             for(int i=0;i<hisFriendLocs.length;i++) {
@@ -285,7 +287,7 @@ class LocationManager {
                     Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                     return;
                 }
-                Logger.minor(this, "Known Location: "+hisFriendLocs[i]);
+                registerKnownLocation(hisFriendLocs[i]);
             }
             
             // Send our SwapComplete
@@ -457,7 +459,7 @@ class LocationManager {
                     Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                     return;
                 }
-                Logger.minor(this, "Known Location: "+hisLoc);
+                registerKnownLocation(hisLoc);
                 
                 double[] hisFriendLocs = new double[hisBufLong.length-2];
                 for(int i=0;i<hisFriendLocs.length;i++) {
@@ -466,7 +468,7 @@ class LocationManager {
                         Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                         return;
                     }
-                    Logger.minor(this, "Known Location: "+hisFriendLocs[i]);
+                    registerKnownLocation(hisFriendLocs[i]);
                 }
                 
                 if(shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom)) {
@@ -954,4 +956,15 @@ class LocationManager {
         recentlyForwardedIDs.remove(new Long(item.incomingID));
         recentlyForwardedIDs.remove(new Long(item.outgoingID));
     }
+    
+    private final HashMap knownLocs = new HashMap();
+    
+    void registerKnownLocation(double d) {
+        Logger.minor(this, "Known Location: "+d);
+        Double dd = new Double(d);
+        synchronized(knownLocs) {
+        	
+        }
+    }
+    
 }

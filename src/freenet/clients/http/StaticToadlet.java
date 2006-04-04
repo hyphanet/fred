@@ -2,11 +2,14 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.FileNameMap;
 import java.net.URI;
 import java.net.URLConnection;
 
+import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
+import freenet.support.Bucket;
 
 /**
  * Static Toadlet.
@@ -42,21 +45,28 @@ public class StaticToadlet extends Toadlet {
 			return;
 		}
 		
-		
 		InputStream strm = getClass().getResourceAsStream(rootPath+path);
 		if (strm == null) {
 			this.sendErrorPage(ctx, 404, "Path not found", "The specified path does not exist.");
 			return;
 		}
-		
+		Bucket data = ctx.getBucketFactory().makeBucket(strm.available());
+		OutputStream os = data.getOutputStream();
+		byte[] cbuf = new byte[4096];
+		while(true) {
+			int r = strm.read(cbuf);
+			if(r == -1) break;
+			os.write(cbuf, 0, r);
+		}
+		strm.close();
+		os.close();
 		
 		FileNameMap map = URLConnection.getFileNameMap();
 		
-		ctx.sendReplyHeaders(200, "OK", null, map.getContentTypeFor(path), strm.available());
-		
-		while ( (len = strm.read(buf)) > 0) {
-			ctx.writeData(buf, 0, len);
-		}
+		ctx.sendReplyHeaders(200, "OK", null, DefaultMIMETypes.guessMIMEType(path), data.size());
+
+		ctx.writeData(data);
+		data.free();
 	}
 	
 	public String supportedMethods() {
