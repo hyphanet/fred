@@ -17,8 +17,11 @@ import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 
 public class WelcomeToadlet extends Toadlet {
-	private static final String[] DEFAULT_BOOKMARKS = {
+	private static final String[] DEFAULT_TESTNET_BOOKMARKS = {
 		"USK@60I8H8HinpgZSOuTSD66AVlIFAy-xsppFr0YCzCar7c,NzdivUGCGOdlgngOGRbbKDNfSCnjI0FXjHLzJM4xkJ4,AQABAAE/index/4/=INDEX.7-freesite"
+	};
+	private static final String[] DEFAULT_DARKNET_BOOKMARKS = {
+		"USK@PFeLTa1si2Ml5sDeUy7eDhPso6TPdmw-2gWfQ4Jg02w,3ocfrqgUMVWA2PeorZx40TW0c-FiIOL-TWKQHoDbVdE,AQABAAE/Index/-1/=Darknet Index"
 	};
 	Node node;
 	SubConfig config;
@@ -30,7 +33,7 @@ public class WelcomeToadlet extends Toadlet {
 		this.config = sc;
 		this.bookmarks = new BookmarkManager(n);
 		
-		sc.register("bookmarks", DEFAULT_BOOKMARKS, 0, false, "List of bookmarks", "A list of bookmarked freesites", this.bookmarks.makeCB());
+		sc.register("bookmarks", n.isTestnetEnabled() ? DEFAULT_TESTNET_BOOKMARKS : DEFAULT_DARKNET_BOOKMARKS, 0, false, "List of bookmarks", "A list of bookmarked freesites", this.bookmarks.makeCB());
 		
 		String[] initialbookmarks = sc.getStringArr("bookmarks");
 		for (int i = 0; i < initialbookmarks.length; i++) {
