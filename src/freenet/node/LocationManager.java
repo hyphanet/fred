@@ -276,6 +276,7 @@ class LocationManager {
                 Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                 return;
             }
+            Logger.minor(this, "Known Location: "+hisLoc);
             
             double[] hisFriendLocs = new double[hisBufLong.length-2];
             for(int i=0;i<hisFriendLocs.length;i++) {
@@ -284,6 +285,7 @@ class LocationManager {
                     Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                     return;
                 }
+                Logger.minor(this, "Known Location: "+hisFriendLocs[i]);
             }
             
             // Send our SwapComplete
@@ -455,6 +457,7 @@ class LocationManager {
                     Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                     return;
                 }
+                Logger.minor(this, "Known Location: "+hisLoc);
                 
                 double[] hisFriendLocs = new double[hisBufLong.length-2];
                 for(int i=0;i<hisFriendLocs.length;i++) {
@@ -463,6 +466,7 @@ class LocationManager {
                         Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                         return;
                     }
+                    Logger.minor(this, "Known Location: "+hisFriendLocs[i]);
                 }
                 
                 if(shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom)) {
