@@ -1,6 +1,5 @@
 package freenet.support.io;
 
-import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;

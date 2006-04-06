@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 
-import freenet.client.FetcherContext;
-import freenet.client.HighLevelSimpleClient;
-import freenet.client.InserterContext;
-import freenet.node.Node;
 import freenet.support.BucketFactory;
 import freenet.support.Logger;
 

@@ -9,34 +9,18 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
-import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
-import java.util.jar.Attributes;
 import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 
-import sun.net.www.protocol.jar.URLJarFile;
-
-import freenet.client.HighLevelSimpleClient;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
-import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.node.Node;
-import freenet.node.RequestStarter;
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
-import freenet.support.Buffer;
 import freenet.support.Logger;
-import freenet.support.BucketTools.BucketFactoryWrapper;
 
 public class PluginManager {
 

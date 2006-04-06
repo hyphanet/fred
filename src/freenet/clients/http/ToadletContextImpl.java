@@ -8,14 +8,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
 
-import freenet.config.Config;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
-import freenet.support.URLDecoder;
-import freenet.support.URLEncodedFormatException;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
 

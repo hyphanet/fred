@@ -1,7 +1,6 @@
 package freenet.client.events;
 
 import freenet.keys.ClientKey;
-import freenet.keys.Key;
 
 public class SimpleBlockPutEvent implements ClientEvent {
 

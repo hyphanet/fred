@@ -8,7 +8,6 @@ import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.BucketTools;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.PersistentTempBucketFactory;
 
 /**
  * Specialized DirPutFile for direct uploads.

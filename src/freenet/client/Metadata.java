@@ -12,7 +12,6 @@ import java.util.Iterator;
 
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
-import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Fields;

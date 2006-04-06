@@ -2,7 +2,6 @@ package freenet.support;
 
 import java.util.HashMap;
 
-import freenet.client.async.SendableRequest;
 import freenet.crypt.RandomSource;
 
 /**

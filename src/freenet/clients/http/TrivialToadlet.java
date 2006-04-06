@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 
 public class TrivialToadlet extends Toadlet {

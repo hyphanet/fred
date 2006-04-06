@@ -1,7 +1,5 @@
 package freenet.keys;
 
-import java.net.MalformedURLException;
-
 /**
  * Base class for client keys.
  * Client keys are decodable. Node keys are not.

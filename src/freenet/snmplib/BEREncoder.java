@@ -1,6 +1,5 @@
 package freenet.snmplib;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Stack;
 import java.util.Vector;
 

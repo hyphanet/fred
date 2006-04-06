@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import freenet.node.Node;
-import freenet.support.Bucket;
 import freenet.support.BucketFactory;
-import freenet.support.SimpleFieldSet;
 
 public abstract class BaseDataCarryingMessage extends FCPMessage {
 

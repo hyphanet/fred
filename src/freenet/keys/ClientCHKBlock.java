@@ -18,12 +18,6 @@ import freenet.support.ArrayBucketFactory;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.BucketTools;
-import freenet.support.Logger;
-import freenet.support.SimpleReadOnlyArrayBucket;
-import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.Compressor;
-import freenet.support.compress.DecompressException;
-
 
 /**
  * @author amphibian

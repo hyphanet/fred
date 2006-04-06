@@ -1,7 +1,5 @@
 package freenet.support;
 
-import freenet.support.LoggerHook.InvalidThresholdException;
-
 /**
  * A class that takes logging messages and distributes them to LoggerHooks.
  * It implements LoggerHook itself, so that instances can be chained (just

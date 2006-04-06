@@ -14,7 +14,6 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.filter.ContentFilter;
-import freenet.clients.http.filter.MIMEType;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;

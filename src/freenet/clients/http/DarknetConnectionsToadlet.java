@@ -1,27 +1,24 @@
 package freenet.clients.http;
 
-import java.io.IOException;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.io.comm.PeerParseException;
+import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.Version;
-import freenet.node.FSParseException;
-import freenet.io.comm.PeerParseException;
 import freenet.pluginmanager.HTTPRequest;
-import freenet.support.HTMLEncoder;
 import freenet.support.Bucket;
-import freenet.support.BucketTools;
-import freenet.support.Logger;
+import freenet.support.HTMLEncoder;
 import freenet.support.SimpleFieldSet;
 
 public class DarknetConnectionsToadlet extends Toadlet {

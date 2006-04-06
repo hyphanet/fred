@@ -1,8 +1,7 @@
 package freenet.clients.http;
 
-import java.util.Vector;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.Vector;
 
 /** Simple class to output standard heads and tail for web interface pages. 
 */

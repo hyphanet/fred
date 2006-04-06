@@ -1,7 +1,5 @@
 package freenet.node.fcp;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.net.MalformedURLException;
 
 import freenet.client.FetchException;
@@ -11,7 +9,6 @@ import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientRequester;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.FinishedCompressionEvent;

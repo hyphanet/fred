@@ -1,30 +1,18 @@
 package freenet.clients.http;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.Toadlet;
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
-import freenet.node.Node;
-import freenet.pluginmanager.HTTPRequest;
-import freenet.pluginmanager.PluginHTTPException;
-import freenet.pluginmanager.PluginInfoWrapper;
-import freenet.pluginmanager.PluginManager;
-import freenet.support.Logger;
-import freenet.support.MultiValueTable;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
+import freenet.node.Node;
+import freenet.support.Logger;
 
 public class SymlinkerToadlet extends Toadlet {
 	

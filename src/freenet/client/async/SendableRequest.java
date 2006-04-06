@@ -2,7 +2,6 @@ package freenet.client.async;
 
 import freenet.node.Node;
 import freenet.support.RandomGrabArrayItem;
-import freenet.support.SectoredRandomGrabArrayWithInt;
 
 /**
  * A low-level request which can be sent immediately. These are registered

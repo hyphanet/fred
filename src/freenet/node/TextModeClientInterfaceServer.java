@@ -12,7 +12,6 @@ import java.net.SocketTimeoutException;
 import java.util.Hashtable;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.events.EventDumper;
 import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.IntCallback;

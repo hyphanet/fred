@@ -3,7 +3,6 @@ package freenet.client;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 

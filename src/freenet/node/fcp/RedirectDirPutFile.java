@@ -3,13 +3,11 @@ package freenet.node.fcp;
 import java.net.MalformedURLException;
 
 import freenet.client.ClientMetadata;
-import freenet.client.Metadata;
 import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.SimpleReadOnlyArrayBucket;
 
 public class RedirectDirPutFile extends DirPutFile {
 

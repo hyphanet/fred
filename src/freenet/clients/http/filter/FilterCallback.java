@@ -1,7 +1,5 @@
 package freenet.clients.http.filter;
 
-import java.net.URI;
-
 /**
  * Callback to be provided to a content filter.
  */

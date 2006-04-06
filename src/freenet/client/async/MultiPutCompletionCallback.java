@@ -6,7 +6,6 @@ import java.util.ListIterator;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
-import freenet.keys.ClientKey;
 import freenet.support.Logger;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {

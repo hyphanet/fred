@@ -13,7 +13,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -27,7 +26,6 @@ import java.util.Vector;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.node.Version;
-import freenet.support.LoggerHook.InvalidThresholdException;
 
 /**
  * Converted the old StandardLogger to Ian's loggerhook interface.

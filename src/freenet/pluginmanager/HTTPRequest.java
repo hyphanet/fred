@@ -1,28 +1,27 @@
 package freenet.pluginmanager;
 
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Iterator;
 import java.util.StringTokenizer;
-import java.io.InputStream;
-import java.io.DataInputStream;
-import java.io.OutputStream;
-import java.io.IOException;
 
-import freenet.support.Logger;
-import freenet.support.URLDecoder;
-import freenet.support.URLEncodedFormatException;
+import freenet.clients.http.ToadletContext;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
+import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.support.io.LineReadingInputStream;
-import freenet.clients.http.ToadletContext;
 
 /**
  * Used for passing all HTTP request information to the FredPlugin that handles

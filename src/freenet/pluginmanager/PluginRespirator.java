@@ -3,7 +3,6 @@ package freenet.pluginmanager;
 import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.HighLevelSimpleClientImpl;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 

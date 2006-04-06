@@ -3,8 +3,6 @@ package freenet.client.async;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
-import freenet.keys.ClientKey;
-import freenet.keys.USK;
 
 /**
  * Callback called when part of a put request completes.

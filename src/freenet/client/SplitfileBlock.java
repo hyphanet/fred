@@ -1,6 +1,5 @@
 package freenet.client;
 
-import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 
 public interface SplitfileBlock {
