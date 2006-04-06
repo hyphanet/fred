@@ -83,7 +83,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<h2>My Connections</h2>\n");
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("<table class=\"darknet_connections\">\n");
-		buf.append("<tr><th>Status</th><th>Name</th><th>Address</th><th>Version</th><th>Location</th><th>Backoff</th><th>Backoff length</th><th></th></tr>\n");
+		buf.append("<tr><th>Status</th><th>Name</th><th>Address</th><th>Version</th><th>Location</th><th>Backoff</th><th>Idle</th><th></th></tr>\n");
 
 		final Integer CONNECTED = new Integer(0);
 		final Integer BACKED_OFF = new Integer(1);
@@ -95,8 +95,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		for(int i=0;i<peerNodes.length;i++) {
 			PeerNode pn = peerNodes[i];
 			long backedOffUntil = pn.getBackedOffUntil();
-			int backoffLength = pn.getBackoffLength();
 			boolean backedOffNow = (now < backedOffUntil);
+			int backoff = (int)(Math.max(backedOffUntil - now, 0));
+			long idle = pn.lastReceivedPacketTime();
 			
 			Object[] row = new Object[8];
 			rows[i] = row;
@@ -118,8 +119,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			row[2] = pn.getDetectedPeer() != null ? pn.getDetectedPeer().toString() : "(address unknown)";
 			row[3] = pn.getVersion();
 			row[4] = new Double(pn.getLocation().getValue());
-			row[5] = new Long(Math.max(backedOffUntil - now, 0));
-			row[6] = new Long(backoffLength);
+			row[5] = new String(backoff + "/" + pn.getBackoffLength());
+			if (idle == -1) row[6] = " ";
+			else row[6] = new Long((now - idle) / 60000);
 			row[7] = new String("<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />");
 		}
 
