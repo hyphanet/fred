@@ -99,11 +99,7 @@ public class Yarrow extends RandomSource {
 	}
 
 	public void seedFromExternalStuff(boolean canBlock) {
-	    // SecureRandom hopefully acts as a proxy for CAPI on Windows
-	    byte[] buf = sr.generateSeed(20);
-	    consumeBytes(buf);
-	    buf = sr.generateSeed(20);
-	    consumeBytes(buf);
+		byte[] buf = new byte[32];
 	    if(File.separatorChar == '/') {
 	        FileInputStream fis = null;
 	        File hwrng = new File("/dev/hwrng");
@@ -162,6 +158,17 @@ public class Yarrow extends RandomSource {
 	            }
 	        }
 	        fis = null;
+	    } else {
+	    	// Force generateSeed(), since we can't read random data from anywhere else.
+	    	// Anyway, Windows's CAPI won't block.
+	    	canBlock = true;
+	    }
+	    if(canBlock) {
+		    // SecureRandom hopefully acts as a proxy for CAPI on Windows
+		    buf = sr.generateSeed(32);
+		    consumeBytes(buf);
+		    buf = sr.generateSeed(32);
+		    consumeBytes(buf);
 	    }
 	    // A few more bits
 	    consumeString(Long.toHexString(Runtime.getRuntime().freeMemory()));
