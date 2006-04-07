@@ -125,13 +125,26 @@ public class PacketSender implements Runnable {
                 // Any messages to send?
                 MessageItem[] messages = null;
                 messages = pn.grabQueuedMessageItems();
-                if(messages != null) {
+                if(messages != null && messages.length > 0) {
+                	long l = Long.MAX_VALUE;
+                	int sz = 56; // overhead; FIXME should be a constant or something
                 	for(int j=0;j<messages.length;j++) {
-                		Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
+                		if(l > messages[j].submitted) l = messages[j].submitted;
+                		sz += 2 + /* FIXME only 2? */ messages[j].getData(node.packetMangler, pn).length;
                 	}
-                    // Send packets, right now, blocking, including any active notifications
-                    node.packetMangler.processOutgoingOrRequeue(messages, pn, true);
-                    continue;
+                	if(l + 100 > now && sz < 1024) {
+                		// Don't send immediately
+                		if(nextActionTime > (l+100))
+                			nextActionTime = l+100;
+                		pn.requeueMessageItems(messages, 0, messages.length, true);
+                	} else {
+                		for(int j=0;j<messages.length;j++) {
+                			Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
+                		}
+                		// Send packets, right now, blocking, including any active notifications
+                		node.packetMangler.processOutgoingOrRequeue(messages, pn, true);
+                		continue;
+                	}
                 }
                 
                 // Need to send a keepalive packet?

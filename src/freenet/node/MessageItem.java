@@ -8,6 +8,7 @@ public class MessageItem {
     final Message msg;
     byte[] buf;
     final AsyncMessageCallback[] cb;
+    final long submitted;
     /** If true, the buffer may contain several messages, and is formatted
      * for sending as a single packet.
      */
@@ -18,6 +19,7 @@ public class MessageItem {
         this.cb = cb2;
         buf = null;
         formatted = false;
+        this.submitted = System.currentTimeMillis();
     }
 
     public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted) {
@@ -25,6 +27,7 @@ public class MessageItem {
         this.msg = null;
         this.buf = data;
         this.formatted = formatted;
+        this.submitted = System.currentTimeMillis();
     }
 
     /**
