@@ -126,6 +126,9 @@ public class PacketSender implements Runnable {
                 MessageItem[] messages = null;
                 messages = pn.grabQueuedMessageItems();
                 if(messages != null) {
+                	for(int j=0;j<messages.length;j++) {
+                		Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
+                	}
                     // Send packets, right now, blocking, including any active notifications
                     node.packetMangler.processOutgoingOrRequeue(messages, pn, true);
                     continue;

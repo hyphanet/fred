@@ -910,27 +910,27 @@ public class Node {
         // FIXME make all the below arbitrary constants configurable!
         
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
-		chkRequestThrottle = new RequestThrottle(5000, 2.0F);
+		chkRequestThrottle = new RequestThrottle(5000, 2.0F, "CHK Request");
 		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "CHK Request starter ("+portNumber+")");
 		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, this);
 		chkRequestStarter.setScheduler(chkFetchScheduler);
 		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
-		chkInsertThrottle = new RequestThrottle(10000, 2.0F);
+		chkInsertThrottle = new RequestThrottle(10000, 2.0F, "CHK Insert");
 		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "CHK Insert starter ("+portNumber+")");
 		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, this);
 		chkInsertStarter.setScheduler(chkPutScheduler);
 		chkInsertStarter.start();
 
-		sskRequestThrottle = new RequestThrottle(5000, 2.0F);
+		sskRequestThrottle = new RequestThrottle(5000, 2.0F, "SSK Request");
 		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "SSK Request starter ("+portNumber+")");
 		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, this);
 		sskRequestStarter.setScheduler(sskFetchScheduler);
 		sskRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
-		sskInsertThrottle = new RequestThrottle(10000, 2.0F);
+		sskInsertThrottle = new RequestThrottle(10000, 2.0F, "SSK Insert");
 		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "SSK Insert starter ("+portNumber+")");
 		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, this);
 		sskInsertStarter.setScheduler(sskPutScheduler);

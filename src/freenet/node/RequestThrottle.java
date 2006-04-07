@@ -16,10 +16,12 @@ public class RequestThrottle {
 	private long _totalPackets = 0, _droppedPackets = 0;
 	private double _simulatedWindowSize = 2;
 	private final BootstrappingDecayingRunningAverage roundTripTime; 
+	private final String name;
 
-	RequestThrottle(long rtt, float winSize) {
+	RequestThrottle(long rtt, float winSize, String name) {
 		_simulatedWindowSize = 2;
 		roundTripTime = new BootstrappingDecayingRunningAverage(rtt, 10, 5*60*1000, 10);
+		this.name = name;
 	}
 	
 	/**
@@ -46,6 +48,7 @@ public class RequestThrottle {
 		setRoundTripTime(time);
         _totalPackets++;
         _simulatedWindowSize += PACKET_TRANSMIT_INCREMENT;
+        Logger.minor(this, "request completed in "+time+" for "+name);
 	}
 
 	/**
@@ -56,16 +59,17 @@ public class RequestThrottle {
 		_droppedPackets++;
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+		Logger.minor(this, "request rejected overload: "+this);
 	}
 	
 	private synchronized void setRoundTripTime(long rtt) {
 		roundTripTime.report(Math.max(rtt, 10));
-		Logger.minor(this, "Reporting RTT: "+rtt);
+		Logger.minor(this, "Reporting RTT: "+rtt+" on "+this);
 	}
 
 	public synchronized String toString() {
 		return  getDelay()+" ms, (w: "
 				+ _simulatedWindowSize + ", r:" + roundTripTime.currentValue() + ", d:"
-				+ (((float) _droppedPackets / (float) _totalPackets)) + "="+_droppedPackets+"/"+_totalPackets + ")";
+				+ (((float) _droppedPackets / (float) _totalPackets)) + "="+_droppedPackets+"/"+_totalPackets + ") for "+name;
 	}
 }

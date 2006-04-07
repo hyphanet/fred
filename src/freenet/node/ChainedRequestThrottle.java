@@ -8,8 +8,8 @@ public class ChainedRequestThrottle extends RequestThrottle {
 
 	private final RequestThrottle otherThrottle;
 	
-	public ChainedRequestThrottle(int rtt, float winsz, RequestThrottle other) {
-		super(rtt, winsz);
+	public ChainedRequestThrottle(int rtt, float winsz, RequestThrottle other, String name) {
+		super(rtt, winsz, name);
 		otherThrottle = other;
 	}
 	
