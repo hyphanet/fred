@@ -35,6 +35,7 @@ import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.WouldBlockException;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 
@@ -302,10 +303,12 @@ public class PeerNode implements PeerContext {
         decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
         decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
 
-        // FIXME maybe a simple binary RA would be better?
         pingNumber = node.random.nextLong();
-        pingAverage = new SimpleRunningAverage(20, 1);
-        throttledPacketSendAverage = new SimpleRunningAverage(20, 1);
+        
+        // A SimpleRunningAverage would be a bad choice because it would cause oscillations.
+        // So go for a filter.
+        pingAverage = new BootstrappingDecayingRunningAverage(1, 0, Long.MAX_VALUE, 50);
+        throttledPacketSendAverage = new BootstrappingDecayingRunningAverage(1, 0, Long.MAX_VALUE, 50);
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
