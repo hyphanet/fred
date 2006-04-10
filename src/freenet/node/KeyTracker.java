@@ -297,13 +297,17 @@ public class KeyTracker {
     }
     
     private class QueuedAckRequest extends BaseQueuedResend {
-        long initialActiveTime(long now) {
+    	
+    	final long createdTime;
+    	
+    	long initialActiveTime(long now) {
             // 500ms after sending packet, send ackrequest
             return now + 500;
         }
         
         QueuedAckRequest(int packetNumber, boolean sendSoon) {
             super(packetNumber);
+            this.createdTime = System.currentTimeMillis();
             if(sendSoon) {
                 activeTime -= 500;
                 urgentTime -= 500;
@@ -316,6 +320,15 @@ public class KeyTracker {
                 ackRequestQueue.update(this);
             }
         }
+
+        /**
+         * Acknowledged.
+         */
+		public void onAcked() {
+			long t = Math.max(0, System.currentTimeMillis() - createdTime);
+			pn.pingAverage.report(t);
+			Logger.minor(this, "Reported round-trip time of "+t+"ms on "+pn.getPeer());
+		}
     }
     
     /**
@@ -522,7 +535,7 @@ public class KeyTracker {
      * @throws UpdatableSortedLinkedListKilledException 
      */
     private void removeAckRequest(int seqNo) throws UpdatableSortedLinkedListKilledException {
-        ackRequestQueue.removeByKey(new Integer(seqNo));
+        ((QueuedAckRequest)ackRequestQueue.removeByKey(new Integer(seqNo))).onAcked();
     }
 
     /**

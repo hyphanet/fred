@@ -46,10 +46,11 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
      * Remove an element from the list by its key.
      * @throws UpdatableSortedLinkedListKilledException 
      */
-    public synchronized void removeByKey(Object key) throws UpdatableSortedLinkedListKilledException {
+    public synchronized IndexableUpdatableSortedLinkedListItem removeByKey(Object key) throws UpdatableSortedLinkedListKilledException {
         IndexableUpdatableSortedLinkedListItem item = 
             (IndexableUpdatableSortedLinkedListItem) map.get(key);
         if(item != null) remove(item);
         checkList();
+        return item;
     }
 }

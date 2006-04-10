@@ -22,26 +22,12 @@ public class NodePinger implements Runnable {
 			} catch (InterruptedException e) {
 				// Ignore
 			}
-			PeerNode[] peers = node.peers.connectedPeers;
-			if(peers == null) continue;
-			recalculateMean(peers);
-			for(int i=0;i<peers.length;i++) {
-				PeerNode pn = peers[i];
-				if(!pn.isConnected())
-					continue;
-				pn.sendPing();
-				recalculateMean(peers);
-				try {
-					Thread.sleep(200);
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-			}
+			recalculateMean(node.peers.connectedPeers);
 		}
 	}
 
 	/** Recalculate the mean ping time */
-	private void recalculateMean(PeerNode[] peers) {
+	void recalculateMean(PeerNode[] peers) {
 		int peerCount = 0;
 		double total = 1.0;
 		for(int i=0;i<peers.length;i++) {

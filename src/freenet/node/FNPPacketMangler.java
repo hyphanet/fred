@@ -864,7 +864,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 
             }
         } else {
-            length = 1;
+            length = 56;
             int count = 0;
             int lastIndex = 0;
             for(int i=0;i<=messages.length;i++) {

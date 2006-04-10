@@ -38,6 +38,7 @@ import freenet.support.WouldBlockException;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
+import freenet.support.math.TimeDecayingRunningAverage;
 
 /**
  * @author amphibian
@@ -307,8 +308,10 @@ public class PeerNode implements PeerContext {
         
         // A SimpleRunningAverage would be a bad choice because it would cause oscillations.
         // So go for a filter.
-        pingAverage = new BootstrappingDecayingRunningAverage(1, 0, Long.MAX_VALUE, 50);
-        throttledPacketSendAverage = new BootstrappingDecayingRunningAverage(1, 0, Long.MAX_VALUE, 50);
+        pingAverage = 
+        	new TimeDecayingRunningAverage(1, 60000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
+        throttledPacketSendAverage =
+        	new TimeDecayingRunningAverage(1, 60000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
