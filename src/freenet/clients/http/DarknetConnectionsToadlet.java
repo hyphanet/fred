@@ -39,7 +39,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 	}
 
-	Node node;
+	private Node node;
 	
 	protected DarknetConnectionsToadlet(Node n, HighLevelSimpleClient client) {
 		super(client);
@@ -61,9 +61,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			return;
 		}
 		
-		StringBuffer buf = new StringBuffer();
+		StringBuffer buf = new StringBuffer(1024);
 		
-		HTTPRequest request = new HTTPRequest(uri);
+		//HTTPRequest request = new HTTPRequest(uri);
+
 		ctx.getPageMaker().makeHead(buf, "Darknet Connections");
 		
 		// our reference
@@ -99,6 +100,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			int backoff = (int)(Math.max(backedOffUntil - now, 0));
 			long idle = pn.lastReceivedPacketTime();
 			
+			// Elements must be HTML encoded.
 			Object[] row = new Object[8];
 			rows[i] = row;
 			
@@ -116,13 +118,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			
 			row[0] = status;
 			row[1] = HTMLEncoder.encode(pn.getName());
-			row[2] = pn.getDetectedPeer() != null ? pn.getDetectedPeer().toString() : "(address unknown)";
-			row[3] = pn.getVersion();
+			row[2] = pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)";
+			row[3] = HTMLEncoder.encode(pn.getVersion());
 			row[4] = new Double(pn.getLocation().getValue());
-			row[5] = new String(backoff + "/" + pn.getBackoffLength());
+			row[5] = backoff + "/" + pn.getBackoffLength();
 			if (idle == -1) row[6] = " ";
 			else row[6] = new Long((now - idle) / 60000);
-			row[7] = new String("<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />");
+			row[7] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
 		}
 
 		// Sort array
@@ -141,13 +143,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		// Turn array into HTML
 		for(int i=0;i<rows.length;i++) {
 			Object[] row = rows[i];
-			buf.append("<tr><td>");
+			buf.append("\n<tr>\n\t<td>");
 			for(int j=0;j<row.length;j++) {
 				buf.append(row[j]);
 				if(j != row.length-1)
-					buf.append("</td><td>");
+					buf.append("</td>\n\t<td>");
 			}
-			buf.append("</td></tr>");
+			buf.append("</td>\n</tr>\n");
 		}
 		buf.append("</table>");
 		buf.append("<input type=\"submit\" name =\"disconnect\" value=\"Disconnect from Selected Peers\" />");
@@ -183,8 +185,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, darknet toadlet limited to 1MB");
 			return;
 		}
-		HTTPRequest request;
-		request = new HTTPRequest(uri, data, ctx);
+		
+		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
 		if (request.isPartSet("connect")) {
 			// connect to a new node
@@ -194,38 +196,39 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			reftext = reftext.trim();
 			if (reftext.length() < 200) {
 				reftext = request.getPartAsString("reffile", 2000);
+				reftext = reftext.trim();
 			}
-			reftext.trim();
 			
-			String ref = new String("");
-			
+			String ref = "";
 			if (urltext.length() > 0) {
 				// fetch reference from a URL
+				BufferedReader in = null;
 				try {
 					URL url = new URL(urltext);
 					URLConnection uc = url.openConnection();
-					BufferedReader in = new BufferedReader(
-							new InputStreamReader(uc.getInputStream()));
+					in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
 					String line;
 					while ( (line = in.readLine()) != null) {
 						ref += line+"\n";
 					}
-				} catch (Exception e) {
+				} catch (IOException e) {
 					this.sendErrorPage(ctx, 200, "OK", "Failed to add node: Unable to retrieve node reference from "+urltext+".");
+				} finally {
+					if( in != null ){
+						in.close();
+					}
 				}
 			} else if (reftext.length() > 0) {
 				// read from post data or file upload
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+)|(?:End)).*(?:\\r?\\n)*", "$1\n");
-				if (ref.endsWith("\n")) {
-					ref = ref.substring(0, ref.length() - 1);
-				}
 			} else {
 				this.sendErrorPage(ctx, 200, "OK", "Failed to add node: Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
 				request.freeParts();
 				return;
 			}
-			
+			ref = ref.trim();
+
 			request.freeParts();
 			// we have a node reference in ref
 			SimpleFieldSet fs;
@@ -262,4 +265,5 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		this.handleGet(uri, ctx);
 	}
+
 }
