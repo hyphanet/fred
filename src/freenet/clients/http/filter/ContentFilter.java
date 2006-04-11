@@ -54,10 +54,10 @@ public class ContentFilter {
 				false, null, null));
 		
 		// ICO - probably safe - FIXME check this out, write filters
-		register(new MIMEType("image/x-icon", "ico", new String[0], new String[0],
-				true, false, null, null, false, false, false, false, true, false,
+		register(new MIMEType("image/x-icon", "ico", new String[] { "image/vnd.microsoft.icon", "image/ico", "application/ico"}, 
+				new String[0], true, false, null, null, false, false, false, false, false, false,
 				"Icon file - probably not dangerous",
-				"Icon file - probably not dangerous but you should wipe any comments",
+				"Icon file - probably not dangerous (but can contain other data due to offset?)",
 				false, null, null));
 		
 		// PDF - very dangerous - FIXME ideally we would have a filter, this is such a common format...
