@@ -1063,7 +1063,9 @@ public class Node {
         boolean rejectedOverload = false;
         while(true) {
         	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
+        		// See below; inserts count both
         		chkRequestThrottle.requestRejectedOverload();
+        		chkInsertThrottle.requestRejectedOverload();
         		rejectedOverload = true;
         	}
 
@@ -1075,7 +1077,9 @@ public class Node {
         	if(status == RequestSender.TIMED_OUT ||
         			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
         		if(!rejectedOverload) {
+        			// See below
             		chkRequestThrottle.requestRejectedOverload();
+            		chkInsertThrottle.requestRejectedOverload();
         			rejectedOverload = true;
         		}
         	} else {
@@ -1085,6 +1089,10 @@ public class Node {
         				status == RequestSender.VERIFY_FAILURE) {
         			long rtt = System.currentTimeMillis() - startTime;
         			chkRequestThrottle.requestCompleted(rtt);
+        			// Also report on insert throttle as inserts use both for window
+        			// Reason: inserts are excessively biased otherwise as they
+        			// visit more nodes (longer time) and are more likely to encounter an overload.
+        			chkInsertThrottle.requestCompleted();
         		}
         	}
         	
@@ -1154,6 +1162,8 @@ public class Node {
         while(true) {
         	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
         		sskRequestThrottle.requestRejectedOverload();
+        		// See below
+        		sskInsertThrottle.requestRejectedOverload();
         		rejectedOverload = true;
         	}
 
@@ -1166,6 +1176,7 @@ public class Node {
         			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
         		if(!rejectedOverload) {
             		sskRequestThrottle.requestRejectedOverload();
+            		sskInsertThrottle.requestRejectedOverload();
         			rejectedOverload = true;
         		}
         	} else {
@@ -1175,6 +1186,10 @@ public class Node {
         				status == RequestSender.VERIFY_FAILURE) {
         			long rtt = System.currentTimeMillis() - startTime;
         			sskRequestThrottle.requestCompleted(rtt);
+        			// Also report on insert throttle as inserts use both for window
+        			// Reason: inserts are excessively biased otherwise as they
+        			// visit more nodes (longer time) and are more likely to encounter an overload.
+        			sskInsertThrottle.requestCompleted();
         		}
         	}
         	

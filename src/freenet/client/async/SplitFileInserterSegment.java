@@ -172,6 +172,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 
 	private boolean completed(int x) {
+		Logger.minor(this, "Completed: "+x+" on "+this+" ( completed="+blocksCompleted+", total="+(dataBlockInserters.length+checkBlockInserters.length));
 		synchronized(this) {
 			if(finished) return true;
 			if(x >= dataBlocks.length) {

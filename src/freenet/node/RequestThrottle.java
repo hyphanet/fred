@@ -46,11 +46,17 @@ public class RequestThrottle {
 	 */
 	public synchronized void requestCompleted(long time) {
 		setRoundTripTime(time);
-        _totalPackets++;
-        _simulatedWindowSize += PACKET_TRANSMIT_INCREMENT;
+		requestCompleted();
         Logger.minor(this, "request completed in "+time+" for "+name);
 	}
 
+	/** Report that a request completed successfully */
+	public synchronized void requestCompleted() {
+        _totalPackets++;
+        _simulatedWindowSize += PACKET_TRANSMIT_INCREMENT;
+		Logger.minor(this, "requestCompleted on "+this);
+	}
+	
 	/**
 	 * Report that a request got RejectedOverload.
 	 * Do not report the time it took, because it is irrelevant.
