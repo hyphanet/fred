@@ -535,7 +535,10 @@ public class KeyTracker {
      * @throws UpdatableSortedLinkedListKilledException 
      */
     private void removeAckRequest(int seqNo) throws UpdatableSortedLinkedListKilledException {
-        ((QueuedAckRequest)ackRequestQueue.removeByKey(new Integer(seqNo))).onAcked();
+        QueuedAckRequest qr = (QueuedAckRequest)ackRequestQueue.removeByKey(new Integer(seqNo));
+    	if(qr != null) qr.onAcked();
+    	else
+    		Logger.normal(this, "Removing ack request twice? Null on "+seqNo);
     }
 
     /**
