@@ -213,6 +213,7 @@ public class PeerNode implements PeerContext {
         identityHash = md.digest(identity);
         hashCode = Fields.hashCode(identityHash);
         version = fs.get("version");
+        Version.seenVersion(version);
         String locationString = fs.get("location");
         if(locationString == null) throw new FSParseException("No location");
         currentLocation = new Location(locationString);
@@ -889,6 +890,7 @@ public class PeerNode implements PeerContext {
         if(!newVersion.equals(version))
             changedAnything = true;
         version = newVersion;
+        Version.seenVersion(newVersion);
         String locationString = fs.get("location");
         if(locationString == null) throw new FSParseException("No location");
         Location loc = new Location(locationString);
