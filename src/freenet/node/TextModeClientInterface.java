@@ -471,7 +471,7 @@ public class TextModeClientInterface implements Runnable {
         	String fixedInsertURI = insertURI.toString(false);
         	outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\r\n"+fixedInsertURI);
         	outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\r\nPUTSSKDIR:"+fixedInsertURI+"#directoryToUpload/");
-        	outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\r\n"+insertURI.addMetaStrings(new String[] { "" }).toString(false));
+        	outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\r\n"+key.getURI().toString(false)+"testsite/");
         } else if(uline.startsWith("PUTSSK:")) {
         	String cmd = line.substring("PUTSSK:".length());
         	cmd = cmd.trim();

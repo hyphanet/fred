@@ -1398,7 +1398,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				"onmouseout",
 				"onkeypress",
 				"onkeydown",
-				"onkeyup" };
+				"onkeyup",
+				"onload",
+				"onfocus",
+				"onblur",
+				"oncontextmenu",
+				"onresize",
+				"onscroll",
+				"onunload",
+				"onmouseenter",
+				"onchange",
+				"onreset",
+				"onselect",
+				"onsubmit",
+				"onerror",
+			};
 
 		CoreTagVerifier(
 			String tag,

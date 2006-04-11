@@ -53,6 +53,13 @@ public class ContentFilter {
 				"PNG image - probably not dangerous but you should wipe any comments or text blocks",
 				false, null, null));
 		
+		// ICO - probably safe - FIXME check this out, write filters
+		register(new MIMEType("image/x-icon", "ico", new String[0], new String[0],
+				true, false, null, null, false, false, false, false, true, false,
+				"Icon file - probably not dangerous",
+				"Icon file - probably not dangerous but you should wipe any comments",
+				false, null, null));
+		
 		// PDF - very dangerous - FIXME ideally we would have a filter, this is such a common format...
 		register(new MIMEType("application/pdf", "pdf", new String[] { "application/x-pdf" }, new String[0],
 				false, false, null, null, true, true, true, false, true, true,
