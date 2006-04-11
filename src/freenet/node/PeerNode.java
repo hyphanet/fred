@@ -310,8 +310,6 @@ public class PeerNode implements PeerContext {
         // So go for a filter.
         pingAverage = 
         	new TimeDecayingRunningAverage(1, 60000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
-        throttledPacketSendAverage =
-        	new TimeDecayingRunningAverage(1, 60000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
@@ -1152,7 +1150,6 @@ public class PeerNode implements PeerContext {
 	final LRUHashtable pingsSentTimes = new LRUHashtable();
 	long pingNumber;
 	final RunningAverage pingAverage;
-	final RunningAverage throttledPacketSendAverage;
 	
 	public void sendPing() {
 		long pingNo;
@@ -1204,7 +1201,7 @@ public class PeerNode implements PeerContext {
 	}
 
 	public void reportThrottledPacketSendTime(long timeDiff) {
-		throttledPacketSendAverage.report(timeDiff);
+		node.throttledPacketSendAverage.report(timeDiff);
 		Logger.minor(this, "Reporting throttled packet send time: "+timeDiff+" to "+getPeer());
 	}
 

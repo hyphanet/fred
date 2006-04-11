@@ -92,6 +92,8 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
+import freenet.support.math.RunningAverage;
+import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.transport.IPAddressDetector;
 import freenet.transport.IPUtil;
 
@@ -143,11 +145,17 @@ public class Node {
     // If we don't receive any packets at all in this period, from any node, tell the user
     public static final long ALARM_TIME = 60*1000;
     /** Sub-max ping time. If ping is greater than this, we reject some requests. */
-    public static final long SUB_MAX_PING_TIME = 1000;
+    public static final long SUB_MAX_PING_TIME = 500;
     /** Maximum overall average ping time. If ping is greater than this,
-     * we reject all requests.
-     */
-    public static final long MAX_PING_TIME = 2000;
+     * we reject all requests. */
+    public static final long MAX_PING_TIME = 1000;
+    /** Maximum throttled packet delay. If the throttled packet delay is greater
+     * than this, reject all packets. */
+    public static final long MAX_THROTTLE_DELAY = 1000;
+    /** If the throttled packet delay is less than this, reject no packets; if it's
+     * between the two, reject some packets. */
+    public static final long SUB_MAX_THROTTLE_DELAY = 2000;
+    
     /** Accept one request every 10 seconds regardless, to ensure we update the
      * block send time.
      */
@@ -259,6 +267,7 @@ public class Node {
     final RequestThrottle sskInsertThrottle;
     final RequestStarter sskInsertStarter;
 	public final UserAlertManager alerts;
+	final RunningAverage throttledPacketSendAverage;
 
     File downloadDir;
     public final ClientRequestScheduler chkFetchScheduler;
@@ -516,6 +525,8 @@ public class Node {
         decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
         decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
         bootID = random.nextLong();
+        throttledPacketSendAverage =
+        	new TimeDecayingRunningAverage(1, 60000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
 
     	// Setup node-specific configuration
     	
@@ -1422,6 +1433,8 @@ public class Node {
     
     public synchronized boolean shouldRejectRequest() {
     	long now = System.currentTimeMillis();
+    	
+    	// Round trip time
     	double pingTime = nodePinger.averagePingTime();
     	if(pingTime > MAX_PING_TIME) {
     		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) {
@@ -1435,6 +1448,23 @@ public class Node {
     		if(random.nextDouble() < x)
     			return true;
     	}
+    	
+    	// Bandwidth limited packets
+    	
+    	double bwlimitDelayTime = this.throttledPacketSendAverage.currentValue();
+    	if(pingTime > MAX_THROTTLE_DELAY) {
+    		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) {
+    			lastAcceptedRequest = now;
+    			return false;
+    		}
+    		return true;
+    	}
+    	if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
+    		double x = (pingTime - SUB_MAX_THROTTLE_DELAY) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
+    		if(random.nextDouble() < x)
+    			return true;
+    	}
+    	
     	lastAcceptedRequest = now;
     	return false;
     }

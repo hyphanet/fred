@@ -2,6 +2,9 @@ package freenet.node;
 
 import freenet.support.Logger;
 
+/**
+ * Track average round-trip time for each peer node, get a geometric mean.
+ */
 public class NodePinger implements Runnable {
 
 	private double meanPing = 0;
@@ -35,10 +38,8 @@ public class NodePinger implements Runnable {
 			if(!peer.isConnected()) continue;
 			peerCount++;
 			double avgPingTime = peer.averagePingTime();
-			double avgThrottledPacketSendTime = peer.throttledPacketSendAverage.currentValue();
-			double value = Math.max(avgPingTime, avgThrottledPacketSendTime);
-			Logger.minor(this, "Peer: "+peer.getPeer()+", avgPingTime: "+avgPingTime+", avg throttled send time: "+avgThrottledPacketSendTime);
-			total *= value;
+			Logger.minor(this, "Peer: "+peer.getPeer()+", avgPingTime: "+avgPingTime);
+			total *= avgPingTime;
 		}
 		if(peerCount > 0) {
 			total = Math.pow(total, 1.0 / peerCount);
