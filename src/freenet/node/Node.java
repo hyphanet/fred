@@ -92,6 +92,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.transport.IPAddressDetector;
@@ -101,6 +102,35 @@ import freenet.transport.IPUtil;
  * @author amphibian
  */
 public class Node {
+
+	public class MyRequestThrottle implements BaseRequestThrottle {
+
+		private final BootstrappingDecayingRunningAverage roundTripTime; 
+		private final String name;
+		
+		public MyRequestThrottle(ThrottleWindowManager throttleWindow, int rtt, String string) {
+			roundTripTime = new BootstrappingDecayingRunningAverage(rtt, 10, 5*60*1000, 10);
+			this.name = string;
+		}
+
+		public synchronized long getDelay() {
+			double rtt = roundTripTime.currentValue();
+			double winSizeForMinPacketDelay = rtt / MIN_DELAY;
+			double _simulatedWindowSize = throttleWindow.currentValue();
+			if (_simulatedWindowSize > winSizeForMinPacketDelay) {
+				_simulatedWindowSize = winSizeForMinPacketDelay;
+			}
+			if (_simulatedWindowSize < 1.0) {
+				_simulatedWindowSize = 1.0F;
+			}
+			// return (long) (_roundTripTime / _simulatedWindowSize);
+			return Math.max(MIN_DELAY, Math.min((long) (rtt / _simulatedWindowSize), MAX_DELAY));
+		}
+
+		public synchronized void successfulCompletion(long rtt) {
+			roundTripTime.report(Math.max(rtt, 10));
+		}
+	}
 
 	/** Config object for the whole node. */
 	public final Config config;
@@ -258,13 +288,14 @@ public class Node {
     public final USKManager uskManager;
     final ArchiveManager archiveManager;
     public final BucketFactory tempBucketFactory;
-    final RequestThrottle chkRequestThrottle;
+    final ThrottleWindowManager throttleWindow;
+    final MyRequestThrottle chkRequestThrottle;
     final RequestStarter chkRequestStarter;
-    final RequestThrottle chkInsertThrottle;
+    final MyRequestThrottle chkInsertThrottle;
     final RequestStarter chkInsertStarter;
-    final RequestThrottle sskRequestThrottle;
+    final MyRequestThrottle sskRequestThrottle;
     final RequestStarter sskRequestStarter;
-    final RequestThrottle sskInsertThrottle;
+    final MyRequestThrottle sskInsertThrottle;
     final RequestStarter sskInsertStarter;
 	public final UserAlertManager alerts;
 	final RunningAverage throttledPacketSendAverage;
@@ -502,7 +533,8 @@ public class Node {
     private Node(Config config, RandomSource random) throws NodeInitException {
     	
     	// Easy stuff
-        startupTime = System.currentTimeMillis();
+    	startupTime = System.currentTimeMillis();
+    	throttleWindow = new ThrottleWindowManager(2.0);
         alerts = new UserAlertManager();
         recentlyCompletedIDs = new LRUQueue();
     	this.config = config;
@@ -921,27 +953,27 @@ public class Node {
         // FIXME make all the below arbitrary constants configurable!
         
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
-		chkRequestThrottle = new RequestThrottle(5000, 2.0F, "CHK Request");
+		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request");
 		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "CHK Request starter ("+portNumber+")");
 		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, this);
 		chkRequestStarter.setScheduler(chkFetchScheduler);
 		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
-		chkInsertThrottle = new RequestThrottle(10000, 2.0F, "CHK Insert");
+		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 10000, "CHK Insert");
 		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "CHK Insert starter ("+portNumber+")");
 		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, this);
 		chkInsertStarter.setScheduler(chkPutScheduler);
 		chkInsertStarter.start();
 
-		sskRequestThrottle = new RequestThrottle(5000, 2.0F, "SSK Request");
+		sskRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "SSK Request");
 		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "SSK Request starter ("+portNumber+")");
 		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, this);
 		sskRequestStarter.setScheduler(sskFetchScheduler);
 		sskRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
-		sskInsertThrottle = new RequestThrottle(10000, 2.0F, "SSK Insert");
+		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 10000, "SSK Insert");
 		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "SSK Insert starter ("+portNumber+")");
 		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, this);
 		sskInsertStarter.setScheduler(sskPutScheduler);
@@ -1064,8 +1096,7 @@ public class Node {
         while(true) {
         	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
         		// See below; inserts count both
-        		chkRequestThrottle.requestRejectedOverload();
-        		chkInsertThrottle.requestRejectedOverload();
+        		throttleWindow.rejectedOverload();
         		rejectedOverload = true;
         	}
 
@@ -1078,8 +1109,7 @@ public class Node {
         			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
         		if(!rejectedOverload) {
         			// See below
-            		chkRequestThrottle.requestRejectedOverload();
-            		chkInsertThrottle.requestRejectedOverload();
+        			throttleWindow.rejectedOverload();
         			rejectedOverload = true;
         		}
         	} else {
@@ -1088,11 +1118,8 @@ public class Node {
         				status == RequestSender.ROUTE_NOT_FOUND ||
         				status == RequestSender.VERIFY_FAILURE) {
         			long rtt = System.currentTimeMillis() - startTime;
-        			chkRequestThrottle.requestCompleted(rtt);
-        			// Also report on insert throttle as inserts use both for window
-        			// Reason: inserts are excessively biased otherwise as they
-        			// visit more nodes (longer time) and are more likely to encounter an overload.
-        			chkInsertThrottle.requestCompleted();
+        			throttleWindow.requestCompleted();
+        			chkRequestThrottle.successfulCompletion(rtt);
         		}
         	}
         	
@@ -1161,9 +1188,7 @@ public class Node {
         boolean rejectedOverload = false;
         while(true) {
         	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
-        		sskRequestThrottle.requestRejectedOverload();
-        		// See below
-        		sskInsertThrottle.requestRejectedOverload();
+        		throttleWindow.rejectedOverload();
         		rejectedOverload = true;
         	}
 
@@ -1175,8 +1200,7 @@ public class Node {
         	if(status == RequestSender.TIMED_OUT ||
         			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
         		if(!rejectedOverload) {
-            		sskRequestThrottle.requestRejectedOverload();
-            		sskInsertThrottle.requestRejectedOverload();
+        			throttleWindow.rejectedOverload();
         			rejectedOverload = true;
         		}
         	} else {
@@ -1185,11 +1209,8 @@ public class Node {
         				status == RequestSender.ROUTE_NOT_FOUND ||
         				status == RequestSender.VERIFY_FAILURE) {
         			long rtt = System.currentTimeMillis() - startTime;
-        			sskRequestThrottle.requestCompleted(rtt);
-        			// Also report on insert throttle as inserts use both for window
-        			// Reason: inserts are excessively biased otherwise as they
-        			// visit more nodes (longer time) and are more likely to encounter an overload.
-        			sskInsertThrottle.requestCompleted();
+        			throttleWindow.requestCompleted();
+        			sskRequestThrottle.successfulCompletion(rtt);
         		}
         	}
         	
@@ -1274,7 +1295,7 @@ public class Node {
         	}
     		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
     			hasForwardedRejectedOverload = true;
-    			chkInsertThrottle.requestRejectedOverload();
+    			throttleWindow.rejectedOverload();
     		}
         }
         
@@ -1290,7 +1311,7 @@ public class Node {
         	}
     		if(is.anyTransfersFailed() && (!hasForwardedRejectedOverload)) {
     			hasForwardedRejectedOverload = true; // not strictly true but same effect
-    			chkInsertThrottle.requestRejectedOverload();
+    			throttleWindow.rejectedOverload();
     		}        		
         }
         
@@ -1304,7 +1325,9 @@ public class Node {
         		// It worked!
         		long endTime = System.currentTimeMillis();
         		long len = endTime - startTime;
-        		chkInsertThrottle.requestCompleted(len);
+        		
+        		chkInsertThrottle.successfulCompletion(len);
+        		throttleWindow.requestCompleted();
         	}
         }
         
@@ -1376,7 +1399,7 @@ public class Node {
         	}
     		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
     			hasForwardedRejectedOverload = true;
-    			sskInsertThrottle.requestRejectedOverload();
+    			throttleWindow.rejectedOverload();
     		}
         }
         
@@ -1401,8 +1424,9 @@ public class Node {
         			|| is.getStatus() == SSKInsertSender.SUCCESS)) {
         		// It worked!
         		long endTime = System.currentTimeMillis();
-        		long len = endTime - startTime;
-        		sskInsertThrottle.requestCompleted(len);
+        		long rtt = endTime - startTime;
+        		throttleWindow.requestCompleted();
+        		sskInsertThrottle.successfulCompletion(rtt);
         	}
         }
 
@@ -2056,19 +2080,19 @@ public class Node {
 		}
 	}
 
-	public RequestThrottle getCHKRequestThrottle() {
+	public BaseRequestThrottle getCHKRequestThrottle() {
 		return chkRequestThrottle;
 	}
 
-	public RequestThrottle getCHKInsertThrottle() {
+	public BaseRequestThrottle getCHKInsertThrottle() {
 		return chkInsertThrottle;
 	}
 	
-	public RequestThrottle getSSKRequestThrottle() {
+	public BaseRequestThrottle getSSKRequestThrottle() {
 		return sskRequestThrottle;
 	}
 	
-	public RequestThrottle getSSKInsertThrottle() {
+	public BaseRequestThrottle getSSKInsertThrottle() {
 		return sskInsertThrottle;
 	}
 

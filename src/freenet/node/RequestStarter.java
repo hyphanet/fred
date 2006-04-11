@@ -36,12 +36,12 @@ public class RequestStarter implements Runnable {
 		return !(prio < MAXIMUM_PRIORITY_CLASS || prio > MINIMUM_PRIORITY_CLASS);
 	}
 	
-	final RequestThrottle throttle;
+	final BaseRequestThrottle throttle;
 	RequestScheduler sched;
 	final Node node;
 	private long sentRequestTime;
 	
-	public RequestStarter(Node node, RequestThrottle throttle, String name) {
+	public RequestStarter(Node node, BaseRequestThrottle throttle, String name) {
 		this.node = node;
 		this.throttle = throttle;
 		this.name = name;
@@ -70,10 +70,23 @@ public class RequestStarter implements Runnable {
 			if(req != null) {
 				Logger.minor(this, "Running "+req);
 				// Create a thread to handle starting the request, and the resulting feedback
-				Thread t = new Thread(new SenderThread(req));
-				t.setDaemon(true);
-				t.start();
-				Logger.minor(this, "Started "+req+" on "+t);
+				while(true) {
+					try {
+						Thread t = new Thread(new SenderThread(req));
+						t.setDaemon(true);
+						t.start();
+						Logger.minor(this, "Started "+req+" on "+t);
+						break;
+					} catch (OutOfMemoryError e) {
+						// Probably out of threads
+						try {
+							Thread.sleep(5000);
+						} catch (InterruptedException e1) {
+							// Ignore
+						}
+						System.err.println(e.getMessage());
+					}
+				}
 				sentRequestTime = System.currentTimeMillis();
 				// Wait
 				long delay = throttle.getDelay();
