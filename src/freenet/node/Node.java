@@ -627,6 +627,9 @@ public class Node {
     	try{
     		port=nodeConfig.getInt("listenPort");
     	}catch (Exception e){
+    		Logger.error(this, "Caught "+e, e);
+    		System.err.println(e);
+    		e.printStackTrace();
     		port=-1;
     	}
     	
