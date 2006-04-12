@@ -77,8 +77,8 @@ public class FileLoggerHook extends LoggerHook {
 	/* Base filename for rotating logs */
 	protected String baseFilename = null;
 	
-	protected File latestFilename;
-	protected File previousFilename;
+	protected File latestFile;
+	protected File previousFile;
 
 	/* Whether to redirect stdout */
 	protected boolean redirectStdOut = false;
@@ -156,6 +156,8 @@ public class FileLoggerHook extends LoggerHook {
 
 	public class IntervalParseException extends Exception {
 
+		private static final long serialVersionUID = 69847854744673572L;
+
 		public IntervalParseException(String string) {
 			super(string);
 		}
@@ -206,8 +208,8 @@ public class FileLoggerHook extends LoggerHook {
 			GregorianCalendar gc = null;
 			String filename = null;
 			if (baseFilename != null) {
-				latestFilename = new File(baseFilename+"-latest.log");
-				previousFilename = new File(baseFilename+"-previous.log");
+				latestFile = new File(baseFilename+"-latest.log");
+				previousFile = new File(baseFilename+"-previous.log");
 				findOldLogFiles();
 				gc = new GregorianCalendar();
 				switch (INTERVAL) {
@@ -236,8 +238,8 @@ public class FileLoggerHook extends LoggerHook {
 					logFiles.removeLast();
 				}
 				logStream = openNewLogFile(currentFilename, true);
-				if(latestFilename != null) {
-					altLogStream = openNewLogFile(latestFilename, false);
+				if(latestFile != null) {
+					altLogStream = openNewLogFile(latestFile, false);
 				}
 				System.err.println("Created log files");
 				startTime = gc.getTimeInMillis();
@@ -265,7 +267,6 @@ public class FileLoggerHook extends LoggerHook {
 								System.err.println(
 										"Closing on change caught " + e);
 							}
-							String oldFilename = filename;
 							long length = currentFilename.length();
 							OldLogFile olf = new OldLogFile(currentFilename, lastTime, nextHour, length);
 							lastTime = nextHour;
@@ -278,21 +279,21 @@ public class FileLoggerHook extends LoggerHook {
 							filename = getHourLogName(gc, true);
 							currentFilename = new File(filename);
 							logStream = openNewLogFile(new File(filename), true);
-							if(latestFilename != null) {
+							if(latestFile != null) {
 								try {
 									altLogStream.close();
 								} catch (IOException e) {
 									System.err.println(
 											"Closing alt on change caught " + e);
 								}
-								if(previousFilename != null) {
-									previousFilename.delete();
-									latestFilename.renameTo(previousFilename);
-									latestFilename.delete();
+								if(previousFile != null) {
+									previousFile.delete();
+									latestFile.renameTo(previousFile);
+									latestFile.delete();
 								} else {
-									latestFilename.delete();
+									latestFile.delete();
 								}
-								altLogStream = openNewLogFile(latestFilename, false);
+								altLogStream = openNewLogFile(latestFile, false);
 							}
 							System.err.println("Rotated log files: "+filename);
 							//System.err.println("Almost rotated");
@@ -483,14 +484,15 @@ public class FileLoggerHook extends LoggerHook {
 		java.util.Arrays.sort(files);
 		long lastStartTime = -1;
 		File oldFile = null;
-		previousFilename.delete();
-		latestFilename.renameTo(previousFilename);
+		previousFile.delete();
+		latestFile.renameTo(previousFile);
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];
 			String name = f.getName();
 			if(name.toLowerCase().startsWith(prefix)) {
-				if(name.equals(previousFilename) || name.equals(latestFilename))
+				if(name.equals(previousFile.getName()) || name.equals(latestFile.getName())) {
 					continue;
+				}
 				if(!name.endsWith(".log.gz")) {
 					Logger.minor(this, "Does not end in .log.gz: "+name);
 					f.delete();
@@ -548,7 +550,7 @@ public class FileLoggerHook extends LoggerHook {
 				oldFile = f;
 			} else {
 				// Nothing to do with us
-				Logger.normal(this, "Unknown file: "+name+" in our log directory");
+				Logger.normal(this, "Unknown file: "+name+" in the log directory");
 			}
 		}
 		if(oldFile != null) {

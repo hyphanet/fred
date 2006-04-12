@@ -65,13 +65,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 			throw new Error(e);
 		}
 	}
-	
-    public Bucket decode(ClientKey key, BucketFactory bf, int maxLength) throws KeyDecodeException, IOException {
-    	if(!(key instanceof ClientCHK))
-    		throw new KeyDecodeException("Not a CHK!: "+key);
-    	return decode((ClientCHK)key, bf, maxLength);
-    }
-    
+
     /**
      * Decode the CHK and recover the original data
      * @return the original data

@@ -3,7 +3,6 @@ package freenet.client;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -183,14 +182,18 @@ public class ArchiveManager {
 			throw new ArchiveFailureException("Archive too big");
 		if(archiveType != Metadata.ARCHIVE_ZIP)
 			throw new ArchiveFailureException("Unknown or unsupported archive algorithm "+archiveType);
-		InputStream is = null;
+		
+		ZipInputStream zis = null;
 		try {
-			is = data.getInputStream();
-			ZipInputStream zis = new ZipInputStream(is);
+			zis = new ZipInputStream(data.getInputStream());
+			
+			// MINOR: Assumes the first entry in the zip is a directory. 
 			ZipEntry entry =  zis.getNextEntry();
+			
 			byte[] buf = new byte[4096];
 			HashSet names = new HashSet();
 			boolean gotMetadata = false;
+			
 outer:		while(entry != null) {
 				entry = zis.getNextEntry();
 				String name = entry.getName();
@@ -207,6 +210,7 @@ outer:		while(entry != null) {
 					TempStoreElement temp = makeTempStoreBucket(size);
 					Bucket output = temp.bucket;
 					OutputStream out = output.getOutputStream();
+
 					int readBytes;
 inner:				while((readBytes = zis.read(buf)) > 0) {
 						out.write(buf, 0, readBytes);
@@ -218,6 +222,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 							continue outer;
 						}
 					}
+
 					out.close();
 					if(name.equals(".metadata"))
 						gotMetadata = true;
@@ -225,6 +230,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 					names.add(name);
 				}
 			}
+
 			// If no metadata, generate some
 			if(!gotMetadata) {
 				generateMetadata(ctx, key, names);
@@ -233,9 +239,9 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
 		} finally {
-			if(is != null) {
+			if(zis != null) {
 				try {
-					is.close();
+					zis.close();
 				} catch (IOException e) {
 					Logger.error(this, "Failed to close stream: "+e, e);
 				}
