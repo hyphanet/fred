@@ -68,7 +68,7 @@ public class FCPServer implements Runnable {
 	}
 
 	public FCPServer(String ipToBindTo, int port, Node node, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval) throws IOException, InvalidConfigValueException {
-		this.bindTo = new String(ipToBindTo);
+		this.bindTo = ipToBindTo;
 		this.persistenceInterval = persistenceInterval;
 		this.port = port;
 		this.enabled = true;
@@ -107,12 +107,12 @@ public class FCPServer implements Runnable {
 	private void realRun() throws IOException {
 		// Accept a connection
 		Socket s = sock.accept();
-		FCPConnectionHandler handler = new FCPConnectionHandler(s, this);
+		new FCPConnectionHandler(s, this);
 	}
 
 	static class FCPPortNumberCallback implements IntCallback {
 
-		final Node node;
+		private final Node node;
 		
 		FCPPortNumberCallback(Node node) {
 			this.node = node;
@@ -454,7 +454,7 @@ public class FCPServer implements Runnable {
 					return;
 				}
 				for(int i=0;i<count;i++) {
-					ClientRequest req = ClientRequest.readAndRegister(br, this);
+					ClientRequest.readAndRegister(br, this);
 				}
 			} catch (IOException e) {
 				Logger.error(this, "Error reading persistent downloads file: "+persistentDownloadsFile+" : "+e, e);

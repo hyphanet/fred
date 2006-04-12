@@ -88,15 +88,15 @@ public class ConfigToadlet extends Toadlet {
 	}
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		StringBuffer buf = new StringBuffer();
+		StringBuffer buf = new StringBuffer(1024);
 		SubConfig[] sc = config.getConfigs();
 		
-		HTTPRequest request = new HTTPRequest(uri);
+		//HTTPRequest request = new HTTPRequest(uri);
 		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration");
 		buf.append("<form method=\"post\" action=\".\">");
 		buf.append("<div class=\"config\">\n");
 		
-		String last = null;
+		//String last = null;
 		
 		for(int i=0; i<sc.length;i++){
 			Option[] o = sc[i].getOptions();
@@ -114,7 +114,7 @@ public class ConfigToadlet extends Toadlet {
 			buf.append("<ul class=\"config\">\n");
 			
 			for(int j=0; j<o.length; j++){
-				String configName = new String(o[j].getName());
+				String configName = o[j].getName();
 				/*
 				if(prefix.equals("node") && configName.equals("name")){
 					buf.append("<form method=\"post\"><input alt=\"node name\" class=\"config\"" +

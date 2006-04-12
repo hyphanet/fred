@@ -514,7 +514,7 @@ public class HTTPRequest {
 		} catch (IOException ioe) {
 			
 		}
-		return new String("");
+		return "";
 	}
 	
 	public void freeParts() {

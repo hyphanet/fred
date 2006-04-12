@@ -48,7 +48,7 @@ public class ArrayBucket implements Bucket {
 			byte[] b = (byte[]) i.next();
 			s.append(new String(b));
 		}
-		return new String(s);
+		return s.toString();
 	}
 
 	public void read(InputStream in) throws IOException {

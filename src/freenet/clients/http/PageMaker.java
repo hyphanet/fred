@@ -6,12 +6,13 @@ import java.util.Vector;
 /** Simple class to output standard heads and tail for web interface pages. 
 */
 public class PageMaker {
-	private final String defaulttheme = new String("aqua");
+	
+	private static final String DEFAULT_THEME = "aqua";
 	public String theme;
 	
 	PageMaker(String t) {
 		if (t == null || !this.getThemes().contains(t)) {
-			this.theme = this.defaulttheme;
+			this.theme = DEFAULT_THEME;
 		} else {
 			this.theme = t;
 		}

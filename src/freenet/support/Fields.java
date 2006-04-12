@@ -233,7 +233,7 @@ public abstract class Fields {
 				} else
 					break;
 			}
-			int num = Integer.parseInt(new String(sb));
+			int num = Integer.parseInt(sb.toString());
 			int chop = 1 + sb.length();
 			int deltaType = 0;
 			if (date.length() == chop)

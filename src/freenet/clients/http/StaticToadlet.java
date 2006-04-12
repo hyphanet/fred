@@ -3,9 +3,7 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.FileNameMap;
 import java.net.URI;
-import java.net.URLConnection;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
@@ -20,20 +18,18 @@ public class StaticToadlet extends Toadlet {
 		super(client);
 	}
 	
-	final String rootURL = new String("/static/");
-	final String rootPath = new String("staticfiles/");
+	private static final String ROOT_URL = "/static/";
+	private static final String ROOT_PATH = "staticfiles/";
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String path = uri.getPath();
-		byte[] buf = new byte[1024];
-		int len;
 		
-		if (!path.startsWith(rootURL)) {
+		if (!path.startsWith(ROOT_URL)) {
 			// we should never get any other path anyway
 			return;
 		}
 		try {
-			path = path.substring(rootURL.length());
+			path = path.substring(ROOT_URL.length());
 		} catch (IndexOutOfBoundsException ioobe) {
 			this.sendErrorPage(ctx, 404, "Path not found", "The path you specified doesn't exist");
 			return;
@@ -45,7 +41,7 @@ public class StaticToadlet extends Toadlet {
 			return;
 		}
 		
-		InputStream strm = getClass().getResourceAsStream(rootPath+path);
+		InputStream strm = getClass().getResourceAsStream(ROOT_PATH+path);
 		if (strm == null) {
 			this.sendErrorPage(ctx, 404, "Path not found", "The specified path does not exist.");
 			return;
@@ -61,8 +57,6 @@ public class StaticToadlet extends Toadlet {
 		strm.close();
 		os.close();
 		
-		FileNameMap map = URLConnection.getFileNameMap();
-		
 		ctx.sendReplyHeaders(200, "OK", null, DefaultMIMETypes.guessMIMEType(path), data.size());
 
 		ctx.writeData(data);
@@ -72,4 +66,5 @@ public class StaticToadlet extends Toadlet {
 	public String supportedMethods() {
 		return "GET";
 	}
+
 }
