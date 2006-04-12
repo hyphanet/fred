@@ -30,7 +30,7 @@ public class ThrottleWindowManager {
 
 	public synchronized void requestCompleted() {
         _totalPackets++;
-        _simulatedWindowSize += PACKET_TRANSMIT_INCREMENT;
+        _simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
 		Logger.minor(this, "requestCompleted on "+this);
 	}
 

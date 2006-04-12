@@ -2,6 +2,8 @@ package freenet.node;
 
 import java.util.LinkedList;
 
+import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
 import freenet.support.WouldBlockException;
@@ -142,7 +144,7 @@ public class PacketSender implements Runnable {
                 			Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
                 		}
                 		// Send packets, right now, blocking, including any active notifications
-                		node.packetMangler.processOutgoingOrRequeue(messages, pn, true);
+                		node.packetMangler.processOutgoingOrRequeue(messages, pn, true, false);
                 		continue;
                 	}
                 }
@@ -150,16 +152,9 @@ public class PacketSender implements Runnable {
                 // Need to send a keepalive packet?
                 if(now - pn.lastSentPacketTime() > Node.KEEPALIVE_INTERVAL) {
                     Logger.minor(this, "Sending keepalive");
-                    try {
-						node.packetMangler.processOutgoing(null, 0, 0, pn);
-					} catch (PacketSequenceException e) {
-                    	Logger.error(this, "Caught "+e+" - disconnecting", e);
-                    	pn.forceDisconnect();
-					} catch (WouldBlockException e) {
-						Logger.error(this, "Impossible: "+e, e);
-					} catch (NotConnectedException e) {
-						// Ignore: no point sending a keepalive now! :)
-					}
+                   	// Force packet to have a sequence number.
+                   	Message m = DMT.createFNPVoid();
+                   	node.packetMangler.processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null) }, pn, true, true);
                 }
             } else {
                 // Not connected

@@ -777,7 +777,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     /**
      * Build a packet and send it, from a whole bunch of messages.
      */
-    public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber) {
+    public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue) {
         Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn+" ("+neverWaitForPacketNumber+")");
         byte[][] messageData = new byte[messages.length][];
         int length = 1;
@@ -799,22 +799,26 @@ public class FNPPacketMangler implements LowLevelFilter {
                 } catch (NotConnectedException e) {
                     Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
                     // Requeue
-                    pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    if(!dontRequeue)
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false);
                     return;
                 } catch (WouldBlockException e) {
                     Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
                     // Requeue
-                    pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    if(!dontRequeue)
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false);
                     return;
                 } catch (KeyChangedException e) {
                     Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
                     // Requeue
-                    pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    if(!dontRequeue)
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false);
                     return;
                 } catch (Throwable e) {
                     Logger.error(this, "Caught "+e+" while sending messages, requeueing", e);
                     // Requeue
-                    pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    if(!dontRequeue)
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false);
                     return;
                     
                 }
@@ -849,17 +853,20 @@ public class FNPPacketMangler implements LowLevelFilter {
             } catch (NotConnectedException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
                 // Requeue
-                pn.requeueMessageItems(messages, 0, messages.length, false);
+                if(!dontRequeue)
+                	pn.requeueMessageItems(messages, 0, messages.length, false);
                 return;
             } catch (WouldBlockException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
                 // Requeue
-                pn.requeueMessageItems(messages, 0, messages.length, false);
+                if(!dontRequeue)
+                	pn.requeueMessageItems(messages, 0, messages.length, false);
                 return;
             } catch (Throwable e) {
                 Logger.error(this, "Caught "+e+" while sending messages, requeueing", e);
                 // Requeue
-                pn.requeueMessageItems(messages, 0, messages.length, false);
+                if(!dontRequeue)
+                	pn.requeueMessageItems(messages, 0, messages.length, false);
                 return;
                 
             }
@@ -886,17 +893,20 @@ public class FNPPacketMangler implements LowLevelFilter {
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
                             // Requeue
-                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
+                            if(!dontRequeue)
+                            	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
                             return;
                         } catch (WouldBlockException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
                             // Requeue
-                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
+                            if(!dontRequeue)
+                            	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
                             return;
                         } catch (Throwable e) {
                             Logger.error(this, "Caught "+e+" while sending messages, requeueing remaining messages", e);
                             // Requeue
-                            pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
+                            if(!dontRequeue)
+                            	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
                             return;
                         }
                     }

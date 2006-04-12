@@ -918,6 +918,14 @@ public class DMT {
     	msg.set(EXTERNAL_ADDRESS, peer);
     	return msg;
     }
+
+    public static final MessageType FNPVoid = new MessageType("FNPVoid") {{
+    }};
+    
+    public static final Message createFNPVoid() {
+    	Message msg = new Message(FNPVoid);
+    	return msg;
+    }
     
 	public static void init() { }
 
