@@ -102,12 +102,19 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		dbConfig.setAllowCreate(true);
 		dbConfig.setTransactional(true);
 		chkDB = environment.openDatabase(null,"CHK",dbConfig);
-				
+		
+		File fixSecondary = new File(storeDir, "recreate_secondary_db");
+		if(fixSecondary.exists()) {
+			fixSecondary.delete();
+			environment.truncateDatabase(null, "CHK_accessTime", false);
+		}
+		
 		// Initialize secondary CHK database sorted on accesstime
 		SecondaryConfig secDbConfig = new SecondaryConfig();
 		secDbConfig.setAllowCreate(true);
 		secDbConfig.setSortedDuplicates(true);
 		secDbConfig.setTransactional(true);
+		secDbConfig.setAllowPopulate(true);
 		storeBlockTupleBinding = new StoreBlockTupleBinding();
 		longTupleBinding = TupleBinding.getPrimitiveBinding(Long.class);
 		AccessTimeKeyCreator accessTimeKeyCreator = 
