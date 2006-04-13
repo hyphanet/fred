@@ -52,6 +52,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final Environment environment;
 	private final TupleBinding storeBlockTupleBinding;
 	private final TupleBinding longTupleBinding;
+	private final File fixSecondaryFile;
 	
 	private long chkBlocksInStore;
 	private long maxChkBlocks;
@@ -103,9 +104,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		dbConfig.setTransactional(true);
 		chkDB = environment.openDatabase(null,"CHK",dbConfig);
 		
-		File fixSecondary = new File(storeDir, "recreate_secondary_db");
-		if(fixSecondary.exists()) {
-			fixSecondary.delete();
+		fixSecondaryFile = new File(storeDir, "recreate_secondary_db");
+		
+		if(fixSecondaryFile.exists()) {
+			fixSecondaryFile.delete();
+			Logger.error(this, "Recreating secondary database for "+storeDir);
+			Logger.error(this, "This may take some time...");
+			System.err.println("Recreating secondary database for "+storeDir);
+			System.err.println("This may take some time...");
 			environment.truncateDatabase(null, "CHK_accessTime", false);
 		}
 		
@@ -219,6 +225,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		}
     		if(t!=null)
     			try{t.abort();}catch(DatabaseException ex2){}
+           	checkSecondaryDatabaseError(ex);
     		Logger.error(this, "Caught "+ex, ex);
     		ex.printStackTrace();
         	throw new IOException(ex.getMessage());
@@ -303,6 +310,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if(t!=null) {
     			try{t.abort();}catch(DatabaseException ex2){}
     		}
+        	checkSecondaryDatabaseError(ex);
     		Logger.error(this, "Caught "+ex, ex);
     		ex.printStackTrace();
         	throw new IOException(ex.getMessage());
@@ -394,6 +402,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if(t!=null) {
     			try{t.abort();}catch(DatabaseException ex2){}
     		}
+        	checkSecondaryDatabaseError(ex);
     		Logger.error(this, "Caught "+ex, ex);
     		ex.printStackTrace();
         	throw new IOException(ex.getMessage());
@@ -470,13 +479,29 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	if(t!=null){
         		try{t.abort();}catch(DatabaseException ex2){};
         	}
+        	checkSecondaryDatabaseError(ex);
         	Logger.error(this, "Caught "+ex, ex);
         	ex.printStackTrace();
         	throw new IOException(ex.getMessage());
         }
     }
     
-    /**
+    private void checkSecondaryDatabaseError(Throwable ex) {
+    	if(ex instanceof DatabaseException && ex.getMessage().contains("missing key in the primary database")) {
+    		try {
+				fixSecondaryFile.createNewFile();
+			} catch (IOException e) {
+				Logger.error(this, "Corrupt secondary database but could not create flag file "+fixSecondaryFile);
+				System.err.println("Corrupt secondary database but could not create flag file "+fixSecondaryFile);
+				return; // Not sure what else we can do
+			}
+    		Logger.error(this, "Corrupt secondary database. Should be cleaned up on restart.");
+    		System.err.println("Corrupt secondary database. Should be cleaned up on restart.");
+    		System.exit(freenet.node.Node.EXIT_DATABASE_REQUIRES_RESTART);
+    	}
+	}
+
+	/**
      * Store a block.
      */
     public void put(byte[] hash, DSAPublicKey key) throws IOException
@@ -536,6 +561,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
         	if(t!=null){
         		try{t.abort();}catch(DatabaseException ex2){};
         	}
+        	checkSecondaryDatabaseError(ex);
         	Logger.error(this, "Caught "+ex, ex);
         	ex.printStackTrace();
         	throw new IOException(ex.getMessage());

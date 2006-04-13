@@ -279,6 +279,8 @@ public class Node {
 	static final int EXIT_COULD_NOT_START_FCP = 17;
 	static final int EXIT_COULD_NOT_START_FPROXY = 18;
 	static final int EXIT_COULD_NOT_START_TMCI = 19;
+	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
+
     
     
     public final long bootID;
