@@ -23,6 +23,8 @@ public class WelcomeToadlet extends Toadlet {
 	private static final String[] DEFAULT_DARKNET_BOOKMARKS = {
 		"USK@PFeLTa1si2Ml5sDeUy7eDhPso6TPdmw-2gWfQ4Jg02w,3ocfrqgUMVWA2PeorZx40TW0c-FiIOL-TWKQHoDbVdE,AQABAAE/Index/-1/=Darknet Index"
 	};
+	private final static int MODE_ADD = 1;
+	private final static int MODE_EDIT = 2;
 	Node node;
 	SubConfig config;
 	BookmarkManager bookmarks;
@@ -48,7 +50,7 @@ public class WelcomeToadlet extends Toadlet {
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(data.size() > 1024*1024) {
-			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, config servlet limited to 1MB");
+			this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
 			return;
 		}
 		byte[] d = BucketTools.toByteArray(data);
@@ -91,11 +93,11 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("</form>\n");
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
-		} else if (request.getParam("newbookmark").length() > 0) {
+		} else if (request.isParameterSet("addbookmark")) {
 			try {
-				bookmarks.addBookmark(new Bookmark(request.getParam("newbookmark"), request.getParam("name")));
+				bookmarks.addBookmark(new Bookmark(request.getParam("key"), request.getParam("name")));
 			} catch (MalformedURLException mue) {
-				this.sendErrorPage(ctx, 200, "Invalid freenet key", "Could not add the given item as a bookmark since it was not possible to interpret it as a freenet key. Please <a href=\"/\">Try Again</a>");
+				this.sendBookmarkEditPage(ctx, MODE_ADD, null, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid Freenet key.");
 				return;
 			}
 			
@@ -111,6 +113,24 @@ public class WelcomeToadlet extends Toadlet {
 			
 				if (request.isParameterSet("delete_"+b.hashCode())) {
 					bookmarks.removeBookmark(b);
+				} else if (request.isParameterSet("edit_"+b.hashCode())) {
+					this.sendBookmarkEditPage(ctx, b);
+					return;
+				} else if (request.isParameterSet("update_"+b.hashCode())) {
+					// removing it and adding means that any USK subscriptions are updated properly
+					try {
+						Bookmark newbkmk = new Bookmark(request.getParam("key"), request.getParam("name"));
+						bookmarks.removeBookmark(b);
+						bookmarks.addBookmark(newbkmk);
+					} catch (MalformedURLException mue) {
+						this.sendBookmarkEditPage(ctx, MODE_EDIT, b, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid freenet key.");
+						return;
+					}
+					try {
+						this.handleGet(new URI("/welcome/?managebookmarks"), ctx);
+					} catch (URISyntaxException ex) {
+				
+					}
 				}
 			}
 			try {
@@ -137,8 +157,8 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("To your bookmarks, and enter the description that you would prefer:<br />\n");
 			buf.append("Description:\n");
 			buf.append("<input type=\"text\" name=\"name\" value=\""+HTMLEncoder.encode(request.getParam("desc"))+"\" style=\"width: 100%; \" />\n");
-			buf.append("<input type=\"hidden\" name=\"newbookmark\" value=\""+HTMLEncoder.encode(request.getParam("newbookmark"))+"\" />\n");
-			buf.append("<input type=\"submit\" value=\"Add Bookmark\" />\n");
+			buf.append("<input type=\"hidden\" name=\"key\" value=\""+HTMLEncoder.encode(request.getParam("newbookmark"))+"\" />\n");
+			buf.append("<input type=\"submit\" name=\"addbookmark\" value=\"Add Bookmark\" />\n");
 			buf.append("</div>\n");
 			buf.append("</form>\n");
 			
@@ -165,6 +185,7 @@ public class WelcomeToadlet extends Toadlet {
 					buf.append(HTMLEncoder.encode(b.getDesc()));
 					buf.append("</a>\n");
 					buf.append("<input type=\"submit\" name=\"delete_"+b.hashCode()+"\" value=\"Delete\" style=\"float: right; \" />\n");
+					buf.append("<input type=\"submit\" name=\"edit_"+b.hashCode()+"\" value=\"Edit\" style=\"float: right; \" />\n");
 					buf.append("</li>\n");
 				}
 				buf.append("</ul>\n");
@@ -174,16 +195,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("</form>\n");
 			
 			// new bookmark
-			buf.append("<form action=\".\" method=\"post\">\n");
-			buf.append("<div class=\"infobox\">\n");
-			buf.append("<h2>New Bookmark</h2>\n");
-			buf.append("Key: \n");
-			buf.append("<input type=\"text\" name=\"newbookmark\" style=\"width: 100%; \"/>\n");
-			buf.append("Description: \n");
-			buf.append("<input type=\"text\" name=\"name\" style=\"width: 100%; \"/>\n");
-			buf.append("<input type=\"submit\" value=\"Add Bookmark\"/>\n");
-			buf.append("</div>\n");
-			buf.append("</form>\n");
+			this.makeBookmarkEditForm(buf, MODE_ADD, null, "", "", null);
 			
 			ctx.getPageMaker().makeTail(buf);
 		
@@ -263,6 +275,65 @@ public class WelcomeToadlet extends Toadlet {
 		ctx.getPageMaker().makeTail(buf);
 		
 		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+	}
+	
+	private void sendBookmarkEditPage(ToadletContext ctx, Bookmark b) throws ToadletContextClosedException, IOException {
+		this.sendBookmarkEditPage(ctx, MODE_EDIT, b, b.getKey(), b.getDesc(), null);
+	}
+	
+	private void sendBookmarkEditPage(ToadletContext ctx, int mode, Bookmark b, String origKey, String origDesc, String message) throws ToadletContextClosedException, IOException {
+		StringBuffer buf = new StringBuffer();
+		
+		if (mode == MODE_ADD) {
+			ctx.getPageMaker().makeHead(buf, "Add a Bookmark");
+		} else {
+			ctx.getPageMaker().makeHead(buf, "Edit a Bookmark");
+		}
+		
+		if (message != null) {
+			buf.append("<div class=\"infobox\">\n");
+			buf.append(message);
+			buf.append("</div>\n");
+		}
+		
+		this.makeBookmarkEditForm(buf, mode, b, origKey, origDesc, message);
+		
+		ctx.getPageMaker().makeTail(buf);
+		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+	}
+	
+	private void makeBookmarkEditForm(StringBuffer buf, int mode, Bookmark b, String origKey, String origDesc, String message) {
+		buf.append("<form action=\".\" method=\"post\">\n");
+		buf.append("<div class=\"infobox\">\n");
+		if (mode == MODE_ADD) {
+			buf.append("<h2>New Bookmark</h2>\n");
+		} else {
+			buf.append("<h2>Update Bookmark</h2>\n");
+		}
+		buf.append("<div style=\"text-align: right; \">\n");
+		buf.append("Key: \n");
+		buf.append("<input type=\"text\" name=\"key\" value=\""+origKey+"\" size=\"80\" />\n");
+		buf.append("<br />\n");
+		
+		buf.append("Description: \n");
+		buf.append("<input type=\"text\" name=\"name\" value=\""+origDesc+"\" size=\"80\" />\n");
+		buf.append("<br />\n");
+		
+		if (mode == MODE_ADD) {
+			buf.append("<input type=\"submit\" name=\"addbookmark\" value=\"Add Bookmark\" class=\"confirm\" />\n");
+		} else {
+			buf.append("<input type=\"submit\" name=\"update_"+b.hashCode()+"\" value=\"Update Bookmark\" class=\"confirm\" />\n");
+		}
+		
+		buf.append("<input type=\"submit\" value=\"Cancel\"  class=\"cancel\" />\n");
+		
+		buf.append("<br style=\"clear: all;\" />\n");
+		
+		buf.append("<input type=\"hidden\" name=\"managebookmarks\" value=\"yes\" />\n");
+		
+		buf.append("</div>\n");
+		buf.append("</div>\n");
+		buf.append("</form>\n");
 	}
 	
 	public String supportedMethods() {

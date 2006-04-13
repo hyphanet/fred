@@ -103,6 +103,20 @@ body {
 	color: #ff0000;
 }
 
+/* alerts */
+
+.alert-error {
+	color: darkred;
+}
+
+.alert-warning {
+	color: blue;
+}
+
+.alert-minor {
+	color: green;
+}
+
 /* content */
 
 #content {
@@ -211,3 +225,4 @@ table.darknet_connections span.peer_incompatable {
 table.darknet_connections span.peer_disconnected {
 	color: #d0d0d0;
 }
+

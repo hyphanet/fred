@@ -132,14 +132,15 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		if(cssName.indexOf(':') != -1 || cssName.indexOf('/') != -1)
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 		
-		this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindTo));
 		toadlets = new LinkedList();
-		
 		node.setToadletContainer(this); // even if not enabled, because of config
 		
 		if(!enabled) {
 			Logger.normal(node, "Not starting Fproxy as it's disabled");
+			this.sock = null;
 		} else {
+			this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindTo));
+		
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
 			myThread.start();

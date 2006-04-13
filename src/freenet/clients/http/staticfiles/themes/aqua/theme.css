@@ -119,3 +119,16 @@ pre, textarea {
 .peer_disconnected {
 	color: black;
 }
+
+.alert-error {
+	color: darkred;
+}
+
+.alert-warning {
+	color: blue;
+}
+
+.alert-minor {
+	color: green;
+}
+

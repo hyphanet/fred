@@ -49,23 +49,22 @@ public class UserAlertManager implements Comparator {
 			UserAlert alert = a[i];
 			synchronized(alert) {
 				if(!alert.isValid()) return;
-				// FIXME should have separate CSS styles for each type of alert
 				buf.append("<p><b>");
 				short level = a[i].getPriorityClass();
 				if(level <= UserAlert.CRITICAL_ERROR)
-					buf.append("<font color=\"darkred\">");
+					buf.append("<span color=\"darkred\">");
 				else if(level <= UserAlert.ERROR)
-					buf.append("<font color=\"red\">");
+					buf.append("<span class=\"alert-error\">");
 				else if(level <= UserAlert.WARNING)
-					buf.append("<font color=\"blue\">");
+					buf.append("<span class=\"alert-warning\">");
 				else if(level <= UserAlert.MINOR)
-					buf.append("<font color=\"green\">");
+					buf.append("<span class=\"alert-minor\">");
 				buf.append(a[i].getTitle());
 				if(level <= UserAlert.MINOR)
-					buf.append("</font>");
-				buf.append("</b><br>\n");
+					buf.append("</span>");
+				buf.append("</b><br />\n");
 				buf.append(a[i].getText());
-				buf.append("<p>\n");
+				buf.append("</p>\n");
 			}
 		}
 	}
