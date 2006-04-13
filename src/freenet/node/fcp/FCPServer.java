@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -67,29 +68,58 @@ public class FCPServer implements Runnable {
 		persister = null;
 	}
 
-	public FCPServer(String ipToBindTo, int port, Node node, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval) throws IOException, InvalidConfigValueException {
+	public FCPServer(String ipToBindTo, int port, Node node, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval, boolean isEnabled) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
 		this.persistenceInterval = persistenceInterval;
 		this.port = port;
-		this.enabled = true;
-		this.sock = new ServerSocket(port, 0, InetAddress.getByName(bindTo));
-		this.node = node;
-		clientsByName = new WeakHashMap();
-		// This one is only used to get the default settings. Individual FCP conns
-		// will make their own.
-		HighLevelSimpleClient client = node.makeClient((short)0);
-		defaultFetchContext = client.getFetcherContext();
-		defaultInsertContext = client.getInserterContext();
-		Thread t = new Thread(this, "FCP server");
+		this.enabled = isEnabled;
 		this.enablePersistentDownloads = persistentDownloadsEnabled;
-		globalClient = new FCPClient("Global Queue", this, null, true);
 		setPersistentDownloadsFile(new File(persistentDownloadsDir));
-		t.setDaemon(true);
-		t.start();
-		if(enablePersistentDownloads) {
-			loadPersistentRequests();
-			startPersister();
+		
+		if (this.enabled) {
+			this.node = node;
+			clientsByName = new WeakHashMap();
+			
+			
+			// This one is only used to get the default settings. Individual FCP conns
+			// will make their own.
+			HighLevelSimpleClient client = node.makeClient((short)0);
+			defaultFetchContext = client.getFetcherContext();
+			defaultInsertContext = client.getInserterContext();
+			
+			
+			globalClient = new FCPClient("Global Queue", this, null, true);
+			
+			
+			if(enablePersistentDownloads) {
+				loadPersistentRequests();
+				startPersister();
+			}
+			
+			Logger.normal(this, "Starting FCP server on "+bindTo+":"+port+".");
+			ServerSocket tempsock = null;
+			try {
+				tempsock = new ServerSocket(port, 0, InetAddress.getByName(bindTo));
+			} catch (BindException be) {
+				Logger.error(this, "Couldn't bind to FCP Port "+port+". FCP Server not started.");
+			}
+			
+			this.sock = tempsock;
+			
+			if (this.sock != null) {
+				Thread t = new Thread(this, "FCP server");
+				t.setDaemon(true);
+				t.start();
+			}
+		} else {
+			Logger.normal(this, "Not starting FCP server as it's disabled");
+			this.sock = null;
+			this.node = null;
+			this.clientsByName = null;
+			this.globalClient = null;
+			this.defaultFetchContext = null;
 		}
+		
 	}
 	
 	public void run() {
@@ -243,20 +273,16 @@ public class FCPServer implements Runnable {
 		long persistentDownloadsInterval = fcpConfig.getLong("persistentDownloadsInterval");
 		
 		FCPServer fcp;
-		if(fcpConfig.getBoolean("enabled")){
-			Logger.normal(node, "Starting FCP server on "+fcpConfig.getString("bindTo")+":"+fcpConfig.getInt("port")+".");
-			fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getInt("port"), node, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval);
-			node.setFCPServer(fcp);	
-			
-			if(fcp != null) {
-				cb1.server = fcp;
-				cb2.server = fcp;
-				cb3.server = fcp;
-			}
-		}else{
-			Logger.normal(node, "Not starting FCP server as it's disabled");
-			fcp = null;
+		
+		fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getInt("port"), node, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"));
+		node.setFCPServer(fcp);	
+		
+		if(fcp != null) {
+			cb1.server = fcp;
+			cb2.server = fcp;
+			cb3.server = fcp;
 		}
+		
 	
 		fcpConfig.finishedInitialization();
 		return fcp;
