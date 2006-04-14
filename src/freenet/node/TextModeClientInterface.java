@@ -289,8 +289,17 @@ public class TextModeClientInterface implements Runnable {
             	if(e.newURI != null)
             		outsb.append("Permanent redirect: "+e.newURI+"\r\n");
 			}
+	} else if(uline.startsWith("SHUTDOWN")) {
+		n.exit();
         } else if(uline.startsWith("QUIT")) {
-            n.exit();
+		StringBuffer sb = new StringBuffer();
+		sb.append("Closing connection.\r\n");
+		out.write(sb.toString().getBytes());
+		out.flush();
+		return true;
+	} else if(uline.startsWith("HELP")) {
+		printHeader(out);
+		return false;
         } else if(uline.startsWith("PUT:") || (getCHKOnly = uline.startsWith("GETCHK:"))) {
             // Just insert to local store
         	if(getCHKOnly)
@@ -465,12 +474,12 @@ public class TextModeClientInterface implements Runnable {
             }
         } else if(uline.startsWith("MAKESSK")) {
         	InsertableClientSSK key = InsertableClientSSK.createRandom(r);
-        	outsb.append("Insert URI: "+key.getInsertURI().toString(false));
-        	outsb.append("Request URI: "+key.getURI().toString(false));
+        	outsb.append("Insert URI: "+key.getInsertURI().toString(false)+"\r\n");
+        	outsb.append("Request URI: "+key.getURI().toString(false)+"\r\n");
         	FreenetURI insertURI = key.getInsertURI().setDocName("testsite");
         	String fixedInsertURI = insertURI.toString(false);
-        	outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\r\n"+fixedInsertURI);
-        	outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\r\nPUTSSKDIR:"+fixedInsertURI+"#directoryToUpload/");
+        	outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\r\n"+fixedInsertURI+"\r\n");
+        	outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\r\nPUTSSKDIR:"+fixedInsertURI+"#directoryToUpload/"+"\r\n");
         	outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\r\n"+key.getURI().toString(false)+"testsite/");
         } else if(uline.startsWith("PUTSSK:")) {
         	String cmd = line.substring("PUTSSK:".length());
