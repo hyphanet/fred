@@ -85,19 +85,20 @@ public class FCPClient {
 	public void finishedClientRequest(ClientRequest get) {
 		ClientRequest dropped = null;
 		synchronized(this) {
-			if(runningPersistentRequests.remove(get))
+			if(runningPersistentRequests.remove(get)) {
 				completedUnackedRequests.push(get);
-			
+			}	
 			if(completedUnackedRequests.size() > MAX_UNACKED_REQUESTS) {
-				clientRequestsByIdentifier.remove(dropped.getIdentifier());
 				dropped = (ClientRequest) completedUnackedRequests.pop();
+				clientRequestsByIdentifier.remove(dropped.getIdentifier());
 			}
 		}
 		if(dropped != null) {
 			dropped.dropped();
 		}
-		if(get.isPersistentForever())
+		if(get.isPersistentForever()) {
 			server.forceStorePersistentRequests();
+		}
 	}
 
 	/**
@@ -192,7 +193,7 @@ public class FCPClient {
 			watchGlobal = false;
 		} else if(enabled && !watchGlobal) {
 			server.globalClient.watch(this);
-			FCPConnectionHandler connHandler = currentConnection;
+			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
 				server.globalClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler);
 			}

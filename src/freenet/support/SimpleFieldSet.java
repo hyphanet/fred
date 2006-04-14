@@ -22,9 +22,9 @@ import freenet.support.io.LineReader;
  */
 public class SimpleFieldSet {
 
-	final Map map;
-    String endMarker;
-    final boolean multiLevel;
+    private final Map map;
+    private String endMarker;
+    private final boolean multiLevel;
     static public final char MULTI_LEVEL_CHAR = '.';
     
     public SimpleFieldSet(BufferedReader br, boolean multiLevel) throws IOException {
@@ -55,21 +55,6 @@ public class SimpleFieldSet {
         map = new HashMap();
         this.multiLevel = multiLevel;
         StringReader sr = new StringReader(content);
-        BufferedReader br = new BufferedReader(sr);
-	    read(br);
-    }
-
-    /**
-     * Construct from a string[].
-     * @throws IOException if the string is too short or invalid.
-     */
-    public SimpleFieldSet(String[] content, boolean multiLevel) throws IOException {
-        map = new HashMap();
-        this.multiLevel = multiLevel;
-        String content2=new String();
-        for(int i=0;i<content.length;i++)
-        	content2.concat(content[i]+";");
-        StringReader sr = new StringReader(content2);
         BufferedReader br = new BufferedReader(sr);
 	    read(br);
     }

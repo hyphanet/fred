@@ -6,11 +6,11 @@ import freenet.support.URLEncoder;
 
 public class StringArrOption extends Option {
 
-	final String defaultValue;
-	final StringArrCallback cb;
+    private final String defaultValue;
+    private final StringArrCallback cb;
 	private String currentValue;
 	
-	public static String delimiter = ";";
+    public static final String delimiter = ";";
 	
 	public StringArrOption(SubConfig conf, String optionName, String defaultValue, int sortOrder, 
 			boolean expert, String shortDesc, String longDesc, StringArrCallback cb) {

@@ -8,10 +8,17 @@ import freenet.support.HexUtil;
 
 public class FilenameGenerator {
 
-	final RandomSource random;
-	final String prefix;
-	final File tmpDir;
-	
+    private final RandomSource random;
+    private final String prefix;
+    private final File tmpDir;
+
+    /**
+     * @param random
+     * @param wipeFiles
+     * @param dir if <code>null</code> then use the default temporary directory
+     * @param prefix
+     * @throws IOException
+     */
 	public FilenameGenerator(RandomSource random, boolean wipeFiles, File dir, String prefix) throws IOException {
 		this.random = random;
 		this.prefix = prefix;
@@ -19,8 +26,8 @@ public class FilenameGenerator {
 			tmpDir = new File(System.getProperty("java.io.tmpdir"));
 		else
 			tmpDir = dir;
-		if(!dir.exists()) {
-			dir.mkdir();
+        if(!tmpDir.exists()) {
+            tmpDir.mkdir();
 		}
 		if(!(tmpDir.isDirectory() && tmpDir.canRead() && tmpDir.canWrite()))
 			throw new IOException("Not a directory or cannot read/write: "+tmpDir);

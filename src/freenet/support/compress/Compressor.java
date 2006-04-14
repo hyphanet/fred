@@ -12,7 +12,7 @@ import freenet.support.BucketFactory;
  */
 public abstract class Compressor {
 
-	public static Compressor gzip = new GzipCompressor();
+    public static final Compressor GZIP = new GzipCompressor();
 
 	public abstract Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException;
 
@@ -40,14 +40,14 @@ public abstract class Compressor {
 
 	public static Compressor getCompressionAlgorithmByDifficulty(int i) {
 		if(i == 0)
-			return Compressor.gzip;
+            return GZIP;
 		// FIXME when we get more compression algos, put them here.
 		return null;
 	}
 
 	public static Compressor getCompressionAlgorithmByMetadataID(short algo) {
 		if(algo == Metadata.COMPRESS_GZIP)
-			return gzip;
+            return GZIP;
 		// FIXME when we get more compression algos, put them here.
 		return null;
 	}
