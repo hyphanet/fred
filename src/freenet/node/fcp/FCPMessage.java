@@ -54,6 +54,8 @@ public abstract class FCPMessage {
 			return new SubscribeUSKMessage(fs);
 		if(name.equals(GetRequestStatusMessage.name))
 			return new GetRequestStatusMessage(fs);
+		if(name.equals(ShutdownMessage.name))
+			return new ShutdownMessage();
 		if(name.equals("Void"))
 			return null;
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null);

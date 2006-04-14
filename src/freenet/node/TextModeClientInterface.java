@@ -151,7 +151,8 @@ public class TextModeClientInterface implements Runnable {
 //        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\r\n");
 //        sb.append("SAY:<text> - send text to the last created/pushed stream\r\n");
         sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
-        sb.append("QUIT - exit the program\r\n");
+        sb.append("SHUTDOWN - exit the program\r\n");
+        sb.append("QUIT - close the socket\r\n");
         if(n.testnetEnabled) {
         	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         }
