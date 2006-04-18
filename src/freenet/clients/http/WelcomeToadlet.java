@@ -181,11 +181,13 @@ public class WelcomeToadlet extends Toadlet {
 				while (e.hasMoreElements()) {
 					Bookmark b = (Bookmark)e.nextElement();
 				
-					buf.append("<li><a href=\"/"+HTMLEncoder.encode(b.getKey())+"\">");
-					buf.append(HTMLEncoder.encode(b.getDesc()));
-					buf.append("</a>\n");
+					buf.append("<li style=\"clear: right; \">\n");
 					buf.append("<input type=\"submit\" name=\"delete_"+b.hashCode()+"\" value=\"Delete\" style=\"float: right; \" />\n");
 					buf.append("<input type=\"submit\" name=\"edit_"+b.hashCode()+"\" value=\"Edit\" style=\"float: right; \" />\n");
+					buf.append("<a href=\"/"+HTMLEncoder.encode(b.getKey())+"\">");
+					buf.append(HTMLEncoder.encode(b.getDesc()));
+					buf.append("</a>\n");
+
 					buf.append("</li>\n");
 				}
 				buf.append("</ul>\n");
@@ -340,3 +342,4 @@ public class WelcomeToadlet extends Toadlet {
 		return "GET, POST";
 	}
 }
+
