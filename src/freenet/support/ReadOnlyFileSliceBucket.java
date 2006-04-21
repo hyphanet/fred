@@ -85,6 +85,17 @@ public class ReadOnlyFileSliceBucket implements Bucket {
 			return read(buf, 0, buf.length);
 		}
 
+		public void close() throws IOException {
+			f.close();
+		}
+		
+		public void finalize() {
+			try {
+				close();
+			} catch (IOException e) {
+				// Ignore
+			}
+		}
 	}
 
 	public class ReadOnlyFileSliceBucketException extends IOException {
