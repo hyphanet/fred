@@ -15,7 +15,10 @@ import freenet.support.HexUtil;
  * decode original data when fed a ClientSSK.
  */
 public class SSKBlock implements KeyBlock {
-
+	// how much of the headers we compare in order to consider two
+	// SSKBlocks equal - necessary because the last 64 bytes need not
+	// be the same for the same data and the same key (see comments below)
+	private static final int HEADER_COMPARE_TO = 71;
 	final byte[] data;
 	final byte[] headers;
 	/** The index of the first byte of encrypted fields in the headers, after E(H(docname)) */
@@ -63,7 +66,11 @@ public class SSKBlock implements KeyBlock {
     	if(block.headersOffset != headersOffset) return false;
     	if(block.hashIdentifier != hashIdentifier) return false;
     	if(block.symCipherIdentifier != symCipherIdentifier) return false;
-    	if(!Arrays.equals(block.headers, headers)) return false;
+    	// only compare some of the headers (see top)
+    	for (int i = 0; i < HEADER_COMPARE_TO; i++) {
+    		if (block.headers[i] != headers[i]) return false;
+	}
+    	//if(!Arrays.equals(block.headers, headers)) return false;
     	if(!Arrays.equals(block.data, data)) return false;
     	return true;
     }

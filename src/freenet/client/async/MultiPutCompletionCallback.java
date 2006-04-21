@@ -37,7 +37,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			if(!(waitingFor.isEmpty() && started))
 				return;
 		}
-		complete(null);
+		/* Using this.e here will cause complete to consider the
+		 * insert as failed if onFailed has been called in the past
+		 * for this request. This makes collisions work. It does
+		 * mean that onSuccess gets called, and then we consider
+		 * the insert to have failed, which may or may not make sense.
+		 */
+		complete(this.e);
 	}
 
 	public void onFailure(InserterException e, ClientPutState state) {
