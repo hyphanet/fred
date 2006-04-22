@@ -34,7 +34,7 @@ public class PeerManagerUserAlert implements UserAlert {
 					"(if you are paranoid, then people you trust; if not, then " +
 					"at least people you've talked to)";
 		String end = " log on to irc.freenode.net channel " +
-			"#freenet and ask around for somebody to connect to";
+			"#freenet-refs and ask around for somebody to connect to";
 		if(n.testnetEnabled)
 			s += ", but since this is a testnet node, we suggest that you "+end+".";
 		else
