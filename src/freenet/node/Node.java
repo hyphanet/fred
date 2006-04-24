@@ -103,6 +103,8 @@ import freenet.transport.IPUtil;
  */
 public class Node {
 
+	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
+	
 	public class MyRequestThrottle implements BaseRequestThrottle {
 
 		private final BootstrappingDecayingRunningAverage roundTripTime; 
@@ -1602,10 +1604,17 @@ public class Node {
        			}
        		}
        		lastIPAddress = best;
-           	return best;
        	}
-       	lastIPAddress = oldIPAddress;
-       	return oldIPAddress;
+       	else {
+       		lastIPAddress = oldIPAddress;
+       	}
+       	if (lastIPAddress == null) {
+       		this.alerts.register(primaryIPUndetectedAlert);
+       	}
+       	else	 {
+       		this.alerts.unregister(primaryIPUndetectedAlert);
+       	}
+       	return lastIPAddress;
     }
 
     InetAddress getPrimaryIPAddress() {
