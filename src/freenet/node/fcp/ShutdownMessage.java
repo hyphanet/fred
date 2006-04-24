@@ -19,7 +19,7 @@ public class ShutdownMessage extends FCPMessage{
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) {
-		FCPMessage msg = new ProtocolErrorMessage(17,true,"The node is shutting down","Node");
+		FCPMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.SHUTTING_DOWN,true,"The node is shutting down","Node");
 		handler.outputHandler.queue(msg);
 		node.exit();
 	}	
