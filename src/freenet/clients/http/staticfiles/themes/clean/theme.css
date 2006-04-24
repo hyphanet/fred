@@ -218,11 +218,27 @@ table.darknet_connections span.peer_backedoff {
 	color: #ff0000;
 }
 
-table.darknet_connections span.peer_incompatable {
+table.darknet_connections span.peer_incompatible {
 	color: #d0a0d0;
 }
 
 table.darknet_connections span.peer_disconnected {
 	color: #d0d0d0;
+}
+
+tr.messagetypes {
+	text-align: center;
+}
+
+table.sentmessagetypes {
+	display: inline;
+}
+
+table.receivedmessagetypes {
+	display: inline;
+}
+
+table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
+	font-size: 7pt;
 }
 

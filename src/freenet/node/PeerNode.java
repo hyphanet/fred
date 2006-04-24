@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.Vector;
+import java.util.Hashtable;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DiffieHellmanContext;
@@ -171,6 +172,12 @@ public class PeerNode implements PeerContext {
     
     /** The time at which we last completed a connection setup. */
     private long connectedTime;
+
+    /** Holds a String-Long pair that shows which message types (as name) have been send to this peer. */
+    private Hashtable localNodeSentMessageTypes = new Hashtable();
+    
+    /** Holds a String-Long pair that shows which message types (as name) have been received by this peer. */
+    private Hashtable localNodeReceivedMessageTypes = new Hashtable();
 
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
@@ -1229,6 +1236,56 @@ public class PeerNode implements PeerContext {
 
 	public boolean hasCompletedHandshake() {
 		return completedHandshake;
+	}
+	
+	public synchronized void addToLocalNodeSentMessagesToStatistic (Message m)
+	{
+	String messageSpecName;
+	Long count;
+	
+		messageSpecName = m.getSpec().getName();
+		//
+		count = (Long)localNodeSentMessageTypes.get(messageSpecName);
+		if (count == null)
+		{
+			count = new Long(1);
+		}
+		else
+		{
+			count = new Long(count.longValue() + 1);
+		}
+		//
+		localNodeSentMessageTypes.put(messageSpecName,count);
+	}
+	
+	public synchronized void addToLocalNodeReceivedMessagesFromStatistic (Message m)
+	{
+	String messageSpecName;
+	Long count;
+	
+		messageSpecName = m.getSpec().getName();
+		//
+		count = (Long)localNodeReceivedMessageTypes.get(messageSpecName);
+		if (count == null)
+		{
+			count = new Long(1);
+		}
+		else
+		{
+			count = new Long(count.longValue() + 1);
+		}
+		//
+		localNodeReceivedMessageTypes.put(messageSpecName,count);
+	}
+	
+	public Hashtable getLocalNodeSentMessagesToStatistic ()
+	{
+		return localNodeSentMessageTypes;
+	}
+
+	public Hashtable getLocalNodeReceivedMessagesFromStatistic ()
+	{
+		return localNodeReceivedMessageTypes;
 	}
 }
 

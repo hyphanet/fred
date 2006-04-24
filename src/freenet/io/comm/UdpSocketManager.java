@@ -241,6 +241,10 @@ public class UdpSocketManager extends Thread {
 	 * @param m The Message to dispatch.
 	 */
 	public void checkFilters(Message m) {
+		if ((m.getSource()) instanceof PeerNode)
+		{
+			((PeerNode)m.getSource()).addToLocalNodeReceivedMessagesFromStatistic(m);
+		}
 		boolean matched = false;
 		if (!(m.getSpec().equals(DMT.packetTransmit))) {
 			if (m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) {

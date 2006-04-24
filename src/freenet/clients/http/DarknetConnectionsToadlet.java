@@ -9,6 +9,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Hashtable;
+import java.util.Enumeration;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.comm.PeerParseException;
@@ -28,12 +30,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		public int compare(Object arg0, Object arg1) {
 			Object[] row0 = (Object[])arg0;
 			Object[] row1 = (Object[])arg1;
-			Integer stat0 = (Integer) row0[0];
-			Integer stat1 = (Integer) row1[0];
+			Integer stat0 = (Integer) row0[1];  // 1 = status
+			Integer stat1 = (Integer) row1[1];
 			int x = stat0.compareTo(stat1);
 			if(x != 0) return x;
-			String name0 = (String) row0[1];
-			String name1 = (String) row1[1];
+			String name0 = (String) row0[2];  // 2 = node name
+			String name1 = (String) row1[2];
 			return name0.toLowerCase().compareTo(name1.toLowerCase());
 		}
 
@@ -81,7 +83,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 		
 		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2>My Connections</h2>\n");
+		buf.append("<h2>My Connections");
+		if (!path.endsWith("displaymessagetypes.html"))
+		{
+			buf.append(" <a href=\"displaymessagetypes.html\">(more detailed)</a>");
+		}
+		buf.append("</h2>\n");
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("<table class=\"darknet_connections\">\n");
 		buf.append("<tr><th>Status</th><th>Name</th><th> <span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th> <span title=\"Temporarily disconnected. Other node busy? Wait time(ms) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th> <span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th><th></th></tr>\n");
@@ -93,6 +100,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		// Create array
 		Object[][] rows = new Object[peerNodes.length][];
+		String[][] messageTypesRows = new String[peerNodes.length][];
 		for(int i=0;i<peerNodes.length;i++) {
 			PeerNode pn = peerNodes[i];
 			long backedOffUntil = pn.getBackedOffUntil();
@@ -101,7 +109,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			long idle = pn.lastReceivedPacketTime();
 			
 			// Elements must be HTML encoded.
-			Object[] row = new Object[8];
+			Object[] row = new Object[9];  // where [0] is the pn object!
+			String[] messageTypesRow = new String[2];
 			rows[i] = row;
 			
 			Object status;
@@ -116,15 +125,16 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				status = DISCONNECTED;
 			}
 			
-			row[0] = status;
-			row[1] = HTMLEncoder.encode(pn.getName());
-			row[2] = pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)";
-			row[3] = HTMLEncoder.encode(pn.getVersion());
-			row[4] = new Double(pn.getLocation().getValue());
-			row[5] = backoff + "/" + pn.getBackoffLength();
-			if (idle == -1) row[6] = " ";
-			else row[6] = new Long((now - idle) / 60000);
-			row[7] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
+			row[0] = pn;
+			row[1] = status;
+			row[2] = HTMLEncoder.encode(pn.getName());
+			row[3] = pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)";
+			row[4] = HTMLEncoder.encode(pn.getVersion());
+			row[5] = new Double(pn.getLocation().getValue());
+			row[6] = backoff + "/" + pn.getBackoffLength();
+			if (idle == -1) row[7] = " ";
+			else row[7] = new Long((now - idle) / 60000);
+			row[8] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
 		}
 
 		// Sort array
@@ -133,26 +143,55 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		// Convert status codes into status strings
 		for(int i=0;i<rows.length;i++) {
 			Object[] row = rows[i];
-			Integer x = (Integer) row[0];
-			if(x == CONNECTED) row[0] = "<span class=\"peer_connected\">CONNECTED</span>";
-			else if(x == BACKED_OFF) row[0] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
-			else if(x == INCOMPATIBLE) row[0] = "<span class=\"peer_incompatable\">INCOMPATIBLE</span>";
-			else if(x == DISCONNECTED) row[0] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
+			Integer x = (Integer) row[1];
+			if(x == CONNECTED) row[1] = "<span class=\"peer_connected\">CONNECTED</span>";
+			else if(x == BACKED_OFF) row[1] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
+			else if(x == INCOMPATIBLE) row[1] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
+			else if(x == DISCONNECTED) row[1] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
 		}
 		
 		// Turn array into HTML
 		for(int i=0;i<rows.length;i++) {
 			Object[] row = rows[i];
-			buf.append("\n<tr>\n\t<td>");
-			for(int j=0;j<row.length;j++) {
-				buf.append(row[j]);
-				if(j != row.length-1)
-					buf.append("</td>\n\t<td>");
+			buf.append("<tr>\n");
+			for(int j=1;j<row.length;j++) {  // skip index 0 as it's the PeerNode object
+				buf.append("<td>"+row[j]+"</td>");
 			}
-			buf.append("</td>\n</tr>\n");
+			buf.append("</tr>\n");
+			
+			if (path.endsWith("displaymessagetypes.html"))
+			{
+				buf.append("<tr class=\"messagetypes\"><td colspan=\"8\">\n");
+				buf.append("<table class=\"sentmessagetypes\">\n");
+				buf.append("<tr><th>Sent Message Type</th><th>Count</th></tr>\n");
+				for (Enumeration keys=((PeerNode)row[0]).getLocalNodeSentMessagesToStatistic().keys(); keys.hasMoreElements(); )
+				{
+					Object curkey = keys.nextElement();
+					buf.append("<tr><td>");
+					buf.append((String)curkey);
+					buf.append("</td><td>");
+					buf.append(((Long)((PeerNode)row[0]).getLocalNodeSentMessagesToStatistic().get(curkey)) + "");
+					buf.append("</td></tr>\n");
+				}
+				buf.append("</table>\n");
+	
+				buf.append("<table class=\"receivedmessagetypes\">\n");
+				buf.append("<tr><th>Received Message Type</th><th>Count</th></tr>\n");
+				for (Enumeration keys=((PeerNode)row[0]).getLocalNodeReceivedMessagesFromStatistic().keys(); keys.hasMoreElements(); )
+				{
+					Object curkey = keys.nextElement();
+					buf.append("<tr><td>");
+					buf.append((String)curkey);
+					buf.append("</td><td>");
+					buf.append(((Long)((PeerNode)row[0]).getLocalNodeReceivedMessagesFromStatistic().get(curkey)) + "");
+					buf.append("</td></tr>\n");
+				}
+				buf.append("</table>\n");
+				buf.append("</td></tr>\n");
+			}
 		}
 		buf.append("</table>");
-		buf.append("<input type=\"submit\" name =\"disconnect\" value=\"Disconnect from Selected Peers\" />");
+		buf.append("<input type=\"submit\" name =\"disconnect\" value=\"Disconnect from selected Peers\" />");
 		buf.append("</form>");
 		buf.append("</div>");
 		

@@ -142,6 +142,10 @@ public class PacketSender implements Runnable {
                 	} else {
                 		for(int j=0;j<messages.length;j++) {
                 			Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
+                			if (messages[j].msg != null)
+                			{
+                				pn.addToLocalNodeSentMessagesToStatistic(messages[j].msg);
+                			}
                 		}
                 		// Send packets, right now, blocking, including any active notifications
                 		node.packetMangler.processOutgoingOrRequeue(messages, pn, true, false);
@@ -154,6 +158,7 @@ public class PacketSender implements Runnable {
                     Logger.minor(this, "Sending keepalive");
                    	// Force packet to have a sequence number.
                    	Message m = DMT.createFNPVoid();
+                   	pn.addToLocalNodeSentMessagesToStatistic(m);
                    	node.packetMangler.processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null) }, pn, true, true);
                 }
             } else {
