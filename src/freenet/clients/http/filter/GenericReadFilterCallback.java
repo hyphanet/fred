@@ -69,11 +69,11 @@ public class GenericReadFilterCallback implements FilterCallback {
 			// FIXME resolve it
 			// FIXME Note that we allow links to / inlines from fproxy services.
 			// This is okay because we don't allow forms.
-			return finishProcess(req, overrideType, path);
+			return finishProcess(req, overrideType, path, uri);
 		}
 	}
 
-	private String finishProcess(HTTPRequest req, String overrideType, String path) {
+	private String finishProcess(HTTPRequest req, String overrideType, String path, URI u) {
 		String typeOverride = req.getParam("type", null);
 		if(overrideType != null)
 			typeOverride = overrideType;
@@ -83,6 +83,8 @@ public class GenericReadFilterCallback implements FilterCallback {
 		String ret = path;
 		if(typeOverride != null)
 			ret = ret + "?type=" + typeOverride;
+		if(u.getFragment() != null)
+			ret = ret + "#" + u.getFragment();
 		return ret;
 	}
 
@@ -90,7 +92,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// Valid freenet URI, allow it
 		// Now what about the queries?
 		HTTPRequest req = new HTTPRequest(uri);
-		return finishProcess(req, overrideType, "/" + furi.toString(false));
+		return finishProcess(req, overrideType, "/" + furi.toString(false), uri);
 	}
 	
 }
