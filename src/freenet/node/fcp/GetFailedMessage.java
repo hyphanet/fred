@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchException;
+import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -21,6 +22,7 @@ public class GetFailedMessage extends FCPMessage {
 	final long expectedDataLength;
 	final String expectedMimeType;
 	final boolean finalizedExpected;
+	final FreenetURI redirectURI;
 	
 	public GetFailedMessage(FetchException e, String identifier) {
 		Logger.minor(this, "Creating get failed from "+e+" for "+identifier, e);
@@ -34,6 +36,7 @@ public class GetFailedMessage extends FCPMessage {
 		this.expectedDataLength = e.expectedSize;
 		this.expectedMimeType = e.getExpectedMimeType();
 		this.finalizedExpected = e.finalizedSize();
+		this.redirectURI = e.newURI;
 	}
 
 	/**
@@ -42,9 +45,8 @@ public class GetFailedMessage extends FCPMessage {
 	 * client library. FIXME.
 	 * @param useVerboseFields If true, read in verbose fields (CodeDescription
 	 * etc), if false, reconstruct them from the error code.
-	 * @throws MalformedURLException 
 	 */
-	public GetFailedMessage(SimpleFieldSet fs, boolean useVerboseFields) {
+	public GetFailedMessage(SimpleFieldSet fs, boolean useVerboseFields) throws MalformedURLException {
 		identifier = fs.get("Identifier");
 		if(identifier == null) throw new NullPointerException();
 		code = Integer.parseInt(fs.get("Code"));
@@ -73,6 +75,7 @@ public class GetFailedMessage extends FCPMessage {
 			expectedDataLength = Long.parseLong(s);
 		} else
 			expectedDataLength = -1;
+		this.redirectURI = new FreenetURI(fs.get("RedirectURI"));
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -107,6 +110,8 @@ public class GetFailedMessage extends FCPMessage {
 			sfs.put("ExpectedMetadata.ContentType", expectedMimeType);
 		if(finalizedExpected)
 			sfs.put("FinalizedExpected", "true");
+		if(redirectURI != null)
+			sfs.put("RedirectURI", redirectURI.toString(false));
 		return sfs;
 	}
 
