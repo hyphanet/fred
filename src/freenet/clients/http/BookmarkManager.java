@@ -66,6 +66,8 @@ public class BookmarkManager {
 				} catch (MalformedURLException mue) {
 				}
 			}
+			
+			node.config.store();
 		}
 	}
 	

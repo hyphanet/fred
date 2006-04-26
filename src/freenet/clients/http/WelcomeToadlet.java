@@ -96,6 +96,7 @@ public class WelcomeToadlet extends Toadlet {
 		} else if (request.isParameterSet("addbookmark")) {
 			try {
 				bookmarks.addBookmark(new Bookmark(request.getParam("key"), request.getParam("name")));
+				node.config.store();
 			} catch (MalformedURLException mue) {
 				this.sendBookmarkEditPage(ctx, MODE_ADD, null, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid Freenet key.");
 				return;
@@ -113,6 +114,7 @@ public class WelcomeToadlet extends Toadlet {
 			
 				if (request.isParameterSet("delete_"+b.hashCode())) {
 					bookmarks.removeBookmark(b);
+					node.config.store();
 				} else if (request.isParameterSet("edit_"+b.hashCode())) {
 					this.sendBookmarkEditPage(ctx, b);
 					return;
@@ -122,6 +124,7 @@ public class WelcomeToadlet extends Toadlet {
 						Bookmark newbkmk = new Bookmark(request.getParam("key"), request.getParam("name"));
 						bookmarks.removeBookmark(b);
 						bookmarks.addBookmark(newbkmk);
+						node.config.store();
 					} catch (MalformedURLException mue) {
 						this.sendBookmarkEditPage(ctx, MODE_EDIT, b, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid freenet key.");
 						return;
