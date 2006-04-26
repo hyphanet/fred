@@ -192,10 +192,11 @@ public class DSAPublicKey extends CryptoKey {
 		return fs;
 	}
 
-	public static DSAPrivateKey create(SimpleFieldSet fs, DSAGroup group, boolean base64) throws IllegalBase64Exception {
-		NativeBigInteger y = new NativeBigInteger(1, 
-				base64 ? Base64.decode(fs.get("y")) :
-				HexUtil.hexToBytes(fs.get("y")));
-		return new DSAPrivateKey(y);
+	public static DSAPublicKey create(SimpleFieldSet set, DSAGroup group, boolean base64) throws IllegalBase64Exception {
+		NativeBigInteger x = 
+			new NativeBigInteger(1,
+					base64 ? Base64.decode(set.get("y")) :
+					HexUtil.hexToBytes(set.get("y")));
+		return new DSAPublicKey(group, x);
 	}
 }

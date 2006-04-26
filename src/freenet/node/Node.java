@@ -395,14 +395,18 @@ public class Node {
         // FIXME: Back compatibility; REMOVE !!
         try {
         	this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"), base64);
-        	this.myPrivKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup, base64);
-        	this.myPubKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup, base64);
+        	this.myPrivKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup, base64);
+        	this.myPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup, base64);
         } catch (NullPointerException e) {
+        	Logger.minor(this, "Caught "+e, e);
             this.myCryptoGroup = Global.DSAgroupBigA;
             this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
             this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
         } catch (IllegalBase64Exception e) {
-        	throw new IOException();
+        	Logger.minor(this, "Caught "+e, e);
+            this.myCryptoGroup = Global.DSAgroupBigA;
+            this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
+            this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
 		}
         wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
     }
