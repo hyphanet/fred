@@ -197,8 +197,8 @@ public class Node {
     static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
     public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
     /** Minimum space for zipped logfiles on testnet */
-	static final long TESTNET_MIN_MAX_ZIPPED_LOGFILES = 256*1024*1024;
-	static final String TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING = "256M";
+	static final long TESTNET_MIN_MAX_ZIPPED_LOGFILES = 512*1024*1024;
+	static final String TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING = "512M";
     
     // FIXME: abstract out address stuff? Possibly to something like NodeReference?
     final int portNumber;
