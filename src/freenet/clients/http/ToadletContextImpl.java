@@ -6,7 +6,12 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Enumeration;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
@@ -104,7 +109,7 @@ public class ToadletContextImpl implements ToadletContext {
 		// Also this may fix a wierd bug...
 		// All keys are lower-case
 		mvt.put("expires", "Thu, 01 Jan 1970 00:00:00 GMT");
-		mvt.put("last-modified", Long.toString(System.currentTimeMillis()-1000));
+		mvt.put("last-modified", makeHTTPDate(System.currentTimeMillis()-1000));
 		mvt.put("pragma", "no-cache");
 		mvt.put("cache-control", "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0");
 		StringBuffer buf = new StringBuffer(1024);
@@ -129,6 +134,15 @@ public class ToadletContextImpl implements ToadletContext {
 		sockOutputStream.write(buf.toString().getBytes("US-ASCII"));
 	}
 	
+	static TimeZone TZ_UTC = TimeZone.getTimeZone("UTC");
+	
+	private static String makeHTTPDate(long time) {
+		// For HTTP, GMT == UTC
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
+		sdf.setTimeZone(TZ_UTC);
+		return sdf.format(new Date(time));
+	}
+
 	/** Fix key case to be conformant to HTTP expectations.
 	 * Note that HTTP is case insensitive on header names, but we may as well
 	 * send something as close to the spec as possible in case of broken clients... 
