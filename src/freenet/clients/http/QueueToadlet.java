@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.NumberFormat;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -357,7 +358,9 @@ public class QueueToadlet extends Toadlet {
 			buf.append("<td>UNKNOWN</td>\n");
 		} else {
 			buf.append("<td>");
-			buf.append((int)(frac * 100));
+			NumberFormat nf = NumberFormat.getInstance();
+			nf.setMaximumFractionDigits(1);
+			buf.append(nf.format(frac));
 			buf.append("%</td>\n");
 		}
 	}
