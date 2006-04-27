@@ -82,6 +82,7 @@ public class PageMaker {
 				+ "<li><a href=\"/plugins/\" title=\"Configure Plugins\">Plugins</a></li>\n"
 				+ "<li><a href=\"/config/\" title=\"Configure your node\">Configuration</a></li>\n"
 				+ "<li><a href=\"/darknet/\" title=\"Manage darknet connections\">Darknet</a></li>\n"
+				+ "<li><a href=\"/queue/\" title=\"Manage queued requests\">Queue</a></li>\n"
 				+ "</ul>\n"
 				+ "</div>\n");
 	}

@@ -1024,6 +1024,15 @@ public class Node {
 			throw new NodeInitException(EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
 		}
         
+        // FCP (including persistent requests so needs to start before Fproxy)
+        try {
+			fcpServer = FCPServer.maybeCreate(this, config);
+		} catch (IOException e) {
+			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+		} catch (InvalidConfigValueException e) {
+			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
+		}
+        
         // Fproxy
         // FIXME this is a hack, the real way to do this is plugins
         try {
@@ -1042,15 +1051,6 @@ public class Node {
         server.register(fproxy, "/", false);
         server.register(pproxy, "/plugins/", true);
 		 * */
-        
-        // FCP
-        try {
-			fcpServer = FCPServer.maybeCreate(this, config);
-		} catch (IOException e) {
-			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
-		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
-		}
         
         // SNMP
         SNMPStarter.maybeCreate(this, config);

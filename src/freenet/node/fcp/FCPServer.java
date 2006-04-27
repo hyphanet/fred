@@ -502,10 +502,16 @@ public class FCPServer implements Runnable {
 			Iterator i = clientsByName.values().iterator();
 			while(i.hasNext()) {
 				FCPClient client = (FCPClient) (i.next());
-				client.addPersistentRequests(v);
+				client.addPersistentRequests(v, true);
 			}
-			globalClient.addPersistentRequests(v);
+			globalClient.addPersistentRequests(v, true);
 		}
+		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
+	}
+
+	public ClientRequest[] getGlobalRequests() {
+		Vector v = new Vector();
+		globalClient.addPersistentRequests(v, false);
 		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
 	}
 

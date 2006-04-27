@@ -34,4 +34,8 @@ public class SimpleProgressMessage extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SimpleProgress goes from server to client not the other way around", ident);
 	}
 
+	public double getFraction() {
+		return (double) event.fetchedBlocks / (double) event.totalBlocks;
+	}
+
 }

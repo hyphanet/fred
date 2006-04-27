@@ -244,6 +244,9 @@ public class FproxyToadlet extends Toadlet {
 			
 			DarknetConnectionsToadlet darknetToadlet = new DarknetConnectionsToadlet(node, client);
 			server.register(darknetToadlet, "/darknet/", true);
+			
+			QueueToadlet queueToadlet = new QueueToadlet(node.getFCPServer(), client);
+			server.register(queueToadlet, "/queue/", true);
 
 		} catch (IOException ioe) {
 			Logger.error(node,"Failed to start fproxy: "+ioe, ioe);

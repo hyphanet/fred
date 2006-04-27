@@ -214,4 +214,8 @@ public abstract class ClientRequest {
 	 * Get a SimpleFieldSet representing this request.
 	 */
 	public abstract SimpleFieldSet getFieldSet() throws IOException;
+
+	public abstract double getSuccessFraction();
+
+	public abstract String getFailureReason();
 }

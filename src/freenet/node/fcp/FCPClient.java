@@ -163,12 +163,12 @@ public class FCPClient {
 		return !(runningPersistentRequests.isEmpty() && completedUnackedRequests.isEmpty());
 	}
 
-	public void addPersistentRequests(Vector v) {
+	public void addPersistentRequests(Vector v, boolean onlyForever) {
 		synchronized(this) {
 			Iterator i = runningPersistentRequests.iterator();
 			while(i.hasNext()) {
 				ClientRequest req = (ClientRequest) i.next();
-				if(req.isPersistentForever())
+				if(req.isPersistentForever() || !onlyForever)
 					v.add(req);
 			}
 			Object[] unacked = completedUnackedRequests.toArray();

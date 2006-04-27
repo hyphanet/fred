@@ -48,9 +48,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	/** Did the request succeed? Valid if finished. */
 	private boolean succeeded;
 	/** Length of the found data */
-	private long foundDataLength;
+	private long foundDataLength = -1;
 	/** MIME type of the found data */
-	private String foundDataMimeType;
+	private String foundDataMimeType = null;
 	/** Details of request failure */
 	private GetFailedMessage getFailedMessage;
 	/** Succeeded but failed to return data e.g. couldn't write to file */
@@ -396,6 +396,50 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	protected void freeData() {
 		if(returnBucket != null)
 			returnBucket.free();
+	}
+
+	public boolean hasSucceeded() {
+		return succeeded;
+	}
+
+	public boolean isDirect() {
+		return this.returnType == ClientGetMessage.RETURN_TYPE_DIRECT;
+	}
+
+	public boolean isToDisk() {
+		return this.returnType == ClientGetMessage.RETURN_TYPE_DISK;
+	}
+
+	public FreenetURI getURI() {
+		return uri;
+	}
+
+	public long getDataSize() {
+		return foundDataLength;
+	}
+
+	public String getMIMEType() {
+		return foundDataMimeType;
+	}
+
+	public File getDestFilename() {
+		return targetFile;
+	}
+
+	public double getSuccessFraction() {
+		if(progressPending != null) {
+			return progressPending.getFraction();
+		} else
+			return -1;
+	}
+
+	public String getFailureReason() {
+		if(getFailedMessage == null)
+			return null;
+		String s = getFailedMessage.shortCodeDescription;
+		if(getFailedMessage.extraDescription != null)
+			s += ": "+getFailedMessage.extraDescription;
+		return s;
 	}
 
 }

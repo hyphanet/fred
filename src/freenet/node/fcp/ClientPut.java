@@ -172,5 +172,31 @@ public class ClientPut extends ClientPutBase {
 	protected String getTypeName() {
 		return "PUT";
 	}
-	
+
+	public boolean hasSucceeded() {
+		return succeeded;
+	}
+
+	public FreenetURI getFinalURI() {
+		return generatedURI;
+	}
+
+	public boolean isDirect() {
+		return uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT;
+	}
+
+	public File getOrigFilename() {
+		if(uploadFrom != ClientPutMessage.UPLOAD_FROM_DISK)
+			return null;
+		return origFilename;
+	}
+
+	public long getDataSize() {
+		return data.size();
+	}
+
+	public String getMIMEType() {
+		return clientMetadata.getMIMEType();
+	}
+
 }

@@ -41,7 +41,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	 */
 	private PutFailedMessage putFailedMessage;
 	/** URI generated for the insert. */
-	private FreenetURI generatedURI;
+	protected FreenetURI generatedURI;
 	// This could be a SimpleProgress, or it could be started/finished compression.
 	// Not that important, so not saved on persistence.
 	// Probably saving it would conflict with later changes (full persistence at
@@ -228,4 +228,22 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	
 	protected abstract String getTypeName();
 
+	public double getSuccessFraction() {
+		if(progressMessage != null) {
+			if(progressMessage instanceof SimpleProgressMessage)
+				return ((SimpleProgressMessage)progressMessage).getFraction();
+			else return 0;
+		} else
+			return -1;
+	}
+
+	public String getFailureReason() {
+		if(putFailedMessage == null)
+			return null;
+		String s = putFailedMessage.shortCodeDescription;
+		if(putFailedMessage.extraDescription != null)
+			s += ": "+putFailedMessage.extraDescription;
+		return s;
+	}
+	
 }

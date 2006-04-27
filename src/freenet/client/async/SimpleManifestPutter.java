@@ -167,6 +167,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private boolean insertedManifest;
 	private ClientPutState currentMetadataInserterState;
 	private final String defaultName;
+	private int numberOfFiles;
+	private long totalSize;
 	private final static String[] defaultDefaultNames =
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	
@@ -232,6 +234,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					}
 					runningPutHandlers.add(ph);
 					putHandlersWaitingForMetadata.add(ph);
+					numberOfFiles++;
+					totalSize += data.size();
 				}
 				putHandlersByName.put(name, ph);
 			}
@@ -458,5 +462,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			add(e, after, hm);
 		}
+	}
+
+	public int countFiles() {
+		return numberOfFiles;
+	}
+
+	public long totalSize() {
+		return totalSize;
 	}
 }

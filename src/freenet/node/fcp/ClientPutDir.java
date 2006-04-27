@@ -25,6 +25,8 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 	private final HashMap manifestElements;
 	private final SimpleManifestPutter putter;
 	private final String defaultName;
+	private final long totalSize;
+	private final int numberOfFiles;
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
 			HashMap manifestElements) throws IdentifierCollisionException {
@@ -40,7 +42,14 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		} catch (InserterException e) {
 			onFailure(e, null);
 			p = null;
-		} 
+		}
+		if(p != null) {
+			numberOfFiles = p.countFiles();
+			totalSize = p.totalSize();
+		} else {
+			numberOfFiles = -1;
+			totalSize = -1;
+		}
 		putter = p;
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this);
@@ -51,6 +60,8 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		SimpleFieldSet files = fs.subset("Files");
 		defaultName = fs.get("DefaultName");
 		// Flattened for disk, sort out afterwards
+		int fileCount = 0;
+		long size = 0;
 		Vector v = new Vector();
 		for(int i=0;;i++) {
 			String num = Integer.toString(i);
@@ -62,7 +73,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 				throw new PersistenceParseException("No Name on "+i);
 			String contentTypeOverride = subset.get("Metadata.ContentType");
 			String uploadFrom = subset.get("UploadFrom");
-			Bucket data;
+			Bucket data = null;
 			Logger.minor(this, "Parsing "+i);
 			Logger.minor(this, "UploadFrom="+uploadFrom);
 			ManifestElement me;
@@ -79,6 +90,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 					data = null;
 				}
 				me = new ManifestElement(name, data, contentTypeOverride, sz);
+				fileCount++;
 			} else if(uploadFrom.equalsIgnoreCase("disk")) {
 				long sz = Long.parseLong(subset.get("DataLength"));
 				// Disk
@@ -92,12 +104,15 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 				}
 				data = new FileBucket(ff, true, false, false, false);
 				me = new ManifestElement(name, data, contentTypeOverride, sz);
+				fileCount++;
 			} else if(uploadFrom.equalsIgnoreCase("redirect")) {
 				FreenetURI targetURI = new FreenetURI(subset.get("TargetURI"));
 				me = new ManifestElement(name, targetURI, contentTypeOverride);
 			} else
 				throw new PersistenceParseException("Don't know UploadFrom="+uploadFrom);
 			v.add(me);
+			if(data != null && data.size() > 0)
+				size += data.size();
 		}
 		manifestElements = SimpleManifestPutter.unflatten(v);
 		SimpleManifestPutter p = null;
@@ -110,6 +125,8 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			p = null;
 		}
 		putter = p;
+		numberOfFiles = fileCount;
+		totalSize = size;
 		if(!finished)
 			start();
 	}
@@ -204,6 +221,27 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 
 	protected String getTypeName() {
 		return "PUTDIR";
+	}
+
+	public boolean hasSucceeded() {
+		return succeeded;
+	}
+
+	public FreenetURI getFinalURI() {
+		return generatedURI;
+	}
+
+	public boolean isDirect() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public int getNumberOfFiles() {
+		return numberOfFiles;
+	}
+
+	public long getTotalDataSize() {
+		return totalSize;
 	}
 
 }
