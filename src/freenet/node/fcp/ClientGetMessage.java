@@ -176,6 +176,9 @@ public class ClientGetMessage extends FCPMessage {
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
 		}
+		if(global && persistenceType == ClientRequest.PERSIST_CONNECTION) {
+			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Global requests must be persistent", identifier);
+		}
 	}
 
 	public SimpleFieldSet getFieldSet() {
