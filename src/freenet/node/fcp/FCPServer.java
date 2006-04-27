@@ -515,4 +515,8 @@ public class FCPServer implements Runnable {
 		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
 	}
 
+	public void removeGlobalRequest(String identifier) throws MessageInvalidException {
+		globalClient.removeByIdentifier(identifier, true);
+	}
+
 }
