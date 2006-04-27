@@ -298,7 +298,7 @@ public class QueueToadlet extends Toadlet {
 			
 			if(!uncompletedUpload.isEmpty()) {
 				writeTableHead("Uploads in progress", new String[] { "", "Identifier", "Filename", "Size", "Type", "Success", "Persistence", "Key" }, buf);
-				for(Iterator i = uncompletedDownload.iterator();i.hasNext();) {
+				for(Iterator i = uncompletedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
 					writeRowStart(buf);
 					writeDeleteCell(p, buf);
@@ -357,7 +357,7 @@ public class QueueToadlet extends Toadlet {
 			buf.append("<td>UNKNOWN</td>\n");
 		} else {
 			buf.append("<td>");
-			buf.append(frac * 100);
+			buf.append((int)(frac * 100));
 			buf.append("%</td>\n");
 		}
 	}
@@ -401,11 +401,15 @@ public class QueueToadlet extends Toadlet {
 	
 	private void writeIdentifierCell(ClientRequest p, FreenetURI uri, StringBuffer buf) {
 		buf.append("<td>");
-		buf.append("<a href=\"/");
-		buf.append(uri.toString(false));
-		buf.append("\">");
+		if(uri != null) {
+			buf.append("<a href=\"/");
+			buf.append(uri.toString(false));
+			buf.append("\">");
+		}
 		buf.append(HTMLEncoder.encode(p.getIdentifier()));
-		buf.append("</a></td>\n");
+		if(uri != null)
+			buf.append("</a>");
+		buf.append("</td>\n");
 	}
 
 	private void writePersistenceCell(ClientRequest p, StringBuffer buf) {
@@ -445,13 +449,18 @@ public class QueueToadlet extends Toadlet {
 
 	private void writeKeyCell(FreenetURI uri, StringBuffer buf) {
 		buf.append("<td>");
-		buf.append("<a href=\"/");
-		String u = uri.toString(false);
-		buf.append(URLEncoder.encode(u));
-		buf.append("\">");
-		// FIXME too long? maybe only show the human readable bit?
-		buf.append(HTMLEncoder.encode(u));
-		buf.append("</a></td>\n");
+		if(uri != null) {
+			buf.append("<a href=\"/");
+			String u = uri.toString(false);
+			buf.append(URLEncoder.encode(u));
+			buf.append("\">");
+			// FIXME too long? maybe only show the human readable bit?
+			buf.append(HTMLEncoder.encode(u));
+			buf.append("</a>");
+		} else {
+			buf.append("UNKNOWN");
+		}
+		buf.append("</td>\n");
 	}
 
 	private void writeRowStart(StringBuffer buf) {
