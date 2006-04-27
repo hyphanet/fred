@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -19,6 +18,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
+import freenet.io.NetworkInterface;
 import freenet.support.Logger;
 
 public class TextModeClientInterfaceServer implements Runnable {
@@ -30,15 +30,18 @@ public class TextModeClientInterfaceServer implements Runnable {
     final File downloadsDir;
     int port;
     final String bindTo;
+    String allowedHosts;
     boolean isEnabled;
+    NetworkInterface networkInterface;
 
-    TextModeClientInterfaceServer(Node n, int port, String bindTo) {
+    TextModeClientInterfaceServer(Node n, int port, String bindTo, String allowedHosts) {
         this.n = n;
         this.r = n.random;
         streams = new Hashtable();
         this.downloadsDir = n.downloadDir;
         this.port=port;
         this.bindTo=bindTo;
+        this.allowedHosts = allowedHosts;
         this.isEnabled=true;
         n.setTMCI(this);
         new Thread(this, "Text mode client interface").start();
@@ -51,6 +54,8 @@ public class TextModeClientInterfaceServer implements Runnable {
 				new TMCIEnabledCallback(node));
 		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
 				new TMCIBindtoCallback(node));
+		TMCIConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI",
+				new TMCIAllowedHostsCallback(node));
 		TMCIConfig.register("port", 2323, 1, true, "Testnet port", "Testnet port number",
         		new TCMIPortNumberCallback(node));
 		TMCIConfig.register("directEnabled", false, 1, true, "Enable on stdout/stdin?", "Enable text mode client interface on standard input/output? (.enabled refers to providing a telnet-style server, this runs it over a socket)",
@@ -59,10 +64,11 @@ public class TextModeClientInterfaceServer implements Runnable {
 		boolean TMCIEnabled = TMCIConfig.getBoolean("enabled");
 		int port =  TMCIConfig.getInt("port");
 		String bind_ip = TMCIConfig.getString("bindTo");
+		String allowedHosts = TMCIConfig.getString("allowedHosts");
 		boolean direct = TMCIConfig.getBoolean("directEnabled");
 
 		if(TMCIEnabled){
-			new TextModeClientInterfaceServer(node, port, bind_ip);
+			new TextModeClientInterfaceServer(node, port, bind_ip, allowedHosts);
 			Logger.normal(node, "TMCI started on "+bind_ip+":"+port);
 			System.out.println("TMCI started on "+bind_ip+":"+port);
 		}
@@ -142,6 +148,30 @@ public class TextModeClientInterfaceServer implements Runnable {
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
     }
+    
+    static class TMCIAllowedHostsCallback implements StringCallback {
+
+    	private final Node node;
+    	
+    	public TMCIAllowedHostsCallback(Node node) {
+    		this.node = node;
+    	}
+    	
+		public String get() {
+			if (node.getTextModeClientInterface() != null) {
+				return node.getTextModeClientInterface().allowedHosts;
+			}
+			return "127.0.0.1";
+		}
+
+		public void set(String val) {
+			if (!val.equals(get())) {
+				node.getTextModeClientInterface().networkInterface.setAllowedHosts(val);
+				node.getTextModeClientInterface().allowedHosts = val;
+			}
+		}
+    	
+    }
 
     static class TCMIPortNumberCallback implements IntCallback{
     	
@@ -172,16 +202,15 @@ public class TextModeClientInterfaceServer implements Runnable {
     	while(true) {
     		int curPort = port;
     		String bindTo = this.bindTo;
-    		ServerSocket server;
     		try {
-    			server = new ServerSocket(curPort, 0, InetAddress.getByName(bindTo));
+    			networkInterface = new NetworkInterface(curPort, bindTo, allowedHosts);
     		} catch (IOException e) {
     			Logger.error(this, "Could not bind to TMCI port: "+bindTo+":"+port);
     			System.exit(-1);
     			return;
     		}
     		try {
-    			server.setSoTimeout(1000);
+    			networkInterface.setSoTimeout(1000);
     		} catch (SocketException e1) {
     			Logger.error(this, "Could not set timeout: "+e1, e1);
     			System.err.println("Could not start TMCI: "+e1);
@@ -193,7 +222,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 				if(port != curPort) break;
 				if(!(this.bindTo.equals(bindTo))) break;
     			try {
-    				Socket s = server.accept();
+    				Socket s = networkInterface.accept();
     				InputStream in = s.getInputStream();
     				OutputStream out = s.getOutputStream();
     				
@@ -215,7 +244,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     			}
     		}
     		try{
-    			server.close();
+    			networkInterface.close();
     		}catch (IOException e){
     			Logger.error(this, "Error shuting down TMCI", e);
     		}

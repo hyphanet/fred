@@ -3,7 +3,6 @@ package freenet.clients.http;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -17,6 +16,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
+import freenet.io.NetworkInterface;
 import freenet.node.Node;
 import freenet.support.BucketFactory;
 import freenet.support.FileLoggerHook;
@@ -38,8 +38,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	final int port;
 	final String bindTo;
+	String allowedHosts;
 	final BucketFactory bf;
-	private final ServerSocket sock;
+	final NetworkInterface networkInterface;
 	private final LinkedList toadlets;
 	private String cssName;
 	private Thread myThread;
@@ -69,6 +70,21 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			if(bindTo != get())
 				throw new InvalidConfigValueException("Cannot change fproxy bind address on the fly");
 		}
+	}
+	
+	class FproxyAllowedHostsCallback implements StringCallback {
+	
+		public String get() {
+			return allowedHosts;
+		}
+		
+		public void set(String allowedHosts) {
+			if (!allowedHosts.equals(get())) {
+				networkInterface.setAllowedHosts(allowedHosts);
+				SimpleToadletServer.this.allowedHosts = allowedHosts;
+			}
+		}
+		
 	}
 	
 	class FproxyCSSNameCallback implements StringCallback {
@@ -122,12 +138,15 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FproxyPortCallback());
 		fproxyConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
 				new FproxyBindtoCallback());
+		fproxyConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to Fproxy",
+				new FproxyAllowedHostsCallback());
 		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS Fproxy should use",
 				new FproxyCSSNameCallback());
 
 		this.bf = node.tempBucketFactory;
 		port = fproxyConfig.getInt("port");
 		bindTo = fproxyConfig.getString("bindTo");
+		allowedHosts = fproxyConfig.getString("allowedHosts");
 		cssName = fproxyConfig.getString("css");
 		if(cssName.indexOf(':') != -1 || cssName.indexOf('/') != -1)
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
@@ -137,9 +156,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		if(!enabled) {
 			Logger.normal(node, "Not starting Fproxy as it's disabled");
-			this.sock = null;
+			this.networkInterface = null;
 		} else {
-			this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindTo));
+			this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
 		
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
@@ -149,11 +168,12 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	public SimpleToadletServer(int i, String newbindTo, BucketFactory bf, String cssName) throws IOException {
+	public SimpleToadletServer(int i, String newbindTo, String allowedHosts, BucketFactory bf, String cssName) throws IOException {
 		this.port = i;
 		this.bindTo = newbindTo;
+		this.allowedHosts = allowedHosts;
 		this.bf = bf;
-		this.sock = new ServerSocket(port, 0, InetAddress.getByName(this.bindTo));
+		this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
 		toadlets = new LinkedList();
 		this.cssName = cssName;
 		Thread t = new Thread(this, "SimpleToadletServer");
@@ -190,7 +210,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
         Logger.globalSetThreshold(Logger.MINOR);
         Logger.globalAddHook(logger);
         logger.start();
-		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1", new TempBucketFactory(new FilenameGenerator(new DummyRandomSource(), true, new File("temp-test"), "test-temp-")), "aqua");
+		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1", "127.0.0.1", new TempBucketFactory(new FilenameGenerator(new DummyRandomSource(), true, new File("temp-test"), "test-temp-")), "aqua");
 		server.register(new TrivialToadlet(null), "", true);
 		System.out.println("Bound to port 1111.");
 		while(true) {
@@ -204,7 +224,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public void run() {
 		try {
-			sock.setSoTimeout(500);
+			networkInterface.setSoTimeout(500);
 		} catch (SocketException e1) {
 			Logger.error(this, "Could not set so-timeout to 500ms; on-the-fly disabling of the interface will not work");
 		}
@@ -213,7 +233,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				if(myThread == null) return;
 			}
 			try {
-				Socket conn = sock.accept();
+				Socket conn = networkInterface.accept();
 				Logger.minor(this, "Accepted connection");
 				new SocketHandler(conn);
 			} catch (SocketTimeoutException e) {
