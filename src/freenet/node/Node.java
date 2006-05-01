@@ -453,7 +453,7 @@ public class Node {
     }
 
     /**
-     * Read the port number from the arguments.
+     * Read the config file from the arguments.
      * Then create a node.
      * Anything that needs static init should ideally be in here.
      */
@@ -469,6 +469,10 @@ public class Node {
     		configFilename = new File("freenet.ini");
     	} else
     		configFilename = new File(args[0]);
+    		
+    	// set Java's DNS cache not to cache forever, since many people
+    	// use dyndns hostnames
+    	java.security.Security.setProperty("networkaddress.cache.ttl" , "300");
     	
     	FilePersistentConfig cfg = new FilePersistentConfig(configFilename);
     	
