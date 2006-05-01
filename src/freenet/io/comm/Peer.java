@@ -33,7 +33,10 @@ import freenet.io.WritableToDataOutputStream;
 public class Peer implements WritableToDataOutputStream {
 
     public static final String VERSION = "$Id: Peer.java,v 1.4 2005/08/25 17:28:19 amphibian Exp $";
-
+	
+	// hostname - only set if we were created with a hostname
+	// and not an address
+	private final String hostname;
 	private final InetAddress _address;
 	private final int _port;
 
@@ -47,11 +50,13 @@ public class Peer implements WritableToDataOutputStream {
 		dis.readFully(ba);
 		_address = InetAddress.getByAddress(ba);
 		_port = dis.readInt();
+		this.hostname = null;
 	}
 
 	public Peer(InetAddress address, int port) {
 		_address = address;
 		_port = port;
+		this.hostname = null;
 	}
 
 	/**
@@ -60,15 +65,13 @@ public class Peer implements WritableToDataOutputStream {
     public Peer(String physical) throws PeerParseException {
         int offset = physical.lastIndexOf(':'); // ipv6
         if(offset < 0) throw new PeerParseException();
-        String before = physical.substring(0, offset);
-        String after = physical.substring(offset+1);
+	this.hostname = physical.substring(0, offset);
+        String strport = physical.substring(offset+1);
+	// we're created with a hostname so delay the lookup of the address
+	// until it's needed to work better with dynamic DNS hostnames
+	this._address = null;
         try {
-            _address = InetAddress.getByName(before);
-        } catch (UnknownHostException e) {
-        	throw new PeerParseException(e);
-    	}
-        try {
-            _port = Integer.parseInt(after);
+            _port = Integer.parseInt(strport);
         } catch (NumberFormatException e) {
             throw new PeerParseException(e);
         }
@@ -91,18 +94,43 @@ public class Peer implements WritableToDataOutputStream {
 		if (_port != peer._port) {
 			return false;
 		}
-		if (!_address.equals(peer._address)) {
-			return false;
+		if (this._address != null) {
+			if (!_address.equals(peer._address)) {
+				return false;
+			}
+		} else {
+			if (!hostname.equals(peer.hostname)) {
+				return false;
+			}
 		}
 		return true;
 	}
 
 	public InetAddress getAddress() {
-		return _address;
+		if (_address != null) {
+			return _address;
+		} else {
+			/* 
+			 * Peers are constructed from an address once
+			 * a handshake has been completed, so this
+			 * lookup will only be performed during a 
+			 * handshake - it doesn't mean we perform
+			 * a DNS lookup with every packet we send.
+			 */
+			try {
+				return InetAddress.getByName(hostname);
+			} catch (UnknownHostException e) {
+				return null;
+			}
+		}
 	}
 
 	public int hashCode() {
-		return _address.hashCode() + _port;
+		if (_address != null) {
+			return _address.hashCode() + _port;
+		} else {
+			return hostname.hashCode() + _port;
+		}
 	}
 
 	public int getPort() {
@@ -110,11 +138,17 @@ public class Peer implements WritableToDataOutputStream {
 	}
 
 	public String toString() {
-		return (_address != null ? getHostName(_address) : "null") + ":" + _port;
+		if (_address != null) {
+			return getHostName(_address) + ":" + _port;
+		} else {
+			return hostname + ":" + _port;
+		}
 	}
 
 	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
-		dos.write(_address.getAddress());
+		InetAddress addr = this.getAddress();
+		if (addr == null) throw new UnknownHostException();
+		dos.write(addr.getAddress());
 		dos.writeInt(_port);
 	}
 
