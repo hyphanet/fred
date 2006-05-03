@@ -129,7 +129,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("PUT:<text> - Put a single line of text to a CHK and return the key.\r\n");
         sb.append("GETCHK:\r\n<text, until a . on a line by itself> - Get the key that would be returned if the document was inserted.\r\n");
         sb.append("GETCHK:<text> - Get the key that would be returned if the line was inserted.\r\n");
-        sb.append("PUTFILE:<filename> - Put a file from disk.\r\n");
+        sb.append("PUTFILE:<filename>[#<mimetype>] - Put a file from disk.\r\n");
         sb.append("GETFILE:<filename> - Fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.\r\n");
         sb.append("GETCHKFILE:<filename> - Get the key that would be returned if we inserted the file.\r\n");
         sb.append("PUTDIR:<path>[#<defaultfile>] - Put the entire directory from disk.\r\n");
@@ -426,6 +426,12 @@ public class TextModeClientInterface implements Runnable {
                 line = line.substring(1);
             while(line.length() > 0 && line.charAt(line.length()-1) == ' ')
                 line = line.substring(0, line.length()-2);
+            String mimeType = DefaultMIMETypes.guessMIMEType(line);
+            if (line.indexOf('#') > -1) {
+            	String[] splittedLine = line.split("#");
+            	line = splittedLine[0];
+            	mimeType = splittedLine[1];
+            }
             File f = new File(line);
             outsb.append("Attempting to read file "+line);
             long startTime = System.currentTimeMillis();
@@ -435,8 +441,7 @@ public class TextModeClientInterface implements Runnable {
             	}
             	
             	// Guess MIME type
-            	String mimeType = DefaultMIMETypes.guessMIMEType(line);
-            	outsb.append("Using MIME type: "+mimeType);
+            	outsb.append("Using MIME type: "+mimeType + "\r\n");
             	if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
             		mimeType = ""; // don't need to override it
             	
