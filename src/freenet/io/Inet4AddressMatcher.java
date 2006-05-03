@@ -17,6 +17,7 @@
 package freenet.io;
 
 import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.util.StringTokenizer;
 
 /**
@@ -34,7 +35,7 @@ import java.util.StringTokenizer;
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id$
  */
-public class Inet4AddressMatcher {
+public class Inet4AddressMatcher implements AddressMatcher {
 
 	/** The address of this matcher */
 	private int address;
@@ -96,7 +97,7 @@ public class Inet4AddressMatcher {
 	 * @return <code>true</code> if <code>inetAddress</code> matches the
 	 *         specification of this matcher, <code>false</code> otherwise
 	 */
-	public boolean matches(Inet4Address inetAddress) {
+	public boolean matches(InetAddress inetAddress) {
 		int matchAddress = convertToBytes(inetAddress.getHostAddress());
 		return (matchAddress & networkMask) == (address & networkMask);
 	}
