@@ -135,6 +135,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			 * </p>
 			 */
 			StringBuffer b = new StringBuffer(100);
+			StringBuffer balt = new StringBuffer(4000);
 			Vector splitTag = new Vector();
 			char pprevC = 0;
 			char prevC = 0;
@@ -161,21 +162,30 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							if (c == '<') {
 								saveText(b, w, this);
 								b.setLength(0);
+								balt.setLength(0);
 								mode = INTAG;
 							} else {
 								b.append(c);
 							}
 							break;
 						case INTAG :
+							balt.append(c);
 							if (HTMLDecoder.isWhitespace(c)) {
 								splitTag.add(b.toString());
 								mode = INTAGWHITESPACE;
 								b.setLength(0);
+							} else if (c == '<' && Character.isWhitespace(balt.charAt(0))) {
+								// Previous was an un-escaped < in a script.
+								saveText(balt, w, this);
+								balt.setLength(0);
+								b.setLength(0);
+								splitTag.clear();
 							} else if (c == '>') {
 								splitTag.add(b.toString());
 								b.setLength(0);
 								processTag(splitTag, w, this);
 								splitTag.clear();
+								balt.setLength(0);
 								mode = INTEXT;
 							} else if (
 								b.length() == 2
@@ -210,6 +220,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 										splitTag.clear();
 										b.setLength(0);
 										mode = INTEXT;
+										balt.setLength(0);
 										// End tag now
 									} else {
 										killTag = true;
@@ -237,6 +248,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 											"<!-- Tags in string attribute -->");
 										splitTag.clear();
 										b.setLength(0);
+										balt.setLength(0);
 										mode = INTEXT;
 										// End tag now
 									} else {
@@ -298,7 +310,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 									processTag(splitTag, w, this);
 								killTag = false;
 								splitTag.clear();
+								b.setLength(0);
+								balt.setLength(0);
 								mode = INTEXT;
+							} else if (c == '<' && Character.isWhitespace(balt.charAt(0))) {
+								// Previous was an un-escaped < in a script.
+								saveText(balt, w, this);
+								balt.setLength(0);
+								b.setLength(0);
+								splitTag.clear();
+								mode = INTAG;
 							} else if (HTMLDecoder.isWhitespace(c)) {
 								// More whitespace, what fun
 							} else {
@@ -334,6 +355,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	void saveText(StringBuffer s, Writer w, HTMLParseContext pc)
 		throws IOException {
+		Logger.minor(this, "Saving text: "+s.toString());
 		if (pc.killText) {
 			return;
 		}
@@ -353,7 +375,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			pc.currentStyleScriptChunk += style;
 			return; // is parsed and written elsewhere
 		}
-		w.write(style);
+		StringBuffer out = new StringBuffer(s.length()*2);
+		for(int i=0;i<s.length();i++) {
+			char c = s.charAt(i);
+			if(c == '<') {
+				out.append("&lt;");
+			} else {
+				out.append(c);
+			}
+		}
+		w.write(out.toString());
 	}
 
 	void processTag(Vector splitTag, Writer w, HTMLParseContext pc)
@@ -390,6 +421,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	void saveComment(StringBuffer s, Writer w, HTMLParseContext pc)
 		throws IOException {
+		if(s.length() > 3 && s.charAt(0) == '!' && s.charAt(1) == '-' && s.charAt(2) == '-') {
+			s.delete(0, 3);
+			if(s.charAt(s.length()-1) == '-')
+				s.setLength(s.length()-1);
+			if(s.charAt(s.length()-1) == '-')
+				s.setLength(s.length()-1);
+		}
+		Logger.minor(this, "Saving comment: "+s.toString());
 		if (pc.expectingBadComment)
 			return; // ignore it
 
@@ -413,9 +452,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 		s = sb;
-		w.write('<');
+		w.write("<!-- ");
 		w.write(s.toString());
-		w.write('>');
+		w.write(" -->");
 	}
 
 	static void throwFilterException(String s) throws DataFilterException {
@@ -1711,12 +1750,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static String sanitizeStyle(String style, FilterCallback cb) throws DataFilterException {
-		Logger.debug(
-			HTMLFilter.class,
-			"Sanitizing style: " + style);
 		if(style == null) return null;
 		Reader r = new StringReader(style);
 		Writer w = new StringWriter();
+		style = style.trim();
+		Logger.minor(
+				HTMLFilter.class,
+				"Sanitizing style: " + style);
 		CSSParser pc = new CSSParser(r, w, false, cb);
 		try {
 			pc.parse();
