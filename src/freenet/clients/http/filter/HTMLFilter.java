@@ -464,10 +464,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class ParsedTag {
-		String element = null;
-		String[] unparsedAttrs = null;
-		boolean startSlash = false;
-		boolean endSlash = false;
+		final String element;
+		final String[] unparsedAttrs;
+		final boolean startSlash;
+		final boolean endSlash;
 		/*
 		 * public ParsedTag(ParsedTag t) { this.element = t.element;
 		 * this.unparsedAttrs = (String[]) t.unparsedAttrs.clone();
@@ -482,8 +482,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		public ParsedTag(Vector v) {
 			int len = v.size();
-			if (len == 0)
+			if (len == 0) {
+				element = null;
+				unparsedAttrs = new String[0];
+				startSlash = endSlash = false;
 				return;
+			}
 			String s = (String) v.elementAt(len - 1);
 			if ((len - 1 != 0 || s.length() > 1) && s.endsWith("/")) {
 				s = s.substring(0, s.length() - 1);
@@ -492,19 +496,20 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					len--;
 				endSlash = true;
 				// Don't need to set it back because everything is an I-value
-			}
+			} else endSlash = false;
 			s = (String) v.elementAt(0);
 			if (s.length() > 1 && s.startsWith("/")) {
 				s = s.substring(1);
 				v.setElementAt(s, 0);
 				startSlash = true;
-			}
+			} else startSlash = false;
 			element = (String) v.elementAt(0);
 			if (len > 1) {
 				unparsedAttrs = new String[len - 1];
 				for (int x = 1; x < len; x++)
 					unparsedAttrs[x - 1] = (String) v.elementAt(x);
-			}
+			} else
+				unparsedAttrs = new String[0];
 			Logger.minor(this, "Element = "+element);
 		}
 
