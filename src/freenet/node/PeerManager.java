@@ -471,6 +471,7 @@ public class PeerManager {
                 if(!succeeded) return;
             } catch (IOException e) {
                 Logger.error(this, "Cannot close file!: " + e, e);
+                return; // don't overwrite old file!
             }
             if (!new File(f).renameTo(new File(filename))) {
                 new File(filename).delete();
