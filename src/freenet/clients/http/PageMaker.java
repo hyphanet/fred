@@ -1,7 +1,18 @@
 package freenet.clients.http;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.JarURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Vector;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+
+import sun.net.www.protocol.file.FileURLConnection;
 
 /** Simple class to output standard heads and tail for web interface pages. 
 */
@@ -9,6 +20,9 @@ public class PageMaker {
 	
 	private static final String DEFAULT_THEME = "aqua";
 	public String theme;
+	
+	/** Cache for themes read from the JAR file. */
+	public List jarThemesCache = null;
 	
 	PageMaker(String t) {
 		if (t == null || !this.getThemes().contains(t)) {
@@ -25,8 +39,9 @@ public class PageMaker {
 				+ "<head>\n"
 				+ "<meta http-equiv=\"Content-Type\" content=\"text/html;\" />\n"
 				+"<link rel=\"stylesheet\" href=\"/static/themes/"+this.theme+"/theme.css\" type=\"text/css\" />\n");
-		for(int i=0; i<getThemes().size() ; i++){
-			buf.append("<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"/static/themes/"+getThemes().toArray()[i].toString()+"/theme.css\" media=\"screen\" title=\""+getThemes().toArray()[i].toString()+"\" />\n");
+		List themes = getThemes();
+		for(int i=0; i<themes.size() ; i++){
+			buf.append("<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"/static/themes/"+themes.get(i)+"/theme.css\" media=\"screen\" title=\""+themes.get(i)+"\" />\n");
 		}
 	}
 	
@@ -64,14 +79,60 @@ public class PageMaker {
 				+ "</html>\n");
 	}
 	
-	public Collection getThemes() {
-		// Sadly I can't find a way to enumerate the contents of the themes directory
-		// (since it may or may not be in a jar file)
-		Vector themes = new Vector();
-		
-		themes.add("aqua");
-		themes.add("clean");
-		
+	/**
+	 * Returns a {@link Collection} containing the names of all available
+	 * themes. If freenet was started from a JAR file the list is cached
+	 * (because the JAR file only changes between invocations), otherwise the
+	 * filesystem is read on every page access.
+	 * 
+	 * @return A {@link Collection} containing the names of all available themes
+	 */
+	public List getThemes() {
+		if (jarThemesCache != null) {
+			return jarThemesCache;
+		}
+		List themes = new ArrayList();
+		try {
+			URL url = getClass().getResource("staticfiles/themes/");
+			URLConnection urlConnection = url.openConnection();
+			if (urlConnection instanceof FileURLConnection) {
+				FileURLConnection fileUrlConnection = (FileURLConnection) urlConnection;
+				File themesDirectory = new File(fileUrlConnection.getURL().getPath());
+				File[] themeDirectories = themesDirectory.listFiles();
+				for (int themeIndex = 0; themeIndex < themeDirectories.length; themeIndex++) {
+					File themeDirectory = themeDirectories[themeIndex];
+					if (themeDirectory.isDirectory() && !themeDirectory.getName().startsWith(".")) {
+						themes.add(themeDirectory.getName());
+					}
+				}
+			} else if (urlConnection instanceof JarURLConnection) {
+				JarURLConnection jarUrlConnection = (JarURLConnection) urlConnection;
+				JarFile jarFile = jarUrlConnection.getJarFile();
+				Enumeration entries = jarFile.entries();
+				while (entries.hasMoreElements()) {
+					JarEntry entry = (JarEntry) entries.nextElement();
+					String name = entry.getName();
+					if (name.startsWith("freenet/clients/http/staticfiles/themes/")) {
+						name = name.substring("freenet/clients/http/staticfiles/themes/".length());
+						if (name.indexOf('/') != -1) {
+							String themeName = name.substring(0, name.indexOf('/'));
+							if (!themes.contains(themeName)) {
+								themes.add(themeName);
+							}
+						}
+					}
+				}
+				jarThemesCache = themes;
+			}
+		} catch (IOException ioe1) {
+		} finally {
+			if (!themes.contains("aqua")) {
+				themes.add("aqua");
+			}
+			if (!themes.contains("clean")) {
+				themes.add("clean");
+			}
+		}
 		return themes;
 	}
 	
