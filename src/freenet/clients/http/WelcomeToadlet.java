@@ -253,8 +253,7 @@ public class WelcomeToadlet extends Toadlet {
 		// Version info
 		buf.append("<div class=\"infobox\">\n");
 		buf.append("<h2>Version</h2>");
-		buf.append("Freenet version "+Version.nodeVersion+" build #"+Version.buildNumber());
-		buf.append(Version.cvsRevision);
+		buf.append("Freenet version "+Version.nodeVersion+" build #"+Version.buildNumber()+" r"+Version.cvsRevision);
 		if(Version.buildNumber() < Version.highestSeenBuild) {
 			buf.append("<br />");
 			buf.append("<b>A newer version is available! (Build #"+Version.highestSeenBuild+")</b>");
