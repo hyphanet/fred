@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -23,11 +24,13 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.pluginmanager.PproxyToadlet;
+import freenet.support.Base64;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
 
 public class FproxyToadlet extends Toadlet {
@@ -36,10 +39,14 @@ public class FproxyToadlet extends Toadlet {
 	
 	// ?force= links become invalid after 2 hours.
 	long FORCE_GRAIN_INTERVAL = 60*60*1000;
+	/** Maximum size for transparent pass-through, should be a config option */
+	static final long MAX_LENGTH = 2*1024*1024; // 2MB
 	
 	public FproxyToadlet(HighLevelSimpleClient client, byte[] random) {
 		super(client);
 		this.random = random;
+		client.setMaxLength(MAX_LENGTH);
+		client.setMaxIntermediateLength(MAX_LENGTH);
 	}
 	
 	public String supportedMethods() {
@@ -112,6 +119,8 @@ public class FproxyToadlet extends Toadlet {
 		if(ks.startsWith("/"))
 			ks = ks.substring(1);
 		
+		long maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
+		
 		FreenetURI key;
 		try {
 			key = new FreenetURI(ks);
@@ -121,7 +130,7 @@ public class FproxyToadlet extends Toadlet {
 		}
 		try {
 			Logger.minor(this, "Fproxy fetching "+key);
-			FetchResult result = fetch(key);
+			FetchResult result = fetch(key, maxSize);
 			
 			// Now, is it safe?
 			
@@ -181,6 +190,67 @@ public class FproxyToadlet extends Toadlet {
 				this.writePermanentRedirect(ctx, "Not enough meta-strings", "/" + URLEncoder.encode(key.toString(false)) + "/");
 			} else if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, "/"+e.newURI.toString());
+			} else if(e.mode == FetchException.TOO_BIG) {
+				StringBuffer buf = new StringBuffer();
+				ctx.getPageMaker().makeHead(buf, "Large file");
+				buf.append("<table border=\"0\">\n");
+				String fnam = getFilename(e, key, e.getExpectedMimeType());
+				buf.append("<tr><td><b>Filename</b></td>");
+				buf.append("<a href=\"/"+URLEncoder.encode(key.toString(false))+"\">");
+				buf.append(fnam);
+				buf.append("</a>");
+				buf.append("</td></tr>\n");
+				boolean finalized = e.finalizedSize();
+				if(e.expectedSize > 0) {
+					buf.append("<tr><td><b>");
+					if(!finalized)
+						buf.append("Expected size (may change)");
+					else
+						buf.append("Size");
+					buf.append("</b></td><td>");
+					buf.append(SizeUtil.formatSize(e.expectedSize));
+					buf.append("</td></tr>\n");
+				}
+				String mime = e.getExpectedMimeType();
+				if(mime != null) {
+					buf.append("<tr><td><b>");
+					if(!finalized)
+						buf.append("Expected MIME type");
+					else
+						buf.append("MIME type");
+					buf.append("</b></td><td>");
+					buf.append(mime);
+					buf.append(" bytes </td></tr>\n");
+				}
+				// FIXME filename
+				buf.append("</table>\n");
+				buf.append("<br>This is a large file, so it has not been streamed direct" +
+						" to your browser, because Freenet cannot send any data to the " +
+						"browser until it has the whole file, and this may take some time, " +
+						"and also for resource usage reasons.\n");
+				buf.append("<br>What would you like to do with it?:<ul>");
+				buf.append("<li>");
+				buf.append("<form method=\"get\" action=\"/"+key.toString(false)+"\">");
+				buf.append("<input type=\"hidden\" name=\"max-size\" value=\""+e.expectedSize+"\">");
+				buf.append("<input type=\"submit\" name=\"fetch\" value=\"Fetch anyway\">");
+				buf.append("</form></li>");
+				buf.append("<li><form method=\"post\" action=\"/queue/\">");
+				buf.append("<input type=\"hidden\" name=\"key\" value=\""+key.toString(false)+"\">");
+				buf.append("<input type=\"hidden\" name=\"return-type\" value=\"disk\">");
+				buf.append("<input type=\"hidden\" name=\"persistence\" value=\"forever\">");
+				if(mime != null)
+					buf.append("<input type=\"hidden\" name=\"type\" value=\""+URLEncoder.encode(mime)+"\">");
+				buf.append("<input type=\"submit\" name=\"download\" value=\"Download to disk in background\">");
+				buf.append("</form></li>");
+				// FIXME add a queue-a-download option.
+//				buf.append("<li>Save it to disk at </li>");
+				// FIXME add return-to-referring-page
+				//buf.append("<li>Return to the referring page: ");
+				buf.append("<li>Return to the fproxy home page: <a href=\"/\">here</a>");
+				buf.append("</ul>");
+				ctx.getPageMaker().makeTail(buf);
+				writeReply(ctx, 200, "text/html", "OK", buf.toString());
+				// FIXME provide option to queue write to disk.
 			} else {
 				if(e.errorCodes != null)
 					extra = "<pre>"+e.errorCodes.toVerboseString()+"</pre>";
@@ -254,4 +324,56 @@ public class FproxyToadlet extends Toadlet {
 		
 		fproxyConfig.finishedInitialization();
 	}
+	
+	/**
+	 * Get expected filename for a file.
+	 * @param e The FetchException.
+	 * @param uri The original URI.
+	 * @param expectedMimeType The expected MIME type.
+	 */
+	private String getFilename(FetchException e, FreenetURI uri, String expectedMimeType) {
+		String s = getFilename(e, uri);
+		int dotIdx = s.indexOf('.');
+		String ext = DefaultMIMETypes.getExtension(expectedMimeType);
+		if(ext == null)
+			ext = "bin";
+		if(dotIdx == -1 && expectedMimeType != null) {
+			s += "." + ext;
+			return s;
+		}
+		if(dotIdx != -1) {
+			String oldExt = s.substring(dotIdx+1);
+			if(DefaultMIMETypes.isValidExt(expectedMimeType, oldExt))
+				return s;
+			return s + "." + ext;
+		}
+		return s + "." + ext;
+	}
+	
+	private String getFilename(FetchException e, FreenetURI uri) {
+		String fnam = sanitize(uri.getDocName());
+		if(fnam != null && fnam.length() > 0) return fnam;
+		String[] meta = uri.getAllMetaStrings();
+		for(int i=meta.length-1;i>=0;i++) {
+			String s = meta[i];
+			if(s.length() == 0) continue;
+			fnam = sanitize(s);
+			if(s != null && s.length() > 0) return fnam;
+		}
+		return Base64.encode(uri.getRoutingKey());
+	}
+	
+	private String sanitize(String s) {
+		if(s == null) return null;
+		StringBuffer sb = new StringBuffer(s.length());
+		for(int i=0;i<s.length();i++) {
+			char c = s.charAt(i);
+			if(Character.isLetterOrDigit(c) ||
+					c == ' ' || c == '.' || c == '-' || c == '_' ||
+					c == '+' || c == ',')
+				sb.append(c);
+		}
+		return sb.toString();
+	}
+	
 }

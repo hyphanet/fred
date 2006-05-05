@@ -39,6 +39,23 @@ public abstract class ClientRequest {
 	protected String clientToken;
 	/** Is the request on the global queue? */
 	protected final boolean global;
+
+	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
+			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
+		this.uri = uri2;
+		this.identifier = identifier2;
+		this.verbosity = verbosity2;
+		this.finished = false;
+		this.priorityClass = priorityClass2;
+		this.persistenceType = persistenceType2;
+		this.clientToken = clientToken2;
+		this.global = global;
+		if(persistenceType == PERSIST_CONNECTION)
+			this.origHandler = handler;
+		else
+			origHandler = null;
+		this.client = client;
+	}
 	
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			short priorityClass2, short persistenceType2, String clientToken2, boolean global) {

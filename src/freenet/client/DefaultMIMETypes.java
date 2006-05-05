@@ -116,6 +116,8 @@ public class DefaultMIMETypes {
 	 * (y=0; while read x; do echo "$x" | 
 	 * sed -n "s/^\([^ ]*\)$/addMIMEType\($y, \"\1\"\);/p;s/^\([^ (),]\+\) \(.*\)$/addMIMEType\($y, \"\1\", \"\2\"\);/p;"; y=$((y+1)); done)
 	 */
+
+	// FIXME should we support aliases?
 	
 	static {
 		addMIMEType((short)0, "application/activemessage");
@@ -749,5 +751,12 @@ public class DefaultMIMETypes {
 		short typeNumber = byName(type);
 		if(typeNumber < 0) return null;
 		return (String) primaryExtensionByMimeNumber.get(new Short(typeNumber));
+	}
+	
+	public static boolean isValidExt(String expectedMimeType, String oldExt) {
+		Short s = (Short) mimeTypesByExtension.get(oldExt);
+		if(s == null) return false;
+		String type = byNumber(s.shortValue());
+		return type.equals(expectedMimeType);
 	}
 }

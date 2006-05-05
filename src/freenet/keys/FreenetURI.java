@@ -602,4 +602,57 @@ public class FreenetURI {
 		else throw new IllegalArgumentException("Not a USK requesting suggested edition");
 	}
 
+	public String getPreferredFilename() {
+		Logger.minor(this, "Getting preferred filename for "+this);
+		Vector names = new Vector();
+		if(keyType.equals("KSK") || keyType.equals("SSK")) {
+			Logger.minor(this, "Adding docName: "+docName);
+			names.add(docName);
+		}
+		if(metaStr != null)
+			for(int i=0;i<metaStr.length;i++) {
+				Logger.minor(this, "Adding metaString "+i+": "+metaStr[i]);
+				names.add(metaStr[i]);
+			}
+		StringBuffer out = new StringBuffer();
+		for(int i=0;i<names.size();i++) {
+			String s = (String) names.get(i);
+			Logger.minor(this, "name "+i+" = "+s);
+			s = sanitize(s);
+			Logger.minor(this, "Sanitized name "+i+" = "+s);
+			if(s.length() > 0) {
+				if(out.length() > 0)
+					out.append("-");
+				out.append(s);
+			}
+		}
+		Logger.minor(this, "out = "+out.toString());
+		if(out.length() == 0) {
+			if(routingKey != null) {
+				Logger.minor(this, "Returning base64 encoded routing key");
+				return Base64.encode(routingKey);
+			}
+			return "unknown";
+		}
+		return out.toString();
+	}
+
+	private String sanitize(String s) {
+		StringBuffer sb = new StringBuffer(s.length());
+		for(int i=0;i<s.length();i++) {
+			char c = s.charAt(i);
+			if(c == '/' || c == '\\' || c == '%' || c == '>' || c == '<' || c == ':' || c == '\'' || c == '\"')
+				continue;
+			if(Character.isDigit(c))
+				sb.append(c);
+			else if(Character.isLetter(c))
+				sb.append(c);
+			else if(Character.isWhitespace(c))
+				sb.append(' ');
+			else if(c == '-' || c == '_' || c == '.')
+				sb.append(c);
+		}
+		return sb.toString();
+	}
+
 }

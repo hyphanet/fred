@@ -61,6 +61,59 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	/** Last progress message. Not persistent - FIXME this will be made persistent
 	 * when we have proper persistence at the ClientGetter level. */
 	private SimpleProgressMessage progressPending;
+
+	/**
+	 * Create one for a global-queued request not made by FCP.
+	 * @throws IdentifierCollisionException 
+	 */
+	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS, 
+			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength, 
+			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
+			File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
+		super(uri, identifier, verbosity, null, globalClient, prioClass, 
+				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
+						null, true);
+		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK, false);
+		fctx.eventProducer.addEventListener(this);
+		fctx.localRequestOnly = dsOnly;
+		fctx.ignoreStore = ignoreDS;
+		fctx.maxNonSplitfileRetries = maxNonSplitfileRetries;
+		fctx.maxSplitfileBlockRetries = maxSplitfileRetries;
+		fctx.maxOutputLength = maxOutputLength;
+		fctx.maxTempLength = maxOutputLength;
+		Bucket ret = null;
+		this.returnType = returnType;
+		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+			this.targetFile = returnFilename;
+			this.tempFile = returnTempFilename;
+			ret = new FileBucket(returnTempFilename, false, false, false, false);
+		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+			targetFile = null;
+			tempFile = null;
+			ret = new NullBucket();
+		} else {
+			targetFile = null;
+			tempFile = null;
+			try {
+				ret = client.server.node.persistentTempBucketFactory.makeEncryptedBucket();
+			} catch (IOException e) {
+				onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
+				getter = null;
+				returnBucket = null;
+				return;
+			}
+		}
+		returnBucket = ret;
+		if(persistenceType != PERSIST_CONNECTION)
+			try {
+				client.register(this);
+			} catch (IdentifierCollisionException e) {
+				ret.free();
+				throw e;
+			}
+		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+	}
+			
 	
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
@@ -102,7 +155,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		returnBucket = ret;
 		if(persistenceType != PERSIST_CONNECTION)
-			client.register(this);
+			try {
+				client.register(this);
+			} catch (IdentifierCollisionException e) {
+				ret.free();
+				throw e;
+			}
 		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION && handler != null)
 			sendPendingMessages(handler.outputHandler, true, true);

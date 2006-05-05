@@ -18,6 +18,8 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.WeakHashMap;
 
+import freenet.client.ClientMetadata;
+import freenet.client.DefaultMIMETypes;
 import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InserterContext;
@@ -29,7 +31,10 @@ import freenet.config.LongCallback;
 import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.io.NetworkInterface;
+import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.RequestStarter;
+import freenet.support.Base64;
 import freenet.support.Logger;
 
 /**
@@ -57,6 +62,8 @@ public class FCPServer implements Runnable {
 	private long persistenceInterval;
 	final FetcherContext defaultFetchContext;
 	public InserterContext defaultInsertContext;
+	public static final int QUEUE_MAX_RETRIES = -1;
+	public static final long QUEUE_MAX_DATA_SIZE = Long.MAX_VALUE;
 	
 	private void startPersister() {
 		Thread t = new Thread(persister = new FCPServerPersister(), "FCP request persistence handler");
@@ -541,6 +548,94 @@ public class FCPServer implements Runnable {
 
 	public void removeGlobalRequest(String identifier) throws MessageInvalidException {
 		globalClient.removeByIdentifier(identifier, true);
+	}
+
+	/**
+	 * Create a persistent globally-queued request for a file.
+	 * @param fetchURI The file to fetch.
+	 * @param persistence The persistence type.
+	 * @param returnType The return type.
+	 */
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, String expectedMimeType, String persistenceTypeString, String returnTypeString) {
+		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
+		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
+		File returnFilename = null, returnTempFilename = null;
+		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
+			returnFilename = makeReturnFilename(fetchURI, expectedMimeType);
+			returnTempFilename = makeTempReturnFilename(returnFilename);
+		}
+//		public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS, 
+//				int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength, 
+//				short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
+//				File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
+		
+		try {
+			innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, returnTempFilename);
+			return;
+		} catch (IdentifierCollisionException ee) {
+			try {
+				innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, returnTempFilename);
+				return;
+			} catch (IdentifierCollisionException e) {
+				try {
+					innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.toString(false), returnFilename, returnTempFilename);
+					return;
+				} catch (IdentifierCollisionException e1) {
+					// FIXME maybe use DateFormat
+					try {
+						innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy ("+System.currentTimeMillis()+")", returnFilename, returnTempFilename);
+						return;
+					} catch (IdentifierCollisionException e2) {
+						while(true) {
+							byte[] buf = new byte[8];
+							try {
+								node.random.nextBytes(buf);
+								String id = "FProxy:"+Base64.encode(buf);
+								innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, id, returnFilename, returnTempFilename);
+								return;
+							} catch (IdentifierCollisionException e3) {};
+						}
+					}
+				}
+			}
+			
+		}
+	}
+
+	private File makeTempReturnFilename(File returnFilename) {
+		return new File(returnFilename.toString() + ".freenet-tmp");
+	}
+
+	private File makeReturnFilename(FreenetURI uri, String expectedMimeType) {
+		String ext;
+		if(expectedMimeType != null && expectedMimeType.length() > 0 &&
+				!expectedMimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE)) {
+			ext = DefaultMIMETypes.getExtension(expectedMimeType);
+		} else ext = null;
+		String extAdd = (ext == null ? "" : "." + ext);
+		String preferred = uri.getPreferredFilename();
+		File f = new File(node.getDownloadDir(), preferred + extAdd);
+		File f1 = new File(node.getDownloadDir(), preferred + ".freenet-tmp");
+		int x = 0;
+		while(f.exists() || f1.exists()) {
+			f = new File(node.getDownloadDir(), preferred + "-" + x + extAdd);
+			f1 = new File(node.getDownloadDir(), preferred + "-" + x + extAdd + ".freenet-tmp");
+		}
+		return f;
+	}
+
+	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean persistRebootOnly, short returnType, String id, File returnFilename, 
+			File returnTempFilename) throws IdentifierCollisionException {
+		ClientGet cg = 
+			new ClientGet(globalClient, fetchURI, defaultFetchContext.localRequestOnly, 
+					defaultFetchContext.ignoreStore, QUEUE_MAX_RETRIES, QUEUE_MAX_RETRIES,
+					QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id, Integer.MAX_VALUE,
+					RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename);
+		// Register before starting, because it may complete immediately, and if it does,
+		// we may end up with it not being removable because it wasn't registered!
+		if(cg.isPersistentForever())
+			forceStorePersistentRequests();
+		cg.start();
 	}
 
 }

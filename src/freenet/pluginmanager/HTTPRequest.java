@@ -17,6 +17,7 @@ import java.util.StringTokenizer;
 import freenet.clients.http.ToadletContext;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.URLDecoder;
@@ -98,7 +99,9 @@ public class HTTPRequest {
 	}
 	
 	/**
-	 * Creates a new HTTPRequest for the given URI and data (for multipart/form-data)
+	 * Creates a new HTTPRequest for the given URI and data.
+	 * multipart/form-data will be split into Part's, but
+	 * application/x-www-form-urlencoded will be split into Param's.
 	 * 
 	 * @param uri The URI being requested
 	 * @param h Client headers
@@ -386,10 +389,23 @@ public class HTTPRequest {
 	// TODO: add similar methods for multiple long, boolean etc.
 	
 	
+	/**
+	 * Parse submitted data from a bucket.
+	 * Note that if this is application/x-www-form-urlencoded, it will come out as
+	 * params, whereas if it is multipart/form-data it will be separated into buckets.
+	 */
 	private void parseMultiPartData() throws IOException {
 		String ctype = (String) this.headers.get("content-type");
 		if (ctype == null) return;
 		String[] ctypeparts = ctype.split(";");
+		if(ctypeparts[0].equalsIgnoreCase("application/x-www-form-urlencoded")) {
+			// Completely different encoding, but easy to handle
+			if(data.size() > 1024*1024)
+				throw new IOException("Too big");
+			byte[] buf = BucketTools.toByteArray(data);
+			String s = new String(buf, "us-ascii");
+			parseRequestParameters(s, true);
+		}
 		if (!ctypeparts[0].trim().equalsIgnoreCase("multipart/form-data") || ctypeparts.length < 2) {
 			return;
 		}
@@ -525,6 +541,18 @@ public class HTTPRequest {
 			String key = (String) i.next();
 			Bucket b = (Bucket)this.parts.get(key);
 			b.free();
+		}
+	}
+
+	public long getLongParam(String name, long defaultValue) {
+		if (!this.isParameterSet(name)) {
+			return defaultValue;
+		}
+		String value = this.getParameterValue(name);
+		try {
+			return Long.parseLong(value);
+		} catch (NumberFormatException e) {
+			return defaultValue;
 		}
 	}
 }

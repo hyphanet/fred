@@ -2,8 +2,8 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.text.NumberFormat;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -12,15 +12,12 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
-import freenet.node.fcp.ClientPutBase;
 import freenet.node.fcp.ClientPutDir;
 import freenet.node.fcp.ClientRequest;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
-import freenet.support.BucketTools;
-import freenet.support.Fields;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
@@ -41,27 +38,46 @@ public class QueueToadlet extends Toadlet {
 			this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
 			return;
 		}
-		byte[] d = BucketTools.toByteArray(data);
-		String s = new String(d, "us-ascii");
-		HTTPRequest request;
-		try {
-			request = new HTTPRequest("/", s);
-		} catch (URISyntaxException e) {
-			Logger.error(this, "Impossible: "+e, e);
-			return;
-		}
+		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
 		if(request.isParameterSet("remove_request") && request.getParam("remove_request").length() > 0) {
 			String identifier = request.getParam("identifier");
+			Logger.minor(this, "Removing "+identifier);
 			try {
 				fcp.removeGlobalRequest(identifier);
 			} catch (MessageInvalidException e) {
-				this.sendErrorPage(ctx, 200, "OK", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
+				this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
 			}
+		}
+		if(request.isParameterSet("download")) {
+			// Queue a download
+			if(!request.isParameterSet("key")) {
+				writeError("No key specified to download", "No key specified to download");
+				return;
+			}
+			String expectedMIMEType = null;
+			if(request.isParameterSet("type")) {
+				expectedMIMEType = request.getParam("type");
+			}
+			FreenetURI fetchURI;
+			try {
+				fetchURI = new FreenetURI(request.getParam("key"));
+			} catch (MalformedURLException e) {
+				writeError("Invalid URI to download", "Invalid URI to download");
+				return;
+			}
+			String persistence = request.getParam("persistence");
+			String returnType = request.getParam("return-type");
+			fcp.makePersistentGlobalRequest(fetchURI, expectedMIMEType, persistence, returnType);
 		}
 		this.handleGet(uri, ctx);
 	}
 	
+	private void writeError(String string, String string2) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	public void handleGet(URI uri, ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
 		
@@ -396,7 +412,7 @@ public class QueueToadlet extends Toadlet {
 		buf.append("<td>");
 		buf.append("<form action=\"/queue/\" method=\"post\">");
 		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"");
-		buf.append(URLEncoder.encode(p.getIdentifier()));
+		buf.append(HTMLEncoder.encode(p.getIdentifier()));
 		buf.append("\"><input type=\"submit\" name=\"remove_request\" value=\"Delete\">");
 		buf.append("</form>\n");
 		buf.append("</td>\n");

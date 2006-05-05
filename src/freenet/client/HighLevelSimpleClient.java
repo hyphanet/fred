@@ -24,6 +24,11 @@ public interface HighLevelSimpleClient {
 	public FetchResult fetch(FreenetURI uri) throws FetchException;
 
 	/**
+	 * Blocking fetch of a URI with a configurable max-size.
+	 */
+	public FetchResult fetch(FreenetURI uri, long maxSize) throws FetchException;
+	
+	/**
 	 * Blocking insert.
 	 * @throws InserterException If there is an error inserting the data
 	 */
@@ -47,4 +52,5 @@ public interface HighLevelSimpleClient {
 	 * Add a ClientEventListener.
 	 */
 	public void addGlobalHook(ClientEventListener listener);
+
 }

@@ -99,6 +99,15 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return fw.waitForCompletion();
 	}
 
+	public FetchResult fetch(FreenetURI uri, long overrideMaxSize) throws FetchException {
+		if(uri == null) throw new NullPointerException();
+		FetcherContext context = getFetcherContext(overrideMaxSize);
+		FetchWaiter fw = new FetchWaiter();
+		ClientGetter get = new ClientGetter(fw, node.chkFetchScheduler, node.sskFetchScheduler, uri, context, priorityClass, this, null);
+		get.start();
+		return fw.waitForCompletion();
+	}
+
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
 		return insert(insert, getCHKOnly, false);
 	}
@@ -139,8 +148,18 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public FetcherContext getFetcherContext() {
+		return getFetcherContext(-1);
+	}
+	
+	public FetcherContext getFetcherContext(long overrideMaxSize) {
+		long maxLength = curMaxLength;
+		long maxTempLength = curMaxTempLength;
+		if(overrideMaxSize >= 0) {
+			maxLength = overrideMaxSize;
+			maxTempLength = overrideMaxSize;
+		}
 		return 			
-			new FetcherContext(curMaxLength, curMaxTempLength, curMaxMetadataLength, 
+			new FetcherContext(maxLength, maxTempLength, curMaxMetadataLength, 
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, 
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,

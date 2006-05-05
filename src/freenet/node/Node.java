@@ -2292,4 +2292,8 @@ public class Node {
 	public void removeDarknetConnection(PeerNode pn) {
 		peers.disconnect(pn);
 	}
+
+	public File getDownloadDir() {
+		return downloadDir;
+	}
 }

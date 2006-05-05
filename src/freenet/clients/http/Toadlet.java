@@ -107,10 +107,11 @@ public abstract class Toadlet {
 	/**
 	 * Client calls from the above messages to run a freenet request.
 	 * This method may block (or suspend).
+	 * @param maxSize Maximum length of returned content.
 	 */
-	FetchResult fetch(FreenetURI uri) throws FetchException {
+	FetchResult fetch(FreenetURI uri, long maxSize) throws FetchException {
 		// For now, just run it blocking.
-		return client.fetch(uri);
+		return client.fetch(uri, maxSize);
 	}
 
 	FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
