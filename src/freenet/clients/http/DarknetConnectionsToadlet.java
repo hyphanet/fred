@@ -273,7 +273,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			SimpleFieldSet fs;
 			
 			try {
-				fs = new SimpleFieldSet(ref, false);
+				fs = new SimpleFieldSet(ref, true);
 			} catch (IOException e) {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e+" Please <a href=\".\">Try again</a>.");
 				return;

@@ -66,7 +66,7 @@ public class PeerManager {
                 while(true) {
                     // Read a single NodePeer
                     SimpleFieldSet fs;
-                    fs = new SimpleFieldSet(br, false);
+                    fs = new SimpleFieldSet(br, true);
                     PeerNode pn;
                     try {
                         pn = new PeerNode(fs, node);

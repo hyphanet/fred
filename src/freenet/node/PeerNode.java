@@ -318,6 +318,21 @@ public class PeerNode implements PeerContext {
         // So go for a filter.
         pingAverage = 
         	new TimeDecayingRunningAverage(1, 60000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
+        
+        // Now for the metadata.
+        // The metadata sub-fieldset contains data about the node which is not part of the node reference.
+        // It belongs to this node, not to the node being described.
+        
+        SimpleFieldSet metadata = fs.subset("metadata");
+        
+        if(metadata != null) {
+        
+        	Peer p = new Peer(metadata.get("detected.udp"));
+        	if(p != null)
+        		detectedPeer = p;
+        	
+        }
+        
     }
 
     private void randomizeMaxTimeBetweenPacketSends() {
@@ -1010,14 +1025,27 @@ public class PeerNode implements PeerContext {
      */
     public void write(Writer w) throws IOException {
         SimpleFieldSet fs = exportFieldSet();
+        SimpleFieldSet meta = exportMetadataFieldSet();
+        if(!meta.isEmpty())
+        	fs.put("metadata", meta);
         fs.writeTo(w);
     }
 
     /**
+     * Export metadata about the node as a SimpleFieldSet
+     */
+    private SimpleFieldSet exportMetadataFieldSet() {
+    	SimpleFieldSet fs = new SimpleFieldSet(true);
+    	if(detectedPeer != null)
+    		fs.put("detected.udp", detectedPeer.toString());
+    	return fs;
+	}
+
+	/**
      * Export our noderef as a SimpleFieldSet
      */
     private SimpleFieldSet exportFieldSet() {
-        SimpleFieldSet fs = new SimpleFieldSet(false);
+        SimpleFieldSet fs = new SimpleFieldSet(true);
         if(lastGoodVersion != null)
         	fs.put("lastGoodVersion", lastGoodVersion);
         for(int i=0;i<nominalPeer.size();i++)
