@@ -357,7 +357,7 @@ public class PeerNode implements PeerContext {
     	InetAddress nodeIP = node.getPrimaryIPAddress();
     	if(nodeIP != null && nodeIP.equals(localhost)) return p;
     	InetAddress peerIP = detectedPeer.getAddress();
-    	if(peerIP.equals(localhost)) return p;
+    	if(peerIP != null && peerIP.equals(localhost)) return p;
 	if(nodeIP != null && nodeIP.equals(peerIP)) {
     		Peer[] newPeers = new Peer[p.length+1];
     		System.arraycopy(p, 0, newPeers, 0, p.length);

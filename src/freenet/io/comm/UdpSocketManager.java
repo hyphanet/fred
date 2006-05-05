@@ -464,6 +464,10 @@ public class UdpSocketManager extends Thread {
      * @param destination The peer to send it to.
      */
     public void sendPacket(byte[] blockToSend, Peer destination) {
+		if( destination.getAddress() == null ) {
+  		     Logger.error(this, "Tried sending to bad destination address: null:" + destination.getPort());
+  		     return;
+		}
 		if (_dropProbability > 0) {
 			if (dropRandom.nextInt() % _dropProbability == 0) {
 				Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPort());

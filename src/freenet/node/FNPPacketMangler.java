@@ -1294,6 +1294,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
 
         for(int i=0;i<pn.getHandshakeIPs().length;i++){
+          if( pn.getHandshakeIPs()[i].getAddress() == null ) continue;
         	sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, pn.getHandshakeIPs()[i]);
         	pn.sentHandshake();
         }
