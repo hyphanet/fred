@@ -12,11 +12,6 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import freenet.support.URLDecoder;
-import freenet.support.URLEncodedFormatException;
-
-import sun.net.www.protocol.file.FileURLConnection;
-
 /** Simple class to output standard heads and tail for web interface pages. 
 */
 public class PageMaker {
@@ -38,7 +33,7 @@ public class PageMaker {
 	public void makeTopHead(StringBuffer buf) {
 		buf.append("<!DOCTYPE\n"
 				+ "	html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\">\n"
-				+ "<html xml:lang=\"en\">\n"
+				+ "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n"
 				+ "<head>\n"
 				+ "<meta http-equiv=\"Content-Type\" content=\"text/html;\" />\n"
 				+"<link rel=\"stylesheet\" href=\"/static/themes/"+this.theme+"/theme.css\" type=\"text/css\" />\n");
@@ -96,18 +91,10 @@ public class PageMaker {
 		}
 		List themes = new ArrayList();
 		try {
-			URL url = getClass().getResource("staticfiles/themes/");			
+			URL url = getClass().getResource("staticfiles/themes/");
 			URLConnection urlConnection = url.openConnection();
-			if (urlConnection instanceof FileURLConnection) {
-				FileURLConnection fileUrlConnection = (FileURLConnection) urlConnection;
-				String decodedURL = fileUrlConnection.getURL().getPath();
-				
-				try{
-					decodedURL = URLDecoder.decode(url.getPath().replace('/',File.separatorChar).replace('|',':'));
-				}catch (URLEncodedFormatException e){
-				}
-				
-				File themesDirectory = new File(decodedURL);
+			if (url.getProtocol().equals("file")) {
+				File themesDirectory = new File(url.getPath());
 				File[] themeDirectories = themesDirectory.listFiles();
 				for (int themeIndex = 0; themeIndex < themeDirectories.length; themeIndex++) {
 					File themeDirectory = themeDirectories[themeIndex];
