@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
+
 import sun.net.www.protocol.file.FileURLConnection;
 
 /** Simple class to output standard heads and tail for web interface pages. 
@@ -93,11 +96,18 @@ public class PageMaker {
 		}
 		List themes = new ArrayList();
 		try {
-			URL url = getClass().getResource("staticfiles/themes/");
+			URL url = getClass().getResource("staticfiles/themes/");			
 			URLConnection urlConnection = url.openConnection();
 			if (urlConnection instanceof FileURLConnection) {
 				FileURLConnection fileUrlConnection = (FileURLConnection) urlConnection;
-				File themesDirectory = new File(fileUrlConnection.getURL().getPath());
+				String decodedURL = fileUrlConnection.getURL().getPath();
+				
+				try{
+					decodedURL = URLDecoder.decode(url.getPath().replace('/',File.separatorChar).replace('|',':'));
+				}catch (URLEncodedFormatException e){
+				}
+				
+				File themesDirectory = new File(decodedURL);
 				File[] themeDirectories = themesDirectory.listFiles();
 				for (int themeIndex = 0; themeIndex < themeDirectories.length; themeIndex++) {
 					File themeDirectory = themeDirectories[themeIndex];
