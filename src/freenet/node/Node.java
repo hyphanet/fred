@@ -104,6 +104,7 @@ import freenet.transport.IPUtil;
 public class Node {
 
 	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
+	private static MeaningFulNodeNameUserAlert nodeNameUserAlert;
 	
 	public class MyRequestThrottle implements BaseRequestThrottle {
 
@@ -961,7 +962,12 @@ public class Node {
 					}
         });
         myName = nodeConfig.getString("name");
-	    
+        nodeNameUserAlert = new MeaningFulNodeNameUserAlert();
+        if(myName.startsWith("Node created around")|| myName.startsWith("MyFirstFreenetNode")){
+        	this.alerts.register(nodeNameUserAlert);
+        }else{
+        	this.alerts.unregister(nodeNameUserAlert);
+        }
         nodeConfig.finishedInitialization();
         writeNodeFile();
         
@@ -2063,6 +2069,12 @@ public class Node {
     public synchronized void setName(String key) {
         myName = key;
         writeNodeFile();
+        if(key.startsWith("Node created around")|| key.startsWith("MyFirstFreenetNode")){
+        	this.alerts.register(nodeNameUserAlert);
+        }else{
+        	this.alerts.unregister(nodeNameUserAlert);
+        }
+        
     }
 
 	public HighLevelSimpleClient makeClient(short prioClass) {
