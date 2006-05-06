@@ -124,7 +124,8 @@ public class TextModeClientInterface implements Runnable {
     	
         sb.append("Freenet 0.7 Trivial Node Test Interface\r\n");
         sb.append("---------------------------------------\r\n");
-        sb.append("Build "+Version.buildNumber());
+        sb.append("Build "+Version.buildNumber()+"\r\n");
+        sb.append(Version.cvsRevision+"\r\n");
         sb.append("Enter one of the following commands:\r\n");
         sb.append("GET:<Freenet key> - Fetch a key\r\n");
         sb.append("PUT:\r\n<text, until a . on a line by itself> - Insert the document and return the key.\r\n");
