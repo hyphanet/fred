@@ -91,7 +91,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</h2>\n");
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("<table class=\"darknet_connections\">\n");
-		buf.append("<tr><th>Status</th><th>Name</th><th> <span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th> <span title=\"Temporarily disconnected. Other node busy? Wait time(ms) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th> <span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th><th></th></tr>\n");
+		buf.append("<tr><th>Status</th><th>Name</th><th> <span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th> <span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th> <span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th><th></th></tr>\n");
 
 		final Integer CONNECTED = new Integer(0);
 		final Integer BACKED_OFF = new Integer(1);
