@@ -104,7 +104,32 @@ import freenet.transport.IPUtil;
 public class Node {
 
 	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
-	private static MeaningFulNodeNameUserAlert nodeNameUserAlert;
+	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
+	
+	public class NodeNameCallback implements StringCallback{
+			Node node;
+		
+			NodeNameCallback(Node n) {
+				node=n;
+			}
+			public String get() {
+				if(myName.startsWith("Node created around")|| myName.startsWith("MyFirstFreenetNode")){
+		        	node.alerts.register(nodeNameUserAlert);
+		        }else{
+		        	node.alerts.unregister(nodeNameUserAlert);
+		        }
+				return myName;
+			}
+
+			public void set(String val) throws InvalidConfigValueException {
+				myName = val;
+				if(myName.startsWith("Node created around")|| myName.startsWith("MyFirstFreenetNode")){
+		        	node.alerts.register(nodeNameUserAlert);
+		        }else{
+		        	node.alerts.unregister(nodeNameUserAlert);
+		        }
+			}
+	}
 	
 	public class MyRequestThrottle implements BaseRequestThrottle {
 
@@ -134,7 +159,7 @@ public class Node {
 			roundTripTime.report(Math.max(rtt, 10));
 		}
 	}
-
+	
 	/** Config object for the whole node. */
 	public final Config config;
 	
@@ -950,24 +975,11 @@ public class Node {
         }
 
         // Name
-        
         nodeConfig.register("name", myName, 11, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
-        		new StringCallback() {
-					public String get() {
-						return myName;
-					}
-
-					public void set(String val) throws InvalidConfigValueException {
-						myName = val;
-					}
-        });
+        		new NodeNameCallback(this));
+        nodeNameUserAlert = new MeaningfulNodeNameUserAlert();
         myName = nodeConfig.getString("name");
-        nodeNameUserAlert = new MeaningFulNodeNameUserAlert();
-        if(myName.startsWith("Node created around")|| myName.startsWith("MyFirstFreenetNode")){
-        	this.alerts.register(nodeNameUserAlert);
-        }else{
-        	this.alerts.unregister(nodeNameUserAlert);
-        }
+        
         nodeConfig.finishedInitialization();
         writeNodeFile();
         
@@ -2064,17 +2076,6 @@ public class Node {
         recentlyCompletedIDs.push(new Long(id));
         while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
             recentlyCompletedIDs.pop();
-    }
-
-    public synchronized void setName(String key) {
-        myName = key;
-        writeNodeFile();
-        if(key.startsWith("Node created around")|| key.startsWith("MyFirstFreenetNode")){
-        	this.alerts.register(nodeNameUserAlert);
-        }else{
-        	this.alerts.unregister(nodeNameUserAlert);
-        }
-        
     }
 
 	public HighLevelSimpleClient makeClient(short prioClass) {

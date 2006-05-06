@@ -1,6 +1,6 @@
 package freenet.node;
 
-public class MeaningFulNodeNameUserAlert implements UserAlert {
+public class MeaningfulNodeNameUserAlert implements UserAlert {
 
 	public boolean userCanDismiss() {
 		return true;

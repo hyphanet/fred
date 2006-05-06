@@ -27,6 +27,8 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.client.events.EventDumper;
+import freenet.config.Option;
+import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -564,7 +566,27 @@ public class TextModeClientInterface implements Runnable {
             while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
                 key = key.substring(0, key.length()-2);
             outsb.append("New name: "+key);
-            n.setName(key);
+            SubConfig[] sc=n.config.getConfigs();
+            
+            for(int i=0; i<sc.length ; i++){
+    			Option[] o = sc[i].getOptions();
+    			String prefix = new String(sc[i].getPrefix());
+    			String configName;
+    			
+    			for(int j=0; j<o.length; j++){
+    				configName=o[j].getName();
+    				// we look for node.name 
+    				if(prefix.equals("node") && configName.equals("name")){
+    						Logger.minor(this, "Setting "+prefix+"."+configName+" to "+key);
+    						try{
+    							o[j].setValue(key);
+    						}catch(Exception e){
+    							Logger.error(this, "Error setting node's name");
+    						}
+    				}
+    			}
+    		}
+    		n.config.store();
         } else if(uline.startsWith("DISCONNECT:")) {
         	String ipAndPort = line.substring("DISCONNECT:".length());
         	disconnect(ipAndPort.trim());
