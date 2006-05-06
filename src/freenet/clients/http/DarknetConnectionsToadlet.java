@@ -131,7 +131,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			row[3] = pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)";
 			row[4] = HTMLEncoder.encode(pn.getVersion());
 			row[5] = new Double(pn.getLocation().getValue());
-			row[6] = backoff + "/" + pn.getBackoffLength();
+			row[6] = backoff/1000 + "/" + pn.getBackoffLength()/1000;
 			if (idle == -1) row[7] = " ";
 			else row[7] = new Long((now - idle) / 60000);
 			row[8] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
