@@ -290,7 +290,11 @@ public class TextModeClientInterface implements Runnable {
             	if(e.newURI != null)
             		outsb.append("Permanent redirect: "+e.newURI+"\r\n");
 			}
-	} else if(uline.startsWith("SHUTDOWN")) {
+	} else if(uline.startsWith("SHUTDOWN")||(uline.startsWith("QUIT") && n.directTMCI == this)) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("Shutting node down.\r\n");
+		out.write(sb.toString().getBytes());
+		out.flush();
 		n.exit();
         } else if(uline.startsWith("QUIT")) {
 		StringBuffer sb = new StringBuffer();
