@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -94,7 +95,7 @@ public class PageMaker {
 			URL url = getClass().getResource("staticfiles/themes/");
 			URLConnection urlConnection = url.openConnection();
 			if (url.getProtocol().equals("file")) {
-				File themesDirectory = new File(url.getPath());
+				File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1"));
 				File[] themeDirectories = themesDirectory.listFiles();
 				for (int themeIndex = 0; themeIndex < themeDirectories.length; themeIndex++) {
 					File themeDirectory = themeDirectories[themeIndex];
