@@ -38,7 +38,7 @@ public class PageMaker {
 	public void makeTopHead(StringBuffer buf) {
 		buf.append("<!DOCTYPE\n"
 				+ "	html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\">\n"
-				+ "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n"
+				+ "<html xml:lang=\"en\">\n"
 				+ "<head>\n"
 				+ "<meta http-equiv=\"Content-Type\" content=\"text/html;\" />\n"
 				+"<link rel=\"stylesheet\" href=\"/static/themes/"+this.theme+"/theme.css\" type=\"text/css\" />\n");

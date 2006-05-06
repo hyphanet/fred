@@ -149,23 +149,34 @@ public class FproxyToadlet extends Toadlet {
 			
 			String forceString = httprequest.getParam("force");
 			boolean force = false;
+			boolean forcedownload = false;
 			if(forceString != null) {
 				if(forceString.equals(getForceValue(key, now)) || 
 						forceString.equals(getForceValue(key, now-FORCE_GRAIN_INTERVAL)))
 					force = true;
 			}
 
-			if(typeName.equals("application/x-msdownload")) {
+			if(httprequest.isParameterSet("forcedownload")) {
 				// Download to disk, this should be safe, and is set when we do "force download to disk" from a dangerous-content-warning page.
-				force = true;
+				typeName = "application/x-msdownload";
+				forcedownload = true;
 			}
 			
 			try {
-				if(!force)
+				if(!force && !forcedownload) {
 					data = ContentFilter.filter(data, ctx.getBucketFactory(), typeName);
+				}
 				
-				// Send the data, intact
-				writeReply(ctx, 200, typeName, "OK", data);
+				if (forcedownload) {
+					MultiValueTable headers = new MultiValueTable();
+					
+					headers.put("Content-Disposition", "attachment");
+					ctx.sendReplyHeaders(200, "OK", headers, typeName, data.size());
+					ctx.writeData(data);
+				} else {
+					// Send the data, intact
+					writeReply(ctx, 200, typeName, "OK", data);
+				}
 			} catch (UnsafeContentTypeException e) {
 				StringBuffer buf = new StringBuffer();
 				ctx.getPageMaker().makeHead(buf, "Potentially Dangerous Content");
@@ -176,7 +187,7 @@ public class FproxyToadlet extends Toadlet {
 				buf.append("<p>Your options are:</p><ul>\n");
 				buf.append("<li><a href=\"/"+key.toString(false)+"?type=text/plain\">Click here</a> to open the file as plain text (this should not be dangerous, but it may be garbled).</li>\n");
 				// FIXME: is this safe? See bug #131
-				buf.append("<li><a href=\"/"+key.toString(false)+"?type=application/x-msdownload\">Click here</a> to force your browser to download the file to disk.</li>\n");
+				buf.append("<li><a href=\"/"+key.toString(false)+"?forcedownload\">Click here</a> to force your browser to download the file to disk.</li>\n");
 				buf.append("<li><a href=\"/"+key.toString(false)+"?force="+getForceValue(key, now)+"\">Click here</a> to open the file as "+HTMLEncoder.encode(typeName)+".</li>\n");
 				buf.append("<li><a href=\"/\">Click here</a> to go to the FProxy home page.</li>\n");
 				buf.append("</ul>");

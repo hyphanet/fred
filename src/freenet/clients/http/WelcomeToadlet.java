@@ -212,6 +212,15 @@ public class WelcomeToadlet extends Toadlet {
 		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage");
 		if(node.isTestnetEnabled())
 			buf.append("<div style=\"color: red; font-size: 200%; \">WARNING: TESTNET MODE ENABLED</div>");
+		
+		String useragent = (String)ctx.getHeaders().get("user-agent");
+		
+		if (useragent != null) {
+			useragent = useragent.toLowerCase();
+			if (useragent.indexOf("msie") > -1 && useragent.indexOf("opera") == -1) {
+				buf.append("<div style=\"color: darkred\"><b>Warning</b>: You appear to be using Internet Explorer. This means that some sites within Freenet may be able to compromise your anonymity.</div>");
+			}
+		}
 
 		// Alerts
 		
