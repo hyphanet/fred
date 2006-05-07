@@ -1,7 +1,8 @@
 package freenet.node;
 
 public class IPUndetectedUserAlert implements UserAlert {
-
+	boolean isValid=true;
+	
 	public boolean userCanDismiss() {
 		return true;
 	}
@@ -23,6 +24,10 @@ public class IPUndetectedUserAlert implements UserAlert {
 	}
 	
 	public boolean isValid() {
-		return true;
+		return isValid;
+	}
+	
+	public void isValid(boolean validity){
+		if(userCanDismiss()) isValid=validity;
 	}
 }
