@@ -42,4 +42,8 @@ public class Config {
 		return (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
 	}
 	
+	public synchronized SubConfig get(String subConfig){
+		return (SubConfig)configsByPrefix.get(subConfig);
+	}
+	
 }

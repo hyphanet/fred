@@ -113,7 +113,7 @@ public class Node {
 				node=n;
 			}
 			public String get() {
-				if(myName.startsWith("Node created around")|| myName.startsWith("MyFirstFreenetNode")){
+				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
 		        	node.alerts.register(nodeNameUserAlert);
 		        }else{
 		        	node.alerts.unregister(nodeNameUserAlert);
@@ -123,7 +123,7 @@ public class Node {
 
 			public void set(String val) throws InvalidConfigValueException {
 				myName = val;
-				if(myName.startsWith("Node created around")|| myName.startsWith("MyFirstFreenetNode")){
+				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
 		        	node.alerts.register(nodeNameUserAlert);
 		        }else{
 		        	node.alerts.unregister(nodeNameUserAlert);
@@ -134,11 +134,9 @@ public class Node {
 	public class MyRequestThrottle implements BaseRequestThrottle {
 
 		private final BootstrappingDecayingRunningAverage roundTripTime; 
-		private final String name;
 		
 		public MyRequestThrottle(ThrottleWindowManager throttleWindow, int rtt, String string) {
 			roundTripTime = new BootstrappingDecayingRunningAverage(rtt, 10, 5*60*1000, 10);
-			this.name = string;
 		}
 
 		public synchronized long getDelay() {
@@ -553,6 +551,7 @@ public class Node {
     static class NodeInitException extends Exception {
     	// One of the exit codes from above
     	public final int exitCode;
+    	static final long serialVersionUID=0;
     	
     	NodeInitException(int exitCode, String msg) {
     		super(msg+" ("+exitCode+")");
@@ -1397,8 +1396,6 @@ public class Node {
     }
 
     public void realPutSSK(ClientSSKBlock block, boolean cache) throws LowLevelPutException {
-        byte[] data = block.getRawData();
-        byte[] headers = block.getRawHeaders();
         SSKInsertSender is;
         long uid = random.nextLong();
         if(!lockUID(uid)) {
@@ -2226,7 +2223,6 @@ public class Node {
 
 	private ClientKeyBlock fetch(ClientSSK clientSSK) throws SSKVerifyException {
 		DSAPublicKey key = clientSSK.getPubKey();
-		boolean hadKey = key != null;
 		if(key == null) {
 			key = getKey(clientSSK.pubKeyHash);
 		}

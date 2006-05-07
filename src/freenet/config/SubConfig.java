@@ -30,8 +30,12 @@ public class SubConfig {
 	 * Return all the options registered. Each includes its name.
 	 * Used by e.g. webconfig.
 	 */
-	public Option[] getOptions() {
+	public synchronized Option[] getOptions() {
 		return (Option[]) map.values().toArray(new Option[map.size()]);
+	}
+	
+	public synchronized Option getOption(String option){
+		return (Option)map.get(option);
 	}
 	
 	public void register(Option o) {

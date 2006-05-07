@@ -34,6 +34,7 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.Key;
 import freenet.support.ArrayBucket;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
@@ -124,8 +125,7 @@ public class TextModeClientInterface implements Runnable {
     	
         sb.append("Freenet 0.7 Trivial Node Test Interface\r\n");
         sb.append("---------------------------------------\r\n");
-        sb.append("Build "+Version.buildNumber()+"\r\n");
-        sb.append(Version.cvsRevision+"\r\n");
+        sb.append("Build "+Version.buildNumber()+" - "+ Version.cvsRevision+"\r\n");
         sb.append("Enter one of the following commands:\r\n");
         sb.append("GET:<Freenet key> - Fetch a key\r\n");
         sb.append("PUT:\r\n<text, until a . on a line by itself> - Insert the document and return the key.\r\n");
@@ -567,25 +567,12 @@ public class TextModeClientInterface implements Runnable {
             while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
                 key = key.substring(0, key.length()-2);
             outsb.append("New name: "+key);
-            SubConfig[] sc=n.config.getConfigs();
             
-            for(int i=0; i<sc.length ; i++){
-    			Option[] o = sc[i].getOptions();
-    			String prefix = new String(sc[i].getPrefix());
-    			String configName;
-    			
-    			for(int j=0; j<o.length; j++){
-    				configName=o[j].getName();
-    				// we look for node.name 
-    				if(prefix.equals("node") && configName.equals("name")){
-    						Logger.minor(this, "Setting "+prefix+"."+configName+" to "+key);
-    						try{
-    							o[j].setValue(key);
-    						}catch(Exception e){
-    							Logger.error(this, "Error setting node's name");
-    						}
-    				}
-    			}
+            try{
+            	n.config.get("node").getOption("name").setValue(key);
+            	Logger.minor(this, "Setting node.name to "+key);
+			}catch(Exception e){
+				Logger.error(this, "Error setting node's name");
     		}
     		n.config.store();
         } else if(uline.startsWith("DISCONNECT:")) {
