@@ -9,6 +9,7 @@ import java.util.Enumeration;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
 import freenet.node.Node;
+import freenet.node.UserAlert;
 import freenet.node.Version;
 import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
@@ -141,7 +142,25 @@ public class WelcomeToadlet extends Toadlet {
 			} catch (URISyntaxException ex) {
 				
 			}
-		} else {
+		}else if(request.isParameterSet("disable")){
+			UserAlert[] alerts=node.alerts.getAlerts();
+			for(int i=0;i<alerts.length;i++){
+				if(request.getIntParam("disable")==alerts[i].hashCode()){
+					// Won't be dismissed if it's not allowed anyway
+					Logger.normal(this,"Disabling the userAlert "+alerts[i].hashCode());
+					alerts[i].isValid(false);
+
+					ctx.getPageMaker().makeHead(buf, "Configuration Applied");
+					buf.append("<div class=\"infobox\">\n");
+					buf.append("Your configuration changes were applied successfully<br />\n");
+					buf.append("<a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
+					buf.append("</div>\n");
+					
+					ctx.getPageMaker().makeTail(buf);
+					writeReply(ctx, 200, "text/html", "OK", buf.toString());
+				}
+			}
+		}else {
 			this.handleGet(uri, ctx);
 		}
 	}

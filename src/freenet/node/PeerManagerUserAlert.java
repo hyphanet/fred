@@ -5,6 +5,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	final Node n;
 	int conns;
 	int peers;
+	boolean isValid=true;
 	
 	PeerManagerUserAlert(Node n) {
 		this.n = n;
@@ -25,7 +26,7 @@ public class PeerManagerUserAlert implements UserAlert {
 			return "Only 2 open connections";
 		else throw new IllegalArgumentException("Not valid");
 	}
-
+	
 	public String getText() {
 		String s;
 		if(peers == 0) {
@@ -60,7 +61,10 @@ public class PeerManagerUserAlert implements UserAlert {
 	}
 
 	public boolean isValid() {
-		return peers == 0 || conns <= 2;
+		return (peers == 0 || conns <= 2)&&isValid;
 	}
 	
+	public void isValid(boolean b){
+		if(userCanDismiss()) isValid=b;
+	}
 }

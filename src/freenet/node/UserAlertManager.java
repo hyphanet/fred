@@ -60,6 +60,9 @@ public class UserAlertManager implements Comparator {
 				else if(level <= UserAlert.MINOR)
 					buf.append("<span class=\"alert-minor\">");
 				buf.append(a[i].getTitle());
+				if(a[i].userCanDismiss())
+					buf.append("<form method=\"post\" action=\".\"><input type=\"hidden\" name=\"disable\" value=\""+
+						a[i].hashCode()+"\" /><input type=\"submit\" value=\"Hide\" /></form>");
 				if(level <= UserAlert.MINOR)
 					buf.append("</span>");
 				buf.append("</b><br />\n");

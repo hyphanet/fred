@@ -1,6 +1,7 @@
 package freenet.node;
 
 public class MeaningfulNodeNameUserAlert implements UserAlert {
+	private boolean isValid=true;
 
 	public boolean userCanDismiss() {
 		return true;
@@ -22,6 +23,10 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 	}
 	
 	public boolean isValid() {
-		return true;
+		return isValid;
+	}
+	
+	public void isValid(boolean b){
+		if(userCanDismiss()) isValid=b;
 	}
 }

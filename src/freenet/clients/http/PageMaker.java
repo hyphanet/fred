@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import freenet.support.Logger;
+
 /** Simple class to output standard heads and tail for web interface pages. 
 */
 public class PageMaker {
@@ -95,14 +97,19 @@ public class PageMaker {
 			URL url = getClass().getResource("staticfiles/themes/");
 			URLConnection urlConnection = url.openConnection();
 			if (url.getProtocol().equals("file")) {
-				File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1").replaceAll("|", ":"));
-				File[] themeDirectories = themesDirectory.listFiles();
-				for (int themeIndex = 0; themeIndex < themeDirectories.length; themeIndex++) {
-					File themeDirectory = themeDirectories[themeIndex];
-					if (themeDirectory.isDirectory() && !themeDirectory.getName().startsWith(".")) {
-						themes.add(themeDirectory.getName());
-					}
+				try{
+					File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1").replaceAll("|", ":"));
+					File[] themeDirectories = themesDirectory.listFiles();
+					for (int themeIndex = 0; themeIndex < themeDirectories.length; themeIndex++) {
+						File themeDirectory = themeDirectories[themeIndex];
+						if (themeDirectory.isDirectory() && !themeDirectory.getName().startsWith(".")) {
+							themes.add(themeDirectory.getName());
+						}
+					}	
+				}catch(Exception e){
+					Logger.error(this,"Error getting theme list. "+e);
 				}
+				
 			} else if (urlConnection instanceof JarURLConnection) {
 				JarURLConnection jarUrlConnection = (JarURLConnection) urlConnection;
 				JarFile jarFile = jarUrlConnection.getJarFile();

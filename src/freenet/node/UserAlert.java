@@ -29,6 +29,8 @@ public interface UserAlert {
 	 */
 	public boolean isValid();
 	
+	public void isValid(boolean validity);
+	
 	/** An error which prevents normal operation */
 	public final static short CRITICAL_ERROR = 0;
 	/** An error which prevents normal operation but might be temporary */
