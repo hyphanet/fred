@@ -7,20 +7,22 @@
      Possible targets: compile, dist (default), clean
   </description>
 
-<!-- set global properties for this build -->
-  	<property name="src" location="src"/>
-	<property name="build" location="build"/>
-	<property name="lib"	location="lib"/>
-	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
+  <!-- set global properties for this build -->
+  <property name="src" location="src"/>
+  <property name="build" location="build"/>
+  <property name="lib"	location="lib"/>
+  <property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
+  <property name="javadoc" location="javadoc"/>
 
-<target name="mkdir">
+
+  <target name="mkdir">
     <mkdir dir="${build}"/>
     <mkdir dir="${lib}"/>
-</target>
+  </target>
 
-<target name="env" depends="mkdir"   description="Learn about the environment">
+  <target name="env" depends="mkdir"   description="Learn about the environment">
     <available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
-</target>
+  </target>
 
   <target name="get-extjar" depends="env" unless="freenet-ext.present"
     description="Download some external libraries which Freenet relies on">
@@ -82,14 +84,22 @@
   </target>
 
     <!-- ================================================== -->
-    <target name="clean" description="Delete class files and docs dir.">
+  <target name="clean" description="Delete class files and docs dir.">
         <delete dir="${build}"/>
         <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
-    </target>
-    <target name="distclean" description="Delete class files, lib dir and docs dir.">
+  </target>
+  <target name="distclean" description="Delete class files, lib dir and docs dir.">
         <delete dir="${build}"/>
         <delete dir="${lib}"/>
+        <delete dir="${javadoc}"/>
         <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
-    </target>
+  </target>
+
+
+  <target name="javadoc">
+    <javadoc sourcepath="${src}" destdir="${javadoc}">
+      <fileset dir="${src}" includes="**/*.java" />
+    </javadoc>
+  </target>
 
 </project>
