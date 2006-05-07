@@ -4,9 +4,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import freenet.snmplib.SNMPStarter;
-
-
 public class IOStatisticCollector {
 	public static final int STATISTICS_ENTRIES = 10;
 	public static final int STATISTICS_DURATION_S = 30;
@@ -25,7 +22,7 @@ public class IOStatisticCollector {
 		// TODO: only for testing!!!!
 		// This should only happen once
 		//SNMPAgent.create();
-		SNMPStarter.initialize();
+		//SNMPStarter.initialize();
 	}
 	
 	private static IOStatisticCollector getSC() {

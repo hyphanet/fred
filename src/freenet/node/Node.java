@@ -26,6 +26,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.zip.DeflaterOutputStream;
 
+import plugins.snmplib.SNMPStarter;
+
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
@@ -74,7 +76,6 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.fcp.FCPServer;
 import freenet.pluginmanager.PluginManager;
-import freenet.snmplib.SNMPStarter;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.Base64;
@@ -531,9 +532,6 @@ public class Node {
         System.out.println("Starting fproxy on port "+(port+2000));
         new FCPServer(port+3000, n);
         System.out.println("Starting FCP server on port "+(port+3000));
-        SNMPAgent.setSNMPPort(port+4000);
-        System.out.println("Starting SNMP server on port "+(port+4000));
-        SNMPStarter.initialize();
         //server.register(fproxy, "/SSK@", false);
         //server.register(fproxy, "/KSK@", false);
         */
@@ -1072,9 +1070,6 @@ public class Node {
         server.register(fproxy, "/", false);
         server.register(pproxy, "/plugins/", true);
 		 * */
-        
-        // SNMP
-        SNMPStarter.maybeCreate(this, config);
         
         // After everything has been created, write the config file back to disk.
         config.finishedInit();

@@ -22,4 +22,8 @@ public class PluginRespirator {
 	public HighLevelSimpleClient getHLSimpleClient() {
 		return hlsc;
 	}
+	
+	public Node getNode(){
+		return node;
+	}
 }
