@@ -26,8 +26,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.zip.DeflaterOutputStream;
 
-import plugins.snmplib.SNMPStarter;
-
 import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
