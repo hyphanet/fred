@@ -22,7 +22,9 @@ package freenet.io.comm;
 import java.io.*;
 import java.net.*;
 
+import freenet.io.AddressIdentifier;
 import freenet.io.WritableToDataOutputStream;
+import freenet.support.Logger;
 
 /**
  * @author ian
@@ -65,11 +67,34 @@ public class Peer implements WritableToDataOutputStream {
     public Peer(String physical) throws PeerParseException {
         int offset = physical.lastIndexOf(':'); // ipv6
         if(offset < 0) throw new PeerParseException();
-	this.hostname = physical.substring(0, offset);
+        InetAddress addr = null;
+        String host = physical.substring(0, offset);
+        // if we were created with an explicit IP address, use it as such
+        // debugging log messages because AddressIdentifier doesn't appear to handle all IPv6 literals correctly, such as "fe80::204:1234:dead:beef"
+        AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
+        Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+"'");
+        if(!addressType.toString().equals("Other")) {
+            try {
+                addr = InetAddress.getByName(host);
+            } catch (UnknownHostException e) {
+                addr = null;
+            }
+            Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+addr.getHostAddress()+"'");
+            if(addr.getHostAddress().equals(host)) {
+                Logger.debug(this, "'"+host+"' looks like an IP address");
+                host = null;
+            } else {
+                addr = null;
+            }
+        }
+        if( addr == null ) {
+            Logger.debug(this, "'"+host+"' does not look like an IP address");
+        }
+        this._address = addr;
+        this.hostname = host;
         String strport = physical.substring(offset+1);
-	// we're created with a hostname so delay the lookup of the address
-	// until it's needed to work better with dynamic DNS hostnames
-	this._address = null;
+        // we're created with a hostname so delay the lookup of the address
+        // until it's needed to work better with dynamic DNS hostnames
         try {
             _port = Integer.parseInt(strport);
         } catch (NumberFormatException e) {
@@ -110,6 +135,7 @@ public class Peer implements WritableToDataOutputStream {
 		if (_address != null) {
 			return _address;
 		} else {
+                        Logger.minor(this, "Looking up '"+hostname+"' in DNS");
 			/* 
 			 * Peers are constructed from an address once
 			 * a handshake has been completed, so this
