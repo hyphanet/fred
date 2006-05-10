@@ -504,7 +504,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.minor(this, "Tracker == null");
             return false;
         }
-        Logger.minor(this,"Entering tryProcess: "+buf+","+offset+","+length+","+tracker);
+        Logger.minor(this,"Entering tryProcess: "+Fields.hashCode(buf)+","+offset+","+length+","+tracker);
         /**
          * E_pcbc_session(H(seq+random+data)) E_pcfb_session(seq+random+data)
          * 
@@ -517,8 +517,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.minor(this, "No cipher");
             return false;
         }
-        if(Logger.shouldLog(Logger.DEBUG, this))
-            Logger.debug(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
+        Logger.minor(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
         int blockSize = sessionCipher.getBlockSize() >> 3;
         if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
             throw new IllegalStateException("Block size must be equal to key size");
@@ -1195,6 +1194,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         plaintext[ptr++] = 0;
 
         System.arraycopy(buf, offset, plaintext, ptr, length);
+        
+        if(ptr + length != plaintext.length) {
+        	Logger.error(this, "Inconsistent length: "+plaintext.length+" buffer but "+(ptr+length)+" actual");
+        }
 
         if(seqNumber != -1) {
             byte[] saveable = new byte[length];
@@ -1215,8 +1218,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private void processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt, AsyncMessageCallback[] callbacks) {
         BlockCipher sessionCipher = kt.sessionCipher;
-        if(Logger.shouldLog(Logger.DEBUG, this))
-            Logger.debug(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
+        Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
         if(sessionCipher == null) {
             Logger.error(this, "Dropping packet send - have not handshaked yet");
             return;
@@ -1249,7 +1251,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         digestTemp = md.digest();
 
-        //Logger.minor(this, "\nHash:      "+HexUtil.bytesToHex(digestTemp));
+        Logger.minor(this, "\nHash:      "+HexUtil.bytesToHex(digestTemp));
                 
         // Put plaintext in output
         System.arraycopy(digestTemp, 0, output, 0, digestLength);
@@ -1260,7 +1262,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         System.arraycopy(digestTemp, 0, output, 0, digestLength);
         // Yay, we have an encrypted hash
 
-        //Logger.minor(this, "\nEncrypted: "+HexUtil.bytesToHex(digestTemp)+" ("+plaintext.length+" bytes plaintext)");
+        Logger.minor(this, "\nEncrypted: "+HexUtil.bytesToHex(digestTemp)+" ("+plaintext.length+" bytes plaintext)");
         
         PCFBMode pcfb = new PCFBMode(sessionCipher, digestTemp);
         pcfb.blockEncipher(output, digestLength, plaintext.length);
@@ -1270,7 +1272,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         // We have a packet
         // Send it
         
-        Logger.minor(this,"Sending packet of length "+output.length+" to "+kt.pn);
+        Logger.minor(this,"Sending packet of length "+output.length+" (" + Fields.hashCode(output) + " to "+kt.pn);
         
         // pn.getPeer() cannot be null
         usm.sendPacket(output, kt.pn.getPeer());
