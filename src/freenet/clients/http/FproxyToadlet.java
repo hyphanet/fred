@@ -56,7 +56,7 @@ public class FproxyToadlet extends Toadlet {
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String ks = uri.getPath();
 		
-		if (ks.equals("/")) {
+		if (ks.equals("/")||ks.startsWith("/servlet/")) {
 			RedirectException re = new RedirectException();
 			try {
 				re.newuri = new URI("/welcome/");

@@ -165,12 +165,10 @@ public class WelcomeToadlet extends Toadlet {
 					writeReply(ctx, 200, "text/html", "OK", buf.toString());
 				}
 			}
-		}else if(request.isParameterSet("insert")){
+		}else if(request.isParameterSet("key")){
 			FreenetURI key = new FreenetURI(request.getParam("key"));
 			ClientMetadata contentType = new ClientMetadata(request.getParam("content-type"));
-			String value = request.getParam("data");
-			
-			
+			String value = request.getParam("filename");
 			
 			if(key.toString().length()>0 && value.length()>0){
 				InsertBlock block = new InsertBlock(new ArrayBucket(value), contentType, key);
