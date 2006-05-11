@@ -6,5 +6,5 @@ package freenet.io.comm;
  * NotConnectedException.
  */
 public class DisconnectedException extends Exception {
-	static final long serialVersionUID = -1;
+	private static final long serialVersionUID = -1;
 }
