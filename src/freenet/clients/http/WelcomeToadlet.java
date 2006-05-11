@@ -6,12 +6,17 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
 
+import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.InsertBlock;
+import freenet.client.InserterException;
 import freenet.config.SubConfig;
+import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.UserAlert;
 import freenet.node.Version;
 import freenet.pluginmanager.HTTPRequest;
+import freenet.support.ArrayBucket;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.HTMLEncoder;
@@ -160,6 +165,49 @@ public class WelcomeToadlet extends Toadlet {
 					writeReply(ctx, 200, "text/html", "OK", buf.toString());
 				}
 			}
+		}else if(request.isParameterSet("insert")){
+			FreenetURI key = new FreenetURI(request.getParam("key"));
+			ClientMetadata contentType = new ClientMetadata(request.getParam("content-type"));
+			String value = request.getParam("data");
+			String callback = request.getParam("return");
+			
+			if(key.toString().length()>0 && value.length()>0){
+				InsertBlock block = new InsertBlock(new ArrayBucket(value), contentType, key);
+	            try {
+	            	key = this.insert(block, false);
+	            	
+	            	// We redirect to the index if not specified
+	            	if (callback==null) callback = "/";
+	            	writePermanentRedirect(ctx,"Next",callback);
+	            } catch (InserterException e) {
+	            	ctx.getPageMaker().makeHead(buf, "ERROR");
+					buf.append("<div class=\"infobox\">\n");
+	            	buf.append("Error: "+e.getMessage()+"<br>");
+	            	if(e.uri != null)
+	            		buf.append("URI would have been: "+e.uri+"<br>");
+	            	int mode = e.getMode();
+	            	if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
+	            		buf.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString()+"<br>");
+	            	}
+	            	buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
+	            	buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
+					buf.append("</div>\n");
+					
+					ctx.getPageMaker().makeTail(buf);
+					writeReply(ctx, 200, "text/html", "OK", buf.toString());
+	            }
+			}else{
+				ctx.getPageMaker().makeHead(buf, "ERROR");
+				buf.append("<div class=\"infobox\">\n");
+				buf.append("Your post form is missing a mandatory parameter!<br />\n");
+				buf.append("<a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
+				buf.append("<a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
+				buf.append("</div>\n");
+				
+				ctx.getPageMaker().makeTail(buf);
+				writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			}
+			
 		}else {
 			this.handleGet(uri, ctx);
 		}
