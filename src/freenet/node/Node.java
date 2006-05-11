@@ -124,7 +124,7 @@ public class Node {
 		
 		public void update() {
 			Logger.minor(this, "update()");
-			Peer p = new Peer(Node.this.getPrimaryIPAddress(), Node.this.portNumber);
+			Peer p = new Peer(lastIPAddress, Node.this.portNumber);
 			if(p.strictEquals(lastInsertedAddress)) return;
 			Logger.minor(this, "Inserting ARK because "+p+" != "+lastInsertedAddress);
 			synchronized(this) {
@@ -1785,7 +1785,6 @@ public class Node {
        	InetAddress addr = ipDetector.getAddress();
        	if(addr != null) {
        		lastIPAddress = addr;
-       	//	shouldInsertARK();
        		return addr;
        	}
    		// Try to pick it up from our connections
@@ -1809,7 +1808,6 @@ public class Node {
        		if(countsByPeer.size() == 0) return null;
        		Iterator it = countsByPeer.keySet().iterator();
        		if(countsByPeer.size() == 1) {
-		///		shouldInsertARK();
        			return (InetAddress) it.next();
        		}
        		// Pick most popular address
@@ -1831,11 +1829,9 @@ public class Node {
        	}
        	if (lastIPAddress == null) {
        		this.alerts.register(primaryIPUndetectedAlert);
-       	}
-       	else	 {
+       	} else {
        		this.alerts.unregister(primaryIPUndetectedAlert);
        	}
-		//shouldInsertARK();
        	return lastIPAddress;
     }
 
@@ -2331,6 +2327,7 @@ public class Node {
 
 	public void redetectAddress() {
 		InetAddress newIP = detectPrimaryIPAddress();
+		shouldInsertARK();
 		if(newIP.equals(lastIP)) return;
 		writeNodeFile();
 	}
