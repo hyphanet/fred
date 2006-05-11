@@ -13,6 +13,7 @@
   <property name="lib"	location="lib"/>
   <property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
   <property name="javadoc" location="javadoc"/>
+  <property name="svn.revision" value="@custom@"/>
 
 
   <target name="mkdir">
@@ -37,6 +38,13 @@
   <target name="compile" depends="get-extjar">
     <!-- Create the time stamp -->
     <tstamp/>
+
+    <!-- Update the Version file -->
+
+    <replace file="${src}/freenet/node/Version.java">
+	    <replacefilter token="@custom@" value="${svn.revision}"/>
+    </replace>
+    
     <!-- Create the build directory structure used by compile -->
 
 <!-- FIXME: remove the debug and replace with optimize -->
@@ -72,11 +80,11 @@
       <attribute name="Main-Class" value="freenet/node/Node"/>
          <attribute name="Built-By" value="${user.name}"/>
 	 <section name="common">
-	   <attribute name="Specification-Title" value="Example"/>
+	   <attribute name="Specification-Title" value="Freenet"/>
 	   <attribute name="Specification-Version" value="0.7pre"/>
 	   <attribute name="Specification-Vendor" value="freenetproject.org"/>
 	   <attribute name="Implementation-Title" value="Freenet"/>
-	   <attribute name="Implementation-Version" value="0.7pre ${TODAY}"/> 
+	   <attribute name="Implementation-Version" value="0.7pre ${TODAY} ${svn.revision}"/> 
 	   <attribute name="Implementation-Vendor" value="Freenetproject.org"/>
 	 </section>
        </manifest>

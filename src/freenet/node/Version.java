@@ -46,17 +46,8 @@ public abstract class Version {
 	public static final int lastGoodStableBuild = 1;
 
 	/** Revision number of Version.java as read from CVS */
-	public static final String cvsRevision;
+	public static final String cvsRevision = "@custom@";
 	
-	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG,Version.class);
-	static {
-		StringTokenizer cvsId =
-			new StringTokenizer("$Id$");
-		cvsId.nextToken();
-		cvsId.nextToken();
-		cvsRevision = cvsId.nextToken();
-	}
-
 	/**
 	 * @return the node's version designators as an array
 	 */
