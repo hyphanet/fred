@@ -257,6 +257,7 @@ public class NetworkInterface {
 				try {
 					Socket clientSocket = serverSocket.accept();
 					InetAddress clientAddress = clientSocket.getInetAddress();
+					Logger.minor(Acceptor.class, "Connection from " + clientAddress);
 					String clientHostName = clientAddress.getHostName();
 
 					/* check if the ip address is allowed */

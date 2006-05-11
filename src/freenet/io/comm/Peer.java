@@ -39,7 +39,7 @@ public class Peer implements WritableToDataOutputStream {
 	// hostname - only set if we were created with a hostname
 	// and not an address
 	private final String hostname;
-	private final InetAddress _address;
+	private InetAddress _address;
 	private final int _port;
 
 	// Create a null peer
@@ -135,20 +135,47 @@ public class Peer implements WritableToDataOutputStream {
 		if (_address != null) {
 			return _address;
 		} else {
-                        Logger.minor(this, "Looking up '"+hostname+"' in DNS");
-			/* 
-			 * Peers are constructed from an address once
-			 * a handshake has been completed, so this
-			 * lookup will only be performed during a 
-			 * handshake - it doesn't mean we perform
-			 * a DNS lookup with every packet we send.
-			 */
-			try {
-				return InetAddress.getByName(hostname);
-			} catch (UnknownHostException e) {
-				return null;
-			}
+		        InetAddress addr = getHandshakeAddress();
+		        if( addr != null ) {
+		                this._address = addr;
+		        }
+		        return addr;
 		}
+	}
+
+	public InetAddress getHandshakeAddress() {
+	    // Since we're handshaking, hostname-to-IP may have changed
+	    if (_address != null && hostname == null) {
+	        return _address;
+	    } else {
+                Logger.minor(this, "Looking up '"+hostname+"' in DNS");
+	        /* 
+	         * Peers are constructed from an address once a
+	         * handshake has been completed, so this lookup
+	         * will only be performed during a handshake
+	         * (this method should normally only be called
+	         * from PeerNode.getHandshakeIPs() and once
+	         * each connection from this.getAddress()
+	         * otherwise) - it doesn't mean we perform a
+	         * DNS lookup with every packet we send.
+	         */
+	        try {
+                    InetAddress addr = InetAddress.getByName(hostname);
+                    //Logger.normal(this, "Look up got '"+addr+"'");
+                    if( addr != null ) {
+                        /*
+                         * cache the answer since getHandshakeAddress()
+                         * doesn't use the cached value, thus
+                         * getHandshakeIPs() should always get the
+                         * latest value from DNS (minus Java's caching)
+                         */
+                        this._address = addr;
+                    }
+                    return addr;
+	        } catch (UnknownHostException e) {
+	            return null;
+	        }
+	    }
 	}
 
 	public int hashCode() {

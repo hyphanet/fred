@@ -497,6 +497,9 @@ public class Node {
     	// use dyndns hostnames
     	java.security.Security.setProperty("networkaddress.cache.ttl" , "300");
     	
+    	// set Java's negative DNS cache to 1 minute rather than the default 10 seconds
+    	java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "60");
+    	
     	FilePersistentConfig cfg = new FilePersistentConfig(configFilename);
     	
     	// First, set up logging. It is global, and may be shared between several nodes.
@@ -1593,7 +1596,7 @@ public class Node {
        			Peer p = peerList[i].getRemoteDetectedPeer();
        			if(p == null || p.isNull()) continue;
        			InetAddress ip = p.getAddress();
-       			if(!IPUtil.checkAddress(p.getAddress())) continue;
+       			if(!IPUtil.checkAddress(ip)) continue;
        			if(countsByPeer.containsKey(ip)) {
        				Integer count = (Integer) countsByPeer.get(ip);
        				Integer newCount = new Integer(count.intValue()+1);

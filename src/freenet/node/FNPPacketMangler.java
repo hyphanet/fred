@@ -381,7 +381,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private DiffieHellmanContext processDHTwoOrThree(int i, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
         DiffieHellmanContext ctx = pn.getDHContext();
-        if(!ctx.canGetCipher()) {
+        if(ctx == null || !ctx.canGetCipher()) {
             if(shouldLogErrorInHandshake()) {
                 Logger.error(this, "Cannot get cipher");
             }
@@ -1286,19 +1286,27 @@ public class FNPPacketMangler implements LowLevelFilter {
     public void sendHandshake(PeerNode pn) {
         Logger.minor(this, "Possibly sending handshake to "+pn);
         DiffieHellmanContext ctx;
+        Peer[] handshakeIPs;
         synchronized(pn) {
-            if((!pn.shouldSendHandshake()) || pn.getHandshakeIPs().length == 0) {
+            if(!pn.shouldSendHandshake()) return;
+            handshakeIPs = pn.getHandshakeIPs();
+            if(handshakeIPs.length == 0) {
+                pn.couldNotSendHandshake();
                 return;
             } else {
                 ctx = DiffieHellman.generateContext();
                 pn.setDHContext(ctx);
             }
         }
-
-        for(int i=0;i<pn.getHandshakeIPs().length;i++){
-          if( pn.getHandshakeIPs()[i].getAddress() == null ) continue;
-        	sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, pn.getHandshakeIPs()[i]);
+        int sentCount = 0;
+        for(int i=0;i<handshakeIPs.length;i++){
+          if( handshakeIPs[i].getAddress() == null ) continue;
+        	sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, handshakeIPs[i]);
         	pn.sentHandshake();
+        	sentCount += 1;
+        }
+        if(sentCount==0) {
+            pn.couldNotSendHandshake();
         }
     }
 

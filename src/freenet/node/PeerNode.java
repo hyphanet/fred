@@ -358,8 +358,12 @@ public class PeerNode implements PeerContext {
     	Peer[] p=null;
     	
     	if(detectedPeer == null && nominalPeer.size() == 0) return new Peer[0];
+
+    	InetAddress peerIP = detectedPeer.getHandshakeAddress();
+
+    	if(peerIP == null && nominalPeer.size() == 0) return new Peer[0];
     	
-    	if( ! nominalPeer.contains(detectedPeer)){
+    	if( peerIP != null && ! nominalPeer.contains(detectedPeer)){
       		p= new Peer[1+nominalPeer.size()];
     		p[0]=detectedPeer;
     		for(int i=1;i<nominalPeer.size()+1;i++)
@@ -371,7 +375,6 @@ public class PeerNode implements PeerContext {
     	InetAddress localhost = node.localhostAddress;
     	InetAddress nodeIP = node.getPrimaryIPAddress();
     	if(nodeIP != null && nodeIP.equals(localhost)) return p;
-    	InetAddress peerIP = detectedPeer.getAddress();
     	if(peerIP != null && peerIP.equals(localhost)) return p;
 	if(nodeIP != null && nodeIP.equals(peerIP)) {
     		Peer[] newPeers = new Peer[p.length+1];
@@ -530,6 +533,7 @@ public class PeerNode implements PeerContext {
      * sent.
      */
     public synchronized void sentHandshake() {
+        Logger.debug(this, "sentHandshake(): "+this);
         long now = System.currentTimeMillis();
         if(invalidVersion() && !firstHandshake) {
             sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
@@ -539,6 +543,24 @@ public class PeerNode implements PeerContext {
         		+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
         }
         firstHandshake = false;
+    }
+    
+    /**
+     * Call this method when a handshake request could not be sent (i.e. no IP address available)
+     * sent.
+     */
+    public synchronized void couldNotSendHandshake() {
+        Logger.minor(this, "couldNotSendHandshake(): "+this);
+        long now = System.currentTimeMillis();
+        if(invalidVersion() && !firstHandshake) {
+            sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
+              + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES)
+              + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+        } else {
+            sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
+              + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS)
+              + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+        }
     }
 
     /**
