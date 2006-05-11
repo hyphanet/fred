@@ -20,7 +20,7 @@ public abstract class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 690;
+	private static final int buildNumber = 691;
 
 	/** Oldest build of Fred we will talk to */
 	private static final int lastGoodBuild = 591;
@@ -49,6 +49,7 @@ public abstract class Version {
 	public static final String cvsRevision = "@custom@";
 	
 	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG,Version.class);
+	
 	/**
 	 * @return the node's version designators as an array
 	 */

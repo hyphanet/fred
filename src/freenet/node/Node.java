@@ -120,9 +120,13 @@ public class Node {
 
 		private ClientPutter inserter;
 		private boolean shouldInsert;
+		private Peer lastInsertedAddress;
 		
 		public void update() {
 			Logger.minor(this, "update()");
+			Peer p = new Peer(Node.this.getPrimaryIPAddress(), Node.this.portNumber);
+			if(p.strictEquals(lastInsertedAddress)) return;
+			Logger.minor(this, "Inserting ARK because "+p+" != "+lastInsertedAddress);
 			synchronized(this) {
 				if(inserter != null) {
 					// Already inserting.
@@ -168,6 +172,15 @@ public class Node {
 			
 			try {
 				inserter.start();
+				if(fs.get("physical.udp") == null)
+					lastInsertedAddress = null;
+				else {
+					try {
+						lastInsertedAddress = new Peer(fs.get("physical.udp"));
+					} catch (PeerParseException e1) {
+						Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
+					}
+				}
 			} catch (InserterException e) {
 				onFailure(e, inserter);
 			}
@@ -192,6 +205,7 @@ public class Node {
 
 		public void onFailure(InserterException e, BaseClientPutter state) {
 			Logger.minor(this, "ARK insert failed: "+e);
+			lastInsertedAddress = null;
 			// :(
 			// Better try again
 			try {
@@ -217,6 +231,8 @@ public class Node {
 		}
 
 		public void onConnectedPeer() {
+			Peer p = new Peer(Node.this.getPrimaryIPAddress(), Node.this.portNumber);
+			if(p.equals(lastInsertedAddress)) return;
 			synchronized(this) {
 				if(!shouldInsert) return;
 				if(inserter != null) {
@@ -785,16 +801,19 @@ public class Node {
 					// Set to null
 					overrideIPAddress = null;
 					lastIPAddress = null;
+					shouldInsertARK();
 					return;
 				}
 				InetAddress addr;
 				try {
 					addr = InetAddress.getByName(val);
+					shouldInsertARK();
 				} catch (UnknownHostException e) {
 					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
 				}
 				overrideIPAddress = addr;
 				lastIPAddress = null;
+				shouldInsertARK();
 			}
     		
     	});
@@ -1764,6 +1783,7 @@ public class Node {
        	InetAddress addr = ipDetector.getAddress();
        	if(addr != null) {
        		lastIPAddress = addr;
+			shouldInsertARK();
        		return addr;
        	}
    		// Try to pick it up from our connections
@@ -1787,6 +1807,7 @@ public class Node {
        		if(countsByPeer.size() == 0) return null;
        		Iterator it = countsByPeer.keySet().iterator();
        		if(countsByPeer.size() == 1) {
+				shouldInsertARK();
        			return (InetAddress) it.next();
        		}
        		// Pick most popular address
@@ -1812,6 +1833,7 @@ public class Node {
        	else	 {
        		this.alerts.unregister(primaryIPUndetectedAlert);
        	}
+		shouldInsertARK();
        	return lastIPAddress;
     }
 

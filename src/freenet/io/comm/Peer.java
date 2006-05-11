@@ -131,6 +131,31 @@ public class Peer implements WritableToDataOutputStream {
 		return true;
 	}
 
+	public boolean strictEquals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (!(o instanceof Peer)) {
+			return false;
+		}
+
+		final Peer peer = (Peer) o;
+
+		if (_port != peer._port) {
+			return false;
+		}
+		if (this._address != null) {
+			if(!getHostName(_address).equals(getHostName(peer._address))) {
+				return false;
+			}
+		} else {
+			if (!hostname.equals(peer.hostname)) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	public InetAddress getAddress() {
 		if (_address != null) {
 			return _address;
