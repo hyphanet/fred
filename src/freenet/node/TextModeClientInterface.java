@@ -486,7 +486,7 @@ public class TextModeClientInterface implements Runnable {
                 t.printStackTrace();
             }
         } else if(uline.startsWith("MAKESSK")) {
-        	InsertableClientSSK key = InsertableClientSSK.createRandom(r);
+        	InsertableClientSSK key = InsertableClientSSK.createRandom(r, "");
         	outsb.append("Insert URI: "+key.getInsertURI().toString(false)+"\r\n");
         	outsb.append("Request URI: "+key.getURI().toString(false)+"\r\n");
         	FreenetURI insertURI = key.getInsertURI().setDocName("testsite");

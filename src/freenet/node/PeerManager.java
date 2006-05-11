@@ -515,6 +515,16 @@ public class PeerManager {
 			ua.conns = conns;
 			ua.peers = peers;
 		}
+		if(anyConnectedPeers())
+			node.onConnectedPeer();
+	}
+
+	public boolean anyConnectedPeers() {
+		PeerNode[] conns = connectedPeers;
+		for(int i=0;i<conns.length;i++) {
+			if(conns[i].isConnected()) return true;
+		}
+		return false;
 	}
 
 }

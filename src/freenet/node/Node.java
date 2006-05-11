@@ -15,7 +15,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -27,8 +29,16 @@ import java.util.Iterator;
 import java.util.zip.DeflaterOutputStream;
 
 import freenet.client.ArchiveManager;
+import freenet.client.ClientMetadata;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
+import freenet.client.InserterException;
+import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetter;
+import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.USKManager;
 import freenet.clients.http.FproxyToadlet;
@@ -65,6 +75,8 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.ClientSSKBlock;
+import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
@@ -77,6 +89,7 @@ import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
 import freenet.support.Base64;
+import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
@@ -88,6 +101,7 @@ import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
@@ -101,6 +115,126 @@ import freenet.transport.IPUtil;
  * @author amphibian
  */
 public class Node {
+
+	public class MyARKInserter implements ClientCallback {
+
+		private ClientPutter inserter;
+		private boolean shouldInsert;
+		
+		public void update() {
+			Logger.minor(this, "update()");
+			synchronized(this) {
+				if(inserter != null) {
+					// Already inserting.
+					// Re-insert after finished.
+					shouldInsert = true;
+					return;
+				}
+				// Otherwise need to start an insert
+				if(!peers.anyConnectedPeers()) {
+					// Can't start an insert yet
+					shouldInsert = true;
+					return;
+				}
+				startInserter();
+			}
+		}
+
+		private void startInserter() {
+
+			Logger.minor(this, "starting inserter");
+			
+			SimpleFieldSet fs = exportPublicFieldSet();
+			
+			String s = fs.toString();
+			
+			byte[] buf;
+			try {
+				buf = s.getBytes("UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				throw new Error("UTF-8 not supported");
+			}
+			
+			Bucket b = new SimpleReadOnlyArrayBucket(buf);
+			
+			FreenetURI uri = myARK.getInsertURI().setKeyType("USK").setSuggestedEdition(Node.this.myARKNumber);
+			
+			Logger.minor(this, "Inserting ARK: "+uri);
+			
+			inserter = new ClientPutter(this, b, uri,
+					new ClientMetadata("text/plain") /* it won't quite fit in an SSK anyway */, 
+					Node.this.makeClient((short)0).getInserterContext(),
+					chkPutScheduler, sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this);
+			
+			try {
+				inserter.start();
+			} catch (InserterException e) {
+				onFailure(e, inserter);
+			}
+		}
+
+		public void onSuccess(FetchResult result, ClientGetter state) {
+			// Impossible
+		}
+
+		public void onFailure(FetchException e, ClientGetter state) {
+			// Impossible
+		}
+
+		public void onSuccess(BaseClientPutter state) {
+			Logger.minor(this, "ARK insert succeeded");
+			synchronized(this) {
+				inserter = null;
+				if(shouldInsert)
+					startInserter();
+			}
+		}
+
+		public void onFailure(InserterException e, BaseClientPutter state) {
+			Logger.minor(this, "ARK insert failed: "+e);
+			// :(
+			// Better try again
+			try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e1) {
+				// Ignore
+			}
+			synchronized(this) {
+				startInserter();
+			}
+		}
+
+		public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+			Logger.minor(this, "Generated URI for ARK: "+uri);
+			long l = uri.getSuggestedEdition();
+			if(l < myARKNumber) {
+				Logger.error(this, "Inserted edition # lower than attempted: "+l+" expected "+myARKNumber);
+			} else if(l > myARKNumber) {
+				Logger.minor(this, "ARK number moving from "+myARKNumber+" to "+l);
+				myARKNumber = l;
+				writeNodeFile();
+			}
+		}
+
+		public void onConnectedPeer() {
+			synchronized(this) {
+				if(!shouldInsert) return;
+				if(inserter != null) {
+					// Already inserting.
+					return;
+				}
+				// Otherwise need to start an insert
+				if(!peers.anyConnectedPeers()) {
+					// Can't start an insert yet
+					shouldInsert = true;
+					return;
+				}
+				shouldInsert = false;
+				startInserter();
+			}
+		}
+	
+	}
 
 	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
 	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
@@ -258,6 +392,10 @@ public class Node {
     private DSAPrivateKey myPrivKey;
     /** My public key */
     private DSAPublicKey myPubKey;
+    /** My ARK SSK private key */
+    private InsertableClientSSK myARK;
+    /** My ARK sequence number */
+    private long myARKNumber;
     
     private final HashSet runningUIDs;
     
@@ -305,8 +443,6 @@ public class Node {
 	static final int EXIT_COULD_NOT_START_FPROXY = 18;
 	static final int EXIT_COULD_NOT_START_TMCI = 19;
 	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
-
-    
     
     public final long bootID;
     public final long startupTime;
@@ -355,6 +491,9 @@ public class Node {
 	public final InetAddress localhostAddress;
 
 	private boolean wasTestnet;
+
+	// USK inserter.
+	private final MyARKInserter arkPutter;
 	
     /**
      * Read all storable settings (identity etc) from the node file.
@@ -431,6 +570,34 @@ public class Node {
             this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
             this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
 		}
+        InsertableClientSSK ark = null;
+		String s = fs.get("ark.number");
+        
+        String privARK = fs.get("ark.privURI");
+        try {
+        	if(privARK != null) {
+            	FreenetURI uri = new FreenetURI(privARK);
+        		ark = InsertableClientSSK.create(uri);
+        		if(s == null) {
+        			ark = null;
+        		} else {
+        			try {
+        				myARKNumber = Long.parseLong(s);
+        			} catch (NumberFormatException e) {
+        				myARKNumber = 0;
+        				ark = null;
+        			}
+        		}
+        	}
+        } catch (MalformedURLException e) {
+        	Logger.minor(this, "Caught "+e, e);
+        	ark = null;
+        }
+        if(ark == null) {
+        	ark = InsertableClientSSK.createRandom(r, "ark");
+        	myARKNumber = 0;
+        }
+        this.myARK = ark;
         wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
     }
 
@@ -473,6 +640,8 @@ public class Node {
         this.myCryptoGroup = Global.DSAgroupBigA;
         this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
         this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+    	myARK = InsertableClientSSK.createRandom(r, "ark");
+    	myARKNumber = 0;
     }
 
     /**
@@ -569,6 +738,7 @@ public class Node {
     private Node(Config config, RandomSource random) throws NodeInitException {
     	
     	// Easy stuff
+    	arkPutter = new MyARKInserter();
     	startupTime = System.currentTimeMillis();
     	throttleWindow = new ThrottleWindowManager(2.0);
         alerts = new UserAlertManager();
@@ -1081,13 +1251,19 @@ public class Node {
 			testnetHandler.start();
 		
         persistentTempBucketFactory.completedInit();
+
+        shouldInsertARK();
         
 		Thread t = new Thread(ipDetector, "IP address re-detector");
 		t.setDaemon(true);
 		t.start();
     }
     
-    public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
+    private void shouldInsertARK() {
+    	arkPutter.update();
+	}
+
+	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
     	if(key instanceof ClientCHK)
     		return realGetCHK((ClientCHK)key, localOnly, cache, ignoreStore);
     	else if(key instanceof ClientSSK)
@@ -1537,6 +1713,7 @@ public class Node {
     public SimpleFieldSet exportPrivateFieldSet() {
     	SimpleFieldSet fs = exportPublicFieldSet();
     	fs.put("dsaPrivKey", myPrivKey.asFieldSet());
+    	fs.put("ark.privURI", this.myARK.getInsertURI().toString(false));
     	return fs;
     }
     
@@ -1560,6 +1737,8 @@ public class Node {
         fs.put("myName", myName);
         fs.put("dsaGroup", myCryptoGroup.asFieldSet());
         fs.put("dsaPubKey", myPubKey.asFieldSet());
+    	fs.put("ark.number", Long.toString(this.myARKNumber));
+    	fs.put("ark.pubURI", this.myARK.getURI().toString(false));
         Logger.minor(this, "My reference: "+fs);
         return fs;
     }
@@ -2300,5 +2479,11 @@ public class Node {
 
 	public File getDownloadDir() {
 		return downloadDir;
+	}
+
+	public void onConnectedPeer() {
+		Logger.minor(this, "onConnectedPeer()");
+		if(arkPutter != null)
+			arkPutter.onConnectedPeer();
 	}
 }

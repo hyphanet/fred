@@ -433,17 +433,16 @@ public class PeerNode implements PeerContext {
         node.usm.onDisconnect(this);
         node.peers.disconnected(this);
         synchronized(this) {
+        	// Force renegotiation.
             isConnected = false;
+            // Prevent sending packets to the node until that happens.
             if(currentTracker != null)
-                currentTracker.disconnected();
+            	currentTracker.disconnected();
             if(previousTracker != null)
                 previousTracker.disconnected();
             if(unverifiedTracker != null)
                 unverifiedTracker.disconnected();
-            // Must null out to make other side prove it can
-            // *receive* from us as well as send *to* us before
-            // sending any more packets.
-            currentTracker = previousTracker = unverifiedTracker = null;
+            // DO NOT clear trackers, so can still receive.
         }
         node.lm.lostOrRestartedNode(this);
         sendHandshakeTime = System.currentTimeMillis();
@@ -698,9 +697,13 @@ public class PeerNode implements PeerContext {
      * @throws NotConnectedException 
      */
     synchronized void receivedPacket() throws NotConnectedException {
-        if(isConnected == false && unverifiedTracker == null) {
-            Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
-            throw new NotConnectedException();
+        if(isConnected == false) {
+        	if(unverifiedTracker == null && currentTracker == null) {
+        		Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
+        		throw new NotConnectedException();
+        	} else {
+        		Logger.minor(this, "Received packet while disconnected on "+this+" - recently disconnected() ?");
+        	}
         }
         timeLastReceivedPacket = System.currentTimeMillis();
     }
@@ -1013,6 +1016,7 @@ public class PeerNode implements PeerContext {
         }
         tracker = prev;
         if(tracker != null) {
+            if(tracker.isDeprecated()) return;
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {

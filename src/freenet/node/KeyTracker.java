@@ -906,4 +906,8 @@ public class KeyTracker {
         }
         return items;
     }
+
+	public boolean isDeprecated() {
+		return this.isDeprecated;
+	}
 }

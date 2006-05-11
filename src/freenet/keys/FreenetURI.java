@@ -406,7 +406,8 @@ public class FreenetURI {
 			metaStr,
 			routingKey,
 			cryptoKey,
-			extra);
+			extra,
+			suggestedEdition);
 
 	}
 
@@ -653,6 +654,28 @@ public class FreenetURI {
 				sb.append(c);
 		}
 		return sb.toString();
+	}
+
+	public FreenetURI setSuggestedEdition(long newEdition) {
+		return new FreenetURI(
+				keyType,
+				docName,
+				metaStr,
+				routingKey,
+				cryptoKey,
+				extra,
+				newEdition);
+	}
+
+	public FreenetURI setKeyType(String newKeyType) {
+		return new FreenetURI(
+				newKeyType,
+				docName,
+				metaStr,
+				routingKey,
+				cryptoKey,
+				extra,
+				suggestedEdition);
 	}
 
 }

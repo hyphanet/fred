@@ -185,7 +185,7 @@ public class InsertableClientSSK extends ClientSSK {
 		}
 	}
 
-	public static InsertableClientSSK createRandom(RandomSource r) {
+	public static InsertableClientSSK createRandom(RandomSource r, String docName) {
 		byte[] ckey = new byte[CRYPTO_KEY_LENGTH];
 		r.nextBytes(ckey);
 		DSAGroup g = Global.DSAgroupBigA;
@@ -198,7 +198,7 @@ public class InsertableClientSSK extends ClientSSK {
 			throw new Error(e);
 		}
 		try {
-			return new InsertableClientSSK("", md.digest(pubKey.asBytes()), pubKey, privKey, ckey);
+			return new InsertableClientSSK(docName, md.digest(pubKey.asBytes()), pubKey, privKey, ckey);
 		} catch (MalformedURLException e) {
 			throw new Error(e);
 		}
