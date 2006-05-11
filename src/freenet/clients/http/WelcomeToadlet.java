@@ -170,18 +170,22 @@ public class WelcomeToadlet extends Toadlet {
 			ClientMetadata contentType = new ClientMetadata(request.getParam("content-type"));
 			String value = request.getParam("data");
 			
-			ctx.getPageMaker().makeHead(buf, "ERROR");
-			buf.append("<div class=\"infobox\">\n");
+			
 			
 			if(key.toString().length()>0 && value.length()>0){
 				InsertBlock block = new InsertBlock(new ArrayBucket(value), contentType, key);
 	            try {
+	            	ctx.getPageMaker().makeHead(buf, "SUCCESS");
+	    			buf.append("<div class=\"infobox\">\n");
+	    			
 	            	key = this.insert(block, false);
-	            	buf.append("The key : <a href=\"/" + key.getKeyType() + key.getGuessableKey() + "\">" +
-	            			key.getKeyType() + key.getGuessableKey() +"</a> has been inserted successfully.<br>");
+	            	buf.append("The key : <a href=\"/" + key.getKeyType() + "@" + key.getGuessableKey() + "\">" +
+	            			key.getKeyType() + "@" + key.getGuessableKey() +"</a> has been inserted successfully.<br>");
 	            	buf.append("Data : <br>"+value+"<br>");
 	            } catch (InserterException e) {
-	            	
+	            	ctx.getPageMaker().makeHead(buf, "ERROR");
+	    			buf.append("<div class=\"infobox\">\n");
+	    			
 	            	buf.append("Error: "+e.getMessage()+"<br>");
 	            	if(e.uri != null)
 	            		buf.append("URI would have been: "+e.uri+"<br>");
