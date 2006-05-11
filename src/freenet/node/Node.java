@@ -124,6 +124,7 @@ public class Node {
 		
 		public void update() {
 			Logger.minor(this, "update()");
+			if(lastIPAddress == null) return; // no point inserting
 			Peer p = new Peer(lastIPAddress, Node.this.portNumber);
 			if(p.strictEquals(lastInsertedAddress)) return;
 			Logger.minor(this, "Inserting ARK because "+p+" != "+lastInsertedAddress);
