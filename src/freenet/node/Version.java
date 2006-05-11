@@ -48,6 +48,7 @@ public abstract class Version {
 	/** Revision number of Version.java as read from CVS */
 	public static final String cvsRevision = "@custom@";
 	
+	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG,Version.class);
 	/**
 	 * @return the node's version designators as an array
 	 */
