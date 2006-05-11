@@ -198,8 +198,10 @@ public class Node {
 			Logger.minor(this, "ARK insert succeeded");
 			synchronized(this) {
 				inserter = null;
-				if(shouldInsert)
+				if(shouldInsert) {
+					shouldInsert = false;
 					startInserter();
+				}
 			}
 		}
 

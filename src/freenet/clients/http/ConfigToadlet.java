@@ -58,6 +58,7 @@ public class ConfigToadlet extends Toadlet {
 							o[j].setValue(request.getParam(prefix+"."+configName));
 						}catch(Exception e){
 							errbuf.append(o[j].getName()+" "+e+"\n");
+							Logger.error(this, "Caught "+e, e);
 						}
 					}
 				}

@@ -135,6 +135,7 @@ public class Peer implements WritableToDataOutputStream {
 		if (this == o) {
 			return true;
 		}
+		if(o == null) return false;
 		if (!(o instanceof Peer)) {
 			return false;
 		}
@@ -236,6 +237,7 @@ public class Peer implements WritableToDataOutputStream {
 	 * known, return it, otherwise return the textual IP address.
 	 */
 	public static String getHostName(InetAddress primaryIPAddress) {
+		if(primaryIPAddress == null) return null;
 		String s = primaryIPAddress.toString();
 		String addr = s.substring(0, s.indexOf('/')).trim();
 		if(addr.length() == 0)
