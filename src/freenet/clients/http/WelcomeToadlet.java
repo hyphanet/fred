@@ -169,19 +169,19 @@ public class WelcomeToadlet extends Toadlet {
 			FreenetURI key = new FreenetURI(request.getParam("key"));
 			ClientMetadata contentType = new ClientMetadata(request.getParam("content-type"));
 			String value = request.getParam("data");
-			String callback = request.getParam("return");
+			
+			ctx.getPageMaker().makeHead(buf, "ERROR");
+			buf.append("<div class=\"infobox\">\n");
 			
 			if(key.toString().length()>0 && value.length()>0){
 				InsertBlock block = new InsertBlock(new ArrayBucket(value), contentType, key);
 	            try {
 	            	key = this.insert(block, false);
-	            	
-	            	// We redirect to the index if not specified
-	            	if (callback==null) callback = "/";
-	            	writePermanentRedirect(ctx,"Next",callback);
+	            	buf.append("The key : <a href=\"/" + key.getKeyType() + key.getGuessableKey() + "\">" +
+	            			key.getKeyType() + key.getGuessableKey() +"</a> has been inserted successfully.<br>");
+	            	buf.append("Data : <br>"+value+"<br>");
 	            } catch (InserterException e) {
-	            	ctx.getPageMaker().makeHead(buf, "ERROR");
-					buf.append("<div class=\"infobox\">\n");
+	            	
 	            	buf.append("Error: "+e.getMessage()+"<br>");
 	            	if(e.uri != null)
 	            		buf.append("URI would have been: "+e.uri+"<br>");
@@ -189,24 +189,19 @@ public class WelcomeToadlet extends Toadlet {
 	            	if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
 	            		buf.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString()+"<br>");
 	            	}
-	            	buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
-	            	buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
-					buf.append("</div>\n");
-					
-					ctx.getPageMaker().makeTail(buf);
-					writeReply(ctx, 200, "text/html", "OK", buf.toString());
 	            }
+	            
 			}else{
 				ctx.getPageMaker().makeHead(buf, "ERROR");
 				buf.append("<div class=\"infobox\">\n");
 				buf.append("Your post form is missing a mandatory parameter!<br />\n");
-				buf.append("<a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
-				buf.append("<a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
-				buf.append("</div>\n");
-				
-				ctx.getPageMaker().makeTail(buf);
-				writeReply(ctx, 200, "text/html", "OK", buf.toString());
 			}
+			buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
+        	buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
+			buf.append("</div>\n");
+			
+			ctx.getPageMaker().makeTail(buf);
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 			
 		}else {
 			this.handleGet(uri, ctx);
