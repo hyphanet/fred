@@ -199,7 +199,7 @@ public class Node {
 			synchronized(this) {
 				inserter = null;
 				if(shouldInsert) {
-					shouldInsert = false;
+					//shouldInsert = false;
 					startInserter();
 				}
 			}
@@ -1785,6 +1785,7 @@ public class Node {
        	InetAddress addr = ipDetector.getAddress();
        	if(addr != null) {
        		lastIPAddress = addr;
+       		shouldInsertARK();
        		return addr;
        	}
    		// Try to pick it up from our connections
