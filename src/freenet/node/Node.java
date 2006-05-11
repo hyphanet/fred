@@ -1281,7 +1281,7 @@ public class Node {
     }
     
     private void shouldInsertARK() {
-    	arkPutter.update();
+    	if(arkPutter!=null) arkPutter.update();
 	}
 
 	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
@@ -1785,7 +1785,7 @@ public class Node {
        	InetAddress addr = ipDetector.getAddress();
        	if(addr != null) {
        		lastIPAddress = addr;
-       		shouldInsertARK();
+       	//	shouldInsertARK();
        		return addr;
        	}
    		// Try to pick it up from our connections
@@ -1809,7 +1809,7 @@ public class Node {
        		if(countsByPeer.size() == 0) return null;
        		Iterator it = countsByPeer.keySet().iterator();
        		if(countsByPeer.size() == 1) {
-				shouldInsertARK();
+		///		shouldInsertARK();
        			return (InetAddress) it.next();
        		}
        		// Pick most popular address
@@ -1835,7 +1835,7 @@ public class Node {
        	else	 {
        		this.alerts.unregister(primaryIPUndetectedAlert);
        	}
-		shouldInsertARK();
+		//shouldInsertARK();
        	return lastIPAddress;
     }
 
