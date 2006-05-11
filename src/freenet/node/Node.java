@@ -737,7 +737,7 @@ public class Node {
     static class NodeInitException extends Exception {
     	// One of the exit codes from above
     	public final int exitCode;
-    	static final long serialVersionUID=0;
+	private static final long serialVersionUID = 0;
     	
     	NodeInitException(int exitCode, String msg) {
     		super(msg+" ("+exitCode+")");

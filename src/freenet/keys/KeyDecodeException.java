@@ -4,7 +4,7 @@ package freenet.keys;
  * Base class for decode exceptions.
  */
 public class KeyDecodeException extends Exception {
-	static final long serialVersionUID = -1;
+	private static final long serialVersionUID = -1;
 	public KeyDecodeException(String message) {
 		super(message);
 	}

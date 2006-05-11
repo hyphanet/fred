@@ -20,7 +20,7 @@ import net.i2p.util.NativeBigInteger;
  * needed for the DSA algorithm
  */
 public class DSAGroup extends CryptoKey {
-	static final long serialVersionUID = -1;
+	private static final long serialVersionUID = -1;
     private static final boolean DEBUG = false;
 
     private BigInteger p, q, g;

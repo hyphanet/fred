@@ -5,7 +5,7 @@ package freenet.node;
  * SimpleFieldSet format (after it has been turned into a SFS).
  */
 public class FSParseException extends Exception {
-	static final long serialVersionUID = -1;
+	private static final long serialVersionUID = -1;
     public FSParseException(Exception e) {
         super(e);
     }

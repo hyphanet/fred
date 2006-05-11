@@ -344,6 +344,7 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 	
 	static class ParseException extends Exception {
+		private static final long serialVersionUID = -1;
 
 		ParseException(String string) {
 			super(string);

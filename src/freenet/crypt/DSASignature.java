@@ -11,7 +11,7 @@ import net.i2p.util.NativeBigInteger;
 
 
 public class DSASignature implements CryptoElement, java.io.Serializable {
-	static final long serialVersionUID = -1;
+	private static final long serialVersionUID = -1;
     private final BigInteger r, s;
     private String toStringCached; //toString() cache 
 

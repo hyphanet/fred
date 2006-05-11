@@ -8,7 +8,7 @@ import freenet.support.Logger;
  * @author amphibian
  */
 public class SimpleRunningAverage implements RunningAverage {
-	static final long serialVersionUID = -1;
+	private static final long serialVersionUID = -1;
     final double[] refs;
     int nextSlotPtr=0;
     int curLen=0;

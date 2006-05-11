@@ -6,7 +6,7 @@ package freenet.keys;
  * Exception thrown when decode fails.
  */
 public class CHKDecodeException extends KeyDecodeException {
-    static final long serialVersionUID = -1;
+    private static final long serialVersionUID = -1;
     /**
      * 
      */

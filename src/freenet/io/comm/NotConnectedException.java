@@ -7,7 +7,7 @@ package freenet.io.comm;
  * not currently connected.
  */
 public class NotConnectedException extends Exception {
-	static final long serialVersionUID = -1;
+	private static final long serialVersionUID = -1;
     public NotConnectedException(String string) {
         super(string);
     }
