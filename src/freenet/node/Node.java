@@ -59,6 +59,7 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
@@ -183,8 +184,10 @@ public class Node {
 					lastInsertedAddress = null;
 				else {
 					try {
-						lastInsertedAddress = new Peer(fs.get("physical.udp"));
+						lastInsertedAddress = new Peer(fs.get("physical.udp"), false);
 					} catch (PeerParseException e1) {
+						Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
+					} catch (UnknownHostException e1) {
 						Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
 					}
 				}
@@ -536,7 +539,7 @@ public class Node {
         if(physical != null) {
         	Peer myOldPeer;
         	try {
-        		myOldPeer = new Peer(physical);
+        		myOldPeer = new Peer(physical, false);
         	} catch (PeerParseException e) {
         		IOException e1 = new IOException();
         		e1.initCause(e);
@@ -801,7 +804,7 @@ public class Node {
 
 			public String get() {
 				if(overrideIPAddress == null) return "";
-				else return Peer.getHostName(overrideIPAddress);
+				else return overrideIPAddress.toString();
 			}
 			
 			public void set(String val) throws InvalidConfigValueException {
@@ -814,9 +817,9 @@ public class Node {
 					shouldInsertARK();
 					return;
 				}
-				InetAddress addr;
+				FreenetInetAddress addr;
 				try {
-					addr = InetAddress.getByName(val);
+					addr = new FreenetInetAddress(val, false);
 				} catch (UnknownHostException e) {
 					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
 				}
@@ -833,7 +836,7 @@ public class Node {
     		overrideIPAddress = null;
     	else {
 			try {
-				overrideIPAddress = InetAddress.getByName(ipOverrideString);
+				overrideIPAddress = new FreenetInetAddress(ipOverrideString, false);
 			} catch (UnknownHostException e) {
 				String msg = "Unknown host: "+ipOverrideString+" in config: "+e.getMessage();
 				Logger.error(this, msg);
@@ -1755,10 +1758,10 @@ public class Node {
      */
     public SimpleFieldSet exportPublicFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet(true);
-        InetAddress ip = getPrimaryIPAddress();
+        FreenetInetAddress ip = getPrimaryIPAddress();
         fs.put("base64", "true");
         if(ip != null)
-        	fs.put("physical.udp", Peer.getHostName(ip)+":"+portNumber);
+        	fs.put("physical.udp", ip.toString()+":"+portNumber);
         fs.put("identity", Base64.encode(myIdentity));
         fs.put("location", Double.toString(lm.getLocation().getValue()));
         fs.put("version", Version.getVersionString());
@@ -1775,11 +1778,11 @@ public class Node {
         return fs;
     }
 
-    InetAddress overrideIPAddress;
+    FreenetInetAddress overrideIPAddress;
     /** IP address from last time */
     InetAddress oldIPAddress;
     /** Last detected IP address */
-    InetAddress lastIPAddress;
+    FreenetInetAddress lastIPAddress;
     
     /**
      * @return Our current main IP address.
@@ -1787,7 +1790,7 @@ public class Node {
      * detection properly with NetworkInterface, and we should use
      * third parties if available and UP&P if available.
      */
-    InetAddress detectPrimaryIPAddress() {
+    FreenetInetAddress detectPrimaryIPAddress() {
         if(overrideIPAddress != null) {
             Logger.minor(this, "Returning overridden address: "+overrideIPAddress);
             lastIPAddress = overrideIPAddress;
@@ -1796,8 +1799,9 @@ public class Node {
         Logger.minor(this, "IP address not overridden");
        	InetAddress addr = ipDetector.getAddress();
        	if(addr != null) {
-       		lastIPAddress = addr;
-       		return addr;
+       		FreenetInetAddress a = new FreenetInetAddress(addr);
+       		lastIPAddress = a;
+       		return a;
        	}
    		// Try to pick it up from our connections
        	if(peers != null) {
@@ -1820,7 +1824,9 @@ public class Node {
        		if(countsByPeer.size() == 0) return null;
        		Iterator it = countsByPeer.keySet().iterator();
        		if(countsByPeer.size() == 1) {
-       			return (InetAddress) it.next();
+           		FreenetInetAddress a = new FreenetInetAddress((InetAddress)it.next());
+           		lastIPAddress = a;
+           		return a;
        		}
        		// Pick most popular address
        		// FIXME use multi-homing here
@@ -1834,10 +1840,10 @@ public class Node {
        				best = cur;
        			}
        		}
-       		lastIPAddress = best;
+       		lastIPAddress = new FreenetInetAddress(best);
        	}
        	else {
-       		lastIPAddress = oldIPAddress;
+       		lastIPAddress = new FreenetInetAddress(oldIPAddress);
        	}
        	if (lastIPAddress == null) {
        		this.alerts.register(primaryIPUndetectedAlert);
@@ -1847,7 +1853,7 @@ public class Node {
        	return lastIPAddress;
     }
 
-    InetAddress getPrimaryIPAddress() {
+    FreenetInetAddress getPrimaryIPAddress() {
     	if(lastIPAddress == null) return detectPrimaryIPAddress();
     	return lastIPAddress;
     }
@@ -2335,12 +2341,12 @@ public class Node {
 		return sskInsertThrottle;
 	}
 
-	InetAddress lastIP;
+	FreenetInetAddress lastIP;
 
 	public void redetectAddress() {
-		InetAddress newIP = detectPrimaryIPAddress();
+		FreenetInetAddress newIP = detectPrimaryIPAddress();
 		shouldInsertARK();
-		if(newIP.equals(lastIP)) return;
+		if(newIP == null || newIP.equals(lastIP)) return;
 		writeNodeFile();
 	}
 	

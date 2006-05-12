@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -192,7 +193,7 @@ public class PeerNode implements PeerContext {
      * @param fs The SimpleFieldSet to parse
      * @param node2 The running Node we are part of.
      */
-    public PeerNode(SimpleFieldSet fs, Node node2) throws FSParseException, PeerParseException {
+    public PeerNode(SimpleFieldSet fs, Node node2, boolean fromLocal) throws FSParseException, PeerParseException {
         this.node = node2;
         boolean base64 = Fields.stringToBool(fs.get("base64"), false);
         String identityString = fs.get("identity");
@@ -233,12 +234,13 @@ public class PeerNode implements PeerContext {
         try{
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null){
-        		Peer p = new Peer(fs.get("physical.udp"));
+        		// Be tolerant of nonexistent domains.
+        		Peer p = new Peer(fs.get("physical.udp"), true);
         		if(p != null)
         			nominalPeer.addElement(p);
         	}else{
 	    		for(int i=0;i<physical.length;i++){		
-					Peer p = new Peer(physical[i]);
+					Peer p = new Peer(physical[i], true);
 				    if(!nominalPeer.contains(p)) 
 				    	nominalPeer.addElement(p);
 	    		}
@@ -322,12 +324,25 @@ public class PeerNode implements PeerContext {
         // Now for the metadata.
         // The metadata sub-fieldset contains data about the node which is not part of the node reference.
         // It belongs to this node, not to the node being described.
+        // Therefore, if we are parsing a remotely supplied ref, ignore it.
+        
+        if(!fromLocal) return;
         
         SimpleFieldSet metadata = fs.subset("metadata");
         
         if(metadata != null) {
         
-        	Peer p = new Peer(metadata.get("detected.udp"));
+        	// Don't be tolerant of nonexistant domains; this should be an IP address.
+        	Peer p;
+			try {
+				p = new Peer(metadata.get("detected.udp"), false);
+			} catch (UnknownHostException e) {
+				p = null;
+				Logger.error(this, "detected.udp = "+metadata.get("detected.udp")+" - "+e, e);
+			} catch (PeerParseException e) {
+				p = null;
+				Logger.error(this, "detected.udp = "+metadata.get("detected.udp")+" - "+e, e);
+			}
         	if(p != null)
         		detectedPeer = p;
         	
@@ -373,10 +388,10 @@ public class PeerNode implements PeerContext {
     	}
     	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
     	InetAddress localhost = node.localhostAddress;
-    	InetAddress nodeIP = node.getPrimaryIPAddress();
+    	InetAddress nodeIP = node.getPrimaryIPAddress().getAddress();
     	if(nodeIP != null && nodeIP.equals(localhost)) return p;
     	if(peerIP != null && peerIP.equals(localhost)) return p;
-	if(nodeIP != null && nodeIP.equals(peerIP)) {
+    	if(nodeIP != null && nodeIP.equals(peerIP)) {
     		Peer[] newPeers = new Peer[p.length+1];
     		System.arraycopy(p, 0, newPeers, 0, p.length);
     		newPeers[newPeers.length-1] = new Peer(node.localhostAddress, detectedPeer.getPort());
@@ -955,11 +970,11 @@ public class PeerNode implements PeerContext {
         try{
         	String physical[]=fs.getAll("physical.udp");
         	if(physical==null){
-        		Peer p = new Peer(fs.get("physical.udp"));
+        		Peer p = new Peer(fs.get("physical.udp"), true);
         		nominalPeer.addElement(p);
         	}else{
 	    		for(int i=0;i<physical.length;i++){		
-					Peer p = new Peer(physical[i]);
+					Peer p = new Peer(physical[i], true);
 				    if(!nominalPeer.contains(p)) 
 				    	nominalPeer.addElement(p);
 	    		}

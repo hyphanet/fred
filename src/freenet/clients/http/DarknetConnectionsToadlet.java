@@ -280,7 +280,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			PeerNode pn;
 			try {
-				pn = new PeerNode(fs, this.node);
+				pn = new PeerNode(fs, this.node, false);
 			} catch (FSParseException e1) {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e1+". Please <a href=\".\">Try again</a>.");
 				return;

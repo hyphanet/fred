@@ -51,7 +51,7 @@ public class ConfigToadlet extends Toadlet {
 				Logger.minor(this, "Setting "+prefix+"."+configName);
 				
 				// we ignore unreconized parameters 
-				if(request.getParam(prefix+"."+configName) != ""){
+				if(request.isParameterSet(prefix+"."+configName)) {
 					if(!(o[j].getValueString().equals(request.getParam(prefix+"."+configName)))){
 						Logger.minor(this, "Setting "+prefix+"."+configName+" to "+request.getParam(prefix+"."+configName));
 						try{

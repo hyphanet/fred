@@ -741,7 +741,7 @@ public class TextModeClientInterface implements Runnable {
         }
         PeerNode pn;
         try {
-            pn = new PeerNode(fs, n);
+            pn = new PeerNode(fs, n, false);
         } catch (FSParseException e1) {
             System.err.println("Did not parse: "+e1);
             Logger.error(this, "Did not parse: "+e1, e1);
