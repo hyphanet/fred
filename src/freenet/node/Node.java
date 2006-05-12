@@ -158,6 +158,11 @@ public class Node {
 			
 			SimpleFieldSet fs = exportPublicFieldSet();
 			
+			// Remove some unnecessary fields that only cause collisions.
+			fs.remove("ark.number");
+			fs.remove("location");
+			//fs.remove("version"); - keep version because of its significance in reconnection
+			
 			String s = fs.toString();
 			
 			byte[] buf;
