@@ -200,7 +200,7 @@ public class Node {
 			synchronized(this) {
 				inserter = null;
 				if(shouldInsert) {
-					//shouldInsert = false;
+					shouldInsert = false;
 					startInserter();
 				}
 			}
