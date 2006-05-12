@@ -11,7 +11,7 @@ public interface ClientKeyBlock {
 	 * @param factory The BucketFactory to use to create the Bucket to return the data in.
 	 * @param maxLength The maximum size of the returned data in bytes.
 	 */
-	Bucket decode(BucketFactory factory, int maxLength) throws KeyDecodeException, IOException;
+	Bucket decode(BucketFactory factory, int maxLength, boolean dontDecompress) throws KeyDecodeException, IOException;
 
 	/**
 	 * Does the block contain metadata? If not, it contains real data.

@@ -28,7 +28,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 
     public static final long MAX_COMPRESSED_DATA_LENGTH = NodeCHK.BLOCK_SIZE - 4;
 	final ClientCHK key;
-    
+	
     public String toString() {
         return super.toString()+",key="+key;
     }
@@ -59,7 +59,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      */
 	public byte[] memoryDecode() throws CHKDecodeException {
 		try {
-			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32*1024);
+			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32*1024, false);
 			return BucketTools.toByteArray(a); // FIXME
 		} catch (IOException e) {
 			throw new Error(e);
@@ -71,7 +71,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
      * @return the original data
      * @throws IOException If there is a bucket error.
      */
-    public Bucket decode(BucketFactory bf, int maxLength) throws CHKDecodeException, IOException {
+    public Bucket decode(BucketFactory bf, int maxLength, boolean dontCompress) throws CHKDecodeException, IOException {
         // Overall hash already verified, so first job is to decrypt.
         if(key.cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)
             throw new UnsupportedOperationException();
@@ -120,7 +120,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         byte[] output = new byte[size];
         // No particular reason to check the padding, is there?
         System.arraycopy(dbuf, 0, output, 0, size);
-        return Key.decompress(key.isCompressed(), output, bf, Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
+        return Key.decompress(dontCompress ? false : key.isCompressed(), output, bf, Math.min(maxLength, MAX_LENGTH_BEFORE_COMPRESSION), key.compressionAlgorithm, false);
     }
 
     /**

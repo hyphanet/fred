@@ -1,6 +1,8 @@
 package freenet.client.async;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.Arrays;
 
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
@@ -10,6 +12,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableUSK;
 import freenet.keys.USK;
 import freenet.support.Bucket;
+import freenet.support.BucketTools;
 import freenet.support.Logger;
 
 /**
@@ -73,6 +76,26 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	public void onFoundEdition(long l, USK key) {
 		edition = Math.max(l, edition);
 		consecutiveCollisions = 0;
+		if(fetcher.lastContentWasMetadata() == isMetadata && fetcher.hasLastData()
+				&& fetcher.lastCompressionCodec() == compressionCodec) {
+			try {
+				byte[] myData = BucketTools.toByteArray(data);
+				byte[] hisData = BucketTools.toByteArray(fetcher.getLastData());
+				fetcher.freeLastData();
+				if(Arrays.equals(myData, hisData)) {
+					// Success!
+					cb.onEncode(pubUSK.copy(edition), this);
+					cb.onSuccess(this);
+					synchronized(this) {
+						finished = true;
+						sbi = null;
+					}
+					return;
+				}
+			} catch (IOException e) {
+				Logger.error(this, "Could not decode: "+e, e);
+			}
+		}
 		fetcher = null;
 		scheduleInsert();
 	}

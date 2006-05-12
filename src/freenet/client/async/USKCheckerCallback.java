@@ -1,5 +1,8 @@
 package freenet.client.async;
 
+import freenet.keys.ClientSSKBlock;
+import freenet.keys.SSKBlock;
+
 /**
  * Callback for a USKChecker
  */
@@ -8,8 +11,9 @@ interface USKCheckerCallback {
 	/** Data Not Found */
 	public void onDNF();
 	
-	/** Successfully found the latest version of the key */
-	public void onSuccess();
+	/** Successfully found the latest version of the key 
+	 * @param block */
+	public void onSuccess(ClientSSKBlock block);
 	
 	/** Error committed by author */
 	public void onFatalAuthorError();

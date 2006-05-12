@@ -1,14 +1,18 @@
 package freenet.client.async;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
 import freenet.client.FetcherContext;
+import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
+import freenet.keys.KeyDecodeException;
 import freenet.keys.USK;
 import freenet.node.RequestStarter;
+import freenet.support.Bucket;
 import freenet.support.Logger;
 
 /**
@@ -74,6 +78,11 @@ public class USKFetcher implements ClientGetState {
 	private boolean cancelled;
 	
 	final ClientRequester parent;
+
+	// We keep the data from the last (highest number) request.
+	private Bucket lastRequestData;
+	private short lastCompressionCodec;
+	private boolean lastWasMetadata;
 	
 	public synchronized boolean addCallback(USKFetcherCallback cb) {
 		if(completed) return false; 
@@ -101,16 +110,16 @@ public class USKFetcher implements ClientGetState {
 			dnf = true;
 			USKFetcher.this.onDNF(this);
 		}
-		public void onSuccess() {
+		public void onSuccess(ClientSSKBlock block) {
 			checker = null;
 			succeeded = true;
-			USKFetcher.this.onSuccess(this, false);
+			USKFetcher.this.onSuccess(this, false, block);
 		}
 		
 		public void onFatalAuthorError() {
 			checker = null;
 			// Counts as success except it doesn't update
-			USKFetcher.this.onSuccess(this, true);
+			USKFetcher.this.onSuccess(this, true, null);
 		}
 		
 		public void onNetworkError() {
@@ -257,7 +266,7 @@ public class USKFetcher implements ClientGetState {
 		}
 	}
 
-	void onSuccess(USKAttempt att, boolean dontUpdate) {
+	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block) {
 		LinkedList l = null;
 		synchronized(this) {
 			if(completed || cancelled) return;
@@ -265,7 +274,19 @@ public class USKFetcher implements ClientGetState {
 			long curLatest = att.number;
 			if(!dontUpdate)
 				uskManager.update(origUSK, curLatest);
-			curLatest = Math.max(uskManager.lookup(origUSK), curLatest);
+			long lastEd = uskManager.lookup(origUSK);
+			if(curLatest >= lastEd) {
+				try {
+					this.lastRequestData = block.decode(ctx.bucketFactory, 1025 /* it's an SSK */, true);
+					this.lastCompressionCodec = block.getCompressionCodec();
+					this.lastWasMetadata = block.isMetadata();
+				} catch (KeyDecodeException e) {
+					lastRequestData = null;
+				} catch (IOException e) {
+					lastRequestData = null;
+				}
+			}
+			curLatest = Math.max(lastEd, curLatest);
 			Logger.minor(this, "Latest: "+curLatest);
 			long addTo = curLatest + minFailures;
 			long addFrom = Math.max(lastAddedEdition + 1, curLatest + 1);
@@ -393,6 +414,27 @@ public class USKFetcher implements ClientGetState {
 	
 	public synchronized void removeSubscriber(USKCallback cb) {
 		subscribers.remove(cb);
+	}
+
+	public boolean hasLastData() {
+		return this.lastRequestData != null;
+	}
+
+	public boolean lastContentWasMetadata() {
+		return this.lastWasMetadata;
+	}
+
+	public short lastCompressionCodec() {
+		return this.lastCompressionCodec;
+	}
+
+	public Bucket getLastData() {
+		return this.lastRequestData;
+	}
+
+	public void freeLastData() {
+		lastRequestData.free();
+		lastRequestData = null;
 	}
 
 }

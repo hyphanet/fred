@@ -7,6 +7,7 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
+import freenet.support.BucketTools;
 
 public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	
@@ -20,6 +21,9 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	private boolean decoded;
 	/** Client-key. This contains the decryption key etc. */
 	private ClientSSK key;
+
+	/** Compression algorithm from last time tried to decompress. */
+	private short compressionAlgorithm = -1;
 	
 	public ClientSSKBlock(byte[] data, byte[] headers, ClientSSK key, boolean dontVerify) throws SSKVerifyException {
 		super(data, headers, (NodeSSK) key.getNodeKey(), dontVerify);
@@ -33,7 +37,7 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 	/**
 	 * Decode the data.
 	 */
-	public Bucket decode(BucketFactory factory, int maxLength) throws KeyDecodeException, IOException {
+	public Bucket decode(BucketFactory factory, int maxLength, boolean dontDecompress) throws KeyDecodeException, IOException {
 		/* We know the signature is valid because it is checked in the constructor. */
 		/* We also know e(h(docname)) is valid */
 		byte[] decryptedHeaders = new byte[ENCRYPTED_HEADERS_LENGTH];
@@ -75,10 +79,14 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 			System.arraycopy(dataOutput, 0, realDataOutput, 0, dataLength);
 			dataOutput = realDataOutput;
 		}
-        short compressionAlgorithm = (short)(((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+2] & 0xff) << 8) + (decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+3] & 0xff));
+        compressionAlgorithm = (short)(((decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+2] & 0xff) << 8) + (decryptedHeaders[DATA_DECRYPT_KEY_LENGTH+3] & 0xff));
+        decoded = true;
+        
+        if(dontDecompress) {
+        	return BucketTools.makeImmutableBucket(factory, dataOutput);
+        }
 
         Bucket b = Key.decompress(compressionAlgorithm >= 0, dataOutput, factory, Math.min(MAX_DECOMPRESSED_DATA_LENGTH, maxLength), compressionAlgorithm, true);
-        decoded = true;
         return b;
 	}
 
@@ -90,6 +98,10 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 
 	public ClientKey getClientKey() {
 		return key;
+	}
+
+	public short getCompressionCodec() {
+		return compressionAlgorithm;
 	}
 
 }
