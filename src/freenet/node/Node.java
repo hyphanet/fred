@@ -1226,6 +1226,8 @@ public class Node {
         ps.start();
         usm.start();
         
+        Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
+        System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
         // Start services
         
         // TMCI

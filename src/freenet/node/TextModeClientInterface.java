@@ -123,9 +123,9 @@ public class TextModeClientInterface implements Runnable {
 	private void printHeader(OutputStream s) throws IOException {
     	StringBuffer sb = new StringBuffer();
     	
-        sb.append("Freenet 0.7 Trivial Node Test Interface\r\n");
+        sb.append("Trivial Text Mode Client Interface\r\n");
         sb.append("---------------------------------------\r\n");
-        sb.append("Build "+Version.buildNumber()+" - "+ Version.cvsRevision+"\r\n");
+        sb.append("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision+"\r\n");
         sb.append("Enter one of the following commands:\r\n");
         sb.append("GET:<Freenet key> - Fetch a key\r\n");
         sb.append("PUT:\r\n<text, until a . on a line by itself> - Insert the document and return the key.\r\n");
@@ -155,7 +155,9 @@ public class TextModeClientInterface implements Runnable {
 //        sb.append("SAY:<text> - send text to the last created/pushed stream\r\n");
         sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
         sb.append("SHUTDOWN - exit the program\r\n");
-        sb.append("QUIT - close the socket\r\n");
+        if(n.directTMCI != this) {
+          sb.append("QUIT - close the socket\r\n");
+        }
         if(n.testnetEnabled) {
         	sb.append("WARNING: TESTNET MODE ENABLED. YOU HAVE NO ANONYMITY.\r\n");
         }
@@ -293,12 +295,18 @@ public class TextModeClientInterface implements Runnable {
             	if(e.newURI != null)
             		outsb.append("Permanent redirect: "+e.newURI+"\r\n");
 			}
-	} else if(uline.startsWith("SHUTDOWN")||(uline.startsWith("QUIT") && n.directTMCI == this)) {
+	} else if(uline.startsWith("SHUTDOWN")) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("Shutting node down.\r\n");
 		out.write(sb.toString().getBytes());
 		out.flush();
 		n.exit();
+	} else if(uline.startsWith("QUIT") && n.directTMCI == this) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("QUIT command not available in console mode.\r\n");
+		out.write(sb.toString().getBytes());
+		out.flush();
+		return false;
         } else if(uline.startsWith("QUIT")) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("Closing connection.\r\n");
