@@ -59,15 +59,9 @@ public class WelcomeToadlet extends Toadlet {
 			this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
 			return;
 		}
-		byte[] d = BucketTools.toByteArray(data);
-		String s = new String(d, "us-ascii");
-		HTTPRequest request;
-		try {
-			request = new HTTPRequest("/", s);
-		} catch (URISyntaxException e) {
-			Logger.error(this, "Impossible: "+e, e);
-			return;
-		}
+		
+		HTTPRequest request = new HTTPRequest(uri,data,ctx);
+		if(request==null) return;
 		
 		StringBuffer buf = new StringBuffer();
 		
@@ -165,46 +159,39 @@ public class WelcomeToadlet extends Toadlet {
 					writeReply(ctx, 200, "text/html", "OK", buf.toString());
 				}
 			}
-		}else if(request.isParameterSet("key")){
-			FreenetURI key = new FreenetURI(request.getParam("key"));
-			ClientMetadata contentType = new ClientMetadata(request.getParam("content-type"));
-			String value = request.getParam("filename");
+		}else if(request.getPartAsString("key",128).length()>0){
 			
-			if(key.toString().length()>0 && value.length()>0){
-				InsertBlock block = new InsertBlock(new ArrayBucket(value), contentType, key);
-	            try {
-	            	ctx.getPageMaker().makeHead(buf, "SUCCESS");
-	    			buf.append("<div class=\"infobox\">\n");
-	    			
-	            	key = this.insert(block, false);
-	            	buf.append("The key : <a href=\"/" + key.getKeyType() + "@" + key.getGuessableKey() + "\">" +
-	            			key.getKeyType() + "@" + key.getGuessableKey() +"</a> has been inserted successfully.<br>");
-	            	buf.append("Data : <br>"+value+"<br>");
-	            } catch (InserterException e) {
-	            	ctx.getPageMaker().makeHead(buf, "ERROR");
-	    			buf.append("<div class=\"infobox\">\n");
-	    			
-	            	buf.append("Error: "+e.getMessage()+"<br>");
-	            	if(e.uri != null)
-	            		buf.append("URI would have been: "+e.uri+"<br>");
-	            	int mode = e.getMode();
-	            	if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
-	            		buf.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString()+"<br>");
-	            	}
-	            }
-	            
-			}else{
-				ctx.getPageMaker().makeHead(buf, "ERROR");
+			FreenetURI key = new FreenetURI(request.getPartAsString("key",128));
+			ClientMetadata contentType = new ClientMetadata(request.getPartAsString("content-type",128));
+			
+			Bucket bucket = request.getPart("filename");
+			InsertBlock block = new InsertBlock(bucket, contentType, key);
+			try {
+				ctx.getPageMaker().makeHead(buf, "Insertion");
 				buf.append("<div class=\"infobox\">\n");
-				buf.append("Your post form is missing a mandatory parameter!<br />\n");
+				
+				key = this.insert(block, false);
+				buf.append("The key : <a href=\"/" + key.getKeyType() + "@" + key.getGuessableKey() + "\">" +
+						key.getKeyType() + "@" + key.getGuessableKey() +"</a> has been inserted successfully.<br>");
+			} catch (InserterException e) {
+				
+				buf.append("Error: "+e.getMessage()+"<br>");
+				if(e.uri != null)
+					buf.append("URI would have been: "+e.uri+"<br>");
+				int mode = e.getMode();
+				if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
+					buf.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString()+"<br>");
+				}
 			}
+			bucket.free();
+			
 			buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
         	buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
 			buf.append("</div>\n");
 			
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
-			
+			request.freeParts();
 		}else {
 			this.handleGet(uri, ctx);
 		}
