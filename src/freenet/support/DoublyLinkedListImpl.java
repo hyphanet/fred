@@ -73,13 +73,13 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     	DoublyLinkedList.Item pos = _headptr.next;
     	DoublyLinkedList.Item opos = _headptr;
     	while(true) {
+    		if(pos == _tailptr) break;
     		if(pos == null) break;
     		pos.setParent(null);
     		pos.setPrev(null);
     		opos = pos;
     		pos = pos.getNext();
     		opos.setNext(null);
-    		if(pos == _tailptr) break;
     	}
         _headptr.next = _tailptr;
         _tailptr.prev = _headptr;
@@ -266,6 +266,8 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      * Inserts item J before item I (going from head to tail).
      */
     public void insertPrev(DoublyLinkedList.Item i, DoublyLinkedList.Item j) {
+    	if (i.getParent() == null)
+    		throw new PromiscuousItemException(i, i.getParent()); // different trace to make easier debugging
     	if (i.getParent() != this)
     		throw new PromiscuousItemException(i, i.getParent());
     	if (j.getParent() != null)
