@@ -123,9 +123,11 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	public void onFailure(LowLevelPutException e) {
 		if(parent.isCancelled())
 			fail(new InserterException(InserterException.CANCELLED));
-		if(e.code == LowLevelPutException.COLLISION)
-			fail(new InserterException(InserterException.COLLISION));
+		
 		switch(e.code) {
+		case LowLevelPutException.COLLISION:
+			fail(new InserterException(InserterException.COLLISION));
+			break;
 		case LowLevelPutException.INTERNAL_ERROR:
 			errors.inc(InserterException.INTERNAL_ERROR);
 			break;
