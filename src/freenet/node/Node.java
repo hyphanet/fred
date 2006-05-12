@@ -124,9 +124,15 @@ public class Node {
 		
 		public void update() {
 			Logger.minor(this, "update()");
-			if(lastIPAddress == null) return; // no point inserting
+			if(lastIPAddress == null) {
+				Logger.minor(this, "Not inserting because no IP address");
+				return; // no point inserting
+			}
 			Peer p = new Peer(lastIPAddress, Node.this.portNumber);
-			if(p.strictEquals(lastInsertedAddress)) return;
+			if(p.strictEquals(lastInsertedAddress)) {
+				Logger.minor(this, "Not inserting ARK because "+p+" equals "+lastInsertedAddress);
+				return;
+			}
 			Logger.minor(this, "Inserting ARK because "+p+" != "+lastInsertedAddress);
 			synchronized(this) {
 				if(inserter != null) {
@@ -804,18 +810,19 @@ public class Node {
 					// Set to null
 					overrideIPAddress = null;
 					lastIPAddress = null;
+					redetectAddress();
 					shouldInsertARK();
 					return;
 				}
 				InetAddress addr;
 				try {
 					addr = InetAddress.getByName(val);
-					shouldInsertARK();
 				} catch (UnknownHostException e) {
 					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
 				}
 				overrideIPAddress = addr;
 				lastIPAddress = null;
+				redetectAddress();
 				shouldInsertARK();
 			}
     		
@@ -1276,6 +1283,7 @@ public class Node {
 		
         persistentTempBucketFactory.completedInit();
 
+        redetectAddress();
         shouldInsertARK();
         
 		Thread t = new Thread(ipDetector, "IP address re-detector");
@@ -1782,6 +1790,7 @@ public class Node {
     InetAddress detectPrimaryIPAddress() {
         if(overrideIPAddress != null) {
             Logger.minor(this, "Returning overridden address: "+overrideIPAddress);
+            lastIPAddress = overrideIPAddress;
             return overrideIPAddress;
         }
         Logger.minor(this, "IP address not overridden");
