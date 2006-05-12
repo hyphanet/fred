@@ -1,5 +1,7 @@
 package freenet.pluginmanager;
 
+import freenet.clients.http.HTTPRequest;
+
 public interface FredPluginHTTP {
 	
 	// Let them return null if unhandled

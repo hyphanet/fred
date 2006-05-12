@@ -18,7 +18,6 @@ import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.Version;
-import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.SimpleFieldSet;

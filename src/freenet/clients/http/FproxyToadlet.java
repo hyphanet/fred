@@ -22,7 +22,6 @@ import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
-import freenet.pluginmanager.HTTPRequest;
 import freenet.pluginmanager.PproxyToadlet;
 import freenet.support.Base64;
 import freenet.support.Bucket;

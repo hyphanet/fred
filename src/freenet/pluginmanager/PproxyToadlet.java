@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.HTTPRequest;
 import freenet.clients.http.Toadlet;
 import freenet.clients.http.ToadletContext;
 import freenet.clients.http.ToadletContextClosedException;

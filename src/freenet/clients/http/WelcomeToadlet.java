@@ -15,7 +15,6 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.UserAlert;
 import freenet.node.Version;
-import freenet.pluginmanager.HTTPRequest;
 import freenet.support.ArrayBucket;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;

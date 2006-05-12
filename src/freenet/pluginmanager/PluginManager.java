@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.jar.JarFile;
 
+import freenet.clients.http.HTTPRequest;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;

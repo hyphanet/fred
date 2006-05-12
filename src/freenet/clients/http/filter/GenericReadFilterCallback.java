@@ -4,8 +4,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import freenet.clients.http.HTTPRequest;
 import freenet.keys.FreenetURI;
-import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Logger;
 import freenet.support.HTMLEncoder;
 import freenet.support.URLEncoder;

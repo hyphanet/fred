@@ -1,4 +1,4 @@
-package freenet.pluginmanager;
+package freenet.clients.http;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import freenet.clients.http.ToadletContext;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.BucketTools;

@@ -8,7 +8,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.Option;
 import freenet.config.SubConfig;
-import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;

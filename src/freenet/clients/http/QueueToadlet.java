@@ -16,7 +16,6 @@ import freenet.node.fcp.ClientPutDir;
 import freenet.node.fcp.ClientRequest;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.MessageInvalidException;
-import freenet.pluginmanager.HTTPRequest;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
