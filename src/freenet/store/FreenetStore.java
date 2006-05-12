@@ -35,8 +35,15 @@ public interface FreenetStore {
     
     /**
      * Store a block.
+     * @throws KeyCollisionException If the key already exists but has different contents.
+     * @param ignoreAndOverwrite If true, overwrite old content rather than throwing a KeyCollisionException. 
      */
-    public void put(KeyBlock block) throws IOException;
+    public void put(SSKBlock block, boolean ignoreAndOverwrite) throws IOException, KeyCollisionException;
+
+    /**
+     * Store a block.
+     */
+    public void put(CHKBlock block) throws IOException;
     
     /**
      * Store a public key.

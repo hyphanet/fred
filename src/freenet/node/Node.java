@@ -89,6 +89,7 @@ import freenet.node.fcp.FCPServer;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
+import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
@@ -1618,10 +1619,12 @@ public class Node {
         synchronized(this) {
         	if(cache) {
         		try {
-        			sskDatastore.put(block);
+        			sskDatastore.put(block, false);
         		} catch (IOException e) {
         			Logger.error(this, "Datastore failure: "+e, e);
-        		}
+        		} catch (KeyCollisionException e) {
+        			throw new LowLevelPutException(LowLevelPutException.COLLISION);
+				}
         	}
             is = makeInsertSender(block, 
                     MAX_HTL, uid, null, false, lm.getLocation().getValue(), cache);
@@ -1674,7 +1677,15 @@ public class Node {
 
         if(is.hasCollided()) {
         	// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
-        	store(is.getBlock());
+        	try {
+        		synchronized(this) {
+        			sskDatastore.put(is.getBlock(), true);
+        		}
+			} catch (KeyCollisionException e) {
+				// Impossible
+			} catch (IOException e) {
+    			Logger.error(this, "Datastore failure: "+e, e);
+			}
         	throw new LowLevelPutException(LowLevelPutException.COLLISION);
         }
         
@@ -2034,9 +2045,9 @@ public class Node {
         }
     }
 
-    public synchronized void store(SSKBlock block) {
+    public synchronized void store(SSKBlock block) throws KeyCollisionException {
     	try {
-    		sskDatastore.put(block);
+    		sskDatastore.put(block, false);
     		cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey());
     	} catch (IOException e) {
     		Logger.error(this, "Cannot store data: "+e, e);

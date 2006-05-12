@@ -18,6 +18,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 
@@ -398,6 +399,8 @@ public final class RequestSender implements Runnable {
 			Logger.error(this, "Failed to verify: "+e+" from "+next, e);
 			finish(VERIFY_FAILURE, next);
 			return;
+		} catch (KeyCollisionException e) {
+			Logger.normal(this, "Collision on "+this);
 		}
 	}
 
@@ -427,7 +430,11 @@ public final class RequestSender implements Runnable {
     		node.store(block);
     	} else if (key instanceof NodeSSK) {
     		SSKBlock block = new SSKBlock(data, headers, (NodeSSK)key, false);
-    		node.store(block);
+    		try {
+				node.store(block);
+			} catch (KeyCollisionException e) {
+				Logger.normal(this, "Collision on "+this);
+			}
     	}
 	}
 

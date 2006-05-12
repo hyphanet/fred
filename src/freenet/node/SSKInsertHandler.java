@@ -12,6 +12,7 @@ import freenet.io.xfer.BlockReceiver;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 
@@ -291,7 +292,11 @@ public class SSKInsertHandler implements Runnable {
     	Logger.minor(this, "Finishing");
     	
     	if(canCommit) {
-    		node.store(block);
+    		try {
+				node.store(block);
+			} catch (KeyCollisionException e) {
+				Logger.normal(this, "Collision on "+this);
+			}
     	}
     }
     

@@ -411,10 +411,84 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 //    	return null;
     }
 
-    /**
+    public void put(CHKBlock b) throws IOException {
+		NodeCHK chk = (NodeCHK) b.getKey();
+		CHKBlock oldBlock = fetch(chk, false);
+		if(oldBlock != null)
+			return;
+		innerPut(b);
+    }
+    
+    public void put(SSKBlock b, boolean overwrite) throws IOException, KeyCollisionException {
+		NodeSSK ssk = (NodeSSK) b.getKey();
+		SSKBlock oldBlock = fetch(ssk, false);
+		if(oldBlock != null) {
+			if(!b.equals(oldBlock)) {
+				if(!overwrite)
+					throw new KeyCollisionException();
+				else {
+					if(overwrite(b)) {
+						fetch(ssk, false); // promote it
+						return;
+					}
+				}
+			}
+			return;
+		}
+		innerPut(b);
+    }
+    
+    private boolean overwrite(SSKBlock b) throws IOException {
+    	NodeSSK chk = (NodeSSK) b.getKey();
+    	byte[] routingkey = chk.getRoutingKey();
+    	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+    	DatabaseEntry blockDBE = new DatabaseEntry();
+    	Cursor c = null;
+    	Transaction t = null;
+    	try{
+    		t = environment.beginTransaction(null,null);
+    		c = chkDB.openCursor(t,null);
+    		
+    		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
+    				!=OperationStatus.SUCCESS) {
+    			c.close();
+    			t.abort();
+    			return false;
+    		}
+
+	    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+	    		    	
+	    	byte[] header = b.getRawHeaders();
+	    	byte[] data = b.getRawData();
+	    	synchronized(chkStore) {
+		    	chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+			
+		    	chkStore.write(header);
+		    	chkStore.write(data);
+	    	}
+	    		
+	    } catch(Throwable ex) {  // FIXME: ugly  
+	    	if(c!=null) {
+	    		try{c.close();}catch(DatabaseException ex2){}
+	    	
+	    	}
+	    	if(t!=null) {
+	    		try{t.abort();}catch(DatabaseException ex2){}
+	    	}
+	
+	    	checkSecondaryDatabaseError(ex);
+    		Logger.error(this, "Caught "+ex, ex);
+    		ex.printStackTrace();
+        	throw new IOException(ex.getMessage());
+        }
+	    	
+    	return true;
+	}
+
+	/**
      * Store a block.
      */
-    public void put(KeyBlock block) throws IOException
+    void innerPut(KeyBlock block) throws IOException
     {   	
     	if(closed)
     		return;
