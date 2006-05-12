@@ -499,10 +499,6 @@ public class HTTPRequest {
 			
 			this.parts.put(name, filedata);
 		}
-		
-		if (filedata != null) {
-			this.bucketfactory.freeBucket(filedata);
-		}
 	}
 	
 	public Bucket getPart(String name) {

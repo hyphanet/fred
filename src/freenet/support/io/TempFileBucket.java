@@ -135,6 +135,7 @@ public class TempFileBucket extends FileBucket {
 	 * @return    Success
 	 */
 	public synchronized boolean release() {
+		Logger.minor(this, "Releasing bucket: "+file, new Exception("debug"));
 		//System.err.println("FproxyServlet.TempFileBucket -- release: " +                      // file.getAbsolutePath());
 
 		//System.err.println("CALL STACK: ");
