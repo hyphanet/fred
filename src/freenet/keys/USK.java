@@ -59,7 +59,16 @@ public class USK extends BaseClientKey {
 		this.siteName = siteName2;
 		this.suggestedEdition = suggestedEdition2;
 		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
-		siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
+			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
+	}
+
+	public USK(ClientSSK ssk, long myARKNumber) {
+		this.pubKeyHash = ssk.pubKeyHash;
+		this.cryptoKey = ssk.cryptoKey;
+		this.siteName = ssk.docName;
+		this.suggestedEdition = myARKNumber;
+		hashCode = Fields.hashCode(pubKeyHash) ^ Fields.hashCode(cryptoKey) ^
+			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
 
 	public FreenetURI getURI() {
@@ -102,6 +111,10 @@ public class USK extends BaseClientKey {
 
 	public int hashCode() {
 		return hashCode;
+	}
+
+	public FreenetURI getBaseSSK() {
+		return new FreenetURI("SSK", siteName, pubKeyHash, cryptoKey, ClientSSK.getExtraBytes());
 	}
 	
 }

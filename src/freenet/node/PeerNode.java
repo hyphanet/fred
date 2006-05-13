@@ -7,15 +7,16 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.LinkedList;
+import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
-import java.util.Vector;
-import java.util.Hashtable;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DiffieHellmanContext;
@@ -23,12 +24,16 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
+import freenet.keys.ClientSSK;
+import freenet.keys.FreenetURI;
+import freenet.keys.USK;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -37,7 +42,6 @@ import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.WouldBlockException;
-import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -101,6 +105,16 @@ public class PeerNode implements PeerContext {
      */
     private boolean isConnected;
     
+    /**
+     * ARK fetcher.
+     */
+    private final ARKFetcher arkFetcher;
+    
+    /** My ARK SSK public key */
+    private USK myARK;
+    
+    /** My ARK sequence number */
+    private long myARKNumber;
     
     /** Current location in the keyspace */
     private Location currentLocation;
@@ -320,6 +334,14 @@ public class PeerNode implements PeerContext {
         // So go for a filter.
         pingAverage = 
         	new TimeDecayingRunningAverage(1, 60000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
+
+        
+        
+        // ARK stuff.
+
+        parseARK(fs);
+        
+        arkFetcher = new ARKFetcher(this, node);
         
         // Now for the metadata.
         // The metadata sub-fieldset contains data about the node which is not part of the node reference.
@@ -350,7 +372,39 @@ public class PeerNode implements PeerContext {
         
     }
 
-    private void randomizeMaxTimeBetweenPacketSends() {
+    private boolean parseARK(SimpleFieldSet fs) {
+        USK ark = null;
+        long arkNo = 0;
+        try {
+        	String arkNumber = fs.get("ark.number");
+        	
+        	if(arkNumber != null) {
+        		arkNo = Long.parseLong(arkNumber);
+        	}
+        	
+        	String arkPubKey = fs.get("ark.pubURI");
+        	if(arkPubKey != null) {
+        		FreenetURI uri = new FreenetURI(arkPubKey);
+        		ClientSSK ssk = new ClientSSK(uri);
+        		ark = new USK(ssk, myARKNumber);
+        	}
+        } catch (MalformedURLException e) {
+        	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
+        } catch (NumberFormatException e) {
+        	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
+        }
+
+        if(ark != null) {
+        	if(myARKNumber != arkNo || myARK != ark) {
+        		myARKNumber = arkNo;
+        		myARK = ark;
+        		return true;
+        	}
+        }
+        return false;
+	}
+
+	private void randomizeMaxTimeBetweenPacketSends() {
         int x = Node.KEEPALIVE_INTERVAL;
         x += node.random.nextInt(x);
     }
@@ -388,7 +442,8 @@ public class PeerNode implements PeerContext {
     	}
     	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
     	InetAddress localhost = node.localhostAddress;
-    	InetAddress nodeIP = node.getPrimaryIPAddress().getAddress();
+    	FreenetInetAddress nodeAddr = node.getPrimaryIPAddress();
+    	InetAddress nodeIP = nodeAddr == null ? null : nodeAddr.getAddress();
     	if(nodeIP != null && nodeIP.equals(localhost)) return p;
     	if(peerIP != null && peerIP.equals(localhost)) return p;
     	if(nodeIP != null && nodeIP.equals(peerIP)) {
@@ -995,6 +1050,8 @@ public class PeerNode implements PeerContext {
         }
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
+        if(parseARK(fs))
+        	changedAnything = true;
         if(!name.equals(myName)) changedAnything = true;
         myName = name;
         if(changedAnything) node.peers.writePeers();
@@ -1097,6 +1154,10 @@ public class PeerNode implements PeerContext {
         fs.put("testnet", Boolean.toString(testnetEnabled));
         fs.put("version", version);
         fs.put("myName", myName);
+        if(myARK != null) {
+        	fs.put("ark.number", Long.toString(this.myARKNumber));
+        	fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));
+        }
         return fs;
     }
 
