@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.ClientMetadata;
-import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
-import freenet.clients.http.filter.MIMEType;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
@@ -18,7 +16,6 @@ import freenet.support.Bucket;
 public class BlackOpsToadlet extends Toadlet {
 	Node node;
 	SubConfig config;
-	BookmarkManager bookmarks;
 	
 	BlackOpsToadlet(HighLevelSimpleClient client, Node n) {
 		super(client);
@@ -34,7 +31,9 @@ public class BlackOpsToadlet extends Toadlet {
 		
 
 			FreenetURI key = new FreenetURI(request.getPartAsString("key",128));
-			ClientMetadata contentType = new ClientMetadata(request.getPartAsString("content-type",128));
+			String type = request.getPartAsString("content-type",128);
+			if(type==null) type = "text/plain";
+			ClientMetadata contentType = new ClientMetadata(type);
 			
 			Bucket bucket = request.getPart("filename");
 			
