@@ -43,6 +43,7 @@ public class UdpSocketManager extends Thread {
 	private boolean _active = true;
 	private boolean _isDone = false;
 	private static UdpSocketManager _usm;
+	private static final int MAX_UNMATCHED_FIFO_SIZE = 5000;
 
 	protected UdpSocketManager() {
 	}
@@ -319,7 +320,7 @@ public class UdpSocketManager extends Thread {
 					}
 				}
 				if(!matched) {
-				    while (_unclaimed.size() > 500) {
+				    while (_unclaimed.size() > MAX_UNMATCHED_FIFO_SIZE) {
 				        Message removed = (Message)_unclaimed.removeFirst();
 				        Logger.normal(this, "Dropping unclaimed: "+removed);
 				    }

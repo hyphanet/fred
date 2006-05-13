@@ -124,6 +124,11 @@ public class PacketSender implements Runnable {
                 }
 
                 if(node.packetMangler == null) continue;
+                if(pn.isBackedOff()) {
+                    if(pn.hasQueuedMessageItems() || (now - pn.lastSentPacketTime() > Node.KEEPALIVE_INTERVAL))
+                        Logger.debug(this, pn.getPeer()+" is backed off; Won't try to send queued messages and/or keepalive packet");
+                    continue;
+                }
                 // Any messages to send?
                 MessageItem[] messages = null;
                 messages = pn.grabQueuedMessageItems();
