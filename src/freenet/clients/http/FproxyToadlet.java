@@ -327,6 +327,10 @@ public class FproxyToadlet extends Toadlet {
 			
 			QueueToadlet queueToadlet = new QueueToadlet(node.getFCPServer(), client);
 			server.register(queueToadlet, "/queue/", true);
+			
+			BlackOpsToadlet servletoadlet = new BlackOpsToadlet(client, node);
+			server.register(servletoadlet, "/system/", true);
+			
 
 		} catch (IOException ioe) {
 			Logger.error(node,"Failed to start fproxy: "+ioe, ioe);
