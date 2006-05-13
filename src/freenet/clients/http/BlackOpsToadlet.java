@@ -11,6 +11,7 @@ import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Bucket;
+import freenet.support.MultiValueTable;
 
 
 public class BlackOpsToadlet extends Toadlet {
@@ -54,21 +55,41 @@ public class BlackOpsToadlet extends Toadlet {
 					buf.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString()+"<br>");
 				}
 			}
-			bucket.free();
+			
 			
 			buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
         	buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
 			buf.append("</div>\n");
 			
-			request.freeParts();
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			request.freeParts();
+			bucket.free();
 	}
 	
-	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {}
+	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		StringBuffer buf = new StringBuffer();
+		
+		ctx.getPageMaker().makeHead(buf, "Basic NIM form");
+		
+		buf.append("<div><form action=\"/system/\" method=\"POST\" enctype=\"multipart/form-data\">");
+		buf.append("key : <input type=\"text\" value=\"KSK@key\" ><br>");
+		buf.append("metadata : <select name=\"content-type\">");
+		buf.append("<option value=\"text/plain\">text/plain</option>");
+		buf.append("<option value=\"text/html\">text/html</option>");
+		buf.append("<option value=\"audio/mpeg\">MP3 music</option>");
+		buf.append("<option value=\"application/octet-stream\">application/octet-stream</option>");
+		buf.append("</select><br>");
+		buf.append("file: <input type=\"file\" name=\"filename\" value=\"/path/to/file\"><br>");
+		buf.append("<input type=\"submit\"><input type=\"reset\"><br>");
+		buf.append("</form><div>");
+		
+		ctx.getPageMaker().makeTail(buf);
+		
+		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		}
 		
 	public String supportedMethods() {
-		return "POST";
+		return "GET, POST";
 	}
 }
-
