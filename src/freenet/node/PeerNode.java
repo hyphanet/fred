@@ -468,13 +468,6 @@ public class PeerNode implements PeerContext {
     	disconnected();
     }
     
-    public boolean hasQueuedMessageItems() {
-        synchronized(messagesToSendNow) {
-            if(messagesToSendNow.size() == 0) return false;
-            return true;
-        }
-    }
-
     /**
      * Grab all queued Message's.
      * @return Null if no messages are queued, or an array of
