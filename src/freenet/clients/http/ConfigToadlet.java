@@ -111,7 +111,7 @@ public class ConfigToadlet extends Toadlet {
 			}
 			*/
 			
-			buf.append("<ul class=\"config\">\n");
+			buf.append("<ul class=\"config\"><span class=\"configprefix\">"+sc[i].getPrefix()+"</span>\n");
 			
 			for(int j=0; j<o.length; j++){
 				String configName = o[j].getName();
@@ -125,7 +125,7 @@ public class ConfigToadlet extends Toadlet {
 				buf.append("<li><span class=\"configdesc\">");
 				buf.append(o[j].getShortDesc());
 				buf.append("</span> <span class=\"configkey\">");
-				buf.append(sc[i].getPrefix()+"."+configName+"</span><input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
+				buf.append(configName+"</span><input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
 						" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+o[j].getValueString()+"\" /></li>\n");
 			}
 			
