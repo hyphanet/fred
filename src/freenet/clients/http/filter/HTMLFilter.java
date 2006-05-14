@@ -972,20 +972,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		
 		// FIXME no form support for now; when we have NIM posting support, reinstate, and
 		// LIMIT TO METHOD=GET !!!
+		// nextgens : Why ? spiders ?
 		
-//		allowedTagsVerifiers.put(
-//			"form",
-//			new CoreTagVerifier(
-//				"form",
-//				new String[] {
-//					"method",
-//					"name",
-//					"enctype",
-//					"accept",
-//					"accept-charset",
-//					"target" },
-//				new String[] { "action" },
-//				new String[] { "onsubmit", "onreset" }));
+		allowedTagsVerifiers.put(
+			"form",
+			new CoreTagVerifier(
+				"form",
+				new String[] {
+					"method",
+					"name",
+					"enctype",
+					"accept",
+					"accept-charset",
+					"target" },
+				new String[] { "action" },
+				new String[] { "onsubmit", "onreset" }));
 		allowedTagsVerifiers.put(
 			"input",
 			new CoreTagVerifier(
