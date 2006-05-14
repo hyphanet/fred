@@ -453,11 +453,11 @@ public class HTTPRequest {
 				
 				for (int i = 0; i < valueparts.length; i++) {
 					String[] subparts = valueparts[i].split("=");
-					if (valueparts.length <= 2) {
+					if (subparts.length != 2) {
 						continue;
 					}
 					if (hdrname.equalsIgnoreCase("Content-Disposition")) {
-						if (subparts[0].trim().equalsIgnoreCase("filename")) {
+						if (subparts[0].trim().equalsIgnoreCase("name")) {
 							name = subparts[1].trim();
 							if (name.charAt(0) == '"') name = name.substring(1);
 							if (name.charAt(name.length() - 1) == '"')
@@ -504,7 +504,6 @@ public class HTTPRequest {
 	public Bucket getPart(String name) {
 		return (Bucket)this.parts.get(name);
 	}
-	
 	
 	public boolean isPartSet(String name) {
 		return this.parts.containsKey(name);
