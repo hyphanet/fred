@@ -250,7 +250,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						ref += line+"\n";
 					}
 				} catch (IOException e) {
-					this.sendErrorPage(ctx, 200, "OK", "Failed to add node: Unable to retrieve node reference from "+urltext+".");
+					this.sendErrorPage(ctx, 200, "Failed to Add Node", "Failed to add node: Unable to retrieve node reference from "+urltext+".");
 				} finally {
 					if( in != null ){
 						in.close();
@@ -261,7 +261,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n");
 			} else {
-				this.sendErrorPage(ctx, 200, "OK", "Failed to add node: Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed to Add Node", "Failed to add node: Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
 				request.freeParts();
 				return;
 			}
