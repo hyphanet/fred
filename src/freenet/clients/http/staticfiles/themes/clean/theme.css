@@ -117,6 +117,64 @@ body {
 	color: green;
 }
 
+/* infoboxes */
+
+div.infobox {
+	margin: 0 0 5px 0;
+	padding: 10px;
+	background-color: #f0f0f0;
+	border: 1px solid #d0d0d0;
+}
+
+div.infobox div.infobox-header {
+	margin: -10px -10px 10px -10px;
+	padding: 10px;
+	border-bottom: 1px dotted #a0a0a0;
+	font-weight: bold;
+	font-size: 11pt;
+	background-color: #e8e8e8;
+	background-repeat: no-repeat;
+	background-position: right;
+}
+
+div.infobox-information div.infobox-header {
+	background-color: #e8e8f0;
+	background-image: url(information.gif);
+}
+
+div.infobox-warning div.infobox-header {
+	background-color: #f8f8c0;
+	background-image: url(warning.gif);
+}
+
+div.infobox-alert {
+	background-color: #f0e8e8;
+}
+
+div.infobox-alert div.infobox-header {
+	background-color: #ffd0d0;
+	background-image: url(alert.gif);
+}
+
+div.infobox-error {
+	background-color: #f0e8e8;
+}
+
+div.infobox-error div.infobox-header {
+	background-color: #ffd0d0;
+	background-image: url(error.gif);
+}
+
+div.infobox-query div.infobox-header {
+	background-color: #f0f0e8;
+	background-image: url(query.gif);
+}
+
+div.infobox-success div.infobox-header {
+	background-color: #e8f0e8;
+	background-image: url(success.gif);
+}
+
 /* content */
 
 #content {
@@ -134,22 +192,6 @@ a:hover {
 	color: #ff0000;
 }
 
-.infobox {
-	margin: 0 0 5px 0;
-	padding: 10px;
-	background-color: #f0f0f0;
-	border: 1px solid #d0d0d0;
-}
-
-.infobox h2 {
-	margin: -10px -10px 10px -10px;
-	padding: 10px;
-	border-bottom: 1px dotted #a0a0a0;
-	font-weight: bold;
-	font-size: 11pt;
-	background-color: #e8e8e8;
-}
-
 .interfacelink {
 	color: #000000;
 	text-decoration: underline;
@@ -163,40 +205,41 @@ a:hover {
 
 /* configuration page */
 
-.config ul {
+ul.config {
 	margin: 0 0 5px 0;
 	padding: 0;
 	border: 1px solid #d0d0d0;
 }
 
-.config li {
+ul.config li {
 	margin: 0;
 	padding: 15px;
 	list-style: none;
 	text-align: right;
 }
 
-.config span.configdesc {
+ul.config span.configdesc {
 	display: block;
 	text-align: center;
 	font-weight: bold;
 }
 
-.config span.configkey {
+ul.config span.configkey {
 	padding: 0 10px 0 0;
 }
 
-.config span.configprefix {
+ul.config span.configprefix {
 	margin: 0 0 0 15px;
 	font-variant: small-caps;
 	font-size: 16pt;
 	font-weight: bold;
 }
 
-.config input[type=text] {
+ul.config input[type=text] {
 	width: 300px;
 }
 
+/*
 .cancel {
 	float: left;
 }
@@ -204,6 +247,7 @@ a:hover {
 .confirm {
 	float: right;
 }
+*/
 
 /* darknet page */
 
@@ -247,4 +291,3 @@ table.receivedmessagetypes {
 table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
 	font-size: 7pt;
 }
-

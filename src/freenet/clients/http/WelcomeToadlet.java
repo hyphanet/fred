@@ -64,11 +64,14 @@ public class WelcomeToadlet extends Toadlet {
 		
 		if (request.getParam("shutdownconfirm").length() > 0) {
 			// false for no navigation bars, because that would be very silly
-			ctx.getPageMaker().makeHead(buf, "Node Shut down", false);
-			buf.append("<div class=\"infobox\">\n");
+			ctx.getPageMaker().makeHead(buf, "Node Shutdown", false);
+			buf.append("<div class=\"infobox infobox-information\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
 			buf.append("The Freenet node has been successfully shut down\n");
-			buf.append("<br />\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
 			buf.append("Thank you for using Freenet\n");
+			buf.append("</div>\n");
 			buf.append("</div>\n");
 			ctx.getPageMaker().makeTail(buf);
 				
@@ -76,18 +79,18 @@ public class WelcomeToadlet extends Toadlet {
 			this.node.exit();
 		} else if (request.getParam("exit").equalsIgnoreCase("true")) {
 			ctx.getPageMaker().makeHead(buf, "Node Shutdown");
+			buf.append("<div class=\"infobox infobox-query\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("Node Shutdown?\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("Are you sure you wish to shut down your Freenet node?\n");
 			buf.append("<form action=\"/\" method=\"post\">\n");
-			buf.append("<div class=\"infobox\">\n");
-			buf.append("Are you sure you wish to shut down your Freenet node?<br />\n");
-			buf.append("<div class=\"cancel\">\n");
 			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"confirm\">\n");
 			buf.append("<input type=\"submit\" name=\"shutdownconfirm\" value=\"Shut Down\" />\n");
-			buf.append("</div>\n");
-			buf.append("<br style=\"clear: all;\">\n");
-			buf.append("</div>\n");
 			buf.append("</form>\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 		} else if (request.isParameterSet("addbookmark")) {
@@ -147,7 +150,11 @@ public class WelcomeToadlet extends Toadlet {
 					alerts[i].isValid(false);
 
 					ctx.getPageMaker().makeHead(buf, "Configuration Applied");
-					buf.append("<div class=\"infobox\">\n");
+					buf.append("<div class=\"infobox infobox-success\">\n");
+					buf.append("<div class=\"infobox-header\">\n");
+					buf.append("Configuration Applied\n");
+					buf.append("</div>\n");
+					buf.append("<div class=\"infobox-content\">\n");
 					buf.append("Your configuration changes were applied successfully<br />\n");
 					buf.append("<a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
 					buf.append("</div>\n");
@@ -168,12 +175,20 @@ public class WelcomeToadlet extends Toadlet {
 				InsertBlock block = new InsertBlock(bucket, contentType, key);
 				try {
 					ctx.getPageMaker().makeHead(buf, "Insertion");
-					buf.append("<div class=\"infobox\">\n");
 					key = this.insert(block, false);
+					buf.append("<div class=\"infobox infobox-success\">\n");
+					buf.append("<div class=\"infobox-header\">\n");
+					buf.append("Insert Succeeded\n");
+					buf.append("</div>\n");
+					buf.append("<div class=\"infobox-content\">\n");
 					buf.append("The key : <a href=\"/" + key.getKeyType() + "@" + key.getGuessableKey() + "\">" +
 							key.getKeyType() + "@" + key.getGuessableKey() +"</a> has been inserted successfully.<br>");
 				} catch (InserterException e) {
-					
+					buf.append("<div class=\"infobox infobox-error\">\n");
+					buf.append("<div class=\"infobox-header\">\n");
+					buf.append("Insert Failed\n");
+					buf.append("</div>\n");
+					buf.append("<div class=\"infobox-content\">\n");
 					buf.append("Error: "+e.getMessage()+"<br>");
 					if(e.uri != null)
 						buf.append("URI would have been: "+e.uri+"<br>");
@@ -184,7 +199,8 @@ public class WelcomeToadlet extends Toadlet {
 				}
 				
 				buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
-	        	buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
+				buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
+				buf.append("</div>\n");
 				buf.append("</div>\n");
 				
 				ctx.getPageMaker().makeTail(buf);
@@ -201,10 +217,14 @@ public class WelcomeToadlet extends Toadlet {
 		
 		HTTPRequest request = new HTTPRequest(uri);
 		if (request.getParam("newbookmark").length() > 0) {
-			ctx.getPageMaker().makeHead(buf, "Add a Bookmark");
+			ctx.getPageMaker().makeHead(buf, "Add A Bookmark");
 			
+			buf.append("<div class=\"infobox infobox-query\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("Confirm action\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
 			buf.append("<form action=\".\" method=\"post\">\n");
-			buf.append("<div>\n");
 			buf.append("Please confirm that you wish to add the key:<br />\n");
 			buf.append("<i>"+request.getParam("newbookmark")+"</i><br />");
 			buf.append("To your bookmarks, and enter the description that you would prefer:<br />\n");
@@ -212,8 +232,9 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("<input type=\"text\" name=\"name\" value=\""+HTMLEncoder.encode(request.getParam("desc"))+"\" style=\"width: 100%; \" />\n");
 			buf.append("<input type=\"hidden\" name=\"key\" value=\""+HTMLEncoder.encode(request.getParam("newbookmark"))+"\" />\n");
 			buf.append("<input type=\"submit\" name=\"addbookmark\" value=\"Add Bookmark\" />\n");
-			buf.append("</div>\n");
 			buf.append("</form>\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
 			
 			ctx.getPageMaker().makeTail(buf);
 		
@@ -223,9 +244,12 @@ public class WelcomeToadlet extends Toadlet {
 			ctx.getPageMaker().makeHead(buf, "Bookmark Manager");
 			
 			// existing bookmarks
+			buf.append("<div class=\"infobox infobox-normal\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("My Bookmarks\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
 			buf.append("<form action=\".\" method=\"post\">\n");
-			buf.append("<div class=\"infobox\">\n");
-			buf.append("<h2>My Bookmarks</h2>\n");
 			Enumeration e = bookmarks.getBookmarks();
 			if (!e.hasMoreElements()) {
 				buf.append("<i>You currently have no bookmarks defined</i>");
@@ -246,8 +270,9 @@ public class WelcomeToadlet extends Toadlet {
 				buf.append("</ul>\n");
 			}
 			buf.append("<input type=\"hidden\" name=\"managebookmarks\" value=\"yes\" />\n");
-			buf.append("</div>\n");
 			buf.append("</form>\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
 			
 			// new bookmark
 			this.makeBookmarkEditForm(buf, MODE_ADD, null, "", "", null);
@@ -260,15 +285,30 @@ public class WelcomeToadlet extends Toadlet {
 		
 		
 		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage");
-		if(node.isTestnetEnabled())
-			buf.append("<div style=\"color: red; font-size: 200%; \">WARNING: TESTNET MODE ENABLED</div>");
+		if(node.isTestnetEnabled()) {
+			buf.append("<div class=\"infobox infobox-alert\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("Testnet mode!\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("This node runs in testnet node. This WILL seriously jeopardize your anonymity!\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+		}
 		
 		String useragent = (String)ctx.getHeaders().get("user-agent");
 		
 		if (useragent != null) {
 			useragent = useragent.toLowerCase();
 			if (useragent.indexOf("msie") > -1 && useragent.indexOf("opera") == -1) {
-				buf.append("<div style=\"color: darkred\"><b>Warning</b>: You appear to be using Internet Explorer. This means that some sites within Freenet may be able to compromise your anonymity.</div>");
+				buf.append("<div class=\"infobox infobox-alert\">\n");
+				buf.append("<div class=\"infobox-header\">\n");
+				buf.append("Security risk!\n");
+				buf.append("</div>\n");
+				buf.append("<div class=\"infobox-content\">\n");
+				buf.append("You appear to be using Internet Explorer. This means that some sites within Freenet may be able to compromise your anonymity!\n");
+				buf.append("</div>\n");
+				buf.append("</div>\n");
 			}
 		}
 
@@ -277,18 +317,24 @@ public class WelcomeToadlet extends Toadlet {
 		node.alerts.toHtml(buf);
 		
 		// Fetch-a-key box
-		buf.append("<br style=\"clear: all; \" />\n");
+		buf.append("<div class=\"infobox infobox-normal\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append("Fetch a Key\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form action=\"/\" method=\"get\">\n");
-		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2>Fetch a Key</h2>\n");
 		buf.append("Key: <input type=\"text\" size=\"80\" name=\"key\"/>\n");
 		buf.append("<input type=\"submit\" value=\"Fetch\" />\n");
-		buf.append("</div>\n");
 		buf.append("</form>\n");
+		buf.append("</div>\n");
+		buf.append("</div>\n");
 		
 		// Bookmarks
-		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2>My Bookmarks</h2>");
+		buf.append("<div class=\"infobox infobox-normal\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append("My Bookmarks\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
 		
 		Enumeration e = bookmarks.getBookmarks();
 		if (!e.hasMoreElements()) {
@@ -308,15 +354,20 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("<a href=\"?managebookmarks\" class=\"interfacelink\">Edit My Bookmarks</a>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
+		buf.append("</div>\n");
 		
 		// Version info
-		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2>Version</h2>");
+		buf.append("<div class=\"infobox infobox-information\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append("Version\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("Freenet version "+Version.nodeVersion+" build #"+Version.buildNumber()+" r"+Version.cvsRevision);
 		if(Version.buildNumber() < Version.highestSeenBuild) {
 			buf.append("<br />");
 			buf.append("<b>A newer version is available! (Build #"+Version.highestSeenBuild+")</b>");
 		}
+		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
 		// Quit Form
@@ -327,13 +378,17 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("</form>\n");
 		
 		// Activity
-		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2>Current Activity</h2>\n");
+		buf.append("<div class=\"infobox infobox-information\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append("Current Activity\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<ul id=\"activity\">\n"
 				+ "<li>Inserts: "+this.node.getNumInserts()+"</li>\n"
 				+ "<li>Requests: "+this.node.getNumRequests()+"</li>\n"
 				+ "<li>Transferring Requests: "+this.node.getNumTransferringRequests()+"</li>\n"
 				+ "</ul>\n");
+		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
 		ctx.getPageMaker().makeTail(buf);
@@ -354,9 +409,14 @@ public class WelcomeToadlet extends Toadlet {
 			ctx.getPageMaker().makeHead(buf, "Edit a Bookmark");
 		}
 		
-		if (message != null) {
-			buf.append("<div class=\"infobox\">\n");
+		if (message != null) {  // only used for error messages so far...
+			buf.append("<div class=\"infobox infobox-error\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("An Error Occured\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
 			buf.append(message);
+			buf.append("</div>\n");
 			buf.append("</div>\n");
 		}
 		
@@ -367,14 +427,19 @@ public class WelcomeToadlet extends Toadlet {
 	}
 	
 	private void makeBookmarkEditForm(StringBuffer buf, int mode, Bookmark b, String origKey, String origDesc, String message) {
-		buf.append("<form action=\".\" method=\"post\">\n");
-		buf.append("<div class=\"infobox\">\n");
+		buf.append("<div class=\"infobox infobox-normal\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
 		if (mode == MODE_ADD) {
-			buf.append("<h2>New Bookmark</h2>\n");
+			buf.append("New Bookmark\n");
 		} else {
-			buf.append("<h2>Update Bookmark</h2>\n");
+			buf.append("Update Bookmark\n");
 		}
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
+		
+		buf.append("<form action=\".\" method=\"post\">\n");
 		buf.append("<div style=\"text-align: right; \">\n");
+		
 		buf.append("Key: \n");
 		buf.append("<input type=\"text\" name=\"key\" value=\""+origKey+"\" size=\"80\" />\n");
 		buf.append("<br />\n");
@@ -390,14 +455,12 @@ public class WelcomeToadlet extends Toadlet {
 		}
 		
 		buf.append("<input type=\"submit\" value=\"Cancel\"  class=\"cancel\" />\n");
-		
-		buf.append("<br style=\"clear: all;\" />\n");
-		
 		buf.append("<input type=\"hidden\" name=\"managebookmarks\" value=\"yes\" />\n");
-		
-		buf.append("</div>\n");
 		buf.append("</div>\n");
 		buf.append("</form>\n");
+		
+		buf.append("</div>\n");
+		buf.append("</div>\n");
 	}
 	
 	public String supportedMethods() {

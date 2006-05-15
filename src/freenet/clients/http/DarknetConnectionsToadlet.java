@@ -69,11 +69,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		ctx.getPageMaker().makeHead(buf, "Darknet Connections");
 		
 		// our reference
-		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2><a href=\"myref.txt\">My Reference</a></h2>\n");
+		buf.append("<div class=\"infobox infobox-normal\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append("<a href=\"myref.txt\">My Reference</a>\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<pre id=\"reference\">\n");
 		buf.append(this.node.exportPublicFieldSet());
 		buf.append("</pre>\n");
+		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
 		// FIXME! We need some nice images
@@ -81,13 +85,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		long now = System.currentTimeMillis();
 		
-		buf.append("<div class=\"infobox\">\n");
-		buf.append("<h2>My Connections");
+		buf.append("<div class=\"infobox infobox-normal\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append("My Connections");
 		if (!path.endsWith("displaymessagetypes.html"))
 		{
 			buf.append(" <a href=\"displaymessagetypes.html\">(more detailed)</a>");
 		}
-		buf.append("</h2>\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("<table class=\"darknet_connections\">\n");
 		buf.append("<tr><th>Status</th><th>Name</th><th> <span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th> <span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th> <span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th><th></th></tr>\n");
@@ -193,13 +199,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<input type=\"submit\" name =\"disconnect\" value=\"Disconnect from selected Peers\" />");
 		buf.append("</form>");
 		buf.append("</div>");
+		buf.append("</div>");
 		
 		// new connection box
-		buf.append("<div class=\"infobox\">\n");
-		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
-		buf.append("<h2>\n");
+		buf.append("<div class=\"infobox infobox-normal\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
 		buf.append("Connect to another node\n");
-		buf.append("</h2>\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
+		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("Reference:<br />\n");
 		buf.append("<textarea name=\"ref\" rows=\"8\" cols=\"74\"></textarea>\n");
 		buf.append("<br />\n");
@@ -211,6 +219,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<br />\n");
 		buf.append("<input type=\"submit\" name=\"connect\" value=\"Connect\" />\n");
 		buf.append("</form>\n");
+		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
 		ctx.getPageMaker().makeTail(buf);

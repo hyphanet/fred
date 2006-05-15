@@ -49,25 +49,30 @@ public class UserAlertManager implements Comparator {
 			UserAlert alert = a[i];
 			synchronized(alert) {
 				if(!alert.isValid()) return;
-				buf.append("<p><b>");
+				//
 				short level = a[i].getPriorityClass();
 				if(level <= UserAlert.CRITICAL_ERROR)
-					buf.append("<span color=\"darkred\">");
+					buf.append("<div class=\"infobox infobox-error\">\n");
 				else if(level <= UserAlert.ERROR)
-					buf.append("<span class=\"alert-error\">");
+					buf.append("<div class=\"infobox infobox-alert\">\n");
 				else if(level <= UserAlert.WARNING)
-					buf.append("<span class=\"alert-warning\">");
+					buf.append("<div class=\"infobox infobox-warning\">\n");
 				else if(level <= UserAlert.MINOR)
-					buf.append("<span class=\"alert-minor\">");
+					buf.append("<div class=\"infobox infobox-information\">\n");
+				//
+				buf.append("<div class=\"infobox-header\">\n");
 				buf.append(a[i].getTitle());
+				buf.append("</div>\n");
+				//
+				buf.append("<div class=\"infobox-content\">\n");
+				buf.append(a[i].getText());
+				//
 				if(a[i].userCanDismiss())
 					buf.append("<form method=\"post\" action=\".\"><input type=\"hidden\" name=\"disable\" value=\""+
 						a[i].hashCode()+"\" /><input type=\"submit\" value=\"Hide\" /></form>");
-				if(level <= UserAlert.MINOR)
-					buf.append("</span>");
-				buf.append("</b><br />\n");
-				buf.append(a[i].getText());
-				buf.append("</p>\n");
+				//
+				buf.append("</div>\n");
+				buf.append("</div>\n");
 			}
 		}
 	}

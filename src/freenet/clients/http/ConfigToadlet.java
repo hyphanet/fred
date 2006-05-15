@@ -68,10 +68,20 @@ public class ConfigToadlet extends Toadlet {
 		StringBuffer outbuf = new StringBuffer();
 		
 		ctx.getPageMaker().makeHead(outbuf, "Configuration Applied");
-		outbuf.append("<div class=\"infobox\">\n");
+		
 		if (errbuf.length() == 0) {
+			outbuf.append("<div class=\"infobox infobox-success\">\n");
+			outbuf.append("<div class=\"infobox-header\">\n");
+			outbuf.append("Configuration Applied\n");
+			outbuf.append("</div>\n");
+			outbuf.append("<div class=\"infobox-content\">\n");
 			outbuf.append("Your configuration changes were applied successfully<br />\n");
 		} else {
+			outbuf.append("<div class=\"infobox infobox-error\">\n");
+			outbuf.append("<div class=\"infobox-header\">\n");
+			outbuf.append("Configuration Could Not Be Applied\n");
+			outbuf.append("</div>\n");
+			outbuf.append("<div class=\"infobox-content\">\n");
 			outbuf.append("Your configuration changes were applied with the following exceptions:<br />\n");
 			outbuf.append(errbuf.toString());
 			outbuf.append("<br />\n");
@@ -80,6 +90,7 @@ public class ConfigToadlet extends Toadlet {
 		outbuf.append("<a href=\".\" title=\"Configuration\">Return to Node Configuration</a><br />\n");
 		outbuf.append("<a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
 		
+		outbuf.append("</div>\n");
 		outbuf.append("</div>\n");
 		
 		ctx.getPageMaker().makeTail(outbuf);
@@ -93,8 +104,13 @@ public class ConfigToadlet extends Toadlet {
 		
 		//HTTPRequest request = new HTTPRequest(uri);
 		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration");
+
+		buf.append("<div class=\"infobox infobox-normal\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append("Freenet Node Configuration\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form method=\"post\" action=\".\">");
-		buf.append("<div class=\"config\">\n");
 		
 		//String last = null;
 		
@@ -133,11 +149,11 @@ public class ConfigToadlet extends Toadlet {
 			buf.append("</ul>\n");
 		}
 		
-		buf.append("<br />");
 		buf.append("<input type=\"submit\" value=\"Apply\" />");
 		buf.append("<input type=\"reset\" value=\"Reset\" />");
-		buf.append("</div>\n");
 		buf.append("</form>");
+		buf.append("</div>\n");
+		buf.append("</div>\n");
 		
 		ctx.getPageMaker().makeTail(buf);
 		
