@@ -395,8 +395,8 @@ public class PeerManager {
             	Logger.minor(this, "Skipping (not connected): "+p.getPeer());
             	continue;
             }
-            if(p.isBackedOff()) {
-            	Logger.minor(this, "Skipping (backed off): "+p.getPeer());
+            if(p.isRoutingBackedOff()) {
+            	Logger.minor(this, "Skipping (routing backed off): "+p.getPeer());
             	continue;
             }
             count++;

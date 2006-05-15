@@ -108,9 +108,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		String[][] messageTypesRows = new String[peerNodes.length][];
 		for(int i=0;i<peerNodes.length;i++) {
 			PeerNode pn = peerNodes[i];
-			long backedOffUntil = pn.getBackedOffUntil();
-			boolean backedOffNow = (now < backedOffUntil);
-			int backoff = (int)(Math.max(backedOffUntil - now, 0));
+			long routingBackedOffUntil = pn.getRoutingBackedOffUntil();
+			boolean routingBackedOffNow = (now < routingBackedOffUntil);
+			int backoff = (int)(Math.max(routingBackedOffUntil - now, 0));
 			long idle = pn.lastReceivedPacketTime();
 			
 			// Elements must be HTML encoded.
@@ -121,7 +121,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			Object status;
 			if(pn.isConnected()) {
 				status = CONNECTED;
-				if(backedOffNow) {
+				if(routingBackedOffNow) {
 					status = BACKED_OFF;
 				}
 			} else if(pn.hasCompletedHandshake() && !Version.checkGoodVersion(pn.getVersion())) {
@@ -136,7 +136,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			row[3] = pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)";
 			row[4] = HTMLEncoder.encode(pn.getVersion());
 			row[5] = new Double(pn.getLocation().getValue());
-			row[6] = backoff/1000 + "/" + pn.getBackoffLength()/1000;
+			row[6] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000;
 			if (idle == -1) row[7] = " ";
 			else row[7] = new Long((now - idle) / 60000);
 			row[8] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";

@@ -1106,7 +1106,7 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
         return 
-        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+backoffLength+" ("+(Math.max(backedOffUntil - System.currentTimeMillis(),0))+")";
+        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+routingBackoffLength+" ("+(Math.max(routingBackedOffUntil - System.currentTimeMillis(),0))+")";
     }
     
     public String getFreevizOutput() {
@@ -1221,26 +1221,26 @@ public class PeerNode implements PeerContext {
         return hashCode;
     }
 
-	private final Object backoffSync = new Object();
+	private final Object routingBackoffSync = new Object();
 	
-	public boolean isBackedOff() {
-		synchronized(backoffSync) {
-			if(System.currentTimeMillis() < backedOffUntil) {
-				Logger.minor(this, "Is backed off");
+	public boolean isRoutingBackedOff() {
+		synchronized(routingBackoffSync) {
+			if(System.currentTimeMillis() < routingBackedOffUntil) {
+				Logger.minor(this, "Routing is backed off");
 				return true;
 			} else return false;
 		}
 	}
 	
-	long backedOffUntil = -1;
-	/** Initial nominal backoff length */
-	final int INITIAL_BACKOFF_LENGTH = 5000;
+	long routingBackedOffUntil = -1;
+	/** Initial nominal routing backoff length */
+	final int INITIAL_ROUTING_BACKOFF_LENGTH = 5000;
 	/** Double every time */
-	final int BACKOFF_MULTIPLIER = 2;
+	final int ROUTING_BACKOFF_MULTIPLIER = 2;
 	/** Maximum: 24 hours */
-	final int MAX_BACKOFF_LENGTH = 24*60*60*1000;
-	/** Current nominal backoff length */
-	int backoffLength = INITIAL_BACKOFF_LENGTH;
+	final int MAX_ROUTING_BACKOFF_LENGTH = 24*60*60*1000;
+	/** Current nominal routing backoff length */
+	int routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
 	
 	/**
 	 * Got a local RejectedOverload.
@@ -1248,36 +1248,36 @@ public class PeerNode implements PeerContext {
 	 */
 	public void localRejectedOverload() {
 		Logger.minor(this, "Local rejected overload on "+this);
-		synchronized(backoffSync) {
+		synchronized(routingBackoffSync) {
 			long now = System.currentTimeMillis();
 			// Don't back off any further if we are already backed off
-			if(now > backedOffUntil) {
-				backoffLength = backoffLength * BACKOFF_MULTIPLIER;
-				if(backoffLength > MAX_BACKOFF_LENGTH)
-					backoffLength = MAX_BACKOFF_LENGTH;
-				int x = node.random.nextInt(backoffLength);
-				backedOffUntil = now + x;
-				Logger.minor(this, "Backing off: backoffLength="+backoffLength+", until "+x+"ms on "+getPeer());
+			if(now > routingBackedOffUntil) {
+				routingBackoffLength = routingBackoffLength * ROUTING_BACKOFF_MULTIPLIER;
+				if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
+					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
+				int x = node.random.nextInt(routingBackoffLength);
+				routingBackedOffUntil = now + x;
+				Logger.minor(this, "Backing off: routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+getPeer());
 			} else {
-				Logger.minor(this, "Ignoring localRejectedOverload: "+(backedOffUntil-now)+"ms remaining on backoff on "+getPeer());
+				Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+getPeer());
 			}
 		}
 	}
 	
 	/**
 	 * Didn't get RejectedOverload.
-	 * Reset backoff.
+	 * Reset routing backoff.
 	 */
 	public void successNotOverload() {
 		Logger.minor(this, "Success not overload on "+this);
-		synchronized(backoffSync) {
+		synchronized(routingBackoffSync) {
 			long now = System.currentTimeMillis();
 			// Don't un-backoff if still backed off
-			if(now > backedOffUntil) {
-				backoffLength = INITIAL_BACKOFF_LENGTH;
-				Logger.minor(this, "Resetting backoff on "+getPeer());
+			if(now > routingBackedOffUntil) {
+				routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
+				Logger.minor(this, "Resetting routing backoff on "+getPeer());
 			} else {
-				Logger.minor(this, "Ignoring successNotOverload: "+(backedOffUntil-now)+"ms remaining on backoff on "+getPeer());
+				Logger.minor(this, "Ignoring successNotOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+getPeer());
 			}
 		}
 	}
@@ -1356,12 +1356,12 @@ public class PeerNode implements PeerContext {
 		return myName;
 	}
 
-	public int getBackoffLength() {
-		return this.backoffLength;
+	public int getRoutingBackoffLength() {
+		return this.routingBackoffLength;
 	}
 
-	public long getBackedOffUntil() {
-		return backedOffUntil;
+	public long getRoutingBackedOffUntil() {
+		return routingBackedOffUntil;
 	}
 
 	public boolean hasCompletedHandshake() {
