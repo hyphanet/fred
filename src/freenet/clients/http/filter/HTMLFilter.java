@@ -988,7 +988,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				new String[] { "onsubmit", "onreset" }));
 		allowedTagsVerifiers.put(
 			"input",
-			new CoreTagVerifier(
+			new InputTagVerifier(
 				"input",
 				new String[] {
 					"accesskey",
@@ -1499,6 +1499,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						hn.put(name, arg);
 				}
 			}
+			
 			return hn;
 		}
 	}
@@ -1599,6 +1600,28 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			// Action has been previously sanitized, we force it :p
 			hn.put("action","/");
+			
+			return hn;
+		}
+	}
+	
+	static class InputTagVerifier extends CoreTagVerifier{
+		InputTagVerifier(
+			String tag,
+			String[] allowedAttrs,
+			String[] uriAttrs,
+			String[] eventAttrs) {
+			super(tag, allowedAttrs, uriAttrs, eventAttrs);
+		}
+
+		Hashtable sanitizeHash(
+			Hashtable h,
+			ParsedTag p,
+			HTMLParseContext pc) throws DataFilterException {
+			Hashtable hn = super.sanitizeHash(h, p, pc);
+			// We dont want to allow type=file
+			if(((String)hn.get("type")).equalsIgnoreCase("file"))
+				return null;
 			
 			return hn;
 		}
