@@ -972,11 +972,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		
 		// FIXME no form support for now; when we have NIM posting support, reinstate, and
 		// LIMIT TO METHOD=GET !!!
-		// nextgens : Why ? spiders ?
 		
 		allowedTagsVerifiers.put(
 			"form",
-			new CoreTagVerifier(
+			new FormTagVerifier(
 				"form",
 				new String[] {
 					"method",
@@ -1583,6 +1582,28 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
+	// We do not allow forms to act anywhere else than on / 
+	static class FormTagVerifier extends CoreTagVerifier{
+		FormTagVerifier(
+			String tag,
+			String[] allowedAttrs,
+			String[] uriAttrs,
+			String[] eventAttrs) {
+			super(tag, allowedAttrs, uriAttrs, eventAttrs);
+		}
+
+		Hashtable sanitizeHash(
+			Hashtable h,
+			ParsedTag p,
+			HTMLParseContext pc) throws DataFilterException {
+			Hashtable hn = super.sanitizeHash(h, p, pc);
+			// Action has been previously sanitized, we force it :p
+			hn.put("action","/");
+			
+			return hn;
+		}
+	}
+	
 	static class MetaTagVerifier extends TagVerifier {
 		MetaTagVerifier() {
 			super("meta", new String[] { "id" });
