@@ -263,7 +263,7 @@ public class PeerNode implements PeerContext {
                 throw new FSParseException(e1);
         }
         if(nominalPeer.isEmpty()) {
-        	Logger.normal(this, "No IP addresses found");
+        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+"'");
         	detectedPeer = null;
         } else
         	detectedPeer=(Peer) nominalPeer.firstElement();
@@ -898,7 +898,7 @@ public class PeerNode implements PeerContext {
             sendAsync(locMsg, null);
             sendAsync(ipMsg, null);
         } catch (NotConnectedException e) {
-            Logger.error(this, "Completed handshake but disconnected!!!", new Exception("error"));
+            Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected!!!", new Exception("error"));
         }
     }
 

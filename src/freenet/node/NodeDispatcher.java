@@ -113,12 +113,12 @@ public class NodeDispatcher implements Dispatcher {
             return true;
         }
         if(node.shouldRejectRequest()) {
-        	Logger.normal(this, "Rejecting request preemptively");
+        	Logger.normal(this, "Rejecting request from "+m.getSource().getPeer()+" preemptively");
         	Message rejected = DMT.createFNPRejectedOverload(id, true);
         	try {
         		((PeerNode)(m.getSource())).sendAsync(rejected, null);
             } catch (NotConnectedException e) {
-                Logger.normal(this, "Rejecting (overload) data request: "+e);
+                Logger.normal(this, "Rejecting (overload) data request from "+m.getSource().getPeer()+": "+e);
         	}
             node.completed(id);
             return true;
@@ -129,7 +129,7 @@ public class NodeDispatcher implements Dispatcher {
             try {
                 ((PeerNode)(m.getSource())).sendAsync(rejected, null);
             } catch (NotConnectedException e) {
-                Logger.normal(this, "Rejecting insert request: "+e);
+                Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
             }
             return true;
         } else {
@@ -151,17 +151,17 @@ public class NodeDispatcher implements Dispatcher {
             try {
                 ((PeerNode)(m.getSource())).sendAsync(rejected, null);
             } catch (NotConnectedException e) {
-                Logger.normal(this, "Rejecting insert request: "+e);
+                Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
             }
             return true;
         }
         if(node.shouldRejectRequest()) {
-        	Logger.normal(this, "Rejecting insert preemptively");
+        	Logger.normal(this, "Rejecting insert from "+m.getSource().getPeer()+" preemptively");
         	Message rejected = DMT.createFNPRejectedOverload(id, true);
         	try {
         		((PeerNode)(m.getSource())).sendAsync(rejected, null);
             } catch (NotConnectedException e) {
-                Logger.normal(this, "Rejecting (overload) insert request: "+e);
+                Logger.normal(this, "Rejecting (overload) insert request from "+m.getSource().getPeer()+": "+e);
         	}
             node.completed(id);
             return true;
@@ -172,7 +172,7 @@ public class NodeDispatcher implements Dispatcher {
             try {
                 ((PeerNode)(m.getSource())).sendAsync(rejected, null);
             } catch (NotConnectedException e) {
-                Logger.normal(this, "Rejecting insert request: "+e);
+                Logger.normal(this, "Rejecting insert request from "+m.getSource().getPeer()+": "+e);
             }
             return true;
         }

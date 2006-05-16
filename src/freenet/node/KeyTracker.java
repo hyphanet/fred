@@ -538,7 +538,7 @@ public class KeyTracker {
         QueuedAckRequest qr = (QueuedAckRequest)ackRequestQueue.removeByKey(new Integer(seqNo));
     	if(qr != null) qr.onAcked();
     	else
-    		Logger.normal(this, "Removing ack request twice? Null on "+seqNo);
+    		Logger.normal(this, "Removing ack request twice? Null on "+seqNo+" from "+pn.getPeer());
     }
 
     /**

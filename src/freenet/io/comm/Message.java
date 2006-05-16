@@ -67,7 +67,7 @@ public class Message {
 		        }
 		    }
 		} catch (EOFException e) {
-		    Logger.normal(Message.class,"Message packet ends prematurely while deserialising "+mspec.getName(), e);
+		    Logger.normal(Message.class,peer.getPeer()+" sent a message packet that ends prematurely while deserialising "+mspec.getName(), e);
 		    return null;
 		} catch (IOException e) {
 		    Logger.error(Message.class, "WTF?: "+e+" reading from buffer stream", e);

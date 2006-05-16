@@ -933,7 +933,7 @@ class LocationManager {
                 }
             }
         }
-        Logger.normal(this, "lostOrRestartedNode dumping "+v.size()+" swap requests");
+        Logger.normal(this, "lostOrRestartedNode dumping "+v.size()+" swap requests for "+pn.getPeer());
         for(int i=0;i<v.size();i++) {
             RecentlyForwardedItem item = (RecentlyForwardedItem) v.get(i);
             // Just reject it to avoid locking problems etc
