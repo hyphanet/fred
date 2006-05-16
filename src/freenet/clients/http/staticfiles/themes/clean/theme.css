@@ -140,6 +140,7 @@ div.infobox div.infobox-header {
 div.infobox-information div.infobox-header {
 	background-color: #e8e8f0;
 	background-image: url(information.gif);
+	padding-right: 35px;
 }
 
 div.infobox-warning div.infobox-header {
