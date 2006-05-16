@@ -361,26 +361,22 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
-		// Version info
+		// Version info and Quit Form
 		buf.append("<div class=\"infobox infobox-information\">\n");
 		buf.append("<div class=\"infobox-header\">\n");
 		buf.append("Version\n");
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("Freenet version "+Version.nodeVersion+" build #"+Version.buildNumber()+" r"+Version.cvsRevision);
+		buf.append("Freenet "+Version.nodeVersion+" Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
 		if(Version.buildNumber() < Version.highestSeenBuild) {
 			buf.append("<br />");
 			buf.append("<b>A newer version is available! (Build #"+Version.highestSeenBuild+")</b>");
 		}
-		buf.append("</div>\n");
-		buf.append("</div>\n");
-		
-		// Quit Form
 		buf.append("<form method=\"post\" action=\".\">\n");
-		buf.append("<div class=\"exit\">\n");
 		buf.append("<input type=\"hidden\" name=\"exit\" value=\"true\" /><input type=\"submit\" value=\"Shut down the node\" />\n");
-		buf.append("</div>\n");
 		buf.append("</form>\n");
+		buf.append("</div>\n");
+		buf.append("</div>\n");
 		
 		// Activity
 		buf.append("<div class=\"infobox infobox-information\">\n");

@@ -37,18 +37,20 @@ public class PeerManagerUserAlert implements UserAlert {
 		String end = " log on to irc.freenode.net channel " +
 			"#freenet-refs and ask around for somebody to connect to";
 		if(n.testnetEnabled)
-			s += ", but since this is a testnet node, we suggest that you "+end+".";
+			s += ", but since this is a testnet node, we suggest that you " + end + ".";
 		else
 			s += ". You could " + end + ", but remember that you are vulnerable to " +
 					"those you are directly connected to. (This is especially true in this early alpha of Freenet 0.7...)";
 		} else if(conns == 0) {
-			s = "This node has not been able to connect to any other nodes so far; it will not be able to function normally. "+
+			s = "This node has not been able to connect to any other nodes so far; it will not be able to function normally. " +
 			"Hopefully some of your peers will connect soon; if not, try to get some more peers.";
 		} else if(conns == 1) {
-			s = "This node only has one connection. Performance will be impaired, and you have no anonymity nor even plausible deniability if that one person is malicious. "+
+			s = "This node only has one connection. Performance will be impaired, and you have no anonymity nor even plausible deniability if that one person is malicious. " +
+			"Your node is attached to the network like a 'leaf' and does not contribute to the network's health." +
 			"Try to get at least 3 connected peers at any given time.";
 		} else if(conns == 2) {
-			s = "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes."+
+			s = "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. " +
+			"Your node is enbedded like a 'chain' in the network and does not contribute to the network's health." +
 			"Try to get at least 3 connected peers at any given time.";
 		} else throw new IllegalArgumentException("Not valid");
 		return s;
