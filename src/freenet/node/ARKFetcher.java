@@ -1,12 +1,31 @@
 package freenet.node;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
+import freenet.client.FetcherContext;
+import freenet.client.InserterException;
+import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetter;
+import freenet.keys.FreenetURI;
+import freenet.keys.USK;
+import freenet.support.ArrayBucket;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+
 /**
  * Fetch an ARK. Permanent, tied to a PeerNode, stops itself after a successful fetch.
  */
-public class ARKFetcher {
+public class ARKFetcher implements ClientCallback {
 
 	final PeerNode peer;
 	final Node node;
+	private ClientGetter getter;
+	private FreenetURI fetchingURI;
+	private boolean shouldRun = false;
 
 	public ARKFetcher(PeerNode peer, Node node) {
 		this.peer = peer;
@@ -21,16 +40,91 @@ public class ARKFetcher {
 	 * recent).
 	 */
 	public void start() {
-		// Start fetch
-		// FIXME
+		ClientGetter cg = null;
+		synchronized(this) {
+			// Start fetch
+			shouldRun = true;
+			if(getter == null) {
+				USK ark = peer.getARK();
+				if(ark == null) {
+					return;
+				}
+				FreenetURI uri = ark.getURI();
+				fetchingURI = uri;
+				Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
+				cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
+						uri, node.arkFetcherContext, RequestStarter.INTERACTIVE_PRIORITY_CLASS, 
+						this, new ArrayBucket());
+				getter = cg;
+			} else return; // already running
+		}
+		if(cg != null)
+			try {
+				cg.start();
+			} catch (FetchException e) {
+				onFailure(e, cg);
+			}
 	}
 	
 	/**
 	 * Called when the node connects successfully.
 	 */
-	public void stop() {
+	public synchronized void stop() {
 		// Stop fetch
-		// FIXME
+		Logger.minor(this, "Cancelling ARK fetch for "+peer);
+		shouldRun = false;
+		if(getter != null)
+			getter.cancel();
+	}
+
+	public void onSuccess(FetchResult result, ClientGetter state) {
+		Logger.minor(this, "Fetched ARK for "+peer, new Exception("debug"));
+		// Fetcher context specifies an upper bound on size.
+		ArrayBucket bucket = (ArrayBucket) result.asBucket();
+		byte[] data = bucket.toByteArray();
+		String ref;
+		try {
+			ref = new String(data, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// Yeah, right.
+			throw new Error(e);
+		}
+		SimpleFieldSet fs;
+		try {
+			fs = new SimpleFieldSet(ref, true);
+			peer.gotARK(fs);
+		} catch (IOException e) {
+			// Corrupt ref.
+			Logger.error(this, "Corrupt ARK reference? Fetched "+fetchingURI+" got while parsing: "+e+" from:\n"+ref, e);
+		}
+	}
+
+	public void onFailure(FetchException e, ClientGetter state) {
+		Logger.minor(this, "Failed to fetch ARK for "+peer+" : "+e, e);
+		// If it's a redirect, follow the redirect and update the ARK.
+		// If it's any other error, wait a while then retry.
+		getter = null;
+		if(!shouldRun) return;
+		if(e.newURI != null) {
+			peer.updateARK(e.newURI);
+			start();
+			return;
+		}
+		// We may be on the PacketSender thread.
+		// FIXME should this be exponential backoff?
+		node.ps.queueTimedJob(new FastRunnable() { public void run() { start(); }}, 20000L);
+	}
+
+	public void onSuccess(BaseClientPutter state) {
+		// Impossible.
+	}
+
+	public void onFailure(InserterException e, BaseClientPutter state) {
+		// Impossible.
+	}
+
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+		// Impossible.
 	}
 	
 }

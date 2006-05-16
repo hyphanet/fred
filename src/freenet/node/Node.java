@@ -32,6 +32,7 @@ import freenet.client.ArchiveManager;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InserterException;
@@ -160,7 +161,9 @@ public class Node {
 			SimpleFieldSet fs = exportPublicFieldSet();
 			
 			// Remove some unnecessary fields that only cause collisions.
-			fs.remove("ark.number");
+			
+			// Delete entire ark.* field for now. Changing this and automatically moving to the new may be supported in future.
+			fs.remove("ark");
 			fs.remove("location");
 			//fs.remove("version"); - keep version because of its significance in reconnection
 			
@@ -430,6 +433,8 @@ public class Node {
     private InsertableClientSSK myARK;
     /** My ARK sequence number */
     private long myARKNumber;
+    /** FetcherContext for ARKs */
+	public final FetcherContext arkFetcherContext;
     
     private final HashSet runningUIDs;
     
@@ -1222,6 +1227,19 @@ public class Node {
 		
 		// And finally, Initialize the plugin manager
 		pluginManager = new PluginManager(this);
+		
+		FetcherContext ctx = makeClient((short)0).getFetcherContext();
+		
+		ctx.allowSplitfiles = false;
+		ctx.dontEnterImplicitArchives = true;
+		ctx.maxArchiveRestarts = 0;
+		ctx.maxMetadataSize = 256;
+		ctx.maxNonSplitfileRetries = 10;
+		ctx.maxOutputLength = 4096;
+		ctx.maxRecursionLevel = 2;
+		ctx.maxTempLength = 4096;
+		
+		this.arkFetcherContext = ctx;
     }
     
 	private InetAddress resolve(String val) {

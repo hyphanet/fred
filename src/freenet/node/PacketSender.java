@@ -1,6 +1,8 @@
 package freenet.node;
 
 import java.util.LinkedList;
+import java.util.TreeMap;
+import java.util.Vector;
 
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
@@ -18,6 +20,8 @@ import freenet.support.WouldBlockException;
 public class PacketSender implements Runnable {
     
     final LinkedList resendPackets;
+    /** ~= Ticker :) */
+    private final TreeMap timedJobsByTime;
     final Thread myThread;
     final Node node;
     long lastClearedOldSwapChains;
@@ -26,6 +30,7 @@ public class PacketSender implements Runnable {
     
     PacketSender(Node node) {
         resendPackets = new LinkedList();
+        timedJobsByTime = new TreeMap();
         this.node = node;
         myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
@@ -142,8 +147,7 @@ public class PacketSender implements Runnable {
                 	} else {
                 		for(int j=0;j<messages.length;j++) {
                 			Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
-                			if (messages[j].msg != null)
-                			{
+                			if (messages[j].msg != null) {
                 				pn.addToLocalNodeSentMessagesToStatistic(messages[j].msg);
                 			}
                 		}
@@ -173,8 +177,48 @@ public class PacketSender implements Runnable {
             node.lm.clearOldSwapChains();
             lastClearedOldSwapChains = now;
         }
+        
         // Send may have taken some time
         now = System.currentTimeMillis();
+        
+        Vector jobsToRun = null;
+        
+        synchronized(timedJobsByTime) {
+        	while(!timedJobsByTime.isEmpty()) {
+       			Long tRun = (Long) timedJobsByTime.firstKey();
+       			if(tRun.longValue() <= now) {
+       				if(jobsToRun == null) jobsToRun = new Vector();
+       				Object o = timedJobsByTime.remove(tRun);
+       				if(o instanceof Runnable[]) {
+       					Runnable[] r = (Runnable[]) o;
+       					for(int i=0;i<r.length;i++)
+       						jobsToRun.add(r[i]);
+       				} else {
+       					Runnable r = (Runnable) o;
+       					jobsToRun.add(r);
+       				}
+       			} else break;
+        	}
+        }
+
+        if(jobsToRun != null)
+        	for(int i=0;i<jobsToRun.size();i++) {
+        		Runnable r = (Runnable) jobsToRun.get(i);
+        		Logger.minor(this, "Running "+r);
+        		if(r instanceof FastRunnable) {
+        			// Run in-line
+        			try {
+        				r.run();
+        			} catch (Throwable t) {
+        				Logger.error(this, "Caught "+t+" running "+r, t);
+        			}
+        		} else {
+        			Thread t = new Thread(r, "Scheduled job: "+r);
+        			t.setDaemon(true);
+        			t.start();
+        		}
+        	}
+        
         long sleepTime = nextActionTime - now;
         // 200ms maximum sleep time
         sleepTime = Math.min(sleepTime, 200);
@@ -204,4 +248,23 @@ public class PacketSender implements Runnable {
             notifyAll();
         }
     }
+
+	public void queueTimedJob(Runnable job, long offset) {
+		long now = System.currentTimeMillis();
+		Long l = new Long(offset + now);
+		synchronized(timedJobsByTime) {
+			Object o = timedJobsByTime.get(l);
+			if(o == null) {
+				timedJobsByTime.put(l, job);
+			} else if(o instanceof Runnable) {
+				timedJobsByTime.put(l, new Runnable[] { (Runnable)o, job });
+			} else if(o instanceof Runnable[]) {
+				Runnable[] r = (Runnable[]) o;
+				Runnable[] jobs = new Runnable[r.length+1];
+				System.arraycopy(r, 0, jobs, 0, r.length);
+				jobs[jobs.length-1] = job;
+				timedJobsByTime.put(l, jobs);
+			}
+		}
+	}
 }

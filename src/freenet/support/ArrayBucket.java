@@ -11,6 +11,8 @@ import java.util.Iterator;
 /**
  * A bucket that stores data in the memory.
  * 
+ * FIXME: No synchronization, should there be?
+ * 
  * @author oskar
  */
 public class ArrayBucket implements Bucket {
@@ -166,5 +168,20 @@ public class ArrayBucket implements Bucket {
 	public void free() {
 		data.clear();
 		// Not much else we can do.
+	}
+
+	public byte[] toByteArray() {
+		long sz = size();
+		int size = (int)sz;
+		byte[] buf = new byte[size];
+		int index = 0;
+		for(Iterator i=data.iterator();i.hasNext();) {
+			byte[] obuf = (byte[]) i.next();
+			System.arraycopy(obuf, 0, buf, index, obuf.length);
+			index += obuf.length;
+		}
+		if(index != buf.length)
+			throw new IllegalStateException();
+		return buf;
 	}
 }

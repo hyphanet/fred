@@ -113,8 +113,11 @@ public class PeerNode implements PeerContext {
     /** My ARK SSK public key */
     private USK myARK;
     
-    /** My ARK sequence number */
-    private long myARKNumber;
+    /** Number of handshake attempts since last successful connection or ARK fetch */
+    private int handshakeCount = 0;
+    
+    /** After this many failed handshakes, we start the ARK fetcher. */
+    private static final int MAX_HANDSHAKE_COUNT = 2;
     
     /** Current location in the keyspace */
     private Location currentLocation;
@@ -348,25 +351,26 @@ public class PeerNode implements PeerContext {
         // It belongs to this node, not to the node being described.
         // Therefore, if we are parsing a remotely supplied ref, ignore it.
         
-        if(!fromLocal) return;
+        if(fromLocal) {
         
-        SimpleFieldSet metadata = fs.subset("metadata");
-        
-        if(metadata != null) {
-        
-        	// Don't be tolerant of nonexistant domains; this should be an IP address.
-        	Peer p;
-			try {
-				p = new Peer(metadata.get("detected.udp"), false);
-			} catch (UnknownHostException e) {
-				p = null;
-				Logger.error(this, "detected.udp = "+metadata.get("detected.udp")+" - "+e, e);
-			} catch (PeerParseException e) {
-				p = null;
-				Logger.error(this, "detected.udp = "+metadata.get("detected.udp")+" - "+e, e);
-			}
-        	if(p != null)
-        		detectedPeer = p;
+        	SimpleFieldSet metadata = fs.subset("metadata");
+        	
+        	if(metadata != null) {
+        		
+        		// Don't be tolerant of nonexistant domains; this should be an IP address.
+        		Peer p;
+        		try {
+        			p = new Peer(metadata.get("detected.udp"), false);
+        		} catch (UnknownHostException e) {
+        			p = null;
+        			Logger.error(this, "detected.udp = "+metadata.get("detected.udp")+" - "+e, e);
+        		} catch (PeerParseException e) {
+        			p = null;
+        			Logger.error(this, "detected.udp = "+metadata.get("detected.udp")+" - "+e, e);
+        		}
+        		if(p != null)
+        			detectedPeer = p;
+        	}
         	
         }
         
@@ -386,7 +390,7 @@ public class PeerNode implements PeerContext {
         	if(arkPubKey != null) {
         		FreenetURI uri = new FreenetURI(arkPubKey);
         		ClientSSK ssk = new ClientSSK(uri);
-        		ark = new USK(ssk, myARKNumber);
+        		ark = new USK(ssk, arkNo);
         	}
         } catch (MalformedURLException e) {
         	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
@@ -395,8 +399,7 @@ public class PeerNode implements PeerContext {
         }
 
         if(ark != null) {
-        	if(myARKNumber != arkNo || myARK != ark) {
-        		myARKNumber = arkNo;
+        	if(myARK == null || (myARK != ark && !myARK.equals(ark))) {
         		myARK = ark;
         		return true;
         	}
@@ -612,6 +615,10 @@ public class PeerNode implements PeerContext {
         		+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
         }
         firstHandshake = false;
+        this.handshakeCount++;
+        if(handshakeCount == MAX_HANDSHAKE_COUNT) {
+        	arkFetcher.start();
+        }
     }
     
     /**
@@ -629,6 +636,10 @@ public class PeerNode implements PeerContext {
             sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS)
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+        }
+        this.handshakeCount++;
+        if(handshakeCount == MAX_HANDSHAKE_COUNT) {
+        	arkFetcher.start();
         }
     }
 
@@ -809,6 +820,8 @@ public class PeerNode implements PeerContext {
      */
     public synchronized boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
     	completedHandshake = true;
+    	handshakeCount = 0;
+    	arkFetcher.stop();
         bogusNoderef = false;
         try {
             // First, the new noderef
@@ -981,13 +994,13 @@ public class PeerNode implements PeerContext {
             Logger.error(this, "Impossible: e", e);
             return;
         }
-        processNewNoderef(fs);
+        processNewNoderef(fs, false);
     }
 
     /**
      * Process a new nodereference, as a SimpleFieldSet.
      */
-    private void processNewNoderef(SimpleFieldSet fs) throws FSParseException {
+    private void processNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
         Logger.minor(this, "Parsing: "+fs);
         boolean changedAnything = false;
         String identityString = fs.get("identity");
@@ -1003,16 +1016,26 @@ public class PeerNode implements PeerContext {
             throw new FSParseException(e);
 		}
         String newVersion = fs.get("version");
-        if(newVersion == null) throw new FSParseException("No version");
-        if(!newVersion.equals(version))
-            changedAnything = true;
-        version = newVersion;
-        Version.seenVersion(newVersion);
+        if(newVersion == null) {
+        	// Version may be ommitted for an ARK.
+        	if(!forARK)
+        		throw new FSParseException("No version");
+        } else {
+        	if(!newVersion.equals(version))
+        		changedAnything = true;
+        	version = newVersion;
+        	Version.seenVersion(newVersion);
+        }
         String locationString = fs.get("location");
-        if(locationString == null) throw new FSParseException("No location");
-        Location loc = new Location(locationString);
-        if(!loc.equals(currentLocation)) changedAnything = true;
-        currentLocation = loc;
+        if(locationString == null) {
+        	// Location WILL be ommitted for an ARK.
+        	if(!forARK)
+        		throw new FSParseException("No location");
+        } else {
+        	Location loc = new Location(locationString);
+        	if(!loc.equals(currentLocation)) changedAnything = true;
+        	currentLocation = loc;
+        }
 
         if(nominalPeer==null)
         	nominalPeer=new Vector();
@@ -1050,6 +1073,8 @@ public class PeerNode implements PeerContext {
         }
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
+        // In future, ARKs may support automatic transition when the ARK key is changed.
+        // So parse it anyway. If it fails, no big loss; it won't even log an error.
         if(parseARK(fs))
         	changedAnything = true;
         if(!name.equals(myName)) changedAnything = true;
@@ -1155,7 +1180,7 @@ public class PeerNode implements PeerContext {
         fs.put("version", version);
         fs.put("myName", myName);
         if(myARK != null) {
-        	fs.put("ark.number", Long.toString(this.myARKNumber));
+        	fs.put("ark.number", Long.toString(myARK.suggestedEdition));
         	fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));
         }
         return fs;
@@ -1416,6 +1441,35 @@ public class PeerNode implements PeerContext {
 	public Hashtable getLocalNodeReceivedMessagesFromStatistic ()
 	{
 		return localNodeReceivedMessageTypes;
+	}
+
+	USK getARK() {
+		return myARK;
+	}
+
+	public void updateARK(FreenetURI newURI) {
+		try {
+			USK usk = USK.create(newURI);
+			if(!myARK.equals(usk, false)) {
+				Logger.error(this, "Changing ARK not supported (and shouldn't be possible): from "+myARK+" to "+usk);
+			} else if(myARK.suggestedEdition > usk.suggestedEdition) {
+				Logger.minor(this, "Ignoring ARK edition decrease: "+myARK.suggestedEdition+" to "+usk.suggestedEdition);
+			} else
+				myARK = usk;
+		} catch (MalformedURLException e) {
+			Logger.error(this, "ARK update failed: Could not parse permanent redirect (from USK): "+newURI+" : "+e, e);
+		}
+	}
+
+	public void gotARK(SimpleFieldSet fs) {
+		try {
+			processNewNoderef(fs, true);
+			this.handshakeCount = 0;
+		} catch (FSParseException e) {
+			Logger.error(this, "Invalid ARK update: "+e, e);
+			// This is ok as ARKs are limited to 4K anyway.
+			Logger.error(this, "Data was: \n"+fs.toString());
+		}
 	}
 }
 
