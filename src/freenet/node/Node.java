@@ -1850,7 +1850,7 @@ public class Node {
        		int bestPopularity = 0;
        		while(it.hasNext()) {
        			InetAddress cur = (InetAddress) it.next();
-       			int curPop = ((Integer) (countsByPeer.get(best))).intValue();
+       			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
        			if(curPop > bestPopularity) {
        				bestPopularity = curPop;
        				best = cur;
