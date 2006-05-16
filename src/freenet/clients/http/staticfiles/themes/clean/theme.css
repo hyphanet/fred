@@ -128,7 +128,7 @@ div.infobox {
 
 div.infobox div.infobox-header {
 	margin: -10px -10px 10px -10px;
-	padding: 10px;
+	padding: 10px 35px 10px 10px;
 	border-bottom: 1px dotted #a0a0a0;
 	font-weight: bold;
 	font-size: 11pt;
