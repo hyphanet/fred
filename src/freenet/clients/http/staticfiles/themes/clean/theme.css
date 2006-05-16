@@ -214,25 +214,27 @@ ul.config {
 ul.config li {
 	margin: 0;
 	padding: 15px;
+	max-width: 600px;
 	list-style: none;
 	text-align: right;
 }
 
-ul.config span.configdesc {
-	display: block;
-	text-align: center;
-	font-weight: bold;
-}
-
-ul.config span.configkey {
-	padding: 0 10px 0 0;
-}
-
 ul.config span.configprefix {
 	margin: 0 0 0 15px;
-	font-variant: small-caps;
-	font-size: 16pt;
 	font-weight: bold;
+	font-size: 16pt;
+	font-variant: small-caps;
+}
+
+ul.config span.configshortdesc {
+	display: block;
+	text-align: left;
+	font-weight: bold;
+}
+
+ul.config span.configlongdesc {
+	display: block;
+	text-align: left;
 }
 
 ul.config input[type=text] {

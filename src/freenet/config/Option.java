@@ -60,4 +60,7 @@ public abstract class Option {
 		return shortDesc;
 	}
 	
+	public String getLongDesc(){
+		return longDesc;
+	}
 }
