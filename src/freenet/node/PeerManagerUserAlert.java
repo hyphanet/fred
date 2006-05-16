@@ -32,10 +32,8 @@ public class PeerManagerUserAlert implements UserAlert {
 		if(peers == 0) {
 		s = "This node has no peers to connect to, therefore it will not " +
 				"be able to function normally. Ideally you should connect to peers run by people you know " +
-					"(if you are paranoid, then people you trust; if not, then " +
-					"at least people you've talked to)";
-		String end = " log on to irc.freenode.net channel " +
-			"#freenet-refs and ask around for somebody to connect to";
+				"(if you are paranoid, then people you trust; if not, then at least people you've talked to)";
+		String end = " log on to irc.freenode.net channel #freenet-refs and ask around for somebody to connect to";
 		if(n.testnetEnabled)
 			s += ", but since this is a testnet node, we suggest that you " + end + ".";
 		else
@@ -50,7 +48,7 @@ public class PeerManagerUserAlert implements UserAlert {
 			"Try to get at least 3 connected peers at any given time.";
 		} else if(conns == 2) {
 			s = "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. " +
-			"Your node is enbedded like a 'chain' in the network and does not contribute to the network's health." +
+			"Your node is embedded like a 'chain' in the network and does not contribute to the network's health." +
 			"Try to get at least 3 connected peers at any given time.";
 		} else throw new IllegalArgumentException("Not valid");
 		return s;
