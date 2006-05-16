@@ -10,6 +10,7 @@ import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 
 
@@ -83,7 +84,7 @@ public class ConfigToadlet extends Toadlet {
 			outbuf.append("</div>\n");
 			outbuf.append("<div class=\"infobox-content\">\n");
 			outbuf.append("Your configuration changes were applied with the following exceptions:<br />\n");
-			outbuf.append(errbuf.toString());
+			outbuf.append(HTMLEncoder.encode(errbuf.toString()));
 			outbuf.append("<br />\n");
 		}
 		
@@ -153,7 +154,7 @@ public class ConfigToadlet extends Toadlet {
 				buf.append("&nbsp;=&nbsp;</span>");
 				//
 				buf.append("<input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
-						" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+o[j].getValueString()+"\" />");
+						" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+HTMLEncoder.encode(o[j].getValueString())+"\" />");
 				//
 				buf.append("</li>\n");
 			}
