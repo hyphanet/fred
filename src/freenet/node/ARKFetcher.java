@@ -5,7 +5,6 @@ import java.io.UnsupportedEncodingException;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
-import freenet.client.FetcherContext;
 import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
@@ -26,6 +25,9 @@ public class ARKFetcher implements ClientCallback {
 	private ClientGetter getter;
 	private FreenetURI fetchingURI;
 	private boolean shouldRun = false;
+	private static final int MAX_BACKOFF = 60*60*1000;
+	private static final int MIN_BACKOFF = 5*1000;
+	private int backoff = MIN_BACKOFF;
 
 	public ARKFetcher(PeerNode peer, Node node) {
 		this.peer = peer;
@@ -71,6 +73,7 @@ public class ARKFetcher implements ClientCallback {
 	 */
 	public synchronized void stop() {
 		// Stop fetch
+		backoff = MIN_BACKOFF;
 		Logger.minor(this, "Cancelling ARK fetch for "+peer);
 		shouldRun = false;
 		if(getter != null)
@@ -80,6 +83,7 @@ public class ARKFetcher implements ClientCallback {
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.minor(this, "Fetched ARK for "+peer, new Exception("debug"));
 		// Fetcher context specifies an upper bound on size.
+		backoff = MIN_BACKOFF;
 		ArrayBucket bucket = (ArrayBucket) result.asBucket();
 		byte[] data = bucket.toByteArray();
 		String ref;
@@ -110,9 +114,11 @@ public class ARKFetcher implements ClientCallback {
 			start();
 			return;
 		}
+		backoff += backoff;
+		if(backoff > MAX_BACKOFF) backoff = MAX_BACKOFF;
 		// We may be on the PacketSender thread.
 		// FIXME should this be exponential backoff?
-		node.ps.queueTimedJob(new FastRunnable() { public void run() { start(); }}, 20000L);
+		node.ps.queueTimedJob(new FastRunnable() { public void run() { start(); }}, backoff);
 	}
 
 	public void onSuccess(BaseClientPutter state) {
