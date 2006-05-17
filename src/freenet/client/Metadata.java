@@ -303,7 +303,7 @@ public class Metadata implements Cloneable {
 			
 			manifestEntries = new HashMap();
 			
-			// Don't validate, just keep the data; parse later
+			// Parse the sub-Manifest.
 			
 			for(int i=0;i<manifestEntryCount;i++) {
 				short nameLength = dis.readShort();
@@ -317,7 +317,12 @@ public class Metadata implements Cloneable {
 					throw new MetadataParseException("Impossibly long manifest entry: "+len+" - metadata size "+length);
 				byte[] data = new byte[len];
 				dis.readFully(data);
-				manifestEntries.put(name, data);
+				try {
+					Metadata m = Metadata.construct(data);
+					manifestEntries.put(name, m);
+				} catch (Throwable t) {
+					Logger.error(this, "Could not parse sub-manifest: "+t, t);
+				}
 			}
 		}
 		
@@ -364,8 +369,7 @@ public class Metadata implements Cloneable {
 				target = new Metadata();
 				target.addRedirectionManifest((HashMap)o);
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
-			byte[] data = target.writeToByteArray();
-			manifestEntries.put(key, data);
+			manifestEntries.put(key, target);
 		}
 		manifestEntryCount = count;
 		
@@ -410,15 +414,15 @@ public class Metadata implements Cloneable {
 				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests): "+key);
 			count++;
 			Object o = dir.get(key);
-			if(o instanceof byte[]) {
-				byte[] data = (byte[]) dir.get(key);
+			if(o instanceof Metadata) {
+				Metadata data = (Metadata) dir.get(key);
 				if(data == null)
 					throw new NullPointerException();
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
 				HashMap hm = (HashMap)o;
 				Metadata subMap = mkRedirectionManifestWithMetadata(hm);
-				manifestEntries.put(key, subMap.writeToByteArray());
+				manifestEntries.put(key, subMap);
 			}
 		}
 		manifestEntryCount = count;
@@ -450,8 +454,7 @@ public class Metadata implements Cloneable {
 			} else if(o instanceof HashMap) {
 				target = new Metadata((HashMap)o);
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
-			byte[] data = target.writeToByteArray();
-			manifestEntries.put(key, data);
+			manifestEntries.put(key, target);
 		}
 		manifestEntryCount = count;
 	}
@@ -482,8 +485,7 @@ public class Metadata implements Cloneable {
 			} else if(o instanceof HashMap) {
 				target = new Metadata((HashMap)o);
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
-			byte[] data = target.writeToByteArray();
-			manifestEntries.put(key, data);
+			manifestEntries.put(key, target);
 		}
 		manifestEntryCount = count;
 	}
@@ -622,10 +624,8 @@ public class Metadata implements Cloneable {
 	 * Get the sub-document in a manifest file with the given name.
 	 * @throws MetadataParseException 
 	 */
-	public Metadata getDocument(String name) throws MetadataParseException {
-		byte[] data = (byte[]) manifestEntries.get(name);
-		if(data == null) return null;
-		return construct(data);
+	public Metadata getDocument(String name) {
+		return (Metadata) manifestEntries.get(name);
 	}
 
 	/**
@@ -789,7 +789,8 @@ public class Metadata implements Cloneable {
 				if(nameData.length > Short.MAX_VALUE) throw new IllegalArgumentException("Manifest name too long");
 				dos.writeShort(nameData.length);
 				dos.write(nameData);
-				byte[] data = (byte[]) manifestEntries.get(name);
+				Metadata meta = (Metadata) manifestEntries.get(name);
+				byte[] data = meta.writeToByteArray();
 				if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Manifest data too long");
 				dos.writeShort(data.length);
 				dos.write(data);

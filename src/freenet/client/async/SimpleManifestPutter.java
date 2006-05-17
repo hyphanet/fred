@@ -42,7 +42,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.cm = cm;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, target, cm);
 			cm = null;
-			metadata = m.writeToByteArray();
+			metadata = m;
 			origSFI = null;
 			currentState = null;
 		}
@@ -51,7 +51,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private ClientPutState currentState;
 		private ClientMetadata cm;
 		private final String name;
-		private byte[] metadata;
+		private Metadata metadata;
 		private boolean finished;
 		
 		public void start() throws InserterException {
@@ -110,7 +110,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Logger.error(this, "Reassigning metadata", new Exception("debug"));
 				return;
 			}
-			metadata = m.writeToByteArray();
+			metadata = m;
 			synchronized(SimpleManifestPutter.this) {
 				putHandlersWaitingForMetadata.remove(this);
 				if(!putHandlersWaitingForMetadata.isEmpty()) return;
@@ -192,16 +192,19 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	public void start() throws InserterException {
-		Iterator it = runningPutHandlers.iterator();
-		while(it.hasNext()) {
-			PutHandler ph = (PutHandler) it.next();
-			try {
-				ph.start();
-			} catch (InserterException e) {
-				cancelAndFinish();
-				throw e;
+		PutHandler[] running;
+		synchronized(this) {
+			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
+		}
+
+		try {
+			for(int i=0;i<running.length;i++) {
+				running[i].start();
 			}
-		}		
+		} catch (InserterException e) {
+			cancelAndFinish();
+			throw e;
+		}
 	}
 	
 	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InserterException {
@@ -258,7 +261,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		HashMap namesToByteArrays = new HashMap();
 		namesToByteArrays(putHandlersByName, namesToByteArrays);
 		if(defaultName != null) {
-			byte[] meta = (byte[]) namesToByteArrays.get(defaultName);
+			Metadata meta = (Metadata) namesToByteArrays.get(defaultName);
 			if(meta == null) {
 				fail(new InserterException(InserterException.INVALID_URI, "Default name "+defaultName+" does not exist", null));
 				return;
@@ -267,7 +270,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		} else {
 			for(int j=0;j<defaultDefaultNames.length;j++) {
 				String name = defaultDefaultNames[j];
-				byte[] meta = (byte[]) namesToByteArrays.get(name);
+				Metadata meta = (Metadata) namesToByteArrays.get(name);
 				if(meta != null) {
 					namesToByteArrays.put("", meta);
 					break;
@@ -302,7 +305,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Object o = putHandlersByName.get(name);
 			if(o instanceof PutHandler) {
 				PutHandler ph = (PutHandler) o;
-				byte[] meta = ph.metadata;
+				Metadata meta = ph.metadata;
 				namesToByteArrays.put(name, meta);
 			} else if(o instanceof HashMap) {
 				HashMap subMap = new HashMap();
