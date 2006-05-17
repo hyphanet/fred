@@ -444,7 +444,7 @@ public class NativeBigInteger extends BigInteger {
         }
         if (_doLog && !_nativeOk)
         	System.err.println("INFO: Native BigInteger library jbigi not loaded - using pure java");
-    	}catch(Exception e){
+    	}catch(Throwable e){
             if (_doLog)
             	System.err.println("INFO: Native BigInteger library jbigi not loaded, reason: '"+e.getMessage()+"' - using pure java");
     	}

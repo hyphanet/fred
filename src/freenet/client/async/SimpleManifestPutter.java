@@ -104,6 +104,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		public void onMetadata(Metadata m, ClientPutState state) {
+			Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state,
+					new Exception("debug"));
 			if(metadata != null) {
 				Logger.error(this, "Reassigning metadata", new Exception("debug"));
 				return;
