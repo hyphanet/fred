@@ -64,6 +64,9 @@ public class GenericReadFilterCallback implements FilterCallback {
 			// Kill it.
 			Logger.normal(this, "Unrecognized URI, dropped: "+uri);
 			return null;
+		} else if(path.startsWith("../")) {
+			// Kill it, for now. FIXME we need to deal with relative URIs properly!
+			return null;
 		} else {
 			// Relative URI
 			// FIXME resolve it
