@@ -1606,12 +1606,31 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	static class InputTagVerifier extends CoreTagVerifier{
+		final HashSet allowedTypes;
+		String[] types = new String[]{
+			"text",
+			"password",
+			"checkbox",
+			"radio",
+			"submit",
+			"reset,",
+			// no ! file
+			"hidden",
+			"image",
+			"button"
+		};
+		
 		InputTagVerifier(
 			String tag,
 			String[] allowedAttrs,
 			String[] uriAttrs,
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, eventAttrs);
+			this.allowedTypes = new HashSet();
+			if (types != null) {
+				for (int x = 0; x < types.length; x++)
+					this.allowedTypes.add(types[x]);
+			}
 		}
 
 		Hashtable sanitizeHash(
@@ -1619,9 +1638,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
-			// We dont want to allow type=file
-			if(((String)hn.get("type")).equalsIgnoreCase("file"))
+			
+			// We drop the whole <input> if type isn't allowed
+			if(!allowedTypes.contains(hn.get("type"))){
 				return null;
+			}
 			
 			return hn;
 		}
