@@ -76,14 +76,14 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 
-	public UdpSocketManager(int listenPort) throws SocketException {
+	public UdpSocketManager(int listenPort, InetAddress bindto) throws SocketException {
 		super("UdpSocketManager sender thread on port " + listenPort);
 		    // Keep the Updater code in, just commented out, for now
 		    // We may want to be able to do on-line updates.
 //			if (Updater.hasResource()) {
 //				_sock = (DatagramSocket) Updater.getResource();
 //			} else {
-				_sock = new DatagramSocket(listenPort);
+				_sock = new DatagramSocket(listenPort, bindto);
 //			}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = new Random();
@@ -530,10 +530,10 @@ public class UdpSocketManager extends Thread {
 		return _usm;
 	}
 
-	public static void init(int externalListenPort)
+	public static void init(int externalListenPort, InetAddress bindto)
 		throws SocketException
 	{
-		_usm = new UdpSocketManager(externalListenPort);
+		_usm = new UdpSocketManager(externalListenPort, bindto);
 	}
 
     public int getPortNumber() {

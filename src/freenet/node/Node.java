@@ -86,6 +86,7 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
+import freenet.node.TextModeClientInterfaceServer.TMCIBindtoCallback;
 import freenet.node.fcp.FCPServer;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -119,6 +120,27 @@ import freenet.transport.IPUtil;
  */
 public class Node {
 
+	static class NodeBindtoCallback implements StringCallback {
+    	
+    	final Node node;
+    	
+    	NodeBindtoCallback(Node n) {
+    		this.node = n;
+    	}
+    	
+    	public String get() {
+    		if(node.getBindTo()!=null)
+    			return node.getBindTo();
+    		else
+    			return "0.0.0.0";
+    	}
+    	
+    	public void set(String val) throws InvalidConfigValueException {
+    		if(val == get()) return;
+    		throw new InvalidConfigValueException("Cannot be updated on the fly");
+    	}
+    }
+	
 	public class MyARKInserter implements ClientCallback {
 
 		private ClientPutter inserter;
@@ -507,6 +529,7 @@ public class Node {
     public final ClientRequestScheduler chkPutScheduler;
     public final ClientRequestScheduler sskFetchScheduler;
     public final ClientRequestScheduler sskPutScheduler;
+    final String bindto;
     TextModeClientInterfaceServer tmci;
     TextModeClientInterface directTMCI;
     FCPServer fcpServer;
@@ -856,6 +879,15 @@ public class Node {
 			}
     	}
     	
+    	// Determine where to bind to
+    	
+
+    	
+		nodeConfig.register("bindTo", "0.0.0.0", 2, true, "IP address to bind to", "IP address to bind to",
+				new NodeBindtoCallback(this));
+    	
+		this.bindto = nodeConfig.getString("bindTo");
+		
     	// Determine the port number
     	
     	nodeConfig.register("listenPort", -1 /* means random */, 1, true, "FNP port number (UDP)", "UDP port for node-to-node communications (Freenet Node Protocol)",
@@ -891,10 +923,10 @@ public class Node {
     		for(int i=0;i<200000;i++) {
     			int portNo = 1024 + random.nextInt(65535-1024);
     			try {
-    				u = new UdpSocketManager(portNo);
+    				u = new UdpSocketManager(portNo, InetAddress.getByName(bindto));
     				port = u.getPortNumber();
     				break;
-    			} catch (SocketException e) {
+    			} catch (Exception e) {
     				Logger.normal(this, "Could not use port: "+portNo+": "+e, e);
     				System.err.println("Could not use port: "+portNo+": "+e);
     				e.printStackTrace();
@@ -905,8 +937,8 @@ public class Node {
     			throw new NodeInitException(EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
     	} else {
     		try {
-    			u = new UdpSocketManager(port);
-    		} catch (SocketException e) {
+    			u = new UdpSocketManager(port, InetAddress.getByName(bindto));
+    		} catch (Exception e) {
     			throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
     		}
     	}
@@ -2558,5 +2590,9 @@ public class Node {
 		Logger.minor(this, "onConnectedPeer()");
 		if(arkPutter != null)
 			arkPutter.onConnectedPeer();
+	}
+	
+	public String getBindTo(){
+		return this.bindto;
 	}
 }
