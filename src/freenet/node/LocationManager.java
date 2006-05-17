@@ -286,6 +286,7 @@ class LocationManager {
                     Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                     return;
                 }
+                registerLocationLink(hisLoc, hisFriendLocs[i]);
                 registerKnownLocation(hisFriendLocs[i]);
             }
             
@@ -467,6 +468,7 @@ class LocationManager {
                         Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                         return;
                     }
+                    registerLocationLink(hisLoc, hisFriendLocs[i]);
                     registerKnownLocation(hisFriendLocs[i]);
                 }
                 
@@ -957,6 +959,10 @@ class LocationManager {
     }
     
     private final HashMap knownLocs = new HashMap();
+    
+    void registerLocationLink(double d, double t) {
+    	Logger.minor(this, "Known Link: "+d+" "+t);
+    }
     
     void registerKnownLocation(double d) {
         Logger.minor(this, "Known Location: "+d);
