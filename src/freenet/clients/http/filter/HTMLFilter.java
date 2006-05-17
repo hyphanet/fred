@@ -869,10 +869,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray));
 		allowedTagsVerifiers.put(
 			"base",
-			new TagVerifier(
+			new BaseHrefTagVerifier(
 				"base",
 				new String[] { "id", "target" },
-				new String[] { "href" }));
+				new String[] { /* explicitly sanitized by class */ }));
 		allowedTagsVerifiers.put(
 			"img",
 			new CoreTagVerifier(
@@ -1820,6 +1820,29 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
+	static class BaseHrefTagVerifier extends TagVerifier {
+
+		BaseHrefTagVerifier(String string, String[] strings, String[] strings2) {
+			super(string, strings, strings2);
+		}
+		
+		Hashtable sanitizeHash(
+				Hashtable h,
+				ParsedTag p,
+				HTMLParseContext pc) throws DataFilterException {
+			Hashtable hn = super.sanitizeHash(h, p, pc);
+			// Get the already-sanitized version.
+			String baseHref = getHashString(hn, "href");
+			if(baseHref != null) {
+				String ref = pc.cb.onBaseHref(baseHref);
+				if(ref != null)
+					hn.put("href", ref);
+			}
+			return hn;
+		}
+
+	}
+	
 	static String sanitizeStyle(String style, FilterCallback cb) throws DataFilterException {
 		if(style == null) return null;
 		Reader r = new StringReader(style);

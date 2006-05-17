@@ -163,7 +163,7 @@ public class FproxyToadlet extends Toadlet {
 			
 			try {
 				if(!force && !forcedownload) {
-					data = ContentFilter.filter(data, ctx.getBucketFactory(), typeName);
+					data = ContentFilter.filter(data, ctx.getBucketFactory(), typeName, uri);
 				}
 				
 				if (forcedownload) {

@@ -6,12 +6,25 @@ import java.net.URISyntaxException;
 
 import freenet.clients.http.HTTPRequest;
 import freenet.keys.FreenetURI;
-import freenet.support.Logger;
 import freenet.support.HTMLEncoder;
-import freenet.support.URLEncoder;
+import freenet.support.Logger;
 
 public class GenericReadFilterCallback implements FilterCallback {
 
+	private URI baseURI;
+	
+	public GenericReadFilterCallback(URI uri) {
+		this.baseURI = uri;
+	}
+	
+	public GenericReadFilterCallback(FreenetURI uri) {
+		try {
+			this.baseURI = new URI("/" + uri.toString(false));
+		} catch (URISyntaxException e) {
+			throw new Error(e);
+		}
+	}
+	
 	public boolean allowGetForms() {
 		return false;
 	}
@@ -21,21 +34,26 @@ public class GenericReadFilterCallback implements FilterCallback {
 	}
 
 	public String processURI(String u, String overrideType) {
+		return processURI(u, overrideType, false);
+	}
+	
+	public String processURI(String u, String overrideType, boolean noRelative) {
 		URI uri;
+		URI resolved;
 		try {
-			uri = new URI(u);
+			uri = new URI(u).normalize();
+			Logger.minor(this, "Processing "+uri);
+			if(!noRelative)
+				resolved = baseURI.resolve(uri);
+			else
+				resolved = uri;
+			Logger.minor(this, "Resolved: "+resolved);
 		} catch (URISyntaxException e1) {
 			return null;
 		}
 		String path = uri.getPath();
-		if (path == null) {
-			// Only fragment?
-			if(uri.getScheme() == null && uri.getFragment() != null && 
-					uri.getHost() == null) {
-				return "#" + URLEncoder.encode(uri.getFragment());
-			}
-			return null;
-		}
+		
+		// Normal protocols should go to /__CHECKED_HTTP_ for POST-form verification.
 		// mailto: not supported yet - FIXME what to do with it? what queries are allowed? can it possibly hurt us? how to construct safely? etc
 		
 		HTTPRequest req = new HTTPRequest(uri);
@@ -48,35 +66,28 @@ public class GenericReadFilterCallback implements FilterCallback {
 			bookmark_desc = HTMLEncoder.encode(bookmark_desc);
 			
 			return "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
-		} else if(path.startsWith("/") || path.indexOf('@') != -1) {
-			// Try to make it into a FreenetURI
-			try {
-				String p = path;
-				while(p.startsWith("/")) p = p.substring(1);
-				FreenetURI furi = new FreenetURI(p);
-				return processURI(furi, uri, overrideType);
-			} catch (MalformedURLException e) {
-				// Obviously not a Freenet URI!
-			}
 		}
-		if(path.startsWith("/")) {
-			// Still here. It's an absolute URI and *NOT* a freenet URI.
-			// Kill it.
-			Logger.normal(this, "Unrecognized URI, dropped: "+uri);
-			return null;
-		} else if(path.startsWith("../")) {
-			// Kill it, for now. FIXME we need to deal with relative URIs properly!
-			return null;
-		} else {
-			// Relative URI
-			// FIXME resolve it
-			// FIXME Note that we allow links to / inlines from fproxy services.
-			// This is okay because we don't allow forms.
-			return finishProcess(req, overrideType, path, uri);
+		
+		// Probably a relative URI.
+		
+		String rpath = resolved.getPath();
+		Logger.minor(this, "Resolved URI: "+rpath);
+		
+		// Valid FreenetURI?
+		try {
+			String p = rpath;
+			while(p.startsWith("/")) p = p.substring(1);
+			FreenetURI furi = new FreenetURI(p);
+			Logger.minor(this, "Parsed: "+furi);
+			return processURI(furi, uri, overrideType, noRelative);
+		} catch (MalformedURLException e) {
+			// Not a FreenetURI
 		}
+		
+		return null;
 	}
 
-	private String finishProcess(HTTPRequest req, String overrideType, String path, URI u) {
+	private String finishProcess(HTTPRequest req, String overrideType, String path, URI u, boolean noRelative) {
 		String typeOverride = req.getParam("type", null);
 		if(overrideType != null)
 			typeOverride = overrideType;
@@ -88,14 +99,40 @@ public class GenericReadFilterCallback implements FilterCallback {
 			ret = ret + "?type=" + typeOverride;
 		if(u.getFragment() != null)
 			ret = ret + "#" + u.getFragment();
-		return ret;
+		ret = ret.trim(); // URI does wierd things with trailing spaces
+		Logger.minor(this, "ret = "+ret);
+		try {
+			URI out = new URI(ret);
+			if(!noRelative)
+				return baseURI.relativize(out).toASCIIString();
+			else
+				return ret;
+		} catch (URISyntaxException e) {
+			Logger.error(this, "Could not parse own URI: "+ret+" : "+e, e);
+			return null;
+		}
 	}
 
-	private String processURI(FreenetURI furi, URI uri, String overrideType) {
+	private String processURI(FreenetURI furi, URI uri, String overrideType, boolean noRelative) {
 		// Valid freenet URI, allow it
 		// Now what about the queries?
 		HTTPRequest req = new HTTPRequest(uri);
-		return finishProcess(req, overrideType, "/" + furi.toString(false), uri);
+		return finishProcess(req, overrideType, "/" + furi.toString(false), uri, noRelative);
+	}
+
+	public String onBaseHref(String baseHref) {
+		String ret = processURI(baseHref, null, true);
+		if(ret == null) {
+			Logger.error(this, "onBaseHref() failed: cannot sanitize "+baseHref);
+			return null;
+		} else {
+			try {
+				baseURI = new URI(ret);
+			} catch (URISyntaxException e) {
+				throw new Error(e); // Impossible
+			}
+			return baseURI.toASCIIString();
+		}
 	}
 	
 }

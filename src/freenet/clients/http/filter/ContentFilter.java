@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Hashtable;
 
@@ -103,7 +104,7 @@ public class ContentFilter {
 	 * Filter some data.
 	 * @throws IOException If an internal error involving buckets occurred.
 	 */
-	public static Bucket filter(Bucket data, BucketFactory bf, String typeName) throws UnsafeContentTypeException, IOException {
+	public static Bucket filter(Bucket data, BucketFactory bf, String typeName, URI baseURI) throws UnsafeContentTypeException, IOException {
 		String type = typeName;
 		String options = "";
 		String charset = null;
@@ -153,7 +154,7 @@ public class ContentFilter {
 					charset = detectCharset(data, handler);
 				}
 				
-				return handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback());
+				return handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI));
 			}
 			handler.throwUnsafeContentTypeException();
 			return null;

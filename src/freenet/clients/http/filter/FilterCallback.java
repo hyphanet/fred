@@ -21,5 +21,11 @@ public interface FilterCallback {
 	 * Should we allow POST forms?
 	 */
 	public boolean allowPostForms();
+
+	/**
+	 * Process a base URI in the page. Not only is this filtered, it affects all
+	 * relative uri's on the page.
+	 */
+	public String onBaseHref(String baseHref);
 	
 }

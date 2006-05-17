@@ -15,4 +15,8 @@ public class NullFilterCallback implements FilterCallback {
 		return null;
 	}
 
+	public String onBaseHref(String baseHref) {
+		return null;
+	}
+
 }
