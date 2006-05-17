@@ -99,6 +99,7 @@ public class USKFetcher implements ClientGetState {
 		boolean succeeded;
 		/** DNF? */
 		boolean dnf;
+		boolean cancelled = false;
 		public USKAttempt(long i) {
 			this.number = i;
 			this.succeeded = false;
@@ -134,6 +135,7 @@ public class USKFetcher implements ClientGetState {
 		}
 		
 		public void cancel() {
+			cancelled = true;
 			if(checker != null) checker.cancel();
 		}
 		
@@ -292,16 +294,23 @@ public class USKFetcher implements ClientGetState {
 			long addFrom = Math.max(lastAddedEdition + 1, curLatest + 1);
 			if(addTo >= addFrom) {
 				l = new LinkedList();
-				for(long i=addFrom;i<=addTo;i++)
+				for(long i=addFrom;i<=addTo;i++) {
+					Logger.minor(this, "Adding checker for edition "+i);
 					l.add(add(i));
+				}
 			}
 			cancelBefore(curLatest);
-		}
-		if(l == null) return;
-		else if(!cancelled) {
-			for(Iterator i=l.iterator();i.hasNext();) {
-				USKAttempt a = (USKAttempt) i.next();
-				a.schedule();
+			if(l == null) return;
+			// If we schedule them here, we don't get icky recursion problems.
+			else if(!cancelled) {
+				for(Iterator i=l.iterator();i.hasNext();) {
+					// We may be called recursively through onSuccess().
+					// So don't start obsolete requests.
+					USKAttempt a = (USKAttempt) i.next();
+					lastEd = uskManager.lookup(origUSK);
+					if(lastEd <= a.number && !a.cancelled)
+						a.schedule();
+				}
 			}
 		}
 	}
@@ -336,8 +345,10 @@ public class USKFetcher implements ClientGetState {
 	private synchronized void cancelBefore(long curLatest) {
 		for(Iterator i=runningAttempts.iterator();i.hasNext();) {
 			USKAttempt att = (USKAttempt) (i.next());
-			if(att.number < curLatest)
+			if(att.number < curLatest) {
 				att.cancel();
+				i.remove();
+			}
 		}
 	}
 
@@ -350,8 +361,8 @@ public class USKFetcher implements ClientGetState {
 		Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
 		if(!runningAttempts.isEmpty()) {
 			USKAttempt last = (USKAttempt) runningAttempts.lastElement();
-			if(last.number > i)
-				throw new IllegalStateException("Adding "+i+" but last was "+last.number);
+			if(last.number >= i)
+				return null;
 		}
 		USKAttempt a = new USKAttempt(i);
 		runningAttempts.add(a);

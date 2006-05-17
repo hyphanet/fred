@@ -35,6 +35,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	private int retries;
 	private final FailureCodeTracker errors;
 	private boolean finished;
+	private final boolean dontSendEncoded;
 	private ClientKey key;
 	private WeakReference refToClientKeyBlock;
 	final int token; // for e.g. splitfiles
@@ -43,10 +44,11 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	final int sourceLength;
 	private int consecutiveRNFs;
 	
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent) throws InserterException {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded) throws InserterException {
 		this.consecutiveRNFs = 0;
 		this.token = token;
 		this.parent = parent;
+		this.dontSendEncoded = dontSendEncoded;
 		this.retries = 0;
 		this.finished = false;
 		this.ctx = ctx;
@@ -104,7 +106,8 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		refToClientKeyBlock = 
 			new WeakReference(block);
 		resultingURI = block.getClientKey().getURI();
-		cb.onEncode(block.getClientKey(), this);
+		if(!dontSendEncoded)
+			cb.onEncode(block.getClientKey(), this);
 		return block;
 	}
 	

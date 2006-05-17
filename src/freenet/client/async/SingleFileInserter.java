@@ -174,7 +174,7 @@ class SingleFileInserter implements ClientPutState {
 		if (data.size() < ClientCHKBlock.MAX_COMPRESSED_DATA_LENGTH) {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true);
 				Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
 				cb.onMetadata(meta, this);
 				cb.onTransition(this, dataPutter);
@@ -183,7 +183,7 @@ class SingleFileInserter implements ClientPutState {
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false);
 				Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
 				Bucket metadataBucket;
 				try {
@@ -233,7 +233,7 @@ class SingleFileInserter implements ClientPutState {
 			}
 		} else {
 			return new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-				getCHKOnly, addToParent);
+				getCHKOnly, addToParent, false);
 		}
 	}
 

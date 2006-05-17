@@ -11,8 +11,8 @@ public class USKFetcherWrapper extends ClientRequester {
 
 	USK usk;
 	
-	public USKFetcherWrapper(USK usk, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler) {
-		super(RequestStarter.UPDATE_PRIORITY_CLASS, chkScheduler, sskScheduler, usk);
+	public USKFetcherWrapper(USK usk, short prio, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler) {
+		super(prio, chkScheduler, sskScheduler, usk);
 		this.usk = usk;
 	}
 

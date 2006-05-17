@@ -68,7 +68,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 		synchronized(this) {
 			if(finished) return;
-			fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, this);
+			fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this);
 		}
 		fetcher.schedule();
 	}
@@ -108,7 +108,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+" "+edition);
 			try {
 				sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-						ctx, this, isMetadata, sourceLength, token, getCHKOnly, false);
+						ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */);
 			} catch (InserterException e) {
 				cb.onFailure(e, this);
 				return;

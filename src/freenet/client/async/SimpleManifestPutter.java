@@ -85,10 +85,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		public void onEncode(BaseClientKey key, ClientPutState state) {
+			Logger.minor(this, "onEncode("+key+") for "+this);
 			if(metadata == null) {
-				// Don't have metadata yet
-				// Do have key
-				// So make a redirect to the key
+				// The file was too small to have its own metadata, we get this instead.
+				// So we make the key into metadata.
 				Metadata m =
 					new Metadata(Metadata.SIMPLE_REDIRECT, key.getURI(), cm);
 				onMetadata(m, null);
@@ -171,6 +171,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private final String defaultName;
 	private int numberOfFiles;
 	private long totalSize;
+	private boolean metadataBlockSetFinalized;
 	private final static String[] defaultDefaultNames =
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	
@@ -313,10 +314,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	private void insertedAllFiles() {
+		Logger.minor(this, "Inserted all files");
 		synchronized(this) {
 			insertedAllFiles = true;
-			if(finished || cancelled) return;
-			if(!insertedManifest) return;
+			if(finished || cancelled) {
+				Logger.minor(this, "Already "+(finished?"finished":"cancelled"));
+				return;
+			}
+			if(!insertedManifest) {
+				Logger.minor(this, "Haven't inserted manifest");
+				return;
+			}
 			finished = true;
 		}
 		complete();
@@ -347,10 +355,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void onSuccess(ClientPutState state) {
+		Logger.minor(this, "Inserted manifest successfully on "+this);
 		synchronized(this) {
 			insertedManifest = true;
-			if(!finished) return;
-			if(!insertedAllFiles) return;
+			if(finished) {
+				Logger.minor(this, "Already finished");
+				return;
+			}
+			if(!insertedAllFiles) {
+				Logger.minor(this, "Not inserted all files");
+				return;
+			}
 			finished = true;
 		}
 		complete();
@@ -385,9 +400,21 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	public void onBlockSetFinished(ClientPutState state) {
+		synchronized(this) {
+			this.metadataBlockSetFinalized = true;
+			if(!waitingForBlockSets.isEmpty()) return;
+		}
 		this.blockSetFinalized();
 	}
 
+	public void blockSetFinalized() {
+		synchronized(this) {
+			if(!metadataBlockSetFinalized) return;
+			if(waitingForBlockSets.isEmpty()) return;
+		}
+		super.blockSetFinalized();
+	}
+	
 	/**
 	 * Convert a HashMap of name -> bucket to a HashSet of ManifestEntry's.
 	 * All are to have mimeOverride=null, i.e. we use the auto-detected mime type
