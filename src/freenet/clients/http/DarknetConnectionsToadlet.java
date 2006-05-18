@@ -258,7 +258,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf.append("</table>\n");
 		}
 		//
-		buf.append("<input type=\"submit\" name=\"disconnect\" value=\"Disconnect from selected Peers\" />\n");
+		buf.append("<input type=\"submit\" name=\"disconnect\" value=\"Disconnect from selected peers\" />\n");
 		buf.append("</form>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
@@ -321,7 +321,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						ref += line+"\n";
 					}
 				} catch (IOException e) {
-					this.sendErrorPage(ctx, 200, "Failed to Add Node", "Failed to add node: Unable to retrieve node reference from "+urltext+".");
+					this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to retrieve node reference from " + HTMLEncoder.encode(urltext) + ".<br /> <a href=\".\">Please try again</a>.");
 				} finally {
 					if( in != null ){
 						in.close();
@@ -332,7 +332,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n");
 			} else {
-				this.sendErrorPage(ctx, 200, "Failed to Add Node", "Failed to add node: Could not detect either a node reference or a URL. Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Could not detect either a node reference or a URL.<br /> <a href=\".\">Please try again</a>.");
 				request.freeParts();
 				return;
 			}
@@ -345,25 +345,25 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			try {
 				fs = new SimpleFieldSet(ref, true);
 			} catch (IOException e) {
-				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e+" Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref) + "</pre> as a node reference: "+HTMLEncoder.encode(e.toString())+".<br /> <a href=\".\">Please try again</a>.");
 				return;
 			}
 			PeerNode pn;
 			try {
 				pn = new PeerNode(fs, this.node, false);
 			} catch (FSParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e1+". Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref) + "</pre> as a node reference: " + HTMLEncoder.encode(e1.toString()) + ".<br /> Please <a href=\".\">Try again</a>");
 				return;
 			} catch (PeerParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e1+". Please <a href=\".\">Try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref) + "</pre> as a node reference: " + HTMLEncoder.encode(e1.toString()) + ".<br /> Please <a href=\".\">Try again</a>");
 				return;
 			}
 			if(pn.getIdentity()==node.getIdentity()) {
-				this.sendErrorPage(ctx, 200, "Referencing to self", "You can't add your own node to the list of remote peers. Return to the connections page <a href=\".\">here</a>.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "You can't add your own node to the list of remote peers.<br /> <a href=\".\">Return to the connections page</a>");
 				return;
 			}
 			if(!this.node.addDarknetConnection(pn)) {
-				this.sendErrorPage(ctx, 200, "Failed to add node", "We already have the given reference. Return to the connections page <a href=\".\">here</a>.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "We already have the given reference.<br /> <a href=\".\">Return to the connections page</a>");
 				return;
 			}
 		} else if (request.isPartSet("disconnect")) {
@@ -378,5 +378,4 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		this.handleGet(uri, ctx);
 	}
-
 }

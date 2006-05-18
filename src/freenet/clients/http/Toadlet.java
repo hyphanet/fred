@@ -167,7 +167,16 @@ public abstract class Toadlet {
 		StringBuffer buf = new StringBuffer();
 			
 		ctx.getPageMaker().makeHead(buf, desc);
+		//
+		buf.append("<div class=\"infobox infobox-error\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append(desc);
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
 		buf.append(message);
+		//
+		buf.append("</div>\n");
+		buf.append("</div>\n");
 		ctx.getPageMaker().makeTail(buf);
 		writeReply(ctx, code, "text/html", desc, buf.toString());
 	}

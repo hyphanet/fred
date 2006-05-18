@@ -87,7 +87,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("Are you sure you wish to shut down your Freenet node?\n");
 			buf.append("<form action=\"/\" method=\"post\">\n");
 			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("<input type=\"submit\" name=\"shutdownconfirm\" value=\"Shut Down\" />\n");
+			buf.append("<input type=\"submit\" name=\"shutdownconfirm\" value=\"Shut down\" />\n");
 			buf.append("</form>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
@@ -236,7 +236,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("Description:\n");
 			buf.append("<input type=\"text\" name=\"name\" value=\""+HTMLEncoder.encode(request.getParam("desc"))+"\" style=\"width: 100%; \" />\n");
 			buf.append("<input type=\"hidden\" name=\"key\" value=\""+HTMLEncoder.encode(request.getParam("newbookmark"))+"\" />\n");
-			buf.append("<input type=\"submit\" name=\"addbookmark\" value=\"Add Bookmark\" />\n");
+			buf.append("<input type=\"submit\" name=\"addbookmark\" value=\"Add bookmark\" />\n");
 			buf.append("</form>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
@@ -450,12 +450,12 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("<br />\n");
 		
 		if (mode == MODE_ADD) {
-			buf.append("<input type=\"submit\" name=\"addbookmark\" value=\"Add Bookmark\" class=\"confirm\" />\n");
+			buf.append("<input type=\"submit\" name=\"addbookmark\" value=\"Add bookmark\" class=\"confirm\" />\n");
 		} else {
-			buf.append("<input type=\"submit\" name=\"update_"+b.hashCode()+"\" value=\"Update Bookmark\" class=\"confirm\" />\n");
+			buf.append("<input type=\"submit\" name=\"update_"+b.hashCode()+"\" value=\"Update bookmark\" class=\"confirm\" />\n");
 		}
 		
-		buf.append("<input type=\"submit\" value=\"Cancel\"  class=\"cancel\" />\n");
+		buf.append("<input type=\"submit\" value=\"Cancel\" class=\"cancel\" />\n");
 		buf.append("<input type=\"hidden\" name=\"managebookmarks\" value=\"yes\" />\n");
 		buf.append("</div>\n");
 		buf.append("</form>\n");
@@ -468,4 +468,3 @@ public class WelcomeToadlet extends Toadlet {
 		return "GET, POST";
 	}
 }
-
