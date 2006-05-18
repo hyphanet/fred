@@ -335,7 +335,7 @@ public class QueueToadlet extends Toadlet {
 			
 			if(!uncompletedDirUpload.isEmpty()) {
 				writeTableHead("Directory uploads in progress", new String[] { "", "Identifier", "Files", "Total Size", "Success", "Persistence", "Key" }, buf);
-				for(Iterator i=completedUpload.iterator();i.hasNext();) {
+				for(Iterator i=uncompletedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
 					writeRowStart(buf);
 					writeDeleteCell(p, buf);
@@ -375,7 +375,7 @@ public class QueueToadlet extends Toadlet {
 			buf.append("<td>");
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(1);
-			buf.append(nf.format(frac));
+			buf.append(nf.format(frac*100));
 			buf.append("%</td>\n");
 		}
 	}
