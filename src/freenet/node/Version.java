@@ -152,6 +152,77 @@ public abstract class Version {
 	}
 
 	/**
+	 * @return true if requests should be accepted from nodes brandishing this
+	 *         version string, given an arbitrary lastGoodVersion
+	 */
+	public static final boolean checkArbitraryGoodVersion(
+		String version, String lastGoodVersion) {
+	    if(version == null) {
+	        Logger.error(Version.class, "version == null!",
+	                new Exception("error"));
+	        return false;
+	    }
+	    if(lastGoodVersion == null) {
+	        Logger.error(Version.class, "lastGoodVersion == null!",
+	                new Exception("error"));
+	        return false;
+	    }
+		String[] v = Fields.commaList(version);
+		String[] lgv = Fields.commaList(lastGoodVersion);
+
+		if (v.length < 3 || !goodProtocol(v[2])) {
+			return false;
+		}
+		if (lgv.length < 3 || !goodProtocol(lgv[2])) {
+			return false;
+		}
+		if (sameArbitraryVersion(v,lgv)) {
+			try {
+				int build = Integer.parseInt(v[3]);
+				int min_build = Integer.parseInt(lgv[3]);
+				if (build < min_build) {
+					if(logDEBUG) Logger.debug(
+						Version.class,
+						"Not accepting unstable from version: "
+							+ version
+							+ "(lastGoodVersion="
+							+ lastGoodVersion
+							+ ")");
+					return false;
+				}
+			} catch (NumberFormatException e) {
+				Logger.minor(
+					Version.class,
+					"Not accepting (" + e + ") from " + version + " and/or " + lastGoodVersion);
+				return false;
+			}
+		}
+		if (stableVersion(v)) {
+			try {
+				int build = Integer.parseInt(v[3]);
+				if(build < lastGoodStableBuild) {
+					if(logDEBUG) Logger.debug(
+						Version.class,
+						"Not accepting stable from version"
+							+ version
+							+ "(lastGoodStableBuild="
+							+ lastGoodStableBuild
+							+ ")");
+					return false;
+				}
+			} catch (NumberFormatException e) {
+				Logger.minor(
+					Version.class,
+					"Not accepting (" + e + ") from " + version);
+				return false;
+			}
+		}
+		if(logDEBUG)
+			Logger.minor(Version.class, "Accepting: " + version);
+		return true;
+	}
+
+	/**
 	 * @return string explaining why a version string is rejected
 	 */
 	public static final String explainBadVersion(String version) {
@@ -183,6 +254,24 @@ public abstract class Version {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * @return the build number of an arbitrary version string
+	 */
+	public static final int getArbitraryBuildNumber(
+		String version ) throws NumberFormatException {
+	    if(version == null) {
+	        Logger.error(Version.class, "version == null!",
+	                new Exception("error"));
+	        throw new NumberFormatException();
+	    }
+		String[] v = Fields.commaList(version);
+
+		if (v.length < 3 || !goodProtocol(v[2])) {
+	        throw new NumberFormatException();
+		}
+		return Integer.parseInt(v[3]);
 	}
 
 	/**
@@ -222,6 +311,17 @@ public abstract class Version {
 		return v[0].equals(nodeName)
 			&& v[1].equals(nodeVersion)
 			&& v.length >= 4;
+	}
+
+	/**
+	 * @return true if the string describes the same node version as an arbitrary one.
+	 * Note that the build number may be different, and is ignored.
+	 */
+	public static boolean sameArbitraryVersion(String[] v, String[] lgv) {
+		return v[0].equals(lgv[0])
+			&& v[1].equals(lgv[1])
+			&& v.length >= 4
+			&& lgv.length >= 4;
 	}
 
 	/**

@@ -100,12 +100,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 		final Integer CONNECTED = new Integer(0);
 		final Integer BACKED_OFF = new Integer(1);
-		final Integer INCOMPATIBLE = new Integer(2);
-		final Integer DISCONNECTED = new Integer(3);
+		final Integer TOO_NEW = new Integer(2);
+		final Integer INCOMPATIBLE = new Integer(3);
+		final Integer DISCONNECTED = new Integer(4);
 		
 		int numberOfConnected = 0;
 		int numberOfBackedOff = 0;
 		int numberOfIncompatible = 0;
+		int numberOfTooNew = 0;
 		int numberOfDisconnected = 0;
 		
 		// Create array
@@ -129,6 +131,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if(routingBackedOffNow) {
 					status = BACKED_OFF;
 				}
+			} else if(pn.hasCompletedHandshake() && pn.isVerifiedIncompatibleNewerVersion()) {
+				status = TOO_NEW;
 			} else if(pn.hasCompletedHandshake() && !Version.checkGoodVersion(pn.getVersion())) {
 				status = INCOMPATIBLE;
 			} else {
@@ -161,6 +165,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			else if(x == BACKED_OFF) {
 				row[1] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
 				numberOfBackedOff++;
+			}
+			else if(x == TOO_NEW) {
+				row[1] = "<span class=\"peer_too_new\">TOO NEW</span>";
+				numberOfTooNew++;
 			}
 			else if(x == INCOMPATIBLE) {
 				row[1] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
@@ -226,6 +234,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if (separatorNeeded)
 					buf.append(" | ");
 				buf.append("<span class=\"peer_backedoff\">BACKED OFF: " + numberOfBackedOff + "</span>");
+				separatorNeeded = true;
+			}
+			if (numberOfTooNew != 0) {
+				if (separatorNeeded)
+					buf.append(" | ");
+				buf.append("<span class=\"peer_too_new\">TOO NEW: " + numberOfTooNew + "</span>");
 				separatorNeeded = true;
 			}
 			if (numberOfIncompatible != 0) {

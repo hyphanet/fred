@@ -270,6 +270,10 @@ table.darknet_connections span.peer_backedoff {
 	color: #ff0000;
 }
 
+table.darknet_connections span.peer_too_new {
+	color: #d0a0a0;
+}
+
 table.darknet_connections span.peer_incompatible {
 	color: #d0a0d0;
 }

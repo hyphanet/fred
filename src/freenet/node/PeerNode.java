@@ -63,6 +63,11 @@ public class PeerNode implements PeerContext {
     
 	private String lastGoodVersion; 
 	
+    /** Set to true based on a relevant incoming handshake from this peer
+        Set true if this peer has a incompatible newer build than we are
+     */
+	private boolean verifiedIncompatibleNewerVersion = false;
+	
     /** For debugging/testing, set this to true to stop the
      * probabilistic decrement at the edges of the HTLs.
      */
@@ -466,6 +471,14 @@ public class PeerNode implements PeerContext {
     }
     
     /**
+     * Is this node too new for us? (i.e. our version if older than it's lastGoodVersion)
+     * 
+     */
+    public boolean isVerifiedIncompatibleNewerVersion() {
+        return verifiedIncompatibleNewerVersion;
+    }
+    
+    /**
      * Is this node currently connected?
      * 
      * Note possible deadlocks! PeerManager calls this, we call
@@ -607,7 +620,12 @@ public class PeerNode implements PeerContext {
     public synchronized void sentHandshake() {
         Logger.debug(this, "sentHandshake(): "+this);
         long now = System.currentTimeMillis();
-        if(invalidVersion() && !firstHandshake) {
+        if(verifiedIncompatibleNewerVersion) { 
+            // Let them know we're here, but have no hope of connecting
+            sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
+              + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS)
+              + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+        } else if(invalidVersion() && !firstHandshake) {
             sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
             	+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
         } else {
@@ -628,7 +646,12 @@ public class PeerNode implements PeerContext {
     public synchronized void couldNotSendHandshake() {
         Logger.minor(this, "couldNotSendHandshake(): "+this);
         long now = System.currentTimeMillis();
-        if(invalidVersion() && !firstHandshake) {
+        if(verifiedIncompatibleNewerVersion) {
+            // Let them know we're here, but have no hope of connecting
+            sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
+              + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS)
+              + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+        } else if(invalidVersion() && !firstHandshake) {
             sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES)
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
@@ -942,6 +965,10 @@ public class PeerNode implements PeerContext {
     
     private synchronized boolean invalidVersion() {
         return bogusNoderef || (!Version.checkGoodVersion(version));
+    }
+    
+    private synchronized boolean reverseInvalidVersion() {
+        return bogusNoderef || (!Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion));
     }
 
     /**

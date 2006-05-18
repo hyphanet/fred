@@ -297,6 +297,7 @@ public class Node {
 
 	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
 	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
+	private static BuildOldAgeUserAlert buildOldAgeUserAlert;
 	
 	public class NodeNameCallback implements StringCallback{
 			Node node;
@@ -390,6 +391,8 @@ public class Node {
     public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT;
     public static final int MIN_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*4;
     public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*2; // 20-30 secs
+    public static final int MIN_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*9;
+    public static final int RANDOMIZED_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*2; // 45-55 secs
     // If we don't receive any packets at all in this period, from any node, tell the user
     public static final long ALARM_TIME = 60*1000;
     /** Sub-max ping time. If ping is greater than this, we reject some requests. */
@@ -1072,6 +1075,8 @@ public class Node {
 
         usm.setDispatcher(dispatcher=new NodeDispatcher(this));
         usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
+        
+        buildOldAgeUserAlert = new BuildOldAgeUserAlert();
 
         // Temp files
         
@@ -2594,5 +2599,16 @@ public class Node {
 	
 	public String getBindTo(){
 		return this.bindto;
+	}
+	
+	public boolean setNewestPeerLastGoodVersion( int version ) {
+		if( version > buildOldAgeUserAlert.lastGoodVersion ) {
+			if( buildOldAgeUserAlert.lastGoodVersion == 0 ) {
+				alerts.register(buildOldAgeUserAlert);
+			}
+			buildOldAgeUserAlert.lastGoodVersion = version;
+			return true;
+		}
+		return false;
 	}
 }
