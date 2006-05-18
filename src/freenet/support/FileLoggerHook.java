@@ -295,7 +295,7 @@ public class FileLoggerHook extends LoggerHook {
 								}
 								altLogStream = openNewLogFile(latestFile, false);
 							}
-							System.err.println("Rotated log files: "+filename);
+							//System.err.println("Rotated log files: "+filename);
 							//System.err.println("Almost rotated");
 							gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 							nextHour = gc.getTimeInMillis();
