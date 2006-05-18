@@ -219,19 +219,19 @@ public class TestnetHandler implements Runnable {
 
 	
 	static class TestnetPortNumberCallback implements IntCallback {
-		TestnetHandler th;
+		Node node;
 		
 		TestnetPortNumberCallback(Node n){
-			th=n.testnetHandler;
+			this.node = n;
 		}
 		
 		public int get() {
-			return th.getPort();
+			return node.testnetHandler.getPort();
 		}
 		
 		public void set(int val) throws InvalidConfigValueException {
 			if(val == get()) return;
-			th.rebind(val);
+			node.testnetHandler.rebind(val);
 		}
 	}	
 	
@@ -250,10 +250,10 @@ public class TestnetHandler implements Runnable {
 
         	testnetConfig.register("port", node.portNumber+1000, 2, true, "Testnet port", "Testnet port number (-1 = listenPort+1000)",
         			new TestnetPortNumberCallback(node));
+
+        	int port = testnetConfig.getInt("port");
         	
         	testnetConfig.finishedInitialization();
-        	
-        	int port = testnetConfig.getInt("port");
         	return new TestnetHandler(node, port);
         } else return null;
 	}
