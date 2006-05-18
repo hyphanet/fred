@@ -2601,7 +2601,7 @@ public class Node {
 		return this.bindto;
 	}
 	
-	public int getIdentity(){
+	public int getIdentityHash(){
 		return Fields.hashCode(identityHash);
 	}
 	

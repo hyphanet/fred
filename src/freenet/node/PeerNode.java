@@ -473,7 +473,7 @@ public class PeerNode implements PeerContext {
     /**
      * Returns a unique node identifier (usefull to compare 2 pn)
      */
-    public int getIdentity(){
+    public int getIdentityHash(){
     	return hashCode;
     }
     

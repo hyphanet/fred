@@ -9,7 +9,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Hashtable;
 import java.util.Enumeration;
 
 import freenet.client.HighLevelSimpleClient;
@@ -112,7 +111,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		// Create array
 		Object[][] rows = new Object[peerNodes.length][];
-		String[][] messageTypesRows = new String[peerNodes.length][];
 		for(int i=0;i<peerNodes.length;i++) {
 			PeerNode pn = peerNodes[i];
 			long routingBackedOffUntil = pn.getRoutingBackedOffUntil();
@@ -122,7 +120,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			
 			// Elements must be HTML encoded.
 			Object[] row = new Object[9];  // where [0] is the pn object!
-			String[] messageTypesRow = new String[2];
 			rows[i] = row;
 			
 			Object status;
@@ -358,7 +355,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref) + "</pre> as a node reference: " + HTMLEncoder.encode(e1.toString()) + ".<br /> Please <a href=\".\">Try again</a>");
 				return;
 			}
-			if(pn.getIdentity()==node.getIdentity()) {
+			if(pn.getIdentityHash()==node.getIdentityHash()) {
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", "You can't add your own node to the list of remote peers.<br /> <a href=\".\">Return to the connections page</a>");
 				return;
 			}
