@@ -601,7 +601,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		public void onFoundEdition(long l, USK newUSK) {
 			ClientSSK key = usk.getSSK(l);
 			try {
-				if(l == Math.abs(usk.suggestedEdition)) {
+				if(l == usk.suggestedEdition) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, clientMetadata, key, metaStrings,
 							ctx, actx, maxRetries, recursionLevel+1, dontTellClientGet,
 							token, false, returnBucket);
