@@ -369,14 +369,20 @@ public class QueueToadlet extends Toadlet {
 
 	private void writeSuccessFractionCell(ClientRequest p, StringBuffer buf) {
 		double frac = p.getSuccessFraction();
+		boolean b = p.isTotalFinalized();
 		if(frac < 0) {
 			buf.append("<td>UNKNOWN</td>\n");
 		} else {
 			buf.append("<td>");
+			if(b)
+				buf.append("<font color=\"green\">");
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(1);
 			buf.append(nf.format(frac*100));
-			buf.append("%</td>\n");
+			if(b)
+				buf.append("%</font></td>");
+			else
+				buf.append("%</td>\n");
 		}
 	}
 

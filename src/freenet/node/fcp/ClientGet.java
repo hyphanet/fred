@@ -500,4 +500,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return s;
 	}
 
+
+	public boolean isTotalFinalized() {
+		if(progressPending == null) return false;
+		else return progressPending.isTotalFinalized();
+	}
+
 }

@@ -235,4 +235,9 @@ public abstract class ClientRequest {
 	public abstract double getSuccessFraction();
 
 	public abstract String getFailureReason();
+
+	/**
+	 * Has the total number of blocks to insert been determined yet?
+	 */
+	public abstract boolean isTotalFinalized();
 }

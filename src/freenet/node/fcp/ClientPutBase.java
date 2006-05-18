@@ -237,6 +237,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	public boolean isTotalFinalized() {
+		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
+		else return ((SimpleProgressMessage)progressMessage).isTotalFinalized();
+	}
+	
 	public String getFailureReason() {
 		if(putFailedMessage == null)
 			return null;

@@ -38,4 +38,8 @@ public class SimpleProgressMessage extends FCPMessage {
 		return (double) event.fetchedBlocks / (double) event.totalBlocks;
 	}
 
+	public boolean isTotalFinalized() {
+		return event.finalizedTotal;
+	}
+
 }
