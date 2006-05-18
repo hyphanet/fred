@@ -854,10 +854,20 @@ public class PeerNode implements PeerContext {
             Logger.error(this, "Failed to parse new noderef for "+this+": "+e1, e1);
             // Treat as invalid version
         }
+        if(reverseInvalidVersion()) {
+            verifiedIncompatibleNewerVersion = true;
+            try {
+                node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(lastGoodVersion));
+            } catch (NumberFormatException e) {
+                // ignore
+            }
+            Logger.normal(this, "Not connecting to "+this+" - reverse invalid version "+Version.getVersionString()+" for peer's lastGoodversion: "+lastGoodVersion);
+            isConnected = false;
+            node.peers.disconnected(this);
+            return false;
+            }
         if(invalidVersion()) {
             Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
-            // Update the next time to check
-            sentHandshake();
             isConnected = false;
             node.peers.disconnected(this);
             return false;
