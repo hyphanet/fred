@@ -40,7 +40,7 @@ import freenet.support.SimpleFieldSet;
  * The idea is that this should be as simple as possible...
  */
 public class TestnetHandler implements Runnable {
-
+	
 	private final TestnetStatusUploader uploader;
 	
 	public TestnetHandler(Node node2, int testnetPort) {
@@ -67,28 +67,48 @@ public class TestnetHandler implements Runnable {
 	
 	private final Node node;
 	private Thread serverThread;
-	final int testnetPort;
+	private ServerSocket server;
+	private int testnetPort;
 	
 	public void run() {
-		// Set up server socket
-		ServerSocket server;
-		try {
-			server = new ServerSocket(testnetPort);
-		} catch (IOException e) {
-			Logger.error(this, "Could not bind to testnet port: "+testnetPort);
-			System.err.println("Could not bind to testnet port: "+testnetPort);
-			System.exit(Node.EXIT_TESTNET_FAILED);
-			return;
-		}
-		while(true) {
+		while(true){
+			// Set up server socket
 			try {
-				Socket s = server.accept();
-				new TestnetSocketHandler(s);
+				server = new ServerSocket(testnetPort);
+				Logger.normal(this,"Starting testnet server on port"+testnetPort);
 			} catch (IOException e) {
-				Logger.error(this, "Testnet failed to accept socket: "+e, e);
+				Logger.error(this, "Could not bind to testnet port: "+testnetPort);
+				System.exit(Node.EXIT_TESTNET_FAILED);
+				return;
 			}
-			
+			while(!server.isClosed()) {
+				try {
+					Socket s = server.accept();
+					new TestnetSocketHandler(s);
+				} catch (IOException e) {
+					Logger.error(this, "Testnet failed to accept socket: "+e, e);
+				}	
+			}
+			Logger.normal(this, "Testnet handler has been stopped : restarting");
 		}
+	}
+	
+	public void rebind(int port){
+		synchronized(server) {
+			try{
+				if(!server.isClosed()&&server.isBound())
+					server.close();
+				this.testnetPort=port;
+			}catch( IOException e){
+				Logger.error(this, "Error while stopping the testnet handler.");
+				System.exit(Node.EXIT_TESTNET_FAILED);
+				return;
+			}
+		}
+	}
+	
+	public int getPort(){
+		return testnetPort;
 	}
 	
 	public class TestnetSocketHandler implements Runnable {
@@ -197,30 +217,19 @@ public class TestnetHandler implements Runnable {
 		
 	}
 
-	private static class TestnetPortNumberCallback implements IntCallback {
-		
-		final Node node;
-		
-		TestnetPortNumberCallback(Node node) {
-			this.node = node;
-		}
+	
+	class TestnetPortNumberCallback implements IntCallback {
 		
 		public int get() {
-			TestnetHandler th = node.testnetHandler;
-			if(th == null)
-				return node.portNumber+1000;
-			else
-				return th.testnetPort;
+			return getPort();
 		}
 		
 		public void set(int val) throws InvalidConfigValueException {
-			TestnetHandler th = node.testnetHandler;
-			if(th == null)
-				return;
-			if(val == th.testnetPort) return;
-			throw new InvalidConfigValueException("Changing testnet port number on the fly not yet supported");
+			if(val == get()) return;
+			rebind(val);
 		}
-	}
+	}	
+	
 	
 	public static TestnetHandler maybeCreate(Node node, Config config) throws NodeInitException {
         SubConfig testnetConfig = new SubConfig("node.testnet", config);
@@ -233,18 +242,13 @@ public class TestnetHandler implements Runnable {
 
         if(enabled) {
         	// Get the testnet port
-        	
-        	// Default to node port plus 1000
-        	
-        	int defaultPort = 1024 + (node.portNumber-1024+1000) % (65536 - 1024);
-        	
-        	testnetConfig.register("port", defaultPort, 2, true, "Testnet port", "Testnet port number (-1 = listenPort+1000)",
-        			new TestnetPortNumberCallback(node));
+
+        	testnetConfig.register("port", node.portNumber+1000, 2, true, "Testnet port", "Testnet port number (-1 = listenPort+1000)",
+        			new TestnetPortNumberCallback());
         	
         	testnetConfig.finishedInitialization();
         	
         	int port = testnetConfig.getInt("port");
-        	if(port == -1) port = defaultPort;
         	return new TestnetHandler(node, port);
         } else return null;
 	}

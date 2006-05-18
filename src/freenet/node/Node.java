@@ -1840,7 +1840,7 @@ public class Node {
         fs.put("testnet", Boolean.toString(testnetEnabled));
         fs.put("lastGoodVersion", Version.getLastGoodVersionString());
         if(testnetEnabled)
-        	fs.put("testnetPort", Integer.toString(testnetHandler.testnetPort));
+        	fs.put("testnetPort", Integer.toString(testnetHandler.getPort()));
         fs.put("myName", myName);
         fs.put("dsaGroup", myCryptoGroup.asFieldSet());
         fs.put("dsaPubKey", myPubKey.asFieldSet());
