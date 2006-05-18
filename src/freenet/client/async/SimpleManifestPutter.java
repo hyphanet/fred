@@ -12,6 +12,7 @@ import freenet.client.InsertBlock;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
+import freenet.client.MetadataUnresolvedException;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
@@ -31,7 +32,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block = 
 				new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null);
 			currentState = origSFI;
 			metadata = null;
 		}
@@ -167,11 +168,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private final boolean getCHKOnly;
 	private boolean insertedAllFiles;
 	private boolean insertedManifest;
-	private ClientPutState currentMetadataInserterState;
+	private final HashMap metadataPuttersByMetadata;
 	private final String defaultName;
 	private int numberOfFiles;
 	private long totalSize;
 	private boolean metadataBlockSetFinalized;
+	private Metadata baseMetadata;
 	private final static String[] defaultDefaultNames =
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	
@@ -188,6 +190,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		runningPutHandlers = new HashSet();
 		putHandlersWaitingForMetadata = new HashSet();
 		waitingForBlockSets = new HashSet();
+		metadataPuttersByMetadata = new HashMap();
 		makePutHandlers(manifestElements, putHandlersByName);
 	}
 
@@ -277,27 +280,71 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 			}
 		}
-		Metadata meta =
+		baseMetadata =
 			Metadata.mkRedirectionManifestWithMetadata(namesToByteArrays);
-		Bucket bucket;
-		try {
-			bucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
-		} catch (IOException e) {
-			fail(new InserterException(InserterException.BUCKET_ERROR, e, null));
-			return;
+		resolveAndStartBase();
+	}
+	
+	private void resolveAndStartBase() {
+		Bucket bucket = null;
+		synchronized(this) {
+			if(this.metadataPuttersByMetadata.containsKey(baseMetadata)) return;
 		}
+		while(true) {
+			try {
+				bucket = BucketTools.makeImmutableBucket(ctx.bf, baseMetadata.writeToByteArray());
+				break;
+			} catch (IOException e) {
+				fail(new InserterException(InserterException.BUCKET_ERROR, e, null));
+				return;
+			} catch (MetadataUnresolvedException e) {
+				try {
+					resolve(e);
+				} catch (IOException e1) {
+					fail(new InserterException(InserterException.BUCKET_ERROR, e, null));
+					return;
+				} catch (InserterException e2) {
+					fail(e2);
+				}
+			}
+		}
+		if(bucket == null) return;
 		InsertBlock block =
 			new InsertBlock(bucket, null, targetURI);
 		try {
 			SingleFileInserter metadataInserter = 
-				new SingleFileInserter(this, this, block, true, ctx, false, getCHKOnly, false);
-			this.currentMetadataInserterState = metadataInserter;
+				new SingleFileInserter(this, this, block, true, ctx, false, getCHKOnly, false, baseMetadata);
+			Logger.minor(this, "Inserting main metadata: "+metadataInserter);
+			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataInserter.start();
 		} catch (InserterException e) {
 			fail(e);
 		}
 	}
-	
+
+	private void resolve(MetadataUnresolvedException e) throws InserterException, IOException {
+		Metadata[] metas = e.mustResolve;
+		for(int i=0;i<metas.length;i++) {
+			Metadata m = metas[i];
+			synchronized(this) {
+				if(metadataPuttersByMetadata.containsKey(m)) continue;
+			}
+			try {
+				Bucket b = m.toBucket(ctx.bf);
+				InsertBlock ib = new InsertBlock(b, null, FreenetURI.EMPTY_CHK_URI);
+				SingleFileInserter metadataInserter = 
+					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m);
+				Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
+				synchronized(this) {
+					this.metadataPuttersByMetadata.put(m, metadataInserter);
+				}
+				metadataInserter.start();
+			} catch (MetadataUnresolvedException e1) {
+				resolve(e1);
+			}
+		}
+	}
+
 	private void namesToByteArrays(HashMap putHandlersByName, HashMap namesToByteArrays) {
 		Iterator i = putHandlersByName.keySet().iterator();
 		while(i.hasNext()) {
@@ -358,8 +405,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void onSuccess(ClientPutState state) {
-		Logger.minor(this, "Inserted manifest successfully on "+this);
 		synchronized(this) {
+			metadataPuttersByMetadata.remove(state.getToken());
+			if(!metadataPuttersByMetadata.isEmpty()) {
+				Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
+				return;
+			}
+			Logger.minor(this, "Inserted manifest successfully on "+this);
 			insertedManifest = true;
 			if(finished) {
 				Logger.minor(this, "Already finished");
@@ -375,27 +427,31 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void onFailure(InserterException e, ClientPutState state) {
-		// FIXME check state == currentMetadataInserterState ??
 		fail(e);
 	}
 	
 	public void onEncode(BaseClientKey key, ClientPutState state) {
-		this.finalURI = key.getURI();
-		Logger.minor(this, "Got metadata key: "+finalURI);
-		cb.onGeneratedURI(finalURI, this);
+		if(state.getToken() == baseMetadata) {
+			this.finalURI = key.getURI();
+			Logger.minor(this, "Got metadata key: "+finalURI);
+			cb.onGeneratedURI(finalURI, this);
+		} else {
+			// It's a sub-Metadata
+			Metadata m = (Metadata) state.getToken();
+			m.resolve(key.getURI());
+			Logger.minor(this, "Resolved "+m+" : "+key.getURI());
+			resolveAndStartBase();
+		}
 	}
 	
 	public void onTransition(ClientPutState oldState, ClientPutState newState) {
-		if(oldState == currentMetadataInserterState)
-			currentMetadataInserterState = newState;
-		else
-			Logger.error(this, "Current state = "+currentMetadataInserterState+" called onTransition(old="+oldState+", new="+newState+")", 
-					new Exception("debug"));
+		synchronized(this) {
+			Logger.minor(this, "Transition: "+oldState+" -> "+newState);
+		}
 	}
 	
 	public void onMetadata(Metadata m, ClientPutState state) {
-		Logger.error(this, "Got metadata from "+state+" on "+this+" (metadata inserter = "+currentMetadataInserterState);
-		fail(new InserterException(InserterException.INTERNAL_ERROR));
+		// Ignore
 	}
 
 	public void notifyClients() {

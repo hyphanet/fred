@@ -21,12 +21,14 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private InserterException e;
 	private boolean finished;
 	private boolean started;
+	public final Object token;
 	
-	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent) {
+	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token) {
 		this.cb = cb;
 		this.waitingFor = new LinkedList();
 		this.waitingForBlockSet = new LinkedList();
 		this.parent = parent;
+		this.token = token;
 		finished = false;
 	}
 
@@ -142,6 +144,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 
 	public void schedule() throws InserterException {
 		// Do nothing
+	}
+
+	public Object getToken() {
+		return token;
 	}
 
 }

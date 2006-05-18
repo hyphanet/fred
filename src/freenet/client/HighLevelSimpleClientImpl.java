@@ -127,7 +127,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		try {
 			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
 		} catch (IOException e) {
-			Logger.error(this, "Bucket error: "+e);
+			Logger.error(this, "Bucket error: "+e, e);
+			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
+		} catch (MetadataUnresolvedException e) {
+			Logger.error(this, "Impossible error: "+e, e);
 			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
 		}
 		ClientKey k;

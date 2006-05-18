@@ -55,7 +55,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	public void start() throws InserterException {
 		for(int i=0;i<dataBlockInserters.length;i++) {
 			dataBlockInserters[i] = 
-				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i, getCHKOnly, false, false);
+				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i, getCHKOnly, false, false, parent.token);
 			dataBlockInserters[i].schedule();
 		}
 		if(splitfileAlgo == null) {
@@ -81,7 +81,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			// Start the inserts
 			for(int i=0;i<checkBlockInserters.length;i++) {
 				checkBlockInserters[i] = 
-					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false, false);
+					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false, false, parent.token);
 				checkBlockInserters[i].schedule();
 			}
 			// Tell parent only after have started the inserts.

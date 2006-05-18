@@ -6,6 +6,7 @@ import java.io.IOException;
 import freenet.client.ClientMetadata;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
+import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
@@ -46,7 +47,18 @@ public class ClientPut extends ClientPutBase {
 			this.targetURI = message.redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
 			cm = null;
-			byte[] d = m.writeToByteArray();
+			byte[] d;
+			try {
+				d = m.writeToByteArray();
+			} catch (MetadataUnresolvedException e) {
+				// Impossible
+				Logger.error(this, "Impossible: "+e, e);
+				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
+				this.data = null;
+				clientMetadata = null;
+				inserter = null;
+				return;
+			}
 			data = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
 		} else
@@ -115,7 +127,19 @@ public class ClientPut extends ClientPutBase {
 			targetURI = new FreenetURI(target);
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
 			cm = null;
-			byte[] d = m.writeToByteArray();
+			byte[] d;
+			try {
+				d = m.writeToByteArray();
+			} catch (MetadataUnresolvedException e) {
+				// Impossible
+				Logger.error(this, "Impossible: "+e, e);
+				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
+				this.data = null;
+				clientMetadata = null;
+				origFilename = null;
+				inserter = null;
+				return;
+			}
 			data = new SimpleReadOnlyArrayBucket(d);
 			origFilename = null;
 			isMetadata = true;

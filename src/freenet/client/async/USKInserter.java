@@ -32,6 +32,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	final int sourceLength;
 	final int token;
 	final boolean getCHKOnly;
+	public final Object tokenObject;
 	
 	final InsertableUSK privUSK;
 	final USK pubUSK;
@@ -108,7 +109,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+" "+edition);
 			try {
 				sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-						ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */);
+						ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject);
 			} catch (InserterException e) {
 				cb.onFailure(e, this);
 				return;
@@ -155,7 +156,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
-			boolean getCHKOnly, boolean addToParent) throws MalformedURLException {
+			boolean getCHKOnly, boolean addToParent, Object tokenObject) throws MalformedURLException {
+		this.tokenObject = tokenObject;
 		this.parent = parent;
 		this.data = data;
 		this.compressionCodec = compressionCodec;
@@ -215,6 +217,10 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public void onBlockSetFinished(ClientPutState state) {
 		// Ignore
+	}
+
+	public Object getToken() {
+		return tokenObject;
 	}
 
 }

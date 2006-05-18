@@ -9,11 +9,15 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Vector;
 
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
+import freenet.support.BucketFactory;
+import freenet.support.BucketTools;
 import freenet.support.Fields;
 import freenet.support.Logger;
 
@@ -25,6 +29,9 @@ public class Metadata implements Cloneable {
 	static final int MAX_SPLITFILE_PARAMS_LENGTH = 32768;
 	/** Soft limit, to avoid memory DoS */
 	static final int MAX_SPLITFILE_BLOCKS = 100*1000;
+	
+	// URI at which this Metadata has been/will be inserted.
+	FreenetURI resolvedURI;
 	
 	// Actual parsed data
 	
@@ -569,8 +576,9 @@ public class Metadata implements Cloneable {
 
 	/**
 	 * Write the data to a byte array.
+	 * @throws MetadataUnresolvedException 
 	 */
-	public byte[] writeToByteArray() {
+	public byte[] writeToByteArray() throws MetadataUnresolvedException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
@@ -710,8 +718,9 @@ public class Metadata implements Cloneable {
 	}
 	
 	/** Write the metadata as binary. 
-	 * @throws IOException If an I/O error occurred while writing the data. */
-	public void writeTo(DataOutputStream dos) throws IOException {
+	 * @throws IOException If an I/O error occurred while writing the data. 
+	 * @throws MetadataUnresolvedException */
+	public void writeTo(DataOutputStream dos) throws IOException, MetadataUnresolvedException {
 		dos.writeLong(FREENET_METADATA_MAGIC);
 		dos.writeShort(0); // version
 		dos.writeByte(documentType);
@@ -783,6 +792,8 @@ public class Metadata implements Cloneable {
 		
 		if(documentType == SIMPLE_MANIFEST) {
 			dos.writeInt(manifestEntryCount);
+			boolean kill = false;
+			LinkedList unresolvedMetadata = null;
 			for(Iterator i=manifestEntries.keySet().iterator();i.hasNext();) {
 				String name = (String) i.next();
 				byte[] nameData = name.getBytes("UTF-8");
@@ -790,10 +801,34 @@ public class Metadata implements Cloneable {
 				dos.writeShort(nameData.length);
 				dos.write(nameData);
 				Metadata meta = (Metadata) manifestEntries.get(name);
-				byte[] data = meta.writeToByteArray();
-				if(data.length > Short.MAX_VALUE) throw new IllegalArgumentException("Manifest data too long");
-				dos.writeShort(data.length);
-				dos.write(data);
+				try {
+					byte[] data = meta.writeToByteArray();
+					if(data.length > Short.MAX_VALUE) {
+						FreenetURI uri = meta.resolvedURI;
+						if(uri != null) {
+							meta = new Metadata(SIMPLE_REDIRECT, uri, null);
+							data = meta.writeToByteArray();
+						} else {
+							kill = true;
+							if(unresolvedMetadata == null)
+								unresolvedMetadata = new LinkedList();
+							unresolvedMetadata.addLast(meta);
+						}
+					}
+					dos.writeShort(data.length);
+					dos.write(data);
+				} catch (MetadataUnresolvedException e) {
+					Metadata[] m = e.mustResolve;
+					if(unresolvedMetadata == null)
+						unresolvedMetadata = new LinkedList();
+					for(int j=0;j<m.length;j++)
+						unresolvedMetadata.addFirst(m[j]);
+				}
+			}
+			if(kill) {
+				Metadata[] meta = 
+					(Metadata[]) unresolvedMetadata.toArray(new Metadata[unresolvedMetadata.size()]);
+				throw new MetadataUnresolvedException(meta, "Manifest data too long and not resolved");
 			}
 		}
 		
@@ -842,5 +877,18 @@ public class Metadata implements Cloneable {
 
 	public long uncompressedDataLength() {
 		return this.decompressedLength;
+	}
+	
+	public FreenetURI getResolvedURI() {
+		return resolvedURI;
+	}
+	
+	public void resolve(FreenetURI uri) {
+		this.resolvedURI = uri;
+	}
+
+	public Bucket toBucket(BucketFactory bf) throws MetadataUnresolvedException, IOException {
+		byte[] buf = writeToByteArray();
+		return BucketTools.makeImmutableBucket(bf, buf);
 	}
 }

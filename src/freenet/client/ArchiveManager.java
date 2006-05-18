@@ -274,16 +274,43 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 		}
 		Metadata metadata = new Metadata(dir);
 		TempStoreElement element = makeTempStoreBucket(-1);
-		try {
-			OutputStream os = element.bucket.getOutputStream();
-			metadata.writeTo(new DataOutputStream(os));
-			os.close();
-		} catch (IOException e) {
-			throw new ArchiveFailureException("Failed to create metadata: "+e, e);
+		int x = 0;
+		while(true) {
+			try {
+				byte[] buf = metadata.writeToByteArray();
+				OutputStream os = element.bucket.getOutputStream();
+				os.write(buf);
+				os.close();
+				addStoreElement(ctx, key, ".metadata", element);
+				break;
+			} catch (MetadataUnresolvedException e) {
+				try {
+					x = resolve(e, x, element, ctx, key);
+				} catch (IOException e1) {
+					throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
+				}
+			} catch (IOException e1) {
+				throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
+			}
 		}
-		addStoreElement(ctx, key, ".metadata", element);
 	}
 	
+	private int resolve(MetadataUnresolvedException e, int x, TempStoreElement element, ArchiveStoreContext ctx, FreenetURI key) throws IOException {
+		Metadata[] m = e.mustResolve;
+		for(int i=0;i<m.length;i++) {
+			try {
+				byte[] buf = m[i].writeToByteArray();
+				OutputStream os = element.bucket.getOutputStream();
+				os.write(buf);
+				os.close();
+				addStoreElement(ctx, key, ".metadata-"+(x++), element);
+			} catch (MetadataUnresolvedException e1) {
+				x = resolve(e, x, element, ctx, key);
+			}
+		}
+		return x;
+	}
+
 	private void addToDirectory(HashMap dir, String name, String prefix) throws ArchiveFailureException {
 		int x = name.indexOf('/');
 		if(x < 0) {

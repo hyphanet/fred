@@ -39,13 +39,15 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	private ClientKey key;
 	private WeakReference refToClientKeyBlock;
 	final int token; // for e.g. splitfiles
+	private final Object tokenObject;
 	final boolean isMetadata;
 	final boolean getCHKOnly;
 	final int sourceLength;
 	private int consecutiveRNFs;
 	
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded) throws InserterException {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject) throws InserterException {
 		this.consecutiveRNFs = 0;
+		this.tokenObject = tokenObject;
 		this.token = token;
 		this.parent = parent;
 		this.dontSendEncoded = dontSendEncoded;
@@ -276,6 +278,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
 	public ClientRequester getClientRequest() {
 		return parent;
+	}
+
+	public Object getToken() {
+		return tokenObject;
 	}
 
 }

@@ -14,4 +14,6 @@ public interface ClientPutState {
 	public abstract void cancel();
 
 	public abstract void schedule() throws InserterException;
+	
+	public Object getToken();
 }

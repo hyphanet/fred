@@ -34,9 +34,11 @@ public class SplitFileInserter implements ClientPutState {
 	final ClientMetadata cm;
 	final boolean isMetadata;
 	private boolean finished;
+	public final Object token;
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata) throws InserterException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, Object token) throws InserterException {
 		this.parent = put;
+		this.token = token;
 		this.finished = false;
 		this.isMetadata = isMetadata;
 		this.cm = clientMetadata;
@@ -270,6 +272,10 @@ public class SplitFileInserter implements ClientPutState {
 
 	public void schedule() throws InserterException {
 		start();
+	}
+
+	public Object getToken() {
+		return token;
 	}
 
 }
