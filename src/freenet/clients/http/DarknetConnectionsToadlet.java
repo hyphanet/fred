@@ -106,8 +106,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		int numberOfConnected = 0;
 		int numberOfBackedOff = 0;
-		int numberOfIncompatible = 0;
 		int numberOfTooNew = 0;
+		int numberOfIncompatible = 0;
 		int numberOfDisconnected = 0;
 		
 		// Create array
@@ -358,7 +358,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e1+". Please <a href=\".\">Try again</a>.");
 				return;
 			}
-			if(pn.getIdentity()==node.getIndentity() || !this.node.addDarknetConnection(pn)) {
+			if(pn.getIdentity()==node.getIdentity()) {
+				this.sendErrorPage(ctx, 200, "Referencing to self", "You can't add your own node to the list of remote peers. Return to the connections page <a href=\".\">here</a>.");
+				return;
+			}
+			if(!this.node.addDarknetConnection(pn)) {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "We already have the given reference. Return to the connections page <a href=\".\">here</a>.");
 				return;
 			}
