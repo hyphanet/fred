@@ -95,131 +95,135 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("<table class=\"darknet_connections\">\n");
-		buf.append("<tr><th>Status</th><th>Name</th><th> <span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th> <span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th> <span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th><th></th></tr>\n");
-
-		final Integer CONNECTED = new Integer(0);
-		final Integer BACKED_OFF = new Integer(1);
-		final Integer TOO_NEW = new Integer(2);
-		final Integer INCOMPATIBLE = new Integer(3);
-		final Integer DISCONNECTED = new Integer(4);
+		buf.append("<tr><th>Status</th><th>Name</th><th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th><span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th><th></th></tr>\n");
 		
-		int numberOfConnected = 0;
-		int numberOfBackedOff = 0;
-		int numberOfTooNew = 0;
-		int numberOfIncompatible = 0;
-		int numberOfDisconnected = 0;
-		
-		// Create array
-		Object[][] rows = new Object[peerNodes.length][];
-		for(int i=0;i<peerNodes.length;i++) {
-			PeerNode pn = peerNodes[i];
-			long routingBackedOffUntil = pn.getRoutingBackedOffUntil();
-			boolean routingBackedOffNow = (now < routingBackedOffUntil);
-			int backoff = (int)(Math.max(routingBackedOffUntil - now, 0));
-			long idle = pn.lastReceivedPacketTime();
-			
-			// Elements must be HTML encoded.
-			Object[] row = new Object[9];  // where [0] is the pn object!
-			rows[i] = row;
-			
-			Object status;
-			if(pn.isConnected()) {
-				status = CONNECTED;
-				if(routingBackedOffNow) {
-					status = BACKED_OFF;
-				}
-			} else if(pn.hasCompletedHandshake() && pn.isVerifiedIncompatibleNewerVersion()) {
-				status = TOO_NEW;
-			} else if(pn.hasCompletedHandshake() && !Version.checkGoodVersion(pn.getVersion())) {
-				status = INCOMPATIBLE;
-			} else {
-				status = DISCONNECTED;
-			}
-			
-			row[0] = pn;
-			row[1] = status;
-			row[2] = HTMLEncoder.encode(pn.getName());
-			row[3] = pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)";
-			row[4] = HTMLEncoder.encode(pn.getVersion());
-			row[5] = new Double(pn.getLocation().getValue());
-			row[6] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000;
-			if (idle == -1) row[7] = " ";
-			else row[7] = new Long((now - idle) / 60000);
-			row[8] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
+		if (peerNodes.length == 0) {
+			buf.append("<tr><td colspan=\"8\">No connections so far</td></tr>\n");
+			buf.append("</table>\n");
 		}
-
-		// Sort array
-		Arrays.sort(rows, new MyComparator());
-		
-		// Convert status codes into status strings
-		for(int i=0;i<rows.length;i++) {
-			Object[] row = rows[i];
-			Integer x = (Integer) row[1];
-			if(x == CONNECTED) {
-				row[1] = "<span class=\"peer_connected\">CONNECTED</span>";
-				numberOfConnected++;
-			}
-			else if(x == BACKED_OFF) {
-				row[1] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
-				numberOfBackedOff++;
-			}
-			else if(x == TOO_NEW) {
-				row[1] = "<span class=\"peer_too_new\">TOO NEW</span>";
-				numberOfTooNew++;
-			}
-			else if(x == INCOMPATIBLE) {
-				row[1] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
-				numberOfIncompatible++;
-			}
-			else if(x == DISCONNECTED) {
-				row[1] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
-				numberOfDisconnected++;
-			}
-		}
-		
-		// Turn array into HTML
-		for(int i=0;i<rows.length;i++) {
-			Object[] row = rows[i];
-			buf.append("<tr>");
-			for(int j=1;j<row.length;j++) {  // skip index 0 as it's the PeerNode object
-				buf.append("<td>"+row[j]+"</td>");
-			}
-			buf.append("</tr>\n");
+		else {
+			final Integer CONNECTED = new Integer(0);
+			final Integer BACKED_OFF = new Integer(1);
+			final Integer TOO_NEW = new Integer(2);
+			final Integer INCOMPATIBLE = new Integer(3);
+			final Integer DISCONNECTED = new Integer(4);
 			
-			if (path.endsWith("displaymessagetypes.html"))
-			{
-				buf.append("<tr class=\"messagetypes\"><td colspan=\"8\">\n");
-				buf.append("<table class=\"sentmessagetypes\">\n");
-				buf.append("<tr><th>Sent Message Type</th><th>Count</th></tr>\n");
-				for (Enumeration keys=((PeerNode)row[0]).getLocalNodeSentMessagesToStatistic().keys(); keys.hasMoreElements(); )
-				{
-					Object curkey = keys.nextElement();
-					buf.append("<tr><td>");
-					buf.append((String)curkey);
-					buf.append("</td><td>");
-					buf.append(((Long)((PeerNode)row[0]).getLocalNodeSentMessagesToStatistic().get(curkey)) + "");
-					buf.append("</td></tr>\n");
+			int numberOfConnected = 0;
+			int numberOfBackedOff = 0;
+			int numberOfTooNew = 0;
+			int numberOfIncompatible = 0;
+			int numberOfDisconnected = 0;
+			
+			// Create array
+			Object[][] rows = new Object[peerNodes.length][];
+			for(int i=0;i<peerNodes.length;i++) {
+				PeerNode pn = peerNodes[i];
+				long routingBackedOffUntil = pn.getRoutingBackedOffUntil();
+				boolean routingBackedOffNow = (now < routingBackedOffUntil);
+				int backoff = (int)(Math.max(routingBackedOffUntil - now, 0));
+				long idle = pn.lastReceivedPacketTime();
+				
+				// Elements must be HTML encoded.
+				Object[] row = new Object[9];  // where [0] is the pn object!
+				rows[i] = row;
+				
+				Object status;
+				if(pn.isConnected()) {
+					status = CONNECTED;
+					if(routingBackedOffNow) {
+						status = BACKED_OFF;
+					}
+				} else if(pn.hasCompletedHandshake() && pn.isVerifiedIncompatibleNewerVersion()) {
+					status = TOO_NEW;
+				} else if(pn.hasCompletedHandshake() && !Version.checkGoodVersion(pn.getVersion())) {
+					status = INCOMPATIBLE;
+				} else {
+					status = DISCONNECTED;
 				}
-				buf.append("</table>\n");
+				
+				row[0] = pn;
+				row[1] = status;
+				row[2] = HTMLEncoder.encode(pn.getName());
+				row[3] = pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)";
+				row[4] = HTMLEncoder.encode(pn.getVersion());
+				row[5] = new Double(pn.getLocation().getValue());
+				row[6] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000;
+				if (idle == -1) row[7] = " ";
+				else row[7] = new Long((now - idle) / 60000);
+				row[8] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
+			}
 	
-				buf.append("<table class=\"receivedmessagetypes\">\n");
-				buf.append("<tr><th>Received Message Type</th><th>Count</th></tr>\n");
-				for (Enumeration keys=((PeerNode)row[0]).getLocalNodeReceivedMessagesFromStatistic().keys(); keys.hasMoreElements(); )
+			// Sort array
+			Arrays.sort(rows, new MyComparator());
+			
+			// Convert status codes into status strings
+			for(int i=0;i<rows.length;i++) {
+				Object[] row = rows[i];
+				Integer x = (Integer) row[1];
+				if(x == CONNECTED) {
+					row[1] = "<span class=\"peer_connected\">CONNECTED</span>";
+					numberOfConnected++;
+				}
+				else if(x == BACKED_OFF) {
+					row[1] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
+					numberOfBackedOff++;
+				}
+				else if(x == TOO_NEW) {
+					row[1] = "<span class=\"peer_too_new\">TOO NEW</span>";
+					numberOfTooNew++;
+				}
+				else if(x == INCOMPATIBLE) {
+					row[1] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
+					numberOfIncompatible++;
+				}
+				else if(x == DISCONNECTED) {
+					row[1] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
+					numberOfDisconnected++;
+				}
+			}
+			
+			// Turn array into HTML
+			for(int i=0;i<rows.length;i++) {
+				Object[] row = rows[i];
+				buf.append("<tr>");
+				for(int j=1;j<row.length;j++) {  // skip index 0 as it's the PeerNode object
+					buf.append("<td>"+row[j]+"</td>");
+				}
+				buf.append("</tr>\n");
+				
+				if (path.endsWith("displaymessagetypes.html"))
 				{
-					Object curkey = keys.nextElement();
-					buf.append("<tr><td>");
-					buf.append((String)curkey);
-					buf.append("</td><td>");
-					buf.append(((Long)((PeerNode)row[0]).getLocalNodeReceivedMessagesFromStatistic().get(curkey)) + "");
+					buf.append("<tr class=\"messagetypes\"><td colspan=\"8\">\n");
+					buf.append("<table class=\"sentmessagetypes\">\n");
+					buf.append("<tr><th>Sent Message Type</th><th>Count</th></tr>\n");
+					for (Enumeration keys=((PeerNode)row[0]).getLocalNodeSentMessagesToStatistic().keys(); keys.hasMoreElements(); )
+					{
+						Object curkey = keys.nextElement();
+						buf.append("<tr><td>");
+						buf.append((String)curkey);
+						buf.append("</td><td>");
+						buf.append(((Long)((PeerNode)row[0]).getLocalNodeSentMessagesToStatistic().get(curkey)) + "");
+						buf.append("</td></tr>\n");
+					}
+					buf.append("</table>\n");
+		
+					buf.append("<table class=\"receivedmessagetypes\">\n");
+					buf.append("<tr><th>Received Message Type</th><th>Count</th></tr>\n");
+					for (Enumeration keys=((PeerNode)row[0]).getLocalNodeReceivedMessagesFromStatistic().keys(); keys.hasMoreElements(); )
+					{
+						Object curkey = keys.nextElement();
+						buf.append("<tr><td>");
+						buf.append((String)curkey);
+						buf.append("</td><td>");
+						buf.append(((Long)((PeerNode)row[0]).getLocalNodeReceivedMessagesFromStatistic().get(curkey)) + "");
+						buf.append("</td></tr>\n");
+					}
+					buf.append("</table>\n");
 					buf.append("</td></tr>\n");
 				}
-				buf.append("</table>\n");
-				buf.append("</td></tr>\n");
 			}
-		}
-		buf.append("</table>\n");
-		//
-		if (rows.length != 0) {
+			buf.append("</table>\n");
+			//
 			buf.append("<table class=\"darknet_connections\">\n");
 			buf.append("<tr><td>");
 			boolean separatorNeeded = false;
@@ -253,10 +257,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			buf.append("</td></tr>\n");
 			buf.append("</table>\n");
+			//
+			buf.append("<input type=\"submit\" name=\"disconnect\" value=\"Disconnect from selected peers\" />\n");
+			buf.append("</form>\n");
 		}
-		//
-		buf.append("<input type=\"submit\" name=\"disconnect\" value=\"Disconnect from selected peers\" />\n");
-		buf.append("</form>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
 		

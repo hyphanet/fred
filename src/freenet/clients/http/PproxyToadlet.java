@@ -14,6 +14,7 @@ import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 
@@ -33,7 +34,7 @@ public class PproxyToadlet extends Toadlet {
 		throws ToadletContextClosedException, IOException {
 		
 		if(data.size() > 1024*1024) {
-			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, config servlet limited to 1MB");
+			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, plugin servlet limited to 1MB");
 			return;
 		}
 		byte[] d = BucketTools.toByteArray(data);
@@ -63,13 +64,12 @@ public class PproxyToadlet extends Toadlet {
 		}if (request.getParam("unloadconfirm").length() > 0) {
 			pm.killPlugin(request.getParam("unloadconfirm"));
 			ctx.getPageMaker().makeHead(buf, "Plugins");
-			buf.append("<div class=\"infobox infobox-information\">\n");
+			buf.append("<div class=\"infobox infobox-success\">\n");
 			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Plugin operation\n");
+			buf.append("Plugin Unloaded\n");
 			buf.append("</div>\n");
 			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("The plugin "+request.getParam("remove")+" has been removed.\n");
-			buf.append("<a href=\"/plugins/\">Back</a>");
+			buf.append("The plugin " + HTMLEncoder.encode(request.getParam("remove")) + " has been unloaded.<br /><a href=\"/plugins/\">Return to Plugins Page</a>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
 			ctx.getPageMaker().makeTail(buf);
@@ -80,16 +80,14 @@ public class PproxyToadlet extends Toadlet {
 			ctx.getPageMaker().makeHead(buf, "Plugins");
 			buf.append("<div class=\"infobox infobox-query\">\n");
 			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Plugin operation\n");
+			buf.append("Unload Plugin?\n");
 			buf.append("</div>\n");
 			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("Are you sure you wish to unload "+request.getParam("unload")+"?\n");
+			buf.append("Are you sure you wish to unload " + HTMLEncoder.encode(request.getParam("unload")) + "?\n");
 			buf.append("<form action=\"/plugins/\" method=\"post\">\n");
 			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("</form>");
-			buf.append("<form action=\"/plugins/\" method=\"post\">\n");
-			buf.append("<input type=\"hidden\" name=\"unloadconfirm\" value=\""+request.getParam("unload")+"\">\n");
-			buf.append("<input type=\"submit\" name=\"confirm\" value=\"UNLOAD\" />\n");
+			buf.append("<input type=\"hidden\" name=\"unloadconfirm\" value=\"" + HTMLEncoder.encode(request.getParam("unload")) + "\">\n");
+			buf.append("<input type=\"submit\" name=\"confirm\" value=\"Unload\" />\n");
 			buf.append("</form>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
@@ -108,7 +106,7 @@ public class PproxyToadlet extends Toadlet {
 			}
 			
 			if (fn == null) {
-				this.sendErrorPage(ctx, 404, "Plugin not found", "The specified plugin could not be located in order to reload it.");
+				this.sendErrorPage(ctx, 404, "Plugin Not Found", "The specified plugin could not be located in order to reload it.");
 				//writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx,"Error", "Plugin not found...", ".", 5));
 			} else {
 				pm.killPlugin(request.getParam("reload"));
@@ -183,42 +181,41 @@ public class PproxyToadlet extends Toadlet {
 	private void showPluginList(ToadletContext ctx, HTTPRequest request) throws ToadletContextClosedException, IOException {
 		if (!request.hasParameters()) {
 			StringBuffer out = new StringBuffer();
-			ctx.getPageMaker().makeHead(out, "Plugin List");
-			out.append("<table style=\"border: 1pt solid #c0c0c0;\">");
-			out.append("  <tr>\n");
-			out.append("    <th>Name</th>\n");
-			out.append("    <th>ID</th>\n");
-			out.append("    <th>Started</th>\n");
-			out.append("    <th></th>\n");
-			out.append("  </tr>\n");
-			Iterator it = pm.getPlugins().iterator();
-			while (it.hasNext()) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
-				out.append("  <tr>\n");
-				out.append("    <td style=\"border: 1pt solid #c0c0c0;\">" + pi.getPluginClassName() + "</td>\n");
-				out.append("    <td style=\"border: 1pt solid #c0c0c0;\">" + pi.getThreadName() + "</td>\n");
-				out.append("    <td style=\"border: 1pt solid #c0c0c0;\">" + (new Date(pi.getStarted())) + "</td>\n");
-				out.append("    <td style=\"border: 1pt solid #c0c0c0;\">");
-				if (pi.isPproxyPlugin())
-					out.append("&nbsp;<a href=\""+pi.getPluginClassName()+"/\">[VISIT]</a>&nbsp;");
-				out.append("&nbsp;<form method=\"post\" action=\".\">" +
-						"<input type=\"hidden\" name=\"unload\" value=\""+pi.getThreadName()+"\" />"+
-						"<input type=\"submit\" value=\"[UNLOAD]\"></form>&nbsp;");
-				out.append("&nbsp;<form method=\"post\" action=\".\">" +
-						"<input type=\"hidden\" name=\"reload\" value=\""+pi.getThreadName()+"\" />"+
-						"<input type=\"submit\" value=\"[RELOAD]\"></form>&nbsp;");
-				out.append("</td>\n");
-				out.append("  </tr>\n");
-			}
-			
+			ctx.getPageMaker().makeHead(out, "Plugins");
+			//
+			out.append("<div class=\"infobox infobox-normal\">\n");
+			out.append("<div class=\"infobox-header\">\n");
+			out.append("Plugin List\n");
+			out.append("</div>\n");
+			out.append("<div class=\"infobox-content\">\n");
+			//
+			out.append("<table class=\"plugins\">");
+			out.append("<tr><th>Classname</th><th>Internal ID</th><th>Started at</th><th></th></tr>\n");
 			if (pm.getPlugins().isEmpty()) {
-				out.append("<tr>\n");
-				out.append("<td colspan=\"4\"\n");
-				out.append("<i>No plugins loaded</i>\n");
-				out.append("</td>\n");
-				out.append("</tr>\n");
+				out.append("<tr><td colspan=\"4\">No plugins loaded</td></tr>\n");
 			}
-			
+			else {
+				Iterator it = pm.getPlugins().iterator();
+				while (it.hasNext()) {
+					PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
+					out.append("<tr>");
+					out.append("<td>" + pi.getPluginClassName() + "</td>");
+					out.append("<td>" + pi.getThreadName() + "</td>");
+					out.append("<td>" + (new Date(pi.getStarted())) + "</td>");
+					out.append("<td>");
+					if (pi.isPproxyPlugin()) {
+						out.append("<form method=\"get\" action=\"" + pi.getPluginClassName() + "\">" +
+								"<input type=\"submit\" value=\"Visit\"></form>");
+					}
+					out.append("<form method=\"post\" action=\".\">" +
+							"<input type=\"hidden\" name=\"unload\" value=\"" + pi.getThreadName() + "\" />"+
+							"<input type=\"submit\" value=\"Unload\"></form>");
+					out.append("<form method=\"post\" action=\".\">" +
+							"<input type=\"hidden\" name=\"reload\" value=\"" + pi.getThreadName() + "\" />"+
+							"<input type=\"submit\" value=\"Reload\"></form>");
+					out.append("</td></tr>\n");
+				}
+			}
 			out.append("</table>");
 			//String ret = "<hr/>" + out.toString();
 			//ret = pm.dumpPlugins().replaceAll(",", "\n&nbsp; &nbsp; ").replaceAll("\"", " \" ");
@@ -230,6 +227,10 @@ public class PproxyToadlet extends Toadlet {
 			// Obsolete
 			//out.append("<form method=\"get\"><div>Remove plugin: (enter ID) <input type=\"text\" name=\"remove\" size=40/><input type=\"submit\" value=\"Remove\"/></div></form>\n");
 			out.append("<form method=\"post\" action=\".\"><div>Load plugin: <input type=\"text\" name=\"load\" size=\"40\"/><input type=\"submit\" value=\"Load\" /></div></form>\n");
+			//
+			out.append("</div>\n");
+			out.append("</div>\n");
+			//
 			ctx.getPageMaker().makeTail(out);
 			writeReply(ctx, 200, "text/html", "OK", out.toString());
 		} 

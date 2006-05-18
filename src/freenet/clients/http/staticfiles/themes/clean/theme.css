@@ -203,6 +203,21 @@ a:hover {
 	list-style: none;
 }
 
+/* plugins page */
+
+table.plugins th, table.plugins td {
+	font-size: 8pt;
+}
+
+table.plugins span {
+	font-weight: bold;
+	font-size: 8pt;
+}
+
+table.plugins form {
+	display: inline;
+}
+
 /* configuration page */
 
 ul.config {
@@ -240,16 +255,6 @@ ul.config span.configlongdesc {
 ul.config input[type=text] {
 	width: 300px;
 }
-
-/*
-.cancel {
-	float: left;
-}
-
-.confirm {
-	float: right;
-}
-*/
 
 /* darknet page */
 
