@@ -3,6 +3,7 @@ package freenet.clients.http.filter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 
 import freenet.clients.http.HTTPRequest;
 import freenet.keys.FreenetURI;
@@ -96,20 +97,21 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// Obviously we don't want to support ?force= !!
 		// At the moment, ?type= and ?force= are the only options supported by Fproxy anyway.
 		String ret = path;
-		if(typeOverride != null)
-			ret = ret + "?type=" + typeOverride;
-		if(u.getFragment() != null)
-			ret = ret + "#" + u.getFragment();
-		ret = ret.trim(); // URI does wierd things with trailing spaces
-		Logger.minor(this, "ret = "+ret);
+		
 		try {
-			URI out = new URI(ret);
+			URI uri = new URI(null, null, path, typeOverride == null ? null : "type="+typeOverride,
+					u.getFragment());
 			if(!noRelative)
-				return baseURI.relativize(out).toASCIIString();
-			else
-				return ret;
+				uri = baseURI.relativize(uri);
+			return uri.toASCIIString();
 		} catch (URISyntaxException e) {
-			Logger.error(this, "Could not parse own URI: "+ret+" : "+e, e);
+			Logger.error(this, "Could not parse own URI: path="+path+", typeOverride="+typeOverride+", frag="+u.getFragment()+" : "+e, e);
+			String p = path;
+			if(typeOverride != null)
+				p += "?type="+typeOverride;
+			if(u.getFragment() != null)
+				// FIXME encode it properly
+				p += URLEncoder.encode(u.getFragment());
 			return null;
 		}
 	}
