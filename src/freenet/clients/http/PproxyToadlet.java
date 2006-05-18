@@ -1,4 +1,4 @@
-package freenet.pluginmanager;
+package freenet.clients.http;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -9,10 +9,9 @@ import java.util.Date;
 import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.HTTPRequest;
-import freenet.clients.http.Toadlet;
-import freenet.clients.http.ToadletContext;
-import freenet.clients.http.ToadletContextClosedException;
+import freenet.pluginmanager.PluginHTTPException;
+import freenet.pluginmanager.PluginInfoWrapper;
+import freenet.pluginmanager.PluginManager;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
@@ -47,16 +46,80 @@ public class PproxyToadlet extends Toadlet {
 			return;
 		}
 		
+		StringBuffer buf = new StringBuffer();
+		MultiValueTable headers = new MultiValueTable();
+		
 		if (request.isParameterSet("load")) {
 			pm.startPlugin(request.getParam("load"));
 			//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Loading plugin", "Loading plugin...", ".", 5));
-			MultiValueTable headers = new MultiValueTable();
-			
+	
 			headers.put("Location", ".");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-		} else {
+			return;
+		}if (request.isParameterSet("cancel")){
+			headers.put("Location", "/plugins/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		}if (request.getParam("unloadconfirm").length() > 0) {
+			pm.killPlugin(request.getParam("unloadconfirm"));
+			ctx.getPageMaker().makeHead(buf, "Plugins");
+			buf.append("<div class=\"infobox infobox-information\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("Plugin operation\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("The plugin "+request.getParam("remove")+" has been removed.\n");
+			buf.append("<a href=\"/plugins/\">Back</a>");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+				
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
+		}if (request.getParam("unload").length() > 0) {
+			ctx.getPageMaker().makeHead(buf, "Plugins");
+			buf.append("<div class=\"infobox infobox-query\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("Plugin operation\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("Are you sure you wish to unload "+request.getParam("unload")+"?\n");
+			buf.append("<form action=\"/plugins/\" method=\"post\">\n");
+			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
+			buf.append("</form>");
+			buf.append("<form action=\"/plugins/\" method=\"post\">\n");
+			buf.append("<input type=\"hidden\" name=\"unloadconfirm\" value=\""+request.getParam("unload")+"\">\n");
+			buf.append("<input type=\"submit\" name=\"confirm\" value=\"UNLOAD\" />\n");
+			buf.append("</form>\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
+		}else if (request.getParam("reload").length() > 0) {
+			String fn = null;
+			Iterator it = pm.getPlugins().iterator();
+			while (it.hasNext()) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
+				if (pi.getThreadName().equals(request.getParam("reload"))) {
+					fn = pi.getFilename();
+					break;
+				}
+			}
+			
+			if (fn == null) {
+				this.sendErrorPage(ctx, 404, "Plugin not found", "The specified plugin could not be located in order to reload it.");
+				//writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx,"Error", "Plugin not found...", ".", 5));
+			} else {
+				pm.killPlugin(request.getParam("reload"));
+				pm.startPlugin(fn);
+				
+				headers.put("Location", ".");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			}
+			return;
+		}else {
 			// Ignore
-			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", ".");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		}
@@ -138,8 +201,12 @@ public class PproxyToadlet extends Toadlet {
 				out.append("    <td style=\"border: 1pt solid #c0c0c0;\">");
 				if (pi.isPproxyPlugin())
 					out.append("&nbsp;<a href=\""+pi.getPluginClassName()+"/\">[VISIT]</a>&nbsp;");
-				out.append("&nbsp;<a href=\"?remove="+pi.getThreadName()+"\">[UNLOAD]</a>&nbsp;");
-				out.append("&nbsp;<a href=\"?reload="+pi.getThreadName()+"\">[RELOAD]</a>&nbsp;");
+				out.append("&nbsp;<form method=\"post\" action=\".\">" +
+						"<input type=\"hidden\" name=\"unload\" value=\""+pi.getThreadName()+"\" />"+
+						"<input type=\"submit\" value=\"[UNLOAD]\"></form>&nbsp;");
+				out.append("&nbsp;<form method=\"post\" action=\".\">" +
+						"<input type=\"hidden\" name=\"reload\" value=\""+pi.getThreadName()+"\" />"+
+						"<input type=\"submit\" value=\"[RELOAD]\"></form>&nbsp;");
 				out.append("</td>\n");
 				out.append("  </tr>\n");
 			}
@@ -165,36 +232,6 @@ public class PproxyToadlet extends Toadlet {
 			out.append("<form method=\"post\" action=\".\"><div>Load plugin: <input type=\"text\" name=\"load\" size=\"40\"/><input type=\"submit\" value=\"Load\" /></div></form>\n");
 			ctx.getPageMaker().makeTail(out);
 			writeReply(ctx, 200, "text/html", "OK", out.toString());
-		} else if (request.isParameterSet("remove")) {
-			pm.killPlugin(request.getParam("remove"));
-			
-			MultiValueTable headers = new MultiValueTable();
-			
-			headers.put("Location", ".");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Removing plugin", "Removing plugin...", ".", 5));
-		} else if (request.isParameterSet("reload")) {
-			String fn = null;
-			Iterator it = pm.getPlugins().iterator();
-			while (it.hasNext()) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
-				if (pi.getThreadName().equals(request.getParam("reload"))) {
-					fn = pi.getFilename();
-					break;
-				}
-			}
-			
-			if (fn == null) {
-				this.sendErrorPage(ctx, 404, "Plugin not found", "The specified plugin could not be located in order to reload it.");
-				//writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx,"Error", "Plugin not found...", ".", 5));
-			} else {
-				pm.killPlugin(request.getParam("reload"));
-				pm.startPlugin(fn);
-				
-				MultiValueTable headers = new MultiValueTable();
-				headers.put("Location", ".");
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			}
-		}
+		} 
 	}
 }
