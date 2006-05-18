@@ -75,7 +75,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<pre id=\"reference\">\n");
-		buf.append(this.node.exportPublicFieldSet());
+		buf.append(HTMLEncoder.encode(this.node.exportPublicFieldSet().toString()));
 		buf.append("</pre>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
