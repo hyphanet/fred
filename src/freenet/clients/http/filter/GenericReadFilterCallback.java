@@ -57,7 +57,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// mailto: not supported yet - FIXME what to do with it? what queries are allowed? can it possibly hurt us? how to construct safely? etc
 		
 		HTTPRequest req = new HTTPRequest(uri);
-		if (path.equals("/") && req.isParameterSet("newbookmark")) {
+		if (path != null && path.equals("/") && req.isParameterSet("newbookmark")) {
 			// allow links to the root to add bookmarks
 			String bookmark_key = req.getParam("newbookmark");
 			String bookmark_desc = req.getParam("desc");
@@ -71,6 +71,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// Probably a relative URI.
 		
 		String rpath = resolved.getPath();
+		if(rpath == null) return null;
 		Logger.minor(this, "Resolved URI: "+rpath);
 		
 		// Valid FreenetURI?
