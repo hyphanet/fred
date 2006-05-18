@@ -18,7 +18,6 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -2600,6 +2599,10 @@ public class Node {
 	
 	public String getBindTo(){
 		return this.bindto;
+	}
+	
+	public int getIndentity(){
+		return Fields.hashCode(identityHash);
 	}
 	
 	public boolean setNewestPeerLastGoodVersion( int version ) {

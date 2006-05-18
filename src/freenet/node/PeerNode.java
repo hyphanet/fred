@@ -471,6 +471,13 @@ public class PeerNode implements PeerContext {
     }
     
     /**
+     * Returns a unique node identifier (usefull to compare 2 pn)
+     */
+    public int getIdentity(){
+    	return hashCode;
+    }
+    
+    /**
      * Is this node too new for us? (i.e. our version if older than it's lastGoodVersion)
      * 
      */

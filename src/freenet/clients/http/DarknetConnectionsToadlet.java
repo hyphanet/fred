@@ -358,7 +358,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "Unable to parse the given text: <pre>"+ref+"</pre> as a node reference: "+e1+". Please <a href=\".\">Try again</a>.");
 				return;
 			}
-			if(!this.node.addDarknetConnection(pn)) {
+			if(pn.getIdentity()==node.getIndentity() || !this.node.addDarknetConnection(pn)) {
 				this.sendErrorPage(ctx, 200, "Failed to add node", "We already have the given reference. Return to the connections page <a href=\".\">here</a>.");
 				return;
 			}
