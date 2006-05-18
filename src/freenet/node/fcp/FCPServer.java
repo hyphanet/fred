@@ -106,11 +106,13 @@ public class FCPServer implements Runnable {
 			}
 			
 			Logger.normal(this, "Starting FCP server on "+bindTo+":"+port+".");
+			System.out.println("Starting FCP server on "+bindTo+":"+port+".");
 			NetworkInterface networkInterface = null;
 			try {
 				networkInterface = new NetworkInterface(port, bindTo, allowedHosts);
 			} catch (BindException be) {
-				Logger.error(this, "Couldn't bind to FCP Port "+port+". FCP Server not started.");
+				Logger.error(this, "Couldn't bind to FCP Port "+bindTo+":"+port+". FCP Server not started.");
+				System.out.println("Couldn't bind to FCP Port "+bindTo+":"+port+". FCP Server not started.");
 			}
 			
 			this.networkInterface = networkInterface;
@@ -122,6 +124,7 @@ public class FCPServer implements Runnable {
 			}
 		} else {
 			Logger.normal(this, "Not starting FCP server as it's disabled");
+			System.out.println("Not starting FCP server as it's disabled");
 			this.networkInterface = null;
 			this.node = null;
 			this.clientsByName = null;

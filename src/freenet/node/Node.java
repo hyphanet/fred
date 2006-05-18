@@ -930,8 +930,8 @@ public class Node {
     				port = u.getPortNumber();
     				break;
     			} catch (Exception e) {
-    				Logger.normal(this, "Could not use port: "+portNo+": "+e, e);
-    				System.err.println("Could not use port: "+portNo+": "+e);
+    				Logger.normal(this, "Could not use port: "+bindto+":"+portNo+": "+e, e);
+    				System.err.println("Could not use port: "+bindto+":"+portNo+": "+e);
     				e.printStackTrace();
     				continue;
     			}
@@ -947,7 +947,8 @@ public class Node {
     	}
     	usm = u;
     	
-        System.out.println("Port number: "+port);
+        Logger.normal(this, "FNP port created on "+bindto+":"+port);
+        System.out.println("FNP port created on "+bindto+":"+port);
         portNumber = port;
         
         Logger.normal(Node.class, "Creating node...");

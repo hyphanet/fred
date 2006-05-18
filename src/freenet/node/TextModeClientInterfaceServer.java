@@ -74,6 +74,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		}
 		else{
 			Logger.normal(node, "Not starting TMCI as it's disabled");
+			System.out.println("Not starting TMCI as it's disabled");
 		}
 		
 		if(direct) {

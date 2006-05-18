@@ -156,6 +156,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		if(!enabled) {
 			Logger.normal(node, "Not starting Fproxy as it's disabled");
+			System.out.println("Not starting Fproxy as it's disabled");
 			this.networkInterface = null;
 		} else {
 			this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
@@ -163,8 +164,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
 			myThread.start();
-			System.out.println("Starting fproxy on port "+(port));
 			Logger.normal(this, "Starting fproxy on "+bindTo+":"+port);
+			System.out.println("Starting fproxy on "+bindTo+":"+port);
 		}
 	}
 	

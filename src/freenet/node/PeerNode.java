@@ -1102,7 +1102,7 @@ public class PeerNode implements PeerContext {
         	changedAnything = true;
         
         if(nominalPeer.isEmpty()) {
-        	Logger.normal(this, "No physical.udp");
+        	Logger.normal(this, "No physical.udp in noderef for identity '"+identityString+"', possibly at location '"+locationString+"'");
         	// detectedPeer stays as it is
         } else {
             /* yes, we pick up a random one : it will be updated on handshake */
