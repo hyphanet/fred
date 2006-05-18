@@ -103,6 +103,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		final Integer INCOMPATIBLE = new Integer(2);
 		final Integer DISCONNECTED = new Integer(3);
 		
+		int numberOfConnected = 0;
+		int numberOfBackedOff = 0;
+		int numberOfIncompatible = 0;
+		int numberOfDisconnected = 0;
+		
 		// Create array
 		Object[][] rows = new Object[peerNodes.length][];
 		String[][] messageTypesRows = new String[peerNodes.length][];
@@ -149,16 +154,28 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		for(int i=0;i<rows.length;i++) {
 			Object[] row = rows[i];
 			Integer x = (Integer) row[1];
-			if(x == CONNECTED) row[1] = "<span class=\"peer_connected\">CONNECTED</span>";
-			else if(x == BACKED_OFF) row[1] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
-			else if(x == INCOMPATIBLE) row[1] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
-			else if(x == DISCONNECTED) row[1] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
+			if(x == CONNECTED) {
+				row[1] = "<span class=\"peer_connected\">CONNECTED</span>";
+				numberOfConnected++;
+			}
+			else if(x == BACKED_OFF) {
+				row[1] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
+				numberOfBackedOff++;
+			}
+			else if(x == INCOMPATIBLE) {
+				row[1] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
+				numberOfIncompatible++;
+			}
+			else if(x == DISCONNECTED) {
+				row[1] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
+				numberOfDisconnected++;
+			}
 		}
 		
 		// Turn array into HTML
 		for(int i=0;i<rows.length;i++) {
 			Object[] row = rows[i];
-			buf.append("<tr>\n");
+			buf.append("<tr>");
 			for(int j=1;j<row.length;j++) {  // skip index 0 as it's the PeerNode object
 				buf.append("<td>"+row[j]+"</td>");
 			}
@@ -195,11 +212,42 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				buf.append("</td></tr>\n");
 			}
 		}
-		buf.append("</table>");
-		buf.append("<input type=\"submit\" name =\"disconnect\" value=\"Disconnect from selected Peers\" />");
-		buf.append("</form>");
-		buf.append("</div>");
-		buf.append("</div>");
+		buf.append("</table>\n");
+		//
+		if (rows.length != 0) {
+			buf.append("<table class=\"darknet_connections\">\n");
+			buf.append("<tr><td>");
+			boolean separatorNeeded = false;
+			if (numberOfConnected != 0) {
+				buf.append("<span class=\"peer_connected\">CONNECTED: " + numberOfConnected + "</span>");
+				separatorNeeded = true;
+			}
+			if (numberOfBackedOff != 0) {
+				if (separatorNeeded)
+					buf.append(" | ");
+				buf.append("<span class=\"peer_backedoff\">BACKED OFF: " + numberOfBackedOff + "</span>");
+				separatorNeeded = true;
+			}
+			if (numberOfIncompatible != 0) {
+				if (separatorNeeded)
+					buf.append(" | ");
+				buf.append("<span class=\"peer_incompatible\">INCOMPATIBLE: " + numberOfIncompatible + "</span>");
+				separatorNeeded = true;
+			}
+			if (numberOfDisconnected != 0) {
+				if (separatorNeeded)
+					buf.append(" | ");
+				buf.append("<span class=\"peer_disconnected\">DISCONNECTED: " + numberOfDisconnected + "</span>");
+				separatorNeeded = true;
+			}
+			buf.append("</td></tr>\n");
+			buf.append("</table>\n");
+		}
+		//
+		buf.append("<input type=\"submit\" name=\"disconnect\" value=\"Disconnect from selected Peers\" />\n");
+		buf.append("</form>\n");
+		buf.append("</div>\n");
+		buf.append("</div>\n");
 		
 		// new connection box
 		buf.append("<div class=\"infobox infobox-normal\">\n");
