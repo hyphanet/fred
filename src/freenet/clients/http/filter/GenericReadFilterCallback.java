@@ -69,9 +69,27 @@ public class GenericReadFilterCallback implements FilterCallback {
 			return "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
 		}
 		
+		// Try as an absolute URI
+		
+		String rpath = uri.getPath();
+		if(rpath != null) {
+			Logger.minor(this, "Resolved URI: "+rpath);
+			
+			// Valid FreenetURI?
+			try {
+				String p = rpath;
+				while(p.startsWith("/")) p = p.substring(1);
+				FreenetURI furi = new FreenetURI(p);
+				Logger.minor(this, "Parsed: "+furi);
+				return processURI(furi, uri, overrideType, noRelative);
+			} catch (MalformedURLException e) {
+				// Not a FreenetURI
+			}
+		}
+		
 		// Probably a relative URI.
 		
-		String rpath = resolved.getPath();
+		rpath = resolved.getPath();
 		if(rpath == null) return null;
 		Logger.minor(this, "Resolved URI: "+rpath);
 		
