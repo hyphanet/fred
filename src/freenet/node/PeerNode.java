@@ -1341,7 +1341,7 @@ public class PeerNode implements PeerContext {
 				if( 0 < reason.length()) {
 					reasonWrapper = " because of '"+reason+"'";
 				}
-				Logger.normal(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+getPeer());
+				Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+getPeer());
 			} else {
 				Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+getPeer());
 			}

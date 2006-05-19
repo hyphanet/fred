@@ -209,7 +209,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
 	    		
 	    	}catch(CHKVerifyException ex){
-	    		Logger.normal(this, "Does not verify ("+ex+"), setting accessTime to 0 for : "+chk);
+	    		Logger.normal(this, "CHKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk);
 	    		storeBlock.setRecentlyUsedToZero();
     			DatabaseEntry updateDBE = new DatabaseEntry();
     			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
@@ -293,7 +293,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
 	    		
 	    	}catch(SSKVerifyException ex){
-	    		Logger.normal(this, "Does not verify, setting accessTime to 0 for : "+chk, ex);
+	    		Logger.normal(this, "SSHBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk, ex);
 	    		storeBlock.setRecentlyUsedToZero();
     			DatabaseEntry updateDBE = new DatabaseEntry();
     			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
@@ -368,7 +368,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		}
 	    		
 	    		if(!Arrays.equals(block.asBytesHash(), hash)) {
-		    		Logger.normal(this, "Does not verify, setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
+		    		Logger.normal(this, "DSAPublicKey: Does not verify (unequal hashes), setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
 		    		storeBlock.setRecentlyUsedToZero();
 	    			DatabaseEntry updateDBE = new DatabaseEntry();
 	    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
