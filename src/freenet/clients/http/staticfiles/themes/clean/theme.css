@@ -302,3 +302,89 @@ table.receivedmessagetypes {
 table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
 	font-size: 7pt;
 }
+
+/* queue page */
+
+table.queue th, table.queue td {
+	font-size: 8pt;
+}
+
+div.queue_tabletitle {
+	margin: 0;
+	padding: 10px 0 10px 0;
+	font-size: 10pt;
+}
+
+table.queue span {
+	font-size: 8pt;
+}
+
+table.queue span.failure_reason_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.failure_reason_is {
+}
+
+table.queue span.progress_fraction_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.progress_fraction_not_finalized {
+}
+
+table.queue span.progress_fraction_finalized {
+	color: #008000;
+}
+
+table.queue span.number_of_files {
+}
+
+table.queue span.number_of_files {
+}
+
+table.queue span.filename_direct {
+	color: #d0d0d0;
+}
+
+table.queue span.filename_none {
+	color: #d0d0d0;
+}
+
+table.queue span.filename_is {
+}
+
+table.queue span.identifier_with_uri {
+}
+
+table.queue span.persistence_none {
+}
+
+table.queue span.persistence_reboot {
+	color: #0000ff;
+}
+
+table.queue span.persistence_forever {
+	color: #00b000;
+}
+
+table.queue span.mimetype_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.mimetype_is {
+}
+
+table.queue span.filesize_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.filesize_is {
+}
+
+table.queue span.key_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.key_is {
+}

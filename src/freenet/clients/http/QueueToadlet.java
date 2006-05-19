@@ -145,7 +145,7 @@ public class QueueToadlet extends Toadlet {
 			writeBigHeading("Completed requests", buf);
 			
 			if(!completedDownloadToTemp.isEmpty()) {
-				writeTableHead("Completed downloads to temporary space", new String[] { "", "Identifier", "Size", "Type", "Download", "Persistence", "Key" }, buf );
+				writeTableHead("Completed downloads to temporary space", new String[] { "", "Identifier", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf );
 				for(Iterator i = completedDownloadToTemp.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
 					writeRowStart(buf);
@@ -162,7 +162,7 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!completedDownloadToDisk.isEmpty()) {
-				writeTableHead("Completed downloads to disk", new String[] { "", "Identifier", "Filename", "Size", "Type", "Download", "Persistence", "Key" }, buf);
+				writeTableHead("Completed downloads to disk", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf);
 				for(Iterator i=completedDownloadToDisk.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
 					writeRowStart(buf);
@@ -180,7 +180,7 @@ public class QueueToadlet extends Toadlet {
 			}
 
 			if(!completedUpload.isEmpty()) {
-				writeTableHead("Completed uploads", new String[] { "", "Key", "Filename", "Size", "Type", "Persistence", "Identifier" }, buf);
+				writeTableHead("Completed uploads", new String[] { "", "Key", "Filename", "Size", "MIME-Type", "Persistence", "Identifier" }, buf);
 				for(Iterator i=completedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
 					writeRowStart(buf);
@@ -215,6 +215,7 @@ public class QueueToadlet extends Toadlet {
 				}
 				writeTableEnd(buf);
 			}
+			writeBigEnding(buf);
 		}
 
 		/* FIXME color-coded progress bars.
@@ -226,7 +227,7 @@ public class QueueToadlet extends Toadlet {
 		if(!(failedDownload.isEmpty() && failedUpload.isEmpty())) {
 			writeBigHeading("Failed requests", buf);
 			if(!failedDownload.isEmpty()) {
-				writeTableHead("Failed downloads", new String[] { "", "Identifier", "Filename", "Size", "Type", "Success", "Reason", "Persistence", "Key" }, buf);
+				writeTableHead("Failed downloads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
 				for(Iterator i=failedDownload.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
 					writeRowStart(buf);
@@ -238,7 +239,7 @@ public class QueueToadlet extends Toadlet {
 						writeFilenameCell(p.getDestFilename(), buf);
 					writeSizeCell(p.getDataSize(), buf);
 					writeTypeCell(p.getMIMEType(), buf);
-					writeSuccessFractionCell(p, buf);
+					writeProgressFractionCell(p, buf);
 					writeFailureReasonCell(p, buf);
 					writePersistenceCell(p, buf);
 					writeKeyCell(p.getURI(), buf);
@@ -248,7 +249,7 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!failedUpload.isEmpty()) {
-				writeTableHead("Failed uploads", new String[] { "", "Identifier", "Filename", "Size", "Type", "Success", "Reason", "Persistence", "Key" }, buf);
+				writeTableHead("Failed uploads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
 				for(Iterator i=failedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
 					writeRowStart(buf);
@@ -260,7 +261,7 @@ public class QueueToadlet extends Toadlet {
 						writeFilenameCell(p.getOrigFilename(), buf);
 					writeSizeCell(p.getDataSize(), buf);
 					writeTypeCell(p.getMIMEType(), buf);
-					writeSuccessFractionCell(p, buf);
+					writeProgressFractionCell(p, buf);
 					writeFailureReasonCell(p, buf);
 					writePersistenceCell(p, buf);
 					writeKeyCell(p.getFinalURI(), buf);
@@ -270,7 +271,7 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!failedDirUpload.isEmpty()) {
-				writeTableHead("Failed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Success", "Reason", "Persistence", "Key" }, buf);
+				writeTableHead("Failed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Reason", "Persistence", "Key" }, buf);
 				for(Iterator i=failedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
 					writeRowStart(buf);
@@ -278,7 +279,7 @@ public class QueueToadlet extends Toadlet {
 					writeIdentifierCell(p, p.getFinalURI(), buf);
 					writeNumberCell(p.getNumberOfFiles(), buf);
 					writeSizeCell(p.getTotalDataSize(), buf);
-					writeSuccessFractionCell(p, buf);
+					writeProgressFractionCell(p, buf);
 					writeFailureReasonCell(p, buf);
 					writePersistenceCell(p, buf);
 					writeKeyCell(p.getFinalURI(), buf);
@@ -286,13 +287,14 @@ public class QueueToadlet extends Toadlet {
 				}
 				writeTableEnd(buf);
 			}
+			writeBigEnding(buf);
 		}
 		
 		if(!(uncompletedDownload.isEmpty() && uncompletedUpload.isEmpty() && 
 				uncompletedDirUpload.isEmpty())) {
 			writeBigHeading("Requests in progress", buf);
 			if(!uncompletedDownload.isEmpty()) {
-				writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Size", "Type", "Success", "Persistence", "Key" }, buf);
+				writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i = uncompletedDownload.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
 					writeRowStart(buf);
@@ -304,7 +306,7 @@ public class QueueToadlet extends Toadlet {
 						writeFilenameCell(p.getDestFilename(), buf);
 					writeSizeCell(p.getDataSize(), buf);
 					writeTypeCell(p.getMIMEType(), buf);
-					writeSuccessFractionCell(p, buf);
+					writeProgressFractionCell(p, buf);
 					writePersistenceCell(p, buf);
 					writeKeyCell(p.getURI(), buf);
 					writeRowEnd(buf);
@@ -313,7 +315,7 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!uncompletedUpload.isEmpty()) {
-				writeTableHead("Uploads in progress", new String[] { "", "Identifier", "Filename", "Size", "Type", "Success", "Persistence", "Key" }, buf);
+				writeTableHead("Uploads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i = uncompletedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
 					writeRowStart(buf);
@@ -325,7 +327,7 @@ public class QueueToadlet extends Toadlet {
 						writeFilenameCell(p.getOrigFilename(), buf);
 					writeSizeCell(p.getDataSize(), buf);
 					writeTypeCell(p.getMIMEType(), buf);
-					writeSuccessFractionCell(p, buf);
+					writeProgressFractionCell(p, buf);
 					writePersistenceCell(p, buf);
 					writeKeyCell(p.getFinalURI(), buf);
 					writeRowEnd(buf);
@@ -334,7 +336,7 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!uncompletedDirUpload.isEmpty()) {
-				writeTableHead("Directory uploads in progress", new String[] { "", "Identifier", "Files", "Total Size", "Success", "Persistence", "Key" }, buf);
+				writeTableHead("Directory uploads in progress", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i=uncompletedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
 					writeRowStart(buf);
@@ -342,13 +344,14 @@ public class QueueToadlet extends Toadlet {
 					writeIdentifierCell(p, p.getFinalURI(), buf);
 					writeNumberCell(p.getNumberOfFiles(), buf);
 					writeSizeCell(p.getTotalDataSize(), buf);
-					writeSuccessFractionCell(p, buf);
+					writeProgressFractionCell(p, buf);
 					writePersistenceCell(p, buf);
 					writeKeyCell(p.getFinalURI(), buf);
 					writeRowEnd(buf);
 				}
 				writeTableEnd(buf);
 			}
+			writeBigEnding(buf);
 		}
 		
 		ctx.getPageMaker().makeTail(buf);
@@ -361,56 +364,50 @@ public class QueueToadlet extends Toadlet {
 		buf.append("<td>");
 		String s = p.getFailureReason();
 		if(s == null)
-			buf.append("UNKNOWN");
+			buf.append("<span class=\"failure_reason_unknown\">unknown</span>");
 		else
-			buf.append(s);
+			buf.append("<span class=\"failure_reason_is\">" + s + "</span>");
 		buf.append("</td>\n");
 	}
 
-	private void writeSuccessFractionCell(ClientRequest p, StringBuffer buf) {
+	private void writeProgressFractionCell(ClientRequest p, StringBuffer buf) {
+		buf.append("<td>");
 		double frac = p.getSuccessFraction();
 		boolean b = p.isTotalFinalized();
 		if(frac < 0) {
-			buf.append("<td>UNKNOWN</td>\n");
+			buf.append("<span class=\"progress_fraction_unknown\">unknown</span>");
 		} else {
-			buf.append("<td>");
 			if(b)
-				buf.append("<font color=\"green\">");
+				buf.append("<span class=\"progress_fraction_finalized\">");
+			else
+				buf.append("<span class=\"progress_fraction_not_finalized\">");
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(1);
 			buf.append(nf.format(frac*100));
-			if(b)
-				buf.append("%</font></td>");
-			else
-				buf.append("%</td>\n");
+			buf.append("%</span>");
 		}
+		buf.append("</td>\n");
 	}
 
 	private void writeNumberCell(int numberOfFiles, StringBuffer buf) {
 		buf.append("<td>");
-		buf.append(numberOfFiles);
+		buf.append("<span class=\"number_of_files\">" + numberOfFiles + "</span>");
 		buf.append("</td>\n");
 	}
 
 	private void writeDirectCell(StringBuffer buf) {
-		buf.append("<td>DIRECT</td>\n");
+		buf.append("<td>");
+		buf.append("<span class=\"filename_direct\">direct</span>");
+		buf.append("</td>\n");
 	}
 
 	private void writeFilenameCell(File destFilename, StringBuffer buf) {
 		buf.append("<td>");
 		if(destFilename == null)
-			buf.append("NONE");
+			buf.append("<span class=\"filename_none\">none</span>");
 		else
-			buf.append(HTMLEncoder.encode(destFilename.toString()));
+			buf.append("<span class=\"filename_is\">" + HTMLEncoder.encode(destFilename.toString()) + "</span>");
 		buf.append("</td>\n");
-	}
-
-	private void writeTableEnd(StringBuffer buf) {
-		buf.append("</table>");
-	}
-
-	private void writeRowEnd(StringBuffer buf) {
-		buf.append("</tr>\n");
 	}
 
 	private void writeDeleteCell(ClientRequest p, StringBuffer buf) {
@@ -426,24 +423,28 @@ public class QueueToadlet extends Toadlet {
 	private void writeIdentifierCell(ClientRequest p, FreenetURI uri, StringBuffer buf) {
 		buf.append("<td>");
 		if(uri != null) {
-			buf.append("<a href=\"/");
+			buf.append("<span class=\"identifier_with_uri\"><a href=\"/");
 			buf.append(uri.toString(false));
 			buf.append("\">");
+			buf.append(HTMLEncoder.encode(p.getIdentifier()));
+			buf.append("</a></span>");
 		}
-		buf.append(HTMLEncoder.encode(p.getIdentifier()));
-		if(uri != null)
-			buf.append("</a>");
+		else {
+			buf.append("<span class=\"identifier_without_uri\">");
+			buf.append(HTMLEncoder.encode(p.getIdentifier()));
+			buf.append("</span>");
+		}
 		buf.append("</td>\n");
 	}
 
 	private void writePersistenceCell(ClientRequest p, StringBuffer buf) {
 		buf.append("<td>");
 		if(!p.isPersistent())
-			buf.append("<font color=\"black\">NONE</font>");
+			buf.append("<span class=\"persistence_none\">none</span>");
 		else if(!p.isPersistentForever())
-			buf.append("<font color=\"blue\">REBOOT</font>");
+			buf.append("<span class=\"persistence_reboot\">reboot</span>");
 		else
-			buf.append("<font color=\"green\">FOREVER</font>");
+			buf.append("<span class=\"persistence_forever\">forever</span>");
 		buf.append("</td>\n");
 	}
 
@@ -456,33 +457,33 @@ public class QueueToadlet extends Toadlet {
 	private void writeTypeCell(String type, StringBuffer buf) {
 		buf.append("<td>");
 		if(type != null)
-			buf.append(type);
+			buf.append("<span class=\"mimetype_is\">" + type + "</span>");
 		else
-			buf.append("UNKNOWN");
+			buf.append("<span class=\"mimetype_unknown\">unknown</span>");
 		buf.append("</td>\n");
 	}
 
 	private void writeSizeCell(long dataSize, StringBuffer buf) {
 		buf.append("<td>");
 		if(dataSize >= 0)
-			buf.append(SizeUtil.formatSize(dataSize));
+			buf.append("<span class=\"filesize_is\">" + SizeUtil.formatSize(dataSize) + "</span>");
 		else
-			buf.append("UNKNOWN");
+			buf.append("<span class=\"filesize_unknown\">unknown</span>");
 		buf.append("</td>\n");
 	}
 
 	private void writeKeyCell(FreenetURI uri, StringBuffer buf) {
 		buf.append("<td>");
 		if(uri != null) {
-			buf.append("<a href=\"/");
+			buf.append("<span class=\"key_is\"><a href=\"/");
 			String u = uri.toString(false);
 			buf.append(URLEncoder.encode(u));
 			buf.append("\">");
 			// FIXME too long? maybe only show the human readable bit?
 			buf.append(HTMLEncoder.encode(u));
-			buf.append("</a>");
+			buf.append("</a></span>");
 		} else {
-			buf.append("UNKNOWN");
+			buf.append("<span class=\"key_unknown\">unknown</span>");
 		}
 		buf.append("</td>\n");
 	}
@@ -491,24 +492,37 @@ public class QueueToadlet extends Toadlet {
 		buf.append("<tr>");
 	}
 
-	private void writeTableHead(String string, String[] strings, StringBuffer buf) {
-		buf.append("<h2>");
-		buf.append(string);
-		buf.append("</h2>\n");
-		buf.append("<table border=\"0\">\n");
+	private void writeRowEnd(StringBuffer buf) {
+		buf.append("</tr>\n");
+	}
+
+	private void writeTableHead(String tabletitle, String[] strings, StringBuffer buf) {
+		buf.append("<div class=\"queue_tabletitle\">" + tabletitle + "</div>");
+		buf.append("<table class=\"queue\">\n");
 		buf.append("<tr>");
 		for(int i=0;i<strings.length;i++) {
 			buf.append("<th>");
 			buf.append(strings[i]);
 			buf.append("</th>");
 		}
-		buf.append("\n");
+		buf.append("</tr>\n");
 	}
 
-	private void writeBigHeading(String string, StringBuffer buf) {
-		buf.append("<h1>");
-		buf.append(string);
-		buf.append("</h1>\n");
+	private void writeTableEnd(StringBuffer buf) {
+		buf.append("</table>");
+	}
+
+	private void writeBigHeading(String header, StringBuffer buf) {
+		buf.append("<div class=\"infobox infobox-normal\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append(header);
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
+	}
+
+	private void writeBigEnding(StringBuffer buf) {
+		buf.append("</div>\n");
+		buf.append("</div>\n");
 	}
 
 	public String supportedMethods() {

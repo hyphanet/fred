@@ -101,6 +101,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if (peerNodes.length == 0) {
 			buf2.append("<tr><td colspan=\"8\">No connections so far</td></tr>\n");
 			buf2.append("</table>\n");
+			//
+			buf.append(buf2);
 		}
 		else {
 			final Integer CONNECTED = new Integer(0);
@@ -258,6 +260,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			buf.append("</td></tr>\n");
 			buf.append("</table>\n");
+			//
 			buf.append(buf2);
 			//
 			buf.append("<input type=\"submit\" name=\"disconnect\" value=\"Disconnect from selected peers\" />\n");
