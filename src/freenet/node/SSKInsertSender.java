@@ -198,7 +198,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 					// Terminal overload
 					// Try to propagate back to source
 					Logger.minor(this, "Timeout");
-					next.localRejectedOverload();
+					next.localRejectedOverload("Timeout");
 					finish(TIMED_OUT, next);
 					return;
 				}
@@ -206,7 +206,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 				if (msg.getSpec() == DMT.FNPRejectedOverload) {
 					// Non-fatal - probably still have time left
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
-						next.localRejectedOverload();
+						next.localRejectedOverload("ForwardRejectedOverload3");
 						Logger.minor(this,
 										"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
@@ -265,7 +265,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 					// Terminal overload
 					// Try to propagate back to source
 					Logger.minor(this, "Timeout");
-					next.localRejectedOverload();
+					next.localRejectedOverload("Timeout2");
 					finish(TIMED_OUT, next);
 					return;
             	}
@@ -310,7 +310,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 							+ ") after Accepted in insert");
 					// Terminal overload
 					// Try to propagate back to source
-					next.localRejectedOverload();
+					next.localRejectedOverload("AfterInsertAcceptedTimeout");
 					finish(TIMED_OUT, next);
 					return;
 				}
@@ -318,7 +318,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 				if (msg.getSpec() == DMT.FNPRejectedOverload) {
 					// Probably non-fatal, if so, we have time left, can try next one
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
-						next.localRejectedOverload();
+						next.localRejectedOverload("ForwardRejectedOverload4");
 						Logger.minor(this,
 								"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another

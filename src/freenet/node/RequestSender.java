@@ -175,7 +175,7 @@ public final class RequestSender implements Runnable {
             	if(msg == null) {
             		Logger.minor(this, "Timeout waiting for Accepted");
             		// Timeout waiting for Accepted
-            		next.localRejectedOverload();
+            		next.localRejectedOverload("AcceptedTimeout");
             		forwardRejectedOverload();
             		// Try next node
             		break;
@@ -194,7 +194,7 @@ public final class RequestSender implements Runnable {
 					forwardRejectedOverload();
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						Logger.minor(this, "Is local");
-						next.localRejectedOverload();
+						next.localRejectedOverload("ForwardRejectedOverload");
 						Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;
@@ -244,7 +244,7 @@ public final class RequestSender implements Runnable {
                 
             	if(msg == null) {
             		// Fatal timeout
-            		next.localRejectedOverload();
+            		next.localRejectedOverload("FatalTimeout");
             		forwardRejectedOverload();
             		finish(TIMED_OUT, next);
             		return;
@@ -268,7 +268,7 @@ public final class RequestSender implements Runnable {
 					// Non-fatal - probably still have time left
 					forwardRejectedOverload();
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
-						next.localRejectedOverload();
+						next.localRejectedOverload("ForwardRejectedOverload2");
 						Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;

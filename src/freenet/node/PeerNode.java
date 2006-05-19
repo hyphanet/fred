@@ -1310,12 +1310,22 @@ public class PeerNode implements PeerContext {
 	final int MAX_ROUTING_BACKOFF_LENGTH = 24*60*60*1000;
 	/** Current nominal routing backoff length */
 	int routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
+	/** Last backoff reason */
+	String lastBackoffReason = null;
 	
 	/**
 	 * Got a local RejectedOverload.
 	 * Back off this node for a while.
 	 */
 	public void localRejectedOverload() {
+	  localRejectedOverload("");
+	}
+	
+	/**
+	 * Got a local RejectedOverload.
+	 * Back off this node for a while.
+	 */
+	public void localRejectedOverload(String reason) {
 		Logger.minor(this, "Local rejected overload on "+this);
 		synchronized(routingBackoffSync) {
 			long now = System.currentTimeMillis();
@@ -1326,7 +1336,12 @@ public class PeerNode implements PeerContext {
 					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
 				int x = node.random.nextInt(routingBackoffLength);
 				routingBackedOffUntil = now + x;
-				Logger.minor(this, "Backing off: routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+getPeer());
+				setLastBackoffReason( reason );
+				String reasonWrapper = "";
+				if( 0 < reason.length()) {
+					reasonWrapper = " because of '"+reason+"'";
+				}
+				Logger.normal(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+getPeer());
 			} else {
 				Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+getPeer());
 			}
@@ -1431,6 +1446,14 @@ public class PeerNode implements PeerContext {
 
 	public long getRoutingBackedOffUntil() {
 		return routingBackedOffUntil;
+	}
+
+	public String getLastBackoffReason() {
+		return lastBackoffReason;
+	}
+
+	public void setLastBackoffReason(String s) {
+		this.lastBackoffReason = s;
 	}
 
 	public boolean hasCompletedHandshake() {
