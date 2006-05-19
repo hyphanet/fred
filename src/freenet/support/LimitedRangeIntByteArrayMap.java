@@ -131,8 +131,7 @@ public class LimitedRangeIntByteArrayMap {
     public synchronized void lockNeverBlock(int index) throws WouldBlockException {
         if(minValue == -1) return;
         if(index - minValue < maxRange) return;
-        Logger.normal(this, toString()+ " WOULD BLOCK: lockNeverBlock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
-        throw new WouldBlockException();
+        throw new WouldBlockException(toString()+ " WOULD BLOCK: lockNeverBlock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
     }
     
     /**

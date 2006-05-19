@@ -562,9 +562,18 @@ public class PeerNode implements PeerContext {
     }
     
     public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog) {
+        requeueMessageItems( messages, offset, length, dontLog, "" );
+    }
+    
+    public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog, String reason) {
         // Will usually indicate serious problems
-        if(!dontLog)
-            Logger.normal(this, "Requeueing "+messages.length+" messages on "+this);
+        if(!dontLog) {
+            String reasonWrapper = "";
+            if( 0 < reason.length()) {
+              reasonWrapper = " because of '"+reason+"'";
+            }
+            Logger.normal(this, "Requeueing "+messages.length+" messages"+reasonWrapper+" on "+this);
+        }
         synchronized(messagesToSendNow) {
             for(int i=offset;i<offset+length;i++)
                 if(messages[i] != null)

@@ -89,6 +89,6 @@ public class PaddingSpeedTest {
      */
     private static void printStats(String name, int bytesTotal, long interval) {
         double rate = bytesTotal / ((double)interval/1000);
-        System.out.println(name+": "+bytesTotal+" in "+interval+" ms = "+ByteFormat.format((long)rate,false)+"/s");
+        System.out.println(name+": "+bytesTotal+" in "+interval+"ms = "+ByteFormat.format((long)rate,false)+"/s");
     }
 }

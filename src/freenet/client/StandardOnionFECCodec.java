@@ -441,7 +441,7 @@ public class StandardOnionFECCodec extends FECCodec {
 					Logger.minor(this, "Memory in use after stripe: "+memUsedAfterStripe);
 					long endTime = System.currentTimeMillis();
 					Logger.minor(this, "Stripe encode took "
-							+ (endTime - startTime) + " ms for k=" + k + ", n="
+							+ (endTime - startTime) + "ms for k=" + k + ", n="
 							+ n + ", stripeSize=" + STRIPE_SIZE);
 					// Try to limit CPU usage!!
 					try {

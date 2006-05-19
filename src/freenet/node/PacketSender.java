@@ -143,7 +143,7 @@ public class PacketSender implements Runnable {
                 		// Don't send immediately
                 		if(nextActionTime > (l+100))
                 			nextActionTime = l+100;
-                		pn.requeueMessageItems(messages, 0, messages.length, true);
+                		pn.requeueMessageItems(messages, 0, messages.length, true, "TrafficCoalescing");
                 	} else {
                 		for(int j=0;j<messages.length;j++) {
                 			Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));

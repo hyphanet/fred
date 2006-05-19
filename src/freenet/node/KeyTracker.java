@@ -538,7 +538,7 @@ public class KeyTracker {
         QueuedAckRequest qr = (QueuedAckRequest)ackRequestQueue.removeByKey(new Integer(seqNo));
     	if(qr != null) qr.onAcked();
     	else
-    		Logger.normal(this, "Removing ack request twice? Null on "+seqNo+" from "+pn.getPeer());
+    		Logger.normal(this, "Removing ack request twice? Null on "+seqNo+" from "+pn.getPeer()+" ("+new Double(pn.pingAverage.currentValue()).intValue()+"ms ping average)");
     }
 
     /**
@@ -755,7 +755,7 @@ public class KeyTracker {
                     Logger.minor(this, "Grabbing ack request "+packetNumber+" ("+realLength+") from "+this);
                     qr.sent();
                 } else {
-                    Logger.minor(this, "Ignoring ack request "+packetNumber+" ("+realLength+") - will become active in "+(qr.activeTime-now)+" ms on "+this+" - "+qr);
+                    Logger.minor(this, "Ignoring ack request "+packetNumber+" ("+realLength+") - will become active in "+(qr.activeTime-now)+"ms on "+this+" - "+qr);
                 }
             }
         }

@@ -790,34 +790,34 @@ public class FNPPacketMangler implements LowLevelFilter {
                     KeyTracker kt = pn.getCurrentKeyTracker();
                     if(kt == null) {
                         Logger.minor(this, "kt = null");
-                        pn.requeueMessageItems(messages, i, messages.length-i, false);
+                        pn.requeueMessageItems(messages, i, messages.length-i, false, "kt = null");
                         return;
                     }
                     int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
                     this.processOutgoingPreformatted(buf, 0, buf.length, pn.getCurrentKeyTracker(), packetNumber, mi.cb);
                 } catch (NotConnectedException e) {
-                    Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                    Logger.minor(this, "Caught "+e+" while sending messages, requeueing");
                     // Requeue
                     if(!dontRequeue)
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException");
                     return;
                 } catch (WouldBlockException e) {
-                    Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                    Logger.minor(this, "Caught "+e+" while sending messages, requeueing", e);
                     // Requeue
                     if(!dontRequeue)
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "WouldBlockException");
                     return;
                 } catch (KeyChangedException e) {
-                    Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                    Logger.minor(this, "Caught "+e+" while sending messages, requeueing");
                     // Requeue
                     if(!dontRequeue)
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "KeyChangedException");
                     return;
                 } catch (Throwable e) {
                     Logger.error(this, "Caught "+e+" while sending messages, requeueing", e);
                     // Requeue
                     if(!dontRequeue)
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false);
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "Throwable");
                     return;
                     
                 }
@@ -853,19 +853,19 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
                 // Requeue
                 if(!dontRequeue)
-                	pn.requeueMessageItems(messages, 0, messages.length, false);
+                	pn.requeueMessageItems(messages, 0, messages.length, false, "NotConnectedException(2)");
                 return;
             } catch (WouldBlockException e) {
-                Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                Logger.minor(this, "Caught "+e+" while sending messages, requeueing", e);
                 // Requeue
                 if(!dontRequeue)
-                	pn.requeueMessageItems(messages, 0, messages.length, false);
+                	pn.requeueMessageItems(messages, 0, messages.length, false, "WouldBlockException(2)");
                 return;
             } catch (Throwable e) {
                 Logger.error(this, "Caught "+e+" while sending messages, requeueing", e);
                 // Requeue
                 if(!dontRequeue)
-                	pn.requeueMessageItems(messages, 0, messages.length, false);
+                	pn.requeueMessageItems(messages, 0, messages.length, false, "Throwable(2)");
                 return;
                 
             }
@@ -893,19 +893,19 @@ public class FNPPacketMangler implements LowLevelFilter {
                             Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
                             // Requeue
                             if(!dontRequeue)
-                            	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
+                            	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "NotConnectedException(3)");
                             return;
                         } catch (WouldBlockException e) {
-                            Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
+                            Logger.minor(this, "Caught "+e+" while sending messages, requeueing remaining messages", e);
                             // Requeue
                             if(!dontRequeue)
-                            	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
+                            	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "WouldBlockException(3)");
                             return;
                         } catch (Throwable e) {
                             Logger.error(this, "Caught "+e+" while sending messages, requeueing remaining messages", e);
                             // Requeue
                             if(!dontRequeue)
-                            	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false);
+                            	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "Throwable(3)");
                             return;
                         }
                     }
