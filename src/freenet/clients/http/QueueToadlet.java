@@ -202,7 +202,7 @@ public class QueueToadlet extends Toadlet {
 			if(!completedDirUpload.isEmpty()) {
 				// FIXME include filename??
 				writeTableHead("Completed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Persistence", "Key" }, buf);
-				for(Iterator i=completedUpload.iterator();i.hasNext();) {
+				for(Iterator i=completedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
 					writeRowStart(buf);
 					writeDeleteCell(p, buf);
