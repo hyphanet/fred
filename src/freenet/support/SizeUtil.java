@@ -12,15 +12,15 @@ public class SizeUtil {
 		long s = 1;
 		int i;
 		for(i=0;i<suffixes.length;i++) {
-			s *= 1000;
+			s *= 1024;
 			if(s > sz) {
 				break;
 				// Smaller than multiplier [i] - use the previous one
 			}
 		}
 		
-		s /= 1000; // we use the previous unit
-		if (s == 1)  // Bytes?
+		s /= 1024; // we use the previous unit
+		if (s == 1)  // Bytes? Then we don't need real numbers with a comma
 		{
 			return sz + " " + suffixes[0];
 		}
