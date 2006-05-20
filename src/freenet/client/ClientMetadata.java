@@ -3,7 +3,7 @@ package freenet.client;
 /**
  * Stores the metadata that the client might actually be interested in.
  */
-public class ClientMetadata {
+public class ClientMetadata implements Cloneable {
 	
 	/** The document MIME type */
 	private String mimeType;
@@ -36,5 +36,13 @@ public class ClientMetadata {
 
 	public boolean isTrivial() {
 		return (mimeType == null || mimeType.equals(""));
+	}
+	
+	public Object clone() {
+		try {
+			return super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new Error(e);
+		}
 	}
 }

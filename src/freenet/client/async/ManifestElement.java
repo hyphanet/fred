@@ -11,6 +11,8 @@ public class ManifestElement {
 	/** Filename */
 	final String name;
 	
+	final String fullName;
+	
 	/** Data to be inserted. Can be null, if the insert has completed. */
 	final Bucket data;
 	
@@ -23,16 +25,27 @@ public class ManifestElement {
 	/** Redirect target */
 	final FreenetURI targetURI;
 	
-	public ManifestElement(String name, Bucket data, String mimeOverride, long size) {
+	public ManifestElement(String name, String fullName, Bucket data, String mimeOverride, long size) {
 		this.name = name;
+		this.fullName = fullName;
 		this.data = data;
 		this.mimeOverride = mimeOverride;
 		this.dataSize = size;
 		this.targetURI = null;
 	}
 	
-	public ManifestElement(ManifestElement me, String fullName) {
-		this.name = fullName;
+	public ManifestElement(String name, Bucket data, String mimeOverride, long size) {
+		this.name = name;
+		this.fullName = name;
+		this.data = data;
+		this.mimeOverride = mimeOverride;
+		this.dataSize = size;
+		this.targetURI = null;
+	}
+	
+	public ManifestElement(ManifestElement me, String newName) {
+		this.name = newName;
+		this.fullName = me.fullName;
 		this.data = me.data;
 		this.mimeOverride = me.mimeOverride;
 		this.dataSize = me.dataSize;
@@ -41,6 +54,7 @@ public class ManifestElement {
 
 	public ManifestElement(String name, FreenetURI targetURI, String mimeOverride) {
 		this.name = name;
+		this.fullName = name;
 		this.data = null;
 		this.mimeOverride = mimeOverride;
 		this.dataSize = -1;

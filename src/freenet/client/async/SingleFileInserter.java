@@ -39,6 +39,7 @@ class SingleFileInserter implements ClientPutState {
 	final boolean metadata;
 	final PutCompletionCallback cb;
 	final boolean getCHKOnly;
+	final boolean insertAsArchiveManifest;
 	/** If true, we are not the top level request, and should not
 	 * update our parent to point to us as current put-stage. */
 	private boolean cancelled = false;
@@ -54,11 +55,12 @@ class SingleFileInserter implements ClientPutState {
 	 * @param dontCompress
 	 * @param getCHKOnly
 	 * @param reportMetadataOnly If true, don't insert the metadata, just report it.
+	 * @param insertAsArchiveManifest If true, insert the metadata as an archive manifest.
 	 * @throws InserterException
 	 */
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InserterContext ctx, boolean dontCompress, 
-			boolean getCHKOnly, boolean reportMetadataOnly, Object token) throws InserterException {
+			boolean getCHKOnly, boolean reportMetadataOnly, Object token, boolean insertAsArchiveManifest) throws InserterException {
 		this.reportMetadataOnly = reportMetadataOnly;
 		this.token = token;
 		this.parent = parent;
@@ -67,6 +69,7 @@ class SingleFileInserter implements ClientPutState {
 		this.metadata = metadata;
 		this.cb = cb;
 		this.getCHKOnly = getCHKOnly;
+		this.insertAsArchiveManifest = insertAsArchiveManifest;
 	}
 	
 	public void start() throws InserterException {
@@ -164,7 +167,7 @@ class SingleFileInserter implements ClientPutState {
 		if(block.getData().size() > Integer.MAX_VALUE)
 			throw new InserterException(InserterException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 		
-		if((block.clientMetadata == null || block.clientMetadata.isTrivial())) {
+		if((block.clientMetadata == null || block.clientMetadata.isTrivial()) && !insertAsArchiveManifest) {
 			if(data.size() < blockSize) {
 				// Just insert it
 				ClientPutState bi =
@@ -179,7 +182,7 @@ class SingleFileInserter implements ClientPutState {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token);
-				Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
+				Metadata meta = new Metadata(insertAsArchiveManifest ? Metadata.ZIP_MANIFEST : Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
 				cb.onMetadata(meta, this);
 				cb.onTransition(this, dataPutter);
 				dataPutter.schedule();
@@ -188,7 +191,7 @@ class SingleFileInserter implements ClientPutState {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token);
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token);
-				Metadata meta = new Metadata(Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
+				Metadata meta = new Metadata(insertAsArchiveManifest ? Metadata.ZIP_MANIFEST : Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
 				Bucket metadataBucket;
 				try {
 					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
@@ -217,12 +220,12 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, token);
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest);
 			cb.onTransition(this, sfi);
 			sfi.start();
 		} else {
 			SplitHandler sh = new SplitHandler();
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, token);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest);
 			sh.sfi = sfi;
 			cb.onTransition(this, sh);
 			sfi.start();
@@ -325,7 +328,7 @@ class SingleFileInserter implements ClientPutState {
 					}
 					InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
 					try {
-						metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token);
+						metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false);
 						Logger.minor(this, "Putting metadata on "+metadataPutter);
 					} catch (InserterException e) {
 						cb.onFailure(e, this);

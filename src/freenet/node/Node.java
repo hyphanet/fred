@@ -85,7 +85,6 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.node.TextModeClientInterfaceServer.TMCIBindtoCallback;
 import freenet.node.fcp.FCPServer;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -547,7 +546,7 @@ public class Node {
     // Client stuff that needs to be configged - FIXME
     static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
     static final long MAX_CACHED_ARCHIVE_DATA = 32*1024*1024; // make a fixed fraction of the store by default? FIXME
-    static final long MAX_ARCHIVE_SIZE = 1024*1024; // ??? FIXME
+    static final long MAX_ARCHIVE_SIZE = 2*1024*1024; // ??? FIXME
     static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
     static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 

@@ -22,4 +22,8 @@ public class ArchiveKey {
 	public int hashCode() {
 		return key.hashCode() ^ filename.hashCode();
 	}
+	
+	public String toString() {
+		return key+":"+filename;
+	}
 }

@@ -36,6 +36,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	final GetCompletionCallback rcb;
 	final ClientMetadata clientMetadata;
 	private Metadata metadata;
+	private Metadata archiveMetadata;
 	final ArchiveContext actx;
 	/** Archive handler. We can only have one archive handler at a time. */
 	private ArchiveStoreContext ah;
@@ -90,7 +91,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
 		this.ah = fetcher.ah;
-		this.clientMetadata = fetcher.clientMetadata;
+		this.clientMetadata = (ClientMetadata) fetcher.clientMetadata.clone();
 		this.metadata = newMeta;
 		this.metaStrings = fetcher.metaStrings;
 		this.rcb = callback;
@@ -186,12 +187,14 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	private void handleMetadata() throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
 		while(true) {
 			if(metadata.isSimpleManifest()) {
+				Logger.minor(this, "Is simple manifest");
 				String name;
 				if(metaStrings.isEmpty())
 					throw new FetchException(FetchException.NOT_ENOUGH_METASTRINGS);
 				else
 					name = (String) metaStrings.removeFirst();
 				// Since metadata is a document, we just replace metadata here
+				Logger.minor(this, "Next meta-string: "+name);
 				if(name == null) {
 					metadata = metadata.getDefaultDocument();
 					if(metadata == null)
@@ -204,6 +207,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				}
 				continue; // loop
 			} else if(metadata.isArchiveManifest()) {
+				Logger.minor(this, "Is archive manifest");
 				if(metaStrings.isEmpty() && ctx.returnZIPManifests) {
 					// Just return the archive, whole.
 					metadata.setSimpleRedirect();
@@ -213,6 +217,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				// Then parse it.
 				// Then we may need to fetch something from inside the archive.
 				ah = (ArchiveStoreContext) ctx.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), false);
+				archiveMetadata = metadata;
 				// ah is set. This means we are currently handling an archive.
 				Bucket metadataBucket;
 				metadataBucket = ah.getMetadata(actx, null, recursionLevel+1, true);
@@ -224,19 +229,21 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 						throw new FetchException(FetchException.BUCKET_ERROR, e);
 					}
 				} else {
-					fetchArchive(false); // will result in this function being called again
+					fetchArchive(false, archiveMetadata); // will result in this function being called again
 					return;
 				}
 				continue;
 			} else if(metadata.isArchiveInternalRedirect()) {
-				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
+				Logger.minor(this, "Is archive-internal redirect");
+				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
 				// Fetch it from the archive
 				if(ah == null)
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive");
-				if(metaStrings.isEmpty())
-					throw new FetchException(FetchException.NOT_ENOUGH_METASTRINGS);
-				Bucket dataBucket = ah.get((String) metaStrings.removeFirst(), actx, null, recursionLevel+1, true);
+				String filename = metadata.getZIPInternalName();
+				Logger.minor(this, "Fetching "+filename);
+				Bucket dataBucket = ah.get(filename, actx, null, recursionLevel+1, true);
 				if(dataBucket != null) {
+					Logger.minor(this, "Returning data");
 					// The client may free it, which is bad, or it may hang on to it for so long that it gets
 					// freed by us, which is also bad.
 					// So copy it.
@@ -256,14 +263,16 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					onSuccess(new FetchResult(this.clientMetadata, out));
 					return;
 				} else {
+					Logger.minor(this, "Fetching archive");
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
-					fetchArchive(true);
+					fetchArchive(true, archiveMetadata);
 					// Will call back into this function when it has been fetched.
 					return;
 				}
 			} else if(metadata.isMultiLevelMetadata()) {
+				Logger.minor(this, "Is multi-level metadata");
 				// Fetch on a second SingleFileFetcher, like with archives.
 				Metadata newMeta = (Metadata) metadata.clone();
 				newMeta.setSimpleRedirect();
@@ -271,6 +280,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				f.handleMetadata();
 				return;
 			} else if(metadata.isSingleFileRedirect()) {
+				Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				// FIXME implement implicit archive support
 				
@@ -356,14 +366,14 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		decompressors.addLast(codec);
 	}
 
-	private void fetchArchive(boolean forData) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+	private void fetchArchive(boolean forData, Metadata meta) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
 		// Fetch the archive
 		// How?
 		// Spawn a separate SingleFileFetcher,
 		// which fetches the archive, then calls
 		// our Callback, which unpacks the archive, then
 		// reschedules us.
-		Metadata newMeta = (Metadata) metadata.clone();
+		Metadata newMeta = (Metadata) meta.clone();
 		newMeta.setSimpleRedirect();
 		SingleFileFetcher f;
 		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData), new FetcherContext(ctx, FetcherContext.SET_RETURN_ARCHIVES, true));

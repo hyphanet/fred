@@ -3,6 +3,7 @@ package freenet.client;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.DoublyLinkedListImpl;
+import freenet.support.Logger;
 
 /**
  * Tracks all files currently in the cache from a given key.
@@ -43,8 +44,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	}
 
 	/**
-	 * Fetch a file in an archive. Will check the cache first, then fetch the archive if
-	 * necessary.
+	 * Fetch a file in an archive.
 	 */
 	public Bucket get(String internalName, ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
 			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
@@ -55,6 +55,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		Bucket data;
 		
 		// Fetch from cache
+		Logger.minor(this, "Checking cache: "+key+" "+internalName);
 		if((data = manager.getCached(key, internalName)) != null) {
 			return data;
 		}

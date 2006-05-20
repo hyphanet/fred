@@ -35,9 +35,11 @@ public class SplitFileInserter implements ClientPutState {
 	final boolean isMetadata;
 	private boolean finished;
 	public final Object token;
+	final boolean insertAsArchiveManifest;
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, Object token) throws InserterException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest) throws InserterException {
 		this.parent = put;
+		this.insertAsArchiveManifest = insertAsArchiveManifest;
 		this.token = token;
 		this.finished = false;
 		this.isMetadata = isMetadata;
@@ -149,7 +151,7 @@ public class SplitFileInserter implements ClientPutState {
 			
 			if(!missingURIs) {
 				// Create Metadata
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, isMetadata);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, isMetadata, insertAsArchiveManifest);
 			}
 			haveSentMetadata = true;
 		}

@@ -47,7 +47,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 			throws MessageInvalidException {
 		// Create a directory listing of Buckets of data, mapped to ManifestElement's.
 		// Directories are sub-HashMap's.
-		HashMap buckets = makeBucketsByName(dirname);
+		HashMap buckets = makeBucketsByName(dirname, "");
 		handler.startClientPutDir(this, buckets);
 	}
 
@@ -56,7 +56,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
      * and its subdirs.
      * @throws MessageInvalidException 
      */
-    private HashMap makeBucketsByName(File thisdir) throws MessageInvalidException {
+    private HashMap makeBucketsByName(File thisdir, String prefix) throws MessageInvalidException {
     	
     	Logger.minor(this, "Listing directory: "+thisdir);
     	
@@ -74,9 +74,9 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	        		
 	        		FileBucket bucket = new FileBucket(f, true, false, false, false);
 	        		
-	        		ret.put(f.getName(), new ManifestElement(f.getName(), bucket, null, f.length()));
+	        		ret.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, null, f.length()));
 	        	} else if(filelist[i].isDirectory()) {
-	        		HashMap subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()));
+	        		HashMap subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()), prefix + filelist[i].getName() + "/" );
 	        		ret.put(filelist[i].getName(), subdir);
 	        	} else if(!allowUnreadableFiles) {
 	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: "+filelist[i], identifier);

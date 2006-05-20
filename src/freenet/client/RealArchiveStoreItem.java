@@ -31,6 +31,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		this.underBucket = temp.underBucket;
 		underBucket.dontDeleteOnFinalize();
 		underBucket.setReadOnly();
+		this.myFilename = underBucket.getFile();
 		this.manager.cachedData += spaceUsed();
 	}
 

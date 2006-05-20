@@ -12,6 +12,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 
 import freenet.support.Base64;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
@@ -63,6 +64,29 @@ public class FreenetURI {
 	private final String[] metaStr;
 	private final byte[] routingKey, cryptoKey, extra;
 	private final long suggestedEdition; // for USKs
+	private boolean hasHashCode;
+	private int hashCode;
+	
+	public int hashCode() {
+		if(hasHashCode) return hashCode;
+		int x = keyType.hashCode();
+		if(docName != null) x ^= docName.hashCode();
+		if(metaStr != null) {
+			for(int i=0;i<metaStr.length;i++)
+				x ^= metaStr[i].hashCode();
+		}
+		if(routingKey != null)
+			x ^= Fields.hashCode(routingKey);
+		if(cryptoKey != null)
+			x ^= Fields.hashCode(cryptoKey);
+		if(extra != null)
+			x ^= Fields.hashCode(extra);
+		if(keyType.equals("USK"))
+			x ^= suggestedEdition;
+		hashCode = x;
+		hasHashCode = true;
+		return x;
+	}
 
 	public boolean equals(Object o) {
 		if(!(o instanceof FreenetURI))

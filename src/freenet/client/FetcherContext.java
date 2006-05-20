@@ -22,6 +22,7 @@ public class FetcherContext implements Cloneable {
 	public USKManager uskManager;
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
+	public int maxArchiveLevels;
 	public boolean dontEnterImplicitArchives;
 	public int maxSplitfileThreads;
 	public int maxSplitfileBlockRetries;
@@ -44,7 +45,7 @@ public class FetcherContext implements Cloneable {
 	public boolean returnZIPManifests;
 	
 	public FetcherContext(long curMaxLength, 
-			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts,
+			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
 			boolean dontEnterImplicitArchives, int maxSplitfileThreads,
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
@@ -59,6 +60,7 @@ public class FetcherContext implements Cloneable {
 		this.bucketFactory = bucketFactory;
 		this.maxRecursionLevel = maxRecursionLevel;
 		this.maxArchiveRestarts = maxArchiveRestarts;
+		this.maxArchiveLevels = maxArchiveLevels;
 		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
 		this.random = random;
 		this.maxSplitfileThreads = maxSplitfileThreads;
@@ -88,6 +90,7 @@ public class FetcherContext implements Cloneable {
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
 			this.random = ctx.random;
 			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
@@ -109,6 +112,7 @@ public class FetcherContext implements Cloneable {
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = 1;
 			this.maxArchiveRestarts = 0;
+			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = true;
 			this.random = ctx.random;
 			this.maxSplitfileThreads = 0;
@@ -130,6 +134,7 @@ public class FetcherContext implements Cloneable {
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
 			this.random = ctx.random;
 			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
@@ -151,6 +156,7 @@ public class FetcherContext implements Cloneable {
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
 			this.random = ctx.random;
 			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
@@ -172,6 +178,7 @@ public class FetcherContext implements Cloneable {
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
+			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
 			this.random = ctx.random;
 			this.maxSplitfileThreads = ctx.maxSplitfileThreads;

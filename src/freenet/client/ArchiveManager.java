@@ -70,6 +70,7 @@ public class ArchiveManager {
 	
 	/** Add an ArchiveHandler by key */
 	private synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
+		Logger.minor(this, "Put cached AH for "+key+" : "+zip);
 		archiveHandlers.push(key, zip);
 		while(archiveHandlers.size() > maxArchiveHandlers)
 			archiveHandlers.popKey(); // dump it
@@ -77,7 +78,9 @@ public class ArchiveManager {
 
 	/** Get an ArchiveHandler by key */
 	public ArchiveHandler getCached(FreenetURI key) {
+		Logger.minor(this, "Get cached AH for "+key);
 		ArchiveHandler handler = (ArchiveHandler) archiveHandlers.get(key);
+		if(handler == null) return null;
 		archiveHandlers.push(key, handler);
 		return handler;
 	}
@@ -126,6 +129,7 @@ public class ArchiveManager {
 	 * @throws ArchiveFailureException 
 	 */
 	public synchronized Bucket getCached(FreenetURI key, String filename) throws ArchiveFailureException {
+		Logger.minor(this, "Fetch cached: "+key+" "+filename);
 		ArchiveKey k = new ArchiveKey(key, filename);
 		ArchiveStoreItem asi = (ArchiveStoreItem) storedData.get(k);
 		if(asi == null) return null;
@@ -155,6 +159,9 @@ public class ArchiveManager {
 	 * changed.
 	 */
 	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx) throws ArchiveFailureException, ArchiveRestartException {
+		
+		Logger.minor(this, "Extracting "+key);
+		
 		ctx.removeAllCachedItems(); // flush cache anyway
 		long expectedSize = ctx.getLastSize();
 		long archiveSize = data.size();
@@ -188,14 +195,16 @@ public class ArchiveManager {
 			zis = new ZipInputStream(data.getInputStream());
 			
 			// MINOR: Assumes the first entry in the zip is a directory. 
-			ZipEntry entry =  zis.getNextEntry();
+			ZipEntry entry;
 			
 			byte[] buf = new byte[4096];
 			HashSet names = new HashSet();
 			boolean gotMetadata = false;
 			
-outer:		while(entry != null) {
+outer:		while(true) {
 				entry = zis.getNextEntry();
+				if(entry == null) break;
+				if(entry.isDirectory()) continue;
 				String name = entry.getName();
 				if(names.contains(name)) {
 					Logger.error(this, "Duplicate key "+name+" in archive "+key);
@@ -351,6 +360,7 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 	 */
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
+		Logger.minor(this, "Adding error element: "+element+" for "+key+" "+name);
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 		}
@@ -358,10 +368,10 @@ inner:				while((readBytes = zis.read(buf)) > 0) {
 
 	/**
 	 * Add a store element.
-	 * @return True if this was the metadata element.
 	 */
 	private void addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
+		Logger.minor(this, "Adding store element: "+element+" ( "+key+" "+name+" )");
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 			trimStoredData();

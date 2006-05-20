@@ -35,6 +35,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private final boolean cacheLocalRequests;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
+	static final int MAX_ARCHIVE_LEVELS = 4;
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
 	/** Number of threads used by a splitfile fetch */
 	static final int SPLITFILE_THREADS = 20;
@@ -163,7 +164,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		}
 		return 			
 			new FetcherContext(maxLength, maxTempLength, curMaxMetadataLength, 
-				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, DONT_ENTER_IMPLICIT_ARCHIVES, 
+				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES, 
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,

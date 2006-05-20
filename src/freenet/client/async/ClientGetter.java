@@ -48,7 +48,7 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 		this.uri = uri;
 		this.ctx = ctx;
 		this.finished = false;
-		this.actx = new ArchiveContext();
+		this.actx = new ArchiveContext(ctx.maxArchiveLevels);
 		archiveRestarts = 0;
 	}
 	

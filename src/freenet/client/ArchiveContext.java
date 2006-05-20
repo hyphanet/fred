@@ -12,15 +12,17 @@ import freenet.keys.FreenetURI;
 public class ArchiveContext {
 
 	HashSet soFar = new HashSet();
-	int maxArchiveLevels;
+	final int maxArchiveLevels;
+	
+	public ArchiveContext(int max) {
+		this.maxArchiveLevels = max;
+	}
 	
 	/**
 	 * Check for a loop.
 	 * The URI provided is expected to be a reasonably unique identifier for the archive.
 	 */
 	public synchronized void doLoopDetection(FreenetURI key) throws ArchiveFailureException {
-		if(!soFar.add(key))
-			throw new ArchiveFailureException("Archive loop detected");
 		if(soFar.size() > maxArchiveLevels)
 			throw new ArchiveFailureException(ArchiveFailureException.TOO_MANY_LEVELS);
 	}

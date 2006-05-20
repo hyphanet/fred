@@ -40,8 +40,8 @@ public class Metadata implements Cloneable {
 	public static final byte SIMPLE_REDIRECT = 0;
 	static final byte MULTI_LEVEL_METADATA = 1;
 	static final byte SIMPLE_MANIFEST = 2;
-	static final byte ZIP_MANIFEST = 3;
-	static final byte ZIP_INTERNAL_REDIRECT = 4;
+	public static final byte ZIP_MANIFEST = 3;
+	public static final byte ZIP_INTERNAL_REDIRECT = 4;
 	
 	// 2 bytes of flags
 	/** Is a splitfile */
@@ -107,7 +107,6 @@ public class Metadata implements Cloneable {
 	FreenetURI[] splitfileCheckKeys;
 	
 	// Manifests
-	int manifestEntryCount;
 	/** Manifest entries by name */
 	HashMap manifestEntries;
 	
@@ -148,7 +147,7 @@ public class Metadata implements Cloneable {
 		Metadata m;
 		try {
 			DataInputStream dis = new DataInputStream(is);
-			m = new Metadata(dis, false, data.size());
+			m = new Metadata(dis, data.size());
 		} finally {
 			is.close();
 		}
@@ -158,12 +157,12 @@ public class Metadata implements Cloneable {
 	/** Parse some metadata from a byte[]. 
 	 * @throws IOException If the data is incomplete, or something wierd happens. */
 	private Metadata(byte[] data) throws IOException {
-		this(new DataInputStream(new ByteArrayInputStream(data)), false, data.length);
+		this(new DataInputStream(new ByteArrayInputStream(data)), data.length);
 	}
 
 	/** Parse some metadata from a DataInputStream
 	 * @throws IOException If an I/O error occurs, or the data is incomplete. */
-	public Metadata(DataInputStream dis, boolean acceptZipInternalRedirects, long length) throws IOException, MetadataParseException {
+	public Metadata(DataInputStream dis, long length) throws IOException, MetadataParseException {
 		long magic = dis.readLong();
 		if(magic != FREENET_METADATA_MAGIC)
 			throw new MetadataParseException("Invalid magic "+magic);
@@ -171,13 +170,13 @@ public class Metadata implements Cloneable {
 		if(version != 0)
 			throw new MetadataParseException("Unsupported version "+version);
 		documentType = dis.readByte();
-		if(documentType < 0 || documentType > 5 || 
-				(documentType == ZIP_INTERNAL_REDIRECT && !acceptZipInternalRedirects))
+		if(documentType < 0 || documentType > 5)
 			throw new MetadataParseException("Unsupported document type: "+documentType);
+		Logger.minor(this, "Document type: "+documentType);
 		
 		boolean compressed = false;
 		if(documentType == SIMPLE_REDIRECT || documentType == MULTI_LEVEL_METADATA
-				|| documentType == ZIP_MANIFEST) {
+				|| documentType == ZIP_MANIFEST || documentType == ZIP_INTERNAL_REDIRECT) {
 			short flags = dis.readShort();
 			splitfile = (flags & FLAGS_SPLITFILE) == FLAGS_SPLITFILE;
 			dbr = (flags & FLAGS_DBR) == FLAGS_DBR;
@@ -190,12 +189,14 @@ public class Metadata implements Cloneable {
 		}
 		
 		if(documentType == ZIP_MANIFEST) {
+			Logger.minor(this, "Zip manifest");
 			archiveType = dis.readShort();
 			if(archiveType != ARCHIVE_ZIP)
 				throw new MetadataParseException("Unrecognized archive type "+archiveType);
 		}
 
 		if(splitfile) {
+			Logger.minor(this, "Splitfile");
 			dataLength = dis.readLong();
 			if(dataLength < -1)
 				throw new MetadataParseException("Invalid real content length "+dataLength);
@@ -261,7 +262,7 @@ public class Metadata implements Cloneable {
 		
 		clientMetadata = new ClientMetadata(mimeType);
 		
-		if((!splitfile) && documentType == SIMPLE_REDIRECT || documentType == ZIP_MANIFEST) {
+		if((!splitfile) && (documentType == SIMPLE_REDIRECT || documentType == ZIP_MANIFEST)) {
 			simpleRedirectKey = readKey(dis);
 		} else if(splitfile) {
 			splitfileAlgorithm = dis.readShort();
@@ -304,7 +305,7 @@ public class Metadata implements Cloneable {
 		}
 		
 		if(documentType == SIMPLE_MANIFEST) {
-			manifestEntryCount = dis.readInt();
+			int manifestEntryCount = dis.readInt();
 			if(manifestEntryCount < 0)
 				throw new MetadataParseException("Invalid manifest entry count: "+manifestEntryCount);
 			
@@ -317,6 +318,7 @@ public class Metadata implements Cloneable {
 				byte[] buf = new byte[nameLength];
 				dis.readFully(buf);
 				String name = new String(buf, "UTF-8");
+				Logger.minor(this, "Entry "+i+" name "+name);
 				short len = dis.readShort();
 				if(len < 0)
 					throw new MetadataParseException("Invalid manifest entry size: "+len);
@@ -335,8 +337,11 @@ public class Metadata implements Cloneable {
 		
 		if(documentType == ZIP_INTERNAL_REDIRECT) {
 			int len = dis.readShort();
+			Logger.minor(this, "Reading zip internal redirect length "+len);
 			byte[] buf = new byte[len];
+			dis.readFully(buf);
 			nameInArchive = new String(buf, "UTF-8");
+			Logger.minor(this, "Zip internal redirect: "+nameInArchive+" ("+len+")");
 		}
 	}
 	
@@ -378,8 +383,6 @@ public class Metadata implements Cloneable {
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
-		manifestEntryCount = count;
-		
 	}
 	
 	/**
@@ -432,7 +435,6 @@ public class Metadata implements Cloneable {
 				manifestEntries.put(key, subMap);
 			}
 		}
-		manifestEntryCount = count;
 	}
 
 	/**
@@ -457,13 +459,12 @@ public class Metadata implements Cloneable {
 			Metadata target;
 			if(o instanceof String) {
 				// Zip internal redirect
-				target = new Metadata(ZIP_INTERNAL_REDIRECT, key);
+				target = new Metadata(ZIP_INTERNAL_REDIRECT, key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key)));
 			} else if(o instanceof HashMap) {
 				target = new Metadata((HashMap)o);
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
-		manifestEntryCount = count;
 	}
 	
 	/**
@@ -488,13 +489,12 @@ public class Metadata implements Cloneable {
 			Metadata target;
 			if(o instanceof String) {
 				// Zip internal redirect
-				target = new Metadata(ZIP_INTERNAL_REDIRECT, key);
+				target = new Metadata(ZIP_INTERNAL_REDIRECT, key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key)));
 			} else if(o instanceof HashMap) {
 				target = new Metadata((HashMap)o);
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
-		manifestEntryCount = count;
 	}
 
 	/**
@@ -504,12 +504,12 @@ public class Metadata implements Cloneable {
 	 * @param arg The argument; in the case of ZIP_INTERNAL_REDIRECT, the filename in
 	 * the archive to read from.
 	 */
-	public Metadata(byte docType, String arg) {
+	public Metadata(byte docType, String arg, ClientMetadata cm) {
 		if(docType == ZIP_INTERNAL_REDIRECT) {
 			documentType = docType;
 			// Determine MIME type
-			setMIMEType(DefaultMIMETypes.guessMIMEType(arg));
-			clientMetadata = new ClientMetadata(mimeType);
+			this.clientMetadata = cm;
+			this.setMIMEType(cm.getMIMEType());
 			nameInArchive = arg;
 		} else
 			throw new IllegalArgumentException();
@@ -522,7 +522,7 @@ public class Metadata implements Cloneable {
 	 * @param cm The client metadata, if any.
 	 */
 	public Metadata(byte docType, FreenetURI uri, ClientMetadata cm) {
-		if(docType == SIMPLE_REDIRECT) {
+		if(docType == SIMPLE_REDIRECT || docType == ZIP_MANIFEST) {
 			documentType = docType;
 			clientMetadata = cm;
 			if(cm != null && !cm.isTrivial()) {
@@ -538,11 +538,14 @@ public class Metadata implements Cloneable {
 			throw new IllegalArgumentException();
 	}
 
-	public Metadata(short algo, FreenetURI[] dataURIs, FreenetURI[] checkURIs, int segmentSize, int checkSegmentSize, ClientMetadata cm, long dataLength, short compressionAlgo, boolean isMetadata) {
+	public Metadata(short algo, FreenetURI[] dataURIs, FreenetURI[] checkURIs, int segmentSize, int checkSegmentSize, ClientMetadata cm, long dataLength, short compressionAlgo, boolean isMetadata, boolean insertAsArchiveManifest) {
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
-		else
-			documentType = SIMPLE_REDIRECT;
+		else {
+			if(insertAsArchiveManifest)
+				documentType = ZIP_MANIFEST;
+			else documentType = SIMPLE_REDIRECT;
+		}
 		splitfile = true;
 		splitfileAlgorithm = algo;
 		this.dataLength = dataLength;
@@ -725,7 +728,7 @@ public class Metadata implements Cloneable {
 		dos.writeShort(0); // version
 		dos.writeByte(documentType);
 		if(documentType == SIMPLE_REDIRECT || documentType == MULTI_LEVEL_METADATA
-				|| documentType == ZIP_MANIFEST) {
+				|| documentType == ZIP_MANIFEST || documentType == ZIP_INTERNAL_REDIRECT) {
 			short flags = 0;
 			if(splitfile) flags |= FLAGS_SPLITFILE;
 			if(dbr) flags |= FLAGS_DBR;
@@ -772,7 +775,7 @@ public class Metadata implements Cloneable {
 		if(extraMetadata)
 			throw new UnsupportedOperationException("No extra metadata support yet");
 		
-		if((!splitfile) && documentType == SIMPLE_REDIRECT || documentType == ZIP_MANIFEST) {
+		if((!splitfile) && (documentType == SIMPLE_REDIRECT || documentType == ZIP_MANIFEST)) {
 			writeKey(dos, simpleRedirectKey);
 		} else if(splitfile) {
 			dos.writeShort(splitfileAlgorithm);
@@ -791,7 +794,7 @@ public class Metadata implements Cloneable {
 		}
 		
 		if(documentType == SIMPLE_MANIFEST) {
-			dos.writeInt(manifestEntryCount);
+			dos.writeInt(manifestEntries.size());
 			boolean kill = false;
 			LinkedList unresolvedMetadata = null;
 			for(Iterator i=manifestEntries.keySet().iterator();i.hasNext();) {
@@ -890,5 +893,9 @@ public class Metadata implements Cloneable {
 	public Bucket toBucket(BucketFactory bf) throws MetadataUnresolvedException, IOException {
 		byte[] buf = writeToByteArray();
 		return BucketTools.makeImmutableBucket(bf, buf);
+	}
+
+	public boolean isResolved() {
+		return resolvedURI != null;
 	}
 }
