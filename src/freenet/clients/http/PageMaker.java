@@ -33,6 +33,15 @@ public class PageMaker {
 		}
 	}
 	
+	public void makeBackLink(StringBuffer buf, ToadletContext ctx){
+		// My browser sends it with one 'r'
+		String ref = (String)ctx.getHeaders().get("Referer");
+		if(ref!=null) 
+			buf.append("<br><a href=\""+ref+"\" title=\"Back\" Back</a>\n");
+		else
+			buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
+	}
+	
 	public void makeTopHead(StringBuffer buf) {
 		buf.append("<!DOCTYPE\n"
 				+ "	html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\">\n"

@@ -133,12 +133,7 @@ public class FproxyToadlet extends Toadlet {
 			buf.append("<div class=\"infobox-content\">\n");
 			
 			buf.append("Expected a freenet key, but got "+HTMLEncoder.encode(ks)+"\n");		
-			// My browser sends it with one 'r'
-			String ref = (String)ctx.getHeaders().get("Referer");
-			if(ref!=null) 
-				buf.append("<br><a href=\""+ref+"\" title=\"Back\" Back</a>\n");
-			else
-				buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
+			ctx.getPageMaker().makeBackLink(buf,ctx);
 			buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
@@ -292,12 +287,7 @@ public class FproxyToadlet extends Toadlet {
 				buf.append("<div class=\"infobox-content\">\n");
 				
 				buf.append("Error : "+HTMLEncoder.encode(msg)+extra+"\n");		
-				// My browser sends it with one 'r'
-				String ref = (String)ctx.getHeaders().get("Referer");
-				if(ref!=null) 
-					buf.append("<br><a href=\""+ref+"\" title=\"Back\" Back</a>\n");
-				else
-					buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
+				ctx.getPageMaker().makeBackLink(buf,ctx);
 				buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
 				buf.append("</div>\n");
 				buf.append("</div>\n");
