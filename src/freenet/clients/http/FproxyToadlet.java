@@ -119,11 +119,33 @@ public class FproxyToadlet extends Toadlet {
 		
 		long maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
 		
+		StringBuffer buf = new StringBuffer();
 		FreenetURI key;
 		try {
 			key = new FreenetURI(ks);
 		} catch (MalformedURLException e) {
-			this.writeReply(ctx, 400, "text/html", "Invalid key", "<html><head><title>Invalid key</title></head><body>Expected a freenet key, but got "+HTMLEncoder.encode(ks)+"</body></html>");
+			ctx.getPageMaker().makeHead(buf, "Invalid key");
+			
+			buf.append("<div class=\"infobox infobox-error\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("Invalid key\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			
+			buf.append("Expected a freenet key, but got "+HTMLEncoder.encode(ks)+"\n");		
+			// My browser sends it with one 'r'
+			String ref = (String)ctx.getHeaders().get("Referer");
+			if(ref!=null) 
+				buf.append("<br><a href=\""+ref+"\" title=\"Back\" Back</a>\n");
+			else
+				buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
+			buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			
+			ctx.getPageMaker().makeTail(buf);
+			
+			this.writeReply(ctx, 400, "text/html", "Invalid key", buf.toString());
 			return;
 		}
 		try {
@@ -176,7 +198,6 @@ public class FproxyToadlet extends Toadlet {
 					writeReply(ctx, 200, typeName, "OK", data);
 				}
 			} catch (UnsafeContentTypeException e) {
-				StringBuffer buf = new StringBuffer();
 				ctx.getPageMaker().makeHead(buf, "Potentially Dangerous Content");
 				buf.append("<h1>");
 				buf.append(e.getHTMLEncodedTitle());
@@ -200,7 +221,6 @@ public class FproxyToadlet extends Toadlet {
 			} else if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, "/"+e.newURI.toString());
 			} else if(e.mode == FetchException.TOO_BIG) {
-				StringBuffer buf = new StringBuffer();
 				ctx.getPageMaker().makeHead(buf, "Large file");
 				buf.append("<table border=\"0\">\n");
 				String fnam = getFilename(e, key, e.getExpectedMimeType());
@@ -263,8 +283,29 @@ public class FproxyToadlet extends Toadlet {
 			} else {
 				if(e.errorCodes != null)
 					extra = "<pre>"+e.errorCodes.toVerboseString()+"</pre>";
+				ctx.getPageMaker().makeHead(buf,msg);
+				
+				buf.append("<div class=\"infobox infobox-error\">\n");
+				buf.append("<div class=\"infobox-header\">\n");
+				buf.append(msg+"\n");
+				buf.append("</div>\n");
+				buf.append("<div class=\"infobox-content\">\n");
+				
+				buf.append("Error : "+HTMLEncoder.encode(msg)+extra+"\n");		
+				// My browser sends it with one 'r'
+				String ref = (String)ctx.getHeaders().get("Referer");
+				if(ref!=null) 
+					buf.append("<br><a href=\""+ref+"\" title=\"Back\" Back</a>\n");
+				else
+					buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
+				buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
+				buf.append("</div>\n");
+				buf.append("</div>\n");
+				
+				ctx.getPageMaker().makeTail(buf);
+
 				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
-						"text/html", msg, "<html><head><title>"+msg+"</title></head><body>Error: "+HTMLEncoder.encode(msg)+extra+"</body></html>");
+						"text/html", msg, buf.toString());
 			}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
