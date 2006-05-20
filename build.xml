@@ -12,7 +12,6 @@
   <property name="build" location="build"/>
   <property name="lib"	location="lib"/>
   <property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
-  <property name="wrapper.location" location="${lib}/wrapper.jar"/>
   <property name="javadoc" location="javadoc"/>
   <property name="svn.revision" value="@custom@"/>
 
@@ -24,7 +23,6 @@
 
   <target name="env" depends="mkdir"   description="Learn about the environment">
     <available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
-    <available file="${lib}/wrapper.jar" property="wrapper.present"/>
   </target>
 
   <target name="get-extjar" depends="env" unless="freenet-ext.present"
@@ -37,18 +35,8 @@
 		<property name="freenet-ext.present" value="true"/>
   </target>
 
-  	<target name="get-wrapper" depends="env" unless="wrapper.present"
-		    description="Download some external libraries which Freenet relies on">
-	    	<mkdir dir="${lib}"/>
-	    <get src="http://downloads.freenetproject.org/alpha/wrapper.jar" 
-			 		dest="${wrapper.location}" 
-		 verbose="true"
-		 usetimestamp="true"/>
-			<property name="wrapper.present" value="true"/>
-	  </target>
-
     <!-- ================================================== -->
-  <target name="compile" depends="get-extjar, get-wrapper">
+  <target name="compile" depends="get-extjar">
     <!-- Create the time stamp -->
     <tstamp/>
 
@@ -64,7 +52,6 @@
     <javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
     <classpath>
     	<pathelement location="${freenet-ext.location}"/>
-    	<pathelement location="${wrapper.location}"/>
     	<pathelement location="gnu-crypto.jar"/>
     	<pathelement location="javax-security.jar"/>
     	<pathelement location="javax-crypto.jar"/>
