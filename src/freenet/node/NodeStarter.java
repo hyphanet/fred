@@ -106,7 +106,7 @@ public class NodeStarter
     	// Thread t = new Thread(new MemoryChecker(), "Memory checker");
     	// t.setPriority(Thread.MAX_PRIORITY);
     	// t.start();
-    	WrapperManager.signalStopping(500000);
+    	WrapperManager.signalStarting(500000);
     	try {
     		node = new Node(cfg, random, logConfigHandler,this);
     		node.start(false);
