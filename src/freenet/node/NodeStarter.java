@@ -107,6 +107,9 @@ public class NodeStarter
     	// t.setPriority(Thread.MAX_PRIORITY);
     	// t.start();
     	
+    	// The node can take time to start up (DS checking)
+    	WrapperManager.signalStarting(120000);
+    	
     	try {
     		node = new Node(cfg, random, logConfigHandler,this);
     		node.start(false);
