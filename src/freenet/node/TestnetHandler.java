@@ -255,7 +255,10 @@ public class TestnetHandler implements Runnable {
         	
         	testnetConfig.finishedInitialization();
         	return new TestnetHandler(node, port);
-        } else return null;
+        } else {
+        	testnetConfig.finishedInitialization();
+        	return null;
+        }
 	}
 
 }
