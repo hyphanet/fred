@@ -183,18 +183,7 @@ public class WelcomeToadlet extends Toadlet {
 					Logger.normal(this,"Disabling the userAlert "+alerts[i].hashCode());
 					alerts[i].isValid(false);
 
-					ctx.getPageMaker().makeHead(buf, "Configuration Applied");
-					buf.append("<div class=\"infobox infobox-success\">\n");
-					buf.append("<div class=\"infobox-header\">\n");
-					buf.append("Configuration Applied\n");
-					buf.append("</div>\n");
-					buf.append("<div class=\"infobox-content\">\n");
-					buf.append("Your configuration changes were applied successfully<br />\n");
-					buf.append("<a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
-					buf.append("</div>\n");
-					
-					ctx.getPageMaker().makeTail(buf);
-					writeReply(ctx, 200, "text/html", "OK", buf.toString());
+					writePermanentRedirect(ctx, "Configuration applied", "/");
 				}
 			}
 		}else if(request.isPartSet("key")&&request.isPartSet("filename")){
