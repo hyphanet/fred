@@ -303,15 +303,8 @@ public class Node {
 			NodeNameCallback(Node n) {
 				node=n;
 			}
-			
-			public boolean check(String myName){
-				return 	(myName.startsWith("Node created around")||
-						myName.equals("MyFirstFreenetNode")||
-						!myName.matches("^.* .*@.*$"));
-			}
-			
 			public String get() {
-				if(check(myName)){
+				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
 		        	node.alerts.register(nodeNameUserAlert);
 		        }else{
 		        	node.alerts.unregister(nodeNameUserAlert);
@@ -321,7 +314,7 @@ public class Node {
 
 			public void set(String val) throws InvalidConfigValueException {
 				myName = val;
-				if(check(myName)){
+				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
 		        	node.alerts.register(nodeNameUserAlert);
 		        }else{
 		        	node.alerts.unregister(nodeNameUserAlert);
