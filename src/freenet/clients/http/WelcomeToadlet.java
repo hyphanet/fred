@@ -13,6 +13,7 @@ import freenet.client.InserterException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeStarter;
 import freenet.node.UserAlert;
 import freenet.node.Version;
 import freenet.support.Bucket;
@@ -77,6 +78,39 @@ public class WelcomeToadlet extends Toadlet {
 				
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 			this.node.exit();
+		}else if(request.getParam("restartconfirm").length() > 0){
+			// false for no navigation bars, because that would be very silly
+			ctx.getPageMaker().makeHead(buf, "Node Restart", false);
+			buf.append("<div class=\"infobox infobox-information\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("The Freenet node is beeing restarted\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("The restart process might take up to 3 minutes. <br>");
+			buf.append("Thank you for using Freenet\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+			
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			Logger.normal(this, "Node is restarting");
+			node.getNodeStarter().restart();
+		}else if (request.getParam("restart").length() > 0) {
+			ctx.getPageMaker().makeHead(buf, "Node Restart");
+			buf.append("<div class=\"infobox infobox-query\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("Node Restart?\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("Are you sure you wish to restart your Freenet node?\n");
+			buf.append("<form action=\"/\" method=\"post\">\n");
+			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
+			buf.append("<input type=\"submit\" name=\"restartconfirm\" value=\"Restart\" />\n");
+			buf.append("</form>\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 		} else if (request.getParam("exit").equalsIgnoreCase("true")) {
 			ctx.getPageMaker().makeHead(buf, "Node Shutdown");
 			buf.append("<div class=\"infobox infobox-query\">\n");
@@ -369,8 +403,13 @@ public class WelcomeToadlet extends Toadlet {
 		}
 		buf.append("<form method=\"post\" action=\".\">\n");
 		buf.append("<input type=\"hidden\" name=\"exit\" value=\"true\" /><input type=\"submit\" value=\"Shut down the node\" />\n");
-		buf.append("</form>\n");
-		buf.append("</div>\n");
+		buf.append("</form>");
+		if(node.isUsingWrapper()){
+			buf.append("<form action=\"/\" method=\"post\">\n");
+			buf.append("<input type=\"submit\" name=\"restart\" value=\"Restart the node\" />\n");
+			buf.append("</form>");
+		}
+		buf.append("\n</div>\n");
 		buf.append("</div>\n");
 		
 		// Activity

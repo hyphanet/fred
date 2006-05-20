@@ -51,6 +51,7 @@
     <javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
     <classpath>
     	<pathelement location="${freenet-ext.location}"/>
+    	<pathelement location="${lib}/wrapper.jar"/>
     	<pathelement location="gnu-crypto.jar"/>
     	<pathelement location="javax-security.jar"/>
     	<pathelement location="javax-crypto.jar"/>

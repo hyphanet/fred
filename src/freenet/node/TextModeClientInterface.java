@@ -155,6 +155,8 @@ public class TextModeClientInterface implements Runnable {
 //        sb.append("SAY:<text> - send text to the last created/pushed stream\r\n");
         sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
         sb.append("SHUTDOWN - exit the program\r\n");
+        if(n.isUsingWrapper())
+        	sb.append("RESTART - restart the program\r\n");
         if(n.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
@@ -301,6 +303,12 @@ public class TextModeClientInterface implements Runnable {
 		out.write(sb.toString().getBytes());
 		out.flush();
 		n.exit();
+	} else if(uline.startsWith("RESTART")) {
+		StringBuffer sb = new StringBuffer();
+		sb.append("Restarting the node.\r\n");
+		out.write(sb.toString().getBytes());
+		out.flush();
+		n.getNodeStarter().restart();
 	} else if(uline.startsWith("QUIT") && n.directTMCI == this) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("QUIT command not available in console mode.\r\n");

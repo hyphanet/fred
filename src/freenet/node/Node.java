@@ -558,6 +558,8 @@ public class Node {
 	// USK inserter.
 	private final MyARKInserter arkPutter;
 	
+	private static NodeStarter nodeStarter;
+	
     /**
      * Read all storable settings (identity etc) from the node file.
      * @param filename The name of the file to read from.
@@ -770,7 +772,7 @@ public class Node {
         */
     	Node node;
 		try {
-			node = new Node(cfg, random);
+			node = new Node(cfg, random, logConfigHandler);
 	    	node.start(false);
 		} catch (NodeInitException e) {
 			System.err.println("Failed to load node: "+e.getMessage());
@@ -789,18 +791,37 @@ public class Node {
     		this.exitCode = exitCode;
     	}
     }
-
+    
+    Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException{
+    	this(config, random, lc);
+    	nodeStarter=ns;
+    }
+    
+    public boolean isUsingWrapper(){
+    	if(nodeStarter!=null)
+    		return true;
+    	else 
+    		return false;
+    }
+    
+    public NodeStarter getNodeStarter(){
+    	return nodeStarter;
+    }
+    
     /**
      * Create a Node from a Config object.
      * @param config The Config object for this node.
      * @param random The random number generator for this node. Passed in because we may want
      * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
      * a production node.
+     * @param the loggingHandler
      * @throws NodeInitException If the node initialization fails.
      */
-    private Node(Config config, RandomSource random) throws NodeInitException {
-    	
+     Node(Config config, RandomSource random, LoggingConfigHandler lc) throws NodeInitException {
     	// Easy stuff
+    	 nodeStarter=null;
+    	if(logConfigHandler != lc)
+    		this.logConfigHandler=lc;
     	arkPutter = new MyARKInserter();
     	startupTime = System.currentTimeMillis();
     	throttleWindow = new ThrottleWindowManager(2.0);
@@ -1277,18 +1298,6 @@ public class Node {
 		
 		this.arkFetcherContext = ctx;
     }
-    
-	private InetAddress resolve(String val) {
-		try {
-			if(val == null || val.length() == 0)
-				return null;
-			else
-				return InetAddress.getByName(val);
-		} catch (UnknownHostException e) {
-			Logger.error(this, "Ignoring unresolvable overridden IP address: "+overrideIPAddress);
-			return null;
-		}
-	}
 	
     void start(boolean noSwaps) throws NodeInitException {
         if(!noSwaps)
