@@ -96,8 +96,10 @@ public class ARKFetcher implements ClientCallback {
 		// Fetcher context specifies an upper bound on size.
 		backoff = MIN_BACKOFF;
 		if(isFetching) {
-			node.removeARKFetcher(identity,this);
-			isFetching = false;
+			synchronized(this){
+				node.removeARKFetcher(identity,this);
+				isFetching = false;
+			}
 		}
 		ArrayBucket bucket = (ArrayBucket) result.asBucket();
 		byte[] data = bucket.toByteArray();
@@ -121,8 +123,10 @@ public class ARKFetcher implements ClientCallback {
 	public void onFailure(FetchException e, ClientGetter state) {
 		Logger.minor(this, "Failed to fetch ARK for "+peer+" : "+e, e);
 		if(isFetching) {
-			node.removeARKFetcher(identity,this);
-			isFetching = false;
+			synchronized(this){
+				node.removeARKFetcher(identity,this);
+				isFetching = false;
+			}
 		}
 		// If it's a redirect, follow the redirect and update the ARK.
 		// If it's any other error, wait a while then retry.
