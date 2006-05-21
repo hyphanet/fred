@@ -83,9 +83,11 @@ public class ARKFetcher implements ClientCallback {
 		backoff = MIN_BACKOFF;
 		Logger.minor(this, "Cancelling ARK fetch for "+peer);
 		shouldRun = false;
-		if(isFetching) {
-			node.removeARKFetcher(identity,this);
-			isFetching = false;
+		synchronized(this){
+			if(isFetching) {
+				node.removeARKFetcher(identity,this);
+				isFetching = false;
+			}
 		}
 		if(getter != null)
 			getter.cancel();
@@ -95,8 +97,8 @@ public class ARKFetcher implements ClientCallback {
 		Logger.minor(this, "Fetched ARK for "+peer, new Exception("debug"));
 		// Fetcher context specifies an upper bound on size.
 		backoff = MIN_BACKOFF;
-		if(isFetching) {
-			synchronized(this){
+		synchronized(this){
+			if(isFetching) {
 				node.removeARKFetcher(identity,this);
 				isFetching = false;
 			}
@@ -122,8 +124,8 @@ public class ARKFetcher implements ClientCallback {
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		Logger.minor(this, "Failed to fetch ARK for "+peer+" : "+e, e);
-		if(isFetching) {
-			synchronized(this){
+		synchronized(this){
+			if(isFetching) {
 				node.removeARKFetcher(identity,this);
 				isFetching = false;
 			}

@@ -2658,7 +2658,12 @@ public class Node {
      * Add a ARKFetcher to the map
      */
     public synchronized void addARKFetcher(String identity, ARKFetcher fetcher) {
-    	Logger.minor(this, "addARKFetcher(): adding ARK Fetcher for "+identity);
+    	if(arkFetchers.containsKey(identity)) {
+    		ARKFetcher af = (ARKFetcher) arkFetchers.get(identity);
+    		Logger.error(this, "addARKFetcher(): identity '"+identity+"' already in arkFetcher as "+af+" and you want to add"+fetcher);
+    		return;
+    	}
+    	Logger.normal(this, "addARKFetcher(): adding ARK Fetcher for "+identity);
     	arkFetchers.put(identity, fetcher);
     }
     
@@ -2673,7 +2678,11 @@ public class Node {
      * Remove a ARKFetcher from the map
      */
     public synchronized void removeARKFetcher(String identity, ARKFetcher fetcher) {
-    	Logger.minor(this, "removeARKFetcher(): removing ARK Fetcher for "+identity);
+    	if(!arkFetchers.containsKey(identity)) {
+    		Logger.error(this, "removeARKFetcher(): identity '"+identity+"' not in arkFetcher to remove");
+    		return;
+    	}
+    	Logger.normal(this, "removeARKFetcher(): removing ARK Fetcher for "+identity);
     	ARKFetcher af = (ARKFetcher) arkFetchers.remove(identity);
     	if(af != fetcher) {
     		Logger.error(this, "Removed "+af+" should be "+fetcher+" for "+identity+" in removeARKFetcher");
