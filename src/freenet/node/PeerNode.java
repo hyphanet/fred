@@ -163,6 +163,15 @@ public class PeerNode implements PeerContext {
     /** Time at which we should send the next handshake request */
     private long sendHandshakeTime;
     
+    /** Time after which we log message requeues while rate limiting */
+    private long nextMessageRequeueLogTime = 0;
+    
+    /** Interval between rate limited message requeue logs (in milliseconds) */
+    private long messageRequeueLogRateLimitInterval = 1000;
+    
+    /** Number of messages to be requeued after which we rate limit logging of such */
+    private int messageRequeueLogRateLimitThreshold = 15;
+    
     /** Version of the node */
     private String version;
     
@@ -568,11 +577,24 @@ public class PeerNode implements PeerContext {
     public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog, String reason) {
         // Will usually indicate serious problems
         if(!dontLog) {
-            String reasonWrapper = "";
-            if( 0 < reason.length()) {
-              reasonWrapper = " because of '"+reason+"'";
+            long now = System.currentTimeMillis();
+            String rateLimitWrapper = "";
+            boolean rateLimitLogging = false;
+            if( messages.length > messageRequeueLogRateLimitThreshold ) {
+              rateLimitWrapper = " (rate limited)";
+              if(nextMessageRequeueLogTime <= now ) {
+                nextMessageRequeueLogTime = now + messageRequeueLogRateLimitInterval;
+              } else {
+                rateLimitLogging = true;
+              }
             }
-            Logger.normal(this, "Requeueing "+messages.length+" messages"+reasonWrapper+" on "+this);
+            if(!rateLimitLogging) {
+                String reasonWrapper = "";
+                if( 0 <= reason.length()) {
+                  reasonWrapper = " because of '"+reason+"'";
+                }
+                Logger.normal(this, "Requeueing "+messages.length+" messages"+reasonWrapper+" on "+this+rateLimitWrapper);
+            }
         }
         synchronized(messagesToSendNow) {
             for(int i=offset;i<offset+length;i++)
@@ -1355,7 +1377,7 @@ public class PeerNode implements PeerContext {
 				routingBackedOffUntil = now + x;
 				setLastBackoffReason( reason );
 				String reasonWrapper = "";
-				if( 0 < reason.length()) {
+				if( 0 <= reason.length()) {
 					reasonWrapper = " because of '"+reason+"'";
 				}
 				Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+getPeer());
