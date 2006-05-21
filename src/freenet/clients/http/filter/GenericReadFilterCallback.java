@@ -1,6 +1,7 @@
 package freenet.clients.http.filter;
 
 import java.net.MalformedURLException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -127,9 +128,13 @@ public class GenericReadFilterCallback implements FilterCallback {
 			String p = path;
 			if(typeOverride != null)
 				p += "?type="+typeOverride;
-			if(u.getFragment() != null)
+			if(u.getFragment() != null){
+				try{
 				// FIXME encode it properly
-				p += URLEncoder.encode(u.getFragment());
+					p += URLEncoder.encode(u.getFragment(),"UTF-8");
+				}catch (UnsupportedEncodingException e1){
+				}
+			}
 			return null;
 		}
 	}
