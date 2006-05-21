@@ -97,15 +97,20 @@ class UpdateURICallback implements StringCallback{
 }
 
 class UpdatedVersionAvailableUserAlert implements UserAlert {
-	private boolean isValid=true;
+	private boolean isValid;
 	private int version;
 
 	UpdatedVersionAvailableUserAlert(int version){
 		this.version=version;
+		isValid=false;
+	}
+	
+	public synchronized void set(int v){
+		version = v;
 	}
 	
 	public boolean userCanDismiss() {
-		return true;
+		return false;
 	}
 
 	public String getTitle() {
@@ -126,7 +131,7 @@ class UpdatedVersionAvailableUserAlert implements UserAlert {
 	}
 	
 	public void isValid(boolean b){
-		if(userCanDismiss()) isValid=b;
+		isValid=b;
 	}
 }
 
@@ -146,18 +151,21 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	public final boolean isAutoUpdateAllowed;
 	
-	private UpdatedVersionAvailableUserAlert alert;
+	private final UpdatedVersionAvailableUserAlert alert;
 	
 	public NodeUpdater(Node n, boolean isAutoUpdateAllowed, FreenetURI URI) {
 		super();
 		this.URI = URI;
 		this.node = n;
 		this.currentVersion = Version.buildNumber();
-		this.availableVersion = Version.buildNumber();
+		this.availableVersion = currentVersion;
 		this.hasBeenBlown = false;
 		this.isRunning = true;
 		this.isAutoUpdateAllowed = isAutoUpdateAllowed;
-		this.alert=null;
+		
+		this.alert= new UpdatedVersionAvailableUserAlert(currentVersion);
+		alert.isValid(false);
+		node.alerts.register(alert);
 		
 		FetcherContext ctx = n.makeClient((short)0).getFetcherContext();		
 		ctx.allowSplitfiles = true;
@@ -179,25 +187,17 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 	
-	public void onFoundEdition(long l, USK key){
+	public synchronized void onFoundEdition(long l, USK key){
 		// FIXME : Check if it has been blown
 		int found = (int)key.suggestedEdition;
 		
 		if(found > availableVersion){
 			this.availableVersion = found;
-			
-			synchronized(this){
-				Logger.normal(this, "Found a new version!, setting up a new UpdatedVersionAvailableUserAlert");
-				
-				if(alert != null){
-					System.out.println("unregistering "+alert.hashCode()+":"+alert);
-					node.alerts.unregister(alert);
-				}
-				alert = new UpdatedVersionAvailableUserAlert(availableVersion);
-				System.out.println("registering "+alert.hashCode()+":"+alert);
-				node.alerts.register(new UpdatedVersionAvailableUserAlert(availableVersion));
-			}
-			
+
+			Logger.normal(this, "Found a new version!, setting up a new UpdatedVersionAviableUserAlert");
+			alert.set(availableVersion);
+			alert.isValid(true);
+
 			maybeUpdate();
 		}
 	}
