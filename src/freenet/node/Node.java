@@ -389,8 +389,8 @@ public class Node {
     public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT;
     public static final int MIN_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*4;
     public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*2; // 20-30 secs
-    public static final int MIN_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*9;
-    public static final int RANDOMIZED_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*2; // 45-55 secs
+    public static final int MIN_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*5;
+    public static final int RANDOMIZED_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*2; // 25-35 secs
     // If we don't receive any packets at all in this period, from any node, tell the user
     public static final long ALARM_TIME = 60*1000;
     /** Sub-max ping time. If ping is greater than this, we reject some requests. */
@@ -457,7 +457,9 @@ public class Node {
     /** My ARK sequence number */
     private long myARKNumber;
     /** FetcherContext for ARKs */
-	public final FetcherContext arkFetcherContext;
+    public final FetcherContext arkFetcherContext;
+    /** ARKFetcher's currently running, by identity */
+    private final HashMap arkFetchers;
     
     private final HashSet runningUIDs;
     
@@ -841,6 +843,7 @@ public class Node {
         requestSenders = new HashMap();
         transferringRequestSenders = new HashMap();
         insertSenders = new HashMap();
+        arkFetchers = new HashMap();
         runningUIDs = new HashSet();
         ps = new PacketSender(this);
         // FIXME maybe these should persist? They need to be private though, so after the node/peers split. (bug 51).
@@ -2623,4 +2626,38 @@ public class Node {
 		}
 		return false;
 	}
+    
+    public double getBwlimitDelayTime() {
+    	return this.throttledPacketSendAverage.currentValue();
+    }
+    
+    public double getNodeAveragePingTime() {
+    	return nodePinger.averagePingTime();
+    }
+
+    /**
+     * Add a ARKFetcher to the map
+     */
+    public synchronized void addARKFetcher(String identity, ARKFetcher fetcher) {
+    	Logger.minor(this, "addARKFetcher(): adding ARK Fetcher for "+identity);
+    	arkFetchers.put(identity, fetcher);
+    }
+    
+    /**
+     * How many ARK Fetchers are currently requesting ARKs?
+     */
+    public int getNumARKFetchers() {
+		return arkFetchers.size();
+    }
+
+    /**
+     * Remove a ARKFetcher from the map
+     */
+    public synchronized void removeARKFetcher(String identity, ARKFetcher fetcher) {
+    	Logger.minor(this, "removeARKFetcher(): removing ARK Fetcher for "+identity);
+    	ARKFetcher af = (ARKFetcher) arkFetchers.remove(identity);
+    	if(af != fetcher) {
+    		Logger.error(this, "Removed "+af+" should be "+fetcher+" for "+identity+" in removeARKFetcher");
+    	}
+    }
 }

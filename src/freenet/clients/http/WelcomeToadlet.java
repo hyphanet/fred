@@ -411,6 +411,7 @@ public class WelcomeToadlet extends Toadlet {
 				+ "<li>Inserts: "+this.node.getNumInserts()+"</li>\n"
 				+ "<li>Requests: "+this.node.getNumRequests()+"</li>\n"
 				+ "<li>Transferring Requests: "+this.node.getNumTransferringRequests()+"</li>\n"
+				+ "<li>ARK Fetch Requests: "+this.node.getNumARKFetchers()+"</li>\n"
 				+ "</ul>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");

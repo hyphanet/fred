@@ -94,6 +94,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
+		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
+		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
+		buf.append("bwlimitDelayTime: "+bwlimitDelayTime+"ms<br>\n");
+		buf.append("nodeAveragePingTime: "+nodeAveragePingTime+"ms<br>\n");
 		StringBuffer buf2 = new StringBuffer(1024);
 		buf2.append("<table class=\"darknet_connections\">\n");
 		buf2.append("<tr><th>Status</th><th>Name</th><th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th><span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th><th></th></tr>\n");
@@ -149,11 +153,21 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if( backoffReason != null ) {
 					lastBackoffReasonOutputString = "/"+backoffReason;
 				}
+				String avgPingTimeString = "";
+				if(pn.isConnected())
+					avgPingTimeString = " ("+(int) pn.averagePingTime()+"ms)";
+				String VersionPrefixString = "";
+				String VersionSuffixString = "";
+				if(pn.publicInvalidVersion() || pn.publicReverseInvalidVersion()) {
+					VersionPrefixString = "<span class=\"peer_version_problem\">";
+					VersionSuffixString = "</span>";
+				}
+				
 				row[0] = pn;
 				row[1] = status;
 				row[2] = HTMLEncoder.encode(pn.getName());
-				row[3] = pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)";
-				row[4] = HTMLEncoder.encode(pn.getVersion());
+				row[3] = ( pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)" ) + avgPingTimeString;
+				row[4] = VersionPrefixString+HTMLEncoder.encode(pn.getVersion())+VersionSuffixString;
 				row[5] = new Double(pn.getLocation().getValue());
 				row[6] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
 				if (idle == -1) row[7] = " ";

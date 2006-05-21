@@ -287,6 +287,10 @@ table.darknet_connections span.peer_disconnected {
 	color: #d0d0d0;
 }
 
+table.darknet_connections span.peer_version_problem {
+	color: #d07070;
+}
+
 tr.messagetypes {
 	text-align: center;
 }

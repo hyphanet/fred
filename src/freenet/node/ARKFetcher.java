@@ -28,10 +28,13 @@ public class ARKFetcher implements ClientCallback {
 	private static final int MAX_BACKOFF = 60*60*1000;
 	private static final int MIN_BACKOFF = 5*1000;
 	private int backoff = MIN_BACKOFF;
+	private String identity;
+	private boolean isFetching = false;
 
 	public ARKFetcher(PeerNode peer, Node node) {
 		this.peer = peer;
 		this.node = node;
+		this.identity = peer.getIdentityString();
 	}
 
 	/**
@@ -63,6 +66,10 @@ public class ARKFetcher implements ClientCallback {
 		if(cg != null)
 			try {
 				cg.start();
+				if(!isFetching) {
+					node.addARKFetcher(identity,this);
+					isFetching = true;
+				}
 			} catch (FetchException e) {
 				onFailure(e, cg);
 			}
@@ -76,6 +83,10 @@ public class ARKFetcher implements ClientCallback {
 		backoff = MIN_BACKOFF;
 		Logger.minor(this, "Cancelling ARK fetch for "+peer);
 		shouldRun = false;
+		if(isFetching) {
+			node.removeARKFetcher(identity,this);
+			isFetching = false;
+		}
 		if(getter != null)
 			getter.cancel();
 	}
@@ -84,6 +95,10 @@ public class ARKFetcher implements ClientCallback {
 		Logger.minor(this, "Fetched ARK for "+peer, new Exception("debug"));
 		// Fetcher context specifies an upper bound on size.
 		backoff = MIN_BACKOFF;
+		if(isFetching) {
+			node.removeARKFetcher(identity,this);
+			isFetching = false;
+		}
 		ArrayBucket bucket = (ArrayBucket) result.asBucket();
 		byte[] data = bucket.toByteArray();
 		String ref;
@@ -105,6 +120,10 @@ public class ARKFetcher implements ClientCallback {
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		Logger.minor(this, "Failed to fetch ARK for "+peer+" : "+e, e);
+		if(isFetching) {
+			node.removeARKFetcher(identity,this);
+			isFetching = false;
+		}
 		// If it's a redirect, follow the redirect and update the ARK.
 		// If it's any other error, wait a while then retry.
 		getter = null;
@@ -116,6 +135,7 @@ public class ARKFetcher implements ClientCallback {
 		}
 		backoff += backoff;
 		if(backoff > MAX_BACKOFF) backoff = MAX_BACKOFF;
+		Logger.minor(this, "Failed to fetch ARK for "+peer+", now backing off ARK fetches for "+(int) (backoff / 1000)+" seconds");
 		// We may be on the PacketSender thread.
 		// FIXME should this be exponential backoff?
 		node.ps.queueTimedJob(new FastRunnable() { public void run() { start(); }}, backoff);

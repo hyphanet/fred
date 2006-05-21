@@ -271,7 +271,7 @@ public class PeerNode implements PeerContext {
                 throw new FSParseException(e1);
         }
         if(nominalPeer.isEmpty()) {
-        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+"'");
+        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+"' with name '"+myName+"'");
         	detectedPeer = null;
         } else
         	detectedPeer=(Peer) nominalPeer.firstElement();
@@ -996,6 +996,14 @@ public class PeerNode implements PeerContext {
     private synchronized boolean reverseInvalidVersion() {
         return bogusNoderef || (!Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion));
     }
+    
+    public synchronized boolean publicInvalidVersion() {
+        return !Version.checkGoodVersion(version);
+    }
+    
+    public synchronized boolean publicReverseInvalidVersion() {
+        return !Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion);
+    }
 
     /**
      * Process a new nodereference, in compressed form.
@@ -1547,5 +1555,10 @@ public class PeerNode implements PeerContext {
 			Logger.error(this, "Data was: \n"+fs.toString());
 		}
 	}
+
+
+	public String getIdentityString() {
+    	return Base64.encode(identity);
+    }
 }
 
