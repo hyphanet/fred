@@ -96,20 +96,20 @@ class UpdateURICallback implements StringCallback{
 	}	
 }
 
-class UpdatedVersionAviableUserAlert implements UserAlert {
+class UpdatedVersionAvailableUserAlert implements UserAlert {
 	private boolean isValid=true;
 	private int version;
 
-	UpdatedVersionAviableUserAlert(int version){
+	UpdatedVersionAvailableUserAlert(int version){
 		this.version=version;
 	}
 	
 	public boolean userCanDismiss() {
-		return false;
+		return true;
 	}
 
 	public String getTitle() {
-		return "A new stable version of Freenet is aviable";
+		return "A new stable version of Freenet is available";
 	}
 
 	public String getText() {
@@ -137,7 +137,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private final Node node;
 	
 	private final int currentVersion;
-	private int aviableVersion;
+	private int availableVersion;
 	
 	private String revocationMessage;
 	private boolean hasBeenBlown;
@@ -146,14 +146,14 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	public final boolean isAutoUpdateAllowed;
 	
-	private UpdatedVersionAviableUserAlert alert;
+	private UpdatedVersionAvailableUserAlert alert;
 	
 	public NodeUpdater(Node n, boolean isAutoUpdateAllowed, FreenetURI URI) {
 		super();
 		this.URI = URI;
 		this.node = n;
 		this.currentVersion = Version.buildNumber();
-		this.aviableVersion = Version.buildNumber();
+		this.availableVersion = Version.buildNumber();
 		this.hasBeenBlown = false;
 		this.isRunning = true;
 		this.isAutoUpdateAllowed = isAutoUpdateAllowed;
@@ -183,19 +183,19 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		// FIXME : Check if it has been blown
 		int found = (int)key.suggestedEdition;
 		
-		if(found > aviableVersion){
-			this.aviableVersion = found;
+		if(found > availableVersion){
+			this.availableVersion = found;
 			
 			synchronized(this){
-				Logger.normal(this, "Found a new version!, setting up a new UpdatedVersionAviableUserAlert");
+				Logger.normal(this, "Found a new version!, setting up a new UpdatedVersionAvailableUserAlert");
 				
 				if(alert != null){
 					System.out.println("unregistering "+alert.hashCode()+":"+alert);
 					node.alerts.unregister(alert);
 				}
-				alert = new UpdatedVersionAviableUserAlert(aviableVersion);
+				alert = new UpdatedVersionAvailableUserAlert(availableVersion);
 				System.out.println("registering "+alert.hashCode()+":"+alert);
-				node.alerts.register(new UpdatedVersionAviableUserAlert(aviableVersion));
+				node.alerts.register(new UpdatedVersionAvailableUserAlert(availableVersion));
 			}
 			
 			maybeUpdate();
@@ -242,7 +242,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		if(hasBeenBlown) 
 			throw new PrivkeyHasBeenBlownException(revocationMessage);
 		else 
-			return (currentVersion<aviableVersion);
+			return (currentVersion<availableVersion);
 	}
 	
 	public boolean isRunning(){
