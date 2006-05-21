@@ -43,6 +43,7 @@ import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.USKManager;
 import freenet.clients.http.FproxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.FilePersistentConfig;
 import freenet.config.IntCallback;
@@ -507,6 +508,7 @@ public class Node {
 	static final int EXIT_COULD_NOT_START_FPROXY = 18;
 	static final int EXIT_COULD_NOT_START_TMCI = 19;
 	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
+	public static final int EXIT_COULD_NOT_START_UPDATER = 21;
     
     public final long bootID;
     public final long startupTime;
@@ -538,6 +540,9 @@ public class Node {
     FCPServer fcpServer;
     FproxyToadlet fproxyServlet;
     SimpleToadletServer toadletContainer;
+    
+    /** NodeUpdater **/
+    public NodeUpdater nodeUpdater;
     
     // Persistent temporary buckets
     public final PersistentTempBucketFactory persistentTempBucketFactory;
@@ -786,7 +791,7 @@ public class Node {
     static class NodeInitException extends Exception {
     	// One of the exit codes from above
     	public final int exitCode;
-	private static final long serialVersionUID = 0;
+	private static final long serialVersionUID = -1;
     	
     	NodeInitException(int exitCode, String msg) {
     		super(msg+" ("+exitCode+")");
@@ -1250,7 +1255,7 @@ public class Node {
         		new NodeNameCallback(this));
         nodeNameUserAlert = new MeaningfulNodeNameUserAlert();
         myName = nodeConfig.getString("name");
-        
+         
         nodeConfig.finishedInitialization();
         writeNodeFile();
         
@@ -1338,6 +1343,16 @@ public class Node {
 			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);			
+		}
+		
+        
+        // Node Updater
+		try{
+			nodeUpdater = NodeUpdater.maybeCreate(this, config);
+			Logger.normal(this, "Starting the node updater");
+        }catch (NodeInitException e) {
+			e.printStackTrace();
+			throw new NodeInitException(EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
 		
 		/*
@@ -2572,6 +2587,10 @@ public class Node {
         System.exit(0);
 	}
 
+	public NodeUpdater getNodeUpdater(){
+		return nodeUpdater;
+	}
+	
 	public void setTMCI(TextModeClientInterfaceServer server) {
 		this.tmci = server;
 	}
