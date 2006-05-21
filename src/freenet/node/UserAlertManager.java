@@ -48,7 +48,7 @@ public class UserAlertManager implements Comparator {
 			UserAlert[] a = getAlerts();
 			for(int i=0;i<a.length;i++) {
 				UserAlert alert = a[i];
-				if(!alert.isValid()) return;
+				if(!alert.isValid()) continue;
 				
 				short level = a[i].getPriorityClass();
 				if(level <= UserAlert.CRITICAL_ERROR)
