@@ -1553,7 +1553,7 @@ public class PeerNode implements PeerContext {
 		return myARK;
 	}
 
-	public void synchronized updateARK(FreenetURI newURI) {
+	public synchronized void updateARK(FreenetURI newURI) {
 		try {
 			USK usk = USK.create(newURI);
 			if(!myARK.equals(usk, false)) {

@@ -44,25 +44,24 @@ public class ARKFetcher implements ClientCallback {
 	 * that also fails, so we try the fetch again to see if we can find something more
 	 * recent).
 	 */
-	public void start() {
+	public synchronized void start() {
 		ClientGetter cg = null;
-		synchronized(this) {
-			// Start fetch
-			shouldRun = true;
-			if(getter == null) {
-				USK ark = peer.getARK();
-				if(ark == null) {
-					return;
-				}
-				FreenetURI uri = ark.getURI();
-				fetchingURI = uri;
-				Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
-				cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
-						uri, node.arkFetcherContext, RequestStarter.INTERACTIVE_PRIORITY_CLASS, 
-						this, new ArrayBucket());
-				getter = cg;
-			} else return; // already running
-		}
+		// Start fetch
+		shouldRun = true;
+		if(getter == null) {
+			USK ark = peer.getARK();
+			if(ark == null) {
+				return;
+			}
+			FreenetURI uri = ark.getURI();
+			fetchingURI = uri;
+			Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
+			cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
+					uri, node.arkFetcherContext, RequestStarter.INTERACTIVE_PRIORITY_CLASS, 
+					this, new ArrayBucket());
+			getter = cg;
+		} else return; // already running
+		
 		if(cg != null)
 			try {
 				cg.start();
@@ -93,16 +92,16 @@ public class ARKFetcher implements ClientCallback {
 			getter.cancel();
 	}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.minor(this, "Fetched ARK for "+peer, new Exception("debug"));
 		// Fetcher context specifies an upper bound on size.
 		backoff = MIN_BACKOFF;
-		synchronized(this){
-			if(isFetching) {
-				node.removeARKFetcher(identity,this);
-				isFetching = false;
-			}
+		
+		if(isFetching) {
+			node.removeARKFetcher(identity,this);
+			isFetching = false;
 		}
+		
 		ArrayBucket bucket = (ArrayBucket) result.asBucket();
 		byte[] data = bucket.toByteArray();
 		String ref;
@@ -122,14 +121,14 @@ public class ARKFetcher implements ClientCallback {
 		}
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		Logger.minor(this, "Failed to fetch ARK for "+peer+" : "+e, e);
-		synchronized(this){
-			if(isFetching) {
-				node.removeARKFetcher(identity,this);
-				isFetching = false;
-			}
+		
+		if(isFetching) {
+			node.removeARKFetcher(identity,this);
+			isFetching = false;
 		}
+		
 		// If it's a redirect, follow the redirect and update the ARK.
 		// If it's any other error, wait a while then retry.
 		getter = null;
