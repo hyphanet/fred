@@ -61,12 +61,17 @@ public class PeerNode implements PeerContext {
     /** Set to true when we complete a handshake. */
     private boolean completedHandshake = false;
     
-	private String lastGoodVersion; 
+    private String lastGoodVersion; 
 	
     /** Set to true based on a relevant incoming handshake from this peer
-        Set true if this peer has a incompatible newer build than we are
+     *  Set true if this peer has a incompatible older build than we are
      */
-	private boolean verifiedIncompatibleNewerVersion = false;
+    private boolean verifiedIncompatibleOlderVersion = false;
+	
+    /** Set to true based on a relevant incoming handshake from this peer
+     *  Set true if this peer has a incompatible newer build than we are
+     */
+    private boolean verifiedIncompatibleNewerVersion = false;
 	
     /** For debugging/testing, set this to true to stop the
      * probabilistic decrement at the edges of the HTLs.
@@ -487,7 +492,15 @@ public class PeerNode implements PeerContext {
     }
     
     /**
-     * Is this node too new for us? (i.e. our version if older than it's lastGoodVersion)
+     * Is this node too old for us? (i.e. our lastGoodVersion is newer than it's version)
+     * 
+     */
+    public boolean isVerifiedIncompatibleOlderVersion() {
+        return verifiedIncompatibleOlderVersion;
+    }
+    
+    /**
+     * Is this node too new for us? (i.e. our version is older than it's lastGoodVersion)
      * 
      */
     public boolean isVerifiedIncompatibleNewerVersion() {
@@ -658,7 +671,7 @@ public class PeerNode implements PeerContext {
     public synchronized void sentHandshake() {
         Logger.debug(this, "sentHandshake(): "+this);
         long now = System.currentTimeMillis();
-        if(verifiedIncompatibleNewerVersion) { 
+        if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
             // Let them know we're here, but have no hope of connecting
             sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS)
@@ -672,7 +685,9 @@ public class PeerNode implements PeerContext {
         }
         firstHandshake = false;
         this.handshakeCount++;
-        if(handshakeCount == MAX_HANDSHAKE_COUNT) {
+        // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
+        if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
+        	Logger.normal( this, "Starting ARK Fetcher after "+handshakeCount+" failed handshakes for "+getPeer()+" with identity '"+getIdentityString()+"'");
         	arkFetcher.start();
         }
     }
@@ -684,7 +699,7 @@ public class PeerNode implements PeerContext {
     public synchronized void couldNotSendHandshake() {
         Logger.minor(this, "couldNotSendHandshake(): "+this);
         long now = System.currentTimeMillis();
-        if(verifiedIncompatibleNewerVersion) {
+        if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
             // Let them know we're here, but have no hope of connecting
             sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS)
@@ -699,7 +714,9 @@ public class PeerNode implements PeerContext {
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
         }
         this.handshakeCount++;
-        if(handshakeCount == MAX_HANDSHAKE_COUNT) {
+        // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
+        if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
+        	Logger.normal( this, "Starting ARK Fetcher after "+handshakeCount+" failed handshakes(2) for "+getPeer()+" with identity '"+getIdentityString()+"'");
         	arkFetcher.start();
         }
     }
@@ -903,12 +920,17 @@ public class PeerNode implements PeerContext {
             isConnected = false;
             node.peers.disconnected(this);
             return false;
-            }
+        } else {
+            verifiedIncompatibleNewerVersion = false;
+        }
         if(invalidVersion()) {
+            verifiedIncompatibleOlderVersion = true;
             Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
             isConnected = false;
             node.peers.disconnected(this);
             return false;
+        } else {
+            verifiedIncompatibleOlderVersion = false;
         }
         KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
         changedIP(replyTo);
