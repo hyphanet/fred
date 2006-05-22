@@ -102,6 +102,8 @@ public class ARKFetcher implements ClientCallback {
 			isFetching = false;
 		}
 		
+		getter = null;
+		
 		ArrayBucket bucket = (ArrayBucket) result.asBucket();
 		byte[] data = bucket.toByteArray();
 		String ref;
