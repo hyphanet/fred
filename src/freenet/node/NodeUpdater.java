@@ -65,7 +65,7 @@ class AutoUpdateAllowedCallback implements BooleanCallback {
 	public void set(boolean val) throws InvalidConfigValueException {
 		if(val == get()) return;
 		// Good idea to prevent it ?
-		throw new InvalidConfigValueException("Cannot be updated on the fly for security concerns");
+		throw new InvalidConfigValueException("Cannot be updated on the fly for security reasons");
 	}
 }
 
@@ -179,7 +179,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.ctx = ctx;
 		
 		try{		
-			ctx.uskManager.subscribe(USK.create(URI), this,	true);
+			USK myUsk=USK.create(URI);
+			ctx.uskManager.subscribe(myUsk, this,	true);
+			ctx.uskManager.startTemporaryBackgroundFetcher(myUsk);
 		}catch(MalformedURLException e){
 			Logger.error(this,"The auto-update URI isn't valid and can't be used");
 			this.hasBeenBlown=true;
