@@ -20,7 +20,6 @@
 package freenet.io.comm;
 
 import java.util.LinkedList;
-import java.util.List;
 
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
