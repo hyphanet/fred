@@ -536,7 +536,7 @@ public class PeerNode implements PeerContext {
     /**
      * @return The last time we received a packet.
      */
-    public synchronized long lastReceivedPacketTime() {
+    public long lastReceivedPacketTime() {
         return timeLastReceivedPacket;
     }
 

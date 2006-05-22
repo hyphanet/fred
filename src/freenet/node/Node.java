@@ -2583,7 +2583,7 @@ public class Node {
 	
 	public void exit(){
 		config.store();
-        System.out.println("Goodbye.");
+        System.out.println("Goodbye. from "+this);
         System.exit(0);
 	}
 
