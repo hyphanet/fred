@@ -132,30 +132,33 @@ public class ConfigToadlet extends Toadlet {
 			
 			for(int j=0; j<o.length; j++){
 				String configName = o[j].getName();
-				/*
-				if(prefix.equals("node") && configName.equals("name")){
-					buf.append("<form method=\"post\"><input alt=\"node name\" class=\"config\"" +
-							" type=\"text\" name=\"__node_name\" value=\""+o[j].getValueString()+"\"/></form>\n");
-				}
-				*/
 				
 				buf.append("<li>");
 				//
 				buf.append("<span class=\"configshortdesc\">");
 				buf.append(o[j].getShortDesc());
-				buf.append("</span>");
+				buf.append("</span>");	
+				buf.append("<span class=\"config\">");
 				//
+				if(o[j].getValueString().equals("true") || o[j].getValueString().equals("false")){
+					buf.append("<select name=\""+sc[i].getPrefix()+"."+configName+"\" >");
+					if(o[j].getValueString().equals("true")){
+						buf.append("<option value=\"true\" selected>true</option>");
+						buf.append("<option value=\"false\">false</option>");
+					}else{
+						buf.append("<option value=\"true\">true</option>");
+						buf.append("<option value=\"false\" selected>false</option>");
+					}
+					buf.append("</select>");
+				}else{
+					buf.append("<input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
+							" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+HTMLEncoder.encode(o[j].getValueString())+"\" />");				
+				}
+				buf.append("</span>");
 				buf.append("<span class=\"configlongdesc\">");
 				buf.append(o[j].getLongDesc());
 				buf.append("</span>");
-				//
-				buf.append("<span class=\"configkey\">");
-				buf.append(configName);
-				buf.append("&nbsp;=&nbsp;</span>");
-				//
-				buf.append("<input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
-						" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+HTMLEncoder.encode(o[j].getValueString())+"\" />");
-				//
+				
 				buf.append("</li>\n");
 			}
 			

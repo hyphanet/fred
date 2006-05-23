@@ -231,7 +231,7 @@ ul.config li {
 	padding: 15px;
 	max-width: 600px;
 	list-style: none;
-	text-align: right;
+	text-align: left;
 }
 
 ul.config span.configprefix {
@@ -242,13 +242,14 @@ ul.config span.configprefix {
 }
 
 ul.config span.configshortdesc {
-	display: block;
 	text-align: left;
 	font-weight: bold;
+        float: left;
+        width: 292px;
 }
 
 ul.config span.configlongdesc {
-	display: block;
+    display: block;
 	text-align: left;
 }
 
