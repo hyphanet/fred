@@ -294,13 +294,18 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			System.out.println("################## File written! "+cg.getURI().getSuggestedEdition()+ " " +f.getAbsolutePath());
 			
 			File f2 = new File("freenet-cvs-snapshot.jar");
+			f2.delete();
+			
 			if(f.renameTo(f2)){
 				if(node.getNodeStarter()!=null)
 					node.getNodeStarter().restart();
-				else
+				else{
+					System.out.println("New version has been downloaded: please restart your node!");
 					node.exit();
+				}	
 			}else
 				System.out.println("ERROR renaming the file!");
+			
 			
 		}catch(Exception e){
 			Logger.error(this, "Error while updating the node : "+e);
@@ -317,9 +322,18 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		this.cg = state;
+		int errorCode = e.getMode();
 		
 		cg.cancel();
-		maybeUpdate();
+		if(errorCode == FetchException.DATA_NOT_FOUND ||
+				errorCode == FetchException.ROUTE_NOT_FOUND ||
+				errorCode == FetchException.PERMANENT_REDIRECT ||
+				errorCode == FetchException.REJECTED_OVERLOAD){
+			
+			Logger.normal(this, "Rescheduling new request");
+			maybeUpdate();
+		}else
+			Logger.error(this, "Canceling fetch : "+ e.getMessage());
 	}
 
 	public void onSuccess(BaseClientPutter state) {
