@@ -1033,19 +1033,19 @@ public class PeerNode implements PeerContext {
         node.peers.addConnectedPeer(this);
     }
     
-    private synchronized boolean invalidVersion() {
+    private boolean invalidVersion() {
         return bogusNoderef || (!Version.checkGoodVersion(version));
     }
     
-    private synchronized boolean reverseInvalidVersion() {
+    private boolean reverseInvalidVersion() {
         return bogusNoderef || (!Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion));
     }
     
-    public synchronized boolean publicInvalidVersion() {
+    public boolean publicInvalidVersion() {
         return !Version.checkGoodVersion(version);
     }
     
-    public synchronized boolean publicReverseInvalidVersion() {
+    public boolean publicReverseInvalidVersion() {
         return !Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion);
     }
 
