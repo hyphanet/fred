@@ -69,8 +69,8 @@ public class ToadletContextImpl implements ToadletContext {
 		if(mvt == null) mvt = new MultiValueTable();
 		if(disconnect)
 			mvt.put("Connection", "close");
-		byte[] messageBytes = htmlMessage.getBytes("ISO-8859-1");
-		sendReplyHeaders(os, code, message, mvt, "text/html", messageBytes.length);
+		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
+		sendReplyHeaders(os, code, message, mvt, "text/html; charset=UTF-8", messageBytes.length);
 		os.write(messageBytes);
 	}
 	
@@ -101,7 +101,11 @@ public class ToadletContextImpl implements ToadletContext {
 		if(mvt == null)
 			mvt = new MultiValueTable();
 		if(mimeType != null)
-			mvt.put("content-type", mimeType);
+			if(mimeType.equalsIgnoreCase("text/html")){
+				mvt.put("content-type", mimeType+"; charset=UTF-8");
+			}else{
+				mvt.put("content-type", mimeType);
+			}
 		if(contentLength >= 0)
 			mvt.put("content-length", Long.toString(contentLength));
 		// FIXME allow caching on a config option.

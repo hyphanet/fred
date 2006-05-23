@@ -477,7 +477,7 @@ public class HTTPRequest {
 			OutputStream bucketos = filedata.getOutputStream();
 			// buffer characters that match the boundary so far
 			byte[] buf = new byte[boundary.length()];
-			byte[] bbound = boundary.getBytes();
+			byte[] bbound = boundary.getBytes("UTF-8");
 			int offset = 0;
 			while (is.available() > 0 && !boundary.equals(new String(buf))) {
 				byte b = (byte)is.read();

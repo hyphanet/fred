@@ -48,8 +48,8 @@ public class PageMaker {
 				+ "	html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\">\n"
 				+ "<html xml:lang=\"en\">\n"
 				+ "<head>\n"
-				+ "<meta http-equiv=\"Content-Type\" content=\"text/html;\" />\n"
-				+"<link rel=\"stylesheet\" href=\"/static/themes/"+this.theme+"/theme.css\" type=\"text/css\" />\n");
+				+ "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
+				+ "<link rel=\"stylesheet\" href=\"/static/themes/"+this.theme+"/theme.css\" type=\"text/css\" />\n");
 		List themes = getThemes();
 		for(int i=0; i<themes.size() ; i++){
 			buf.append("<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"/static/themes/"+themes.get(i)+"/theme.css\" media=\"screen\" title=\""+themes.get(i)+"\" />\n");

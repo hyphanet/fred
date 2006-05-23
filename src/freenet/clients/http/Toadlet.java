@@ -136,7 +136,7 @@ public abstract class Toadlet {
 	}
 
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, String reply) throws ToadletContextClosedException, IOException {
-		byte[] buf = reply.getBytes("ISO-8859-1");
+		byte[] buf = reply.getBytes("UTF-8");
 		ctx.sendReplyHeaders(code, desc, null, mimeType, buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}
@@ -151,12 +151,12 @@ public abstract class Toadlet {
 			msg+"</h1><a href=\""+string+"\">Click here</a></body></html>";
 		byte[] buf;
 		try {
-			buf = redirDoc.getBytes("ISO-8859-1");
+			buf = redirDoc.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			// No way!
 			throw new Error(e);
 		}
-		ctx.sendReplyHeaders(301, "Permanent redirect", mvt, "text/html;charset=ISO-8859-1", buf.length);
+		ctx.sendReplyHeaders(301, "Permanent redirect", mvt, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
 	}
 	
@@ -178,7 +178,7 @@ public abstract class Toadlet {
 		buf.append("</div>\n");
 		buf.append("</div>\n");
 		ctx.getPageMaker().makeTail(buf);
-		writeReply(ctx, code, "text/html", desc, buf.toString());
+		writeReply(ctx, code, "text/html; charset=UTF-8", desc, buf.toString());
 	}
 	
 	/**
