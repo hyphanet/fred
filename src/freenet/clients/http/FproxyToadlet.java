@@ -278,15 +278,15 @@ public class FproxyToadlet extends Toadlet {
 			} else {
 				if(e.errorCodes != null)
 					extra = "<pre>"+e.errorCodes.toVerboseString()+"</pre>";
-				ctx.getPageMaker().makeHead(buf,msg);
+				ctx.getPageMaker().makeHead(buf,e.getShortMessage(e.mode));
 				
 				buf.append("<div class=\"infobox infobox-error\">\n");
 				buf.append("<div class=\"infobox-header\">\n");
-				buf.append(msg+"\n");
+				buf.append(e.getShortMessage(e.mode)+"\n");
 				buf.append("</div>\n");
 				buf.append("<div class=\"infobox-content\">\n");
 				
-				buf.append("Error : "+HTMLEncoder.encode(msg)+extra+"\n");		
+				buf.append("Error: "+HTMLEncoder.encode(msg)+extra+"\n");		
 				ctx.getPageMaker().makeBackLink(buf,ctx);
 				buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
 				buf.append("</div>\n");
@@ -295,7 +295,7 @@ public class FproxyToadlet extends Toadlet {
 				ctx.getPageMaker().makeTail(buf);
 
 				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
-						"text/html", msg, buf.toString());
+						"text/html", e.getShortMessage(e.mode), buf.toString());
 			}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
