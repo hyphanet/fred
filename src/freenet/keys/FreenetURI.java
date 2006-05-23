@@ -315,7 +315,7 @@ public class FreenetURI {
 		String r = routingKey == null ? "none" : HexUtil.bytesToHex(routingKey);
 		String k = cryptoKey == null ? "none" : HexUtil.bytesToHex(cryptoKey);
 		String e = extra == null ? "none" : HexUtil.bytesToHex(extra);
-		System.out.println("" + this);
+		System.out.println("FreenetURI" + this);
 		System.out.println("Key type   : " + keyType);
 		System.out.println("Routing key: " + r);
 		System.out.println("Crypto key : " + k);

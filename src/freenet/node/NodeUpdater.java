@@ -1,7 +1,9 @@
 package freenet.node;
 
-import java.net.MalformedURLException;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.net.MalformedURLException;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
@@ -18,6 +20,7 @@ import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.Node.NodeInitException;
+import freenet.support.ArrayBucket;
 import freenet.support.Logger;
 
 class PrivkeyHasBeenBlownException extends Exception{	
@@ -72,8 +75,8 @@ class AutoUpdateAllowedCallback implements BooleanCallback {
 class UpdateURICallback implements StringCallback{
 
 	private final Node node;
-	private final String baseURI="freenet:USK@XC-ntr3FcUblbYWjLkV9ci6BwnXqvIuKKWcWQHDjlFw,YcCSs5lraAMOKx5VMbrvL-28Waf4elHpz~lvVL~hEDk,AQABAAE/update/";
-	
+	private final String baseURI = "freenet:USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/update/";
+			
 	public UpdateURICallback(Node node) {
 		this.node = node;
 	}
@@ -92,6 +95,33 @@ class UpdateURICallback implements StringCallback{
 		//
 		// Maybe it NEEDS to be implemented
 		Logger.error(this, "Node's updater URI can't be updated on the fly");
+		return;
+	}	
+}
+
+class UpdaterevocationURICallback implements StringCallback{
+
+	private final Node node;
+	private final String baseURI = "SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked/";
+			
+	public UpdaterevocationURICallback(Node node) {
+		this.node = node;
+	}
+	
+	public String get() {
+		NodeUpdater nu = node.getNodeUpdater();
+		if (nu != null)
+			return nu.getRevocationKey().toString(true);
+		else
+			return baseURI;
+	}
+
+	public void set(String val) {
+		if(val == get()) return;
+		// Good idea to prevent it ? 
+		//
+		// Maybe it NEEDS to be implemented
+		Logger.error(this, "Node's updater revocationURI can't be updated on the fly");
 		return;
 	}	
 }
@@ -138,7 +168,10 @@ class UpdatedVersionAvailableUserAlert implements UserAlert {
 
 public class NodeUpdater implements ClientCallback, USKCallback {
 	private FetcherContext ctx;
+	private FetchResult result;
+	private ClientGetter cg;
 	private final FreenetURI URI;
+	private final FreenetURI revocationURI;
 	private final Node node;
 	
 	private final int currentVersion;
@@ -148,20 +181,24 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private boolean hasBeenBlown;
 	
 	private boolean isRunning = false;
+	private boolean isFetching = false;
 	
 	public final boolean isAutoUpdateAllowed;
 	
 	private final UpdatedVersionAvailableUserAlert alert;
 	
-	public NodeUpdater(Node n, boolean isAutoUpdateAllowed, FreenetURI URI) {
+	public NodeUpdater(Node n, boolean isAutoUpdateAllowed, FreenetURI URI, FreenetURI revocationURI) {
 		super();
 		this.URI = URI;
+		this.revocationURI = revocationURI;
 		this.node = n;
 		this.currentVersion = Version.buildNumber();
 		this.availableVersion = currentVersion;
 		this.hasBeenBlown = false;
 		this.isRunning = true;
 		this.isAutoUpdateAllowed = isAutoUpdateAllowed;
+		this.cg = null;
+		this.isFetching = false;
 		
 		this.alert= new UpdatedVersionAvailableUserAlert(currentVersion);
 		alert.isValid(false);
@@ -170,12 +207,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		FetcherContext ctx = n.makeClient((short)0).getFetcherContext();		
 		ctx.allowSplitfiles = true;
 		ctx.dontEnterImplicitArchives = false;
-		ctx.maxArchiveRestarts = 0;
-		ctx.maxMetadataSize = 256;
-		ctx.maxNonSplitfileRetries = 10;
-		ctx.maxOutputLength = 4096;
-		ctx.maxRecursionLevel = 2;
-		ctx.maxTempLength = 4096;
 		this.ctx = ctx;
 		
 		try{		
@@ -195,37 +226,100 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		
 		if(found > availableVersion){
 			this.availableVersion = found;
-
+			try{
+				maybeUpdate();
+			}catch (Exception e){
+				
+			}
+			System.out.println("Found "+availableVersion);
 			Logger.normal(this, "Found a new version!, setting up a new UpdatedVersionAviableUserAlert");
 			alert.set(availableVersion);
-			alert.isValid(true);
-
-			maybeUpdate();
+			alert.isValid(true);		
+			this.isRunning=true;
 		}
 	}
 
 	public synchronized void maybeUpdate(){
 		try{
-			if(isRunning || !isUpdatable()) return;
+			if(isFetching || !isRunning || !isUpdatable()) return;
 		}catch (PrivkeyHasBeenBlownException e){
 			// how to handle it ? a new UserAlert or an imediate exit?
-			Logger.error(this, "Private key has been blown!");
+			Logger.error(this, "The auto-updating Private key has been blown!");
 			node.exit();
 		}
 		
-		//TODO maybe a UpdateInProgress alert ?
+		isRunning=false;
 		
+		//TODO maybe a UpdateInProgress alert ?
 		if(isAutoUpdateAllowed){
 			Logger.normal(this,"Starting the update process");
+//			We fetch it
+			try{
+				if(cg==null||cg.isCancelled()){
+					cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
+							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
+							this, new ArrayBucket());
+				}
+				cg.start();
+				isFetching = true;
+			}catch (Exception e) {
+				Logger.error(this, "Error while starting the fetching");
+			}
 		}else{
 			Logger.normal(this,"Not starting the update process as it's not allowed");
 		}
 	}
 	
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	/** 
+	 * We try to update the node :p
+	 *
+	 */
+	public synchronized void Update(){
+		if((result == null) || !isAutoUpdateAllowed || hasBeenBlown)
+			return;
+		
+		Logger.normal(this, "Update in progress");
+		try{
+			ArrayBucket bucket = (ArrayBucket) result.asBucket();
+			byte[] data = bucket.toByteArray();
+			
+			File f = new File("freenet-cvs-snapshot.jar.new");
+			f.delete();
+			
+			FileOutputStream fos = new FileOutputStream(f);
+			
+			fos.write(data);
+			fos.flush();
+			fos.close();
+			System.out.println("################## File written! "+cg.getURI().getSuggestedEdition()+ " " +f.getAbsolutePath());
+			
+			File f2 = new File("freenet-cvs-snapshot.jar");
+			if(f.renameTo(f2)){
+				if(node.getNodeStarter()!=null)
+					node.getNodeStarter().restart();
+				else
+					node.exit();
+			}else
+				System.out.println("ERROR renaming the file!");
+			
+		}catch(Exception e){
+			Logger.error(this, "Error while updating the node : "+e);
+			System.out.println("Exception : "+e);
+			e.printStackTrace();
+		}
+	}
+	
+	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
+		this.cg = state;
+		this.result = result;
+		Update();
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public synchronized void onFailure(FetchException e, ClientGetter state) {
+		this.cg = state;
+		
+		cg.cancel();
+		maybeUpdate();
 	}
 
 	public void onSuccess(BaseClientPutter state) {
@@ -251,8 +345,17 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		return isRunning;
 	}
 	
+	public synchronized void blow(String msg){
+		this.revocationMessage = msg;
+		this.hasBeenBlown = true;
+	}
+	
 	public FreenetURI getUpdateKey(){
 		return URI;
+	}
+	
+	public FreenetURI getRevocationKey(){
+		return revocationURI;
 	}
 	
 	public static NodeUpdater maybeCreate(Node node, Config config) throws NodeInitException {
@@ -271,19 +374,29 @@ public class NodeUpdater implements ClientCallback, USKCallback {
         	boolean autoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
         	
         	updaterConfig.register("URI",
-        			"freenet:USK@XC-ntr3FcUblbYWjLkV9ci6BwnXqvIuKKWcWQHDjlFw,YcCSs5lraAMOKx5VMbrvL-28Waf4elHpz~lvVL~hEDk,AQABAAE/update/"+Version.buildNumber()+"/",
+        			"freenet:USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/update/"+Version.buildNumber()+"/",
         			3, true, "Where should the node look for updates?",
         			"Where should the node look for updates?",
         			new UpdateURICallback(node));
         	
         	String URI = updaterConfig.getString("URI");
         	
+        	
+        	updaterConfig.register("revocationURI",
+        			"freenet:SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked/",
+        			3, true, "Where should the node look for revocation ?",
+        			"Where should the node look for revocation ?",
+        			new UpdaterevocationURICallback(node));
+        	
+        	String revURI = updaterConfig.getString("revocationURI");
+        	
+        	
         	updaterConfig.finishedInitialization();
         	try{
-        		return new NodeUpdater(node , autoUpdateAllowed, new FreenetURI(URI));
+        		return new NodeUpdater(node , autoUpdateAllowed, new FreenetURI(URI), new FreenetURI(revURI));
         	}catch(Exception e){
         		Logger.error(node, "Error starting the NodeUpdater: "+e);
-        		throw new NodeInitException(node.EXIT_COULD_NOT_START_UPDATER,"Unable to start the NodeUpdater up");
+        		throw new NodeInitException(Node.EXIT_COULD_NOT_START_UPDATER,"Unable to start the NodeUpdater up");
         	}
         } else {
         	updaterConfig.finishedInitialization();
