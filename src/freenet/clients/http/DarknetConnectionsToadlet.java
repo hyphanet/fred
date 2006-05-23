@@ -19,6 +19,7 @@ import freenet.node.PeerNode;
 import freenet.node.Version;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
+import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 
 public class DarknetConnectionsToadlet extends Toadlet {
@@ -391,6 +392,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", "We already have the given reference.<br /> <a href=\".\">Return to the connections page</a>");
 				return;
 			}
+			
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		} else if (request.isPartSet("disconnect")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
