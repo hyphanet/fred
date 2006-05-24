@@ -291,7 +291,7 @@ public class TextModeClientInterface implements Runnable {
                 outsb.append("Download rate: "+rate+" bytes / second");
 			} catch (FetchException e) {
 				outsb.append("Error: "+e.getMessage());
-            	if(e.getMode() == e.SPLITFILE_ERROR && e.errorCodes != null) {
+            	if(e.getMode() == FetchException.SPLITFILE_ERROR && e.errorCodes != null) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
@@ -300,6 +300,9 @@ public class TextModeClientInterface implements Runnable {
     } else if(uline.startsWith("UPDATE")) {
     		n.getNodeUpdater().Update();
     		return false;
+    }else if(uline.startsWith("BLOW")) {
+    			n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p");
+    			return false;
 	} else if(uline.startsWith("SHUTDOWN")) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("Shutting node down.\r\n");

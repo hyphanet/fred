@@ -87,6 +87,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.fcp.FCPServer;
+import freenet.node.updater.NodeUpdater;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
@@ -1352,7 +1353,7 @@ public class Node {
 		try{
 			nodeUpdater = NodeUpdater.maybeCreate(this, config);
 			Logger.normal(this, "Starting the node updater");
-        }catch (NodeInitException e) {
+        }catch (Exception e) {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
