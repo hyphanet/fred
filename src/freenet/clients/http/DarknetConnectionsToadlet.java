@@ -348,6 +348,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 				} catch (IOException e) {
 					this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to retrieve node reference from " + HTMLEncoder.encode(urltext) + ".<br /> <a href=\".\">Please try again</a>.");
+					return;
 				} finally {
 					if( in != null ){
 						in.close();
@@ -405,6 +406,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					this.node.removeDarknetConnection(peerNodes[i]);
 				}
 			}
+			return;
 		}
 		this.handleGet(uri, ctx);
 	}

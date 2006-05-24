@@ -78,6 +78,7 @@ public class WelcomeToadlet extends Toadlet {
 				
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 			this.node.exit();
+			return;
 		}else if(request.getParam("restartconfirm").length() > 0){
 			// false for no navigation bars, because that would be very silly
 			ctx.getPageMaker().makeHead(buf, "Node Restart", false);
@@ -95,6 +96,7 @@ public class WelcomeToadlet extends Toadlet {
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 			Logger.normal(this, "Node is restarting");
 			node.getNodeStarter().restart();
+			return;
 		}else if (request.getParam("restart").length() > 0) {
 			ctx.getPageMaker().makeHead(buf, "Node Restart");
 			buf.append("<div class=\"infobox infobox-query\">\n");
@@ -111,6 +113,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("</div>\n");
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
 		} else if (request.getParam("exit").equalsIgnoreCase("true")) {
 			ctx.getPageMaker().makeHead(buf, "Node Shutdown");
 			buf.append("<div class=\"infobox infobox-query\">\n");
@@ -127,6 +130,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("</div>\n");
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
 		} else if (request.isParameterSet("addbookmark")) {
 			try {
 				bookmarks.addBookmark(new Bookmark(request.getParam("key"), request.getParam("name")));
@@ -166,14 +170,14 @@ public class WelcomeToadlet extends Toadlet {
 					try {
 						this.handleGet(new URI("/welcome/?managebookmarks"), ctx);
 					} catch (URISyntaxException ex) {
-				
+						return;
 					}
 				}
 			}
 			try {
 				this.handleGet(new URI("/welcome/?managebookmarks"), ctx);
 			} catch (URISyntaxException ex) {
-				
+				return;
 			}
 		}else if(request.isParameterSet("disable")){
 			UserAlert[] alerts=node.alerts.getAlerts();
