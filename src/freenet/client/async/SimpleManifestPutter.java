@@ -223,6 +223,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	public void start() throws InserterException {
+		Logger.minor(this, "Starting "+this);
 		PutHandler[] running;
 		synchronized(this) {
 			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
@@ -232,6 +233,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			for(int i=0;i<running.length;i++) {
 				running[i].start();
 			}
+			Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
+			if(running.length == 0)
+				gotAllMetadata();
 		} catch (InserterException e) {
 			cancelAndFinish();
 			throw e;

@@ -171,6 +171,7 @@ public class FCPConnectionHandler {
 	}
 
 	public void startClientPutDir(ClientPutDirMessage message, HashMap buckets) {
+		Logger.minor(this, "Start ClientPutDir");
 		String id = message.identifier;
 		ClientPutDir cp = null;
 		boolean success;
@@ -204,6 +205,7 @@ public class FCPConnectionHandler {
 				if(cp.isPersistentForever())
 					server.forceStorePersistentRequests();
 			}
+			Logger.minor(this, "Starting "+cp);
 			cp.start();
 		}
 	}

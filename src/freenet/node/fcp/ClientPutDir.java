@@ -135,6 +135,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		try {
 			if(putter != null)
 				putter.start();
+			Logger.minor(this, "Started "+putter);
 		} catch (InserterException e) {
 			onFailure(e, null);
 		}
