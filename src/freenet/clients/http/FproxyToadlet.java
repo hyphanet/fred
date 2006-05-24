@@ -31,7 +31,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
 
-public class FproxyToadlet extends Toadlet {
+public class FProxyToadlet extends Toadlet {
 	
 	final byte[] random;
 	
@@ -40,7 +40,7 @@ public class FproxyToadlet extends Toadlet {
 	/** Maximum size for transparent pass-through, should be a config option */
 	static final long MAX_LENGTH = 2*1024*1024; // 2MB
 	
-	public FproxyToadlet(HighLevelSimpleClient client, byte[] random) {
+	public FProxyToadlet(HighLevelSimpleClient client, byte[] random) {
 		super(client);
 		this.random = random;
 		client.setMaxLength(MAX_LENGTH);
@@ -144,7 +144,7 @@ public class FproxyToadlet extends Toadlet {
 			return;
 		}
 		try {
-			Logger.minor(this, "Fproxy fetching "+key);
+			Logger.minor(this, "FProxy fetching "+key);
 			FetchResult result = fetch(key, maxSize);
 			
 			// Now, is it safe?
@@ -270,7 +270,7 @@ public class FproxyToadlet extends Toadlet {
 //				buf.append("<li>Save it to disk at </li>");
 				// FIXME add return-to-referring-page
 				//buf.append("<li>Return to the referring page: ");
-				buf.append("<li>Return to the fproxy home page: <a href=\"/\">here</a>");
+				buf.append("<li>Return to the FProxy home page: <a href=\"/\">here</a>");
 				buf.append("</ul>");
 				ctx.getPageMaker().makeTail(buf);
 				writeReply(ctx, 200, "text/html", "OK", buf.toString());
@@ -321,7 +321,7 @@ public class FproxyToadlet extends Toadlet {
 		}
 	}
 
-	public static void maybeCreateFproxyEtc(Node node, Config config) throws IOException, InvalidConfigValueException {
+	public static void maybeCreateFProxyEtc(Node node, Config config) throws IOException, InvalidConfigValueException {
 		
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
 		
@@ -333,8 +333,8 @@ public class FproxyToadlet extends Toadlet {
 			node.setToadletContainer(server);
 			byte[] random = new byte[32];
 			node.random.nextBytes(random);
-			FproxyToadlet fproxy = new FproxyToadlet(client, random);
-			node.setFproxy(fproxy);
+			FProxyToadlet fproxy = new FProxyToadlet(client, random);
+			node.setFProxy(fproxy);
 			server.register(fproxy, "/", false);
 			
 			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager);
@@ -359,7 +359,7 @@ public class FproxyToadlet extends Toadlet {
 			server.register(queueToadlet, "/queue/", true);
 
 		} catch (IOException ioe) {
-			Logger.error(node,"Failed to start fproxy: "+ioe, ioe);
+			Logger.error(node,"Failed to start FProxy: "+ioe, ioe);
 		}
 		
 		fproxyConfig.finishedInitialization();

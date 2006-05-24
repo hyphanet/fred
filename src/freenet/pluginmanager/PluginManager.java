@@ -105,7 +105,7 @@ public class PluginManager {
 		try {
 			plug = LoadPlugin(filename);
 			PluginInfoWrapper pi = PluginHandler.startPlugin(this, filename, plug, pluginRespirator);
-			// handles fproxy? If so, register
+			// handles FProxy? If so, register
 			
 			if (pi.isPproxyPlugin())
 				registerToadlet(plug);

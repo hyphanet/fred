@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /*
- * This code is part of fproxy, an HTTP proxy server for Freenet. It is
+ * This code is part of FProxy, an HTTP proxy server for Freenet. It is
  * distributed under the GNU Public Licence (GPL) version 2. See
  * http://www.gnu.org/ for further details of the GPL.
  */

@@ -114,7 +114,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			typeOverride = overrideType;
 		// REDFLAG any other options we should support? 
 		// Obviously we don't want to support ?force= !!
-		// At the moment, ?type= and ?force= are the only options supported by Fproxy anyway.
+		// At the moment, ?type= and ?force= are the only options supported by FProxy anyway.
 		String ret = path;
 		
 		try {

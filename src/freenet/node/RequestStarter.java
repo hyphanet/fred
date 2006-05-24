@@ -15,11 +15,11 @@ public class RequestStarter implements Runnable {
 	/*
 	 * Priority classes
 	 */
-	/** Anything more important than fproxy */
+	/** Anything more important than FProxy */
 	public static final short MAXIMUM_PRIORITY_CLASS = 0;
-	/** Fproxy etc */
+	/** FProxy etc */
 	public static final short INTERACTIVE_PRIORITY_CLASS = 1;
-	/** Fproxy splitfile fetches */
+	/** FProxy splitfile fetches */
 	public static final short IMMEDIATE_SPLITFILE_PRIORITY_CLASS = 2;
 	/** USK updates etc */
 	public static final short UPDATE_PRIORITY_CLASS = 3;

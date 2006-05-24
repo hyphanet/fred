@@ -9,7 +9,7 @@ import java.util.Vector;
 import freenet.support.Logger;
 
 /*
- *  This code is part of fproxy, an HTTP proxy server for Freenet.
+ *  This code is part of FProxy, an HTTP proxy server for Freenet.
  *  It is distributed under the GNU Public Licence (GPL) version 2.  See
  *  http://www.gnu.org/ for further details of the GPL.
  */
@@ -51,7 +51,7 @@ public class TempFileBucket extends FileBucket {
 		// if it is not explictly freed.
 		deleteOnFinalize = true;
 
-		//System.err.println("FproxyServlet.TempFileBucket -- created: " +
+		//System.err.println("FProxyServlet.TempFileBucket -- created: " +
 		//         f.getAbsolutePath());
 		this.hook = hook;
 		long x = startLength <= 0 ? minAlloc : startLength;
@@ -136,7 +136,7 @@ public class TempFileBucket extends FileBucket {
 	 */
 	public synchronized boolean release() {
 		Logger.minor(this, "Releasing bucket: "+file, new Exception("debug"));
-		//System.err.println("FproxyServlet.TempFileBucket -- release: " +                      // file.getAbsolutePath());
+		//System.err.println("FProxyServlet.TempFileBucket -- release: " +                      // file.getAbsolutePath());
 
 		//System.err.println("CALL STACK: ");
 		//(new Exception()).printStackTrace();

@@ -87,7 +87,7 @@ public class ClientGetMessage extends FCPMessage {
 		if(returnType == RETURN_TYPE_DIRECT) {
 			diskFile = null;
 			tempFile = null;
-			// default just below fproxy
+			// default just below FProxy
 			defaultPriority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		} else if(returnType == RETURN_TYPE_NONE) {
 			diskFile = null;
@@ -151,7 +151,7 @@ public class ClientGetMessage extends FCPMessage {
 		Logger.minor(this, "max retries="+maxRetries);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
-			// defaults to the one just below fproxy
+			// defaults to the one just below FProxy
 			priorityClass = defaultPriority;
 		} else {
 			try {

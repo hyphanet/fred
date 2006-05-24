@@ -312,7 +312,7 @@ public class FetchException extends Exception {
 	public static final int CANCELLED = 25;
 	/** Archive restart */
 	public static final int ARCHIVE_RESTART = 26;
-	/** There is a more recent version of the USK, ~= HTTP 301; fproxy will turn this into a 301 */
+	/** There is a more recent version of the USK, ~= HTTP 301; FProxy will turn this into a 301 */
 	public static final int PERMANENT_REDIRECT = 27;
 
 	/** Is an error fatal i.e. is there no point retrying? */

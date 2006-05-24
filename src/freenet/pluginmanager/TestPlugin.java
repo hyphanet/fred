@@ -11,9 +11,9 @@ public class TestPlugin implements FredPlugin {
 	PluginRespirator pr;
 	/*
 	public boolean handles(int thing) {
-		return ((thing == FredPlugin.handleFproxy) ||
-				(thing == FredPlugin.handleFproxy) ||
-				(thing == FredPlugin.handleFproxy));
+		return ((thing == FredPlugin.handleFProxy) ||
+				(thing == FredPlugin.handleFProxy) ||
+				(thing == FredPlugin.handleFProxy));
 	}
 	*/
 	public void terminate() {

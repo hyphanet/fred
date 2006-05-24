@@ -7,7 +7,7 @@ import freenet.keys.FreenetURI;
 
 /**
  * A client process. Something that initiates requests, and can cancel
- * them. FCP, Fproxy, and the GlobalPersistentClient, implement this
+ * them. FCP, FProxy, and the GlobalPersistentClient, implement this
  * somewhere.
  */
 public interface ClientCallback {

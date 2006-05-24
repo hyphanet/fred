@@ -47,7 +47,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	static final int DEFAULT_FPROXY_PORT = 8888;
 	
-	class FproxyPortCallback implements IntCallback {
+	class FProxyPortCallback implements IntCallback {
 		
 		public int get() {
 			return port;
@@ -55,12 +55,12 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		public void set(int newPort) throws InvalidConfigValueException {
 			if(port != newPort)
-				throw new InvalidConfigValueException("Cannot change fproxy port number on the fly");
+				throw new InvalidConfigValueException("Cannot change FProxy port number on the fly");
 			// FIXME
 		}
 	}
 	
-	class FproxyBindtoCallback implements StringCallback {
+	class FProxyBindtoCallback implements StringCallback {
 		
 		public String get() {
 			return bindTo;
@@ -68,11 +68,11 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		public void set(String bindTo) throws InvalidConfigValueException {
 			if(bindTo != get())
-				throw new InvalidConfigValueException("Cannot change fproxy bind address on the fly");
+				throw new InvalidConfigValueException("Cannot change FProxy bind address on the fly");
 		}
 	}
 	
-	class FproxyAllowedHostsCallback implements StringCallback {
+	class FProxyAllowedHostsCallback implements StringCallback {
 	
 		public String get() {
 			return allowedHosts;
@@ -87,7 +87,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 	}
 	
-	class FproxyCSSNameCallback implements StringCallback {
+	class FProxyCSSNameCallback implements StringCallback {
 		
 		public String get() {
 			return cssName;
@@ -100,7 +100,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FproxyEnabledCallback implements BooleanCallback {
+	class FProxyEnabledCallback implements BooleanCallback {
 		
 		public boolean get() {
 			synchronized(SimpleToadletServer.this) {
@@ -129,19 +129,19 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	 */
 	public SimpleToadletServer(SubConfig fproxyConfig, Node node) throws IOException, InvalidConfigValueException {
 		
-		fproxyConfig.register("enabled", true, 1, true, "Enable fproxy?", "Whether to enable fproxy and related HTTP services",
-				new FproxyEnabledCallback());
+		fproxyConfig.register("enabled", true, 1, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
+				new FProxyEnabledCallback());
 		
 		boolean enabled = fproxyConfig.getBoolean("enabled");
 		
-		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, "Fproxy port number", "Fproxy port number",
-				new FproxyPortCallback());
+		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, "FProxy port number", "FProxy port number",
+				new FProxyPortCallback());
 		fproxyConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
-				new FproxyBindtoCallback());
-		fproxyConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to Fproxy",
-				new FproxyAllowedHostsCallback());
-		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS Fproxy should use",
-				new FproxyCSSNameCallback());
+				new FProxyBindtoCallback());
+		fproxyConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to FProxy",
+				new FProxyAllowedHostsCallback());
+		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS FProxy should use",
+				new FProxyCSSNameCallback());
 
 		this.bf = node.tempBucketFactory;
 		port = fproxyConfig.getInt("port");
@@ -155,8 +155,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		node.setToadletContainer(this); // even if not enabled, because of config
 		
 		if(!enabled) {
-			Logger.normal(node, "Not starting Fproxy as it's disabled");
-			System.out.println("Not starting Fproxy as it's disabled");
+			Logger.normal(node, "Not starting FProxy as it's disabled");
+			System.out.println("Not starting FProxy as it's disabled");
 			this.networkInterface = null;
 		} else {
 			this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
@@ -164,8 +164,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
 			myThread.start();
-			Logger.normal(this, "Starting fproxy on "+bindTo+":"+port);
-			System.out.println("Starting fproxy on "+bindTo+":"+port);
+			Logger.normal(this, "Starting FProxy on "+bindTo+":"+port);
+			System.out.println("Starting FProxy on "+bindTo+":"+port);
 		}
 	}
 	

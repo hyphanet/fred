@@ -59,7 +59,7 @@ public class PluginHandler {
 			
 			if (plugin instanceof FredPlugin) {
 				FredPlugin plug = ((FredPlugin)plugin);
-				//if (plug.handles(FredPlugin.handleFproxy))
+				//if (plug.handles(FredPlugin.handleFProxy))
 				
 				((FredPlugin)plugin).runPlugin(pr);
 			}

@@ -20,12 +20,12 @@ import freenet.support.Logger;
  * On 0.7, this shouldn't however take more than 10 seconds or so; these are SSKs
  * we are talking about. If this is fast enough then people will use the "-" form.
  * 
- * Fproxy should cause USKs with negative edition numbers to be redirected to USKs
+ * FProxy should cause USKs with negative edition numbers to be redirected to USKs
  * with negative edition numbers.
  * 
  * If the number specified is up to date, we just do the fetch. If a more recent
  * USK can be found, then we fail with an exception with the new version. The
- * client is expected to redirect to this. The point here is that fproxy will then
+ * client is expected to redirect to this. The point here is that FProxy will then
  * have the correct number in the location bar, so that if the user copies the URL,
  * it will keep the edition number hint.
  * 

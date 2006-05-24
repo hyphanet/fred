@@ -21,7 +21,7 @@ import freenet.support.io.FileBucket;
  * Identifier=Insert-1 // identifier, as always
  * Verbosity=0 // just report when complete
  * MaxRetries=999999 // lots of retries
- * PriorityClass=1 // fproxy priority level
+ * PriorityClass=1 // FProxy priority level
  * 
  * UploadFrom=direct // attached directly to this message
  * DataLength=100 // 100kB
@@ -94,7 +94,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		getCHKOnly = Fields.stringToBool(fs.get("GetCHKOnly"), false);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
-			// defaults to the one just below fproxy
+			// defaults to the one just below FProxy
 			priorityClass = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		} else {
 			try {

@@ -41,7 +41,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.USKManager;
-import freenet.clients.http.FproxyToadlet;
+import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.BooleanCallback;
 import freenet.config.Config;
@@ -538,7 +538,7 @@ public class Node {
     TextModeClientInterfaceServer tmci;
     TextModeClientInterface directTMCI;
     FCPServer fcpServer;
-    FproxyToadlet fproxyServlet;
+    FProxyToadlet fproxyServlet;
     SimpleToadletServer toadletContainer;
     
     /** NodeUpdater **/
@@ -767,12 +767,12 @@ public class Node {
         t.start();
         /*
         SimpleToadletServer server = new SimpleToadletServer(port+2000);
-        FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
-        PproxyToadlet pproxy = new PproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
+        FProxyToadlet fproxy = new FProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+        PProxyToadlet pproxy = new PProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
         server.register(fproxy, "/", false);
         server.register(pproxy, "/plugins/", true);
         
-        System.out.println("Starting fproxy on port "+(port+2000));
+        System.out.println("Starting FProxy on port "+(port+2000));
         new FCPServer(port+3000, n);
         System.out.println("Starting FCP server on port "+(port+3000));
         //server.register(fproxy, "/SSK@", false);
@@ -1327,7 +1327,7 @@ public class Node {
 			throw new NodeInitException(EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
 		}
         
-        // FCP (including persistent requests so needs to start before Fproxy)
+        // FCP (including persistent requests so needs to start before FProxy)
         try {
 			fcpServer = FCPServer.maybeCreate(this, config);
 		} catch (IOException e) {
@@ -1336,15 +1336,15 @@ public class Node {
 			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
 		}
         
-        // Fproxy
+        // FProxy
         // FIXME this is a hack, the real way to do this is plugins
         try {
-			FproxyToadlet.maybeCreateFproxyEtc(this, config);
+			FProxyToadlet.maybeCreateFProxyEtc(this, config);
 		} catch (IOException e) {
 			e.printStackTrace();
-			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);
+			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
 		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start fproxy: "+e);			
+			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);			
 		}
 		
         
@@ -1359,8 +1359,8 @@ public class Node {
 		
 		/*
         SimpleToadletServer server = new SimpleToadletServer(port+2000);
-        FproxyToadlet fproxy = new FproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
-        PproxyToadlet pproxy = new PproxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
+        FProxyToadlet fproxy = new FProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+        PProxyToadlet pproxy = new PProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
         server.register(fproxy, "/", false);
         server.register(pproxy, "/plugins/", true);
 		 * */
@@ -2563,7 +2563,7 @@ public class Node {
 		toadletContainer = server;
 	}
 
-	public FproxyToadlet getFproxy() {
+	public FProxyToadlet getFProxy() {
 		return fproxyServlet;
 	}
 
@@ -2575,7 +2575,7 @@ public class Node {
 		return tmci;
 	}
 
-	public void setFproxy(FproxyToadlet fproxy) {
+	public void setFProxy(FProxyToadlet fproxy) {
 		this.fproxyServlet = fproxy;
 	}
 

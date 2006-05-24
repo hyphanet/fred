@@ -78,7 +78,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		getCHKOnly = Fields.stringToBool(fs.get("GetCHKOnly"), false);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
-			// defaults to the one just below fproxy
+			// defaults to the one just below FProxy
 			priorityClass = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		} else {
 			try {

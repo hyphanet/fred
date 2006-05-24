@@ -1,7 +1,7 @@
 package freenet.support;
 
 public class URLEncoder {
-  // Moved here from fproxy by amphibian
+  // Moved here from FProxy by amphibian
   final static String safeURLCharacters = "@*-./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
   /**
