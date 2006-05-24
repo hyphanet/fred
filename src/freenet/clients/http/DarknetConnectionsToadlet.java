@@ -407,6 +407,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					this.node.removeDarknetConnection(peerNodes[i]);
 				}
 			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
 		}else{
 			this.handleGet(uri, ctx);
 		}
