@@ -20,6 +20,8 @@ import freenet.keys.USK;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
+import freenet.node.useralerts.RevocationKeyFoundUserAlert;
+import freenet.node.useralerts.UpdatedVersionAvailableUserAlert;
 import freenet.support.ArrayBucket;
 import freenet.support.Logger;
 

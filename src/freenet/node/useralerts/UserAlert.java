@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.useralerts;
 
 public interface UserAlert {
 	

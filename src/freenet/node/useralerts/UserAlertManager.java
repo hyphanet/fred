@@ -1,4 +1,4 @@
-package freenet.node;
+package freenet.node.useralerts;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -11,7 +11,7 @@ public class UserAlertManager implements Comparator {
 
 	final HashSet alerts;
 	
-	UserAlertManager() {
+	public UserAlertManager() {
 		alerts = new HashSet();
 	}
 	

@@ -1,11 +1,9 @@
-package freenet.node.updater;
-
-import freenet.node.UserAlert;
+package freenet.node.useralerts;
 
 public class RevocationKeyFoundUserAlert implements UserAlert {
 	private final String msg;
 	
-	RevocationKeyFoundUserAlert(String msg){
+	public RevocationKeyFoundUserAlert(String msg){
 		this.msg=msg;
 	}
 	

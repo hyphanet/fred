@@ -1,13 +1,15 @@
-package freenet.node;
+package freenet.node.useralerts;
+
+import freenet.node.Node;
 
 public class PeerManagerUserAlert implements UserAlert {
 
 	final Node n;
-	int conns;
-	int peers;
+	public int conns;
+	public int peers;
 	boolean isValid=true;
 	
-	PeerManagerUserAlert(Node n) {
+	public PeerManagerUserAlert(Node n) {
 		this.n = n;
 	}
 	
@@ -34,7 +36,7 @@ public class PeerManagerUserAlert implements UserAlert {
 				"be able to function normally. Ideally you should connect to peers run by people you know " +
 				"(if you are paranoid, then people you trust; if not, then at least people you've talked to)";
 		String end = " log on to irc.freenode.net channel #freenet-refs and ask around for somebody to connect to";
-		if(n.testnetEnabled)
+		if(n.isTestnetEnabled())
 			s += ", but since this is a testnet node, we suggest that you " + end + ".";
 		else
 			s += ". You could " + end + ", but remember that you are vulnerable to " +

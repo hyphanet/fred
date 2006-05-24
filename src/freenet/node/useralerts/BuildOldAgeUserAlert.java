@@ -1,8 +1,8 @@
-package freenet.node;
+package freenet.node.useralerts;
 
 public class BuildOldAgeUserAlert implements UserAlert {
 	private boolean isValid=true;
-	int lastGoodVersion = 0;
+	public int lastGoodVersion = 0;
 	
 	public boolean userCanDismiss() {
 		return false;
