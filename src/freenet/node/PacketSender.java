@@ -71,6 +71,7 @@ public class PacketSender implements Runnable {
         long nextActionTime = Long.MAX_VALUE;
         for(int i=0;i<nodes.length;i++) {
             PeerNode pn = nodes[i];
+            pn.setPeerNodeStatus(now);
             lastReceivedPacketFromAnyNode =
                 Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
             if(pn.isConnected()) {
@@ -180,6 +181,8 @@ public class PacketSender implements Runnable {
         
         // Send may have taken some time
         now = System.currentTimeMillis();
+
+        node.maybeLogPeerNodeStatusSummary(now);
         
         Vector jobsToRun = null;
         

@@ -110,12 +110,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf.append(buf2);
 		}
 		else {
-			final Integer CONNECTED = new Integer(0);
-			final Integer BACKED_OFF = new Integer(1);
-			final Integer TOO_NEW = new Integer(2);
-			final Integer INCOMPATIBLE = new Integer(3);
-			final Integer DISCONNECTED = new Integer(4);
-			
 			int numberOfConnected = 0;
 			int numberOfBackedOff = 0;
 			int numberOfTooNew = 0;
@@ -135,20 +129,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				Object[] row = new Object[9];  // where [0] is the pn object!
 				rows[i] = row;
 				
-				Object status;
-				if(pn.isConnected()) {
-					status = CONNECTED;
-					if(routingBackedOffNow) {
-						status = BACKED_OFF;
-					}
-				} else if(pn.hasCompletedHandshake() && pn.isVerifiedIncompatibleNewerVersion()) {
-					status = TOO_NEW;
-				} else if(pn.hasCompletedHandshake() && !Version.checkGoodVersion(pn.getVersion())) {
-					status = INCOMPATIBLE;
-				} else {
-					status = DISCONNECTED;
-				}
-				
+				Object status = new Integer(pn.getPeerNodeStatus());
 				String lastBackoffReasonOutputString = "/";
 				String backoffReason = pn.getLastBackoffReason();
 				if( backoffReason != null ) {
@@ -182,24 +163,24 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			// Convert status codes into status strings
 			for(int i=0;i<rows.length;i++) {
 				Object[] row = rows[i];
-				Integer x = (Integer) row[1];
-				if(x == CONNECTED) {
+				int x = ((Integer) row[1]).intValue();
+				if(x == Node.PEER_NODE_STATUS_CONNECTED) {
 					row[1] = "<span class=\"peer_connected\">CONNECTED</span>";
 					numberOfConnected++;
 				}
-				else if(x == BACKED_OFF) {
+				else if(x == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
 					row[1] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
 					numberOfBackedOff++;
 				}
-				else if(x == TOO_NEW) {
+				else if(x == Node.PEER_NODE_STATUS_TOO_NEW) {
 					row[1] = "<span class=\"peer_too_new\">TOO NEW</span>";
 					numberOfTooNew++;
 				}
-				else if(x == INCOMPATIBLE) {
+				else if(x == Node.PEER_NODE_STATUS_TOO_OLD) {
 					row[1] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
 					numberOfIncompatible++;
 				}
-				else if(x == DISCONNECTED) {
+				else if(x == Node.PEER_NODE_STATUS_DISCONNECTED) {
 					row[1] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
 					numberOfDisconnected++;
 				}

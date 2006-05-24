@@ -209,6 +209,9 @@ public class PeerNode implements PeerContext {
     
     /** The time at which we last completed a connection setup. */
     private long connectedTime;
+    
+    /** The status of this peer node in terms of Node.PEER_NODE_STATUS_* */
+    public int peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
 
     /** Holds a String-Long pair that shows which message types (as name) have been send to this peer. */
     private Hashtable localNodeSentMessageTypes = new Hashtable();
@@ -557,12 +560,14 @@ public class PeerNode implements PeerContext {
      * Disconnected e.g. due to not receiving a packet for ages.
      */
     public void disconnected() {
+        long now = System.currentTimeMillis();
         Logger.normal(this, "Disconnected "+this);
         node.usm.onDisconnect(this);
         node.peers.disconnected(this);
         synchronized(this) {
         	// Force renegotiation.
             isConnected = false;
+            setPeerNodeStatus(now);
             // Prevent sending packets to the node until that happens.
             if(currentTracker != null)
             	currentTracker.disconnected();
@@ -910,6 +915,7 @@ public class PeerNode implements PeerContext {
      * @return True unless we rejected the handshake, or it failed to parse.
      */
     public synchronized boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
+      long now = System.currentTimeMillis();
     	completedHandshake = true;
     	handshakeCount = 0;
     	arkFetcher.stop();
@@ -923,27 +929,31 @@ public class PeerNode implements PeerContext {
             // Treat as invalid version
         }
         if(reverseInvalidVersion()) {
-            verifiedIncompatibleNewerVersion = true;
             try {
                 node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(lastGoodVersion));
             } catch (NumberFormatException e) {
                 // ignore
             }
             Logger.normal(this, "Not connecting to "+this+" - reverse invalid version "+Version.getVersionString()+" for peer's lastGoodversion: "+lastGoodVersion);
+            verifiedIncompatibleNewerVersion = true;
             isConnected = false;
+            setPeerNodeStatus(now);
             node.peers.disconnected(this);
             return false;
         } else {
             verifiedIncompatibleNewerVersion = false;
+            setPeerNodeStatus(now);
         }
         if(invalidVersion()) {
-            verifiedIncompatibleOlderVersion = true;
             Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
+            verifiedIncompatibleOlderVersion = true;
             isConnected = false;
+            setPeerNodeStatus(now);
             node.peers.disconnected(this);
             return false;
         } else {
             verifiedIncompatibleOlderVersion = false;
+            setPeerNodeStatus(now);
         }
         KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
         changedIP(replyTo);
@@ -951,6 +961,7 @@ public class PeerNode implements PeerContext {
             connectedTime = System.currentTimeMillis();
             Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID);
             isConnected = false; // Will be reset below
+            setPeerNodeStatus(now);
             if(previousTracker != null) {
                 KeyTracker old = previousTracker;
                 previousTracker = null;
@@ -977,6 +988,7 @@ public class PeerNode implements PeerContext {
             if(previousTracker != null)
                 previousTracker.deprecated();
             isConnected = true;
+            setPeerNodeStatus(now);
             ctx = null;
         }
         if(!isConnected)
@@ -1027,6 +1039,7 @@ public class PeerNode implements PeerContext {
      * if necessary.
      */
     public void verified(KeyTracker tracker) {
+      long now = System.currentTimeMillis();
     	synchronized(this) {
         if(tracker == unverifiedTracker) {
             Logger.minor(this, "Promoting unverified tracker "+tracker);
@@ -1039,6 +1052,7 @@ public class PeerNode implements PeerContext {
             currentTracker = unverifiedTracker;
             unverifiedTracker = null;
             isConnected = true;
+            setPeerNodeStatus(now);
             ctx = null;
             maybeSendInitialMessages();
         } else return;
@@ -1613,6 +1627,47 @@ public class PeerNode implements PeerContext {
 		}
 	}
 
+  public int getPeerNodeStatus() {
+		return peerNodeStatus;
+  }
+
+	public synchronized void setPeerNodeStatus(long now) {
+		int oldPeerNodeStatus = peerNodeStatus;
+		if(isConnected) {
+			peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
+			if(now < routingBackedOffUntil) {
+				peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
+			}
+		} else if(completedHandshake && verifiedIncompatibleNewerVersion) {
+			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_NEW;
+		} else if(completedHandshake && verifiedIncompatibleOlderVersion) {
+			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_OLD;
+		} else {
+			peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
+		}
+		if(peerNodeStatus != oldPeerNodeStatus) {
+		  if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_CONNECTED)
+		    node.removeStatusConnectedPeerNode(getIdentityString(), this);
+		  else if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+		    node.removeStatusRoutingBackedOffPeerNode(getIdentityString(), this);
+		  else if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_TOO_NEW)
+		    node.removeStatusTooNewPeerNode(getIdentityString(), this);
+		  else if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_TOO_OLD)
+		    node.removeStatusTooOldPeerNode(getIdentityString(), this);
+		  else if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_DISCONNECTED)
+		    node.removeStatusDisconnectedPeerNode(getIdentityString(), this);
+		  if(peerNodeStatus == Node.PEER_NODE_STATUS_CONNECTED)
+		    node.addStatusConnectedPeerNode(getIdentityString(), this);
+		  else if(peerNodeStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+		    node.addStatusRoutingBackedOffPeerNode(getIdentityString(), this);
+		  else if(peerNodeStatus == Node.PEER_NODE_STATUS_TOO_NEW)
+		    node.addStatusTooNewPeerNode(getIdentityString(), this);
+		  else if(peerNodeStatus == Node.PEER_NODE_STATUS_TOO_OLD)
+		    node.addStatusTooOldPeerNode(getIdentityString(), this);
+		  else if(peerNodeStatus == Node.PEER_NODE_STATUS_DISCONNECTED)
+		    node.addStatusDisconnectedPeerNode(getIdentityString(), this);
+		}
+	}
 
 	public String getIdentityString() {
     	return Base64.encode(identity);
