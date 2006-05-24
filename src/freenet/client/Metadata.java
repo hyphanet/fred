@@ -509,7 +509,8 @@ public class Metadata implements Cloneable {
 			documentType = docType;
 			// Determine MIME type
 			this.clientMetadata = cm;
-			this.setMIMEType(cm.getMIMEType());
+			if(cm != null)
+				this.setMIMEType(cm.getMIMEType());
 			nameInArchive = arg;
 		} else
 			throw new IllegalArgumentException();
