@@ -348,7 +348,7 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("<div class=\"infobox-header\">\n");
 		buf.append("Fetch a Key\n");
 		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
+		buf.append("<div class=\"infobox-content\" id=\"keyfetchbox\">\n");
 		buf.append("<form action=\"/\" method=\"get\">\n");
 		buf.append("Key: <input type=\"text\" size=\"80\" name=\"key\"/>\n");
 		buf.append("<input type=\"submit\" value=\"Fetch\" />\n");

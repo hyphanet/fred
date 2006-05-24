@@ -1,0 +1,420 @@
+/* overall settings */
+
+p, span, div, td, th, li, h1, h2, h3, h4, h5 {
+	font-family: Arial;
+	font-weight: normal;
+	font-size: 11pt;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+th {
+	font-weight: bold;
+	background-color: #d0e2ff;
+}
+
+th, td {
+	margin: 0;
+	padding: 5px;
+	border: 1px solid #b0b0d0;
+}
+
+pre, textarea {
+	font-family: Courier;
+	font-weight: normal;
+	font-size: 8pt;
+}
+
+pre#reference {
+	overflow: auto;
+}
+
+/* body and page header */
+
+body {
+	padding: 0;
+	margin: 0;
+	background-color: #f5f9ff;
+}
+
+/* page's topbar */
+
+#topbar {
+	margin: 0;
+	padding: 5px;
+	min-height: 50px;
+	background-image: url(logo.png);
+	background-repeat: no-repeat;
+	background-position: 30px 3px;
+	background-color: #eaf2ff;
+}
+
+#topbar h1 {
+	margin: 0;
+	padding: 7px 0 0 0;
+	text-align: center;
+	font-size: 20pt;
+}
+
+/* navigation */
+
+#navbar {
+	margin-bottom: 5px;
+	padding: 0;
+	border-bottom: 1px solid #d0d0f0;
+	border-top: 1px solid #d0d0f0;
+	background-color: #eaf2ff;
+}
+
+#navbar ul {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	display: table;
+	border-collapse: collapse;
+	border: 0px hidden;
+}
+
+#navbar li {
+	margin: 0px;
+	padding-left: 5px;
+	padding-right: 5px;
+	list-style-type: none;
+	display: table-cell;
+	text-align: center;
+	border-left: 1px solid #d0d0f0;
+}
+
+#navbar li:hover {
+	background-color: #75a9ff;
+}
+
+#navbar a {
+	color: #000000;
+	text-decoration: none;
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* alerts */
+
+.alert-error {
+	color: darkred;
+}
+
+.alert-warning {
+	color: blue;
+}
+
+.alert-minor {
+	color: green;
+}
+
+/* infoboxes */
+
+div.infobox {
+	margin: 10px;
+	padding: 10px;
+	background-color: #f6f9ff;
+	border: 1px solid #b1ceff;
+}
+
+div.infobox div.infobox-header {
+	margin: -10px -10px 10px -10px;
+	padding: 10px 35px 10px 10px;
+	border-bottom: 1px dotted #b1ceff;
+	font-weight: bold;
+	font-size: 11pt;
+	background-color: #eaf2ff;
+}
+
+div.infobox-information div.infobox-header {
+	background-color: #e5efff;
+}
+
+div.infobox-warning div.infobox-header {
+	background-color: #f8f8c0;
+}
+
+div.infobox-alert {
+	background-color: #f0e8e8;
+}
+
+div.infobox-alert div.infobox-header {
+	background-color: #ffd0d0;
+}
+
+div.infobox-error {
+	background-color: #f0e8e8;
+}
+
+div.infobox-error div.infobox-header {
+	background-color: #ffd0d0;
+	background-image: url(error.gif);
+}
+
+div.infobox-query div.infobox-header {
+	background-color: #f0f0e8;
+	background-image: url(query.gif);
+}
+
+div.infobox-success div.infobox-header {
+	background-color: #e8f0e8;
+	background-image: url(success.gif);
+}
+
+/* content */
+
+#content {
+	padding: 0;
+}
+
+a {
+	color: #000000;
+}
+
+a:hover {
+	color: #7070bb;
+}
+
+.interfacelink {
+	color: #000000;
+	text-decoration: underline;
+}
+
+#activity {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* plugins page */
+
+table.plugins {
+	width: 100%;
+}
+
+table.plugins th, table.plugins td {
+	font-size: 8pt;
+}
+
+table.plugins span {
+	font-weight: bold;
+	font-size: 8pt;
+}
+
+table.plugins form {
+	display: inline;
+}
+
+/* configuration page */
+
+ul.config {
+	margin: 0 0 5px 0;
+	padding: 0;
+	border: 1px solid #d0d0d0;
+}
+
+ul.config li {
+	margin: 0;
+	padding: 5px;
+	list-style: none;
+	text-align: left;
+	display: table;
+}
+
+ul.config li:hover span.configlongdesc {
+	display: block;
+}
+
+ul.config span.configprefix {
+	display: block;
+	width: 100%;
+	background-color: #e5efff;
+	text-indent: 15px;
+	font-weight: bold;
+	font-size: 16pt;
+}
+
+ul.config span.configshortdesc {
+	text-align: left;
+	font-weight: bold;
+        float: left;
+	margin-right: 10px;
+	width: 300px;
+	display: table-cell;
+}
+
+ul.config span.configlongdesc {
+	display: none;
+	position: absolute;
+	left: 40px;
+	background-color: #e1ecff;
+	border: 1px solid #97beff;
+	padding: 5px;
+}
+
+span.config {
+	display: table-cell;
+	width: 100%;
+}
+
+ul.config input[type=text] {
+	width: 100%;
+}
+
+/* darknet page */
+
+table.darknet_connections {
+	width: 100%;
+}
+
+table.darknet_connections th, table.darknet_connections td {
+	font-size: 8pt;
+}
+
+table.darknet_connections span {
+	font-weight: bold;
+	font-size: 8pt;
+}
+
+table.darknet_connections span.peer_connected {
+	color: #008000;
+}
+
+table.darknet_connections span.peer_backedoff {
+	color: #ff0000;
+}
+
+table.darknet_connections span.peer_too_new {
+	color: #d0a0a0;
+}
+
+table.darknet_connections span.peer_incompatible {
+	color: #d0a0d0;
+}
+
+table.darknet_connections span.peer_disconnected {
+	color: #d0d0d0;
+}
+
+table.darknet_connections span.peer_version_problem {
+	color: #d07070;
+}
+
+tr.messagetypes {
+	text-align: center;
+}
+
+table.sentmessagetypes {
+	display: inline;
+}
+
+table.receivedmessagetypes {
+	display: inline;
+}
+
+table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
+	font-size: 7pt;
+}
+
+#reftext {
+	width: 100%;
+}
+
+#refurl {
+	width: 100%;
+}
+
+#reffile {
+	width: 100%;
+}
+
+/* queue page */
+
+table.queue th, table.queue td {
+	font-size: 8pt;
+}
+
+div.queue_tabletitle {
+	margin: 0;
+	padding: 10px 0 10px 0;
+	font-size: 10pt;
+}
+
+table.queue span {
+	font-size: 8pt;
+}
+
+table.queue span.failure_reason_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.failure_reason_is {
+}
+
+table.queue span.progress_fraction_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.progress_fraction_not_finalized {
+}
+
+table.queue span.progress_fraction_finalized {
+	color: #008000;
+}
+
+table.queue span.number_of_files {
+}
+
+table.queue span.number_of_files {
+}
+
+table.queue span.filename_direct {
+	color: #d0d0d0;
+}
+
+table.queue span.filename_none {
+	color: #d0d0d0;
+}
+
+table.queue span.filename_is {
+}
+
+table.queue span.identifier_with_uri {
+}
+
+table.queue span.persistence_none {
+}
+
+table.queue span.persistence_reboot {
+	color: #0000ff;
+}
+
+table.queue span.persistence_forever {
+	color: #00b000;
+}
+
+table.queue span.mimetype_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.mimetype_is {
+}
+
+table.queue span.filesize_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.filesize_is {
+}
+
+table.queue span.key_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.key_is {
+}

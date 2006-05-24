@@ -68,18 +68,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 		ctx.getPageMaker().makeHead(buf, "Darknet Connections");
 		
-		// our reference
-		buf.append("<div class=\"infobox infobox-normal\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("<a href=\"myref.txt\">My Reference</a>\n");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("<pre id=\"reference\">\n");
-		buf.append(HTMLEncoder.encode(this.node.exportPublicFieldSet().toString()));
-		buf.append("</pre>\n");
-		buf.append("</div>\n");
-		buf.append("</div>\n");
-		
 		// FIXME! We need some nice images
 		PeerNode[] peerNodes = node.getDarknetConnections();
 		
@@ -278,16 +266,28 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		buf.append("Reference:<br />\n");
-		buf.append("<textarea name=\"ref\" rows=\"8\" cols=\"74\"></textarea>\n");
+		buf.append("<textarea id=\"reftext\" name=\"ref\" rows=\"8\" cols=\"74\"></textarea>\n");
 		buf.append("<br />\n");
 		buf.append("or URL:\n");
-		buf.append("<input type=\"text\" name=\"url\" />\n");
+		buf.append("<input id=\"refurl\" type=\"text\" name=\"url\" />\n");
 		buf.append("<br />\n");
 		buf.append("or file:\n");
-		buf.append("<input type=\"file\" name=\"reffile\" />\n");
+		buf.append("<input id=\"reffile\" type=\"file\" name=\"reffile\" />\n");
 		buf.append("<br />\n");
 		buf.append("<input type=\"submit\" name=\"connect\" value=\"Connect\" />\n");
 		buf.append("</form>\n");
+		buf.append("</div>\n");
+		buf.append("</div>\n");
+		
+		// our reference
+		buf.append("<div class=\"infobox infobox-normal\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append("<a href=\"myref.txt\">My Reference</a>\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
+		buf.append("<pre id=\"reference\">\n");
+		buf.append(HTMLEncoder.encode(this.node.exportPublicFieldSet().toString()));
+		buf.append("</pre>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
