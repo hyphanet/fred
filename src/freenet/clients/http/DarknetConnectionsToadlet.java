@@ -397,6 +397,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
 		} else if (request.isPartSet("disconnect")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
