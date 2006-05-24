@@ -165,4 +165,8 @@ public class Peer implements WritableToDataOutputStream {
 		addr.writeToDataOutputStream(dos);
 		dos.writeInt(_port);
 	}
+
+	public FreenetInetAddress getFreenetAddress() {
+		return addr;
+	}
 }

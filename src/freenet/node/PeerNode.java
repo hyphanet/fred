@@ -448,13 +448,20 @@ public class PeerNode implements PeerContext {
     public Peer[] getHandshakeIPs(){
     	Peer[] p=null;
     	
-    	if(detectedPeer == null && nominalPeer.size() == 0) return new Peer[0];
-
-    	InetAddress peerIP = detectedPeer.getHandshakeAddress();
-
-    	if(peerIP == null && nominalPeer.size() == 0) return new Peer[0];
+    	Peer[] myNominalPeer;
     	
-    	if( peerIP != null && ! nominalPeer.contains(detectedPeer)){
+    	// Don't synchronize while doing lookups which may take a long time!
+    	synchronized(this) {
+    		myNominalPeer = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
+    		
+    		if(myNominalPeer.length == 0) {
+    			if(detectedPeer == null) return new Peer[0];
+    			return new Peer[] { detectedPeer };
+    		}
+    		
+    	}
+    	
+    	if( detectedPeer != null && ! nominalPeer.contains(detectedPeer)){
       		p= new Peer[1+nominalPeer.size()];
     		p[0]=detectedPeer;
     		for(int i=1;i<nominalPeer.size()+1;i++)
@@ -462,16 +469,22 @@ public class PeerNode implements PeerContext {
     	}else{
     		p = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);  		
     	}
+    	
     	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
-    	InetAddress localhost = node.localhostAddress;
+    	FreenetInetAddress localhost = node.fLocalhostAddress;
     	FreenetInetAddress nodeAddr = node.getPrimaryIPAddress();
-    	InetAddress nodeIP = nodeAddr == null ? null : nodeAddr.getAddress();
-    	if(nodeIP != null && nodeIP.equals(localhost)) return p;
-    	if(peerIP != null && peerIP.equals(localhost)) return p;
-    	if(nodeIP != null && nodeIP.equals(peerIP)) {
+    	
+    	Peer extra = null;
+    	for(int i=0;i<p.length;i++) {
+    		FreenetInetAddress a = p[i].getFreenetAddress();
+    		if(a.equals(nodeAddr)) {
+    			extra = new Peer(localhost, p[i].getPort());
+    		}
+    	}
+    	if(extra != null) {
     		Peer[] newPeers = new Peer[p.length+1];
     		System.arraycopy(p, 0, newPeers, 0, p.length);
-    		newPeers[newPeers.length-1] = new Peer(node.localhostAddress, detectedPeer.getPort());
+    		newPeers[p.length] = extra;
     		p = newPeers;
     	}
     	return p;

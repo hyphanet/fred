@@ -559,6 +559,7 @@ public class Node {
 
     // Helpers
 	public final InetAddress localhostAddress;
+	public final FreenetInetAddress fLocalhostAddress;
 
 	private boolean wasTestnet;
 
@@ -844,6 +845,7 @@ public class Node {
 			// Does not do a reverse lookup, so this is impossible
 			throw new Error(e3);
 		}
+		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
         ipDetector = new IPAddressDetector(10*1000, this);
         requestSenders = new HashMap();
         transferringRequestSenders = new HashMap();

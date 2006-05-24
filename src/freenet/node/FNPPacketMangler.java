@@ -1287,16 +1287,14 @@ public class FNPPacketMangler implements LowLevelFilter {
         Logger.minor(this, "Possibly sending handshake to "+pn);
         DiffieHellmanContext ctx;
         Peer[] handshakeIPs;
-        synchronized(pn) {
-            if(!pn.shouldSendHandshake()) return;
-            handshakeIPs = pn.getHandshakeIPs();
-            if(handshakeIPs.length == 0) {
-                pn.couldNotSendHandshake();
-                return;
-            } else {
-                ctx = DiffieHellman.generateContext();
-                pn.setDHContext(ctx);
-            }
+        if(!pn.shouldSendHandshake()) return;
+        handshakeIPs = pn.getHandshakeIPs();
+        if(handshakeIPs.length == 0) {
+            pn.couldNotSendHandshake();
+            return;
+        } else {
+            ctx = DiffieHellman.generateContext();
+            pn.setDHContext(ctx);
         }
         int sentCount = 0;
         for(int i=0;i<handshakeIPs.length;i++){
