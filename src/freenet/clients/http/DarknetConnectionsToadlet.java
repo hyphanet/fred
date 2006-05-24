@@ -407,7 +407,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					this.node.removeDarknetConnection(peerNodes[i]);
 				}
 			}
+		}else{
+			this.handleGet(uri, ctx);
 		}
-		this.handleGet(uri, ctx);
 	}
 }
