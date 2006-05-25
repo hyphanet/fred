@@ -246,6 +246,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InserterException {
+		makePutHandlers(manifestElements, putHandlersByName, "/");
+	}
+	
+	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName, String ZipPrefix) throws InserterException {
 		Iterator it = manifestElements.keySet().iterator();
 		while(it.hasNext()) {
 			String name = (String) it.next();
@@ -253,7 +257,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(o instanceof HashMap) {
 				HashMap subMap = new HashMap();
 				putHandlersByName.put(name, subMap);
-				makePutHandlers((HashMap)o, subMap);
+				makePutHandlers((HashMap)o, subMap, ZipPrefix+name+"/");
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
@@ -275,7 +279,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					// FIXME support better heuristics.
 					if(data.size() <= 65536) { // totally dumb heuristic!
 						// Put it in the zip.
-						ph = new PutHandler(name, element.fullName, cm, data);
+						ph = new PutHandler(name, ZipPrefix+element.fullName, cm, data);
 						elementsToPutInZip.addLast(ph);
 						numberOfFiles++;
 						totalSize += data.size();
