@@ -293,7 +293,7 @@ table.darknet_connections span.peer_too_new {
 	color: #d0a0a0;
 }
 
-table.darknet_connections span.peer_incompatible {
+table.darknet_connections span.peer_too_old {
 	color: #d0a0d0;
 }
 

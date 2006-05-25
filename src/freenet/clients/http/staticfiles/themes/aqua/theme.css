@@ -112,7 +112,7 @@ pre, textarea {
 	color: red;
 }
 
-.peer_incompatible {
+.peer_too_old {
 	color: blue;
 }
 

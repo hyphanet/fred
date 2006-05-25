@@ -101,7 +101,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			int numberOfConnected = 0;
 			int numberOfBackedOff = 0;
 			int numberOfTooNew = 0;
-			int numberOfIncompatible = 0;
+			int numberOfTooOld = 0;
 			int numberOfDisconnected = 0;
 			
 			// Create array
@@ -165,8 +165,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					numberOfTooNew++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_TOO_OLD) {
-					row[1] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
-					numberOfIncompatible++;
+					row[1] = "<span class=\"peer_too_old\">TOO OLD</span>";
+					numberOfTooOld++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_DISCONNECTED) {
 					row[1] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
@@ -235,10 +235,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				buf.append("<span class=\"peer_too_new\">TOO NEW: " + numberOfTooNew + "</span>");
 				separatorNeeded = true;
 			}
-			if (numberOfIncompatible != 0) {
+			if (numberOfTooOld != 0) {
 				if (separatorNeeded)
 					buf.append(" | ");
-				buf.append("<span class=\"peer_incompatible\">INCOMPATIBLE: " + numberOfIncompatible + "</span>");
+				buf.append("<span class=\"peer_too_old\">TOO OLD: " + numberOfTooOld + "</span>");
 				separatorNeeded = true;
 			}
 			if (numberOfDisconnected != 0) {
