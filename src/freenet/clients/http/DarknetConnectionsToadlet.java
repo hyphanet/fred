@@ -29,12 +29,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		public int compare(Object arg0, Object arg1) {
 			Object[] row0 = (Object[])arg0;
 			Object[] row1 = (Object[])arg1;
-			Integer stat0 = (Integer) row0[1];  // 1 = status
-			Integer stat1 = (Integer) row1[1];
+			Integer stat0 = (Integer) row0[2];  // 2 = status
+			Integer stat1 = (Integer) row1[2];
 			int x = stat0.compareTo(stat1);
 			if(x != 0) return x;
-			String name0 = (String) row0[2];  // 2 = node name
-			String name1 = (String) row1[2];
+			String name0 = (String) row0[3];  // 3 = node name
+			String name1 = (String) row1[3];
 			return name0.toLowerCase().compareTo(name1.toLowerCase());
 		}
 
@@ -89,7 +89,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("nodeAveragePingTime: "+nodeAveragePingTime+"ms<br>\n");
 		StringBuffer buf2 = new StringBuffer(1024);
 		buf2.append("<table class=\"darknet_connections\">\n");
-		buf2.append("<tr><th>Status</th><th>Name</th><th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th><span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th><th></th></tr>\n");
+		buf2.append("<tr><th></th><th>Status</th><th>Name</th><th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th><span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th></tr>\n");
 		
 		if (peerNodes.length == 0) {
 			buf2.append("<tr><td colspan=\"8\">No connections so far</td></tr>\n");
@@ -134,15 +134,16 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 				
 				row[0] = pn;
-				row[1] = status;
-				row[2] = HTMLEncoder.encode(pn.getName());
-				row[3] = ( pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)" ) + avgPingTimeString;
-				row[4] = VersionPrefixString+HTMLEncoder.encode(pn.getVersion())+VersionSuffixString;
-				row[5] = new Double(pn.getLocation().getValue());
-				row[6] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
-				if (idle == -1) row[7] = " ";
-				else row[7] = new Long((now - idle) / 60000);
-				row[8] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
+				row[1] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
+				row[2] = status;
+				row[3] = HTMLEncoder.encode(pn.getName());
+				row[4] = ( pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)" ) + avgPingTimeString;
+				row[5] = VersionPrefixString+HTMLEncoder.encode(pn.getVersion())+VersionSuffixString;
+				row[6] = new Double(pn.getLocation().getValue());
+				row[7] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
+				if (idle == -1) row[8] = " ";
+				else row[8] = new Long((now - idle) / 60000);
+				
 			}
 	
 			// Sort array
@@ -151,25 +152,25 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			// Convert status codes into status strings
 			for(int i=0;i<rows.length;i++) {
 				Object[] row = rows[i];
-				int x = ((Integer) row[1]).intValue();
+				int x = ((Integer) row[2]).intValue();
 				if(x == Node.PEER_NODE_STATUS_CONNECTED) {
-					row[1] = "<span class=\"peer_connected\">CONNECTED</span>";
+					row[2] = "<span class=\"peer_connected\">CONNECTED</span>";
 					numberOfConnected++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-					row[1] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
+					row[2] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
 					numberOfBackedOff++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_TOO_NEW) {
-					row[1] = "<span class=\"peer_too_new\">TOO NEW</span>";
+					row[2] = "<span class=\"peer_too_new\">TOO NEW</span>";
 					numberOfTooNew++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_TOO_OLD) {
-					row[1] = "<span class=\"peer_too_old\">TOO OLD</span>";
+					row[2] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
 					numberOfTooOld++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_DISCONNECTED) {
-					row[1] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
+					row[2] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
 					numberOfDisconnected++;
 				}
 			}

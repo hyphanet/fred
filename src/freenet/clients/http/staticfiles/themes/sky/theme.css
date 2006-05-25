@@ -24,7 +24,7 @@ th, td {
 pre, textarea {
 	font-family: Courier;
 	font-weight: normal;
-	font-size: 8pt;
+	font-size: 80%;
 }
 
 pre#reference {
@@ -197,13 +197,8 @@ table.plugins {
 	width: 100%;
 }
 
-table.plugins th, table.plugins td {
-	font-size: 8pt;
-}
-
 table.plugins span {
 	font-weight: bold;
-	font-size: 8pt;
 }
 
 table.plugins form {
@@ -273,12 +268,12 @@ table.darknet_connections {
 }
 
 table.darknet_connections th, table.darknet_connections td {
-	font-size: 8pt;
+	font-size: 80%;
 }
 
 table.darknet_connections span {
 	font-weight: bold;
-	font-size: 8pt;
+	font-size: 80%;
 }
 
 table.darknet_connections span.peer_connected {
