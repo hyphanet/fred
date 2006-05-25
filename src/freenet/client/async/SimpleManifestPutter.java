@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import freenet.client.ClientMetadata;
@@ -234,8 +235,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				running[i].start();
 			}
 			Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
-			if(running.length == 0)
+			if(running.length == 0) {
+				insertedAllFiles = true;
 				gotAllMetadata();
+			}
 		} catch (InserterException e) {
 			cancelAndFinish();
 			throw e;
@@ -406,6 +409,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				block = new InsertBlock(zipBucket, new ClientMetadata("application/zip"), targetURI);
 				isMetadata = false;
 				insertAsArchiveManifest = true;
+			} catch (ZipException e) {
+				fail(new InserterException(InserterException.INTERNAL_ERROR, e, null));
+				return;
 			} catch (IOException e) {
 				fail(new InserterException(InserterException.BUCKET_ERROR, e, null));
 				return;

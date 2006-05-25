@@ -84,6 +84,8 @@ public class PacketSender implements Runnable {
                 
                 // Any urgent notifications to send?
                 long urgentTime = pn.getNextUrgentTime();
+                // Should spam the logs, unless there is a deadlock
+                Logger.minor(this, "Next urgent time: "+urgentTime+" for "+pn.getDetectedPeer());
                 if(urgentTime <= now) {
                     // Send them
                     try {
