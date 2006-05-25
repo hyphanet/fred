@@ -28,7 +28,7 @@ pre, textarea {
 }
 
 pre#reference {
-		overflow:auto;
+	overflow: auto;
 }
 
 table, pre {
@@ -223,38 +223,44 @@ table.plugins form {
 ul.config {
 	margin: 0 0 5px 0;
 	padding: 0;
-	border: 1px solid #d0d0d0;
+	border-top: 1px solid #d0d0d0;
+	border-right: 1px solid #d0d0d0;
+	border-left: 1px solid #d0d0d0;
 }
 
 ul.config li {
 	margin: 0;
-	padding: 15px;
-	max-width: 600px;
+	padding: 15px 10px 15px 10px;
 	list-style: none;
 	text-align: left;
+	border-bottom: 1px solid #d0d0d0;
 }
 
 ul.config span.configprefix {
-	margin: 0 0 0 15px;
+	margin: 0;
+	padding: 10px 35px 10px 10px;
+	display: block;
+	border-bottom: 1px dotted #a0a0a0;
 	font-weight: bold;
 	font-size: 16pt;
 	font-variant: small-caps;
+	background-color: #e8e8e8;
 }
 
 ul.config span.configshortdesc {
 	text-align: left;
 	font-weight: bold;
-        float: left;
-        width: 292px;
+	float: left;
+	width: 30%;
 }
 
 ul.config span.configlongdesc {
-    display: block;
+	display: block;
 	text-align: left;
 }
 
 ul.config input[type=text] {
-	width: 300px;
+	width: 70%;
 }
 
 /* darknet page */
