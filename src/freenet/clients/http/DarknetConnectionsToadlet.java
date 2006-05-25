@@ -166,7 +166,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					numberOfTooNew++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_TOO_OLD) {
-					row[2] = "<span class=\"peer_incompatible\">INCOMPATIBLE</span>";
+					row[2] = "<span class=\"peer_too_old\">TOO OLD</span>";
 					numberOfTooOld++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_DISCONNECTED) {
