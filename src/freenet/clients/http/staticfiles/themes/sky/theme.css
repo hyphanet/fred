@@ -12,44 +12,31 @@ table {
 
 th {
 	font-weight: bold;
-	background-color: #e8e8e8;
+	background-color: #d0e2ff;
 }
 
 th, td {
 	margin: 0;
 	padding: 5px;
-	border: 1px solid #d0d0d0;
+	border: 1px solid #b0b0d0;
 }
 
 pre, textarea {
 	font-family: Courier;
 	font-weight: normal;
-	font-size: 8pt;
+	font-size: 80%;
 }
 
 pre#reference {
 	overflow: auto;
 }
 
-table, pre {
-	margin: 0 0 5px 0;
-	padding: 0;
-}
-
-form {
-	margin: 0;
-	padding: 0;
-}
-
 /* body and page header */
 
 body {
-	margin: 0;
 	padding: 0;
-	background-color: #f0f0f0;
-}
-
-#page {
+	margin: 0;
+	background-color: #f5f9ff;
 }
 
 /* page's topbar */
@@ -58,11 +45,10 @@ body {
 	margin: 0;
 	padding: 5px;
 	min-height: 50px;
-	background-color: #e8e8e8;
 	background-image: url(logo.png);
 	background-repeat: no-repeat;
 	background-position: 30px 3px;
-	border-bottom: 1px solid #d0d0d0;
+	background-color: #eaf2ff;
 }
 
 #topbar h1 {
@@ -75,32 +61,42 @@ body {
 /* navigation */
 
 #navbar {
-	margin: 5px 5px 0 0;
-	padding: 10px;
-	position: absolute;
-	width: 150px;
-	background-color: #e8e8e8;
-	border: 1px solid #d0d0d0;
+	margin-bottom: 5px;
+	padding: 0;
+	border-bottom: 1px solid #d0d0f0;
+	border-top: 1px solid #d0d0f0;
+	background-color: #eaf2ff;
 }
 
 #navbar ul {
-	margin: 0 0 0 30px;
+	margin: 0;
 	padding: 0;
+	width: 100%;
+	display: table;
+	border-collapse: collapse;
+	border: 0px hidden;
 }
 
 #navbar li {
-	margin: 0;
-	padding: 0;
+	margin: 0px;
+	padding-left: 5px;
+	padding-right: 5px;
 	list-style-type: none;
+	display: table-cell;
+	text-align: center;
+	border-left: 1px solid #d0d0f0;
+}
+
+#navbar li:hover {
+	background-color: #75a9ff;
 }
 
 #navbar a {
 	color: #000000;
 	text-decoration: none;
-}
-
-#navbar a:hover {
-	color: #ff0000;
+	display: block;
+	width: 100%;
+	height: 100%;
 }
 
 /* alerts */
@@ -120,31 +116,27 @@ body {
 /* infoboxes */
 
 div.infobox {
-	margin: 0 0 5px 0;
+	margin: 10px;
 	padding: 10px;
-	background-color: #f0f0f0;
-	border: 1px solid #d0d0d0;
+	background-color: #f6f9ff;
+	border: 1px solid #b1ceff;
 }
 
 div.infobox div.infobox-header {
 	margin: -10px -10px 10px -10px;
 	padding: 10px 35px 10px 10px;
-	border-bottom: 1px dotted #a0a0a0;
+	border-bottom: 1px dotted #b1ceff;
 	font-weight: bold;
 	font-size: 11pt;
-	background-color: #e8e8e8;
-	background-repeat: no-repeat;
-	background-position: right;
+	background-color: #eaf2ff;
 }
 
 div.infobox-information div.infobox-header {
-	background-color: #e8e8f0;
-	background-image: url(information.gif);
+	background-color: #e5efff;
 }
 
 div.infobox-warning div.infobox-header {
 	background-color: #f8f8c0;
-	background-image: url(warning.gif);
 }
 
 div.infobox-alert {
@@ -153,7 +145,6 @@ div.infobox-alert {
 
 div.infobox-alert div.infobox-header {
 	background-color: #ffd0d0;
-	background-image: url(alert.gif);
 }
 
 div.infobox-error {
@@ -178,10 +169,7 @@ div.infobox-success div.infobox-header {
 /* content */
 
 #content {
-	margin: 5px 5px 5px 0;
 	padding: 0;
-	position: absolute;
-	left: 177px;
 }
 
 a {
@@ -189,7 +177,7 @@ a {
 }
 
 a:hover {
-	color: #ff0000;
+	color: #7070bb;
 }
 
 .interfacelink {
@@ -205,13 +193,12 @@ a:hover {
 
 /* plugins page */
 
-table.plugins th, table.plugins td {
-	font-size: 8pt;
+table.plugins {
+	width: 100%;
 }
 
 table.plugins span {
 	font-weight: bold;
-	font-size: 8pt;
 }
 
 table.plugins form {
@@ -223,55 +210,70 @@ table.plugins form {
 ul.config {
 	margin: 0 0 5px 0;
 	padding: 0;
-	border-top: 1px solid #d0d0d0;
-	border-right: 1px solid #d0d0d0;
-	border-left: 1px solid #d0d0d0;
+	border: 1px solid #d0d0d0;
 }
 
 ul.config li {
 	margin: 0;
-	padding: 15px 10px 15px 10px;
+	padding: 5px;
 	list-style: none;
 	text-align: left;
-	border-bottom: 1px solid #d0d0d0;
+	display: table;
+}
+
+ul.config li:hover span.configlongdesc {
+	display: block;
 }
 
 ul.config span.configprefix {
-	margin: 0;
-	padding: 10px 35px 10px 10px;
 	display: block;
-	border-bottom: 1px dotted #a0a0a0;
+	width: 100%;
+	background-color: #e5efff;
+	text-indent: 15px;
 	font-weight: bold;
 	font-size: 16pt;
-	font-variant: small-caps;
-	background-color: #e8e8e8;
 }
 
 ul.config span.configshortdesc {
 	text-align: left;
 	font-weight: bold;
-	float: left;
-	width: 30%;
+        float: left;
+	margin-right: 10px;
+	width: 300px;
+	display: table-cell;
 }
 
 ul.config span.configlongdesc {
-	display: block;
-	text-align: left;
+	display: none;
+	position: absolute;
+	left: 40px;
+	background-color: #e1ecff;
+	border: 1px solid #97beff;
+	padding: 5px;
+}
+
+span.config {
+	display: table-cell;
+	width: 100%;
 }
 
 ul.config input[type=text] {
-	width: 70%;
+	width: 100%;
 }
 
 /* darknet page */
 
+table.darknet_connections {
+	width: 100%;
+}
+
 table.darknet_connections th, table.darknet_connections td {
-	font-size: 8pt;
+	font-size: 80%;
 }
 
 table.darknet_connections span {
 	font-weight: bold;
-	font-size: 8pt;
+	font-size: 80%;
 }
 
 table.darknet_connections span.peer_connected {
@@ -312,6 +314,18 @@ table.receivedmessagetypes {
 
 table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
 	font-size: 7pt;
+}
+
+#reftext {
+	width: 100%;
+}
+
+#refurl {
+	width: 100%;
+}
+
+#reffile {
+	width: 100%;
 }
 
 /* queue page */
