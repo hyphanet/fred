@@ -85,6 +85,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
 			this.recursionLevel = 0;
 		}
+		Logger.minor(this, "Created "+this+" for "+parentFetcher);
 	}
 
 	public boolean isFinished() {

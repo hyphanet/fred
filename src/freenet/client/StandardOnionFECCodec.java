@@ -137,6 +137,10 @@ public class StandardOnionFECCodec extends FECCodec {
 	private static int runningDecodes;
 
 	public void decode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		Logger.minor(this, "Queueing decode: " + dataBlockStatus.length
+				+ " data blocks, " + checkBlockStatus.length
+				+ " check blocks, block length " + blockLength + " with "
+				+ this, new Exception("debug"));
 		// Ensure that there are only K simultaneous running decodes.
 		synchronized(runningDecodesSync) {
 			while(runningDecodes >= PARALLEL_DECODES) {
@@ -288,6 +292,10 @@ public class StandardOnionFECCodec extends FECCodec {
 	}
 
 	public void encode(Bucket[] dataBlockStatus, Bucket[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		Logger.minor(this, "Queueing encode: " + dataBlockStatus.length
+				+ " data blocks, " + checkBlockStatus.length
+				+ " check blocks, block length " + blockLength + " with "
+				+ this, new Exception("debug"));
 		// Encodes count as decodes.
 		synchronized(runningDecodesSync) {
 			while(runningDecodes >= PARALLEL_DECODES) {

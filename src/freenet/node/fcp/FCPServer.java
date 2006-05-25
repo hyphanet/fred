@@ -12,13 +12,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.BindException;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.WeakHashMap;
 
-import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
