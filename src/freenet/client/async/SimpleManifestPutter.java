@@ -197,6 +197,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private boolean hasResolvedBase = false;
 	private final static String[] defaultDefaultNames =
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
+	private int bytesOnZip = 0;
 	private LinkedList elementsToPutInZip;
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
@@ -277,7 +278,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					// Decide whether to put it in the ZIP.
 					// FIXME support multiple ZIPs and size limits.
 					// FIXME support better heuristics.
-					if(data.size() <= 65536) { // totally dumb heuristic!
+					int sz = (int)data.size() + 40 + element.fullName.length();
+					if(data.size() <= 65536 && 
+							bytesOnZip + sz < ((2048-64)*1024)) { // totally dumb heuristic!
+						bytesOnZip += sz;
 						// Put it in the zip.
 						ph = new PutHandler(name, ZipPrefix+element.fullName, cm, data);
 						elementsToPutInZip.addLast(ph);
