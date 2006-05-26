@@ -103,9 +103,11 @@ public class NodeStarter
     	
     	// FIXME : maybe we should keep it even if the wrapper does it
     	
-    	// Thread t = new Thread(new MemoryChecker(), "Memory checker");
-    	// t.setPriority(Thread.MAX_PRIORITY);
-    	// t.start();
+    	Thread t = new Thread(new MemoryChecker(), "Memory checker");
+    	t.setPriority(Thread.MAX_PRIORITY);
+    	t.start();
+    	 
+    	 
     	WrapperManager.signalStarting(500000);
     	try {
     		node = new Node(cfg, random, logConfigHandler,this);
