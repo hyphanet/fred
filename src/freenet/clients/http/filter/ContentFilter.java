@@ -104,7 +104,7 @@ public class ContentFilter {
 	 * Filter some data.
 	 * @throws IOException If an internal error involving buckets occurred.
 	 */
-	public static Bucket filter(Bucket data, BucketFactory bf, String typeName, URI baseURI) throws UnsafeContentTypeException, IOException {
+	public static Bucket filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb) throws UnsafeContentTypeException, IOException {
 		String type = typeName;
 		String options = "";
 		String charset = null;
@@ -154,7 +154,7 @@ public class ContentFilter {
 					charset = detectCharset(data, handler);
 				}
 				
-				return handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI));
+				return handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI, cb));
 			}
 			handler.throwUnsafeContentTypeException();
 			return null;

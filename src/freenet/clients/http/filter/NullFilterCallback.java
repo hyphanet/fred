@@ -19,4 +19,8 @@ public class NullFilterCallback implements FilterCallback {
 		return null;
 	}
 
+	public void onText(String s) {
+		// Do nothing
+	}
+
 }

@@ -238,7 +238,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
 				// Fetch it from the archive
 				if(ah == null)
-					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive");
+					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getZIPInternalName();
 				Logger.minor(this, "Fetching "+filename);
 				Bucket dataBucket = ah.get(filename, actx, null, recursionLevel+1, true);

@@ -85,6 +85,15 @@ public class BookmarkManager {
 		return this.bookmarks.elements();
 	}
 	
+	public FreenetURI[] getBookmarkURIs() {
+		Bookmark[] b = (Bookmark[]) bookmarks.toArray(new Bookmark[bookmarks.size()]);
+		FreenetURI[] uris = new FreenetURI[b.length];
+		for(int i=0;i<uris.length;i++) {
+			uris[i] = b[i].key;
+		}
+		return uris;
+	}
+	
 	public void clear() {
 		for (Enumeration e = this.bookmarks.elements(); e.hasMoreElements(); ) {
 			Bookmark i = (Bookmark)e.nextElement();

@@ -38,6 +38,7 @@ public class WelcomeToadlet extends Toadlet {
 		this.node = n;
 		this.config = sc;
 		this.bookmarks = new BookmarkManager(n);
+		node.bookmarkManager = bookmarks;
 		
 		sc.register("bookmarks", n.isTestnetEnabled() ? DEFAULT_TESTNET_BOOKMARKS : DEFAULT_DARKNET_BOOKMARKS, 0, false, "List of bookmarks", "A list of bookmarked freesites", this.bookmarks.makeCB());
 		

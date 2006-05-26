@@ -384,7 +384,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				out.append(c);
 			}
 		}
-		w.write(out.toString());
+		String sout = out.toString();
+		if(pc.cb != null)
+			pc.cb.onText(sout);
+		w.write(sout);
 	}
 
 	void processTag(Vector splitTag, Writer w, HTMLParseContext pc)

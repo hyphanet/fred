@@ -14,14 +14,17 @@ import freenet.support.Logger;
 public class GenericReadFilterCallback implements FilterCallback {
 
 	private URI baseURI;
+	private final FoundURICallback cb;
 	
-	public GenericReadFilterCallback(URI uri) {
+	public GenericReadFilterCallback(URI uri, FoundURICallback cb) {
 		this.baseURI = uri;
+		this.cb = cb;
 	}
 	
-	public GenericReadFilterCallback(FreenetURI uri) {
+	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb) {
 		try {
 			this.baseURI = new URI("/" + uri.toString(false));
+			this.cb = cb;
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}
@@ -143,6 +146,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// Valid freenet URI, allow it
 		// Now what about the queries?
 		HTTPRequest req = new HTTPRequest(uri);
+		if(cb != null) cb.foundURI(furi);
 		return finishProcess(req, overrideType, "/" + furi.toString(false), uri, noRelative);
 	}
 
@@ -159,6 +163,11 @@ public class GenericReadFilterCallback implements FilterCallback {
 			}
 			return baseURI.toASCIIString();
 		}
+	}
+
+	public void onText(String s) {
+		if(cb != null)
+			cb.onText(s, baseURI);
 	}
 	
 }

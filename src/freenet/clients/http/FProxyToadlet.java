@@ -179,7 +179,7 @@ public class FProxyToadlet extends Toadlet {
 			
 			try {
 				if(!force && !forcedownload) {
-					data = ContentFilter.filter(data, ctx.getBucketFactory(), typeName, uri);
+					data = ContentFilter.filter(data, ctx.getBucketFactory(), typeName, uri, null);
 				}
 				
 				if (forcedownload) {
@@ -415,5 +415,4 @@ public class FProxyToadlet extends Toadlet {
 		}
 		return sb.toString();
 	}
-	
 }

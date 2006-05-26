@@ -41,9 +41,10 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.USKManager;
+import freenet.clients.http.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.config.BooleanCallback;
+import freenet.clients.http.Spider;
 import freenet.config.Config;
 import freenet.config.FilePersistentConfig;
 import freenet.config.IntCallback;
@@ -87,11 +88,11 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.node.fcp.FCPServer;
+import freenet.node.updater.NodeUpdater;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.UserAlertManager;
-import freenet.node.updater.NodeUpdater;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
@@ -1404,6 +1405,11 @@ public class Node {
 		if(testnetHandler != null)
 			testnetHandler.start();
 		
+		// Spider. FIXME.
+		
+		//if(testnetEnabled)
+		//	new Spider(bookmarkManager, this);
+		
         persistentTempBucketFactory.completedInit();
 
         redetectAddress();
@@ -2476,6 +2482,7 @@ public class Node {
 	}
 
 	FreenetInetAddress lastIP;
+	public BookmarkManager bookmarkManager;
 
 	public void redetectAddress() {
 		FreenetInetAddress newIP = detectPrimaryIPAddress();

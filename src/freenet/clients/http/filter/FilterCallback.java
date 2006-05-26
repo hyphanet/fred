@@ -28,4 +28,9 @@ public interface FilterCallback {
 	 */
 	public String onBaseHref(String baseHref);
 	
+	/**
+	 * Process plain-text. Notification only; can't modify.
+	 */
+	public void onText(String s);
+	
 }
