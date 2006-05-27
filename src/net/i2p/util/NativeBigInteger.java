@@ -585,4 +585,11 @@ public class NativeBigInteger extends BigInteger {
 		else
     		return "lib";
     }
+    
+    public int compareTo(Object obj) {
+	    if (obj instanceof BigInteger) {
+	    	return super.compareTo((BigInteger)obj);
+	    }
+	    return -1;
+    }
 }

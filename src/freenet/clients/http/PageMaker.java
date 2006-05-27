@@ -105,6 +105,11 @@ public class PageMaker {
 		List themes = new ArrayList();
 		try {
 			URL url = getClass().getResource("staticfiles/themes/");
+			// This seems not to work with GCJ, as it returns null. Try another method.
+			if (url == null) {
+				url = new URL("staticfiles/themes/");
+				if (url == null) throw new IOException("Can't find themes");
+			}
 			URLConnection urlConnection = url.openConnection();
 			if (url.getProtocol().equals("file")) {
 				File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1").replaceAll("\\|", ":"));
