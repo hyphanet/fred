@@ -105,15 +105,15 @@ public class FCPServer implements Runnable {
 			
 			Logger.normal(this, "Starting FCP server on "+bindTo+":"+port+".");
 			System.out.println("Starting FCP server on "+bindTo+":"+port+".");
-			NetworkInterface netInterface = null;
+			NetworkInterface networkInterface = null;
 			try {
-				netInterface = new NetworkInterface(port, bindTo, allowedHosts);
+				networkInterface = new NetworkInterface(port, bindTo, allowedHosts);
 			} catch (BindException be) {
 				Logger.error(this, "Couldn't bind to FCP Port "+bindTo+":"+port+". FCP Server not started.");
 				System.out.println("Couldn't bind to FCP Port "+bindTo+":"+port+". FCP Server not started.");
 			}
 			
-			this.networkInterface = netInterface;
+			this.networkInterface = networkInterface;
 			
 			if (this.networkInterface != null) {
 				Thread t = new Thread(this, "FCP server");
@@ -272,7 +272,7 @@ public class FCPServer implements Runnable {
 		
 		public void set(long value) {
 			server.persistenceInterval = value;
-			freenet.node.fcp.FCPServer.FCPServerPersister p = server.persister;
+			FCPServerPersister p = server.persister;
 			if(p != null) {
 				synchronized(p) {
 					p.notify();

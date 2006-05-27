@@ -516,7 +516,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Logger.minor(this, "Element = "+element);
 		}
 
-		public ParsedTag sanitize(freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+		public ParsedTag sanitize(HTMLParseContext pc) throws DataFilterException {
 			TagVerifier tv =
 				(TagVerifier) allowedTagsVerifiers.get(element.toLowerCase());
 			Logger.minor(this, "Got verifier: "+tv+" for "+element);
@@ -1109,7 +1109,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 
-		ParsedTag sanitize(ParsedTag t, freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) throws DataFilterException {
 			Hashtable h = new Hashtable();
 			boolean equals = false;
 			String prevX = "";
@@ -1179,7 +1179,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = new Hashtable();
 			for (Enumeration e = h.keys(); e.hasMoreElements();) {
 				String x = (String) e.nextElement();
@@ -1249,16 +1249,16 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs);
 		}
 
-		abstract void setStyle(boolean b, freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc);
+		abstract void setStyle(boolean b, HTMLParseContext pc);
 
-		abstract boolean getStyle(freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc);
+		abstract boolean getStyle(HTMLParseContext pc);
 
-		abstract void processStyle(freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc);
+		abstract void processStyle(HTMLParseContext pc);
 
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			if (p.startSlash) {
 				return finish(h, hn, pc);
@@ -1270,7 +1270,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable finish(
 			Hashtable h,
 			Hashtable hn,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Logger.minor(this, "Finishing script/style");
 			// Finishing
 			setStyle(false, pc);
@@ -1295,7 +1295,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return hn;
 		}
 
-		Hashtable start(Hashtable h, Hashtable hn, freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+		Hashtable start(Hashtable h, Hashtable hn, HTMLParseContext pc) throws DataFilterException {
 			Logger.minor(this, "Starting script/style");
 			pc.styleScriptRecurseCount++;
 			if (pc.styleScriptRecurseCount > 1) {
@@ -1329,15 +1329,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				emptyStringArray);
 		}
 
-		void setStyle(boolean b, freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) {
+		void setStyle(boolean b, HTMLParseContext pc) {
 			pc.inStyle = b;
 		}
 
-		boolean getStyle(freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) {
+		boolean getStyle(HTMLParseContext pc) {
 			return pc.inStyle;
 		}
 
-		void processStyle(freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) {
+		void processStyle(HTMLParseContext pc) {
 			try {
 				pc.currentStyleScriptChunk =
 					sanitizeStyle(pc.currentStyleScriptChunk, pc.cb);
@@ -1369,21 +1369,21 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable hn,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			// Call parent so we swallow the scripting
 			Hashtable h = super.sanitizeHash(hn, p, pc);
 			return null; // Lose the tags
 		}
 
-		void setStyle(boolean b, freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) {
+		void setStyle(boolean b, HTMLParseContext pc) {
 			pc.inScript = b;
 		}
 
-		boolean getStyle(freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) {
+		boolean getStyle(HTMLParseContext pc) {
 			return pc.inScript;
 		}
 
-		void processStyle(freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) {
+		void processStyle(HTMLParseContext pc) {
 			pc.currentStyleScriptChunk =
 				sanitizeScripting(pc.currentStyleScriptChunk);
 		}
@@ -1400,7 +1400,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			// %i18n dealt with by TagVerifier
 			// %coreattrs
@@ -1490,7 +1490,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			// events (default and added)
 			for (Iterator e = eventAttrs.iterator(); e.hasNext();) {
@@ -1519,7 +1519,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			String hreflang = getHashString(h, "hreflang");
 			String charset = null;
@@ -1599,7 +1599,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			// Action has been previously sanitized, we force it :p
 			hn.put("action","/");
@@ -1639,7 +1639,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			
 			// We drop the whole <input> if type isn't allowed
@@ -1659,7 +1659,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			/*
 			 * Several possibilities: a) meta http-equiv=X content=Y b) meta
@@ -1764,7 +1764,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			DTDs.put("-//W3C//DTD HTML 3.2 Final//EN", new Object());
 		}
 
-		ParsedTag sanitize(ParsedTag t, freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) {
+		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
 			if (!(t.unparsedAttrs.length == 3 || t.unparsedAttrs.length == 4))
 				return null;
 			if (!t.unparsedAttrs[0].equalsIgnoreCase("html"))
@@ -1789,7 +1789,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super("?xml", null);
 		}
 
-		ParsedTag sanitize(ParsedTag t, freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) {
+		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
 			if (t.unparsedAttrs.length != 2)
 				return null;
 			if (!t.unparsedAttrs[0].equals("version=\"1.0\""))
@@ -1814,7 +1814,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,
-			freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			String xmlns = getHashString(h, "xmlns");
 			if (xmlns != null && xmlns.equals("http://www.w3.org/1999/xhtml"))
@@ -1832,7 +1832,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Hashtable sanitizeHash(
 				Hashtable h,
 				ParsedTag p,
-				freenet.clients.http.filter.HTMLFilter.HTMLParseContext pc) throws DataFilterException {
+				HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			// Get the already-sanitized version.
 			String baseHref = getHashString(hn, "href");
