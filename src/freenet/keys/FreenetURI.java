@@ -54,7 +54,11 @@ import freenet.support.Logger;
  * The metastring is meant to be passed to the metadata processing systems that
  * act on the retrieved document.
  * </p>
- * 
+ * <p>
+ * When constructing a FreenetURI with a String argument, it is now legal for CHK keys
+ * to have a '.extension' tail, eg 'CHK@blahblahblah.html'. The constructor will simply
+ * chop off at the first dot.
+ * </p>
  * REDFLAG: Old code has a FieldSet, and the ability to put arbitrary metadata
  * in through name/value pairs. Do we want this?
  */
@@ -222,6 +226,12 @@ public class FreenetURI {
 			keyType = URI.substring(colon + 1, atchar).toUpperCase().trim();
 		}
 		URI = URI.substring(atchar + 1);
+
+        // strip 'file extensions' from CHKs
+        // added by aum (david@rebirthing.co.nz)
+        if ("CHK".equals(keyType)) {
+            URI = URI.split("[.]")[0];
+        }
 
 		// decode metaString
 		int slash2;
