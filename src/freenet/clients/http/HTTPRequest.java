@@ -109,6 +109,7 @@ public class HTTPRequest {
 	 * @throws URISyntaxException if the URI is invalid
 	 */
 	public HTTPRequest(URI uri, Bucket d, ToadletContext ctx) {
+		this.uri = uri;
 		this.headers = ctx.getHeaders();
 		this.parseRequestParameters(uri.getRawQuery(), true);
 		this.data = d;
