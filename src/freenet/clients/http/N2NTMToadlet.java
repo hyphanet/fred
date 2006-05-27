@@ -73,11 +73,18 @@ public class N2NTMToadlet extends Toadlet {
         this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
         return;
       }
-      buf.append("<b>Sending Node To Node Text Message to "+HTMLEncoder.encode(peernode_name)+":</b><br />\n");
+      
       buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
+      buf.append("<div class=\"infobox infobox-normal\">");
+      buf.append("<div class=\"infobox-header\">");
+      buf.append("Sending Node To Node Text Message to "+HTMLEncoder.encode(peernode_name)+"\n");
+      buf.append("</div>");
+      buf.append("<div class=\"infobox-content\" id=\"n2nbox\">");
       buf.append("<input type=\"hidden\" name=\"hashcode\" value=\""+input_hashcode_string+"\" />\n");
       buf.append("<textarea id=\"n2ntmtext\" name=\"message\" rows=\"8\" cols=\"74\"></textarea><br />\n");
       buf.append("<input type=\"submit\" name=\"send\" value=\"Send message to "+HTMLEncoder.encode(peernode_name)+"\" />\n");
+      buf.append("</div>");
+      buf.append("</div>");
       buf.append("</form>\n");
       ctx.getPageMaker().makeTail(buf);
       this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
@@ -90,7 +97,7 @@ public class N2NTMToadlet extends Toadlet {
   
   public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
     if(data.size() > 1024*1024) {
-      this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, darknet toadlet limited to 1MB");
+      this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, N2NTM toadlet limited to 1MB");
       return;
     }
     
@@ -103,7 +110,7 @@ public class N2NTMToadlet extends Toadlet {
       PeerNode pn = null;
       String input_hashcode_string = request.getPartAsString("hashcode", 2000);
       request.freeParts();
-			input_hashcode_string = input_hashcode_string.trim();
+      input_hashcode_string = input_hashcode_string.trim();
       int input_hashcode = -1;
       try {
         input_hashcode = (new Integer(input_hashcode_string)).intValue();
@@ -121,7 +128,15 @@ public class N2NTMToadlet extends Toadlet {
         }
       }
       if(pn == null) {
+        ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Failed");
+	buf.append("<div class=\"infobox infobox-error\">");
+	buf.append("<div class=\"infobox-header\">");
+	buf.append("Peer not Found");
+	buf.append("</div>");
+	buf.append("<div class=\"infobox-content\">");
         buf.append("PeerNode.hashCode '"+input_hashcode_string+"' not found.<br /><br />\n");
+	buf.append("</div>");
+	buf.append("</div>");
         buf.append("<a href=\"/darknet/\">Back to Darknet page</a>\n");
         ctx.getPageMaker().makeTail(buf);
         this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
@@ -130,17 +145,57 @@ public class N2NTMToadlet extends Toadlet {
       try {
         Message n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), pn.getName(), message);
         if(pn == null) {
-          buf.append("PeerNode.hashCode '"+request.getParam("hashcode")+"' not found.<br /><br />\n");
+          ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Failed");
+	  
+	  buf.append("<div class=\"infobox infobox-error\">");
+	  buf.append("<div class=\"infobox-header\">");
+	  buf.append("Peer not Found");
+	  buf.append("</div>");
+	  buf.append("<div class=\"infobox-content\">");
+	  buf.append("PeerNode.hashCode '"+request.getParam("hashcode")+"' not found.<br /><br />\n");
+	  buf.append("</div>");
+	  buf.append("</div>");
         } else if(!pn.isConnected()) {
-          buf.append("Peer '"+HTMLEncoder.encode(pn.getName())+"' is not connected.  Not sending N2NTM.<br /><br />\n");
+          ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Failed");
+	  
+	  buf.append("<div class=\"infobox infobox-error\">");
+	  buf.append("<div class=\"infobox-header\">");
+	  buf.append("Peer not Connected");
+	  buf.append("</div>");
+	  buf.append("<div class=\"infobox-content\">");
+	  buf.append("Peer '"+HTMLEncoder.encode(pn.getName())+"' is not connected.  Not sending N2NTM.<br /><br />\n");
+	  buf.append("</div>");
+	  buf.append("</div>");
         } else if(pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-          buf.append("Peer '"+HTMLEncoder.encode(pn.getName())+"' is \"backed off\".  N2NTM receipt may be significantly delayed.<br /><br />\n");
+          ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Succeeded");
+	  
+	  buf.append("<div class=\"infobox infobox-warning\">");
+	  buf.append("<div class=\"infobox-header\">");
+	  buf.append("Sent, but Peer is Backed Off");
+	  buf.append("</div>");
+	  buf.append("<div class=\"infobox-content\">");
+	  buf.append("Peer '"+HTMLEncoder.encode(pn.getName())+"' is \"backed off\".  N2NTM receipt may be significantly delayed.<br /><br />\n");
+          
           usm.send(pn, n2ntm);
+	  
           buf.append("Message should be on it's way.<br /><br />\n");
+	  buf.append("</div>");
+	  buf.append("</div>");
         } else {
-          buf.append("Sending N2NTM to peer '"+HTMLEncoder.encode(pn.getName())+"'.<br /><br />\n");
+          ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Succeeded");
+	  
+	  buf.append("<div class=\"infobox infobox-success\">");
+	  buf.append("<div class=\"infobox-header\">");
+	  buf.append("Message Sent");
+	  buf.append("</div>");
+	  buf.append("<div class=\"infobox-content\">");
+	  buf.append("Sending N2NTM to peer '"+HTMLEncoder.encode(pn.getName())+"'.<br /><br />\n");  
+	  
           usm.send(pn, n2ntm);
+	  
           buf.append("Message should be on it's way.<br /><br />\n");
+	  buf.append("</div>");
+	  buf.append("</div>");
         }
       } catch (NotConnectedException e) {
         buf.append("Got NotConnectedException sending message to Peer '"+HTMLEncoder.encode(pn.getName())+"'.  Can't send N2NTM.<br /><br />\n");

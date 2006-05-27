@@ -153,17 +153,14 @@ div.infobox-error {
 
 div.infobox-error div.infobox-header {
 	background-color: #ffd0d0;
-	background-image: url(error.gif);
 }
 
 div.infobox-query div.infobox-header {
 	background-color: #f0f0e8;
-	background-image: url(query.gif);
 }
 
 div.infobox-success div.infobox-header {
-	background-color: #e8f0e8;
-	background-image: url(success.gif);
+	background-color: #c8f0c8;
 }
 
 /* content */
@@ -412,4 +409,13 @@ table.queue span.key_unknown {
 }
 
 table.queue span.key_is {
+}
+
+/* Node to node text message */
+#n2ntmtext {
+	width: 100%;
+}
+
+#n2nbox input[type=submit] {
+	width: 100%;
 }
