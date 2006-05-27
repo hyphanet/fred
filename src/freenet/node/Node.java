@@ -92,6 +92,7 @@ import freenet.node.updater.NodeUpdater;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
+import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -536,6 +537,7 @@ public class Node {
     public static final int PEER_NODE_STATUS_TOO_NEW = 3;
     public static final int PEER_NODE_STATUS_TOO_OLD = 4;
     public static final int PEER_NODE_STATUS_DISCONNECTED = 5;
+    public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
     
     public final long bootID;
     public final long startupTime;
@@ -2888,5 +2890,31 @@ public class Node {
         Logger.minor(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected);
         nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
       }
+    }
+
+    /**
+     * Handle a received node to node text message
+     */
+    public void receivedNodeToNodeTextMessage(Message m) {
+      PeerNode source = (PeerNode)m.getSource();
+      int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+      if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
+        String source_nodename = (String) m.getObject(DMT.SOURCE_NODENAME);
+        String target_nodename = (String) m.getObject(DMT.TARGET_NODENAME);
+        String text = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TEXT);
+        Logger.normal(this, "Received N2NTM from '"+source_nodename+"' to '"+target_nodename+"': "+text);
+        N2NTMUserAlert userAlert = new N2NTMUserAlert(source_nodename, target_nodename, text);
+		    alerts.register(userAlert);
+      } else {
+        Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
+      }
+    }
+
+    public String getMyName() {
+      return myName;
+    }
+
+    public UdpSocketManager getUSM() {
+      return usm;
     }
 }

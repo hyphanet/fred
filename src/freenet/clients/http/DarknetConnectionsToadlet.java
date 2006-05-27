@@ -33,8 +33,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			Integer stat1 = (Integer) row1[2];
 			int x = stat0.compareTo(stat1);
 			if(x != 0) return x;
-			String name0 = (String) row0[3];  // 3 = node name
-			String name1 = (String) row1[3];
+			String name0 = (String) row0[9];  // 9 = node name
+			String name1 = (String) row1[9];
 			return name0.toLowerCase().compareTo(name1.toLowerCase());
 		}
 
@@ -114,7 +114,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				long idle = pn.lastReceivedPacketTime();
 				
 				// Elements must be HTML encoded.
-				Object[] row = new Object[9];  // where [0] is the pn object!
+				Object[] row = new Object[10];  // where [0] is the pn object and 9 is the node name only for sorting!
 				rows[i] = row;
 				
 				Object status = new Integer(pn.getPeerNodeStatus());
@@ -132,18 +132,24 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					VersionPrefixString = "<span class=\"peer_version_problem\">";
 					VersionSuffixString = "</span>";
 				}
+				String NamePrefixString = "";
+				String NameSuffixString = "";
+				if(pn.isConnected()) {
+				  NamePrefixString = "<a href=\"/send_n2ntm/?peernode_hashcode="+pn.hashCode()+"\">";
+				  NameSuffixString = "</a>";
+				}
 				
 				row[0] = pn;
 				row[1] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
 				row[2] = status;
-				row[3] = HTMLEncoder.encode(pn.getName());
+				row[3] = NamePrefixString+HTMLEncoder.encode(pn.getName())+NameSuffixString;
 				row[4] = ( pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)" ) + avgPingTimeString;
 				row[5] = VersionPrefixString+HTMLEncoder.encode(pn.getVersion())+VersionSuffixString;
 				row[6] = new Double(pn.getLocation().getValue());
 				row[7] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
 				if (idle == -1) row[8] = " ";
 				else row[8] = new Long((now - idle) / 60000);
-				
+				row[9] = HTMLEncoder.encode(pn.getName());
 			}
 	
 			// Sort array
@@ -180,6 +186,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				Object[] row = rows[i];
 				buf2.append("<tr>");
 				for(int j=1;j<row.length;j++) {  // skip index 0 as it's the PeerNode object
+				  if(j == 9) // skip index 9 as it's used for sorting purposes only
+				    continue;
 					buf2.append("<td>"+row[j]+"</td>");
 				}
 				buf2.append("</tr>\n");
@@ -393,7 +401,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
-		}else{
+		} else {
 			this.handleGet(uri, ctx);
 		}
 	}

@@ -40,7 +40,8 @@ public class NodeDispatcher implements Dispatcher {
     public boolean handleMessage(Message m) {
         PeerNode source = (PeerNode)m.getSource();
         Logger.minor(this, "Dispatching "+m);
-        if(m.getSpec() == DMT.FNPPing) {
+        MessageType spec = m.getSpec();
+        if(spec == DMT.FNPPing) {
             // Send an FNPPong
             Message reply = DMT.createFNPPong(m.getInt(DMT.PING_SEQNO));
             try {
@@ -50,7 +51,6 @@ public class NodeDispatcher implements Dispatcher {
             }
             return true;
         }
-        MessageType spec = m.getSpec();
         if(spec == DMT.FNPLocChangeNotification) {
             double newLoc = m.getDouble(DMT.LOCATION);
             source.updateLocation(newLoc);
@@ -93,6 +93,9 @@ public class NodeDispatcher implements Dispatcher {
         	source.setRemoteDetectedPeer(p);
         	node.redetectAddress();
         } else if(spec == DMT.FNPVoid) {
+        	return true;
+        } else if(spec == DMT.nodeToNodeTextMessage) {
+        	node.receivedNodeToNodeTextMessage(m);
         	return true;
         }
         return false;

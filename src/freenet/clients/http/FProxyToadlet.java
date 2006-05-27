@@ -355,6 +355,9 @@ public class FProxyToadlet extends Toadlet {
 			DarknetConnectionsToadlet darknetToadlet = new DarknetConnectionsToadlet(node, client);
 			server.register(darknetToadlet, "/darknet/", true);
 			
+			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, client);
+			server.register(n2ntmToadlet, "/send_n2ntm/", true);
+			
 			QueueToadlet queueToadlet = new QueueToadlet(node.getFCPServer(), client);
 			server.register(queueToadlet, "/queue/", true);
 

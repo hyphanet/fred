@@ -84,6 +84,10 @@ public class DMT {
     public static final String PUBKEY_HASH = "pubkeyHash";
     public static final String NEED_PUB_KEY = "needPubKey";
     public static final String PUBKEY_AS_BYTES = "pubkeyAsBytes";
+    public static final String SOURCE_NODENAME = "sourceNodename";
+    public static final String TARGET_NODENAME = "targetNodename";
+    public static final String NODE_TO_NODE_MESSAGE_TYPE = "nodeToNodeMessageType";
+    public static final String NODE_TO_NODE_MESSAGE_TEXT = "nodeToNodeMessageText";
 
 	//Diagnostic
 	public static final MessageType ping = new MessageType("ping") {{
@@ -340,6 +344,23 @@ public class DMT {
         msg.set(UID, id);
         msg.set(SUCCESS, success);
         msg.set(REASON, reason);
+        return msg;
+    }
+
+    // Node-To-Node Instant Message
+    public static final MessageType nodeToNodeTextMessage = new MessageType("nodeToNodeTextMessage", false) {{
+        addField(NODE_TO_NODE_MESSAGE_TYPE, Integer.class);
+        addField(SOURCE_NODENAME, String.class);
+        addField(TARGET_NODENAME, String.class);
+        addField(NODE_TO_NODE_MESSAGE_TEXT, String.class);
+    }};
+
+    public static final Message createNodeToNodeTextMessage(int type, String source, String target, String message) {
+        Message msg = new Message(nodeToNodeTextMessage);
+        msg.set(NODE_TO_NODE_MESSAGE_TYPE, type);
+        msg.set(SOURCE_NODENAME, source);
+        msg.set(TARGET_NODENAME, target);
+        msg.set(NODE_TO_NODE_MESSAGE_TEXT, message);
         return msg;
     }
 
