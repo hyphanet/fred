@@ -1425,6 +1425,7 @@ public class PeerNode implements PeerContext {
 				int x = node.random.nextInt(routingBackoffLength);
 				routingBackedOffUntil = now + x;
 				setLastBackoffReason( reason );
+				setPeerNodeStatus(now);
 				String reasonWrapper = "";
 				if( 0 <= reason.length()) {
 					reasonWrapper = " because of '"+reason+"'";
@@ -1448,6 +1449,7 @@ public class PeerNode implements PeerContext {
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
 				Logger.minor(this, "Resetting routing backoff on "+getPeer());
+				setPeerNodeStatus(now);
 			} else {
 				Logger.minor(this, "Ignoring successNotOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+getPeer());
 			}

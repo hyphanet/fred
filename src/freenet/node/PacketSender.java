@@ -68,10 +68,15 @@ public class PacketSender implements Runnable {
         long now = System.currentTimeMillis();
         PeerManager pm = node.peers;
         PeerNode[] nodes = pm.myPeers;
-        long nextActionTime = Long.MAX_VALUE;
+        // Run the time sensitive status updater separately
         for(int i=0;i<nodes.length;i++) {
             PeerNode pn = nodes[i];
             pn.setPeerNodeStatus(now);
+        }
+        node.maybeLogPeerNodeStatusSummary(now);
+        long nextActionTime = Long.MAX_VALUE;
+        for(int i=0;i<nodes.length;i++) {
+            PeerNode pn = nodes[i];
             lastReceivedPacketFromAnyNode =
                 Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
             if(pn.isConnected()) {
@@ -181,10 +186,14 @@ public class PacketSender implements Runnable {
             lastClearedOldSwapChains = now;
         }
         
+        long oldNow = System.currentTimeMillis();
+
         // Send may have taken some time
         now = System.currentTimeMillis();
-
-        node.maybeLogPeerNodeStatusSummary(now);
+        
+        long nowDelta = now - oldNow;
+        if(nowDelta > (60*1000))
+            Logger.normal(this, "nowDelta("+nowDelta+") is greater than a minute in PacketSender");
         
         Vector jobsToRun = null;
         

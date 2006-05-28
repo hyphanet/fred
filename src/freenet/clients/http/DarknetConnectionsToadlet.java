@@ -111,6 +111,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				long routingBackedOffUntil = pn.getRoutingBackedOffUntil();
 				boolean routingBackedOffNow = (now < routingBackedOffUntil);
 				int backoff = (int)(Math.max(routingBackedOffUntil - now, 0));
+				// Don't list the backoff as zero before it's actually zero
+				if(backoff > 0 && backoff < 1000 )
+					backoff = 1000;
 				long idle = pn.lastReceivedPacketTime();
 				
 				// Elements must be HTML encoded.
