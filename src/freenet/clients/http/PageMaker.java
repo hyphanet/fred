@@ -26,10 +26,14 @@ public class PageMaker {
 	public List jarThemesCache = null;
 	
 	PageMaker(String t) {
-		if (t == null || !this.getThemes().contains(t)) {
+		if (t == null) {
 			this.theme = DEFAULT_THEME;
 		} else {
-			this.theme = t;
+			URL themeurl = getClass().getResource("staticfiles/themes/"+t+"/theme.css");
+			if (themeurl == null)
+				this.theme = DEFAULT_THEME;
+			else
+				this.theme = t;
 		}
 	}
 	
@@ -136,6 +140,8 @@ public class PageMaker {
 			}
 		} catch (IOException ioe1) {
 			Logger.error(this, "error creating list of themes", ioe1);
+		} catch (NullPointerException npe) {
+			Logger.error(this, "error creating list of themes", npe);
 		} finally {
 			if (!themes.contains("aqua")) {
 				themes.add("aqua");
