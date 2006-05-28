@@ -1,7 +1,6 @@
 package freenet.clients.http;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -9,11 +8,16 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Vector;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
@@ -29,16 +33,20 @@ import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.plugin.HttpPlugin;
+import freenet.plugin.PluginManager;
 import freenet.support.Bucket;
+import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.MultiValueTable;
 
 /**
  * Spider. Produces an index.
  */
-public class Spider implements ClientCallback, FoundURICallback {
-	
+public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
+
 	long tProducedIndex;
-	
+
 	// URIs visited, or fetching, or queued. Added once then forgotten about.
 	private final HashSet visitedURIs = new HashSet();
 	private final HashSet urisWithWords = new HashSet();
@@ -47,58 +55,46 @@ public class Spider implements ClientCallback, FoundURICallback {
 	private final LinkedList queuedURIList = new LinkedList();
 	private final HashMap runningFetchesByURI = new HashMap();
 	private final HashMap urisByWord = new HashMap();
+
 	// Can have many; this limit only exists to save memory.
 	private final int maxParallelRequests = 200;
-	private final Node node;
-	private final FetcherContext ctx;
+
+	private Node node;
+	private FetcherContext ctx;
 	private final short PRIORITY_CLASS = RequestStarter.PREFETCH_PRIORITY_CLASS;
-	
-	public Spider(BookmarkManager bm, Node node) {
-		this.node = node;
-		this.ctx = node.makeClient((short)0).getFetcherContext();
-		ctx.maxSplitfileBlockRetries = 10;
-		ctx.maxNonSplitfileRetries = 10;
-		ctx.maxTempLength = 2*1024*1024;
-		ctx.maxOutputLength = 2*1024*1024;
-		FreenetURI[] initialURIs = bm.getBookmarkURIs();
-		for(int i=0;i<initialURIs.length;i++)
-			queueURI(initialURIs[i]);
-		tProducedIndex = System.currentTimeMillis();
-		startSomeRequests();
-	}
+	private boolean stopped = true;
 
 	private synchronized void queueURI(FreenetURI uri) {
-		if((!visitedURIs.contains(uri)) && queuedURISet.add(uri)) {
-			Logger.minor(this, "Spider queueing URI: "+uri);
+		if ((!visitedURIs.contains(uri)) && queuedURISet.add(uri)) {
 			queuedURIList.addLast(uri);
 			visitedURIs.add(uri);
 		}
 	}
 
 	private void startSomeRequests() {
-		Vector toStart = null;
-		synchronized(this) {
+		ArrayList toStart = null;
+		synchronized (this) {
+			if (stopped) {
+				return;
+			}
 			int running = runningFetchesByURI.size();
 			int queued = queuedURIList.size();
-			if(running == maxParallelRequests || queued == 0) return;
-			if(toStart == null)
-				toStart = new Vector(Math.min(maxParallelRequests-running, queued));
-			for(int i=running;i<maxParallelRequests;i++) {
-				if(queuedURIList.isEmpty()) break;
+			if (running == maxParallelRequests || queued == 0)
+				return;
+			toStart = new ArrayList(Math.min(maxParallelRequests - running, queued));
+			for (int i = running; i < maxParallelRequests; i++) {
+				if (queuedURIList.isEmpty())
+					break;
 				FreenetURI uri = (FreenetURI) queuedURIList.removeFirst();
 				queuedURISet.remove(uri);
 				ClientGetter getter = makeGetter(uri);
 				toStart.add(getter);
 			}
-		}
-		if(toStart != null) {
-			for(int i=0;i<toStart.size();i++) {
+			for (int i = 0; i < toStart.size(); i++) {
 				ClientGetter g = (ClientGetter) toStart.get(i);
 				try {
-					Logger.minor(this, "Starting "+g+" for "+g.getURI());
-					g.start();
-					Logger.minor(this, "Started "+g+" for "+g.getURI());
 					runningFetchesByURI.put(g.getURI(), g);
+					g.start();
 				} catch (FetchException e) {
 					onFailure(e, g);
 				}
@@ -107,29 +103,27 @@ public class Spider implements ClientCallback, FoundURICallback {
 	}
 
 	private ClientGetter makeGetter(FreenetURI uri) {
-		Logger.minor(this, "Starting getter for "+uri);
 		ClientGetter g = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, uri, ctx, PRIORITY_CLASS, this, null);
 		return g;
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		FreenetURI uri = state.getURI();
-		synchronized(this) {
+		synchronized (this) {
 			runningFetchesByURI.remove(uri);
 		}
-		Logger.minor(this, "Success: "+uri);
 		startSomeRequests();
 		ClientMetadata cm = result.getMetadata();
 		Bucket data = result.asBucket();
 		String mimeType = cm.getMIMEType();
 		try {
-			ContentFilter.filter(data, ctx.bucketFactory, mimeType, new URI("http://127.0.0.1:8888/"+uri.toString(false)), this);
+			ContentFilter.filter(data, ctx.bucketFactory, mimeType, new URI("http://127.0.0.1:8888/" + uri.toString(false)), this);
 		} catch (UnsafeContentTypeException e) {
 			return; // Ignore
 		} catch (IOException e) {
-			Logger.error(this, "Bucket error?: "+e, e);
+			Logger.error(this, "Bucket error?: " + e, e);
 		} catch (URISyntaxException e) {
-			Logger.error(this, "Internal error: "+e, e);
+			Logger.error(this, "Internal error: " + e, e);
 		} finally {
 			data.free();
 		}
@@ -137,13 +131,14 @@ public class Spider implements ClientCallback, FoundURICallback {
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		FreenetURI uri = state.getURI();
-		Logger.minor(this, "Failed: "+uri);
-		synchronized(this) {
+		synchronized (this) {
 			failedURIs.add(uri);
 			runningFetchesByURI.remove(uri);
 		}
-		if(e.newURI != null)
+		if (e.newURI != null)
 			queueURI(e.newURI);
+		else
+			queueURI(uri);
 		startSomeRequests();
 	}
 
@@ -169,13 +164,14 @@ public class Spider implements ClientCallback, FoundURICallback {
 		try {
 			uri = new FreenetURI(baseURI.getPath());
 		} catch (MalformedURLException e) {
-			Logger.error(this, "Caught "+e, e);
+			Logger.error(this, "Caught " + e, e);
 			return;
 		}
 		String[] words = s.split("[^A-Za-z0-9]");
-		for(int i=0;i<words.length;i++) {
+		for (int i = 0; i < words.length; i++) {
 			String word = words[i];
-			if(word == null || word.length() == 0) continue;
+			if (word == null || word.length() == 0)
+				continue;
 			word = word.toLowerCase();
 			addWord(word, uri);
 		}
@@ -184,24 +180,23 @@ public class Spider implements ClientCallback, FoundURICallback {
 	private synchronized void addWord(String word, FreenetURI uri) {
 		FreenetURI[] uris = (FreenetURI[]) urisByWord.get(word);
 		urisWithWords.add(uri);
-		if(uris == null) {
+		if (uris == null) {
 			urisByWord.put(word, new FreenetURI[] { uri });
 		} else {
-			for(int i=0;i<uris.length;i++) {
-				if(uris[i].equals(uri))
+			for (int i = 0; i < uris.length; i++) {
+				if (uris[i].equals(uri))
 					return;
 			}
-			FreenetURI[] newURIs = new FreenetURI[uris.length+1];
+			FreenetURI[] newURIs = new FreenetURI[uris.length + 1];
 			System.arraycopy(uris, 0, newURIs, 0, uris.length);
 			newURIs[uris.length] = uri;
 			urisByWord.put(word, newURIs);
 		}
-		Logger.minor(this, "Added word: "+word+" for "+uri);
-		if(tProducedIndex + 10*1000 < System.currentTimeMillis()) {
+		if (tProducedIndex + 10 * 1000 < System.currentTimeMillis()) {
 			try {
 				produceIndex();
 			} catch (IOException e) {
-				Logger.error(this, "Caught "+e+" while creating index", e);
+				Logger.error(this, "Caught " + e + " while creating index", e);
 			}
 			tProducedIndex = System.currentTimeMillis();
 		}
@@ -217,27 +212,27 @@ public class Spider implements ClientCallback, FoundURICallback {
 			throw new Error(e);
 		}
 		BufferedWriter bw = new BufferedWriter(osw);
-		if(urisByWord.isEmpty() || urisWithWords.isEmpty()) {
-			Logger.minor(this, "No URIs with words");
+		if (urisByWord.isEmpty() || urisWithWords.isEmpty()) {
+			System.out.println("No URIs with words");
 			return;
 		}
 		String[] words = (String[]) urisByWord.keySet().toArray(new String[urisByWord.size()]);
 		Arrays.sort(words);
 		FreenetURI[] uris = (FreenetURI[]) urisWithWords.toArray(new FreenetURI[urisWithWords.size()]);
 		HashMap urisToNumbers = new HashMap();
-		for(int i=0;i<uris.length;i++) {
+		for (int i = 0; i < uris.length; i++) {
 			urisToNumbers.put(uris[i], new Integer(i));
-			bw.write("!" + uris[i].toString(false)+"\n");
+			bw.write("!" + uris[i].toString(false) + "\n");
 		}
-		for(int i=0;i<words.length;i++) {
+		for (int i = 0; i < words.length; i++) {
 			StringBuffer s = new StringBuffer();
 			s.append('?');
 			s.append(words[i]);
 			FreenetURI[] urisForWord = (FreenetURI[]) urisByWord.get(words[i]);
-			for(int j=0;j<urisForWord.length;j++) {
+			for (int j = 0; j < urisForWord.length; j++) {
 				FreenetURI uri = urisForWord[j];
 				Integer x = (Integer) urisToNumbers.get(uri);
-				if(x == null)
+				if (x == null)
 					Logger.error(this, "Eh?");
 				else {
 					s.append(' ');
@@ -249,5 +244,159 @@ public class Spider implements ClientCallback, FoundURICallback {
 		}
 		bw.close();
 	}
+
+	/**
+	 * @see freenet.plugin.HttpPlugin#handleGet(freenet.clients.http.HTTPRequest, freenet.clients.http.ToadletContext)
+	 */
+	public void handleGet(HTTPRequest request, ToadletContext context) throws IOException, ToadletContextClosedException {
+		String action = request.getParam("action");
+		PageMaker pageMaker = context.getPageMaker();
+		if ((action == null) || (action.length() == 0)) {
+			MultiValueTable responseHeaders = new MultiValueTable();
+			responseHeaders.put("Location", "?action=list");
+			context.sendReplyHeaders(301, "Redirect", responseHeaders, "text/html; charset=utf-8", 0);
+			return;
+		} else if ("list".equals(action)) {
+			StringBuffer responseBuffer = new StringBuffer();
+			pageMaker.makeHead(responseBuffer, "The Definitive Spider");
+			/* create copies for multi-threaded use */
+			Map runningFetches = new HashMap(runningFetchesByURI);
+			List queued = new ArrayList(queuedURIList);
+			Set visited = new HashSet(visitedURIs);
+			Set failed = new HashSet(failedURIs);
+			responseBuffer.append(createNavbar(runningFetches.size(), queued.size(), visited.size(), failed.size()));
+			responseBuffer.append(createAddBox());
+			responseBuffer.append(createList("Running Fetches", "running", runningFetches.keySet()));
+			responseBuffer.append(createList("Queued URIs", "queued", queued));
+			responseBuffer.append(createList("Visited URIs", "visited", visited));
+			responseBuffer.append(createList("Failed URIs", "failed", failed));
+			pageMaker.makeTail(responseBuffer);
+			MultiValueTable responseHeaders = new MultiValueTable();
+			byte[] responseBytes = responseBuffer.toString().getBytes("utf-8");
+			context.sendReplyHeaders(200, "OK", responseHeaders, "text/html; charset=utf-8", responseBytes.length);
+			context.writeData(responseBytes);
+		} else if ("add".equals(action)) {
+			String uriParam = request.getParam("key");
+			try {
+				FreenetURI uri = new FreenetURI(uriParam);
+				synchronized (this) {
+					failedURIs.remove(uri);
+					visitedURIs.remove(uri);
+				}
+				queueURI(uri);
+				startSomeRequests();
+			} catch (MalformedURLException mue1) {
+				sendSimpleResponse(context, "URL invalid", "The given URI is not valid. Please <a href=\"?action=list\">return</a> and try again.");
+				return;
+			}
+			MultiValueTable responseHeaders = new MultiValueTable();
+			responseHeaders.put("Location", "?action=list");
+			context.sendReplyHeaders(301, "Redirect", responseHeaders, "text/html; charset=utf-8", 0);
+			return;
+		}
+	}
+
+	/**
+	 * @see freenet.plugin.HttpPlugin#handlePost(freenet.clients.http.HTTPRequest, freenet.clients.http.ToadletContext)
+	 */
+	public void handlePost(HTTPRequest request, ToadletContext context) throws IOException {
+	}
 	
+	private void sendSimpleResponse(ToadletContext context, String title, String message) throws ToadletContextClosedException, IOException {
+		PageMaker pageMaker = context.getPageMaker();
+		StringBuffer outputBuffer = new StringBuffer();
+		pageMaker.makeHead(outputBuffer, title);
+		outputBuffer.append("<div class=\"infobox infobox-alert\">");
+		outputBuffer.append("<div class=\"infobox-header\">").append(HTMLEncoder.encode(title)).append("</div>\n");
+		outputBuffer.append("<div class=\"infobox-content\">").append(HTMLEncoder.encode(message)).append("</div>\n");
+		outputBuffer.append("</div>\n");
+		byte[] responseBytes = outputBuffer.toString().getBytes("utf-8");
+		context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", responseBytes.length);
+		context.writeData(responseBytes);
+	}
+	
+	private StringBuffer createAddBox() {
+		StringBuffer outputBuffer = new StringBuffer();
+		outputBuffer.append("<div class=\"infobox\">");
+		outputBuffer.append("<div class=\"infobox-header\">Add a URI</div>");
+		outputBuffer.append("<div class=\"infobox-content\"><form action=\"\" method=\"get\">");
+		outputBuffer.append("<input type=\"hidden\" name=\"action\" value=\"add\" />");
+		outputBuffer.append("<input type=\"text\" size=\"40\" name=\"key\" value=\"\" />");
+		outputBuffer.append("<input type=\"submit\" value=\"Add URI\" />");
+		outputBuffer.append("</form></div>\n");
+		outputBuffer.append("</div>\n");
+		return outputBuffer;
+	}
+
+	private StringBuffer createNavbar(int running, int queued, int visited, int failed) {
+		StringBuffer outputBuffer = new StringBuffer();
+		outputBuffer.append("<div class=\"infobox navbar\">");
+		outputBuffer.append("<div class=\"infobox-content\"><ul>");
+		outputBuffer.append("<li><a href=\"#running\">Running (").append(running).append(")</a></li>");
+		outputBuffer.append("<li><a href=\"#queued\">Queued (").append(queued).append(")</a></li>");
+		outputBuffer.append("<li><a href=\"#visited\">Visited (").append(visited).append(")</a></li>");
+		outputBuffer.append("<li><a href=\"#failed\">Failed (").append(failed).append(")</a></li>");
+		outputBuffer.append("</ul></div>\n");
+		outputBuffer.append("</div>\n");
+		return outputBuffer;
+	}
+
+	private StringBuffer createList(String listName, String anchorName, Collection collection) {
+		StringBuffer outputBuffer = new StringBuffer();
+		outputBuffer.append("<a name=\"").append(HTMLEncoder.encode(anchorName)).append("\"></a>");
+		outputBuffer.append("<div class=\"infobox\">");
+		outputBuffer.append("<div class=\"infobox-header\">").append(HTMLEncoder.encode(listName)).append(" (").append(collection.size()).append(")</div>\n");
+		outputBuffer.append("<div class=\"infobox-content\">");
+		Iterator collectionItems = collection.iterator();
+		while (collectionItems.hasNext()) {
+			FreenetURI uri = (FreenetURI) collectionItems.next();
+			outputBuffer.append(HTMLEncoder.encode(uri.toString())).append("<br/>\n");
+		}
+		outputBuffer.append("</div>\n");
+		outputBuffer.append("</div>\n");
+		return outputBuffer;
+	}
+
+	/**
+	 * @see freenet.plugin.Plugin#getPluginName()
+	 */
+	public String getPluginName() {
+		return "The Definitive Spider";
+	}
+
+	/**
+	 * @see freenet.plugin.Plugin#setPluginManager(freenet.plugin.PluginManager)
+	 */
+	public void setPluginManager(PluginManager pluginManager) {
+		this.node = pluginManager.getNode();
+		this.ctx = node.makeClient((short) 0).getFetcherContext();
+		ctx.maxSplitfileBlockRetries = 10;
+		ctx.maxNonSplitfileRetries = 10;
+		ctx.maxTempLength = 2 * 1024 * 1024;
+		ctx.maxOutputLength = 2 * 1024 * 1024;
+		tProducedIndex = System.currentTimeMillis();
+	}
+
+
+	/**
+	 * @see freenet.plugin.Plugin#startPlugin()
+	 */
+	public void startPlugin() {
+		FreenetURI[] initialURIs = node.bookmarkManager.getBookmarkURIs();
+		for (int i = 0; i < initialURIs.length; i++)
+			queueURI(initialURIs[i]);
+		stopped = false;
+		startSomeRequests();
+	}
+
+	/**
+	 * @see freenet.plugin.Plugin#stopPlugin()
+	 */
+	public void stopPlugin() {
+		synchronized (this) {
+			stopped = true;
+			queuedURIList.clear();
+		}
+	}
+
 }

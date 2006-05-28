@@ -28,6 +28,18 @@ public interface ToadletContext {
 	void writeData(byte[] data, int offset, int length) throws ToadletContextClosedException, IOException;
 
 	/**
+	 * Convenience method that simply calls {@link #writeData(byte[], int, int)}.
+	 * 
+	 * @param data
+	 *            The data to write
+	 * @throws ToadletContextClosedException
+	 *             if the context has already been closed
+	 * @throws IOException
+	 *             if an I/O error occurs
+	 */
+	void writeData(byte[] data) throws ToadletContextClosedException, IOException;
+
+	/**
 	 * Write data from a bucket. You must send reply headers first.
 	 */
 	void writeData(Bucket data) throws ToadletContextClosedException, IOException;

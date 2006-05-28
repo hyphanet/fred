@@ -13,7 +13,6 @@ import freenet.client.InserterException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Bucket;
@@ -21,12 +20,6 @@ import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 
 public class WelcomeToadlet extends Toadlet {
-	private static final String[] DEFAULT_TESTNET_BOOKMARKS = {
-		"USK@60I8H8HinpgZSOuTSD66AVlIFAy-xsppFr0YCzCar7c,NzdivUGCGOdlgngOGRbbKDNfSCnjI0FXjHLzJM4xkJ4,AQABAAE/index/4/=INDEX.7-freesite"
-	};
-	private static final String[] DEFAULT_DARKNET_BOOKMARKS = {
-		"USK@PFeLTa1si2Ml5sDeUy7eDhPso6TPdmw-2gWfQ4Jg02w,3ocfrqgUMVWA2PeorZx40TW0c-FiIOL-TWKQHoDbVdE,AQABAAE/Index/-1/=Darknet Index"
-	};
 	private final static int MODE_ADD = 1;
 	private final static int MODE_EDIT = 2;
 	Node node;
@@ -37,19 +30,7 @@ public class WelcomeToadlet extends Toadlet {
 		super(client);
 		this.node = n;
 		this.config = sc;
-		this.bookmarks = new BookmarkManager(n);
-		node.bookmarkManager = bookmarks;
-		
-		sc.register("bookmarks", n.isTestnetEnabled() ? DEFAULT_TESTNET_BOOKMARKS : DEFAULT_DARKNET_BOOKMARKS, 0, false, "List of bookmarks", "A list of bookmarked freesites", this.bookmarks.makeCB());
-		
-		String[] initialbookmarks = sc.getStringArr("bookmarks");
-		for (int i = 0; i < initialbookmarks.length; i++) {
-			try {
-				bookmarks.addBookmark(new Bookmark(initialbookmarks[i]));
-			} catch (MalformedURLException mue) {
-				// just ignore that one
-			}
-		}
+		this.bookmarks = node.bookmarkManager;
 	}
 
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -135,7 +116,6 @@ public class WelcomeToadlet extends Toadlet {
 		} else if (request.isParameterSet("addbookmark")) {
 			try {
 				bookmarks.addBookmark(new Bookmark(request.getParam("key"), request.getParam("name")));
-				node.config.store();
 			} catch (MalformedURLException mue) {
 				this.sendBookmarkEditPage(ctx, MODE_ADD, null, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid Freenet key.");
 				return;
@@ -153,7 +133,6 @@ public class WelcomeToadlet extends Toadlet {
 			
 				if (request.isParameterSet("delete_"+b.hashCode())) {
 					bookmarks.removeBookmark(b);
-					node.config.store();
 				} else if (request.isParameterSet("edit_"+b.hashCode())) {
 					this.sendBookmarkEditPage(ctx, b);
 					return;
@@ -163,7 +142,6 @@ public class WelcomeToadlet extends Toadlet {
 						Bookmark newbkmk = new Bookmark(request.getParam("key"), request.getParam("name"));
 						bookmarks.removeBookmark(b);
 						bookmarks.addBookmark(newbkmk);
-						node.config.store();
 					} catch (MalformedURLException mue) {
 						this.sendBookmarkEditPage(ctx, MODE_EDIT, b, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid freenet key.");
 						return;

@@ -10,9 +10,16 @@ import freenet.node.Node;
 import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.SubConfig;
 import freenet.client.async.USKCallback;
 
 public class BookmarkManager {
+	private static final String[] DEFAULT_TESTNET_BOOKMARKS = {
+		"USK@60I8H8HinpgZSOuTSD66AVlIFAy-xsppFr0YCzCar7c,NzdivUGCGOdlgngOGRbbKDNfSCnjI0FXjHLzJM4xkJ4,AQABAAE/index/4/=INDEX.7-freesite"
+	};
+	private static final String[] DEFAULT_DARKNET_BOOKMARKS = {
+		"USK@PFeLTa1si2Ml5sDeUy7eDhPso6TPdmw-2gWfQ4Jg02w,3ocfrqgUMVWA2PeorZx40TW0c-FiIOL-TWKQHoDbVdE,AQABAAE/Index/-1/=Darknet Index"
+	};
 	Vector bookmarks;
 	Node node;
 	USKUpdatedCallback uskcb;
@@ -71,10 +78,27 @@ public class BookmarkManager {
 		}
 	}
 	
-	BookmarkManager(Node n) {
+	public BookmarkManager(Node n) {
 		this.bookmarks = new Vector();
 		this.node = n;
 		this.uskcb = new USKUpdatedCallback();
+		SubConfig sc = null;
+		try {
+			sc = new SubConfig("fproxy", n.config);
+		} catch (IllegalArgumentException iae1) {
+			sc = n.config.get("fproxy");
+		}
+		sc.register("bookmarks", n.isTestnetEnabled() ? DEFAULT_TESTNET_BOOKMARKS : DEFAULT_DARKNET_BOOKMARKS, 0, false, "List of bookmarks", "A list of bookmarked freesites", makeCB());
+		
+		String[] initialbookmarks = sc.getStringArr("bookmarks");
+		for (int i = 0; i < initialbookmarks.length; i++) {
+			try {
+				addBookmark(new Bookmark(initialbookmarks[i]));
+			} catch (MalformedURLException mue) {
+				// just ignore that one
+			}
+		}
+
 	}
 	
 	public BookmarkCallback makeCB() {
@@ -116,6 +140,7 @@ public class BookmarkManager {
 			try {
 				USK u = USK.create(b.key);
 				this.node.uskManager.subscribe(u, this.uskcb, true);
+				node.config.store();
 			} catch (MalformedURLException mue) {
 				
 			}
@@ -127,6 +152,7 @@ public class BookmarkManager {
 			try {
 				USK u = USK.create(b.key);
 				this.node.uskManager.subscribe(u, this.uskcb, true);
+				node.config.store();
 			} catch (MalformedURLException mue) {
 			
 			}

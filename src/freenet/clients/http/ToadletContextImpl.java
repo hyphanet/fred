@@ -361,6 +361,10 @@ public class ToadletContextImpl implements ToadletContext {
 		sockOutputStream.write(data, offset, length);
 	}
 
+	public void writeData(byte[] data) throws ToadletContextClosedException, IOException {
+		writeData(data, 0, data.length);
+	}
+	
 	public void writeData(Bucket data) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		BucketTools.copyTo(data, sockOutputStream, Long.MAX_VALUE);

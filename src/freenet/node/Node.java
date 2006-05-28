@@ -578,6 +578,7 @@ public class Node {
     
     // Things that's needed to keep track of
     public final PluginManager pluginManager;
+    public freenet.plugin.PluginManager pluginManager2;
     
     // Client stuff that needs to be configged - FIXME
     static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -1369,6 +1370,10 @@ public class Node {
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
 		}
+		
+		bookmarkManager = new BookmarkManager(this);
+		pluginManager2 = new freenet.plugin.PluginManager(this);
+		
         
         // FProxy
         // FIXME this is a hack, the real way to do this is plugins
@@ -1380,8 +1385,7 @@ public class Node {
 		} catch (InvalidConfigValueException e) {
 			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);			
 		}
-		
-        
+
         // Node Updater
 		try{
 			nodeUpdater = NodeUpdater.maybeCreate(this, config);
@@ -1406,11 +1410,6 @@ public class Node {
         // Start testnet handler
 		if(testnetHandler != null)
 			testnetHandler.start();
-		
-		// Spider. FIXME.
-		
-		//if(testnetEnabled)
-		//	new Spider(bookmarkManager, this);
 		
         persistentTempBucketFactory.completedInit();
 
