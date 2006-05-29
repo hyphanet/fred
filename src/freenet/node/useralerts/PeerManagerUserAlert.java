@@ -73,4 +73,8 @@ public class PeerManagerUserAlert implements UserAlert {
 	public String dismissButtonText(){
 		return "Hide";
 	}
+	
+	public boolean shouldUnregisterOnDismiss() {
+		return false;
+	}
 }

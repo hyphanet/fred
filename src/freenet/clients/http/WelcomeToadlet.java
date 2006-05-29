@@ -162,9 +162,15 @@ public class WelcomeToadlet extends Toadlet {
 			UserAlert[] alerts=node.alerts.getAlerts();
 			for(int i=0;i<alerts.length;i++){
 				if(request.getIntParam("disable")==alerts[i].hashCode()){
+					UserAlert alert = alerts[i];
 					// Won't be dismissed if it's not allowed anyway
-					Logger.normal(this,"Disabling the userAlert "+alerts[i].hashCode());
-					alerts[i].isValid(false);
+					if(alert.userCanDismiss()  && alert.shouldUnregisterOnDismiss()) {
+						Logger.normal(this,"Unregistering the userAlert "+alert.hashCode());
+						node.alerts.unregister(alert);
+					} else {
+						Logger.normal(this,"Disabling the userAlert "+alert.hashCode());
+						alert.isValid(false);
+					}
 
 					writePermanentRedirect(ctx, "Configuration applied", "/");
 				}

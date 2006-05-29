@@ -59,4 +59,8 @@ public class N2NTMUserAlert implements UserAlert {
 	public String dismissButtonText(){
 		return "Delete";
 	}
+	
+	public boolean shouldUnregisterOnDismiss() {
+		return true;
+	}
 }

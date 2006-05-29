@@ -43,4 +43,8 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	public String dismissButtonText(){
 		return "Hide";
 	}
+	
+	public boolean shouldUnregisterOnDismiss() {
+		return false;
+	}
 }
