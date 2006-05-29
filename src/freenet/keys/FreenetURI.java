@@ -227,12 +227,6 @@ public class FreenetURI {
 		}
 		URI = URI.substring(atchar + 1);
 
-        // strip 'file extensions' from CHKs
-        // added by aum (david@rebirthing.co.nz)
-        if ("CHK".equals(keyType)) {
-            URI = URI.split("[.]")[0];
-        }
-
 		// decode metaString
 		int slash2;
 		Vector sv = new Vector();
@@ -281,7 +275,12 @@ public class FreenetURI {
 			metaStr = null;
 		}
 
-		
+        // strip 'file extensions' from CHKs
+        // added by aum (david@rebirthing.co.nz)
+        if ("CHK".equals(keyType)) {
+            URI = URI.split("[.]")[0];
+        }
+
 		// URI now contains: routingKey[,cryptoKey][,metaInfo]
 		StringTokenizer st = new StringTokenizer(URI, ",");
 		try {
