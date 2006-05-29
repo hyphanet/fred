@@ -1288,9 +1288,16 @@ public class FNPPacketMangler implements LowLevelFilter {
         DiffieHellmanContext ctx;
         Peer[] handshakeIPs;
         if(!pn.shouldSendHandshake()) return;
+        long firstTime = System.currentTimeMillis();
         handshakeIPs = pn.getHandshakeIPs();
+        long secondTime = System.currentTimeMillis();
+        if((secondTime - firstTime) > 1000)
+            Logger.normal(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+")");
         if(handshakeIPs.length == 0) {
             pn.couldNotSendHandshake();
+            long thirdTime = System.currentTimeMillis();
+            if((thirdTime - secondTime) > 1000)
+                Logger.normal(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+")");
             return;
         } else {
             ctx = DiffieHellman.generateContext();

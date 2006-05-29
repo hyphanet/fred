@@ -75,6 +75,7 @@ public class PacketSender implements Runnable {
         }
         node.maybeLogPeerNodeStatusSummary(now);
         long nextActionTime = Long.MAX_VALUE;
+        long oldTempNow = now;
         for(int i=0;i<nodes.length;i++) {
             PeerNode pn = nodes[i];
             lastReceivedPacketFromAnyNode =
@@ -176,9 +177,17 @@ public class PacketSender implements Runnable {
             } else {
                 // Not connected
                 // Send handshake if necessary
+                long beforeHandshakeTime = System.currentTimeMillis();
                 if(pn.shouldSendHandshake())
                     node.packetMangler.sendHandshake(pn);
+                long afterHandshakeTime = System.currentTimeMillis();
+                if((afterHandshakeTime - beforeHandshakeTime) > (2*1000))
+                    Logger.normal(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime ("+(afterHandshakeTime - beforeHandshakeTime)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
             }
+    		long tempNow = System.currentTimeMillis();
+    		if((tempNow - oldTempNow) > (5*1000))
+    			Logger.normal(this, "tempNow is more than 5 seconds past oldTempNow ("+(tempNow - oldTempNow)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
+    		oldTempNow = tempNow;
     	}
     	
         if(now - lastClearedOldSwapChains > 10000) {
@@ -191,9 +200,8 @@ public class PacketSender implements Runnable {
         // Send may have taken some time
         now = System.currentTimeMillis();
         
-        long nowDelta = now - oldNow;
-        if(nowDelta > (60*1000))
-            Logger.normal(this, "nowDelta("+nowDelta+") is greater than a minute in PacketSender");
+        if((now - oldNow) > (10*1000))
+            Logger.normal(this, "now is more than 10 seconds past oldNow ("+(now - oldNow)+") in PacketSender");
         
         Vector jobsToRun = null;
         
