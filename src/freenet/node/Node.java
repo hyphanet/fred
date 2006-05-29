@@ -1442,7 +1442,7 @@ public class Node {
 		Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
 		if(osName.equals("Linux") && jvmVendor.startsWith("Sun ") && 
-				(osVersion.contains("nptl") || osVersion.startsWith("2.6") || 
+				(osVersion.indexOf("nptl")!=-1 || osVersion.startsWith("2.6") || 
 						osVersion.startsWith("2.7") || osVersion.startsWith("3."))) {
 			// Hopefully we won't still have to deal with this **** when THAT comes out! 
 			// Check the environment.
