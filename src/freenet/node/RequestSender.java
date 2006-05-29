@@ -132,7 +132,7 @@ public final class RequestSender implements Runnable {
             Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
-            if(Math.abs(target - nextValue) > Math.abs(target - nearestLoc)) {
+            if(PeerManager.distance(target, nextValue) > PeerManager.distance(target, nearestLoc)) {
                 htl = node.decrementHTL(source, htl);
                 Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl);
             }

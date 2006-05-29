@@ -54,7 +54,7 @@ public class SSKInsertHandler implements Runnable {
         closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
         double targetLoc = key.toNormalizedDouble();
         double myLoc = node.lm.getLocation().getValue();
-        if(Math.abs(targetLoc - myLoc) < Math.abs(targetLoc - closestLoc))
+        if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc))
             closestLoc = myLoc;
         byte[] pubKeyHash = ((ShortBuffer)req.getObject(DMT.PUBKEY_HASH)).getData();
         pubKey = node.getKey(pubKeyHash);

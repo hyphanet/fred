@@ -234,7 +234,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
             Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
-            if(Math.abs(target - nextValue) > Math.abs(target - closestLocation)) {
+            if(PeerManager.distance(target, nextValue) > PeerManager.distance(target, closestLocation)) {
                 Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
                 htl = node.decrementHTL(source, htl);
             }

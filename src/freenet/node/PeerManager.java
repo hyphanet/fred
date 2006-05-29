@@ -359,13 +359,13 @@ public class PeerManager {
     /**
      * Distance between two locations.
      */
-    public static double distance(double d, double loc) {
+    public static double distance(double a, double b) {
         // Circular keyspace
-        double dist = Math.abs(d-loc);
-        double min = Math.min(d, loc);
-        double max = Math.max(d, loc);
-        double altdist = Math.abs(1.0+min-max);
-        return Math.min(dist, altdist);
+	double dist;
+	if (a > b) dist = a - b;
+	else dist = b - a;
+	if (dist > 0.5) dist = 1.0 - dist;
+	return dist;
     }
 
     /**

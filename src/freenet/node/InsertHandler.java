@@ -54,7 +54,7 @@ public class InsertHandler implements Runnable {
         closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
         double targetLoc = key.toNormalizedDouble();
         double myLoc = node.lm.getLocation().getValue();
-        if(Math.abs(targetLoc - myLoc) < Math.abs(targetLoc - closestLoc))
+        if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc))
             closestLoc = myLoc;
     }
     

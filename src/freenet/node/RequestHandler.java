@@ -44,7 +44,7 @@ public class RequestHandler implements Runnable {
         // FIXME should be more generic when implement SSKs
         key = (Key) req.getObject(DMT.FREENET_ROUTING_KEY);
         double keyLoc = key.toNormalizedDouble();
-        if(Math.abs(keyLoc - myLoc) < Math.abs(keyLoc - closestLoc))
+        if(PeerManager.distance(keyLoc, myLoc) < PeerManager.distance(keyLoc, closestLoc))
             closestLoc = myLoc;
         if(key instanceof NodeSSK)
         	needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
