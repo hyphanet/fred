@@ -374,6 +374,7 @@ public class PeerManager {
      */
     public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf) {
         PeerNode[] peers = connectedPeers;
+        // No locking necessary. We won't modify it, and if another method does, it will copy-and-assign.
         Logger.minor(this, "Choosing closest peer: connectedPeers="+peers.length);
         double bestDiff = Double.MAX_VALUE;
         double maxDiff = 0.0;

@@ -30,6 +30,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private FetcherContext ctxRevocation;
 	private FetchResult result;
 	private ClientGetter cg;
+	private boolean finalCheck = false;
 	private final FreenetURI URI;
 	private final FreenetURI revocationURI;
 	private final Node node;
@@ -74,24 +75,29 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		ctx.dontEnterImplicitArchives = false;
 		this.ctx = ctx;
 		
-		FetcherContext ctx2 = n.makeClient((short)0).getFetcherContext();
-		ctx2.allowSplitfiles = false;
-		ctx2.cacheLocalRequests = false;
-		ctx2.followRedirects = false;
-		ctx2.maxArchiveLevels = 1;
+		ctxRevocation = n.makeClient((short)0).getFetcherContext();
+		ctxRevocation.allowSplitfiles = false;
+		ctxRevocation.cacheLocalRequests = false;
+		ctxRevocation.followRedirects = false;
+		ctxRevocation.maxArchiveLevels = 1;
 		// big enough ?
-		ctx2.maxOutputLength = 4096;
-		ctx2.maxTempLength = 4096;
-		this.ctxRevocation = ctx2;
+		ctxRevocation.maxOutputLength = 4096;
+		ctxRevocation.maxTempLength = 4096;
 		
 		try{		
 			USK myUsk=USK.create(URI);
 			ctx.uskManager.subscribe(myUsk, this,	true);
 			ctx.uskManager.startTemporaryBackgroundFetcher(myUsk);
 			
+			ClientGetter cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.UPDATE_PRIORITY_CLASS, this, null);
+			cg.start();
+			
 		}catch(MalformedURLException e){
 			Logger.error(this,"The auto-update URI isn't valid and can't be used");
 			blow("The auto-update URI isn't valid and can't be used");
+		} catch (FetchException e) {
+			Logger.error(this, "Not able to start the revocation fetcher.");
+			blow("Cannot fetch the auto-update URI");
 		}
 	}
 	
@@ -147,11 +153,27 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	/** 
 	 * We try to update the node :p
-	 *
+	 * Must run on its own thread.
 	 */
 	public synchronized void Update(){
 		if((result == null) || !isAutoUpdateAllowed || hasBeenBlown)
 			return;
+
+		this.revocationDNFCounter = 0;
+		this.finalCheck = true;
+		
+		this.queueFetchRevocation(100);
+		while(revocationDNFCounter < 3) {
+			if(this.hasBeenBlown) {
+				Logger.error(this, "The revocation key has been found on the network : blocking auto-update");
+				return;
+			}
+			try {
+				wait(100*1000);
+			} catch (InterruptedException e) {
+				// Ignore
+			}
+		}
 		
 		// FIXME: maybe we need a higher throshold
 		if(revocationDNFCounter<1){
@@ -201,7 +223,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			synchronized(this){
 				this.cg = state;
 				this.result = result;
-				Update();
+				scheduleUpdate();
 			}
 		}else{
 			// The key has been blown !
@@ -239,8 +261,44 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			if(errorCode == FetchException.DATA_NOT_FOUND){
 				revocationDNFCounter++;
 			}
-			// FIXME: else ? what do we do ?
+			// Start it again
+			if(this.finalCheck) {
+				if(revocationDNFCounter < 3)
+					queueFetchRevocation(1000);
+				else
+					notifyAll();
+			} else {
+				boolean pause = (revocationDNFCounter == 3);
+				if(pause) revocationDNFCounter = 0;
+				queueFetchRevocation(pause ? 60*60*1000 : 5000);
+			}
 		}
+	}
+
+	private void queueFetchRevocation(long delay) {
+		node.ps.queueTimedJob(new Runnable() { // maybe a FastRunnable? FIXME
+
+			public void run() {
+				try {
+					ClientGetter cg = new ClientGetter(NodeUpdater.this, node.chkFetchScheduler, node.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.UPDATE_PRIORITY_CLASS, NodeUpdater.this, null);
+					cg.start();
+				} catch (FetchException e) {
+					Logger.error(this, "Not able to start the revocation fetcher.");
+					blow("Cannot fetch the auto-update URI");
+				}
+			}
+			
+		}, delay);
+	}
+
+	private void scheduleUpdate() {
+		node.ps.queueTimedJob(new Runnable() { // definitely needs its own thread
+
+			public void run() {
+				Update();
+			}
+			
+		}, 50);
 	}
 
 	public void onSuccess(BaseClientPutter state) {

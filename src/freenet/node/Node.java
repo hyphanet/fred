@@ -504,7 +504,7 @@ public class Node {
     public final RandomSource random; // strong RNG
     final UdpSocketManager usm;
     final FNPPacketMangler packetMangler;
-    final PacketSender ps;
+    public final PacketSender ps;
     final NodeDispatcher dispatcher;
     final NodePinger nodePinger;
     final FilenameGenerator tempFilenameGenerator;
@@ -1450,6 +1450,8 @@ public class Node {
 			// Check the environment.
 			String assumeKernel;
 			try {
+				// It is essential to check the environment.
+				// Make an alternative way to do it if you like.
 				assumeKernel = System.getenv("LD_ASSUME_KERNEL");
 			} catch (Error e) {
 				assumeKernel = null;
