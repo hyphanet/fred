@@ -73,6 +73,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		long now = System.currentTimeMillis();
 		
+		node.alerts.toSummaryHtml(buf);
+		
 		buf.append("<div class=\"infobox infobox-normal\">\n");
 		buf.append("<div class=\"infobox-header\">\n");
 		buf.append("My Connections");

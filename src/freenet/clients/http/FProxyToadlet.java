@@ -366,7 +366,7 @@ public class FProxyToadlet extends Toadlet {
 			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, client);
 			server.register(n2ntmToadlet, "/send_n2ntm/", true);
 			
-			QueueToadlet queueToadlet = new QueueToadlet(node.getFCPServer(), client);
+			QueueToadlet queueToadlet = new QueueToadlet(node, node.getFCPServer(), client);
 			server.register(queueToadlet, "/queue/", true);
 
 		} catch (IOException ioe) {

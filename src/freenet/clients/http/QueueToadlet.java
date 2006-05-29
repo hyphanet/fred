@@ -16,6 +16,7 @@ import freenet.node.fcp.ClientPutDir;
 import freenet.node.fcp.ClientRequest;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.MessageInvalidException;
+import freenet.node.Node;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
@@ -24,10 +25,12 @@ import freenet.support.URLEncoder;
 
 public class QueueToadlet extends Toadlet {
 
+	private Node node;
 	final FCPServer fcp;
 	
-	public QueueToadlet(FCPServer fcp, HighLevelSimpleClient client) {
+	public QueueToadlet(Node n, FCPServer fcp, HighLevelSimpleClient client) {
 		super(client);
+		this.node = n;
 		this.fcp = fcp;
 		if(fcp == null) throw new NullPointerException();
 	}
@@ -83,6 +86,8 @@ public class QueueToadlet extends Toadlet {
 		StringBuffer buf = new StringBuffer(2048);
 		
 		ctx.getPageMaker().makeHead(buf, "Queued Requests");
+		
+		node.alerts.toSummaryHtml(buf);
 		
 		// First, get the queued requests, and separate them into different types.
 		
