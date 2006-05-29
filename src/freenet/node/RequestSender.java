@@ -235,7 +235,7 @@ public final class RequestSender implements Runnable {
             		msg = node.usm.waitFor(mf);
             	} catch (DisconnectedException e) {
             		Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
-            		continue;
+            		break;
             	}
             	
                 Logger.minor(this, "second part got "+msg);
