@@ -107,7 +107,25 @@ public class NodeStarter
     	t.setPriority(Thread.MAX_PRIORITY);
     	t.start();
     	 
-    	 
+		// Thread to keep the node up.
+		// JVM deadlocks losing a lock when two threads of different types (daemon|app)
+		// are contended for the same lock. So make USM daemon, and use useless to keep the JVM
+		// up.
+		// http://forum.java.sun.com/thread.jspa?threadID=343023&messageID=2942637 - last message
+		Runnable useless =
+			new Runnable() {
+			public void run() {
+				while(true)
+					try {
+						Thread.sleep(Long.MAX_VALUE);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+			}
+		};
+		Thread plug = new Thread(useless, "Plug");
+		plug.start();
+		
     	WrapperManager.signalStarting(500000);
     	try {
     		node = new Node(cfg, random, logConfigHandler,this);
@@ -117,7 +135,8 @@ public class NodeStarter
     		e.printStackTrace();
     		System.exit(e.exitCode);
     	}
-    	return null;
+    	
+		return null;
     }
 
     /**
