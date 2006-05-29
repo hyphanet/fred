@@ -4,6 +4,8 @@ import java.util.LinkedList;
 import java.util.TreeMap;
 import java.util.Vector;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
@@ -27,6 +29,8 @@ public class PacketSender implements Runnable {
     long lastClearedOldSwapChains;
     long lastReportedNoPackets;
     long lastReceivedPacketFromAnyNode;
+    /** For watchdog. 32-bit to avoid locking. */
+    int lastTimeInSeconds;
     
     PacketSender(Node node) {
         resendPackets = new LinkedList();
@@ -34,8 +38,41 @@ public class PacketSender implements Runnable {
         this.node = node;
         myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
+        lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
+        // Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
+        Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
+        t1.setDaemon(true);
+        t1.start();
     }
 
+    private class Watchdog implements Runnable {
+    	
+    	public void run() {
+    		while(true) {
+    			try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+				long now = System.currentTimeMillis();
+				long recordedTime = ((long)lastTimeInSeconds) * 1000;
+				long diff = now - recordedTime;
+				Logger.minor(this, "PacketSender last updated time "+diff+"ms ago");
+				if(diff > 3*60*1000) {
+					System.err.println("Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
+					Logger.error(this, "Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
+					try {
+						WrapperManager.requestThreadDump();
+					} catch (Throwable t) {
+						// Ignore
+					}
+					WrapperManager.restart();
+				}
+    			
+    		}
+    	}
+    }
+    
     void start() {
         myThread.start();
     }
@@ -66,6 +103,7 @@ public class PacketSender implements Runnable {
 
     private void realRun() {
         long now = System.currentTimeMillis();
+        lastTimeInSeconds = (int) (now / 1000);
         PeerManager pm = node.peers;
         PeerNode[] nodes = pm.myPeers;
         // Run the time sensitive status updater separately
