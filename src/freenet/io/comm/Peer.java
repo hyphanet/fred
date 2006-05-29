@@ -137,7 +137,16 @@ public class Peer implements WritableToDataOutputStream {
 	 * looked up before.
 	 */
 	public InetAddress getAddress() {
-		return addr.getAddress();
+		return getAddress(true);
+	}
+
+	/**
+	 * Get the IP address. Look it up if allowed to, but return the last value if it
+	 * has ever been looked up before; will not trigger a new lookup if it has been
+	 * looked up before.
+	 */
+	public InetAddress getAddress(boolean doDNSRequest) {
+		return addr.getAddress(doDNSRequest);
 	}
 	
 	/**

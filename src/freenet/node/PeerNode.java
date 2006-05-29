@@ -219,6 +219,12 @@ public class PeerNode implements PeerContext {
     /** Holds a String-Long pair that shows which message types (as name) have been received by this peer. */
     private Hashtable localNodeReceivedMessageTypes = new Hashtable();
 
+    /** Hold collected IP addresses for handshake attempts, populated by DNSRequestor */
+    private Peer[] handshakeIPs = null;
+    
+    /** The last time we attempted to update handshakeIPs */
+    private long lastAttemptedHandshakeIPUpdateTime = 0;
+
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following
@@ -449,6 +455,16 @@ public class PeerNode implements PeerContext {
      * Returns an array with the advertised addresses and the detected one
      */
     public Peer[] getHandshakeIPs(){
+        return handshakeIPs;
+    }
+    
+    public void maybeUpdateHandshakeIPs() {
+    	if(handshakeIPs != null) return;
+      long now = System.currentTimeMillis();
+      if((now - lastAttemptedHandshakeIPUpdateTime) < 5000) return;
+      lastAttemptedHandshakeIPUpdateTime = now;
+      Logger.normal(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+myName+"'");
+    
     	Peer[] p=null;
     	
     	Peer[] myNominalPeer;
@@ -458,10 +474,13 @@ public class PeerNode implements PeerContext {
     		myNominalPeer = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
     		
     		if(myNominalPeer.length == 0) {
-    			if(detectedPeer == null) return new Peer[0];
-    			return new Peer[] { detectedPeer };
+    			if(detectedPeer == null) {
+    				handshakeIPs = null;
+    				return;
+    			}
+    			handshakeIPs = new Peer[] { detectedPeer };
+    			return;
     		}
-    		
     	}
     	
     	if( detectedPeer != null && ! nominalPeer.contains(detectedPeer)){
@@ -490,7 +509,8 @@ public class PeerNode implements PeerContext {
     		newPeers[p.length] = extra;
     		p = newPeers;
     	}
-    	return p;
+    	handshakeIPs = p;
+    	return;
     }
     
     /**
@@ -665,6 +685,7 @@ public class PeerNode implements PeerContext {
     public boolean shouldSendHandshake() {
         long now = System.currentTimeMillis();
         return (!isConnected) && 
+                (handshakeIPs != null) &&
                 (now > sendHandshakeTime) &&
                 !(hasLiveHandshake(now));
     }
@@ -702,6 +723,7 @@ public class PeerNode implements PeerContext {
         		+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
         }
         firstHandshake = false;
+        handshakeIPs = null;
         this.handshakeCount++;
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
         if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
@@ -731,6 +753,7 @@ public class PeerNode implements PeerContext {
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS)
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
         }
+        handshakeIPs = null;
         this.handshakeCount++;
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
         if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {

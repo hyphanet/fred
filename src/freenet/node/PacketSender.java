@@ -74,6 +74,7 @@ public class PacketSender implements Runnable {
     }
     
     void start() {
+        Logger.normal(this,"Starting the PacketSender thread");
         myThread.start();
     }
     

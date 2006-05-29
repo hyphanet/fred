@@ -1292,24 +1292,35 @@ public class FNPPacketMangler implements LowLevelFilter {
         handshakeIPs = pn.getHandshakeIPs();
         long secondTime = System.currentTimeMillis();
         if((secondTime - firstTime) > 1000)
-            Logger.normal(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+")");
+            Logger.normal(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+pn.getName());
         if(handshakeIPs.length == 0) {
             pn.couldNotSendHandshake();
             long thirdTime = System.currentTimeMillis();
             if((thirdTime - secondTime) > 1000)
-                Logger.normal(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+")");
+                Logger.normal(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+pn.getName());
             return;
         } else {
+            long DHTime1 = System.currentTimeMillis();
             ctx = DiffieHellman.generateContext();
+            long DHTime2 = System.currentTimeMillis();
+            if((DHTime2 - DHTime1) > 1000)
+                Logger.normal(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.getName());
             pn.setDHContext(ctx);
+            long DHTime3 = System.currentTimeMillis();
+            if((DHTime3 - DHTime2) > 1000)
+                Logger.normal(this, "DHTime3 is more than a second after DHTime2 ("+(DHTime3 - DHTime2)+") working on "+pn.getName());
         }
         int sentCount = 0;
+        long loopTime1 = System.currentTimeMillis();
         for(int i=0;i<handshakeIPs.length;i++){
-          if( handshakeIPs[i].getAddress() == null ) continue;
+          if(handshakeIPs[i].getAddress(false) == null) continue;
         	sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, handshakeIPs[i]);
         	pn.sentHandshake();
         	sentCount += 1;
         }
+        long loopTime2 = System.currentTimeMillis();
+        if((loopTime2 - loopTime1) > 1000)
+          Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+pn.getName());
         if(sentCount==0) {
             pn.couldNotSendHandshake();
         }

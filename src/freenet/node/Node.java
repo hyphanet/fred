@@ -504,6 +504,7 @@ public class Node {
     public final RandomSource random; // strong RNG
     final UdpSocketManager usm;
     final FNPPacketMangler packetMangler;
+    final DNSRequester dnsr;
     public final PacketSender ps;
     final NodeDispatcher dispatcher;
     final NodePinger nodePinger;
@@ -890,6 +891,7 @@ public class Node {
         statusTooOldPeerNodes = new HashMap();
         statusDisconnectedPeerNodes = new HashMap();
         runningUIDs = new HashSet();
+        dnsr = new DNSRequester(this);
         ps = new PacketSender(this);
         // FIXME maybe these should persist? They need to be private though, so after the node/peers split. (bug 51).
         decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
@@ -1360,6 +1362,7 @@ public class Node {
     void start(boolean noSwaps) throws NodeInitException {
         if(!noSwaps)
             lm.startSender(this, this.swapInterval);
+        dnsr.start();
         ps.start();
         usm.start();
         

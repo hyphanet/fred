@@ -149,9 +149,19 @@ public class FreenetInetAddress {
 	 * looked up before.
 	 */
 	public InetAddress getAddress() {
+	  return getAddress(true);
+	}
+
+	/**
+	 * Get the IP address. Look it up only if allowed to, but return the last value if it
+	 * has ever been looked up before; will not trigger a new lookup if it has been
+	 * looked up before.
+	 */
+	public InetAddress getAddress(boolean doDNSRequest) {
 		if (_address != null) {
 			return _address;
 		} else {
+		        if(doDNSRequest == false) return null;
 		        InetAddress addr = getHandshakeAddress();
 		        if( addr != null ) {
 		                this._address = addr;
