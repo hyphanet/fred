@@ -187,6 +187,7 @@ public class N2NTMToadlet extends Toadlet {
 	  buf.append("Peer '"+HTMLEncoder.encode(pn.getName())+"' is \"backed off\".  N2NTM receipt may be significantly delayed.<br /><br />\n");
           
           usm.send(pn, n2ntm);
+          Logger.normal(this, "Sent N2NTM to '"+pn.getName()+"': "+message);
 	  
           buf.append("Message should be on it's way:<hr /><br /><br />"+messageTextBuf2+"<br /><br />\n");
 	  buf.append("</div>");
@@ -202,6 +203,7 @@ public class N2NTMToadlet extends Toadlet {
 	  buf.append("Sending N2NTM to peer '"+HTMLEncoder.encode(pn.getName())+"'.<br /><br />\n");  
 	  
           usm.send(pn, n2ntm);
+          Logger.normal(this, "Sent N2NTM to '"+pn.getName()+"': "+message);
 	  
           buf.append("Message should be on it's way:<hr /><br /><br />"+messageTextBuf2+"<br /><br />\n");
 	  buf.append("</div>");
