@@ -64,13 +64,19 @@ public abstract class ClientRequester {
 	
 	public synchronized void addBlock() {
 		if(blockSetFinalized)
-			Logger.error(this, "addBlock() but set finalized! on "+this, new Exception("error"));
+			if(Logger.globalGetThreshold() > Logger.MINOR)
+				Logger.error(this, "addBlock() but set finalized! on "+this);
+			else
+				Logger.error(this, "addBlock() but set finalized! on "+this, new Exception("error"));
 		totalBlocks++;
 	}
 	
 	public synchronized void addBlocks(int num) {
 		if(blockSetFinalized)
-			Logger.error(this, "addBlock() but set finalized! on "+this, new Exception("error"));
+			if(Logger.globalGetThreshold() > Logger.MINOR)
+				Logger.error(this, "addBlocks() but set finalized! on "+this);
+			else
+				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));
 		totalBlocks+=num;
 	}
 	

@@ -29,8 +29,12 @@ public class SplitfileProgressEvent implements ClientEvent {
 		if(minSuccessfulBlocks == 0 && fetchedBlocks == 0)
 			minSuccessfulBlocks = 1;
 		if(minSuccessfulBlocks == 0) {
-			Logger.error(this, "minSuccessfulBlocks=0, fetchedBlocks="+fetchedBlocks+", totalBlocks="+totalBlocks+
-					", failedBlocks="+failedBlocks+", fatallyFailedBlocks="+fatallyFailedBlocks+", finalizedTotal="+finalizedTotal, new Exception("debug"));
+			if(Logger.globalGetThreshold() > Logger.MINOR)
+				Logger.error(this, "minSuccessfulBlocks=0, fetchedBlocks="+fetchedBlocks+", totalBlocks="+totalBlocks+
+						", failedBlocks="+failedBlocks+", fatallyFailedBlocks="+fatallyFailedBlocks+", finalizedTotal="+finalizedTotal);
+			else
+				Logger.error(this, "minSuccessfulBlocks=0, fetchedBlocks="+fetchedBlocks+", totalBlocks="+totalBlocks+
+						", failedBlocks="+failedBlocks+", fatallyFailedBlocks="+fatallyFailedBlocks+", finalizedTotal="+finalizedTotal, new Exception("debug"));
 		} else {
 			sb.append((100*(fetchedBlocks)/minSuccessfulBlocks));
 			sb.append('%');
