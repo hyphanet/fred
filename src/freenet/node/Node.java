@@ -2881,6 +2881,8 @@ public class Node {
      */
     public void maybeLogPeerNodeStatusSummary(long now) {
       if(now > nextPeerNodeStatusLogTime) {
+        if((now - nextPeerNodeStatusLogTime) > (3*60*1000))
+          Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 3 seconds.  PacketSender getting bogged down or something?");
         int numberOfConnected = getNumStatusConnectedPeerNodes();
         int numberOfRoutingBackedOff = getNumStatusRoutingBackedOffPeerNodes();
         int numberOfTooNew = getNumStatusTooNewPeerNodes();

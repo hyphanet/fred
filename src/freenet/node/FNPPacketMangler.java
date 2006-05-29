@@ -310,7 +310,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param replyTo
      */
     private void sendFirstHalfDHPacket(int phase, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
-        Logger.minor(this, "Sending ("+phase+") "+integer.toHexString());
+        Logger.minor(this, "Sending ("+phase+") "+integer.toHexString()+" to "+pn.getPeer());
         byte[] data = integer.toByteArray();
         int targetLength = DiffieHellman.modulusLengthInBytes();
         if(data.length != targetLength) {

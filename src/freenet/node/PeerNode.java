@@ -959,7 +959,7 @@ public class PeerNode implements PeerContext {
         changedIP(replyTo);
         if(thisBootID != this.bootID) {
             connectedTime = System.currentTimeMillis();
-            Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID);
+            Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
             isConnected = false; // Will be reset below
             setPeerNodeStatus(now);
             if(previousTracker != null) {
@@ -980,6 +980,7 @@ public class PeerNode implements PeerContext {
         if(unverified) {
             unverifiedTracker = newTracker;
             ctx = null;
+            Logger.minor(this, "sentHandshake() being called for unverifiedTracker: "+getPeer());
             sentHandshake();
         } else {
             previousTracker = currentTracker;
@@ -993,7 +994,7 @@ public class PeerNode implements PeerContext {
         }
         if(!isConnected)
         	node.peers.disconnected(this);
-        Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID);
+        Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" myName: "+myName);
         try {
 			receivedPacket();
 		} catch (NotConnectedException e) {
@@ -1042,7 +1043,7 @@ public class PeerNode implements PeerContext {
       long now = System.currentTimeMillis();
     	synchronized(this) {
         if(tracker == unverifiedTracker) {
-            Logger.minor(this, "Promoting unverified tracker "+tracker);
+            Logger.minor(this, "Promoting unverified tracker "+tracker+" for "+getPeer());
             if(previousTracker != null) {
                 previousTracker.completelyDeprecated(tracker);
             }
@@ -1197,7 +1198,7 @@ public class PeerNode implements PeerContext {
         	changedAnything = true;
         
         if(nominalPeer.isEmpty()) {
-        	Logger.normal(this, "No physical.udp in noderef for identity '"+identityString+"', possibly at location '"+locationString+"'");
+        	Logger.normal(this, "No physical.udp in noderef for identity '"+identityString+"', possibly at location '"+locationString+"' with name '"+myName+"'");
         	// detectedPeer stays as it is
         } else {
             /* yes, we pick up a random one : it will be updated on handshake */
