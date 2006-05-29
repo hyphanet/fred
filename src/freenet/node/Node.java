@@ -46,7 +46,6 @@ import freenet.client.async.USKManager;
 import freenet.clients.http.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.clients.http.Spider;
 import freenet.config.Config;
 import freenet.config.FilePersistentConfig;
 import freenet.config.IntCallback;

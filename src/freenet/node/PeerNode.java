@@ -1416,15 +1416,10 @@ public class PeerNode implements PeerContext {
 	long routingBackedOffUntil = -1;
 	/** Initial nominal routing backoff length */
 	final int INITIAL_ROUTING_BACKOFF_LENGTH = 5000;  // 5 seconds
-	/** How much to add during slow routing backoff */
-	final int SLOW_ROUTING_BACKOFF_ADDER = 7000;  // 7 seconds
 	/** How much to multiply by during fast routing backoff */
-	final int FAST_ROUTING_BACKOFF_MULTIPLIER = 2;
-	/** After what routing backoff length do we use fast routing backoff (slow before this) */
-	//final int FAST_ROUTING_BACKOFF_LOW_THRESHOLD = 2*60*60*1000;  // 2 hours
-	final int FAST_ROUTING_BACKOFF_LOW_THRESHOLD = 2*1000;  // 2 seconds (i.e., never happens)
+	final int BACKOFF_MULTIPLIER = 2;
 	/** Maximum upper limit to routing backoff slow or fast */
-	final int MAX_ROUTING_BACKOFF_LENGTH = 24*60*60*1000;  // 24 hours
+	final int MAX_ROUTING_BACKOFF_LENGTH = 3*60*60*1000;  // 3 hours
 	/** Current nominal routing backoff length */
 	int routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
 	/** Last backoff reason */
@@ -1448,10 +1443,7 @@ public class PeerNode implements PeerContext {
 			long now = System.currentTimeMillis();
 			// Don't back off any further if we are already backed off
 			if(now > routingBackedOffUntil) {
-				if(routingBackoffLength < FAST_ROUTING_BACKOFF_LOW_THRESHOLD)
-					routingBackoffLength = routingBackoffLength + SLOW_ROUTING_BACKOFF_ADDER;
-				else
-					routingBackoffLength = routingBackoffLength * FAST_ROUTING_BACKOFF_MULTIPLIER;
+				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
 				if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
 					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
 				int x = node.random.nextInt(routingBackoffLength);
