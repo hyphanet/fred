@@ -237,6 +237,7 @@ public class PacketSender implements Runnable {
 
         // Send may have taken some time
         now = System.currentTimeMillis();
+        lastTimeInSeconds = (int) (now / 1000);
         
         if((now - oldNow) > (10*1000))
             Logger.normal(this, "now is more than 10 seconds past oldNow ("+(now - oldNow)+") in PacketSender");
