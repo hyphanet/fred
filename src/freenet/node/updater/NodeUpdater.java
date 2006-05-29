@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
@@ -15,7 +16,6 @@ import freenet.client.async.USKCallback;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
-import freenet.keys.NodeCHK;
 import freenet.keys.USK;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -175,12 +175,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 		}
 		
-		// FIXME: maybe we need a higher throshold
-		if(revocationDNFCounter<1){
-			Logger.normal(this, "We don't have checked if the revocation key has been inserted or not yet : delaying update");
-			return;
-		}
-			
 		Logger.normal(this, "Update in progress");
 		try{
 			ArrayBucket bucket = (ArrayBucket) result.asBucket();
