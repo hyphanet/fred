@@ -1,19 +1,21 @@
 package freenet.node.useralerts;
 
+import freenet.node.PeerNode;
 import freenet.support.HTMLEncoder;
 
 // Node To Node Text Message User Alert
 public class N2NTMUserAlert implements UserAlert {
 	private boolean isValid=true;
-	public int lastGoodVersion = 0;
-	private String source_nodename;
-	private String target_nodename;
-	private String message_text;
+	private PeerNode sourcePeerNode;
+	private String sourceNodename;
+	private String targetNodename;
+	private String messageText;
 
-	public N2NTMUserAlert(String source, String target, String message) {
-		this.source_nodename = source;
-		this.target_nodename = target;
-		this.message_text = message;
+	public N2NTMUserAlert(PeerNode sourcePeerNode, String source, String target, String message) {
+	  this.sourcePeerNode = sourcePeerNode;
+		this.sourceNodename = source;
+		this.targetNodename = target;
+		this.messageText = message;
 		isValid=true;
 	}
 	
@@ -26,8 +28,19 @@ public class N2NTMUserAlert implements UserAlert {
 	}
 	
 	public String getText() {
+	  String messageTextBuf = HTMLEncoder.encode(messageText);
+	  int j = messageTextBuf.length();
+		StringBuffer messageTextBuf2 = new StringBuffer(j);
+		for (int i = 0; i < j; i++) {
+		  char ch = messageTextBuf.charAt(i);
+		  if(ch == '\n')
+		    messageTextBuf2.append("<br />");
+		  else
+		    messageTextBuf2.append(ch);
+		}
+    String replyString = "<a href=\"/send_n2ntm/?peernode_hashcode="+sourcePeerNode.hashCode()+"\">Reply</a><br /><br />";
 		String s;
-		s = "You, as nodename '"+HTMLEncoder.encode(target_nodename)+"', have received a node to node text message from nodename '"+HTMLEncoder.encode(source_nodename)+"':<br /><br />"+HTMLEncoder.encode(message_text);
+		s = "From: &lt;"+HTMLEncoder.encode(sourceNodename)+"&gt;<br />To: &lt;"+HTMLEncoder.encode(targetNodename)+"&gt;<hr /><br /><br />"+messageTextBuf2+"<br /><br />"+replyString;
 		return s;
 	}
 
@@ -41,5 +54,9 @@ public class N2NTMUserAlert implements UserAlert {
 	
 	public void isValid(boolean b){
 		if(userCanDismiss()) isValid=b;
+	}
+	
+	public String dismissButtonText(){
+		return "Delete";
 	}
 }

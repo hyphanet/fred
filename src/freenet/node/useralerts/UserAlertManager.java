@@ -69,7 +69,7 @@ public class UserAlertManager implements Comparator {
 				//
 				if(a[i].userCanDismiss())
 					buf.append("<form method=\"post\" action=\".\"><input type=\"hidden\" name=\"disable\" value=\""+
-							a[i].hashCode()+"\" /><input type=\"submit\" value=\"Hide\" /></form>");
+							a[i].hashCode()+"\" /><input type=\"submit\" value=\""+a[i].dismissButtonText()+"\" /></form>");
 				//
 				buf.append("</div>\n");
 				buf.append("</div>\n");

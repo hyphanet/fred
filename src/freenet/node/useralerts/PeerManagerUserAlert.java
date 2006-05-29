@@ -69,4 +69,8 @@ public class PeerManagerUserAlert implements UserAlert {
 	public void isValid(boolean b){
 		if(userCanDismiss()) isValid=b;
 	}
+	
+	public String dismissButtonText(){
+		return "Hide";
+	}
 }

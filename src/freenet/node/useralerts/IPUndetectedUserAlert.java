@@ -30,4 +30,8 @@ public class IPUndetectedUserAlert implements UserAlert {
 	public void isValid(boolean validity){
 		if(userCanDismiss()) isValid=validity;
 	}
+	
+	public String dismissButtonText(){
+		return "Hide";
+	}
 }

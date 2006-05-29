@@ -36,4 +36,8 @@ public class RevocationKeyFoundUserAlert implements UserAlert {
 	public void isValid(boolean b){
 		// We ignore it : it's ALWAYS valid !
 	}
+	
+	public String dismissButtonText(){
+		return "Hide";
+	}
 }

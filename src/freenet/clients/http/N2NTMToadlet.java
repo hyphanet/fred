@@ -144,6 +144,16 @@ public class N2NTMToadlet extends Toadlet {
       }
       try {
         Message n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), pn.getName(), message);
+        String messageTextBuf = HTMLEncoder.encode(message);
+        int j = messageTextBuf.length();
+              StringBuffer messageTextBuf2 = new StringBuffer(j);
+              for (int i = 0; i < j; i++) {
+                char ch = messageTextBuf.charAt(i);
+                if(ch == '\n')
+                  messageTextBuf2.append("<br />");
+                else
+                  messageTextBuf2.append(ch);
+              }
         if(pn == null) {
           ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Failed");
 	  
@@ -178,7 +188,7 @@ public class N2NTMToadlet extends Toadlet {
           
           usm.send(pn, n2ntm);
 	  
-          buf.append("Message should be on it's way.<br /><br />\n");
+          buf.append("Message should be on it's way:<hr /><br /><br />"+messageTextBuf2+"<br /><br />\n");
 	  buf.append("</div>");
 	  buf.append("</div>");
         } else {
@@ -193,7 +203,7 @@ public class N2NTMToadlet extends Toadlet {
 	  
           usm.send(pn, n2ntm);
 	  
-          buf.append("Message should be on it's way.<br /><br />\n");
+          buf.append("Message should be on it's way:<hr /><br /><br />"+messageTextBuf2+"<br /><br />\n");
 	  buf.append("</div>");
 	  buf.append("</div>");
         }

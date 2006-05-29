@@ -39,4 +39,8 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	public void isValid(boolean b){
 		isValid=b;
 	}
+	
+	public String dismissButtonText(){
+		return "Hide";
+	}
 }

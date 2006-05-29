@@ -2902,7 +2902,7 @@ public class Node {
         String target_nodename = (String) m.getObject(DMT.TARGET_NODENAME);
         String text = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TEXT);
         Logger.normal(this, "Received N2NTM from '"+source_nodename+"' to '"+target_nodename+"': "+text);
-        N2NTMUserAlert userAlert = new N2NTMUserAlert(source_nodename, target_nodename, text);
+        N2NTMUserAlert userAlert = new N2NTMUserAlert(source, source_nodename, target_nodename, text);
 		    alerts.register(userAlert);
       } else {
         Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
