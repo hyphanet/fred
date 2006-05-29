@@ -27,6 +27,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.zip.DeflaterOutputStream;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.client.ArchiveManager;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
@@ -1446,7 +1448,13 @@ public class Node {
 						osVersion.startsWith("2.7") || osVersion.startsWith("3."))) {
 			// Hopefully we won't still have to deal with this **** when THAT comes out! 
 			// Check the environment.
-			String assumeKernel = System.getenv("LD_ASSUME_KERNEL");
+			String assumeKernel;
+			try {
+				assumeKernel = System.getenv("LD_ASSUME_KERNEL");
+			} catch (Error e) {
+				assumeKernel = null;
+				assumeKernel = WrapperManager.getProperties().getProperty("set.LD_ASSUME_KERNEL");
+			}
 			if(assumeKernel == null || assumeKernel.length() == 0 || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
 				System.err.println(ERROR_SUN_NPTL);
 				Logger.error(this, ERROR_SUN_NPTL);
