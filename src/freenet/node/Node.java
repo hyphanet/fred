@@ -1350,7 +1350,7 @@ public class Node {
 		"This has been known to cause the node to freeze up due to the JVM losing a lock. " +
 		"Please disable NPTL if possible by setting the environment variable LD_ASSUME_KERNEL=2.4.1. " +
 		"Recent versions of the freenet installer should have this already; either reinstall, or edit " +
-		"run.sh and add a line saying \"export LD_ASSUME_KERNEL=2.4.1\". " +
+		"run.sh (https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/run.sh). " +
 		"On some systems you may need to install the pthreads libraries to make this work. " +
 		"Note that the node will try to automatically restart the node in the event of such a deadlock, " +
 		"but this will cause some disruption, and may not be 100% reliable.";
