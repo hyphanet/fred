@@ -116,13 +116,11 @@ public final class RequestSender implements Runnable {
             // Route it
             PeerNode next;
             double nextValue;
-            synchronized(node.peers) {
-                next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true);
-                if(next != null)
-                    nextValue = next.getLocation().getValue();
-                else
-                    nextValue = -1.0;
-            }
+            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true);
+            if(next != null)
+                nextValue = next.getLocation().getValue();
+            else
+                nextValue = -1.0;
             
             if(next == null) {
                 // Backtrack
