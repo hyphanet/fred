@@ -458,8 +458,35 @@ public class PeerNode implements PeerContext {
         return handshakeIPs;
     }
     
+    private String handshakeIPsToString() {
+        Peer[] localHandshakeIPs;
+        synchronized(this) {
+                localHandshakeIPs = handshakeIPs;
+        }
+    	if(localHandshakeIPs == null)
+    		return "null";
+    	StringBuffer toOutputString = new StringBuffer(1024);
+    	boolean needSep = false;
+    	toOutputString.append("[ ");
+        for(int i=0;i<localHandshakeIPs.length;i++) {
+        	if(needSep)
+        		toOutputString.append(", ");
+        	if(localHandshakeIPs[i] == null) {
+        		toOutputString.append("null");
+    			needSep = true;
+        		continue;
+        	}
+    		toOutputString.append("'");
+        	// Actually do the DNS request for the member Peer of localHandshakeIPs
+        	toOutputString.append(localHandshakeIPs[i].getHandshakeAddress());
+    		toOutputString.append("'");
+    		needSep = true;
+        }
+    	toOutputString.append(" ]");
+    	return toOutputString.toString();
+    }
+
     public void maybeUpdateHandshakeIPs() {
-    	if(handshakeIPs != null) return;
       long now = System.currentTimeMillis();
       if((now - lastAttemptedHandshakeIPUpdateTime) < 5*60*1000) return;  // 5 minutes
       lastAttemptedHandshakeIPUpdateTime = now;
@@ -472,21 +499,21 @@ public class PeerNode implements PeerContext {
     	// Don't synchronize while doing lookups which may take a long time!
     	synchronized(this) {
     		myNominalPeer = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
-    		
-    		if(myNominalPeer.length == 0) {
-    			if(detectedPeer == null) {
+    	}
+    	
+    	if(myNominalPeer.length == 0) {
+    		if(detectedPeer == null) {
+        		synchronized(this) {
     				handshakeIPs = null;
-    				Logger.normal(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPs);
-    				return;
     			}
-    			handshakeIPs = new Peer[] { detectedPeer };
-        		for(int i=0;i<handshakeIPs.length;i++) {
-        			// Actually do the DNS request for the member Peer of handshakeIPs
-        			handshakeIPs[i].getHandshakeAddress();
-        		}
-    			Logger.normal(this, "2: maybeUpdateHandshakeIPs got a result of: "+handshakeIPs);
+    			Logger.normal(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     			return;
     		}
+        	synchronized(this) {
+    			handshakeIPs = new Peer[] { detectedPeer };
+    		}
+    		Logger.normal(this, "2: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
+    		return;
     	}
     	
     	if( detectedPeer != null && ! nominalPeer.contains(detectedPeer)){
@@ -515,12 +542,10 @@ public class PeerNode implements PeerContext {
     		newPeers[p.length] = extra;
     		p = newPeers;
     	}
-    	handshakeIPs = p;
-    	for(int i=0;i<handshakeIPs.length;i++) {
-    		// Actually do the DNS request for the member Peer of handshakeIPs
-    		handshakeIPs[i].getHandshakeAddress();
+    	synchronized(this) {
+    		handshakeIPs = p;
     	}
-    	Logger.normal(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPs);
+    	Logger.normal(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     	return;
     }
     
@@ -763,7 +788,9 @@ public class PeerNode implements PeerContext {
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS)
               + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
         }
-        handshakeIPs = null;
+    	synchronized(this) {
+        	handshakeIPs = null;
+        }
         this.handshakeCount++;
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
         if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
