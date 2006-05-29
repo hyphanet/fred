@@ -461,7 +461,7 @@ public class PeerNode implements PeerContext {
     public void maybeUpdateHandshakeIPs() {
     	if(handshakeIPs != null) return;
       long now = System.currentTimeMillis();
-      if((now - lastAttemptedHandshakeIPUpdateTime) < 6*60*1000) return;  // 6 minutes
+      if((now - lastAttemptedHandshakeIPUpdateTime) < 5*60*1000) return;  // 5 minutes
       lastAttemptedHandshakeIPUpdateTime = now;
       Logger.normal(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+myName+"'");
     
@@ -476,9 +476,15 @@ public class PeerNode implements PeerContext {
     		if(myNominalPeer.length == 0) {
     			if(detectedPeer == null) {
     				handshakeIPs = null;
+    				Logger.normal(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPs);
     				return;
     			}
     			handshakeIPs = new Peer[] { detectedPeer };
+        		for(int i=0;i<handshakeIPs.length;i++) {
+        			// Actually do the DNS request for the member Peer of handshakeIPs
+        			handshakeIPs[i].getHandshakeAddress();
+        		}
+    			Logger.normal(this, "2: maybeUpdateHandshakeIPs got a result of: "+handshakeIPs);
     			return;
     		}
     	}
@@ -510,6 +516,11 @@ public class PeerNode implements PeerContext {
     		p = newPeers;
     	}
     	handshakeIPs = p;
+    	for(int i=0;i<handshakeIPs.length;i++) {
+    		// Actually do the DNS request for the member Peer of handshakeIPs
+    		handshakeIPs[i].getHandshakeAddress();
+    	}
+    	Logger.normal(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPs);
     	return;
     }
     
@@ -723,7 +734,6 @@ public class PeerNode implements PeerContext {
         		+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
         }
         firstHandshake = false;
-        handshakeIPs = null;
         this.handshakeCount++;
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
         if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
