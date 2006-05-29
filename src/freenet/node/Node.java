@@ -93,6 +93,7 @@ import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -1344,6 +1345,16 @@ public class Node {
 		this.arkFetcherContext = ctx;
     }
 	
+	static final String ERROR_SUN_NPTL = 
+		"WARNING: Your system appears to be running a Sun JVM with NPTL. " +
+		"This has been known to cause the node to freeze up due to the JVM losing a lock. " +
+		"Please disable NPTL if possible by setting the environment variable LD_ASSUME_KERNEL=2.4.1. " +
+		"Recent versions of the freenet installer should have this already; either reinstall, or edit " +
+		"run.sh and add a line saying \"export LD_ASSUME_KERNEL=2.4.1\". " +
+		"On some systems you may need to install the pthreads libraries to make this work. " +
+		"Note that the node will try to automatically restart the node in the event of such a deadlock, " +
+		"but this will cause some disruption, and may not be 100% reliable.";
+	
     void start(boolean noSwaps) throws NodeInitException {
         if(!noSwaps)
             lm.startSender(this, this.swapInterval);
@@ -1419,6 +1430,66 @@ public class Node {
 		Thread t = new Thread(ipDetector, "IP address re-detector");
 		t.setDaemon(true);
 		t.start();
+		
+		// Now check whether we are likely to get the EvilJVMBug.
+		// If we are running a Sun or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
+		
+		String jvmVendor = System.getProperty("java.vm.vendor");
+		String jvmVersion = System.getProperty("java.vm.version");
+		String osName = System.getProperty("os.name");
+		String osVersion = System.getProperty("os.version");
+		
+		Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
+		
+		if(osName.equals("Linux") && jvmVendor.startsWith("Sun ") && 
+				(osVersion.contains("nptl") || osVersion.startsWith("2.6") || 
+						osVersion.startsWith("2.7") || osVersion.startsWith("3."))) {
+			// Hopefully we won't still have to deal with this **** when THAT comes out! 
+			// Check the environment.
+			String assumeKernel = System.getenv("LD_ASSUME_KERNEL");
+			if(assumeKernel == null || assumeKernel.length() == 0 || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
+				System.err.println(ERROR_SUN_NPTL);
+				Logger.error(this, ERROR_SUN_NPTL);
+				this.alerts.register(new UserAlert() {
+
+					public boolean userCanDismiss() {
+						return false;
+					}
+
+					public String getTitle() {
+						return "Deadlocking likely due to buggy JVM/kernel combination";
+					}
+
+					public String getText() {
+						return ERROR_SUN_NPTL;
+					}
+
+					public short getPriorityClass() {
+						return UserAlert.CRITICAL_ERROR;
+					}
+
+					public boolean isValid() {
+						return true;
+					}
+
+					public void isValid(boolean validity) {
+						// Not clearable.
+					}
+
+					public String dismissButtonText() {
+						// Not dismissable.
+						return null;
+					}
+
+					public boolean shouldUnregisterOnDismiss() {
+						// Not dismissable.
+						return false;
+					}
+					
+				});
+			}
+		}
+		
     }
     
     private void shouldInsertARK() {
