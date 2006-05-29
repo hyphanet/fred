@@ -461,7 +461,7 @@ public class PeerNode implements PeerContext {
     public void maybeUpdateHandshakeIPs() {
     	if(handshakeIPs != null) return;
       long now = System.currentTimeMillis();
-      if((now - lastAttemptedHandshakeIPUpdateTime) < 5000) return;
+      if((now - lastAttemptedHandshakeIPUpdateTime) < 6*60*1000) return;  // 6 minutes
       lastAttemptedHandshakeIPUpdateTime = now;
       Logger.normal(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+myName+"'");
     

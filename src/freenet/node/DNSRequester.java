@@ -64,5 +64,12 @@ public class DNSRequester implements Runnable {
                 pn.maybeUpdateHandshakeIPs();
             }
         }
+        try {
+            synchronized(this) {
+                wait(200);  // sleep 200ms
+            }
+        } catch (InterruptedException e) {
+            // Ignore, just wake up. Just sleeping to not busy wait anyway
+        }
     }
 }
