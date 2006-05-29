@@ -134,6 +134,7 @@ public class UserAlertManager implements Comparator {
       if (separatorNeeded)
         alertSummaryString.append(" | ");
       alertSummaryString.append("Total: " + totalNumber);
+      alertSummaryString.append(" | See them on <a href=\"/\">the Freenet FProxy Homepage</a>");
       if(highestLevel <= UserAlert.CRITICAL_ERROR)
         buf.append("<div class=\"infobox infobox-error\">\n");
       else if(highestLevel <= UserAlert.ERROR)
