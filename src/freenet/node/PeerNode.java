@@ -478,7 +478,7 @@ public class PeerNode implements PeerContext {
         	}
     		toOutputString.append("'");
         	// Actually do the DNS request for the member Peer of localHandshakeIPs
-        	toOutputString.append(localHandshakeIPs[i].getHandshakeAddress());
+        	toOutputString.append(localHandshakeIPs[i].getAddress(false));
     		toOutputString.append("'");
     		needSep = true;
         }
@@ -486,14 +486,20 @@ public class PeerNode implements PeerContext {
     	return toOutputString.toString();
     }
 
-    public void maybeUpdateHandshakeIPs() {
-      long now = System.currentTimeMillis();
-      if((now - lastAttemptedHandshakeIPUpdateTime) < 5*60*1000) return;  // 5 minutes
-      lastAttemptedHandshakeIPUpdateTime = now;
-      Logger.normal(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+myName+"'");
-    
-    	Peer[] p=null;
-    	
+    /**
+      * Do occasional DNS requests, but ignoreHostnames should be true
+      * for the first cycle through the peers by DNSRequester at node
+      * startup (faster startup time if we know some IPs already)
+      */
+    public void maybeUpdateHandshakeIPs(boolean ignoreHostnames) {
+    	long now = System.currentTimeMillis();
+    	if((now - lastAttemptedHandshakeIPUpdateTime) < (5*60*1000)) return;  // 5 minutes
+    	// We want to come back right away for DNS requesting if this is our first time through
+    	if(!ignoreHostnames)
+    		lastAttemptedHandshakeIPUpdateTime = now;
+    	Logger.normal(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+myName+"' ("+ignoreHostnames+")");
+    	Peer[] localHandshakeIPs;
+    	Peer[] p = null;
     	Peer[] myNominalPeer;
     	
     	// Don't synchronize while doing lookups which may take a long time!
@@ -503,14 +509,26 @@ public class PeerNode implements PeerContext {
     	
     	if(myNominalPeer.length == 0) {
     		if(detectedPeer == null) {
+    		        localHandshakeIPs = null;
         		synchronized(this) {
-    				handshakeIPs = null;
+    				handshakeIPs = localHandshakeIPs;
     			}
     			Logger.normal(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     			return;
     		}
+    		localHandshakeIPs = new Peer[] { detectedPeer };
+        	for(int i=0;i<localHandshakeIPs.length;i++) {
+        		if(ignoreHostnames) {
+        			// Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
+        			// upon startup (I suspect the following won't do anything, but just in case)
+        			localHandshakeIPs[i].getAddress(false);
+        		} else {
+        			// Actually do the DNS request for the member Peer of localHandshakeIPs
+        			localHandshakeIPs[i].getHandshakeAddress();
+        		}
+        	}
         	synchronized(this) {
-    			handshakeIPs = new Peer[] { detectedPeer };
+    			handshakeIPs = localHandshakeIPs;
     		}
     		Logger.normal(this, "2: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     		return;
@@ -542,8 +560,13 @@ public class PeerNode implements PeerContext {
     		newPeers[p.length] = extra;
     		p = newPeers;
     	}
+    	localHandshakeIPs = p;
+        for(int i=0;i<localHandshakeIPs.length;i++) {
+        	// Actually do the DNS request for the member Peer of localHandshakeIPs
+        	localHandshakeIPs[i].getHandshakeAddress();
+        }
     	synchronized(this) {
-    		handshakeIPs = p;
+    		handshakeIPs = localHandshakeIPs;
     	}
     	Logger.normal(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     	return;

@@ -161,7 +161,7 @@ public class FreenetInetAddress {
 		if (_address != null) {
 			return _address;
 		} else {
-		        if(doDNSRequest == false) return null;
+		        if(!doDNSRequest) return null;
 		        InetAddress addr = getHandshakeAddress();
 		        if( addr != null ) {
 		                this._address = addr;

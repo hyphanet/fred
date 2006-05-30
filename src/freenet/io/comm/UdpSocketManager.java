@@ -471,7 +471,7 @@ public class UdpSocketManager extends Thread {
      * @param destination The peer to send it to.
      */
     public void sendPacket(byte[] blockToSend, Peer destination) {
-		if( destination.getAddress() == null ) {
+		if( destination.getAddress(false) == null ) {
   		     Logger.error(this, "Tried sending to bad destination address: null:" + destination.getPort());
   		     return;
 		}
@@ -482,7 +482,7 @@ public class UdpSocketManager extends Thread {
 			}
 		}
 		DatagramPacket packet = new DatagramPacket(blockToSend, blockToSend.length);
-		packet.setAddress(destination.getAddress());
+		packet.setAddress(destination.getAddress(false));
 		packet.setPort(destination.getPort());
 		
 		// TODO: keep?

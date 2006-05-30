@@ -626,7 +626,8 @@ public class Node {
         	if(myOldPeer.getPort() != portNumber)
         		throw new IllegalArgumentException("Wrong port number "+
         				myOldPeer.getPort()+" should be "+portNumber);
-        	oldIPAddress = myOldPeer.getAddress();
+        	// DNSRequester doesn't deal with our own node
+        	oldIPAddress = myOldPeer.getAddress(true);
         }
         String identity = fs.get("identity");
         if(identity == null)
@@ -2056,7 +2057,8 @@ public class Node {
        		for(int i=0;i<peerList.length;i++) {
        			Peer p = peerList[i].getRemoteDetectedPeer();
        			if(p == null || p.isNull()) continue;
-       			InetAddress ip = p.getAddress();
+       			// DNSRequester doesn't deal with our own node
+       			InetAddress ip = p.getAddress(true);
        			if(!IPUtil.checkAddress(ip)) continue;
        			if(countsByPeer.containsKey(ip)) {
        				Integer count = (Integer) countsByPeer.get(ip);
