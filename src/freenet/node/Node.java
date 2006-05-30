@@ -914,6 +914,7 @@ public class Node {
         runningUIDs = new HashSet();
         dnsr = new DNSRequester(this);
         ps = new PacketSender(this);
+        nextPeerNodeStatusLogTime = System.currentTimeMillis() + (3*1000);
         // FIXME maybe these should persist? They need to be private though, so after the node/peers split. (bug 51).
         decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
         decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;

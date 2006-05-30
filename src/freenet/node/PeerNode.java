@@ -274,7 +274,10 @@ public class PeerNode implements PeerContext {
         // FIXME make mandatory once everyone has upgraded
         lastGoodVersion = fs.get("lastGoodVersion");
         
-       	nominalPeer=new Vector();
+        // PeerNode starts life as disconnected
+        node.addStatusDisconnectedPeerNode(getIdentityString(), this);
+		
+        nominalPeer=new Vector();
         nominalPeer.removeAllElements();
         try{
         	String physical[]=fs.getAll("physical.udp");
