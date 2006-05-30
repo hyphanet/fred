@@ -500,7 +500,7 @@ public class PeerNode implements PeerContext {
     	// We want to come back right away for DNS requesting if this is our first time through
     	if(!ignoreHostnames)
     		lastAttemptedHandshakeIPUpdateTime = now;
-    	Logger.normal(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+myName+"' ("+ignoreHostnames+")");
+    	Logger.minor(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+myName+"' ("+ignoreHostnames+")");
     	Peer[] localHandshakeIPs;
     	Peer[] p = null;
     	Peer[] myNominalPeer;
@@ -516,7 +516,7 @@ public class PeerNode implements PeerContext {
         		synchronized(this) {
     				handshakeIPs = localHandshakeIPs;
     			}
-    			Logger.normal(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
+    			Logger.minor(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     			return;
     		}
     		localHandshakeIPs = new Peer[] { detectedPeer };
@@ -533,7 +533,7 @@ public class PeerNode implements PeerContext {
         	synchronized(this) {
     			handshakeIPs = localHandshakeIPs;
     		}
-    		Logger.normal(this, "2: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
+    		Logger.minor(this, "2: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     		return;
     	}
     	
@@ -571,7 +571,7 @@ public class PeerNode implements PeerContext {
     	synchronized(this) {
     		handshakeIPs = localHandshakeIPs;
     	}
-    	Logger.normal(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
+    	Logger.minor(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     	return;
     }
     

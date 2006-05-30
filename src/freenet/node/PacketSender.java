@@ -221,11 +221,11 @@ public class PacketSender implements Runnable {
                     node.packetMangler.sendHandshake(pn);
                 long afterHandshakeTime = System.currentTimeMillis();
                 if((afterHandshakeTime - beforeHandshakeTime) > (2*1000))
-                    Logger.normal(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime ("+(afterHandshakeTime - beforeHandshakeTime)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
+                    Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime ("+(afterHandshakeTime - beforeHandshakeTime)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
             }
     		long tempNow = System.currentTimeMillis();
     		if((tempNow - oldTempNow) > (5*1000))
-    			Logger.normal(this, "tempNow is more than 5 seconds past oldTempNow ("+(tempNow - oldTempNow)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
+    			Logger.error(this, "tempNow is more than 5 seconds past oldTempNow ("+(tempNow - oldTempNow)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());
     		oldTempNow = tempNow;
     	}
     	
@@ -241,7 +241,7 @@ public class PacketSender implements Runnable {
         lastTimeInSeconds = (int) (now / 1000);
         
         if((now - oldNow) > (10*1000))
-            Logger.normal(this, "now is more than 10 seconds past oldNow ("+(now - oldNow)+") in PacketSender");
+            Logger.error(this, "now is more than 10 seconds past oldNow ("+(now - oldNow)+") in PacketSender");
         
         Vector jobsToRun = null;
         
