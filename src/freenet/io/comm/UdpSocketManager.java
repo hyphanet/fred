@@ -471,7 +471,11 @@ public class UdpSocketManager extends Thread {
      * @param destination The peer to send it to.
      */
     public void sendPacket(byte[] blockToSend, Peer destination) {
-		if( destination.getAddress(false) == null ) {
+    // I think DNSRequester should have handled DNS for this spot, but
+    // I'm seeing this error, so I'm temporarily switching this to
+    // allow DNS until I have more time to sort this out  -Zothar (**FIXME**)
+    //if( destination.getAddress(false) == null ) {
+    if( destination.getAddress(true) == null ) {
   		     Logger.error(this, "Tried sending to bad destination address: null:" + destination.getPort());
   		     return;
 		}
