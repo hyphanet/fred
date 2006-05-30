@@ -146,10 +146,9 @@ public class PluginToadlet extends Toadlet {
 		StringBuffer outputBuffer = new StringBuffer();
 		pageMaker.makeHead(outputBuffer, "List of Plugins", true);
 
-		outputBuffer.append("<div id=\"infobox\">");
-		outputBuffer.append("<div id=\"infobox-header\">Plugin list</div>");
-		outputBuffer.append("<div id=\"infobox-content\">Plugin list</div>");
-		outputBuffer.append("<table id=\"plugintable\">");
+		outputBuffer.append("<div class=\"infobox\">");
+		outputBuffer.append("<div class=\"infobox-header\">Plugin list</div>");
+		outputBuffer.append("<div class=\"infobox-content\"><table class=\"plugintable\">");
 		outputBuffer.append("<tr>");
 		outputBuffer.append("<th>Plugin Name</th>");
 		outputBuffer.append("<th>Internal Name</th>");
@@ -214,12 +213,15 @@ public class PluginToadlet extends Toadlet {
 	 *            The StringBuffer to append the HTML code to
 	 */
 	private void appendAddPluginBox(StringBuffer outputBuffer) {
-		outputBuffer.append("<div id=\"pluginadder\">");
+		outputBuffer.append("<div class=\"infobox\">");
+		outputBuffer.append("<div class=\"infobox-header\">Add a plugin</div>");
+		outputBuffer.append("<div class=\"infobox-content\">");
 		outputBuffer.append("<form action=\"?add\" method=\"get\">");
 		outputBuffer.append("<input type=\"hidden\" name=\"action\" value=\"add\" />");
 		outputBuffer.append("<input type=\"text\" size=\"40\" name=\"pluginName\" value=\"\" />&nbsp;");
 		outputBuffer.append("<input type=\"submit\" value=\"Load plugin\" />");
 		outputBuffer.append("</form>");
+		outputBuffer.append("</div>\n");
 		outputBuffer.append("</div>\n");
 	}
 

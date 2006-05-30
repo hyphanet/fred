@@ -386,7 +386,11 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		for (int i = 0; i < initialURIs.length; i++)
 			queueURI(initialURIs[i]);
 		stopped = false;
-		startSomeRequests();
+		new Thread() {
+			public void run() {
+				startSomeRequests();
+			}
+		}.start();
 	}
 
 	/**
