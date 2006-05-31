@@ -251,12 +251,12 @@ public class FProxyToadlet extends Toadlet {
 				buf.append("<br>This is a large file, so it has not been streamed direct" +
 						" to your browser, because Freenet cannot send any data to the " +
 						"browser until it has the whole file, and this may take some time, " +
-						"and also for resource usage reasons.\n");
-				buf.append("<br>What would you like to do with it?:<ul>");
-				buf.append("<li>");
-				buf.append("<form method=\"get\" action=\"/"+key.toString(false)+"\">");
+						"and also for resource usage reasons.<br>\n");
+				buf.append("What would you like to do with it?");
+				buf.append("<ul>");
+				buf.append("<li><form method=\"get\" action=\"/"+key.toString(false)+"\">");
 				buf.append("<input type=\"hidden\" name=\"max-size\" value=\""+e.expectedSize+"\">");
-				buf.append("<input type=\"submit\" name=\"fetch\" value=\"Fetch anyway\">");
+				buf.append("<input type=\"submit\" name=\"fetch\" value=\"Fetch anyway and display file in browser\">");
 				buf.append("</form></li>");
 				buf.append("<li><form method=\"post\" action=\"/queue/\">");
 				buf.append("<input type=\"hidden\" name=\"key\" value=\""+key.toString(false)+"\">");
@@ -264,13 +264,13 @@ public class FProxyToadlet extends Toadlet {
 				buf.append("<input type=\"hidden\" name=\"persistence\" value=\"forever\">");
 				if(mime != null)
 					buf.append("<input type=\"hidden\" name=\"type\" value=\""+URLEncoder.encode(mime)+"\">");
-				buf.append("<input type=\"submit\" name=\"download\" value=\"Download to disk in background\">");
+				buf.append("<input type=\"submit\" name=\"download\" value=\"Download in background and store in downloads directory\">");
 				buf.append("</form></li>");
 				// FIXME add a queue-a-download option.
 //				buf.append("<li>Save it to disk at </li>");
 				// FIXME add return-to-referring-page
 				//buf.append("<li>Return to the referring page: ");
-				buf.append("<li>Return to the FProxy home page: <a href=\"/\">here</a>");
+				buf.append("<li>Abort and return to the FProxy home page: <a href=\"/\">here</a></li>");
 				buf.append("</ul>");
 				ctx.getPageMaker().makeTail(buf);
 				writeReply(ctx, 200, "text/html", "OK", buf.toString());
