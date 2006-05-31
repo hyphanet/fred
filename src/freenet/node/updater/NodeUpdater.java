@@ -345,7 +345,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public static NodeUpdater maybeCreate(Node node, Config config) throws Exception {
         SubConfig updaterConfig = new SubConfig("node.updater", config);
          
-        updaterConfig.register("enabled", false, 1, false, "Enable Node's updater?",
+        updaterConfig.register("enabled", true, 1, false, "Enable Node's updater?",
         		"Whether to enable the node's updater. It won't auto-update unless node.updater.autoupdate is true, it will just warn",
         		new UpdaterEnabledCallback(node));
         
