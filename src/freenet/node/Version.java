@@ -18,10 +18,10 @@ public abstract class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 758;
+	private static final int buildNumber = 759;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int lastGoodBuild = 754;
+	private static final int lastGoodBuild = 759;
 
 	public static final int buildNumber() {
 		return buildNumber;
