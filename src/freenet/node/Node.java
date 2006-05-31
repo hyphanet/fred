@@ -1957,8 +1957,12 @@ public class Node {
     	
     	if(now - lastCheckedUncontended > 1000) {
     		lastCheckedUncontended = now;
-    		if(BlockTransmitter.isUncontended())
+    		if(BlockTransmitter.isUncontended()) {
+    			Logger.minor(this, "Reporting 0 because throttle uncontended: now "+throttledPacketSendAverage.currentValue());
     			throttledPacketSendAverage.report(0);
+    			Logger.minor(this, "New average: "+throttledPacketSendAverage.currentValue());
+    		} else
+    			Logger.minor(this, "Not uncontended");
     	}
     	
     	// Round trip time

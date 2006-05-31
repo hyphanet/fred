@@ -257,6 +257,8 @@ public class BlockTransmitter {
 					
 					long nowNS = System.currentTimeMillis() * 1000 * 1000;
 					
+					Logger.minor(this, "Now="+nowNS/(1000*1000));
+					
 					long endTime = -1;
 					
 					boolean thenSend = true;
@@ -268,22 +270,31 @@ public class BlockTransmitter {
 						nowNS = System.currentTimeMillis() * 1000 * 1000;
 						
 						// Update time if necessary to avoid spurts
-						if(hardLastPacketSendTimeNSec < (nowNS - minPacketDelayNSec))
+						if(hardLastPacketSendTimeNSec < (nowNS - minPacketDelayNSec)) {
+							Logger.minor(this, "Updating hard limit counter - was "+hardLastPacketSendTimeNSec/1000);
 							hardLastPacketSendTimeNSec = nowNS - minPacketDelayNSec;
+							Logger.minor(this, "Updated hard limit counter - now "+hardLastPacketSendTimeNSec/1000);
+						}
 						
 						// Wait until the next send window
 						long newHardLastPacketSendTimeNS =
 							hardLastPacketSendTimeNSec + minPacketDelayNSec;
+						
+						Logger.minor(this, "Waiting for "+minPacketDelayNSec+" until "+newHardLastPacketSendTimeNS/1000);
 						
 						long newHardLastPacketSendTime =
 							newHardLastPacketSendTimeNS / (1000 * 1000);
 						
 						long earliestSendTime = startCycleTime + delay;
 						
+						Logger.minor(this, "Earliest time by hard limit: "+newHardLastPacketSendTime);
+						Logger.minor(this, "Earliest time by throttle:   "+earliestSendTime);
+						
 						if(earliestSendTime > newHardLastPacketSendTime) {
 							// Don't clog up other senders!
 							thenSend = false;
 							endTime = earliestSendTime;
+							Logger.minor(this, "Looping");
 						} else {
 							hardLastPacketSendTimeNSec = newHardLastPacketSendTimeNS;
 							endTime = hardLastPacketSendTimeNSec / (1000 * 1000);
@@ -298,12 +309,14 @@ public class BlockTransmitter {
 							// However, after 1 hour we forget our burst rights.
 							if(nowNS - softLastPacketSendTimeNSec > softLimitPeriodNSec) {
 								softLastPacketSendTimeNSec = nowNS - (softLimitPeriodNSec);
+								Logger.minor(this, "Updating soft limit");
 							}
 							
 							softLastPacketSendTimeNSec += minSoftDelayNSec;
 							
 							if(softLastPacketSendTimeNSec > hardLastPacketSendTimeNSec) {
 								endTime = ((hardLastPacketSendTimeNSec = softLastPacketSendTimeNSec) / (1000 * 1000));
+								Logger.minor(this, "endTime now "+endTime+" because of soft limit");
 							}
 						}
 					}
@@ -324,6 +337,7 @@ public class BlockTransmitter {
 							return true;
 						now = System.currentTimeMillis();
 					}
+					Logger.minor(this, "Completed wait at "+now);
 					
 					nowNS = now * 1000 * 1000;
 					
@@ -507,6 +521,7 @@ public class BlockTransmitter {
 			if(hardLastPacketSendTimeNSec < (nowNS - minPacketDelayNSec)) {
 				// Can send immediately!
 			} else {
+				Logger.minor(BlockTransmitter.class, "Is contended (hard limit)");
 				return false; // is contended.
 			}
 			
@@ -522,9 +537,10 @@ public class BlockTransmitter {
 				softLastPacketSendTimeNSec = nowNS - (softLimitPeriodNSec);
 			}
 			
-			softLastPacketSendTimeNSec += minSoftDelayNSec;
+			//softLastPacketSendTimeNSec += minSoftDelayNSec;
 			
-			if(softLastPacketSendTimeNSec > nowNS) {
+			if(softLastPacketSendTimeNSec + minSoftDelayNSec > nowNS) {
+				Logger.minor(BlockTransmitter.class, "Is contended (soft limit)");
 				// Can't send immediately due to soft limit.
 				return false;
 			}
