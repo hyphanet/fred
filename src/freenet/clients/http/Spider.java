@@ -58,6 +58,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 
 	// Can have many; this limit only exists to save memory.
 	private final int maxParallelRequests = 200;
+	private int maxShownURIs = 50;
 
 	private Node node;
 	private FetcherContext ctx;
@@ -257,19 +258,37 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 			context.sendReplyHeaders(301, "Redirect", responseHeaders, "text/html; charset=utf-8", 0);
 			return;
 		} else if ("list".equals(action)) {
+			String listName = request.getParam("listName", null);
 			StringBuffer responseBuffer = new StringBuffer();
 			pageMaker.makeHead(responseBuffer, "The Definitive Spider");
 			/* create copies for multi-threaded use */
-			Map runningFetches = new HashMap(runningFetchesByURI);
-			List queued = new ArrayList(queuedURIList);
-			Set visited = new HashSet(visitedURIs);
-			Set failed = new HashSet(failedURIs);
-			responseBuffer.append(createNavbar(runningFetches.size(), queued.size(), visited.size(), failed.size()));
-			responseBuffer.append(createAddBox());
-			responseBuffer.append(createList("Running Fetches", "running", runningFetches.keySet()));
-			responseBuffer.append(createList("Queued URIs", "queued", queued));
-			responseBuffer.append(createList("Visited URIs", "visited", visited));
-			responseBuffer.append(createList("Failed URIs", "failed", failed));
+			if (listName == null) {
+				Map runningFetches = new HashMap(runningFetchesByURI);
+				List queued = new ArrayList(queuedURIList);
+				Set visited = new HashSet(visitedURIs);
+				Set failed = new HashSet(failedURIs);
+				responseBuffer.append(createNavbar(runningFetches.size(), queued.size(), visited.size(), failed.size()));
+				responseBuffer.append(createAddBox());
+				responseBuffer.append(createList("Running Fetches", "running", runningFetches.keySet(), maxShownURIs));
+				responseBuffer.append(createList("Queued URIs", "queued", queued, maxShownURIs));
+				responseBuffer.append(createList("Visited URIs", "visited", visited, maxShownURIs));
+				responseBuffer.append(createList("Failed URIs", "failed", failed, maxShownURIs));
+			} else {
+				responseBuffer.append(createBackBox());
+				if ("failed".equals(listName)) {
+					Set failed = new HashSet(failedURIs);
+					responseBuffer.append(createList("Failed URIs", "failed", failed, -1));	
+				} else if ("visited".equals(listName)) {
+					Set visited = new HashSet(visitedURIs);
+					responseBuffer.append(createList("Visited URIs", "visited", visited, -1));
+				} else if ("queued".equals(listName)) {
+					List queued = new ArrayList(queuedURIList);
+					responseBuffer.append(createList("Queued URIs", "queued", queued, -1));
+				} else if ("running".equals(listName)) {
+					Map runningFetches = new HashMap(runningFetchesByURI);
+					responseBuffer.append(createList("Running Fetches", "running", runningFetches.keySet(), -1));
+				}
+			}
 			pageMaker.makeTail(responseBuffer);
 			MultiValueTable responseHeaders = new MultiValueTable();
 			byte[] responseBytes = responseBuffer.toString().getBytes("utf-8");
@@ -315,6 +334,14 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		context.writeData(responseBytes);
 	}
 	
+	private StringBuffer createBackBox() {
+		StringBuffer outputBuffer = new StringBuffer();
+		outputBuffer.append("<div class=\"infobox\">");
+		outputBuffer.append("<div class=\"infobox-content\">Return to the <a href=\"?action=list\">list of all URIs</a>.</div>");
+		outputBuffer.append("</div>\n");
+		return outputBuffer;
+	}
+	
 	private StringBuffer createAddBox() {
 		StringBuffer outputBuffer = new StringBuffer();
 		outputBuffer.append("<div class=\"infobox\">");
@@ -341,16 +368,21 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		return outputBuffer;
 	}
 
-	private StringBuffer createList(String listName, String anchorName, Collection collection) {
+	private StringBuffer createList(String listName, String anchorName, Collection collection, int maxCount) {
 		StringBuffer outputBuffer = new StringBuffer();
 		outputBuffer.append("<a name=\"").append(HTMLEncoder.encode(anchorName)).append("\"></a>");
 		outputBuffer.append("<div class=\"infobox\">");
 		outputBuffer.append("<div class=\"infobox-header\">").append(HTMLEncoder.encode(listName)).append(" (").append(collection.size()).append(")</div>\n");
 		outputBuffer.append("<div class=\"infobox-content\">");
 		Iterator collectionItems = collection.iterator();
+		int itemCount = 0;
 		while (collectionItems.hasNext()) {
 			FreenetURI uri = (FreenetURI) collectionItems.next();
 			outputBuffer.append(HTMLEncoder.encode(uri.toString())).append("<br/>\n");
+			if (itemCount++ == maxCount) {
+				outputBuffer.append("<br><a href=\"?action=list&amp;listName=").append(HTMLEncoder.encode(anchorName)).append("\">Show all&hellip;</a>");
+				break;
+			}
 		}
 		outputBuffer.append("</div>\n");
 		outputBuffer.append("</div>\n");
