@@ -1955,7 +1955,7 @@ public class Node {
     public synchronized boolean shouldRejectRequest(boolean canAcceptAnyway) {
     	long now = System.currentTimeMillis();
     	
-    	if(lastCheckedUncontended - now > 1000) {
+    	if(now - lastCheckedUncontended > 1000) {
     		lastCheckedUncontended = now;
     		if(BlockTransmitter.isUncontended())
     			throttledPacketSendAverage.report(0);
