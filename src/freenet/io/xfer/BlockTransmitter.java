@@ -493,4 +493,43 @@ public class BlockTransmitter {
 	public PeerContext getDestination() {
 		return _destination;
 	}
+
+	public static boolean isUncontended() {
+		long nowNS = System.currentTimeMillis() * 1000 * 1000;
+		
+		// Synchronize on the static lock, and update
+		synchronized(lastPacketSendTimeSync) {
+			
+			// Get the current time
+			nowNS = System.currentTimeMillis() * 1000 * 1000;
+			
+			// Update time if necessary to avoid spurts
+			if(hardLastPacketSendTimeNSec < (nowNS - minPacketDelayNSec)) {
+				// Can send immediately!
+			} else {
+				return false; // is contended.
+			}
+			
+			// What about the soft limit?
+			
+			// We can only accumulate burst traffic rights for a full period at most.
+			// If we have a period of 1 hour, and we send no traffic in the first 30 minutes,
+			// then we can use up our whole hour's quota in the next 30 minutes if we need to.
+			// We could even use our entire quota in the last 5 minutes. After that, we can
+			// only send at the limit (which may be very low), since we have no quota left.
+			// However, after 1 hour we forget our burst rights.
+			if(nowNS - softLastPacketSendTimeNSec > softLimitPeriodNSec) {
+				softLastPacketSendTimeNSec = nowNS - (softLimitPeriodNSec);
+			}
+			
+			softLastPacketSendTimeNSec += minSoftDelayNSec;
+			
+			if(softLastPacketSendTimeNSec > nowNS) {
+				// Can't send immediately due to soft limit.
+				return false;
+			}
+		}
+		
+		return true;
+	}
 }

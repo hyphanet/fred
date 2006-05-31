@@ -1950,22 +1950,30 @@ public class Node {
 
     long lastAcceptedRequest = -1;
     
-    public synchronized boolean shouldRejectRequest() {
+    long lastCheckedUncontended = -1;
+    
+    public synchronized boolean shouldRejectRequest(boolean canAcceptAnyway) {
     	long now = System.currentTimeMillis();
+    	
+    	if(lastCheckedUncontended - now > 1000) {
+    		lastCheckedUncontended = now;
+    		if(BlockTransmitter.isUncontended())
+    			throttledPacketSendAverage.report(0);
+    	}
     	
     	// Round trip time
     	double pingTime = nodePinger.averagePingTime();
     	if(pingTime > MAX_PING_TIME) {
-    		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) {
+    		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
     			Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
     			lastAcceptedRequest = now;
     			return false;
     		}
-    		Logger.minor( this, "shouldRejectRequest() == true because >MAX_PING_TIME");
+    		Logger.minor( this, "shouldRejectRequest("+canAcceptAnyway+") == true because >MAX_PING_TIME");
     		return true;
     	}
     	if(pingTime > SUB_MAX_PING_TIME) {
-    		double x = (pingTime - SUB_MAX_PING_TIME) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
+    		double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
     		if(random.nextDouble() < x) {
     			Logger.minor( this, "shouldRejectRequest() == true because >SUB_MAX_PING_TIME");
     			return true;
@@ -1977,7 +1985,7 @@ public class Node {
     	double bwlimitDelayTime = this.throttledPacketSendAverage.currentValue();
     	Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
     	if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
-    		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) {
+    		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
     			Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
     			lastAcceptedRequest = now;
     			return false;
@@ -1986,12 +1994,14 @@ public class Node {
     		return true;
     	}
     	if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
-    		double x = (pingTime - SUB_MAX_THROTTLE_DELAY) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
+    		double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
     		if(random.nextDouble() < x) {
-    			Logger.minor( this, "shouldRejectRequest() == true because >SUB_MAX_THROTTLE_DELAY");
+    			Logger.minor( this, "shouldRejectRequest("+canAcceptAnyway+") == true because >SUB_MAX_THROTTLE_DELAY");
     			return true;
     		}
     	}
+    	
+    	Logger.minor(this, "Accepting request");
     	
     	lastAcceptedRequest = now;
     	return false;
