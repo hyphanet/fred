@@ -1965,15 +1965,16 @@ public class Node {
     	}
     	if(pingTime > SUB_MAX_PING_TIME) {
     		double x = (pingTime - SUB_MAX_PING_TIME) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
-    		if(random.nextDouble() < x)
+    		if(random.nextDouble() < x) {
     			Logger.minor( this, "shouldRejectRequest() == true because >SUB_MAX_PING_TIME");
     			return true;
+		}
     	}
     	
     	// Bandwidth limited packets
     	
     	double bwlimitDelayTime = this.throttledPacketSendAverage.currentValue();
-    	if(pingTime > MAX_THROTTLE_DELAY) {
+    	if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
     		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) {
     			lastAcceptedRequest = now;
     			return false;
@@ -1983,9 +1984,10 @@ public class Node {
     	}
     	if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
     		double x = (pingTime - SUB_MAX_THROTTLE_DELAY) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
-    		if(random.nextDouble() < x)
+    		if(random.nextDouble() < x) {
     			Logger.minor( this, "shouldRejectRequest() == true because >SUB_MAX_THROTTLE_DELAY");
     			return true;
+		}
     	}
     	
     	lastAcceptedRequest = now;
