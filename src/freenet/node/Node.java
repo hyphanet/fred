@@ -1968,7 +1968,7 @@ public class Node {
     		if(random.nextDouble() < x) {
     			Logger.minor( this, "shouldRejectRequest() == true because >SUB_MAX_PING_TIME");
     			return true;
-		}
+    		}
     	}
     	
     	// Bandwidth limited packets
@@ -1987,7 +1987,7 @@ public class Node {
     		if(random.nextDouble() < x) {
     			Logger.minor( this, "shouldRejectRequest() == true because >SUB_MAX_THROTTLE_DELAY");
     			return true;
-		}
+    		}
     	}
     	
     	lastAcceptedRequest = now;
