@@ -410,10 +410,10 @@ public class Node {
     public static final long MAX_PING_TIME = 1000;
     /** Maximum throttled packet delay. If the throttled packet delay is greater
      * than this, reject all packets. */
-    public static final long MAX_THROTTLE_DELAY = 1000;
+    public static final long MAX_THROTTLE_DELAY = 2000;
     /** If the throttled packet delay is less than this, reject no packets; if it's
      * between the two, reject some packets. */
-    public static final long SUB_MAX_THROTTLE_DELAY = 2000;
+    public static final long SUB_MAX_THROTTLE_DELAY = 1000;
     
     /** Accept one request every 10 seconds regardless, to ensure we update the
      * block send time.
@@ -1957,6 +1957,7 @@ public class Node {
     	double pingTime = nodePinger.averagePingTime();
     	if(pingTime > MAX_PING_TIME) {
     		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) {
+    			Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
     			lastAcceptedRequest = now;
     			return false;
     		}
@@ -1974,8 +1975,10 @@ public class Node {
     	// Bandwidth limited packets
     	
     	double bwlimitDelayTime = this.throttledPacketSendAverage.currentValue();
+    	Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
     	if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
     		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) {
+    			Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
     			lastAcceptedRequest = now;
     			return false;
     		}
