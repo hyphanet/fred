@@ -149,6 +149,9 @@ public class PageMaker {
 			if (!themes.contains("clean")) {
 				themes.add("clean");
 			}
+			if (!themes.contains("greyandblue")) {
+				themes.add("grayandblue");
+			}
 		}
 		return themes;
 	}

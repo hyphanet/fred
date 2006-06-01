@@ -1,0 +1,435 @@
+
+/* [edward@rnahost.com] */
+
+/* overall settings */
+
+p, span, div, td, th, li, h1, h2, h3, h4, h5 {
+	font-family: Verdana;
+	font-weight: normal;
+	font-size: 10pt;
+	line-height: 22px;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+th {
+	font-weight: bold;
+	background-color: #e8e8e8;
+}
+
+th, td {
+	margin: 0;
+	padding: 5px;
+	border:1px dotted #676767;
+}
+
+.bluebutton {
+	background-image: url(bluebuttonbg_larger1.gif);
+	background-repeat: no-repeat;
+	font-family: verdana;
+	font-size: 8pt;
+	align: center;
+	border: solid 0 #FFFFFF;
+	color: #000000;
+	margin: 0px;
+	width: 140px;
+	height: 21px;
+    	padding-top: 1px;
+    	padding-bottom: 3px;
+    	vertical-align: middle;
+}
+
+pre, textarea {
+	font-family: Courier;
+	font-weight: normal;
+	font-size: 8pt;
+}
+
+pre#reference {
+	font-size: 8pt;
+	overflow: auto;
+}
+
+table, pre {
+	margin: 0 0 5px 0;
+	padding: 0;
+}
+
+form {
+	margin: 0;
+	padding: 0;
+}
+
+/* body and page header */
+
+body {
+	margin: 0;
+	padding: 0;
+	background-color: #ffffff;
+}
+
+#page {
+}
+
+/* page's topbar */
+
+#topbar {
+	margin: 0;
+	padding: 5px;
+	min-height: 50px;
+	background-image: url(logo.png);
+	background-repeat: no-repeat;
+	background-position: 200px 8px;
+}
+
+/* Top Title Area */
+#topbar h1 {
+	margin: 0;
+	padding: 20px 0 0 0;
+	text-align: center;
+	font-weight:900;
+	color:#ccc;
+	font-size: 28px;
+}
+
+
+/* navigation */
+
+#navbar {
+	margin: 5px 5px 10px 10px;
+	position: absolute;
+	width: 135px;
+	border:1px dotted #676767;
+	background-color:#eee;
+	padding: 10px;
+}
+
+#navbar ul {
+	margin: 0 0 0 10px;
+	padding: 0;
+}
+
+#navbar li {
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+}
+
+#navbar a {
+	font-weight: bold;
+	color: #0089e1;
+	text-decoration: none;
+}
+
+#navbar a:hover {
+	color: #09c;
+}
+
+/* alerts */
+
+.alert-error {
+	color: darkred;
+}
+
+.alert-warning {
+	color: blue;
+}
+
+.alert-minor {
+	color: green;
+}
+
+/* infoboxes */
+
+div.infobox {
+	margin: 0 0 5px 0;
+	padding: 10px;
+	background-color: #f0f0f0;
+	border:1px dotted #676767;
+}
+
+div.infobox div.infobox-header {
+	color: #000000;
+	margin: -10px -10px 10px -10px;
+	padding: 10px 35px 10px 10px;
+	border-bottom: 1px dotted #a0a0a0;
+	font-family: verdana;
+	font-weight: bold;
+	font-size: 10pt;
+	background-color: #eee;
+	background-repeat: no-repeat;
+	background-position: right;
+}
+
+
+div.infobox-information div.infobox-header {
+	background-color: #eee;
+	background-image: url(information.png);
+}
+
+div.infobox-warning div.infobox-header {
+	background-color: #eee;
+	background-image: url(warning.png);
+}
+
+div.infobox-alert {
+	background-color: #f0e8e8;
+}
+
+div.infobox-alert div.infobox-header {
+	background-color: #ffd0d0;
+	background-image: url(alert.png);
+}
+
+div.infobox-error {
+	background-color: #f0e8e8;
+}
+
+div.infobox-error div.infobox-header {
+	background-color: #ffd0d0;
+	background-image: url(error.png);
+}
+
+div.infobox-query div.infobox-header {
+	background-color: #f0f0e8;
+	background-image: url(query.png);
+}
+
+div.infobox-success div.infobox-header {
+	background-color: #e8f0e8;
+	background-image: url(success.png);
+}
+
+/* content */
+
+#content {
+	margin: 5px 5px 5px 0;
+	padding: 0;
+	position: absolute;
+	left: 177px;
+}
+
+a, a:link {
+	color: #09c;
+	text-decoration: underline;
+}
+
+a:visited { 
+	color: #07a;
+	text-decoration: underline;
+}
+
+a:hover {
+	background-color: #eee;
+	text-decoration: underline;
+}
+
+.interfacelink {
+	color: #000000;
+	text-decoration: underline;
+}
+
+#activity {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* plugins page */
+
+table.plugins th, table.plugins td {
+	font-size: 8pt;
+}
+
+table.plugins span {
+	font-weight: bold;
+	font-size: 8pt;
+}
+
+table.plugins form {
+	display: inline;
+}
+
+/* configuration page */
+
+ul.config {
+	margin: 0 0 5px 0;
+	padding: 0;
+	border-top: 1px solid #d0d0d0;
+	border-right: 1px solid #d0d0d0;
+	border-left: 1px solid #d0d0d0;
+}
+
+ul.config li {
+	margin: 0;
+	padding: 15px 10px 15px 10px;
+	list-style: none;
+	text-align: left;
+	border-bottom: 1px solid #d0d0d0;
+}
+
+ul.config span.configprefix {
+	margin: 0;
+	padding: 10px 35px 10px 10px;
+	display: block;
+	border-bottom: 1px dotted #a0a0a0;
+	font-weight: bold;
+	font-size: 16pt;
+	font-variant: small-caps;
+	background-color: #e8e8e8;
+}
+
+ul.config span.configshortdesc {
+	text-align: left;
+	font-weight: bold;
+	float: left;
+	width: 30%;
+}
+
+ul.config span.configlongdesc {
+	display: block;
+	text-align: left;
+}
+
+ul.config input[type=text] {
+	width: 70%;
+}
+
+/* darknet page */
+
+table.darknet_connections th, table.darknet_connections td {
+	font-size: 8pt;
+}
+
+table.darknet_connections span {
+	font-weight: bold;
+	font-size: 8pt;
+}
+
+table.darknet_connections span.peer_connected {
+	color: #008000;
+}
+
+table.darknet_connections span.peer_backedoff {
+	color: #ff0000;
+}
+
+table.darknet_connections span.peer_too_new {
+	color: #d0a0a0;
+}
+
+table.darknet_connections span.peer_too_old {
+	color: #d0a0d0;
+}
+
+table.darknet_connections span.peer_disconnected {
+	color: #7F7F7F;
+}
+
+table.darknet_connections span.peer_version_problem {
+	color: #0089e1;
+}
+
+tr.messagetypes {
+	text-align: center;
+}
+
+table.sentmessagetypes {
+	display: inline;
+}
+
+table.receivedmessagetypes {
+	display: inline;
+}
+
+table.sentmessagetypes th, table.sentmessagetypes td, table.receivedmessagetypes th, table.receivedmessagetypes td {
+	font-size: 7pt;
+}
+
+/* queue page */
+
+table.queue th, table.queue td {
+	font-size: 8pt;
+}
+
+div.queue_tabletitle {
+	margin: 0;
+	padding: 10px 0 10px 0;
+	font-size: 10pt;
+}
+
+table.queue span {
+	font-size: 8pt;
+}
+
+table.queue span.failure_reason_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.failure_reason_is {
+}
+
+table.queue span.progress_fraction_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.progress_fraction_not_finalized {
+}
+
+table.queue span.progress_fraction_finalized {
+	color: #008000;
+}
+
+table.queue span.number_of_files {
+}
+
+table.queue span.number_of_files {
+}
+
+table.queue span.filename_direct {
+	color: #d0d0d0;
+}
+
+table.queue span.filename_none {
+	color: #d0d0d0;
+}
+
+table.queue span.filename_is {
+}
+
+table.queue span.identifier_with_uri {
+}
+
+table.queue span.persistence_none {
+}
+
+table.queue span.persistence_reboot {
+	color: #0000ff;
+}
+
+table.queue span.persistence_forever {
+	color: #00b000;
+}
+
+table.queue span.mimetype_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.mimetype_is {
+}
+
+table.queue span.filesize_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.filesize_is {
+}
+
+table.queue span.key_unknown {
+	color: #d0d0d0;
+}
+
+table.queue span.key_is {
+}
