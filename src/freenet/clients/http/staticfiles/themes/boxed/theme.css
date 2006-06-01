@@ -1,0 +1,141 @@
+
+body {
+	font-family: tahoma;
+	font-size: 11px;
+
+	width: 750px;
+	margin: 15px auto;
+}
+
+#topbar {
+	background-image: url("logo.png");
+	background-position: 10px 4px;
+	background-repeat: no-repeat;
+	height: 41px;
+}
+
+a {
+	color: #00f;
+	text-decoration: none;
+}
+
+a:hover {
+	padding: 1px 4px;
+	margin: -1px -4px;
+	background-color: #888;
+}
+
+.infobox {
+	display: block;
+	margin-top: 20px;
+	margin-bottom: 10px;
+}
+
+.infobox-header {
+	display: inline;
+	margin-left: 20px;
+	border: solid 1px #000;
+	padding: 2px 8px;
+
+	background-color: #aaa;
+	position: relative;
+	top: -2px;
+
+	font-family: verdana;
+	font-weight: bold;
+	font-size: 11px;
+
+	z-index: 5;
+}
+
+.infobox-error .infobox-header {
+	background-color: #f00;
+	color: #ff0;
+	font-weigth: bold;
+}
+
+.infobox-error .infobox-content, .infobox-alert .infobox-content {
+	background-color: #fcc;
+}
+
+.infobox-alert .infobox-header {
+	color: #f00;
+}
+
+#topbar, #navbar, .infobox-content, ul.config {
+	border: solid 1px #000;
+	padding: 10px 13px;
+
+	background-color: #ddd;
+	overflow: auto;
+}
+
+#navbar {
+	padding-top: 1px;
+	padding-bottom: 1px;
+	border-top: none;
+	text-align: center;
+	font-family: verdana;
+	font-weight: bold;
+}
+
+#topbar h1 {
+	margin-bottom: 0px;
+	margin-top: 0px;
+	text-align: center;
+}
+
+#navbar ul, .navbar ul {
+	display: inline;
+	text-align: center;
+	padding: 0px;
+}
+
+#navbar li, .navbar li {
+	display: inline;
+	padding: 0px 5px;
+}
+
+ul.config span.configprefix {
+	font-size: larger;
+}
+
+ul.config span.configprefix:before {
+	content: "Section: ";
+	font-weight: bold;
+}
+
+ul.config {
+	list-style-type: none;
+}
+
+li .configshortdesc {
+	margin-top: 8px;
+}
+
+li .config {
+	padding: 1px 4px;
+}
+
+li .configlongdesc {
+	display: block;
+	margin-bottom: 1ex;
+}
+
+.peer_connected {
+	color: #080;
+}
+
+.peer_backedoff {
+	color: #840;
+}
+
+.peer_disconnected {
+	color: #444;
+}
+
+.peer_version_problem, .peer_too_new, .peer_too_old {
+	color: #f00;
+}
+
+/* vim: set ts=4: sw=4: */
