@@ -75,6 +75,67 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		node.alerts.toSummaryHtml(buf);
 		
+		/* node status values */
+		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
+		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
+		
+		/* gather connection statistics */
+		int numberOfConnected = 0;
+		int numberOfBackedOff = 0;
+		int numberOfTooNew = 0;
+		int numberOfTooOld = 0;
+		int numberOfDisconnected = 0;
+		for (int peerIndex = 0, peerCount = peerNodes.length; peerIndex < peerCount; peerIndex++) {
+			int peerStatus = peerNodes[peerIndex].getPeerNodeStatus();
+			if (peerStatus == Node.PEER_NODE_STATUS_CONNECTED) {
+				numberOfConnected++;
+			} else if (peerStatus == Node.PEER_NODE_STATUS_DISCONNECTED) {
+				numberOfDisconnected++;
+			} else if (peerStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+				numberOfBackedOff++;
+			} else if (peerStatus == Node.PEER_NODE_STATUS_TOO_NEW) {
+				numberOfTooNew++;
+			} else if (peerStatus == Node.PEER_NODE_STATUS_TOO_OLD) {
+				numberOfTooOld++;
+			}
+		}
+		
+		buf.append("<table class=\"column\" width=\"100%\"><tr valign=\"top\"><td class=\"first\" width=\"50%\">");
+		
+		/* node status overview box */
+		buf.append("<div class=\"infobox\">");
+		buf.append("<div class=\"infobox-header\">Node status overview</div>");
+		buf.append("<div class=\"infobox-content\">");
+		buf.append("bwlimitDelayTime: " + bwlimitDelayTime + "ms<br/>");
+		buf.append("nodeAveragePingTime: " + nodeAveragePingTime + "ms<br/>");
+		buf.append("</div>");
+		buf.append("</div>\n");
+		
+		buf.append("</td><td class=\"last\" width=\"50%\">");
+		
+		buf.append("<div class=\"infobox\">");
+		buf.append("<div class=\"infobox-header\">Connection statistics</div>");
+		buf.append("<div class=\"infobox-content\">");
+		if (numberOfConnected > 0) {
+			buf.append("<span class=\"peer_connected\">Connected: " + numberOfConnected + "</span><br/>");
+		}
+		if (numberOfDisconnected > 0) {
+			buf.append("<span class=\"peer_disconnected\">Disconnected: " + numberOfDisconnected + "</span><br/>");
+		}
+		if (numberOfBackedOff > 0) {
+			buf.append("<span class=\"peer_backedoff\">Backed off: " + numberOfBackedOff + "</span><br/>");
+		}
+		if (numberOfTooNew > 0) {
+			buf.append("<span class=\"peer_too_new\">Too new: " + numberOfTooNew + "</span><br/>");
+		}
+		if (numberOfTooOld > 0) {
+			buf.append("<span class=\"peer_too_old\">Too old: " + numberOfTooOld + "</span><br/>");
+		}
+		buf.append("</div>");
+		buf.append("</div>\n");
+		
+		buf.append("</td></tr></table>\n");
+		
 		buf.append("<div class=\"infobox infobox-normal\">\n");
 		buf.append("<div class=\"infobox-header\">\n");
 		buf.append("My Connections");
@@ -85,10 +146,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
-		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
-		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
-		buf.append("bwlimitDelayTime: "+bwlimitDelayTime+"ms<br>\n");
-		buf.append("nodeAveragePingTime: "+nodeAveragePingTime+"ms<br>\n");
 		StringBuffer buf2 = new StringBuffer(1024);
 		buf2.append("<table class=\"darknet_connections\">\n");
 		buf2.append("<tr><th></th><th>Status</th><th>Name</th><th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th><span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th></tr>\n");
@@ -100,11 +157,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf.append(buf2);
 		}
 		else {
-			int numberOfConnected = 0;
-			int numberOfBackedOff = 0;
-			int numberOfTooNew = 0;
-			int numberOfTooOld = 0;
-			int numberOfDisconnected = 0;
 			
 			// Create array
 			Object[][] rows = new Object[peerNodes.length][];
@@ -166,23 +218,18 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				int x = ((Integer) row[2]).intValue();
 				if(x == Node.PEER_NODE_STATUS_CONNECTED) {
 					row[2] = "<span class=\"peer_connected\">CONNECTED</span>";
-					numberOfConnected++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
 					row[2] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
-					numberOfBackedOff++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_TOO_NEW) {
 					row[2] = "<span class=\"peer_too_new\">TOO NEW</span>";
-					numberOfTooNew++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_TOO_OLD) {
 					row[2] = "<span class=\"peer_too_old\">TOO OLD</span>";
-					numberOfTooOld++;
 				}
 				else if(x == Node.PEER_NODE_STATUS_DISCONNECTED) {
 					row[2] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
-					numberOfDisconnected++;
 				}
 			}
 			
@@ -229,40 +276,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			buf2.append("</table>\n");
-			//
-			buf.append("<table class=\"darknet_connections\">\n");
-			buf.append("<tr><td>");
-			boolean separatorNeeded = false;
-			if (numberOfConnected != 0) {
-				buf.append("<span class=\"peer_connected\">CONNECTED: " + numberOfConnected + "</span>");
-				separatorNeeded = true;
-			}
-			if (numberOfBackedOff != 0) {
-				if (separatorNeeded)
-					buf.append(" | ");
-				buf.append("<span class=\"peer_backedoff\">BACKED OFF: " + numberOfBackedOff + "</span>");
-				separatorNeeded = true;
-			}
-			if (numberOfTooNew != 0) {
-				if (separatorNeeded)
-					buf.append(" | ");
-				buf.append("<span class=\"peer_too_new\">TOO NEW: " + numberOfTooNew + "</span>");
-				separatorNeeded = true;
-			}
-			if (numberOfTooOld != 0) {
-				if (separatorNeeded)
-					buf.append(" | ");
-				buf.append("<span class=\"peer_too_old\">TOO OLD: " + numberOfTooOld + "</span>");
-				separatorNeeded = true;
-			}
-			if (numberOfDisconnected != 0) {
-				if (separatorNeeded)
-					buf.append(" | ");
-				buf.append("<span class=\"peer_disconnected\">DISCONNECTED: " + numberOfDisconnected + "</span>");
-				separatorNeeded = true;
-			}
-			buf.append("</td></tr>\n");
-			buf.append("</table>\n");
 			//
 			buf.append(buf2);
 			//

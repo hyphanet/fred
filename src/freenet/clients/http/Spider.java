@@ -358,7 +358,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private StringBuffer createNavbar(int running, int queued, int visited, int failed) {
 		StringBuffer outputBuffer = new StringBuffer();
 		outputBuffer.append("<div class=\"infobox navbar\">");
-		outputBuffer.append("<div class=\"infobox-content\">Page navigation</div>");
+		outputBuffer.append("<div class=\"infobox-header\">Page navigation</div>");
 		outputBuffer.append("<div class=\"infobox-content\"><ul>");
 		outputBuffer.append("<li><a href=\"#running\">Running (").append(running).append(")</a></li>");
 		outputBuffer.append("<li><a href=\"#queued\">Queued (").append(queued).append(")</a></li>");

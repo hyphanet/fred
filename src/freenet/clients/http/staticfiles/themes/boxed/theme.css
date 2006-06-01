@@ -138,4 +138,23 @@ li .configlongdesc {
 	color: #f00;
 }
 
+table.column {
+	table-layout: fixed;
+	width: 100%;
+	border-spacing: 0px;
+}
+
+table.column tr td {
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+table.column tr td.first {
+	padding-left: 0px;
+}
+
+table.column tr td.last {
+	padding-right: 0px;
+}
+
 /* vim: set ts=4: sw=4: */
