@@ -172,7 +172,7 @@ public class SplitFileFetcher implements ClientGetState {
 
 	public void segmentFinished(SplitFileFetcherSegment segment) {
 		Logger.minor(this, "Finished segment: "+segment);
-		boolean alreadyFinished = false;
+		boolean finish = false;
 		synchronized(this) {
 			boolean allDone = true;
 			for(int i=0;i<segments.length;i++)
@@ -183,15 +183,14 @@ public class SplitFileFetcher implements ClientGetState {
 			if(allDone) {
 				if(allSegmentsFinished) {
 					Logger.error(this, "Was already finished! (segmentFinished("+segment+")");
-					alreadyFinished = true;
 				} else {
 					allSegmentsFinished = true;
+					finish = true;
 				}
-			}
+			} 
 			notifyAll();
 		}
-		if(!alreadyFinished)
-			finish();
+		if(finish) finish();
 	}
 
 	private void finish() {
