@@ -303,7 +303,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("Testnet mode!\n");
 			buf.append("</div>\n");
 			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("This node runs in testnet node. This WILL seriously jeopardize your anonymity!\n");
+			buf.append("This node runs in testnet mode. This WILL seriously jeopardize your anonymity!\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
 		}
