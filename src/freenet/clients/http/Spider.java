@@ -57,7 +57,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private final HashMap urisByWord = new HashMap();
 
 	// Can have many; this limit only exists to save memory.
-	private final int maxParallelRequests = 200;
+	private final int maxParallelRequests = 20;
 	private int maxShownURIs = 50;
 
 	private Node node;
@@ -418,11 +418,13 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		for (int i = 0; i < initialURIs.length; i++)
 			queueURI(initialURIs[i]);
 		stopped = false;
-		new Thread() {
+		Thread starterThread = new Thread("Spider Plugin Starter") {
 			public void run() {
 				startSomeRequests();
 			}
-		}.start();
+		};
+		starterThread.setDaemon(true);
+		starterThread.start();
 	}
 
 	/**
