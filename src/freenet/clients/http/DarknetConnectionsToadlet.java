@@ -89,14 +89,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			int peerStatus = peerNodes[peerIndex].getPeerNodeStatus();
 			if (peerStatus == Node.PEER_NODE_STATUS_CONNECTED) {
 				numberOfConnected++;
-			} else if (peerStatus == Node.PEER_NODE_STATUS_DISCONNECTED) {
-				numberOfDisconnected++;
 			} else if (peerStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
 				numberOfBackedOff++;
 			} else if (peerStatus == Node.PEER_NODE_STATUS_TOO_NEW) {
 				numberOfTooNew++;
 			} else if (peerStatus == Node.PEER_NODE_STATUS_TOO_OLD) {
 				numberOfTooOld++;
+			} else if (peerStatus == Node.PEER_NODE_STATUS_DISCONNECTED) {
+				numberOfDisconnected++;
 			}
 		}
 		
@@ -119,9 +119,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if (numberOfConnected > 0) {
 			buf.append("<span class=\"peer_connected\">Connected: " + numberOfConnected + "</span><br/>");
 		}
-		if (numberOfDisconnected > 0) {
-			buf.append("<span class=\"peer_disconnected\">Disconnected: " + numberOfDisconnected + "</span><br/>");
-		}
 		if (numberOfBackedOff > 0) {
 			buf.append("<span class=\"peer_backedoff\">Backed off: " + numberOfBackedOff + "</span><br/>");
 		}
@@ -130,6 +127,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		if (numberOfTooOld > 0) {
 			buf.append("<span class=\"peer_too_old\">Too old: " + numberOfTooOld + "</span><br/>");
+		}
+		if (numberOfDisconnected > 0) {
+			buf.append("<span class=\"peer_disconnected\">Disconnected: " + numberOfDisconnected + "</span><br/>");
 		}
 		buf.append("</div>");
 		buf.append("</div>\n");
