@@ -84,6 +84,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		// big enough ?
 		ctxRevocation.maxOutputLength = 4096;
 		ctxRevocation.maxTempLength = 4096;
+		ctxRevocation.maxSplitfileBlockRetries = -1; // if we find content, try forever to get it.
+		ctxRevocation.maxNonSplitfileRetries = 0; // but return quickly normally
 		
 		try{		
 			USK myUsk=USK.create(URI);
@@ -113,10 +115,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}catch (Exception e){
 				
 			}
-			System.out.println("Found "+availableVersion);
-			Logger.normal(this, "Found a new version! (" + availableVersion + ", setting up a new UpdatedVersionAviableUserAlert");
-			alert.set(availableVersion);
-			alert.isValid(true);		
 			this.isRunning=true;
 		}
 	}
@@ -133,22 +131,19 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		isRunning=false;
 		
 		//TODO maybe a UpdateInProgress alert ?
-		if(isAutoUpdateAllowed){
-			Logger.normal(this,"Starting the update process");
-//			We fetch it
-			try{
-				if(cg==null||cg.isCancelled()){
-					cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
-							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
-							this, new ArrayBucket());
-				}
-				cg.start();
-				isFetching = true;
-			}catch (Exception e) {
-				Logger.error(this, "Error while starting the fetching");
+		Logger.normal(this,"Starting the update process");
+		System.err.println("Starting the update process: found the update, now fetching it.");
+//		We fetch it
+		try{
+			if(cg==null||cg.isCancelled()){
+				cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
+						URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
+						this, new ArrayBucket());
 			}
-		}else{
-			Logger.normal(this,"Not starting the update process as it's not allowed");
+			cg.start();
+			isFetching = true;
+		}catch (Exception e) {
+			Logger.error(this, "Error while starting the fetching");
 		}
 	}
 	
@@ -157,14 +152,19 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	 * Must run on its own thread.
 	 */
 	public synchronized void Update(){
-		if((result == null) || !isAutoUpdateAllowed || hasBeenBlown)
+		Logger.minor(this, "Update() called");
+		if((result == null) || hasBeenBlown) {
+			Logger.minor(this, "Returning: result="+result+", isAutoUpdateAllowed="+isAutoUpdateAllowed+", hasBeenBlown="+hasBeenBlown);
 			return;
+		}
 
 		this.revocationDNFCounter = 0;
 		this.finalCheck = true;
 		
+		System.err.println("Searching for revocation key");
 		this.queueFetchRevocation(100);
 		while(revocationDNFCounter < 3) {
+			System.err.println("Revocation counter: "+revocationDNFCounter);
 			if(this.hasBeenBlown) {
 				Logger.error(this, "The revocation key has been found on the network : blocking auto-update");
 				return;
@@ -175,7 +175,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				// Ignore
 			}
 		}
-		
+
+		System.err.println("Update in progress");
 		Logger.normal(this, "Update in progress");
 		try{
 			ArrayBucket bucket = (ArrayBucket) result.asBucket();
@@ -215,10 +216,15 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		// TODO ensure it works
 		if(!state.getURI().equals(revocationURI)){
+			System.out.println("Found "+availableVersion);
+			Logger.normal(this, "Found a new version! (" + availableVersion + ", setting up a new UpdatedVersionAviableUserAlert");
+			alert.set(availableVersion);
+			alert.isValid(true);		
 			synchronized(this){
 				this.cg = state;
 				this.result = result;
-				scheduleUpdate();
+				if(this.isAutoUpdateAllowed)
+					scheduleUpdate();
 			}
 		}else{
 			// The key has been blown !
@@ -275,7 +281,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 			public void run() {
 				try {
-					ClientGetter cg = new ClientGetter(NodeUpdater.this, node.chkFetchScheduler, node.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.UPDATE_PRIORITY_CLASS, NodeUpdater.this, null);
+					// We've got the data, so speed things up a bit.
+					ClientGetter cg = new ClientGetter(NodeUpdater.this, node.chkFetchScheduler, node.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, NodeUpdater.this, null);
 					cg.start();
 				} catch (FetchException e) {
 					Logger.error(this, "Not able to start the revocation fetcher.");
