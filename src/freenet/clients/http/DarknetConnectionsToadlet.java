@@ -111,7 +111,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>");
 		buf.append("</div>\n");
 		
-		buf.append("</td><td class=\"last\"");
+		buf.append("</td><td class=\"last\">");
 		
 		buf.append("<div class=\"infobox\">");
 		buf.append("<div class=\"infobox-header\">Connection statistics</div>");

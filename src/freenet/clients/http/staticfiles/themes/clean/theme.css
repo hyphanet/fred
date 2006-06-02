@@ -269,32 +269,40 @@ table.darknet_connections th, table.darknet_connections td {
 	font-size: 8pt;
 }
 
-table.darknet_connections span {
+table.column td {
+	vertical-align: top;
+}
+
+table.darknet_connections span, table.column span {
 	font-weight: bold;
 	font-size: 8pt;
 }
 
-table.darknet_connections span.peer_connected {
+table.column span {
+	text-transform: uppercase;
+}
+
+span.peer_connected {
 	color: #008000;
 }
 
-table.darknet_connections span.peer_backedoff {
+span.peer_backedoff {
 	color: #ff0000;
 }
 
-table.darknet_connections span.peer_too_new {
+span.peer_too_new {
 	color: #d0a0a0;
 }
 
-table.darknet_connections span.peer_too_old {
+span.peer_too_old {
 	color: #d0a0d0;
 }
 
-table.darknet_connections span.peer_disconnected {
+span.peer_disconnected {
 	color: #d0d0d0;
 }
 
-table.darknet_connections span.peer_version_problem {
+span.peer_version_problem {
 	color: #d07070;
 }
 
