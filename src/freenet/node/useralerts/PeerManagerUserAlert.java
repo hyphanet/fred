@@ -40,7 +40,7 @@ public class PeerManagerUserAlert implements UserAlert {
 				s += ", but since this is a testnet node, we suggest that you " + end + ".";
 			else
 				s += ". You could " + end + ", but remember that you are vulnerable to " +
-				"those you are directly connected to. (This is especially true in this early alpha of Freenet 0.7...)";
+				"those you are directly connected to. (This is especially true in this early alpha of Freenet 0.7...)<br/>BE SURE THAT THE OTHER PERSON HAS ADDED YOUR REFERENCE, TOO, AS ONE-WAY CONNECTIONS WON'T WORK!";
 		}else if(peers-conns >= 20){ 
 			s = "This node has too many disconnected peers : it will have a negative impact on your performance! Consider \"cleaning up\" your peer list.";
 		}else if(conns == 0) {
