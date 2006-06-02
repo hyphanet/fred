@@ -79,6 +79,24 @@ public class WelcomeToadlet extends Toadlet {
 			Logger.normal(this, "Node is restarting");
 			node.getNodeStarter().restart();
 			return;
+		}else if(request.getParam("updateconfirm").length() > 0){
+			// false for no navigation bars, because that would be very silly
+			ctx.getPageMaker().makeHead(buf, "Node Updating", false);
+			buf.append("<div class=\"infobox infobox-information\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("The Freenet node is beeing updated and will self-restart\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("The restart process might take up to 3 minutes. <br>");
+			buf.append("Thank you for using Freenet\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+			
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			Logger.normal(this, "Node is updating/restarting");
+			node.getNodeUpdater().Update();
+			return;
 		}else if (request.getParam("restart").length() > 0) {
 			ctx.getPageMaker().makeHead(buf, "Node Restart");
 			buf.append("<div class=\"infobox infobox-query\">\n");
@@ -90,6 +108,23 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("<form action=\"/\" method=\"post\">\n");
 			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
 			buf.append("<input type=\"submit\" name=\"restartconfirm\" value=\"Restart\" />\n");
+			buf.append("</form>\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
+		}else if (request.getParam("update").length() > 0) {
+			ctx.getPageMaker().makeHead(buf, "Node Update");
+			buf.append("<div class=\"infobox infobox-query\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("Update the node?\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("Are you sure you wish to update your Freenet node?\n");
+			buf.append("<form action=\"/\" method=\"post\">\n");
+			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
+			buf.append("<input type=\"submit\" name=\"updateconfirm\" value=\"Restart\" />\n");
 			buf.append("</form>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");

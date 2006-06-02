@@ -151,6 +151,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("CONNECT:\r\n<noderef including an End on a line by itself> - enter a noderef directly.\r\n");
         sb.append("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port or name\r\n");
         sb.append("NAME:<new node name> - change the node's name.\r\n");
+        sb.append("UPDATE ask the node to self-update if possible. \r\n");
 //        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\r\n");
 //        sb.append("SAY:<text> - send text to the last created/pushed stream\r\n");
         sb.append("STATUS - display some status information on the node including its reference and connections.\r\n");
@@ -298,6 +299,7 @@ public class TextModeClientInterface implements Runnable {
             		outsb.append("Permanent redirect: "+e.newURI+"\r\n");
 			}
     } else if(uline.startsWith("UPDATE")) {
+    		outsb.append("starting the update process");
     		n.getNodeUpdater().Update();
     		return false;
     }else if(uline.startsWith("BLOW")) {

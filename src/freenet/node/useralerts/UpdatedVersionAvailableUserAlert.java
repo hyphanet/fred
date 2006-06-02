@@ -1,7 +1,5 @@
 package freenet.node.useralerts;
 
-import freenet.node.Node;
-
 public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	private boolean isValid;
 	private int version;
@@ -25,9 +23,10 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 
 	public String getText() {
 		return "It seems that your node isn't running the latest version of the software. "+
-		"Updating to "+version+" is advised.";
+		"Updating to "+version+" is advised. <form action=\"/\" method=\"post\">"+
+		"<input type=\"submit\" name=\"update\" value=\"Update Now\" /></form>";
 	}
-
+	
 	public short getPriorityClass() {
 		return UserAlert.MINOR;
 	}
