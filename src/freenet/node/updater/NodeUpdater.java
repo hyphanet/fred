@@ -263,15 +263,15 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					boolean stillSucceeded = false;
 					while((line = br.readLine()) != null) {
 						if(line.equals("wrapper.java.classpath.1="+fRunning.getName())) {
-							bw.write("wrapper.java.classpath.1="+fNew.getName());
+							bw.write("wrapper.java.classpath.1="+fNew.getName()+"\n");
 							succeeded = true;
 						} else if(line.equals("wrapper.java.classpath.2="+fRunning.getName())) {
-							bw.write("wrapper.java.classpath.2="+fNew.getName());
+							bw.write("wrapper.java.classpath.2="+fNew.getName()+"\n");
 							succeeded = true;
 						} else {
 							if(line.equals("wrapper.restart.reload_configuration=TRUE"))
 								stillSucceeded = true;
-							bw.write(line);
+							bw.write(line+"\n");
 						}
 					}
 					bw.close();
