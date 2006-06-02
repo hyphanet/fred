@@ -12,7 +12,6 @@ public class DNSRequester implements Runnable {
     final Thread myThread;
     final Node node;
     private long lastLogTime = 0;
-    private boolean firstCycle = true;
 
     DNSRequester(Node node) {
         this.node = node;
@@ -61,10 +60,9 @@ public class DNSRequester implements Runnable {
             if(!pn.isConnected()) {
                 // Not connected
                 // Try new DNS lookup
-                pn.maybeUpdateHandshakeIPs(firstCycle);
+                pn.maybeUpdateHandshakeIPs(false);
             }
         }
-        firstCycle = false;
         try {
             synchronized(this) {
                 wait(200);  // sleep 200ms

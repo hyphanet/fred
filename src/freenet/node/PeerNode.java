@@ -404,7 +404,8 @@ public class PeerNode implements PeerContext {
         	}
         	
         }
-        
+    // populate handshakeIPs so handshakes can start ASAP
+    maybeUpdateHandshakeIPs(true);
     }
 
     private boolean parseARK(SimpleFieldSet fs) {
