@@ -100,8 +100,8 @@ public class PluginToadlet extends Toadlet {
 		} else if ("reload".equals(action)) {
 			pluginName = httpRequest.getParam("pluginName");
 			Plugin plugin = findPlugin(pluginName);
-			plugin.stopPlugin();
-			plugin.startPlugin();
+			pluginManager.removePlugin(plugin);
+			pluginManager.addPlugin(plugin.getClass().getName());
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
 		} else if ("unload".equals(action)) {
 			pluginName = httpRequest.getParam("pluginName");
@@ -165,8 +165,8 @@ public class PluginToadlet extends Toadlet {
 			} else {
 				outputBuffer.append("<td/>");
 			}
-			outputBuffer.append("<td><form action=\"\" method=\"get\"><input type=\"hidden\" name=\"action\" value=\"reload\"><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Reload\" /></form></td>");
-			outputBuffer.append("<td><form action=\"\" method=\"get\"><input type=\"hidden\" name=\"action\" value=\"unload\"><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Unload\" /></form></td>");
+			outputBuffer.append("<td><form action=\"\" method=\"get\"><input type=\"hidden\" name=\"action\" value=\"reload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Reload\" /></form></td>");
+			outputBuffer.append("<td><form action=\"\" method=\"get\"><input type=\"hidden\" name=\"action\" value=\"unload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Unload\" /></form></td>");
 			outputBuffer.append("</tr>\n");
 		}
 		outputBuffer.append("</table>");

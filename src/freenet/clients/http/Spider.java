@@ -381,7 +381,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 			FreenetURI uri = (FreenetURI) collectionItems.next();
 			outputBuffer.append(HTMLEncoder.encode(uri.toString())).append("<br/>\n");
 			if (itemCount++ == maxCount) {
-				outputBuffer.append("<br><a href=\"?action=list&amp;listName=").append(HTMLEncoder.encode(anchorName)).append("\">Show all&hellip;</a>");
+				outputBuffer.append("<br/><a href=\"?action=list&amp;listName=").append(HTMLEncoder.encode(anchorName)).append("\">Show all&hellip;</a>");
 				break;
 			}
 		}
