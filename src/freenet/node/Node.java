@@ -857,8 +857,6 @@ public class Node {
     
     Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException{
     	this(config, random, lc);
-    	Logger.normal(this, "Using wrapper correctly: "+ns);
-    	System.out.println("Using wrapper correctly: "+ns);
     	nodeStarter=ns;
     }
     
@@ -885,8 +883,6 @@ public class Node {
      Node(Config config, RandomSource random, LoggingConfigHandler lc) throws NodeInitException {
     	// Easy stuff
     	nodeStarter=null;
-    	Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar and/or wrapper.conf need to be updated.");
-    	System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar and/or wrapper.conf need to be updated.");
     	if(logConfigHandler != lc)
     		this.logConfigHandler=lc;
     	arkPutter = new MyARKInserter();
@@ -1394,6 +1390,13 @@ public class Node {
         
         Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
         System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
+        if(isUsingWrapper()) {
+            Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
+            System.out.println("Using wrapper correctly: "+nodeStarter);
+        } else {
+            Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
+            System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
+        }
         // Start services
         
         // TMCI

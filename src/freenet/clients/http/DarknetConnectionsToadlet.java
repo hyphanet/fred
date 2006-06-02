@@ -204,7 +204,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				row[5] = VersionPrefixString+HTMLEncoder.encode(pn.getVersion())+VersionSuffixString;
 				row[6] = new Double(pn.getLocation().getValue());
 				row[7] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
-				row[8] = idleToString(now, idle);
+				row[8] = idleToString(now, idle, pn.getPeerNodeStatus());
 				row[9] = HTMLEncoder.encode(pn.getName());
 			}
 	
@@ -420,14 +420,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			return;
 		} else {
 			this.handleGet(uri, ctx);
-		}
-	}
-	
-	private String idleToString(long now, long idle) {
-		if (idle == -1) {
-			return " ";
-		} else {
-			return (new Long((now - idle) / 60000)).toString();
 		}
 	}
 	
