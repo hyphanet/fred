@@ -401,6 +401,11 @@ public class PeerNode implements PeerContext {
         		}
         		if(p != null)
         			detectedPeer = p;
+            String tempTimeLastReceivedPacketString = metadata.get("timeLastReceivedPacket");
+            if(tempTimeLastReceivedPacketString != null) {
+              long tempTimeLastReceivedPacket = Long.parseLong(tempTimeLastReceivedPacketString);
+              timeLastReceivedPacket = tempTimeLastReceivedPacket;
+            }
         	}
         	
         }
@@ -1392,6 +1397,8 @@ public class PeerNode implements PeerContext {
     	SimpleFieldSet fs = new SimpleFieldSet(true);
     	if(detectedPeer != null)
     		fs.put("detected.udp", detectedPeer.toString());
+    	if(timeLastReceivedPacket > 0)
+    		fs.put("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
     	return fs;
 	}
 
