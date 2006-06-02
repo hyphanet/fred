@@ -107,6 +107,15 @@ public class PacketSender implements Runnable {
         lastTimeInSeconds = (int) (now / 1000);
         PeerManager pm = node.peers;
         PeerNode[] nodes = pm.myPeers;
+        // Run the time sensitive status updater separately
+        for(int i = 0; i < nodes.length; i++) {
+            PeerNode pn = nodes[i];
+            // Only routing backed off nodes should need status updating since everything else
+            // should get updated immediately when it's changed
+            if(pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+                pn.setPeerNodeStatus(now);
+            }
+        }
         node.maybeLogPeerNodeStatusSummary(now);
         long nextActionTime = Long.MAX_VALUE;
         long oldTempNow = now;

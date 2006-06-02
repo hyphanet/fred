@@ -52,11 +52,6 @@ public class DNSRequester implements Runnable {
         PeerManager pm = node.peers;
         PeerNode[] nodes = pm.myPeers;
         long now = System.currentTimeMillis();
-        // Run the time sensitive status updater separately
-        for(int i=0;i<nodes.length;i++) {
-            PeerNode pn = nodes[i];
-            pn.setPeerNodeStatus(now);
-        }
         if((now - lastLogTime) > 1000) {
             Logger.minor(this, "Processing DNS Requests (log rate-limited)");
             lastLogTime = now;
