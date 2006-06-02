@@ -57,7 +57,7 @@ public class ARKFetcher implements ClientCallback {
 			fetchingURI = uri;
 			Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
 			cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
-					uri, node.arkFetcherContext, RequestStarter.INTERACTIVE_PRIORITY_CLASS, 
+					uri, node.arkFetcherContext, RequestStarter.UPDATE_PRIORITY_CLASS, 
 					this, new ArrayBucket());
 			getter = cg;
 		} else return; // already running
