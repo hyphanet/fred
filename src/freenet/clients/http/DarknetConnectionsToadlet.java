@@ -148,7 +148,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		StringBuffer buf2 = new StringBuffer(1024);
 		buf2.append("<table class=\"darknet_connections\">\n");
-		buf2.append("<tr><th></th><th>Status</th><th>Name</th><th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th><span title=\"Number of minutes since the node was last seen in this session\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th></tr>\n");
+		buf2.append("<tr><th></th><th>Status</th><th><span title=\"Click on the nodename link to send a N2NTM\" style=\"border-bottom:1px dotted;cursor:help;\">Name</span></th><th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th><span title=\"How long since the node was last seen\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th></tr>\n");
 		
 		if (peerNodes.length == 0) {
 			buf2.append("<tr><td colspan=\"8\">No connections so far</td></tr>\n");
@@ -204,8 +204,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				row[5] = VersionPrefixString+HTMLEncoder.encode(pn.getVersion())+VersionSuffixString;
 				row[6] = new Double(pn.getLocation().getValue());
 				row[7] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
-				if (idle == -1) row[8] = " ";
-				else row[8] = new Long((now - idle) / 60000);
+				row[8] = idleToString(now, idle);
 				row[9] = HTMLEncoder.encode(pn.getName());
 			}
 	
@@ -422,5 +421,61 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		} else {
 			this.handleGet(uri, ctx);
 		}
+	}
+	
+	private String idleToString(long now, long idle) {
+		if (idle == -1) {
+			return " ";
+		} else {
+			return (new Long((now - idle) / 60000)).toString();
+		}
+	}
+	
+	private String idleToString(long now, long idle, int peerNodeStatus) {
+		if (idle == -1) {
+			return " ";
+		}
+		StringBuffer sb = new StringBuffer(1024);
+		long idleSeconds = (now - idle) / 1000;
+		if(idleSeconds < 60 && (peerNodeStatus == Node.PEER_NODE_STATUS_CONNECTED || peerNodeStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
+		  return "0m";
+		}
+		long l = idleSeconds;
+		int termCount = 0;
+		int weeks = (int) l / (7*24*60*60);
+		if(weeks > 0) {
+		  sb.append(weeks + "w");
+		  termCount++;
+		  l = l - (weeks * (7*24*60*60));
+		}
+		int days = (int) l / (24*60*60);
+		if(days > 0) {
+		  sb.append(days + "d");
+		  termCount++;
+		  l = l - (days * (24*60*60));
+		}
+		if(termCount >= 2) {
+		  return sb.toString();
+		}
+		int hours = (int) l / (60*60);
+		if(hours > 0) {
+		  sb.append(hours + "h");
+		  termCount++;
+		  l = l - (hours * (60*60));
+		}
+		if(termCount >= 2) {
+		  return sb.toString();
+		}
+		int minutes = (int) l / 60;
+		if(minutes > 0) {
+		  sb.append(minutes + "m");
+		  termCount++;
+		  l = l - (minutes * 60);
+		}
+		if(termCount >= 2) {
+		  return sb.toString();
+		}
+		sb.append(l + "s");
+		return sb.toString();
 	}
 }
