@@ -406,11 +406,14 @@ public class FProxyToadlet extends Toadlet {
 		String fnam = sanitize(uri.getDocName());
 		if(fnam != null && fnam.length() > 0) return fnam;
 		String[] meta = uri.getAllMetaStrings();
-		for(int i=meta.length-1;i>=0;i++) {
-			String s = meta[i];
-			if(s.length() == 0) continue;
-			fnam = sanitize(s);
-			if(s != null && s.length() > 0) return fnam;
+		if(meta != null) {
+			for(int i=meta.length-1;i>=0;i++) {
+				String s = meta[i];
+				if(s == null) continue;
+				if(s.length() == 0) continue;
+				fnam = sanitize(s);
+				if(s != null && s.length() > 0) return fnam;
+			}
 		}
 		return Base64.encode(uri.getRoutingKey());
 	}
