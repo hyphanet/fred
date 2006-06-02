@@ -211,9 +211,19 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					fRunning = fNew;
 					fNew = fRunning;
 				} else {
-					Logger.error(this, "Cannot restart on Windows due to non-standard config file!");
-					System.err.println("Cannot restart on Windows due to non-standard config file!");
-					return;
+					cp1 = p.getProperty("wrapper.java.classpath.2");
+					if(cp1.equals("freenet-cvs-snapshot.jar")) {
+						// Cool!
+					} else if(cp1.equals("freenet-cvs-snapshot.jar.new")) {
+						// Swapped; we are running .new
+						File tmp = fRunning;
+						fRunning = fNew;
+						fNew = fRunning;
+					} else {					
+						Logger.error(this, "Cannot restart on Windows due to non-standard config file!");
+						System.err.println("Cannot restart on Windows due to non-standard config file!");
+						return;
+					}
 				}
 			}
 			
