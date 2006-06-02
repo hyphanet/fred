@@ -61,12 +61,21 @@ public class PacketSender implements Runnable {
 				if(diff > 3*60*1000) {
 					System.err.println("Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
 					Logger.error(this, "Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
+					
 					try {
-						WrapperManager.requestThreadDump();
+						if(node.isUsingWrapper()){
+							WrapperManager.requestThreadDump();
+							WrapperManager.restart();
+						}else{
+							// No wrapper : we don't want to let it harm the network!
+							Logger.error(this,"Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
+							node.exit();
+						}
 					} catch (Throwable t) {
-						// Ignore
+						Logger.error(this,"Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
+						node.exit();
 					}
-					WrapperManager.restart();
+					
 				}
     			
     		}

@@ -1468,9 +1468,12 @@ public class Node {
 		
 		Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
+		// If we are using the wrapper, we ignore:
+		// Any problem should be detected by the watchdog and the node will be restarted
 		if(osName.equals("Linux") && jvmVendor.startsWith("Sun ") && 
 				(osVersion.indexOf("nptl")!=-1 || osVersion.startsWith("2.6") || 
-						osVersion.startsWith("2.7") || osVersion.startsWith("3."))) {
+						osVersion.startsWith("2.7") || osVersion.startsWith("3."))
+						&& !isUsingWrapper()) {
 			// Hopefully we won't still have to deal with this **** when THAT comes out! 
 			// Check the environment.
 			String assumeKernel;
