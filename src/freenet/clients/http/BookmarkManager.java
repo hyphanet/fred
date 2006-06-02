@@ -152,11 +152,11 @@ public class BookmarkManager {
 			try {
 				USK u = USK.create(b.key);
 				this.node.uskManager.subscribe(u, this.uskcb, true);
-				node.config.store();
 			} catch (MalformedURLException mue) {
 			
 			}
 		}
 		this.bookmarks.remove(b);
+		node.config.store();
 	}
 }
