@@ -151,7 +151,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf2.append("<tr><th></th><th>Status</th><th><span title=\"Click on the nodename link to send a N2NTM\" style=\"border-bottom:1px dotted;cursor:help;\">Name</span></th><th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th><span title=\"How long since the node was last seen\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th></tr>\n");
 		
 		if (peerNodes.length == 0) {
-			buf2.append("<tr><td colspan=\"8\">No connections so far</td></tr>\n");
+			buf2.append("<tr><td colspan=\"8\">Freenet can't work - you have not added any peers so far. <a href=\"/\">Go here</a> and read the top infobox to see how it's done.</td></tr>\n");
 			buf2.append("</table>\n");
 			//
 			buf.append(buf2);
