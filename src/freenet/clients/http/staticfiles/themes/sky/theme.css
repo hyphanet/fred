@@ -260,6 +260,22 @@ ul.config input[type=text] {
 
 /* darknet page */
 
+table.column {
+	width: 100%;
+	border: none;
+}
+
+table.column td.first {
+	text-align: left;
+	vertical-align: top;
+	border: none;
+}
+
+table.column td.last {
+	vertical-align: top;
+	border: none;
+}
+
 table.darknet_connections {
 	width: 100%;
 }
