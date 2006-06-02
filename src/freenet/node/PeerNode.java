@@ -491,9 +491,28 @@ public class PeerNode implements PeerContext {
     }
 
     /**
+      * Do the maybeUpdateHandshakeIPs DNS requests, but only if ignoreHostnames is false
+      * This method should only be called by maybeUpdateHandshakeIPs
+      */
+    private Peer[] updateHandshakeIPs(Peer[] localHandshakeIPs, boolean ignoreHostnames) {
+        for(int i=0;i<localHandshakeIPs.length;i++) {
+          if(ignoreHostnames) {
+            // Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
+            // upon startup (I suspect the following won't do anything, but just in case)
+            Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+myName+"' ("+ignoreHostnames+")");
+            localHandshakeIPs[i].getAddress(false);
+          } else {
+            // Actually do the DNS request for the member Peer of localHandshakeIPs
+            Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+myName+"' ("+ignoreHostnames+")");
+            localHandshakeIPs[i].getHandshakeAddress();
+          }
+        }
+        return localHandshakeIPs;
+    }
+
+    /**
       * Do occasional DNS requests, but ignoreHostnames should be true
-      * for the first cycle through the peers by DNSRequester at node
-      * startup (faster startup time if we know some IPs already)
+      * on PeerNode construction
       */
     public void maybeUpdateHandshakeIPs(boolean ignoreHostnames) {
     	long now = System.currentTimeMillis();
@@ -521,16 +540,7 @@ public class PeerNode implements PeerContext {
     			return;
     		}
     		localHandshakeIPs = new Peer[] { detectedPeer };
-        	for(int i=0;i<localHandshakeIPs.length;i++) {
-        		if(ignoreHostnames) {
-        			// Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
-        			// upon startup (I suspect the following won't do anything, but just in case)
-        			localHandshakeIPs[i].getAddress(false);
-        		} else {
-        			// Actually do the DNS request for the member Peer of localHandshakeIPs
-        			localHandshakeIPs[i].getHandshakeAddress();
-        		}
-        	}
+    		localHandshakeIPs = updateHandshakeIPs(localHandshakeIPs, ignoreHostnames);
         	synchronized(this) {
     			handshakeIPs = localHandshakeIPs;
     		}
@@ -565,10 +575,7 @@ public class PeerNode implements PeerContext {
     		p = newPeers;
     	}
     	localHandshakeIPs = p;
-        for(int i=0;i<localHandshakeIPs.length;i++) {
-        	// Actually do the DNS request for the member Peer of localHandshakeIPs
-        	localHandshakeIPs[i].getHandshakeAddress();
-        }
+    	localHandshakeIPs = updateHandshakeIPs(localHandshakeIPs, ignoreHostnames);
     	synchronized(this) {
     		handshakeIPs = localHandshakeIPs;
     	}
