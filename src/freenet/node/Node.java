@@ -857,6 +857,8 @@ public class Node {
     
     Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException{
     	this(config, random, lc);
+    	Logger.normal(this, "Using wrapper correctly: "+ns);
+    	System.out.println("Using wrapper correctly: "+ns);
     	nodeStarter=ns;
     }
     
@@ -882,7 +884,9 @@ public class Node {
      */
      Node(Config config, RandomSource random, LoggingConfigHandler lc) throws NodeInitException {
     	// Easy stuff
-    	 nodeStarter=null;
+    	nodeStarter=null;
+    	Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar and/or wrapper.conf need to be updated.");
+    	System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar and/or wrapper.conf need to be updated.");
     	if(logConfigHandler != lc)
     		this.logConfigHandler=lc;
     	arkPutter = new MyARKInserter();
