@@ -10,6 +10,7 @@ import freenet.clients.http.HTTPRequest;
 import freenet.keys.FreenetURI;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.URIPreEncoder;
 
 public class GenericReadFilterCallback implements FilterCallback {
 
@@ -46,7 +47,8 @@ public class GenericReadFilterCallback implements FilterCallback {
 		URI uri;
 		URI resolved;
 		try {
-			uri = new URI(u).normalize();
+			Logger.minor(this, "Processing "+u);
+			uri = URIPreEncoder.encodeURI(u).normalize();
 			Logger.minor(this, "Processing "+uri);
 			if(!noRelative)
 				resolved = baseURI.resolve(uri);
@@ -54,6 +56,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 				resolved = uri;
 			Logger.minor(this, "Resolved: "+resolved);
 		} catch (URISyntaxException e1) {
+			Logger.minor(this, "Failed to parse URI: "+e1);
 			return null;
 		}
 		String path = uri.getPath();

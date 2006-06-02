@@ -101,6 +101,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			// Ignore ALL errors
 			Logger.minor(this, "Caught "+t+" trying to detect MIME type with "+parseCharset);
 		}
+		Logger.minor(this, "Returning charset "+pc.detectedCharset);
 		return pc.detectedCharset;
 	}
 
@@ -1968,6 +1969,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String overrideType,
 		String overrideCharset,
 		FilterCallback cb) {
+		Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" )");
 		if(overrideCharset != null && overrideCharset.length() > 0)
 			overrideType += ";charset="+overrideCharset;
 		return cb.processURI(suri, overrideType);
