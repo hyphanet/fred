@@ -1,9 +1,19 @@
 package freenet.node.updater;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
+import java.util.Properties;
+
+import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -182,28 +192,126 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			ArrayBucket bucket = (ArrayBucket) result.asBucket();
 			byte[] data = bucket.toByteArray();
 			
-			File f = new File("freenet-cvs-snapshot.jar.new");
-			f.delete();
+			File fRunning = new File("freenet-cvs-snapshot.jar");
+			File fNew = new File("freenet-cvs-snapshot.jar.new");
 			
-			FileOutputStream fos = new FileOutputStream(f);
+			boolean nastyRestart = false;
+			
+			if(File.separatorChar != '\\') {
+				// Do nothing.
+			} else {
+				nastyRestart = true;
+				Properties p = WrapperManager.getProperties();
+				String cp1 = p.getProperty("wrapper.java.classpath.1");
+				if(cp1.equals("freenet-cvs-snapshot.jar")) {
+					// Cool!
+				} else if(cp1.equals("freenet-cvs-snapshot.jar.new")) {
+					// Swapped; we are running .new
+					File tmp = fRunning;
+					fRunning = fNew;
+					fNew = fRunning;
+				} else {
+					Logger.error(this, "Cannot restart on Windows due to non-standard config file!");
+					System.err.println("Cannot restart on Windows due to non-standard config file!");
+					return;
+				}
+			}
+			
+			fNew.delete();
+			
+			FileOutputStream fos = new FileOutputStream(fNew);
 			
 			fos.write(data);
 			fos.flush();
 			fos.close();
-			System.out.println("################## File written! "+cg.getURI().getSuggestedEdition()+ " " +f.getAbsolutePath());
-			
-			File f2 = new File("freenet-cvs-snapshot.jar");
-			f2.delete();
-			
-			if(f.renameTo(f2)){
+			System.out.println("################## File written! "+cg.getURI().getSuggestedEdition()+ " " +fNew.getAbsolutePath());
+
+			if(!nastyRestart) {
+				// Easy way.
+				if(!fNew.renameTo(fRunning)) {
+					fRunning.delete();
+					if(!fNew.renameTo(fRunning)) {
+						System.out.println("ERROR renaming the file!");
+						return;
+					}
+				}
+			} else {
+				// Hard way.
+				
+				if(!WrapperManager.isControlledByNativeWrapper()) {
+					Logger.error(this, "Cannot update because not running under wrapper");
+					System.err.println("Cannot update because not running under wrapper");
+				}
+				
+				try {
+					
+					File oldConfig = new File("wrapper.conf");
+					File newConfig = new File("wrapper.conf.new");
+					
+					FileInputStream fis = new FileInputStream(oldConfig);
+					BufferedInputStream bis = new BufferedInputStream(fis);
+					InputStreamReader isr = new InputStreamReader(bis);
+					BufferedReader br = new BufferedReader(isr);
+					
+					fos = new FileOutputStream(newConfig);
+					BufferedOutputStream bos = new BufferedOutputStream(fos);
+					OutputStreamWriter osw = new OutputStreamWriter(fos);
+					BufferedWriter bw = new BufferedWriter(osw);
+					
+					String line;
+					boolean succeeded = false;
+					boolean stillSucceeded = false;
+					while((line = br.readLine()) != null) {
+						if(line.equals("wrapper.java.classpath.1="+fRunning.getName())) {
+							bw.write("wrapper.java.classpath.1="+fNew.getName());
+							succeeded = true;
+						} else {
+							if(line.equals("wrapper.restart.reload_configuration=TRUE"))
+								stillSucceeded = true;
+							bw.write(line);
+						}
+					}
+					bw.close();
+					br.close();
+					
+					if(!succeeded) {
+						System.err.println("Not able to update because of non-standard config");
+						Logger.error(this, "Not able to update because of non-standard config");
+						return;
+					}
+					
+					if(!stillSucceeded) {
+						System.err.println("Not able to update because of non-standard or old config, add a line saying \"wrapper.restart.reload_configuration=TRUE\"");
+						Logger.error(this, "Not able to update because of non-standard or old config, add a line saying \"wrapper.restart.reload_configuration=TRUE\"");
+						return;
+					}
+					
+					if(!newConfig.renameTo(oldConfig)) {
+						oldConfig.delete();
+						if(!newConfig.renameTo(oldConfig)) {
+							System.err.println("Failed to rename over old config: update failed.");
+							Logger.error(this, "Failed to rename over old config: update failed.");
+							return;
+						}
+					}
+					
+					// New config installed.
+					
+				} catch (IOException e) {
+					Logger.error(this, "Not able to update because of I/O error: "+e, e);
+					System.err.println("Not able to update because of I/O error: "+e);
+				}
+				
 				if(node.getNodeStarter()!=null)
 					node.getNodeStarter().restart();
 				else{
 					System.out.println("New version has been downloaded: please restart your node!");
 					node.exit();
 				}	
-			}else
-				System.out.println("ERROR renaming the file!");
+				
+				
+				
+			}
 			
 			
 		}catch(Exception e){
