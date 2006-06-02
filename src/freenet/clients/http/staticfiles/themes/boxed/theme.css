@@ -144,6 +144,10 @@ table.column {
 	border-spacing: 0px;
 }
 
+table.column tr {
+	vertical-align: top;
+}
+
 table.column tr td {
 	padding-left: 10px;
 	padding-right: 10px;
@@ -155,6 +159,23 @@ table.column tr td.first {
 
 table.column tr td.last {
 	padding-right: 0px;
+}
+
+ul.config li {
+	display: table-row;
+	width: 100%;
+}
+
+span.configshortdesc, span.config, span.configlongdesc {
+	display: table-cell;
+}
+
+span.configlongdesc {
+	display: none;
+}
+
+span.config {
+	text-align: right;
 }
 
 /* vim: set ts=4: sw=4: */

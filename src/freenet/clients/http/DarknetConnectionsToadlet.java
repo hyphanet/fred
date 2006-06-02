@@ -100,7 +100,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 		}
 		
-		buf.append("<table class=\"column\" width=\"100%\"><tr valign=\"top\"><td class=\"first\" width=\"50%\">");
+		buf.append("<table class=\"column\"><tr><td class=\"first\">");
 		
 		/* node status overview box */
 		buf.append("<div class=\"infobox\">");
@@ -111,7 +111,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>");
 		buf.append("</div>\n");
 		
-		buf.append("</td><td class=\"last\" width=\"50%\">");
+		buf.append("</td><td class=\"last\"");
 		
 		buf.append("<div class=\"infobox\">");
 		buf.append("<div class=\"infobox-header\">Connection statistics</div>");
