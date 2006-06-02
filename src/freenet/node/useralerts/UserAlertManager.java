@@ -39,7 +39,7 @@ public class UserAlertManager implements Comparator {
 	public int compare(Object arg0, Object arg1) {
 		UserAlert a0 = (UserAlert) arg0;
 		UserAlert a1 = (UserAlert) arg1;
-		return a1.getPriorityClass() - a0.getPriorityClass();
+		return a0.getPriorityClass() - a1.getPriorityClass();
 	}
 
 	/**
