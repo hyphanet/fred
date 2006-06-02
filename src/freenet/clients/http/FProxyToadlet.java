@@ -194,9 +194,9 @@ public class FProxyToadlet extends Toadlet {
 				}
 			} catch (UnsafeContentTypeException e) {
 				ctx.getPageMaker().makeHead(buf, "Potentially Dangerous Content");
-				buf.append("<h1>");
-				buf.append(e.getHTMLEncodedTitle());
-				buf.append("</h1>\n");
+				buf.append("<div class=\"infobox infobox-alert\">");
+				buf.append("<div class=\"infobox-header\">").append(e.getHTMLEncodedTitle()).append("</div>");
+				buf.append("<div class=\"infobox-content\">");
 				buf.append(e.getExplanation());
 				buf.append("<p>Your options are:</p><ul>\n");
 				buf.append("<li><a href=\"/"+key.toString(false)+"?type=text/plain\">Click here</a> to open the file as plain text (this should not be dangerous, but it may be garbled).</li>\n");
@@ -204,7 +204,8 @@ public class FProxyToadlet extends Toadlet {
 				buf.append("<li><a href=\"/"+key.toString(false)+"?forcedownload\">Click here</a> to force your browser to download the file to disk.</li>\n");
 				buf.append("<li><a href=\"/"+key.toString(false)+"?force="+getForceValue(key, now)+"\">Click here</a> to open the file as "+HTMLEncoder.encode(typeName)+".</li>\n");
 				buf.append("<li><a href=\"/\">Click here</a> to go to the FProxy home page.</li>\n");
-				buf.append("</ul>");
+				buf.append("</ul></div>");
+				buf.append("</div>\n");
 				ctx.getPageMaker().makeTail(buf);
 				writeReply(ctx, 200, "text/html", "OK", buf.toString());
 			}
