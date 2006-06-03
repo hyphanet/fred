@@ -129,17 +129,19 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 
-	public synchronized void maybeUpdate(){
-		try{
-			if(isFetching || !isRunning || !isUpdatable()) return;
-		}catch (PrivkeyHasBeenBlownException e){
-			// how to handle it ? a new UserAlert or an imediate exit?
-			Logger.error(this, "The auto-updating Private key has been blown!");
-			node.exit();
+	public void maybeUpdate(){
+		synchronized(this) {
+			try{
+				if(isFetching || (!isRunning) || (!isUpdatable())) return;
+			}catch (PrivkeyHasBeenBlownException e){
+				// how to handle it ? a new UserAlert or an imediate exit?
+				Logger.error(this, "The auto-updating Private key has been blown!");
+				System.err.println("The auto-updating Private key has been blown!");
+				node.exit();
+			}
+			
+			isRunning=false;
 		}
-		
-		isRunning=false;
-		
 		//TODO maybe a UpdateInProgress alert ?
 		Logger.normal(this,"Starting the update process");
 		System.err.println("Starting the update process: found the update, now fetching it.");
