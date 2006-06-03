@@ -161,28 +161,32 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	 * We try to update the node :p
 	 * Must run on its own thread.
 	 */
-	public synchronized void Update(){
+	public void Update(){
 		Logger.minor(this, "Update() called");
-		if((result == null) || hasBeenBlown) {
-			Logger.minor(this, "Returning: result="+result+", isAutoUpdateAllowed="+isAutoUpdateAllowed+", hasBeenBlown="+hasBeenBlown);
-			return;
+		synchronized(this) {
+			if((result == null) || hasBeenBlown) {
+				Logger.minor(this, "Returning: result="+result+", isAutoUpdateAllowed="+isAutoUpdateAllowed+", hasBeenBlown="+hasBeenBlown);
+				return;
+			}
+			
+			this.revocationDNFCounter = 0;
+			this.finalCheck = true;
 		}
-
-		this.revocationDNFCounter = 0;
-		this.finalCheck = true;
 		
 		System.err.println("Searching for revocation key");
 		this.queueFetchRevocation(100);
-		while(revocationDNFCounter < 3) {
-			System.err.println("Revocation counter: "+revocationDNFCounter);
-			if(this.hasBeenBlown) {
-				Logger.error(this, "The revocation key has been found on the network : blocking auto-update");
-				return;
-			}
-			try {
-				wait(100*1000);
-			} catch (InterruptedException e) {
-				// Ignore
+		synchronized(this) {
+			while(revocationDNFCounter < 3) {
+				System.err.println("Revocation counter: "+revocationDNFCounter);
+				if(this.hasBeenBlown) {
+					Logger.error(this, "The revocation key has been found on the network : blocking auto-update");
+					return;
+				}
+				try {
+					wait(100*1000);
+				} catch (InterruptedException e) {
+					// Ignore
+				}
 			}
 		}
 
@@ -363,7 +367,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 
-	public synchronized void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state) {
 		int errorCode = e.getMode();
 		
 		if(!state.getURI().equals(revocationURI)){	
@@ -380,19 +384,21 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}else
 				Logger.error(this, "Canceling fetch : "+ e.getMessage());
 		}else{
-			if(errorCode == FetchException.DATA_NOT_FOUND){
-				revocationDNFCounter++;
-			}
-			// Start it again
-			if(this.finalCheck) {
-				if(revocationDNFCounter < 3)
-					queueFetchRevocation(1000);
-				else
-					notifyAll();
-			} else {
-				boolean pause = (revocationDNFCounter == 3);
-				if(pause) revocationDNFCounter = 0;
-				queueFetchRevocation(pause ? 60*60*1000 : 5000);
+			synchronized(this) {
+				if(errorCode == FetchException.DATA_NOT_FOUND){
+					revocationDNFCounter++;
+				}
+				// Start it again
+				if(this.finalCheck) {
+					if(revocationDNFCounter < 3)
+						queueFetchRevocation(1000);
+					else
+						notifyAll();
+				} else {
+					boolean pause = (revocationDNFCounter == 3);
+					if(pause) revocationDNFCounter = 0;
+					queueFetchRevocation(pause ? 60*60*1000 : 5000);
+				}
 			}
 		}
 	}

@@ -300,6 +300,7 @@ public class TextModeClientInterface implements Runnable {
 			}
     } else if(uline.startsWith("UPDATE")) {
     		outsb.append("starting the update process");
+    		// FIXME run on separate thread
     		n.getNodeUpdater().Update();
     		return false;
     }else if(uline.startsWith("BLOW")) {
