@@ -2721,7 +2721,6 @@ public class Node {
 	public void exit(){
 		config.store();
         System.out.println("Goodbye. from "+this);
-        if(isUsingWrapper()) WrapperManager.stop(0);
         System.exit(0);
 	}
 
