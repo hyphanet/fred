@@ -69,6 +69,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.revocationAlert = null;
 		this.revocationDNFCounter = 0;
 		this.node = n;
+		node.nodeUpdater = this;
 		this.currentVersion = Version.buildNumber();
 		this.availableVersion = currentVersion;
 		this.hasBeenBlown = false;
@@ -120,6 +121,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		
 		if(found > availableVersion){
 			this.availableVersion = found;
+			node.ps.queueTimedJob(new Runnable() {
+				public void run() {
+					maybeUpdate();
+				}
+			}, 30*1000); // leave some time in case we get later editions
 			try{
 				maybeUpdate();
 			}catch (Exception e){
@@ -159,11 +165,19 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 	
+	private Object updateSync = new Object();
+	
+	public void Update() {
+		synchronized(updateSync) {
+			innerUpdate();
+		}
+	}
+	
 	/** 
 	 * We try to update the node :p
 	 * Must run on its own thread.
 	 */
-	public void Update(){
+	void innerUpdate(){
 		Logger.minor(this, "Update() called");
 		synchronized(this) {
 			if((result == null) || hasBeenBlown) {
@@ -429,7 +443,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				Update();
 			}
 			
-		}, 50);
+		}, 500); // give it time to get close-together next version
 	}
 
 	public void onSuccess(BaseClientPutter state) {
