@@ -430,6 +430,13 @@ public class PeerNode implements PeerContext {
             } else {
               neverConnected = false;
             }
+            if((now - peerAddedTime) > (((long) 30)*24*60*60*1000)) {  // 30 days
+              peerAddedTime = 0;  // don't store anymore
+              neverConnected = false;
+            }
+            if(!neverConnected) {
+              peerAddedTime = 0;  // don't store anymore
+            }
         	}
         } else {
             neverConnected = true;
@@ -1129,6 +1136,7 @@ public class PeerNode implements PeerContext {
                 previousTracker.deprecated();
             isConnected = true;
             neverConnected = false;
+            peerAddedTime = 0;  // don't store anymore
             setPeerNodeStatus(now);
             ctx = null;
         }
@@ -1194,6 +1202,7 @@ public class PeerNode implements PeerContext {
             unverifiedTracker = null;
             isConnected = true;
             neverConnected = false;
+            peerAddedTime = 0;  // don't store anymore
             setPeerNodeStatus(now);
             ctx = null;
             maybeSendInitialMessages();
