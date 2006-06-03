@@ -50,6 +50,8 @@ public class QueueToadlet extends Toadlet {
 			} catch (MessageInvalidException e) {
 				this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
 			}
+			writePermanentRedirect(ctx, "Done", "/queue/");
+			return;
 		}
 		if(request.isParameterSet("download")) {
 			// Queue a download
@@ -71,6 +73,8 @@ public class QueueToadlet extends Toadlet {
 			String persistence = request.getParam("persistence");
 			String returnType = request.getParam("return-type");
 			fcp.makePersistentGlobalRequest(fetchURI, expectedMIMEType, persistence, returnType);
+			writePermanentRedirect(ctx, "Done", "/queue/");
+			return;
 		}
 		this.handleGet(uri, ctx);
 	}
