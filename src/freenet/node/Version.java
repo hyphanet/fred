@@ -44,7 +44,7 @@ public abstract class Version {
 	public static final int lastGoodStableBuild = 1;
 
 	/** Revision number of Version.java as read from CVS */
-	public static final String cvsRevision = "9013M";
+	public static final String cvsRevision = "@custom@";
 	
 	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG,Version.class);
 	

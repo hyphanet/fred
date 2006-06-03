@@ -281,7 +281,6 @@ public class PeerNode implements PeerContext {
         lastGoodVersion = fs.get("lastGoodVersion");
         
         // PeerNode starts life as disconnected
-        node.addStatusDisconnectedPeerNode(getIdentityString(), this);
         node.addPeerNodeStatus(Node.PEER_NODE_STATUS_DISCONNECTED, this);
 		
         nominalPeer=new Vector();
@@ -1807,26 +1806,6 @@ public class PeerNode implements PeerContext {
 			peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
 		}
 		if(peerNodeStatus != oldPeerNodeStatus) {
-		  if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_CONNECTED)
-		    node.removeStatusConnectedPeerNode(getIdentityString(), this);
-		  else if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-		    node.removeStatusRoutingBackedOffPeerNode(getIdentityString(), this);
-		  else if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_TOO_NEW)
-		    node.removeStatusTooNewPeerNode(getIdentityString(), this);
-		  else if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_TOO_OLD)
-		    node.removeStatusTooOldPeerNode(getIdentityString(), this);
-		  else if(oldPeerNodeStatus == Node.PEER_NODE_STATUS_DISCONNECTED)
-		    node.removeStatusDisconnectedPeerNode(getIdentityString(), this);
-		  if(peerNodeStatus == Node.PEER_NODE_STATUS_CONNECTED)
-		    node.addStatusConnectedPeerNode(getIdentityString(), this);
-		  else if(peerNodeStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-		    node.addStatusRoutingBackedOffPeerNode(getIdentityString(), this);
-		  else if(peerNodeStatus == Node.PEER_NODE_STATUS_TOO_NEW)
-		    node.addStatusTooNewPeerNode(getIdentityString(), this);
-		  else if(peerNodeStatus == Node.PEER_NODE_STATUS_TOO_OLD)
-		    node.addStatusTooOldPeerNode(getIdentityString(), this);
-		  else if(peerNodeStatus == Node.PEER_NODE_STATUS_DISCONNECTED)
-		    node.addStatusDisconnectedPeerNode(getIdentityString(), this);
 		  node.removePeerNodeStatus( oldPeerNodeStatus, this );
 		  node.addPeerNodeStatus( peerNodeStatus, this );
 		}

@@ -476,16 +476,6 @@ public class Node {
     private long nextPeerNodeStatusLogTime = -1;
     /** PeerNode status summary log interval (milliseconds) */
     private final long peerNodeStatusLogInterval = 1000;
-    /** PeerNodes in CONNECTED status, by identity */
-    private final HashMap statusConnectedPeerNodes;
-    /** PeerNodes in BACKED_OFF status, by identity */
-    private final HashMap statusRoutingBackedOffPeerNodes;
-    /** PeerNodes in TOO_NEW status, by identity */
-    private final HashMap statusTooNewPeerNodes;
-    /** PeerNodes in INCOMPATIBLE status, by identity */
-    private final HashMap statusTooOldPeerNodes;
-    /** PeerNodes in DISCONNECTED status, by identity */
-    private final HashMap statusDisconnectedPeerNodes;
     /** PeerNode statuses, by status */
     private final HashMap peerNodeStatuses;
     
@@ -909,11 +899,6 @@ public class Node {
         transferringRequestSenders = new HashMap();
         insertSenders = new HashMap();
         arkFetchers = new HashMap();
-        statusConnectedPeerNodes = new HashMap();
-        statusRoutingBackedOffPeerNodes = new HashMap();
-        statusTooNewPeerNodes = new HashMap();
-        statusTooOldPeerNodes = new HashMap();
-        statusDisconnectedPeerNodes = new HashMap();
         peerNodeStatuses = new HashMap();
         runningUIDs = new HashSet();
         dnsr = new DNSRequester(this);
@@ -2842,181 +2827,6 @@ public class Node {
     }
 
     /**
-     * Add a connected peer to the map
-     */
-    public synchronized void addStatusConnectedPeerNode(String identity, PeerNode peerNode) {
-    	if(statusConnectedPeerNodes.containsKey(identity)) {
-    		PeerNode pn = (PeerNode) statusConnectedPeerNodes.get(identity);
-    		Logger.error(this, "addStatusConnectedPeerNode(): identity '"+identity+"' already in statusConnectedPeerNodes as "+pn+" and you want to add"+peerNode);
-    		return;
-    	}
-    	Logger.minor(this, "addStatusConnectedPeerNode(): adding PeerNode for "+identity);
-    	statusConnectedPeerNodes.put(identity, peerNode);
-    }
-    
-    /**
-     * How many peers are currently connected?
-     */
-    public int getNumStatusConnectedPeerNodes() {
-		return statusConnectedPeerNodes.size();
-    }
-
-    /**
-     * Remove a connected node from the map
-     */
-    public synchronized void removeStatusConnectedPeerNode(String identity, PeerNode peerNode) {
-    	if(!statusConnectedPeerNodes.containsKey(identity)) {
-    		Logger.error(this, "removeStatusConnectedPeerNode(): identity '"+identity+"' not in statusConnectedPeerNodes to remove");
-    		return;
-    	}
-    	Logger.minor(this, "removeStatusConnectedPeerNode(): removing PeerNode for "+identity);
-    	PeerNode pn = (PeerNode) statusConnectedPeerNodes.remove(identity);
-    	if(pn != peerNode) {
-    		Logger.error(this, "Removed "+pn+" should be "+peerNode+" for "+identity+" in removeStatusConnectedPeerNode");
-    	}
-    }
-
-    /**
-     * Add a routing backed off peer to the map
-     */
-    public synchronized void addStatusRoutingBackedOffPeerNode(String identity, PeerNode peerNode) {
-    	if(statusRoutingBackedOffPeerNodes.containsKey(identity)) {
-    		PeerNode pn = (PeerNode) statusRoutingBackedOffPeerNodes.get(identity);
-    		Logger.error(this, "addStatusRoutingBackedOffPeerNode(): identity '"+identity+"' already in statusRoutingBackedOffPeerNodes as "+pn+" and you want to add"+peerNode);
-    		return;
-    	}
-    	Logger.minor(this, "addStatusRoutingBackedOffPeerNode(): adding PeerNode for "+identity);
-    	statusRoutingBackedOffPeerNodes.put(identity, peerNode);
-    }
-    
-    /**
-     * How many peers are currently routing backed off?
-     */
-    public int getNumStatusRoutingBackedOffPeerNodes() {
-		return statusRoutingBackedOffPeerNodes.size();
-    }
-
-    /**
-     * Remove a routing backed off node from the map
-     */
-    public synchronized void removeStatusRoutingBackedOffPeerNode(String identity, PeerNode peerNode) {
-    	if(!statusRoutingBackedOffPeerNodes.containsKey(identity)) {
-    		Logger.error(this, "removeStatusRoutingBackedOffPeerNode(): identity '"+identity+"' not in statusRoutingBackedOffPeerNodes to remove");
-    		return;
-    	}
-    	Logger.minor(this, "removeStatusRoutingBackedOffPeerNode(): removing PeerNode for "+identity);
-    	PeerNode pn = (PeerNode) statusRoutingBackedOffPeerNodes.remove(identity);
-    	if(pn != peerNode) {
-    		Logger.error(this, "Removed "+pn+" should be "+peerNode+" for "+identity+" in removeStatusRoutingBackedOffPeerNode");
-    	}
-    }
-
-    /**
-     * Add a too new peer to the map
-     */
-    public synchronized void addStatusTooNewPeerNode(String identity, PeerNode peerNode) {
-    	if(statusTooNewPeerNodes.containsKey(identity)) {
-    		PeerNode pn = (PeerNode) statusTooNewPeerNodes.get(identity);
-    		Logger.error(this, "addStatusTooNewPeerNode(): identity '"+identity+"' already in statusTooNewPeerNodes as "+pn+" and you want to add"+peerNode);
-    		return;
-    	}
-    	Logger.minor(this, "addStatusTooNewPeerNode(): adding PeerNode for "+identity);
-    	statusTooNewPeerNodes.put(identity, peerNode);
-    }
-    
-    /**
-     * How many peers are currently too new?
-     */
-    public int getNumStatusTooNewPeerNodes() {
-		return statusTooNewPeerNodes.size();
-    }
-
-    /**
-     * Remove a too new node from the map
-     */
-    public synchronized void removeStatusTooNewPeerNode(String identity, PeerNode peerNode) {
-    	if(!statusTooNewPeerNodes.containsKey(identity)) {
-    		Logger.error(this, "removeStatusTooNewPeerNode(): identity '"+identity+"' not in statusTooNewPeerNodes to remove");
-    		return;
-    	}
-    	Logger.minor(this, "removeStatusTooNewPeerNode(): removing PeerNode for "+identity);
-    	PeerNode pn = (PeerNode) statusTooNewPeerNodes.remove(identity);
-    	if(pn != peerNode) {
-    		Logger.error(this, "Removed "+pn+" should be "+peerNode+" for "+identity+" in removeStatusTooNewPeerNode");
-    	}
-    }
-
-    /**
-     * Add a too old peer to the map
-     */
-    public synchronized void addStatusTooOldPeerNode(String identity, PeerNode peerNode) {
-    	if(statusTooOldPeerNodes.containsKey(identity)) {
-    		PeerNode pn = (PeerNode) statusTooOldPeerNodes.get(identity);
-    		Logger.error(this, "addStatusTooOldPeerNode(): identity '"+identity+"' already in statusTooOldPeerNodes as "+pn+" and you want to add"+peerNode);
-    		return;
-    	}
-    	Logger.minor(this, "addStatusTooOldPeerNode(): adding PeerNode for "+identity);
-    	statusTooOldPeerNodes.put(identity, peerNode);
-    }
-    
-    /**
-     * How many peers are currently too old?
-     */
-    public int getNumStatusTooOldPeerNodes() {
-		return statusTooOldPeerNodes.size();
-    }
-
-    /**
-     * Remove a too old node from the map
-     */
-    public synchronized void removeStatusTooOldPeerNode(String identity, PeerNode peerNode) {
-    	if(!statusTooOldPeerNodes.containsKey(identity)) {
-    		Logger.error(this, "removeStatusTooOldPeerNode(): identity '"+identity+"' not in statusTooOldPeerNodes to remove");
-    		return;
-    	}
-    	Logger.minor(this, "removeStatusTooOldPeerNode(): removing PeerNode for "+identity);
-    	PeerNode pn = (PeerNode) statusTooOldPeerNodes.remove(identity);
-    	if(pn != peerNode) {
-    		Logger.error(this, "Removed "+pn+" should be "+peerNode+" for "+identity+" in removeStatusTooOldPeerNode");
-    	}
-    }
-
-    /**
-     * Add a disconnected peer to the map
-     */
-    public synchronized void addStatusDisconnectedPeerNode(String identity, PeerNode peerNode) {
-    	if(statusDisconnectedPeerNodes.containsKey(identity)) {
-    		PeerNode pn = (PeerNode) statusDisconnectedPeerNodes.get(identity);
-    		Logger.error(this, "addStatusDisconnectedPeerNode(): identity '"+identity+"' already in statusDisconnectedPeerNodes as "+pn+" and you want to add"+peerNode);
-    		return;
-    	}
-    	Logger.minor(this, "addStatusDisconnectedPeerNode(): adding PeerNode for "+identity);
-    	statusDisconnectedPeerNodes.put(identity, peerNode);
-    }
-    
-    /**
-     * How many peers are currently disconnected?
-     */
-    public int getNumStatusDisconnectedPeerNodes() {
-		return statusDisconnectedPeerNodes.size();
-    }
-
-    /**
-     * Remove a disconnected node from the map
-     */
-    public synchronized void removeStatusDisconnectedPeerNode(String identity, PeerNode peerNode) {
-    	if(!statusDisconnectedPeerNodes.containsKey(identity)) {
-    		Logger.error(this, "removeStatusDisconnectedPeerNode(): identity '"+identity+"' not in statusDisconnectedPeerNodes to remove");
-    		return;
-    	}
-    	Logger.minor(this, "removeStatusDisconnectedPeerNode(): removing PeerNode for "+identity);
-    	PeerNode pn = (PeerNode) statusDisconnectedPeerNodes.remove(identity);
-    	if(pn != peerNode) {
-    		Logger.error(this, "Removed "+pn+" should be "+peerNode+" for "+identity+" in removeStatusDisconnectedPeerNode");
-    	}
-    }
-
-    /**
      * Add a PeerNode status to the map
      */
     public synchronized void addPeerNodeStatus(int pnStatus, PeerNode peerNode) {
@@ -3081,11 +2891,11 @@ public class Node {
       if(now > nextPeerNodeStatusLogTime) {
         if((now - nextPeerNodeStatusLogTime) > (3*1000))
           Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 3 seconds ("+(now - nextPeerNodeStatusLogTime)+").  PacketSender getting bogged down or something?");
-        int numberOfConnected = getNumStatusConnectedPeerNodes();
-        int numberOfRoutingBackedOff = getNumStatusRoutingBackedOffPeerNodes();
-        int numberOfTooNew = getNumStatusTooNewPeerNodes();
-        int numberOfTooOld = getNumStatusTooOldPeerNodes();
-        int numberOfDisconnected = getNumStatusDisconnectedPeerNodes();
+        int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
+        int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+        int numberOfTooNew = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW);
+        int numberOfTooOld = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_OLD);
+        int numberOfDisconnected = getPeerNodeStatusSize(PEER_NODE_STATUS_DISCONNECTED);
         int numberOfNeverConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
         Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected);
         nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;

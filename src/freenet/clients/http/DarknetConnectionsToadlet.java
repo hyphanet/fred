@@ -80,28 +80,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
 		
 		/* gather connection statistics */
-		int numberOfConnected = 0;
-		int numberOfBackedOff = 0;
-		int numberOfTooNew = 0;
-		int numberOfTooOld = 0;
-		int numberOfNeverConnected = 0;
-		int numberOfDisconnected = 0;
-		for (int peerIndex = 0, peerCount = peerNodes.length; peerIndex < peerCount; peerIndex++) {
-			int peerStatus = peerNodes[peerIndex].getPeerNodeStatus();
-			if (peerStatus == Node.PEER_NODE_STATUS_CONNECTED) {
-				numberOfConnected++;
-			} else if (peerStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				numberOfBackedOff++;
-			} else if (peerStatus == Node.PEER_NODE_STATUS_TOO_NEW) {
-				numberOfTooNew++;
-			} else if (peerStatus == Node.PEER_NODE_STATUS_TOO_OLD) {
-				numberOfTooOld++;
-			} else if (peerStatus == Node.PEER_NODE_STATUS_DISCONNECTED) {
-				numberOfDisconnected++;
-			} else if (peerStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
-				numberOfNeverConnected++;
-			}
-		}
+		int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
+		int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+		int numberOfTooNew = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_TOO_NEW);
+		int numberOfTooOld = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_TOO_OLD);
+		int numberOfDisconnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_DISCONNECTED);
+		int numberOfNeverConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_NEVER_CONNECTED);
 		
 		buf.append("<table class=\"column\"><tr><td class=\"first\">");
 		
@@ -122,8 +106,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if (numberOfConnected > 0) {
 			buf.append("<span class=\"peer_connected\">Connected: " + numberOfConnected + "</span><br/>");
 		}
-		if (numberOfBackedOff > 0) {
-			buf.append("<span class=\"peer_backedoff\">Backed off: " + numberOfBackedOff + "</span><br/>");
+		if (numberOfRoutingBackedOff > 0) {
+			buf.append("<span class=\"peer_backedoff\">Backed off: " + numberOfRoutingBackedOff + "</span><br/>");
 		}
 		if (numberOfTooNew > 0) {
 			buf.append("<span class=\"peer_too_new\">Too new: " + numberOfTooNew + "</span><br/>");
