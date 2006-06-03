@@ -146,7 +146,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			
 			isRunning=false;
 		}
-		//TODO maybe a UpdateInProgress alert ?
+		
+		alert.set(availableVersion,false);
+		alert.isValid(true);
 		Logger.normal(this,"Starting the update process");
 		System.err.println("Starting the update process: found the update, now fetching it.");
 //		We fetch it
@@ -357,7 +359,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		if(!state.getURI().equals(revocationURI)){
 			System.out.println("Found "+availableVersion);
 			Logger.normal(this, "Found a new version! (" + availableVersion + ", setting up a new UpdatedVersionAviableUserAlert");
-			alert.set(availableVersion);
+			alert.set(availableVersion,true);
 			alert.isValid(true);		
 			synchronized(this){
 				this.cg = state;

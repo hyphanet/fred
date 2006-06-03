@@ -1,16 +1,18 @@
 package freenet.node.useralerts;
 
 public class UpdatedVersionAvailableUserAlert implements UserAlert {
-	private boolean isValid;
+	private boolean isValid, isReady;
 	private int version;
 
 	public UpdatedVersionAvailableUserAlert(int version){
 		this.version=version;
 		isValid=false;
+		isReady=false;
 	}
 	
-	public synchronized void set(int v){
+	public synchronized void set(int v, boolean ready){
 		version = v;
+		isReady = ready;
 	}
 	
 	public boolean userCanDismiss() {
@@ -22,9 +24,13 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	}
 
 	public String getText() {
-		return "It seems that your node isn't running the latest version of the software. "+
-		"Updating to "+version+" is advised. <form action=\"/\" method=\"post\">"+
-		"<input type=\"submit\" name=\"update\" value=\"Update Now\" /></form>";
+		String s ="It seems that your node isn't running the latest version of the software. "+
+		"Updating to "+version+" is advised. ";
+		
+		if(isReady) return s+
+			" <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update Now\" /></form>";
+		else return s+
+			"Your node is currently fetching the update and will ask you whatever you want to update or not when it's ready.";
 	}
 	
 	public short getPriorityClass() {
