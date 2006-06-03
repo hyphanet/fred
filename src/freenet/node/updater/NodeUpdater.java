@@ -261,7 +261,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				if(!fNew.renameTo(fRunning)) {
 					fRunning.delete();
 					if(!fNew.renameTo(fRunning)) {
-						System.out.println("ERROR renaming the file!");
+						System.err.println("ERROR renaming the file!");
 						return;
 					}
 				}
@@ -271,6 +271,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				if(!WrapperManager.isControlledByNativeWrapper()) {
 					Logger.error(this, "Cannot update because not running under wrapper");
 					System.err.println("Cannot update because not running under wrapper");
+					return;
 				}
 				
 				try {
@@ -334,18 +335,16 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					Logger.error(this, "Not able to update because of I/O error: "+e, e);
 					System.err.println("Not able to update because of I/O error: "+e);
 				}
-				
-				if(node.getNodeStarter()!=null)
-					node.getNodeStarter().restart();
-				else{
-					System.out.println("New version has been downloaded: please restart your node!");
-					node.exit();
-				}	
-				
-				
-				
+
 			}
-			
+			if(node.getNodeStarter()!=null) {
+				System.err.println("Restarting because of update");
+				node.getNodeStarter().restart();
+				System.err.println("Restart returned!?");
+			} else{
+				System.out.println("New version has been downloaded: please restart your node!");
+				node.exit();
+			}	
 			
 		}catch(Exception e){
 			Logger.error(this, "Error while updating the node : "+e);
