@@ -90,7 +90,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		ctxRevocation = n.makeClient((short)0).getFetcherContext();
 		ctxRevocation.allowSplitfiles = false;
 		ctxRevocation.cacheLocalRequests = false;
-		ctxRevocation.followRedirects = false;
 		ctxRevocation.maxArchiveLevels = 1;
 		// big enough ?
 		ctxRevocation.maxOutputLength = 4096;
@@ -140,10 +139,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			try{
 				if(isFetching || (!isRunning) || (!isUpdatable())) return;
 			}catch (PrivkeyHasBeenBlownException e){
-				// how to handle it ? a new UserAlert or an imediate exit?
-				Logger.error(this, "The auto-updating Private key has been blown!");
-				System.err.println("The auto-updating Private key has been blown!");
-				node.exit();
+				// Handled in blow().
+				isRunning=false;
+				return;
 			}
 			
 			isRunning=false;
@@ -160,8 +158,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 			cg.start();
 			isFetching = true;
+			queueFetchRevocation(0);
 		}catch (Exception e) {
-			Logger.error(this, "Error while starting the fetching");
+			Logger.error(this, "Error while starting the fetching: "+e, e);
 		}
 	}
 	
@@ -369,16 +368,21 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}else{
 			// The key has been blown !
 			// FIXME: maybe we need a bigger warning message.
-			try{
-				blow(result.asBucket().getOutputStream().toString());
-				Logger.error(this, "The revocation key has been found on the network : blocking auto-update");
-			}catch(IOException e){
-				// We stop anyway.
-				synchronized(this){
-					this.hasBeenBlown = true;
+			String msg = null;
+			try {
+				byte[] buf = result.asByteArray();
+				msg = new String(buf);
+			} catch (Throwable t) {
+				try {
+					Logger.error(this, "Failed to extract result when key blown: "+t, t);
+					System.err.println("Failed to extract result when key blown: "+t);
+					t.printStackTrace();
+					msg = "Failed to extract result when key blown: "+t;
+				} catch (Throwable t1) {
+					msg = "Internal error after retreiving revocation key";
 				}
-				Logger.error(this, "Unable to set the revocation flag");
 			}
+			blow(msg);
 		}
 	}
 
@@ -396,13 +400,14 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				
 				Logger.normal(this, "Rescheduling new request");
 				maybeUpdate();
-			}else
+			} else
 				Logger.error(this, "Canceling fetch : "+ e.getMessage());
 		}else{
 			synchronized(this) {
 				if(errorCode == FetchException.DATA_NOT_FOUND){
 					revocationDNFCounter++;
 				}
+				if(e.isFatal()) this.blow("Permanent error fetching revocation (invalid data inserted?): "+e.toString());
 				// Start it again
 				if(this.finalCheck) {
 					if(revocationDNFCounter < 3)
