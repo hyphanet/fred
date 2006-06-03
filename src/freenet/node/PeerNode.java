@@ -224,6 +224,12 @@ public class PeerNode implements PeerContext {
     
     /** The last time we attempted to update handshakeIPs */
     private long lastAttemptedHandshakeIPUpdateTime = 0;
+    
+    /** True if we have never connected to this peer since it was added to this node */
+    private boolean neverConnected = false;
+    
+    /** When this peer was added to this node */
+    private long peerAddedTime = 1;
 
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
@@ -276,6 +282,7 @@ public class PeerNode implements PeerContext {
         
         // PeerNode starts life as disconnected
         node.addStatusDisconnectedPeerNode(getIdentityString(), this);
+        node.addPeerNodeStatus(Node.PEER_NODE_STATUS_DISCONNECTED, this);
 		
         nominalPeer=new Vector();
         nominalPeer.removeAllElements();
@@ -382,6 +389,7 @@ public class PeerNode implements PeerContext {
         // It belongs to this node, not to the node being described.
         // Therefore, if we are parsing a remotely supplied ref, ignore it.
         
+        long now = System.currentTimeMillis();
         if(fromLocal) {
         
         	SimpleFieldSet metadata = fs.subset("metadata");
@@ -391,7 +399,10 @@ public class PeerNode implements PeerContext {
         		// Don't be tolerant of nonexistant domains; this should be an IP address.
         		Peer p;
         		try {
-        			p = new Peer(metadata.get("detected.udp"), false);
+        			String detectedUDPString = metadata.get("detected.udp");
+        			p = null;
+        			if(detectedUDPString != null)
+        				p = new Peer(detectedUDPString, false);
         		} catch (UnknownHostException e) {
         			p = null;
         			Logger.error(this, "detected.udp = "+metadata.get("detected.udp")+" - "+e, e);
@@ -406,11 +417,29 @@ public class PeerNode implements PeerContext {
               long tempTimeLastReceivedPacket = Long.parseLong(tempTimeLastReceivedPacketString);
               timeLastReceivedPacket = tempTimeLastReceivedPacket;
             }
+            String tempPeerAddedTimeString = metadata.get("peerAddedTime");
+            if(tempPeerAddedTimeString != null) {
+              long tempPeerAddedTime = Long.parseLong(tempPeerAddedTimeString);
+              peerAddedTime = tempPeerAddedTime;
+            } else {
+              peerAddedTime = 1;
+            }
+            String tempNeverConnectedString = metadata.get("neverConnected");
+            if(tempNeverConnectedString != null && tempNeverConnectedString.equals("true")) {
+              neverConnected = true;
+            } else {
+              neverConnected = false;
+            }
         	}
-        	
+        } else {
+            neverConnected = true;
+            peerAddedTime = now;
         }
-    // populate handshakeIPs so handshakes can start ASAP
-    maybeUpdateHandshakeIPs(true);
+        // populate handshakeIPs so handshakes can start ASAP
+        maybeUpdateHandshakeIPs(true);
+    
+        // status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
+        setPeerNodeStatus(now);
     }
 
     private boolean parseARK(SimpleFieldSet fs) {
@@ -649,6 +678,13 @@ public class PeerNode implements PeerContext {
      */
     public long lastReceivedPacketTime() {
         return timeLastReceivedPacket;
+    }
+
+    /**
+     * @return The time this PeerNode was added to the node
+     */
+    public long getPeerAddedTime() {
+        return peerAddedTime;
     }
 
     /**
@@ -1092,6 +1128,7 @@ public class PeerNode implements PeerContext {
             if(previousTracker != null)
                 previousTracker.deprecated();
             isConnected = true;
+            neverConnected = false;
             setPeerNodeStatus(now);
             ctx = null;
         }
@@ -1156,6 +1193,7 @@ public class PeerNode implements PeerContext {
             currentTracker = unverifiedTracker;
             unverifiedTracker = null;
             isConnected = true;
+            neverConnected = false;
             setPeerNodeStatus(now);
             ctx = null;
             maybeSendInitialMessages();
@@ -1399,6 +1437,10 @@ public class PeerNode implements PeerContext {
     		fs.put("detected.udp", detectedPeer.toString());
     	if(timeLastReceivedPacket > 0)
     		fs.put("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
+    	if(peerAddedTime > 0)
+    		fs.put("peerAddedTime", Long.toString(peerAddedTime));
+    	if(neverConnected)
+    		fs.put("neverConnected", "true");
     	return fs;
 	}
 
@@ -1750,6 +1792,8 @@ public class PeerNode implements PeerContext {
 			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_NEW;
 		} else if(completedHandshake && verifiedIncompatibleOlderVersion) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_OLD;
+		} else if(neverConnected) {
+			peerNodeStatus = Node.PEER_NODE_STATUS_NEVER_CONNECTED;
 		} else {
 			peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
 		}
@@ -1774,6 +1818,8 @@ public class PeerNode implements PeerContext {
 		    node.addStatusTooOldPeerNode(getIdentityString(), this);
 		  else if(peerNodeStatus == Node.PEER_NODE_STATUS_DISCONNECTED)
 		    node.addStatusDisconnectedPeerNode(getIdentityString(), this);
+		  node.removePeerNodeStatus( oldPeerNodeStatus, this );
+		  node.addPeerNodeStatus( peerNodeStatus, this );
 		}
 	}
 

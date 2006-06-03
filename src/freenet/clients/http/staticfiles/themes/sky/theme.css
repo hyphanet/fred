@@ -309,6 +309,10 @@ table.darknet_connections span.peer_disconnected {
 	color: #d0d0d0;
 }
 
+table.darknet_connections span.peer_never_connected {
+	color: #a0a0a0;
+}
+
 table.darknet_connections span.peer_version_problem {
 	color: #d07070;
 }

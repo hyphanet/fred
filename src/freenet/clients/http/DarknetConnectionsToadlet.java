@@ -84,6 +84,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int numberOfBackedOff = 0;
 		int numberOfTooNew = 0;
 		int numberOfTooOld = 0;
+		int numberOfNeverConnected = 0;
 		int numberOfDisconnected = 0;
 		for (int peerIndex = 0, peerCount = peerNodes.length; peerIndex < peerCount; peerIndex++) {
 			int peerStatus = peerNodes[peerIndex].getPeerNodeStatus();
@@ -97,6 +98,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				numberOfTooOld++;
 			} else if (peerStatus == Node.PEER_NODE_STATUS_DISCONNECTED) {
 				numberOfDisconnected++;
+			} else if (peerStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
+				numberOfNeverConnected++;
 			}
 		}
 		
@@ -130,6 +133,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		if (numberOfDisconnected > 0) {
 			buf.append("<span class=\"peer_disconnected\">Disconnected: " + numberOfDisconnected + "</span><br/>");
+		}
+		if (numberOfNeverConnected > 0) {
+			buf.append("<span class=\"peer_never_connected\">Never Connected: " + numberOfNeverConnected + "</span><br/>");
 		}
 		buf.append("</div>");
 		buf.append("</div>\n");
@@ -168,13 +174,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				// Don't list the backoff as zero before it's actually zero
 				if(backoff > 0 && backoff < 1000 )
 					backoff = 1000;
-				long idle = pn.lastReceivedPacketTime();
 				
 				// Elements must be HTML encoded.
 				Object[] row = new Object[10];  // where [0] is the pn object and 9 is the node name only for sorting!
 				rows[i] = row;
 				
 				Object status = new Integer(pn.getPeerNodeStatus());
+				long idle = pn.lastReceivedPacketTime();
+				if(((Integer) status).intValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
+					idle = pn.getPeerAddedTime();
 				String lastBackoffReasonOutputString = "/";
 				String backoffReason = pn.getLastBackoffReason();
 				if( backoffReason != null ) {
@@ -204,7 +212,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				row[5] = VersionPrefixString+HTMLEncoder.encode(pn.getVersion())+VersionSuffixString;
 				row[6] = new Double(pn.getLocation().getValue());
 				row[7] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
-				row[8] = idleToString(now, idle, pn.getPeerNodeStatus());
+				row[8] = idleToString(now, idle, ((Integer) status).intValue());
 				row[9] = HTMLEncoder.encode(pn.getName());
 			}
 	
@@ -229,6 +237,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 				else if(x == Node.PEER_NODE_STATUS_DISCONNECTED) {
 					row[2] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
+				}
+				else if(x == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
+					row[2] = "<span class=\"peer_never_connected\">NEVER CONNECTED</span>";
 				}
 			}
 			
