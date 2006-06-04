@@ -138,16 +138,18 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			StringBuffer b = new StringBuffer(100);
 			StringBuffer balt = new StringBuffer(4000);
 			Vector splitTag = new Vector();
+			String currentTag = null;
 			char pprevC = 0;
 			char prevC = 0;
 			char c = 0;
 			mode = INTEXT;
+
 			while (true) {
 				int x = r.read();
 				if (x == -1) {
 					switch (mode) {
 						case INTEXT :
-							saveText(b, w, this);
+							saveText(b, currentTag, w, this);
 							break;
 						default :
 							// Dump unfinished tag
@@ -161,7 +163,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					switch (mode) {
 						case INTEXT :
 							if (c == '<') {
-								saveText(b, w, this);
+
+								saveText(b, currentTag, w, this);
+
 								b.setLength(0);
 								balt.setLength(0);
 								mode = INTAG;
@@ -177,7 +181,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.setLength(0);
 							} else if (c == '<' && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
-								saveText(balt, w, this);
+								saveText(b, currentTag, w, this);
+
 								balt.setLength(0);
 								b.setLength(0);
 								splitTag.clear();
@@ -185,6 +190,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								splitTag.add(b.toString());
 								b.setLength(0);
 								processTag(splitTag, w, this);
+								currentTag = (String)splitTag.get(0);
 								splitTag.clear();
 								balt.setLength(0);
 								mode = INTEXT;
@@ -200,6 +206,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append(c);
 							} else if (c == '\'') {
 								mode = INTAGSQUOTES;
+								b.append(c);
+							} else if (c == '/') { /* Probable end tag */
+								currentTag = null; /* We didn't remember what was the last tag, so ... */
 								b.append(c);
 							} else {
 								b.append(c);
@@ -310,13 +319,14 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								if (!killTag)
 									processTag(splitTag, w, this);
 								killTag = false;
+								currentTag = (String)splitTag.get(0);
 								splitTag.clear();
 								b.setLength(0);
 								balt.setLength(0);
 								mode = INTEXT;
 							} else if (c == '<' && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
-								saveText(balt, w, this);
+								saveText(balt, currentTag, w, this);
 								balt.setLength(0);
 								b.setLength(0);
 								splitTag.clear();
@@ -354,8 +364,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String writeAfterTag = "";
 	}
 
-	void saveText(StringBuffer s, Writer w, HTMLParseContext pc)
+
+	void saveText(StringBuffer s, String tagName, Writer w, HTMLParseContext pc)
 		throws IOException {
+
 		Logger.minor(this, "Saving text: "+s.toString());
 		if (pc.killText) {
 			return;
@@ -387,7 +399,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 		String sout = out.toString();
 		if(pc.cb != null)
-			pc.cb.onText(sout);
+			pc.cb.onText(sout, tagName); /* Tag name is given as type for the text */
+		
 		w.write(sout);
 	}
 

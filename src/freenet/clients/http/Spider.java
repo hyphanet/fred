@@ -55,6 +55,9 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private final LinkedList queuedURIList = new LinkedList();
 	private final HashMap runningFetchesByURI = new HashMap();
 	private final HashMap urisByWord = new HashMap();
+	private final HashMap titlesOfURIs = new HashMap();
+
+	private final int minTimeBetweenEachIndexRewriting = 10;
 
 	// Can have many; this limit only exists to save memory.
 	private final int maxParallelRequests = 20;
@@ -160,7 +163,8 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		startSomeRequests();
 	}
 
-	public void onText(String s, URI baseURI) {
+	public void onText(String s, String type, URI baseURI) {
+
 		FreenetURI uri;
 		try {
 			uri = new FreenetURI(baseURI.getPath());
@@ -168,6 +172,14 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 			Logger.error(this, "Caught " + e, e);
 			return;
 		}
+
+		if(type != null && type.length() != 0 && type.toLowerCase().equals("title")
+		   && s != null && s.length() != 0 && !s.contains("\n")) {
+			/* We should have a correct title */
+			titlesOfURIs.put(uri.toString(false), s);
+		}
+
+
 		String[] words = s.split("[^A-Za-z0-9]");
 		for (int i = 0; i < words.length; i++) {
 			String word = words[i];
@@ -193,7 +205,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 			newURIs[uris.length] = uri;
 			urisByWord.put(word, newURIs);
 		}
-		if (tProducedIndex + 10 * 1000 < System.currentTimeMillis()) {
+		if (tProducedIndex + minTimeBetweenEachIndexRewriting * 1000 < System.currentTimeMillis()) {
 			try {
 				produceIndex();
 			} catch (IOException e) {
@@ -224,6 +236,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		for (int i = 0; i < uris.length; i++) {
 			urisToNumbers.put(uris[i], new Integer(i));
 			bw.write("!" + uris[i].toString(false) + "\n");
+			bw.write("+" + titlesOfURIs.get(uris[i].toString(false)) + "\n");
 		}
 		for (int i = 0; i < words.length; i++) {
 			StringBuffer s = new StringBuffer();

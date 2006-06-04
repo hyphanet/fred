@@ -168,9 +168,9 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 	}
 
-	public void onText(String s) {
+	public void onText(String s, String type) {
 		if(cb != null)
-			cb.onText(s, baseURI);
+			cb.onText(s, type, baseURI);
 	}
 	
 }

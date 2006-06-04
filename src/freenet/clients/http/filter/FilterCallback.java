@@ -30,7 +30,9 @@ public interface FilterCallback {
 	
 	/**
 	 * Process plain-text. Notification only; can't modify.
+	 * Type can be null, or can correspond, for example to HTML tag name around text
+	 *    (for example: "title")
 	 */
-	public void onText(String s);
+	public void onText(String s, String type);
 	
 }
