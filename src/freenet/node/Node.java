@@ -1151,7 +1151,7 @@ public class Node {
         // Then read the peers
         peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
         peers.writePeers();
-        peers.checkEmpty();
+        peers.updatePMUserAlert();
         nodePinger = new NodePinger(this);
 
         usm.setDispatcher(dispatcher=new NodeDispatcher(this));

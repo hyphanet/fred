@@ -112,7 +112,7 @@ public class PeerManager {
         myPeers = newMyPeers;
         Logger.normal(this, "Added "+pn);
     	}
-        checkEmpty();
+        updatePMUserAlert();
         return true;
     }
     
@@ -150,7 +150,7 @@ public class PeerManager {
         
         Logger.normal(this, "Removed "+pn);
     	}
-        checkEmpty();
+        updatePMUserAlert();
         return true;
     }
 
@@ -171,7 +171,7 @@ public class PeerManager {
 			newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
 			connectedPeers = newConnectedPeers;
 		}
-		checkEmpty();
+		updatePMUserAlert();
 		return true;
 	}
 	
@@ -205,7 +205,7 @@ public class PeerManager {
         connectedPeers = newConnectedPeers;
         Logger.minor(this, "Connected peers: "+connectedPeers.length);
     	}
-        checkEmpty();
+        updatePMUserAlert();
     }
     
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
@@ -509,9 +509,10 @@ public class PeerManager {
 	}
 
 	/**
-	 * Check whether the PM is empty. If so, file a PeerManagerUserAlert on the UAM.
+	 * Update the numbers needed by our PeerManagerUserAlert on the UAM.
+	 * Also run the node's onConnectedPeers() method if applicable
 	 */
-	public void checkEmpty() {
+	public void updatePMUserAlert() {
 		int conns, peers;
 		synchronized(this) {
 			conns = this.connectedPeers.length;

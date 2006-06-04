@@ -188,8 +188,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		    			chkStore.seek(seekTarget);
 		    		} catch (IOException ioe) {
 	    				if(seekTarget > (2*1024*1024*1024))
-	    					Logger.error(this, "Environment does not support files greater than 2 GB?");
-	    					System.out.println("Environment does not support files greater than 2 GB? (exception to follow)");
+	    					Logger.error(this, "Environment does not support files bigger than 2 GB?");
+	    					System.out.println("Environment does not support files bigger than 2 GB? (exception to follow)");
 		    			Logger.error(this, "Caught IOException on chkStore.seek("+seekTarget+")");
 		    			throw ioe;
 		    		}
@@ -533,8 +533,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	          chkStore.seek(byteOffset);
 	    	        } catch (IOException ioe) {
 	    	          if(byteOffset > (2*1024*1024*1024))
-	    	            Logger.error(this, "Environment does not support files greater than 2 GB?");
-	    	            System.out.println("Environment does not support files greater than 2 GB? (exception to follow)");
+	    	            Logger.error(this, "Environment does not support files bigger than 2 GB?");
+	    	            System.out.println("Environment does not support files bigger than 2 GB? (exception to follow)");
 	    	          Logger.error(this, "Caught IOException on chkStore.seek("+byteOffset+")");
 		              throw ioe;
 	    	        }
