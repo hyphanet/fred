@@ -438,6 +438,26 @@ public class PeerManager {
         }
         return sb.toString();
     }
+
+    /**
+     * @return TMCI peer list
+     */
+    public String getTMCIPeerList() {
+        StringBuffer sb = new StringBuffer();
+        PeerNode[] peers = myPeers;
+        String[] peerList = new String[peers.length];
+        for(int i=0;i<myPeers.length;i++) {
+            PeerNode pn = myPeers[i];
+            peerList[i] = pn.getTMCIPeerInfo();
+        }
+        Arrays.sort(peerList);
+        for(int i=0;i<peerList.length;i++) {
+            sb.append(peerList[i]);
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
+
     public String getFreevizOutput() {
         StringBuffer sb = new StringBuffer();
         PeerNode[] peers = myPeers;

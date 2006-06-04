@@ -2463,6 +2463,8 @@ public class Node {
     	StringBuffer sb = new StringBuffer();
     	if (peers != null)
     		sb.append(peers.getStatus());
+    	else
+    		sb.append("No peers yet");
     	sb.append("\nInserts: ");
     	int x = insertSenders.size();
     	sb.append(x);
@@ -2483,6 +2485,18 @@ public class Node {
     	sb.append("\nTransferring requests: ");
     	sb.append(this.transferringRequestSenders.size());
     	sb.append('\n');
+    	return sb.toString();
+    }
+
+    /**
+     * @return TMCI peer list
+     */
+    public String getTMCIPeerList() {
+    	StringBuffer sb = new StringBuffer();
+    	if (peers != null)
+    		sb.append(peers.getTMCIPeerList());
+    	else
+    		sb.append("No peers yet");
     	return sb.toString();
     }
     

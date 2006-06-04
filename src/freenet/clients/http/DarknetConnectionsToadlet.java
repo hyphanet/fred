@@ -207,24 +207,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			for(int i=0;i<rows.length;i++) {
 				Object[] row = rows[i];
 				int x = ((Integer) row[2]).intValue();
-				if(x == Node.PEER_NODE_STATUS_CONNECTED) {
-					row[2] = "<span class=\"peer_connected\">CONNECTED</span>";
-				}
-				else if(x == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-					row[2] = "<span class=\"peer_backedoff\">BACKED OFF</span>";
-				}
-				else if(x == Node.PEER_NODE_STATUS_TOO_NEW) {
-					row[2] = "<span class=\"peer_too_new\">TOO NEW</span>";
-				}
-				else if(x == Node.PEER_NODE_STATUS_TOO_OLD) {
-					row[2] = "<span class=\"peer_too_old\">TOO OLD</span>";
-				}
-				else if(x == Node.PEER_NODE_STATUS_DISCONNECTED) {
-					row[2] = "<span class=\"peer_disconnected\">DISCONNECTED</span>";
-				}
-				else if(x == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
-					row[2] = "<span class=\"peer_never_connected\">NEVER CONNECTED</span>";
-				}
+				row[2] = "<span class=\""+((PeerNode) row[0]).getPeerNodeStatusCSSClassName()+"\">"+((PeerNode) row[0]).getPeerNodeStatusString()+"</span>";
 			}
 			
 			// Turn array into HTML

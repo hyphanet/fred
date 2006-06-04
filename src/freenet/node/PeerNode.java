@@ -638,7 +638,7 @@ public class PeerNode implements PeerContext {
     }
     
     /**
-     * Is this node too old for us? (i.e. our lastGoodVersion is newer than it's version)
+     * Is this peer too old for us? (i.e. our lastGoodVersion is newer than it's version)
      * 
      */
     public boolean isVerifiedIncompatibleOlderVersion() {
@@ -646,7 +646,7 @@ public class PeerNode implements PeerContext {
     }
     
     /**
-     * Is this node too new for us? (i.e. our version is older than it's lastGoodVersion)
+     * Is this peer too new for us? (i.e. our version is older than it's lastGoodVersion)
      * 
      */
     public boolean isVerifiedIncompatibleNewerVersion() {
@@ -654,7 +654,7 @@ public class PeerNode implements PeerContext {
     }
     
     /**
-     * Is this node currently connected?
+     * Is this peer currently connected?
      * 
      * Note possible deadlocks! PeerManager calls this, we call
      * PeerManager in e.g. verified.
@@ -1419,6 +1419,14 @@ public class PeerNode implements PeerContext {
         return 
         	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+routingBackoffLength+" ("+(Math.max(routingBackedOffUntil - System.currentTimeMillis(),0))+")";
     }
+
+    public String getTMCIPeerInfo() {
+		    long now = System.currentTimeMillis();
+        int idle = (int) ((now - timeLastReceivedPacket) / 1000);
+        if(peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED && peerAddedTime > 1)
+            idle = (int) ((now - peerAddedTime) / 1000);
+        return myName+"\t"+getPeer()+"\t"+getIdentityString()+"\t"+currentLocation.getValue()+"\t"+getPeerNodeStatusString()+"\t"+idle;
+    }
     
     public String getFreevizOutput() {
     	return
@@ -1430,7 +1438,7 @@ public class PeerNode implements PeerContext {
     }
 
     /**
-     * Write our noderef to disk
+     * Write the peer's noderef to disk
      */
     public void write(Writer w) throws IOException {
         SimpleFieldSet fs = exportFieldSet();
@@ -1443,7 +1451,7 @@ public class PeerNode implements PeerContext {
     /**
      * Export metadata about the node as a SimpleFieldSet
      */
-    private SimpleFieldSet exportMetadataFieldSet() {
+    public SimpleFieldSet exportMetadataFieldSet() {
     	SimpleFieldSet fs = new SimpleFieldSet(true);
     	if(detectedPeer != null)
     		fs.put("detected.udp", detectedPeer.toString());
@@ -1457,9 +1465,9 @@ public class PeerNode implements PeerContext {
 	}
 
 	/**
-     * Export our noderef as a SimpleFieldSet
+     * Export the peer's noderef as a SimpleFieldSet
      */
-    private SimpleFieldSet exportFieldSet() {
+    public SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet(true);
         if(lastGoodVersion != null)
         	fs.put("lastGoodVersion", lastGoodVersion);
@@ -1791,6 +1799,40 @@ public class PeerNode implements PeerContext {
 
   public int getPeerNodeStatus() {
 		return peerNodeStatus;
+  }
+
+  public String getPeerNodeStatusString() {
+  	int status = peerNodeStatus;
+  	if(status == Node.PEER_NODE_STATUS_CONNECTED)
+  		return "CONNECTED";
+  	if(status == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+  		return "BACKED OFF";
+  	if(status == Node.PEER_NODE_STATUS_TOO_NEW)
+  		return "TOO NEW";
+  	if(status == Node.PEER_NODE_STATUS_TOO_OLD)
+  		return "TOO OLD";
+  	if(status == Node.PEER_NODE_STATUS_DISCONNECTED)
+  		return "DISCONNECTED";
+  	if(status == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
+  		return "NEVER CONNECTED";
+  	return "UNKNOWN STATUS";
+  }
+
+  public String getPeerNodeStatusCSSClassName() {
+  	int status = peerNodeStatus;
+  	if(status == Node.PEER_NODE_STATUS_CONNECTED)
+  		return "peer_connected";
+  	if(status == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
+  		return "peer_backedoff";
+  	if(status == Node.PEER_NODE_STATUS_TOO_NEW)
+  		return "peer_too_new";
+  	if(status == Node.PEER_NODE_STATUS_TOO_OLD)
+  		return "peer_too_old";
+  	if(status == Node.PEER_NODE_STATUS_DISCONNECTED)
+  		return "peer_disconnected";
+  	if(status == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
+  		return "peer_never_connected";
+  	return "peer_unknown_status";
   }
 
 	public synchronized void setPeerNodeStatus(long now) {

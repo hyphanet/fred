@@ -149,10 +149,14 @@ public class TextModeClientInterface implements Runnable {
 //        sb.append("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key\r\n");
         sb.append("CONNECT:<filename|URL> - see ADDPEER:<filename|URL> below\r\n");
         sb.append("CONNECT:\\r\\n<noderef> - see ADDPEER:\\r\\n<noderef> below\r\n");
-        sb.append("DISCONNECT:<ip:port|name> - see REMOVEPEER:<ip:port|name> below\r\n");
-        sb.append("ADDPEER:<filename|URL> - connect to a node from its ref in a file/url.\r\n");
-        sb.append("ADDPEER:\\r\\n<noderef including an End on a line by itself> - enter a noderef directly.\r\n");
-        sb.append("REMOVEPEER:<ip:port|name> - disconnect from a node by providing it's ip+port or name\r\n");
+        sb.append("DISCONNECT:<ip:port|name> - see REMOVEPEER:<ip:port|name|identity> below\r\n");
+        sb.append("ADDPEER:<filename|URL> - add a peer from its ref in a file/url.\r\n");
+        sb.append("ADDPEER:\\r\\n<noderef including an End on a line by itself> - add a peer by entering a noderef directly.\r\n");
+        sb.append("HAVEPEER:<ip:port|name|identity> - report true/false on having a peer by providing it's ip+port, name, or identity\r\n");
+        sb.append("REMOVEPEER:<ip:port|name|identity> - remove a peer by providing it's ip+port, name, or identity\r\n");
+        sb.append("PEER:<ip:port|name|identity> - report the noderef of a peer (without metadata) by providing it's ip+port, name, or identity\r\n");
+        sb.append("PEERWMD:<ip:port|name|identity> - report the noderef of a peer (with metadata) by providing it's ip+port, name, or identity\r\n");
+        sb.append("PEERS - report tab delimited list of peers with name, ip+port, identity, location, status and idle time in seconds\r\n");
         sb.append("NAME:<new node name> - change the node's name.\r\n");
         sb.append("UPDATE ask the node to self-update if possible. \r\n");
 //        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\r\n");
@@ -552,9 +556,9 @@ public class TextModeClientInterface implements Runnable {
             SimpleFieldSet fs = n.exportPublicFieldSet();
             outsb.append(fs.toString());
             outsb.append(n.getStatus());
-	    if(Version.buildNumber()<Version.highestSeenBuild){
-	            outsb.append("The latest version is : "+Version.highestSeenBuild);
-	    }
+            if(Version.buildNumber()<Version.highestSeenBuild){
+                outsb.append("The latest version is : "+Version.highestSeenBuild);
+            }
         } else if(uline.startsWith("ADDPEER:") || uline.startsWith("CONNECT:")) {
             String key = null;
             if(uline.startsWith("CONNECT:")) {
@@ -571,13 +575,13 @@ public class TextModeClientInterface implements Runnable {
             if(key.length() > 0) {
                 // Filename
             	BufferedReader in;
-                outsb.append("Trying to connect to noderef in "+key);
+                outsb.append("Trying to add peer to node by noderef in "+key+"\r\n");
                 File f = new File(key);
                 if (f.isFile()) {
-                	outsb.append("Given string seems to be a file, loading...");
+                	outsb.append("Given string seems to be a file, loading...\r\n");
                 	in = new BufferedReader(new FileReader(f));
                 } else {
-                	outsb.append("Given string seems to be an URL, loading...");
+                	outsb.append("Given string seems to be an URL, loading...\r\n");
                     URL url = new URL(key);
                     URLConnection uc = url.openConnection();
                 	in = new BufferedReader(
@@ -590,7 +594,7 @@ public class TextModeClientInterface implements Runnable {
             }
             if(content == null) return false;
             if(content.equals("")) return false;
-            connect(content);
+            addPeer(content);
         
         } else if(uline.startsWith("NAME:")) {
             outsb.append("Node name currently: "+n.myName);
@@ -604,19 +608,67 @@ public class TextModeClientInterface implements Runnable {
             try{
             	n.config.get("node").getOption("name").setValue(key);
             	Logger.minor(this, "Setting node.name to "+key);
-			}catch(Exception e){
-				Logger.error(this, "Error setting node's name");
+            }catch(Exception e){
+            	Logger.error(this, "Error setting node's name");
     		}
     		n.config.store();
-        } else if(uline.startsWith("REMOVEPEER:") || uline.startsWith("DISCONNECT:")) {
-        	String ipAndPortOrName = null;
-        	if(uline.startsWith("DISCONNECT:")) {
-        		ipAndPortOrName = line.substring("DISCONNECT:".length());
+        } else if(uline.startsWith("HAVEPEER:")) {
+        	String nodeIdentifier = (line.substring("HAVEPEER:".length())).trim();
+        	if(havePeer(nodeIdentifier)) {
+        		outsb.append("true for "+nodeIdentifier);
         	} else {
-        		ipAndPortOrName = line.substring("REMOVEPEER:".length());
+        		outsb.append("false for "+nodeIdentifier);
         	}
-        	disconnect(ipAndPortOrName.trim());
-        	
+        	outsb.append("\r\n");
+        } else if(uline.startsWith("REMOVEPEER:") || uline.startsWith("DISCONNECT:")) {
+        	String nodeIdentifier = null;
+        	if(uline.startsWith("DISCONNECT:")) {
+        		nodeIdentifier = line.substring("DISCONNECT:".length());
+        	} else {
+        		nodeIdentifier = line.substring("REMOVEPEER:".length());
+        	}
+        	if(removePeer(nodeIdentifier)) {
+        		outsb.append("peer removed for "+nodeIdentifier);
+        	} else {
+        		outsb.append("peer removal failed for "+nodeIdentifier);
+        	}
+        	outsb.append("\r\n");
+        } else if(uline.startsWith("PEER:")) {
+        	String nodeIdentifier = (line.substring("PEER:".length())).trim();
+        	if(!havePeer(nodeIdentifier)) {
+        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
+        	PeerNode pn = getPeer(nodeIdentifier);
+        	if(pn == null) {
+        		out.write(("getPeer() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
+        	SimpleFieldSet fs = pn.exportFieldSet();
+        	outsb.append(fs.toString());
+        } else if(uline.startsWith("PEERWMD:")) {
+        	String nodeIdentifier = (line.substring("PEERWMD:".length())).trim();
+        	if(!havePeer(nodeIdentifier)) {
+        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
+        	PeerNode pn = getPeer(nodeIdentifier);
+        	if(pn == null) {
+        		out.write(("getPeer() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
+        	SimpleFieldSet fs = pn.exportFieldSet();
+        	SimpleFieldSet meta = pn.exportMetadataFieldSet();
+        	if(!meta.isEmpty())
+        	 	fs.put("metadata", meta);
+        	outsb.append(fs.toString());
+        } else if(uline.startsWith("PEERS")) {
+        	outsb.append(n.getTMCIPeerList());
+        	outsb.append("PEERS done.\r\n");
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
         		outsb.append("  PLUGLOAD: pkg.Class                  - Load plugin from current classpath");        		
@@ -757,9 +809,9 @@ public class TextModeClientInterface implements Runnable {
     }
 
     /**
-     * Connect to a node, given its reference.
+     * Add a peer to the node, given its reference.
      */
-    private void connect(String content) {
+    private void addPeer(String content) {
         SimpleFieldSet fs;
         System.out.println("Connecting to:\r\n"+content);
         try {
@@ -787,10 +839,9 @@ public class TextModeClientInterface implements Runnable {
     }
     
     /**
-     * Disconnect from a node, given its ip and port, or name, as a String
+     * Return a peer of the node given its ip and port, name or identity, as a String
      */
-    private void disconnect(String nodeIdentifier) {
-    	System.out.println("Disconnecting from node at: "+nodeIdentifier);
+    private PeerNode getPeer(String nodeIdentifier) {
     	PeerNode[] pn = n.peers.myPeers;
     	for(int i=0;i<pn.length;i++)
     	{
@@ -800,13 +851,62 @@ public class TextModeClientInterface implements Runnable {
         		nodeIpAndPort = peer.getAddress().getHostAddress()+":"+pn[i].getDetectedPeer().getPort();
     		}
     		String name = pn[i].myName;
-    		if(nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
+    		String identity = pn[i].getIdentityString();
+    		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
     		{
-    			n.peers.disconnect(pn[i]);
-    			return;
+    			return pn[i];
     		}
     	}
-    	System.out.println("No node in peers list at: "+nodeIdentifier);
+    	return null;
+    }
+    
+    /**
+     * Check for a peer of the node given its ip and port, name or identity, as a String
+     * Report peer existence as boolean
+     */
+    private boolean havePeer(String nodeIdentifier) {
+    	PeerNode[] pn = n.peers.myPeers;
+    	for(int i=0;i<pn.length;i++)
+    	{
+    		Peer peer = pn[i].getDetectedPeer();
+    		String nodeIpAndPort = "";
+    		if(peer != null) {
+        		nodeIpAndPort = peer.getAddress().getHostAddress()+":"+pn[i].getDetectedPeer().getPort();
+    		}
+    		String name = pn[i].myName;
+    		String identity = pn[i].getIdentityString();
+    		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
+    		{
+    			return true;
+    		}
+    	}
+    	return false;
+    }
+    
+    /**
+     * Remove a peer from the node given its ip and port, name or identity, as a String
+     * Report peer removal successfulness as boolean
+     */
+    private boolean removePeer(String nodeIdentifier) {
+    	System.out.println("Removing peer from node for: "+nodeIdentifier);
+    	PeerNode[] pn = n.peers.myPeers;
+    	for(int i=0;i<pn.length;i++)
+    	{
+    		Peer peer = pn[i].getDetectedPeer();
+    		String nodeIpAndPort = "";
+    		if(peer != null) {
+        		nodeIpAndPort = peer.getAddress().getHostAddress()+":"+pn[i].getDetectedPeer().getPort();
+    		}
+    		String name = pn[i].myName;
+    		String identity = pn[i].getIdentityString();
+    		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
+    		{
+    			n.removeDarknetConnection(pn[i]);
+    			return true;
+    		}
+    	}
+    	System.out.println("No node in peers list for: "+nodeIdentifier);
+    	return false;
     }
 
     private String sanitize(String fnam) {
