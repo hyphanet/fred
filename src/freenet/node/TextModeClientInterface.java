@@ -128,9 +128,9 @@ public class TextModeClientInterface implements Runnable {
         sb.append("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision+"\r\n");
         sb.append("Enter one of the following commands:\r\n");
         sb.append("GET:<Freenet key> - Fetch a key\r\n");
-        sb.append("PUT:\r\n<text, until a . on a line by itself> - Insert the document and return the key.\r\n");
+        sb.append("PUT:\\r\\n<text, until a . on a line by itself> - Insert the document and return the key.\r\n");
         sb.append("PUT:<text> - Put a single line of text to a CHK and return the key.\r\n");
-        sb.append("GETCHK:\r\n<text, until a . on a line by itself> - Get the key that would be returned if the document was inserted.\r\n");
+        sb.append("GETCHK:\\r\\n<text, until a . on a line by itself> - Get the key that would be returned if the document was inserted.\r\n");
         sb.append("GETCHK:<text> - Get the key that would be returned if the line was inserted.\r\n");
         sb.append("PUTFILE:<filename>[#<mimetype>] - Put a file from disk.\r\n");
         sb.append("GETFILE:<filename> - Fetch a key and put it in a file. If the key includes a filename we will use it but we will not overwrite local files.\r\n");
@@ -143,7 +143,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("PLUGLOAD: - Load plugin. (use \"PLUGLOAD:?\" for more info)\r\n");
         //sb.append("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.\r\n");
         sb.append("PLUGLIST - List all loaded plugins.\r\n");
-        sb.append("PLUGKILL: <pluginID> - Unload the plugin with the given ID (see PLUGLIST).\r\n");
+        sb.append("PLUGKILL:<pluginID> - Unload the plugin with the given ID (see PLUGLIST).\r\n");
 //        sb.append("PUBLISH:<name> - create a publish/subscribe stream called <name>\r\n");
 //        sb.append("PUSH:<name>:<text> - publish a single line of text to the stream named\r\n");
 //        sb.append("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key\r\n");
