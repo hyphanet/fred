@@ -174,7 +174,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		}
 
 		if(type != null && type.length() != 0 && type.toLowerCase().equals("title")
-		   && s != null && s.length() != 0 && !s.contains("\n")) {
+		   && s != null && s.length() != 0 && s.indexOf('\n') < 0) {
 			/* We should have a correct title */
 			titlesOfURIs.put(uri.toString(false), s);
 		}
