@@ -847,7 +847,11 @@ public class PeerNode implements PeerContext {
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
         if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
         	Logger.normal( this, "Starting ARK Fetcher after "+handshakeCount+" failed handshakes for "+getPeer()+" with identity '"+getIdentityString()+"'");
+        	long arkFetcherStartTime1 = System.currentTimeMillis();
         	arkFetcher.start();
+        	long arkFetcherStartTime2 = System.currentTimeMillis();
+        	if((arkFetcherStartTime2 - arkFetcherStartTime1) > 500)
+        		Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 ("+(arkFetcherStartTime2 - arkFetcherStartTime1)+") working on "+myName);
         }
     }
     
