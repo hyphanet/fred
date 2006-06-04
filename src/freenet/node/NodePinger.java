@@ -15,6 +15,8 @@ public class NodePinger implements Runnable {
 	private TimeDecayingRunningAverage tdra;
 	
 	NodePinger(Node n) {
+		Logger.normal(this, "Starting NodePinger");
+		System.out.println("Starting NodePinger");
 		this.node = n;
 		this.tdra = new TimeDecayingRunningAverage(0.0, 30*1000, // 30 seconds
 				0.0, Double.MAX_VALUE);

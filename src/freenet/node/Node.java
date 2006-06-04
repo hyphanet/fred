@@ -1257,8 +1257,14 @@ public class Node {
         }
 
         try {
+            Logger.normal(this, "Initializing CHK Datastore");
+            System.out.println("Initializing CHK Datastore");
             chkDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH);
+            Logger.normal(this, "Initializing SSK Datastore");
+            System.out.println("Initializing SSK Datastore");
             sskDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH);
+            Logger.normal(this, "Initializing pubKey Datastore");
+            System.out.println("Initializing pubKey Datastore");
             pubKeyDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0);
         } catch (FileNotFoundException e1) {
         	String msg = "Could not open datastore: "+e1;
@@ -1298,7 +1304,7 @@ public class Node {
         });
         
         String val = nodeConfig.getString("downloadsDir");
-		downloadDir = new File(val);
+        downloadDir = new File(val);
         if(!((downloadDir.exists() && downloadDir.isDirectory()) || (downloadDir.mkdir()))) {
         	throw new NodeInitException(EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
         }
@@ -1341,9 +1347,13 @@ public class Node {
 		sskInsertStarter.setScheduler(sskPutScheduler);
 		sskInsertStarter.start();
 
+    Logger.normal(this, "Initializing USK Manager");
+    System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);
 		
 		// And finally, Initialize the plugin manager
+    Logger.normal(this, "Initializing Plugin Manager");
+    System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
 		
 		FetcherContext ctx = makeClient((short)0).getFetcherContext();
@@ -1358,6 +1368,8 @@ public class Node {
 		ctx.maxTempLength = 4096;
 		
 		this.arkFetcherContext = ctx;
+    Logger.normal(this, "Node constructor completed");
+    System.out.println("Node constructor completed");
     }
 	
 	static final String ERROR_SUN_NPTL = 
@@ -1377,8 +1389,6 @@ public class Node {
         ps.start();
         usm.start();
         
-        Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-        System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
         if(isUsingWrapper()) {
             Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
             System.out.println("Using wrapper correctly: "+nodeStarter);
@@ -1386,6 +1396,10 @@ public class Node {
             Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
             System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
         }
+        Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
+        System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
+        Logger.normal(this, "FNP port is on "+bindto+":"+portNumber);
+        System.out.println("FNP port is on "+bindto+":"+portNumber);
         // Start services
         
         // TMCI

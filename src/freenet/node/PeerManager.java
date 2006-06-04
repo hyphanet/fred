@@ -52,9 +52,11 @@ public class PeerManager {
      * @param filename
      */
     public PeerManager(Node node, String filename) {
+        Logger.normal(this, "Creating PeerManager");
+        System.out.println("Creating PeerManager");
         this.filename = filename;
-		ua = new PeerManagerUserAlert(node);
-		node.alerts.register(ua);
+        ua = new PeerManagerUserAlert(node);
+        node.alerts.register(ua);
         myPeers = new PeerNode[0];
         connectedPeers = new PeerNode[0];
         this.node = node;
