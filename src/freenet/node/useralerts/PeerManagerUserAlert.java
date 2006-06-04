@@ -10,6 +10,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	boolean isValid=true;
 	int bwlimitDelayTime = 1;
 	int nodeAveragePingTime = 1;
+	long oldestNeverConnectedPeerAge = 0;
 	
 	/** How many connected peers we need to not get alert about not enough */
 	static final int MIN_CONN_THRESHOLD = 3;
@@ -28,6 +29,9 @@ public class PeerManagerUserAlert implements UserAlert {
 	
 	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
 	static final int MAX_NODE_AVERAGE_PING_TIME_THRESHOLD = 1500;
+	
+	/** How high can oldestNeverConnectedPeerAge be before we alert (in milliseconds)*/
+	static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD = ((long) 2)*24*60*60*1000;  // 2 weeks
 	
 	public PeerManagerUserAlert(Node n) {
 		this.n = n;
@@ -54,6 +58,8 @@ public class PeerManagerUserAlert implements UserAlert {
 			return "bwlimitDelayTime too high";
 		if(nodeAveragePingTime > MAX_NODE_AVERAGE_PING_TIME_THRESHOLD)
 			return "nodeAveragePingTime too high";
+		if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD)
+			return "Never connected peer(s) too old";
 		else throw new IllegalArgumentException("Not valid");
 	}
 	
@@ -90,6 +96,8 @@ public class PeerManagerUserAlert implements UserAlert {
 			s = "This node has to wait too long for available bandwidth ("+bwlimitDelayTime+" > "+MAX_BWLIMIT_DELAY_TIME_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
 		} else if(nodeAveragePingTime > MAX_NODE_AVERAGE_PING_TIME_THRESHOLD) {
 			s = "This node is having trouble talking with it's peers quickly enough ("+nodeAveragePingTime+" > "+MAX_NODE_AVERAGE_PING_TIME_THRESHOLD+").  Decrease your output bandwidth limit and or remove som peers to improve the situation.";
+		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD) {
+			s = "One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are affecting performance.";
 		} else throw new IllegalArgumentException("Not valid");
 		return s;
 	}
@@ -110,13 +118,15 @@ public class PeerManagerUserAlert implements UserAlert {
 		// only update here so we don't get odd behavior with it fluctuating
 		bwlimitDelayTime = (int) n.getBwlimitDelayTime();
 		nodeAveragePingTime = (int) n.getNodeAveragePingTime();
+		oldestNeverConnectedPeerAge = (int) n.getOldestNeverConnectedPeerAge();
 		return (peers == 0 ||
 				conns < 3 ||
 				(peers - conns) > MAX_DISCONN_PEER_THRESHOLD ||
 				conns > MAX_CONN_THRESHOLD ||
 				peers > MAX_PEER_THRESHOLD ||
 				bwlimitDelayTime > MAX_BWLIMIT_DELAY_TIME_THRESHOLD ||
-				nodeAveragePingTime > MAX_NODE_AVERAGE_PING_TIME_THRESHOLD) &&
+				nodeAveragePingTime > MAX_NODE_AVERAGE_PING_TIME_THRESHOLD ||
+				oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD) &&
 				isValid;
 	}
 	

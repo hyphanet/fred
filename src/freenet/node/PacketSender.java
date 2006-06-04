@@ -126,6 +126,7 @@ public class PacketSender implements Runnable {
             }
         }
         node.maybeLogPeerNodeStatusSummary(now);
+        node.maybeUpdateOldestNeverConnectedPeerAge(now);
         long nextActionTime = Long.MAX_VALUE;
         long oldTempNow = now;
         for(int i=0;i<nodes.length;i++) {

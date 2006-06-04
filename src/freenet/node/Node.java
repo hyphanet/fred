@@ -478,6 +478,12 @@ public class Node {
     private final long peerNodeStatusLogInterval = 1000;
     /** PeerNode statuses, by status */
     private final HashMap peerNodeStatuses;
+    /** Next time to update oldestNeverConnectedPeerAge */
+    private long nextOldestNeverConnectedPeerAgeUpdateTime = -1;
+    /** oldestNeverConnectedPeerAge update interval (milliseconds) */
+    private final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
+    /** age of oldest never connected peer (milliseconds) */
+    private long oldestNeverConnectedPeerAge = 0;
     
     private final HashSet runningUIDs;
     
@@ -2928,6 +2934,33 @@ public class Node {
         Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected);
         nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
       }
+    }
+
+    /**
+     * Update oldestNeverConnectedPeerAge if the timer has expired
+     */
+    public void maybeUpdateOldestNeverConnectedPeerAge(long now) {
+      if(now > nextOldestNeverConnectedPeerAgeUpdateTime) {
+        oldestNeverConnectedPeerAge = 0;
+       	if(peers != null) {
+          PeerNode[] peerList = peers.myPeers;
+          for(int i=0;i<peerList.length;i++) {
+            PeerNode pn = peerList[i];
+            if(pn.getPeerNodeStatus() == PEER_NODE_STATUS_NEVER_CONNECTED) {
+              if((now - pn.getPeerAddedTime()) > oldestNeverConnectedPeerAge) {
+                oldestNeverConnectedPeerAge = now - pn.getPeerAddedTime();
+              }
+            }
+          }
+       	}
+       	if(oldestNeverConnectedPeerAge > 0)
+          Logger.minor(this, "Oldest never connected peer is "+oldestNeverConnectedPeerAge+"ms old");
+        nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
+      }
+    }
+
+    public long getOldestNeverConnectedPeerAge() {
+      return oldestNeverConnectedPeerAge;
     }
 
     /**
