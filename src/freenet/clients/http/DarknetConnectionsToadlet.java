@@ -66,7 +66,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		//HTTPRequest request = new HTTPRequest(uri);
 
-		ctx.getPageMaker().makeHead(buf, "Darknet Connections");
+		ctx.getPageMaker().makeHead(buf, "Darknet Peers");
 		
 		// FIXME! We need some nice images
 		PeerNode[] peerNodes = node.getDarknetConnections();
@@ -101,7 +101,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</td><td class=\"last\">");
 		
 		buf.append("<div class=\"infobox\">");
-		buf.append("<div class=\"infobox-header\">Connection statistics</div>");
+		buf.append("<div class=\"infobox-header\">Peer statistics</div>");
 		buf.append("<div class=\"infobox-content\">");
 		if (numberOfConnected > 0) {
 			buf.append("<span class=\"peer_connected\">Connected: " + numberOfConnected + "</span><br/>");
@@ -128,7 +128,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		buf.append("<div class=\"infobox infobox-normal\">\n");
 		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("My Connections");
+		buf.append("My Peers");
 		if (!path.endsWith("displaymessagetypes.html"))
 		{
 			buf.append(" <a href=\"displaymessagetypes.html\">(more detailed)</a>");
@@ -279,10 +279,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
-		// new connection box
+		// new peer addition box
 		buf.append("<div class=\"infobox infobox-normal\">\n");
 		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("Connect to another node\n");
+		buf.append("Add another peer\n");
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
@@ -295,7 +295,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("or file:\n");
 		buf.append("<input id=\"reffile\" type=\"file\" name=\"reffile\" />\n");
 		buf.append("<br />\n");
-		buf.append("<input type=\"submit\" name=\"connect\" value=\"Connect\" />\n");
+		buf.append("<input type=\"submit\" name=\"add\" value=\"Add\" />\n");
 		buf.append("</form>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
@@ -325,8 +325,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
-		if (request.isPartSet("connect")) {
-			// connect to a new node
+		if (request.isPartSet("add")) {
+			// add a new node
 			String urltext = request.getPartAsString("url", 100);
 			urltext = urltext.trim();
 			String reftext = request.getPartAsString("ref", 2000);
@@ -388,11 +388,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				return;
 			}
 			if(pn.getIdentityHash()==node.getIdentityHash()) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "You can't add your own node to the list of remote peers.<br /> <a href=\".\">Return to the connections page</a>");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "You can't add your own node to the list of remote peers.<br /> <a href=\".\">Return to the peers page</a>");
 				return;
 			}
 			if(!this.node.addDarknetConnection(pn)) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "We already have the given reference.<br /> <a href=\".\">Return to the connections page</a>");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "We already have the given reference.<br /> <a href=\".\">Return to the peers page</a>");
 				return;
 			}
 			
