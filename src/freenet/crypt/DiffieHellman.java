@@ -17,10 +17,10 @@ public class DiffieHellman {
 	 * When the number of precalculations falls below this threshold generation
 	 * starts up to make more.
 	 */
-	private static final int PRECALC_RESUME = 15;
+	private static final int PRECALC_RESUME = 150;
 
 	/** Maximum number of precalculations to create. */
-	private static final int PRECALC_MAX = 30;
+	private static final int PRECALC_MAX = 300;
 
 	/**
 	 * How often to wake up and make sure the precalculation buffer is full

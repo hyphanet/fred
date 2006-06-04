@@ -43,7 +43,7 @@ public class UdpSocketManager extends Thread {
 	private boolean _active = true;
 	private boolean _isDone = false;
 	private static UdpSocketManager _usm;
-	private static final int MAX_UNMATCHED_FIFO_SIZE = 5000;
+	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
 
 	protected UdpSocketManager() {
 	}
@@ -474,11 +474,14 @@ public class UdpSocketManager extends Thread {
     // I think DNSRequester should have handled DNS for this spot, but
     // I'm seeing this error, so I'm temporarily switching this to
     // allow DNS until I have more time to sort this out  -Zothar (**FIXME**)
-    //if( destination.getAddress(false) == null ) {
-    if( destination.getAddress(true) == null ) {
-  		     Logger.error(this, "Tried sending to bad destination address: null:" + destination.getPort());
-  		     return;
-		}
+    // start with false, and then try true, but complain loudly that we had to use true :)
+		if( destination.getAddress(false) == null ) {
+  			Logger.error(this, "Tried sending to destination without pre-looked up IP address(needs a real Peer.getHostname()): null:" + destination.getPort(), new Exception("error"));
+			if( destination.getAddress(true) == null ) {
+  				Logger.error(this, "Tried sending to bad destination address: null:" + destination.getPort(), new Exception("error"));
+  				return;
+  			}
+  		}
 		if (_dropProbability > 0) {
 			if (dropRandom.nextInt() % _dropProbability == 0) {
 				Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPort());

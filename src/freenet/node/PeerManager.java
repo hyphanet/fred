@@ -154,24 +154,23 @@ public class PeerManager {
 
 	public boolean disconnected(PeerNode pn) {
 		synchronized(this) {
-		boolean isInPeers = false;
-		for(int i=0;i<connectedPeers.length;i++) {
-			if(connectedPeers[i] == pn) isInPeers=true;
+			boolean isInPeers = false;
+			for(int i=0;i<connectedPeers.length;i++) {
+				if(connectedPeers[i] == pn) isInPeers=true;
+			}
+			if(!isInPeers) return false;
+			// removing from connectedPeers
+			ArrayList a = new ArrayList();
+			for(int i=0;i<myPeers.length;i++) {
+				if(myPeers[i]!=pn && myPeers[i].isConnected())
+					a.add(myPeers[i]);
+			}
+			PeerNode[] newConnectedPeers = new PeerNode[a.size()];
+			newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
+			connectedPeers = newConnectedPeers;
 		}
-		if(!isInPeers) return false;
-		// removing from connectedPeers
-		ArrayList a = new ArrayList();
-		for(int i=0;i<myPeers.length;i++) {
-			if(myPeers[i]!=pn && myPeers[i].isConnected())
-				a.add(myPeers[i]);
-		}
-        
-        PeerNode[] newConnectedPeers = new PeerNode[a.size()];
-        newConnectedPeers = (PeerNode[]) a.toArray(newConnectedPeers);
-	    connectedPeers = newConnectedPeers;
-		}
-	    checkEmpty();
-	    return true;
+		checkEmpty();
+		return true;
 	}
 	
     public void addConnectedPeer(PeerNode pn) {
