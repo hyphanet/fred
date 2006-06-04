@@ -143,6 +143,9 @@ public class PeerManager {
         	}
         }
         myPeers = newMyPeers;
+        int peerNodeStatus = pn.getPeerNodeStatus();
+        node.removePeerNodeStatus( peerNodeStatus, pn );
+        
         Logger.normal(this, "Removed "+pn);
     	}
         checkEmpty();
