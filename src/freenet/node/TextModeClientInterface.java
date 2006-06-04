@@ -147,9 +147,12 @@ public class TextModeClientInterface implements Runnable {
 //        sb.append("PUBLISH:<name> - create a publish/subscribe stream called <name>\r\n");
 //        sb.append("PUSH:<name>:<text> - publish a single line of text to the stream named\r\n");
 //        sb.append("SUBSCRIBE:<key> - subscribe to a publish/subscribe stream by key\r\n");
-        sb.append("CONNECT:<filename|URL> - connect to a node from its ref in a file/url.\r\n");
-        sb.append("CONNECT:\r\n<noderef including an End on a line by itself> - enter a noderef directly.\r\n");
-        sb.append("DISCONNECT:<ip:port> - disconnect from a node by providing it's ip+port or name\r\n");
+        sb.append("CONNECT:<filename|URL> - see ADDPEER:<filename|URL> below\r\n");
+        sb.append("CONNECT:\\r\\n<noderef> - see ADDPEER:\\r\\n<noderef> below\r\n");
+        sb.append("DISCONNECT:<ip:port|name> - see REMOVEPEER:<ip:port|name> below\r\n");
+        sb.append("ADDPEER:<filename|URL> - connect to a node from its ref in a file/url.\r\n");
+        sb.append("ADDPEER:\\r\\n<noderef including an End on a line by itself> - enter a noderef directly.\r\n");
+        sb.append("REMOVEPEER:<ip:port|name> - disconnect from a node by providing it's ip+port or name\r\n");
         sb.append("NAME:<new node name> - change the node's name.\r\n");
         sb.append("UPDATE ask the node to self-update if possible. \r\n");
 //        sb.append("SUBFILE:<filename> - append all data received from subscriptions to a file, rather than sending it to stdout.\r\n");
@@ -552,8 +555,13 @@ public class TextModeClientInterface implements Runnable {
 	    if(Version.buildNumber()<Version.highestSeenBuild){
 	            outsb.append("The latest version is : "+Version.highestSeenBuild);
 	    }
-        } else if(uline.startsWith("CONNECT:")) {
-            String key = line.substring("CONNECT:".length());
+        } else if(uline.startsWith("ADDPEER:") || uline.startsWith("CONNECT:")) {
+            String key = null;
+            if(uline.startsWith("CONNECT:")) {
+                key = line.substring("CONNECT:".length());
+            } else {
+                key = line.substring("ADDPEER:".length());
+            }
             while(key.length() > 0 && key.charAt(0) == ' ')
                 key = key.substring(1);
             while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
@@ -600,9 +608,14 @@ public class TextModeClientInterface implements Runnable {
 				Logger.error(this, "Error setting node's name");
     		}
     		n.config.store();
-        } else if(uline.startsWith("DISCONNECT:")) {
-        	String ipAndPort = line.substring("DISCONNECT:".length());
-        	disconnect(ipAndPort.trim());
+        } else if(uline.startsWith("REMOVEPEER:") || uline.startsWith("DISCONNECT:")) {
+        	String ipAndPortOrName = null;
+        	if(uline.startsWith("DISCONNECT:")) {
+        		ipAndPortOrName = line.substring("DISCONNECT:".length());
+        	} else {
+        		ipAndPortOrName = line.substring("REMOVEPEER:".length());
+        	}
+        	disconnect(ipAndPortOrName.trim());
         	
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
