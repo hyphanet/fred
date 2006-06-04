@@ -273,7 +273,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			//
 			buf.append(buf2);
 			//
-			buf.append("<input type=\"submit\" name=\"disconnect\" value=\"Disconnect from selected peers\" />\n");
+			buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />\n");
 			buf.append("</form>\n");
 		}
 		buf.append("</div>\n");
@@ -400,7 +400,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
-		} else if (request.isPartSet("disconnect")) {
+		} else if (request.isPartSet("remove")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			PeerNode[] peerNodes = node.getDarknetConnections();
