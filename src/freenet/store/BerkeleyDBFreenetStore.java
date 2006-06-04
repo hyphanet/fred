@@ -183,7 +183,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		byte[] header = new byte[headerBlockSize];
 	    		byte[] data = new byte[dataBlockSize];
 	    		synchronized(chkStore) {
-		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+	    			long seekTarget = storeBlock.offset*(long)(dataBlockSize+headerBlockSize);
+	    	  	try {
+		    			chkStore.seek(seekTarget);
+		    		} catch (IOException ioe) {
+	    				if(seekTarget > (2*1024*1024*1024))
+	    					Logger.error(this, "Environment does not support files greater than 2 GB?");
+	    					System.out.println("Environment does not support files greater than 2 GB? (exception to follow)");
+		    			Logger.error(this, "Caught IOException on chkStore.seek("+seekTarget+")");
+		    			throw ioe;
+		    		}
 		    		chkStore.readFully(header);
 		    		chkStore.readFully(data);
 	    		}
@@ -520,7 +529,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	        		DatabaseEntry blockDBE = new DatabaseEntry();
 	    	    	storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 	    	        chkDB.put(t,routingkeyDBE,blockDBE);
-	    	        chkStore.seek(byteOffset);
+	    	        try {
+	    	          chkStore.seek(byteOffset);
+	    	        } catch (IOException ioe) {
+	    	          if(byteOffset > (2*1024*1024*1024))
+	    	            Logger.error(this, "Environment does not support files greater than 2 GB?");
+	    	            System.out.println("Environment does not support files greater than 2 GB? (exception to follow)");
+	    	          Logger.error(this, "Caught IOException on chkStore.seek("+byteOffset+")");
+		              throw ioe;
+	    	        }
 	    	        chkStore.write(header);
 	    	        chkStore.write(data);
 	    	        t.commit();
