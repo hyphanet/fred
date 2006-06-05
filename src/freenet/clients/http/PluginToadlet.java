@@ -73,6 +73,7 @@ public class PluginToadlet extends Toadlet {
 				return;
 			}
 			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Plugin not found", "The requested plugin could not be found.").toString());
+			return;
 		}
 
 		String action = httpRequest.getParam("action");
@@ -103,11 +104,13 @@ public class PluginToadlet extends Toadlet {
 			pluginManager.removePlugin(plugin);
 			pluginManager.addPlugin(plugin.getClass().getName());
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
+			return;
 		} else if ("unload".equals(action)) {
 			pluginName = httpRequest.getParam("pluginName");
 			Plugin plugin = findPlugin(pluginName);
 			pluginManager.removePlugin(plugin);
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
+			return;
 		}
 		writeReply(ctx, 220, "text/html; charset=utf-8", "OK", replyBuffer.toString());
 	}
