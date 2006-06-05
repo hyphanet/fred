@@ -83,9 +83,12 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 			}
 			int running = runningFetchesByURI.size();
 			int queued = queuedURIList.size();
-			if (running == maxParallelRequests || queued == 0)
+			
+			if (running >= maxParallelRequests || queued == 0)
 				return;
+			
 			toStart = new ArrayList(Math.min(maxParallelRequests - running, queued));
+			
 			for (int i = running; i < maxParallelRequests; i++) {
 				if (queuedURIList.isEmpty())
 					break;
