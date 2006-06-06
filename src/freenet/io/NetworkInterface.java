@@ -270,7 +270,7 @@ public class NetworkInterface {
 							if (matcher != null) {
 								addressMatched = matcher.matches(clientAddress);
 							} else {
-								addressMatched = "*".equals(clientHostName) || clientHostName.equalsIgnoreCase(host);
+								addressMatched = "*".equals(host) || clientHostName.equalsIgnoreCase(host);
 							}
 						}
 					}
