@@ -145,7 +145,7 @@ public class NodeDispatcher implements Dispatcher {
         }
         //if(!node.lockUID(id)) return false;
         RequestHandler rh = new RequestHandler(m, id, node);
-        Thread t = new Thread(rh);
+        Thread t = new Thread(rh, "RequestHandler for UID "+id);
         t.setDaemon(true);
         t.start();
         return true;

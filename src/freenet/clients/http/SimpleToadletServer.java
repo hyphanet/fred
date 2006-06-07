@@ -253,7 +253,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		public SocketHandler(Socket conn) {
 			this.sock = conn;
-			Thread t = new Thread(this);
+			Thread t = new Thread(this, "SimpleToadletServer$SocketHandler");
 			t.setDaemon(true);
 			t.start();
 		}

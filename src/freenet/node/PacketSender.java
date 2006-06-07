@@ -93,7 +93,8 @@ public class PacketSender implements Runnable {
     }
     
     void start() {
-        Logger.normal(this,"Starting the PacketSender thread");
+        Logger.normal(this, "Starting PacketSender");
+        System.out.println("Starting PacketSender");
         // Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
         Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
         t1.setDaemon(true);

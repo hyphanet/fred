@@ -20,7 +20,8 @@ public class DNSRequester implements Runnable {
     }
 
     void start() {
-			  Logger.normal(this,"Starting the DNSRequester thread");
+			  Logger.normal(this, "Starting DNSRequester");
+			  System.out.println("Starting DNSRequester");
         myThread.start();
     }
 

@@ -21,7 +21,7 @@ public final class CPUAdjustingSwapRequestInterval implements SwapRequestInterva
         currentValue = initialValue;
         this.targetCPUUsage = targetCPUUsage;
         m = new CPUUsageMonitor();
-        Thread t = new Thread(this);
+        Thread t = new Thread(this, "CPUAdjustingSwapRequestInterval");
         t.setDaemon(true);
         t.setPriority(Thread.MAX_PRIORITY);
         t.start();

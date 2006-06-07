@@ -483,7 +483,7 @@ public class BlockTransmitter {
     public void sendAsync() {
         Runnable r = new Runnable() {
             public void run() { send(); } };
-        Thread t = new Thread(r);
+        Thread t = new Thread(r, "BlockTransmitter:sendAsync()");
         t.setDaemon(true);
         t.start();
     }

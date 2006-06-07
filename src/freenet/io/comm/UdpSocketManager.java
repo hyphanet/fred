@@ -52,7 +52,7 @@ public class UdpSocketManager extends Thread {
 		setDaemon(true);
 		setPriority(Thread.MAX_PRIORITY);
 		super.start();
-		Thread checker = new Thread(new USMChecker());
+		Thread checker = new Thread(new USMChecker(), "UdpSocketManager$USMChecker");
 		checker.setDaemon(true);
 		checker.setPriority(Thread.MAX_PRIORITY);
 		checker.start();

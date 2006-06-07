@@ -166,7 +166,7 @@ public class IOStatisticCollector {
 			this.key = key;
 			this.inbytes = inbytes;
 			this.outbytes = outbytes;
-			new Thread(this).run();
+			new Thread(this, "IOStatisticCollector$StatisticUpdater").run();
 		}
 		
 		public void run() {

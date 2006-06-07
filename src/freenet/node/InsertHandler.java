@@ -137,7 +137,7 @@ public class InsertHandler implements Runnable {
         // Receive the data, off thread
         
         Runnable dataReceiver = new DataReceiver();
-        Thread t = new Thread(dataReceiver);
+        Thread t = new Thread(dataReceiver, "InsertHandler$DataReceiver for UID "+uid);
         t.setDaemon(true);
         t.start();
 
