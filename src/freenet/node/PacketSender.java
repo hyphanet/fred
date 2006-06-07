@@ -45,9 +45,19 @@ public class PacketSender implements Runnable {
         t1.start();
     }
 
+    /**
+     * The main purpose of this thread is to detect the lost-lock deadlocks that happen occasionally
+     * on Sun VMs with NPTL enabled, and restart the node.
+     * 
+     * Consequently it MUST NOT LOCK ANYTHING. That further means it must not use the Logger, and even
+     * System.err/System.out if they have been redirected.
+     * @author root
+     *
+     */
     private class Watchdog implements Runnable {
     	
     	public void run() {
+    		// Do not lock anything, or we may be caught up with a lost-lock deadlock.
     		while(true) {
     			try {
 					Thread.sleep(5000);
@@ -57,10 +67,9 @@ public class PacketSender implements Runnable {
 				long now = System.currentTimeMillis();
 				long recordedTime = ((long)lastTimeInSeconds) * 1000;
 				long diff = now - recordedTime;
-				Logger.minor(this, "PacketSender last updated time "+diff+"ms ago");
 				if(diff > 3*60*1000) {
-					System.err.println("Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
-					Logger.error(this, "Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
+					if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
+						System.err.println("Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
 					
 					try {
 						if(node.isUsingWrapper()){
@@ -68,11 +77,13 @@ public class PacketSender implements Runnable {
 							WrapperManager.restart();
 						}else{
 							// No wrapper : we don't want to let it harm the network!
-							Logger.error(this,"Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
 							node.exit();
 						}
 					} catch (Throwable t) {
-						Logger.error(this,"Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
+						if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock()) {
+							System.err.println("Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
+							t.printStackTrace();
+						}
 						node.exit();
 					}
 					

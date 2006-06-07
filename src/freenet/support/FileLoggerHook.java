@@ -979,4 +979,11 @@ public class FileLoggerHook extends LoggerHook {
 			}
 		}
 	}
+
+	/**
+	 * This is used by the lost-lock deadlock detector so MUST NOT TAKE A LOCK ever!
+	 */
+	public boolean hasRedirectedStdOutErrNoLock() {
+		return redirectStdOut || redirectStdErr;
+	}
 }
