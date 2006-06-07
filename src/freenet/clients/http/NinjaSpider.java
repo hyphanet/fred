@@ -60,19 +60,16 @@ import freenet.support.MultiValueTable;
  *
  * I think regarding the name, a little explanation is required:
  *
- * This name comes from my flatmate (David Anderson[1]), here is the discussion we had:
- *   him> Can I say a stupidity ?
+ * This name comes from my flatmate, David Anderson. It originated in the following discussion over dinner:
+ *   him> I've just thought of something weird...
  *   me> oO
- *   him> The name "Spider", it comes from the idea of a spider traveling 
- *        through the web / net, right ?
- *   me> hm, yes ... and ?
- *   him> But this one work over a darknet ? So it's a ... *NINJASPIDER* ... no ? :D
+ *   him> The term "spider" for indexing software comes from the analogy "a spider one the web", right ?
+ *   me> Yeeess... ?
+ *   him> So, if you're writing a spider for a darknet, isn't it a .... *Ninja Spider* ? :D
  *
- * Maybe should we stop buying beers ... However I needed a name for this spider,
- * and I was thinking to XmlSpider, but his name sounds much better :)
+ * Maybe we should stop buying beers ... However, I needed a name for the spider,
+ * and NinjaSpider sounds more fun than XmlSpider, so it stuck :)
  *
- * 
- * [1] He ask me to put his name
  */
 public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback {
 
