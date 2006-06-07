@@ -4,7 +4,6 @@ import freenet.client.FetcherContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSKBlock;
-import freenet.keys.SSKBlock;
 import freenet.node.LowLevelGetException;
 import freenet.support.Logger;
 

@@ -208,7 +208,6 @@ public class USKFetcher implements ClientGetState {
 				Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+minFailures));
 				if(started) {
 					finished = true;
-					completed = true;
 				}
 			} else 
 				Logger.minor(this, "Remaining: "+runningAttempts.size());
@@ -271,12 +270,12 @@ public class USKFetcher implements ClientGetState {
 	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block) {
 		LinkedList l = null;
 		synchronized(this) {
-			if(completed || cancelled) return;
 			runningAttempts.remove(att);
 			long curLatest = att.number;
+			long lastEd = uskManager.lookup(origUSK);
 			if(!dontUpdate)
 				uskManager.update(origUSK, curLatest);
-			long lastEd = uskManager.lookup(origUSK);
+			if(completed || cancelled) return;
 			if(curLatest >= lastEd) {
 				try {
 					this.lastRequestData = block.decode(ctx.bucketFactory, 1025 /* it's an SSK */, true);
