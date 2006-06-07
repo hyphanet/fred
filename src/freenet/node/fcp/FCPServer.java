@@ -287,7 +287,7 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("port", 9481 /* anagram of 1984, and 1000 up from old number */,
 				2, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(node));
 		fcpConfig.register("bindTo", "127.0.0.1", 2, true, "Ip address to bind to", "Ip address to bind the FCP server to", new FCPBindtoCallback(node));
-		fcpConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the FCP server.Hostnames or IP addresses that are allowed to connect to FProxy. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24", new FCPAllowedHostsCallback(node));
+		fcpConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the FCP server. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24", new FCPAllowedHostsCallback(node));
 		PersistentDownloadsEnabledCallback cb1;
 		PersistentDownloadsFileCallback cb2;
 		PersistentDownloadsIntervalCallback cb3;
