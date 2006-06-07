@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,6 +27,7 @@ import freenet.client.async.USKCallback;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
+import freenet.keys.NodeSSK;
 import freenet.keys.USK;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -98,7 +100,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		ctxRevocation.maxNonSplitfileRetries = 0; // but return quickly normally
 		
 		try{		
-			USK myUsk=USK.create(URI);
+			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion));
 			ctx.uskManager.subscribe(myUsk, this,	true);
 			ctx.uskManager.startTemporaryBackgroundFetcher(myUsk);
 			
