@@ -69,6 +69,23 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private boolean stopped = true;
 
 	private synchronized void queueURI(FreenetURI uri) {
+		String uriStr = null;
+		
+		/* We remove HTML targets from URI (http://my.server/file#target) */
+		/* Else we re-index already indexed file */
+		try {
+			uriStr = uri.toString(false);
+			if(uriStr.indexOf("#") > 0)
+				{
+					uriStr = uriStr.substring(0, uriStr.indexOf("#"));
+					uri = new FreenetURI(uriStr);
+				}
+		} catch (MalformedURLException e) {
+			Logger.error(this, "Spider: MalformedURLException: "+uriStr+":"+e);
+			return;
+		}
+
+		
 		if ((!visitedURIs.contains(uri)) && queuedURISet.add(uri)) {
 			queuedURIList.addLast(uri);
 			visitedURIs.add(uri);
