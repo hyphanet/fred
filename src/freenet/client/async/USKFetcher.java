@@ -172,8 +172,9 @@ public class USKFetcher implements ClientGetState {
 	final long maxSleepTime = 60 * 60 * 1000;
 	long sleepTime = origSleepTime;
 
-	// At most, probe 1000 editions ahead!
-	private static final long MAX_MIN_FAILURES = 1000;
+	/** Maximum number of editions to probe ahead. */
+	private final long maxMinFailures;
+	private final static long DEFAULT_MAX_MIN_FAILURES = 100;
 
 	private long valueAtSchedule;
 	
@@ -181,9 +182,15 @@ public class USKFetcher implements ClientGetState {
 	private final boolean backgroundPoll;
 	
 	private boolean started = false;
-	
+
 	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever) {
+		this(origUSK, manager, ctx, parent, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES);
+	}
+	
+	// FIXME use this!
+	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever, long maxProbeEditions) {
 		this.parent = parent;
+		this.maxMinFailures = maxProbeEditions;
 		this.origUSK = origUSK;
 		this.uskManager = manager;
 		this.minFailures = this.origMinFailures = minFailures;
@@ -227,9 +234,10 @@ public class USKFetcher implements ClientGetState {
 					minFailures = origMinFailures;
 					sleepTime = origSleepTime;
 				} else {
-					long newMinFailures = minFailures * 2;
-					if(newMinFailures > MAX_MIN_FAILURES)
-						newMinFailures = MAX_MIN_FAILURES;
+					// Not exponential; it is more likely that it is close to the known edition than not.
+					long newMinFailures = Math.max(((int)((double)minFailures * 1.25)), minFailures+1);
+					if(newMinFailures > maxMinFailures)
+						newMinFailures = maxMinFailures;
 					minFailures = newMinFailures;
 				}
 				long newSleepTime = sleepTime * 2;
