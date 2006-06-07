@@ -81,13 +81,14 @@ public class WelcomeToadlet extends Toadlet {
 			return;
 		}else if(request.getParam("updateconfirm").length() > 0){
 			// false for no navigation bars, because that would be very silly
-			ctx.getPageMaker().makeHead(buf, "Node Updating", false);
+			ctx.getPageMaker().makeHead(buf, "Node Updating", true);
 			buf.append("<div class=\"infobox infobox-information\">\n");
 			buf.append("<div class=\"infobox-header\">\n");
 			buf.append("The Freenet node is beeing updated and will self-restart\n");
 			buf.append("</div>\n");
 			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("The restart process might take up to 3 minutes. <br>");
+			buf.append("The restart process might take up to 10 minutes. <br>");
+			buf.append("(The node will try to fetch a revocation key before updating)");
 			buf.append("Thank you for using Freenet\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
@@ -108,7 +109,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("Are you sure you wish to restart your Freenet node?\n");
 			buf.append("<form action=\"/\" method=\"post\">\n");
 			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("<input type=\"submit\" name=\"restartconfirm\" value=\"Restart\" />\n");
+			buf.append("<input type=\"submit\" name=\"restartconfirm\" value=\"Update\" />\n");
 			buf.append("</form>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");

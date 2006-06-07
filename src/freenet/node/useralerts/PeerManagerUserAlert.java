@@ -31,7 +31,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	static final int MAX_NODE_AVERAGE_PING_TIME_THRESHOLD = 1500;
 	
 	/** How high can oldestNeverConnectedPeerAge be before we alert (in milliseconds)*/
-	static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD = ((long) 2)*24*60*60*1000;  // 2 weeks
+	static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
 	
 	public PeerManagerUserAlert(Node n) {
 		this.n = n;
