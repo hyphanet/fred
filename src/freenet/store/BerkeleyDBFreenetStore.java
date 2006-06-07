@@ -5,16 +5,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
+import java.util.HashSet;
 
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
-import com.sleepycat.je.BtreeStats;
 import com.sleepycat.je.Cursor;
 import com.sleepycat.je.Database;
 import com.sleepycat.je.DatabaseConfig;
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.DatabaseNotFoundException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.LockMode;
@@ -58,6 +59,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private long maxChkBlocks;
 	private final Database chkDB;
 	private final Database chkDB_accessTime;
+	private final Database chkDB_blockNum;
 	private final RandomAccessFile chkStore;
 	
 	private long lastRecentlyUsed;
@@ -129,6 +131,38 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		chkDB_accessTime = environment.openSecondaryDatabase
 							(null, "CHK_accessTime", chkDB, secDbConfig);
 		
+		// Initialize other secondary database sorted on block number
+//		try {
+//			environment.removeDatabase(null, "CHK_blockNum");
+//		} catch (DatabaseNotFoundException e) { };
+		SecondaryConfig blockNoDbConfig = new SecondaryConfig();
+		blockNoDbConfig.setAllowCreate(false);
+		blockNoDbConfig.setSortedDuplicates(false);
+		blockNoDbConfig.setAllowPopulate(true);
+		blockNoDbConfig.setTransactional(true);
+		
+		BlockNumberKeyCreator bnkc = 
+			new BlockNumberKeyCreator(storeBlockTupleBinding);
+		blockNoDbConfig.setKeyCreator(bnkc);
+		SecondaryDatabase blockNums;
+		try {
+			System.err.println("Opening block db index");
+			blockNums = environment.openSecondaryDatabase
+				(null, "CHK_blockNum", chkDB, blockNoDbConfig);
+		} catch (DatabaseNotFoundException e) {
+			System.err.println("Migrating block db index");
+			// De-dupe on keys and block numbers.
+			migrate(storeDir);
+			System.err.println("De-duped, creating new index...");
+			blockNoDbConfig.setSortedDuplicates(false);
+			blockNoDbConfig.setAllowCreate(true);
+			blockNoDbConfig.setAllowPopulate(true);
+			blockNums = environment.openSecondaryDatabase
+				(null, "CHK_blockNum", chkDB, blockNoDbConfig);
+		}
+		
+		chkDB_blockNum = blockNums;
+		
 		// Initialize the store file
 		File storeFile = new File(dir,"store");
 		if(!storeFile.exists())
@@ -142,6 +176,60 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
 	}
 	
+	/**
+	 * Migrate from a store which didn't have a unique index on blockNum, to one which does.
+	 * How do we do this? We scan through all entries (slow), we fetch each key, delete all data's
+	 * under it, and then insert the one we are looking at.
+	 * 
+	 * FIXME: Create a list of reusable block numbers?
+	 */
+	private void migrate(String storeDir) throws DatabaseException {
+		
+		System.err.println("Migrating database "+storeDir+": Creating unique index on block number");
+		HashSet s = new HashSet();
+		
+    	Cursor c = null;
+    	Transaction t = null;
+		t = environment.beginTransaction(null,null);
+		c = chkDB.openCursor(t,null);
+		DatabaseEntry keyDBE = new DatabaseEntry();
+		DatabaseEntry blockDBE = new DatabaseEntry();
+		OperationStatus opStat;
+		opStat = c.getLast(keyDBE, blockDBE, LockMode.RMW);
+		if(opStat == OperationStatus.NOTFOUND) {
+			System.err.println("Database is empty.");
+			return;
+		}
+		Logger.minor(this, "Found first key");
+		try {
+			int x = 0;
+			while(true) {
+		    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+				Logger.minor(this, "Found another key ("+(x++)+") ("+storeBlock.offset+")");
+				Long l = new Long(storeBlock.offset);
+				if(s.contains(l)) {
+					Logger.minor(this, "Deleting (block number conflict).");
+					chkDB.delete(t, keyDBE);
+				}
+				s.add(l);
+				opStat = c.getPrev(keyDBE, blockDBE, LockMode.RMW);
+				if(opStat == OperationStatus.NOTFOUND) {
+					return;
+				}
+			}
+		} catch (DatabaseException e) {
+			System.err.println("Caught: "+e);
+			e.printStackTrace();
+			Logger.error(this, "Caught "+e, e);
+			t.abort();
+			t = null;
+		} finally {
+			c.close();
+			if(t != null)
+				t.commit();
+		}
+	}
+
 	/**
      * Retrieve a block.
      * @param dontPromote If true, don't promote data if fetched.
@@ -218,7 +306,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
 	    		
 	    	}catch(CHKVerifyException ex){
-	    		Logger.normal(this, "CHKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk);
+	    		Logger.error(this, "CHKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk);
 	    		storeBlock.setRecentlyUsedToZero();
     			DatabaseEntry updateDBE = new DatabaseEntry();
     			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
@@ -302,7 +390,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
 	    		
 	    	}catch(SSKVerifyException ex){
-	    		Logger.normal(this, "SSHBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk, ex);
+	    		Logger.normal(this, "SSKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk, ex);
 	    		storeBlock.setRecentlyUsedToZero();
     			DatabaseEntry updateDBE = new DatabaseEntry();
     			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
@@ -377,7 +465,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		}
 	    		
 	    		if(!Arrays.equals(block.asBytesHash(), hash)) {
-		    		Logger.normal(this, "DSAPublicKey: Does not verify (unequal hashes), setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
+		    		Logger.error(this, "DSAPublicKey: Does not verify (unequal hashes), setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
 		    		storeBlock.setRecentlyUsedToZero();
 	    			DatabaseEntry updateDBE = new DatabaseEntry();
 	    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
@@ -592,16 +680,30 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
 	}
 
+    /**
+     * Store a pubkey.
+     */
+    public void put(byte[] hash, DSAPublicKey key) throws IOException {
+		DSAPublicKey k = fetchPubKey(hash, true);
+		if(k == null)
+			innerPut(hash, key);
+    }
+    
 	/**
      * Store a block.
      */
-    public void put(byte[] hash, DSAPublicKey key) throws IOException
+    public void innerPut(byte[] hash, DSAPublicKey key) throws IOException
     {   	
     	if(closed)
     		return;
     	  	
     	byte[] routingkey = hash;
         byte[] data = key.asPaddedBytes();
+        
+        if(!(Arrays.equals(hash, key.asBytesHash()))) {
+        	Logger.error(this, "Invalid hash!: "+HexUtil.bytesToHex(hash)+" : "+key.asBytesHash());
+        }
+        	
         
         if(data.length!=dataBlockSize) {
         	Logger.error(this, "This data is "+data.length+" bytes. Should be "+dataBlockSize);
@@ -741,6 +843,26 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
     }
 
+    private class BlockNumberKeyCreator implements SecondaryKeyCreator {
+    	private TupleBinding theBinding;
+    	
+    	public BlockNumberKeyCreator(TupleBinding theBinding1) {
+    		theBinding = theBinding1;
+    	}
+    	
+    	public boolean createSecondaryKey(SecondaryDatabase secDb,
+   	    	DatabaseEntry keyEntry,
+   	    	DatabaseEntry dataEntry,
+   	    	DatabaseEntry resultEntry) {
+
+   	    		StoreBlock storeblock = (StoreBlock) theBinding.entryToObject(dataEntry);
+   	    		Long blockNo = new Long(storeblock.offset);
+   	    		longTupleBinding.objectToEntry(blockNo, resultEntry);
+   	    		return true;
+   	    	}
+    	
+    }
+    
     private class ShutdownHook extends Thread
     {
     	public void run() {
@@ -760,6 +882,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Thread.sleep(5000);
 			chkStore.close();
     		chkDB_accessTime.close();
+    		chkDB_blockNum.close();
     		chkDB.close();
     		environment.close();
     		Logger.minor(this, "Closing database finished.");
@@ -769,17 +892,30 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
     }
     
-    private long countCHKBlocks() {
-    	long count =0;
+    private long countCHKBlocks() throws IOException {
+    	long count = 0;
+    	
     	try{
-    		Logger.minor(this, "Started counting items in database");
-    		
-    		count = ((BtreeStats)chkDB.getStats(null)).getLeafNodeCount();
-    		
-    		Logger.minor(this, "Counted "+count+" items in database");
-    	}catch(DatabaseException ex){
-    		Logger.minor(this, "Exception while counting items in database",ex);
+	    	Cursor c = chkDB_blockNum.openCursor(null,null);
+			DatabaseEntry keyDBE = new DatabaseEntry();
+			DatabaseEntry dataDBE = new DatabaseEntry();
+			if(c.getLast(keyDBE,dataDBE,null)==OperationStatus.SUCCESS) {
+				StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+				count = storeBlock.offset;
+			}
+			c.close();
+    	}catch(DatabaseException ex){ex.printStackTrace();}
+
+    	count++;
+    	System.out.println("Count from database: "+count);
+    	
+    	long oCount = chkStore.length() / (dataBlockSize + headerBlockSize);
+    	
+    	if(oCount > count) {
+    		System.err.println("Count from file length: "+oCount);
+    		return oCount;
     	}
+    	
     	return count;
     }
     

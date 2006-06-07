@@ -238,11 +238,11 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
      * @return  this item, or null if the item was not in the list
      */
     public DoublyLinkedList.Item remove(DoublyLinkedList.Item i) {
+    	if (i.getParent() == null) return null; // not in list
     	if(isEmpty()) {
     		Logger.error(this, "Illegal ERROR: Removing from an empty list!!");
     		throw new IllegalStateException("Illegal ERROR: Removing from an empty list!!");
     	}
-    	if (i.getParent() == null) return null; // not in list
     	if (i.getParent() != this)
     		throw new PromiscuousItemException(i, i.getParent());
         DoublyLinkedList.Item next = i.getNext(), prev = i.getPrev();

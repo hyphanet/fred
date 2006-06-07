@@ -598,7 +598,11 @@ public class Node {
 	// USK inserter.
 	private final MyARKInserter arkPutter;
 	
+	// The node starter
 	private static NodeStarter nodeStarter;
+	
+	// Debugging stuff
+	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
 	
     /**
      * Read all storable settings (identity etc) from the node file.
@@ -854,9 +858,8 @@ public class Node {
     	}
     }
     
-    Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException{
-    	this(config, random, lc);
-    	nodeStarter=ns;
+    Node(Config config, RandomSource random, LoggingConfigHandler lc) throws NodeInitException{
+    	this(config, random, lc, null);
     }
     
     public boolean isUsingWrapper(){
@@ -879,11 +882,11 @@ public class Node {
      * @param the loggingHandler
      * @throws NodeInitException If the node initialization fails.
      */
-     Node(Config config, RandomSource random, LoggingConfigHandler lc) throws NodeInitException {
+     Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
     	// Easy stuff
-    	nodeStarter=null;
+      	nodeStarter=ns;
     	if(logConfigHandler != lc)
-    		this.logConfigHandler=lc;
+    		logConfigHandler=lc;
     	arkPutter = new MyARKInserter();
     	startupTime = System.currentTimeMillis();
     	throttleWindow = new ThrottleWindowManager(2.0);
@@ -2624,12 +2627,14 @@ public class Node {
 	public DSAPublicKey getKey(byte[] hash) {
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
 		Logger.minor(this, "Getting pubkey: "+HexUtil.bytesToHex(hash));
-		synchronized(cachedPubKeys) {
-			DSAPublicKey key = (DSAPublicKey) cachedPubKeys.get(w);
-			if(key != null) {
-				cachedPubKeys.push(w, key);
-				Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
-				return key;
+		if(USE_RAM_PUBKEYS_CACHE) {
+			synchronized(cachedPubKeys) {
+				DSAPublicKey key = (DSAPublicKey) cachedPubKeys.get(w);
+				if(key != null) {
+					cachedPubKeys.push(w, key);
+					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
+					return key;
+				}
 			}
 		}
 		try {
@@ -2650,6 +2655,7 @@ public class Node {
 	 * Cache a public key
 	 */
 	public void cacheKey(byte[] hash, DSAPublicKey key) {
+		Logger.minor(this, "Cache key: "+HexUtil.bytesToHex(hash)+" : "+key);
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
@@ -2684,6 +2690,7 @@ public class Node {
 		}
 		try {
 			pubKeyDatastore.put(hash, key);
+			pubKeyDatastore.fetchPubKey(hash, true);
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.
 			Logger.error(this, "Error accessing pubkey store: "+e, e);

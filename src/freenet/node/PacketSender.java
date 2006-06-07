@@ -39,10 +39,6 @@ public class PacketSender implements Runnable {
         myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
         lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
-        // Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
-        Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
-        t1.setDaemon(true);
-        t1.start();
     }
 
     /**
@@ -76,6 +72,9 @@ public class PacketSender implements Runnable {
 							WrapperManager.requestThreadDump();
 							WrapperManager.restart();
 						}else{
+							if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
+								System.err.println("Exiting on deadlock, but not running in the wrapper! Please restart the node manually.");
+							
 							// No wrapper : we don't want to let it harm the network!
 							node.exit();
 						}
@@ -95,6 +94,10 @@ public class PacketSender implements Runnable {
     
     void start() {
         Logger.normal(this,"Starting the PacketSender thread");
+        // Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
+        Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
+        t1.setDaemon(true);
+        t1.start();
         myThread.start();
     }
     
