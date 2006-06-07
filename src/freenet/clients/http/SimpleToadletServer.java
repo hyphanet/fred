@@ -138,7 +138,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyPortCallback());
 		fproxyConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
 				new FProxyBindtoCallback());
-		fproxyConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to FProxy",
+		fproxyConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to FProxy. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
 				new FProxyAllowedHostsCallback());
 		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS FProxy should use",
 				new FProxyCSSNameCallback());

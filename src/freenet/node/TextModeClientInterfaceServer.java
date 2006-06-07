@@ -54,7 +54,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 				new TMCIEnabledCallback(node));
 		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
 				new TMCIBindtoCallback(node));
-		TMCIConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI",
+		TMCIConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI.Hostnames or IP addresses that are allowed to connect to FProxy. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
 				new TMCIAllowedHostsCallback(node));
 		TMCIConfig.register("port", 2323, 1, true, "Testnet port", "Testnet port number",
         		new TCMIPortNumberCallback(node));
