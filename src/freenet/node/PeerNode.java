@@ -819,20 +819,14 @@ public class PeerNode implements PeerContext {
     }
 
     boolean firstHandshake = true;
-    
-    /**
-     * Call this method when a handshake request has been
-     * sent.
-     */
-    public void sentHandshake() {
-        Logger.debug(this, "sentHandshake(): "+this);
+
+    private void calcNextHandshake(boolean couldSendHandshake) {
         long now = -1;
         synchronized(this) {
             now = System.currentTimeMillis();
             if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
                 // Let them know we're here, but have no hope of connecting
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS)
                   + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
             } else if(invalidVersion() && !firstHandshake) {
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
@@ -841,7 +835,11 @@ public class PeerNode implements PeerContext {
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
                 + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
             }
-            firstHandshake = false;
+            if(couldSendHandshake) {
+            	firstHandshake = false;
+            } else {
+            	handshakeIPs = null;
+            }
             this.handshakeCount++;
         }
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
@@ -856,36 +854,21 @@ public class PeerNode implements PeerContext {
     }
     
     /**
+     * Call this method when a handshake request has been
+     * sent.
+     */
+    public void sentHandshake() {
+        Logger.debug(this, "sentHandshake(): "+this);
+        calcNextHandshake(true);
+    }
+    
+    /**
      * Call this method when a handshake request could not be sent (i.e. no IP address available)
      * sent.
      */
     public void couldNotSendHandshake() {
         Logger.minor(this, "couldNotSendHandshake(): "+this);
-        long now = -1;
-        synchronized(this) {
-            now = System.currentTimeMillis();
-            if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
-                // Let them know we're here, but have no hope of connecting
-                sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS)
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
-            } else if(invalidVersion() && !firstHandshake) {
-                sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES)
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
-            } else {
-                sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS)
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
-            }
-            handshakeIPs = null;
-            this.handshakeCount++;
-        }
-        // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
-        if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
-        	Logger.normal( this, "Starting ARK Fetcher after "+handshakeCount+" failed handshakes(2) for "+getPeer()+" with identity '"+getIdentityString()+"'");
-        	arkFetcher.start();
-        }
+        calcNextHandshake(false);
     }
 
     /**
