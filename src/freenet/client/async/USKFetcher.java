@@ -206,12 +206,12 @@ public class USKFetcher implements ClientGetState {
 	void onDNF(USKAttempt att) {
 		Logger.minor(this, "DNF: "+att);
 		boolean finished = false;
+		long curLatest = uskManager.lookup(origUSK);
 		synchronized(this) {
 			if(completed || cancelled) return;
 			lastFetchedEdition = Math.max(lastFetchedEdition, att.number);
 			runningAttempts.remove(att);
 			if(runningAttempts.isEmpty()) {
-				long curLatest = uskManager.lookup(origUSK);
 				Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+minFailures));
 				if(started) {
 					finished = true;
@@ -226,9 +226,9 @@ public class USKFetcher implements ClientGetState {
 	
 	private void finishSuccess() {
 		if(backgroundPoll) {
+			long valAtEnd = uskManager.lookup(origUSK);
 			synchronized(this) {
 				started = false; // don't finish before have rescheduled
-				long valAtEnd = uskManager.lookup(origUSK);
 				if(valAtEnd > valueAtSchedule) {
 					// Have advanced.
 					minFailures = origMinFailures;
@@ -243,21 +243,25 @@ public class USKFetcher implements ClientGetState {
 				long newSleepTime = sleepTime * 2;
 				if(newSleepTime > maxSleepTime) newSleepTime = maxSleepTime;
 				sleepTime = newSleepTime;
-				long now = System.currentTimeMillis();
-				long end = now + sleepTime;
-				long newValAtEnd = valAtEnd;
-				// FIXME do this without occupying a thread
-				while(now < end && ((newValAtEnd = uskManager.lookup(origUSK)) == valAtEnd)) {
-					long d = end - now;
-					if(d > 0)
-						try {
+			}
+			long now = System.currentTimeMillis();
+			long end = now + sleepTime;
+			long newValAtEnd = valAtEnd;
+			// FIXME do this without occupying a thread
+			while(now < end && ((newValAtEnd = uskManager.lookup(origUSK)) == valAtEnd)) {
+				long d = end - now;
+				if(d > 0)
+					try {
+						synchronized(this) {
 							wait(d);
-						} catch (InterruptedException e) {
-							// Maybe break? Go around loop.
 						}
-					now = System.currentTimeMillis();
-				}
-				if(newValAtEnd != valAtEnd) {
+					} catch (InterruptedException e) {
+						// Maybe break? Go around loop.
+					}
+				now = System.currentTimeMillis();
+			}
+			if(newValAtEnd != valAtEnd) {
+				synchronized(this) {
 					minFailures = origMinFailures;
 					sleepTime = origSleepTime;
 				}
@@ -277,10 +281,10 @@ public class USKFetcher implements ClientGetState {
 
 	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block) {
 		LinkedList l = null;
+		long lastEd = uskManager.lookup(origUSK);
 		synchronized(this) {
 			runningAttempts.remove(att);
 			long curLatest = att.number;
-			long lastEd = uskManager.lookup(origUSK);
 			if(!dontUpdate)
 				uskManager.update(origUSK, curLatest);
 			if(completed || cancelled) return;
@@ -307,17 +311,17 @@ public class USKFetcher implements ClientGetState {
 				}
 			}
 			cancelBefore(curLatest);
-			if(l == null) return;
-			// If we schedule them here, we don't get icky recursion problems.
-			else if(!cancelled) {
-				for(Iterator i=l.iterator();i.hasNext();) {
-					// We may be called recursively through onSuccess().
-					// So don't start obsolete requests.
-					USKAttempt a = (USKAttempt) i.next();
-					lastEd = uskManager.lookup(origUSK);
-					if(lastEd <= a.number && !a.cancelled)
-						a.schedule();
-				}
+		}
+		if(l == null) return;
+		// If we schedule them here, we don't get icky recursion problems.
+		else if(!cancelled) {
+			for(Iterator i=l.iterator();i.hasNext();) {
+				// We may be called recursively through onSuccess().
+				// So don't start obsolete requests.
+				USKAttempt a = (USKAttempt) i.next();
+				lastEd = uskManager.lookup(origUSK);
+				if(lastEd <= a.number && !a.cancelled)
+					a.schedule();
 			}
 		}
 	}
@@ -391,9 +395,10 @@ public class USKFetcher implements ClientGetState {
 
 	public void schedule() {
 		USKAttempt[] attempts;
+		long lookedUp = uskManager.lookup(origUSK);
 		synchronized(this) {
+			valueAtSchedule = Math.max(lookedUp, valueAtSchedule);
 			if(cancelled) return;
-			valueAtSchedule = uskManager.lookup(origUSK);
 			long startPoint = Math.max(origUSK.suggestedEdition, valueAtSchedule);
 			for(long i=startPoint;i<startPoint+minFailures;i++)
 				add(i);

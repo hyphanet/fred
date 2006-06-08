@@ -112,8 +112,13 @@ public class USKManager {
 			while(temporaryBackgroundFetchersLRU.size() > MAX_BACKGROUND_FETCHERS) {
 				USK del = (USK) temporaryBackgroundFetchersLRU.pop();
 				USKFetcher fetcher = (USKFetcher) backgroundFetchersByClearUSK.get(del.clearCopy());
-				if(!fetcher.hasSubscribers())
+				if(!fetcher.hasSubscribers()) {
 					fetcher.cancel();
+					backgroundFetchersByClearUSK.remove(fetcher);
+				} else {
+					Logger.minor(this, "Allowing temporary background fetcher to continue as it has subscribers... "+fetcher);
+					// It will burn itself out anyway as it's a temp fetcher, so no big harm here.
+				}
 			}
 		}
 		if(sched != null) sched.schedule();
@@ -154,8 +159,8 @@ public class USKManager {
 		USKFetcher sched = null;
 		long ed = origUSK.suggestedEdition;
 		long curEd;
+		curEd = lookup(origUSK);
 		synchronized(this) {
-			curEd = lookup(origUSK);
 			USK clear = origUSK.clearCopy();
 			USKCallback[] callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
 			if(callbacks == null)

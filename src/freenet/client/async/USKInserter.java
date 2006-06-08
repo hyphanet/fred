@@ -102,9 +102,9 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	private void scheduleInsert() {
+		long edNo = Math.max(edition, ctx.uskManager.lookup(pubUSK))+1;
 		synchronized(this) {
 			if(finished) return;
-			long edNo = Math.max(edition, ctx.uskManager.lookup(pubUSK))+1;
 			edition = edNo;
 			Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+" "+edition);
 			try {
