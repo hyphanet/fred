@@ -843,13 +843,19 @@ public class PeerNode implements PeerContext {
             this.handshakeCount++;
         }
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
-        if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
-        	Logger.normal( this, "Starting ARK Fetcher after "+handshakeCount+" failed handshakes for "+getPeer()+" with identity '"+getIdentityString()+"'");
-        	long arkFetcherStartTime1 = System.currentTimeMillis();
-        	arkFetcher.start();
-        	long arkFetcherStartTime2 = System.currentTimeMillis();
-        	if((arkFetcherStartTime2 - arkFetcherStartTime1) > 500)
-        		Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 ("+(arkFetcherStartTime2 - arkFetcherStartTime1)+") working on "+myName);
+        if(handshakeCount >= MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
+        	int numARKFetchers = node.getNumARKFetchers();
+        	if( numARKFetchers >= 30 ) {  // Limit concurrent ARK Fetch Requests to 30 since we UserAlert at 20 disconnected peers anyway
+				Logger.minor( this, "Not starting ARK Fetcher after "+handshakeCount+" failed handshakes for "+getPeer()+" with identity '"+getIdentityString()+"' because there are already 30 ARK Fetchers running.");
+        	} else {
+				Logger.normal( this, "Starting ARK Fetcher after "+handshakeCount+" failed handshakes for "+getPeer()+" with identity '"+getIdentityString()+"'");
+				long arkFetcherStartTime1 = System.currentTimeMillis();
+				arkFetcher.start();
+				long arkFetcherStartTime2 = System.currentTimeMillis();
+				if((arkFetcherStartTime2 - arkFetcherStartTime1) > 500) {
+					Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 ("+(arkFetcherStartTime2 - arkFetcherStartTime1)+") working on "+myName);
+				}
+			}
         }
     }
     

@@ -30,6 +30,7 @@ public class ARKFetcher implements ClientCallback {
 	private int backoff = MIN_BACKOFF;
 	private String identity;
 	private boolean isFetching = false;
+	private boolean started = false;
 
 	public ARKFetcher(PeerNode peer, Node node) {
 		this.peer = peer;
@@ -46,6 +47,10 @@ public class ARKFetcher implements ClientCallback {
 	 */
 	public synchronized void start() {
 		ClientGetter cg = null;
+		if(started) {  // We only need one ARKFetcher per PeerNode
+		  return;
+		}
+		started = true;
 		// Start fetch
 		shouldRun = true;
 		if(getter == null) {
@@ -83,6 +88,7 @@ public class ARKFetcher implements ClientCallback {
 		Logger.minor(this, "Cancelling ARK fetch for "+peer);
 		shouldRun = false;
 		synchronized(this){
+			started = false;
 			if(isFetching) {
 				node.removeARKFetcher(identity,this);
 				isFetching = false;
@@ -94,6 +100,7 @@ public class ARKFetcher implements ClientCallback {
 
 	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.minor(this, "Fetched ARK for "+peer, new Exception("debug"));
+		started = false;
 		// Fetcher context specifies an upper bound on size.
 		backoff = MIN_BACKOFF;
 		
@@ -124,6 +131,7 @@ public class ARKFetcher implements ClientCallback {
 	}
 
 	public synchronized void onFailure(FetchException e, ClientGetter state) {
+		started = false;
 		Logger.minor(this, "Failed to fetch ARK for "+peer+" : "+e, e);
 		
 		if(isFetching) {
@@ -145,7 +153,7 @@ public class ARKFetcher implements ClientCallback {
 		Logger.minor(this, "Failed to fetch ARK for "+peer+", now backing off ARK fetches for "+(int) (backoff / 1000)+" seconds");
 		// We may be on the PacketSender thread.
 		// FIXME should this be exponential backoff?
-		node.ps.queueTimedJob(new FastRunnable() { public void run() { start(); }}, backoff);
+		node.ps.queueTimedJob(new Runnable() { public void run() { start(); }}, backoff);  // Runnable rather than FastRunnable so we don't put ourselves on the PacketSender thread anyway
 	}
 
 	public void onSuccess(BaseClientPutter state) {
