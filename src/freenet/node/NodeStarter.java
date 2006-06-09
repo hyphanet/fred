@@ -80,6 +80,7 @@ public class NodeStarter
     		cfg = new FilePersistentConfig(configFilename);	
     	}catch(IOException e){
     		System.out.println("Error : "+e);
+    		e.printStackTrace();
     		return new Integer(-1);
     	}
     	
