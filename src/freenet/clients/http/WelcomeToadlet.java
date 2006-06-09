@@ -109,7 +109,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("Are you sure you wish to restart your Freenet node?\n");
 			buf.append("<form action=\"/\" method=\"post\">\n");
 			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("<input type=\"submit\" name=\"restartconfirm\" value=\"Update\" />\n");
+			buf.append("<input type=\"submit\" name=\"restartconfirm\" value=\"Restart\" />\n");
 			buf.append("</form>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
@@ -126,7 +126,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("Are you sure you wish to update your Freenet node?\n");
 			buf.append("<form action=\"/\" method=\"post\">\n");
 			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("<input type=\"submit\" name=\"updateconfirm\" value=\"Restart\" />\n");
+			buf.append("<input type=\"submit\" name=\"updateconfirm\" value=\"Update\" />\n");
 			buf.append("</form>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
