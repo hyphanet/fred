@@ -95,10 +95,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<div class=\"infobox\">");
 		buf.append("<div class=\"infobox-header\">Node status overview</div>");
 		buf.append("<div class=\"infobox-content\">");
-		buf.append("bwlimitDelayTime: " + bwlimitDelayTime + "ms<br/>");
-		buf.append("nodeAveragePingTime: " + nodeAveragePingTime + "ms<br/>");
-		buf.append("networkSizeEstimate: " + networkSizeEstimate + " nodes<br/>");
-		buf.append("nodeUptime: " + nodeUptimeString + "<br/>");
+		buf.append("bwlimitDelayTime:&nbsp;" + bwlimitDelayTime + "ms<br/>");
+		buf.append("nodeAveragePingTime:&nbsp;" + nodeAveragePingTime + "ms<br/>");
+		buf.append("networkSizeEstimate:&nbsp;" + networkSizeEstimate + "&nbsp;nodes<br/>");
+		buf.append("nodeUptime:&nbsp;" + nodeUptimeString + "<br/>");
 		buf.append("</div>");
 		buf.append("</div>\n");
 		
@@ -111,10 +111,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<ul id=\"activity\">\n"
-				+ "<li>Inserts: "+node.getNumInserts()+"</li>\n"
-				+ "<li>Requests: "+node.getNumRequests()+"</li>\n"
-				+ "<li>Transferring Requests: "+node.getNumTransferringRequests()+"</li>\n"
-				+ "<li>ARK Fetch Requests: "+node.getNumARKFetchers()+"</li>\n"
+				+ "<li>Inserts:&nbsp;"+node.getNumInserts()+"</li>\n"
+				+ "<li>Requests:&nbsp;"+node.getNumRequests()+"</li>\n"
+				+ "<li>Transferring Requests:&nbsp;"+node.getNumTransferringRequests()+"</li>\n"
+				+ "<li>ARK Fetch Requests:&nbsp;"+node.getNumARKFetchers()+"</li>\n"
 				+ "</ul>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
@@ -126,22 +126,22 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<div class=\"infobox-header\">Peer statistics</div>");
 		buf.append("<div class=\"infobox-content\">");
 		if (numberOfConnected > 0) {
-			buf.append("<span class=\"peer_connected\">Connected: " + numberOfConnected + "</span><br/>");
+			buf.append("<span class=\"peer_connected\">Connected:&nbsp;" + numberOfConnected + "</span><br/>");
 		}
 		if (numberOfRoutingBackedOff > 0) {
-			buf.append("<span class=\"peer_backedoff\">Backed off: " + numberOfRoutingBackedOff + "</span><br/>");
+			buf.append("<span class=\"peer_backedoff\">Backed off:&nbsp;" + numberOfRoutingBackedOff + "</span><br/>");
 		}
 		if (numberOfTooNew > 0) {
-			buf.append("<span class=\"peer_too_new\">Too new: " + numberOfTooNew + "</span><br/>");
+			buf.append("<span class=\"peer_too_new\">Too new:&nbsp;" + numberOfTooNew + "</span><br/>");
 		}
 		if (numberOfTooOld > 0) {
-			buf.append("<span class=\"peer_too_old\">Too old: " + numberOfTooOld + "</span><br/>");
+			buf.append("<span class=\"peer_too_old\">Too old:&nbsp;" + numberOfTooOld + "</span><br/>");
 		}
 		if (numberOfDisconnected > 0) {
-			buf.append("<span class=\"peer_disconnected\">Disconnected: " + numberOfDisconnected + "</span><br/>");
+			buf.append("<span class=\"peer_disconnected\">Disconnected:&nbsp;" + numberOfDisconnected + "</span><br/>");
 		}
 		if (numberOfNeverConnected > 0) {
-			buf.append("<span class=\"peer_never_connected\">Never Connected: " + numberOfNeverConnected + "</span><br/>");
+			buf.append("<span class=\"peer_never_connected\">Never Connected:&nbsp;" + numberOfNeverConnected + "</span><br/>");
 		}
 		buf.append("</div>");
 		buf.append("</div>\n");
