@@ -2995,4 +2995,8 @@ public class Node {
     public UdpSocketManager getUSM() {
       return usm;
     }
+
+    public int getNetworkSizeEstimate(int numberOfMinutes) {
+      return lm.getNetworkSizeEstimate( numberOfMinutes );
+    }
 }

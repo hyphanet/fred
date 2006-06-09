@@ -78,6 +78,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		/* node status values */
 		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
 		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
+		int networkSizeEstimate = (int) node.getNetworkSizeEstimate( 0 );
+		String nodeStartupTimeString = timeIntervalToString(( now - node.startupTime ) / 1000);
 		
 		/* gather connection statistics */
 		int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
@@ -95,11 +97,31 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<div class=\"infobox-content\">");
 		buf.append("bwlimitDelayTime: " + bwlimitDelayTime + "ms<br/>");
 		buf.append("nodeAveragePingTime: " + nodeAveragePingTime + "ms<br/>");
+		buf.append("networkSizeEstimate: " + networkSizeEstimate + " nodes<br/>");
+		buf.append("nodeStartupTime: " + nodeStartupTimeString + " ago<br/>");
 		buf.append("</div>");
 		buf.append("</div>\n");
 		
 		buf.append("</td><td class=\"last\">");
 		
+		// Activity box
+		buf.append("<div class=\"infobox\">\n");
+		buf.append("<div class=\"infobox-header\">\n");
+		buf.append("Current Activity\n");
+		buf.append("</div>\n");
+		buf.append("<div class=\"infobox-content\">\n");
+		buf.append("<ul id=\"activity\">\n"
+				+ "<li>Inserts: "+node.getNumInserts()+"</li>\n"
+				+ "<li>Requests: "+node.getNumRequests()+"</li>\n"
+				+ "<li>Transferring Requests: "+node.getNumTransferringRequests()+"</li>\n"
+				+ "<li>ARK Fetch Requests: "+node.getNumARKFetchers()+"</li>\n"
+				+ "</ul>\n");
+		buf.append("</div>\n");
+		buf.append("</div>\n");
+		
+		buf.append("</td><td class=\"last\">");
+		
+		// Peer statistics box
 		buf.append("<div class=\"infobox\">");
 		buf.append("<div class=\"infobox-header\">Peer statistics</div>");
 		buf.append("<div class=\"infobox-content\">");
@@ -405,12 +427,16 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if (idle == -1) {
 			return " ";
 		}
-		StringBuffer sb = new StringBuffer(1024);
 		long idleSeconds = (now - idle) / 1000;
 		if(idleSeconds < 60 && (peerNodeStatus == Node.PEER_NODE_STATUS_CONNECTED || peerNodeStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
 		  return "0m";
 		}
-		long l = idleSeconds;
+		return timeIntervalToString( idleSeconds );
+	}
+	
+	private String timeIntervalToString(long timeInterval) {
+		StringBuffer sb = new StringBuffer(1024);
+		long l = timeInterval;
 		int termCount = 0;
 		int weeks = (int) l / (7*24*60*60);
 		if(weeks > 0) {
