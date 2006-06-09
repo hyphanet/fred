@@ -79,7 +79,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
 		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
 		int networkSizeEstimate = (int) node.getNetworkSizeEstimate( 0 );
-		String nodeStartupTimeString = timeIntervalToString(( now - node.startupTime ) / 1000);
+		String nodeUptimeString = timeIntervalToString(( now - node.startupTime ) / 1000);
 		
 		/* gather connection statistics */
 		int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
@@ -98,7 +98,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("bwlimitDelayTime: " + bwlimitDelayTime + "ms<br/>");
 		buf.append("nodeAveragePingTime: " + nodeAveragePingTime + "ms<br/>");
 		buf.append("networkSizeEstimate: " + networkSizeEstimate + " nodes<br/>");
-		buf.append("nodeStartupTime: " + nodeStartupTimeString + " ago<br/>");
+		buf.append("nodeUptime: " + nodeUptimeString + "<br/>");
 		buf.append("</div>");
 		buf.append("</div>\n");
 		
