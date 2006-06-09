@@ -832,7 +832,6 @@ public class PeerNode implements PeerContext {
             if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
                 // Let them know we're here, but have no hope of connecting
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS)
                   + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
             } else if(invalidVersion() && !firstHandshake) {
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
@@ -873,15 +872,12 @@ public class PeerNode implements PeerContext {
             if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
                 // Let them know we're here, but have no hope of connecting
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS)
                   + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
             } else if(invalidVersion() && !firstHandshake) {
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES)
                   + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
             } else {
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS)
                   + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
             }
             handshakeIPs = null;
