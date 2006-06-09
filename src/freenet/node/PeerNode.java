@@ -1556,7 +1556,9 @@ public class PeerNode implements PeerContext {
 	/** Current nominal routing backoff length */
 	int routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
 	/** Last backoff reason */
-	String lastBackoffReason = null;
+	String lastRoutingBackoffReason = null;
+	/** Previous backoff reason (used by setPeerNodeStatus)*/
+	String previousRoutingBackoffReason = null;
 	
 	/**
 	 * Got a local RejectedOverload.
@@ -1696,11 +1698,11 @@ public class PeerNode implements PeerContext {
 	}
 
 	public String getLastBackoffReason() {
-		return lastBackoffReason;
+		return lastRoutingBackoffReason;
 	}
 
 	public void setLastBackoffReason(String s) {
-		this.lastBackoffReason = s;
+		this.lastRoutingBackoffReason = s;
 	}
 
 	public boolean hasCompletedHandshake() {
@@ -1830,6 +1832,16 @@ public class PeerNode implements PeerContext {
 			peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
 			if(now < routingBackedOffUntil) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
+				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason)) {
+					node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+					node.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
+					previousRoutingBackoffReason = lastRoutingBackoffReason;
+				}
+			} else {
+				if(previousRoutingBackoffReason != null) {
+					node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+					previousRoutingBackoffReason = null;
+				}
 			}
 		} else if(completedHandshake && verifiedIncompatibleNewerVersion) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_NEW;

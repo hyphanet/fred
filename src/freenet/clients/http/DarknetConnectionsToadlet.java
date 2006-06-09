@@ -146,6 +146,26 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>");
 		buf.append("</div>\n");
 		
+		buf.append("</td><td class=\"last\">");
+		
+		// Peer routing backoff reason box
+		buf.append("<div class=\"infobox\">");
+		buf.append("<div class=\"infobox-header\">Peer backoff reasons</div>");
+		buf.append("<div class=\"infobox-content\">");
+		String [] routingBackoffReasons = node.getPeerNodeRoutingBackoffReasons();
+		if(routingBackoffReasons.length == 0) {
+			buf.append("Good, your node is not backed off from any peers!<br/>\n");
+		} else {
+			for(int i=0;i<routingBackoffReasons.length;i++) {
+				int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+				if(reasonCount > 0) {
+					buf.append(routingBackoffReasons[i]+":&nbsp;"+reasonCount+"<br/>\n");
+				}
+			}
+		}
+		buf.append("</div>");
+		buf.append("</div>\n");
+		
 		buf.append("</td></tr></table>\n");
 		
 		buf.append("<div class=\"infobox infobox-normal\">\n");

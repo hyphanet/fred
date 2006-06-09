@@ -478,6 +478,8 @@ public class Node {
     private final long peerNodeStatusLogInterval = 1000;
     /** PeerNode statuses, by status */
     private final HashMap peerNodeStatuses;
+    /** PeerNode routing backoff reasons, by reason */
+    private final HashMap peerNodeRoutingBackoffReasons;
     /** Next time to update oldestNeverConnectedPeerAge */
     private long nextOldestNeverConnectedPeerAgeUpdateTime = -1;
     /** oldestNeverConnectedPeerAge update interval (milliseconds) */
@@ -909,6 +911,7 @@ public class Node {
         insertSenders = new HashMap();
         arkFetchers = new HashMap();
         peerNodeStatuses = new HashMap();
+        peerNodeRoutingBackoffReasons = new HashMap();
         runningUIDs = new HashSet();
         dnsr = new DNSRequester(this);
         ps = new PacketSender(this);
@@ -2903,7 +2906,7 @@ public class Node {
     }
 
     /**
-     * Remove a disconnected node from the map
+     * Remove a PeerNode status from the map
      */
     public synchronized void removePeerNodeStatus(int pnStatus, PeerNode peerNode) {
       Integer peerNodeStatus = new Integer(pnStatus);
@@ -2998,5 +3001,71 @@ public class Node {
 
     public int getNetworkSizeEstimate(int numberOfMinutes) {
       return lm.getNetworkSizeEstimate( numberOfMinutes );
+    }
+
+    /**
+     * Add a PeerNode routing backoff reason to the map
+     */
+    public synchronized void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+    	HashSet reasonSet = null;
+    	if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+    		reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+    		if(reasonSet.contains(peerNode)) {
+    			Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode+" with status code "+peerNodeRoutingBackoffReason);
+    			return;
+    		}
+    		peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
+    	} else {
+    		reasonSet = new HashSet();
+    	}
+    	Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
+    	reasonSet.add(peerNode);
+    	peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
+    }
+    
+    /**
+     * What are the currently tracked PeerNode routing backoff reasons?
+     */
+    public String [] getPeerNodeRoutingBackoffReasons() {
+    	String [] reasonStrings = (String []) peerNodeRoutingBackoffReasons.keySet().toArray(new String[peerNodeRoutingBackoffReasons.size()]);
+    	Arrays.sort(reasonStrings);
+    	return reasonStrings;
+    }
+    
+    /**
+     * How many PeerNodes have a particular routing backoff reason?
+     */
+    public int getPeerNodeRoutingBackoffReasonSize(String peerNodeRoutingBackoffReason) {
+    	HashSet reasonSet = null;
+    	if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+    		reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+    	} else {
+    		reasonSet = new HashSet();
+    	}
+    	return reasonSet.size();
+    }
+
+    /**
+     * Remove a PeerNode routing backoff reason from the map
+     */
+    public synchronized void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+    	HashSet reasonSet = null;
+    	if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+    		reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+    		if(!reasonSet.contains(peerNode)) {
+    			Logger.error(this, "removePeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' not in peerNodeRoutingBackoffReasons with status code "+peerNodeRoutingBackoffReason);
+    			return;
+    		}
+    		peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
+    	} else {
+    		reasonSet = new HashSet();
+    	}
+    	Logger.minor(this, "removePeerNodeRoutingBackoffReason(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
+    	if(reasonSet.contains(peerNode)) {
+    		reasonSet.remove(peerNode);
+    	}
+    	if(reasonSet.size() > 0) {
+    		peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
+    	}
     }
 }
