@@ -229,7 +229,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			for(int i=0;i<rows.length;i++) {
 				Object[] row = rows[i];
 				int x = ((Integer) row[2]).intValue();
-				row[2] = "<span class=\""+((PeerNode) row[0]).getPeerNodeStatusCSSClassName()+"\">"+((PeerNode) row[0]).getPeerNodeStatusString()+"</span>";
+				String arkAsterisk = "";
+				if(((PeerNode) row[0]).isFetchingARK()) {
+					arkAsterisk = "*";
+				}
+				row[2] = "<span class=\""+((PeerNode) row[0]).getPeerNodeStatusCSSClassName()+"\">"+((PeerNode) row[0]).getPeerNodeStatusString()+arkAsterisk+"</span>";
 			}
 			
 			// Turn array into HTML
@@ -278,7 +282,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			//
 			buf.append(buf2);
 			//
-			buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />\n");
+			buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />&nbsp;&nbsp;&nbsp;<span class=\"darknet_connections\">* Requesting ARK</span>\n");
 			buf.append("</form>\n");
 		}
 		buf.append("</div>\n");

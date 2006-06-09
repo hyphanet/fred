@@ -167,5 +167,9 @@ public class ARKFetcher implements ClientCallback {
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		// Impossible.
 	}
+
+	public boolean isFetching() {
+		return isFetching;
+	}
 	
 }

@@ -1849,5 +1849,9 @@ public class PeerNode implements PeerContext {
 	public String getIdentityString() {
     	return Base64.encode(identity);
     }
+
+	public boolean isFetchingARK() {
+		return arkFetcher.isFetching();
+	}
 }
 
