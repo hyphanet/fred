@@ -838,7 +838,7 @@ public class PeerNode implements PeerContext {
                   + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
             } else {
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-                + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
             }
             firstHandshake = false;
             this.handshakeCount++;
@@ -884,7 +884,7 @@ public class PeerNode implements PeerContext {
             this.handshakeCount++;
         }
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
-        if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
+        if(handshakeCount >= MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
         	int numARKFetchers = node.getNumARKFetchers();
         	if( numARKFetchers >= 30 ) {  // Limit concurrent ARK Fetch Requests to 30 since we UserAlert at 20 disconnected peers anyway
 				Logger.minor( this, "Not starting ARK Fetcher after "+handshakeCount+" failed handshakes for "+getPeer()+" with identity '"+getIdentityString()+"' because there are already 30 ARK Fetchers running.");
