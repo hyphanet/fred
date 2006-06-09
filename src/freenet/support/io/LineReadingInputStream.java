@@ -35,7 +35,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
 			if(ctr >= buf.length) {
-				if(buf.length == bufferSize) throw new TooLongException();
+				if(buf.length == maxLength) throw new TooLongException();
 				byte[] newBuf = new byte[Math.min(buf.length * 2, bufferSize)];
 				System.arraycopy(buf, 0, newBuf, 0, buf.length);
 				buf = newBuf;
