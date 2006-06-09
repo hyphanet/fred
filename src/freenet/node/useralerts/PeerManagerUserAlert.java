@@ -95,7 +95,7 @@ public class PeerManagerUserAlert implements UserAlert {
 		} else if(bwlimitDelayTime > MAX_BWLIMIT_DELAY_TIME_THRESHOLD) {
 			s = "This node has to wait too long for available bandwidth ("+bwlimitDelayTime+" > "+MAX_BWLIMIT_DELAY_TIME_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
 		} else if(nodeAveragePingTime > MAX_NODE_AVERAGE_PING_TIME_THRESHOLD) {
-			s = "This node is having trouble talking with it's peers quickly enough ("+nodeAveragePingTime+" > "+MAX_NODE_AVERAGE_PING_TIME_THRESHOLD+").  Decrease your output bandwidth limit and or remove som peers to improve the situation.";
+			s = "This node is having trouble talking with it's peers quickly enough ("+nodeAveragePingTime+" > "+MAX_NODE_AVERAGE_PING_TIME_THRESHOLD+").  Decrease your output bandwidth limit and/or remove some peers to improve the situation.";
 		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD) {
 			s = "One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are affecting performance.";
 		} else throw new IllegalArgumentException("Not valid");
