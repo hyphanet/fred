@@ -819,13 +819,8 @@ public class PeerNode implements PeerContext {
     }
 
     boolean firstHandshake = true;
-    
-    /**
-     * Call this method when a handshake request has been
-     * sent.
-     */
-    public void sentHandshake() {
-        Logger.debug(this, "sentHandshake(): "+this);
+
+    private void calcNextHandshake(boolean couldSendHandshake) {
         long now = -1;
         synchronized(this) {
             now = System.currentTimeMillis();
@@ -858,6 +853,15 @@ public class PeerNode implements PeerContext {
 				}
 			}
         }
+    }
+    
+    /**
+     * Call this method when a handshake request has been
+     * sent.
+     */
+    public void sentHandshake() {
+        Logger.debug(this, "sentHandshake(): "+this);
+        calcNextHandshake(true);
     }
     
     /**
