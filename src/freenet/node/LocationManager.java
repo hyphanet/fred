@@ -6,6 +6,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.Date;
 
 import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
@@ -968,8 +969,24 @@ class LocationManager {
         Logger.minor(this, "Known Location: "+d);
         Double dd = new Double(d);
         synchronized(knownLocs) {
-        	
+            Date timestamp = new Date();
+        		//If the location is already recorded, remove it from the hashmap
+        		if (knownLocs.containsKey(dd)) {
+        			knownLocs.remove(dd);
+        		}
+        		//Add the location to the map with the current timestamp as value
+        		knownLocs.put(dd,timestamp);
+        		Logger.normal(this, "Estimated net size(session): "+knownLocs.size());
         }
     }
     
+    //Return the estimated network size for numberOfMinutes back or for the whole session if 0
+    public int getNetworkSizeEstimate(int numberOfMinutes) {
+    		//if (numberOfMinutes == 0) {
+    			return knownLocs.size();
+    		//}
+    		//else {
+    		//TODO: Add possibility to get an estimate based on the past numberOfMinutes minutes.
+    		//}
+    }
 }
