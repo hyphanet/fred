@@ -36,7 +36,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 			}
 			if(ctr >= buf.length) {
 				if(buf.length == maxLength) throw new TooLongException();
-				byte[] newBuf = new byte[Math.min(buf.length * 2, bufferSize)];
+				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
 				System.arraycopy(buf, 0, newBuf, 0, buf.length);
 				buf = newBuf;
 			}
