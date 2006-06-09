@@ -176,7 +176,7 @@ public class ToadletContextImpl implements ToadletContext {
 
 			while(true) {
 				
-				String firstLine = lis.readLine(32768, 128);
+				String firstLine = lis.readLine(32768, 128, false); // ISO-8859-1 or US-ASCII, _not_ UTF-8
 				if (firstLine == null) {
 					sock.close();
 					return;
@@ -213,7 +213,7 @@ public class ToadletContextImpl implements ToadletContext {
 				MultiValueTable headers = new MultiValueTable();
 				
 				while(true) {
-					String line = lis.readLine(32768, 128);
+					String line = lis.readLine(32768, 128, false); // ISO-8859 or US-ASCII, not UTF-8
 					if (line == null) {
 						sock.close();
 						return;

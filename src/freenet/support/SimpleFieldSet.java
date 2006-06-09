@@ -33,10 +33,10 @@ public class SimpleFieldSet {
         read(br);
     }
 
-    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean multiLevel, boolean tolerant) throws IOException {
+    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean multiLevel, boolean tolerant, boolean utf8OrIso88591) throws IOException {
     	map = new HashMap();
     	this.multiLevel = multiLevel;
-    	read(lis, maxLineLength, lineBufferSize, tolerant);
+    	read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591);
     }
     
     /**
@@ -95,11 +95,12 @@ public class SimpleFieldSet {
      * blah=blah
      * blah=blah
      * End
+     * @param utfOrIso88591 If true, read as UTF-8, otherwise read as ISO-8859-1.
      */
-    private void read(LineReader br, int maxLength, int bufferSize, boolean tolerant) throws IOException {
+    private void read(LineReader br, int maxLength, int bufferSize, boolean tolerant, boolean utfOrIso88591) throws IOException {
         boolean firstLine = true;
         while(true) {
-            String line = br.readLine(maxLength, bufferSize);
+            String line = br.readLine(maxLength, bufferSize, utfOrIso88591);
             if(line == null) {
                 if(firstLine) throw new EOFException();
                 if(tolerant)

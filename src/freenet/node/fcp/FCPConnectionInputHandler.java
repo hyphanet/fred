@@ -43,13 +43,13 @@ public class FCPConnectionInputHandler implements Runnable {
 		while(true) {
 			SimpleFieldSet fs;
 			// Read a message
-			String messageType = lis.readLine(64, 64);
+			String messageType = lis.readLine(64, 64, true);
 			if(messageType == null) {
 				is.close();
 				return;
 			}
 			if(messageType.equals("")) continue;
-			fs = new SimpleFieldSet(lis, 4096, 128, true, false);
+			fs = new SimpleFieldSet(lis, 4096, 128, true, false, true);
 			FCPMessage msg;
 			try {
 				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.node.persistentTempBucketFactory);

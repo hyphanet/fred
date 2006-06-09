@@ -80,7 +80,8 @@ public class FilePersistentConfig extends Config {
 		BufferedInputStream bis = new BufferedInputStream(fis);
 		try {
 			LineReadingInputStream lis = new LineReadingInputStream(bis);
-			origConfigFileContents = new SimpleFieldSet(lis, 4096, 256, true, true);
+			// Config file is UTF-8 too!
+			origConfigFileContents = new SimpleFieldSet(lis, 4096, 256, true, true, true);
 		} finally {
 			try {
 				fis.close();
@@ -122,7 +123,7 @@ public class FilePersistentConfig extends Config {
 		SimpleFieldSet fs = exportFieldSet();
 		Logger.minor(this, "fs = "+fs);
 		FileOutputStream fos = new FileOutputStream(tempFilename);
-		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
+		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos, "UTF-8"));
 		synchronized(this) {
 			fs.writeTo(bw);
 		}

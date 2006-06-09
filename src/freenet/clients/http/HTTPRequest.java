@@ -429,9 +429,9 @@ public class HTTPRequest {
 		LineReadingInputStream lis = new LineReadingInputStream(is);
 		
 		String line;
-		line = lis.readLine(100, 100);
+		line = lis.readLine(100, 100, false); // really it's US-ASCII, but ISO-8859-1 is close enough.
 		while (is.available() > 0 && !line.equals(boundary)) {
-			line = lis.readLine(100, 100);
+			line = lis.readLine(100, 100, false);
 		}
 		
 		boundary  = "\r\n"+boundary;
@@ -442,7 +442,7 @@ public class HTTPRequest {
 		while(is.available() > 0) {
 			name = null;
 			// chomp headers
-			while( (line = lis.readLine(100, 100)) != null) {
+			while( (line = lis.readLine(100, 100, false)) /* see above */ != null) {
 				if (line.length() == 0) break;
 				
 				String[] lineparts = line.split(":");
