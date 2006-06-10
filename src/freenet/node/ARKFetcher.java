@@ -151,7 +151,7 @@ public class ARKFetcher implements ClientCallback {
 		if(!shouldRun) return;
 		if(e.newURI != null) {
 			peer.updateARK(e.newURI);
-			start();
+			node.ps.queueTimedJob(new Runnable() { public void run() { start(); }}, backoff);  // Runnable rather than FastRunnable so we don't put ourselves on the PacketSender thread anyway
 			return;
 		}
 		backoff += backoff;
