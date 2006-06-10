@@ -96,27 +96,40 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<div class=\"infobox-header\">Node status overview</div>");
 		buf.append("<div class=\"infobox-content\">");
 		buf.append("<ul>");
-		buf.append("<li>bwlimitDelayTime:&nbsp;" + bwlimitDelayTime + "ms</li>");
-		buf.append("<li>nodeAveragePingTime:&nbsp;" + nodeAveragePingTime + "ms</li>");
-		buf.append("<li>networkSizeEstimate:&nbsp;" + networkSizeEstimate + "&nbsp;nodes</li>");
-		buf.append("<li>nodeUptime:&nbsp;" + nodeUptimeString + "</li>");
+		buf.append("<li>bwlimitDelayTime:&nbsp;").append(bwlimitDelayTime).append("ms</li>");
+		buf.append("<li>nodeAveragePingTime:&nbsp;").append(nodeAveragePingTime).append("ms</li>");
+		buf.append("<li>networkSizeEstimate:&nbsp;").append(networkSizeEstimate).append("&nbsp;nodes</li>");
+		buf.append("<li>nodeUptime:&nbsp;").append(nodeUptimeString).append("</li>");
 		buf.append("</ul></div>");
 		buf.append("</div>\n");
 		
 		buf.append("</td><td>");
 		
 		// Activity box
+		int numInserts = node.getNumInserts();
+		int numRequests = node.getNumRequests();
+		int numTransferringRequests = node.getNumTransferringRequests();
+		int numARKFetchers = node.getNumARKFetchers();
+		
 		buf.append("<div class=\"infobox\">\n");
 		buf.append("<div class=\"infobox-header\">\n");
 		buf.append("Current Activity\n");
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("<ul id=\"activity\">\n"
-				+ "<li>Inserts:&nbsp;"+node.getNumInserts()+"</li>\n"
-				+ "<li>Requests:&nbsp;"+node.getNumRequests()+"</li>\n"
-				+ "<li>Transferring Requests:&nbsp;"+node.getNumTransferringRequests()+"</li>\n"
-				+ "<li>ARK Fetch Requests:&nbsp;"+node.getNumARKFetchers()+"</li>\n"
-				+ "</ul>\n");
+		buf.append("<ul id=\"activity\">\n");
+		if (numInserts > 0) {
+			buf.append("<li>Inserts:&nbsp;").append(numInserts).append("</li>");
+		}
+		if (numRequests > 0) {
+			buf.append("<li>Requests:&nbsp;").append(numRequests).append("</li>");
+		}
+		if (numTransferringRequests > 0) {
+			buf.append("<li>Transferring&nbsp;Requests:&nbsp;").append(numTransferringRequests).append("</li>");
+		}
+		if (numARKFetchers > 0) {
+			buf.append("<li>ARK&nbsp;Fetch&nbsp;Requests:&nbsp;").append(numARKFetchers).append("</li>");
+		}
+		buf.append("</ul>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
@@ -128,22 +141,22 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<div class=\"infobox-content\">");
 		buf.append("<ul>");
 		if (numberOfConnected > 0) {
-			buf.append("<li><span class=\"peer_connected\">Connected:&nbsp;" + numberOfConnected + "</span></li>");
+			buf.append("<li><span class=\"peer_connected\">Connected:&nbsp;").append(numberOfConnected).append("</span></li>");
 		}
 		if (numberOfRoutingBackedOff > 0) {
-			buf.append("<li><span class=\"peer_backedoff\">Backed off:&nbsp;" + numberOfRoutingBackedOff + "</span></li>");
+			buf.append("<li><span class=\"peer_backedoff\">Backed off:&nbsp;").append(numberOfRoutingBackedOff).append("</span></li>");
 		}
 		if (numberOfTooNew > 0) {
-			buf.append("<li><span class=\"peer_too_new\">Too new:&nbsp;" + numberOfTooNew + "</span></li>");
+			buf.append("<li><span class=\"peer_too_new\">Too new:&nbsp;").append(numberOfTooNew).append("</span></li>");
 		}
 		if (numberOfTooOld > 0) {
-			buf.append("<li><span class=\"peer_too_old\">Too old:&nbsp;" + numberOfTooOld + "</span></li>");
+			buf.append("<li><span class=\"peer_too_old\">Too old:&nbsp;").append(numberOfTooOld).append("</span></li>");
 		}
 		if (numberOfDisconnected > 0) {
-			buf.append("<li><span class=\"peer_disconnected\">Disconnected:&nbsp;" + numberOfDisconnected + "</span></li>");
+			buf.append("<li><span class=\"peer_disconnected\">Disconnected:&nbsp;").append(numberOfDisconnected).append("</span></li>");
 		}
 		if (numberOfNeverConnected > 0) {
-			buf.append("<li><span class=\"peer_never_connected\">Never Connected:&nbsp;" + numberOfNeverConnected + "</span></li>");
+			buf.append("<li><span class=\"peer_never_connected\">Never Connected:&nbsp;").append(numberOfNeverConnected).append("</span></li>");
 		}
 		buf.append("</ul>");
 		buf.append("</div>");
@@ -162,7 +175,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			for(int i=0;i<routingBackoffReasons.length;i++) {
 				int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
 				if(reasonCount > 0) {
-					buf.append(routingBackoffReasons[i]+":&nbsp;"+reasonCount+"<br/>\n");
+					buf.append(routingBackoffReasons[i]).append(":&nbsp;").append(reasonCount).append("<br/>\n");
 				}
 			}
 		}
