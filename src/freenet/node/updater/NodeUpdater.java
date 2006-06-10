@@ -122,11 +122,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					maybeUpdate();
 				}
 			}, 60*1000); // leave some time in case we get later editions
-			try{
-				maybeUpdate();
-			}catch (Exception e){
-				
-			}
 			this.isRunning=true;
 		}
 	}
