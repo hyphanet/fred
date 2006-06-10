@@ -505,7 +505,7 @@ public class PeerNode implements PeerContext {
     private String handshakeIPsToString() {
         Peer[] localHandshakeIPs;
         synchronized(this) {
-                localHandshakeIPs = handshakeIPs;
+        	localHandshakeIPs = handshakeIPs;
         }
     	if(localHandshakeIPs == null)
     		return "null";
@@ -556,13 +556,15 @@ public class PeerNode implements PeerContext {
       */
     public void maybeUpdateHandshakeIPs(boolean ignoreHostnames) {
     	long now = System.currentTimeMillis();
-    	if((now - lastAttemptedHandshakeIPUpdateTime) < (5*60*1000)) return;  // 5 minutes
+    	if((now - lastAttemptedHandshakeIPUpdateTime) < (5*60*1000)) {
+    		Logger.minor(this, "Looked up recently");
+    		return;  // 5 minutes FIXME
+    	}
     	// We want to come back right away for DNS requesting if this is our first time through
     	if(!ignoreHostnames)
     		lastAttemptedHandshakeIPUpdateTime = now;
     	Logger.minor(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+myName+"' ("+ignoreHostnames+")");
     	Peer[] localHandshakeIPs;
-    	Peer[] p = null;
     	Peer[] myNominalPeer;
     	
     	// Don't synchronize while doing lookups which may take a long time!
@@ -572,7 +574,7 @@ public class PeerNode implements PeerContext {
     	
     	if(myNominalPeer.length == 0) {
     		if(detectedPeer == null) {
-    		        localHandshakeIPs = null;
+    			localHandshakeIPs = null;
         		synchronized(this) {
     				handshakeIPs = localHandshakeIPs;
     			}
@@ -587,38 +589,46 @@ public class PeerNode implements PeerContext {
     		Logger.minor(this, "2: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     		return;
     	}
-    	
-    	if( detectedPeer != null && ! nominalPeer.contains(detectedPeer)){
-      		p= new Peer[1+nominalPeer.size()];
-    		p[0]=detectedPeer;
-    		for(int i=1;i<nominalPeer.size()+1;i++)
-    			p[i]=(Peer) nominalPeer.get(i-1);
-    	}else{
-    		p = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);  		
-    	}
-    	
+
     	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
     	FreenetInetAddress localhost = node.fLocalhostAddress;
     	FreenetInetAddress nodeAddr = node.getPrimaryIPAddress();
     	
-    	Peer extra = null;
-    	for(int i=0;i<p.length;i++) {
-    		FreenetInetAddress a = p[i].getFreenetAddress();
-    		if(a.equals(nodeAddr)) {
-    			extra = new Peer(localhost, p[i].getPort());
+    	Vector peers = new Vector(nominalPeer);
+    	
+    	boolean addedLocalhost = false;
+    	Peer detectedDuplicate = null;
+    	for(int i=0;i<nominalPeer.size();i++) {
+    		Peer p = (Peer) nominalPeer.get(i);
+    		if(p == null) continue;
+    		if(detectedPeer != null) {
+    			if(p != detectedPeer && p.equals(detectedPeer)) {
+    				// Equal but not the same object; need to update the copy.
+    				detectedDuplicate = p;
+    			}
     		}
+    		FreenetInetAddress addr = p.getFreenetAddress();
+    		if(addr.equals(localhost)) {
+    			if(addedLocalhost) continue;
+    			addedLocalhost = true;
+    		}
+    		if(addr.equals(nodeAddr)) {
+    			if(!addedLocalhost)
+    				peers.add(localhost);
+    		}
+    		if(peers.contains(p)) continue;
+    		peers.add(p);
     	}
-    	if(extra != null) {
-    		Peer[] newPeers = new Peer[p.length+1];
-    		System.arraycopy(p, 0, newPeers, 0, p.length);
-    		newPeers[p.length] = extra;
-    		p = newPeers;
-    	}
-    	localHandshakeIPs = p;
+    	
+    	localHandshakeIPs = (Peer[]) peers.toArray(new Peer[peers.size()]);
     	localHandshakeIPs = updateHandshakeIPs(localHandshakeIPs, ignoreHostnames);
     	synchronized(this) {
     		handshakeIPs = localHandshakeIPs;
+        	if(detectedDuplicate != null && detectedDuplicate.equals(detectedPeer)) {
+        		detectedPeer = detectedDuplicate;
+        	}
     	}
+    	Logger.minor(this, "3: detectedPeer = "+detectedPeer+" ("+detectedPeer.getAddress(false));
     	Logger.minor(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     	return;
     }
