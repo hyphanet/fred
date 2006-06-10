@@ -419,12 +419,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
     // FIXME do this with interfaces etc.
     
+    public DSAPublicKey fetchPubKey(byte[] hash, boolean dontPromote) throws IOException {
+    	return fetchPubKey(hash, null, dontPromote);
+    }
+    
 	/**
      * Retrieve a block.
      * @param dontPromote If true, don't promote data if fetched.
+     * @param replacement If non-null, and the data exists but is corrupt, replace it with this.
      * @return null if there is no such block stored, otherwise the block.
      */
-    public DSAPublicKey fetchPubKey(byte[] hash, boolean dontPromote) throws IOException
+    public DSAPublicKey fetchPubKey(byte[] hash, DSAPublicKey replacement, boolean dontPromote) throws IOException
     {
     	if(closed)
     		return null;
@@ -436,7 +441,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	try{
     		t = environment.beginTransaction(null,null);
     		c = chkDB.openCursor(t,null);
-    		
+
+    		// Lock the records as soon as we find them.
     		if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
     				!=OperationStatus.SUCCESS) {
     			c.close();
@@ -445,7 +451,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		}
 
 	    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
-	    		    	
+	    	
+	    	// Promote the key (we can always demote it later; promoting it here means it shouldn't be deallocated
+	    	// FIXME the locking/concurrency in this class is a bit dodgy!
+	    	
+    		if(!dontPromote) {
+    			storeBlock.updateRecentlyUsed();
+    			DatabaseEntry updateDBE = new DatabaseEntry();
+    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
+    			c.putCurrent(updateDBE);
+    		}
+    		
 	    	DSAPublicKey block = null;
 	    	
 	    		byte[] data = new byte[dataBlockSize];
@@ -464,30 +480,31 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    			t.abort();
 	    			return null;
 	    		}
-	    		
+
 	    		if(!Arrays.equals(block.asBytesHash(), hash)) {
-		    		Logger.error(this, "DSAPublicKey: Does not verify (unequal hashes), setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
-		    		storeBlock.setRecentlyUsedToZero();
-	    			DatabaseEntry updateDBE = new DatabaseEntry();
-	    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
-	    			c.putCurrent(updateDBE);
-		    		c.close();
-		    		t.commit();
-		            return null;
+	    			
+	    			if(replacement != null) {
+	    				Logger.normal(this, "Replacing corrupt DSAPublicKey ("+HexUtil.bytesToHex(hash));
+	    				synchronized(chkStore) {
+	    					chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+	    					byte[] toWrite = block.asPaddedBytes();
+	    					chkStore.write(toWrite);
+	    				}
+	    			} else {
+	    				Logger.error(this, "DSAPublicKey: Does not verify (unequal hashes), setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
+	    				storeBlock.setRecentlyUsedToZero();
+	    				DatabaseEntry updateDBE = new DatabaseEntry();
+	    				storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
+	    				c.putCurrent(updateDBE);
+	    				c.close();
+	    				t.commit();
+	    				return null;
+	    			}
 	    		}
-	    		
-	    		if(!dontPromote)
-	    		{
-	    			storeBlock.updateRecentlyUsed();
-	    			DatabaseEntry updateDBE = new DatabaseEntry();
-	    			storeBlockTupleBinding.objectToEntry(storeBlock, updateDBE);
-	    			c.putCurrent(updateDBE);
-		    		c.close();
-		    		t.commit();
-	    		}else{
-	    			c.close();
-	    			t.abort();
-	    		}
+
+	    		// Finished, commit.
+	    		c.close();
+	    		t.commit();
 	    		
 	    		Logger.minor(this, "Get key: "+HexUtil.bytesToHex(hash));
 	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
@@ -686,11 +703,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
      * Store a pubkey.
      */
     public void put(byte[] hash, DSAPublicKey key) throws IOException {
-		DSAPublicKey k = fetchPubKey(hash, true);
+		DSAPublicKey k = fetchPubKey(hash, key, true);
 		if(k == null)
 			innerPut(hash, key);
     }
-    
+
 	/**
      * Store a block.
      */
