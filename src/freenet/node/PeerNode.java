@@ -1578,7 +1578,7 @@ public class PeerNode implements PeerContext {
 	
 	long routingBackedOffUntil = -1;
 	/** Initial nominal routing backoff length */
-	final int INITIAL_ROUTING_BACKOFF_LENGTH = 5000;  // 5 seconds
+	final int INITIAL_ROUTING_BACKOFF_LENGTH = 1000;  // 1 second
 	/** How much to multiply by during fast routing backoff */
 	final int BACKOFF_MULTIPLIER = 2;
 	/** Maximum upper limit to routing backoff slow or fast */
