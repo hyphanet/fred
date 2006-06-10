@@ -1313,24 +1313,24 @@ public class FNPPacketMangler implements LowLevelFilter {
         int sentCount = 0;
         long loopTime1 = System.currentTimeMillis();
         for(int i=0;i<handshakeIPs.length;i++){
-          long innerLoopTime1 = System.currentTimeMillis();
-          if(handshakeIPs[i].getAddress(false) == null) continue;
-          long innerLoopTime2 = System.currentTimeMillis();
-          if((innerLoopTime2 - innerLoopTime1) > 500)
-            Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.getName());
+        	long innerLoopTime1 = System.currentTimeMillis();
+        	if(handshakeIPs[i].getAddress(false) == null) continue;
+        	long innerLoopTime2 = System.currentTimeMillis();
+        	if((innerLoopTime2 - innerLoopTime1) > 500)
+        		Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.getName());
         	sendFirstHalfDHPacket(0, ctx.getOurExponential(), pn, handshakeIPs[i]);
-          long innerLoopTime3 = System.currentTimeMillis();
-          if((innerLoopTime3 - innerLoopTime2) > 500)
-            Logger.normal(this, "innerLoopTime3 is more than half a second after innerLoopTime2 ("+(innerLoopTime3 - innerLoopTime2)+") working on "+handshakeIPs[i]+" of "+pn.getName());
+        	long innerLoopTime3 = System.currentTimeMillis();
+        	if((innerLoopTime3 - innerLoopTime2) > 500)
+        		Logger.normal(this, "innerLoopTime3 is more than half a second after innerLoopTime2 ("+(innerLoopTime3 - innerLoopTime2)+") working on "+handshakeIPs[i]+" of "+pn.getName());
         	pn.sentHandshake();
-          long innerLoopTime4 = System.currentTimeMillis();
-          if((innerLoopTime4 - innerLoopTime3) > 500)
-            Logger.normal(this, "innerLoopTime4 is more than half a second after innerLoopTime3 ("+(innerLoopTime4 - innerLoopTime3)+") working on "+handshakeIPs[i]+" of "+pn.getName());
+        	long innerLoopTime4 = System.currentTimeMillis();
+        	if((innerLoopTime4 - innerLoopTime3) > 500)
+        		Logger.normal(this, "innerLoopTime4 is more than half a second after innerLoopTime3 ("+(innerLoopTime4 - innerLoopTime3)+") working on "+handshakeIPs[i]+" of "+pn.getName());
         	sentCount += 1;
         }
         long loopTime2 = System.currentTimeMillis();
         if((loopTime2 - loopTime1) > 1000)
-          Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+pn.getName());
+        	Logger.normal(this, "loopTime2 is more than a second after loopTime1 ("+(loopTime2 - loopTime1)+") working on "+pn.getName());
         if(sentCount==0) {
             pn.couldNotSendHandshake();
         }
