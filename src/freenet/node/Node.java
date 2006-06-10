@@ -3006,28 +3006,33 @@ public class Node {
     /**
      * Add a PeerNode routing backoff reason to the map
      */
-    public synchronized void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
-    	HashSet reasonSet = null;
-    	if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-    		reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-    		if(reasonSet.contains(peerNode)) {
-    			Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode+" with status code "+peerNodeRoutingBackoffReason);
-    			return;
+    public void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+    	synchronized(peerNodeRoutingBackoffReasons) {
+    		HashSet reasonSet = null;
+    		if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+    			reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+    			if(reasonSet.contains(peerNode)) {
+    				Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode+" with status code "+peerNodeRoutingBackoffReason);
+    				return;
+    			}
+    			peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
+    		} else {
+    			reasonSet = new HashSet();
     		}
-    		peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
-    	} else {
-    		reasonSet = new HashSet();
+    		Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
+    		reasonSet.add(peerNode);
+    		peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
     	}
-    	Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
-    	reasonSet.add(peerNode);
-    	peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
     }
     
     /**
      * What are the currently tracked PeerNode routing backoff reasons?
      */
     public String [] getPeerNodeRoutingBackoffReasons() {
-    	String [] reasonStrings = (String []) peerNodeRoutingBackoffReasons.keySet().toArray(new String[peerNodeRoutingBackoffReasons.size()]);
+    	String [] reasonStrings;
+    	synchronized(peerNodeRoutingBackoffReasons) {
+    		reasonStrings = (String []) peerNodeRoutingBackoffReasons.keySet().toArray(new String[peerNodeRoutingBackoffReasons.size()]);
+    	}
     	Arrays.sort(reasonStrings);
     	return reasonStrings;
     }
@@ -3037,12 +3042,14 @@ public class Node {
      */
     public int getPeerNodeRoutingBackoffReasonSize(String peerNodeRoutingBackoffReason) {
     	HashSet reasonSet = null;
-    	if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-    		reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-    	} else {
-    		reasonSet = new HashSet();
+    	synchronized(peerNodeRoutingBackoffReasons) {
+    		if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+    			reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+    			return reasonSet.size();
+    		} else {
+    			return 0;
+    		}
     	}
-    	return reasonSet.size();
     }
 
     /**
