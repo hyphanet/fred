@@ -95,14 +95,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<div class=\"infobox\">");
 		buf.append("<div class=\"infobox-header\">Node status overview</div>");
 		buf.append("<div class=\"infobox-content\">");
-		buf.append("bwlimitDelayTime:&nbsp;" + bwlimitDelayTime + "ms<br/>");
-		buf.append("nodeAveragePingTime:&nbsp;" + nodeAveragePingTime + "ms<br/>");
-		buf.append("networkSizeEstimate:&nbsp;" + networkSizeEstimate + "&nbsp;nodes<br/>");
-		buf.append("nodeUptime:&nbsp;" + nodeUptimeString + "<br/>");
-		buf.append("</div>");
+		buf.append("<ul>");
+		buf.append("<li>bwlimitDelayTime:&nbsp;" + bwlimitDelayTime + "ms</li>");
+		buf.append("<li>nodeAveragePingTime:&nbsp;" + nodeAveragePingTime + "ms</li>");
+		buf.append("<li>networkSizeEstimate:&nbsp;" + networkSizeEstimate + "&nbsp;nodes</li>");
+		buf.append("<li>nodeUptime:&nbsp;" + nodeUptimeString + "</li>");
+		buf.append("</ul></div>");
 		buf.append("</div>\n");
 		
-		buf.append("</td><td class=\"last\">");
+		buf.append("</td><td>");
 		
 		// Activity box
 		buf.append("<div class=\"infobox\">\n");
@@ -119,30 +120,32 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
-		buf.append("</td><td class=\"last\">");
+		buf.append("</td><td>");
 		
 		// Peer statistics box
 		buf.append("<div class=\"infobox\">");
 		buf.append("<div class=\"infobox-header\">Peer statistics</div>");
 		buf.append("<div class=\"infobox-content\">");
+		buf.append("<ul>");
 		if (numberOfConnected > 0) {
-			buf.append("<span class=\"peer_connected\">Connected:&nbsp;" + numberOfConnected + "</span><br/>");
+			buf.append("<li><span class=\"peer_connected\">Connected:&nbsp;" + numberOfConnected + "</span></li>");
 		}
 		if (numberOfRoutingBackedOff > 0) {
-			buf.append("<span class=\"peer_backedoff\">Backed off:&nbsp;" + numberOfRoutingBackedOff + "</span><br/>");
+			buf.append("<li><span class=\"peer_backedoff\">Backed off:&nbsp;" + numberOfRoutingBackedOff + "</span></li>");
 		}
 		if (numberOfTooNew > 0) {
-			buf.append("<span class=\"peer_too_new\">Too new:&nbsp;" + numberOfTooNew + "</span><br/>");
+			buf.append("<li><span class=\"peer_too_new\">Too new:&nbsp;" + numberOfTooNew + "</span></li>");
 		}
 		if (numberOfTooOld > 0) {
-			buf.append("<span class=\"peer_too_old\">Too old:&nbsp;" + numberOfTooOld + "</span><br/>");
+			buf.append("<li><span class=\"peer_too_old\">Too old:&nbsp;" + numberOfTooOld + "</span></li>");
 		}
 		if (numberOfDisconnected > 0) {
-			buf.append("<span class=\"peer_disconnected\">Disconnected:&nbsp;" + numberOfDisconnected + "</span><br/>");
+			buf.append("<li><span class=\"peer_disconnected\">Disconnected:&nbsp;" + numberOfDisconnected + "</span></li>");
 		}
 		if (numberOfNeverConnected > 0) {
-			buf.append("<span class=\"peer_never_connected\">Never Connected:&nbsp;" + numberOfNeverConnected + "</span><br/>");
+			buf.append("<li><span class=\"peer_never_connected\">Never Connected:&nbsp;" + numberOfNeverConnected + "</span></li>");
 		}
+		buf.append("</ul>");
 		buf.append("</div>");
 		buf.append("</div>\n");
 		

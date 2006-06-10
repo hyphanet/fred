@@ -10,6 +10,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.Plugin;
 import freenet.plugin.PluginManager;
+import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 
 /**
@@ -37,13 +38,13 @@ public class PluginToadlet extends Toadlet {
 	}
 
 	/**
-	 * Currently this toadlet only supports GET.
+	 * This toadlet support GET and POST operations.
 	 * 
 	 * @see freenet.clients.http.Toadlet#supportedMethods()
-	 * @return "GET"
+	 * @return "GET,POST"
 	 */
 	public String supportedMethods() {
-		return "GET";
+		return "GET,POST";
 	}
 
 	/**
@@ -85,7 +86,44 @@ public class PluginToadlet extends Toadlet {
 		StringBuffer replyBuffer = new StringBuffer();
 		if ("list".equals(action)) {
 			replyBuffer.append(listPlugins(ctx));
-		} else if ("add".equals(action)) {
+		} else {
+			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Unsupported method", "Unsupported method.").toString());
+			return;
+		}
+		writeReply(ctx, 220, "text/html; charset=utf-8", "OK", replyBuffer.toString());
+	}
+	
+	/**
+	 * @see freenet.clients.http.Toadlet#handlePost(java.net.URI, freenet.support.Bucket, freenet.clients.http.ToadletContext)
+	 */
+	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+		HTTPRequest httpRequest = new HTTPRequest(uri, data, ctx);
+		
+		String uriPath = uri.getPath();
+		String pluginName = uriPath.substring(uriPath.lastIndexOf('/') + 1);
+		
+		if (pluginName.length() > 0) {
+			Plugin plugin = findPlugin(pluginName);
+			if (plugin != null) {
+				if (plugin instanceof HttpPlugin) {
+					((HttpPlugin) plugin).handlePost(httpRequest, ctx);
+				} else {
+					writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Plugin has no web interface", "The plugin does not have a web interface, so there is nothing to show.").toString());
+				}
+				return;
+			}
+			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Plugin not found", "The requested plugin could not be found.").toString());
+			return;
+		}
+		
+		String action = httpRequest.getParam("action");
+		if (action.length() == 0) {
+			writePermanentRedirect(ctx, "Plugin list", "?action=list");
+			return;
+		}
+
+		StringBuffer replyBuffer = new StringBuffer();
+		if ("add".equals(action)) {
 			pluginName = httpRequest.getParam("pluginName");
 			boolean added = false;
 			try {
@@ -97,7 +135,7 @@ public class PluginToadlet extends Toadlet {
 				writePermanentRedirect(ctx, "Plugin list", "?action=list");
 				return;
 			}
-			replyBuffer.append(createBox(ctx, "Plugin was not loaded", "The plugin you requested could not be loaded. Please verify the name of the plugin&rsquo;s class and the URL, if you gave one."));
+			replyBuffer.append(createBox(ctx, "Plugin was not loaded", "The plugin you requested could not be loaded. Please verify the name of the plugin\u2019s class and the URL, if you gave one."));
 		} else if ("reload".equals(action)) {
 			pluginName = httpRequest.getParam("pluginName");
 			Plugin plugin = findPlugin(pluginName);
@@ -168,8 +206,8 @@ public class PluginToadlet extends Toadlet {
 			} else {
 				outputBuffer.append("<td/>");
 			}
-			outputBuffer.append("<td><form action=\"\" method=\"get\"><input type=\"hidden\" name=\"action\" value=\"reload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Reload\" /></form></td>");
-			outputBuffer.append("<td><form action=\"\" method=\"get\"><input type=\"hidden\" name=\"action\" value=\"unload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Unload\" /></form></td>");
+			outputBuffer.append("<td><form action=\"./\" method=\"post\"><input type=\"hidden\" name=\"action\" value=\"reload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Reload\" /></form></td>");
+			outputBuffer.append("<td><form action=\"./\" method=\"post\"><input type=\"hidden\" name=\"action\" value=\"unload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Unload\" /></form></td>");
 			outputBuffer.append("</tr>\n");
 		}
 		outputBuffer.append("</table>");
@@ -200,8 +238,8 @@ public class PluginToadlet extends Toadlet {
 		pageMaker.makeHead(outputBuffer, HTMLEncoder.encode(title));
 		outputBuffer.append("<div class=\"infobox infobox-alert\">");
 		outputBuffer.append("<div class=\"infobox-header\">").append(HTMLEncoder.encode(title)).append("</div>\n");
-		outputBuffer.append("<div class=\"infobox-content\">").append(HTMLEncoder.encode(message)).append("</div>\n");
-		outputBuffer.append("<div class=\"infobox-content\">Please <a href=\"?action=list\">return</a> to the list of plugins.</div>\n");
+		outputBuffer.append("<div class=\"infobox-content\"><p>").append(HTMLEncoder.encode(message)).append("</p>");
+		outputBuffer.append("<p>Please <a href=\"?action=list\">return</a> to the list of plugins.</p></div>");
 		outputBuffer.append("</div>\n");
 		pageMaker.makeTail(outputBuffer);
 
@@ -219,7 +257,7 @@ public class PluginToadlet extends Toadlet {
 		outputBuffer.append("<div class=\"infobox\">");
 		outputBuffer.append("<div class=\"infobox-header\">Add a plugin</div>");
 		outputBuffer.append("<div class=\"infobox-content\">");
-		outputBuffer.append("<form action=\"?add\" method=\"get\">");
+		outputBuffer.append("<form action=\"./\" method=\"post\">");
 		outputBuffer.append("<input type=\"hidden\" name=\"action\" value=\"add\" />");
 		outputBuffer.append("<input type=\"text\" size=\"40\" name=\"pluginName\" value=\"\" />&nbsp;");
 		outputBuffer.append("<input type=\"submit\" value=\"Load plugin\" />");
