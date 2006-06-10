@@ -536,8 +536,7 @@ public class QueueToadlet extends Toadlet {
 	}
 
 	public String supportedMethods() {
-		// TODO Auto-generated method stub
-		return null;
+		return "GET, POST";
 	}
 
 }
