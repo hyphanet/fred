@@ -50,7 +50,7 @@ public class ConfigToadlet extends Toadlet {
 		String pass = request.getParam("formPassword");
 		if(pass == null || !pass.equals(node.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/queue/");
+			headers.put("Location", "/config/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
