@@ -61,7 +61,6 @@ public class ARKFetcher implements ClientCallback {
 				return;
 			}
 			FreenetURI uri = ark.getURI();
-			uri = uri.setSuggestedEdition(uri.getSuggestedEdition());
 			startedEdition = uri.getSuggestedEdition();
 			fetchingURI = uri;
 			Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);

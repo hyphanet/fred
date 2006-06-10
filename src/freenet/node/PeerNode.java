@@ -120,7 +120,8 @@ public class PeerNode implements PeerContext {
      */
     private final ARKFetcher arkFetcher;
     
-    /** My ARK SSK public key */
+    /** My ARK SSK public key; edition is the next one, not the current one, 
+     * so this is what we want to fetch. */
     private USK myARK;
     
     /** Number of handshake attempts since last successful connection or ARK fetch */
@@ -456,7 +457,7 @@ public class PeerNode implements PeerContext {
         	String arkNumber = fs.get("ark.number");
         	
         	if(arkNumber != null) {
-        		arkNo = Long.parseLong(arkNumber);
+        		arkNo = Long.parseLong(arkNumber) + 1; // this is the number of the ref we are parsing. we want the number of the next edition.
         	}
         	
         	String arkPubKey = fs.get("ark.pubURI");
@@ -1499,7 +1500,8 @@ public class PeerNode implements PeerContext {
         fs.put("version", version);
         fs.put("myName", myName);
         if(myARK != null) {
-        	fs.put("ark.number", Long.toString(myARK.suggestedEdition));
+        	// Decrement it because we keep the number we would like to fetch, not the last one fetched.
+        	fs.put("ark.number", Long.toString(myARK.suggestedEdition-1));
         	fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));
         }
         return fs;
@@ -1796,10 +1798,13 @@ public class PeerNode implements PeerContext {
 	public synchronized void updateARK(FreenetURI newURI) {
 		try {
 			USK usk = USK.create(newURI);
-			if(!myARK.equals(usk, false)) {
+			if(!myARK.equals(usk.copy(myARK.suggestedEdition), false)) {
 				Logger.error(this, "Changing ARK not supported (and shouldn't be possible): from "+myARK+" to "+usk+" for "+this);
 			} else if(myARK.suggestedEdition > usk.suggestedEdition) {
 				Logger.minor(this, "Ignoring ARK edition decrease: "+myARK.suggestedEdition+" to "+usk.suggestedEdition+" for "+this);
+			} else if(myARK.suggestedEdition > usk.suggestedEdition) {
+				Logger.minor(this, "New ARK edition found");
+				myARK = usk;
 			} else if(myARK == null) {
 				Logger.minor(this, "Setting ARK to "+usk+" was null on "+this);
 				myARK = usk;
@@ -1813,8 +1818,9 @@ public class PeerNode implements PeerContext {
 		try {
 			synchronized(this) {
 				handshakeCount = 0;
-				if(myARK.suggestedEdition < fetchedEdition)
-					myARK = myARK.copy(fetchedEdition);
+				// edition +1 because we store the ARK edition that we want to fetch.
+				if(myARK.suggestedEdition < fetchedEdition+1)
+					myARK = myARK.copy(fetchedEdition+1);
 			}
 			processNewNoderef(fs, true);
 		} catch (FSParseException e) {
