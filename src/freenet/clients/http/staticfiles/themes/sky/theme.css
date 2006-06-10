@@ -216,6 +216,7 @@ ul.config li {
 	list-style: none;
 	text-align: left;
 	display: table;
+	position: relative;
 }
 
 ul.config li:hover span.configlongdesc {
@@ -244,6 +245,7 @@ ul.config span.configlongdesc {
 	display: none;
 	position: absolute;
 	left: 40px;
+	top: -40px;
 	background-color: #e1ecff;
 	border: 1px solid #97beff;
 	padding: 5px;
