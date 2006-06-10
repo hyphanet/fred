@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.io.File;
 
+
 /* XML */
 import org.w3c.dom.Document;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -475,7 +476,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		
 		/* Word by word */
 		for (int i = 0; i < words.length; i++) {
-			Element wordElement = xmlDoc.createElement("word");
+			Element wordElement = xmlDoc.createElement("w");/* stands for "word" */
 			wordElement.setAttribute("v", words[i]);
 
 			FreenetURI[] urisForWord = (FreenetURI[]) urisByWord.get(words[i]);
@@ -490,20 +491,23 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 					continue;
 				}
 
-				Element uriElement = xmlDoc.createElement("file");
+				Element uriElement = xmlDoc.createElement("f"); /* stands for "file" */
 				uriElement.setAttribute("id", x.toString());
 
 				/* Position by position */
 				HashMap positionsForGivenWord = (HashMap)positionsByWordByURI.get(uri.toString(false));
 				Integer[] positions = (Integer[])positionsForGivenWord.get(words[i]);
 
+				StringBuffer positionList = new StringBuffer();
+
 				for(int k=0; k < positions.length ; k++) {
-					Element positionElement = xmlDoc.createElement("p");
-					Text positionText = xmlDoc.createTextNode(positions[k].toString());
-					positionElement.appendChild(positionText);
-					uriElement.appendChild(positionElement);
+					if(k!=0)
+						positionList.append(",");
+
+					positionList.append(positions[k].toString());
 				}
 				
+				uriElement.appendChild(xmlDoc.createTextNode(positionList.toString()));
 
 				wordElement.appendChild(uriElement);
 			}
