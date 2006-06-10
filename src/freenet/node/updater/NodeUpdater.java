@@ -1,10 +1,8 @@
 package freenet.node.updater;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataInput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -27,7 +25,6 @@ import freenet.client.async.USKCallback;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
-import freenet.keys.NodeSSK;
 import freenet.keys.USK;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -62,7 +59,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private final UpdatedVersionAvailableUserAlert alert;
 	private RevocationKeyFoundUserAlert revocationAlert;
 	
-	// TODO: Start the revocation url fetching!
 	public NodeUpdater(Node n, boolean isAutoUpdateAllowed, FreenetURI URI, FreenetURI revocationURI) {
 		super();
 		this.URI = URI;
@@ -117,7 +113,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 	
 	public synchronized void onFoundEdition(long l, USK key){
-		// FIXME : Check if it has been blown
 		int found = (int)key.suggestedEdition;
 		
 		if(found > availableVersion){
@@ -126,7 +121,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				public void run() {
 					maybeUpdate();
 				}
-			}, 30*1000); // leave some time in case we get later editions
+			}, 60*1000); // leave some time in case we get later editions
 			try{
 				maybeUpdate();
 			}catch (Exception e){
@@ -288,7 +283,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					BufferedReader br = new BufferedReader(isr);
 					
 					fos = new FileOutputStream(newConfig);
-					BufferedOutputStream bos = new BufferedOutputStream(fos);
 					OutputStreamWriter osw = new OutputStreamWriter(fos);
 					BufferedWriter bw = new BufferedWriter(osw);
 					
@@ -343,11 +337,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			if(node.getNodeStarter()!=null) {
 				System.err.println("Restarting because of update");
 				node.getNodeStarter().restart();
-				System.err.println("Restart returned!?");
 			} else{
 				System.out.println("New version has been downloaded: please restart your node!");
 				node.exit();
-			}	
+			}
+			System.err.println("WTF? Restart returned!?");
 			
 		}catch(Exception e){
 			Logger.error(this, "Error while updating the node : "+e);
@@ -357,7 +351,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 	
 	public void onSuccess(FetchResult result, ClientGetter state) {
-		// TODO ensure it works
 		if(!state.getURI().equals(revocationURI)){
 			System.out.println("Found "+availableVersion);
 			Logger.normal(this, "Found a new version! (" + availableVersion + ", setting up a new UpdatedVersionAviableUserAlert");
@@ -433,7 +426,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			public void run() {
 				try {
 					// We've got the data, so speed things up a bit.
-					ClientGetter cg = new ClientGetter(NodeUpdater.this, node.chkFetchScheduler, node.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, NodeUpdater.this, null);
+					ClientGetter cg = new ClientGetter(NodeUpdater.this, node.chkFetchScheduler, node.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.MAXIMUM_PRIORITY_CLASS, NodeUpdater.this, null);
 					cg.start();
 				} catch (FetchException e) {
 					Logger.error(this, "Not able to start the revocation fetcher.");
