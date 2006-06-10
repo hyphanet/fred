@@ -20,8 +20,8 @@ public class DNSRequester implements Runnable {
     }
 
     void start() {
-			  Logger.normal(this, "Starting DNSRequester");
-			  System.out.println("Starting DNSRequester");
+    	Logger.normal(this, "Starting DNSRequester");
+    	System.out.println("Starting DNSRequester");
         myThread.start();
     }
 
@@ -58,11 +58,11 @@ public class DNSRequester implements Runnable {
         }
         for(int i=0;i<nodes.length;i++) {
             PeerNode pn = nodes[i];
-            Logger.minor(this, "Node: "+pn);
+            //Logger.minor(this, "Node: "+pn);
             if(!pn.isConnected()) {
                 // Not connected
                 // Try new DNS lookup
-            	Logger.minor(this, "Doing lookup on "+pn);
+            	//Logger.minor(this, "Doing lookup on "+pn);
                 pn.maybeUpdateHandshakeIPs(false);
             }
         }

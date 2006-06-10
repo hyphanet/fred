@@ -31,6 +31,7 @@ public class ARKFetcher implements ClientCallback {
 	private String identity;
 	private boolean isFetching = false;
 	private boolean started = false;
+	private long startedEdition;
 
 	public ARKFetcher(PeerNode peer, Node node) {
 		this.peer = peer;
@@ -50,6 +51,7 @@ public class ARKFetcher implements ClientCallback {
 		if(started) {  // We only need one ARKFetcher per PeerNode
 		  return;
 		}
+		Logger.minor(this, "Starting ... for "+peer+" on "+this);
 		started = true;
 		// Start fetch
 		shouldRun = true;
@@ -59,6 +61,8 @@ public class ARKFetcher implements ClientCallback {
 				return;
 			}
 			FreenetURI uri = ark.getURI();
+			uri = uri.setSuggestedEdition(uri.getSuggestedEdition());
+			startedEdition = uri.getSuggestedEdition();
 			fetchingURI = uri;
 			Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
 			cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
@@ -69,11 +73,13 @@ public class ARKFetcher implements ClientCallback {
 		
 		if(cg != null)
 			try {
-				cg.start();
-				if(!isFetching) {
-					node.addARKFetcher(identity,this);
-					isFetching = true;
+				synchronized(this) {
+					if(!isFetching) {
+						node.addARKFetcher(identity,this);
+						isFetching = true;
+					}
 				}
+				cg.start();
 			} catch (FetchException e) {
 				onFailure(e, cg);
 			}
@@ -123,7 +129,8 @@ public class ARKFetcher implements ClientCallback {
 		SimpleFieldSet fs;
 		try {
 			fs = new SimpleFieldSet(ref, true);
-			peer.gotARK(fs);
+			Logger.minor(this, "Got ARK for "+peer);
+			peer.gotARK(fs, startedEdition);
 		} catch (IOException e) {
 			// Corrupt ref.
 			Logger.error(this, "Corrupt ARK reference? Fetched "+fetchingURI+" got while parsing: "+e+" from:\n"+ref, e);

@@ -305,8 +305,9 @@ public class PeerNode implements PeerContext {
         if(nominalPeer.isEmpty()) {
         	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+"' with name '"+myName+"'");
         	detectedPeer = null;
-        } else
-        	detectedPeer=(Peer) nominalPeer.firstElement();
+        } else {
+        	detectedPeer = (Peer) nominalPeer.firstElement();
+        }
         
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
@@ -557,7 +558,7 @@ public class PeerNode implements PeerContext {
     public void maybeUpdateHandshakeIPs(boolean ignoreHostnames) {
     	long now = System.currentTimeMillis();
     	if((now - lastAttemptedHandshakeIPUpdateTime) < (5*60*1000)) {
-    		Logger.minor(this, "Looked up recently");
+    		//Logger.minor(this, "Looked up recently (detectedPeer = "+detectedPeer + " : "+((detectedPeer == null) ? "" : detectedPeer.getAddress(false).toString()));
     		return;  // 5 minutes FIXME
     	}
     	// We want to come back right away for DNS requesting if this is our first time through
@@ -874,7 +875,7 @@ public class PeerNode implements PeerContext {
      * sent.
      */
     public void sentHandshake() {
-        Logger.debug(this, "sentHandshake(): "+this);
+        Logger.minor(this, "sentHandshake(): "+this);
         calcNextHandshake(true);
     }
     
@@ -977,10 +978,17 @@ public class PeerNode implements PeerContext {
      * @param newPeer The new address of the peer.
      */
     public void changedIP(Peer newPeer) {
-        this.detectedPeer=newPeer;
+    	setDetectedPeer(newPeer);
     }
 
-    /**
+    private void setDetectedPeer(Peer newPeer) {
+    	if(!detectedPeer.equals(newPeer)) {
+    		this.detectedPeer=newPeer;
+    		this.lastAttemptedHandshakeIPUpdateTime = 0;
+    	}
+	}
+
+	/**
      * @return The current primary KeyTracker, or null if we
      * don't have one.
      */
@@ -1286,7 +1294,7 @@ public class PeerNode implements PeerContext {
      * Process a new nodereference, as a SimpleFieldSet.
      */
     private void processNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
-        Logger.minor(this, "Parsing: "+fs);
+        Logger.minor(this, "Parsing: \n"+fs);
         boolean changedAnything = false;
         String identityString = fs.get("identity");
         try {
@@ -1322,6 +1330,8 @@ public class PeerNode implements PeerContext {
         	currentLocation = loc;
         }
 
+        Vector oldNominalPeer = nominalPeer;
+        
         if(nominalPeer==null)
         	nominalPeer=new Vector();
         nominalPeer.removeAllElements();
@@ -1338,10 +1348,17 @@ public class PeerNode implements PeerContext {
         	}else{
 	    		for(int i=0;i<physical.length;i++){		
 					Peer p = new Peer(physical[i], true);
-				    if(!nominalPeer.contains(p)) 
+				    if(!nominalPeer.contains(p)) {
+				    	if(oldNominalPeer.contains(p)) {
+				    		// Do nothing
+				    		// .contains() will .equals() on each, and equals() will propagate the looked-up IP if necessary.
+				    		// This is obviously O(n^2), but it doesn't matter, there will be very few peers.
+				    	}
 				    	nominalPeer.addElement(p);
+				    }
 	    		}
         	}
+        	this.lastAttemptedHandshakeIPUpdateTime = 0;
         } catch (Exception e1) {
                 throw new FSParseException(e1);
         }
@@ -1354,12 +1371,15 @@ public class PeerNode implements PeerContext {
         	// detectedPeer stays as it is
         } else {
             /* yes, we pick up a random one : it will be updated on handshake */
-            detectedPeer=(Peer) nominalPeer.firstElement();
+        	this.setDetectedPeer((Peer) nominalPeer.firstElement());
         }
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         // In future, ARKs may support automatic transition when the ARK key is changed.
         // So parse it anyway. If it fails, no big loss; it won't even log an error.
+        
+        Logger.minor(this, "Parsed successfully; changedAnything = "+changedAnything);
+        
         if(parseARK(fs))
         	changedAnything = true;
         if(!name.equals(myName)) changedAnything = true;
@@ -1777,24 +1797,33 @@ public class PeerNode implements PeerContext {
 		try {
 			USK usk = USK.create(newURI);
 			if(!myARK.equals(usk, false)) {
-				Logger.error(this, "Changing ARK not supported (and shouldn't be possible): from "+myARK+" to "+usk);
+				Logger.error(this, "Changing ARK not supported (and shouldn't be possible): from "+myARK+" to "+usk+" for "+this);
 			} else if(myARK.suggestedEdition > usk.suggestedEdition) {
-				Logger.minor(this, "Ignoring ARK edition decrease: "+myARK.suggestedEdition+" to "+usk.suggestedEdition);
-			} else
+				Logger.minor(this, "Ignoring ARK edition decrease: "+myARK.suggestedEdition+" to "+usk.suggestedEdition+" for "+this);
+			} else if(myARK == null) {
+				Logger.minor(this, "Setting ARK to "+usk+" was null on "+this);
 				myARK = usk;
+			}
 		} catch (MalformedURLException e) {
 			Logger.error(this, "ARK update failed: Could not parse permanent redirect (from USK): "+newURI+" : "+e, e);
 		}
 	}
 
-	public void gotARK(SimpleFieldSet fs) {
+	public void gotARK(SimpleFieldSet fs, long fetchedEdition) {
 		try {
+			synchronized(this) {
+				handshakeCount = 0;
+				if(myARK.suggestedEdition < fetchedEdition)
+					myARK = myARK.copy(fetchedEdition);
+			}
 			processNewNoderef(fs, true);
-			this.handshakeCount = 0;
 		} catch (FSParseException e) {
 			Logger.error(this, "Invalid ARK update: "+e, e);
 			// This is ok as ARKs are limited to 4K anyway.
 			Logger.error(this, "Data was: \n"+fs.toString());
+			synchronized(this) {
+				handshakeCount = PeerNode.MAX_HANDSHAKE_COUNT;
+			}
 		}
 	}
 
