@@ -343,16 +343,16 @@ public class FProxyToadlet extends Toadlet {
 			node.setFProxy(fproxy);
 			server.register(fproxy, "/", false);
 			
-			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager);
+			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, node);
 			server.register(pproxy, "/plugins/", true);
 			
 			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node, fproxyConfig);
 			server.register(welcometoadlet, "/welcome/", true);
 			
-			PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2);
+			PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2, node);
 			server.register(pluginToadlet, "/plugin/", true);
 			
-			ConfigToadlet configtoadlet = new ConfigToadlet(client, config);
+			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node);
 			server.register(configtoadlet, "/config/", true);
 			
 			StaticToadlet statictoadlet = new StaticToadlet(client);

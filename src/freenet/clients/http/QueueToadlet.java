@@ -21,6 +21,7 @@ import freenet.support.Bucket;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
 
@@ -42,6 +43,14 @@ public class QueueToadlet extends Toadlet {
 			return;
 		}
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
+		
+		String pass = request.getParam("formPassword");
+		if(pass == null || !pass.equals(node.formPassword)) {
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/queue/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		}
 		
 		if(request.isParameterSet("remove_request") && request.getParam("remove_request").length() > 0) {
 			String identifier = request.getParam("identifier");
@@ -423,6 +432,7 @@ public class QueueToadlet extends Toadlet {
 	private void writeDeleteCell(ClientRequest p, StringBuffer buf) {
 		buf.append("<td>");
 		buf.append("<form action=\"/queue/\" method=\"post\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"");
 		buf.append(HTMLEncoder.encode(p.getIdentifier()));
 		buf.append("\"><input type=\"submit\" name=\"remove_request\" value=\"Delete\">");

@@ -561,6 +561,8 @@ public class Node {
     final RequestStarter sskInsertStarter;
 	public final UserAlertManager alerts;
 	final RunningAverage throttledPacketSendAverage;
+	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
+	public final String formPassword;
 
     File downloadDir;
     public final ClientRequestScheduler chkFetchScheduler;
@@ -886,6 +888,9 @@ public class Node {
      */
      Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
     	// Easy stuff
+    	byte[] pwdBuf = new byte[16];
+    	random.nextBytes(pwdBuf);
+    	this.formPassword = Base64.encode(pwdBuf);
       	nodeStarter=ns;
     	if(logConfigHandler != lc)
     		logConfigHandler=lc;

@@ -319,6 +319,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf.append(buf2);
 			//
 			buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />&nbsp;&nbsp;&nbsp;<span class=\"darknet_connections\">* Requesting ARK</span>\n");
+			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 			buf.append("</form>\n");
 		}
 		buf.append("</div>\n");
@@ -340,6 +341,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("or file:\n");
 		buf.append("<input id=\"reffile\" type=\"file\" name=\"reffile\" />\n");
 		buf.append("<br />\n");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 		buf.append("<input type=\"submit\" name=\"add\" value=\"Add\" />\n");
 		buf.append("</form>\n");
 		buf.append("</div>\n");
@@ -369,6 +371,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
+		
+		String pass = request.getPartAsString("formPassword", 32);
+		if(pass == null || !pass.equals(node.formPassword)) {
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		}
 		
 		if (request.isPartSet("add")) {
 			// add a new node

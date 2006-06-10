@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.node.Node;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.Plugin;
 import freenet.plugin.PluginManager;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
+import freenet.support.MultiValueTable;
 
 /**
  * Toadlet for the plugin manager.
@@ -23,6 +25,7 @@ public class PluginToadlet extends Toadlet {
 
 	/** The plugin manager backing this toadlet. */
 	private final PluginManager pluginManager;
+	private final Node node;
 
 	/**
 	 * Creates a new toadlet.
@@ -32,9 +35,10 @@ public class PluginToadlet extends Toadlet {
 	 * @param pluginManager
 	 *            The plugin manager to use
 	 */
-	protected PluginToadlet(HighLevelSimpleClient client, PluginManager pluginManager) {
+	protected PluginToadlet(HighLevelSimpleClient client, PluginManager pluginManager, Node n) {
 		super(client);
 		this.pluginManager = pluginManager;
+		this.node = n;
 	}
 
 	/**
@@ -113,6 +117,14 @@ public class PluginToadlet extends Toadlet {
 				return;
 			}
 			writeReply(ctx, 220, "text/html; charset=utf-8", "OK", createBox(ctx, "Plugin not found", "The requested plugin could not be found.").toString());
+			return;
+		}
+		
+		String pass = httpRequest.getParam("formPassword");
+		if(pass == null || !pass.equals(node.formPassword)) {
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/plugin/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
 		
@@ -206,8 +218,12 @@ public class PluginToadlet extends Toadlet {
 			} else {
 				outputBuffer.append("<td/>");
 			}
-			outputBuffer.append("<td><form action=\"./\" method=\"post\"><input type=\"hidden\" name=\"action\" value=\"reload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Reload\" /></form></td>");
-			outputBuffer.append("<td><form action=\"./\" method=\"post\"><input type=\"hidden\" name=\"action\" value=\"unload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Unload\" /></form></td>");
+			outputBuffer.append("<td><form action=\"./\" method=\"post\"><input type=\"hidden\" name=\"action\" value=\"reload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Reload\" />" +
+					"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
+					"</form></td>");
+			outputBuffer.append("<td><form action=\"./\" method=\"post\"><input type=\"hidden\" name=\"action\" value=\"unload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Unload\" />" +
+					"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
+					"</form></td>");
 			outputBuffer.append("</tr>\n");
 		}
 		outputBuffer.append("</table>");
@@ -259,6 +275,7 @@ public class PluginToadlet extends Toadlet {
 		outputBuffer.append("<div class=\"infobox-content\">");
 		outputBuffer.append("<form action=\"./\" method=\"post\">");
 		outputBuffer.append("<input type=\"hidden\" name=\"action\" value=\"add\" />");
+		outputBuffer.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 		outputBuffer.append("<input type=\"text\" size=\"40\" name=\"pluginName\" value=\"\" />&nbsp;");
 		outputBuffer.append("<input type=\"submit\" value=\"Load plugin\" />");
 		outputBuffer.append("</form>");

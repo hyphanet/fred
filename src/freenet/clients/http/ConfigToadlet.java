@@ -8,25 +8,30 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.Option;
 import freenet.config.SubConfig;
+import freenet.node.Node;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.MultiValueTable;
 
 
 // FIXME: add logging, comments
 public class ConfigToadlet extends Toadlet {
 	private Config config;
+	private final Node node;
 	
-	ConfigToadlet(HighLevelSimpleClient client, Config conf) {
+	ConfigToadlet(HighLevelSimpleClient client, Config conf, Node node) {
 		super(client);
 		config=conf;
+		this.node = node;
 	}
 
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		StringBuffer errbuf = new StringBuffer();
 		SubConfig[] sc = config.getConfigs();
 		
+		// FIXME this is stupid, use a direct constructor
 		
 		if(data.size() > 1024*1024) {
 			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, config servlet limited to 1MB");
@@ -41,6 +46,15 @@ public class ConfigToadlet extends Toadlet {
 			Logger.error(this, "Impossible: "+e, e);
 			return;
 		}
+		
+		String pass = request.getParam("formPassword");
+		if(pass == null || !pass.equals(node.formPassword)) {
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/queue/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		}
+		
 		for(int i=0; i<sc.length ; i++){
 			Option[] o = sc[i].getOptions();
 			String prefix = new String(sc[i].getPrefix());
@@ -112,6 +126,7 @@ public class ConfigToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form method=\"post\" action=\".\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 		
 		//String last = null;
 		
