@@ -18,6 +18,7 @@ import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.node.Node;
 import freenet.support.Bucket;
+import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
@@ -46,7 +47,7 @@ public class QueueToadlet extends Toadlet {
 			String identifier = request.getParam("identifier");
 			Logger.minor(this, "Removing "+identifier);
 			try {
-				fcp.removeGlobalRequest(identifier);
+				fcp.removeGlobalRequest(HTMLDecoder.decode(identifier));
 			} catch (MessageInvalidException e) {
 				this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
 			}
