@@ -2,113 +2,110 @@
 <!-- ant build file for Freenet -->
 
 <project name="Freenet" default="dist" basedir=".">
-  <description>
-     This file builds freenet...
-     Possible targets: compile, dist (default), clean
-  </description>
+	<description>
+		This file builds freenet...
+		Possible targets: compile, dist (default), clean
+	</description>
 
-  <!-- set global properties for this build -->
-  <property name="src" location="src"/>
-  <property name="build" location="build"/>
-  <property name="lib"	location="lib"/>
-  <property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
-  <property name="javadoc" location="javadoc"/>
-  <property name="svn.revision" value="@custom@"/>
+	<!-- set global properties for this build -->
+	<property name="src" location="src"/>
+	<property name="build" location="build"/>
+	<property name="lib"	location="lib"/>
+	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
+	<property name="javadoc" location="javadoc"/>
+	<property name="svn.revision" value="@custom@"/>
 
 
-  <target name="mkdir">
-    <mkdir dir="${build}"/>
-    <mkdir dir="${lib}"/>
-  </target>
+	<target name="mkdir">
+		<mkdir dir="${build}"/>
+		<mkdir dir="${lib}"/>
+	</target>
 
-  <target name="env" depends="mkdir"   description="Learn about the environment">
-    <available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
-  </target>
+	<target name="env" depends="mkdir"   description="Learn about the environment">
+		<available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
+	</target>
 
-  <target name="get-extjar" depends="env" unless="freenet-ext.present"
-    description="Download some external libraries which Freenet relies on">
-    <mkdir dir="${lib}"/>
-    <get src="http://downloads.freenetproject.org/alpha/freenet-ext.jar" 
-		 	dest="${freenet-ext.location}" 
-	 verbose="true"
-	 usetimestamp="true"/>
+	<target name="get-extjar" depends="env" unless="freenet-ext.present"
+		description="Download some external libraries which Freenet relies on">
+		<mkdir dir="${lib}"/>
+		<get src="http://downloads.freenetproject.org/alpha/freenet-ext.jar" 
+			dest="${freenet-ext.location}" 
+			verbose="true"
+			usetimestamp="true"/>
 		<property name="freenet-ext.present" value="true"/>
-  </target>
+	</target>
 
-    <!-- ================================================== -->
-  <target name="compile" depends="get-extjar">
-    <!-- Create the time stamp -->
-    <tstamp/>
+	<!-- ================================================== -->
+	<target name="compile" depends="get-extjar">
+		<!-- Create the time stamp -->
+		<tstamp/>
 
-    <!-- Update the Version file -->
+		<!-- Update the Version file -->
 
-    <replace file="${src}/freenet/node/Version.java">
-	    <replacefilter token="@custom@" value="${svn.revision}"/>
-    </replace>
-    
-    <!-- Create the build directory structure used by compile -->
+		<replace file="${src}/freenet/node/Version.java">
+			<replacefilter token="@custom@" value="${svn.revision}"/>
+		</replace>
 
-<!-- FIXME: remove the debug and replace with optimize -->
-    <javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
-    <classpath>
-    	<pathelement location="${freenet-ext.location}"/>
-    	<pathelement location="gnu-crypto.jar"/>
-    	<pathelement location="javax-security.jar"/>
-    	<pathelement location="javax-crypto.jar"/>
-    </classpath>
-<!-- following a very temporary list of files to be build -->
-      <include name="org/**/*.java"/>
-      <include name="freenet/**/*.java"/>
-      <include name="net/i2p/util/*.java"/>
-      <exclude name="org/**/MersenneTwisterTest.java"/>
-      <exclude name="freenet/node/*Test.java"/>
-    </javac>
-    <!-- Copy web interface static files to the build dir -->
-    <copy todir="${build}/freenet/clients/http/staticfiles">
-      <fileset dir="${src}/freenet/clients/http/staticfiles"/>
-    </copy>
-  </target>
+		<!-- Create the build directory structure used by compile -->
 
-
-    <!-- ================================================== -->
-  <target name="dist" depends="compile"
-      description="generate the distribution" >
-    <!-- Create the distribution directory -->
-    <!--<mkdir dir="."/>-->
-    <!-- Put everything in ${build} into the freenet-${DSTAMP}.jar file -->
-    <jar jarfile="${lib}/freenet-cvs-snapshot.jar" basedir="${build}">
-      <manifest>
-      <attribute name="Main-Class" value="freenet/node/Node"/>
-         <attribute name="Built-By" value="${user.name}"/>
-	 <section name="common">
-	   <attribute name="Specification-Title" value="Freenet"/>
-	   <attribute name="Specification-Version" value="0.7pre"/>
-	   <attribute name="Specification-Vendor" value="freenetproject.org"/>
-	   <attribute name="Implementation-Title" value="Freenet"/>
-	   <attribute name="Implementation-Version" value="0.7pre ${TODAY} ${svn.revision}"/> 
-	   <attribute name="Implementation-Vendor" value="Freenetproject.org"/>
-	 </section>
-       </manifest>
-    </jar>    
-  </target>
-
-    <!-- ================================================== -->
-  <target name="clean" description="Delete class files and docs dir.">
-        <delete dir="${build}"/>
-        <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
-  </target>
-  <target name="distclean" description="Delete class files, lib dir and docs dir.">
-        <delete dir="${build}"/>
-        <delete dir="${lib}"/>
-        <delete dir="${javadoc}"/>
-        <!--<delete><fileset dir="src" includes="**/*.class"/></delete>-->
-  </target>
+		<!-- FIXME: remove the debug and replace with optimize -->
+		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
+			<classpath>
+				<pathelement location="${freenet-ext.location}"/>
+				<pathelement location="gnu-crypto.jar"/>
+				<pathelement location="javax-security.jar"/>
+				<pathelement location="javax-crypto.jar"/>
+			</classpath>
+			<!-- following a very temporary list of files to be build -->
+			<include name="org/**/*.java"/>
+			<include name="freenet/**/*.java"/>
+			<include name="net/i2p/util/*.java"/>
+			<exclude name="org/**/MersenneTwisterTest.java"/>
+			<exclude name="freenet/node/*Test.java"/>
+		</javac>
+		<!-- Copy web interface static files to the build dir -->
+		<copy todir="${build}/freenet/clients/http/staticfiles">
+			<fileset dir="${src}/freenet/clients/http/staticfiles"/>
+		</copy>
+	</target>
 
 
-  <target name="javadoc">
-    <javadoc sourcepath="${src}" destdir="${javadoc}">
-      <fileset dir="${src}" includes="**/*.java" />
-    </javadoc>
-  </target>
+	<!-- ================================================== -->
+	<target name="dist" depends="compile"
+		description="generate the distribution" >
+		<!-- Create the distribution directory -->
+		<!--<mkdir dir="."/>-->
+		<!-- Put everything in ${build} into the freenet-${DSTAMP}.jar file -->
+		<jar jarfile="${lib}/freenet-cvs-snapshot.jar" basedir="${build}">
+			<manifest>
+				<attribute name="Main-Class" value="freenet/node/Node"/>
+				<attribute name="Built-By" value="${user.name}"/>
+				<section name="common">
+					<attribute name="Specification-Title" value="Freenet"/>
+					<attribute name="Specification-Version" value="0.7pre"/>
+					<attribute name="Specification-Vendor" value="freenetproject.org"/>
+					<attribute name="Implementation-Title" value="Freenet"/>
+					<attribute name="Implementation-Version" value="0.7pre ${TODAY} ${svn.revision}"/> 
+					<attribute name="Implementation-Vendor" value="Freenetproject.org"/>
+				</section>
+			</manifest>
+		</jar>    
+	</target>
 
+	<!-- ================================================== -->
+	<target name="clean" description="Delete class files and docs dir.">
+		<delete dir="${build}"/>
+	</target>
+	<target name="distclean" description="Delete class files, lib dir and docs dir.">
+		<delete dir="${build}"/>
+		<delete dir="${lib}"/>
+		<delete dir="${javadoc}"/>
+	</target>
+
+
+	<target name="javadoc">
+		<javadoc sourcepath="${src}" destdir="${javadoc}">
+			<fileset dir="${src}" includes="**/*.java" />
+		</javadoc>
+	</target>
 </project>
