@@ -323,11 +323,11 @@ public class UdpSocketManager extends Thread {
 				if(!matched) {
 				    while (_unclaimed.size() > MAX_UNMATCHED_FIFO_SIZE) {
 				        Message removed = (Message)_unclaimed.removeFirst();
-				        if ((removed.getSource()) instanceof PeerNode)
-				        {
-				            Logger.normal(this, "Dropping unclaimed from "+removed.getSource().getPeer()+": "+removed);
+				        long messageLifeTime = System.currentTimeMillis() - removed.localInstantiationTime;
+				        if ((removed.getSource()) instanceof PeerNode) {
+				            Logger.normal(this, "Dropping unclaimed from "+removed.getSource().getPeer()+", lived "+messageLifeTime+"ms : "+removed);
 				        } else {
-				            Logger.normal(this, "Dropping unclaimed: "+removed);
+				            Logger.normal(this, "Dropping unclaimed, lived "+messageLifeTime+"ms : "+removed);
 				        }
 				    }
 				    _unclaimed.addLast(m);

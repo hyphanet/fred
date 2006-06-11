@@ -38,6 +38,7 @@ public class Message {
 	private final MessageType _spec;
 	private final PeerContext _source;
 	private final HashMap _payload = new HashMap();
+	public final long localInstantiationTime;
 
 	public static Message decodeFromPacket(byte[] buf, int offset, int length, PeerContext peer) {
 		DataInputStream dis
@@ -81,6 +82,7 @@ public class Message {
 	}
 
 	private Message(MessageType spec, PeerContext source) {
+		localInstantiationTime = System.currentTimeMillis();
 		_spec = spec;
 		_source = source;
 	}
