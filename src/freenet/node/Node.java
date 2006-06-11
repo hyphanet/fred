@@ -2840,98 +2840,108 @@ public class Node {
     	return nodePinger.averagePingTime();
     }
 
-    /**
-     * Add a ARKFetcher to the map
-     */
-    public synchronized void addARKFetcher(String identity, ARKFetcher fetcher) {
-    	if(arkFetchers.containsKey(identity)) {
-    		ARKFetcher af = (ARKFetcher) arkFetchers.get(identity);
-    		Logger.error(this, "addARKFetcher(): identity '"+identity+"' already in arkFetcher as "+af+" and you want to add"+fetcher);
-    		return;
-    	}
-    	Logger.minor(this, "addARKFetcher(): adding ARK Fetcher for "+identity);
-    	arkFetchers.put(identity, fetcher);
-    }
-    
-    /**
-     * How many ARKFetchers are currently requesting ARKs?
-     */
-    public int getNumARKFetchers() {
+	/**
+	 * Add a ARKFetcher to the map
+	 */
+	public void addARKFetcher(String identity, ARKFetcher fetcher) {
+		synchronized(arkFetchers) {
+			if(arkFetchers.containsKey(identity)) {
+				ARKFetcher af = (ARKFetcher) arkFetchers.get(identity);
+				Logger.error(this, "addARKFetcher(): identity '"+identity+"' already in arkFetcher as "+af+" and you want to add"+fetcher);
+				return;
+			}
+			Logger.minor(this, "addARKFetcher(): adding ARK Fetcher for "+identity);
+			arkFetchers.put(identity, fetcher);
+		}
+	}
+	
+	/**
+	 * How many ARKFetchers are currently requesting ARKs?
+	 */
+	public int getNumARKFetchers() {
 		return arkFetchers.size();
-    }
+	}
 
-    /**
-     * Remove a ARKFetcher from the map
-     */
-    public synchronized void removeARKFetcher(String identity, ARKFetcher fetcher) {
-    	if(!arkFetchers.containsKey(identity)) {
-    		Logger.error(this, "removeARKFetcher(): identity '"+identity+"' not in arkFetcher to remove");
-    		return;
-    	}
-    	Logger.minor(this, "removeARKFetcher(): removing ARK Fetcher for "+identity);
-    	ARKFetcher af = (ARKFetcher) arkFetchers.remove(identity);
-    	if(af != fetcher) {
-    		Logger.error(this, "Removed "+af+" should be "+fetcher+" for "+identity+" in removeARKFetcher");
-    	}
-    }
+	/**
+	 * Remove a ARKFetcher from the map
+	 */
+	public void removeARKFetcher(String identity, ARKFetcher fetcher) {
+		synchronized(arkFetchers) {
+			if(!arkFetchers.containsKey(identity)) {
+				Logger.error(this, "removeARKFetcher(): identity '"+identity+"' not in arkFetcher to remove");
+				return;
+			}
+			Logger.minor(this, "removeARKFetcher(): removing ARK Fetcher for "+identity);
+			ARKFetcher af = (ARKFetcher) arkFetchers.remove(identity);
+			if(af != fetcher) {
+				Logger.error(this, "Removed "+af+" should be "+fetcher+" for "+identity+" in removeARKFetcher");
+			}
+		}
+	}
 
-    /**
-     * Add a PeerNode status to the map
-     */
-    public synchronized void addPeerNodeStatus(int pnStatus, PeerNode peerNode) {
-      Integer peerNodeStatus = new Integer(pnStatus);
-    	HashSet statusSet = null;
-    	if(peerNodeStatuses.containsKey(peerNodeStatus)) {
-    		statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
-    		if(statusSet.contains(peerNode)) {
-    			Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode+" with status code "+peerNodeStatus);
-    			return;
-    		}
-    		peerNodeStatuses.remove(peerNodeStatus);
-    	} else {
-    		statusSet = new HashSet();
-    	}
-    	Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
-    	statusSet.add(peerNode);
-    	peerNodeStatuses.put(peerNodeStatus, statusSet);
-    }
-    
-    /**
-     * How many PeerNodes have a particular status?
-     */
-    public int getPeerNodeStatusSize(int pnStatus) {
-      Integer peerNodeStatus = new Integer(pnStatus);
-    	HashSet statusSet = null;
-    	if(peerNodeStatuses.containsKey(peerNodeStatus)) {
-    		statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
-    	} else {
-    		statusSet = new HashSet();
-    	}
-    	return statusSet.size();
-    }
+	/**
+	 * Add a PeerNode status to the map
+	 */
+	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode) {
+		Integer peerNodeStatus = new Integer(pnStatus);
+		HashSet statusSet = null;
+		synchronized(peerNodeStatuses) {
+			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
+				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
+				if(statusSet.contains(peerNode)) {
+					Logger.error(this, "addPeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' already in peerNodeStatuses as "+peerNode+" with status code "+peerNodeStatus);
+					return;
+				}
+				peerNodeStatuses.remove(peerNodeStatus);
+			} else {
+				statusSet = new HashSet();
+			}
+			Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			statusSet.add(peerNode);
+			peerNodeStatuses.put(peerNodeStatus, statusSet);
+		}
+	}
 
-    /**
-     * Remove a PeerNode status from the map
-     */
-    public synchronized void removePeerNodeStatus(int pnStatus, PeerNode peerNode) {
-      Integer peerNodeStatus = new Integer(pnStatus);
-    	HashSet statusSet = null;
-    	if(peerNodeStatuses.containsKey(peerNodeStatus)) {
-    		statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
-    		if(!statusSet.contains(peerNode)) {
-    			Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status code "+peerNodeStatus);
-    			return;
-    		}
-    		peerNodeStatuses.remove(peerNodeStatus);
-    	} else {
-    		statusSet = new HashSet();
-    	}
-    	Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
-    	if(statusSet.contains(peerNode)) {
-    		statusSet.remove(peerNode);
-    	}
-    	peerNodeStatuses.put(peerNodeStatus, statusSet);
-    }
+	/**
+	 * How many PeerNodes have a particular status?
+	 */
+	public int getPeerNodeStatusSize(int pnStatus) {
+		Integer peerNodeStatus = new Integer(pnStatus);
+		HashSet statusSet = null;
+		synchronized(peerNodeStatuses) {
+			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
+				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
+			} else {
+				statusSet = new HashSet();
+			}
+			return statusSet.size();
+		}
+	}
+
+	/**
+	 * Remove a PeerNode status from the map
+	 */
+	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode) {
+		Integer peerNodeStatus = new Integer(pnStatus);
+		HashSet statusSet = null;
+		synchronized(peerNodeStatuses) {
+			if(peerNodeStatuses.containsKey(peerNodeStatus)) {
+				statusSet = (HashSet) peerNodeStatuses.get(peerNodeStatus);
+				if(!statusSet.contains(peerNode)) {
+					Logger.error(this, "removePeerNodeStatus(): identity '"+peerNode.getIdentityString()+"' not in peerNodeStatuses with status code "+peerNodeStatus);
+					return;
+				}
+				peerNodeStatuses.remove(peerNodeStatus);
+			} else {
+				statusSet = new HashSet();
+			}
+			Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			if(statusSet.contains(peerNode)) {
+				statusSet.remove(peerNode);
+			}
+			peerNodeStatuses.put(peerNodeStatus, statusSet);
+		}
+	}
 
     /**
      * Log the current PeerNode status summary if the timer has expired
@@ -3060,24 +3070,26 @@ public class Node {
     /**
      * Remove a PeerNode routing backoff reason from the map
      */
-    public synchronized void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+    public void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
     	HashSet reasonSet = null;
-    	if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-    		reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-    		if(!reasonSet.contains(peerNode)) {
-    			Logger.error(this, "removePeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' not in peerNodeRoutingBackoffReasons with status code "+peerNodeRoutingBackoffReason);
-    			return;
-    		}
-    		peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
-    	} else {
-    		reasonSet = new HashSet();
-    	}
-    	Logger.minor(this, "removePeerNodeRoutingBackoffReason(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
-    	if(reasonSet.contains(peerNode)) {
-    		reasonSet.remove(peerNode);
-    	}
-    	if(reasonSet.size() > 0) {
-    		peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
-    	}
+		synchronized(peerNodeRoutingBackoffReasons) {
+			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+				if(!reasonSet.contains(peerNode)) {
+					Logger.error(this, "removePeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' not in peerNodeRoutingBackoffReasons with status code "+peerNodeRoutingBackoffReason);
+					return;
+				}
+				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
+			} else {
+				reasonSet = new HashSet();
+			}
+			Logger.minor(this, "removePeerNodeRoutingBackoffReason(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
+			if(reasonSet.contains(peerNode)) {
+				reasonSet.remove(peerNode);
+			}
+			if(reasonSet.size() > 0) {
+				peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
+			}
+		}
     }
 }
