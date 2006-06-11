@@ -321,7 +321,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf.append(buf2);
 			//
 			buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />&nbsp;&nbsp;&nbsp;<span class=\"darknet_connections\">* Requesting ARK</span>\n");
-			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
 			buf.append("</form>\n");
 		}
 		buf.append("</div>\n");
@@ -343,7 +343,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("or file:\n");
 		buf.append("<input id=\"reffile\" type=\"file\" name=\"reffile\" />\n");
 		buf.append("<br />\n");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
 		buf.append("<input type=\"submit\" name=\"add\" value=\"Add\" />\n");
 		buf.append("</form>\n");
 		buf.append("</div>\n");
