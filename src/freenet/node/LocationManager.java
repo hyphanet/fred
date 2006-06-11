@@ -976,7 +976,7 @@ class LocationManager {
         		}
         		//Add the location to the map with the current timestamp as value
         		knownLocs.put(dd,timestamp);
-        		Logger.normal(this, "Estimated net size(session): "+knownLocs.size());
+        		Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
         }
     }
     
