@@ -172,12 +172,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if(routingBackoffReasons.length == 0) {
 			buf.append("Good, your node is not backed off from any peers!<br/>\n");
 		} else {
+			buf.append("<ul>\n");
 			for(int i=0;i<routingBackoffReasons.length;i++) {
 				int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
 				if(reasonCount > 0) {
-					buf.append(routingBackoffReasons[i]).append(":&nbsp;").append(reasonCount).append("<br/>\n");
+					buf.append("<li>").append(routingBackoffReasons[i]).append(":&nbsp;").append(reasonCount).append("</li>\n");
 				}
 			}
+			buf.append("</ul>\n");
 		}
 		buf.append("</div>");
 		buf.append("</div>\n");

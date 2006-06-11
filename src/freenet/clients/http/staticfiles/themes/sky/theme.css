@@ -267,15 +267,21 @@ table.column {
 	border: none;
 }
 
-table.column td.first {
-	text-align: left;
+table.column td {
 	vertical-align: top;
 	border: none;
+	padding: 0;
 }
 
-table.column td.last {
-	vertical-align: top;
-	border: none;
+table.column div {
+	margin-top: 0;
+	margin-bottom: 0;
+}
+
+table.column ul {
+	list-style-type: none;
+	margin: 0px;
+	padding: 0px;
 }
 
 table.darknet_connections {
