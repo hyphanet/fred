@@ -196,8 +196,7 @@ public class ARKFetcher implements ClientCallback {
 	}
 	
 	/**
-	 * Queue a Runnable on the PacketSender timed job queue to be run almost immediately
-	 * Should not be called from other objects except for ARKFetchManager
+	 * Queue a call to our queue method on the PacketSender timed job queue to be run after our ARK fetch backoff expires
 	 */
 	private void queueWithBackoff() {
 		node.ps.queueTimedJob(new Runnable() { public void run() { queue(); }}, backoff);  // Runnable rather than FastRunnable so we don't put it on the PacketSender thread
