@@ -2776,9 +2776,18 @@ public class Node {
 	}
 	
 	public void exit(){
+		this.park();
+        	System.out.println("Goodbye. from "+this);
+		System.exit(0);
+	}
+	
+	/**
+	 * Get the node into a state where it can be stopped safely
+	 * May be called twice - once in exit (above) and then again
+	 * from the wrapper triggered by calling System.exit(). Beware!
+	 */
+	public void park() {
 		config.store();
-        System.out.println("Goodbye. from "+this);
-        System.exit(0);
 	}
 
 	public NodeUpdater getNodeUpdater(){

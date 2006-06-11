@@ -158,7 +158,7 @@ public class NodeStarter
      */
     public int stop( int exitCode )
     {
-    	node.exit();
+    	node.park();
     	// see #354
     	WrapperManager.signalStopping(120000);
         
