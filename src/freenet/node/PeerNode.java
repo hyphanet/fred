@@ -615,7 +615,7 @@ public class PeerNode implements PeerContext {
     		}
     		if(addr.equals(nodeAddr)) {
     			if(!addedLocalhost)
-    				peers.add(localhost);
+    				peers.add(new Peer(localhost, p.getPort()));
     		}
     		if(peers.contains(p)) continue;
     		peers.add(p);
@@ -1732,6 +1732,10 @@ public class PeerNode implements PeerContext {
 		return lastRoutingBackoffReason;
 	}
 
+	public String getPreviousBackoffReason() {
+		return previousRoutingBackoffReason;
+	}
+
 	public void setLastBackoffReason(String s) {
 		this.lastRoutingBackoffReason = s;
 	}
@@ -1895,6 +1899,10 @@ public class PeerNode implements PeerContext {
 			peerNodeStatus = Node.PEER_NODE_STATUS_NEVER_CONNECTED;
 		} else {
 			peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
+		}
+		if(!isConnected && previousRoutingBackoffReason != null) {
+			node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+			previousRoutingBackoffReason = null;
 		}
 		if(peerNodeStatus != oldPeerNodeStatus) {
 		  node.removePeerNodeStatus( oldPeerNodeStatus, this );

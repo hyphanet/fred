@@ -147,6 +147,10 @@ public class PeerManager {
         myPeers = newMyPeers;
         int peerNodeStatus = pn.getPeerNodeStatus();
         node.removePeerNodeStatus( peerNodeStatus, pn );
+        String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
+        if(peerNodePreviousRoutingBackoffReason != null) {
+        	node.removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
+        }
         
         Logger.normal(this, "Removed "+pn);
     	}
