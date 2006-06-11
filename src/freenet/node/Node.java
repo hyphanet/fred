@@ -486,6 +486,10 @@ public class Node {
     private final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
     /** age of oldest never connected peer (milliseconds) */
     private long oldestNeverConnectedPeerAge = 0;
+    /** Next time to start a ready ARKFetcher */
+    private long nextReadyARKFetcherStartTime = -1;
+    /** Ready ARKFetcher start interval (milliseconds) */
+    private final long readyARKFetcherStartInterval = 1000;
     
     private final HashSet runningUIDs;
     
@@ -497,6 +501,7 @@ public class Node {
     String myName;
     final LocationManager lm;
     final PeerManager peers; // my peers
+    final ARKFetchManager arkFetchManager; // ready ARK Fetchers
     /** Directory to put node, peers, etc into */
     final File nodeDir;
     final File tempDir;
@@ -1164,6 +1169,9 @@ public class Node {
                 initNodeFileSettings(random);
             }
         }
+
+		// Prepare the ARKFetchManager
+		arkFetchManager = new ARKFetchManager(this);
 
         // Then read the peers
         peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
@@ -3092,4 +3100,20 @@ public class Node {
 			}
 		}
     }
+
+	/**
+	 * Start a ready ARKFetcher if the timer has expired
+	 */
+	public void maybeStartAReadyARKFetcher(long now) {
+	  if(now > nextReadyARKFetcherStartTime) {
+	  	if(arkFetchManager.hasReadyARKFetchers()) {
+			if(getNumARKFetchers() >= 30) {
+				Logger.error(this, "Not starting ARKFetcher in maybeStartAReadyARKFetcher() because there are already 30 or more ARK Fetchers running");
+			} else {
+				arkFetchManager.maybeStartNextReadyARKFetcher();
+			}
+		}
+		nextReadyARKFetcherStartTime = now + readyARKFetcherStartInterval;
+	  }
+	}
 }

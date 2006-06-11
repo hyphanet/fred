@@ -40,11 +40,18 @@ public class ARKFetcher implements ClientCallback {
 	}
 
 	/**
-	 * Called when the node starts / is added, and also when we fail to connect twice 
-	 * after a new reference. (So we get one from the ARK, we wait for the current
-	 * connect attempt to fail, we start another one, that fails, we start another one,
-	 * that also fails, so we try the fetch again to see if we can find something more
-	 * recent).
+	 * Called when we fail to connect twice after a new reference. (So we get one from
+	 * the ARK, we wait for the current connect attempt to fail, we start another one,
+	 * that fails, we start another one, that also fails, so we try the fetch again to
+	 * see if we can find something more recent).
+	 */
+	public synchronized void queue() {
+		Logger.normal( this, "Queueing ARK Fetcher after "+peer.getHandshakeCount()+" failed handshakes for "+peer.getPeer()+" with identity '"+peer.getIdentityString()+"'");
+		node.arkFetchManager.addReadyARKFetcher(this);
+	}
+
+	/**
+	 * Called when the ARKFetchManager says it's our turn to start fetching.
 	 */
 	public synchronized void start() {
 		ClientGetter cg = null;
@@ -52,6 +59,7 @@ public class ARKFetcher implements ClientCallback {
 		  return;
 		}
 		Logger.minor(this, "Starting ... for "+peer+" on "+this);
+		Logger.normal( this, "Starting ARK Fetcher after "+peer.getHandshakeCount()+" failed handshakes for "+peer.getPeer()+" with identity '"+peer.getIdentityString()+"'");
 		started = true;
 		// Start fetch
 		shouldRun = true;
@@ -96,6 +104,7 @@ public class ARKFetcher implements ClientCallback {
 			started = false;
 			if(isFetching) {
 				node.removeARKFetcher(identity,this);
+				node.arkFetchManager.removeReadyARKFetcher(this);
 				isFetching = false;
 			}
 		}
@@ -151,7 +160,7 @@ public class ARKFetcher implements ClientCallback {
 		if(!shouldRun) return;
 		if(e.newURI != null) {
 			peer.updateARK(e.newURI);
-			node.ps.queueTimedJob(new Runnable() { public void run() { start(); }}, backoff);  // Runnable rather than FastRunnable so we don't put ourselves on the PacketSender thread anyway
+			queueWithBackoff();
 			return;
 		}
 		backoff += backoff;
@@ -159,7 +168,7 @@ public class ARKFetcher implements ClientCallback {
 		Logger.minor(this, "Failed to fetch ARK for "+peer+", now backing off ARK fetches for "+(int) (backoff / 1000)+" seconds");
 		// We may be on the PacketSender thread.
 		// FIXME should this be exponential backoff?
-		node.ps.queueTimedJob(new Runnable() { public void run() { start(); }}, backoff);  // Runnable rather than FastRunnable so we don't put ourselves on the PacketSender thread anyway
+		queueWithBackoff();
 	}
 
 	public void onSuccess(BaseClientPutter state) {
@@ -178,4 +187,19 @@ public class ARKFetcher implements ClientCallback {
 		return isFetching;
 	}
 	
+	/**
+	 * Queue a Runnable on the PacketSender timed job queue to be run almost immediately
+	 * Should not be called from other objects except for ARKFetchManager
+	 */
+	public void queueRunnableImmediately() {
+		node.ps.queueTimedJob(new Runnable() { public void run() { start(); }}, 100);  // Runnable rather than FastRunnable so we don't put it on the PacketSender thread
+	}
+	
+	/**
+	 * Queue a Runnable on the PacketSender timed job queue to be run almost immediately
+	 * Should not be called from other objects except for ARKFetchManager
+	 */
+	private void queueWithBackoff() {
+		node.ps.queueTimedJob(new Runnable() { public void run() { queue(); }}, backoff);  // Runnable rather than FastRunnable so we don't put it on the PacketSender thread
+	}
 }
