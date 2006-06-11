@@ -46,8 +46,11 @@ public class PeerManagerUserAlert implements UserAlert {
 			return "No peers found";
 		if(conns == 0)
 			return "No open connections";
-		if(conns < MIN_CONN_THRESHOLD)
-			return "Only "+conns+" open connection";
+		if(conns < MIN_CONN_THRESHOLD) {
+			String suff = "";
+			if (conns > 1) suff = "s";
+			return "Only "+conns+" open connection"+suff;
+		}
 		if((peers - conns) > MAX_DISCONN_PEER_THRESHOLD)
 			return "Too many disconnected peers";
 		if(conns > MAX_CONN_THRESHOLD)
@@ -80,11 +83,11 @@ public class PeerManagerUserAlert implements UserAlert {
 			"Hopefully some of your peers will connect soon; if not, try to get some more peers.";
 		} else if(conns == 1) {
 			s = "This node only has one connection. Performance will be impaired, and you have no anonymity nor even plausible deniability if that one person is malicious. " +
-			"Your node is attached to the network like a 'leaf' and does not contribute to the network's health." +
+			"Your node is attached to the network like a 'leaf' and does not contribute to the network's health. " +
 			"Try to get at least 3 connected peers at any given time.";
 		} else if(conns == 2) {
 			s = "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. " +
-			"Your node is embedded like a 'chain' in the network and does not contribute to the network's health." +
+			"Your node is embedded like a 'chain' in the network and does not contribute to the network's health. " +
 			"Try to get at least 3 connected peers at any given time.";
 		} else if((peers - conns) > MAX_DISCONN_PEER_THRESHOLD){ 
 			s = "This node has too many disconnected peers ("+(peers - conns)+" > "+MAX_DISCONN_PEER_THRESHOLD+"). This will have a impact your performance as disconnected peers also consume bandwidth and CPU. Consider \"cleaning up\" your peer list.";
