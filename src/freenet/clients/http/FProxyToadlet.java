@@ -220,7 +220,7 @@ public class FProxyToadlet extends Toadlet {
 				ctx.getPageMaker().makeHead(buf, "Large file");
 				buf.append("<table border=\"0\">\n");
 				String fnam = getFilename(e, key, e.getExpectedMimeType());
-				buf.append("<tr><td><b>Filename</b></td>");
+				buf.append("<tr><td><b>Filename</b></td><td>");
 				buf.append("<a href=\"/"+URLEncoder.encode(key.toString(false))+"\">");
 				buf.append(fnam);
 				buf.append("</a>");
