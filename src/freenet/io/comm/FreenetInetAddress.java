@@ -55,6 +55,7 @@ public class FreenetInetAddress {
 
 	public FreenetInetAddress(String host, boolean allowUnknown) throws UnknownHostException {
         InetAddress addr = null;
+        if(host != null && host.startsWith("/")) host = host.substring(1);
         // if we were created with an explicit IP address, use it as such
         // debugging log messages because AddressIdentifier doesn't appear to handle all IPv6 literals correctly, such as "fe80::204:1234:dead:beef"
         AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
@@ -223,7 +224,7 @@ public class FreenetInetAddress {
 		if(hostname != null) {
 			return hostname;
 		} else {
-			return _address.toString();
+			return _address.getHostAddress();
 		}
 	}
 
