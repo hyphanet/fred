@@ -380,7 +380,7 @@ public class PeerNode implements PeerContext {
         
         // ARK stuff.
 
-        parseARK(fs);
+        parseARK(fs, true);
         
         arkFetcher = new ARKFetcher(this, node);
         
@@ -449,14 +449,15 @@ public class PeerNode implements PeerContext {
         setPeerNodeStatus(now);
     }
 
-    private boolean parseARK(SimpleFieldSet fs) {
+    private boolean parseARK(SimpleFieldSet fs, boolean onStartup) {
         USK ark = null;
         long arkNo = 0;
         try {
         	String arkNumber = fs.get("ark.number");
         	
         	if(arkNumber != null) {
-        		arkNo = Long.parseLong(arkNumber) + 1; // this is the number of the ref we are parsing. we want the number of the next edition.
+        		arkNo = Long.parseLong(arkNumber) + (onStartup ? 0 : 1);
+        		// this is the number of the ref we are parsing. we want the number of the next edition. on startup we want to fetch the old edition in case there's been a corruption.
         	}
         	
         	String arkPubKey = fs.get("ark.pubURI");
@@ -1374,7 +1375,7 @@ public class PeerNode implements PeerContext {
         
         Logger.minor(this, "Parsed successfully; changedAnything = "+changedAnything);
         
-        if(parseARK(fs))
+        if(parseARK(fs, false))
         	changedAnything = true;
         if(!name.equals(myName)) changedAnything = true;
         myName = name;
