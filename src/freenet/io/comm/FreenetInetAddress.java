@@ -220,7 +220,7 @@ public class FreenetInetAddress {
 	}
 	
 	public String toString() {
-		if(hostname == null) {
+		if(hostname != null) {
 			return hostname;
 		} else {
 			return _address.toString();
