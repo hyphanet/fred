@@ -116,20 +116,24 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("Current Activity\n");
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("<ul id=\"activity\">\n");
-		if (numInserts > 0) {
-			buf.append("<li>Inserts:&nbsp;").append(numInserts).append("</li>");
+		if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) && (numARKFetchers == 0)) {
+			buf.append("Your node is not processing any requests right now.");
+		} else {
+			buf.append("<ul id=\"activity\">\n");
+			if (numInserts > 0) {
+				buf.append("<li>Inserts:&nbsp;").append(numInserts).append("</li>");
+			}
+			if (numRequests > 0) {
+				buf.append("<li>Requests:&nbsp;").append(numRequests).append("</li>");
+			}
+			if (numTransferringRequests > 0) {
+				buf.append("<li>Transferring&nbsp;Requests:&nbsp;").append(numTransferringRequests).append("</li>");
+			}
+			if (numARKFetchers > 0) {
+				buf.append("<li>ARK&nbsp;Fetch&nbsp;Requests:&nbsp;").append(numARKFetchers).append("</li>");
+			}
+			buf.append("</ul>\n");
 		}
-		if (numRequests > 0) {
-			buf.append("<li>Requests:&nbsp;").append(numRequests).append("</li>");
-		}
-		if (numTransferringRequests > 0) {
-			buf.append("<li>Transferring&nbsp;Requests:&nbsp;").append(numTransferringRequests).append("</li>");
-		}
-		if (numARKFetchers > 0) {
-			buf.append("<li>ARK&nbsp;Fetch&nbsp;Requests:&nbsp;").append(numARKFetchers).append("</li>");
-		}
-		buf.append("</ul>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
