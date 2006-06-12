@@ -599,8 +599,8 @@ public class PeerNode implements PeerContext {
     	
     	boolean addedLocalhost = false;
     	Peer detectedDuplicate = null;
-    	for(int i=0;i<nominalPeer.size();i++) {
-    		Peer p = (Peer) nominalPeer.get(i);
+    	for(int i=0;i<myNominalPeer.length;i++) {
+    		Peer p = myNominalPeer[i];
     		if(p == null) continue;
     		if(detectedPeer != null) {
     			if(p != detectedPeer && p.equals(detectedPeer)) {
