@@ -411,3 +411,19 @@ table.queue span.key_unknown {
 
 table.queue span.key_is {
 }
+
+table.progressbar {
+	margin: none;
+	background: blue;
+	border: none;
+	width: 100px;
+}
+
+td.progressbar-done {
+	background: red;
+	height: 15px;
+}
+
+td.progressbar-remaining {
+	background: blue;
+}

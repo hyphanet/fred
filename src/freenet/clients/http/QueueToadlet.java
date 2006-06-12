@@ -396,12 +396,16 @@ public class QueueToadlet extends Toadlet {
 		if(frac < 0) {
 			buf.append("<span class=\"progress_fraction_unknown\">unknown</span>");
 		} else {
+			NumberFormat nf = NumberFormat.getInstance();
+			nf.setMaximumFractionDigits(1);
+			buf.append("<table class=\"progressbar\"><tr class=\"progressbar-tr\">"+
+					"<td class=\"progressbar-done\" width=\""+nf.format(frac*100)+"%\"/>"+
+					"<td class=\"progressbar-remaining\"/></tr></table>");
+			
 			if(b)
 				buf.append("<span class=\"progress_fraction_finalized\">");
 			else
 				buf.append("<span class=\"progress_fraction_not_finalized\">");
-			NumberFormat nf = NumberFormat.getInstance();
-			nf.setMaximumFractionDigits(1);
 			buf.append(nf.format(frac*100));
 			buf.append("%</span>");
 		}
