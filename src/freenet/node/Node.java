@@ -2145,10 +2145,10 @@ public class Node {
        				best = cur;
        			}
        		}
-       		lastIPAddress = new FreenetInetAddress(best);
+       		lastIPAddress = best == null ? null : new FreenetInetAddress(best);
        	}
        	else {
-       		lastIPAddress = new FreenetInetAddress(oldIPAddress);
+       		lastIPAddress = oldIPAddress == null ? null : new FreenetInetAddress(oldIPAddress);
        	}
        	if (lastIPAddress == null) {
        		this.alerts.register(primaryIPUndetectedAlert);
