@@ -500,7 +500,12 @@ public class PeerManager {
                 w.close();
                 if(!succeeded) return;
             } catch (IOException e) {
-                Logger.error(this, "Cannot close file!: " + e, e);
+            	try {
+            		w.close();
+            	} catch (IOException e1) {
+            		Logger.error(this, "Cannot close peers file: "+e, e);
+            	}
+                Logger.error(this, "Cannot write file: " + e, e);
                 return; // don't overwrite old file!
             }
             if (!new File(f).renameTo(new File(filename))) {

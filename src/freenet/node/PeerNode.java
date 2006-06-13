@@ -977,7 +977,7 @@ public class PeerNode implements PeerContext {
     }
 
     private void setDetectedPeer(Peer newPeer) {
-    	if(!detectedPeer.equals(newPeer)) {
+    	if(detectedPeer == null || !detectedPeer.equals(newPeer)) {
     		this.detectedPeer=newPeer;
     		this.lastAttemptedHandshakeIPUpdateTime = 0;
     	}
@@ -1024,8 +1024,8 @@ public class PeerNode implements PeerContext {
      * Update timeLastReceivedPacket
      * @throws NotConnectedException 
      */
-    synchronized void receivedPacket() throws NotConnectedException {
-        if(isConnected == false) {
+    synchronized void receivedPacket(boolean dontLog) throws NotConnectedException {
+        if(isConnected == false && !dontLog) {
         	if(unverifiedTracker == null && currentTracker == null) {
         		Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
         		throw new NotConnectedException();
@@ -1149,7 +1149,7 @@ public class PeerNode implements PeerContext {
         	node.peers.disconnected(this);
         Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" myName: "+myName);
         try {
-			receivedPacket();
+			receivedPacket(unverified);
 		} catch (NotConnectedException e) {
 			Logger.error(this, "Disconnected in completedHandshake with "+this);
 			return true; // i suppose

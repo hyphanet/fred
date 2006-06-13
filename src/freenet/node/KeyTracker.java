@@ -340,7 +340,7 @@ public class KeyTracker {
     public synchronized void receivedPacket(int seqNumber) {
     	Logger.minor(this, "Received packet "+seqNumber);
         try {
-			pn.receivedPacket();
+			pn.receivedPacket(false);
 		} catch (NotConnectedException e) {
 			Logger.minor(this, "Ignoring, because disconnected");
 			return;
