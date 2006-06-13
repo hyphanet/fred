@@ -155,6 +155,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			queueFetchRevocation(0);
 		}catch (Exception e) {
 			Logger.error(this, "Error while starting the fetching: "+e, e);
+			isFetching=false;
 		}
 	}
 	
@@ -383,7 +384,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		
 		if(!state.getURI().equals(revocationURI)){	
 			this.cg = state;
-			
+			isFetching=false;
 			cg.cancel();
 			if(errorCode == FetchException.DATA_NOT_FOUND ||
 					errorCode == FetchException.ROUTE_NOT_FOUND ||
