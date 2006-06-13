@@ -19,7 +19,7 @@ import freenet.support.Logger;
 */
 public class PageMaker {
 	
-	private static final String DEFAULT_THEME = "aqua";
+	private static final String DEFAULT_THEME = "clean";
 	public String theme;
 	
 	/** Cache for themes read from the JAR file. */
@@ -56,7 +56,8 @@ public class PageMaker {
 				+ "<link rel=\"stylesheet\" href=\"/static/themes/"+this.theme+"/theme.css\" type=\"text/css\" />\n");
 		List themes = getThemes();
 		for(int i=0; i<themes.size() ; i++){
-			buf.append("<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"/static/themes/"+themes.get(i)+"/theme.css\" media=\"screen\" title=\""+themes.get(i)+"\" />\n");
+			if(!themes.get(i).toString().equals(theme))
+				buf.append("<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"/static/themes/"+themes.get(i)+"/theme.css\" media=\"screen\" title=\""+themes.get(i)+"\" />\n");
 		}
 	}
 	
