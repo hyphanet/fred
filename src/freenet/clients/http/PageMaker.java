@@ -143,14 +143,8 @@ public class PageMaker {
 		} catch (NullPointerException npe) {
 			Logger.error(this, "error creating list of themes", npe);
 		} finally {
-			if (!themes.contains("aqua")) {
-				themes.add("aqua");
-			}
 			if (!themes.contains("clean")) {
 				themes.add("clean");
-			}
-			if (!themes.contains("greyandblue")) {
-				themes.add("grayandblue");
 			}
 		}
 		return themes;
