@@ -156,10 +156,10 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		
-		ctx.getPageMaker().makeHead(buf, "Queued Requests ("+(uncompletedDirUpload.size()+uncompletedDownload.size()+uncompletedUpload.size())+
+		ctx.getPageMaker().makeHead(buf, "("+(uncompletedDirUpload.size()+uncompletedDownload.size()+uncompletedUpload.size())+
 				"/"+(failedDirUpload.size()+failedDownload.size()+failedUpload.size())+
 				"/"+(completedDirUpload.size()+completedDownloadToDisk.size()+completedDownloadToTemp.size()+completedUpload.size())+
-				")");
+				") Queued Requests");
 		
 		node.alerts.toSummaryHtml(buf);
 		
