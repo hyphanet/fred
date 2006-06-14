@@ -120,7 +120,7 @@ public class QueueToadlet extends Toadlet {
 		
 		ClientRequest[] reqs = fcp.getGlobalRequests();
 		Logger.minor(this, "Request count: "+reqs.length);
-		
+
 		for(int i=0;i<reqs.length;i++) {
 			ClientRequest req = reqs[i];
 			if(req instanceof ClientGet) {
@@ -397,10 +397,8 @@ public class QueueToadlet extends Toadlet {
 			buf.append("<span class=\"progress_fraction_unknown\">unknown</span>");
 		} else {
 			NumberFormat nf = NumberFormat.getInstance();
-			nf.setMaximumFractionDigits(1);
-			buf.append("<table class=\"progressbar\"><tr class=\"progressbar-tr\">"+
-					"<td class=\"progressbar-done\" width=\""+nf.format(frac*100)+"%\"/>"+
-					"<td class=\"progressbar-remaining\"/></tr></table>");
+			nf.setMaximumFractionDigits(0);
+			buf.append("<div class=\"progressbar\"><div class=\"progressbar-done\" style=\"width: "+nf.format(frac*100)+"%\" /></div>");
 			
 			if(b)
 				buf.append("<span class=\"progress_fraction_finalized\">");

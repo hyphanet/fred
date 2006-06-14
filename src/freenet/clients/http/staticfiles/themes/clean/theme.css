@@ -412,18 +412,16 @@ table.queue span.key_unknown {
 table.queue span.key_is {
 }
 
-table.progressbar {
+div.progressbar {
 	margin: none;
 	background: blue;
-	border: none;
+	border: solid blue 1px;
 	width: 100px;
 }
 
-td.progressbar-done {
+div.progressbar-done {
 	background: red;
-	height: 15px;
+	width:30%;
+	height:15px;
 }
 
-td.progressbar-remaining {
-	background: blue;
-}
