@@ -725,20 +725,35 @@ public class Node {
     }
 
     public void writeNodeFile() {
-        try {
-            writeNodeFile(new File(nodeDir, "node-"+portNumber), new File(nodeDir, "node-"+portNumber+".bak"));
-        } catch (IOException e) {
-            Logger.error(this, "Cannot write node file!: "+e+" : "+"node-"+portNumber);
-        }
+        writeNodeFile(new File(nodeDir, "node-"+portNumber), new File(nodeDir, "node-"+portNumber+".bak"));
     }
     
-    private void writeNodeFile(File orig, File backup) throws IOException {
+    private void writeNodeFile(File orig, File backup) {
         SimpleFieldSet fs = exportPrivateFieldSet();
-        orig.renameTo(backup);
-        FileOutputStream fos = new FileOutputStream(orig);
-        OutputStreamWriter osr = new OutputStreamWriter(fos);
-        fs.writeTo(osr);
-        osr.close();
+        
+        if(orig.exists()) backup.delete();
+        
+        OutputStreamWriter osr = null;
+        try {
+        	FileOutputStream fos = new FileOutputStream(backup);
+        	osr = new OutputStreamWriter(fos);
+        	fs.writeTo(osr);
+            osr.close();
+            if(!backup.renameTo(orig)) {
+            	orig.delete();
+            	if(!backup.renameTo(orig)) {
+            		Logger.error(this, "Could not rename new node file "+backup+" to "+orig);
+            	}
+            }
+        } catch (IOException e) {
+        	if(osr != null) {
+        		try {
+        			osr.close();
+        		} catch (IOException e1) {
+        			Logger.error(this, "Cannot close "+backup+": "+e1, e1);
+        		}
+        	}
+        }
     }
 
     private void initNodeFileSettings(RandomSource r) {

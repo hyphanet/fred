@@ -30,7 +30,7 @@ public class PacketSender implements Runnable {
     long lastReportedNoPackets;
     long lastReceivedPacketFromAnyNode;
     /** For watchdog. 32-bit to avoid locking. */
-    int lastTimeInSeconds;
+    volatile int lastTimeInSeconds;
     
     PacketSender(Node node) {
         resendPackets = new LinkedList();
