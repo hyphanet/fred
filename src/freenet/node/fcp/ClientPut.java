@@ -27,6 +27,8 @@ public class ClientPut extends ClientPutBase {
 	private final FreenetURI targetURI;
 	private final Bucket data;
 	private final ClientMetadata clientMetadata;
+	/** We store the size of inserted data before freeing it */
+	private long finishedSize;
 	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
@@ -162,6 +164,7 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	protected void freeData() {
+		finishedSize=data.size();
 		data.free();
 	}
 	
@@ -216,7 +219,10 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	public long getDataSize() {
-		return data.size();
+		if(data == null)
+			return finishedSize;
+		else
+			return data.size();
 	}
 
 	public String getMIMEType() {

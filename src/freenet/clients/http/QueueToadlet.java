@@ -99,10 +99,6 @@ public class QueueToadlet extends Toadlet {
 		
 		StringBuffer buf = new StringBuffer(2048);
 		
-		ctx.getPageMaker().makeHead(buf, "Queued Requests");
-		
-		node.alerts.toSummaryHtml(buf);
-		
 		// First, get the queued requests, and separate them into different types.
 		
 		LinkedList completedDownloadToDisk = new LinkedList();
@@ -158,6 +154,15 @@ public class QueueToadlet extends Toadlet {
 				}
 			}
 		}
+		
+		
+		ctx.getPageMaker().makeHead(buf, "Queued Requests ("+(uncompletedDirUpload.size()+uncompletedDownload.size()+uncompletedUpload.size())+
+				"/"+(failedDirUpload.size()+failedDownload.size()+failedUpload.size())+
+				"/"+(completedDirUpload.size()+completedDownloadToDisk.size()+completedDownloadToTemp.size()+completedUpload.size())+
+				")");
+		
+		node.alerts.toSummaryHtml(buf);
+		
 		
 		if(!(completedDownloadToTemp.isEmpty() && completedDownloadToDisk.isEmpty() &&
 				completedUpload.isEmpty() && completedDirUpload.isEmpty())) {
@@ -400,6 +405,7 @@ public class QueueToadlet extends Toadlet {
 			nf.setMaximumFractionDigits(0);
 			buf.append("<div class=\"progressbar\"><div class=\"progressbar-done\" style=\"width: "+nf.format(frac*100)+"%\" /></div>");
 			
+			nf.setMaximumFractionDigits(1);
 			if(b)
 				buf.append("<span class=\"progress_fraction_finalized\">");
 			else

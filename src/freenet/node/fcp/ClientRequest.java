@@ -202,6 +202,11 @@ public abstract class ClientRequest {
 		cancel();
 		freeData();
 	}
+	
+	/** Return the priority class */
+	public short getPriority(){
+		return priorityClass;
+	}
 
 	/** Free cached data bucket(s) */
 	protected abstract void freeData(); 
