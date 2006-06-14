@@ -44,7 +44,10 @@ public abstract class ClientRequest {
 			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
 		this.uri = uri2;
 		this.identifier = identifier2;
-		this.verbosity = verbosity2;
+		if(global)
+			this.verbosity = Integer.MAX_VALUE;
+		else
+			this.verbosity = verbosity2;
 		this.finished = false;
 		this.priorityClass = priorityClass2;
 		this.persistenceType = persistenceType2;
@@ -61,7 +64,10 @@ public abstract class ClientRequest {
 			short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
 		this.uri = uri2;
 		this.identifier = identifier2;
-		this.verbosity = verbosity2;
+		if(global)
+			this.verbosity = Integer.MAX_VALUE;
+		else
+			this.verbosity = verbosity2;
 		this.finished = false;
 		this.priorityClass = priorityClass2;
 		this.persistenceType = persistenceType2;
@@ -81,6 +87,7 @@ public abstract class ClientRequest {
 	public ClientRequest(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
 		uri = new FreenetURI(fs.get("URI"));
 		identifier = fs.get("Identifier");
+		// We don't force the verbosity even if the request is meant to go on the global queue
 		verbosity = Integer.parseInt(fs.get("Verbosity"));
 		persistenceType = ClientRequest.parsePersistence(fs.get("Persistence"));
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
