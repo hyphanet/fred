@@ -1065,99 +1065,101 @@ public class PeerNode implements PeerContext {
      * @param replyTo
      * @return True unless we rejected the handshake, or it failed to parse.
      */
-    public synchronized boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
-      long now = System.currentTimeMillis();
-    	completedHandshake = true;
-    	handshakeCount = 0;
+    public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
+    	long now = System.currentTimeMillis();
     	arkFetcher.stop();
-        bogusNoderef = false;
-        try {
-            // First, the new noderef
-            processNewNoderef(data, offset, length);
-        } catch (FSParseException e1) {
-            bogusNoderef = true;
-            Logger.error(this, "Failed to parse new noderef for "+this+": "+e1, e1);
-            // Treat as invalid version
-        }
-        if(reverseInvalidVersion()) {
-            try {
-                node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(lastGoodVersion));
-            } catch (NumberFormatException e) {
-                // ignore
-            }
-            Logger.normal(this, "Not connecting to "+this+" - reverse invalid version "+Version.getVersionString()+" for peer's lastGoodversion: "+lastGoodVersion);
-            verifiedIncompatibleNewerVersion = true;
-            isConnected = false;
-            setPeerNodeStatus(now);
-            node.peers.disconnected(this);
-            return false;
-        } else {
-            verifiedIncompatibleNewerVersion = false;
-            setPeerNodeStatus(now);
-        }
-        if(invalidVersion()) {
-            Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
-            verifiedIncompatibleOlderVersion = true;
-            isConnected = false;
-            setPeerNodeStatus(now);
-            node.peers.disconnected(this);
-            return false;
-        } else {
-            verifiedIncompatibleOlderVersion = false;
-            setPeerNodeStatus(now);
-        }
-        KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
-        changedIP(replyTo);
-        if(thisBootID != this.bootID) {
-            connectedTime = System.currentTimeMillis();
-            Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
-            isConnected = false; // Will be reset below
-            setPeerNodeStatus(now);
-            if(previousTracker != null) {
-                KeyTracker old = previousTracker;
-                previousTracker = null;
-                old.completelyDeprecated(newTracker);
-            }
-            previousTracker = null;
-            if(currentTracker != null) {
-                KeyTracker old = currentTracker;
-                currentTracker = null;
-                old.completelyDeprecated(newTracker);
-            }
-            this.bootID = thisBootID;
-            node.lm.lostOrRestartedNode(this);
-        } // else it's a rekey
-        
-        if(unverified) {
-            unverifiedTracker = newTracker;
-            ctx = null;
-            Logger.minor(this, "sentHandshake() being called for unverifiedTracker: "+getPeer());
-            sentHandshake();
-        } else {
-            previousTracker = currentTracker;
-            currentTracker = newTracker;
-            unverifiedTracker = null;
-            if(previousTracker != null)
-                previousTracker.deprecated();
-            isConnected = true;
-            neverConnected = false;
-            peerAddedTime = 0;  // don't store anymore
-            setPeerNodeStatus(now);
-            ctx = null;
-        }
-        if(!isConnected)
-        	node.peers.disconnected(this);
-        Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" myName: "+myName);
-        try {
-			receivedPacket(unverified);
-		} catch (NotConnectedException e) {
-			Logger.error(this, "Disconnected in completedHandshake with "+this);
-			return true; // i suppose
-		}
-		if(isConnected)
-			node.peers.addConnectedPeer(this);
-        sentInitialMessages = false;
-        return true;
+    	synchronized(this) {
+    		completedHandshake = true;
+    		handshakeCount = 0;
+        	bogusNoderef = false;
+        	try {
+        		// First, the new noderef
+        		processNewNoderef(data, offset, length);
+        	} catch (FSParseException e1) {
+        		bogusNoderef = true;
+        		Logger.error(this, "Failed to parse new noderef for "+this+": "+e1, e1);
+        		// Treat as invalid version
+        	}
+        	if(reverseInvalidVersion()) {
+        		try {
+        			node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(lastGoodVersion));
+        		} catch (NumberFormatException e) {
+        			// ignore
+        		}
+        		Logger.normal(this, "Not connecting to "+this+" - reverse invalid version "+Version.getVersionString()+" for peer's lastGoodversion: "+lastGoodVersion);
+        		verifiedIncompatibleNewerVersion = true;
+        		isConnected = false;
+        		setPeerNodeStatus(now);
+        		node.peers.disconnected(this);
+        		return false;
+        	} else {
+        		verifiedIncompatibleNewerVersion = false;
+        		setPeerNodeStatus(now);
+        	}
+        	if(invalidVersion()) {
+        		Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
+        		verifiedIncompatibleOlderVersion = true;
+        		isConnected = false;
+        		setPeerNodeStatus(now);
+        		node.peers.disconnected(this);
+        		return false;
+        	} else {
+        		verifiedIncompatibleOlderVersion = false;
+        		setPeerNodeStatus(now);
+        	}
+        	KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
+        	changedIP(replyTo);
+        	if(thisBootID != this.bootID) {
+        		connectedTime = System.currentTimeMillis();
+        		Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
+        		isConnected = false; // Will be reset below
+        		setPeerNodeStatus(now);
+        		if(previousTracker != null) {
+        			KeyTracker old = previousTracker;
+        			previousTracker = null;
+        			old.completelyDeprecated(newTracker);
+        		}
+        		previousTracker = null;
+        		if(currentTracker != null) {
+        			KeyTracker old = currentTracker;
+        			currentTracker = null;
+        			old.completelyDeprecated(newTracker);
+        		}
+        		this.bootID = thisBootID;
+        		node.lm.lostOrRestartedNode(this);
+        	} // else it's a rekey
+        	
+        	if(unverified) {
+        		unverifiedTracker = newTracker;
+        		ctx = null;
+        		Logger.minor(this, "sentHandshake() being called for unverifiedTracker: "+getPeer());
+        		sentHandshake();
+        	} else {
+        		previousTracker = currentTracker;
+        		currentTracker = newTracker;
+        		unverifiedTracker = null;
+        		if(previousTracker != null)
+        			previousTracker.deprecated();
+        		isConnected = true;
+        		neverConnected = false;
+        		peerAddedTime = 0;  // don't store anymore
+        		setPeerNodeStatus(now);
+        		ctx = null;
+        	}
+        	if(!isConnected)
+        		node.peers.disconnected(this);
+        	Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" myName: "+myName);
+        	try {
+        		receivedPacket(unverified);
+        	} catch (NotConnectedException e) {
+        		Logger.error(this, "Disconnected in completedHandshake with "+this);
+        		return true; // i suppose
+        	}
+        	if(isConnected)
+        		node.peers.addConnectedPeer(this);
+        	sentInitialMessages = false;
+        	return true;
+    	}
     }
 
     boolean sentInitialMessages = false;
