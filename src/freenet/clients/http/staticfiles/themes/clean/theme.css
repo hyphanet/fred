@@ -421,7 +421,6 @@ div.progressbar {
 
 div.progressbar-done {
 	background: red;
-	width:30%;
 	height:15px;
 }
 

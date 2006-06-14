@@ -403,7 +403,7 @@ public class QueueToadlet extends Toadlet {
 		} else {
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(0);
-			buf.append("<div class=\"progressbar\"><div class=\"progressbar-done\" style=\"width: "+nf.format(frac*100)+"%\" /></div>");
+			buf.append("<div class=\"progressbar\"><div class=\"progressbar-done\" style=\"width: "+nf.format(frac*100)+"px\"></div></div>");
 			
 			nf.setMaximumFractionDigits(1);
 			if(b)
