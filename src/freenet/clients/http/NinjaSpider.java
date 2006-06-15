@@ -476,7 +476,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		
 		/* Word by word */
 		for (int i = 0; i < words.length; i++) {
-			Element wordElement = xmlDoc.createElement("w");/* stands for "word" */
+			Element wordElement = xmlDoc.createElement("word");
 			wordElement.setAttribute("v", words[i]);
 
 			FreenetURI[] urisForWord = (FreenetURI[]) urisByWord.get(words[i]);
@@ -491,7 +491,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 					continue;
 				}
 
-				Element uriElement = xmlDoc.createElement("f"); /* stands for "file" */
+				Element uriElement = xmlDoc.createElement("file");
 				uriElement.setAttribute("id", x.toString());
 
 				/* Position by position */
