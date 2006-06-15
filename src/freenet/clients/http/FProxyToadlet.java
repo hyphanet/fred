@@ -34,17 +34,19 @@ import freenet.support.URLEncoder;
 public class FProxyToadlet extends Toadlet {
 	
 	final byte[] random;
+	final Node node;
 	
 	// ?force= links become invalid after 2 hours.
 	long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
 	static final long MAX_LENGTH = 2*1024*1024; // 2MB
 	
-	public FProxyToadlet(HighLevelSimpleClient client, byte[] random) {
+	public FProxyToadlet(HighLevelSimpleClient client, byte[] random, Node node) {
 		super(client);
 		this.random = random;
 		client.setMaxLength(MAX_LENGTH);
 		client.setMaxIntermediateLength(MAX_LENGTH);
+		this.node = node;
 	}
 	
 	public String supportedMethods() {
@@ -258,15 +260,16 @@ public class FProxyToadlet extends Toadlet {
 				buf.append("<li><form method=\"get\" action=\"/"+key.toString(false)+"\">");
 				buf.append("<input type=\"hidden\" name=\"max-size\" value=\""+e.expectedSize+"\">");
 				buf.append("<input type=\"submit\" name=\"fetch\" value=\"Fetch anyway and display file in browser\">");
-				buf.append("</form></li>");
+				buf.append("</form></li>\n");
 				buf.append("<li><form method=\"post\" action=\"/queue/\">");
 				buf.append("<input type=\"hidden\" name=\"key\" value=\""+key.toString(false)+"\">");
 				buf.append("<input type=\"hidden\" name=\"return-type\" value=\"disk\">");
 				buf.append("<input type=\"hidden\" name=\"persistence\" value=\"forever\">");
+				buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 				if(mime != null)
 					buf.append("<input type=\"hidden\" name=\"type\" value=\""+URLEncoder.encode(mime)+"\">");
 				buf.append("<input type=\"submit\" name=\"download\" value=\"Download in background and store in downloads directory\">");
-				buf.append("</form></li>");
+				buf.append("</form></li>\n");
 				// FIXME add a queue-a-download option.
 //				buf.append("<li>Save it to disk at </li>");
 				// FIXME add return-to-referring-page
@@ -339,7 +342,7 @@ public class FProxyToadlet extends Toadlet {
 			node.setToadletContainer(server);
 			byte[] random = new byte[32];
 			node.random.nextBytes(random);
-			FProxyToadlet fproxy = new FProxyToadlet(client, random);
+			FProxyToadlet fproxy = new FProxyToadlet(client, random, node);
 			node.setFProxy(fproxy);
 			server.register(fproxy, "/", false);
 			
