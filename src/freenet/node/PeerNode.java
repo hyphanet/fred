@@ -1023,6 +1023,8 @@ public class PeerNode implements PeerContext {
     /**
      * Update timeLastReceivedPacket
      * @throws NotConnectedException 
+     * @param dontLog If true, don't log an error or throw an exception if we are not connected. This
+     * can be used in handshaking when the connection hasn't been verified yet.
      */
     synchronized void receivedPacket(boolean dontLog) throws NotConnectedException {
         if(isConnected == false && !dontLog) {

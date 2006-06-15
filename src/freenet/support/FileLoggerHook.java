@@ -234,8 +234,10 @@ public class FileLoggerHook extends LoggerHook {
 				}
 				filename = getHourLogName(gc, true);
 				currentFilename = new File(filename);
-				if((!logFiles.isEmpty()) && ((OldLogFile)logFiles.getLast()).filename.equals(currentFilename)) {
-					logFiles.removeLast();
+				synchronized(logFiles) {
+					if((!logFiles.isEmpty()) && ((OldLogFile)logFiles.getLast()).filename.equals(currentFilename)) {
+						logFiles.removeLast();
+					}
 				}
 				logStream = openNewLogFile(currentFilename, true);
 				if(latestFile != null) {
@@ -457,6 +459,9 @@ public class FileLoggerHook extends LoggerHook {
 			while(oldLogFilesDiskSpaceUsage > maxOldLogfilesDiskUsage) {
 				OldLogFile olf;
 				synchronized(logFiles) {
+					if(logFiles.isEmpty()) {
+						System.err.println("ERROR: INCONSISTENT LOGGER TOTALS: Log file list is empty but still used "+oldLogFilesDiskSpaceUsage+" bytes!");
+					}
 					olf = (OldLogFile) logFiles.removeFirst();
 				}
 				olf.filename.delete();
@@ -543,7 +548,9 @@ public class FileLoggerHook extends LoggerHook {
 				if(oldFile != null) {
 					long l = oldFile.length();
 					OldLogFile olf = new OldLogFile(oldFile, lastStartTime, startTime, l);
-					logFiles.addLast(olf);
+					synchronized(logFiles) {
+						logFiles.addLast(olf);
+					}
 					oldLogFilesDiskSpaceUsage += l;
 				}
 				lastStartTime = startTime;
@@ -556,7 +563,9 @@ public class FileLoggerHook extends LoggerHook {
 		if(oldFile != null) {
 			long l = oldFile.length();
 			OldLogFile olf = new OldLogFile(oldFile, lastStartTime, System.currentTimeMillis(), l);
-			logFiles.addLast(olf);
+			synchronized(logFiles) {
+				logFiles.addLast(olf);
+			}
 			oldLogFilesDiskSpaceUsage += l;
 		}
 		trimOldLogFiles();
