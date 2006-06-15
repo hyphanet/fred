@@ -75,7 +75,11 @@ public class GetFailedMessage extends FCPMessage {
 			expectedDataLength = Long.parseLong(s);
 		} else
 			expectedDataLength = -1;
-		this.redirectURI = new FreenetURI(fs.get("RedirectURI"));
+		s = fs.get("RedirectURI");
+		if(s != null)
+			this.redirectURI = new FreenetURI(s);
+		else
+			this.redirectURI = null;
 	}
 
 	public SimpleFieldSet getFieldSet() {
