@@ -2207,80 +2207,80 @@ public class Node {
         return m.getInt(DMT.COUNTER) - initialX;
     }
 
-    /**
-     * Check the datastore, then if the key is not in the store,
-     * check whether another node is requesting the same key at
-     * the same HTL, and if all else fails, create a new 
-     * RequestSender for the key/htl.
-     * @param closestLocation The closest location to the key so far.
-     * @param localOnly If true, only check the datastore.
-     * @return A CHKBlock if the data is in the store, otherwise
-     * a RequestSender, unless the HTL is 0, in which case NULL.
-     * RequestSender.
-     */
-    public synchronized Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
-        Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
-        // In store?
-        KeyBlock chk = null;
-        if(!ignoreStore) {
-        try {
-        	if(key instanceof NodeCHK)
-        		chk = chkDatastore.fetch((NodeCHK)key, !cache);
-        	else if(key instanceof NodeSSK) {
-        		NodeSSK k = (NodeSSK)key;
-        		DSAPublicKey pubKey = k.getPubKey();
-        		if(pubKey == null) {
-        			pubKey = getKey(k.getPubKeyHash());
-        			Logger.minor(this, "Fetched pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
-        			try {
-						k.setPubKey(pubKey);
-					} catch (SSKVerifyException e) {
-						Logger.error(this, "Error setting pubkey: "+e, e);
+	/**
+	 * Check the datastore, then if the key is not in the store,
+	 * check whether another node is requesting the same key at
+	 * the same HTL, and if all else fails, create a new 
+	 * RequestSender for the key/htl.
+	 * @param closestLocation The closest location to the key so far.
+	 * @param localOnly If true, only check the datastore.
+	 * @return A CHKBlock if the data is in the store, otherwise
+	 * a RequestSender, unless the HTL is 0, in which case NULL.
+	 * RequestSender.
+	 */
+	public synchronized Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
+		Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
+		// In store?
+		KeyBlock chk = null;
+		if(!ignoreStore) {
+			try {
+				if(key instanceof NodeCHK)
+					chk = chkDatastore.fetch((NodeCHK)key, !cache);
+				else if(key instanceof NodeSSK) {
+					NodeSSK k = (NodeSSK)key;
+					DSAPublicKey pubKey = k.getPubKey();
+					if(pubKey == null) {
+						pubKey = getKey(k.getPubKeyHash());
+						Logger.minor(this, "Fetched pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
+						try {
+							k.setPubKey(pubKey);
+						} catch (SSKVerifyException e) {
+							Logger.error(this, "Error setting pubkey: "+e, e);
+						}
 					}
-        		}
-        		if(pubKey != null) {
-        			Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
-        			chk = sskDatastore.fetch((NodeSSK)key, !cache);
-        		} else {
-        			Logger.minor(this, "Not found because no pubkey: "+uid);
-        		}
-        	} else
-        		throw new IllegalStateException("Unknown key type: "+key.getClass());
-        } catch (IOException e) {
-            Logger.error(this, "Error accessing store: "+e, e);
-        }
-        if(chk != null) return chk;
-        }
-        if(localOnly) return null;
-        Logger.minor(this, "Not in store locally");
-        
-        // Transfer coalescing - match key only as HTL irrelevant
-        RequestSender sender = (RequestSender) transferringRequestSenders.get(key);
-        if(sender != null) {
-            Logger.minor(this, "Data already being transferred: "+sender);
-            return sender;
-        }
+					if(pubKey != null) {
+						Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
+						chk = sskDatastore.fetch((NodeSSK)key, !cache);
+					} else {
+						Logger.minor(this, "Not found because no pubkey: "+uid);
+					}
+				} else
+					throw new IllegalStateException("Unknown key type: "+key.getClass());
+			} catch (IOException e) {
+				Logger.error(this, "Error accessing store: "+e, e);
+			}
+			if(chk != null) return chk;
+		}
+		if(localOnly) return null;
+		Logger.minor(this, "Not in store locally");
+		
+		// Transfer coalescing - match key only as HTL irrelevant
+		RequestSender sender = (RequestSender) transferringRequestSenders.get(key);
+		if(sender != null) {
+			Logger.minor(this, "Data already being transferred: "+sender);
+			return sender;
+		}
 
-        // HTL == 0 => Don't search further
-        if(htl == 0) {
-            Logger.minor(this, "No HTL");
-            return null;
-        }
-        
-        // Request coalescing
-        KeyHTLPair kh = new KeyHTLPair(key, htl);
-        sender = (RequestSender) requestSenders.get(kh);
-        if(sender != null) {
-            Logger.minor(this, "Found sender: "+sender+" for "+uid);
-            return sender;
-        }
-        
-        sender = new RequestSender(key, null, htl, uid, this, closestLocation, source);
-        requestSenders.put(kh, sender);
-        Logger.minor(this, "Created new sender: "+sender);
-        return sender;
-    }
-    
+		// HTL == 0 => Don't search further
+		if(htl == 0) {
+			Logger.minor(this, "No HTL");
+			return null;
+		}
+		
+		// Request coalescing
+		KeyHTLPair kh = new KeyHTLPair(key, htl);
+		sender = (RequestSender) requestSenders.get(kh);
+		if(sender != null) {
+			Logger.minor(this, "Found sender: "+sender+" for "+uid);
+			return sender;
+		}
+		
+		sender = new RequestSender(key, null, htl, uid, this, closestLocation, source);
+		requestSenders.put(kh, sender);
+		Logger.minor(this, "Created new sender: "+sender);
+		return sender;
+	}
+	
     static class KeyHTLPair {
         final Key key;
         final short htl;
