@@ -1140,8 +1140,10 @@ public class Node {
 			Logger.normal(this, s);
 			System.err.println(s);
 			testnetEnabled = false;
-			FileLoggerHook flh = logConfigHandler.getFileLoggerHook();
-			if(flh != null) flh.deleteAllOldLogFiles();
+			if(wasTestnet) {
+				FileLoggerHook flh = logConfigHandler.getFileLoggerHook();
+				if(flh != null) flh.deleteAllOldLogFiles();
+			}
 		}
 		
 		if(wasTestnet != testnetEnabled) {
@@ -1593,10 +1595,6 @@ public class Node {
 			throw new IllegalArgumentException("Not a CHK or SSK: "+key);
 	}
 	
-	/**
-	 * Really trivially simple client interface.
-	 * Either it succeeds or it doesn't.
-	 */
 	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
@@ -1684,10 +1682,6 @@ public class Node {
 		}
 	}
 
-	/**
-	 * Really trivially simple client interface.
-	 * Either it succeeds or it doesn't.
-	 */
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
