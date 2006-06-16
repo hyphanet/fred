@@ -129,25 +129,25 @@ import freenet.transport.IPUtil;
 public class Node {
 
 	static class NodeBindtoCallback implements StringCallback {
-    	
-    	final Node node;
-    	
-    	NodeBindtoCallback(Node n) {
-    		this.node = n;
-    	}
-    	
-    	public String get() {
-    		if(node.getBindTo()!=null)
-    			return node.getBindTo();
-    		else
-    			return "0.0.0.0";
-    	}
-    	
-    	public void set(String val) throws InvalidConfigValueException {
-    		if(val == get()) return;
-    		throw new InvalidConfigValueException("Cannot be updated on the fly");
-    	}
-    }
+		
+		final Node node;
+		
+		NodeBindtoCallback(Node n) {
+			this.node = n;
+		}
+		
+		public String get() {
+			if(node.getBindTo()!=null)
+				return node.getBindTo();
+			else
+				return "0.0.0.0";
+		}
+		
+		public void set(String val) throws InvalidConfigValueException {
+			if(val == get()) return;
+			throw new InvalidConfigValueException("Cannot be updated on the fly");
+		}
+	}
 	
 	public class MyARKInserter implements ClientCallback {
 
@@ -315,20 +315,20 @@ public class Node {
 			}
 			public String get() {
 				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
-		        	node.alerts.register(nodeNameUserAlert);
-		        }else{
-		        	node.alerts.unregister(nodeNameUserAlert);
-		        }
+					node.alerts.register(nodeNameUserAlert);
+				}else{
+					node.alerts.unregister(nodeNameUserAlert);
+				}
 				return myName;
 			}
 
 			public void set(String val) throws InvalidConfigValueException {
 				myName = val;
 				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
-		        	node.alerts.register(nodeNameUserAlert);
-		        }else{
-		        	node.alerts.unregister(nodeNameUserAlert);
-		        }
+					node.alerts.register(nodeNameUserAlert);
+				}else{
+					node.alerts.unregister(nodeNameUserAlert);
+				}
 			}
 	}
 	
@@ -384,152 +384,152 @@ public class Node {
 	 * most darknets.
 	 */
 	public static final boolean DONT_CACHE_LOCAL_REQUESTS = true;
-    public static final int PACKETS_IN_BLOCK = 32;
-    public static final int PACKET_SIZE = 1024;
-    public static final double DECREMENT_AT_MIN_PROB = 0.25;
-    public static final double DECREMENT_AT_MAX_PROB = 0.5;
-    // Send keepalives every 2.5-5.0 seconds
-    public static final int KEEPALIVE_INTERVAL = 2500;
-    // If no activity for 30 seconds, node is dead
-    public static final int MAX_PEER_INACTIVITY = 60000;
-    /** Time after which a handshake is assumed to have failed. */
-    public static final int HANDSHAKE_TIMEOUT = 5000;
-    // Inter-handshake time must be at least 2x handshake timeout
-    public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // 10-15 secs
-    public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT;
-    public static final int MIN_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*4;
-    public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*2; // 20-30 secs
-    public static final int MIN_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*4;
-    public static final int RANDOMIZED_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*2; // 20-30 secs
-    // If we don't receive any packets at all in this period, from any node, tell the user
-    public static final long ALARM_TIME = 60*1000;
-    /** Sub-max ping time. If ping is greater than this, we reject some requests. */
-    public static final long SUB_MAX_PING_TIME = 500;
-    /** Maximum overall average ping time. If ping is greater than this,
-     * we reject all requests. */
-    public static final long MAX_PING_TIME = 1000;
-    /** Maximum throttled packet delay. If the throttled packet delay is greater
-     * than this, reject all packets. */
-    public static final long MAX_THROTTLE_DELAY = 2000;
-    /** If the throttled packet delay is less than this, reject no packets; if it's
-     * between the two, reject some packets. */
-    public static final long SUB_MAX_THROTTLE_DELAY = 1000;
-    
-    /** Accept one request every 10 seconds regardless, to ensure we update the
-     * block send time.
-     */
-    public static final int MAX_INTERREQUEST_TIME = 10*1000;
+	public static final int PACKETS_IN_BLOCK = 32;
+	public static final int PACKET_SIZE = 1024;
+	public static final double DECREMENT_AT_MIN_PROB = 0.25;
+	public static final double DECREMENT_AT_MAX_PROB = 0.5;
+	// Send keepalives every 2.5-5.0 seconds
+	public static final int KEEPALIVE_INTERVAL = 2500;
+	// If no activity for 30 seconds, node is dead
+	public static final int MAX_PEER_INACTIVITY = 60000;
+	/** Time after which a handshake is assumed to have failed. */
+	public static final int HANDSHAKE_TIMEOUT = 5000;
+	// Inter-handshake time must be at least 2x handshake timeout
+	public static final int MIN_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT*2; // 10-15 secs
+	public static final int RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS = HANDSHAKE_TIMEOUT;
+	public static final int MIN_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*4;
+	public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*2; // 20-30 secs
+	public static final int MIN_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*4;
+	public static final int RANDOMIZED_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*2; // 20-30 secs
+	// If we don't receive any packets at all in this period, from any node, tell the user
+	public static final long ALARM_TIME = 60*1000;
+	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
+	public static final long SUB_MAX_PING_TIME = 500;
+	/** Maximum overall average ping time. If ping is greater than this,
+	 * we reject all requests. */
+	public static final long MAX_PING_TIME = 1000;
+	/** Maximum throttled packet delay. If the throttled packet delay is greater
+	 * than this, reject all packets. */
+	public static final long MAX_THROTTLE_DELAY = 2000;
+	/** If the throttled packet delay is less than this, reject no packets; if it's
+	 * between the two, reject some packets. */
+	public static final long SUB_MAX_THROTTLE_DELAY = 1000;
+	
+	/** Accept one request every 10 seconds regardless, to ensure we update the
+	 * block send time.
+	 */
+	public static final int MAX_INTERREQUEST_TIME = 10*1000;
 
-    // 900ms
-    static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
-    public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
-    /** Minimum space for zipped logfiles on testnet */
+	// 900ms
+	static final int MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS = 900;
+	public static final int SYMMETRIC_KEY_LENGTH = 32; // 256 bits - note that this isn't used everywhere to determine it
+	/** Minimum space for zipped logfiles on testnet */
 	static final long TESTNET_MIN_MAX_ZIPPED_LOGFILES = 512*1024*1024;
 	static final String TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING = "512M";
-    
-    // FIXME: abstract out address stuff? Possibly to something like NodeReference?
-    final int portNumber;
+	
+	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
+	final int portNumber;
 
-    /** Datastore directory */
-    private final File storeDir;
+	/** Datastore directory */
+	private final File storeDir;
 
-    /** The number of bytes per key total in all the different datastores. All the datastores
-     * are always the same size in number of keys. */
-    static final int sizePerKey = CHKBlock.DATA_LENGTH + CHKBlock.TOTAL_HEADERS_LENGTH +
+	/** The number of bytes per key total in all the different datastores. All the datastores
+	 * are always the same size in number of keys. */
+	static final int sizePerKey = CHKBlock.DATA_LENGTH + CHKBlock.TOTAL_HEADERS_LENGTH +
 		DSAPublicKey.PADDED_SIZE + SSKBlock.DATA_LENGTH + SSKBlock.TOTAL_HEADERS_LENGTH;
-    
-    /** The maximum number of keys stored in each of the datastores. */
-    private long maxStoreKeys;
-    
-    /** These 3 are private because must be protected by synchronized(this) */
-    /** The CHK datastore */
-    private final FreenetStore chkDatastore;
-    /** The SSK datastore */
-    private final FreenetStore sskDatastore;
-    /** The store of DSAPublicKeys (by hash) */
-    private final FreenetStore pubKeyDatastore;
-    /** RequestSender's currently running, by KeyHTLPair */
-    private final HashMap requestSenders;
-    /** RequestSender's currently transferring, by key */
-    private final HashMap transferringRequestSenders;
-    /** CHKInsertSender's currently running, by KeyHTLPair */
-    private final HashMap insertSenders;
-    /** IP address detector */
-    private final IPAddressDetector ipDetector;
-    /** My crypto group */
-    private DSAGroup myCryptoGroup;
-    /** My private key */
-    private DSAPrivateKey myPrivKey;
-    /** My public key */
-    private DSAPublicKey myPubKey;
-    /** My ARK SSK private key */
-    private InsertableClientSSK myARK;
-    /** My ARK sequence number */
-    private long myARKNumber;
-    /** FetcherContext for ARKs */
-    public final FetcherContext arkFetcherContext;
-    /** ARK currently inserting? */
-    private boolean arkCurrentlyInserting = false;
-    /** ARKFetcher's currently running, by identity */
-    private final HashMap arkFetchers;
-    /** Next time to log the PeerNode status summary */
-    private long nextPeerNodeStatusLogTime = -1;
-    /** PeerNode status summary log interval (milliseconds) */
-    private final long peerNodeStatusLogInterval = 1000;
-    /** PeerNode statuses, by status */
-    private final HashMap peerNodeStatuses;
-    /** PeerNode routing backoff reasons, by reason */
-    private final HashMap peerNodeRoutingBackoffReasons;
-    /** Next time to update oldestNeverConnectedPeerAge */
-    private long nextOldestNeverConnectedPeerAgeUpdateTime = -1;
-    /** oldestNeverConnectedPeerAge update interval (milliseconds) */
-    private final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
-    /** age of oldest never connected peer (milliseconds) */
-    private long oldestNeverConnectedPeerAge = 0;
-    /** Next time to start a ready ARKFetcher */
-    private long nextReadyARKFetcherStartTime = -1;
-    /** Ready ARKFetcher start interval (milliseconds) */
-    private final long readyARKFetcherStartInterval = 1000;
-    
-    private final HashSet runningUIDs;
-    
-    byte[] myIdentity; // FIXME: simple identity block; should be unique
-    /** Hash of identity. Used as setup key. */
-    byte[] identityHash;
-    /** Hash of hash of identity i.e. hash of setup key. */
-    byte[] identityHashHash; 
-    String myName;
-    final LocationManager lm;
-    final PeerManager peers; // my peers
-    final ARKFetchManager arkFetchManager; // ready ARK Fetchers
-    /** Directory to put node, peers, etc into */
-    final File nodeDir;
-    final File tempDir;
-    public final RandomSource random; // strong RNG
-    final UdpSocketManager usm;
-    final FNPPacketMangler packetMangler;
-    final DNSRequester dnsr;
-    public final PacketSender ps;
-    final NodeDispatcher dispatcher;
-    final NodePinger nodePinger;
-    final FilenameGenerator tempFilenameGenerator;
-    static final int MAX_CACHED_KEYS = 1000;
-    final LRUHashtable cachedPubKeys;
-    final boolean testnetEnabled;
-    final TestnetHandler testnetHandler;
-    final StaticSwapRequestInterval swapInterval;
-    static short MAX_HTL = 10;
-    static final int EXIT_STORE_FILE_NOT_FOUND = 1;
-    static final int EXIT_STORE_IOEXCEPTION = 2;
-    static final int EXIT_STORE_OTHER = 3;
-    static final int EXIT_USM_DIED = 4;
-    public static final int EXIT_YARROW_INIT_FAILED = 5;
-    static final int EXIT_TEMP_INIT_ERROR = 6;
-    static final int EXIT_TESTNET_FAILED = 7;
-    public static final int EXIT_MAIN_LOOP_LOST = 8;
-    public static final int EXIT_COULD_NOT_BIND_USM = 9;
-    static final int EXIT_IMPOSSIBLE_USM_PORT = 10;
-    static final int EXIT_NO_AVAILABLE_UDP_PORTS = 11;
+	
+	/** The maximum number of keys stored in each of the datastores. */
+	private long maxStoreKeys;
+	
+	/** These 3 are private because must be protected by synchronized(this) */
+	/** The CHK datastore */
+	private final FreenetStore chkDatastore;
+	/** The SSK datastore */
+	private final FreenetStore sskDatastore;
+	/** The store of DSAPublicKeys (by hash) */
+	private final FreenetStore pubKeyDatastore;
+	/** RequestSender's currently running, by KeyHTLPair */
+	private final HashMap requestSenders;
+	/** RequestSender's currently transferring, by key */
+	private final HashMap transferringRequestSenders;
+	/** CHKInsertSender's currently running, by KeyHTLPair */
+	private final HashMap insertSenders;
+	/** IP address detector */
+	private final IPAddressDetector ipDetector;
+	/** My crypto group */
+	private DSAGroup myCryptoGroup;
+	/** My private key */
+	private DSAPrivateKey myPrivKey;
+	/** My public key */
+	private DSAPublicKey myPubKey;
+	/** My ARK SSK private key */
+	private InsertableClientSSK myARK;
+	/** My ARK sequence number */
+	private long myARKNumber;
+	/** FetcherContext for ARKs */
+	public final FetcherContext arkFetcherContext;
+	/** ARK currently inserting? */
+	private boolean arkCurrentlyInserting = false;
+	/** ARKFetcher's currently running, by identity */
+	private final HashMap arkFetchers;
+	/** Next time to log the PeerNode status summary */
+	private long nextPeerNodeStatusLogTime = -1;
+	/** PeerNode status summary log interval (milliseconds) */
+	private final long peerNodeStatusLogInterval = 1000;
+	/** PeerNode statuses, by status */
+	private final HashMap peerNodeStatuses;
+	/** PeerNode routing backoff reasons, by reason */
+	private final HashMap peerNodeRoutingBackoffReasons;
+	/** Next time to update oldestNeverConnectedPeerAge */
+	private long nextOldestNeverConnectedPeerAgeUpdateTime = -1;
+	/** oldestNeverConnectedPeerAge update interval (milliseconds) */
+	private final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
+	/** age of oldest never connected peer (milliseconds) */
+	private long oldestNeverConnectedPeerAge = 0;
+	/** Next time to start a ready ARKFetcher */
+	private long nextReadyARKFetcherStartTime = -1;
+	/** Ready ARKFetcher start interval (milliseconds) */
+	private final long readyARKFetcherStartInterval = 1000;
+	
+	private final HashSet runningUIDs;
+	
+	byte[] myIdentity; // FIXME: simple identity block; should be unique
+	/** Hash of identity. Used as setup key. */
+	byte[] identityHash;
+	/** Hash of hash of identity i.e. hash of setup key. */
+	byte[] identityHashHash; 
+	String myName;
+	final LocationManager lm;
+	final PeerManager peers; // my peers
+	final ARKFetchManager arkFetchManager; // ready ARK Fetchers
+	/** Directory to put node, peers, etc into */
+	final File nodeDir;
+	final File tempDir;
+	public final RandomSource random; // strong RNG
+	final UdpSocketManager usm;
+	final FNPPacketMangler packetMangler;
+	final DNSRequester dnsr;
+	public final PacketSender ps;
+	final NodeDispatcher dispatcher;
+	final NodePinger nodePinger;
+	final FilenameGenerator tempFilenameGenerator;
+	static final int MAX_CACHED_KEYS = 1000;
+	final LRUHashtable cachedPubKeys;
+	final boolean testnetEnabled;
+	final TestnetHandler testnetHandler;
+	final StaticSwapRequestInterval swapInterval;
+	static short MAX_HTL = 10;
+	static final int EXIT_STORE_FILE_NOT_FOUND = 1;
+	static final int EXIT_STORE_IOEXCEPTION = 2;
+	static final int EXIT_STORE_OTHER = 3;
+	static final int EXIT_USM_DIED = 4;
+	public static final int EXIT_YARROW_INIT_FAILED = 5;
+	static final int EXIT_TEMP_INIT_ERROR = 6;
+	static final int EXIT_TESTNET_FAILED = 7;
+	public static final int EXIT_MAIN_LOOP_LOST = 8;
+	public static final int EXIT_COULD_NOT_BIND_USM = 9;
+	static final int EXIT_IMPOSSIBLE_USM_PORT = 10;
+	static final int EXIT_NO_AVAILABLE_UDP_PORTS = 11;
 	public static final int EXIT_TESTNET_DISABLED_NOT_SUPPORTED = 12;
 	static final int EXIT_INVALID_STORE_SIZE = 13;
 	static final int EXIT_BAD_DOWNLOADS_DIR = 14;
@@ -540,65 +540,65 @@ public class Node {
 	static final int EXIT_COULD_NOT_START_TMCI = 19;
 	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
 	public static final int EXIT_COULD_NOT_START_UPDATER = 21;
-    public static final int PEER_NODE_STATUS_CONNECTED = 1;
-    public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
-    public static final int PEER_NODE_STATUS_TOO_NEW = 3;
-    public static final int PEER_NODE_STATUS_TOO_OLD = 4;
-    public static final int PEER_NODE_STATUS_DISCONNECTED = 5;
-    public static final int PEER_NODE_STATUS_NEVER_CONNECTED = 6;
-    public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
-    
-    public final long bootID;
-    public final long startupTime;
-    
-    // Client stuff
-    public final USKManager uskManager;
-    final ArchiveManager archiveManager;
-    public final BucketFactory tempBucketFactory;
-    final ThrottleWindowManager throttleWindow;
-    final MyRequestThrottle chkRequestThrottle;
-    final RequestStarter chkRequestStarter;
-    final MyRequestThrottle chkInsertThrottle;
-    final RequestStarter chkInsertStarter;
-    final MyRequestThrottle sskRequestThrottle;
-    final RequestStarter sskRequestStarter;
-    final MyRequestThrottle sskInsertThrottle;
-    final RequestStarter sskInsertStarter;
+	public static final int PEER_NODE_STATUS_CONNECTED = 1;
+	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
+	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
+	public static final int PEER_NODE_STATUS_TOO_OLD = 4;
+	public static final int PEER_NODE_STATUS_DISCONNECTED = 5;
+	public static final int PEER_NODE_STATUS_NEVER_CONNECTED = 6;
+	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
+	
+	public final long bootID;
+	public final long startupTime;
+	
+	// Client stuff
+	public final USKManager uskManager;
+	final ArchiveManager archiveManager;
+	public final BucketFactory tempBucketFactory;
+	final ThrottleWindowManager throttleWindow;
+	final MyRequestThrottle chkRequestThrottle;
+	final RequestStarter chkRequestStarter;
+	final MyRequestThrottle chkInsertThrottle;
+	final RequestStarter chkInsertStarter;
+	final MyRequestThrottle sskRequestThrottle;
+	final RequestStarter sskRequestStarter;
+	final MyRequestThrottle sskInsertThrottle;
+	final RequestStarter sskInsertStarter;
 	public final UserAlertManager alerts;
 	final RunningAverage throttledPacketSendAverage;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
 	public final String formPassword;
 
-    File downloadDir;
-    public final ClientRequestScheduler chkFetchScheduler;
-    public final ClientRequestScheduler chkPutScheduler;
-    public final ClientRequestScheduler sskFetchScheduler;
-    public final ClientRequestScheduler sskPutScheduler;
-    final String bindto;
-    TextModeClientInterfaceServer tmci;
-    TextModeClientInterface directTMCI;
-    FCPServer fcpServer;
-    FProxyToadlet fproxyServlet;
-    SimpleToadletServer toadletContainer;
-    
-    /** NodeUpdater **/
-    public NodeUpdater nodeUpdater;
-    
-    // Persistent temporary buckets
-    public final PersistentTempBucketFactory persistentTempBucketFactory;
-    
-    // Things that's needed to keep track of
-    public final PluginManager pluginManager;
-    public freenet.plugin.PluginManager pluginManager2;
-    
-    // Client stuff that needs to be configged - FIXME
-    static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
-    static final long MAX_CACHED_ARCHIVE_DATA = 32*1024*1024; // make a fixed fraction of the store by default? FIXME
-    static final long MAX_ARCHIVE_SIZE = 2*1024*1024; // ??? FIXME
-    static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
-    static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
+	File downloadDir;
+	public final ClientRequestScheduler chkFetchScheduler;
+	public final ClientRequestScheduler chkPutScheduler;
+	public final ClientRequestScheduler sskFetchScheduler;
+	public final ClientRequestScheduler sskPutScheduler;
+	final String bindto;
+	TextModeClientInterfaceServer tmci;
+	TextModeClientInterface directTMCI;
+	FCPServer fcpServer;
+	FProxyToadlet fproxyServlet;
+	SimpleToadletServer toadletContainer;
+	
+	/** NodeUpdater **/
+	public NodeUpdater nodeUpdater;
+	
+	// Persistent temporary buckets
+	public final PersistentTempBucketFactory persistentTempBucketFactory;
+	
+	// Things that's needed to keep track of
+	public final PluginManager pluginManager;
+	public freenet.plugin.PluginManager pluginManager2;
+	
+	// Client stuff that needs to be configged - FIXME
+	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
+	static final long MAX_CACHED_ARCHIVE_DATA = 32*1024*1024; // make a fixed fraction of the store by default? FIXME
+	static final long MAX_ARCHIVE_SIZE = 2*1024*1024; // ??? FIXME
+	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
+	static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 
-    // Helpers
+	// Helpers
 	public final InetAddress localhostAddress;
 	public final FreenetInetAddress fLocalhostAddress;
 
@@ -613,236 +613,236 @@ public class Node {
 	// Debugging stuff
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
 	
-    /**
-     * Read all storable settings (identity etc) from the node file.
-     * @param filename The name of the file to read from.
-     */
-    private void readNodeFile(String filename, RandomSource r) throws IOException {
-    	// REDFLAG: Any way to share this code with NodePeer?
-        FileInputStream fis = new FileInputStream(filename);
-        InputStreamReader isr = new InputStreamReader(fis);
-        BufferedReader br = new BufferedReader(isr);
-        SimpleFieldSet fs = new SimpleFieldSet(br, true);
-        br.close();
-        // Read contents
-        String physical = fs.get("physical.udp");
-        if(physical != null) {
-        	Peer myOldPeer;
-        	try {
-        		myOldPeer = new Peer(physical, false);
-        	} catch (PeerParseException e) {
-        		IOException e1 = new IOException();
-        		e1.initCause(e);
-        		throw e1;
-        	}
-        	if(myOldPeer.getPort() != portNumber)
-        		throw new IllegalArgumentException("Wrong port number "+
-        				myOldPeer.getPort()+" should be "+portNumber);
-        	// DNSRequester doesn't deal with our own node
-        	oldIPAddress = myOldPeer.getAddress(true);
-        }
-        String identity = fs.get("identity");
-        if(identity == null)
-            throw new IOException();
-        boolean base64 = Fields.stringToBool(fs.get("base64"), false);
-        try {
+	/**
+	 * Read all storable settings (identity etc) from the node file.
+	 * @param filename The name of the file to read from.
+	 */
+	private void readNodeFile(String filename, RandomSource r) throws IOException {
+		// REDFLAG: Any way to share this code with NodePeer?
+		FileInputStream fis = new FileInputStream(filename);
+		InputStreamReader isr = new InputStreamReader(fis);
+		BufferedReader br = new BufferedReader(isr);
+		SimpleFieldSet fs = new SimpleFieldSet(br, true);
+		br.close();
+		// Read contents
+		String physical = fs.get("physical.udp");
+		if(physical != null) {
+			Peer myOldPeer;
+			try {
+				myOldPeer = new Peer(physical, false);
+			} catch (PeerParseException e) {
+				IOException e1 = new IOException();
+				e1.initCause(e);
+				throw e1;
+			}
+			if(myOldPeer.getPort() != portNumber)
+				throw new IllegalArgumentException("Wrong port number "+
+						myOldPeer.getPort()+" should be "+portNumber);
+			// DNSRequester doesn't deal with our own node
+			oldIPAddress = myOldPeer.getAddress(true);
+		}
+		String identity = fs.get("identity");
+		if(identity == null)
+			throw new IOException();
+		boolean base64 = Fields.stringToBool(fs.get("base64"), false);
+		try {
 			myIdentity = base64 ? Base64.decode(identity) : HexUtil.hexToBytes(identity);
 		} catch (IllegalBase64Exception e2) {
 			throw new IOException();
 		}
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
-        identityHash = md.digest(myIdentity);
-        identityHashHash = md.digest(identityHash);
-	    String loc = fs.get("location");
-	    Location l;
-        try {
-            l = new Location(loc);
-        } catch (FSParseException e) {
-            IOException e1 = new IOException();
-            e1.initCause(e);
-            throw e1;
-        }
-        lm.setLocation(l);
-        myName = fs.get("myName");
-        if(myName == null) {
-            myName = newName();
-        }
-
-        // FIXME: Back compatibility; REMOVE !!
-        try {
-        	this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"), base64);
-        	this.myPrivKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup, base64);
-        	this.myPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup, base64);
-        } catch (NullPointerException e) {
-        	Logger.minor(this, "Caught "+e, e);
-            this.myCryptoGroup = Global.DSAgroupBigA;
-            this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
-            this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
-        } catch (IllegalBase64Exception e) {
-        	Logger.minor(this, "Caught "+e, e);
-            this.myCryptoGroup = Global.DSAgroupBigA;
-            this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
-            this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("SHA-256");
+		} catch (NoSuchAlgorithmException e) {
+			throw new Error(e);
 		}
-        InsertableClientSSK ark = null;
+		identityHash = md.digest(myIdentity);
+		identityHashHash = md.digest(identityHash);
+		String loc = fs.get("location");
+		Location l;
+		try {
+			l = new Location(loc);
+		} catch (FSParseException e) {
+			IOException e1 = new IOException();
+			e1.initCause(e);
+			throw e1;
+		}
+		lm.setLocation(l);
+		myName = fs.get("myName");
+		if(myName == null) {
+			myName = newName();
+		}
+
+		// FIXME: Back compatibility; REMOVE !!
+		try {
+			this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"), base64);
+			this.myPrivKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup, base64);
+			this.myPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup, base64);
+		} catch (NullPointerException e) {
+			Logger.minor(this, "Caught "+e, e);
+			this.myCryptoGroup = Global.DSAgroupBigA;
+			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
+			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+		} catch (IllegalBase64Exception e) {
+			Logger.minor(this, "Caught "+e, e);
+			this.myCryptoGroup = Global.DSAgroupBigA;
+			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
+			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+		}
+		InsertableClientSSK ark = null;
 		String s = fs.get("ark.number");
-        
-        String privARK = fs.get("ark.privURI");
-        try {
-        	if(privARK != null) {
-            	FreenetURI uri = new FreenetURI(privARK);
-        		ark = InsertableClientSSK.create(uri);
-        		if(s == null) {
-        			ark = null;
-        		} else {
-        			try {
-        				myARKNumber = Long.parseLong(s);
-        			} catch (NumberFormatException e) {
-        				myARKNumber = 0;
-        				ark = null;
-        			}
-        		}
-        	}
-        } catch (MalformedURLException e) {
-        	Logger.minor(this, "Caught "+e, e);
-        	ark = null;
-        }
-        if(ark == null) {
-        	ark = InsertableClientSSK.createRandom(r, "ark");
-        	myARKNumber = 0;
-        }
-        this.myARK = ark;
-        wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
-    }
+		
+		String privARK = fs.get("ark.privURI");
+		try {
+			if(privARK != null) {
+				FreenetURI uri = new FreenetURI(privARK);
+				ark = InsertableClientSSK.create(uri);
+				if(s == null) {
+					ark = null;
+				} else {
+					try {
+						myARKNumber = Long.parseLong(s);
+					} catch (NumberFormatException e) {
+						myARKNumber = 0;
+						ark = null;
+					}
+				}
+			}
+		} catch (MalformedURLException e) {
+			Logger.minor(this, "Caught "+e, e);
+			ark = null;
+		}
+		if(ark == null) {
+			ark = InsertableClientSSK.createRandom(r, "ark");
+			myARKNumber = 0;
+		}
+		this.myARK = ark;
+		wasTestnet = Fields.stringToBool(fs.get("testnet"), false);
+	}
 
-    private String newName() {
-        return "Node created around "+System.currentTimeMillis();
-    }
+	private String newName() {
+		return "Node created around "+System.currentTimeMillis();
+	}
 
-    public void writeNodeFile() {
-        writeNodeFile(new File(nodeDir, "node-"+portNumber), new File(nodeDir, "node-"+portNumber+".bak"));
-    }
-    
-    private void writeNodeFile(File orig, File backup) {
-        SimpleFieldSet fs = exportPrivateFieldSet();
-        
-        if(orig.exists()) backup.delete();
-        
-        OutputStreamWriter osr = null;
-        try {
-        	FileOutputStream fos = new FileOutputStream(backup);
-        	osr = new OutputStreamWriter(fos);
-        	fs.writeTo(osr);
-            osr.close();
-            if(!backup.renameTo(orig)) {
-            	orig.delete();
-            	if(!backup.renameTo(orig)) {
-            		Logger.error(this, "Could not rename new node file "+backup+" to "+orig);
-            	}
-            }
-        } catch (IOException e) {
-        	if(osr != null) {
-        		try {
-        			osr.close();
-        		} catch (IOException e1) {
-        			Logger.error(this, "Cannot close "+backup+": "+e1, e1);
-        		}
-        	}
-        }
-    }
+	public void writeNodeFile() {
+		writeNodeFile(new File(nodeDir, "node-"+portNumber), new File(nodeDir, "node-"+portNumber+".bak"));
+	}
+	
+	private void writeNodeFile(File orig, File backup) {
+		SimpleFieldSet fs = exportPrivateFieldSet();
+		
+		if(orig.exists()) backup.delete();
+		
+		OutputStreamWriter osr = null;
+		try {
+			FileOutputStream fos = new FileOutputStream(backup);
+			osr = new OutputStreamWriter(fos);
+			fs.writeTo(osr);
+			osr.close();
+			if(!backup.renameTo(orig)) {
+				orig.delete();
+				if(!backup.renameTo(orig)) {
+					Logger.error(this, "Could not rename new node file "+backup+" to "+orig);
+				}
+			}
+		} catch (IOException e) {
+			if(osr != null) {
+				try {
+					osr.close();
+				} catch (IOException e1) {
+					Logger.error(this, "Cannot close "+backup+": "+e1, e1);
+				}
+			}
+		}
+	}
 
-    private void initNodeFileSettings(RandomSource r) {
-        Logger.normal(this, "Creating new node file from scratch");
-        // Don't need to set portNumber
-        // FIXME use a real IP!
-    	myIdentity = new byte[32];
-    	r.nextBytes(myIdentity);
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
-        identityHash = md.digest(myIdentity);
-        identityHashHash = md.digest(identityHash);
-        myName = newName();
-        this.myCryptoGroup = Global.DSAgroupBigA;
-        this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
-        this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
-    	myARK = InsertableClientSSK.createRandom(r, "ark");
-    	myARKNumber = 0;
-    }
+	private void initNodeFileSettings(RandomSource r) {
+		Logger.normal(this, "Creating new node file from scratch");
+		// Don't need to set portNumber
+		// FIXME use a real IP!
+		myIdentity = new byte[32];
+		r.nextBytes(myIdentity);
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("SHA-256");
+		} catch (NoSuchAlgorithmException e) {
+			throw new Error(e);
+		}
+		identityHash = md.digest(myIdentity);
+		identityHashHash = md.digest(identityHash);
+		myName = newName();
+		this.myCryptoGroup = Global.DSAgroupBigA;
+		this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
+		this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+		myARK = InsertableClientSSK.createRandom(r, "ark");
+		myARKNumber = 0;
+	}
 
-    /**
-     * Read the config file from the arguments.
-     * Then create a node.
-     * Anything that needs static init should ideally be in here.
-     */
-    public static void main(String[] args) throws IOException {
-    	if(args.length>1) {
-    		System.out.println("Usage: $ java freenet.node.Node <configFile>");
-    		return;
-    	}
-    	
-    	File configFilename;
-    	if(args.length == 0) {
-    		System.out.println("Using default config filename freenet.ini");
-    		configFilename = new File("freenet.ini");
-    	} else
-    		configFilename = new File(args[0]);
-    		
-    	// set Java's DNS cache not to cache forever, since many people
-    	// use dyndns hostnames
-    	java.security.Security.setProperty("networkaddress.cache.ttl" , "60");
-    	
-    	// set Java's negative DNS cache to 1 minute rather than the default 10 seconds
-    	java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "60");
-    	
-    	FilePersistentConfig cfg = new FilePersistentConfig(configFilename);
-    	
-    	// First, set up logging. It is global, and may be shared between several nodes.
-    	
-    	SubConfig loggingConfig = new SubConfig("logger", cfg);
-    	
-    	try {
+	/**
+	 * Read the config file from the arguments.
+	 * Then create a node.
+	 * Anything that needs static init should ideally be in here.
+	 */
+	public static void main(String[] args) throws IOException {
+		if(args.length>1) {
+			System.out.println("Usage: $ java freenet.node.Node <configFile>");
+			return;
+		}
+		
+		File configFilename;
+		if(args.length == 0) {
+			System.out.println("Using default config filename freenet.ini");
+			configFilename = new File("freenet.ini");
+		} else
+			configFilename = new File(args[0]);
+			
+		// set Java's DNS cache not to cache forever, since many people
+		// use dyndns hostnames
+		java.security.Security.setProperty("networkaddress.cache.ttl" , "60");
+		
+		// set Java's negative DNS cache to 1 minute rather than the default 10 seconds
+		java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "60");
+		
+		FilePersistentConfig cfg = new FilePersistentConfig(configFilename);
+		
+		// First, set up logging. It is global, and may be shared between several nodes.
+		
+		SubConfig loggingConfig = new SubConfig("logger", cfg);
+		
+		try {
 			logConfigHandler = new LoggingConfigHandler(loggingConfig);
 		} catch (InvalidConfigValueException e) {
 			System.err.println("Error: could not set up logging: "+e.getMessage());
 			e.printStackTrace();
 			return;
 		}
-    	
-    	// Setup RNG
+		
+		// Setup RNG
 
-    	RandomSource random = new Yarrow();
-    	
-        DiffieHellman.init(random);
-        
-        Thread t = new Thread(new MemoryChecker(), "Memory checker");
-        t.setPriority(Thread.MAX_PRIORITY);
-        t.start();
-        /*
-        SimpleToadletServer server = new SimpleToadletServer(port+2000);
-        FProxyToadlet fproxy = new FProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
-        PProxyToadlet pproxy = new PProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
-        server.register(fproxy, "/", false);
-        server.register(pproxy, "/plugins/", true);
-        
-        System.out.println("Starting FProxy on port "+(port+2000));
-        new FCPServer(port+3000, n);
-        System.out.println("Starting FCP server on port "+(port+3000));
-        //server.register(fproxy, "/SSK@", false);
-        //server.register(fproxy, "/KSK@", false);
-        */
-    	Node node;
+		RandomSource random = new Yarrow();
+		
+		DiffieHellman.init(random);
+		
+		Thread t = new Thread(new MemoryChecker(), "Memory checker");
+		t.setPriority(Thread.MAX_PRIORITY);
+		t.start();
+		/*
+		SimpleToadletServer server = new SimpleToadletServer(port+2000);
+		FProxyToadlet fproxy = new FProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+		PProxyToadlet pproxy = new PProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
+		server.register(fproxy, "/", false);
+		server.register(pproxy, "/plugins/", true);
+		
+		System.out.println("Starting FProxy on port "+(port+2000));
+		new FCPServer(port+3000, n);
+		System.out.println("Starting FCP server on port "+(port+3000));
+		//server.register(fproxy, "/SSK@", false);
+		//server.register(fproxy, "/KSK@", false);
+		*/
+		Node node;
 		try {
 			node = new Node(cfg, random, logConfigHandler);
-	    	node.start(false);
+			node.start(false);
 		} catch (NodeInitException e) {
 			System.err.println("Failed to load node: "+e.getMessage());
 			e.printStackTrace();
@@ -869,92 +869,92 @@ public class Node {
 		plug.start();
 		
 
-    }
-    
-    static class NodeInitException extends Exception {
-    	// One of the exit codes from above
-    	public final int exitCode;
+	}
+	
+	static class NodeInitException extends Exception {
+		// One of the exit codes from above
+		public final int exitCode;
 	private static final long serialVersionUID = -1;
-    	
-    	NodeInitException(int exitCode, String msg) {
-    		super(msg+" ("+exitCode+")");
-    		this.exitCode = exitCode;
-    	}
-    }
-    
-    Node(Config config, RandomSource random, LoggingConfigHandler lc) throws NodeInitException{
-    	this(config, random, lc, null);
-    }
-    
-    public boolean isUsingWrapper(){
-    	if(nodeStarter!=null)
-    		return true;
-    	else 
-    		return false;
-    }
-    
-    public NodeStarter getNodeStarter(){
-    	return nodeStarter;
-    }
-    
-    /**
-     * Create a Node from a Config object.
-     * @param config The Config object for this node.
-     * @param random The random number generator for this node. Passed in because we may want
-     * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
-     * a production node.
-     * @param the loggingHandler
-     * @throws NodeInitException If the node initialization fails.
-     */
-     Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
-    	// Easy stuff
-    	byte[] pwdBuf = new byte[16];
-    	random.nextBytes(pwdBuf);
-    	this.formPassword = Base64.encode(pwdBuf);
-      	nodeStarter=ns;
-    	if(logConfigHandler != lc)
-    		logConfigHandler=lc;
-    	arkPutter = new MyARKInserter();
-    	startupTime = System.currentTimeMillis();
-    	throttleWindow = new ThrottleWindowManager(2.0);
-        alerts = new UserAlertManager();
-        recentlyCompletedIDs = new LRUQueue();
-    	this.config = config;
-    	this.random = random;
-    	cachedPubKeys = new LRUHashtable();
+		
+		NodeInitException(int exitCode, String msg) {
+			super(msg+" ("+exitCode+")");
+			this.exitCode = exitCode;
+		}
+	}
+	
+	Node(Config config, RandomSource random, LoggingConfigHandler lc) throws NodeInitException{
+		this(config, random, lc, null);
+	}
+	
+	public boolean isUsingWrapper(){
+		if(nodeStarter!=null)
+			return true;
+		else 
+			return false;
+	}
+	
+	public NodeStarter getNodeStarter(){
+		return nodeStarter;
+	}
+	
+	/**
+	 * Create a Node from a Config object.
+	 * @param config The Config object for this node.
+	 * @param random The random number generator for this node. Passed in because we may want
+	 * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
+	 * a production node.
+	 * @param the loggingHandler
+	 * @throws NodeInitException If the node initialization fails.
+	 */
+	 Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
+		// Easy stuff
+		byte[] pwdBuf = new byte[16];
+		random.nextBytes(pwdBuf);
+		this.formPassword = Base64.encode(pwdBuf);
+	  	nodeStarter=ns;
+		if(logConfigHandler != lc)
+			logConfigHandler=lc;
+		arkPutter = new MyARKInserter();
+		startupTime = System.currentTimeMillis();
+		throttleWindow = new ThrottleWindowManager(2.0);
+		alerts = new UserAlertManager();
+		recentlyCompletedIDs = new LRUQueue();
+		this.config = config;
+		this.random = random;
+		cachedPubKeys = new LRUHashtable();
 		lm = new LocationManager(random);
-    	try {
+		try {
 			localhostAddress = InetAddress.getByName("127.0.0.1");
 		} catch (UnknownHostException e3) {
 			// Does not do a reverse lookup, so this is impossible
 			throw new Error(e3);
 		}
 		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
-        ipDetector = new IPAddressDetector(10*1000, this);
-        requestSenders = new HashMap();
-        transferringRequestSenders = new HashMap();
-        insertSenders = new HashMap();
-        arkFetchers = new HashMap();
-        peerNodeStatuses = new HashMap();
-        peerNodeRoutingBackoffReasons = new HashMap();
-        runningUIDs = new HashSet();
-        dnsr = new DNSRequester(this);
-        ps = new PacketSender(this);
-        nextPeerNodeStatusLogTime = System.currentTimeMillis() + (3*1000);
-        // FIXME maybe these should persist? They need to be private though, so after the node/peers split. (bug 51).
-        decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
-        decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
-        bootID = random.nextLong();
-        throttledPacketSendAverage =
-        	new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
+		ipDetector = new IPAddressDetector(10*1000, this);
+		requestSenders = new HashMap();
+		transferringRequestSenders = new HashMap();
+		insertSenders = new HashMap();
+		arkFetchers = new HashMap();
+		peerNodeStatuses = new HashMap();
+		peerNodeRoutingBackoffReasons = new HashMap();
+		runningUIDs = new HashSet();
+		dnsr = new DNSRequester(this);
+		ps = new PacketSender(this);
+		nextPeerNodeStatusLogTime = System.currentTimeMillis() + (3*1000);
+		// FIXME maybe these should persist? They need to be private though, so after the node/peers split. (bug 51).
+		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
+		decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
+		bootID = random.nextLong();
+		throttledPacketSendAverage =
+			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
 
-    	// Setup node-specific configuration
-    	
-    	SubConfig nodeConfig = new SubConfig("node", config);
+		// Setup node-specific configuration
+		
+		SubConfig nodeConfig = new SubConfig("node", config);
 
-    	// IP address override
-    	
-    	nodeConfig.register("ipAddressOverride", "", 0, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
+		// IP address override
+		
+		nodeConfig.register("ipAddressOverride", "", 0, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
 
 			public String get() {
 				if(overrideIPAddress == null) return "";
@@ -982,13 +982,13 @@ public class Node {
 				redetectAddress();
 				shouldInsertARK();
 			}
-    		
-    	});
-    	
-    	String ipOverrideString = nodeConfig.getString("ipAddressOverride");
-    	if(ipOverrideString.length() == 0)
-    		overrideIPAddress = null;
-    	else {
+			
+		});
+		
+		String ipOverrideString = nodeConfig.getString("ipAddressOverride");
+		if(ipOverrideString.length() == 0)
+			overrideIPAddress = null;
+		else {
 			try {
 				overrideIPAddress = new FreenetInetAddress(ipOverrideString, false);
 			} catch (UnknownHostException e) {
@@ -997,21 +997,21 @@ public class Node {
 				System.err.println(msg+" but starting up anyway with no IP override");
 				overrideIPAddress = null;
 			}
-    	}
-    	
-    	// Determine where to bind to
-    	
+		}
+		
+		// Determine where to bind to
+		
 
-    	
+		
 		nodeConfig.register("bindTo", "0.0.0.0", 2, true, "IP address to bind to", "IP address to bind to",
 				new NodeBindtoCallback(this));
-    	
+		
 		this.bindto = nodeConfig.getString("bindTo");
 		
-    	// Determine the port number
-    	
-    	nodeConfig.register("listenPort", -1 /* means random */, 1, true, "FNP port number (UDP)", "UDP port for node-to-node communications (Freenet Node Protocol)",
-    			new IntCallback() {
+		// Determine the port number
+		
+		nodeConfig.register("listenPort", -1 /* means random */, 1, true, "FNP port number (UDP)", "UDP port for node-to-node communications (Freenet Node Protocol)",
+				new IntCallback() {
 					public int get() {
 						return portNumber;
 					}
@@ -1022,141 +1022,141 @@ public class Node {
 						Logger.error(this, msg);
 						throw new InvalidConfigValueException(msg);
 					}
-    	});
-    	
-    	int port=-1;
-    	try{
-    		port=nodeConfig.getInt("listenPort");
-    	}catch (Exception e){
-    		Logger.error(this, "Caught "+e, e);
-    		System.err.println(e);
-    		e.printStackTrace();
-    		port=-1;
-    	}
-    	
-    	UdpSocketManager u = null;
-    	
-    	if(port > 65535) {
-    		throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Impossible port number: "+port);
-    	} else if(port == -1) {
-    		// Pick a random port
-    		for(int i=0;i<200000;i++) {
-    			int portNo = 1024 + random.nextInt(65535-1024);
-    			try {
-    				u = new UdpSocketManager(portNo, InetAddress.getByName(bindto));
-    				port = u.getPortNumber();
-    				break;
-    			} catch (Exception e) {
-    				Logger.normal(this, "Could not use port: "+bindto+":"+portNo+": "+e, e);
-    				System.err.println("Could not use port: "+bindto+":"+portNo+": "+e);
-    				e.printStackTrace();
-    				continue;
-    			}
-    		}
-    		if(u == null)
-    			throw new NodeInitException(EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
-    	} else {
-    		try {
-    			u = new UdpSocketManager(port, InetAddress.getByName(bindto));
-    		} catch (Exception e) {
-    			throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
-    		}
-    	}
-    	usm = u;
-    	
-        Logger.normal(this, "FNP port created on "+bindto+":"+port);
-        System.out.println("FNP port created on "+bindto+":"+port);
-        portNumber = port;
-        
-        Logger.normal(Node.class, "Creating node...");
+		});
+		
+		int port=-1;
+		try{
+			port=nodeConfig.getInt("listenPort");
+		}catch (Exception e){
+			Logger.error(this, "Caught "+e, e);
+			System.err.println(e);
+			e.printStackTrace();
+			port=-1;
+		}
+		
+		UdpSocketManager u = null;
+		
+		if(port > 65535) {
+			throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Impossible port number: "+port);
+		} else if(port == -1) {
+			// Pick a random port
+			for(int i=0;i<200000;i++) {
+				int portNo = 1024 + random.nextInt(65535-1024);
+				try {
+					u = new UdpSocketManager(portNo, InetAddress.getByName(bindto));
+					port = u.getPortNumber();
+					break;
+				} catch (Exception e) {
+					Logger.normal(this, "Could not use port: "+bindto+":"+portNo+": "+e, e);
+					System.err.println("Could not use port: "+bindto+":"+portNo+": "+e);
+					e.printStackTrace();
+					continue;
+				}
+			}
+			if(u == null)
+				throw new NodeInitException(EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
+		} else {
+			try {
+				u = new UdpSocketManager(port, InetAddress.getByName(bindto));
+			} catch (Exception e) {
+				throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
+			}
+		}
+		usm = u;
+		
+		Logger.normal(this, "FNP port created on "+bindto+":"+port);
+		System.out.println("FNP port created on "+bindto+":"+port);
+		portNumber = port;
+		
+		Logger.normal(Node.class, "Creating node...");
 
-        // Bandwidth limit
+		// Bandwidth limit
 
-        // FIXME These should not be static !!!! Need a context object for BT for bwlimiting.
-        // See bug 77
-        nodeConfig.register("outputBandwidthLimit", "15K", 3, false, 
-        		"Output bandwidth limit", "Hard output bandwidth limit (bytes/sec); the node should almost never exceed this", 
-        		new IntCallback() {
+		// FIXME These should not be static !!!! Need a context object for BT for bwlimiting.
+		// See bug 77
+		nodeConfig.register("outputBandwidthLimit", "15K", 3, false, 
+				"Output bandwidth limit", "Hard output bandwidth limit (bytes/sec); the node should almost never exceed this", 
+				new IntCallback() {
 					public int get() {
 						return BlockTransmitter.getHardBandwidthLimit();
 					}
 					public void set(int val) throws InvalidConfigValueException {
 						BlockTransmitter.setHardBandwidthLimit(val);
 					}
-        });
-        
-        int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
-        BlockTransmitter.setHardBandwidthLimit(obwLimit);
-        // FIXME add an averaging/long-term/soft bandwidth limit. (bug 76)
-        // There is already untested support for this in BlockTransmitter.
-        // No long-term limit for now.
-        BlockTransmitter.setSoftBandwidthLimit(0, 0);
-        
-        // SwapRequestInterval
-        
-        nodeConfig.register("swapRequestSendInterval", 2000, 4, true,
-        		"Swap request send interval (ms)", "Interval between swap attempting to send swap requests in milliseconds. Leave this alone!",
-        		new IntCallback() {
+		});
+		
+		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
+		BlockTransmitter.setHardBandwidthLimit(obwLimit);
+		// FIXME add an averaging/long-term/soft bandwidth limit. (bug 76)
+		// There is already untested support for this in BlockTransmitter.
+		// No long-term limit for now.
+		BlockTransmitter.setSoftBandwidthLimit(0, 0);
+		
+		// SwapRequestInterval
+		
+		nodeConfig.register("swapRequestSendInterval", 2000, 4, true,
+				"Swap request send interval (ms)", "Interval between swap attempting to send swap requests in milliseconds. Leave this alone!",
+				new IntCallback() {
 					public int get() {
 						return swapInterval.fixedInterval;
 					}
 					public void set(int val) throws InvalidConfigValueException {
 						swapInterval.set(val);
 					}
-        });
-        
-        swapInterval = new StaticSwapRequestInterval(nodeConfig.getInt("swapRequestSendInterval"));
-        
-        // Testnet.
-        // Cannot be enabled/disabled on the fly.
-        // If enabled, forces certain other config options.
-        
-        if((testnetHandler = TestnetHandler.maybeCreate(this, config)) != null) {
-        	String msg = "WARNING: ENABLING TESTNET CODE! This WILL seriously jeopardize your anonymity!";
-    		Logger.error(this, msg);
-    		System.err.println(msg);
-        	testnetEnabled = true;
-        	if(logConfigHandler.getFileLoggerHook() == null) {
-        		System.err.println("Forcing logging enabled (essential for testnet)");
-        		logConfigHandler.forceEnableLogging();
-        	}
-        	int x = Logger.globalGetThreshold();
-        	if(!(x == Logger.MINOR || x == Logger.DEBUG)) {
-        		System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
-        		Logger.globalSetThreshold(Logger.MINOR);
-        	}
-        	if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
-        		System.err.println("Forcing max zipped logfiles space to 256MB for testnet");
-        		try {
+		});
+		
+		swapInterval = new StaticSwapRequestInterval(nodeConfig.getInt("swapRequestSendInterval"));
+		
+		// Testnet.
+		// Cannot be enabled/disabled on the fly.
+		// If enabled, forces certain other config options.
+		
+		if((testnetHandler = TestnetHandler.maybeCreate(this, config)) != null) {
+			String msg = "WARNING: ENABLING TESTNET CODE! This WILL seriously jeopardize your anonymity!";
+			Logger.error(this, msg);
+			System.err.println(msg);
+			testnetEnabled = true;
+			if(logConfigHandler.getFileLoggerHook() == null) {
+				System.err.println("Forcing logging enabled (essential for testnet)");
+				logConfigHandler.forceEnableLogging();
+			}
+			int x = Logger.globalGetThreshold();
+			if(!(x == Logger.MINOR || x == Logger.DEBUG)) {
+				System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
+				Logger.globalSetThreshold(Logger.MINOR);
+			}
+			if(logConfigHandler.getMaxZippedLogFiles() < TESTNET_MIN_MAX_ZIPPED_LOGFILES) {
+				System.err.println("Forcing max zipped logfiles space to 256MB for testnet");
+				try {
 					logConfigHandler.setMaxZippedLogFiles(TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING);
 				} catch (InvalidConfigValueException e) {
 					throw new Error("Impossible: "+e);
 				}
-        	}
-        } else {
-        	String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
-        		"Note that while we no longer have explicit back-doors enabled, this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
-        		"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE DARKNET PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
-        	Logger.normal(this, s);
-        	System.err.println(s);
-        	testnetEnabled = false;
-        	FileLoggerHook flh = logConfigHandler.getFileLoggerHook();
-        	if(flh != null) flh.deleteAllOldLogFiles();
-        }
-        
-        if(wasTestnet != testnetEnabled) {
-        	Logger.error(this, "Switched from testnet mode to non-testnet mode or vice versa! Regenerating pubkey, privkey, and deleting logs.");
-            this.myCryptoGroup = Global.DSAgroupBigA;
-            this.myPrivKey = new DSAPrivateKey(myCryptoGroup, random);
-            this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
-        	
-        	
-        }
+			}
+		} else {
+			String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
+				"Note that while we no longer have explicit back-doors enabled, this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
+				"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE DARKNET PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
+			Logger.normal(this, s);
+			System.err.println(s);
+			testnetEnabled = false;
+			FileLoggerHook flh = logConfigHandler.getFileLoggerHook();
+			if(flh != null) flh.deleteAllOldLogFiles();
+		}
+		
+		if(wasTestnet != testnetEnabled) {
+			Logger.error(this, "Switched from testnet mode to non-testnet mode or vice versa! Regenerating pubkey, privkey, and deleting logs.");
+			this.myCryptoGroup = Global.DSAgroupBigA;
+			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, random);
+			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
+			
+			
+		}
 
-        // Directory for node-related files other than store
-        
-        nodeConfig.register("nodeDir", ".", 6, true, "Node directory", "Name of directory to put node-related files e.g. peers list in", 
-        		new StringCallback() {
+		// Directory for node-related files other than store
+		
+		nodeConfig.register("nodeDir", ".", 6, true, "Node directory", "Name of directory to put node-related files e.g. peers list in", 
+				new StringCallback() {
 					public String get() {
 						return nodeDir.getPath();
 					}
@@ -1165,44 +1165,44 @@ public class Node {
 						// FIXME
 						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
 					}
-        });
-        
-        nodeDir = new File(nodeConfig.getString("nodeDir"));
-        if(!((nodeDir.exists() && nodeDir.isDirectory()) || (nodeDir.mkdir()))) {
-        	String msg = "Could not find or create datastore directory";
-        	throw new NodeInitException(EXIT_BAD_NODE_DIR, msg);
-        }
+		});
+		
+		nodeDir = new File(nodeConfig.getString("nodeDir"));
+		if(!((nodeDir.exists() && nodeDir.isDirectory()) || (nodeDir.mkdir()))) {
+			String msg = "Could not find or create datastore directory";
+			throw new NodeInitException(EXIT_BAD_NODE_DIR, msg);
+		}
 
-        // After we have set up testnet and IP address, load the node file
-        try {
-        	// FIXME should take file directly?
-        	readNodeFile(new File(nodeDir, "node-"+portNumber).getPath(), random);
-        } catch (IOException e) {
-            try {
-                readNodeFile(new File("node-"+portNumber+".bak").getPath(), random);
-            } catch (IOException e1) {
-                initNodeFileSettings(random);
-            }
-        }
+		// After we have set up testnet and IP address, load the node file
+		try {
+			// FIXME should take file directly?
+			readNodeFile(new File(nodeDir, "node-"+portNumber).getPath(), random);
+		} catch (IOException e) {
+			try {
+				readNodeFile(new File("node-"+portNumber+".bak").getPath(), random);
+			} catch (IOException e1) {
+				initNodeFileSettings(random);
+			}
+		}
 
 		// Prepare the ARKFetchManager
 		arkFetchManager = new ARKFetchManager(this);
 
-        // Then read the peers
-        peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
-        peers.writePeers();
-        peers.updatePMUserAlert();
-        nodePinger = new NodePinger(this);
+		// Then read the peers
+		peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
+		peers.writePeers();
+		peers.updatePMUserAlert();
+		nodePinger = new NodePinger(this);
 
-        usm.setDispatcher(dispatcher=new NodeDispatcher(this));
-        usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
-        
-        buildOldAgeUserAlert = new BuildOldAgeUserAlert();
+		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
+		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
+		
+		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
 
-        // Temp files
-        
-        nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), 6, true, "Temp files directory", "Name of directory to put temporary files in", 
-        		new StringCallback() {
+		// Temp files
+		
+		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), 6, true, "Temp files directory", "Name of directory to put temporary files in", 
+				new StringCallback() {
 					public String get() {
 						return tempDir.getPath();
 					}
@@ -1211,23 +1211,23 @@ public class Node {
 						// FIXME
 						throw new InvalidConfigValueException("Moving temp directory on the fly not supported at present");
 					}
-        });
-        
-        tempDir = new File(nodeConfig.getString("tempDir"));
-        if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
-        	String msg = "Could not find or create temporary directory";
-        	throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
-        }
-        
-        try {
+		});
+		
+		tempDir = new File(nodeConfig.getString("tempDir"));
+		if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
+			String msg = "Could not find or create temporary directory";
+			throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
+		}
+		
+		try {
 			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
 		} catch (IOException e) {
-        	String msg = "Could not find or create temporary directory (filename generator)";
-        	throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
+			String msg = "Could not find or create temporary directory (filename generator)";
+			throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
 		}
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
 
-        // Persistent temp files
+		// Persistent temp files
 		
 		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), 7, true, "Persistent temp files directory", "Name of directory to put persistent temp files in",
 				new StringCallback() {
@@ -1244,14 +1244,14 @@ public class Node {
 		try {
 			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random);
 		} catch (IOException e2) {
-        	String msg = "Could not find or create persistent temporary directory";
-        	throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
+			String msg = "Could not find or create persistent temporary directory";
+			throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
 		}
 		
-        // Datastore
-        
-        nodeConfig.register("storeSize", "1G", 8, false, "Store size in bytes", "Store size in bytes", 
-        		new LongCallback() {
+		// Datastore
+		
+		nodeConfig.register("storeSize", "1G", 8, false, "Store size in bytes", "Store size in bytes", 
+				new LongCallback() {
 
 					public long get() {
 						return maxStoreKeys * sizePerKey;
@@ -1268,18 +1268,18 @@ public class Node {
 						sskDatastore.setMaxKeys(maxStoreKeys);
 						pubKeyDatastore.setMaxKeys(maxStoreKeys);
 					}
-        });
-        
-        long storeSize = nodeConfig.getLong("storeSize");
-        
-        if(/*storeSize < 0 || */storeSize < (32 * 1024 * 1024)) { // totally arbitrary minimum!
-        	throw new NodeInitException(EXIT_INVALID_STORE_SIZE, "Invalid store size");
-        }
+		});
+		
+		long storeSize = nodeConfig.getLong("storeSize");
+		
+		if(/*storeSize < 0 || */storeSize < (32 * 1024 * 1024)) { // totally arbitrary minimum!
+			throw new NodeInitException(EXIT_INVALID_STORE_SIZE, "Invalid store size");
+		}
 
-        maxStoreKeys = storeSize / sizePerKey;
-        
-        nodeConfig.register("storeDir", ".", 9, true, "Store directory", "Name of directory to put store files in", 
-        		new StringCallback() {
+		maxStoreKeys = storeSize / sizePerKey;
+		
+		nodeConfig.register("storeDir", ".", 9, true, "Store directory", "Name of directory to put store files in", 
+				new StringCallback() {
 					public String get() {
 						return storeDir.getPath();
 					}
@@ -1288,44 +1288,44 @@ public class Node {
 						// FIXME
 						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
 					}
-        });
-        
-        storeDir = new File(nodeConfig.getString("storeDir"));
-        if(!((storeDir.exists() && storeDir.isDirectory()) || (storeDir.mkdir()))) {
-        	String msg = "Could not find or create datastore directory";
-        	throw new NodeInitException(EXIT_STORE_OTHER, msg);
-        }
+		});
+		
+		storeDir = new File(nodeConfig.getString("storeDir"));
+		if(!((storeDir.exists() && storeDir.isDirectory()) || (storeDir.mkdir()))) {
+			String msg = "Could not find or create datastore directory";
+			throw new NodeInitException(EXIT_STORE_OTHER, msg);
+		}
 
-        try {
-            Logger.normal(this, "Initializing CHK Datastore");
-            System.out.println("Initializing CHK Datastore");
-            chkDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH);
-            Logger.normal(this, "Initializing SSK Datastore");
-            System.out.println("Initializing SSK Datastore");
-            sskDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH);
-            Logger.normal(this, "Initializing pubKey Datastore");
-            System.out.println("Initializing pubKey Datastore");
-            pubKeyDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0);
-        } catch (FileNotFoundException e1) {
-        	String msg = "Could not open datastore: "+e1;
-            Logger.error(this, msg, e1);
-            System.err.println(msg);
-            throw new NodeInitException(EXIT_STORE_FILE_NOT_FOUND, msg);
-        } catch (IOException e1) {
-        	String msg = "Could not open datastore: "+e1;
-            Logger.error(this, msg, e1);
-            System.err.println(msg);
-            throw new NodeInitException(EXIT_STORE_IOEXCEPTION, msg);
-        } catch (Exception e1) {
-        	String msg = "Could not open datastore: "+e1;
-            Logger.error(this, msg, e1);
-            System.err.println(msg);
-            throw new NodeInitException(EXIT_STORE_OTHER, msg);
-        }
-        
-        // Downloads directory
-        
-        nodeConfig.register("downloadsDir", "downloads", 10, false, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
+		try {
+			Logger.normal(this, "Initializing CHK Datastore");
+			System.out.println("Initializing CHK Datastore");
+			chkDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH);
+			Logger.normal(this, "Initializing SSK Datastore");
+			System.out.println("Initializing SSK Datastore");
+			sskDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH);
+			Logger.normal(this, "Initializing pubKey Datastore");
+			System.out.println("Initializing pubKey Datastore");
+			pubKeyDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0);
+		} catch (FileNotFoundException e1) {
+			String msg = "Could not open datastore: "+e1;
+			Logger.error(this, msg, e1);
+			System.err.println(msg);
+			throw new NodeInitException(EXIT_STORE_FILE_NOT_FOUND, msg);
+		} catch (IOException e1) {
+			String msg = "Could not open datastore: "+e1;
+			Logger.error(this, msg, e1);
+			System.err.println(msg);
+			throw new NodeInitException(EXIT_STORE_IOEXCEPTION, msg);
+		} catch (Exception e1) {
+			String msg = "Could not open datastore: "+e1;
+			Logger.error(this, msg, e1);
+			System.err.println(msg);
+			throw new NodeInitException(EXIT_STORE_OTHER, msg);
+		}
+		
+		// Downloads directory
+		
+		nodeConfig.register("downloadsDir", "downloads", 10, false, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
 
 			public String get() {
 				return downloadDir.getPath();
@@ -1335,31 +1335,31 @@ public class Node {
 				if(downloadDir.equals(new File(val)))
 					return;
 				File f = new File(val);
-		        if(!((f.exists() && f.isDirectory()) || (f.mkdir()))) {
-		        	throw new InvalidConfigValueException("Could not find or create directory");
-		        }
+				if(!((f.exists() && f.isDirectory()) || (f.mkdir()))) {
+					throw new InvalidConfigValueException("Could not find or create directory");
+				}
 				downloadDir = new File(val);
 			}
-        	
-        });
-        
-        String val = nodeConfig.getString("downloadsDir");
-        downloadDir = new File(val);
-        if(!((downloadDir.exists() && downloadDir.isDirectory()) || (downloadDir.mkdir()))) {
-        	throw new NodeInitException(EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
-        }
+			
+		});
+		
+		String val = nodeConfig.getString("downloadsDir");
+		downloadDir = new File(val);
+		if(!((downloadDir.exists() && downloadDir.isDirectory()) || (downloadDir.mkdir()))) {
+			throw new NodeInitException(EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
+		}
 
-        // Name
-        nodeConfig.register("name", myName, 11, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
-        		new NodeNameCallback(this));
-        nodeNameUserAlert = new MeaningfulNodeNameUserAlert();
-        myName = nodeConfig.getString("name");
-         
-        nodeConfig.finishedInitialization();
-        writeNodeFile();
-        
-        // FIXME make all the below arbitrary constants configurable!
-        
+		// Name
+		nodeConfig.register("name", myName, 11, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
+				new NodeNameCallback(this));
+		nodeNameUserAlert = new MeaningfulNodeNameUserAlert();
+		myName = nodeConfig.getString("name");
+		 
+		nodeConfig.finishedInitialization();
+		writeNodeFile();
+		
+		// FIXME make all the below arbitrary constants configurable!
+		
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
 		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request");
 		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "CHK Request starter ("+portNumber+")");
@@ -1387,13 +1387,13 @@ public class Node {
 		sskInsertStarter.setScheduler(sskPutScheduler);
 		sskInsertStarter.start();
 
-    Logger.normal(this, "Initializing USK Manager");
-    System.out.println("Initializing USK Manager");
+	Logger.normal(this, "Initializing USK Manager");
+	System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);
 		
 		// And finally, Initialize the plugin manager
-    Logger.normal(this, "Initializing Plugin Manager");
-    System.out.println("Initializing Plugin Manager");
+	Logger.normal(this, "Initializing Plugin Manager");
+	System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
 		
 		FetcherContext ctx = makeClient((short)0).getFetcherContext();
@@ -1408,9 +1408,9 @@ public class Node {
 		ctx.maxTempLength = 4096;
 		
 		this.arkFetcherContext = ctx;
-    Logger.normal(this, "Node constructor completed");
-    System.out.println("Node constructor completed");
-    }
+	Logger.normal(this, "Node constructor completed");
+	System.out.println("Node constructor completed");
+	}
 	
 	static final String ERROR_SUN_NPTL = 
 		"WARNING: Your system appears to be running a Sun JVM with NPTL. " +
@@ -1422,36 +1422,36 @@ public class Node {
 		"Note that the node will try to automatically restart the node in the event of such a deadlock, " +
 		"but this will cause some disruption, and may not be 100% reliable.";
 	
-    void start(boolean noSwaps) throws NodeInitException {
-        if(!noSwaps)
-            lm.startSender(this, this.swapInterval);
-        dnsr.start();
-        ps.start();
-        usm.start();
-        
-        if(isUsingWrapper()) {
-            Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
-            System.out.println("Using wrapper correctly: "+nodeStarter);
-        } else {
-            Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
-            System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
-        }
-        Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-        System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-        Logger.normal(this, "FNP port is on "+bindto+":"+portNumber);
-        System.out.println("FNP port is on "+bindto+":"+portNumber);
-        // Start services
-        
-        // TMCI
-        try{
-        	TextModeClientInterfaceServer.maybeCreate(this, config);
-        } catch (IOException e) {
+	void start(boolean noSwaps) throws NodeInitException {
+		if(!noSwaps)
+			lm.startSender(this, this.swapInterval);
+		dnsr.start();
+		ps.start();
+		usm.start();
+		
+		if(isUsingWrapper()) {
+			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
+			System.out.println("Using wrapper correctly: "+nodeStarter);
+		} else {
+			Logger.error(this, "NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
+			System.out.println("NOT using wrapper (at least not correctly).  Your freenet-ext.jar <http://downloads.freenetproject.org/alpha/freenet-ext.jar> and/or wrapper.conf <https://emu.freenetproject.org/svn/trunk/apps/installer/installclasspath/config/wrapper.conf> need to be updated.");
+		}
+		Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
+		System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
+		Logger.normal(this, "FNP port is on "+bindto+":"+portNumber);
+		System.out.println("FNP port is on "+bindto+":"+portNumber);
+		// Start services
+		
+		// TMCI
+		try{
+			TextModeClientInterfaceServer.maybeCreate(this, config);
+		} catch (IOException e) {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
 		}
-        
-        // FCP (including persistent requests so needs to start before FProxy)
-        try {
+		
+		// FCP (including persistent requests so needs to start before FProxy)
+		try {
 			fcpServer = FCPServer.maybeCreate(this, config);
 		} catch (IOException e) {
 			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
@@ -1462,48 +1462,48 @@ public class Node {
 		bookmarkManager = new BookmarkManager(this);
 		pluginManager2 = new freenet.plugin.PluginManager(this);
 		
-        
-        // FProxy
-        // FIXME this is a hack, the real way to do this is plugins
-        try {
+		
+		// FProxy
+		// FIXME this is a hack, the real way to do this is plugins
+		try {
 			FProxyToadlet.maybeCreateFProxyEtc(this, config);
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
 		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);			
+			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
 		}
 
-        // Node Updater
+		// Node Updater
 		try{
 			nodeUpdater = NodeUpdater.maybeCreate(this, config);
 			Logger.normal(this, "Starting the node updater");
-        }catch (Exception e) {
+		}catch (Exception e) {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_UPDATER, "Could not start Updater: "+e);
 		}
 		
 		/*
-        SimpleToadletServer server = new SimpleToadletServer(port+2000);
-        FProxyToadlet fproxy = new FProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
-        PProxyToadlet pproxy = new PProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
-        server.register(fproxy, "/", false);
-        server.register(pproxy, "/plugins/", true);
+		SimpleToadletServer server = new SimpleToadletServer(port+2000);
+		FProxyToadlet fproxy = new FProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
+		PProxyToadlet pproxy = new PProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS), n.pluginManager);
+		server.register(fproxy, "/", false);
+		server.register(pproxy, "/plugins/", true);
 		 * */
-        
-        // After everything has been created, write the config file back to disk.
-        config.finishedInit();
-        config.store();
-        
-        // Start testnet handler
+		
+		// After everything has been created, write the config file back to disk.
+		config.finishedInit();
+		config.store();
+		
+		// Start testnet handler
 		if(testnetHandler != null)
 			testnetHandler.start();
 		
-        persistentTempBucketFactory.completedInit();
+		persistentTempBucketFactory.completedInit();
 
-        redetectAddress();
-        shouldInsertARK();
-        
+		redetectAddress();
+		shouldInsertARK();
+		
 		Thread t = new Thread(ipDetector, "IP address re-detector");
 		t.setDaemon(true);
 		t.start();
@@ -1578,634 +1578,634 @@ public class Node {
 			}
 		}
 		
-    }
-    
-    private void shouldInsertARK() {
-    	if(arkPutter!=null) arkPutter.update();
+	}
+	
+	private void shouldInsertARK() {
+		if(arkPutter!=null) arkPutter.update();
 	}
 
 	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
-    	if(key instanceof ClientCHK)
-    		return realGetCHK((ClientCHK)key, localOnly, cache, ignoreStore);
-    	else if(key instanceof ClientSSK)
-    		return realGetSSK((ClientSSK)key, localOnly, cache, ignoreStore);
-    	else
-    		throw new IllegalArgumentException("Not a CHK or SSK: "+key);
-    }
-    
-    /**
-     * Really trivially simple client interface.
-     * Either it succeeds or it doesn't.
-     */
-    ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
-    	long startTime = System.currentTimeMillis();
-    	long uid = random.nextLong();
-        if(!lockUID(uid)) {
-            Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
-            throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-        }
-        Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache, ignoreStore);
-        if(o instanceof CHKBlock) {
-            try {
-                return new ClientCHKBlock((CHKBlock)o, key);
-            } catch (CHKVerifyException e) {
-                Logger.error(this, "Does not verify: "+e, e);
-                throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
-            }
-        }
-        if(o == null) {
-        	throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
-        }
-        RequestSender rs = (RequestSender)o;
-        boolean rejectedOverload = false;
-        while(true) {
-        	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
-        		// See below; inserts count both
-        		throttleWindow.rejectedOverload();
-        		rejectedOverload = true;
-        	}
+		if(key instanceof ClientCHK)
+			return realGetCHK((ClientCHK)key, localOnly, cache, ignoreStore);
+		else if(key instanceof ClientSSK)
+			return realGetSSK((ClientSSK)key, localOnly, cache, ignoreStore);
+		else
+			throw new IllegalArgumentException("Not a CHK or SSK: "+key);
+	}
+	
+	/**
+	 * Really trivially simple client interface.
+	 * Either it succeeds or it doesn't.
+	 */
+	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
+		long startTime = System.currentTimeMillis();
+		long uid = random.nextLong();
+		if(!lockUID(uid)) {
+			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+		}
+		Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache, ignoreStore);
+		if(o instanceof CHKBlock) {
+			try {
+				return new ClientCHKBlock((CHKBlock)o, key);
+			} catch (CHKVerifyException e) {
+				Logger.error(this, "Does not verify: "+e, e);
+				throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
+			}
+		}
+		if(o == null) {
+			throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
+		}
+		RequestSender rs = (RequestSender)o;
+		boolean rejectedOverload = false;
+		while(true) {
+			if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
+				// See below; inserts count both
+				throttleWindow.rejectedOverload();
+				rejectedOverload = true;
+			}
 
-        	int status = rs.getStatus();
-        	
-        	if(status == RequestSender.NOT_FINISHED) 
-        		continue;
-        	
-        	if(status == RequestSender.TIMED_OUT ||
-        			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
-        		if(!rejectedOverload) {
-        			// See below
-        			throttleWindow.rejectedOverload();
-        			rejectedOverload = true;
-        		}
-        	} else {
-        		if(status == RequestSender.DATA_NOT_FOUND ||
-        				status == RequestSender.SUCCESS ||
-        				status == RequestSender.ROUTE_NOT_FOUND ||
-        				status == RequestSender.VERIFY_FAILURE) {
-        			long rtt = System.currentTimeMillis() - startTime;
-        			throttleWindow.requestCompleted();
-        			chkRequestThrottle.successfulCompletion(rtt);
-        		}
-        	}
-        	
-        	if(rs.getStatus() == RequestSender.SUCCESS) {
-        		try {
-        			return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
-        		} catch (CHKVerifyException e) {
-        			Logger.error(this, "Does not verify: "+e, e);
-        			throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);                
-        		} catch (AbortedException e) {
-        			Logger.error(this, "Impossible: "+e, e);
-        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-        		}
-        	} else {
-        		switch(rs.getStatus()) {
-        		case RequestSender.NOT_FINISHED:
-        			Logger.error(this, "RS still running in getCHK!: "+rs);
-        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-        		case RequestSender.DATA_NOT_FOUND:
-        			throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
-        		case RequestSender.ROUTE_NOT_FOUND:
-        			throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
-        		case RequestSender.TRANSFER_FAILED:
-        			throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
-        		case RequestSender.VERIFY_FAILURE:
-        			throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
-        		case RequestSender.GENERATED_REJECTED_OVERLOAD:
-        		case RequestSender.TIMED_OUT:
-        			throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
-        		case RequestSender.INTERNAL_ERROR:
-        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-        		default:
-        			Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
-        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-        		}
-        	}
-        }
-    }
+			int status = rs.getStatus();
+			
+			if(status == RequestSender.NOT_FINISHED) 
+				continue;
+			
+			if(status == RequestSender.TIMED_OUT ||
+					status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
+				if(!rejectedOverload) {
+					// See below
+					throttleWindow.rejectedOverload();
+					rejectedOverload = true;
+				}
+			} else {
+				if(status == RequestSender.DATA_NOT_FOUND ||
+						status == RequestSender.SUCCESS ||
+						status == RequestSender.ROUTE_NOT_FOUND ||
+						status == RequestSender.VERIFY_FAILURE) {
+					long rtt = System.currentTimeMillis() - startTime;
+					throttleWindow.requestCompleted();
+					chkRequestThrottle.successfulCompletion(rtt);
+				}
+			}
+			
+			if(rs.getStatus() == RequestSender.SUCCESS) {
+				try {
+					return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
+				} catch (CHKVerifyException e) {
+					Logger.error(this, "Does not verify: "+e, e);
+					throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
+				} catch (AbortedException e) {
+					Logger.error(this, "Impossible: "+e, e);
+					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+				}
+			} else {
+				switch(rs.getStatus()) {
+				case RequestSender.NOT_FINISHED:
+					Logger.error(this, "RS still running in getCHK!: "+rs);
+					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+				case RequestSender.DATA_NOT_FOUND:
+					throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
+				case RequestSender.ROUTE_NOT_FOUND:
+					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
+				case RequestSender.TRANSFER_FAILED:
+					throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
+				case RequestSender.VERIFY_FAILURE:
+					throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
+				case RequestSender.GENERATED_REJECTED_OVERLOAD:
+				case RequestSender.TIMED_OUT:
+					throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
+				case RequestSender.INTERNAL_ERROR:
+					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+				default:
+					Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
+					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+				}
+			}
+		}
+	}
 
-    /**
-     * Really trivially simple client interface.
-     * Either it succeeds or it doesn't.
-     */
-    ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
-    	long startTime = System.currentTimeMillis();
-    	long uid = random.nextLong();
-        if(!lockUID(uid)) {
-            Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
-            throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-        }
-        Object o = makeRequestSender(key.getNodeKey(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache, ignoreStore);
-        if(o instanceof SSKBlock) {
-            try {
-            	SSKBlock block = (SSKBlock)o;
-            	key.setPublicKey(block.getPubKey());
-                return new ClientSSKBlock(block, key);
-            } catch (SSKVerifyException e) {
-                Logger.error(this, "Does not verify: "+e, e);
-                throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
-            }
-        }
-        if(o == null) {
-        	throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
-        }
-        RequestSender rs = (RequestSender)o;
-        boolean rejectedOverload = false;
-        while(true) {
-        	if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
-        		throttleWindow.rejectedOverload();
-        		rejectedOverload = true;
-        	}
+	/**
+	 * Really trivially simple client interface.
+	 * Either it succeeds or it doesn't.
+	 */
+	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
+		long startTime = System.currentTimeMillis();
+		long uid = random.nextLong();
+		if(!lockUID(uid)) {
+			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+		}
+		Object o = makeRequestSender(key.getNodeKey(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache, ignoreStore);
+		if(o instanceof SSKBlock) {
+			try {
+				SSKBlock block = (SSKBlock)o;
+				key.setPublicKey(block.getPubKey());
+				return new ClientSSKBlock(block, key);
+			} catch (SSKVerifyException e) {
+				Logger.error(this, "Does not verify: "+e, e);
+				throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
+			}
+		}
+		if(o == null) {
+			throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
+		}
+		RequestSender rs = (RequestSender)o;
+		boolean rejectedOverload = false;
+		while(true) {
+			if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
+				throttleWindow.rejectedOverload();
+				rejectedOverload = true;
+			}
 
-        	int status = rs.getStatus();
-        	
-        	if(status == RequestSender.NOT_FINISHED) 
-        		continue;
-        	
-        	if(status == RequestSender.TIMED_OUT ||
-        			status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
-        		if(!rejectedOverload) {
-        			throttleWindow.rejectedOverload();
-        			rejectedOverload = true;
-        		}
-        	} else {
-        		if(status == RequestSender.DATA_NOT_FOUND ||
-        				status == RequestSender.SUCCESS ||
-        				status == RequestSender.ROUTE_NOT_FOUND ||
-        				status == RequestSender.VERIFY_FAILURE) {
-        			long rtt = System.currentTimeMillis() - startTime;
-        			throttleWindow.requestCompleted();
-        			sskRequestThrottle.successfulCompletion(rtt);
-        		}
-        	}
-        	
-        	if(rs.getStatus() == RequestSender.SUCCESS) {
-        		try {
-        			SSKBlock block = rs.getSSKBlock();
-        			key.setPublicKey(block.getPubKey());
-        			return new ClientSSKBlock(block, key);
-        		} catch (SSKVerifyException e) {
-        			Logger.error(this, "Does not verify: "+e, e);
-        			throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);                
-        		}
-        	} else {
-        		switch(rs.getStatus()) {
-        		case RequestSender.NOT_FINISHED:
-        			Logger.error(this, "RS still running in getCHK!: "+rs);
-        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-        		case RequestSender.DATA_NOT_FOUND:
-        			throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
-        		case RequestSender.ROUTE_NOT_FOUND:
-        			throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
-        		case RequestSender.TRANSFER_FAILED:
-        			Logger.error(this, "WTF? Transfer failed on an SSK? on "+uid);
-        			throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
-        		case RequestSender.VERIFY_FAILURE:
-        			throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
-        		case RequestSender.GENERATED_REJECTED_OVERLOAD:
-        		case RequestSender.TIMED_OUT:
-        			throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
-        		case RequestSender.INTERNAL_ERROR:
-        		default:
-        			Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
-        			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-        		}
-        	}
-        }
-    }
+			int status = rs.getStatus();
+			
+			if(status == RequestSender.NOT_FINISHED) 
+				continue;
+			
+			if(status == RequestSender.TIMED_OUT ||
+					status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
+				if(!rejectedOverload) {
+					throttleWindow.rejectedOverload();
+					rejectedOverload = true;
+				}
+			} else {
+				if(status == RequestSender.DATA_NOT_FOUND ||
+						status == RequestSender.SUCCESS ||
+						status == RequestSender.ROUTE_NOT_FOUND ||
+						status == RequestSender.VERIFY_FAILURE) {
+					long rtt = System.currentTimeMillis() - startTime;
+					throttleWindow.requestCompleted();
+					sskRequestThrottle.successfulCompletion(rtt);
+				}
+			}
+			
+			if(rs.getStatus() == RequestSender.SUCCESS) {
+				try {
+					SSKBlock block = rs.getSSKBlock();
+					key.setPublicKey(block.getPubKey());
+					return new ClientSSKBlock(block, key);
+				} catch (SSKVerifyException e) {
+					Logger.error(this, "Does not verify: "+e, e);
+					throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
+				}
+			} else {
+				switch(rs.getStatus()) {
+				case RequestSender.NOT_FINISHED:
+					Logger.error(this, "RS still running in getCHK!: "+rs);
+					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+				case RequestSender.DATA_NOT_FOUND:
+					throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
+				case RequestSender.ROUTE_NOT_FOUND:
+					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
+				case RequestSender.TRANSFER_FAILED:
+					Logger.error(this, "WTF? Transfer failed on an SSK? on "+uid);
+					throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
+				case RequestSender.VERIFY_FAILURE:
+					throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
+				case RequestSender.GENERATED_REJECTED_OVERLOAD:
+				case RequestSender.TIMED_OUT:
+					throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
+				case RequestSender.INTERNAL_ERROR:
+				default:
+					Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
+					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
+				}
+			}
+		}
+	}
 
-    public void realPut(ClientKeyBlock block, boolean cache) throws LowLevelPutException {
-    	if(block instanceof ClientCHKBlock)
-    		realPutCHK((ClientCHKBlock)block, cache);
-    	else if(block instanceof ClientSSKBlock)
-    		realPutSSK((ClientSSKBlock)block, cache);
-    	else
-    		throw new IllegalArgumentException("Unknown put type "+block.getClass());
-    }
-    
-    public void realPutCHK(ClientCHKBlock block, boolean cache) throws LowLevelPutException {
-        byte[] data = block.getData();
-        byte[] headers = block.getHeaders();
-        PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
-        CHKInsertSender is;
-        long uid = random.nextLong();
-        if(!lockUID(uid)) {
-            Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
-            throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        }
-        long startTime = System.currentTimeMillis();
-        synchronized(this) {
-        	if(cache) {
-        		try {
-        			chkDatastore.put(block);
-        		} catch (IOException e) {
-        			Logger.error(this, "Datastore failure: "+e, e);
-        		}
-        	}
-            is = makeInsertSender((NodeCHK)block.getClientKey().getNodeKey(), 
-                    MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
-        }
-        boolean hasForwardedRejectedOverload = false;
-        // Wait for status
-        while(true) {
-        	synchronized(is) {
-        		if(is.getStatus() == CHKInsertSender.NOT_FINISHED) {
-        			try {
-        				is.wait(5*1000);
-        			} catch (InterruptedException e) {
-        				// Ignore
-        			}
-        		}
-        		if(is.getStatus() != CHKInsertSender.NOT_FINISHED) break;
-        	}
-    		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
-    			hasForwardedRejectedOverload = true;
-    			throttleWindow.rejectedOverload();
-    		}
-        }
-        
-        // Wait for completion
-        while(true) {
-        	synchronized(is) {
-        		if(is.completed()) break;
-        		try {
+	public void realPut(ClientKeyBlock block, boolean cache) throws LowLevelPutException {
+		if(block instanceof ClientCHKBlock)
+			realPutCHK((ClientCHKBlock)block, cache);
+		else if(block instanceof ClientSSKBlock)
+			realPutSSK((ClientSSKBlock)block, cache);
+		else
+			throw new IllegalArgumentException("Unknown put type "+block.getClass());
+	}
+	
+	public void realPutCHK(ClientCHKBlock block, boolean cache) throws LowLevelPutException {
+		byte[] data = block.getData();
+		byte[] headers = block.getHeaders();
+		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
+		CHKInsertSender is;
+		long uid = random.nextLong();
+		if(!lockUID(uid)) {
+			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+		}
+		long startTime = System.currentTimeMillis();
+		synchronized(this) {
+			if(cache) {
+				try {
+					chkDatastore.put(block);
+				} catch (IOException e) {
+					Logger.error(this, "Datastore failure: "+e, e);
+				}
+			}
+			is = makeInsertSender((NodeCHK)block.getClientKey().getNodeKey(), 
+					MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
+		}
+		boolean hasForwardedRejectedOverload = false;
+		// Wait for status
+		while(true) {
+			synchronized(is) {
+				if(is.getStatus() == CHKInsertSender.NOT_FINISHED) {
+					try {
+						is.wait(5*1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+				if(is.getStatus() != CHKInsertSender.NOT_FINISHED) break;
+			}
+			if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
+				hasForwardedRejectedOverload = true;
+				throttleWindow.rejectedOverload();
+			}
+		}
+		
+		// Wait for completion
+		while(true) {
+			synchronized(is) {
+				if(is.completed()) break;
+				try {
 					is.wait(10*1000);
 				} catch (InterruptedException e) {
 					// Go around again
 				}
-        	}
-    		if(is.anyTransfersFailed() && (!hasForwardedRejectedOverload)) {
-    			hasForwardedRejectedOverload = true; // not strictly true but same effect
-    			throttleWindow.rejectedOverload();
-    		}        		
-        }
-        
-        Logger.minor(this, "Completed "+uid+" overload="+hasForwardedRejectedOverload+" "+is.getStatusString());
-        
-        // Finished?
-        if(!hasForwardedRejectedOverload) {
-        	// Is it ours? Did we send a request?
-        	if(is.sentRequest() && is.uid == uid && (is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND 
-        			|| is.getStatus() == CHKInsertSender.SUCCESS)) {
-        		// It worked!
-        		long endTime = System.currentTimeMillis();
-        		long len = endTime - startTime;
-        		
-        		chkInsertThrottle.successfulCompletion(len);
-        		throttleWindow.requestCompleted();
-        	}
-        }
-        
-        if(is.getStatus() == CHKInsertSender.SUCCESS) {
-        	Logger.normal(this, "Succeeded inserting "+block);
-        	return;
-        } else {
-        	int status = is.getStatus();
-        	String msg = "Failed inserting "+block+" : "+is.getStatusString();
-        	if(status == CHKInsertSender.ROUTE_NOT_FOUND)
-        		msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
-        	if(is.getStatus() != CHKInsertSender.ROUTE_NOT_FOUND)
-        		Logger.error(this, msg);
-        	else
-        		Logger.normal(this, msg);
-        	switch(is.getStatus()) {
-        	case CHKInsertSender.NOT_FINISHED:
-        		Logger.error(this, "IS still running in putCHK!: "+is);
-        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        	case CHKInsertSender.GENERATED_REJECTED_OVERLOAD:
-        	case CHKInsertSender.TIMED_OUT:
-        		throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
-        	case CHKInsertSender.ROUTE_NOT_FOUND:
-        		throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
-        	case CHKInsertSender.ROUTE_REALLY_NOT_FOUND:
-        		throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
-        	case CHKInsertSender.INTERNAL_ERROR:
-        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        	default:
-        		Logger.error(this, "Unknown CHKInsertSender code in putCHK: "+is.getStatus()+" on "+is);
-    			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        	}
-        }
-    }
+			}
+			if(is.anyTransfersFailed() && (!hasForwardedRejectedOverload)) {
+				hasForwardedRejectedOverload = true; // not strictly true but same effect
+				throttleWindow.rejectedOverload();
+			}
+		}
+		
+		Logger.minor(this, "Completed "+uid+" overload="+hasForwardedRejectedOverload+" "+is.getStatusString());
+		
+		// Finished?
+		if(!hasForwardedRejectedOverload) {
+			// Is it ours? Did we send a request?
+			if(is.sentRequest() && is.uid == uid && (is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND 
+					|| is.getStatus() == CHKInsertSender.SUCCESS)) {
+				// It worked!
+				long endTime = System.currentTimeMillis();
+				long len = endTime - startTime;
+				
+				chkInsertThrottle.successfulCompletion(len);
+				throttleWindow.requestCompleted();
+			}
+		}
+		
+		if(is.getStatus() == CHKInsertSender.SUCCESS) {
+			Logger.normal(this, "Succeeded inserting "+block);
+			return;
+		} else {
+			int status = is.getStatus();
+			String msg = "Failed inserting "+block+" : "+is.getStatusString();
+			if(status == CHKInsertSender.ROUTE_NOT_FOUND)
+				msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
+			if(is.getStatus() != CHKInsertSender.ROUTE_NOT_FOUND)
+				Logger.error(this, msg);
+			else
+				Logger.normal(this, msg);
+			switch(is.getStatus()) {
+			case CHKInsertSender.NOT_FINISHED:
+				Logger.error(this, "IS still running in putCHK!: "+is);
+				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+			case CHKInsertSender.GENERATED_REJECTED_OVERLOAD:
+			case CHKInsertSender.TIMED_OUT:
+				throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
+			case CHKInsertSender.ROUTE_NOT_FOUND:
+				throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
+			case CHKInsertSender.ROUTE_REALLY_NOT_FOUND:
+				throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
+			case CHKInsertSender.INTERNAL_ERROR:
+				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+			default:
+				Logger.error(this, "Unknown CHKInsertSender code in putCHK: "+is.getStatus()+" on "+is);
+				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+			}
+		}
+	}
 
-    public void realPutSSK(ClientSSKBlock block, boolean cache) throws LowLevelPutException {
-        SSKInsertSender is;
-        long uid = random.nextLong();
-        if(!lockUID(uid)) {
-            Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
-            throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        }
-        long startTime = System.currentTimeMillis();
-        synchronized(this) {
-        	if(cache) {
-        		try {
-        			sskDatastore.put(block, false);
-        		} catch (IOException e) {
-        			Logger.error(this, "Datastore failure: "+e, e);
-        		} catch (KeyCollisionException e) {
-        			throw new LowLevelPutException(LowLevelPutException.COLLISION);
+	public void realPutSSK(ClientSSKBlock block, boolean cache) throws LowLevelPutException {
+		SSKInsertSender is;
+		long uid = random.nextLong();
+		if(!lockUID(uid)) {
+			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
+			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+		}
+		long startTime = System.currentTimeMillis();
+		synchronized(this) {
+			if(cache) {
+				try {
+					sskDatastore.put(block, false);
+				} catch (IOException e) {
+					Logger.error(this, "Datastore failure: "+e, e);
+				} catch (KeyCollisionException e) {
+					throw new LowLevelPutException(LowLevelPutException.COLLISION);
 				}
-        	}
-            is = makeInsertSender(block, 
-                    MAX_HTL, uid, null, false, lm.getLocation().getValue(), cache);
-        }
-        boolean hasForwardedRejectedOverload = false;
-        // Wait for status
-        while(true) {
-        	synchronized(is) {
-        		if(is.getStatus() == SSKInsertSender.NOT_FINISHED) {
-        			try {
-        				is.wait(5*1000);
-        			} catch (InterruptedException e) {
-        				// Ignore
-        			}
-        		}
-        		if(is.getStatus() != SSKInsertSender.NOT_FINISHED) break;
-        	}
-    		if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
-    			hasForwardedRejectedOverload = true;
-    			throttleWindow.rejectedOverload();
-    		}
-        }
-        
-        // Wait for completion
-        while(true) {
-        	synchronized(is) {
-        		if(is.getStatus() != SSKInsertSender.NOT_FINISHED) break;
-        		try {
+			}
+			is = makeInsertSender(block, 
+					MAX_HTL, uid, null, false, lm.getLocation().getValue(), cache);
+		}
+		boolean hasForwardedRejectedOverload = false;
+		// Wait for status
+		while(true) {
+			synchronized(is) {
+				if(is.getStatus() == SSKInsertSender.NOT_FINISHED) {
+					try {
+						is.wait(5*1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+				if(is.getStatus() != SSKInsertSender.NOT_FINISHED) break;
+			}
+			if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
+				hasForwardedRejectedOverload = true;
+				throttleWindow.rejectedOverload();
+			}
+		}
+		
+		// Wait for completion
+		while(true) {
+			synchronized(is) {
+				if(is.getStatus() != SSKInsertSender.NOT_FINISHED) break;
+				try {
 					is.wait(10*1000);
 				} catch (InterruptedException e) {
 					// Go around again
 				}
-        	}
-        }
-        
-        Logger.minor(this, "Completed "+uid+" overload="+hasForwardedRejectedOverload+" "+is.getStatusString());
-        
-        // Finished?
-        if(!hasForwardedRejectedOverload) {
-        	// Is it ours? Did we send a request?
-        	if(is.sentRequest() && is.uid == uid && (is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND 
-        			|| is.getStatus() == SSKInsertSender.SUCCESS)) {
-        		// It worked!
-        		long endTime = System.currentTimeMillis();
-        		long rtt = endTime - startTime;
-        		throttleWindow.requestCompleted();
-        		sskInsertThrottle.successfulCompletion(rtt);
-        	}
-        }
+			}
+		}
+		
+		Logger.minor(this, "Completed "+uid+" overload="+hasForwardedRejectedOverload+" "+is.getStatusString());
+		
+		// Finished?
+		if(!hasForwardedRejectedOverload) {
+			// Is it ours? Did we send a request?
+			if(is.sentRequest() && is.uid == uid && (is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND 
+					|| is.getStatus() == SSKInsertSender.SUCCESS)) {
+				// It worked!
+				long endTime = System.currentTimeMillis();
+				long rtt = endTime - startTime;
+				throttleWindow.requestCompleted();
+				sskInsertThrottle.successfulCompletion(rtt);
+			}
+		}
 
-        if(is.hasCollided()) {
-        	// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
-        	try {
-        		synchronized(this) {
-        			sskDatastore.put(is.getBlock(), true);
-        		}
+		if(is.hasCollided()) {
+			// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
+			try {
+				synchronized(this) {
+					sskDatastore.put(is.getBlock(), true);
+				}
 			} catch (KeyCollisionException e) {
 				// Impossible
 			} catch (IOException e) {
-    			Logger.error(this, "Datastore failure: "+e, e);
+				Logger.error(this, "Datastore failure: "+e, e);
 			}
-        	throw new LowLevelPutException(LowLevelPutException.COLLISION);
-        }
-        
-        if(is.getStatus() == SSKInsertSender.SUCCESS) {
-        	Logger.normal(this, "Succeeded inserting "+block);
-        	return;
-        } else {
-        	int status = is.getStatus();
-        	String msg = "Failed inserting "+block+" : "+is.getStatusString();
-        	if(status == CHKInsertSender.ROUTE_NOT_FOUND)
-        		msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
-        	if(is.getStatus() != SSKInsertSender.ROUTE_NOT_FOUND)
-        		Logger.error(this, msg);
-        	else
-        		Logger.normal(this, msg);
-        	switch(is.getStatus()) {
-        	case SSKInsertSender.NOT_FINISHED:
-        		Logger.error(this, "IS still running in putCHK!: "+is);
-        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        	case SSKInsertSender.GENERATED_REJECTED_OVERLOAD:
-        	case SSKInsertSender.TIMED_OUT:
-        		throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
-        	case SSKInsertSender.ROUTE_NOT_FOUND:
-        		throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
-        	case SSKInsertSender.ROUTE_REALLY_NOT_FOUND:
-        		throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
-        	case SSKInsertSender.INTERNAL_ERROR:
-        		throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        	default:
-        		Logger.error(this, "Unknown CHKInsertSender code in putSSK: "+is.getStatus()+" on "+is);
-    			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-        	}
-        }
-    }
+			throw new LowLevelPutException(LowLevelPutException.COLLISION);
+		}
+		
+		if(is.getStatus() == SSKInsertSender.SUCCESS) {
+			Logger.normal(this, "Succeeded inserting "+block);
+			return;
+		} else {
+			int status = is.getStatus();
+			String msg = "Failed inserting "+block+" : "+is.getStatusString();
+			if(status == CHKInsertSender.ROUTE_NOT_FOUND)
+				msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
+			if(is.getStatus() != SSKInsertSender.ROUTE_NOT_FOUND)
+				Logger.error(this, msg);
+			else
+				Logger.normal(this, msg);
+			switch(is.getStatus()) {
+			case SSKInsertSender.NOT_FINISHED:
+				Logger.error(this, "IS still running in putCHK!: "+is);
+				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+			case SSKInsertSender.GENERATED_REJECTED_OVERLOAD:
+			case SSKInsertSender.TIMED_OUT:
+				throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
+			case SSKInsertSender.ROUTE_NOT_FOUND:
+				throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
+			case SSKInsertSender.ROUTE_REALLY_NOT_FOUND:
+				throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
+			case SSKInsertSender.INTERNAL_ERROR:
+				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+			default:
+				Logger.error(this, "Unknown CHKInsertSender code in putSSK: "+is.getStatus()+" on "+is);
+				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
+			}
+		}
+	}
 
-    long lastAcceptedRequest = -1;
-    
-    long lastCheckedUncontended = -1;
-    
-    public synchronized boolean shouldRejectRequest(boolean canAcceptAnyway) {
-    	long now = System.currentTimeMillis();
-    	
-    	if(now - lastCheckedUncontended > 1000) {
-    		lastCheckedUncontended = now;
-    		if(BlockTransmitter.isUncontended()) {
-    			Logger.minor(this, "Reporting 0 because throttle uncontended: now "+throttledPacketSendAverage.currentValue());
-    			throttledPacketSendAverage.report(0);
-    			Logger.minor(this, "New average: "+throttledPacketSendAverage.currentValue());
-    		} else
-    			Logger.minor(this, "Not uncontended");
-    	}
-    	
-    	// Round trip time
-    	double pingTime = nodePinger.averagePingTime();
-    	if(pingTime > MAX_PING_TIME) {
-    		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
-    			Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-    			lastAcceptedRequest = now;
-    			return false;
-    		}
-    		Logger.minor( this, "shouldRejectRequest("+canAcceptAnyway+") == true because >MAX_PING_TIME");
-    		return true;
-    	}
-    	if(pingTime > SUB_MAX_PING_TIME) {
-    		double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
-    		if(random.nextDouble() < x) {
-    			Logger.minor( this, "shouldRejectRequest() == true because >SUB_MAX_PING_TIME");
-    			return true;
-    		}
-    	}
-    	
-    	// Bandwidth limited packets
-    	
-    	double bwlimitDelayTime = this.throttledPacketSendAverage.currentValue();
-    	Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
-    	if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
-    		if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
-    			Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-    			lastAcceptedRequest = now;
-    			return false;
-    		}
-    		Logger.minor( this, "shouldRejectRequest() == true because >MAX_THROTTLE_DELAY");
-    		return true;
-    	}
-    	if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
-    		double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
-    		if(random.nextDouble() < x) {
-    			Logger.minor( this, "shouldRejectRequest("+canAcceptAnyway+") == true because >SUB_MAX_THROTTLE_DELAY");
-    			return true;
-    		}
-    	}
-    	
-    	Logger.minor(this, "Accepting request");
-    	
-    	lastAcceptedRequest = now;
-    	return false;
-    }
-    
-    public SimpleFieldSet exportPrivateFieldSet() {
-    	SimpleFieldSet fs = exportPublicFieldSet();
-    	fs.put("dsaPrivKey", myPrivKey.asFieldSet());
-    	fs.put("ark.privURI", this.myARK.getInsertURI().toString(false));
-    	return fs;
-    }
-    
-    /**
-     * Export my reference so that another node can connect to me.
-     * @return
-     */
-    public SimpleFieldSet exportPublicFieldSet() {
-        SimpleFieldSet fs = new SimpleFieldSet(true);
-        FreenetInetAddress ip = getPrimaryIPAddress();
-        fs.put("base64", "true");
-        if(ip != null)
-        	fs.put("physical.udp", ip.toString()+":"+portNumber);
-        fs.put("identity", Base64.encode(myIdentity));
-        fs.put("location", Double.toString(lm.getLocation().getValue()));
-        fs.put("version", Version.getVersionString());
-        fs.put("testnet", Boolean.toString(testnetEnabled));
-        fs.put("lastGoodVersion", Version.getLastGoodVersionString());
-        if(testnetEnabled)
-        	fs.put("testnetPort", Integer.toString(testnetHandler.getPort()));
-        fs.put("myName", myName);
-        fs.put("dsaGroup", myCryptoGroup.asFieldSet());
-        fs.put("dsaPubKey", myPubKey.asFieldSet());
-    	fs.put("ark.number", Long.toString(this.myARKNumber));
-    	fs.put("ark.pubURI", this.myARK.getURI().toString(false));
-        Logger.minor(this, "My reference: "+fs);
-        return fs;
-    }
+	long lastAcceptedRequest = -1;
+	
+	long lastCheckedUncontended = -1;
+	
+	public synchronized boolean shouldRejectRequest(boolean canAcceptAnyway) {
+		long now = System.currentTimeMillis();
+		
+		if(now - lastCheckedUncontended > 1000) {
+			lastCheckedUncontended = now;
+			if(BlockTransmitter.isUncontended()) {
+				Logger.minor(this, "Reporting 0 because throttle uncontended: now "+throttledPacketSendAverage.currentValue());
+				throttledPacketSendAverage.report(0);
+				Logger.minor(this, "New average: "+throttledPacketSendAverage.currentValue());
+			} else
+				Logger.minor(this, "Not uncontended");
+		}
+		
+		// Round trip time
+		double pingTime = nodePinger.averagePingTime();
+		if(pingTime > MAX_PING_TIME) {
+			if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
+				Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
+				lastAcceptedRequest = now;
+				return false;
+			}
+			Logger.minor( this, "shouldRejectRequest("+canAcceptAnyway+") == true because >MAX_PING_TIME");
+			return true;
+		}
+		if(pingTime > SUB_MAX_PING_TIME) {
+			double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
+			if(random.nextDouble() < x) {
+				Logger.minor( this, "shouldRejectRequest() == true because >SUB_MAX_PING_TIME");
+				return true;
+			}
+		}
+		
+		// Bandwidth limited packets
+		
+		double bwlimitDelayTime = this.throttledPacketSendAverage.currentValue();
+		Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
+		if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
+			if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
+				Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
+				lastAcceptedRequest = now;
+				return false;
+			}
+			Logger.minor( this, "shouldRejectRequest() == true because >MAX_THROTTLE_DELAY");
+			return true;
+		}
+		if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
+			double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
+			if(random.nextDouble() < x) {
+				Logger.minor( this, "shouldRejectRequest("+canAcceptAnyway+") == true because >SUB_MAX_THROTTLE_DELAY");
+				return true;
+			}
+		}
+		
+		Logger.minor(this, "Accepting request");
+		
+		lastAcceptedRequest = now;
+		return false;
+	}
+	
+	public SimpleFieldSet exportPrivateFieldSet() {
+		SimpleFieldSet fs = exportPublicFieldSet();
+		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
+		fs.put("ark.privURI", this.myARK.getInsertURI().toString(false));
+		return fs;
+	}
+	
+	/**
+	 * Export my reference so that another node can connect to me.
+	 * @return
+	 */
+	public SimpleFieldSet exportPublicFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		FreenetInetAddress ip = getPrimaryIPAddress();
+		fs.put("base64", "true");
+		if(ip != null)
+			fs.put("physical.udp", ip.toString()+":"+portNumber);
+		fs.put("identity", Base64.encode(myIdentity));
+		fs.put("location", Double.toString(lm.getLocation().getValue()));
+		fs.put("version", Version.getVersionString());
+		fs.put("testnet", Boolean.toString(testnetEnabled));
+		fs.put("lastGoodVersion", Version.getLastGoodVersionString());
+		if(testnetEnabled)
+			fs.put("testnetPort", Integer.toString(testnetHandler.getPort()));
+		fs.put("myName", myName);
+		fs.put("dsaGroup", myCryptoGroup.asFieldSet());
+		fs.put("dsaPubKey", myPubKey.asFieldSet());
+		fs.put("ark.number", Long.toString(this.myARKNumber));
+		fs.put("ark.pubURI", this.myARK.getURI().toString(false));
+		Logger.minor(this, "My reference: "+fs);
+		return fs;
+	}
 
-    FreenetInetAddress overrideIPAddress;
-    /** IP address from last time */
-    InetAddress oldIPAddress;
-    /** Last detected IP address */
-    FreenetInetAddress lastIPAddress;
-    
-    /**
-     * @return Our current main IP address.
-     * FIXME - we should support more than 1, and we should do the
-     * detection properly with NetworkInterface, and we should use
-     * third parties if available and UP&P if available.
-     */
-    FreenetInetAddress detectPrimaryIPAddress() {
-        if(overrideIPAddress != null) {
-            Logger.minor(this, "Returning overridden address: "+overrideIPAddress);
-            lastIPAddress = overrideIPAddress;
-            return overrideIPAddress;
-        }
-        Logger.minor(this, "IP address not overridden");
-       	InetAddress addr = ipDetector.getAddress();
-       	if(addr != null) {
-       		FreenetInetAddress a = new FreenetInetAddress(addr);
-       		lastIPAddress = a;
-       		return a;
-       	}
+	FreenetInetAddress overrideIPAddress;
+	/** IP address from last time */
+	InetAddress oldIPAddress;
+	/** Last detected IP address */
+	FreenetInetAddress lastIPAddress;
+	
+	/**
+	 * @return Our current main IP address.
+	 * FIXME - we should support more than 1, and we should do the
+	 * detection properly with NetworkInterface, and we should use
+	 * third parties if available and UP&P if available.
+	 */
+	FreenetInetAddress detectPrimaryIPAddress() {
+		if(overrideIPAddress != null) {
+			Logger.minor(this, "Returning overridden address: "+overrideIPAddress);
+			lastIPAddress = overrideIPAddress;
+			return overrideIPAddress;
+		}
+		Logger.minor(this, "IP address not overridden");
+	   	InetAddress addr = ipDetector.getAddress();
+	   	if(addr != null) {
+	   		FreenetInetAddress a = new FreenetInetAddress(addr);
+	   		lastIPAddress = a;
+	   		return a;
+	   	}
    		// Try to pick it up from our connections
-       	if(peers != null) {
-       		PeerNode[] peerList = peers.connectedPeers;
-       		HashMap countsByPeer = new HashMap();
-       		// FIXME use a standard mutable int object, we have one somewhere
-       		for(int i=0;i<peerList.length;i++) {
-       			Peer p = peerList[i].getRemoteDetectedPeer();
-       			if(p == null || p.isNull()) continue;
-       			// DNSRequester doesn't deal with our own node
-       			InetAddress ip = p.getAddress(true);
-       			if(!IPUtil.checkAddress(ip)) continue;
-       			if(countsByPeer.containsKey(ip)) {
-       				Integer count = (Integer) countsByPeer.get(ip);
-       				Integer newCount = new Integer(count.intValue()+1);
-       				countsByPeer.put(ip, newCount);
-       			} else {
-       				countsByPeer.put(ip, new Integer(1));
-       			}
-       		}
-       		if(countsByPeer.size() == 0) return null;
-       		Iterator it = countsByPeer.keySet().iterator();
-       		if(countsByPeer.size() == 1) {
-           		FreenetInetAddress a = new FreenetInetAddress((InetAddress)it.next());
-           		lastIPAddress = a;
-           		return a;
-       		}
-       		// Pick most popular address
-       		// FIXME use multi-homing here
-       		InetAddress best = null;
-       		int bestPopularity = 0;
-       		while(it.hasNext()) {
-       			InetAddress cur = (InetAddress) it.next();
-       			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
-       			if(curPop > bestPopularity) {
-       				bestPopularity = curPop;
-       				best = cur;
-       			}
-       		}
-       		lastIPAddress = best == null ? null : new FreenetInetAddress(best);
-       	}
-       	else {
-       		lastIPAddress = oldIPAddress == null ? null : new FreenetInetAddress(oldIPAddress);
-       	}
-       	if (lastIPAddress == null) {
-       		this.alerts.register(primaryIPUndetectedAlert);
-       	} else {
-       		this.alerts.unregister(primaryIPUndetectedAlert);
-       	}
-       	return lastIPAddress;
-    }
+	   	if(peers != null) {
+	   		PeerNode[] peerList = peers.connectedPeers;
+	   		HashMap countsByPeer = new HashMap();
+	   		// FIXME use a standard mutable int object, we have one somewhere
+	   		for(int i=0;i<peerList.length;i++) {
+	   			Peer p = peerList[i].getRemoteDetectedPeer();
+	   			if(p == null || p.isNull()) continue;
+	   			// DNSRequester doesn't deal with our own node
+	   			InetAddress ip = p.getAddress(true);
+	   			if(!IPUtil.checkAddress(ip)) continue;
+	   			if(countsByPeer.containsKey(ip)) {
+	   				Integer count = (Integer) countsByPeer.get(ip);
+	   				Integer newCount = new Integer(count.intValue()+1);
+	   				countsByPeer.put(ip, newCount);
+	   			} else {
+	   				countsByPeer.put(ip, new Integer(1));
+	   			}
+	   		}
+	   		if(countsByPeer.size() == 0) return null;
+	   		Iterator it = countsByPeer.keySet().iterator();
+	   		if(countsByPeer.size() == 1) {
+		   		FreenetInetAddress a = new FreenetInetAddress((InetAddress)it.next());
+		   		lastIPAddress = a;
+		   		return a;
+	   		}
+	   		// Pick most popular address
+	   		// FIXME use multi-homing here
+	   		InetAddress best = null;
+	   		int bestPopularity = 0;
+	   		while(it.hasNext()) {
+	   			InetAddress cur = (InetAddress) it.next();
+	   			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
+	   			if(curPop > bestPopularity) {
+	   				bestPopularity = curPop;
+	   				best = cur;
+	   			}
+	   		}
+	   		lastIPAddress = best == null ? null : new FreenetInetAddress(best);
+	   	}
+	   	else {
+	   		lastIPAddress = oldIPAddress == null ? null : new FreenetInetAddress(oldIPAddress);
+	   	}
+	   	if (lastIPAddress == null) {
+	   		this.alerts.register(primaryIPUndetectedAlert);
+	   	} else {
+	   		this.alerts.unregister(primaryIPUndetectedAlert);
+	   	}
+	   	return lastIPAddress;
+	}
 
-    FreenetInetAddress getPrimaryIPAddress() {
-    	if(lastIPAddress == null) return detectPrimaryIPAddress();
-    	return lastIPAddress;
-    }
-    
-    /**
-     * Do a routed ping of another node on the network by its location.
-     * @param loc2 The location of the other node to ping. It must match
-     * exactly.
-     * @return The number of hops it took to find the node, if it was found.
-     * Otherwise -1.
-     */
-    public int routedPing(double loc2) {
-        long uid = random.nextLong();
-        int initialX = random.nextInt();
-        Message m = DMT.createFNPRoutedPing(uid, loc2, MAX_HTL, initialX);
-        Logger.normal(this, "Message: "+m);
-        
-        dispatcher.handleRouted(m);
-        // FIXME: might be rejected
-        MessageFilter mf1 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedPong).setTimeout(5000);
-        try {
-            //MessageFilter mf2 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedRejected).setTimeout(5000);
-            // Ignore Rejected - let it be retried on other peers
-            m = usm.waitFor(mf1/*.or(mf2)*/);
-        } catch (DisconnectedException e) {
-            Logger.normal(this, "Disconnected in waiting for pong");
-            return -1;
-        }
-        if(m == null) return -1;
-        if(m.getSpec() == DMT.FNPRoutedRejected) return -1;
-        return m.getInt(DMT.COUNTER) - initialX;
-    }
+	FreenetInetAddress getPrimaryIPAddress() {
+		if(lastIPAddress == null) return detectPrimaryIPAddress();
+		return lastIPAddress;
+	}
+	
+	/**
+	 * Do a routed ping of another node on the network by its location.
+	 * @param loc2 The location of the other node to ping. It must match
+	 * exactly.
+	 * @return The number of hops it took to find the node, if it was found.
+	 * Otherwise -1.
+	 */
+	public int routedPing(double loc2) {
+		long uid = random.nextLong();
+		int initialX = random.nextInt();
+		Message m = DMT.createFNPRoutedPing(uid, loc2, MAX_HTL, initialX);
+		Logger.normal(this, "Message: "+m);
+		
+		dispatcher.handleRouted(m);
+		// FIXME: might be rejected
+		MessageFilter mf1 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedPong).setTimeout(5000);
+		try {
+			//MessageFilter mf2 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedRejected).setTimeout(5000);
+			// Ignore Rejected - let it be retried on other peers
+			m = usm.waitFor(mf1/*.or(mf2)*/);
+		} catch (DisconnectedException e) {
+			Logger.normal(this, "Disconnected in waiting for pong");
+			return -1;
+		}
+		if(m == null) return -1;
+		if(m.getSpec() == DMT.FNPRoutedRejected) return -1;
+		return m.getInt(DMT.COUNTER) - initialX;
+	}
 
 	/**
 	 * Check the datastore, then if the key is not in the store,
@@ -2283,346 +2283,346 @@ public class Node {
 		return sender;
 	}
 	
-    static class KeyHTLPair {
-        final Key key;
-        final short htl;
-        KeyHTLPair(Key key, short htl) {
-            this.key = key;
-            this.htl = htl;
-        }
-        
-        public boolean equals(Object o) {
-            if(o instanceof KeyHTLPair) {
-                KeyHTLPair p = (KeyHTLPair) o;
-                return (p.key.equals(key) && p.htl == htl);
-            } else return false;
-        }
-        
-        public int hashCode() {
-            return key.hashCode() ^ htl;
-        }
-        
-        public String toString() {
-            return key.toString()+":"+htl;
-        }
-    }
+	static class KeyHTLPair {
+		final Key key;
+		final short htl;
+		KeyHTLPair(Key key, short htl) {
+			this.key = key;
+			this.htl = htl;
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof KeyHTLPair) {
+				KeyHTLPair p = (KeyHTLPair) o;
+				return (p.key.equals(key) && p.htl == htl);
+			} else return false;
+		}
+		
+		public int hashCode() {
+			return key.hashCode() ^ htl;
+		}
+		
+		public String toString() {
+			return key.toString()+":"+htl;
+		}
+	}
 
-    /**
-     * Add a RequestSender to our HashSet.
-     */
-    public synchronized void addSender(Key key, short htl, RequestSender sender) {
-        KeyHTLPair kh = new KeyHTLPair(key, htl);
-        requestSenders.put(kh, sender);
-    }
+	/**
+	 * Add a RequestSender to our HashSet.
+	 */
+	public synchronized void addSender(Key key, short htl, RequestSender sender) {
+		KeyHTLPair kh = new KeyHTLPair(key, htl);
+		requestSenders.put(kh, sender);
+	}
 
-    /**
-     * Add a transferring RequestSender.
-     */
-    public synchronized void addTransferringSender(NodeCHK key, RequestSender sender) {
-        transferringRequestSenders.put(key, sender);
-    }
+	/**
+	 * Add a transferring RequestSender.
+	 */
+	public synchronized void addTransferringSender(NodeCHK key, RequestSender sender) {
+		transferringRequestSenders.put(key, sender);
+	}
 
-    public synchronized SSKBlock fetch(NodeSSK key) {
-    	try {
-    		return sskDatastore.fetch(key, false);
-    	} catch (IOException e) {
-    		Logger.error(this, "Cannot fetch data: "+e, e);
-    		return null;
-    	}
-    }
+	public synchronized SSKBlock fetch(NodeSSK key) {
+		try {
+			return sskDatastore.fetch(key, false);
+		} catch (IOException e) {
+			Logger.error(this, "Cannot fetch data: "+e, e);
+			return null;
+		}
+	}
 
-    public synchronized CHKBlock fetch(NodeCHK key) {
-    	try {
-    		return chkDatastore.fetch(key, false);
-    	} catch (IOException e) {
-    		Logger.error(this, "Cannot fetch data: "+e, e);
-    		return null;
-    	}
-    }
-    
-    /**
-     * Store a datum.
-     */
-    public synchronized void store(CHKBlock block) {
-        try {
-            chkDatastore.put(block);
-        } catch (IOException e) {
-            Logger.error(this, "Cannot store data: "+e, e);
-        }
-    }
+	public synchronized CHKBlock fetch(NodeCHK key) {
+		try {
+			return chkDatastore.fetch(key, false);
+		} catch (IOException e) {
+			Logger.error(this, "Cannot fetch data: "+e, e);
+			return null;
+		}
+	}
+	
+	/**
+	 * Store a datum.
+	 */
+	public synchronized void store(CHKBlock block) {
+		try {
+			chkDatastore.put(block);
+		} catch (IOException e) {
+			Logger.error(this, "Cannot store data: "+e, e);
+		}
+	}
 
-    public synchronized void store(SSKBlock block) throws KeyCollisionException {
-    	try {
-    		sskDatastore.put(block, false);
-    		cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey());
-    	} catch (IOException e) {
-    		Logger.error(this, "Cannot store data: "+e, e);
-    	}
-    }
-    
-    /**
-     * Remove a sender from the set of currently transferring senders.
-     */
-    public synchronized void removeTransferringSender(NodeCHK key, RequestSender sender) {
-        RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
-        if(rs != sender) {
-            Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+" in removeTransferringSender");
-        }
-    }
+	public synchronized void store(SSKBlock block) throws KeyCollisionException {
+		try {
+			sskDatastore.put(block, false);
+			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey());
+		} catch (IOException e) {
+			Logger.error(this, "Cannot store data: "+e, e);
+		}
+	}
+	
+	/**
+	 * Remove a sender from the set of currently transferring senders.
+	 */
+	public synchronized void removeTransferringSender(NodeCHK key, RequestSender sender) {
+		RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
+		if(rs != sender) {
+			Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+" in removeTransferringSender");
+		}
+	}
 
-    /**
-     * Remove a RequestSender from the map.
-     */
-    public synchronized void removeSender(Key key, short htl, RequestSender sender) {
-        KeyHTLPair kh = new KeyHTLPair(key, htl);
-        RequestSender rs = (RequestSender) requestSenders.remove(kh);
-        if(rs != sender) {
-            Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+","+htl+" in removeSender");
-        }
-    }
+	/**
+	 * Remove a RequestSender from the map.
+	 */
+	public synchronized void removeSender(Key key, short htl, RequestSender sender) {
+		KeyHTLPair kh = new KeyHTLPair(key, htl);
+		RequestSender rs = (RequestSender) requestSenders.remove(kh);
+		if(rs != sender) {
+			Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+","+htl+" in removeSender");
+		}
+	}
 
-    /**
-     * Remove an CHKInsertSender from the map.
-     */
-    public void removeInsertSender(Key key, short htl, AnyInsertSender sender) {
-        KeyHTLPair kh = new KeyHTLPair(key, htl);
-        AnyInsertSender is = (AnyInsertSender) insertSenders.remove(kh);
-        if(is != sender) {
-            Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeInsertSender");
-        }
-    }
+	/**
+	 * Remove an CHKInsertSender from the map.
+	 */
+	public void removeInsertSender(Key key, short htl, AnyInsertSender sender) {
+		KeyHTLPair kh = new KeyHTLPair(key, htl);
+		AnyInsertSender is = (AnyInsertSender) insertSenders.remove(kh);
+		if(is != sender) {
+			Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeInsertSender");
+		}
+	}
 
-    final boolean decrementAtMax;
-    final boolean decrementAtMin;
-    
-    /**
-     * Decrement the HTL according to the policy of the given
-     * NodePeer if it is non-null, or do something else if it is
-     * null.
-     */
-    public short decrementHTL(PeerNode source, short htl) {
-        if(source != null)
-            return source.decrementHTL(htl);
-        // Otherwise...
-        if(htl >= MAX_HTL) htl = MAX_HTL;
-        if(htl <= 0) htl = 1;
-        if(htl == MAX_HTL) {
-            if(decrementAtMax) htl--;
-            return htl;
-        }
-        if(htl == 1) {
-            if(decrementAtMin) htl--;
-            return htl;
-        }
-        return --htl;
-    }
+	final boolean decrementAtMax;
+	final boolean decrementAtMin;
+	
+	/**
+	 * Decrement the HTL according to the policy of the given
+	 * NodePeer if it is non-null, or do something else if it is
+	 * null.
+	 */
+	public short decrementHTL(PeerNode source, short htl) {
+		if(source != null)
+			return source.decrementHTL(htl);
+		// Otherwise...
+		if(htl >= MAX_HTL) htl = MAX_HTL;
+		if(htl <= 0) htl = 1;
+		if(htl == MAX_HTL) {
+			if(decrementAtMax) htl--;
+			return htl;
+		}
+		if(htl == 1) {
+			if(decrementAtMin) htl--;
+			return htl;
+		}
+		return --htl;
+	}
 
-    /**
-     * Fetch or create an CHKInsertSender for a given key/htl.
-     * @param key The key to be inserted.
-     * @param htl The current HTL. We can't coalesce inserts across
-     * HTL's.
-     * @param uid The UID of the caller's request chain, or a new
-     * one. This is obviously not used if there is already an 
-     * CHKInsertSender running.
-     * @param source The node that sent the InsertRequest, or null
-     * if it originated locally.
-     */
-    public synchronized CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-            byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
-        Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
-        KeyHTLPair kh = new KeyHTLPair(key, htl);
-        CHKInsertSender is = (CHKInsertSender) insertSenders.get(kh);
-        if(is != null) {
-            Logger.minor(this, "Found "+is+" for "+kh);
-            return is;
-        }
-        if(fromStore && !cache)
-        	throw new IllegalArgumentException("From store = true but cache = false !!!");
-        is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
-        Logger.minor(this, is.toString()+" for "+kh.toString());
-        insertSenders.put(kh, is);
-        return is;
-    }
-    
-    /**
-     * Fetch or create an SSKInsertSender for a given key/htl.
-     * @param key The key to be inserted.
-     * @param htl The current HTL. We can't coalesce inserts across
-     * HTL's.
-     * @param uid The UID of the caller's request chain, or a new
-     * one. This is obviously not used if there is already an 
-     * SSKInsertSender running.
-     * @param source The node that sent the InsertRequest, or null
-     * if it originated locally.
-     */
-    public synchronized SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-            boolean fromStore, double closestLoc, boolean cache) {
-    	NodeSSK key = (NodeSSK) block.getKey();
-    	if(key.getPubKey() == null) {
-    		throw new IllegalArgumentException("No pub key when inserting");
-    	}
-    	cacheKey(key.getPubKeyHash(), key.getPubKey());
-        Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
-        KeyHTLPair kh = new KeyHTLPair(key, htl);
-        SSKInsertSender is = (SSKInsertSender) insertSenders.get(kh);
-        if(is != null) {
-            Logger.minor(this, "Found "+is+" for "+kh);
-            return is;
-        }
-        if(fromStore && !cache)
-        	throw new IllegalArgumentException("From store = true but cache = false !!!");
-        is = new SSKInsertSender(block, uid, htl, source, this, fromStore, closestLoc);
-        Logger.minor(this, is.toString()+" for "+kh.toString());
-        insertSenders.put(kh, is);
-        return is;
-    }
-    
-    public boolean lockUID(long uid) {
-    	Logger.minor(this, "Locking "+uid);
-        Long l = new Long(uid);
-        synchronized(runningUIDs) {
-            if(runningUIDs.contains(l)) return false;
-            runningUIDs.add(l);
-            return true;
-        }
-    }
-    
-    public void unlockUID(long uid) {
-    	Logger.minor(this, "Unlocking "+uid);
-        Long l = new Long(uid);
-        completed(uid);
-        synchronized(runningUIDs) {
-            if(!runningUIDs.remove(l))
-                throw new IllegalStateException("Could not unlock "+uid+"!");
-        }
-    }
+	/**
+	 * Fetch or create an CHKInsertSender for a given key/htl.
+	 * @param key The key to be inserted.
+	 * @param htl The current HTL. We can't coalesce inserts across
+	 * HTL's.
+	 * @param uid The UID of the caller's request chain, or a new
+	 * one. This is obviously not used if there is already an 
+	 * CHKInsertSender running.
+	 * @param source The node that sent the InsertRequest, or null
+	 * if it originated locally.
+	 */
+	public synchronized CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
+			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
+		Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
+		KeyHTLPair kh = new KeyHTLPair(key, htl);
+		CHKInsertSender is = (CHKInsertSender) insertSenders.get(kh);
+		if(is != null) {
+			Logger.minor(this, "Found "+is+" for "+kh);
+			return is;
+		}
+		if(fromStore && !cache)
+			throw new IllegalArgumentException("From store = true but cache = false !!!");
+		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
+		Logger.minor(this, is.toString()+" for "+kh.toString());
+		insertSenders.put(kh, is);
+		return is;
+	}
+	
+	/**
+	 * Fetch or create an SSKInsertSender for a given key/htl.
+	 * @param key The key to be inserted.
+	 * @param htl The current HTL. We can't coalesce inserts across
+	 * HTL's.
+	 * @param uid The UID of the caller's request chain, or a new
+	 * one. This is obviously not used if there is already an 
+	 * SSKInsertSender running.
+	 * @param source The node that sent the InsertRequest, or null
+	 * if it originated locally.
+	 */
+	public synchronized SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
+			boolean fromStore, double closestLoc, boolean cache) {
+		NodeSSK key = (NodeSSK) block.getKey();
+		if(key.getPubKey() == null) {
+			throw new IllegalArgumentException("No pub key when inserting");
+		}
+		cacheKey(key.getPubKeyHash(), key.getPubKey());
+		Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
+		KeyHTLPair kh = new KeyHTLPair(key, htl);
+		SSKInsertSender is = (SSKInsertSender) insertSenders.get(kh);
+		if(is != null) {
+			Logger.minor(this, "Found "+is+" for "+kh);
+			return is;
+		}
+		if(fromStore && !cache)
+			throw new IllegalArgumentException("From store = true but cache = false !!!");
+		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, closestLoc);
+		Logger.minor(this, is.toString()+" for "+kh.toString());
+		insertSenders.put(kh, is);
+		return is;
+	}
+	
+	public boolean lockUID(long uid) {
+		Logger.minor(this, "Locking "+uid);
+		Long l = new Long(uid);
+		synchronized(runningUIDs) {
+			if(runningUIDs.contains(l)) return false;
+			runningUIDs.add(l);
+			return true;
+		}
+	}
+	
+	public void unlockUID(long uid) {
+		Logger.minor(this, "Unlocking "+uid);
+		Long l = new Long(uid);
+		completed(uid);
+		synchronized(runningUIDs) {
+			if(!runningUIDs.remove(l))
+				throw new IllegalStateException("Could not unlock "+uid+"!");
+		}
+	}
 
-    /**
-     * @return Some status information.
-     */
-    public String getStatus() {
-    	StringBuffer sb = new StringBuffer();
-    	if (peers != null)
-    		sb.append(peers.getStatus());
-    	else
-    		sb.append("No peers yet");
-    	sb.append("\nInserts: ");
-    	int x = insertSenders.size();
-    	sb.append(x);
-    	if(x < 5 && x > 0) {
-    		sb.append('\n');
-    		// Dump
-    		Iterator i = insertSenders.values().iterator();
-    		while(i.hasNext()) {
-    			AnyInsertSender s = (AnyInsertSender) i.next();
-    			sb.append(s.getUID());
-    			sb.append(": ");
-    			sb.append(s.getStatusString());
-    			sb.append('\n');
-    		}
-    	}
-    	sb.append("\nRequests: ");
-    	sb.append(requestSenders.size());
-    	sb.append("\nTransferring requests: ");
-    	sb.append(this.transferringRequestSenders.size());
-    	sb.append('\n');
-    	return sb.toString();
-    }
+	/**
+	 * @return Some status information.
+	 */
+	public String getStatus() {
+		StringBuffer sb = new StringBuffer();
+		if (peers != null)
+			sb.append(peers.getStatus());
+		else
+			sb.append("No peers yet");
+		sb.append("\nInserts: ");
+		int x = insertSenders.size();
+		sb.append(x);
+		if(x < 5 && x > 0) {
+			sb.append('\n');
+			// Dump
+			Iterator i = insertSenders.values().iterator();
+			while(i.hasNext()) {
+				AnyInsertSender s = (AnyInsertSender) i.next();
+				sb.append(s.getUID());
+				sb.append(": ");
+				sb.append(s.getStatusString());
+				sb.append('\n');
+			}
+		}
+		sb.append("\nRequests: ");
+		sb.append(requestSenders.size());
+		sb.append("\nTransferring requests: ");
+		sb.append(this.transferringRequestSenders.size());
+		sb.append('\n');
+		return sb.toString();
+	}
 
-    /**
-     * @return TMCI peer list
-     */
-    public String getTMCIPeerList() {
-    	StringBuffer sb = new StringBuffer();
-    	if (peers != null)
-    		sb.append(peers.getTMCIPeerList());
-    	else
-    		sb.append("No peers yet");
-    	return sb.toString();
-    }
-    
-    public int getNumInserts() {
-        return insertSenders.size();
-    }
-    
-    public int getNumRequests() {
+	/**
+	 * @return TMCI peer list
+	 */
+	public String getTMCIPeerList() {
+		StringBuffer sb = new StringBuffer();
+		if (peers != null)
+			sb.append(peers.getTMCIPeerList());
+		else
+			sb.append("No peers yet");
+		return sb.toString();
+	}
+	
+	public int getNumInserts() {
+		return insertSenders.size();
+	}
+	
+	public int getNumRequests() {
 	return requestSenders.size();
-    }
+	}
 
-    public int getNumTransferringRequests() {
+	public int getNumTransferringRequests() {
 	return transferringRequestSenders.size();
-    }
-    
-    /**
-     * @return Data String for freeviz.
-     */
-    public String getFreevizOutput() {
-    	StringBuffer sb = new StringBuffer();
-    	sb.append("\nrequests=");
-    	sb.append(requestSenders.size());
-    	
-    	sb.append("\ntransferring_requests=");
-    	sb.append(this.transferringRequestSenders.size());
-    	
-    	sb.append("\ninserts=");
-    	sb.append(this.insertSenders.size());
-    	sb.append("\n");
-    	
-    	
-    	if (peers != null)
-    		sb.append(peers.getFreevizOutput());
-    	  		    	    	
-    	return sb.toString();
-    }
+	}
+	
+	/**
+	 * @return Data String for freeviz.
+	 */
+	public String getFreevizOutput() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("\nrequests=");
+		sb.append(requestSenders.size());
+		
+		sb.append("\ntransferring_requests=");
+		sb.append(this.transferringRequestSenders.size());
+		
+		sb.append("\ninserts=");
+		sb.append(this.insertSenders.size());
+		sb.append("\n");
+		
+		
+		if (peers != null)
+			sb.append(peers.getFreevizOutput());
+		  						
+		return sb.toString();
+	}
 
-    /**
-     * @return Our reference, compressed
-     */
-    public byte[] myPublicRefCompressed() {
-        SimpleFieldSet fs = exportPublicFieldSet();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        DeflaterOutputStream gis;
+	/**
+	 * @return Our reference, compressed
+	 */
+	public byte[] myPublicRefCompressed() {
+		SimpleFieldSet fs = exportPublicFieldSet();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
-        OutputStreamWriter osw = new OutputStreamWriter(gis);
-        try {
-            fs.writeTo(osw);
-        } catch (IOException e) {
-            throw new Error(e);
-        }
-        try {
-            osw.flush();
-            gis.close();
-        } catch (IOException e1) {
-            throw new Error(e1);
-        }
-        byte[] buf = baos.toByteArray();
-        byte[] obuf = new byte[buf.length + 1];
-        obuf[0] = 1;
-        System.arraycopy(buf, 0, obuf, 1, buf.length);
-        return obuf;
-        // FIXME support compression when noderefs get big enough for it to be useful
-    }
+		OutputStreamWriter osw = new OutputStreamWriter(gis);
+		try {
+			fs.writeTo(osw);
+		} catch (IOException e) {
+			throw new Error(e);
+		}
+		try {
+			osw.flush();
+			gis.close();
+		} catch (IOException e1) {
+			throw new Error(e1);
+		}
+		byte[] buf = baos.toByteArray();
+		byte[] obuf = new byte[buf.length + 1];
+		obuf[0] = 1;
+		System.arraycopy(buf, 0, obuf, 1, buf.length);
+		return obuf;
+		// FIXME support compression when noderefs get big enough for it to be useful
+	}
 
-    final LRUQueue recentlyCompletedIDs;
+	final LRUQueue recentlyCompletedIDs;
 
-    static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
+	static final int MAX_RECENTLY_COMPLETED_IDS = 10*1000;
 
-    /**
-     * Has a request completed with this ID recently?
-     */
-    public synchronized boolean recentlyCompleted(long id) {
-        return recentlyCompletedIDs.contains(new Long(id));
-    }
-    
-    /**
-     * A request completed (regardless of success).
-     */
-    public synchronized void completed(long id) {
-        recentlyCompletedIDs.push(new Long(id));
-        while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
-            recentlyCompletedIDs.pop();
-    }
+	/**
+	 * Has a request completed with this ID recently?
+	 */
+	public synchronized boolean recentlyCompleted(long id) {
+		return recentlyCompletedIDs.contains(new Long(id));
+	}
+	
+	/**
+	 * A request completed (regardless of success).
+	 */
+	public synchronized void completed(long id) {
+		recentlyCompletedIDs.push(new Long(id));
+		while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
+			recentlyCompletedIDs.pop();
+	}
 
 	public HighLevelSimpleClient makeClient(short prioClass) {
 		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, !DONT_CACHE_LOCAL_REQUESTS, prioClass);
@@ -2794,7 +2794,7 @@ public class Node {
 	
 	public void exit(){
 		this.park();
-        	System.out.println("Goodbye. from "+this);
+			System.out.println("Goodbye. from "+this);
 		System.exit(0);
 	}
 	
@@ -2865,14 +2865,14 @@ public class Node {
 		}
 		return false;
 	}
-    
-    public double getBwlimitDelayTime() {
-    	return this.throttledPacketSendAverage.currentValue();
-    }
-    
-    public double getNodeAveragePingTime() {
-    	return nodePinger.averagePingTime();
-    }
+	
+	public double getBwlimitDelayTime() {
+		return this.throttledPacketSendAverage.currentValue();
+	}
+	
+	public double getNodeAveragePingTime() {
+		return nodePinger.averagePingTime();
+	}
 
 	/**
 	 * Add a ARKFetcher to the map
@@ -2977,135 +2977,135 @@ public class Node {
 		}
 	}
 
-    /**
-     * Log the current PeerNode status summary if the timer has expired
-     */
-    public void maybeLogPeerNodeStatusSummary(long now) {
-      if(now > nextPeerNodeStatusLogTime) {
-        if((now - nextPeerNodeStatusLogTime) > (3*1000))
-          Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 3 seconds ("+(now - nextPeerNodeStatusLogTime)+").  PacketSender getting bogged down or something?");
-        int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
-        int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-        int numberOfTooNew = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW);
-        int numberOfTooOld = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_OLD);
-        int numberOfDisconnected = getPeerNodeStatusSize(PEER_NODE_STATUS_DISCONNECTED);
-        int numberOfNeverConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
-        Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected);
-        nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
-      }
-    }
+	/**
+	 * Log the current PeerNode status summary if the timer has expired
+	 */
+	public void maybeLogPeerNodeStatusSummary(long now) {
+	  if(now > nextPeerNodeStatusLogTime) {
+		if((now - nextPeerNodeStatusLogTime) > (3*1000))
+		  Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 3 seconds ("+(now - nextPeerNodeStatusLogTime)+").  PacketSender getting bogged down or something?");
+		int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
+		int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+		int numberOfTooNew = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW);
+		int numberOfTooOld = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_OLD);
+		int numberOfDisconnected = getPeerNodeStatusSize(PEER_NODE_STATUS_DISCONNECTED);
+		int numberOfNeverConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
+		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected);
+		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
+	  }
+	}
 
-    /**
-     * Update oldestNeverConnectedPeerAge if the timer has expired
-     */
-    public void maybeUpdateOldestNeverConnectedPeerAge(long now) {
-      if(now > nextOldestNeverConnectedPeerAgeUpdateTime) {
-        oldestNeverConnectedPeerAge = 0;
-       	if(peers != null) {
-          PeerNode[] peerList = peers.myPeers;
-          for(int i=0;i<peerList.length;i++) {
-            PeerNode pn = peerList[i];
-            if(pn.getPeerNodeStatus() == PEER_NODE_STATUS_NEVER_CONNECTED) {
-              if((now - pn.getPeerAddedTime()) > oldestNeverConnectedPeerAge) {
-                oldestNeverConnectedPeerAge = now - pn.getPeerAddedTime();
-              }
-            }
-          }
-       	}
-       	if(oldestNeverConnectedPeerAge > 0)
-          Logger.minor(this, "Oldest never connected peer is "+oldestNeverConnectedPeerAge+"ms old");
-        nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
-      }
-    }
+	/**
+	 * Update oldestNeverConnectedPeerAge if the timer has expired
+	 */
+	public void maybeUpdateOldestNeverConnectedPeerAge(long now) {
+	  if(now > nextOldestNeverConnectedPeerAgeUpdateTime) {
+		oldestNeverConnectedPeerAge = 0;
+	   	if(peers != null) {
+		  PeerNode[] peerList = peers.myPeers;
+		  for(int i=0;i<peerList.length;i++) {
+			PeerNode pn = peerList[i];
+			if(pn.getPeerNodeStatus() == PEER_NODE_STATUS_NEVER_CONNECTED) {
+			  if((now - pn.getPeerAddedTime()) > oldestNeverConnectedPeerAge) {
+				oldestNeverConnectedPeerAge = now - pn.getPeerAddedTime();
+			  }
+			}
+		  }
+	   	}
+	   	if(oldestNeverConnectedPeerAge > 0)
+		  Logger.minor(this, "Oldest never connected peer is "+oldestNeverConnectedPeerAge+"ms old");
+		nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
+	  }
+	}
 
-    public long getOldestNeverConnectedPeerAge() {
-      return oldestNeverConnectedPeerAge;
-    }
+	public long getOldestNeverConnectedPeerAge() {
+	  return oldestNeverConnectedPeerAge;
+	}
 
-    /**
-     * Handle a received node to node text message
-     */
-    public void receivedNodeToNodeTextMessage(Message m) {
-      PeerNode source = (PeerNode)m.getSource();
-      int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
-      if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
-        String source_nodename = (String) m.getObject(DMT.SOURCE_NODENAME);
-        String target_nodename = (String) m.getObject(DMT.TARGET_NODENAME);
-        String text = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TEXT);
-        Logger.normal(this, "Received N2NTM from '"+source_nodename+"' to '"+target_nodename+"': "+text);
-        N2NTMUserAlert userAlert = new N2NTMUserAlert(source, source_nodename, target_nodename, text);
-		    alerts.register(userAlert);
-      } else {
-        Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
-      }
-    }
+	/**
+	 * Handle a received node to node text message
+	 */
+	public void receivedNodeToNodeTextMessage(Message m) {
+	  PeerNode source = (PeerNode)m.getSource();
+	  int type = ((Integer) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TYPE)).intValue();
+	  if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
+		String source_nodename = (String) m.getObject(DMT.SOURCE_NODENAME);
+		String target_nodename = (String) m.getObject(DMT.TARGET_NODENAME);
+		String text = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TEXT);
+		Logger.normal(this, "Received N2NTM from '"+source_nodename+"' to '"+target_nodename+"': "+text);
+		N2NTMUserAlert userAlert = new N2NTMUserAlert(source, source_nodename, target_nodename, text);
+			alerts.register(userAlert);
+	  } else {
+		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
+	  }
+	}
 
-    public String getMyName() {
-      return myName;
-    }
+	public String getMyName() {
+	  return myName;
+	}
 
-    public UdpSocketManager getUSM() {
-      return usm;
-    }
+	public UdpSocketManager getUSM() {
+	  return usm;
+	}
 
-    public int getNetworkSizeEstimate(int numberOfMinutes) {
-      return lm.getNetworkSizeEstimate( numberOfMinutes );
-    }
+	public int getNetworkSizeEstimate(int numberOfMinutes) {
+	  return lm.getNetworkSizeEstimate( numberOfMinutes );
+	}
 
-    /**
-     * Add a PeerNode routing backoff reason to the map
-     */
-    public void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
-    	synchronized(peerNodeRoutingBackoffReasons) {
-    		HashSet reasonSet = null;
-    		if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-    			reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-    			if(reasonSet.contains(peerNode)) {
-    				Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode+" with status code "+peerNodeRoutingBackoffReason);
-    				return;
-    			}
-    			peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
-    		} else {
-    			reasonSet = new HashSet();
-    		}
-    		Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
-    		reasonSet.add(peerNode);
-    		peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
-    	}
-    }
-    
-    /**
-     * What are the currently tracked PeerNode routing backoff reasons?
-     */
-    public String [] getPeerNodeRoutingBackoffReasons() {
-    	String [] reasonStrings;
-    	synchronized(peerNodeRoutingBackoffReasons) {
-    		reasonStrings = (String []) peerNodeRoutingBackoffReasons.keySet().toArray(new String[peerNodeRoutingBackoffReasons.size()]);
-    	}
-    	Arrays.sort(reasonStrings);
-    	return reasonStrings;
-    }
-    
-    /**
-     * How many PeerNodes have a particular routing backoff reason?
-     */
-    public int getPeerNodeRoutingBackoffReasonSize(String peerNodeRoutingBackoffReason) {
-    	HashSet reasonSet = null;
-    	synchronized(peerNodeRoutingBackoffReasons) {
-    		if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
-    			reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
-    			return reasonSet.size();
-    		} else {
-    			return 0;
-    		}
-    	}
-    }
+	/**
+	 * Add a PeerNode routing backoff reason to the map
+	 */
+	public void addPeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+		synchronized(peerNodeRoutingBackoffReasons) {
+			HashSet reasonSet = null;
+			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+				if(reasonSet.contains(peerNode)) {
+					Logger.error(this, "addPeerNodeRoutingBackoffReason(): identity '"+peerNode.getIdentityString()+"' already in peerNodeRoutingBackoffReasons as "+peerNode+" with status code "+peerNodeRoutingBackoffReason);
+					return;
+				}
+				peerNodeRoutingBackoffReasons.remove(peerNodeRoutingBackoffReason);
+			} else {
+				reasonSet = new HashSet();
+			}
+			Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
+			reasonSet.add(peerNode);
+			peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
+		}
+	}
+	
+	/**
+	 * What are the currently tracked PeerNode routing backoff reasons?
+	 */
+	public String [] getPeerNodeRoutingBackoffReasons() {
+		String [] reasonStrings;
+		synchronized(peerNodeRoutingBackoffReasons) {
+			reasonStrings = (String []) peerNodeRoutingBackoffReasons.keySet().toArray(new String[peerNodeRoutingBackoffReasons.size()]);
+		}
+		Arrays.sort(reasonStrings);
+		return reasonStrings;
+	}
+	
+	/**
+	 * How many PeerNodes have a particular routing backoff reason?
+	 */
+	public int getPeerNodeRoutingBackoffReasonSize(String peerNodeRoutingBackoffReason) {
+		HashSet reasonSet = null;
+		synchronized(peerNodeRoutingBackoffReasons) {
+			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
+				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
+				return reasonSet.size();
+			} else {
+				return 0;
+			}
+		}
+	}
 
-    /**
-     * Remove a PeerNode routing backoff reason from the map
-     */
-    public void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
-    	HashSet reasonSet = null;
+	/**
+	 * Remove a PeerNode routing backoff reason from the map
+	 */
+	public void removePeerNodeRoutingBackoffReason(String peerNodeRoutingBackoffReason, PeerNode peerNode) {
+		HashSet reasonSet = null;
 		synchronized(peerNodeRoutingBackoffReasons) {
 			if(peerNodeRoutingBackoffReasons.containsKey(peerNodeRoutingBackoffReason)) {
 				reasonSet = (HashSet) peerNodeRoutingBackoffReasons.get(peerNodeRoutingBackoffReason);
@@ -3125,7 +3125,7 @@ public class Node {
 				peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
 			}
 		}
-    }
+	}
 
 	/**
 	 * Start a ready ARKFetcher if the timer has expired
