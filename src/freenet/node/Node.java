@@ -2218,7 +2218,7 @@ public class Node {
 	 * a RequestSender, unless the HTL is 0, in which case NULL.
 	 * RequestSender.
 	 */
-	public synchronized Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
+	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
 		Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
 		// In store?
 		KeyBlock chk = null;
@@ -2267,16 +2267,18 @@ public class Node {
 			return null;
 		}
 		
-		// Request coalescing
-		KeyHTLPair kh = new KeyHTLPair(key, htl);
-		sender = (RequestSender) requestSenders.get(kh);
-		if(sender != null) {
-			Logger.minor(this, "Found sender: "+sender+" for "+uid);
-			return sender;
+		synchronized(requestSenders) {
+			// Request coalescing
+			KeyHTLPair kh = new KeyHTLPair(key, htl);
+			sender = (RequestSender) requestSenders.get(kh);
+			if(sender != null) {
+				Logger.minor(this, "Found sender: "+sender+" for "+uid);
+				return sender;
+			}
+			
+			sender = new RequestSender(key, null, htl, uid, this, closestLocation, source);
+			requestSenders.put(kh, sender);
 		}
-		
-		sender = new RequestSender(key, null, htl, uid, this, closestLocation, source);
-		requestSenders.put(kh, sender);
 		Logger.minor(this, "Created new sender: "+sender);
 		return sender;
 	}
