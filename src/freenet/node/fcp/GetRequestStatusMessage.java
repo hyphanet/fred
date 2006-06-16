@@ -8,11 +8,13 @@ public class GetRequestStatusMessage extends FCPMessage {
 
 	final String identifier;
 	final boolean global;
+	final boolean onlyData;
 	final static String name = "GetRequestStatus";
 	
 	public GetRequestStatusMessage(SimpleFieldSet fs) {
 		this.identifier = fs.get("Identifier");
 		this.global = Fields.stringToBool(fs.get("Global"), false);
+		this.onlyData = Fields.stringToBool(fs.get("OnlyData"), false);
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -37,7 +39,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 			ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier);
 			handler.outputHandler.queue(msg);
 		} else {
-			req.sendPendingMessages(handler.outputHandler, true, true);
+			req.sendPendingMessages(handler.outputHandler, true, true, onlyData);
 		}
 	}
 

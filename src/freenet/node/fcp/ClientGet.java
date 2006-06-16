@@ -163,7 +163,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION && handler != null)
-			sendPendingMessages(handler.outputHandler, true, true);
+			sendPendingMessages(handler.outputHandler, true, true, false);
 			
 	}
 
@@ -345,19 +345,21 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS);
 	}
 	
-	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData) {
+	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
 			return;
 		}
-		if(includePersistentRequest) {
-			FCPMessage msg = new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue);
-			handler.queue(msg);
+		if(!onlyData) {
+			if(includePersistentRequest) {
+				FCPMessage msg = new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue);
+				handler.queue(msg);
+			}
+			if(progressPending != null)
+				handler.queue(progressPending);
+			if(finished)
+				trySendDataFoundOrGetFailed(handler);
 		}
-		if(progressPending != null)
-			handler.queue(progressPending);
-		if(finished)
-			trySendDataFoundOrGetFailed(handler);
 		if(includeData && allDataPending != null)
 			handler.queue(allDataPending);
 	}

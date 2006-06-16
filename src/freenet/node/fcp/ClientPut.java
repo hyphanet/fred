@@ -72,7 +72,7 @@ public class ClientPut extends ClientPutBase {
 				ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client);
 		if(persistenceType != PERSIST_CONNECTION && handler != null)
-			sendPendingMessages(handler.outputHandler, true, false);
+			sendPendingMessages(handler.outputHandler, true, false, false);
 	}
 	
 	/**

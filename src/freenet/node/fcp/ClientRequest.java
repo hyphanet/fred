@@ -105,7 +105,7 @@ public abstract class ClientRequest {
 	public abstract void onLostConnection();
 	
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
-	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData);
+	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData);
 
 	// Persistence
 	
