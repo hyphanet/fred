@@ -285,7 +285,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 		// :(
-		Logger.minor(this, "Permanently failed: "+state+" on "+this);
+		Logger.minor(this, "Permanently failed block: "+state+" on "+this);
 		if(e.isFatal())
 			fatallyFailedBlocks++;
 		else
@@ -326,7 +326,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 				if(dataBlocks[i].getKeyType().equals("USK"))
 					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
 				dataBlockStatus[i] =
-					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(i), true, null);
+					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(i), true, null);
 				dataBlockStatus[i].schedule();
 			}
 			for(int i=0;i<checkBlocks.length;i++) {
@@ -334,7 +334,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 				if(checkBlocks[i].getKeyType().equals("USK"))
 					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
 				checkBlockStatus[i] =
-					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxSplitfileBlockRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null);
+					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null);
 				checkBlockStatus[i].schedule();
 			}
 		} catch (MalformedURLException e) {

@@ -116,8 +116,8 @@ public class FetcherContext implements Cloneable {
 			this.dontEnterImplicitArchives = true;
 			this.random = ctx.random;
 			this.maxSplitfileThreads = 0;
-			this.maxSplitfileBlockRetries = 0;
-			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
+			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
+			this.maxNonSplitfileRetries = ctx.maxSplitfileBlockRetries;
 			this.allowSplitfiles = false;
 			this.followRedirects = false;
 			this.localRequestOnly = ctx.localRequestOnly;

@@ -469,6 +469,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	// Real onFailure
 	protected void onFailure(FetchException e, boolean forceFatal) {
 		if(parent.isCancelled() || cancelled) {
+			Logger.minor(this, "Failing: cancelled");
 			e = new FetchException(FetchException.CANCELLED);
 			forceFatal = true;
 		}
