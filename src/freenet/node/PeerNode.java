@@ -977,7 +977,9 @@ public class PeerNode implements PeerContext {
     }
 
     private void setDetectedPeer(Peer newPeer) {
-    	if(detectedPeer == null || !detectedPeer.equals(newPeer)) {
+    	// Only clear lastAttemptedHandshakeIPUpdateTime if we have a new IP.
+    	// Also, we need to call .equals() to propagate any DNS lookups that have been done if the two have the same domain.
+    	if(newPeer != null && (detectedPeer == null || !detectedPeer.equals(newPeer))) {
     		this.detectedPeer=newPeer;
     		this.lastAttemptedHandshakeIPUpdateTime = 0;
     	}
@@ -1292,7 +1294,7 @@ public class PeerNode implements PeerContext {
     /**
      * Process a new nodereference, as a SimpleFieldSet.
      */
-    private void processNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
+    private synchronized void processNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
         Logger.minor(this, "Parsing: \n"+fs);
         boolean changedAnything = false;
         String identityString = fs.get("identity");
@@ -1365,13 +1367,9 @@ public class PeerNode implements PeerContext {
         if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()])))
         	changedAnything = true;
         
-        if(nominalPeer.isEmpty()) {
-        	Logger.normal(this, "No physical.udp in noderef for identity '"+identityString+"', possibly at location '"+locationString+"' with name '"+myName+"'");
-        	// detectedPeer stays as it is
-        } else {
-            /* yes, we pick up a random one : it will be updated on handshake */
-        	this.setDetectedPeer((Peer) nominalPeer.firstElement());
-        }
+        // DO NOT change detectedPeer !!!
+        // The given physical.udp may be WRONG!!!
+        
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         // In future, ARKs may support automatic transition when the ARK key is changed.
