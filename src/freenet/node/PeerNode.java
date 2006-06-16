@@ -280,9 +280,6 @@ public class PeerNode implements PeerContext {
         // FIXME make mandatory once everyone has upgraded
         lastGoodVersion = fs.get("lastGoodVersion");
         
-        // PeerNode starts life as disconnected
-        node.addPeerNodeStatus(Node.PEER_NODE_STATUS_DISCONNECTED, this);
-		
         nominalPeer=new Vector();
         nominalPeer.removeAllElements();
         try{
@@ -363,6 +360,7 @@ public class PeerNode implements PeerContext {
         
         // Not connected yet; need to handshake
         isConnected = false;
+        node.addPeerNodeStatus(Node.PEER_NODE_STATUS_DISCONNECTED, this);
                
         messagesToSendNow = new LinkedList();
         
@@ -1802,7 +1800,7 @@ public class PeerNode implements PeerContext {
 				Logger.error(this, "Changing ARK not supported (and shouldn't be possible): from "+myARK+" to "+usk+" for "+this);
 			} else if(myARK.suggestedEdition > usk.suggestedEdition) {
 				Logger.minor(this, "Ignoring ARK edition decrease: "+myARK.suggestedEdition+" to "+usk.suggestedEdition+" for "+this);
-			} else if(myARK.suggestedEdition > usk.suggestedEdition) {
+			} else if(myARK.suggestedEdition < usk.suggestedEdition) {
 				Logger.minor(this, "New ARK edition found");
 				myARK = usk;
 			} else if(myARK == null) {
@@ -1877,8 +1875,10 @@ public class PeerNode implements PeerContext {
 			peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
 			if(now < routingBackedOffUntil) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
-				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason)) {
-					node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || previousRoutingBackoffReason == null) {
+					if(previousRoutingBackoffReason != null) {
+						node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+					}
 					node.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
 					previousRoutingBackoffReason = lastRoutingBackoffReason;
 				}

@@ -30,11 +30,20 @@ public class ARKFetchManager {
 
 	public void addReadyARKFetcher(ARKFetcher arkFetcher) {
 		synchronized(readyARKFetchers) {
-			if(readyARKFetchers.contains(arkFetcher)) {
+			if(hasReadyARKFetcher(arkFetcher)) {
 				Logger.error(this, arkFetcher.peer.getPeer()+" already in readyARKFetchers");
 				return;
 			}
 			readyARKFetchers.addLast(arkFetcher);
+		}
+	}
+
+	public boolean hasReadyARKFetcher(ARKFetcher arkFetcher) {
+		synchronized(readyARKFetchers) {
+			if(readyARKFetchers.contains(arkFetcher)) {
+				return true;
+			}
+			return false;
 		}
 	}
 	
@@ -70,7 +79,7 @@ public class ARKFetchManager {
 
 	public void removeReadyARKFetcher(ARKFetcher arkFetcher) {
 		synchronized(readyARKFetchers) {
-			if(!readyARKFetchers.contains(arkFetcher)) {
+			if(!hasReadyARKFetcher(arkFetcher)) {
 				return;
 			}
 			readyARKFetchers.remove(arkFetcher);

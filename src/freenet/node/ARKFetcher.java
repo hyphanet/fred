@@ -25,8 +25,8 @@ public class ARKFetcher implements ClientCallback {
 	private ClientGetter getter;
 	private FreenetURI fetchingURI;
 	private boolean shouldRun = false;
-	private static final int MAX_BACKOFF = 60*60*1000;
-	private static final int MIN_BACKOFF = 5*1000;
+	private static final int MAX_BACKOFF = 60*60*1000;  // 1 hour
+	private static final int MIN_BACKOFF = 5*1000;  // 5 seconds
 	private int backoff = MIN_BACKOFF;
 	private String identity;
 	private boolean isFetching = false;
@@ -46,6 +46,15 @@ public class ARKFetcher implements ClientCallback {
 	 * see if we can find something more recent).
 	 */
 	public synchronized void queue() {
+		if(node.arkFetchManager.hasReadyARKFetcher(this)) {
+			return;
+		}
+		if(peer.isConnected()) {
+			return;
+		}
+		if(isFetching) {
+			return;
+		}
 		Logger.normal( this, "Queueing ARK Fetcher after "+peer.getHandshakeCount()+" failed handshakes for "+peer.getPeer()+" with identity '"+peer.getIdentityString()+"'");
 		node.arkFetchManager.addReadyARKFetcher(this);
 	}
@@ -54,6 +63,15 @@ public class ARKFetcher implements ClientCallback {
 	 * Called when the ARKFetchManager says it's our turn to start fetching.
 	 */
 	public synchronized void start() {
+		if(node.arkFetchManager.hasReadyARKFetcher(this)) {
+			node.arkFetchManager.removeReadyARKFetcher(this);
+		}
+		if(peer.isConnected()) {
+			return;
+		}
+		if(isFetching) {
+			return;
+		}
 		ClientGetter cg = null;
 		if(started) {  // We only need one ARKFetcher per PeerNode
 		  return;
@@ -104,7 +122,9 @@ public class ARKFetcher implements ClientCallback {
 			started = false;
 			if(isFetching) {
 				node.removeARKFetcher(identity,this);
-				node.arkFetchManager.removeReadyARKFetcher(this);
+				if(node.arkFetchManager.hasReadyARKFetcher(this)) {
+					node.arkFetchManager.removeReadyARKFetcher(this);
+				}
 				isFetching = false;
 			}
 		}
@@ -121,6 +141,9 @@ public class ARKFetcher implements ClientCallback {
 			
 			if(isFetching) {
 				node.removeARKFetcher(identity,this);
+				if(node.arkFetchManager.hasReadyARKFetcher(this)) {
+					node.arkFetchManager.removeReadyARKFetcher(this);
+				}
 				isFetching = false;
 			}
 			
@@ -139,7 +162,7 @@ public class ARKFetcher implements ClientCallback {
 		SimpleFieldSet fs;
 		try {
 			fs = new SimpleFieldSet(ref, true);
-			Logger.minor(this, "Got ARK for "+peer);
+			Logger.minor(this, "Got ARK for "+peer.getPeer());
 			peer.gotARK(fs, startedEdition);
 		} catch (IOException e) {
 			// Corrupt ref.
@@ -154,6 +177,9 @@ public class ARKFetcher implements ClientCallback {
 			
 			if(isFetching) {
 				node.removeARKFetcher(identity,this);
+				if(node.arkFetchManager.hasReadyARKFetcher(this)) {
+					node.arkFetchManager.removeReadyARKFetcher(this);
+				}
 				isFetching = false;
 			}
 			
@@ -167,11 +193,12 @@ public class ARKFetcher implements ClientCallback {
 			}
 		}
 		if(e.newURI != null) {
+			Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", "+fetchingURI+" gave redirect to "+e.newURI);
 			peer.updateARK(e.newURI);
 			queueWithBackoff();
 			return;
 		}
-		Logger.minor(this, "Failed to fetch ARK for "+peer+", now backing off ARK fetches for "+(int) (backoff / 1000)+" seconds");
+		Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", now backing off ARK fetches for "+(int) (backoff / 1000)+" seconds");
 		// We may be on the PacketSender thread.
 		// FIXME should this be exponential backoff?
 		queueWithBackoff();
@@ -179,14 +206,17 @@ public class ARKFetcher implements ClientCallback {
 
 	public void onSuccess(BaseClientPutter state) {
 		// Impossible.
+		Logger.error(this, "Impossible reached in ARKFetcher.onSuccess(BaseClientPutter) for peer "+peer.getPeer(), new Exception("error"));
 	}
 
 	public void onFailure(InserterException e, BaseClientPutter state) {
 		// Impossible.
+		Logger.error(this, "Impossible reached in ARKFetcher.onFailure(InserterException,BaseClientPutter) for peer "+peer.getPeer(), new Exception("error"));
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		// Impossible.
+		Logger.error(this, "Impossible reached in ARKFetcher.onGeneratredURI(FreenetURI,BaseClientPutter) for peer "+peer.getPeer(), new Exception("error"));
 	}
 
 	public boolean isFetching() {

@@ -122,6 +122,12 @@ public class PeerManager {
         for(int i=0;i<myPeers.length;i++) {
             if(myPeers[i] == pn) isInPeers=true;
         }
+        int peerNodeStatus = pn.getPeerNodeStatus();
+        node.removePeerNodeStatus( peerNodeStatus, pn );
+        String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
+        if(peerNodePreviousRoutingBackoffReason != null) {
+        	node.removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
+        }
         if(!isInPeers) return false;
                 
         // removing from connectedPeers
@@ -145,12 +151,6 @@ public class PeerManager {
         	}
         }
         myPeers = newMyPeers;
-        int peerNodeStatus = pn.getPeerNodeStatus();
-        node.removePeerNodeStatus( peerNodeStatus, pn );
-        String peerNodePreviousRoutingBackoffReason = pn.getPreviousBackoffReason();
-        if(peerNodePreviousRoutingBackoffReason != null) {
-        	node.removePeerNodeRoutingBackoffReason(peerNodePreviousRoutingBackoffReason, pn);
-        }
         
         Logger.normal(this, "Removed "+pn);
     	}
