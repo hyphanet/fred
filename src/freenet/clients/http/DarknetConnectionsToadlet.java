@@ -61,7 +61,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
 			return;
 		}
-		
 		StringBuffer buf = new StringBuffer(1024);
 		
 		//HTTPRequest request = new HTTPRequest(uri);
@@ -72,6 +71,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		PeerNode[] peerNodes = node.getDarknetConnections();
 		
 		long now = System.currentTimeMillis();
+		
+		boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
 		node.alerts.toSummaryHtml(buf);
 		
@@ -92,18 +93,19 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<table class=\"column\"><tr><td class=\"first\">");
 		
 		/* node status overview box */
-		buf.append("<div class=\"infobox\">");
-		buf.append("<div class=\"infobox-header\">Node status overview</div>");
-		buf.append("<div class=\"infobox-content\">");
-		buf.append("<ul>");
-		buf.append("<li>bwlimitDelayTime:&nbsp;").append(bwlimitDelayTime).append("ms</li>");
-		buf.append("<li>nodeAveragePingTime:&nbsp;").append(nodeAveragePingTime).append("ms</li>");
-		buf.append("<li>networkSizeEstimate:&nbsp;").append(networkSizeEstimate).append("&nbsp;nodes</li>");
-		buf.append("<li>nodeUptime:&nbsp;").append(nodeUptimeString).append("</li>");
-		buf.append("</ul></div>");
-		buf.append("</div>\n");
-		
-		buf.append("</td><td>");
+		if(advancedEnabled) {
+			buf.append("<div class=\"infobox\">");
+			buf.append("<div class=\"infobox-header\">Node status overview</div>");
+			buf.append("<div class=\"infobox-content\">");
+			buf.append("<ul>");
+			buf.append("<li>bwlimitDelayTime:&nbsp;").append(bwlimitDelayTime).append("ms</li>");
+			buf.append("<li>nodeAveragePingTime:&nbsp;").append(nodeAveragePingTime).append("ms</li>");
+			buf.append("<li>networkSizeEstimate:&nbsp;").append(networkSizeEstimate).append("&nbsp;nodes</li>");
+			buf.append("<li>nodeUptime:&nbsp;").append(nodeUptimeString).append("</li>");
+			buf.append("</ul></div>");
+			buf.append("</div>\n");
+			buf.append("</td><td>");
+		}
 		
 		// Activity box
 		int numInserts = node.getNumInserts();
@@ -129,8 +131,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			if (numTransferringRequests > 0) {
 				buf.append("<li>Transferring&nbsp;Requests:&nbsp;").append(numTransferringRequests).append("</li>");
 			}
-			if (numARKFetchers > 0) {
-				buf.append("<li>ARK&nbsp;Fetch&nbsp;Requests:&nbsp;").append(numARKFetchers).append("</li>");
+			if(advancedEnabled) {
+				if (numARKFetchers > 0) {
+					buf.append("<li>ARK&nbsp;Fetch&nbsp;Requests:&nbsp;").append(numARKFetchers).append("</li>");
+				}
 			}
 			buf.append("</ul>\n");
 		}
@@ -166,36 +170,39 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("</div>");
 		buf.append("</div>\n");
 		
-		buf.append("</td><td class=\"last\">");
-		
 		// Peer routing backoff reason box
-		buf.append("<div class=\"infobox\">");
-		buf.append("<div class=\"infobox-header\">Peer backoff reasons</div>");
-		buf.append("<div class=\"infobox-content\">");
-		String [] routingBackoffReasons = node.getPeerNodeRoutingBackoffReasons();
-		if(routingBackoffReasons.length == 0) {
-			buf.append("Good, your node is not backed off from any peers!<br/>\n");
-		} else {
-			buf.append("<ul>\n");
-			for(int i=0;i<routingBackoffReasons.length;i++) {
-				int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
-				if(reasonCount > 0) {
-					buf.append("<li>").append(routingBackoffReasons[i]).append(":&nbsp;").append(reasonCount).append("</li>\n");
+		if(advancedEnabled) {
+			buf.append("</td><td class=\"last\">");
+			buf.append("<div class=\"infobox\">");
+			buf.append("<div class=\"infobox-header\">Peer backoff reasons</div>");
+			buf.append("<div class=\"infobox-content\">");
+			String [] routingBackoffReasons = node.getPeerNodeRoutingBackoffReasons();
+			if(routingBackoffReasons.length == 0) {
+				buf.append("Good, your node is not backed off from any peers!<br/>\n");
+			} else {
+				buf.append("<ul>\n");
+				for(int i=0;i<routingBackoffReasons.length;i++) {
+					int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+					if(reasonCount > 0) {
+						buf.append("<li>").append(routingBackoffReasons[i]).append(":&nbsp;").append(reasonCount).append("</li>\n");
+					}
 				}
+				buf.append("</ul>\n");
 			}
-			buf.append("</ul>\n");
+			buf.append("</div>");
+			buf.append("</div>\n");
 		}
-		buf.append("</div>");
-		buf.append("</div>\n");
 		
 		buf.append("</td></tr></table>\n");
 		
 		buf.append("<div class=\"infobox infobox-normal\">\n");
 		buf.append("<div class=\"infobox-header\">\n");
 		buf.append("My Peers");
-		if (!path.endsWith("displaymessagetypes.html"))
-		{
-			buf.append(" <a href=\"displaymessagetypes.html\">(more detailed)</a>");
+		if(advancedEnabled) {
+			if (!path.endsWith("displaymessagetypes.html"))
+			{
+				buf.append(" <a href=\"displaymessagetypes.html\">(more detailed)</a>");
+			}
 		}
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
@@ -231,14 +238,21 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				long idle = pn.lastReceivedPacketTime();
 				if(((Integer) status).intValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
 					idle = pn.getPeerAddedTime();
-				String lastBackoffReasonOutputString = "/";
-				String backoffReason = pn.getLastBackoffReason();
-				if( backoffReason != null ) {
-					lastBackoffReasonOutputString = "/"+backoffReason;
+				String lastBackoffReasonOutputString = "";
+				if(advancedEnabled) {
+					String backoffReason = pn.getLastBackoffReason();
+					if( backoffReason != null ) {
+						lastBackoffReasonOutputString = "/"+backoffReason;
+					} else {
+						lastBackoffReasonOutputString = "/";
+					}
 				}
 				String avgPingTimeString = "";
-				if(pn.isConnected())
-					avgPingTimeString = " ("+(int) pn.averagePingTime()+"ms)";
+				if(advancedEnabled) {
+					if(pn.isConnected()) {
+						avgPingTimeString = " ("+(int) pn.averagePingTime()+"ms)";
+					}
+				}
 				String VersionPrefixString = "";
 				String VersionSuffixString = "";
 				if(pn.publicInvalidVersion() || pn.publicReverseInvalidVersion()) {
@@ -272,8 +286,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				Object[] row = rows[i];
 				int x = ((Integer) row[2]).intValue();
 				String arkAsterisk = "";
-				if(((PeerNode) row[0]).isFetchingARK()) {
-					arkAsterisk = "*";
+				if(advancedEnabled) {
+					if(((PeerNode) row[0]).isFetchingARK()) {
+						arkAsterisk = "*";
+					}
 				}
 				row[2] = "<span class=\""+((PeerNode) row[0]).getPeerNodeStatusCSSClassName()+"\">"+((PeerNode) row[0]).getPeerNodeStatusString()+arkAsterisk+"</span>";
 			}
@@ -324,7 +340,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			//
 			buf.append(buf2);
 			//
-			buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />&nbsp;&nbsp;&nbsp;<span class=\"darknet_connections\">* Requesting ARK</span>\n");
+			buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />");
+			if(advancedEnabled) {
+				buf.append("&nbsp;&nbsp;&nbsp;<span class=\"darknet_connections\">* Requesting ARK</span>\n");
+			}
 			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
 			buf.append("</form>\n");
 		}

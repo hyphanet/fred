@@ -44,6 +44,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private final LinkedList toadlets;
 	private String cssName;
 	private Thread myThread;
+	private boolean advancedDarknetEnabled;
 	
 	static final int DEFAULT_FPROXY_PORT = 8888;
 	
@@ -123,6 +124,21 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
+	class FProxyAdvancedDarknetEnabledCallback implements BooleanCallback {
+		
+		public boolean get() {
+			synchronized(SimpleToadletServer.this) {
+				return advancedDarknetEnabled;
+			}
+		}
+		public void set(boolean val) throws InvalidConfigValueException {
+			if(val == get()) return;
+			synchronized(SimpleToadletServer.this) {
+				SimpleToadletServer.this.advancedDarknetEnabled = val;
+			}
+		}
+	}
+	
 	/**
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
@@ -142,6 +158,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyAllowedHostsCallback());
 		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS FProxy should use",
 				new FProxyCSSNameCallback());
+		fproxyConfig.register("advancedDarknetEnabled", false, 1, true, "Enable Advanced Darknet?", "Whether to enable show information meant for advanced users/devs on /darkenet/ page",
+				new FProxyAdvancedDarknetEnabledCallback());
 
 		this.bf = node.tempBucketFactory;
 		port = fproxyConfig.getInt("port");
@@ -150,6 +168,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		cssName = fproxyConfig.getString("css");
 		if(cssName.indexOf(':') != -1 || cssName.indexOf('/') != -1)
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
+		boolean advancedDarknetEnabled = fproxyConfig.getBoolean("advancedDarknetEnabled");
 		
 		toadlets = new LinkedList();
 		node.setToadletContainer(this); // even if not enabled, because of config
@@ -272,5 +291,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public void setCSSName(String name) {
 		this.cssName = name;
+	}
+
+	public boolean isAdvancedDarknetEnabled() {
+		return this.advancedDarknetEnabled;
 	}
 }

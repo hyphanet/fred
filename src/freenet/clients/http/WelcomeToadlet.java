@@ -264,6 +264,8 @@ public class WelcomeToadlet extends Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		StringBuffer buf = new StringBuffer();
 		
+		boolean advancedDarknetOutputEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
+		
 		HTTPRequest request = new HTTPRequest(uri);
 		if (request.getParam("newbookmark").length() > 0) {
 			ctx.getPageMaker().makeHead(buf, "Add A Bookmark");
@@ -433,12 +435,14 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("Current Activity\n");
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("<ul id=\"activity\">\n"
-				+ "<li>Inserts: "+this.node.getNumInserts()+"</li>\n"
-				+ "<li>Requests: "+this.node.getNumRequests()+"</li>\n"
-				+ "<li>Transferring Requests: "+this.node.getNumTransferringRequests()+"</li>\n"
-				+ "<li>ARK Fetch Requests: "+this.node.getNumARKFetchers()+"</li>\n"
-				+ "</ul>\n");
+		buf.append("<ul id=\"activity\">\n");
+		buf.append("<li>Inserts: "+this.node.getNumInserts()+"</li>\n");
+		buf.append("<li>Requests: "+this.node.getNumRequests()+"</li>\n");
+		buf.append("<li>Transferring Requests: "+this.node.getNumTransferringRequests()+"</li>\n");
+		if(advancedDarknetOutputEnabled) {
+			buf.append("<li>ARK Fetch Requests: "+this.node.getNumARKFetchers()+"</li>\n");
+		}
+		buf.append("</ul>\n");
 		buf.append("</div>\n");
 		buf.append("</div>\n");
 		
