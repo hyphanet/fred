@@ -2,7 +2,6 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -126,16 +125,19 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxyAdvancedDarknetEnabledCallback implements BooleanCallback {
 		
-		public boolean get() {
-			synchronized(SimpleToadletServer.this) {
-				return advancedDarknetEnabled;
-			}
+		private final SimpleToadletServer ts;
+		
+		FProxyAdvancedDarknetEnabledCallback(SimpleToadletServer ts){
+			this.ts = ts;
 		}
+		
+		public boolean get() {
+			return ts.isAdvancedDarknetEnabled();
+		}
+		
 		public void set(boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
-			synchronized(SimpleToadletServer.this) {
-				SimpleToadletServer.this.advancedDarknetEnabled = val;
-			}
+				ts.enableAdvancedDarknet(val);
 		}
 	}
 	
@@ -159,7 +161,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS FProxy should use",
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("advancedDarknetEnabled", false, 1, true, "Enable Advanced Darknet?", "Whether to enable show information meant for advanced users/devs on /darkenet/ page",
-				new FProxyAdvancedDarknetEnabledCallback());
+				new FProxyAdvancedDarknetEnabledCallback(this));
 
 		this.bf = node.tempBucketFactory;
 		port = fproxyConfig.getInt("port");
@@ -168,7 +170,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		cssName = fproxyConfig.getString("css");
 		if(cssName.indexOf(':') != -1 || cssName.indexOf('/') != -1)
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
-		boolean advancedDarknetEnabled = fproxyConfig.getBoolean("advancedDarknetEnabled");
+		this.advancedDarknetEnabled = fproxyConfig.getBoolean("advancedDarknetEnabled");
 		
 		toadlets = new LinkedList();
 		node.setToadletContainer(this); // even if not enabled, because of config
@@ -258,11 +260,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new SocketHandler(conn);
 			} catch (SocketTimeoutException e) {
 				// Go around again, this introduced to avoid blocking forever when told to quit
-			} catch (IOException e) {
-				Logger.minor(this, "Got IOException accepting conn: "+e, e);
-				// Ignore
-				continue;
-			}
+			} 
 		}
 	}
 	
@@ -293,7 +291,11 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.cssName = name;
 	}
 
-	public boolean isAdvancedDarknetEnabled() {
+	public synchronized boolean isAdvancedDarknetEnabled() {
 		return this.advancedDarknetEnabled;
+	}
+	
+	public synchronized void enableAdvancedDarknet(boolean b){
+		advancedDarknetEnabled = b;
 	}
 }
