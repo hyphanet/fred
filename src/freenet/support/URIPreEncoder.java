@@ -18,7 +18,7 @@ import java.net.URISyntaxException;
 public class URIPreEncoder {
 	
 	// We deliberately include '%' because we don't want to interfere with stuff which is already encoded.
-	public final static String allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-!.~'()*,;:$&+=?/@%";
+	public final static String allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-!.~'()*,;:$&+=?/@%#";
 
 	public static String encode(String s) {
 		StringBuffer output = new StringBuffer(s.length()*2);
