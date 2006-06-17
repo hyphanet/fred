@@ -6,11 +6,9 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.Locale;
 import java.util.TimeZone;
 
 import freenet.support.Bucket;
