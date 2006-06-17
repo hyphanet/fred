@@ -157,7 +157,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 	
-	private Object updateSync = new Object();
+	private volatile Object updateSync = new Object();
 	
 	public void Update() {
 		if(!isRunning) return;
@@ -467,6 +467,12 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	protected synchronized void kill(){
 		isRunning = false;
+		try{
+			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion));
+			ctx.uskManager.unsubscribe(myUsk, this,	true);
+			cg.cancel();
+		}catch(Exception e){
+		}
 	}
 	
 	public synchronized void blow(String msg){
