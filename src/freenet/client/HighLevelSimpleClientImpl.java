@@ -11,7 +11,6 @@ import freenet.client.events.ClientEventProducer;
 import freenet.client.events.EventLogger;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
-import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Bucket;
@@ -134,7 +133,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 			Logger.error(this, "Impossible error: "+e, e);
 			throw new InserterException(InserterException.INTERNAL_ERROR, e, null);
 		}
-		ClientKey k;
+		
 		InsertBlock block = new InsertBlock(b, null, insertURI);
 		return insert(block, false, true);
 	}

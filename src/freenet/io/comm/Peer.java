@@ -22,9 +22,7 @@ package freenet.io.comm;
 import java.io.*;
 import java.net.*;
 
-import freenet.io.AddressIdentifier;
 import freenet.io.WritableToDataOutputStream;
-import freenet.support.Logger;
 
 /**
  * @author ian

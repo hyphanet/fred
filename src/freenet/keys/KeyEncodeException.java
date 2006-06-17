@@ -1,6 +1,7 @@
 package freenet.keys;
 
 public class KeyEncodeException extends Exception {
+	private static final long serialVersionUID = -1;
 
 	public KeyEncodeException(String string) {
 		super(string);

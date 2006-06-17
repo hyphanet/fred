@@ -1,6 +1,8 @@
 package freenet.pluginmanager;
 
 public class PluginHTTPException extends Exception {
+	private static final long serialVersionUID = -1;
+	
 	private int code;
 	private String mimeType;
 	private String desc;

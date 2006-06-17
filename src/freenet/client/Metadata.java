@@ -10,7 +10,6 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Vector;
 
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;

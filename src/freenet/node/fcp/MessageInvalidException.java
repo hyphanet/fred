@@ -7,6 +7,7 @@ package freenet.node.fcp;
  * ProtocolError.
  */
 public class MessageInvalidException extends Exception {
+	private static final long serialVersionUID = -1;
 
 	int protocolCode;
 	public String ident;

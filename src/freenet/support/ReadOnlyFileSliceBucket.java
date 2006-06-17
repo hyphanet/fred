@@ -99,7 +99,8 @@ public class ReadOnlyFileSliceBucket implements Bucket {
 	}
 
 	public class ReadOnlyFileSliceBucketException extends IOException {
-
+		private static final long serialVersionUID = -1;
+		
 		public ReadOnlyFileSliceBucketException(FileNotFoundException e) {
 			super("File not found: "+e.getMessage());
 			initCause(e);

@@ -16,6 +16,7 @@ import freenet.support.Logger;
  * Created on May 14, 2004
  */
 public class SimpleBinaryRunningAverage implements RunningAverage {
+	private static final long serialVersionUID = -1;
 
     public Object clone() {
         return new SimpleBinaryRunningAverage(this);

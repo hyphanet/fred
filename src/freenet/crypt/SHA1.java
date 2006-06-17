@@ -322,7 +322,7 @@ public final class SHA1 implements Digest {
      */
     protected final void finish() {
         byte bits[] = new byte[8];
-        int i, j;
+        int i;
         for (i = 0; i < 8; i++) {
             bits[i] = (byte)((count >>> (((7 - i) << 3))) & 0xff);
         }

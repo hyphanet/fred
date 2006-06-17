@@ -1,6 +1,7 @@
 package freenet.pluginmanager;
 
 public class PluginSecurityException extends Exception {
+	private static final long serialVersionUID = -1;
 
 	/**
 	 * 

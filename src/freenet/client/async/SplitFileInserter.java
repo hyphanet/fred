@@ -250,7 +250,6 @@ public class SplitFileInserter implements ClientPutState {
 		if(allSucceeded)
 			cb.onSuccess(this);
 		else {
-			InserterException e;
 			if(tracker.isFatal(true))
 				cb.onFailure(new InserterException(InserterException.FATAL_ERRORS_IN_BLOCKS, tracker, null), this);
 			else

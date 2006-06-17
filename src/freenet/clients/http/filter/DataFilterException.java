@@ -4,6 +4,7 @@ package freenet.clients.http.filter;
  * Exception thrown when the data cannot be filtered.
  */
 public class DataFilterException extends UnsafeContentTypeException {
+	private static final long serialVersionUID = -1;
 
 	final String rawTitle;
 	final String encodedTitle;

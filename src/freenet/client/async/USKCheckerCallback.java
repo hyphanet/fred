@@ -1,7 +1,6 @@
 package freenet.client.async;
 
 import freenet.keys.ClientSSKBlock;
-import freenet.keys.SSKBlock;
 
 /**
  * Callback for a USKChecker

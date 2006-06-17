@@ -12,7 +12,6 @@ import freenet.client.FetcherContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.FreenetURI;
-import freenet.keys.NodeCHK;
 import freenet.support.Bucket;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -79,7 +78,6 @@ public class SplitFileFetcher implements ClientGetState {
 		splitfileDataBlocks = metadata.getSplitfileDataKeys();
 		splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
 		splitUseLengths = metadata.splitUseLengths();
-		int blockLength = splitUseLengths ? -1 : NodeCHK.BLOCK_SIZE;
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
 			blocksPerSegment = -1;

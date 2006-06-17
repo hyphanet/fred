@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.CHKBlock;
-import freenet.keys.KeyBlock;
 import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;

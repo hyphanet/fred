@@ -158,6 +158,8 @@ public abstract class LoggerHook extends Logger {
     }
     
     public static class InvalidThresholdException extends Exception {
+    	private static final long serialVersionUID = -1;
+    	
     	InvalidThresholdException(String msg) {
     		super(msg);
     	}

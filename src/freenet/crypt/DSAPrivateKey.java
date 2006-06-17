@@ -12,6 +12,7 @@ import freenet.support.SimpleFieldSet;
 import net.i2p.util.NativeBigInteger;
 
 public class DSAPrivateKey extends CryptoKey {
+	private static final long serialVersionUID = -1;
 
     private final BigInteger x;
 

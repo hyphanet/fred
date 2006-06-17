@@ -14,6 +14,7 @@ import freenet.support.SimpleFieldSet;
 import net.i2p.util.NativeBigInteger;
 
 public class DSAPublicKey extends CryptoKey {
+	private static final long serialVersionUID = -1;
     
     private final BigInteger y;
 	/** A cache of the hexadecimal string representation of y */
