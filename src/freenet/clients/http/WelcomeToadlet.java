@@ -88,7 +88,7 @@ public class WelcomeToadlet extends Toadlet {
 			buf.append("</div>\n");
 			buf.append("<div class=\"infobox-content\">\n");
 			buf.append("The restart process might take up to 10 minutes. <br>");
-			buf.append("(The node will try to fetch a revocation key before updating)");
+			buf.append("(The node will try to fetch a revocation key before updating)<br>");
 			buf.append("Thank you for using Freenet\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
