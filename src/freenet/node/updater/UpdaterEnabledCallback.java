@@ -26,19 +26,21 @@ public class UpdaterEnabledCallback implements BooleanCallback {
 	}
 	
 	public void set(boolean val) throws InvalidConfigValueException {
-		if(val == get()) return;
-		if(val){
-			try{
-				SubConfig sc = nodeConfig.get("node.updater");
-				node.nodeUpdater = new NodeUpdater(node , sc.getBoolean("autoupdate"), new FreenetURI(sc.getString("URI")), new FreenetURI(sc.getString("revocationURI")));
-				Logger.normal(this, "Starting up the node updater");
-			}catch (Exception e){
-				Logger.error(this, "unable to start the node updater up "+e);
-				throw new InvalidConfigValueException("Unable to enable the Node Updater "+e);
+		synchronized (node.nodeUpdater) {
+			if(val == get()) return;
+			if(val){
+				try{
+					SubConfig sc = nodeConfig.get("node.updater");
+					node.nodeUpdater = new NodeUpdater(node , sc.getBoolean("autoupdate"), new FreenetURI(sc.getString("URI")), new FreenetURI(sc.getString("revocationURI")));
+					Logger.normal(this, "Starting up the node updater");
+				}catch (Exception e){
+					Logger.error(this, "unable to start the node updater up "+e);
+					throw new InvalidConfigValueException("Unable to enable the Node Updater "+e);
+				}
+			}else{
+				node.nodeUpdater.kill();
+				Logger.normal(this, "Shutting down the node updater");
 			}
-		}else{
-			node.nodeUpdater.kill();
-			Logger.normal(this, "Shutting down the node updater");
 		}
 	}
 }
