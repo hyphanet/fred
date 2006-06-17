@@ -3,6 +3,7 @@ package freenet.node.updater;
 import freenet.config.BooleanCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.node.Node;
+import freenet.support.Logger;
 
 public class AutoUpdateAllowedCallback implements BooleanCallback {
 	
@@ -13,13 +14,15 @@ public class AutoUpdateAllowedCallback implements BooleanCallback {
 	}
 	
 	public boolean get() {
-		NodeUpdater nu = node.getNodeUpdater();
-		return nu.isAutoUpdateAllowed;
+		if(node.getNodeUpdater()==null)
+			return false;
+		else 
+			return node.getNodeUpdater().isAutoUpdateAllowed;
 	}
 	
 	public void set(boolean val) throws InvalidConfigValueException {
 		if(val == get()) return;
-		// Good idea to prevent it ?
-		throw new InvalidConfigValueException("Cannot be updated on the fly for security reasons");
+		node.getNodeUpdater().setAutoupdateAllowed(val);
+		Logger.normal(this, "Node auto update is now allowed = "+val);
 	}
 }

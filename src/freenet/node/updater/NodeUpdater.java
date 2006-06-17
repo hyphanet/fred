@@ -54,7 +54,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private boolean isRunning = false;
 	private boolean isFetching = false;
 	
-	public final boolean isAutoUpdateAllowed;
+	public boolean isAutoUpdateAllowed;
 	
 	private final UpdatedVersionAvailableUserAlert alert;
 	private RevocationKeyFoundUserAlert revocationAlert;
@@ -113,6 +113,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 	
 	public synchronized void onFoundEdition(long l, USK key){
+		if(!isRunning) return;
 		int found = (int)key.suggestedEdition;
 		
 		if(found > availableVersion){
@@ -122,7 +123,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					maybeUpdate();
 				}
 			}, 60*1000); // leave some time in case we get later editions
-			this.isRunning=true;
 		}
 	}
 
@@ -135,8 +135,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				isRunning=false;
 				return;
 			}
-			
-			isRunning=false;
 		}
 		
 		alert.set(availableVersion,false);
@@ -162,6 +160,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private Object updateSync = new Object();
 	
 	public void Update() {
+		if(!isRunning) return;
 		synchronized(updateSync) {
 			innerUpdate();
 		}
@@ -466,6 +465,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		return isRunning;
 	}
 	
+	protected synchronized void kill(){
+		isRunning = false;
+	}
+	
 	public synchronized void blow(String msg){
 		if(hasBeenBlown){
 			Logger.error(this, "The key has ALREADY been marked as blown!");
@@ -490,12 +493,16 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		return revocationURI;
 	}
 	
+	protected synchronized void  setAutoupdateAllowed(boolean b) {
+		this.isAutoUpdateAllowed = b;
+	}
+	
 	public static NodeUpdater maybeCreate(Node node, Config config) throws Exception {
         SubConfig updaterConfig = new SubConfig("node.updater", config);
          
         updaterConfig.register("enabled", true, 1, false, "Enable Node's updater?",
         		"Whether to enable the node's updater. It won't auto-update unless node.updater.autoupdate is true, it will just warn",
-        		new UpdaterEnabledCallback(node));
+        		new UpdaterEnabledCallback(node, config));
         
         boolean enabled = updaterConfig.getBoolean("enabled");
 
