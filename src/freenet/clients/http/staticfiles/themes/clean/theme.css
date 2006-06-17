@@ -424,3 +424,30 @@ div.progressbar-done {
 	height:15px;
 }
 
+tr.priority0 {
+	background-color: #66ff00;
+}
+
+tr.priority1 {
+	background-color: #66ff33;
+}
+
+tr.priority2 {
+	background-color: #66ff66;
+}
+
+tr.priority3 {
+	background-color: #66ff99;
+}
+
+tr.priority4 {
+	background-color: #66ffcc;
+}
+
+tr.priority5 {
+	background-color: #66ffff;
+}
+
+tr.priority6 {
+	background-color: grey;
+}

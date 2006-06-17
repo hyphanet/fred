@@ -172,7 +172,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Completed downloads to temporary space", new String[] { "", "Identifier", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf );
 				for(Iterator i = completedDownloadToTemp.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getURI(), buf);
 					writeSizeCell(p.getDataSize(), buf);
@@ -189,7 +189,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Completed downloads to disk", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf);
 				for(Iterator i=completedDownloadToDisk.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getURI(), buf);
 					writeFilenameCell(p.getDestFilename(), buf);
@@ -207,7 +207,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Completed uploads", new String[] { "", "Key", "Filename", "Size", "MIME-Type", "Persistence", "Identifier" }, buf);
 				for(Iterator i=completedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getFinalURI(), buf);
 					if(p.isDirect())
@@ -228,7 +228,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Completed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Persistence", "Key" }, buf);
 				for(Iterator i=completedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getFinalURI(), buf);
 					writeNumberCell(p.getNumberOfFiles(), buf);
@@ -254,7 +254,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Failed downloads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
 				for(Iterator i=failedDownload.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getURI(), buf);
 					if(p.isDirect())
@@ -276,7 +276,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Failed uploads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
 				for(Iterator i=failedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getFinalURI(), buf);
 					if(p.isDirect())
@@ -298,7 +298,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Failed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Reason", "Persistence", "Key" }, buf);
 				for(Iterator i=failedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getFinalURI(), buf);
 					writeNumberCell(p.getNumberOfFiles(), buf);
@@ -321,7 +321,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i = uncompletedDownload.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getURI(), buf);
 					if(p.isDirect())
@@ -342,7 +342,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Uploads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i = uncompletedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getFinalURI(), buf);
 					if(p.isDirect())
@@ -363,7 +363,7 @@ public class QueueToadlet extends Toadlet {
 				writeTableHead("Directory uploads in progress", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i=uncompletedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
-					writeRowStart(buf);
+					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
 					writeIdentifierCell(p, p.getFinalURI(), buf);
 					writeNumberCell(p.getNumberOfFiles(), buf);
@@ -516,8 +516,8 @@ public class QueueToadlet extends Toadlet {
 		buf.append("</td>\n");
 	}
 
-	private void writeRowStart(StringBuffer buf) {
-		buf.append("<tr>");
+	private void writeRowStart(StringBuffer buf, ClientRequest p) {
+		buf.append("<tr class=\"priority"+p.getPriority()+"\">");
 	}
 
 	private void writeRowEnd(StringBuffer buf) {
