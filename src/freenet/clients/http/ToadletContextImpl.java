@@ -27,7 +27,7 @@ import freenet.support.io.TooLongException;
  *
  */
 public class ToadletContextImpl implements ToadletContext {
-
+	
 	private final Socket sock;
 	private final MultiValueTable headers;
 	private final OutputStream sockOutputStream;
@@ -47,18 +47,18 @@ public class ToadletContextImpl implements ToadletContext {
 		this.bf = bf;
 		pagemaker = new PageMaker(CSSName);
 	}
-
+	
 	private void close() {
 		closed = true;
 	}
-
+	
 	private void sendMethodNotAllowed(String method, boolean shouldDisconnect) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		MultiValueTable mvt = new MultiValueTable();
 		mvt.put("Allow", "GET, PUT");
 		sendError(sockOutputStream, 405, "Method not allowed", shouldDisconnect, mvt);
 	}
-
+	
 	private static void sendError(OutputStream os, int code, String message, boolean shouldDisconnect, MultiValueTable mvt) throws IOException {
 		sendError(os, code, message, "<html><head><title>"+message+"</title></head><body><h1>"+message+"</h1></body>", shouldDisconnect, mvt);
 	}
@@ -80,7 +80,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private static void sendURIParseError(OutputStream os, boolean shouldDisconnect) throws IOException {
 		sendError(os, 400, "URI parse error", shouldDisconnect, null);
 	}
-
+	
 	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength);
@@ -93,7 +93,7 @@ public class ToadletContextImpl implements ToadletContext {
 	public MultiValueTable getHeaders() {
 		return headers;
 	}
-
+	
 	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws IOException {
 		// Construct headers
 		if(mvt == null)
@@ -144,7 +144,7 @@ public class ToadletContextImpl implements ToadletContext {
 		sdf.setTimeZone(TZ_UTC);
 		return sdf.format(new Date(time));
 	}
-
+	
 	/** Fix key case to be conformant to HTTP expectations.
 	 * Note that HTTP is case insensitive on header names, but we may as well
 	 * send something as close to the spec as possible in case of broken clients... 
@@ -162,7 +162,7 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 		return sb.toString();
 	}
-
+	
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
@@ -171,7 +171,7 @@ public class ToadletContextImpl implements ToadletContext {
 			InputStream is = sock.getInputStream();
 			
 			LineReadingInputStream lis = new LineReadingInputStream(is);
-
+			
 			while(true) {
 				
 				String firstLine = lis.readLine(32768, 128, false); // ISO-8859-1 or US-ASCII, _not_ UTF-8
@@ -199,11 +199,11 @@ public class ToadletContextImpl implements ToadletContext {
 				} catch (URISyntaxException e) {
 					sendURIParseError(sock.getOutputStream(), true);
 					return;
-				/*
-				} catch (URLEncodedFormatException e) {
-					sendURIParseError(sock.getOutputStream(), true);
-					return;
-					*/
+					/*
+					 } catch (URLEncodedFormatException e) {
+					 sendURIParseError(sock.getOutputStream(), true);
+					 return;
+					 */
 				}
 				
 				String method = split[0];
@@ -291,7 +291,7 @@ public class ToadletContextImpl implements ToadletContext {
 							uri = re.newuri;
 							redirect = true;
 						}
-	
+						
 					} else if(method.equals("POST")) {
 						try {
 							t.handlePost(uri, data, ctx);
@@ -330,7 +330,7 @@ public class ToadletContextImpl implements ToadletContext {
 			return;
 		}
 	}
-
+	
 	private static boolean shouldDisconnectAfterHandled(boolean isHTTP10, MultiValueTable headers) {
 		String connection = (String) headers.get("connection");
 		if(connection != null) {
@@ -347,18 +347,18 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	static class ParseException extends Exception {
 		private static final long serialVersionUID = -1;
-
+		
 		ParseException(String string) {
 			super(string);
 		}
-
+		
 	}
-
+	
 	public void writeData(byte[] data, int offset, int length) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		sockOutputStream.write(data, offset, length);
 	}
-
+	
 	public void writeData(byte[] data) throws ToadletContextClosedException, IOException {
 		writeData(data, 0, data.length);
 	}
@@ -367,7 +367,7 @@ public class ToadletContextImpl implements ToadletContext {
 		if(closed) throw new ToadletContextClosedException();
 		BucketTools.copyTo(data, sockOutputStream, Long.MAX_VALUE);
 	}
-
+	
 	public BucketFactory getBucketFactory() {
 		return bf;
 	}
