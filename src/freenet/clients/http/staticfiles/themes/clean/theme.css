@@ -422,27 +422,27 @@ div.progressbar-done {
 }
 
 tr.priority0, td.priority0 {
-	background-color: #66ff00;
+	background-color: #0023e0;
 }
 
 tr.priority1, td.priority1 {
-	background-color: #66ff33;
+	background-color: #007ee0;
 }
 
 tr.priority2, td.priority2 {
-	background-color: #66ff66;
+	background-color: #00e0ce;
 }
 
 tr.priority3, td.priority3 {
-	background-color: #66ff99;
+	background-color: #00e094;
 }
 
 tr.priority4, td.priority4 {
-	background-color: #66ffcc;
+	background-color: #00e069;
 }
 
 tr.priority5, td.priority5 {
-	background-color: #66ffff;
+	background-color: #00e010;
 }
 
 tr.priority6, td.priority6 {
