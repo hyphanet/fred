@@ -798,10 +798,8 @@ public class Node {
 			
 		// set Java's DNS cache not to cache forever, since many people
 		// use dyndns hostnames
-		java.security.Security.setProperty("networkaddress.cache.ttl" , "60");
-		
-		// set Java's negative DNS cache to 1 minute rather than the default 10 seconds
-		java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "60");
+		java.security.Security.setProperty("networkaddress.cache.ttl" , "0");
+		java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "0");
 		
 		FilePersistentConfig cfg = new FilePersistentConfig(configFilename);
 		
