@@ -2,12 +2,21 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.JarURLConnection;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 import freenet.config.BooleanCallback;
 import freenet.config.IntCallback;
@@ -150,6 +159,47 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyConfig.register("enabled", true, 1, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
 				new FProxyEnabledCallback());
 		
+		List themes = new ArrayList();
+		try {
+			URL url = getClass().getResource("staticfiles/themes/");
+			URLConnection urlConnection = url.openConnection();
+			if (url.getProtocol().equals("file")) {
+				File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1").replaceAll("\\|", ":"));
+				File[] themeDirectories = themesDirectory.listFiles();
+				for (int themeIndex = 0; themeDirectories != null && themeIndex < themeDirectories.length; themeIndex++) {
+					File themeDirectory = themeDirectories[themeIndex];
+					if (themeDirectory.isDirectory() && !themeDirectory.getName().startsWith(".")) {
+						themes.add(themeDirectory.getName());
+					}
+				}	
+			} else if (urlConnection instanceof JarURLConnection) {
+				JarURLConnection jarUrlConnection = (JarURLConnection) urlConnection;
+				JarFile jarFile = jarUrlConnection.getJarFile();
+				Enumeration entries = jarFile.entries();
+				while (entries.hasMoreElements()) {
+					JarEntry entry = (JarEntry) entries.nextElement();
+					String name = entry.getName();
+					if (name.startsWith("freenet/clients/http/staticfiles/themes/")) {
+						name = name.substring("freenet/clients/http/staticfiles/themes/".length());
+						if (name.indexOf('/') != -1) {
+							String themeName = name.substring(0, name.indexOf('/'));
+							if (!themes.contains(themeName)) {
+								themes.add(themeName);
+							}
+						}
+					}
+				}
+			}
+		} catch (IOException ioe1) {
+			Logger.error(this, "error creating list of themes", ioe1);
+		} catch (NullPointerException npe) {
+			Logger.error(this, "error creating list of themes", npe);
+		} finally {
+			if (!themes.contains("clean")) {
+				themes.add("clean");
+			}
+		}
+		
 		boolean enabled = fproxyConfig.getBoolean("enabled");
 		
 		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, "FProxy port number", "FProxy port number",
@@ -158,7 +208,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyBindtoCallback());
 		fproxyConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to FProxy. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
 				new FProxyAllowedHostsCallback());
-		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS FProxy should use",
+		fproxyConfig.register("css", "clean", 1, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("advancedDarknetEnabled", false, 1, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
 				new FProxyAdvancedDarknetEnabledCallback(this));
