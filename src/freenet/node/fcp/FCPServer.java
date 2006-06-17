@@ -43,7 +43,7 @@ public class FCPServer implements Runnable {
 	final NetworkInterface networkInterface;
 	final Node node;
 	final int port;
-	final boolean enabled;
+	public final boolean enabled;
 	final String bindTo;
 	String allowedHosts;
 	final WeakHashMap clientsByName;

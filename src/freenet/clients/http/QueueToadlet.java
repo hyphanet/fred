@@ -97,6 +97,12 @@ public class QueueToadlet extends Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
 		
+		// We ensure that we have a FCP server running
+		if(!fcp.enabled){
+			this.writeReply(ctx, 400, "text/plain", "FCP server is missing", "You need to enable the FCP server to access this page");
+			return;
+		}
+		
 		StringBuffer buf = new StringBuffer(2048);
 		
 		// First, get the queued requests, and separate them into different types.
