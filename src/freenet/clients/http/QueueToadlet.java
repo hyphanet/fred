@@ -163,6 +163,15 @@ public class QueueToadlet extends Toadlet {
 		
 		node.alerts.toSummaryHtml(buf);
 		
+		writeBigHeading("Legend", buf);
+		buf.append("<table class=\"queue\">\n");
+		buf.append("<tr>");
+		for(int i=0; i<7; i++){
+			buf.append("<td class=\"priority"+i+"\">priority "+i+"</td>");
+		}
+		buf.append("</tr>\n");
+		writeTableEnd(buf);
+		writeBigEnding(buf);
 		
 		if(!(completedDownloadToTemp.isEmpty() && completedDownloadToDisk.isEmpty() &&
 				completedUpload.isEmpty() && completedDirUpload.isEmpty())) {

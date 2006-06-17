@@ -363,9 +363,6 @@ table.queue span.progress_fraction_finalized {
 table.queue span.number_of_files {
 }
 
-table.queue span.number_of_files {
-}
-
 table.queue span.filename_direct {
 	color: #d0d0d0;
 }
@@ -424,30 +421,30 @@ div.progressbar-done {
 	height:15px;
 }
 
-tr.priority0 {
+tr.priority0, td.priority0 {
 	background-color: #66ff00;
 }
 
-tr.priority1 {
+tr.priority1, td.priority1 {
 	background-color: #66ff33;
 }
 
-tr.priority2 {
+tr.priority2, td.priority2 {
 	background-color: #66ff66;
 }
 
-tr.priority3 {
+tr.priority3, td.priority3 {
 	background-color: #66ff99;
 }
 
-tr.priority4 {
+tr.priority4, td.priority4 {
 	background-color: #66ffcc;
 }
 
-tr.priority5 {
+tr.priority5, td.priority5 {
 	background-color: #66ffff;
 }
 
-tr.priority6 {
+tr.priority6, td.priority6 {
 	background-color: grey;
 }
