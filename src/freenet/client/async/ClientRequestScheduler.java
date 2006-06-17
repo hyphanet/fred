@@ -127,49 +127,55 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public SendableRequest improved_scheduler_1_removeFirst() {
 		// Priorities start at 0
-		// Maybe we should retry ... we were looping previously
-		Logger.minor(this, "removeFirst() (improved_1)");			
-		int i = random.nextInt(prioritySelecter.length);
-		SortedVectorByNumber s = priorities[prioritySelecter[i]];
-		if(s == null) {
-			Logger.minor(this, "Priority "+prioritySelecter[i]+" is null");
-			return null;
-		}
-		
-		i=prioritySelecter[i];
-		
-		SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst(); // will discard finished items
-		if(rga == null) {
-			Logger.minor(this, "No retrycount's in priority "+i);
-			priorities[i] = null;
-			return null;
-		}
-		SendableRequest req = (SendableRequest) rga.removeRandom();
-		if(rga.isEmpty()) {
-			Logger.minor(this, "Removing retrycount "+rga.getNumber());
-			s.remove(rga.getNumber());
-			if(s.isEmpty()) {
-				Logger.minor(this, "Removing priority "+i);
-				priorities[i] = null;
+		Logger.minor(this, "removeFirst() (improved_1)");	
+		short count = 6;
+		while(count>0){
+			int i = random.nextInt(prioritySelecter.length);
+			SortedVectorByNumber s = priorities[prioritySelecter[i]];
+			if(s == null) {
+				Logger.minor(this, "Priority "+prioritySelecter[i]+" is null");
+				count--;
+				continue;
 			}
+			
+			i=prioritySelecter[i];
+			
+			SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst(); // will discard finished items
+			if(rga == null) {
+				Logger.minor(this, "No retrycount's in priority "+i);
+				priorities[i] = null;
+				count--;
+				continue;
+			}
+			SendableRequest req = (SendableRequest) rga.removeRandom();
+			if(rga.isEmpty()) {
+				Logger.minor(this, "Removing retrycount "+rga.getNumber());
+				s.remove(rga.getNumber());
+				if(s.isEmpty()) {
+					Logger.minor(this, "Removing priority "+i);
+					priorities[i] = null;
+				}
+			}
+			if(req == null) {
+				Logger.minor(this, "No requests in priority "+i+", retrycount "+rga.getNumber()+" ("+rga+")");
+				count--;
+				continue;
+			}
+			if(req.getPriorityClass() > i) {
+				// Reinsert it
+				Logger.minor(this, "In wrong priority class: "+req);
+				innerRegister(req);
+				continue;
+			}
+			Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+")");
+			ClientRequester cr = req.getClientRequest();
+			HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
+			v.remove(req);
+			if(v.isEmpty())
+				allRequestsByClientRequest.remove(cr);
+			return req;
 		}
-		if(req == null) {
-			Logger.minor(this, "No requests in priority "+i+", retrycount "+rga.getNumber()+" ("+rga+")");
-			return null;
-		}
-		if(req.getPriorityClass() > i) {
-			// Reinsert it
-			Logger.minor(this, "In wrong priority class: "+req);
-			innerRegister(req);
-			return null;
-		}
-		Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+")");
-		ClientRequester cr = req.getClientRequest();
-		HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
-		v.remove(req);
-		if(v.isEmpty())
-			allRequestsByClientRequest.remove(cr);
-		return req;
+		return null;
 	}
 	
 	public SendableRequest default_Scheduler_removeFirst() {
