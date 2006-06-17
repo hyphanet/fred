@@ -56,7 +56,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 				new TMCIBindtoCallback(node));
 		TMCIConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
 				new TMCIAllowedHostsCallback(node));
-		TMCIConfig.register("port", 2323, 1, true, "Testnet port", "Testnet port number",
+		TMCIConfig.register("port", 2323, 1, true, "Telnet port", "Telnet port number",
         		new TCMIPortNumberCallback(node));
 		TMCIConfig.register("directEnabled", false, 1, true, "Enable on stdout/stdin?", "Enable text mode client interface on standard input/output? (.enabled refers to providing a telnet-style server, this runs it over a socket)",
 				new TMCIDirectEnabledCallback(node));
