@@ -1447,9 +1447,14 @@ public class PeerNode implements PeerContext {
     	
        		getStatus()+"|"+ Base64.encode(identity);
     }
-    public String getVersion(){
-	    return version;
-    }
+	
+	public String getVersion(){
+		return version;
+	}
+	
+	public String getSimpleVersion(){
+		return (new Integer(Version.getArbitraryBuildNumber(version))).toString();
+	}
 
     /**
      * Write the peer's noderef to disk

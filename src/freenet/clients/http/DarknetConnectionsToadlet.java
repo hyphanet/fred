@@ -209,7 +209,20 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
 		StringBuffer buf2 = new StringBuffer(1024);
 		buf2.append("<table class=\"darknet_connections\">\n");
-		buf2.append("<tr><th></th><th>Status</th><th><span title=\"Click on the nodename link to send a N2NTM\" style=\"border-bottom:1px dotted;cursor:help;\">Name</span></th><th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th><th>Version</th><th>Location</th><th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th><th><span title=\"How long since the node was last seen\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th></tr>\n");
+		buf2.append(" <tr>\n");
+		buf2.append("  <th></th>\n");
+		buf2.append("  <th>Status</th>\n");
+		buf2.append("  <th><span title=\"Click on the nodename link to send a N2NTM\" style=\"border-bottom:1px dotted;cursor:help;\">Name</span></th>\n");
+		if(advancedEnabled) {
+			buf2.append("  <th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th>\n");
+		}
+		buf2.append("  <th>Version</th>\n");
+		if(advancedEnabled) {
+			buf2.append("  <th>Location</th>\n");
+			buf2.append("  <th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th>\n");
+		}
+		buf2.append("  <th><span title=\"How long since the node was last seen\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th>\n");
+		buf2.append(" </tr>\n");
 		
 		if (peerNodes.length == 0) {
 			buf2.append("<tr><td colspan=\"8\">Freenet can't work - you have not added any peers so far. <a href=\"/\">Go here</a> and read the top infobox to see how it's done.</td></tr>\n");
@@ -254,6 +267,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 				}
 				String VersionPrefixString = "";
+				String VersionString = "";
 				String VersionSuffixString = "";
 				if(pn.publicInvalidVersion() || pn.publicReverseInvalidVersion()) {
 					VersionPrefixString = "<span class=\"peer_version_problem\">";
@@ -266,12 +280,18 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				  NameSuffixString = "</a>";
 				}
 				
+				if(advancedEnabled) {
+					VersionString = HTMLEncoder.encode(pn.getVersion());
+				} else {
+					VersionString = HTMLEncoder.encode(pn.getSimpleVersion());
+				}
+
 				row[0] = pn;
 				row[1] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
 				row[2] = status;
 				row[3] = NamePrefixString+HTMLEncoder.encode(pn.getName())+NameSuffixString;
 				row[4] = ( pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)" ) + avgPingTimeString;
-				row[5] = VersionPrefixString+HTMLEncoder.encode(pn.getVersion())+VersionSuffixString;
+				row[5] = VersionPrefixString+VersionString+VersionSuffixString;
 				row[6] = new Double(pn.getLocation().getValue());
 				row[7] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
 				row[8] = idleToString(now, idle, ((Integer) status).intValue());
@@ -299,8 +319,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				Object[] row = rows[i];
 				buf2.append("<tr>");
 				for(int j=1;j<row.length;j++) {  // skip index 0 as it's the PeerNode object
-				  if(j == 9) // skip index 9 as it's used for sorting purposes only
-				    continue;
+					if(j == 9) { // skip index 9 as it's used for sorting purposes only
+				    	continue;
+				    }
+					if(!advancedEnabled) {  // if not in advanced Darknet page output mode
+						if( j == 4 || j == 6 || j == 7 ) {  // skip IP address/name, location and backoff times
+							continue;
+						}
+					}
 					buf2.append("<td>"+row[j]+"</td>");
 				}
 				buf2.append("</tr>\n");
