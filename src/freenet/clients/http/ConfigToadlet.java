@@ -116,8 +116,8 @@ public class ConfigToadlet extends Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		StringBuffer buf = new StringBuffer(1024);
 		SubConfig[] sc = config.getConfigs();
+		boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
-		//HTTPRequest request = new HTTPRequest(uri);
 		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration");
 
 		buf.append("<div class=\"infobox infobox-normal\">\n");
@@ -128,57 +128,50 @@ public class ConfigToadlet extends Toadlet {
 		buf.append("<form method=\"post\" action=\".\">");
 		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 		
-		//String last = null;
-		
 		for(int i=0; i<sc.length;i++){
+			StringBuffer buf2 = new StringBuffer();
+			short displayedConfigElements = 0;
+			
 			Option[] o = sc[i].getOptions();
-			//String prefix = new String(sc[i].getPrefix());
-			
-			/*
-			if(last == null || ! last.equalsIgnoreCase(prefix)){
-				//buf.append("</p>\n");
-				buf.append("</span>\n");
-				buf.append("<span id=\""+prefix+"\">\n");
-				//buf.append("<p>\n");
-			}
-			*/
-			
-			buf.append("<ul class=\"config\"><span class=\"configprefix\">"+sc[i].getPrefix()+"</span>\n");
+			buf2.append("<ul class=\"config\"><span class=\"configprefix\">"+sc[i].getPrefix()+"</span>\n");
 			
 			for(int j=0; j<o.length; j++){
-				String configName = o[j].getName();
-				
-				buf.append("<li>");
-				//
-				buf.append("<span class=\"configshortdesc\">");
-				buf.append(o[j].getShortDesc());
-				buf.append("</span>");	
-				buf.append("<span class=\"config\">");
-				//
-				if(o[j].getValueString().equals("true") || o[j].getValueString().equals("false")){
-					buf.append("<select name=\""+sc[i].getPrefix()+"."+configName+"\" >");
-					if(o[j].getValueString().equals("true")){
-						buf.append("<option value=\"true\" selected>true</option>");
-						buf.append("<option value=\"false\">false</option>");
+				if(! (!advancedEnabled && o[j].isExpert())){
+					displayedConfigElements++;
+					String configName = o[j].getName();
+					
+					buf2.append("<li>");
+					buf2.append("<span class=\"configshortdesc\">");
+					buf2.append(o[j].getShortDesc());
+					buf2.append("</span>");	
+					buf2.append("<span class=\"config\">");
+					
+					if(o[j].getValueString().equals("true") || o[j].getValueString().equals("false")){
+						buf2.append("<select name=\""+sc[i].getPrefix()+"."+configName+"\" >");
+						if(o[j].getValueString().equals("true")){
+							buf2.append("<option value=\"true\" selected>true</option>");
+							buf2.append("<option value=\"false\">false</option>");
+						}else{
+							buf2.append("<option value=\"true\">true</option>");
+							buf2.append("<option value=\"false\" selected>false</option>");
+						}
+						buf2.append("</select>");
 					}else{
-						buf.append("<option value=\"true\">true</option>");
-						buf.append("<option value=\"false\" selected>false</option>");
+						buf2.append("<input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
+								" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+HTMLEncoder.encode(o[j].getValueString())+"\" />");				
 					}
-					buf.append("</select>");
-				}else{
-					buf.append("<input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
-							" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+HTMLEncoder.encode(o[j].getValueString())+"\" />");				
+					buf2.append("</span>");
+					buf2.append("<span class=\"configlongdesc\">");
+					buf2.append(o[j].getLongDesc());
+					buf2.append("</span>");
+					
+					buf2.append("</li>\n");
 				}
-				buf.append("</span>");
-				buf.append("<span class=\"configlongdesc\">");
-				buf.append(o[j].getLongDesc());
-				buf.append("</span>");
-				
-				buf.append("</li>\n");
 			}
+			buf2.append("</ul>\n");
 			
-			
-			buf.append("</ul>\n");
+			if(displayedConfigElements>0)
+				buf.append(buf2);
 		}
 		
 		buf.append("<input type=\"submit\" value=\"Apply\" />");

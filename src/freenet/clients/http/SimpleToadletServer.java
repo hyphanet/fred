@@ -160,7 +160,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyAllowedHostsCallback());
 		fproxyConfig.register("css", "clean", 1, true, "CSS Name", "Name of the CSS FProxy should use",
 				new FProxyCSSNameCallback());
-		fproxyConfig.register("advancedDarknetEnabled", false, 1, true, "Enable Advanced Darknet?", "Whether to enable show information meant for advanced users/devs on /darkenet/ page",
+		fproxyConfig.register("advancedDarknetEnabled", false, 1, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
 				new FProxyAdvancedDarknetEnabledCallback(this));
 
 		this.bf = node.tempBucketFactory;

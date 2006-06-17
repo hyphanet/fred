@@ -16,7 +16,6 @@ import freenet.io.comm.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
-import freenet.node.Version;
 import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.MultiValueTable;
@@ -72,7 +71,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		long now = System.currentTimeMillis();
 		
-		boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
+		final boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
 		node.alerts.toSummaryHtml(buf);
 		
@@ -237,7 +236,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			for(int i=0;i<peerNodes.length;i++) {
 				PeerNode pn = peerNodes[i];
 				long routingBackedOffUntil = pn.getRoutingBackedOffUntil();
-				boolean routingBackedOffNow = (now < routingBackedOffUntil);
 				int backoff = (int)(Math.max(routingBackedOffUntil - now, 0));
 				// Don't list the backoff as zero before it's actually zero
 				if(backoff > 0 && backoff < 1000 )
@@ -304,7 +302,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			// Convert status codes into status strings
 			for(int i=0;i<rows.length;i++) {
 				Object[] row = rows[i];
-				int x = ((Integer) row[2]).intValue();
 				String arkAsterisk = "";
 				if(advancedEnabled) {
 					if(((PeerNode) row[0]).isFetchingARK()) {

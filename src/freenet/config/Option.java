@@ -63,4 +63,8 @@ public abstract class Option {
 	public String getLongDesc(){
 		return longDesc;
 	}
+	
+	public boolean isExpert(){
+		return expert;
+	}
 }
