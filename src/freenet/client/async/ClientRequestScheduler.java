@@ -38,6 +38,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final RequestStarter starter;
 	private final Node node;
 	
+	// FIXME : shoudln't be hardcoded !
+	private int[] prioritySelecter = { 
+			0, 0, 0, 0, 0, 0, 0,
+			1, 1, 1, 1, 1, 1,
+			2, 2, 2, 2, 2,
+			3, 3, 3, 3,
+			4, 4, 4,
+			5, 5,
+			6 
+	};
+	
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node) {
 		this.starter = starter;
 		this.random = random;
@@ -108,6 +119,60 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public synchronized SendableRequest removeFirst() {
+		if(node.currentScheduler == Node.SCHEDULER_IMPROVED_1)
+			return improved_scheduler_1_removeFirst();
+		else
+			return default_Scheduler_removeFirst();
+	}
+	
+	public SendableRequest improved_scheduler_1_removeFirst() {
+		// Priorities start at 0
+		// Maybe we should retry ... we were looping previously
+		Logger.minor(this, "removeFirst() (improved_1)");			
+		int i = random.nextInt(prioritySelecter.length);
+		SortedVectorByNumber s = priorities[prioritySelecter[i]];
+		if(s == null) {
+			Logger.minor(this, "Priority "+prioritySelecter[i]+" is null");
+			return null;
+		}
+		
+		i=prioritySelecter[i];
+		
+		SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst(); // will discard finished items
+		if(rga == null) {
+			Logger.minor(this, "No retrycount's in priority "+i);
+			priorities[i] = null;
+			return null;
+		}
+		SendableRequest req = (SendableRequest) rga.removeRandom();
+		if(rga.isEmpty()) {
+			Logger.minor(this, "Removing retrycount "+rga.getNumber());
+			s.remove(rga.getNumber());
+			if(s.isEmpty()) {
+				Logger.minor(this, "Removing priority "+i);
+				priorities[i] = null;
+			}
+		}
+		if(req == null) {
+			Logger.minor(this, "No requests in priority "+i+", retrycount "+rga.getNumber()+" ("+rga+")");
+			return null;
+		}
+		if(req.getPriorityClass() > i) {
+			// Reinsert it
+			Logger.minor(this, "In wrong priority class: "+req);
+			innerRegister(req);
+			return null;
+		}
+		Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+")");
+		ClientRequester cr = req.getClientRequest();
+		HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
+		v.remove(req);
+		if(v.isEmpty())
+			allRequestsByClientRequest.remove(cr);
+		return req;
+	}
+	
+	public SendableRequest default_Scheduler_removeFirst() {
 		// Priorities start at 0
 		Logger.minor(this, "removeFirst()");
 		for(int i=0;i<RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {

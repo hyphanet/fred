@@ -42,6 +42,7 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.RequestScheduler;
 import freenet.client.async.USKManager;
 import freenet.clients.http.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
@@ -414,6 +415,11 @@ public class Node {
 	/** If the throttled packet delay is less than this, reject no packets; if it's
 	 * between the two, reject some packets. */
 	public static final long SUB_MAX_THROTTLE_DELAY = 1000;
+	
+	public static final int SCHEDULER_DEFAULT = 0;
+	public static final int SCHEDULER_IMPROVED_1 = 1;
+
+	public final int currentScheduler;
 	
 	/** Accept one request every 10 seconds regardless, to ensure we update the
 	 * block send time.
@@ -1355,8 +1361,22 @@ public class Node {
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert();
 		myName = nodeConfig.getString("name");
 		 
-		nodeConfig.finishedInitialization();
-		writeNodeFile();
+		
+		// Select the request scheduler
+		
+		nodeConfig.register("scheduler", 0, 12, true, "Scheduler", "Scheduler",
+				new IntCallback(){
+					public int get(){
+						return currentScheduler;
+					}
+					
+					public void set(int val){
+						if(val == get()) return;
+						//FIXME: implement!
+					}
+		});
+		
+		currentScheduler = nodeConfig.getInt("scheduler");
 		
 		// FIXME make all the below arbitrary constants configurable!
 		
@@ -1386,14 +1406,19 @@ public class Node {
 		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, this);
 		sskInsertStarter.setScheduler(sskPutScheduler);
 		sskInsertStarter.start();
-
-	Logger.normal(this, "Initializing USK Manager");
-	System.out.println("Initializing USK Manager");
+		
+		
+		nodeConfig.finishedInitialization();
+		writeNodeFile();
+		
+		
+		Logger.normal(this, "Initializing USK Manager");
+		System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);
 		
 		// And finally, Initialize the plugin manager
-	Logger.normal(this, "Initializing Plugin Manager");
-	System.out.println("Initializing Plugin Manager");
+		Logger.normal(this, "Initializing Plugin Manager");
+		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
 		
 		FetcherContext ctx = makeClient((short)0).getFetcherContext();
