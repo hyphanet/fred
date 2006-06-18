@@ -179,6 +179,7 @@ public class FreenetInetAddress {
 	public InetAddress getHandshakeAddress() {
 	    // Since we're handshaking, hostname-to-IP may have changed
 	    if (_address != null && hostname == null) {
+	    	Logger.minor(this, "hostname is null, returning "+_address);
 	        return _address;
 	    } else {
 	    	Logger.minor(this, "Looking up '"+hostname+"' in DNS");
@@ -207,6 +208,7 @@ public class FreenetInetAddress {
 	        	}
 	        	return addr;
 	        } catch (UnknownHostException e) {
+	    	    Logger.minor(this, "DNS said hostname '"+hostname+"' is an unknown host, returning null");
 	            return null;
 	        }
 	    }
