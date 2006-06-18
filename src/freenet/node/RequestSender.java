@@ -99,7 +99,7 @@ public final class RequestSender implements Runnable {
     
     public void run() {
         short origHTL = htl;
-        node.addSender(key, htl, this);
+        node.addRequestSender(key, htl, this);
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
         try {
@@ -391,7 +391,7 @@ public final class RequestSender implements Runnable {
         } finally {
         	Logger.minor(this, "Leaving RequestSender.run() for "+uid);
             node.completed(uid);
-            node.removeSender(key, origHTL, this);
+            node.removeRequestSender(key, origHTL, this);
         }
     }
 

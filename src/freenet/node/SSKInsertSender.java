@@ -103,7 +103,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 	
 	public void run() {
         short origHTL = htl;
-
+        node.addInsertSender(myKey, htl, this);
         try {
         	realRun();
         } catch (Throwable t) {

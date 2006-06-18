@@ -2272,7 +2272,10 @@ public class Node {
 		Logger.minor(this, "Not in store locally");
 		
 		// Transfer coalescing - match key only as HTL irrelevant
-		RequestSender sender = (RequestSender) transferringRequestSenders.get(key);
+		RequestSender sender = null;
+		synchronized(transferringRequestSenders) {
+			sender = (RequestSender) transferringRequestSenders.get(key);
+		}
 		if(sender != null) {
 			Logger.minor(this, "Data already being transferred: "+sender);
 			return sender;
@@ -2325,21 +2328,46 @@ public class Node {
 	}
 
 	/**
-	 * Add a RequestSender to our HashSet.
+	 * Add a RequestSender to our HashMap.
 	 */
-	public synchronized void addSender(Key key, short htl, RequestSender sender) {
-		KeyHTLPair kh = new KeyHTLPair(key, htl);
-		requestSenders.put(kh, sender);
+	public void addRequestSender(Key key, short htl, RequestSender sender) {
+		synchronized(requestSenders) {
+			KeyHTLPair kh = new KeyHTLPair(key, htl);
+			if(requestSenders.containsKey(kh)) {
+				RequestSender rs = (RequestSender) requestSenders.get(kh);
+				Logger.error(this, "addRequestSender(): KeyHTLPair '"+kh+"' already in requestSenders as "+rs+" and you want to add "+sender);
+				return;
+			}
+			requestSenders.put(kh, sender);
+		}
 	}
 
 	/**
-	 * Add a transferring RequestSender.
+	 * Add a AnyInsertSender to our HashMap.
 	 */
-	public synchronized void addTransferringSender(NodeCHK key, RequestSender sender) {
-		transferringRequestSenders.put(key, sender);
+	public void addInsertSender(Key key, short htl, AnyInsertSender sender) {
+		synchronized(insertSenders) {
+			KeyHTLPair kh = new KeyHTLPair(key, htl);
+			if(insertSenders.containsKey(kh)) {
+				AnyInsertSender is = (AnyInsertSender) insertSenders.get(kh);
+				Logger.error(this, "addInsertSender(): KeyHTLPair '"+kh+"' already in insertSenders as "+is+" and you want to add "+sender);
+				return;
+			}
+			insertSenders.put(kh, sender);
+		}
+	}
+
+	/**
+	 * Add a transferring RequestSender to our HashMap.
+	 */
+	public void addTransferringSender(NodeCHK key, RequestSender sender) {
+		synchronized(transferringRequestSenders) {
+			transferringRequestSenders.put(key, sender);
+		}
 	}
 
 	public synchronized SSKBlock fetch(NodeSSK key) {
+		// Can we just lock on sskDatastore here?  **FIXME**
 		try {
 			return sskDatastore.fetch(key, false);
 		} catch (IOException e) {
@@ -2349,6 +2377,7 @@ public class Node {
 	}
 
 	public synchronized CHKBlock fetch(NodeCHK key) {
+		// Can we just lock on chkDatastore here?  **FIXME**
 		try {
 			return chkDatastore.fetch(key, false);
 		} catch (IOException e) {
@@ -2361,6 +2390,7 @@ public class Node {
 	 * Store a datum.
 	 */
 	public synchronized void store(CHKBlock block) {
+		// Can we just lock on chkDatastore here?  **FIXME**
 		try {
 			chkDatastore.put(block);
 		} catch (IOException e) {
@@ -2380,21 +2410,25 @@ public class Node {
 	/**
 	 * Remove a sender from the set of currently transferring senders.
 	 */
-	public synchronized void removeTransferringSender(NodeCHK key, RequestSender sender) {
-		RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
-		if(rs != sender) {
-			Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+" in removeTransferringSender");
+	public void removeTransferringSender(NodeCHK key, RequestSender sender) {
+		synchronized(transferringRequestSenders) {
+			RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
+			if(rs != sender) {
+				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+" in removeTransferringSender");
+			}
 		}
 	}
 
 	/**
 	 * Remove a RequestSender from the map.
 	 */
-	public synchronized void removeSender(Key key, short htl, RequestSender sender) {
-		KeyHTLPair kh = new KeyHTLPair(key, htl);
-		RequestSender rs = (RequestSender) requestSenders.remove(kh);
-		if(rs != sender) {
-			Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+","+htl+" in removeSender");
+	public void removeRequestSender(Key key, short htl, RequestSender sender) {
+		synchronized(requestSenders) {
+			KeyHTLPair kh = new KeyHTLPair(key, htl);
+			RequestSender rs = (RequestSender) requestSenders.remove(kh);
+			if(rs != sender) {
+				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+","+htl+" in removeRequestSender");
+			}
 		}
 	}
 
@@ -2402,10 +2436,12 @@ public class Node {
 	 * Remove an CHKInsertSender from the map.
 	 */
 	public void removeInsertSender(Key key, short htl, AnyInsertSender sender) {
-		KeyHTLPair kh = new KeyHTLPair(key, htl);
-		AnyInsertSender is = (AnyInsertSender) insertSenders.remove(kh);
-		if(is != sender) {
-			Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeInsertSender");
+		synchronized(insertSenders) {
+			KeyHTLPair kh = new KeyHTLPair(key, htl);
+			AnyInsertSender is = (AnyInsertSender) insertSenders.remove(kh);
+			if(is != sender) {
+				Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeInsertSender");
+			}
 		}
 	}
 
@@ -2449,16 +2485,19 @@ public class Node {
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
 		Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl);
-		CHKInsertSender is = (CHKInsertSender) insertSenders.get(kh);
+		CHKInsertSender is = null;
+		synchronized(insertSenders) {
+			is = (CHKInsertSender) insertSenders.get(kh);
+		}
 		if(is != null) {
 			Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
 		}
-		if(fromStore && !cache)
+  		if(fromStore && !cache)
 			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
 		Logger.minor(this, is.toString()+" for "+kh.toString());
-		insertSenders.put(kh, is);
+		// CHKInsertSender adds itself to insertSenders
 		return is;
 	}
 	
@@ -2482,7 +2521,10 @@ public class Node {
 		cacheKey(key.getPubKeyHash(), key.getPubKey());
 		Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl);
-		SSKInsertSender is = (SSKInsertSender) insertSenders.get(kh);
+		SSKInsertSender is = null;
+		synchronized(insertSenders) {
+			is = (SSKInsertSender) insertSenders.get(kh);
+		}
 		if(is != null) {
 			Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
@@ -2491,7 +2533,7 @@ public class Node {
 			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, closestLoc);
 		Logger.minor(this, is.toString()+" for "+kh.toString());
-		insertSenders.put(kh, is);
+		// SSKInsertSender adds itself to insertSenders
 		return is;
 	}
 	
@@ -2525,24 +2567,26 @@ public class Node {
 		else
 			sb.append("No peers yet");
 		sb.append("\nInserts: ");
-		int x = insertSenders.size();
-		sb.append(x);
-		if(x < 5 && x > 0) {
-			sb.append('\n');
-			// Dump
-			Iterator i = insertSenders.values().iterator();
-			while(i.hasNext()) {
-				AnyInsertSender s = (AnyInsertSender) i.next();
-				sb.append(s.getUID());
-				sb.append(": ");
-				sb.append(s.getStatusString());
+		synchronized(insertSenders) {
+			int x = getNumInserts();
+			sb.append(x);
+			if(x < 5 && x > 0) {
 				sb.append('\n');
+				// Dump
+				Iterator i = insertSenders.values().iterator();
+				while(i.hasNext()) {
+					AnyInsertSender s = (AnyInsertSender) i.next();
+					sb.append(s.getUID());
+					sb.append(": ");
+					sb.append(s.getStatusString());
+					sb.append('\n');
+				}
 			}
 		}
 		sb.append("\nRequests: ");
-		sb.append(requestSenders.size());
+		sb.append(getNumRequests());
 		sb.append("\nTransferring requests: ");
-		sb.append(this.transferringRequestSenders.size());
+		sb.append(getNumTransferringRequests());
 		sb.append('\n');
 		return sb.toString();
 	}
@@ -2560,15 +2604,21 @@ public class Node {
 	}
 	
 	public int getNumInserts() {
-		return insertSenders.size();
+		synchronized(insertSenders) {
+			return insertSenders.size();
+		}
 	}
 	
 	public int getNumRequests() {
-	return requestSenders.size();
+		synchronized(requestSenders) {
+			return requestSenders.size();
+		}
 	}
 
 	public int getNumTransferringRequests() {
-	return transferringRequestSenders.size();
+		synchronized(transferringRequestSenders) {
+			return transferringRequestSenders.size();
+		}
 	}
 	
 	/**
@@ -2577,13 +2627,13 @@ public class Node {
 	public String getFreevizOutput() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("\nrequests=");
-		sb.append(requestSenders.size());
+		sb.append(getNumRequests());
 		
 		sb.append("\ntransferring_requests=");
-		sb.append(this.transferringRequestSenders.size());
+		sb.append(getNumTransferringRequests());
 		
 		sb.append("\ninserts=");
-		sb.append(this.insertSenders.size());
+		sb.append(getNumInserts());
 		sb.append("\n");
 		
 		
@@ -2811,7 +2861,7 @@ public class Node {
 	
 	public void exit(){
 		this.park();
-			System.out.println("Goodbye. from "+this);
+		System.out.println("Goodbye. from "+this);
 		System.exit(0);
 	}
 	
