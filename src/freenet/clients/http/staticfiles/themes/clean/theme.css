@@ -422,29 +422,36 @@ div.progressbar-done {
 }
 
 tr.priority0, td.priority0 {
-	background-color: #eb613d;
+/*	background-color: #eb613d;*/
+	background-color: #ffb7b7;
 }
 
 tr.priority1, td.priority1 {
-	background-color: #007ee0;
+/*	background-color: #007ee0;*/
+	background-color: #ffcea7;
 }
 
 tr.priority2, td.priority2 {
-	background-color: #00e0ce;
+/*	background-color: #00e0ce;*/
+	background-color: #ffeba7;
 }
 
 tr.priority3, td.priority3 {
-	background-color: #00e094;
+/*	background-color: #00e094;*/
+	background-color: #ddffa7;
 }
 
 tr.priority4, td.priority4 {
-	background-color: #00e069;
+/*	background-color: #00e069;*/
+	background-color: #a7ffbc;
 }
 
 tr.priority5, td.priority5 {
-	background-color: #00e010;
+/*	background-color: #00e010;*/
+	background-color: #a7fff8;
 }
 
 tr.priority6, td.priority6 {
-	background-color: grey;
+/*	background-color: grey;*/
+	background-color: #a7caff;
 }
