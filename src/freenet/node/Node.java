@@ -2294,7 +2294,7 @@ public class Node {
 			}
 			
 			sender = new RequestSender(key, null, htl, uid, this, closestLocation, source);
-			requestSenders.put(kh, sender);
+			// RequestSender adds itself to requestSenders
 		}
 		Logger.minor(this, "Created new sender: "+sender);
 		return sender;
