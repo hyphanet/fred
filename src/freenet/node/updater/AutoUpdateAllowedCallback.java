@@ -22,7 +22,10 @@ public class AutoUpdateAllowedCallback implements BooleanCallback {
 	
 	public void set(boolean val) throws InvalidConfigValueException {
 		if(val == get()) return;
-		node.getNodeUpdater().setAutoupdateAllowed(val);
-		Logger.normal(this, "Node auto update is now allowed = "+val);
+		if(node.getNodeUpdater()!=null){
+			node.getNodeUpdater().setAutoupdateAllowed(val);
+			Logger.normal(this, "Node auto update is now allowed = "+val);
+		}else
+			throw new InvalidConfigValueException("Nodeupdater: unable to set node-autoupdate allowed if the updater isn't started");
 	}
 }
