@@ -113,6 +113,13 @@ public final class RequestSender implements Runnable {
                 return;
             }
             
+			// Route starvation due to almost all backed off?
+			if(node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED) == 1 && node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) > 3) {
+                // Don't send everything to one node, that may have just come out of backoff, hopefully preventing backoff hell (the one emerging from backoff gets pounded back into backoff)
+                finish(ROUTE_NOT_FOUND, null);
+                return;
+			}
+
             // Route it
             PeerNode next;
             double nextValue;
