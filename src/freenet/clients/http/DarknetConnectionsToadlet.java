@@ -264,32 +264,32 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						avgPingTimeString = " ("+(int) pn.averagePingTime()+"ms)";
 					}
 				}
-				String VersionPrefixString = "";
-				String VersionString = "";
-				String VersionSuffixString = "";
+				String versionPrefixString = "";
+				String versionString = "";
+				String versionSuffixString = "";
 				if(pn.publicInvalidVersion() || pn.publicReverseInvalidVersion()) {
-					VersionPrefixString = "<span class=\"peer_version_problem\">";
-					VersionSuffixString = "</span>";
+					versionPrefixString = "<span class=\"peer_version_problem\">";
+					versionSuffixString = "</span>";
 				}
-				String NamePrefixString = "";
-				String NameSuffixString = "";
+				String namePrefixString = "";
+				String nameSuffixString = "";
 				if(pn.isConnected()) {
-				  NamePrefixString = "<a href=\"/send_n2ntm/?peernode_hashcode="+pn.hashCode()+"\">";
-				  NameSuffixString = "</a>";
+				  namePrefixString = "<a href=\"/send_n2ntm/?peernode_hashcode="+pn.hashCode()+"\">";
+				  nameSuffixString = "</a>";
 				}
 				
 				if(advancedEnabled) {
-					VersionString = HTMLEncoder.encode(pn.getVersion());
+					versionString = HTMLEncoder.encode(pn.getVersion());
 				} else {
-					VersionString = HTMLEncoder.encode(pn.getSimpleVersion());
+					versionString = HTMLEncoder.encode(pn.getSimpleVersion());
 				}
 
 				row[0] = pn;
 				row[1] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
 				row[2] = status;
-				row[3] = NamePrefixString+HTMLEncoder.encode(pn.getName())+NameSuffixString;
+				row[3] = namePrefixString+HTMLEncoder.encode(pn.getName())+nameSuffixString;
 				row[4] = ( pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)" ) + avgPingTimeString;
-				row[5] = VersionPrefixString+VersionString+VersionSuffixString;
+				row[5] = versionPrefixString+versionString+versionSuffixString;
 				row[6] = new Double(pn.getLocation().getValue());
 				row[7] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
 				row[8] = idleToString(now, idle, ((Integer) status).intValue());
