@@ -556,7 +556,7 @@ public class PeerNode implements PeerContext {
       */
     public void maybeUpdateHandshakeIPs(boolean ignoreHostnames) {
     	long now = System.currentTimeMillis();
-    	if((now - lastAttemptedHandshakeIPUpdateTime) < (5*60*1000)) {
+    	if((now - lastAttemptedHandshakeIPUpdateTime) < (5*60*1000)) {  // 5 minutes
     		//Logger.minor(this, "Looked up recently (detectedPeer = "+detectedPeer + " : "+((detectedPeer == null) ? "" : detectedPeer.getAddress(false).toString()));
     		return;  // 5 minutes FIXME
     	}
@@ -628,7 +628,7 @@ public class PeerNode implements PeerContext {
         		detectedPeer = detectedDuplicate;
         	}
     	}
-    	Logger.minor(this, "3: detectedPeer = "+detectedPeer+" ("+detectedPeer.getAddress(false));
+    	Logger.minor(this, "3: detectedPeer = "+detectedPeer+" ("+detectedPeer.getAddress(false)+")");
     	Logger.minor(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     	return;
     }

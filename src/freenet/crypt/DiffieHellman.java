@@ -9,6 +9,7 @@ package freenet.crypt;
 import java.util.Random;
 import java.util.Stack;
 
+import freenet.support.Logger;
 import net.i2p.util.NativeBigInteger;
 
 public class DiffieHellman {
@@ -97,13 +98,18 @@ public class DiffieHellman {
 		}
 	}
 
-    /**
-     * Create a DiffieHellmanContext. This will include this side's DH params.
-     */
-    public static DiffieHellmanContext generateContext() {
-        NativeBigInteger[] params = getParams();
-        return new DiffieHellmanContext(params[0], params[1], group);
-    }
+	/**
+	 * Create a DiffieHellmanContext. This will include this side's DH params.
+	 */
+	public static DiffieHellmanContext generateContext() {
+		long time1 = System.currentTimeMillis();
+		NativeBigInteger[] params = getParams();
+		long time2 = System.currentTimeMillis();
+		if((time2 - time1) > 300) {
+			Logger.error(null, "DiffieHellman.generateContext(): time2 is more than 300ms after time1 ("+(time2 - time1)+")");
+		}
+		return new DiffieHellmanContext(params[0], params[1], group);
+	}
 	
 	public static NativeBigInteger[] getParams() {
 		synchronized (precalcBuffer) {

@@ -310,6 +310,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param replyTo
      */
     private void sendFirstHalfDHPacket(int phase, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
+        long time1 = System.currentTimeMillis();
         Logger.minor(this, "Sending ("+phase+") "+integer.toHexString()+" to "+pn.getPeer());
         byte[] data = integer.toByteArray();
         int targetLength = DiffieHellman.modulusLengthInBytes();
@@ -326,19 +327,32 @@ public class FNPPacketMangler implements LowLevelFilter {
             data = newData;
         }
         Logger.minor(this, "Processed: "+HexUtil.bytesToHex(data));
+        long time2 = System.currentTimeMillis();
+        if((time2 - time1) > 200) {
+          Logger.error(this, "sendFirstHalfDHPacket: time2 is more than 200ms after time1 ("+(time2 - time1)+") working on "+replyTo+" of "+pn.getName());
+        }
         sendAuthPacket(1, 0, phase, data, pn, replyTo);
+        long time3 = System.currentTimeMillis();
+        if((time3 - time2) > 500) {
+          Logger.error(this, "sendFirstHalfDHPacket:sendAuthPacket() time3 is more than half a second after time2 ("+(time3 - time2)+") working on "+replyTo+" of "+pn.getName());
+        }
+        if((time3 - time1) > 500) {
+          Logger.error(this, "sendFirstHalfDHPacket: time3 is more than half a second after time1 ("+(time3 - time1)+") working on "+replyTo+" of "+pn.getName());
+        }
     }
 
     /**
      * Send an auth packet.
      */
     private void sendAuthPacket(int version, int negType, int phase, byte[] data, PeerNode pn, Peer replyTo) {
+        long now = System.currentTimeMillis();
+        int delta = (int) (now - pn.lastSentPacketTime());
         byte[] output = new byte[data.length+3];
         output[0] = (byte) version;
         output[1] = (byte) negType;
         output[2] = (byte) phase;
         System.arraycopy(data, 0, output, 3, data.length);
-        Logger.minor(this, "Sending auth packet ("+version+","+negType+" to "+replyTo+" - version="+version+" negType="+negType+" phase="+phase+" data.length="+data.length+" for "+pn);
+        Logger.minor(this, "Sending auth packet ("+version+","+negType+" to "+replyTo+" - version="+version+" negType="+negType+" phase="+phase+" data.length="+data.length+" for "+pn.getPeer()+" (last packet sent "+delta+"ms ago)");
         sendAuthPacket(output, pn, replyTo);
     }
 
@@ -1292,23 +1306,23 @@ public class FNPPacketMangler implements LowLevelFilter {
         handshakeIPs = pn.getHandshakeIPs();
         long secondTime = System.currentTimeMillis();
         if((secondTime - firstTime) > 1000)
-            Logger.normal(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+pn.getName());
+            Logger.error(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+pn.getName());
         if(handshakeIPs.length == 0) {
             pn.couldNotSendHandshake();
             long thirdTime = System.currentTimeMillis();
             if((thirdTime - secondTime) > 1000)
-                Logger.normal(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+pn.getName());
+                Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+pn.getName());
             return;
         } else {
             long DHTime1 = System.currentTimeMillis();
             ctx = DiffieHellman.generateContext();
             long DHTime2 = System.currentTimeMillis();
             if((DHTime2 - DHTime1) > 1000)
-                Logger.normal(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.getName());
+                Logger.error(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.getName());
             pn.setDHContext(ctx);
             long DHTime3 = System.currentTimeMillis();
             if((DHTime3 - DHTime2) > 1000)
-                Logger.normal(this, "DHTime3 is more than a second after DHTime2 ("+(DHTime3 - DHTime2)+") working on "+pn.getName());
+                Logger.error(this, "DHTime3 is more than a second after DHTime2 ("+(DHTime3 - DHTime2)+") working on "+pn.getName());
         }
         int sentCount = 0;
         long loopTime1 = System.currentTimeMillis();
