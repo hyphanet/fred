@@ -245,6 +245,12 @@ public abstract class ClientRequest {
 	public abstract SimpleFieldSet getFieldSet() throws IOException;
 
 	public abstract double getSuccessFraction();
+	
+	public abstract double getTotalBlocks();
+	public abstract double getMinBlocks();
+	public abstract double getFetchedBlocks();
+	public abstract double getFailedBlocks();
+	public abstract double getFatalyFailedBlocks();
 
 	public abstract String getFailureReason();
 

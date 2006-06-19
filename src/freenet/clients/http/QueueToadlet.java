@@ -256,12 +256,6 @@ public class QueueToadlet extends Toadlet {
 			}
 			writeBigEnding(buf);
 		}
-
-		/* FIXME color-coded progress bars.
-		 * It would be really nice to have a color-coded progress bar.
-		 * We can then show what part is successful, what part isn't tried yet,
-		 * what part has each different well known error code...
-		 */
 		
 		if(!(failedDownload.isEmpty() && failedUpload.isEmpty())) {
 			writeBigHeading("Failed requests", buf);
@@ -411,14 +405,33 @@ public class QueueToadlet extends Toadlet {
 
 	private void writeProgressFractionCell(ClientRequest p, StringBuffer buf) {
 		buf.append("<td>");
+		
 		double frac = p.getSuccessFraction();
+		double total = p.getTotalBlocks();
+		// All are fractions
+		double fetched = p.getFetchedBlocks()/total;
+		double failed = p.getFailedBlocks()/total;
+		double failed2 = p.getFatalyFailedBlocks()/total;
+		double min = p.getMinBlocks()/total;
+		
 		boolean b = p.isTotalFinalized();
 		if(frac < 0) {
 			buf.append("<span class=\"progress_fraction_unknown\">unknown</span>");
 		} else {
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(0);
-			buf.append("<div class=\"progressbar\"><div class=\"progressbar-done\" style=\"width: "+nf.format(frac*100)+"px\"></div></div>");
+			buf.append("<div class=\"progressbar\">"+
+					"<div class=\"progressbar-done\" style=\"width: "+nf.format(frac*100)+"px\"></div>");
+			if(node.getToadletContainer().isAdvancedDarknetEnabled())
+			{
+				if(failed > 0)
+					buf.append("<div class=\"progressbar-failed\" style=\"width: "+nf.format(failed*100)+"px\"></div>");
+				if(failed2 > 0)
+					buf.append("<div class=\"progressbar-failed2\" style=\"width: "+nf.format(failed2*100)+"px\"></div>");
+				if(fetched < min)
+					buf.append("<div class=\"progressbar-min\" style=\"width: "+nf.format((min-fetched)*100)+"px\"></div>");
+			}
+			buf.append("</div>");
 			
 			nf.setMaximumFractionDigits(1);
 			if(b)

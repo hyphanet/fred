@@ -237,6 +237,52 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	
+	public double getTotalBlocks() {
+		if(progressMessage != null) {
+			if(progressMessage instanceof SimpleProgressMessage)
+				return ((SimpleProgressMessage)progressMessage).getTotalBlocks();
+			else return 0;
+		} else
+			return -1;
+	}
+	
+	public double getMinBlocks() {
+		if(progressMessage != null) {
+			if(progressMessage instanceof SimpleProgressMessage)
+				return ((SimpleProgressMessage)progressMessage).getMinBlocks();
+			else return 0;
+		} else
+			return -1;
+	}
+	
+	public double getFailedBlocks() {
+		if(progressMessage != null) {
+			if(progressMessage instanceof SimpleProgressMessage)
+				return ((SimpleProgressMessage)progressMessage).getFailedBlocks();
+			else return 0;
+		} else
+			return -1;
+	}
+	
+	public double getFatalyFailedBlocks() {
+		if(progressMessage != null) {
+			if(progressMessage instanceof SimpleProgressMessage)
+				return ((SimpleProgressMessage)progressMessage).getFatalyFailedBlocks();
+			else return 0;
+		} else
+			return -1;
+	}
+	
+	public double getFetchedBlocks() {
+		if(progressMessage != null) {
+			if(progressMessage instanceof SimpleProgressMessage)
+				return ((SimpleProgressMessage)progressMessage).getFetchedBlocks();
+			else return 0;
+		} else
+			return -1;
+	}
+	
 	public boolean isTotalFinalized() {
 		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
 		else return ((SimpleProgressMessage)progressMessage).isTotalFinalized();

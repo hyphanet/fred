@@ -37,6 +37,26 @@ public class SimpleProgressMessage extends FCPMessage {
 	public double getFraction() {
 		return (double) event.fetchedBlocks / (double) event.totalBlocks;
 	}
+	
+	public double getMinBlocks() {
+		return (double) event.minSuccessfulBlocks;
+	}
+	
+	public double getTotalBlocks(){
+		return (double) event.totalBlocks;
+	}
+	
+	public double getFetchedBlocks(){
+		return (double) event.fetchedBlocks;
+	}
+	
+	public double getFailedBlocks(){
+		return (double) event.failedBlocks;
+	}
+	
+	public double getFatalyFailedBlocks(){
+		return (double) event.fatallyFailedBlocks;
+	}
 
 	public boolean isTotalFinalized() {
 		return event.finalizedTotal;

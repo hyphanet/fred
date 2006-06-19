@@ -410,14 +410,35 @@ table.queue span.key_is {
 }
 
 div.progressbar {
+	float: left;
 	margin: none;
 	background: blue;
 	border: solid blue 1px;
 	width: 100px;
+	height:15px;	
 }
 
 div.progressbar-done {
+	float: left;
+	background: green;
+	height:15px;
+}
+
+div.progressbar-min {
+	float: left;
+	background: yellow;
+	height:15px;
+}
+
+div.progressbar-failed {
+	float: left;
 	background: red;
+	height:15px;
+}
+
+div.progressbar-failed2 {
+	float: left;
+	background: black;
 	height:15px;
 }
 
