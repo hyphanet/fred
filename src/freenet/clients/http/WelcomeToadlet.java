@@ -414,7 +414,7 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("Freenet "+Version.nodeVersion+" Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-		if(Version.buildNumber() < Version.highestSeenBuild) {
+		if(Version.buildNumber() < Version.highestSeenBuild && advancedDarknetOutputEnabled) {
 			buf.append("<br />");
 			buf.append("<b>A newer version is available! (Build #"+Version.highestSeenBuild+")</b>");
 		}
