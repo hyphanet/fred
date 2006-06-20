@@ -85,19 +85,22 @@ public final class RequestSender implements Runnable {
         this.node = n;
         this.source = source;
         this.nearestLoc = nearestLoc;
-        if(key instanceof NodeSSK && pubKey == null) {
-        	pubKey = ((NodeSSK)key).getPubKey();
-        	if(pubKey == null)
-        		pubKey = node.getKey(((NodeSSK)key).getPubKeyHash());
-        }
-        
         target = key.toNormalizedDouble();
+    }
+
+    public void start() {
         Thread t = new Thread(this, "RequestSender for UID "+uid);
         t.setDaemon(true);
         t.start();
     }
     
     public void run() {
+        if(key instanceof NodeSSK && pubKey == null) {
+        	pubKey = ((NodeSSK)key).getPubKey();
+        	if(pubKey == null)
+        		pubKey = node.getKey(((NodeSSK)key).getPubKeyHash());
+        }
+        
         short origHTL = htl;
         node.addRequestSender(key, htl, this);
         HashSet nodesRoutedTo = new HashSet();

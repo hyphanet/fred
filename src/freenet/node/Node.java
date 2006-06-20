@@ -2299,6 +2299,7 @@ public class Node {
 			sender = new RequestSender(key, null, htl, uid, this, closestLocation, source);
 			// RequestSender adds itself to requestSenders
 		}
+		sender.start();
 		Logger.minor(this, "Created new sender: "+sender);
 		return sender;
 	}
