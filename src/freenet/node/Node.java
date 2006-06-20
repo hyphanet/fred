@@ -1199,6 +1199,7 @@ public class Node {
 		peers.writePeers();
 		peers.updatePMUserAlert();
 		nodePinger = new NodePinger(this);
+		nodePinger.start();
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
@@ -2482,7 +2483,7 @@ public class Node {
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
 	 */
-	public synchronized CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
+	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
 		Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl);
@@ -2497,6 +2498,7 @@ public class Node {
   		if(fromStore && !cache)
 			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
+		is.start();
 		Logger.minor(this, is.toString()+" for "+kh.toString());
 		// CHKInsertSender adds itself to insertSenders
 		return is;
@@ -2513,7 +2515,7 @@ public class Node {
 	 * @param source The node that sent the InsertRequest, or null
 	 * if it originated locally.
 	 */
-	public synchronized SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
+	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
 			boolean fromStore, double closestLoc, boolean cache) {
 		NodeSSK key = (NodeSSK) block.getKey();
 		if(key.getPubKey() == null) {
@@ -2533,6 +2535,7 @@ public class Node {
 		if(fromStore && !cache)
 			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, closestLoc);
+		is.start();
 		Logger.minor(this, is.toString()+" for "+kh.toString());
 		// SSKInsertSender adds itself to insertSenders
 		return is;

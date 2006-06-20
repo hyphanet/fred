@@ -42,6 +42,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
 		AwaitingCompletion(PeerNode pn, PartiallyReceivedBlock prb) {
 			this.pn = pn;
 			bt = new BlockTransmitter(node.usm, pn, uid, prb);
+		}
+		
+		void start() {
 			Sender s = new Sender(this);
             Thread senderThread = new Thread(s, "Sender for "+uid+" to "+pn.getPeer());
             senderThread.setDaemon(true);
@@ -125,11 +128,14 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
         this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
         this.nodesWaitingForCompletion = new Vector();
+    }
+
+	void start() {
         Thread t = new Thread(this, "CHKInsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
         t.start();
-    }
-    
+	}
+	
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
     static final int SEARCH_TIMEOUT = 60000;
@@ -368,6 +374,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
             	nodesWaitingForCompletion.add(ac);
             	nodesWaitingForCompletion.notifyAll();
             }
+            ac.start();
             makeCompletionWaiter();
 
             while (true) {
@@ -584,13 +591,16 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
 		return sentRequest;
 	}
 	
-	private synchronized void makeCompletionWaiter() {
-		if(cw == null) {
-			cw = new CompletionWaiter();
-			Thread t = new Thread(cw, "Completion waiter for "+uid);
-			t.setDaemon(true);
-			t.start();
+	private void makeCompletionWaiter() {
+		synchronized(this) {
+			if(cw != null)
+				cw = new CompletionWaiter();
+			else
+				return;
 		}
+		Thread t = new Thread(cw, "Completion waiter for "+uid);
+		t.setDaemon(true);
+		t.start();
 	}
 	
 	private class CompletionWaiter implements Runnable {

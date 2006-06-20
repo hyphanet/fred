@@ -40,7 +40,7 @@ import freenet.support.Logger;
  */
 public class FCPServer implements Runnable {
 
-	final NetworkInterface networkInterface;
+	NetworkInterface networkInterface;
 	final Node node;
 	final int port;
 	public final boolean enabled;
@@ -82,21 +82,24 @@ public class FCPServer implements Runnable {
 		this.enabled = isEnabled;
 		this.enablePersistentDownloads = persistentDownloadsEnabled;
 		setPersistentDownloadsFile(new File(persistentDownloadsDir));
+		this.node = node;
+		clientsByName = new WeakHashMap();
 		
+		
+		// This one is only used to get the default settings. Individual FCP conns
+		// will make their own.
+		HighLevelSimpleClient client = node.makeClient((short)0);
+		defaultFetchContext = client.getFetcherContext();
+		defaultInsertContext = client.getInserterContext();
+		
+		
+		globalClient = new FCPClient("Global Queue", this, null, true);
+		
+		
+	}
+	
+	public void maybeStart() throws IOException, InvalidConfigValueException {
 		if (this.enabled) {
-			this.node = node;
-			clientsByName = new WeakHashMap();
-			
-			
-			// This one is only used to get the default settings. Individual FCP conns
-			// will make their own.
-			HighLevelSimpleClient client = node.makeClient((short)0);
-			defaultFetchContext = client.getFetcherContext();
-			defaultInsertContext = client.getInserterContext();
-			
-			
-			globalClient = new FCPClient("Global Queue", this, null, true);
-			
 			
 			if(enablePersistentDownloads) {
 				loadPersistentRequests();
@@ -124,12 +127,7 @@ public class FCPServer implements Runnable {
 			Logger.normal(this, "Not starting FCP server as it's disabled");
 			System.out.println("Not starting FCP server as it's disabled");
 			this.networkInterface = null;
-			this.node = null;
-			this.clientsByName = null;
-			this.globalClient = null;
-			this.defaultFetchContext = null;
 		}
-		
 	}
 	
 	public void run() {
@@ -147,7 +145,8 @@ public class FCPServer implements Runnable {
 	private void realRun() throws IOException {
 		// Accept a connection
 		Socket s = networkInterface.accept();
-		new FCPConnectionHandler(s, this);
+		FCPConnectionHandler ch = new FCPConnectionHandler(s, this);
+		ch.start();
 	}
 
 	static class FCPPortNumberCallback implements IntCallback {
@@ -317,6 +316,9 @@ public class FCPServer implements Runnable {
 		
 	
 		fcpConfig.finishedInitialization();
+		if(fcp != null)
+			fcp.maybeStart();
+
 		return fcp;
 	}
 

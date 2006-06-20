@@ -38,9 +38,9 @@ public class PacketSender implements Runnable {
         this.node = node;
         myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
-        lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
     }
 
+    
     /**
      * The main purpose of this thread is to detect the lost-lock deadlocks that happen occasionally
      * on Sun VMs with NPTL enabled, and restart the node.
@@ -95,6 +95,7 @@ public class PacketSender implements Runnable {
     void start() {
         Logger.normal(this, "Starting PacketSender");
         System.out.println("Starting PacketSender");
+        lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
         // Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
         Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
         t1.setDaemon(true);

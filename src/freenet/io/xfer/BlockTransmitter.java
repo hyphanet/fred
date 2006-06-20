@@ -345,6 +345,7 @@ public class BlockTransmitter {
 				}
 			}
 		};
+		_senderThread.setDaemon(true);
 	}
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
@@ -483,7 +484,7 @@ public class BlockTransmitter {
     public void sendAsync() {
         Runnable r = new Runnable() {
             public void run() { send(); } };
-        Thread t = new Thread(r, "BlockTransmitter:sendAsync()");
+        Thread t = new Thread(r, "BlockTransmitter:sendAsync() for "+this);
         t.setDaemon(true);
         t.start();
     }

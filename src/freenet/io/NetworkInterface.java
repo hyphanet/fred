@@ -156,7 +156,9 @@ public class NetworkInterface {
 				started = true;
 				Iterator acceptors = this.acceptors.iterator();
 				while (acceptors.hasNext()) {
-					new Thread((Acceptor) acceptors.next(), "Network Interface Acceptor").start();
+					Thread t = new Thread((Acceptor) acceptors.next(), "Network Interface Acceptor");
+					t.setDaemon(true);
+					t.start();
 				}
 			}
 			while (acceptedSockets.size() == 0) {

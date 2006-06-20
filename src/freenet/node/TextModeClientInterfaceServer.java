@@ -43,7 +43,12 @@ public class TextModeClientInterfaceServer implements Runnable {
         this.allowedHosts = allowedHosts;
         this.isEnabled=true;
         n.setTMCI(this);
-        new Thread(this, "Text mode client interface").start();
+    }
+    
+    void start() {
+        Thread t = new Thread(this, "Text mode client interface");
+        t.setDaemon(true);
+        t.start();
     }
     
 	public static void maybeCreate(Node node, Config config) throws IOException {
@@ -67,7 +72,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 		boolean direct = TMCIConfig.getBoolean("directEnabled");
 
 		if(TMCIEnabled){
-			new TextModeClientInterfaceServer(node, port, bind_ip, allowedHosts);
+			new TextModeClientInterfaceServer(node, port, bind_ip, allowedHosts).start();
 			Logger.normal(node, "TMCI started on "+bind_ip+":"+port);
 			System.out.println("TMCI started on "+bind_ip+":"+port);
 		}

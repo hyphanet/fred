@@ -84,7 +84,7 @@ public class TestnetHandler implements Runnable {
 			while(!server.isClosed()) {
 				try {
 					Socket s = server.accept();
-					new TestnetSocketHandler(s);
+					new TestnetSocketHandler(s).start();
 				} catch (IOException e) {
 					Logger.error(this, "Testnet failed to accept socket: "+e, e);
 				}	
@@ -117,11 +117,14 @@ public class TestnetHandler implements Runnable {
 		
 		public TestnetSocketHandler(Socket s2) {
 			this.s = s2;
+		}
+
+		void start() {
 			Thread t = new Thread(this, "Testnet handler for "+s.getInetAddress()+" at "+System.currentTimeMillis());
 			t.setDaemon(true);
 			t.start();
 		}
-
+		
 		public void run() {
 			InputStream is = null;
 			OutputStream os = null;

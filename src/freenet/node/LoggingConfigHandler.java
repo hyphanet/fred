@@ -64,7 +64,7 @@ public class LoggingConfigHandler {
 							// Discard old data
 							fileLoggerHook.switchBaseFilename(f.getPath()+File.separator+LOG_PREFIX);
 							logDir = f;
-							new Deleter(logDir);
+							new Deleter(logDir).start();
 						}
 					}
     	});
@@ -252,11 +252,14 @@ public class LoggingConfigHandler {
 		
 		public Deleter(File logDir) {
 			this.logDir = logDir;
+		}
+
+		void start() {
 			Thread t = new Thread(this, "Old log directory "+logDir+" deleter");
 			t.setDaemon(true);
 			t.start();
 		}
-
+		
 		public void run() {
 			fileLoggerHook.waitForSwitch();
 			delete(logDir);

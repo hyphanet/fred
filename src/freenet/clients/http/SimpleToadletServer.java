@@ -122,13 +122,14 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				if(val) {
 					// Start it
 					myThread = new Thread(SimpleToadletServer.this, "SimpleToadletServer");
-					myThread.setDaemon(true);
-					myThread.start();
 				} else {
 					myThread.interrupt();
 					myThread = null;
+					return;
 				}
 			}
+			myThread.setDaemon(true);
+			myThread.start();
 		}
 	}
 	
@@ -158,6 +159,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		fproxyConfig.register("enabled", true, 1, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
 				new FProxyEnabledCallback());
+		
+		boolean enabled = fproxyConfig.getBoolean("enabled");
 		
 		List themes = new ArrayList();
 		try {
@@ -200,8 +203,6 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 		}
 		
-		boolean enabled = fproxyConfig.getBoolean("enabled");
-		
 		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, "FProxy port number", "FProxy port number",
 				new FProxyPortCallback());
 		fproxyConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
@@ -225,18 +226,13 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		toadlets = new LinkedList();
 		node.setToadletContainer(this); // even if not enabled, because of config
 		
+		this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
 		if(!enabled) {
 			Logger.normal(node, "Not starting FProxy as it's disabled");
 			System.out.println("Not starting FProxy as it's disabled");
-			this.networkInterface = null;
 		} else {
-			this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
-		
 			myThread = new Thread(this, "SimpleToadletServer");
 			myThread.setDaemon(true);
-			myThread.start();
-			Logger.normal(this, "Starting FProxy on "+bindTo+":"+port);
-			System.out.println("Starting FProxy on "+bindTo+":"+port);
 		}
 	}
 	
@@ -248,11 +244,16 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
 		toadlets = new LinkedList();
 		this.cssName = cssName;
-		Thread t = new Thread(this, "SimpleToadletServer");
-		t.setDaemon(true);
-		t.start();
 	}
 
+	public void start() {
+		if(myThread != null) {
+			myThread.start();
+			Logger.normal(this, "Starting FProxy on "+bindTo+":"+port);
+			System.out.println("Starting FProxy on "+bindTo+":"+port);
+		}
+	}
+	
 	public void register(Toadlet t, String urlPrefix, boolean atFront) {
 		ToadletElement te = new ToadletElement(t, urlPrefix);
 		if(atFront) toadlets.addFirst(te);
@@ -284,6 +285,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
         logger.start();
 		SimpleToadletServer server = new SimpleToadletServer(1111, "127.0.0.1", "127.0.0.1", new TempBucketFactory(new FilenameGenerator(new DummyRandomSource(), true, new File("temp-test"), "test-temp-")), "aqua");
 		server.register(new TrivialToadlet(null), "", true);
+		server.start();
 		System.out.println("Bound to port 1111.");
 		while(true) {
 			try {
@@ -307,7 +309,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			try {
 				Socket conn = networkInterface.accept();
 				Logger.minor(this, "Accepted connection");
-				new SocketHandler(conn);
+				SocketHandler sh = new SocketHandler(conn);
+				sh.start();
 			} catch (SocketTimeoutException e) {
 				// Go around again, this introduced to avoid blocking forever when told to quit
 			} 
@@ -320,11 +323,14 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		public SocketHandler(Socket conn) {
 			this.sock = conn;
+		}
+
+		void start() {
 			Thread t = new Thread(this, "SimpleToadletServer$SocketHandler");
 			t.setDaemon(true);
 			t.start();
 		}
-
+		
 		public void run() {
 			Logger.minor(this, "Handling connection");
 			ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf);

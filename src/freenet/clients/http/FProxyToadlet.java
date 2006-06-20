@@ -373,6 +373,9 @@ public class FProxyToadlet extends Toadlet {
 			QueueToadlet queueToadlet = new QueueToadlet(node, node.getFCPServer(), client);
 			server.register(queueToadlet, "/queue/", true);
 
+			// Now start the server.
+			server.start();
+			
 		} catch (IOException ioe) {
 			Logger.error(node,"Failed to start FProxy: "+ioe, ioe);
 		}

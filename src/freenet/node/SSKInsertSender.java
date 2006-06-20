@@ -96,11 +96,14 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 		}
     	this.block = block;
     	startTime = System.currentTimeMillis();
+    }
+
+    void start() {
         Thread t = new Thread(this, "SSKInsertSender for UID "+uid+" on "+node.portNumber+" at "+System.currentTimeMillis());
         t.setDaemon(true);
         t.start();
     }
-	
+    
 	public void run() {
         short origHTL = htl;
         node.addInsertSender(myKey, htl, this);

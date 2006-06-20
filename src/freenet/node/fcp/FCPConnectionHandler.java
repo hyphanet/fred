@@ -29,9 +29,13 @@ public class FCPConnectionHandler {
 		requestsByIdentifier = new HashMap();
 		this.inputHandler = new FCPConnectionInputHandler(this);
 		this.outputHandler = new FCPConnectionOutputHandler(this);
-		inputHandler.start();
 	}
 	
+	void start() {
+		inputHandler.start();
+		outputHandler.start();
+	}
+
 	public void close() {
 		ClientRequest[] requests;
 		if(client != null)

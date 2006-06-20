@@ -14,11 +14,14 @@ public class FCPConnectionOutputHandler implements Runnable {
 	public FCPConnectionOutputHandler(FCPConnectionHandler handler) {
 		this.handler = handler;
 		this.outQueue = new LinkedList();
+	}
+
+	void start() {
 		Thread t = new Thread(this, "FCP output handler for "+handler.sock.getRemoteSocketAddress()+":"+handler.sock.getPort());
 		t.setDaemon(true);
 		t.start();
 	}
-
+	
 	public void run() {
 		try {
 			realRun();

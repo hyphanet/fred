@@ -20,6 +20,9 @@ public class NodePinger implements Runnable {
 		this.node = n;
 		this.tdra = new TimeDecayingRunningAverage(0.0, 30*1000, // 30 seconds
 				0.0, Double.MAX_VALUE);
+	}
+
+	void start() {
 		Thread t = new Thread(this, "Node pinger");
 		t.setDaemon(true);
 		t.start();
