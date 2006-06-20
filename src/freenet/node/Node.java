@@ -1812,17 +1812,15 @@ public class Node {
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
 		long startTime = System.currentTimeMillis();
-		synchronized(this) {
-			if(cache) {
-				try {
-					chkDatastore.put(block);
-				} catch (IOException e) {
-					Logger.error(this, "Datastore failure: "+e, e);
-				}
+		if(cache) {
+			try {
+				chkDatastore.put(block);
+			} catch (IOException e) {
+				Logger.error(this, "Datastore failure: "+e, e);
 			}
-			is = makeInsertSender((NodeCHK)block.getClientKey().getNodeKey(), 
-					MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
 		}
+		is = makeInsertSender((NodeCHK)block.getClientKey().getNodeKey(), 
+				MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
 		boolean hasForwardedRejectedOverload = false;
 		// Wait for status
 		while(true) {
@@ -1914,19 +1912,17 @@ public class Node {
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
 		long startTime = System.currentTimeMillis();
-		synchronized(this) {
-			if(cache) {
-				try {
-					sskDatastore.put(block, false);
-				} catch (IOException e) {
-					Logger.error(this, "Datastore failure: "+e, e);
-				} catch (KeyCollisionException e) {
-					throw new LowLevelPutException(LowLevelPutException.COLLISION);
-				}
+		if(cache) {
+			try {
+				sskDatastore.put(block, false);
+			} catch (IOException e) {
+				Logger.error(this, "Datastore failure: "+e, e);
+			} catch (KeyCollisionException e) {
+				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			}
-			is = makeInsertSender(block, 
-					MAX_HTL, uid, null, false, lm.getLocation().getValue(), cache);
 		}
+		is = makeInsertSender(block, 
+				MAX_HTL, uid, null, false, lm.getLocation().getValue(), cache);
 		boolean hasForwardedRejectedOverload = false;
 		// Wait for status
 		while(true) {
@@ -1976,9 +1972,7 @@ public class Node {
 		if(is.hasCollided()) {
 			// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
 			try {
-				synchronized(this) {
-					sskDatastore.put(is.getBlock(), true);
-				}
+				sskDatastore.put(is.getBlock(), true);
 			} catch (KeyCollisionException e) {
 				// Impossible
 			} catch (IOException e) {
@@ -2368,7 +2362,7 @@ public class Node {
 		}
 	}
 
-	public synchronized SSKBlock fetch(NodeSSK key) {
+	public SSKBlock fetch(NodeSSK key) {
 		// Can we just lock on sskDatastore here?  **FIXME**
 		try {
 			return sskDatastore.fetch(key, false);
@@ -2378,8 +2372,7 @@ public class Node {
 		}
 	}
 
-	public synchronized CHKBlock fetch(NodeCHK key) {
-		// Can we just lock on chkDatastore here?  **FIXME**
+	public CHKBlock fetch(NodeCHK key) {
 		try {
 			return chkDatastore.fetch(key, false);
 		} catch (IOException e) {
@@ -2391,8 +2384,7 @@ public class Node {
 	/**
 	 * Store a datum.
 	 */
-	public synchronized void store(CHKBlock block) {
-		// Can we just lock on chkDatastore here?  **FIXME**
+	public void store(CHKBlock block) {
 		try {
 			chkDatastore.put(block);
 		} catch (IOException e) {
@@ -2400,7 +2392,7 @@ public class Node {
 		}
 	}
 
-	public synchronized void store(SSKBlock block) throws KeyCollisionException {
+	public void store(SSKBlock block) throws KeyCollisionException {
 		try {
 			sskDatastore.put(block, false);
 			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey());
