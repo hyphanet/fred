@@ -42,7 +42,6 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequestScheduler;
-import freenet.client.async.RequestScheduler;
 import freenet.client.async.USKManager;
 import freenet.clients.http.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
@@ -1002,6 +1001,46 @@ public class Node {
 				overrideIPAddress = null;
 			}
 		}
+		
+		// Temporary IP address hint
+		
+		nodeConfig.register("tempIPAddressHint", "", 0, true, "Temporary IP address hint", "Temporary hint to what our IP might be; deleted after use", new StringCallback() {
+
+			public String get() {
+				return null;
+			}
+			
+			public void set(String val) throws InvalidConfigValueException {
+				if(val.length() == 0) {
+					return;
+				}
+				if(overrideIPAddress != null) return;
+				try {
+					ipAddressHint = new FreenetInetAddress(val, false);
+				} catch (UnknownHostException e) {
+					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
+				}
+				redetectAddress();
+				shouldInsertARK();
+			}
+			
+		});
+		
+		String ipHintString = nodeConfig.getString("tempIPAddressHint");
+		if(ipOverrideString.length() == 0)
+			overrideIPAddress = null;
+		else {
+			try {
+				ipAddressHint = new FreenetInetAddress(ipOverrideString, false);
+			} catch (UnknownHostException e) {
+				String msg = "Unknown host: "+ipOverrideString+" in config: "+e.getMessage();
+				Logger.error(this, msg);
+				System.err.println(msg+"");
+				overrideIPAddress = null;
+			}
+		}
+		
+		
 		
 		// Determine where to bind to
 		
@@ -2109,7 +2148,10 @@ public class Node {
 		return fs;
 	}
 
+	/** Explicit forced IP address */
 	FreenetInetAddress overrideIPAddress;
+	/** Temporary hint at IP address if all else fails */
+	FreenetInetAddress ipAddressHint;
 	/** IP address from last time */
 	InetAddress oldIPAddress;
 	/** Last detected IP address */
@@ -2173,9 +2215,12 @@ public class Node {
 	   			}
 	   		}
 	   		lastIPAddress = best == null ? null : new FreenetInetAddress(best);
-	   	}
-	   	else {
+	   	} else {
 	   		lastIPAddress = oldIPAddress == null ? null : new FreenetInetAddress(oldIPAddress);
+	   	}
+	   	if(lastIPAddress == null) {
+	   		lastIPAddress = ipAddressHint;
+	   		ipAddressHint = null;
 	   	}
 	   	if (lastIPAddress == null) {
 	   		this.alerts.register(primaryIPUndetectedAlert);
