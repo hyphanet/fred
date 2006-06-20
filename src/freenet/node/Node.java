@@ -1007,7 +1007,7 @@ public class Node {
 		nodeConfig.register("tempIPAddressHint", "", 0, true, "Temporary IP address hint", "Temporary hint to what our IP might be; deleted after use", new StringCallback() {
 
 			public String get() {
-				return null;
+				return "";
 			}
 			
 			public void set(String val) throws InvalidConfigValueException {
