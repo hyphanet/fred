@@ -783,7 +783,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	        		}
 	        		
 	        		long byteOffset = blockNum*(dataBlockSize+headerBlockSize);
-	        		StoreBlock storeBlock = new StoreBlock(chkBlocksInStore);
+	        		StoreBlock storeBlock = new StoreBlock(blockNum);
 	        		DatabaseEntry blockDBE = new DatabaseEntry();
 	    	    	storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
     	    		chkDB.put(t,routingkeyDBE,blockDBE);
