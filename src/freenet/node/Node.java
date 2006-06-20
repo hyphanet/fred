@@ -644,7 +644,7 @@ public class Node {
 				throw new IllegalArgumentException("Wrong port number "+
 						myOldPeer.getPort()+" should be "+portNumber);
 			// DNSRequester doesn't deal with our own node
-			oldIPAddress = myOldPeer.getAddress(true);
+			oldIPAddress = myOldPeer.getFreenetAddress();
 		}
 		String identity = fs.get("identity");
 		if(identity == null)
@@ -1016,7 +1016,7 @@ public class Node {
 				}
 				if(overrideIPAddress != null) return;
 				try {
-					ipAddressHint = new FreenetInetAddress(val, false);
+					oldIPAddress = new FreenetInetAddress(val, false);
 				} catch (UnknownHostException e) {
 					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
 				}
@@ -1027,11 +1027,9 @@ public class Node {
 		});
 		
 		String ipHintString = nodeConfig.getString("tempIPAddressHint");
-		if(ipOverrideString.length() == 0)
-			overrideIPAddress = null;
-		else {
+		if(ipOverrideString.length() > 0) {
 			try {
-				ipAddressHint = new FreenetInetAddress(ipOverrideString, false);
+				oldIPAddress = new FreenetInetAddress(ipHintString, false);
 			} catch (UnknownHostException e) {
 				String msg = "Unknown host: "+ipOverrideString+" in config: "+e.getMessage();
 				Logger.error(this, msg);
@@ -2150,10 +2148,8 @@ public class Node {
 
 	/** Explicit forced IP address */
 	FreenetInetAddress overrideIPAddress;
-	/** Temporary hint at IP address if all else fails */
-	FreenetInetAddress ipAddressHint;
 	/** IP address from last time */
-	InetAddress oldIPAddress;
+	FreenetInetAddress oldIPAddress;
 	/** Last detected IP address */
 	FreenetInetAddress lastIPAddress;
 	
@@ -2216,11 +2212,7 @@ public class Node {
 	   		}
 	   		lastIPAddress = best == null ? null : new FreenetInetAddress(best);
 	   	} else {
-	   		lastIPAddress = oldIPAddress == null ? null : new FreenetInetAddress(oldIPAddress);
-	   	}
-	   	if(lastIPAddress == null) {
-	   		lastIPAddress = ipAddressHint;
-	   		ipAddressHint = null;
+	   		lastIPAddress = oldIPAddress == null ? null : oldIPAddress;
 	   	}
 	   	if (lastIPAddress == null) {
 	   		this.alerts.register(primaryIPUndetectedAlert);
