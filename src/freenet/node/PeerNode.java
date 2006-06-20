@@ -1172,6 +1172,7 @@ public class PeerNode implements PeerContext {
             if(currentTracker != null)
                 sentInitialMessages = true;
             else return;
+            if(unverifiedTracker != null) return;
         }
         sendInitialMessages();
     }
