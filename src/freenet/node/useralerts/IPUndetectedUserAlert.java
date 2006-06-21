@@ -16,7 +16,9 @@ public class IPUndetectedUserAlert implements UserAlert {
 			"(or the IP address of your NAT or Firewall). You can still exchange " +
 			"references with other people, however this will only work if the other " +
 			"user is not behind a NAT or Firewall. As soon as you have connected to " +
-			"one other user in this way, Freenet will be able to determine your external IP address.";
+			"one other user in this way, Freenet will be able to determine your " +
+			"external IP address. You can determine your current IP address and tell " +
+			"your node with the 'Temporary IP address hint' <a href=\"/config/\">configuration parameter</a>.";
 	}
 
 	public short getPriorityClass() {
