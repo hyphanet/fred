@@ -245,10 +245,15 @@ ul.config span.configlongdesc {
 	display: none;
 	position: absolute;
 	left: 40px;
-	top: -40px;
 	background-color: #e1ecff;
 	border: 1px solid #97beff;
 	padding: 5px;
+	/*
+	 * This should be 'top', but firefox is broken and doesn't
+	 + set the li to be a containing block with 'display: table' on
+	 */
+	margin-top: 20px;
+	z-index: 10;
 }
 
 span.config {
