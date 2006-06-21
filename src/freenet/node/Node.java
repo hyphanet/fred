@@ -2191,28 +2191,30 @@ public class Node {
 	   				countsByPeer.put(ip, new Integer(1));
 	   			}
 	   		}
-	   		if(countsByPeer.size() == 0) return null;
-	   		Iterator it = countsByPeer.keySet().iterator();
 	   		if(countsByPeer.size() == 1) {
-		   		FreenetInetAddress a = new FreenetInetAddress((InetAddress)it.next());
+		   		Iterator it = countsByPeer.keySet().iterator();
+		   		FreenetInetAddress a = new FreenetInetAddress((InetAddress)(it.next()));
 		   		lastIPAddress = a;
 		   		return a;
+	   		} else if(countsByPeer.size() > 1) {
+		   		Iterator it = countsByPeer.keySet().iterator();
+		   		// Pick most popular address
+		   		// FIXME use multi-homing here
+		   		InetAddress best = null;
+		   		int bestPopularity = 0;
+		   		while(it.hasNext()) {
+		   			InetAddress cur = (InetAddress) it.next();
+		   			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
+		   			if(curPop > bestPopularity) {
+		   				bestPopularity = curPop;
+		   				best = cur;
+		   			}
+		   		}
+		   		lastIPAddress = best == null ? null : new FreenetInetAddress(best);
 	   		}
-	   		// Pick most popular address
-	   		// FIXME use multi-homing here
-	   		InetAddress best = null;
-	   		int bestPopularity = 0;
-	   		while(it.hasNext()) {
-	   			InetAddress cur = (InetAddress) it.next();
-	   			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
-	   			if(curPop > bestPopularity) {
-	   				bestPopularity = curPop;
-	   				best = cur;
-	   			}
-	   		}
-	   		lastIPAddress = best == null ? null : new FreenetInetAddress(best);
-	   	} else {
-	   		lastIPAddress = oldIPAddress == null ? null : oldIPAddress;
+	   	}
+	   	if(lastIPAddress == null) {
+	   		if(oldIPAddress != null) lastIPAddress = oldIPAddress;
 	   	}
 	   	if (lastIPAddress == null) {
 	   		this.alerts.register(primaryIPUndetectedAlert);
@@ -2751,6 +2753,7 @@ public class Node {
 		FreenetInetAddress newIP = detectPrimaryIPAddress();
 		shouldInsertARK();
 		if(newIP == null || newIP.equals(lastIP)) return;
+		lastIP = newIP;
 		writeNodeFile();
 	}
 	
