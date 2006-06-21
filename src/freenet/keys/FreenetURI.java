@@ -492,6 +492,31 @@ public class FreenetURI {
 		}
 		return b.toString();
 	}
+	
+	public String toShortString() {
+		StringBuffer b = new StringBuffer();;
+		
+		b.append(keyType).append('@');
+		
+		if (!"KSK".equals(keyType)) {
+			b.append("...");
+			if (docName != null)
+				b.append('/');
+		}
+		
+		if (docName != null)
+			b.append(docName);
+		if(keyType.equals("USK")) {
+			b.append('/');
+			b.append(suggestedEdition);
+		}
+		if (metaStr != null) {
+			for (int i = 0; i < metaStr.length; i++) {
+				b.append("/").append(metaStr[i]);
+			}
+		}
+		return b.toString();
+	}
 
 	public static void main(String[] args) throws Exception {
 		(new FreenetURI(args[0])).decompose();

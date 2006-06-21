@@ -184,12 +184,16 @@ public class QueueToadlet extends Toadlet {
 			writeBigHeading("Completed requests", buf);
 			
 			if(!completedDownloadToTemp.isEmpty()) {
-				writeTableHead("Completed downloads to temporary space", new String[] { "", "Identifier", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf );
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Completed downloads to temporary space", new String[] { "", "Identifier", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf );
+				else
+					writeTableHead("Completed downloads to temporary space", new String[] { "", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf );
 				for(Iterator i = completedDownloadToTemp.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getURI(), buf);
 					writeSizeCell(p.getDataSize(), buf);
 					writeTypeCell(p.getMIMEType(), buf);
 					writeDownloadCell(p, buf);
@@ -201,12 +205,16 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!completedDownloadToDisk.isEmpty()) {
-				writeTableHead("Completed downloads to disk", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf);
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Completed downloads to disk", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf);
+				else
+					writeTableHead("Completed downloads to disk", new String[] { "", "Filename", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf);
 				for(Iterator i=completedDownloadToDisk.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getURI(), buf);
 					writeFilenameCell(p.getDestFilename(), buf);
 					writeSizeCell(p.getDataSize(), buf);
 					writeTypeCell(p.getMIMEType(), buf);
@@ -219,12 +227,16 @@ public class QueueToadlet extends Toadlet {
 			}
 
 			if(!completedUpload.isEmpty()) {
-				writeTableHead("Completed uploads", new String[] { "", "Key", "Filename", "Size", "MIME-Type", "Persistence", "Identifier" }, buf);
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Completed uploads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Persistence", "Identifier" }, buf);
+				else
+					writeTableHead("Completed uploads", new String[] { "", "Filename", "Size", "MIME-Type", "Persistence", "Key" }, buf);
 				for(Iterator i=completedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getFinalURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getFinalURI(), buf);
 					if(p.isDirect())
 						writeDirectCell(buf);
 					else
@@ -240,12 +252,16 @@ public class QueueToadlet extends Toadlet {
 			
 			if(!completedDirUpload.isEmpty()) {
 				// FIXME include filename??
-				writeTableHead("Completed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Persistence", "Key" }, buf);
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Completed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Persistence", "Key" }, buf);
+				else
+					writeTableHead("Completed directory uploads", new String[] { "", "Files", "Total Size", "Persistence", "Key" }, buf);
 				for(Iterator i=completedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getFinalURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getFinalURI(), buf);
 					writeNumberCell(p.getNumberOfFiles(), buf);
 					writeSizeCell(p.getTotalDataSize(), buf);
 					writePersistenceCell(p, buf);
@@ -260,12 +276,16 @@ public class QueueToadlet extends Toadlet {
 		if(!(failedDownload.isEmpty() && failedUpload.isEmpty())) {
 			writeBigHeading("Failed requests", buf);
 			if(!failedDownload.isEmpty()) {
-				writeTableHead("Failed downloads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Failed downloads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
+				else
+					writeTableHead("Failed downloads", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
 				for(Iterator i=failedDownload.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getURI(), buf);
 					if(p.isDirect())
 						writeDirectCell(buf);
 					else
@@ -282,12 +302,16 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!failedUpload.isEmpty()) {
-				writeTableHead("Failed uploads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Failed uploads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
+				else
+					writeTableHead("Failed uploads", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
 				for(Iterator i=failedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getFinalURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getFinalURI(), buf);
 					if(p.isDirect())
 						writeDirectCell(buf);
 					else
@@ -304,12 +328,16 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!failedDirUpload.isEmpty()) {
-				writeTableHead("Failed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Reason", "Persistence", "Key" }, buf);
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Failed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Reason", "Persistence", "Key" }, buf);
+				else
+					writeTableHead("Failed directory uploads", new String[] { "", "Files", "Total Size", "Progress", "Reason", "Persistence", "Key" }, buf);
 				for(Iterator i=failedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getFinalURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getFinalURI(), buf);
 					writeNumberCell(p.getNumberOfFiles(), buf);
 					writeSizeCell(p.getTotalDataSize(), buf);
 					writeProgressFractionCell(p, buf);
@@ -327,12 +355,16 @@ public class QueueToadlet extends Toadlet {
 				uncompletedDirUpload.isEmpty())) {
 			writeBigHeading("Requests in progress", buf);
 			if(!uncompletedDownload.isEmpty()) {
-				writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+				else
+					writeTableHead("Downloads in progress", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i = uncompletedDownload.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getURI(), buf);
 					if(p.isDirect())
 						writeDirectCell(buf);
 					else
@@ -348,12 +380,16 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!uncompletedUpload.isEmpty()) {
-				writeTableHead("Uploads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Uploads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+				else
+					writeTableHead("Uploads in progress", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i = uncompletedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getFinalURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getFinalURI(), buf);
 					if(p.isDirect())
 						writeDirectCell(buf);
 					else
@@ -369,12 +405,16 @@ public class QueueToadlet extends Toadlet {
 			}
 			
 			if(!uncompletedDirUpload.isEmpty()) {
-				writeTableHead("Directory uploads in progress", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Directory uploads in progress", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
+				else
+					writeTableHead("Directory uploads in progress", new String[] { "", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i=uncompletedDirUpload.iterator();i.hasNext();) {
 					ClientPutDir p = (ClientPutDir) i.next();
 					writeRowStart(buf,p);
 					writeDeleteCell(p, buf);
-					writeIdentifierCell(p, p.getFinalURI(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled())
+						writeIdentifierCell(p, p.getFinalURI(), buf);
 					writeNumberCell(p.getNumberOfFiles(), buf);
 					writeSizeCell(p.getTotalDataSize(), buf);
 					writeProgressFractionCell(p, buf);
@@ -406,13 +446,19 @@ public class QueueToadlet extends Toadlet {
 	private void writeProgressFractionCell(ClientRequest p, StringBuffer buf) {
 		buf.append("<td>");
 		
-		double frac = p.getSuccessFraction();
-		double total = p.getTotalBlocks();
+		//double frac = p.getSuccessFraction();
+		double total;
+		if(node.getToadletContainer().isAdvancedDarknetEnabled())
+			total = p.getTotalBlocks();
+		else
+			total = p.getMinBlocks();
 		// All are fractions
 		double fetched = p.getFetchedBlocks()/total;
 		double failed = p.getFailedBlocks()/total;
 		double failed2 = p.getFatalyFailedBlocks()/total;
 		double min = p.getMinBlocks()/total;
+		
+		double frac = fetched / total;
 		
 		boolean b = p.isTotalFinalized();
 		if(frac < 0) {
@@ -535,7 +581,7 @@ public class QueueToadlet extends Toadlet {
 			String u = uri.toString(false);
 			buf.append(URLEncoder.encode(u));
 			buf.append("\">");
-			// FIXME too long? maybe only show the human readable bit?
+			u = uri.toShortString();
 			buf.append(HTMLEncoder.encode(u));
 			buf.append("</a></span>");
 		} else {

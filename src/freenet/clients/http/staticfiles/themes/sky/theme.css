@@ -439,6 +439,69 @@ table.queue span.key_unknown {
 table.queue span.key_is {
 }
 
+div.progressbar {
+	float: left;
+	margin: none;
+	margin-right: 3px;
+	background-color: #f6f9ff;
+	border: solid 1px #97beff;
+	width: 100px;
+	height:15px;
+}
+
+div.progressbar-done {
+	float: left;
+	background-color: #8092ff;
+	height:15px;
+}
+
+div.progressbar-min {
+	float: left;
+	background-color: #cad2ff;
+	height:15px;
+}
+
+div.progressbar-failed {
+	float: left;
+	background-color: #ffa0a0;
+	height:15px;
+}
+
+div.progressbar-failed2 {
+	float: left;
+	background-color: #ffd0d0;
+	background-color: #dd4040;
+	height:15px;
+}
+
+tr.priority0, td.priority0 {
+	background-color: #ffb7b7;
+}
+
+tr.priority1, td.priority1 {
+	background-color: #ffcea7;
+}
+
+tr.priority2, td.priority2 {
+	background-color: #ffeba7;
+}
+
+tr.priority3, td.priority3 {
+	background-color: #ddffa7;
+}
+
+tr.priority4, td.priority4 {
+	background-color: #a7ffbc;
+}
+
+tr.priority5, td.priority5 {
+	background-color: #a7fff8;
+}
+
+tr.priority6, td.priority6 {
+	background-color: #a7caff;
+}
+
 /* Node to node text message */
 #n2ntmtext {
 	width: 100%;
