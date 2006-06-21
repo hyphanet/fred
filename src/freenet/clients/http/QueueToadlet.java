@@ -457,17 +457,20 @@ public class QueueToadlet extends Toadlet {
 		double failed = p.getFailedBlocks()/total;
 		double failed2 = p.getFatalyFailedBlocks()/total;
 		double min = p.getMinBlocks()/total;
-		
-		double frac = fetched / total;
+
+		if (Double.isNaN(fetched)) fetched = 0.0;
+		if (Double.isNaN(failed)) failed = 0.0;
+		if (Double.isNaN(failed2)) failed2 = 0.0;
+		if (Double.isNaN(min)) min = 0.0;
 		
 		boolean b = p.isTotalFinalized();
-		if(frac < 0) {
+		if(fetched < 0) {
 			buf.append("<span class=\"progress_fraction_unknown\">unknown</span>");
 		} else {
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(0);
 			buf.append("<div class=\"progressbar\">"+
-					"<div class=\"progressbar-done\" style=\"width: "+nf.format(frac*100)+"px\"></div>");
+					"<div class=\"progressbar-done\" style=\"width: "+nf.format(fetched*100)+"px\"></div>");
 			if(node.getToadletContainer().isAdvancedDarknetEnabled())
 			{
 				if(failed > 0)
@@ -484,7 +487,7 @@ public class QueueToadlet extends Toadlet {
 				buf.append("<span class=\"progress_fraction_finalized\">");
 			else
 				buf.append("<span class=\"progress_fraction_not_finalized\">");
-			buf.append(nf.format(frac*100));
+			buf.append(nf.format(fetched*100));
 			buf.append("%</span>");
 		}
 		buf.append("</td>\n");
