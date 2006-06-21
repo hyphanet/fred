@@ -22,6 +22,9 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
+import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.Logger;
 
@@ -44,11 +47,17 @@ public class UdpSocketManager extends Thread {
 	private boolean _isDone = false;
 	private static UdpSocketManager _usm;
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
+	private volatile int lastTimeInSeconds;
 
-	protected UdpSocketManager() {
+	// Icky layer violation, but we need to know the Node to work around the EvilJVMBug.
+	private final Node node;
+	
+	protected UdpSocketManager(Node node) {
+		this.node = node;
 	}
 
 	public void start() {
+		lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
 		setDaemon(true);
 		setPriority(Thread.MAX_PRIORITY);
 		super.start();
@@ -66,9 +75,39 @@ public class UdpSocketManager extends Thread {
 				} catch (InterruptedException e) {
 					// Ignore
 				}
-				if(UdpSocketManager.this.isAlive())
+				if(UdpSocketManager.this.isAlive()) {
 					Logger.minor(this, "PING on "+UdpSocketManager.this);
-				else {
+					long time = System.currentTimeMillis();
+					int timeSecs = (int) (time / 1000);
+					if(timeSecs - lastTimeInSeconds > 3*60) {
+						
+						// USM has hung.
+						// Probably caused by the EvilJVMBug (see PacketSender).
+						// We'd better restart... :(
+						
+						if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
+							System.err.println("Restarting node: UdpSocketManager froze for 3 minutes!");
+						
+						try {
+							if(node.isUsingWrapper()){
+								WrapperManager.requestThreadDump();
+								WrapperManager.restart();
+							}else{
+								if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
+									System.err.println("Exiting on deadlock, but not running in the wrapper! Please restart the node manually.");
+								
+								// No wrapper : we don't want to let it harm the network!
+								node.exit();
+							}
+						} catch (Throwable t) {
+							if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock()) {
+								System.err.println("Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
+								t.printStackTrace();
+							}
+							node.exit();
+						}
+					}
+				} else {
 					Logger.error(this, "MAIN LOOP TERMINATED");
 					System.err.println("MAIN LOOP TERMINATED!");
 					System.exit(freenet.node.Node.EXIT_MAIN_LOOP_LOST);
@@ -77,8 +116,9 @@ public class UdpSocketManager extends Thread {
 		}
 	}
 
-	public UdpSocketManager(int listenPort, InetAddress bindto) throws SocketException {
+	public UdpSocketManager(int listenPort, InetAddress bindto, Node node) throws SocketException {
 		super("UdpSocketManager sender thread on port " + listenPort);
+		this.node = node;
 		    // Keep the Updater code in, just commented out, for now
 		    // We may want to be able to do on-line updates.
 //			if (Updater.hasResource()) {
@@ -133,6 +173,7 @@ public class UdpSocketManager extends Thread {
 	private void runLoop() {
 		while (/*_active*/true) {
 			try {
+				lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
 				realRun();
 			} catch (Throwable t) {
 				Logger.error(this, "Caught " + t, t);
@@ -543,12 +584,12 @@ public class UdpSocketManager extends Thread {
 		return _usm;
 	}
 
-	public static void init(int externalListenPort, InetAddress bindto)
-		throws SocketException
-	{
-		_usm = new UdpSocketManager(externalListenPort, bindto);
-	}
-
+//	public static void init(int externalListenPort, InetAddress bindto)
+//		throws SocketException
+//	{
+//		_usm = new UdpSocketManager(externalListenPort, bindto);
+//	}
+//
     public int getPortNumber() {
         return _sock.getLocalPort();
     }

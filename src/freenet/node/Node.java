@@ -369,7 +369,7 @@ public class Node {
 	/** Maximum size of gzipped logfiles */
 	static long maxLogSize;
 	/** Log config handler */
-	static LoggingConfigHandler logConfigHandler;
+	public static LoggingConfigHandler logConfigHandler;
 	
 	/** If true, local requests and inserts aren't cached.
 	 * This opens up a glaring vulnerability; connected nodes
@@ -1084,7 +1084,7 @@ public class Node {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketManager(portNo, InetAddress.getByName(bindto));
+					u = new UdpSocketManager(portNo, InetAddress.getByName(bindto), this);
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -1098,7 +1098,7 @@ public class Node {
 				throw new NodeInitException(EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketManager(port, InetAddress.getByName(bindto));
+				u = new UdpSocketManager(port, InetAddress.getByName(bindto), this);
 			} catch (Exception e) {
 				throw new NodeInitException(EXIT_IMPOSSIBLE_USM_PORT, "Could not bind to port: "+port+" (node already running?)");
 			}
