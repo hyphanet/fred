@@ -952,6 +952,10 @@ public class Node {
 		throttledPacketSendAverage =
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
 
+		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
+
+		primaryIPUndetectedAlert = new IPUndetectedUserAlert();
+
 		// Setup node-specific configuration
 		
 		SubConfig nodeConfig = new SubConfig("node", config);
@@ -1242,10 +1246,6 @@ public class Node {
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
 		
-		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
-
-		primaryIPUndetectedAlert = new IPUndetectedUserAlert();
-
 		// Temp files
 		
 		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), 6, true, "Temp files directory", "Name of directory to put temporary files in", 
