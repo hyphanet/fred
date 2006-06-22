@@ -175,7 +175,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 */
 	public ClientGet(SimpleFieldSet fs, FCPClient client2) throws IOException {
 		super(fs, client2);
-		priorityClass = Short.parseShort(fs.get("PriorityClass"));
 		returnType = ClientGetMessage.parseValidReturnType(fs.get("ReturnType"));
 		String f = fs.get("Filename");
 		if(f != null)

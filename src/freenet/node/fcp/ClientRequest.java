@@ -85,6 +85,7 @@ public abstract class ClientRequest {
 	}
 
 	public ClientRequest(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
+		priorityClass = Short.parseShort(fs.get("PriorityClass"));
 		uri = new FreenetURI(fs.get("URI"));
 		identifier = fs.get("Identifier");
 		// We don't force the verbosity even if the request is meant to go on the global queue
