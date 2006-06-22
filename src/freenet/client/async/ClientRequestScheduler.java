@@ -11,6 +11,8 @@ import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
+import freenet.support.SectoredRandomGrabArray;
+import freenet.support.SectoredRandomGrabArrayWithClient;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SortedVectorByNumber;
 
@@ -89,9 +91,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	private synchronized void innerRegister(SendableRequest req) {
-		SectoredRandomGrabArrayWithInt grabber = 
-			makeGrabArray(req.getPriorityClass(), req.getRetryCount());
-		grabber.add(req.getClient(), req);
+		addToGrabArray(req.getPriorityClass(), req.getRetryCount(), req.getClient(), req.getClientRequest(), req);
 		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
 			v = new HashSet();
@@ -101,21 +101,29 @@ public class ClientRequestScheduler implements RequestScheduler {
 		Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount());
 	}
 
-	private synchronized SectoredRandomGrabArrayWithInt makeGrabArray(short priorityClass, int retryCount) {
+	private synchronized void addToGrabArray(short priorityClass, int retryCount, Object client, ClientRequester cr, SendableRequest req) {
 		if(priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS || priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS)
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
+		// Priority
 		SortedVectorByNumber prio = priorities[priorityClass];
 		if(prio == null) {
 			prio = new SortedVectorByNumber();
 			priorities[priorityClass] = prio;
 		}
-		SectoredRandomGrabArrayWithInt grabber = (SectoredRandomGrabArrayWithInt) prio.get(retryCount);
-		if(grabber == null) {
-			grabber = new SectoredRandomGrabArrayWithInt(random, retryCount);
-			prio.add(grabber);
+		// Client
+		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(retryCount);
+		if(clientGrabber == null) {
+			clientGrabber = new SectoredRandomGrabArrayWithInt(random, retryCount);
+			prio.add(clientGrabber);
 			Logger.minor(this, "Registering retry count "+retryCount+" with prioclass "+priorityClass);
 		}
-		return grabber;
+		// Request
+		SectoredRandomGrabArrayWithClient requestGrabber = (SectoredRandomGrabArrayWithClient) clientGrabber.getGrabber(cr);
+		if(requestGrabber == null) {
+			requestGrabber = new SectoredRandomGrabArrayWithClient(cr, random);
+			clientGrabber.addGrabber(cr, requestGrabber);
+		}
+		clientGrabber.add(client, req);
 	}
 
 	public synchronized SendableRequest removeFirst() {

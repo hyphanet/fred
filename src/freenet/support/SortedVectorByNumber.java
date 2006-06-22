@@ -3,6 +3,8 @@ package freenet.support;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import freenet.client.async.ClientRequester;
+
 /**
  * Map of an integer to an element, based on a sorted Vector.
  * Note that we have to shuffle data around, so this is slowish if it gets big.
