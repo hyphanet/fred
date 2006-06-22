@@ -1244,6 +1244,8 @@ public class Node {
 		
 		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
 
+		primaryIPUndetectedAlert = new IPUndetectedUserAlert();
+
 		// Temp files
 		
 		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), 6, true, "Temp files directory", "Name of directory to put temporary files in", 
