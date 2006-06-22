@@ -219,8 +219,8 @@ public class FProxyToadlet extends Toadlet {
 			} else if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, "/"+e.newURI.toString());
 			} else if(e.mode == FetchException.TOO_BIG) {
-				ctx.getPageMaker().makeHead(buf, "Large file");
-				buf.append("<table border=\"0\">\n");
+				ctx.getPageMaker().makeHead(buf, "Large File");
+				buf.append("<table style=\"border: none; \">\n");
 				String fnam = getFilename(e, key, e.getExpectedMimeType());
 				buf.append("<tr><td><b>Filename</b></td><td>");
 				buf.append("<a href=\"/"+URLEncoder.encode(key.toString(false))+"\">");
@@ -251,11 +251,7 @@ public class FProxyToadlet extends Toadlet {
 				}
 				// FIXME filename
 				buf.append("</table>\n");
-				buf.append("<br>This is a large file, so it has not been streamed direct" +
-						" to your browser, because Freenet cannot send any data to the " +
-						"browser until it has the whole file, and this may take some time, " +
-						"and also for resource usage reasons.<br>\n");
-				buf.append("What would you like to do with it?");
+				buf.append("<br />The Freenet key you requested refers to a large file. Files of this size cannot generally be sent directly to your browser since they take too long for your Freenet node to retrieve. The following options are available: ");
 				buf.append("<ul>");
 				buf.append("<li><form method=\"get\" action=\"/"+key.toString(false)+"\">");
 				buf.append("<input type=\"hidden\" name=\"max-size\" value=\""+e.expectedSize+"\">");
@@ -274,7 +270,7 @@ public class FProxyToadlet extends Toadlet {
 //				buf.append("<li>Save it to disk at </li>");
 				// FIXME add return-to-referring-page
 				//buf.append("<li>Return to the referring page: ");
-				buf.append("<li>Abort and return to the FProxy home page: <a href=\"/\">here</a></li>");
+				buf.append("<li><a href=\"/\" title=\"FProxy Home Page\" >Abort and return to the FProxy home page</a></li>");
 				buf.append("</ul>");
 				ctx.getPageMaker().makeTail(buf);
 				writeReply(ctx, 200, "text/html", "OK", buf.toString());
