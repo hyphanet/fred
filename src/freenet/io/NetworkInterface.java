@@ -290,7 +290,9 @@ public class NetworkInterface {
 						Logger.normal(Acceptor.class, "Denied connection to " + clientHostName);
 					}
 				} catch (SocketTimeoutException ste1) {
+					Logger.minor(this, "Timeout");
 				} catch (IOException ioe1) {
+					Logger.minor(this, "Caught "+ioe1);
 				}
 			}
 		}

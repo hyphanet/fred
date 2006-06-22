@@ -118,12 +118,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 			Logger.minor(this, "Registering retry count "+retryCount+" with prioclass "+priorityClass);
 		}
 		// Request
-		SectoredRandomGrabArrayWithClient requestGrabber = (SectoredRandomGrabArrayWithClient) clientGrabber.getGrabber(cr);
+		SectoredRandomGrabArrayWithClient requestGrabber = (SectoredRandomGrabArrayWithClient) clientGrabber.getGrabber(client);
 		if(requestGrabber == null) {
-			requestGrabber = new SectoredRandomGrabArrayWithClient(cr, random);
-			clientGrabber.addGrabber(cr, requestGrabber);
+			requestGrabber = new SectoredRandomGrabArrayWithClient(client, random);
+			clientGrabber.addGrabber(client, requestGrabber);
 		}
-		clientGrabber.add(client, req);
+		clientGrabber.add(cr, req);
 	}
 
 	public synchronized SendableRequest removeFirst() {
