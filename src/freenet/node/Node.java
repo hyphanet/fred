@@ -921,6 +921,7 @@ public class Node {
 		startupTime = System.currentTimeMillis();
 		throttleWindow = new ThrottleWindowManager(2.0);
 		alerts = new UserAlertManager();
+		nodeNameUserAlert = new MeaningfulNodeNameUserAlert();
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
 		this.random = random;
@@ -1396,7 +1397,6 @@ public class Node {
 		// Name
 		nodeConfig.register("name", myName, 11, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
 				new NodeNameCallback(this));
-		nodeNameUserAlert = new MeaningfulNodeNameUserAlert();
 		myName = nodeConfig.getString("name");
 		 
 		
