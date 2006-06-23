@@ -25,10 +25,10 @@ public class PeerManagerUserAlert implements UserAlert {
 	static final int MAX_PEER_THRESHOLD = 50;
 	
 	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
-	static final int MAX_BWLIMIT_DELAY_TIME_THRESHOLD = 1000;
+	static final int MAX_BWLIMIT_DELAY_TIME_THRESHOLD = 2000;
 	
 	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
-	static final int MAX_NODE_AVERAGE_PING_TIME_THRESHOLD = 1500;
+	static final int MAX_NODE_AVERAGE_PING_TIME_THRESHOLD = 1000;
 	
 	/** How high can oldestNeverConnectedPeerAge be before we alert (in milliseconds)*/
 	static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
