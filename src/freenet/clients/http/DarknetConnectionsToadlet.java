@@ -151,7 +151,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf.append("<li><span class=\"peer_connected\">Connected:&nbsp;").append(numberOfConnected).append("</span></li>");
 		}
 		if (numberOfRoutingBackedOff > 0) {
-			buf.append("<li><span class=\"peer_backedoff\">Backed off:&nbsp;").append(numberOfRoutingBackedOff).append("</span></li>");
+			String backoffName = "Busy";
+			if(advancedEnabled) {
+				backoffName = "Backed off";
+			}
+			buf.append("<li><span class=\"peer_backedoff\">").append(backoffName).append(":&nbsp;").append(numberOfRoutingBackedOff).append("</span></li>");
 		}
 		if (numberOfTooNew > 0) {
 			buf.append("<li><span class=\"peer_too_new\">Too new:&nbsp;").append(numberOfTooNew).append("</span></li>");
@@ -308,7 +312,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						arkAsterisk = "*";
 					}
 				}
-				row[2] = "<span class=\""+((PeerNode) row[0]).getPeerNodeStatusCSSClassName()+"\">"+((PeerNode) row[0]).getPeerNodeStatusString()+arkAsterisk+"</span>";
+				String statusString = ((PeerNode) row[0]).getPeerNodeStatusString();
+				if(!advancedEnabled && ((PeerNode) row[0]).getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+					statusString = "BUSY";
+				}
+				row[2] = "<span class=\""+((PeerNode) row[0]).getPeerNodeStatusCSSClassName()+"\">"+statusString+arkAsterisk+"</span>";
 			}
 			
 			// Turn array into HTML
