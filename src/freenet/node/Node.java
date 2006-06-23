@@ -963,7 +963,8 @@ public class Node {
 
 		// IP address override
 		
-		nodeConfig.register("ipAddressOverride", "", 0, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
+		int sortOrder = 0;
+		nodeConfig.register("ipAddressOverride", "", sortOrder++, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
 
 			public String get() {
 				if(overrideIPAddress == null) return "";
@@ -1010,7 +1011,7 @@ public class Node {
 		
 		// Temporary IP address hint
 		
-		nodeConfig.register("tempIPAddressHint", "", 0, true, "Temporary IP address hint", "Temporary hint to what our IP might be; deleted after use", new StringCallback() {
+		nodeConfig.register("tempIPAddressHint", "", sortOrder++, false, "Temporary IP address hint", "Temporary hint to what our IP might be; deleted after use", new StringCallback() {
 
 			public String get() {
 				return "";
@@ -1050,14 +1051,14 @@ public class Node {
 		
 
 		
-		nodeConfig.register("bindTo", "0.0.0.0", 2, true, "IP address to bind to", "IP address to bind to",
+		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, "IP address to bind to", "IP address to bind to",
 				new NodeBindtoCallback(this));
 		
 		this.bindto = nodeConfig.getString("bindTo");
 		
 		// Determine the port number
 		
-		nodeConfig.register("listenPort", -1 /* means random */, 1, true, "FNP port number (UDP)", "UDP port for node-to-node communications (Freenet Node Protocol)",
+		nodeConfig.register("listenPort", -1 /* means random */, sortOrder++, true, "FNP port number (UDP)", "UDP port for node-to-node communications (Freenet Node Protocol)",
 				new IntCallback() {
 					public int get() {
 						return portNumber;
@@ -1121,8 +1122,8 @@ public class Node {
 
 		// FIXME These should not be static !!!! Need a context object for BT for bwlimiting.
 		// See bug 77
-		nodeConfig.register("outputBandwidthLimit", "15K", 3, false, 
-				"Output bandwidth limit", "Hard output bandwidth limit (bytes/sec); the node should almost never exceed this", 
+		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, 
+				"Output bandwidth limit (bytes per second)", "Hard output bandwidth limit (bytes/sec); the node should almost never exceed this", 
 				new IntCallback() {
 					public int get() {
 						return BlockTransmitter.getHardBandwidthLimit();
@@ -1141,7 +1142,7 @@ public class Node {
 		
 		// SwapRequestInterval
 		
-		nodeConfig.register("swapRequestSendInterval", 2000, 4, true,
+		nodeConfig.register("swapRequestSendInterval", 2000, sortOrder++, true,
 				"Swap request send interval (ms)", "Interval between swap attempting to send swap requests in milliseconds. Leave this alone!",
 				new IntCallback() {
 					public int get() {
@@ -1204,7 +1205,7 @@ public class Node {
 
 		// Directory for node-related files other than store
 		
-		nodeConfig.register("nodeDir", ".", 6, true, "Node directory", "Name of directory to put node-related files e.g. peers list in", 
+		nodeConfig.register("nodeDir", ".", sortOrder++, true, "Node directory", "Name of directory to put node-related files e.g. peers list in", 
 				new StringCallback() {
 					public String get() {
 						return nodeDir.getPath();
@@ -1249,7 +1250,7 @@ public class Node {
 		
 		// Temp files
 		
-		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), 6, true, "Temp files directory", "Name of directory to put temporary files in", 
+		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, "Temp files directory", "Name of directory to put temporary files in", 
 				new StringCallback() {
 					public String get() {
 						return tempDir.getPath();
@@ -1277,7 +1278,7 @@ public class Node {
 
 		// Persistent temp files
 		
-		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), 7, true, "Persistent temp files directory", "Name of directory to put persistent temp files in",
+		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), sortOrder++, true, "Persistent temp files directory", "Name of directory to put persistent temp files in",
 				new StringCallback() {
 					public String get() {
 						return persistentTempBucketFactory.getDir().toString();
@@ -1298,7 +1299,7 @@ public class Node {
 		
 		// Datastore
 		
-		nodeConfig.register("storeSize", "1G", 8, false, "Store size in bytes", "Store size in bytes", 
+		nodeConfig.register("storeSize", "1G", sortOrder++, false, "Store size in bytes", "Store size in bytes", 
 				new LongCallback() {
 
 					public long get() {
@@ -1326,7 +1327,7 @@ public class Node {
 
 		maxStoreKeys = storeSize / sizePerKey;
 		
-		nodeConfig.register("storeDir", ".", 9, true, "Store directory", "Name of directory to put store files in", 
+		nodeConfig.register("storeDir", ".", sortOrder++, true, "Store directory", "Name of directory to put store files in", 
 				new StringCallback() {
 					public String get() {
 						return storeDir.getPath();
@@ -1373,7 +1374,7 @@ public class Node {
 		
 		// Downloads directory
 		
-		nodeConfig.register("downloadsDir", "downloads", 10, false, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
+		nodeConfig.register("downloadsDir", "downloads", sortOrder++, false, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
 
 			public String get() {
 				return downloadDir.getPath();
@@ -1398,14 +1399,14 @@ public class Node {
 		}
 
 		// Name
-		nodeConfig.register("name", myName, 11, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
+		nodeConfig.register("name", myName, sortOrder++, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
 				new NodeNameCallback(this));
 		myName = nodeConfig.getString("name");
 		 
 		
 		// Select the request scheduler
 		
-		nodeConfig.register("scheduler", 0, 12, true, "Scheduler", "Scheduler",
+		nodeConfig.register("scheduler", 0, sortOrder++, true, "Scheduler", "Scheduler",
 				new IntCallback(){
 					public int get(){
 						return currentScheduler;
@@ -1474,8 +1475,8 @@ public class Node {
 		ctx.maxTempLength = 4096;
 		
 		this.arkFetcherContext = ctx;
-	Logger.normal(this, "Node constructor completed");
-	System.out.println("Node constructor completed");
+		Logger.normal(this, "Node constructor completed");
+		System.out.println("Node constructor completed");
 	}
 	
 	static final String ERROR_SUN_NPTL = 
