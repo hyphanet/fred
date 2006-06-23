@@ -88,34 +88,36 @@ public class TextModeClientInterface implements Runnable {
     		Logger.error(this, "Caught "+t, t);
     	}
     }
-    
-    public void realRun() throws IOException {
+	
+	public void realRun() throws IOException {
 		printHeader(out);
 
 		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        while(true) {
-            try {
-                if(processLine(reader,out)) {
-                	reader.close();
-                	return;
-                }
-            } catch (SocketException e) {
-            	Logger.error(this, "Socket error: "+e, e);
-            	return;
-            } catch (Throwable t) {
-                Logger.error(this, "Caught "+t, t);
-                System.out.println("Caught: "+t);
-                StringWriter sw = new StringWriter();
-                t.printStackTrace(new PrintWriter(sw));
-                try {
-					out.write(sw.toString().getBytes());
-				} catch (IOException e) {
-	            	Logger.error(this, "Socket error: "+e, e);
+		while(true) {
+			try {
+				out.write("TMCI> ".getBytes());
+				out.flush();
+				if(processLine(reader,out)) {
+					reader.close();
 					return;
 				}
-            }
-        }
-    }
+			} catch (SocketException e) {
+				Logger.error(this, "Socket error: "+e, e);
+				return;
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t, t);
+				System.out.println("Caught: "+t);
+				StringWriter sw = new StringWriter();
+				t.printStackTrace(new PrintWriter(sw));
+				try {
+					out.write(sw.toString().getBytes());
+				} catch (IOException e) {
+					Logger.error(this, "Socket error: "+e, e);
+					return;
+				}
+			}
+		}
+	}
     
 	private void printHeader(OutputStream s) throws IOException {
     	StringBuffer sb = new StringBuffer();
