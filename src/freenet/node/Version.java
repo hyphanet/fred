@@ -18,17 +18,22 @@ public abstract class Version {
 	public static final String protocolVersion = "1.0";
 
 	/** The build number of the current revision */
-	private static final int buildNumber = 838;
+	private static final int buildNumber = 839;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int lastGoodBuild = 765;
+	private static final int oldLastGoodBuild = 765;
+	private static final int newLastGoodBuild = 839;
+	private static final long transitionTime = 1151103600000L; // 0:00 GMT 24/06/06
 
 	public static final int buildNumber() {
 		return buildNumber;
 	}
 	
 	public static final int lastGoodBuild() {
-		return lastGoodBuild;
+		if(System.currentTimeMillis() > transitionTime)
+			return newLastGoodBuild;
+		else
+			return oldLastGoodBuild;
 	}
 	
 	/** The highest reported build of fred */
@@ -59,7 +64,7 @@ public abstract class Version {
 	
 	public static final String[] getLastGoodVersion() {
 		String[] ret =
-			{ nodeName, nodeVersion, protocolVersion, "" + lastGoodBuild };
+			{ nodeName, nodeVersion, protocolVersion, "" + lastGoodBuild() };
 		return ret;
 	}
 	
@@ -109,13 +114,14 @@ public abstract class Version {
 		if (sameVersion(v)) {
 			try {
 				int build = Integer.parseInt(v[3]);
-				if (build < lastGoodBuild) {
+				int req = lastGoodBuild();
+				if (build < req) {
 					if(logDEBUG) Logger.debug(
 						Version.class,
 						"Not accepting unstable from version: "
 							+ version
 							+ "(lastGoodBuild="
-							+ lastGoodBuild
+							+ req
 							+ ")");
 					return false;
 				}
@@ -238,8 +244,9 @@ public abstract class Version {
 		if (sameVersion(v)) {
 			try {
 				int build = Integer.parseInt(v[3]);
-				if (build < lastGoodBuild)
-					return "Build older than last good build " + lastGoodBuild;
+				int req = lastGoodBuild();
+				if (build < req)
+					return "Build older than last good build " + req;
 			} catch (NumberFormatException e) {
 				return "Build number not numeric.";
 			}
@@ -344,7 +351,7 @@ public abstract class Version {
 				+ ") build "
 				+ buildNumber
 				+ " (last good build: "
-				+ lastGoodBuild
+				+ lastGoodBuild()
 				+ ")");
 	}
 }
