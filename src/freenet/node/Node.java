@@ -2061,7 +2061,8 @@ public class Node {
 	
 	long lastCheckedUncontended = -1;
 	
-	public synchronized boolean shouldRejectRequest(boolean canAcceptAnyway) {
+    /* return reject reason as string if should reject, otherwise return null */
+	public synchronized String shouldRejectRequest(boolean canAcceptAnyway) {
 		long now = System.currentTimeMillis();
 		
 		if(now - lastCheckedUncontended > 1000) {
@@ -2080,16 +2081,14 @@ public class Node {
 			if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
 				Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				lastAcceptedRequest = now;
-				return false;
+				return null;
 			}
-			Logger.minor( this, "shouldRejectRequest("+canAcceptAnyway+") == true because >MAX_PING_TIME");
-			return true;
+			return ">MAX_PING_TIME";
 		}
 		if(pingTime > SUB_MAX_PING_TIME) {
 			double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
 			if(random.nextDouble() < x) {
-				Logger.minor( this, "shouldRejectRequest() == true because >SUB_MAX_PING_TIME");
-				return true;
+				return ">SUB_MAX_PING_TIME";
 			}
 		}
 		
@@ -2101,23 +2100,21 @@ public class Node {
 			if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
 				Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				lastAcceptedRequest = now;
-				return false;
+				return null;
 			}
-			Logger.minor( this, "shouldRejectRequest() == true because >MAX_THROTTLE_DELAY");
-			return true;
+			return ">MAX_THROTTLE_DELAY";
 		}
 		if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 			double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 			if(random.nextDouble() < x) {
-				Logger.minor( this, "shouldRejectRequest("+canAcceptAnyway+") == true because >SUB_MAX_THROTTLE_DELAY");
-				return true;
+				return ">SUB_MAX_THROTTLE_DELAY";
 			}
 		}
 		
 		Logger.minor(this, "Accepting request");
 		
 		lastAcceptedRequest = now;
-		return false;
+		return null;
 	}
 	
 	public SimpleFieldSet exportPrivateFieldSet() {
