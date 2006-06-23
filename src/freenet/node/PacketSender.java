@@ -161,7 +161,8 @@ public class PacketSender implements Runnable {
                 // Any urgent notifications to send?
                 long urgentTime = pn.getNextUrgentTime();
                 // Should spam the logs, unless there is a deadlock
-                Logger.minor(this, "Next urgent time: "+urgentTime+" for "+pn.getDetectedPeer());
+                if(urgentTime < Long.MAX_VALUE)
+                	Logger.minor(this, "Next urgent time: "+urgentTime+" for "+pn.getDetectedPeer());
                 if(urgentTime <= now) {
                     // Send them
                     try {
@@ -326,6 +327,7 @@ public class PacketSender implements Runnable {
         if(sleepTime > 0) {
             try {
                 synchronized(this) {
+                	Logger.minor(this, "Sleeping for "+sleepTime);
                     wait(sleepTime);
                 }
             } catch (InterruptedException e) {

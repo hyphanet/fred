@@ -356,6 +356,7 @@ public class Node {
 
 		public synchronized void successfulCompletion(long rtt) {
 			roundTripTime.report(Math.max(rtt, 10));
+			Logger.minor(this, "Reported successful completion: "+rtt+" on "+this+" avg "+roundTripTime.currentValue());
 		}
 	}
 	
@@ -1428,7 +1429,7 @@ public class Node {
 		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
-		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 10000, "CHK Insert");
+		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "CHK Insert");
 		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "CHK Insert starter ("+portNumber+")");
 		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, this);
 		chkInsertStarter.setScheduler(chkPutScheduler);
@@ -1441,7 +1442,7 @@ public class Node {
 		sskRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
-		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 10000, "SSK Insert");
+		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "SSK Insert");
 		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "SSK Insert starter ("+portNumber+")");
 		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, this);
 		sskInsertStarter.setScheduler(sskPutScheduler);
@@ -1704,7 +1705,8 @@ public class Node {
 						status == RequestSender.ROUTE_NOT_FOUND ||
 						status == RequestSender.VERIFY_FAILURE) {
 					long rtt = System.currentTimeMillis() - startTime;
-					throttleWindow.requestCompleted();
+					if(!rejectedOverload)
+						throttleWindow.requestCompleted();
 					chkRequestThrottle.successfulCompletion(rtt);
 				}
 			}
@@ -1791,7 +1793,9 @@ public class Node {
 						status == RequestSender.ROUTE_NOT_FOUND ||
 						status == RequestSender.VERIFY_FAILURE) {
 					long rtt = System.currentTimeMillis() - startTime;
-					throttleWindow.requestCompleted();
+					
+					if(!rejectedOverload)
+						throttleWindow.requestCompleted();
 					sskRequestThrottle.successfulCompletion(rtt);
 				}
 			}
@@ -1860,7 +1864,7 @@ public class Node {
 		}
 		is = makeInsertSender((NodeCHK)block.getClientKey().getNodeKey(), 
 				MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
-		boolean hasForwardedRejectedOverload = false;
+		boolean hasReceivedRejectedOverload = false;
 		// Wait for status
 		while(true) {
 			synchronized(is) {
@@ -1873,8 +1877,8 @@ public class Node {
 				}
 				if(is.getStatus() != CHKInsertSender.NOT_FINISHED) break;
 			}
-			if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
-				hasForwardedRejectedOverload = true;
+			if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
+				hasReceivedRejectedOverload = true;
 				throttleWindow.rejectedOverload();
 			}
 		}
@@ -1889,16 +1893,16 @@ public class Node {
 					// Go around again
 				}
 			}
-			if(is.anyTransfersFailed() && (!hasForwardedRejectedOverload)) {
-				hasForwardedRejectedOverload = true; // not strictly true but same effect
+			if(is.anyTransfersFailed() && (!hasReceivedRejectedOverload)) {
+				hasReceivedRejectedOverload = true; // not strictly true but same effect
 				throttleWindow.rejectedOverload();
 			}
 		}
 		
-		Logger.minor(this, "Completed "+uid+" overload="+hasForwardedRejectedOverload+" "+is.getStatusString());
+		Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
 		
 		// Finished?
-		if(!hasForwardedRejectedOverload) {
+		if(!hasReceivedRejectedOverload) {
 			// Is it ours? Did we send a request?
 			if(is.sentRequest() && is.uid == uid && (is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND 
 					|| is.getStatus() == CHKInsertSender.SUCCESS)) {
@@ -1907,7 +1911,8 @@ public class Node {
 				long len = endTime - startTime;
 				
 				chkInsertThrottle.successfulCompletion(len);
-				throttleWindow.requestCompleted();
+				if(!hasReceivedRejectedOverload)
+					throttleWindow.requestCompleted();
 			}
 		}
 		
@@ -1962,7 +1967,7 @@ public class Node {
 		}
 		is = makeInsertSender(block, 
 				MAX_HTL, uid, null, false, lm.getLocation().getValue(), cache);
-		boolean hasForwardedRejectedOverload = false;
+		boolean hasReceivedRejectedOverload = false;
 		// Wait for status
 		while(true) {
 			synchronized(is) {
@@ -1975,8 +1980,8 @@ public class Node {
 				}
 				if(is.getStatus() != SSKInsertSender.NOT_FINISHED) break;
 			}
-			if((!hasForwardedRejectedOverload) && is.receivedRejectedOverload()) {
-				hasForwardedRejectedOverload = true;
+			if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
+				hasReceivedRejectedOverload = true;
 				throttleWindow.rejectedOverload();
 			}
 		}
@@ -1993,10 +1998,10 @@ public class Node {
 			}
 		}
 		
-		Logger.minor(this, "Completed "+uid+" overload="+hasForwardedRejectedOverload+" "+is.getStatusString());
+		Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
 		
 		// Finished?
-		if(!hasForwardedRejectedOverload) {
+		if(!hasReceivedRejectedOverload) {
 			// Is it ours? Did we send a request?
 			if(is.sentRequest() && is.uid == uid && (is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND 
 					|| is.getStatus() == SSKInsertSender.SUCCESS)) {
