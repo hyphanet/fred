@@ -76,7 +76,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.cg = null;
 		this.isFetching = false;
 		
-		this.alert= new UpdatedVersionAvailableUserAlert(currentVersion);
+		this.alert= new UpdatedVersionAvailableUserAlert(currentVersion, this);
 		alert.isValid(false);
 		node.alerts.register(alert);
 		
@@ -547,5 +547,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
         	updaterConfig.finishedInitialization();
         	return null;
         }
+	}
+
+	public boolean inFinalCheck() {
+		return finalCheck;
 	}
 }
