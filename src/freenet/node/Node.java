@@ -415,6 +415,14 @@ public class Node {
 	/** If the throttled packet delay is less than this, reject no packets; if it's
 	 * between the two, reject some packets. */
 	public static final long SUB_MAX_THROTTLE_DELAY = 1000;
+	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
+	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD = MAX_THROTTLE_DELAY*2;
+	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
+	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD = MAX_PING_TIME*2;
+	/** How long we're over the bwlimitDelayTime threshold before we alert (in milliseconds)*/
+	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
+	/** How long we're over the nodeAveragePingTime threshold before we alert (in milliseconds)*/
+	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
 	
 	public static final int SCHEDULER_DEFAULT = 0;
 	public static final int SCHEDULER_IMPROVED_1 = 1;
@@ -496,6 +504,18 @@ public class Node {
 	private long nextReadyARKFetcherStartTime = -1;
 	/** Ready ARKFetcher start interval (milliseconds) */
 	private final long readyARKFetcherStartInterval = 1000;
+	/** Next time to update PeerManagerUserAlert stats */
+	private long nextPeerManagerUserAlertStatsUpdateTime = -1;
+	/** PeerManagerUserAlert stats update interval (milliseconds) */
+	private final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
+	/** first time bwlimitDelay was over PeerManagerUserAlert threshold */
+	private long firstBwlimitDelayTimeThresholdBreak = 0;
+	/** first time nodeAveragePing was over PeerManagerUserAlert threshold */
+	private long firstNodeAveragePingTimeThresholdBreak = 0;
+	/** bwlimitDelay PeerManagerUserAlert should happen if true */
+	public boolean bwlimitDelayAlertRelevant = false;
+	/** nodeAveragePing PeerManagerUserAlert should happen if true */
+	public boolean nodeAveragePingAlertRelevant = false;
 	
 	private final HashSet runningUIDs;
 	
@@ -2407,7 +2427,6 @@ public class Node {
 	}
 
 	public SSKBlock fetch(NodeSSK key) {
-		// Can we just lock on sskDatastore here?  **FIXME**
 		try {
 			return sskDatastore.fetch(key, false);
 		} catch (IOException e) {
@@ -3249,5 +3268,39 @@ public class Node {
 		}
 		nextReadyARKFetcherStartTime = now + readyARKFetcherStartInterval;
 	  }
+	}
+
+	/**
+	 * Update peerManagerUserAlertStats if the timer has expired
+	 */
+	public void maybeUpdatePeerManagerUserAlertStats(long now) {
+		if(now > nextPeerManagerUserAlertStatsUpdateTime) {
+			if(getBwlimitDelayTime() > MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD) {
+				if(firstBwlimitDelayTimeThresholdBreak == 0) {
+					firstBwlimitDelayTimeThresholdBreak = now;
+				}
+			} else {
+				firstBwlimitDelayTimeThresholdBreak = 0;
+			}
+			if(firstBwlimitDelayTimeThresholdBreak != 0 && (now - firstBwlimitDelayTimeThresholdBreak) >= MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY) {
+				bwlimitDelayAlertRelevant = true;
+			} else {
+				bwlimitDelayAlertRelevant = false;
+			}
+			if(getNodeAveragePingTime() > MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD) {
+				if(firstNodeAveragePingTimeThresholdBreak == 0) {
+					firstNodeAveragePingTimeThresholdBreak = now;
+				}
+			} else {
+				firstNodeAveragePingTimeThresholdBreak = 0;
+			}
+			if(firstNodeAveragePingTimeThresholdBreak != 0 && (now - firstNodeAveragePingTimeThresholdBreak) >= MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY) {
+				nodeAveragePingAlertRelevant = true;
+			} else {
+				nodeAveragePingAlertRelevant = false;
+			}
+			Logger.debug(this, "mUPMUAS: "+now+": "+getBwlimitDelayTime()+" >? "+MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+" since "+firstBwlimitDelayTimeThresholdBreak+" ("+bwlimitDelayAlertRelevant+") "+getNodeAveragePingTime()+" >? "+MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+" since "+firstNodeAveragePingTimeThresholdBreak+" ("+nodeAveragePingAlertRelevant+")");
+			nextPeerManagerUserAlertStatsUpdateTime = now + peerManagerUserAlertStatsUpdateInterval;
+		}
 	}
 }

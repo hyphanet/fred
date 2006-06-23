@@ -144,6 +144,7 @@ public class PacketSender implements Runnable {
         node.maybeLogPeerNodeStatusSummary(now);
         node.maybeUpdateOldestNeverConnectedPeerAge(now);
         node.maybeStartAReadyARKFetcher(now);
+        node.maybeUpdatePeerManagerUserAlertStats(now);
         long nextActionTime = Long.MAX_VALUE;
         long oldTempNow = now;
         for(int i=0;i<nodes.length;i++) {

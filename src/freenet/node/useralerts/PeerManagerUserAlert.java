@@ -13,25 +13,19 @@ public class PeerManagerUserAlert implements UserAlert {
 	long oldestNeverConnectedPeerAge = 0;
 	
 	/** How many connected peers we need to not get alert about not enough */
-	static final int MIN_CONN_THRESHOLD = 3;
+	static final int MIN_CONN_ALERT_THRESHOLD = 3;
 	
 	/** How many connected peers we can have without getting alerted about too many */
-	static final int MAX_CONN_THRESHOLD = 30;
+	static final int MAX_CONN_ALERT_THRESHOLD = 30;
 	
 	/** How many disconnected peers we can have without getting alerted about too many */
-	static final int MAX_DISCONN_PEER_THRESHOLD = 20;
+	static final int MAX_DISCONN_PEER_ALERT_THRESHOLD = 30;
 	
 	/** How many peers we can have without getting alerted about too many */
-	static final int MAX_PEER_THRESHOLD = 50;
-	
-	/** How high can bwlimitDelayTime be before we alert (in milliseconds)*/
-	static final int MAX_BWLIMIT_DELAY_TIME_THRESHOLD = 2000;
-	
-	/** How high can nodeAveragePingTime be before we alert (in milliseconds)*/
-	static final int MAX_NODE_AVERAGE_PING_TIME_THRESHOLD = 1000;
+	static final int MAX_PEER_ALERT_THRESHOLD = 50;
 	
 	/** How high can oldestNeverConnectedPeerAge be before we alert (in milliseconds)*/
-	static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
+	static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
 	
 	public PeerManagerUserAlert(Node n) {
 		this.n = n;
@@ -42,26 +36,27 @@ public class PeerManagerUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
+		long now = System.currentTimeMillis();
 		if(peers == 0)
 			return "No peers found";
 		if(conns == 0)
 			return "No open connections";
-		if(conns < MIN_CONN_THRESHOLD) {
+		if(conns < MIN_CONN_ALERT_THRESHOLD) {
 			String suff = "";
 			if (conns > 1) suff = "s";
 			return "Only "+conns+" open connection"+suff;
 		}
-		if((peers - conns) > MAX_DISCONN_PEER_THRESHOLD)
+		if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD)
 			return "Too many disconnected peers";
-		if(conns > MAX_CONN_THRESHOLD)
+		if(conns > MAX_CONN_ALERT_THRESHOLD)
 			return "Too many open connections";
-		if(peers > MAX_PEER_THRESHOLD)
+		if(peers > MAX_PEER_ALERT_THRESHOLD)
 			return "Too many peers";
-		if(bwlimitDelayTime > MAX_BWLIMIT_DELAY_TIME_THRESHOLD)
+		if(n.bwlimitDelayAlertRelevant && bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)
 			return "bwlimitDelayTime too high";
-		if(nodeAveragePingTime > MAX_NODE_AVERAGE_PING_TIME_THRESHOLD)
+		if(n.nodeAveragePingAlertRelevant && nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)
 			return "nodeAveragePingTime too high";
-		if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD)
+		if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD)
 			return "Never connected peer(s) too old";
 		else throw new IllegalArgumentException("Not valid");
 	}
@@ -89,17 +84,17 @@ public class PeerManagerUserAlert implements UserAlert {
 			s = "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. " +
 			"Your node is embedded like a 'chain' in the network and does not contribute to the network's health. " +
 			"Try to get at least 3 connected peers at any given time.";
-		} else if((peers - conns) > MAX_DISCONN_PEER_THRESHOLD){ 
-			s = "This node has too many disconnected peers ("+(peers - conns)+" > "+MAX_DISCONN_PEER_THRESHOLD+"). This will have a impact your performance as disconnected peers also consume bandwidth and CPU. Consider \"cleaning up\" your peer list.";
-		} else if(conns > MAX_CONN_THRESHOLD) {
-			s = "This node has too many connections ("+conns+" > "+MAX_CONN_THRESHOLD+"). We don't encourage such a behaviour; Ubernodes are hurting the network.";
-		} else if(peers > MAX_PEER_THRESHOLD) {
-			s = "This node has too many peers ("+peers+" > "+MAX_PEER_THRESHOLD+"). This will impact your performance as all peers (connected or not) consume bandwidth and CPU. Consider \"cleaning up\" your peer list.";
-		} else if(bwlimitDelayTime > MAX_BWLIMIT_DELAY_TIME_THRESHOLD) {
-			s = "This node has to wait too long for available bandwidth ("+bwlimitDelayTime+" > "+MAX_BWLIMIT_DELAY_TIME_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
-		} else if(nodeAveragePingTime > MAX_NODE_AVERAGE_PING_TIME_THRESHOLD) {
-			s = "This node is having trouble talking with it's peers quickly enough ("+nodeAveragePingTime+" > "+MAX_NODE_AVERAGE_PING_TIME_THRESHOLD+").  Decrease your output bandwidth limit and/or remove some peers to improve the situation.";
-		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD) {
+		} else if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD){ 
+			s = "This node has too many disconnected peers ("+(peers - conns)+" > "+MAX_DISCONN_PEER_ALERT_THRESHOLD+"). This will have a impact your performance as disconnected peers also consume bandwidth and CPU. Consider \"cleaning up\" your peer list.";
+		} else if(conns > MAX_CONN_ALERT_THRESHOLD) {
+			s = "This node has too many connections ("+conns+" > "+MAX_CONN_ALERT_THRESHOLD+"). We don't encourage such a behaviour; Ubernodes are hurting the network.";
+		} else if(peers > MAX_PEER_ALERT_THRESHOLD) {
+			s = "This node has too many peers ("+peers+" > "+MAX_PEER_ALERT_THRESHOLD+"). This will impact your performance as all peers (connected or not) consume bandwidth and CPU. Consider \"cleaning up\" your peer list.";
+		} else if(n.bwlimitDelayAlertRelevant && bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD) {
+			s = "This node has to wait too long for available bandwidth ("+bwlimitDelayTime+" > "+Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
+		} else if(n.nodeAveragePingAlertRelevant && nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD) {
+			s = "This node is having trouble talking with it's peers quickly enough ("+nodeAveragePingTime+" > "+Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Decrease your output bandwidth limit and/or remove some peers to improve the situation.";
+		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
 			s = "One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are affecting performance.";
 		} else throw new IllegalArgumentException("Not valid");
 		return s;
@@ -108,11 +103,11 @@ public class PeerManagerUserAlert implements UserAlert {
 	public short getPriorityClass() {
 		if(peers == 0 ||
 				conns == 0 ||
-				(peers - conns) > MAX_DISCONN_PEER_THRESHOLD ||
-				conns > MAX_CONN_THRESHOLD ||
-				peers > MAX_PEER_THRESHOLD ||
-				bwlimitDelayTime > MAX_BWLIMIT_DELAY_TIME_THRESHOLD ||
-				nodeAveragePingTime > MAX_NODE_AVERAGE_PING_TIME_THRESHOLD)
+				(peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD ||
+				conns > MAX_CONN_ALERT_THRESHOLD ||
+				peers > MAX_PEER_ALERT_THRESHOLD ||
+				(n.bwlimitDelayAlertRelevant && bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD) ||
+				(n.nodeAveragePingAlertRelevant && nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
 			return UserAlert.CRITICAL_ERROR;
 		return UserAlert.ERROR;
 	}
@@ -124,12 +119,12 @@ public class PeerManagerUserAlert implements UserAlert {
 		oldestNeverConnectedPeerAge = (int) n.getOldestNeverConnectedPeerAge();
 		return (peers == 0 ||
 				conns < 3 ||
-				(peers - conns) > MAX_DISCONN_PEER_THRESHOLD ||
-				conns > MAX_CONN_THRESHOLD ||
-				peers > MAX_PEER_THRESHOLD ||
-				bwlimitDelayTime > MAX_BWLIMIT_DELAY_TIME_THRESHOLD ||
-				nodeAveragePingTime > MAX_NODE_AVERAGE_PING_TIME_THRESHOLD ||
-				oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_THRESHOLD) &&
+				(peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD ||
+				conns > MAX_CONN_ALERT_THRESHOLD ||
+				peers > MAX_PEER_ALERT_THRESHOLD ||
+				(n.bwlimitDelayAlertRelevant && bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD) ||
+				(n.nodeAveragePingAlertRelevant && nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD) ||
+				oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) &&
 				isValid;
 	}
 	
