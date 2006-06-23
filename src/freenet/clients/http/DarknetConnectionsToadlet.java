@@ -63,23 +63,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		StringBuffer buf = new StringBuffer(1024);
 		
 		//HTTPRequest request = new HTTPRequest(uri);
-
-		ctx.getPageMaker().makeHead(buf, "Darknet Peers");
-		
-		// FIXME! We need some nice images
-		PeerNode[] peerNodes = node.getDarknetConnections();
-		
-		long now = System.currentTimeMillis();
 		
 		final boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
-		
-		node.alerts.toSummaryHtml(buf);
-		
-		/* node status values */
-		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
-		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
-		int networkSizeEstimate = (int) node.getNetworkSizeEstimate( 0 );
-		String nodeUptimeString = timeIntervalToString(( now - node.startupTime ) / 1000);
 		
 		/* gather connection statistics */
 		int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
@@ -88,6 +73,32 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int numberOfTooOld = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_TOO_OLD);
 		int numberOfDisconnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_DISCONNECTED);
 		int numberOfNeverConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_NEVER_CONNECTED);
+		
+		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
+		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected;
+		String titleCountString = null;
+		if(advancedEnabled) {
+			titleCountString = "(" + numberOfConnected + "/" + numberOfRoutingBackedOff + "/" + numberOfNotConnected + ")";
+		} else {
+			titleCountString = new Integer(numberOfSimpleConnected).toString();
+		}
+		
+		String pageTitle = titleCountString + " Darknet Peers";
+		
+		ctx.getPageMaker().makeHead(buf, pageTitle);
+		
+		// FIXME! We need some nice images
+		PeerNode[] peerNodes = node.getDarknetConnections();
+		
+		long now = System.currentTimeMillis();
+		
+		node.alerts.toSummaryHtml(buf);
+		
+		/* node status values */
+		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
+		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
+		int networkSizeEstimate = (int) node.getNetworkSizeEstimate( 0 );
+		String nodeUptimeString = timeIntervalToString(( now - node.startupTime ) / 1000);
 		
 		buf.append("<table class=\"column\"><tr><td class=\"first\">");
 		
