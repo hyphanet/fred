@@ -847,7 +847,7 @@ public class TextModeClientInterface implements Runnable {
     		Peer peer = pn[i].getDetectedPeer();
     		String nodeIpAndPort = "";
     		if(peer != null) {
-        		nodeIpAndPort = peer.getAddress().getHostAddress()+":"+pn[i].getDetectedPeer().getPort();
+    			nodeIpAndPort = peer.toString();
     		}
     		String name = pn[i].myName;
     		String identity = pn[i].getIdentityString();
@@ -870,7 +870,7 @@ public class TextModeClientInterface implements Runnable {
     		Peer peer = pn[i].getDetectedPeer();
     		String nodeIpAndPort = "";
     		if(peer != null) {
-        		nodeIpAndPort = peer.getAddress().getHostAddress()+":"+pn[i].getDetectedPeer().getPort();
+    			nodeIpAndPort = peer.toString();
     		}
     		String name = pn[i].myName;
     		String identity = pn[i].getIdentityString();
