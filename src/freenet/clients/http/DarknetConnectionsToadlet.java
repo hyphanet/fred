@@ -7,6 +7,7 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -99,6 +100,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
 		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
 		int networkSizeEstimate = (int) node.getNetworkSizeEstimate( 0 );
+		DecimalFormat fix4 = new DecimalFormat("0.0000");
+		double missRoutingDistance =  node.MissRoutingDistance.currentValue();
+		DecimalFormat fix1 = new DecimalFormat("##0.0%");
+		double backedoffPercent =  node.BackedoffPercent.currentValue();
 		String nodeUptimeString = timeIntervalToString(( now - node.startupTime ) / 1000);
 		
 		buf.append("<table class=\"column\"><tr><td class=\"first\">");
@@ -113,6 +118,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf.append("<li>nodeAveragePingTime:&nbsp;").append(nodeAveragePingTime).append("ms</li>");
 			buf.append("<li>networkSizeEstimate:&nbsp;").append(networkSizeEstimate).append("&nbsp;nodes</li>");
 			buf.append("<li>nodeUptime:&nbsp;").append(nodeUptimeString).append("</li>");
+			buf.append("<li>missRoutingDistance:&nbsp;").append(fix4.format(missRoutingDistance)).append("</li>");
+			buf.append("<li>backedoffPercent:&nbsp;").append(fix1.format(backedoffPercent)).append("</li>");
 			buf.append("</ul></div>");
 			buf.append("</div>\n");
 			buf.append("</td><td>");

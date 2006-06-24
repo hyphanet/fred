@@ -377,10 +377,29 @@ public class PeerManager {
     }
 
     /**
+     * FIXME
+     * This scans the same array 4 times.  It would be better to scan once and execute 4 callbacks...
+     * For this reason the metrics are only updated if advanced mode is enabled
+     */
+    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf) {
+	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false);
+	if (node.getToadletContainer().isAdvancedDarknetEnabled()) {
+		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
+		node.MissRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
+		int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
+		int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+		if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
+			node.BackedoffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+		}
+	}
+	return best;
+    }
+	    
+    /**
      * Find the peer, if any, which is closer to the target location
      * than we are, and is not included in the provided set.
      */
-    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf) {
+    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean ignoreBackedOff) {
         PeerNode[] peers = connectedPeers;
         // No locking necessary. We won't modify it, and if another method does, it will copy-and-assign.
         Logger.minor(this, "Choosing closest peer: connectedPeers="+peers.length);
@@ -405,7 +424,7 @@ public class PeerManager {
             	Logger.minor(this, "Skipping (not connected): "+p.getPeer());
             	continue;
             }
-            if(p.isRoutingBackedOff()) {
+            if((!ignoreBackedOff) && p.isRoutingBackedOff()) {
             	Logger.minor(this, "Skipping (routing backed off): "+p.getPeer());
             	continue;
             }

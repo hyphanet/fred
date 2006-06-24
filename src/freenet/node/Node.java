@@ -639,6 +639,10 @@ public class Node {
 	
 	// Debugging stuff
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
+
+	// various metrics
+	public RunningAverage MissRoutingDistance = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 500);
+	public RunningAverage BackedoffPercent = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 500);
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
