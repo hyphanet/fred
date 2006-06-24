@@ -1702,6 +1702,8 @@ public class PeerNode implements PeerContext {
 			pingAverage.report(now - startTime);
 			Logger.minor(this, "Reporting ping time to "+this+" : "+(now - startTime));
 		}
+		if(verifiedIncompatibleOlderVersion)
+				forceDisconnect();
 	}
 
 	public double averagePingTime() {
