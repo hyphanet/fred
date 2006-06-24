@@ -230,6 +230,9 @@ public class PeerNode implements PeerContext {
     
     /** When this peer was added to this node */
     private long peerAddedTime = 1;
+    
+    /** True if this peer is not to be connected with */
+    private boolean isDisabled = false;
 
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
@@ -811,7 +814,8 @@ public class PeerNode implements PeerContext {
      */
     public boolean shouldSendHandshake() {
         long now = System.currentTimeMillis();
-        return (!isConnected) && 
+        return (!isConnected) &&
+				(!isDisabled) &&  // don't connect to disabled peers
                 (handshakeIPs != null) &&
                 (now > sendHandshakeTime) &&
                 !(hasLiveHandshake(now));
@@ -1855,6 +1859,8 @@ public class PeerNode implements PeerContext {
   		return "DISCONNECTED";
   	if(status == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
   		return "NEVER CONNECTED";
+  	if(status == Node.PEER_NODE_STATUS_DISABLED)
+  		return "DISABLED";
   	return "UNKNOWN STATUS";
   }
 
@@ -1872,6 +1878,8 @@ public class PeerNode implements PeerContext {
   		return "peer_disconnected";
   	if(status == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
   		return "peer_never_connected";
+  	if(status == Node.PEER_NODE_STATUS_DISABLED)
+  		return "peer_disconnected";  // **FIXME**
   	return "peer_unknown_status";
   }
 
@@ -1894,6 +1902,8 @@ public class PeerNode implements PeerContext {
 					previousRoutingBackoffReason = null;
 				}
 			}
+		} else if(isDisabled) {
+			peerNodeStatus = Node.PEER_NODE_STATUS_DISABLED;
 		} else if(completedHandshake && verifiedIncompatibleNewerVersion) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_NEW;
 		} else if(completedHandshake && verifiedIncompatibleOlderVersion) {
@@ -1923,6 +1933,23 @@ public class PeerNode implements PeerContext {
 
 	public int getHandshakeCount() {
 		return handshakeCount;
+	}
+	
+	public void enablePeer() {
+		isDisabled = false;
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
+	
+	public void disablePeer() {
+		if(isConnected) {
+			return;
+		}
+		isDisabled = true;
+		setPeerNodeStatus(System.currentTimeMillis());
+	}
+
+	public boolean isDisabled() {
+		return isDisabled;
 	}
 }
 

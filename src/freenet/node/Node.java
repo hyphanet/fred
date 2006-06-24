@@ -572,6 +572,7 @@ public class Node {
 	public static final int PEER_NODE_STATUS_TOO_OLD = 4;
 	public static final int PEER_NODE_STATUS_DISCONNECTED = 5;
 	public static final int PEER_NODE_STATUS_NEVER_CONNECTED = 6;
+	public static final int PEER_NODE_STATUS_DISABLED = 7;
 	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
 	
 	public final long bootID;

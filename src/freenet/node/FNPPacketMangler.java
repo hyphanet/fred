@@ -217,6 +217,9 @@ public class FNPPacketMangler implements LowLevelFilter {
             Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
             return;
         }
+        if(pn.isDisabled()) {
+        	return;  // We don't connect to disabled peers
+        }
         Logger.minor(this, "Version="+version+", negType="+negType+", packetType="+packetType);
         // We keep one DiffieHellmanContext per node ONLY
         /*

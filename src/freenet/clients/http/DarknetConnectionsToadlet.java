@@ -73,9 +73,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int numberOfTooOld = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_TOO_OLD);
 		int numberOfDisconnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_DISCONNECTED);
 		int numberOfNeverConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_NEVER_CONNECTED);
+		int numberOfDisabled = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_DISABLED);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
-		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected;
+		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled;
 		String titleCountString = null;
 		if(advancedEnabled) {
 			titleCountString = "(" + numberOfConnected + "/" + numberOfRoutingBackedOff + "/" + numberOfNotConnected + ")";
@@ -179,6 +180,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		if (numberOfNeverConnected > 0) {
 			buf.append("<li><span class=\"peer_never_connected\">Never Connected:&nbsp;").append(numberOfNeverConnected).append("</span></li>");
+		}
+		if (numberOfDisabled > 0) {
+			buf.append("<li><span class=\"peer_never_connected\">Disabled:&nbsp;").append(numberOfDisabled).append("</span></li>");  // **FIXME**
 		}
 		buf.append("</ul>");
 		buf.append("</div>");
@@ -300,7 +304,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 
 				row[0] = pn;
-				row[1] = "<input type=\"checkbox\" name=\"delete_node_"+pn.hashCode()+"\" />";
+				row[1] = "<input type=\"checkbox\" name=\"node_"+pn.hashCode()+"\" />";
 				row[2] = status;
 				row[3] = namePrefixString+HTMLEncoder.encode(pn.getName())+nameSuffixString;
 				row[4] = ( pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)" ) + avgPingTimeString;
@@ -382,8 +386,16 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			//
 			buf.append(buf2);
 			//
-			buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />");
-			if(advancedEnabled) {
+			if(!advancedEnabled) {
+				buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />");
+			} else {
+				buf.append("<select name=\"action\">\n");
+				buf.append(" <option value=\"\">-- Select Action --</option>\n");
+				buf.append(" <option value=\"enable\">Enable Selected Peers</option>\n");
+				buf.append(" <option value=\"disable\">Disable Selected Peers</option>\n");
+				buf.append(" <option value=\"remove\">Remove Selected Peers</option>\n");
+				buf.append("</select>\n");
+				buf.append("<input type=\"submit\" name=\"submit\" value=\"Go\" />\n");
 				buf.append("&nbsp;&nbsp;&nbsp;<span class=\"darknet_connections\">* Requesting ARK</span>\n");
 			}
 			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
@@ -522,12 +534,38 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
-		} else if (request.isPartSet("remove")) {
+		} else if (request.isPartSet("submit") && request.getPartAsString("action",25).equals("enable")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("delete_node_"+peerNodes[i].hashCode())) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					peerNodes[i].enablePeer();
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("submit") && request.getPartAsString("action",25).equals("disable")) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					peerNodes[i].disablePeer();
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("remove") || (request.isPartSet("submit") && request.getPartAsString("action",25).equals("remove"))) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
 					this.node.removeDarknetConnection(peerNodes[i]);
 				}
 			}
