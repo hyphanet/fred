@@ -151,6 +151,8 @@ public class TextModeClientInterface implements Runnable {
         sb.append("DISCONNECT:<ip:port|name> - see REMOVEPEER:<ip:port|name|identity> below\r\n");
         sb.append("ADDPEER:<filename|URL> - add a peer from its ref in a file/url.\r\n");
         sb.append("ADDPEER:\\r\\n<noderef including an End on a line by itself> - add a peer by entering a noderef directly.\r\n");
+        sb.append("DISABLEPEER:<ip:port|name|identity> - disable a peer by providing it's ip+port, name, or identity\r\n");
+        sb.append("ENABLEPEER:<ip:port|name|identity> - enable a peer by providing it's ip+port, name, or identity\r\n");
         sb.append("HAVEPEER:<ip:port|name|identity> - report true/false on having a peer by providing it's ip+port, name, or identity\r\n");
         sb.append("REMOVEPEER:<ip:port|name|identity> - remove a peer by providing it's ip+port, name, or identity\r\n");
         sb.append("PEER:<ip:port|name|identity> - report the noderef of a peer (without metadata) by providing it's ip+port, name, or identity\r\n");
@@ -611,6 +613,32 @@ public class TextModeClientInterface implements Runnable {
             	Logger.error(this, "Error setting node's name");
     		}
     		n.config.store();
+        } else if(uline.startsWith("DISABLEPEER:")) {
+        	String nodeIdentifier = (line.substring("DISABLEPEER:".length())).trim();
+        	if(!havePeer(nodeIdentifier)) {
+        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
+        	if(disablePeer(nodeIdentifier)) {
+        		outsb.append("disable succeeded for "+nodeIdentifier);
+        	} else {
+        		outsb.append("disable failed for "+nodeIdentifier);
+        	}
+        	outsb.append("\r\n");
+        } else if(uline.startsWith("ENABLEPEER:")) {
+        	String nodeIdentifier = (line.substring("ENABLEPEER:".length())).trim();
+        	if(!havePeer(nodeIdentifier)) {
+        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
+        	if(enablePeer(nodeIdentifier)) {
+        		outsb.append("enable succeeded for "+nodeIdentifier);
+        	} else {
+        		outsb.append("enable failed for "+nodeIdentifier);
+        	}
+        	outsb.append("\r\n");
         } else if(uline.startsWith("HAVEPEER:")) {
         	String nodeIdentifier = (line.substring("HAVEPEER:".length())).trim();
         	if(havePeer(nodeIdentifier)) {
@@ -858,6 +886,52 @@ public class TextModeClientInterface implements Runnable {
     	}
     	return null;
     }
+
+	/**
+	 * Disable connecting to a peer given its ip and port, name or identity, as a String
+	 * Report peer success as boolean
+	 */
+	private boolean disablePeer(String nodeIdentifier) {
+		PeerNode[] pn = n.peers.myPeers;
+		for(int i=0;i<pn.length;i++)
+		{
+			Peer peer = pn[i].getDetectedPeer();
+			String nodeIpAndPort = "";
+			if(peer != null) {
+				nodeIpAndPort = peer.toString();
+			}
+			String name = pn[i].myName;
+			String identity = pn[i].getIdentityString();
+			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
+				pn[i].disablePeer();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Enable connecting to a peer given its ip and port, name or identity, as a String
+	 * Report peer success as boolean
+	 */
+	private boolean enablePeer(String nodeIdentifier) {
+		PeerNode[] pn = n.peers.myPeers;
+		for(int i=0;i<pn.length;i++)
+		{
+			Peer peer = pn[i].getDetectedPeer();
+			String nodeIpAndPort = "";
+			if(peer != null) {
+				nodeIpAndPort = peer.toString();
+			}
+			String name = pn[i].myName;
+			String identity = pn[i].getIdentityString();
+			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier)) {
+				pn[i].enablePeer();
+				return true;
+			}
+		}
+		return false;
+	}
     
     /**
      * Check for a peer of the node given its ip and port, name or identity, as a String
