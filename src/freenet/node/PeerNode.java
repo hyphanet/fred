@@ -233,6 +233,9 @@ public class PeerNode implements PeerContext {
     
     /** True if this peer is not to be connected with */
     private boolean isDisabled = false;
+    
+    /** True if we don't send handshake requests to this peer, but will connect if we receive one */
+    private boolean isListenOnly = false;
 
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
@@ -442,6 +445,12 @@ public class PeerNode implements PeerContext {
             		isDisabled = true;
             	} else {
             		isDisabled = false;
+            	}
+            	String tempIsListenOnlyString = metadata.get("isListenOnly");
+            	if(tempIsListenOnlyString != null && tempIsListenOnlyString.equals("true")) {
+            		isListenOnly = true;
+            	} else {
+            		isListenOnly = false;
             	}
         	}
         } else {
@@ -821,6 +830,7 @@ public class PeerNode implements PeerContext {
         long now = System.currentTimeMillis();
         return (!isConnected) &&
 				(!isDisabled) &&  // don't connect to disabled peers
+				(!isListenOnly) &&  // don't send handshake requests to isListenOnly peers
                 (handshakeIPs != null) &&
                 (now > sendHandshakeTime) &&
                 !(hasLiveHandshake(now));
@@ -1492,6 +1502,8 @@ public class PeerNode implements PeerContext {
     		fs.put("neverConnected", "true");
     	if(isDisabled)
     		fs.put("isDisabled", "true");
+    	if(isListenOnly)
+    		fs.put("isListenOnly", "true");
     	return fs;
 	}
 
@@ -1870,6 +1882,8 @@ public class PeerNode implements PeerContext {
   		return "NEVER CONNECTED";
   	if(status == Node.PEER_NODE_STATUS_DISABLED)
   		return "DISABLED";
+  	if(status == Node.PEER_NODE_STATUS_LISTENING)
+  		return "LISTENING";
   	return "UNKNOWN STATUS";
   }
 
@@ -1888,6 +1902,8 @@ public class PeerNode implements PeerContext {
   	if(status == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
   		return "peer_never_connected";
   	if(status == Node.PEER_NODE_STATUS_DISABLED)
+  		return "peer_disconnected";  // **FIXME**
+  	if(status == Node.PEER_NODE_STATUS_LISTENING)
   		return "peer_disconnected";  // **FIXME**
   	return "peer_unknown_status";
   }
@@ -1919,6 +1935,8 @@ public class PeerNode implements PeerContext {
 			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_OLD;
 		} else if(neverConnected) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_NEVER_CONNECTED;
+		} else if(isListenOnly) {
+			peerNodeStatus = Node.PEER_NODE_STATUS_LISTENING;
 		} else {
 			peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
 		}
@@ -1962,6 +1980,16 @@ public class PeerNode implements PeerContext {
 
 	public boolean isDisabled() {
 		return isDisabled;
+	}
+	
+	public void setListenOnly(boolean setting) {
+		isListenOnly = setting;
+		setPeerNodeStatus(System.currentTimeMillis());
+        node.peers.writePeers();
+	}
+
+	public boolean isListenOnly() {
+		return isListenOnly;
 	}
 }
 

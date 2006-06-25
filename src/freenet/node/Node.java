@@ -573,6 +573,7 @@ public class Node {
 	public static final int PEER_NODE_STATUS_DISCONNECTED = 5;
 	public static final int PEER_NODE_STATUS_NEVER_CONNECTED = 6;
 	public static final int PEER_NODE_STATUS_DISABLED = 7;
+	public static final int PEER_NODE_STATUS_LISTENING = 8;
 	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
 	
 	public final long bootID;
@@ -3122,7 +3123,9 @@ public class Node {
 		int numberOfTooOld = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_OLD);
 		int numberOfDisconnected = getPeerNodeStatusSize(PEER_NODE_STATUS_DISCONNECTED);
 		int numberOfNeverConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
-		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected);
+		int numberOfDisabled = getPeerNodeStatusSize(PEER_NODE_STATUS_DISABLED);
+		int numberOfListening = getPeerNodeStatusSize(PEER_NODE_STATUS_LISTENING);
+		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Listening: "+numberOfListening);
 		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 	  }
 	}
