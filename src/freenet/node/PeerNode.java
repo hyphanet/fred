@@ -413,31 +413,31 @@ public class PeerNode implements PeerContext {
         		}
         		if(p != null)
         			detectedPeer = p;
-            String tempTimeLastReceivedPacketString = metadata.get("timeLastReceivedPacket");
-            if(tempTimeLastReceivedPacketString != null) {
-              long tempTimeLastReceivedPacket = Long.parseLong(tempTimeLastReceivedPacketString);
-              timeLastReceivedPacket = tempTimeLastReceivedPacket;
-            }
-            String tempPeerAddedTimeString = metadata.get("peerAddedTime");
-            if(tempPeerAddedTimeString != null) {
-              long tempPeerAddedTime = Long.parseLong(tempPeerAddedTimeString);
-              peerAddedTime = tempPeerAddedTime;
-            } else {
-              peerAddedTime = 1;
-            }
-            String tempNeverConnectedString = metadata.get("neverConnected");
-            if(tempNeverConnectedString != null && tempNeverConnectedString.equals("true")) {
-              neverConnected = true;
-            } else {
-              neverConnected = false;
-            }
-            if((now - peerAddedTime) > (((long) 30)*24*60*60*1000)) {  // 30 days
-              peerAddedTime = 0;  // don't store anymore
-              neverConnected = false;
-            }
-            if(!neverConnected) {
-              peerAddedTime = 0;  // don't store anymore
-            }
+            	String tempTimeLastReceivedPacketString = metadata.get("timeLastReceivedPacket");
+            	if(tempTimeLastReceivedPacketString != null) {
+            		long tempTimeLastReceivedPacket = Long.parseLong(tempTimeLastReceivedPacketString);
+            		timeLastReceivedPacket = tempTimeLastReceivedPacket;
+            	}
+            	String tempPeerAddedTimeString = metadata.get("peerAddedTime");
+            	if(tempPeerAddedTimeString != null) {
+            		long tempPeerAddedTime = Long.parseLong(tempPeerAddedTimeString);
+            		peerAddedTime = tempPeerAddedTime;
+            	} else {
+            		peerAddedTime = 1;
+            	}
+            	String tempNeverConnectedString = metadata.get("neverConnected");
+            	if(tempNeverConnectedString != null && tempNeverConnectedString.equals("true")) {
+            		neverConnected = true;
+            	} else {
+            		neverConnected = false;
+            	}
+            	if((now - peerAddedTime) > (((long) 30)*24*60*60*1000)) {  // 30 days
+            		peerAddedTime = 0;  // don't store anymore
+            		neverConnected = false;
+            	}
+            	if(!neverConnected) {
+            		peerAddedTime = 0;  // don't store anymore
+            	}
         	}
         } else {
             neverConnected = true;
@@ -1944,9 +1944,10 @@ public class PeerNode implements PeerContext {
 	
 	public void disablePeer() {
 		if(isConnected) {
-			return;
+			forceDisconnect();
 		}
 		isDisabled = true;
+    	arkFetcher.stop();
 		setPeerNodeStatus(System.currentTimeMillis());
 	}
 

@@ -120,11 +120,11 @@ public class ARKFetcher implements ClientCallback {
 		shouldRun = false;
 		synchronized(this){
 			started = false;
+			if(node.arkFetchManager.hasReadyARKFetcher(this)) {
+				node.arkFetchManager.removeReadyARKFetcher(this);
+			}
 			if(isFetching) {
 				node.removeARKFetcher(identity,this);
-				if(node.arkFetchManager.hasReadyARKFetcher(this)) {
-					node.arkFetchManager.removeReadyARKFetcher(this);
-				}
 				isFetching = false;
 			}
 		}
