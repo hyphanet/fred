@@ -383,13 +383,15 @@ public class PeerManager {
      */
     public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf) {
 	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false);
-	if (node.getToadletContainer().isAdvancedDarknetEnabled()) {
+	if (best != null && node.getToadletContainer().isAdvancedDarknetEnabled()) {
 		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
-		node.MissRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
-		int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
-		int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-		if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
-			node.BackedoffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+		if(nbo != null) {
+			node.MissRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
+			int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
+			int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
+				node.BackedoffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+			}
 		}
 	}
 	return best;
