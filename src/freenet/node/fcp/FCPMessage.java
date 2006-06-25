@@ -38,6 +38,8 @@ public abstract class FCPMessage {
 			return new ClientPutMessage(fs);
 		if(name.equals(GenerateSSKMessage.name))
 			return new GenerateSSKMessage(fs);
+		if(name.equals(ListPeersMessage.name))
+			return new ListPeersMessage(fs);
 		if(name.equals(ListPersistentRequestsMessage.name))
 			return new ListPersistentRequestsMessage(fs);
 		if(name.equals(RemovePersistentRequest.name))

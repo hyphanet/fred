@@ -3311,4 +3311,8 @@ public class Node {
 			nextPeerManagerUserAlertStatsUpdateTime = now + peerManagerUserAlertStatsUpdateInterval;
 		}
 	}
+	public PeerNode[] getPeerNodes() {
+		PeerManager pm = peers;
+		return pm.myPeers;
+	}
 }
