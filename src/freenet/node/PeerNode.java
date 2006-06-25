@@ -433,7 +433,6 @@ public class PeerNode implements PeerContext {
             	}
             	if((now - peerAddedTime) > (((long) 30)*24*60*60*1000)) {  // 30 days
             		peerAddedTime = 0;  // don't store anymore
-            		neverConnected = false;
             	}
             	if(!neverConnected) {
             		peerAddedTime = 0;  // don't store anymore
