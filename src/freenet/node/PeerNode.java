@@ -437,6 +437,12 @@ public class PeerNode implements PeerContext {
             	if(!neverConnected) {
             		peerAddedTime = 0;  // don't store anymore
             	}
+            	String tempIsDisabledString = metadata.get("isDisabled");
+            	if(tempIsDisabledString != null && tempIsDisabledString.equals("true")) {
+            		isDisabled = true;
+            	} else {
+            		isDisabled = false;
+            	}
         	}
         } else {
             neverConnected = true;
@@ -1484,6 +1490,8 @@ public class PeerNode implements PeerContext {
     		fs.put("peerAddedTime", Long.toString(peerAddedTime));
     	if(neverConnected)
     		fs.put("neverConnected", "true");
+    	if(isDisabled)
+    		fs.put("isDisabled", "true");
     	return fs;
 	}
 
@@ -1939,6 +1947,7 @@ public class PeerNode implements PeerContext {
 	public void enablePeer() {
 		isDisabled = false;
 		setPeerNodeStatus(System.currentTimeMillis());
+        node.peers.writePeers();
 	}
 	
 	public void disablePeer() {
@@ -1948,6 +1957,7 @@ public class PeerNode implements PeerContext {
 		isDisabled = true;
     	arkFetcher.stop();
 		setPeerNodeStatus(System.currentTimeMillis());
+        node.peers.writePeers();
 	}
 
 	public boolean isDisabled() {

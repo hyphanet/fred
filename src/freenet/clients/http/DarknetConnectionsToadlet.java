@@ -400,6 +400,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				buf.append(" <option value=\"\">-- Select Action --</option>\n");
 				buf.append(" <option value=\"enable\">Enable Selected Peers</option>\n");
 				buf.append(" <option value=\"disable\">Disable Selected Peers</option>\n");
+				buf.append(" <option value=\"\">-- -- --</option>\n");
 				buf.append(" <option value=\"remove\">Remove Selected Peers</option>\n");
 				buf.append("</select>\n");
 				buf.append("<input type=\"submit\" name=\"submit\" value=\"Go\" />\n");
