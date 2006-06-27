@@ -96,6 +96,7 @@ import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
@@ -3314,5 +3315,11 @@ public class Node {
 	public PeerNode[] getPeerNodes() {
 		PeerManager pm = peers;
 		return pm.myPeers;
+	}
+
+	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {
+		// FIXME do something
+		// TODO Auto-generated method stub
+		
 	}
 }

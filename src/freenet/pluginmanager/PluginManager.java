@@ -109,6 +109,10 @@ public class PluginManager {
 			
 			if (pi.isPproxyPlugin())
 				registerToadlet(plug);
+
+			if(pi.isIPDetectorPlugin()) {
+				node.registerIPDetectorPlugin((FredPluginIPDetector) plug);
+			}
 			
 			synchronized (pluginInfo) {
 				pluginInfo.put(pi.getThreadName(), pi);
