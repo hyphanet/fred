@@ -96,7 +96,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 		
 		node.alerts.toSummaryHtml(buf);
-		
+	
 		/* node status values */
 		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
 		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
@@ -321,7 +321,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				row[4] = ( pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)" ) + avgPingTimeString;
 				row[5] = versionPrefixString+versionString+versionSuffixString;
 				row[6] = new Double(pn.getLocation().getValue());
-				row[7] = backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
+				row[7] = fix1.format(pn.backedOffPercent.currentValue())+" "+backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
 				row[8] = idleToString(now, idle, ((Integer) status).intValue());
 				row[9] = HTMLEncoder.encode(pn.getName());
 			}

@@ -683,6 +683,9 @@ public class PeerNode implements PeerContext {
         Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected) throw new NotConnectedException();
         MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb});
+	synchronized(routingBackoffSync) {
+		reportBackoffStatus(System.currentTimeMillis());
+	}
         synchronized(messagesToSendNow) {
             messagesToSendNow.addLast(item);
         }
@@ -1599,13 +1602,35 @@ public class PeerNode implements PeerContext {
 	String lastRoutingBackoffReason = null;
 	/** Previous backoff reason (used by setPeerNodeStatus)*/
 	String previousRoutingBackoffReason = null;
-	
+	/* percent of time this peer is backedoff */
+    	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	/* time of last sample */
+	private long lastSampleTime = Long.MAX_VALUE;
+    
 	/**
 	 * Got a local RejectedOverload.
 	 * Back off this node for a while.
 	 */
 	public void localRejectedOverload() {
 	  localRejectedOverload("");
+	}
+
+	/** 
+	 * Track the percentage of time a peer spends backed off
+	 */
+	private void reportBackoffStatus(long now) {
+		if(now > lastSampleTime) {
+			if (now > routingBackedOffUntil) {
+				if (lastSampleTime > routingBackedOffUntil) {
+					backedOffPercent.report(0.0);
+				} else {
+					backedOffPercent.report((double)(routingBackedOffUntil-lastSampleTime)/(double)(now-lastSampleTime));
+				}
+			} else {
+				backedOffPercent.report(1.0);
+			}
+		}
+		lastSampleTime = now;
 	}
 	
 	/**
@@ -1616,6 +1641,7 @@ public class PeerNode implements PeerContext {
 		Logger.minor(this, "Local rejected overload on "+this);
 		synchronized(routingBackoffSync) {
 			long now = System.currentTimeMillis();
+			reportBackoffStatus(now);
 			// Don't back off any further if we are already backed off
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
@@ -1629,6 +1655,7 @@ public class PeerNode implements PeerContext {
 				if( 0 <= reason.length()) {
 					reasonWrapper = " because of '"+reason+"'";
 				}
+
 				Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+getPeer());
 			} else {
 				Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+getPeer());
@@ -1644,6 +1671,7 @@ public class PeerNode implements PeerContext {
 		Logger.minor(this, "Success not overload on "+this);
 		synchronized(routingBackoffSync) {
 			long now = System.currentTimeMillis();
+			reportBackoffStatus(now);
 			// Don't un-backoff if still backed off
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
