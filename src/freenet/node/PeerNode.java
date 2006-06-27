@@ -428,30 +428,15 @@ public class PeerNode implements PeerContext {
             	} else {
             		peerAddedTime = 1;
             	}
-            	String tempNeverConnectedString = metadata.get("neverConnected");
-            	if(tempNeverConnectedString != null && tempNeverConnectedString.equals("true")) {
-            		neverConnected = true;
-            	} else {
-            		neverConnected = false;
-            	}
+            	neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
             	if((now - peerAddedTime) > (((long) 30)*24*60*60*1000)) {  // 30 days
             		peerAddedTime = 0;  // don't store anymore
             	}
             	if(!neverConnected) {
             		peerAddedTime = 0;  // don't store anymore
             	}
-            	String tempIsDisabledString = metadata.get("isDisabled");
-            	if(tempIsDisabledString != null && tempIsDisabledString.equals("true")) {
-            		isDisabled = true;
-            	} else {
-            		isDisabled = false;
-            	}
-            	String tempIsListenOnlyString = metadata.get("isListenOnly");
-            	if(tempIsListenOnlyString != null && tempIsListenOnlyString.equals("true")) {
-            		isListenOnly = true;
-            	} else {
-            		isListenOnly = false;
-            	}
+            	isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
+            	isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
         	}
         } else {
             neverConnected = true;
