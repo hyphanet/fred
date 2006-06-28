@@ -425,11 +425,6 @@ public class Node {
 	/** How long we're over the nodeAveragePingTime threshold before we alert (in milliseconds)*/
 	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
 	
-	public static final int SCHEDULER_DEFAULT = 0;
-	public static final int SCHEDULER_IMPROVED_1 = 1;
-
-	public final int currentScheduler;
-	
 	/** Accept one request every 10 seconds regardless, to ensure we update the
 	 * block send time.
 	 */
@@ -1432,20 +1427,6 @@ public class Node {
 		 
 		
 		// Select the request scheduler
-		
-		nodeConfig.register("scheduler", 0, sortOrder++, true, "Scheduler", "Scheduler",
-				new IntCallback(){
-					public int get(){
-						return currentScheduler;
-					}
-					
-					public void set(int val){
-						if(val == get()) return;
-						//FIXME: implement!
-					}
-		});
-		
-		currentScheduler = nodeConfig.getInt("scheduler");
 		
 		// FIXME make all the below arbitrary constants configurable!
 		
