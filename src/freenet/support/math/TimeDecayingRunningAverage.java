@@ -114,7 +114,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
                  now - lastReportTime;
             double thisHalfLife = halfLife;
             long uptime = now - createdTime;
-            //if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);
+            if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);
             if(thisHalfLife == 0) thisHalfLife = 1;
             double changeFactor =
             	Math.pow(0.5, ((double)thisInterval) / thisHalfLife);
