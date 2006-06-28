@@ -497,35 +497,35 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(progressPending != null) {
 			return progressPending.getTotalBlocks();
 		} else
-			return -1;
+			return 1;
 	}
 	
 	public double getMinBlocks() {
 		if(progressPending != null) {
 			return progressPending.getMinBlocks();
 		} else
-			return -1;
+			return 1;
 	}
 	
 	public double getFailedBlocks() {
 		if(progressPending != null) {
 			return progressPending.getFailedBlocks();
 		} else
-			return -1;
+			return 0;
 	}
 	
 	public double getFatalyFailedBlocks() {
 		if(progressPending != null) {
 			return progressPending.getFatalyFailedBlocks();
 		} else
-			return -1;
+			return 0;
 	}
 	
 	public double getFetchedBlocks() {
 		if(progressPending != null) {
 			return progressPending.getFetchedBlocks();
 		} else
-			return -1;
+			return 0;
 	}
 
 	public String getFailureReason() {
