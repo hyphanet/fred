@@ -2080,6 +2080,7 @@ public class Node {
 				Logger.minor(this, "Reporting 0 because throttle uncontended: now "+throttledPacketSendAverage.currentValue());
 				throttledPacketSendAverage.report(0);
 				Logger.minor(this, "New average: "+throttledPacketSendAverage.currentValue());
+				Logger.minor(this, "Average: "+throttledPacketSendAverage.toString());
 			} else
 				Logger.minor(this, "Not uncontended");
 		}
@@ -2982,7 +2983,7 @@ public class Node {
 	}
 	
 	public double getBwlimitDelayTime() {
-		return this.throttledPacketSendAverage.currentValue();
+		return throttledPacketSendAverage.currentValue();
 	}
 	
 	public double getNodeAveragePingTime() {
