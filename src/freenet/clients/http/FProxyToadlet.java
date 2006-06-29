@@ -321,14 +321,7 @@ public class FProxyToadlet extends Toadlet {
 		}
 	}
 
-	public static void maybeCreateFProxyEtc(Node node, Config config) throws IOException, InvalidConfigValueException {
-		
-		SubConfig fproxyConfig = null;
-		try {
-			fproxyConfig = new SubConfig("fproxy", config);
-		} catch (IllegalArgumentException iae1) {
-			fproxyConfig = config.get("fproxy");
-		}
+	public static void maybeCreateFProxyEtc(Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {
 		
 		try {
 			SimpleToadletServer server = new SimpleToadletServer(fproxyConfig, node);

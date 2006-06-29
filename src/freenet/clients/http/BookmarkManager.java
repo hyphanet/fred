@@ -78,16 +78,10 @@ public class BookmarkManager {
 		}
 	}
 	
-	public BookmarkManager(Node n) {
+	public BookmarkManager(Node n, SubConfig sc) {
 		this.bookmarks = new Vector();
 		this.node = n;
 		this.uskcb = new USKUpdatedCallback();
-		SubConfig sc = null;
-		try {
-			sc = new SubConfig("fproxy", n.config);
-		} catch (IllegalArgumentException iae1) {
-			sc = n.config.get("fproxy");
-		}
 		sc.register("bookmarks", n.isTestnetEnabled() ? DEFAULT_TESTNET_BOOKMARKS : DEFAULT_DARKNET_BOOKMARKS, 0, false, "List of bookmarks", "A list of bookmarked freesites", makeCB());
 		
 		String[] initialbookmarks = sc.getStringArr("bookmarks");

@@ -1534,14 +1534,15 @@ public class Node {
 			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
 		}
 		
-		bookmarkManager = new BookmarkManager(this);
+		SubConfig fproxyConfig = new SubConfig("fproxy", config);
+		bookmarkManager = new BookmarkManager(this, fproxyConfig);
 		pluginManager2 = new freenet.plugin.PluginManager(this);
 		
 		
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
 		try {
-			FProxyToadlet.maybeCreateFProxyEtc(this, config);
+			FProxyToadlet.maybeCreateFProxyEtc(this, config, fproxyConfig);
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
