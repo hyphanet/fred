@@ -152,6 +152,12 @@ public class PacketSender implements Runnable {
             lastReceivedPacketFromAnyNode =
                 Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
             if(pn.isConnected()) {
+            	
+            	if(pn.shouldDisconnectNow()) {
+            		pn.forceDisconnect();
+            		continue;
+            	}
+            	
                 // Is the node dead?
                 if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
                 	Logger.error(this, "Disconnecting from "+pn+" - haven't received packets recently");

@@ -2027,5 +2027,9 @@ public class PeerNode implements PeerContext {
 	public boolean isListenOnly() {
 		return isListenOnly;
 	}
-}
 
+	public synchronized boolean shouldDisconnectNow() {
+		verifiedIncompatibleOlderVersion = invalidVersion();
+		return verifiedIncompatibleOlderVersion;
+	}
+}
