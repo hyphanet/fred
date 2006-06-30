@@ -2028,6 +2028,10 @@ public class PeerNode implements PeerContext {
 		return isListenOnly;
 	}
 
+	/**
+	 * Should the node be disconnected from immediately?
+	 * This will return true if our lastGoodBuild has changed due to a timed mandatory.
+	 */
 	public synchronized boolean shouldDisconnectNow() {
 		verifiedIncompatibleOlderVersion = invalidVersion();
 		return verifiedIncompatibleOlderVersion;
