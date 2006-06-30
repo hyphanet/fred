@@ -1495,6 +1495,29 @@ public class PeerNode implements PeerContext {
     	return fs;
 	}
 
+    /**
+     * Export volatile data about the node as a SimpleFieldSet
+     */
+    public SimpleFieldSet exportVolatileFieldSet() {
+    	SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("averagePingTime", Double.toString(averagePingTime()));
+		long now = System.currentTimeMillis();
+		long idle = now - lastReceivedPacketTime();
+		if(idle > (60 * 1000)) {  // 1 minute
+			fs.put("idle", Long.toString(idle));
+		}
+		fs.put("lastRoutingBackoffReason", getLastBackoffReason());
+		long peerAddedTime = getPeerAddedTime();
+		if(peerAddedTime > 1) {
+			fs.put("peerAddedTime", Long.toString(peerAddedTime));
+		}
+		fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
+		fs.put("routingBackoff", Long.toString((Math.max(routingBackedOffUntil - now, 0))));
+		fs.put("routingBackoffLength", Integer.toString(getRoutingBackoffLength()));
+		fs.put("status", getPeerNodeStatusString());
+    	return fs;
+	}
+
 	/**
      * Export the peer's noderef as a SimpleFieldSet
      */
@@ -1603,7 +1626,7 @@ public class PeerNode implements PeerContext {
 	/** Previous backoff reason (used by setPeerNodeStatus)*/
 	String previousRoutingBackoffReason = null;
 	/* percent of time this peer is backedoff */
-    	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
     

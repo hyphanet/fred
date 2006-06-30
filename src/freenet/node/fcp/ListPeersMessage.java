@@ -8,10 +8,12 @@ import freenet.support.SimpleFieldSet;
 public class ListPeersMessage extends FCPMessage {
 
 	final boolean withMetadata;
+	final boolean withVolatile;
 	static final String name = "ListPeers";
 	
 	public ListPeersMessage(SimpleFieldSet fs) {
 		withMetadata = Fields.stringToBool(fs.get("WithMetadata"), false);
+		withVolatile = Fields.stringToBool(fs.get("WithVolatile"), false);
 	}
 	
 	public SimpleFieldSet getFieldSet() {
@@ -27,7 +29,7 @@ public class ListPeersMessage extends FCPMessage {
 		PeerNode[] nodes = node.getPeerNodes();
 		for(int i = 0; i < nodes.length; i++) {
 			PeerNode pn = nodes[i];
-			handler.outputHandler.queue(new Peer(pn, withMetadata));
+			handler.outputHandler.queue(new Peer(pn, withMetadata, withVolatile));
 		}
 		handler.outputHandler.queue(new EndListPeersMessage());
 	}

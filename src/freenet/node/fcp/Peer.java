@@ -13,10 +13,12 @@ public class Peer extends FCPMessage {
 	
 	final PeerNode pn;
 	final boolean withMetadata;
+	final boolean withVolatile;
 	
-	public Peer(PeerNode pn, boolean withMetadata) {
+	public Peer(PeerNode pn, boolean withMetadata, boolean withVolatile) {
 		this.pn = pn;
 		this.withMetadata = withMetadata;
+		this.withVolatile = withVolatile;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -25,6 +27,12 @@ public class Peer extends FCPMessage {
 			SimpleFieldSet meta = pn.exportMetadataFieldSet();
 			if(!meta.isEmpty()) {
 			 	fs.put("metadata", meta);
+			}
+		}
+		if(withVolatile) {
+			SimpleFieldSet vol = pn.exportVolatileFieldSet();
+			if(!vol.isEmpty()) {
+			 	fs.put("volatile", vol);
 			}
 		}
 		return fs;
