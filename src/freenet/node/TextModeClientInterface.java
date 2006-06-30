@@ -153,6 +153,8 @@ public class TextModeClientInterface implements Runnable {
         sb.append("ADDPEER:\\r\\n<noderef including an End on a line by itself> - add a peer by entering a noderef directly.\r\n");
         sb.append("DISABLEPEER:<ip:port|name|identity> - disable a peer by providing it's ip+port, name, or identity\r\n");
         sb.append("ENABLEPEER:<ip:port|name|identity> - enable a peer by providing it's ip+port, name, or identity\r\n");
+        sb.append("SETPEERLISTENONLY:<ip:port|name|identity> - set ListenOnly on a peer by providing it's ip+port, name, or identity\r\n");
+        sb.append("UNSETPEERLISTENONLY:<ip:port|name|identity> - unset ListenOnly on a peer by providing it's ip+port, name, or identity\r\n");
         sb.append("HAVEPEER:<ip:port|name|identity> - report true/false on having a peer by providing it's ip+port, name, or identity\r\n");
         sb.append("REMOVEPEER:<ip:port|name|identity> - remove a peer by providing it's ip+port, name, or identity\r\n");
         sb.append("PEER:<ip:port|name|identity> - report the noderef of a peer (without metadata) by providing it's ip+port, name, or identity\r\n");
@@ -639,6 +641,26 @@ public class TextModeClientInterface implements Runnable {
         		outsb.append("enable failed for "+nodeIdentifier);
         	}
         	outsb.append("\r\n");
+		} else if(uline.startsWith("SETPEERLISTENONLY:")) {
+			String nodeIdentifier = (line.substring("SETPEERLISTENONLY:".length())).trim();
+        	if(!havePeer(nodeIdentifier)) {
+        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
+			PeerNode pn = getPeer(nodeIdentifier);
+			pn.setListenOnly(true);
+			outsb.append("set ListenOnly suceeded for "+nodeIdentifier+"\r\n");
+		} else if(uline.startsWith("UNSETPEERLISTENONLY:")) {
+			String nodeIdentifier = (line.substring("UNSETPEERLISTENONLY:".length())).trim();
+        	if(!havePeer(nodeIdentifier)) {
+        		out.write(("no peer for "+nodeIdentifier+"\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
+			PeerNode pn = getPeer(nodeIdentifier);
+			pn.setListenOnly(false);
+			outsb.append("unset ListenOnly suceeded for "+nodeIdentifier+"\r\n");
         } else if(uline.startsWith("HAVEPEER:")) {
         	String nodeIdentifier = (line.substring("HAVEPEER:".length())).trim();
         	if(havePeer(nodeIdentifier)) {
