@@ -420,8 +420,6 @@ public class StandardOnionFECCodec extends FECCodec {
 			Logger.minor(this, "Memory in use before encodes: "+memUsedBeforeEncodes);
 			
 			if (numberToEncode > 0) {
-				System.err.println("************* Encoding " + dataBlockStatus.length
-						+ " -> " + numberToEncode + " *************");
 				// Do the (striped) encode
 				for (int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
 					long memUsedBeforeRead = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
@@ -465,8 +463,6 @@ public class StandardOnionFECCodec extends FECCodec {
 									STRIPE_SIZE);
 					}
 				}
-				System.err.println("************* Encoded " + dataBlockStatus.length
-						+ " -> " + numberToEncode + " *************");
 			}
 
 		} finally {
