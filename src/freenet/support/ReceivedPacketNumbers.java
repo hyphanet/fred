@@ -1,10 +1,9 @@
-package freenet.node;
+package freenet.support;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 
-import freenet.support.Logger;
 
 /**
  * @author amphibian

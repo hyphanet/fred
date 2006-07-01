@@ -13,6 +13,7 @@ import freenet.support.IndexableUpdatableSortedLinkedListItem;
 import freenet.support.LimitedRangeIntByteArrayMap;
 import freenet.support.LimitedRangeIntByteArrayMapElement;
 import freenet.support.Logger;
+import freenet.support.ReceivedPacketNumbers;
 import freenet.support.UpdatableSortedLinkedListItem;
 import freenet.support.UpdatableSortedLinkedListKilledException;
 import freenet.support.UpdatableSortedLinkedListWithForeignIndex;
