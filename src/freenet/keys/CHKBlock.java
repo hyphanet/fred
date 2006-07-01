@@ -47,9 +47,11 @@ public class CHKBlock implements KeyBlock {
         if(headers.length != TOTAL_HEADERS_LENGTH)
         	throw new IllegalArgumentException("Wrong length: "+headers.length+" should be "+TOTAL_HEADERS_LENGTH);
         hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
-        this.chk = key;
 //        Logger.debug(CHKBlock.class, "Data length: "+data.length+", header length: "+header.length);
-        if(!verify) return;
+        if(key != null && !verify) {
+        	this.chk = key;
+        	return;
+        }
         
         // Minimal verification
         // Check the hash
@@ -65,11 +67,16 @@ public class CHKBlock implements KeyBlock {
         md.update(headers);
         md.update(data);
         byte[] hash = md.digest();
-        byte[] check = chk.routingKey;
-        if(!java.util.Arrays.equals(hash, check)) {
-            throw new CHKVerifyException("Hash does not verify");
+        if(key == null) {
+        	chk = new NodeCHK(hash);
+        } else {
+        	chk = key;
+            byte[] check = chk.routingKey;
+            if(!java.util.Arrays.equals(hash, check)) {
+                throw new CHKVerifyException("Hash does not verify");
+            }
+            // Otherwise it checks out
         }
-        // Otherwise it checks out
     }
 
 	public Key getKey() {

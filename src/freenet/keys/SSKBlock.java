@@ -85,9 +85,9 @@ public class SSKBlock implements KeyBlock {
 		this.data = data;
 		this.headers = headers;
 		this.nodeKey = nodeKey;
-		this.pubKey = nodeKey.getPubKey();
 		if(data.length != DATA_LENGTH)
 			throw new SSKVerifyException("Data length wrong: "+data.length+" should be "+DATA_LENGTH);
+		this.pubKey = nodeKey.getPubKey();
 		if(pubKey == null)
 			throw new SSKVerifyException("PubKey was null from "+nodeKey);
         MessageDigest md;

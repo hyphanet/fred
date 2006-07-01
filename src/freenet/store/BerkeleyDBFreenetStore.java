@@ -1,5 +1,6 @@
 package freenet.store;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -182,7 +183,172 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 //		 Add shutdownhook
 		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
 	}
+
+	public static final short TYPE_CHK = 0;
+	public static final short TYPE_PUBKEY = 1;
+	public static final short TYPE_SSK = 2;
 	
+	/**
+     * Recreate the index from the data file. Call this when the index has been corrupted.
+     * @param the directory where the store is located
+     * @throws FileNotFoundException if the dir does not exist and could not be created
+     */
+	public BerkeleyDBFreenetStore(String storeDir, long maxChkBlocks, int blockSize, int headerSize, short type) throws Exception {
+		this.dataBlockSize = blockSize;
+		this.headerBlockSize = headerSize;
+		// Percentage of the database that must contain usefull data
+		// decrease to increase performance, increase to save disk space
+		System.setProperty("je.cleaner.minUtilization","98");
+		
+		// Delete empty log files
+		System.setProperty("je.cleaner.expunge","true");
+		
+		// Percentage of the maximum heap size used as a cache
+		System.setProperty("je.maxMemoryPercent","30");
+		
+		this.maxChkBlocks=maxChkBlocks;
+		
+		// Delete old database.
+		
+		File dir = new File(storeDir);
+		if(!dir.exists())
+			dir.mkdir();
+		File dbDir = new File(dir,"database");
+		if(dbDir.exists()) {
+			File[] files = dbDir.listFiles();
+			for(int i=0;i<files.length;i++)
+				files[i].delete();
+		} else
+			dbDir.mkdir();
+		
+		// Now create a new one.
+		
+		// Initialize environment
+		EnvironmentConfig envConfig = new EnvironmentConfig();
+		envConfig.setAllowCreate(true);
+		envConfig.setTransactional(true);
+		envConfig.setTxnWriteNoSync(true);
+
+		environment = new Environment(dbDir, envConfig);
+		
+		// Initialize CHK database
+		DatabaseConfig dbConfig = new DatabaseConfig();
+		dbConfig.setAllowCreate(true);
+		dbConfig.setTransactional(true);
+		chkDB = environment.openDatabase(null,"CHK",dbConfig);
+		
+		fixSecondaryFile = new File(storeDir, "recreate_secondary_db");
+		fixSecondaryFile.delete();
+		
+		// Initialize secondary CHK database sorted on accesstime
+		SecondaryConfig secDbConfig = new SecondaryConfig();
+		secDbConfig.setAllowCreate(true);
+		secDbConfig.setSortedDuplicates(true);
+		secDbConfig.setTransactional(true);
+		secDbConfig.setAllowPopulate(true);
+		storeBlockTupleBinding = new StoreBlockTupleBinding();
+		longTupleBinding = TupleBinding.getPrimitiveBinding(Long.class);
+		AccessTimeKeyCreator accessTimeKeyCreator = 
+			new AccessTimeKeyCreator(storeBlockTupleBinding);
+		secDbConfig.setKeyCreator(accessTimeKeyCreator);
+		chkDB_accessTime = environment.openSecondaryDatabase
+							(null, "CHK_accessTime", chkDB, secDbConfig);
+		
+		// Initialize other secondary database sorted on block number
+//		try {
+//			environment.removeDatabase(null, "CHK_blockNum");
+//		} catch (DatabaseNotFoundException e) { };
+		SecondaryConfig blockNoDbConfig = new SecondaryConfig();
+		blockNoDbConfig.setAllowCreate(true);
+		blockNoDbConfig.setSortedDuplicates(false);
+		blockNoDbConfig.setAllowPopulate(true);
+		blockNoDbConfig.setTransactional(true);
+		
+		BlockNumberKeyCreator bnkc = 
+			new BlockNumberKeyCreator(storeBlockTupleBinding);
+		blockNoDbConfig.setKeyCreator(bnkc);
+		SecondaryDatabase blockNums;
+		System.err.println("Creating block db index");
+		chkDB_blockNum = environment.openSecondaryDatabase
+			(null, "CHK_blockNum", chkDB, blockNoDbConfig);
+		
+		// Initialize the store file
+		File storeFile = new File(dir,"store");
+		if(!storeFile.exists())
+			storeFile.createNewFile();
+		chkStore = new RandomAccessFile(storeFile,"rw");
+		
+		chkBlocksInStore = 0;
+		
+		lastRecentlyUsed = 0;
+		
+		reconstruct(type, storeDir);
+			
+		chkBlocksInStore = countCHKBlocks();
+		lastRecentlyUsed = getMaxRecentlyUsed();
+		
+//		 Add shutdownhook
+		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
+	}
+	
+	private void reconstruct(short type, String storeDir) throws DatabaseException {
+		if(type == TYPE_SSK) {
+			System.err.println("Reconstruction of SSK store not supported at present.");
+			throw new UnsupportedOperationException("Reconstruction of SSK store not supported at present.");
+			// FIXME we would need to pass in a means to fetch the pubkeys (an already-working BDBFS maybe).
+			// This could be via an interface. It might be implemented by the node so we can use the in-RAM cache.
+		}
+		System.err.println("Reconstructing store index from store file: type="+type);
+		Logger.error(this, "Reconstructing store index from store file: type="+type);
+		byte[] header = new byte[headerBlockSize];
+		byte[] data = new byte[dataBlockSize];
+		try {
+			chkStore.seek(0);
+			long l = 0;
+			while(true) {
+				Transaction t = null;
+				try {
+					chkStore.readFully(header);
+					chkStore.readFully(data);
+					byte[] routingkey = null;
+					if(type == TYPE_CHK) {
+						try {
+							CHKBlock chk = new CHKBlock(header, data, null);
+							routingkey = chk.getKey().getRoutingKey();
+						} catch (CHKVerifyException e) {
+							Logger.error(this, "Bogus key at slot "+l+" : "+e, e);
+						}
+					} else if(type == TYPE_PUBKEY) {
+						DSAPublicKey key = new DSAPublicKey(data);
+						routingkey = key.asBytesHash();
+					} else {
+						l++;
+						continue;
+					}
+					t = environment.beginTransaction(null,null);
+					long blockNum = chkBlocksInStore++;
+					StoreBlock storeBlock = new StoreBlock(blockNum);
+					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+					DatabaseEntry blockDBE = new DatabaseEntry();
+					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+					chkDB.put(t,routingkeyDBE,blockDBE);
+					t.commit();
+					t = null;
+				} finally {
+					l++;
+					if(t != null) t.abort();
+				}
+			}
+		} catch (EOFException e) {
+			migrate(storeDir);
+			return;
+		} catch (IOException e) {
+			Logger.error(this, "Caught "+e, e);
+			throw new Error(e);
+			// What else can we do? FIXME
+		}
+	}
+
 	/**
 	 * Migrate from a store which didn't have a unique index on blockNum, to one which does.
 	 * How do we do this? We scan through all entries (slow), we fetch each key, delete all data's
