@@ -20,7 +20,7 @@ public class ReceivedPacketNumbers {
     int highestSeqNumber;
     final int horizon;
     
-    ReceivedPacketNumbers(int horizon) {
+    public ReceivedPacketNumbers(int horizon) {
         ranges = new LinkedList();
         lowestSeqNumber = -1;
         highestSeqNumber = -1;
