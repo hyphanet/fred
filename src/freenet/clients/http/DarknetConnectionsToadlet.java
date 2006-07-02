@@ -303,22 +303,22 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				buf.append("034:").append(i).append(':').append(pn.getName()).append('\n');
 				buf.append("035:").append(i).append(':').append(pn.hashCode()).append('\n');
 				buf.append("036:").append(i).append(':').append(pn.getPeerNodeStatusString()).append('\n');
-				buf.append("036:").append(i).append(':').append(pn.averagePingTime()).append('\n');
-				buf.append("037:").append(i).append(':').append(pn.getDetectedPeer()).append('\n');
-				buf.append("038:").append(i).append(':').append(pn.getVersion()).append('\n');
-				buf.append("039:").append(i).append(':').append(pn.getLocation().getValue()).append('\n');
+				buf.append("037:").append(i).append(':').append(pn.averagePingTime()).append('\n');
+				buf.append("038:").append(i).append(':').append(pn.getDetectedPeer()).append('\n');
+				buf.append("039:").append(i).append(':').append(pn.getVersion()).append('\n');
+				buf.append("040:").append(i).append(':').append(pn.getLocation().getValue()).append('\n');
 				String lastBackoffReason = pn.getLastBackoffReason();
 				if (lastBackoffReason != null) {
-					buf.append("040:").append(i).append(':').append(backoff).append('\n');
-					buf.append("041:").append(i).append(':').append(pn.getRoutingBackoffLength()).append('\n');
-					buf.append("042:").append(i).append(':').append(pn.getLastBackoffReason()).append('\n');
+					buf.append("041:").append(i).append(':').append(backoff).append('\n');
+					buf.append("042:").append(i).append(':').append(pn.getRoutingBackoffLength()).append('\n');
+					buf.append("043:").append(i).append(':').append(pn.getLastBackoffReason()).append('\n');
 				}
 				if (pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
-					buf.append("043:").append(i).append(':').append(pn.getPeerAddedTime()).append('\n');
+					buf.append("044:").append(i).append(':').append(pn.getPeerAddedTime()).append('\n');
 				} else {
-					buf.append("044:").append(i).append(':').append(pn.lastReceivedPacketTime()).append('\n');
+					buf.append("045:").append(i).append(':').append(pn.lastReceivedPacketTime()).append('\n');
 				}
-				buf.append("045:").append(i).append(':').append(pn.isFetchingARK() ? "true" : "false").append('\n');
+				buf.append("046:").append(i).append(':').append(pn.isFetchingARK() ? "true" : "false").append('\n');
 			}
 		} else {
 			buf.append("<div class=\"infobox infobox-normal\">\n");
