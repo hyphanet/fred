@@ -11,7 +11,6 @@ import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
-import freenet.support.SectoredRandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithClient;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SortedVectorByNumber;
@@ -22,7 +21,7 @@ import freenet.support.SortedVectorByNumber;
  * thread. It is removed at that point.
  */
 public class ClientRequestScheduler implements RequestScheduler {
-
+	
 	/**
 	 * Structure:
 	 * array (by priority) -> // one element per possible priority
@@ -40,8 +39,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final RequestStarter starter;
 	private final Node node;
 	
+	public static final String PRIORITY_NONE = "NONE";
+	public static final String PRIORITY_SOFT = "SOFT";
+	public static final String PRIORITY_HARD = "HARD";
+	private String choosen_priority_scheduler; 
+	
 	// FIXME : shoudln't be hardcoded !
-	private int[] prioritySelecter = { 
+	private int[] tweakedPrioritySelector = { 
 			0, 0, 0, 0, 0, 0, 0,
 			1, 1, 1, 1, 1, 1,
 			2, 2, 2, 2, 2,
@@ -50,6 +54,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			5, 5,
 			6 
 	};
+	private int[] prioritySelector = { 0, 1, 2, 3, 4, 5, 6 };
 	
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node) {
 		this.starter = starter;
@@ -59,6 +64,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.isSSKScheduler = forSSKs;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		allRequestsByClientRequest = new HashMap();
+		
+		//FIXME implement the config. hook
+		this.choosen_priority_scheduler = PRIORITY_SOFT;
+	}
+	
+	/** Called by the  config. Callback
+	 * 
+	 * @param val
+	 */
+	protected void setPriorityScheduler(String val){
+		choosen_priority_scheduler = val;
 	}
 	
 	public void register(SendableRequest req) {
@@ -100,7 +116,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		v.add(req);
 		Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount());
 	}
-
+	
 	private synchronized void addToGrabArray(short priorityClass, int retryCount, Object client, ClientRequester cr, SendableRequest req) {
 		if(priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS || priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS)
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
@@ -125,21 +141,50 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		clientGrabber.add(cr, req);
 	}
-
+	
+	private SortedVectorByNumber removeFirstAccordingToPriorities(){
+		SortedVectorByNumber result = null;
+		int priority;
+		
+		if(choosen_priority_scheduler.equals(PRIORITY_SOFT)){
+			short fuzz=-1, iteration = 0;
+			
+			// we loop to ensure we try every possibilities
+			while(iteration++ < priorities.length){
+				priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
+				result = priorities[priority];
+				if(result != null)	
+					return result;
+				
+				Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
+				fuzz++;
+			}
+			
+			return null;
+		}else if(choosen_priority_scheduler.equals(PRIORITY_HARD)){
+			// FIXME: maybe use an iterator ?
+			for(priority=0 ; priority< prioritySelector.length ; priority++){
+				result = priorities[priority];
+				if(result != null)
+					return result;
+				else
+					Logger.minor(this, "Priority "+priority+" is null");
+			}
+		}
+		//FIXME : implement "NONE"
+		
+		return result;
+	}
+	
 	public SendableRequest removeFirst() {
 		// Priorities start at 0
 		Logger.minor(this, "removeFirst()");
-		for(int i=0;i<RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
-			SortedVectorByNumber s = priorities[i];
-			if(s == null) {
-				Logger.minor(this, "Priority "+i+" is null");
-				continue;
-			}
+		SortedVectorByNumber s = removeFirstAccordingToPriorities();
+		if(s != null){
 			while(true) {
-				SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst(); // will discard finished items
+				SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst();
 				if(rga == null) {
-					Logger.minor(this, "No retrycount's in priority "+i);
-					priorities[i] = null;
+					Logger.minor(this, "No retrycount's left");
 					break;
 				}
 				SendableRequest req = (SendableRequest) rga.removeRandom();
@@ -147,20 +192,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 					Logger.minor(this, "Removing retrycount "+rga.getNumber());
 					s.remove(rga.getNumber());
 					if(s.isEmpty()) {
-						Logger.minor(this, "Removing priority "+i);
-						priorities[i] = null;
+						Logger.minor(this, "Should remove priority ");
 					}
 				}
 				if(req == null) {
-					Logger.minor(this, "No requests in priority "+i+", retrycount "+rga.getNumber()+" ("+rga+")");
-					continue;
+					Logger.minor(this, "No requests, retrycount "+rga.getNumber()+" ("+rga+")");
+					break;
 				}
-				if(req.getPriorityClass() > i) {
-					// Reinsert it
-					Logger.minor(this, "In wrong priority class: "+req);
-					innerRegister(req);
-					continue;
-				}
+				
 				Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+")");
 				ClientRequester cr = req.getClientRequest();
 				HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
@@ -173,7 +212,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		Logger.minor(this, "No requests to run");
 		return null;
 	}
-
+	
 	public void reregisterAll(ClientRequester request) {
 		synchronized(this) {
 			HashSet h = (HashSet) allRequestsByClientRequest.get(request);
