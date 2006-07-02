@@ -37,7 +37,7 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 			if(isReady) return s+
 				" <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update Now\" /></form>";
 			else return s+
-				"Your node is currently fetching the update and will ask you whatever you want to update or not when it's ready.";
+				"Your node is currently fetching the update and will ask you whether you want to update or not when it's ready.";
 		}
 	}
 	
