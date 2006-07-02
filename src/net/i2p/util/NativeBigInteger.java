@@ -115,7 +115,7 @@ public class NativeBigInteger extends BigInteger {
     private final static String JBIGI_OPTIMIZATION_PENTIUM2 	= "pentium2";
     private final static String JBIGI_OPTIMIZATION_PENTIUM3 	= "pentium3";
     private final static String JBIGI_OPTIMIZATION_PENTIUM4 	= "pentium4";
-    private final static String JBIGI_OPTIMIZATION_PPC 			= "osx";
+    private final static String JBIGI_OPTIMIZATION_PPC 			= "ppc";
 
     private final static String sCPUType; //The CPU Type to optimize for (one of the above strings)
     
@@ -569,7 +569,7 @@ public class NativeBigInteger extends BigInteger {
 		if(isFreebsd)
 			return "jbigi-freebsd"+sAppend; // The convention on freebsd...
 		if(isMacOS)
-			return "jbigi-osx-none"; // The convention on Mac OS X...
+			return "jbigi-osx"+sAppend; // The convention on Mac OS X...
 		throw new RuntimeException("Dont know jbigi library name for os type '"+System.getProperty("os.name")+"'");
     }
     private static final String getLibrarySuffix()
@@ -579,7 +579,7 @@ public class NativeBigInteger extends BigInteger {
     	if(isWindows)
     		return "dll";
     	else if(isMacOS)
-		return "jnilib";
+    		return "jnilib";
 	else
     		return "so";
     }

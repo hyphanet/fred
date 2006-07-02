@@ -533,12 +533,15 @@ public class CPUID {
     	boolean isWindows =(System.getProperty("os.name").toLowerCase().indexOf("windows") != -1);
     	boolean isLinux =(System.getProperty("os.name").toLowerCase().indexOf("linux") != -1);
     	boolean isFreebsd =(System.getProperty("os.name").toLowerCase().indexOf("freebsd") != -1);
+    	boolean isMacOS =(System.getProperty("os.name").toLowerCase().indexOf("mac os x") != -1);
     	if(isWindows)
 		 	return "jcpuid-x86-windows"; // The convention on Windows
 		if(isLinux)
 			return "jcpuid-x86-linux"; // The convention on linux...
 		if(isFreebsd)
 			return "jcpuid-x86-freebsd"; // The convention on freebsd...
+		if(isMacOS)
+			return "jcpuid-x86-osx"; // The convention on Mac OS X...
 		throw new RuntimeException("Dont know jcpuid library name for os type '"+System.getProperty("os.name")+"'");
     }
     
