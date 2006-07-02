@@ -42,19 +42,26 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
 	public static final String PRIORITY_HARD = "HARD";
-	private String choosen_priority_scheduler; 
+	private String choosenPriorityScheduler; 
 	
-	// FIXME : shoudln't be hardcoded !
 	private int[] tweakedPrioritySelector = { 
-			0, 0, 0, 0, 0, 0, 0,
-			1, 1, 1, 1, 1, 1,
-			2, 2, 2, 2, 2,
-			3, 3, 3, 3,
-			4, 4, 4,
-			5, 5,
-			6 
+			RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS, RequestStarter.MAXIMUM_PRIORITY_CLASS,
+			RequestStarter.INTERACTIVE_PRIORITY_CLASS,RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS, RequestStarter.INTERACTIVE_PRIORITY_CLASS,  
+			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,   
+			RequestStarter.UPDATE_PRIORITY_CLASS, RequestStarter.UPDATE_PRIORITY_CLASS, RequestStarter.UPDATE_PRIORITY_CLASS, RequestStarter.UPDATE_PRIORITY_CLASS,  
+			RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,  
+			RequestStarter.PREFETCH_PRIORITY_CLASS, RequestStarter.PREFETCH_PRIORITY_CLASS,  
+			RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
-	private int[] prioritySelector = { 0, 1, 2, 3, 4, 5, 6 };
+	private int[] prioritySelector = {
+			RequestStarter.MAXIMUM_PRIORITY_CLASS,
+			RequestStarter.INTERACTIVE_PRIORITY_CLASS,
+			RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
+			RequestStarter.UPDATE_PRIORITY_CLASS,
+			RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS,
+			RequestStarter.PREFETCH_PRIORITY_CLASS,
+			RequestStarter.MINIMUM_PRIORITY_CLASS
+	};
 	
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node) {
 		this.starter = starter;
@@ -66,15 +73,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 		allRequestsByClientRequest = new HashMap();
 		
 		//FIXME implement the config. hook
-		this.choosen_priority_scheduler = PRIORITY_SOFT;
+		this.choosenPriorityScheduler = PRIORITY_SOFT;
 	}
 	
 	/** Called by the  config. Callback
 	 * 
 	 * @param val
 	 */
-	protected void setPriorityScheduler(String val){
-		choosen_priority_scheduler = val;
+	protected synchronized void setPriorityScheduler(String val){
+		choosenPriorityScheduler = val;
 	}
 	
 	public void register(SendableRequest req) {
@@ -146,34 +153,28 @@ public class ClientRequestScheduler implements RequestScheduler {
 		SortedVectorByNumber result = null;
 		int priority;
 		
-		if(choosen_priority_scheduler.equals(PRIORITY_SOFT)){
-			short fuzz=-1, iteration = 0;
-			
-			// we loop to ensure we try every possibilities
-			while(iteration++ < priorities.length){
-				priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
-				result = priorities[priority];
-				if(result != null)	
-					return result;
-				
-				Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
-				fuzz++;
-			}
-			
-			return null;
-		}else if(choosen_priority_scheduler.equals(PRIORITY_HARD)){
-			// FIXME: maybe use an iterator ?
-			for(priority=0 ; priority< prioritySelector.length ; priority++){
-				result = priorities[priority];
-				if(result != null)
-					return result;
-				else
-					Logger.minor(this, "Priority "+priority+" is null");
-			}
-		}
-		//FIXME : implement "NONE"
+		short fuzz = -1, iteration = 0;
+		if(choosenPriorityScheduler.equals(PRIORITY_SOFT))
+			fuzz = -1;
+		else if(choosenPriorityScheduler.equals(PRIORITY_HARD))
+			fuzz = 0;
 		
-		return result;
+		// we loop to ensure we try every possibilities ( n + 1)
+		//
+		// PRIO will do 0,1,2,3,4,5,6,0
+		// TWEAKED will do rand%6,0,1,2,3,4,5,6
+		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
+			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
+			result = priorities[priority];
+			if(result != null)	
+				return result;
+			
+			Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
+			fuzz++;
+		}
+		
+		//FIXME: implement NONE
+		return null;
 	}
 	
 	public SendableRequest removeFirst() {
