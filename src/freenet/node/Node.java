@@ -474,6 +474,8 @@ public class Node {
 	private DSAPrivateKey myPrivKey;
 	/** My public key */
 	private DSAPublicKey myPubKey;
+	/** Memory Checker thread */
+	private final Thread myMemoryChecker;
 	/** My ARK SSK private key */
 	private InsertableClientSSK myARK;
 	/** My ARK sequence number */
@@ -981,12 +983,15 @@ public class Node {
 
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert();
 
-		// Setup node-specific configuration
+		//Memory Checking thread
+    	this.myMemoryChecker = new Thread(new MemoryChecker(), "Memory checker");
+    	this.myMemoryChecker.setPriority(Thread.MAX_PRIORITY);
+    	this.myMemoryChecker.setDaemon(true);
 		
+		// Setup node-specific configuration
 		SubConfig nodeConfig = new SubConfig("node", config);
 
 		// IP address override
-		
 		int sortOrder = 0;
 		nodeConfig.register("ipAddressOverride", "", sortOrder++, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
 
@@ -1267,7 +1272,6 @@ public class Node {
 		peers.writePeers();
 		peers.updatePMUserAlert();
 		nodePinger = new NodePinger(this);
-		nodePinger.start();
 
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
@@ -1514,9 +1518,11 @@ public class Node {
 	void start(boolean noSwaps) throws NodeInitException {
 		if(!noSwaps)
 			lm.startSender(this, this.swapInterval);
+		nodePinger.start();
 		dnsr.start();
 		ps.start();
 		usm.start();
+		myMemoryChecker.start();
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);

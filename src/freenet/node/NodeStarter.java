@@ -32,9 +32,7 @@ public class NodeStarter
     /*---------------------------------------------------------------
      * Constructors
      *-------------------------------------------------------------*/
-    private NodeStarter()
-    {
-    }
+    private NodeStarter(){}
     
     public NodeStarter get(){
     	return this;
@@ -83,7 +81,6 @@ public class NodeStarter
     	}
     	
     	// First, set up logging. It is global, and may be shared between several nodes.
-    	
     	SubConfig loggingConfig = new SubConfig("logger", cfg);
     	
     	try {
@@ -95,16 +92,9 @@ public class NodeStarter
     	}
     	
     	// Setup RNG
-    	
     	RandomSource random = new Yarrow();
     	
     	DiffieHellman.init(random);
-    	
-    	// FIXME : maybe we should keep it even if the wrapper does it
-    	
-    	Thread t = new Thread(new MemoryChecker(), "Memory checker");
-    	t.setPriority(Thread.MAX_PRIORITY);
-    	t.start();
     	 
 		// Thread to keep the node up.
 		// JVM deadlocks losing a lock when two threads of different types (daemon|app)
