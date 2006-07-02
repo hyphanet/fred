@@ -512,10 +512,7 @@ public class UdpSocketManager extends Thread {
      * @param destination The peer to send it to.
      */
     public void sendPacket(byte[] blockToSend, Peer destination) {
-    // I think DNSRequester should have handled DNS for this spot, but
-    // I'm seeing this error, so I'm temporarily switching this to
-    // allow DNS until I have more time to sort this out  -Zothar (**FIXME**)
-    // start with false, and then try true, but complain loudly that we had to use true :)
+		// there should be no DNS needed here, but go ahead if we can, but complain doing it
 		if( destination.getAddress(false) == null ) {
   			Logger.error(this, "Tried sending to destination without pre-looked up IP address(needs a real Peer.getHostname()): null:" + destination.getPort(), new Exception("error"));
 			if( destination.getAddress(true) == null ) {
