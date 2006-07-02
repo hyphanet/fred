@@ -648,7 +648,12 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-			PeerNode pn = getPeer(nodeIdentifier);
+			PeerNode pn = n.getPeerNode(nodeIdentifier);
+        	if(pn == null) {
+        		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
 			pn.setListenOnly(true);
 			outsb.append("set ListenOnly suceeded for "+nodeIdentifier+"\r\n");
 		} else if(uline.startsWith("UNSETPEERLISTENONLY:")) {
@@ -658,7 +663,12 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-			PeerNode pn = getPeer(nodeIdentifier);
+			PeerNode pn = n.getPeerNode(nodeIdentifier);
+        	if(pn == null) {
+        		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		out.flush();
+        		return false;
+        	}
 			pn.setListenOnly(false);
 			outsb.append("unset ListenOnly suceeded for "+nodeIdentifier+"\r\n");
         } else if(uline.startsWith("HAVEPEER:")) {
@@ -689,9 +699,9 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-        	PeerNode pn = getPeer(nodeIdentifier);
+        	PeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
-        		out.write(("getPeer() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
         		out.flush();
         		return false;
         	}
@@ -704,9 +714,9 @@ public class TextModeClientInterface implements Runnable {
         		out.flush();
         		return false;
         	}
-        	PeerNode pn = getPeer(nodeIdentifier);
+        	PeerNode pn = n.getPeerNode(nodeIdentifier);
         	if(pn == null) {
-        		out.write(("getPeer() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
+        		out.write(("n.getPeerNode() failed to get peer details for "+nodeIdentifier+"\r\n\r\n").getBytes());
         		out.flush();
         		return false;
         	}
@@ -885,28 +895,6 @@ public class TextModeClientInterface implements Runnable {
         if(n.peers.addPeer(pn))
             System.out.println("Added peer: "+pn);
         n.peers.writePeers();
-    }
-    
-    /**
-     * Return a peer of the node given its ip and port, name or identity, as a String
-     */
-    private PeerNode getPeer(String nodeIdentifier) {
-    	PeerNode[] pn = n.peers.myPeers;
-    	for(int i=0;i<pn.length;i++)
-    	{
-    		Peer peer = pn[i].getDetectedPeer();
-    		String nodeIpAndPort = "";
-    		if(peer != null) {
-    			nodeIpAndPort = peer.toString();
-    		}
-    		String name = pn[i].myName;
-    		String identity = pn[i].getIdentityString();
-    		if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
-    		{
-    			return pn[i];
-    		}
-    	}
-    	return null;
     }
 
 	/**

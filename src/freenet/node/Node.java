@@ -3315,6 +3315,7 @@ public class Node {
 			nextPeerManagerUserAlertStatsUpdateTime = now + peerManagerUserAlertStatsUpdateInterval;
 		}
 	}
+
 	public PeerNode[] getPeerNodes() {
 		PeerManager pm = peers;
 		return pm.myPeers;
@@ -3323,6 +3324,27 @@ public class Node {
 	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {
 		// FIXME do something
 		// TODO Auto-generated method stub
-		
+	}
+	
+	/**
+	 * Return a peer of the node given its ip and port, name or identity, as a String
+	 */
+	public PeerNode getPeerNode(String nodeIdentifier) {
+		PeerNode[] pn = peers.myPeers;
+		for(int i=0;i<pn.length;i++)
+		{
+			Peer peer = pn[i].getDetectedPeer();
+			String nodeIpAndPort = "";
+			if(peer != null) {
+				nodeIpAndPort = peer.toString();
+			}
+			String name = pn[i].myName;
+			String identity = pn[i].getIdentityString();
+			if(identity.equals(nodeIdentifier) || nodeIpAndPort.equals(nodeIdentifier) || name.equals(nodeIdentifier))
+			{
+				return pn[i];
+			}
+		}
+		return null;
 	}
 }
