@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.File;
 
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 import freenet.support.CPUInformation.AMDCPUInfo;
 import freenet.support.CPUInformation.CPUID;
 import freenet.support.CPUInformation.CPUInfo;
@@ -499,7 +500,12 @@ public class NativeBigInteger extends BigInteger {
         File outFile = null;
         try {
             InputStream libStream = resource.openStream();
-            outFile = File.createTempFile("jbigi", "lib.tmp");
+            try{
+            	outFile = File.createTempFile("jbigi", "lib.tmp");
+            }catch (IOException e){
+            	Logger.error("NativeBigInt", "Can't create the temporary file in "+System.getProperty("java.io.tmpdir")+" trying something else now.");
+            	outFile = new File("jbigi-lib.tmp");
+            }
             FileOutputStream fos = new FileOutputStream(outFile);
             byte buf[] = new byte[4096*1024];
             while (true) {

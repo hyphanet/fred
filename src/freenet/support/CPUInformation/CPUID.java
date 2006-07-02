@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import freenet.support.Logger;
+
 /**
  * @author Iakin
  * A class for retrieveing details about the CPU using the CPUID assembly instruction.
@@ -476,7 +478,12 @@ public class CPUID {
         File outFile = null;
         try {
             InputStream libStream = resource.openStream();
-            outFile = File.createTempFile("jcpuid", "lib.tmp");
+            try{
+            	outFile = File.createTempFile("jcpuid", "lib.tmp");
+                }catch (IOException e){
+            	Logger.error("CPUID", "Can't create the temporary file in "+System.getProperty("java.io.tmpdir")+" trying something else now.");
+            	outFile = new File("cpuid-lib.tmp");
+            }
             FileOutputStream fos = new FileOutputStream(outFile);
             byte buf[] = new byte[4096*1024];
             while (true) {
