@@ -21,10 +21,6 @@ class ErrorArchiveStoreItem extends ArchiveStoreItem {
 		this.error = error;
 	}
 
-	public void finalize() {
-		super.finalize();
-	}
-
 	/**
 	 * Throws an exception with the given error message, because this file could not be
 	 * extracted from the archive.

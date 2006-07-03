@@ -1298,7 +1298,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
     }
 
-	public void setMaxKeys(long maxStoreKeys) throws DatabaseException, IOException {
+	public synchronized void setMaxKeys(long maxStoreKeys) throws DatabaseException, IOException {
 		maxChkBlocks = maxStoreKeys;
 		maybeShrink(false);
 	}

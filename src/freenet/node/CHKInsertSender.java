@@ -17,7 +17,32 @@ import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 
 public final class CHKInsertSender implements Runnable, AnyInsertSender {
-
+	
+	private static class Sender implements Runnable {
+		
+		final AwaitingCompletion completion;
+		final BlockTransmitter bt;
+		
+		public Sender(AwaitingCompletion ac) {
+			this.bt = ac.bt;
+			this.completion = ac;
+		}
+		
+		public void run() {
+			try {
+				bt.send();
+				if(bt.failedDueToOverload()) {
+					completion.completedTransfer(false);
+				} else {
+					completion.completedTransfer(true);
+				}
+			} catch (Throwable t) {
+				completion.completedTransfer(false);
+				Logger.error(this, "Caught "+t, t);
+			}
+		}
+	}
+	
 	private class AwaitingCompletion {
 		
 		/** Node we are waiting for response from */
@@ -89,30 +114,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
 		}
 	}
 	
-    public class Sender implements Runnable {
-    	
-    	final AwaitingCompletion completion;
-    	final BlockTransmitter bt;
-    	
-    	public Sender(AwaitingCompletion ac) {
-    		this.bt = ac.bt;
-    		this.completion = ac;
-    	}
-    	
-		public void run() {
-			try {
-				bt.send();
-				if(bt.failedDueToOverload()) {
-					completion.completedTransfer(false);
-				} else {
-					completion.completedTransfer(true);
-				}
-			} catch (Throwable t) {
-				completion.completedTransfer(false);
-				Logger.error(this, "Caught "+t, t);
-			}
-		}
-	}
+   
     
 	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore, double closestLocation) {
@@ -523,29 +525,29 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
         
         status = code;
         
-        synchronized(this) {
-            notifyAll();
+		synchronized(this) {
+        	notifyAll();
         }
 
         Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         
         // Now wait for transfers, or for downstream transfer notifications.
         
-        synchronized(this) {
-        	if(cw != null) {
-        		while(!allTransfersCompleted) {
-        			try {
-        				wait(10*1000);
-        			} catch (InterruptedException e) {
-        				// Try again
-        			}
+        if(cw != null) {
+        	while(!allTransfersCompleted) {
+        		try {
+        			wait(10*1000);
+        		} catch (InterruptedException e) {
+        			// Try again
         		}
-        	} else {
-        		// There weren't any transfers
+        	}
+        } else {
+        	// There weren't any transfers
+        	synchronized(this) {
         		allTransfersCompleted = true;
         	}
-            notifyAll();
         }
+        notifyAll();
         
         Logger.minor(this, "Returning from finish()");
     }

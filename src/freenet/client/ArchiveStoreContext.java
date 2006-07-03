@@ -30,10 +30,6 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		myItems = new DoublyLinkedListImpl();
 	}
 
-	public void finalize() {
-		// Need to do anything here?
-	}
-
 	/**
 	 * Get the metadata for a given archive.
 	 * @return A Bucket containing the metadata, in binary format, for the archive.

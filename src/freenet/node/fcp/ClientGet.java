@@ -306,7 +306,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		finish();
 	}
 
-	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
+	private synchronized void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
 		
 		FCPMessage msg;
 
@@ -386,7 +386,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Ignore
 	}
 
-	public void receive(ClientEvent ce) {
+	public synchronized void receive(ClientEvent ce) {
 		if(finished) return;
 		if(!(((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) &&
 				(ce instanceof SplitfileProgressEvent)))
@@ -414,6 +414,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			fs.put("TempFilename", tempFile.getPath());
 		if(clientToken != null)
 			fs.put("ClientToken", clientToken);
+		//FIXME: what were we supposed to do there ?
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK && targetFile != null) {
 			// Otherwise we must re-run it anyway as we don't have the data.
 			

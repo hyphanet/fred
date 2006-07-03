@@ -98,12 +98,11 @@ public class ARKFetcher implements ClientCallback {
 		
 		if(cg != null)
 			try {
-				synchronized(this) {
-					if(!isFetching) {
-						node.addARKFetcher(identity,this);
-						isFetching = true;
-					}
+				if(!isFetching) {
+					node.addARKFetcher(identity,this);
+					isFetching = true;
 				}
+				
 				cg.start();
 			} catch (FetchException e) {
 				onFailure(e, cg);
@@ -118,7 +117,6 @@ public class ARKFetcher implements ClientCallback {
 		backoff = MIN_BACKOFF;
 		Logger.minor(this, "Cancelling ARK fetch for "+peer);
 		shouldRun = false;
-		synchronized(this){
 			started = false;
 			if(node.arkFetchManager.hasReadyARKFetcher(this)) {
 				node.arkFetchManager.removeReadyARKFetcher(this);
@@ -127,7 +125,7 @@ public class ARKFetcher implements ClientCallback {
 				node.removeARKFetcher(identity,this);
 				isFetching = false;
 			}
-		}
+		
 		if(getter != null)
 			getter.cancel();
 	}

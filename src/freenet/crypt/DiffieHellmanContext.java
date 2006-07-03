@@ -47,7 +47,7 @@ public class DiffieHellmanContext {
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
-    public NativeBigInteger getOurExponential() {
+    public synchronized NativeBigInteger getOurExponential() {
         lastUsedTime = System.currentTimeMillis();
         return myExponential;
     }
@@ -102,7 +102,7 @@ public class DiffieHellmanContext {
     /**
      * @return The time at which this object was last used.
      */
-    public long lastUsedTime() {
+    public synchronized long lastUsedTime() {
         return lastUsedTime;
     }
 

@@ -40,7 +40,7 @@ public class FailureCodeTracker {
 		}
 	}
 	
-	class Item {
+	private static class Item {
 		Item(int count) {
 			this.x = count;
 		}
