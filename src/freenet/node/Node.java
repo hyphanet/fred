@@ -1408,6 +1408,7 @@ public class Node {
 				System.err.println("Could not open store: "+e);
 				e.printStackTrace();
 				System.err.println("Attempting to reconstruct...");
+    			WrapperManager.signalStarting((int) Integer.MAX_VALUE);
 				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
 			}
 			chkDatastore = tmp;
@@ -1422,6 +1423,7 @@ public class Node {
 				System.err.println("Could not open store: "+e);
 				e.printStackTrace();
 				System.err.println("Attempting to reconstruct...");
+    			WrapperManager.signalStarting((int) Integer.MAX_VALUE);
 				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
 			}
 			this.pubKeyDatastore = tmp;
