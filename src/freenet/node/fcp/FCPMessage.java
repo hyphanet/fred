@@ -42,6 +42,8 @@ public abstract class FCPMessage {
 			return new ListPeersMessage(fs);
 		if(name.equals(ListPersistentRequestsMessage.name))
 			return new ListPersistentRequestsMessage(fs);
+		if(name.equals(RemovePeer.name))
+			return new RemovePeer(fs);
 		if(name.equals(RemovePersistentRequest.name))
 			return new RemovePersistentRequest(fs);
 		if(name.equals(WatchGlobal.name))
