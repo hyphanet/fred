@@ -193,7 +193,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
-			if(result != null)	
+			if(result != null && !result.isEmpty())	
 				return result;
 			
 			Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
