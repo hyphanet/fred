@@ -386,11 +386,11 @@ public class PeerManager {
 	if (best != null && node.getToadletContainer().isAdvancedDarknetEnabled()) {
 		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
 		if(nbo != null) {
-			node.MissRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
+			node.missRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
 			int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
 			int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
 			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
-				node.BackedoffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+				node.backedoffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
 			}
 		}
 	}
