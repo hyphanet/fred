@@ -103,7 +103,6 @@ public class NetworkInterface {
 		Map newAddressMatchers = new HashMap();
 		while (allowedHostsTokens.hasMoreTokens()) {
 			String allowedHost = allowedHostsTokens.nextToken().trim();
-			newAllowedHosts.add(allowedHost);
 			String hostname = allowedHost;
 			if (allowedHost.indexOf('/') != -1) {
 				hostname = allowedHost.substring(0, allowedHost.indexOf('/'));
@@ -111,8 +110,14 @@ public class NetworkInterface {
 			AddressType addressType = AddressIdentifier.getAddressType(hostname);
 			if (addressType == AddressType.IPv4) {
 				newAddressMatchers.put(allowedHost, new Inet4AddressMatcher(allowedHost));
+				newAllowedHosts.add(allowedHost);
 			} else if (addressType == AddressType.IPv6) {
 				newAddressMatchers.put(allowedHost, new Inet6AddressMatcher(allowedHost));
+				newAllowedHosts.add(allowedHost);
+			} else if (allowedHost.equals("*")) {
+				newAllowedHosts.add(allowedHost);
+			} else {
+				Logger.normal(NetworkInterface.class, "Ignoring invalid allowedHost: " + allowedHost);
 			}
 		}
 		synchronized (syncObject) {
@@ -260,7 +265,6 @@ public class NetworkInterface {
 					Socket clientSocket = serverSocket.accept();
 					InetAddress clientAddress = clientSocket.getInetAddress();
 					Logger.minor(Acceptor.class, "Connection from " + clientAddress);
-					String clientHostName = clientAddress.getHostName();
 
 					/* check if the ip address is allowed */
 					boolean addressMatched = false;
@@ -272,7 +276,7 @@ public class NetworkInterface {
 							if (matcher != null) {
 								addressMatched = matcher.matches(clientAddress);
 							} else {
-								addressMatched = "*".equals(host) || clientHostName.equalsIgnoreCase(host);
+								addressMatched = "*".equals(host);
 							}
 						}
 					}
@@ -287,7 +291,7 @@ public class NetworkInterface {
 							clientSocket.close();
 						} catch (IOException ioe1) {
 						}
-						Logger.normal(Acceptor.class, "Denied connection to " + clientHostName);
+						Logger.normal(Acceptor.class, "Denied connection to " + clientAddress);
 					}
 				} catch (SocketTimeoutException ste1) {
 					Logger.minor(this, "Timeout");
