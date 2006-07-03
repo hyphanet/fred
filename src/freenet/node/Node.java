@@ -147,7 +147,7 @@ public class Node {
 		}
 		
 		public void set(String val) throws InvalidConfigValueException {
-			if(val == get()) return;
+			if(val.equals(get())) return;
 			throw new InvalidConfigValueException("Cannot be updated on the fly");
 		}
 	}
@@ -645,8 +645,8 @@ public class Node {
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
 
 	// various metrics
-	public RunningAverage MissRoutingDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
-	public RunningAverage BackedoffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	public RunningAverage missRoutingDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	public RunningAverage backedoffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -1408,7 +1408,7 @@ public class Node {
 				System.err.println("Could not open store: "+e);
 				e.printStackTrace();
 				System.err.println("Attempting to reconstruct...");
-    			WrapperManager.signalStarting((int) Integer.MAX_VALUE);
+				WrapperManager.signalStarting((int) Integer.MAX_VALUE);
 				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
 			}
 			chkDatastore = tmp;
@@ -1423,7 +1423,7 @@ public class Node {
 				System.err.println("Could not open store: "+e);
 				e.printStackTrace();
 				System.err.println("Attempting to reconstruct...");
-    			WrapperManager.signalStarting((int) Integer.MAX_VALUE);
+				WrapperManager.signalStarting((int) Integer.MAX_VALUE);
 				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
 			}
 			this.pubKeyDatastore = tmp;
