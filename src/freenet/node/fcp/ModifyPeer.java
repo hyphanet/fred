@@ -16,8 +16,6 @@ public class ModifyPeer extends FCPMessage {
 	
 	public ModifyPeer(SimpleFieldSet fs) {
 		this.fs = fs;
-		//this.withMetadata = withMetadata;
-		//this.withVolatile = withVolatile;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -53,7 +51,7 @@ public class ModifyPeer extends FCPMessage {
 		String isListenOnlyString = fs.get("IsListenOnly");
 		if(isListenOnlyString != null) {
 			if(!isListenOnlyString.equals("")) {
-				pn.setListenOnly(Fields.stringToBool(isListenOnlyString, true));
+				pn.setListenOnly(Fields.stringToBool(isListenOnlyString, false));
 			} else {
 				ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "IsListenOnly had no value", nodeIdentifier);
 				handler.outputHandler.queue(msg);
