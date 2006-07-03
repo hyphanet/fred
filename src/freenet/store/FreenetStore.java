@@ -2,6 +2,8 @@ package freenet.store;
 
 import java.io.IOException;
 
+import com.sleepycat.je.DatabaseException;
+
 import freenet.crypt.DSAPublicKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.NodeCHK;
@@ -52,6 +54,8 @@ public interface FreenetStore {
     /**
      * Change the store size.
      * @param maxStoreKeys The maximum number of keys to be cached.
+     * @throws IOException 
+     * @throws DatabaseException 
      */
-	public void setMaxKeys(long maxStoreKeys);
+	public void setMaxKeys(long maxStoreKeys) throws DatabaseException, IOException;
 }

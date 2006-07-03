@@ -3,8 +3,6 @@ package freenet.support;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import freenet.client.async.ClientRequester;
-
 /**
  * Map of an integer to an element, based on a sorted Vector.
  * Note that we have to shuffle data around, so this is slowish if it gets big.
@@ -67,11 +65,28 @@ public class SortedVectorByNumber {
 				throw new IllegalStateException("length="+length+", data.length="+data.length+" but ["+i+"] != null");
 	}
 
+	/**
+	 * Add the item, if it (or an item of the same number) is not already present.
+	 * @return True if we added the item.
+	 */
+	public synchronized boolean push(IntNumberedItem grabber) {
+		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
+		if(x >= 0) return false;
+		// insertion point
+		x = -x-1;
+		push(grabber, x);
+		return true;
+	}
+	
 	public synchronized void add(IntNumberedItem grabber) {
 		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
 		if(x >= 0) throw new IllegalArgumentException(); // already exists
 		// insertion point
 		x = -x-1;
+		push(grabber, x);
+	}
+
+	private void push(IntNumberedItem grabber, int x) {
 		Logger.minor(this, "Insertion point: "+x);
 		// Move the data
 		if(length == data.length) {

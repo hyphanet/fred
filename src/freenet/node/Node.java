@@ -609,6 +609,9 @@ public class Node {
 	FProxyToadlet fproxyServlet;
 	SimpleToadletServer toadletContainer;
 	
+	// The version we were before we restarted.
+	public int lastVersion;
+	
 	/** NodeUpdater **/
 	public NodeUpdater nodeUpdater;
 	
@@ -703,6 +706,14 @@ public class Node {
 		myName = fs.get("myName");
 		if(myName == null) {
 			myName = newName();
+		}
+		
+		String verString = fs.get("version");
+		if(verString == null) {
+			Logger.error(this, "No version!");
+			System.err.println("No version!");
+		} else {
+			lastVersion = Version.getArbitraryBuildNumber(verString);
 		}
 
 		// FIXME: Back compatibility; REMOVE !!
@@ -1341,9 +1352,20 @@ public class Node {
 						if(newMaxStoreKeys == maxStoreKeys) return;
 						// Update each datastore
 						maxStoreKeys = newMaxStoreKeys;
-						chkDatastore.setMaxKeys(maxStoreKeys);
-						sskDatastore.setMaxKeys(maxStoreKeys);
-						pubKeyDatastore.setMaxKeys(maxStoreKeys);
+						try {
+							chkDatastore.setMaxKeys(maxStoreKeys);
+							sskDatastore.setMaxKeys(maxStoreKeys);
+							pubKeyDatastore.setMaxKeys(maxStoreKeys);
+						} catch (IOException e) {
+							// FIXME we need to be able to tell the user.
+							Logger.error(this, "Caught "+e+" resizing the datastore", e);
+							System.err.println("Caught "+e+" resizing the datastore");
+							e.printStackTrace();
+						} catch (DatabaseException e) {
+							Logger.error(this, "Caught "+e+" resizing the datastore", e);
+							System.err.println("Caught "+e+" resizing the datastore");
+							e.printStackTrace();
+						}
 					}
 		});
 		
@@ -1378,23 +1400,35 @@ public class Node {
 			System.out.println("Initializing CHK Datastore");
 			BerkeleyDBFreenetStore tmp;
 			try {
-				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH);
+				if(lastVersion > 0 && lastVersion < 852) {
+					throw new DatabaseException("Reconstructing store because started from old version");
+				}
+				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
 			} catch (DatabaseException e) {
+				System.err.println("Could not open store: "+e);
+				e.printStackTrace();
+				System.err.println("Attempting to reconstruct...");
 				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
 			}
 			chkDatastore = tmp;
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			try {
-				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0);
+				if(lastVersion > 0 && lastVersion < 852) {
+					throw new DatabaseException("Reconstructing store because started from old version");
+				}
+				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, true);
 			} catch (DatabaseException e) {
+				System.err.println("Could not open store: "+e);
+				e.printStackTrace();
+				System.err.println("Attempting to reconstruct...");
 				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
 			}
 			this.pubKeyDatastore = tmp;
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
-			sskDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH);
+			sskDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
@@ -1409,6 +1443,7 @@ public class Node {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
 			System.err.println(msg);
+			e1.printStackTrace();
 			throw new NodeInitException(EXIT_STORE_OTHER, msg);
 		}
 		

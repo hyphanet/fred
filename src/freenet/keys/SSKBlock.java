@@ -8,6 +8,7 @@ import net.i2p.util.NativeBigInteger;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.node.DSAPublicKeyDatabase;
 import freenet.support.HexUtil;
 
 /**
@@ -69,7 +70,7 @@ public class SSKBlock implements KeyBlock {
     	// only compare some of the headers (see top)
     	for (int i = 0; i < HEADER_COMPARE_TO; i++) {
     		if (block.headers[i] != headers[i]) return false;
-	}
+    	}
     	//if(!Arrays.equals(block.headers, headers)) return false;
     	if(!Arrays.equals(block.data, data)) return false;
     	return true;
