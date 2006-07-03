@@ -1,5 +1,7 @@
 package freenet.support;
 
+import java.util.Random;
+
 /**
  * This class provides encoding of byte arrays into Base64-encoded strings,
  * and decoding the other way.
@@ -22,10 +24,11 @@ public class Base64
     throws IllegalBase64Exception
   {
     int iter;
+    Random r = new Random();
     for (iter = 0; iter < 1000; iter++) {
-      byte[] b = new byte[(int) (Math.random()*64.0)];
+      byte[] b = new byte[r.nextInt(64)];
       for (int i = 0; i < b.length; i++)
-        b[i] = (byte) (Math.random() * 256.0);
+        b[i] = (byte) (r.nextInt(256));
       String encoded = encode(b);
      System.out.println(encoded);
       byte[] decoded = decode(encoded);

@@ -18,7 +18,7 @@ import freenet.support.Logger;
  * b) We don't get big problems with influence of the initial value,
  * which is usually not very reliable.
  */
-public class BootstrappingDecayingRunningAverage implements
+public final class BootstrappingDecayingRunningAverage implements
         RunningAverage {
 	
 	private static final long serialVersionUID = -1;
