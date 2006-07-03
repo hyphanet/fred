@@ -1397,7 +1397,7 @@ public class Node {
 
 		try {
 			Logger.normal(this, "Initializing CHK Datastore");
-			System.out.println("Initializing CHK Datastore");
+			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
 			BerkeleyDBFreenetStore tmp;
 			try {
 				if(lastVersion > 0 && lastVersion < 852) {

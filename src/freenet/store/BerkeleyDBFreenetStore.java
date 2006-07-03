@@ -244,8 +244,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if(maxBlocks >= curBlocks)
 					return;
 			}
-			System.err.println("Shrinking store: "+chkBlocksInStore+" -> "+maxChkBlocks);
-			Logger.error(this, "Shrinking store: "+chkBlocksInStore+" -> "+maxChkBlocks);
+			System.err.println("Shrinking store: "+curBlocks+" -> "+maxBlocks);
+			Logger.error(this, "Shrinking store: "+curBlocks+" -> "+maxBlocks);
 			while(true) {
 				t = environment.beginTransaction(null,null);
 				long deleted = 0;
