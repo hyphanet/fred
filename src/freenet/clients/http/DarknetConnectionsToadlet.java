@@ -102,9 +102,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
 		int networkSizeEstimate = (int) node.getNetworkSizeEstimate( 0 );
 		DecimalFormat fix4 = new DecimalFormat("0.0000");
-		double missRoutingDistance =  node.MissRoutingDistance.currentValue();
+		double missRoutingDistance =  node.missRoutingDistance.currentValue();
 		DecimalFormat fix1 = new DecimalFormat("##0.0%");
-		double backedoffPercent =  node.BackedoffPercent.currentValue();
+		double backedoffPercent =  node.backedoffPercent.currentValue();
 		String nodeUptimeString = timeIntervalToString(( now - node.startupTime ) / 1000);
 		
 		buf.append("<table class=\"column\"><tr><td class=\"first\">");
