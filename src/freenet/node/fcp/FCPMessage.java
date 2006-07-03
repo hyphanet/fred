@@ -46,6 +46,8 @@ public abstract class FCPMessage {
 			return new RemovePersistentRequest(fs);
 		if(name.equals(WatchGlobal.name))
 			return new WatchGlobal(fs);
+		if(name.equals(ModifyPeer.name))
+			return new ModifyPeer(fs);
 		if(name.equals(ModifyPersistentRequest.name))
 			return new ModifyPersistentRequest(fs);
 		if(name.equals(ClientPutDiskDirMessage.name))

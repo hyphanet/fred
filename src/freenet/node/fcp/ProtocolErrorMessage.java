@@ -37,6 +37,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int NOT_SUPPORTED = 16;
 	static final int INTERNAL_ERROR = 17;
 	static final int SHUTTING_DOWN = 18;
+	static final int NO_SUCH_NODE_IDENTIFIER = 19;
 	
 	final int code;
 	final String extra;
@@ -81,6 +82,8 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Internal error";
 		case SHUTTING_DOWN:
 			return "Shutting down";
+		case NO_SUCH_NODE_IDENTIFIER:
+			return "No such nodeIdentifier";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";
