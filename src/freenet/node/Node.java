@@ -949,6 +949,8 @@ public class Node {
 	 */
 	 Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
 		// Easy stuff
+		Logger.normal(this, "Initializing Node using SVN r"+Version.cvsRevision);
+		System.out.println("Initializing Node using SVN r"+Version.cvsRevision);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
