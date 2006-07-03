@@ -306,10 +306,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		finish();
 	}
 
-	private synchronized void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
+	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
 		
 		FCPMessage msg;
-
+		
+		// Don't need to lock. succeeded is only ever set, never unset.
+		// and succeeded and getFailedMessage are both atomic.
 		if(succeeded) {
 			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier);
 		} else {
@@ -386,7 +388,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Ignore
 	}
 
-	public synchronized void receive(ClientEvent ce) {
+	public void receive(ClientEvent ce) {
+		// Don't need to lock, verbosity is final and finished is never unset.
 		if(finished) return;
 		if(!(((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) &&
 				(ce instanceof SplitfileProgressEvent)))
@@ -414,13 +417,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			fs.put("TempFilename", tempFile.getPath());
 		if(clientToken != null)
 			fs.put("ClientToken", clientToken);
-		//FIXME: what were we supposed to do there ?
-		if(returnType == ClientGetMessage.RETURN_TYPE_DISK && targetFile != null) {
-			// Otherwise we must re-run it anyway as we don't have the data.
-			
-			// finished => persistence of completion state, pending messages
-			//fs.put("Finished", Boolean.toString(finished));
-		}
 		fs.put("IgnoreDS", Boolean.toString(fctx.ignoreStore));
 		fs.put("DSOnly", Boolean.toString(fctx.localRequestOnly));
 		fs.put("MaxRetries", Integer.toString(fctx.maxNonSplitfileRetries));

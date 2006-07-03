@@ -532,22 +532,22 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
         Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         
         // Now wait for transfers, or for downstream transfer notifications.
-        
-        if(cw != null) {
-        	while(!allTransfersCompleted) {
-        		try {
-        			wait(10*1000);
-        		} catch (InterruptedException e) {
-        			// Try again
+
+        synchronized(this) {
+        	if(cw != null) {
+        		while(!allTransfersCompleted) {
+        			try {
+        				wait(10*1000);
+        			} catch (InterruptedException e) {
+        				// Try again
+        			}
         		}
+        	} else {
+        		// There weren't any transfers
+       			allTransfersCompleted = true;
         	}
-        } else {
-        	// There weren't any transfers
-        	synchronized(this) {
-        		allTransfersCompleted = true;
-        	}
+        	notifyAll();
         }
-        notifyAll();
         
         Logger.minor(this, "Returning from finish()");
     }

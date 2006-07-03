@@ -235,15 +235,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private void maybeShrink(boolean dontCheck) throws DatabaseException, IOException {
 		Transaction t = null;
 		try {
-			if(maxChkBlocks >= chkBlocksInStore)
-				return;
+			// long's are not atomic.
+			long maxBlocks;
+			long curBlocks;
+			synchronized(this) {
+				maxBlocks = maxChkBlocks;
+				curBlocks = chkBlocksInStore;
+				if(maxBlocks >= curBlocks)
+					return;
+			}
 			System.err.println("Shrinking store: "+chkBlocksInStore+" -> "+maxChkBlocks);
 			Logger.error(this, "Shrinking store: "+chkBlocksInStore+" -> "+maxChkBlocks);
 			while(true) {
 				t = environment.beginTransaction(null,null);
 				long deleted = 0;
-				for(long i=chkBlocksInStore-1;i>=maxChkBlocks;i--) {
-					
+				for(long i=curBlocks-1;i>=maxBlocks;i--) {
+
 					// Delete the block with this blocknum.
 					
 					Long blockNo = new Long(i);
@@ -254,6 +261,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						chkDB_blockNum.delete(t, blockNumEntry);
 					if(result.equals(OperationStatus.SUCCESS))
 						deleted++;
+					
+					synchronized(this) {
+						maxBlocks = maxChkBlocks;
+						curBlocks = chkBlocksInStore;
+						if(maxBlocks >= curBlocks)
+							return;
+					}
 				}
 				
 				t.commit();
@@ -263,8 +277,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				t = null;
 				
 				if(deleted == 0 || dontCheck) break;
-				else
+				else {
 					System.err.println("Checking...");
+					synchronized(this) {
+						maxBlocks = maxChkBlocks;
+						curBlocks = chkBlocksInStore;
+						if(maxBlocks >= curBlocks)
+							return;
+					}
+				}
 			}
 			
 			chkStore.setLength(maxChkBlocks * (dataBlockSize + headerBlockSize));
@@ -1298,8 +1319,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	}
     }
 
-	public synchronized void setMaxKeys(long maxStoreKeys) throws DatabaseException, IOException {
-		maxChkBlocks = maxStoreKeys;
+	public void setMaxKeys(long maxStoreKeys) throws DatabaseException, IOException {
+		synchronized(this) {
+			maxChkBlocks = maxStoreKeys;
+		}
 		maybeShrink(false);
 	}
 }
