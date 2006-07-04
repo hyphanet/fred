@@ -43,7 +43,7 @@ public class SortedLongSet {
 			data[--length] = Long.MAX_VALUE;
 		}
 		if(length*4 < data.length && length > MIN_SIZE) {
-			long[] newData = new long[Math.max(length/2, MIN_SIZE)];
+			long[] newData = new long[Math.max(data.length/2, MIN_SIZE)];
 			System.arraycopy(data, 0, newData, 0, length);
 			for(int i=length;i<newData.length;i++)
 				newData[i] = Long.MAX_VALUE;
