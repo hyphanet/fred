@@ -30,6 +30,8 @@ public abstract class FCPMessage {
 	 * Create a message from a SimpleFieldSet, and the message's name, if possible. 
 	 */
 	public static FCPMessage create(String name, SimpleFieldSet fs, BucketFactory bfTemp, PersistentTempBucketFactory bfPersistent) throws MessageInvalidException {
+		if(name.equals(AddPeer.name))
+			return new AddPeer(fs);
 		if(name.equals(ClientGetMessage.name))
 			return new ClientGetMessage(fs);
 		if(name.equals(ClientHelloMessage.name))
