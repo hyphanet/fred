@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.TreeMap;
+import java.util.Vector;
 import java.util.zip.DeflaterOutputStream;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -156,20 +158,12 @@ public class Node {
 
 		private ClientPutter inserter;
 		private boolean shouldInsert;
-		private Peer lastInsertedAddress;
+		private Peer[] lastInsertedPeers;
 		
 		public void update() {
 			Logger.minor(this, "update()");
-			if(lastIPAddress == null) {
-				Logger.minor(this, "Not inserting because no IP address");
-				return; // no point inserting
-			}
-			Peer p = new Peer(lastIPAddress, Node.this.portNumber);
-			if(p.strictEquals(lastInsertedAddress)) {
-				Logger.minor(this, "Not inserting ARK because "+p+" equals "+lastInsertedAddress);
-				return;
-			}
-			Logger.minor(this, "Inserting ARK because "+p+" != "+lastInsertedAddress);
+			if(!checkIPUpdated()) return;
+			Logger.minor(this, "Inserting ARK because peers list changed");
 			synchronized(this) {
 				if(inserter != null) {
 					// Already inserting.
@@ -185,6 +179,21 @@ public class Node {
 				}
 				startInserter();
 			}
+		}
+
+		private boolean checkIPUpdated() {
+			if(lastIPAddress == null) {
+				Logger.minor(this, "Not inserting because no IP address");
+				return true; // no point inserting
+			}
+			Peer[] p = getPrimaryIPAddress();
+			if(lastInsertedPeers != null) {
+				if(p.length != lastInsertedPeers.length) return true;
+				for(int i=0;i<p.length;i++)
+					if(!p[i].strictEquals(lastInsertedPeers[i]))
+						return true;
+			}
+			return false;
 		}
 
 		private void startInserter() {
@@ -223,10 +232,14 @@ public class Node {
 			try {
 				inserter.start();
 				if(fs.get("physical.udp") == null)
-					lastInsertedAddress = null;
+					lastInsertedPeers = null;
 				else {
 					try {
-						lastInsertedAddress = new Peer(fs.get("physical.udp"), false);
+						String[] all = fs.getAll("physical.udp");
+						Peer[] peers = new Peer[all.length];
+						for(int i=0;i<all.length;i++)
+							peers[i] = new Peer(all[i], false);
+						lastInsertedPeers = peers;
 					} catch (PeerParseException e1) {
 						Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
 					} catch (UnknownHostException e1) {
@@ -259,7 +272,7 @@ public class Node {
 
 		public void onFailure(InserterException e, BaseClientPutter state) {
 			Logger.minor(this, "ARK insert failed: "+e);
-			lastInsertedAddress = null;
+			lastInsertedPeers = null;
 			// :(
 			// Better try again
 			try {
@@ -285,8 +298,7 @@ public class Node {
 		}
 
 		public void onConnectedPeer() {
-			Peer p = new Peer(Node.this.getPrimaryIPAddress(), Node.this.portNumber);
-			if(p.equals(lastInsertedAddress)) return;
+			if(!checkIPUpdated()) return;
 			synchronized(this) {
 				if(!shouldInsert) return;
 				if(inserter != null) {
@@ -660,11 +672,12 @@ public class Node {
 		SimpleFieldSet fs = new SimpleFieldSet(br, true);
 		br.close();
 		// Read contents
-		String physical = fs.get("physical.udp");
-		if(physical != null) {
+		String[] udp = fs.getAll("physical.udp");
+		if(udp != null && udp.length > 0) {
+			// Just keep the first one.
 			Peer myOldPeer;
 			try {
-				myOldPeer = new Peer(physical, false);
+				myOldPeer = new Peer(udp[0], false);
 			} catch (PeerParseException e) {
 				IOException e1 = new IOException();
 				e1.initCause(e);
@@ -2200,10 +2213,12 @@ public class Node {
 	 */
 	public SimpleFieldSet exportPublicFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
-		FreenetInetAddress ip = getPrimaryIPAddress();
+		Peer[] ips = getPrimaryIPAddress();
 		fs.put("base64", "true");
-		if(ip != null)
-			fs.put("physical.udp", ip.toString()+":"+portNumber);
+		if(ips != null) {
+			for(int i=0;i<ips.length;i++)
+				fs.put("physical.udp", ips[i].toString());
+		}
 		fs.put("identity", Base64.encode(myIdentity));
 		fs.put("location", Double.toString(lm.getLocation().getValue()));
 		fs.put("version", Version.getVersionString());
@@ -2225,7 +2240,7 @@ public class Node {
 	/** IP address from last time */
 	FreenetInetAddress oldIPAddress;
 	/** Last detected IP address */
-	FreenetInetAddress lastIPAddress;
+	Peer[] lastIPAddress;
 	
 	/**
 	 * @return Our current main IP address.
@@ -2233,19 +2248,20 @@ public class Node {
 	 * detection properly with NetworkInterface, and we should use
 	 * third parties if available and UP&P if available.
 	 */
-	FreenetInetAddress detectPrimaryIPAddress() {
+	Peer[] detectPrimaryIPAddress() {
+		Vector addresses = new Vector();
 		if(overrideIPAddress != null) {
-			Logger.minor(this, "Returning overridden address: "+overrideIPAddress);
-			lastIPAddress = overrideIPAddress;
-			return overrideIPAddress;
+			// If the IP is overridden, the override has to be the first element.
+			addresses.add(new Peer(overrideIPAddress, portNumber));
 		}
-		Logger.minor(this, "IP address not overridden");
-	   	InetAddress addr = ipDetector.getAddress();
-	   	if(addr != null) {
-	   		FreenetInetAddress a = new FreenetInetAddress(addr);
-	   		lastIPAddress = a;
-	   		return a;
+	   	InetAddress detectedAddr = ipDetector.getAddress();
+	   	if(detectedAddr != null) {
+	   		Peer a = new Peer(new FreenetInetAddress(detectedAddr), portNumber);
+	   		if(!addresses.contains(a))
+	   			addresses.add(a);
 	   	}
+	   	if(detectedAddr == null && oldIPAddress != null && !oldIPAddress.equals(overrideIPAddress))
+	   		addresses.add(new Peer(oldIPAddress, portNumber));
    		// Try to pick it up from our connections
 	   	if(peers != null) {
 	   		PeerNode[] peerList = peers.connectedPeers;
@@ -2258,47 +2274,56 @@ public class Node {
 	   			InetAddress ip = p.getAddress(true);
 	   			if(!IPUtil.checkAddress(ip)) continue;
 	   			if(countsByPeer.containsKey(ip)) {
-	   				Integer count = (Integer) countsByPeer.get(ip);
+	   				Integer count = (Integer) countsByPeer.get(p);
 	   				Integer newCount = new Integer(count.intValue()+1);
-	   				countsByPeer.put(ip, newCount);
+	   				countsByPeer.put(p, newCount);
 	   			} else {
-	   				countsByPeer.put(ip, new Integer(1));
+	   				countsByPeer.put(p, new Integer(1));
 	   			}
 	   		}
 	   		if(countsByPeer.size() == 1) {
 		   		Iterator it = countsByPeer.keySet().iterator();
-		   		FreenetInetAddress a = new FreenetInetAddress((InetAddress)(it.next()));
-		   		lastIPAddress = a;
-		   		return a;
+		   		Peer p = (Peer) (it.next());
+		   		if(!addresses.contains(p)) addresses.add(p);
 	   		} else if(countsByPeer.size() > 1) {
-		   		Iterator it = countsByPeer.keySet().iterator();
-		   		// Pick most popular address
-		   		// FIXME use multi-homing here
-		   		InetAddress best = null;
+	   			Iterator it = countsByPeer.keySet().iterator();
+	   			// Take two most popular addresses.
+		   		Peer best = null;
+		   		Peer secondBest = null;
 		   		int bestPopularity = 0;
+		   		int secondBestPopularity = 0;
 		   		while(it.hasNext()) {
-		   			InetAddress cur = (InetAddress) it.next();
+		   			Peer cur = (Peer) (it.next());
 		   			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
 		   			if(curPop > bestPopularity) {
 		   				bestPopularity = curPop;
+		   				secondBest = best;
 		   				best = cur;
+		   				secondBestPopularity = bestPopularity;
 		   			}
 		   		}
-		   		lastIPAddress = best == null ? null : new FreenetInetAddress(best);
+		   		if(best != null) {
+		   			if(bestPopularity > 2 || detectedAddr == null) {
+		   				if(!addresses.contains(best))
+		   					addresses.add(best);
+		   				if(secondBest != null && secondBestPopularity > 2) {
+		   					if(!addresses.contains(secondBest))
+		   						addresses.add(secondBest);
+		   				}
+		   			}
+		   		}
 	   		}
 	   	}
-	   	if(lastIPAddress == null) {
-	   		if(oldIPAddress != null) lastIPAddress = oldIPAddress;
-	   	}
-	   	if (lastIPAddress == null) {
+	   	if (addresses.isEmpty()) {
 	   		this.alerts.register(primaryIPUndetectedAlert);
 	   	} else {
 	   		this.alerts.unregister(primaryIPUndetectedAlert);
 	   	}
+	   	lastIPAddress = (Peer[]) addresses.toArray(new Peer[addresses.size()]);
 	   	return lastIPAddress;
 	}
 
-	FreenetInetAddress getPrimaryIPAddress() {
+	Peer[] getPrimaryIPAddress() {
 		if(lastIPAddress == null) return detectPrimaryIPAddress();
 		return lastIPAddress;
 	}
@@ -2819,13 +2844,13 @@ public class Node {
 		return sskInsertThrottle;
 	}
 
-	FreenetInetAddress lastIP;
+	Peer[] lastIP;
 	public BookmarkManager bookmarkManager;
 
 	public void redetectAddress() {
-		FreenetInetAddress newIP = detectPrimaryIPAddress();
+		Peer[] newIP = detectPrimaryIPAddress();
+		if(Arrays.equals(newIP, lastIP)) return;
 		shouldInsertARK();
-		if(newIP == null || newIP.equals(lastIP)) return;
 		lastIP = newIP;
 		writeNodeFile();
 	}

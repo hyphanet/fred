@@ -594,7 +594,8 @@ public class PeerNode implements PeerContext {
 
     	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
     	FreenetInetAddress localhost = node.fLocalhostAddress;
-    	FreenetInetAddress nodeAddr = node.getPrimaryIPAddress();
+    	Peer[] nodePeers = node.getPrimaryIPAddress();
+//    	FreenetInetAddress nodeAddr = node.getPrimaryIPAddress();
     	
     	Vector peers = new Vector(nominalPeer);
     	
@@ -614,9 +615,12 @@ public class PeerNode implements PeerContext {
     			if(addedLocalhost) continue;
     			addedLocalhost = true;
     		}
-    		if(addr.equals(nodeAddr)) {
-    			if(!addedLocalhost)
-    				peers.add(new Peer(localhost, p.getPort()));
+    		for(int j=0;j<nodePeers.length;j++) {
+    			if(nodePeers[j].getFreenetAddress().equals(addr)) {
+        			if(!addedLocalhost)
+        				peers.add(new Peer(localhost, p.getPort()));
+    				addedLocalhost = true;
+    			}
     		}
     		if(peers.contains(p)) continue;
     		peers.add(p);
