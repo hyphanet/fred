@@ -652,6 +652,9 @@ public class Node {
 	// The node starter
 	private static NodeStarter nodeStarter;
 	
+	// The watchdog will be silenced until it's true
+	private static boolean hasStarted = false;
+	
 	// Debugging stuff
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
 
@@ -1725,6 +1728,7 @@ public class Node {
 			}
 		}
 		
+		this.hasStarted = true;
 	}
 	
 	private void shouldInsertARK() {
@@ -3409,5 +3413,9 @@ public class Node {
 			}
 		}
 		return null;
+	}
+
+	public boolean isHasStarted() {
+		return hasStarted;
 	}
 }

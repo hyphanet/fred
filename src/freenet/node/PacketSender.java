@@ -63,7 +63,7 @@ public class PacketSender implements Runnable {
 				long now = System.currentTimeMillis();
 				long recordedTime = ((long)lastTimeInSeconds) * 1000;
 				long diff = now - recordedTime;
-				if(diff > 3*60*1000) {
+				if(diff > 3*60*1000 && node.isHasStarted()) {
 					if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
 						System.err.println("Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
 					
@@ -344,7 +344,7 @@ public class PacketSender implements Runnable {
         }
 	}
 
-	void queuedResendPacket() {
+	protected void queuedResendPacket() {
         // Wake up if needed
         synchronized(this) {
             notifyAll();
