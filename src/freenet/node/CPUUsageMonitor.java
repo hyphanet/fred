@@ -39,6 +39,7 @@ public class CPUUsageMonitor {
                 firstline = br.readLine();
                 if(firstline == null) throw new EOFException();
                 ris.close();
+                br.close();
             } catch (IOException e) {
                 if(!reportedFailedProcOpen)
                     Logger.error(this, "Failed to open /proc/stat: "+e, e);

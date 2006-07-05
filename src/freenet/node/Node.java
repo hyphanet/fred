@@ -653,7 +653,7 @@ public class Node {
 	private static NodeStarter nodeStarter;
 	
 	// The watchdog will be silenced until it's true
-	private static boolean hasStarted = false;
+	private boolean hasStarted = false;
 	
 	// Debugging stuff
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;

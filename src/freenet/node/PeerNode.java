@@ -286,6 +286,17 @@ public class PeerNode implements PeerContext {
         // FIXME make mandatory once everyone has upgraded
         lastGoodVersion = fs.get("lastGoodVersion");
         
+        String name = fs.get("myName");
+        if(name == null) throw new FSParseException("No name");
+        myName = name;
+        String testnet = fs.get("testnet");
+        testnetEnabled = testnet == null ? false : (testnet.equalsIgnoreCase("true") || testnet.equalsIgnoreCase("yes"));
+        if(testnetEnabled != node.testnetEnabled) {
+        	String err = "Ignoring incompatible node "+detectedPeer+" - peer.testnet="+testnetEnabled+"("+testnet+") but node.testnet="+node.testnetEnabled;
+        	Logger.error(this, err);
+        	throw new PeerParseException(err);
+        }
+        
         nominalPeer=new Vector();
         nominalPeer.removeAllElements();
         try{
@@ -310,17 +321,6 @@ public class PeerNode implements PeerContext {
         	detectedPeer = null;
         } else {
         	detectedPeer = (Peer) nominalPeer.firstElement();
-        }
-        
-        String name = fs.get("myName");
-        if(name == null) throw new FSParseException("No name");
-        myName = name;
-        String testnet = fs.get("testnet");
-        testnetEnabled = testnet == null ? false : (testnet.equalsIgnoreCase("true") || testnet.equalsIgnoreCase("yes"));
-        if(testnetEnabled != node.testnetEnabled) {
-        	String err = "Ignoring incompatible node "+detectedPeer+" - peer.testnet="+testnetEnabled+"("+testnet+") but node.testnet="+node.testnetEnabled;
-        	Logger.error(this, err);
-        	throw new PeerParseException(err);
         }
         
         // Setup incoming and outgoing setup ciphers
@@ -481,6 +481,7 @@ public class PeerNode implements PeerContext {
         return false;
 	}
 
+    //FIXME: Huh wtf ?
 	private void randomizeMaxTimeBetweenPacketSends() {
         int x = Node.KEEPALIVE_INTERVAL;
         x += node.random.nextInt(x);
@@ -500,7 +501,7 @@ public class PeerNode implements PeerContext {
     /**
      * Returns an array with the advertised addresses and the detected one
      */
-    public Peer[] getHandshakeIPs(){
+    protected Peer[] getHandshakeIPs(){
         return handshakeIPs;
     }
     
@@ -941,10 +942,12 @@ public class PeerNode implements PeerContext {
      * Send a message, right now, on this thread, to this node.
      */
     public void send(Message req) throws NotConnectedException {
-        if(!isConnected) {
-            Logger.error(this, "Tried to send "+req+" but not connected to "+this, new Exception("debug"));
-            return;
-        }
+    	synchronized (this) {
+            if(!isConnected()) {
+                Logger.error(this, "Tried to send "+req+" but not connected to "+this, new Exception("debug"));
+                return;
+            }
+		}
         node.usm.send(this, req);
     }
 
@@ -1537,11 +1540,13 @@ public class PeerNode implements PeerContext {
         fs.put("testnet", Boolean.toString(testnetEnabled));
         fs.put("version", version);
         fs.put("myName", myName);
-        if(myARK != null) {
-        	// Decrement it because we keep the number we would like to fetch, not the last one fetched.
-        	fs.put("ark.number", Long.toString(myARK.suggestedEdition-1));
-        	fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));
-        }
+        synchronized (myARK) {
+            if(myARK != null) {
+            	// Decrement it because we keep the number we would like to fetch, not the last one fetched.
+            	fs.put("ark.number", Long.toString(myARK.suggestedEdition-1));
+            	fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));
+            }
+		}
         return fs;
     }
 
@@ -1850,11 +1855,13 @@ public class PeerNode implements PeerContext {
 		localNodeReceivedMessageTypes.put(messageSpecName,count);
 	}
 	
+	//FIXME: maybe return a copy insteed
 	public Hashtable getLocalNodeSentMessagesToStatistic ()
 	{
 		return localNodeSentMessageTypes;
 	}
-
+	
+	//FIXME: maybe return a copy insteed
 	public Hashtable getLocalNodeReceivedMessagesFromStatistic ()
 	{
 		return localNodeReceivedMessageTypes;

@@ -35,7 +35,7 @@ import freenet.support.io.TempBucketFactory;
 
 public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
-	public class ToadletElement {
+	private static class ToadletElement {
 		public ToadletElement(Toadlet t2, String urlPrefix) {
 			t = t2;
 			prefix = urlPrefix;
@@ -76,7 +76,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public void set(String bindTo) throws InvalidConfigValueException {
-			if(bindTo != get())
+			if(!bindTo.equals(get()))
 				throw new InvalidConfigValueException("Cannot change FProxy bind address on the fly");
 		}
 	}
@@ -133,7 +133,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyAdvancedDarknetEnabledCallback implements BooleanCallback {
+	private static class FProxyAdvancedDarknetEnabledCallback implements BooleanCallback {
 		
 		private final SimpleToadletServer ts;
 		

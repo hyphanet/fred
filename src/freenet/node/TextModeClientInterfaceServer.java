@@ -149,7 +149,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     	}
     	
     	public void set(String val) throws InvalidConfigValueException {
-    		if(val == get()) return;
+    		if(val.equals(get())) return;
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
     }
