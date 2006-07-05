@@ -510,7 +510,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				Long l = new Long(storeBlock.offset);
 				if(s.contains(l)) {
 					Logger.minor(this, "Deleting (block number conflict).");
-					addFreeBlock(storeBlock.offset);
 					chkDB.delete(t, keyDBE);
 				}
 				s.add(l);
@@ -846,6 +845,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
     private void addFreeBlock(long offset) {
    		if(freeBlocks.push(offset)) {
+   			System.err.println("Freed block "+offset);
    			Logger.normal(this, "Freed block "+offset);
    		} else {
    			Logger.minor(this, "Already freed block "+offset);
@@ -1226,6 +1226,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     
     private class ShutdownHook extends Thread {
     	public void run() {
+    		System.err.println("Closing database due to shutdown.");
     		close();
     	}
     }
