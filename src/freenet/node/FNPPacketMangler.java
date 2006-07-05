@@ -12,6 +12,7 @@ import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.EntropySource;
 import freenet.crypt.PCFBMode;
 import freenet.io.comm.*;
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -385,7 +386,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         data[hash.length+iv.length+1] = (byte) pcfb.encipher((byte)length);
         pcfb.blockEncipher(output, 0, output.length);
         System.arraycopy(output, 0, data, hash.length+iv.length+2, output.length);
-        usm.sendPacket(data, replyTo);
+        try {
+			usm.sendPacket(data, replyTo, pn.allowLocalAddresses());
+		} catch (LocalAddressException e) {
+			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
+		}
         Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
      }
 
@@ -1292,7 +1297,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         Logger.minor(this,"Sending packet of length "+output.length+" (" + Fields.hashCode(output) + " to "+kt.pn);
         
         // pn.getPeer() cannot be null
-        usm.sendPacket(output, kt.pn.getPeer());
+        try {
+			usm.sendPacket(output, kt.pn.getPeer(), kt.pn.allowLocalAddresses());
+		} catch (LocalAddressException e) {
+			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
+		}
         kt.pn.sentPacket();
     }
 
@@ -1332,6 +1341,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         for(int i=0;i<handshakeIPs.length;i++){
         	long innerLoopTime1 = System.currentTimeMillis();
         	if(handshakeIPs[i].getAddress(false) == null) continue;
+        	if(!handshakeIPs[i].isRealInternetAddress(false, false)) continue;
         	long innerLoopTime2 = System.currentTimeMillis();
         	if((innerLoopTime2 - innerLoopTime1) > 500)
         		Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.getName());

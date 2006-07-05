@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 
 import freenet.io.AddressIdentifier;
 import freenet.support.Logger;
+import freenet.transport.IPUtil;
 
 /**
  * Long-term InetAddress. If created with an IP address, then the IP address is primary.
@@ -253,5 +254,18 @@ public class FreenetInetAddress {
 			return primaryIPAddress.getHostAddress();
 		else
 			return addr;
+	}
+
+	public boolean isRealInternetAddress(boolean lookup, boolean defaultVal) {
+		if(_address != null) {
+			return IPUtil.checkAddress(_address);
+		} else {
+			if(lookup) {
+				InetAddress a = getAddress();
+				if(a != null)
+					return IPUtil.checkAddress(a);
+			}
+			return defaultVal;	
+		}
 	}
 }

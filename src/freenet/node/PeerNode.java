@@ -236,6 +236,9 @@ public class PeerNode implements PeerContext {
     
     /** True if we don't send handshake requests to this peer, but will connect if we receive one */
     private boolean isListenOnly = false;
+    
+    /** True if we want to allow LAN/localhost addresses. */
+    private boolean allowLocalAddresses = false;
 
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
@@ -437,6 +440,7 @@ public class PeerNode implements PeerContext {
             	}
             	isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
             	isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
+            	allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
         	}
         } else {
             neverConnected = true;
@@ -1499,6 +1503,8 @@ public class PeerNode implements PeerContext {
     		fs.put("isDisabled", "true");
     	if(isListenOnly)
     		fs.put("isListenOnly", "true");
+    	if(allowLocalAddresses)
+    		fs.put("allowLocalAddresses", "true");
     	return fs;
 	}
 
@@ -2044,5 +2050,9 @@ public class PeerNode implements PeerContext {
 	public synchronized boolean shouldDisconnectNow() {
 		verifiedIncompatibleOlderVersion = invalidVersion();
 		return verifiedIncompatibleOlderVersion;
+	}
+
+	public boolean allowLocalAddresses() {
+		return allowLocalAddresses;
 	}
 }

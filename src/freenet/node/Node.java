@@ -49,6 +49,7 @@ import freenet.client.async.USKManager;
 import freenet.clients.http.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.FilePersistentConfig;
 import freenet.config.IntCallback;
@@ -530,6 +531,8 @@ public class Node {
 	public boolean bwlimitDelayAlertRelevant = false;
 	/** nodeAveragePing PeerManagerUserAlert should happen if true */
 	public boolean nodeAveragePingAlertRelevant = false;
+	/** If true, include local addresses on noderefs */
+	public boolean includeLocalAddressesInNoderefs = false;
 	
 	private final HashSet runningUIDs;
 	
@@ -1106,7 +1109,21 @@ public class Node {
 			}
 		}
 		
+		// Include local IPs in noderef file
 		
+		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, "Include local addresses in noderef", "Whether to include local addresses (LAN and localhost) in node references. This will not be useful unless the other side sets metadata.allowLocalAddresses=true for this reference.", new BooleanCallback() {
+
+			public boolean get() {
+				return includeLocalAddressesInNoderefs;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				includeLocalAddressesInNoderefs = val;
+			}
+			
+		});
+		
+		includeLocalAddressesInNoderefs = nodeConfig.getBoolean("includeLocalAddressesInNoderefs");
 		
 		// Determine where to bind to
 		

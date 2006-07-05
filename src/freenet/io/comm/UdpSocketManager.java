@@ -24,6 +24,7 @@ import java.util.*;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.Logger;
@@ -511,11 +512,11 @@ public class UdpSocketManager extends Thread {
      * @param blockToSend The data block to send.
      * @param destination The peer to send it to.
      */
-    public void sendPacket(byte[] blockToSend, Peer destination) {
+    public void sendPacket(byte[] blockToSend, Peer destination, boolean allowLocalAddresses) throws LocalAddressException {
 		// there should be no DNS needed here, but go ahead if we can, but complain doing it
-		if( destination.getAddress(false) == null ) {
+		if( destination.getAddress(false, allowLocalAddresses) == null ) {
   			Logger.error(this, "Tried sending to destination without pre-looked up IP address(needs a real Peer.getHostname()): null:" + destination.getPort(), new Exception("error"));
-			if( destination.getAddress(true) == null ) {
+			if( destination.getAddress(true, allowLocalAddresses) == null ) {
   				Logger.error(this, "Tried sending to bad destination address: null:" + destination.getPort(), new Exception("error"));
   				return;
   			}
@@ -527,7 +528,7 @@ public class UdpSocketManager extends Thread {
 			}
 		}
 		DatagramPacket packet = new DatagramPacket(blockToSend, blockToSend.length);
-		packet.setAddress(destination.getAddress(false));
+		packet.setAddress(destination.getAddress(false, allowLocalAddresses));
 		packet.setPort(destination.getPort());
 		
 		// TODO: keep?

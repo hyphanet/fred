@@ -23,6 +23,7 @@ import java.io.*;
 import java.net.*;
 
 import freenet.io.WritableToDataOutputStream;
+import freenet.transport.IPUtil;
 
 /**
  * @author ian
@@ -32,7 +33,11 @@ import freenet.io.WritableToDataOutputStream;
  */
 public class Peer implements WritableToDataOutputStream {
 
-    public static final String VERSION = "$Id: Peer.java,v 1.4 2005/08/25 17:28:19 amphibian Exp $";
+    public class LocalAddressException extends Exception {
+
+	}
+
+	public static final String VERSION = "$Id: Peer.java,v 1.4 2005/08/25 17:28:19 amphibian Exp $";
 
     private final FreenetInetAddress addr;
 	private final int _port;
@@ -147,6 +152,13 @@ public class Peer implements WritableToDataOutputStream {
 		return addr.getAddress(doDNSRequest);
 	}
 	
+	public InetAddress getAddress(boolean doDNSRequest, boolean allowLocal) throws LocalAddressException {
+		InetAddress a = addr.getAddress(doDNSRequest);
+		if(a == null) return null;
+		if(allowLocal || IPUtil.checkAddress(a)) return a;
+		throw new LocalAddressException();
+	}
+	
 	/**
 	 * Get the IP address, looking up the hostname if the hostname is primary, even if
 	 * it has been looked up before. Typically called on a reconnect attempt, when the
@@ -175,5 +187,9 @@ public class Peer implements WritableToDataOutputStream {
 
 	public FreenetInetAddress getFreenetAddress() {
 		return addr;
+	}
+
+	public boolean isRealInternetAddress(boolean lookup, boolean defaultVal) {
+		return addr.isRealInternetAddress(lookup, defaultVal);
 	}
 }

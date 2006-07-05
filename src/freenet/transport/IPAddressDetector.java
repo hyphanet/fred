@@ -256,7 +256,7 @@ public class IPAddressDetector implements Runnable {
 	}
 
 	protected boolean isInternetAddress(InetAddress addr) {
-		return IPUtil.checkAddress(addr);
+		return node.includeLocalAddressesInNoderefs || IPUtil.checkAddress(addr);
 	}
 
 	public void run() {
