@@ -383,7 +383,8 @@ public class PeerManager {
      */
     public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf) {
 	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false);
-	if (best != null && node.getToadletContainer().isAdvancedDarknetEnabled()) {
+	if (best != null && node.getToadletContainer() != null &&
+			node.getToadletContainer().isAdvancedDarknetEnabled()) {
 		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
 		if(nbo != null) {
 			node.missRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
