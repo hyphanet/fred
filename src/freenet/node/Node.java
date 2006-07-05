@@ -99,6 +99,7 @@ import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
+import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -479,6 +480,8 @@ public class Node {
 	private final HashMap insertSenders;
 	/** IP address detector */
 	private final IPAddressDetector ipDetector;
+	/** Plugin manager for plugin IP address detectors e.g. STUN */
+	private final IPDetectorPluginManager ipDetectorManager;
 	/** My crypto group */
 	private DSAGroup myCryptoGroup;
 	/** My private key */
@@ -976,6 +979,7 @@ public class Node {
 		startupTime = System.currentTimeMillis();
 		throttleWindow = new ThrottleWindowManager(2.0);
 		alerts = new UserAlertManager();
+		ipDetectorManager = new IPDetectorPluginManager(this);
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert();
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
@@ -1577,6 +1581,7 @@ public class Node {
 		ps.start();
 		usm.start();
 		myMemoryChecker.start();
+		ipDetectorManager.start();
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
@@ -2242,6 +2247,8 @@ public class Node {
 	FreenetInetAddress overrideIPAddress;
 	/** IP address from last time */
 	FreenetInetAddress oldIPAddress;
+	/** Detected IP's and their NAT status from plugins */
+	DetectedIP[] pluginDetectedIPs;
 	/** Last detected IP address */
 	Peer[] lastIPAddress;
 	
@@ -2262,6 +2269,15 @@ public class Node {
 	   		Peer a = new Peer(new FreenetInetAddress(detectedAddr), portNumber);
 	   		if(!addresses.contains(a))
 	   			addresses.add(a);
+	   	}
+	   	if(pluginDetectedIPs != null && pluginDetectedIPs.length > 0) {
+	   		for(int i=0;i<pluginDetectedIPs.length;i++) {
+	   			InetAddress addr = pluginDetectedIPs[i].publicAddress;
+	   			if(addr == null) continue;
+	   			Peer a = new Peer(new FreenetInetAddress(addr), portNumber);
+	   			if(!addresses.contains(a))
+	   				addresses.add(a);
+	   		}
 	   	}
 	   	if(detectedAddr == null && oldIPAddress != null && !oldIPAddress.equals(overrideIPAddress))
 	   		addresses.add(new Peer(oldIPAddress, portNumber));
@@ -3049,6 +3065,7 @@ public class Node {
 		Logger.minor(this, "onConnectedPeer()");
 		if(arkPutter != null)
 			arkPutter.onConnectedPeer();
+		ipDetectorManager.maybeRun();
 	}
 	
 	public String getBindTo(){
@@ -3389,9 +3406,8 @@ public class Node {
 	}
 
 	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {
-		// FIXME do something
-		// TODO Auto-generated method stub
-	}
+		ipDetectorManager.register(detector);
+	} // FIXME what about unloading?
 	
 	/**
 	 * Return a peer of the node given its ip and port, name or identity, as a String
@@ -3417,5 +3433,22 @@ public class Node {
 
 	public boolean isHasStarted() {
 		return hasStarted;
+	}
+
+	public boolean hasDirectlyDetectedIP() {
+		return (ipDetector.getAddress() != null);
+	}
+
+	/**
+	 * Process a list of DetectedIP's from the IP detector plugin manager.
+	 * DetectedIP's can tell us what kind of NAT we are behind as well as our public
+	 * IP address.
+	 */
+	public void processDetectedIPs(DetectedIP[] list) {
+		Vector fullAccess = new Vector();
+		Vector fullCone = new Vector();
+		pluginDetectedIPs = list;
+		redetectAddress();
+		shouldInsertARK();
 	}
 }

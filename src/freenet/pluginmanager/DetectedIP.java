@@ -16,9 +16,7 @@ public class DetectedIP {
 	public final short natType;
 	// Constants
 	/** The plugin does not support detecting the NAT type. */
-	public static final short NOT_SUPPORTED = 0;
-	/** No UDP connectivity at all */
-	public static final short NO_UDP = 1;
+	public static final short NOT_SUPPORTED = 1;
 	/** Full internet access! */
 	public static final short FULL_INTERNET = 2;
 	/** Full cone NAT. Once we have sent a packet out on a port, any node anywhere can send us
@@ -35,10 +33,23 @@ public class DetectedIP {
 	public static final short SYMMETRIC_NAT = 6;
 	/** Symmetric UDP firewall. We are not NATed, but the firewall behaves as if we were. */
 	public static final short SYMMETRIC_UDP_FIREWALL = 7;
+	/** No UDP connectivity at all */
+	public static final short NO_UDP = 8;
 	
 	public DetectedIP(InetAddress addr, short type) {
 		this.publicAddress = addr;
 		this.natType = type;
 	}
 	
+	public boolean equals(Object o) {
+		if(!(o instanceof DetectedIP)) {
+			return false;
+		}
+		DetectedIP d = (DetectedIP)o;
+		return (d.natType == natType && d.publicAddress.equals(publicAddress));
+	}
+	
+	public int hashCode() {
+		return publicAddress.hashCode() ^ natType;
+	}
 }
