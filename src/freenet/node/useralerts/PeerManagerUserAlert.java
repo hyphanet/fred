@@ -36,7 +36,6 @@ public class PeerManagerUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		long now = System.currentTimeMillis();
 		if(peers == 0)
 			return "No peers found";
 		if(conns == 0)

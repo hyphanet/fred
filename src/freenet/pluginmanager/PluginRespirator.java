@@ -16,6 +16,7 @@ public class PluginRespirator {
 		this.node = node;
 		this.hlsc = node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 		this.toadletList = new HashMap();
+		this.pm = pm;
 	}
 	
 	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {

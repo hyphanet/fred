@@ -56,6 +56,7 @@ public class N2NTMToadlet extends Toadlet {
 		  }
 		  if(peernode_name == null) {
 			  buf.append("PeerNode.hashCode '"+input_hashcode_string+"' not found.<br /><br />\n");
+			  buf.append("<a href=\"/\" title=\"Back to Node Homepage\">Homepage</a>\n");
 			  buf.append("<a href=\"/darknet/\">Back to Darknet page</a>\n");
 			  ctx.getPageMaker().makeTail(buf);
 			  this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
@@ -134,6 +135,7 @@ public class N2NTMToadlet extends Toadlet {
 			  buf.append("PeerNode.hashCode '"+input_hashcode_string+"' not found.<br /><br />\n");
 			  buf.append("</div>");
 			  buf.append("</div>");
+			  buf.append("<a href=\"/\" title=\"Node Homepage\">Back to Homepage</a>\n");
 			  buf.append("<a href=\"/darknet/\">Back to Darknet page</a>\n");
 			  ctx.getPageMaker().makeTail(buf);
 			  this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
@@ -162,7 +164,7 @@ public class N2NTMToadlet extends Toadlet {
 				  buf.append("PeerNode.hashCode '"+request.getParam("hashcode")+"' not found.<br /><br />\n");
 				  buf.append("</div>");
 				  buf.append("</div>");
-			  } else if(!pn.isConnected()) {
+			  } else if(!pn.isConnected() && !pn.isVerifiedIncompatibleNewerVersion() && !pn.isVerifiedIncompatibleOlderVersion()) {
 				  ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Failed");
 				  
 				  buf.append("<div class=\"infobox infobox-error\">");
@@ -210,6 +212,7 @@ public class N2NTMToadlet extends Toadlet {
 			  buf.append("Got NotConnectedException sending message to Peer '"+HTMLEncoder.encode(pn.getName())+"'.  Can't send N2NTM.<br /><br />\n");
 			  Logger.error(this, "Caught NotConnectedException while trying to send n2ntm: "+e);
 		  }
+		  buf.append("<a href=\"/\" title=\"Node Homepage\">Back to Homepage</a>\n");
 		  buf.append("<a href=\"/darknet/\">Back to Darknet page</a>\n");
 		  ctx.getPageMaker().makeTail(buf);
 		  this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
