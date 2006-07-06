@@ -16,6 +16,7 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.UnsafeContentTypeException;
+import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -181,7 +182,9 @@ public class FProxyToadlet extends Toadlet {
 			
 			try {
 				if(!force && !forcedownload) {
-					data = ContentFilter.filter(data, ctx.getBucketFactory(), typeName, uri, null);
+					FilterOutput fo = ContentFilter.filter(data, ctx.getBucketFactory(), typeName, uri, null);
+					data = fo.data;
+					typeName = fo.type;
 				}
 				
 				if (forcedownload) {

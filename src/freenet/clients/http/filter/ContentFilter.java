@@ -100,11 +100,21 @@ public class ContentFilter {
 		return (MIMEType) mimeTypesByName.get(mimeType);
 	}
 
+	public static class FilterOutput {
+		public final Bucket data;
+		public final String type;
+		
+		FilterOutput(Bucket data, String type) {
+			this.data = data;
+			this.type = type;
+		}
+	}
+	
 	/**
 	 * Filter some data.
 	 * @throws IOException If an internal error involving buckets occurred.
 	 */
-	public static Bucket filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb) throws UnsafeContentTypeException, IOException {
+	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb) throws UnsafeContentTypeException, IOException {
 		String type = typeName;
 		String options = "";
 		String charset = null;
@@ -146,7 +156,7 @@ public class ContentFilter {
 		else {
 			
 			if(handler.safeToRead) {
-				return data;
+				return new FilterOutput(data, typeName);
 			}
 			
 			if(handler.readFilter != null) {
@@ -154,7 +164,10 @@ public class ContentFilter {
 					charset = detectCharset(data, handler);
 				}
 				
-				return handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI, cb));
+				Bucket outputData = handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI, cb));
+				if(charset != null)
+					type = type + ";charset="+charset;
+				return new FilterOutput(outputData, type);
 			}
 			handler.throwUnsafeContentTypeException();
 			return null;
