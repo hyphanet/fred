@@ -506,15 +506,15 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public static NodeUpdater maybeCreate(Node node, Config config) throws Exception {
         SubConfig updaterConfig = new SubConfig("node.updater", config);
          
-        updaterConfig.register("enabled", true, 1, false, "Enable Node's updater?",
-        		"Whether to enable the node's updater. It won't auto-update unless node.updater.autoupdate is true, it will just warn",
+        updaterConfig.register("enabled", true, 1, false, "Check for, and download new versions",
+        		"Should your node automatically check for new versions of Freenet. If yes, new versions will be automatically detected and downloaded, but not necessarily installed.",
         		new UpdaterEnabledCallback(node, config));
         
         boolean enabled = updaterConfig.getBoolean("enabled");
 
         if(enabled) {
         	// is the auto-update allowed ?
-        	updaterConfig.register("autoupdate", false, 2, false, "Is the node allowed to auto-update?", "Is the node allowed to auto-update?",
+        	updaterConfig.register("autoupdate", false, 2, false, "Automatically install new versions", "Should your node automatically update to the newest version of Freenet, without asking?",
         			new AutoUpdateAllowedCallback(node));
         	boolean autoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
         	
