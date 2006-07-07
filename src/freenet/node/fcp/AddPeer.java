@@ -55,33 +55,26 @@ public class AddPeer extends FCPMessage {
 				}
 				in.close();
 			} catch (MalformedURLException e) {
-				// **FIXME** FCPify
-				System.err.println("Did not parse: "+e);
-				e.printStackTrace();
-				return;
+				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "Error parsing ref URL <"+urlString+">: "+e.getMessage(), null);
 			} catch (IOException e) {
-				// **FIXME** FCPify
-				System.err.println("Did not parse: "+e);
-				e.printStackTrace();
-				return;
+				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "IO error while retrieving ref URL <"+urlString+">: "+e.getMessage(), null);
 			}
 			ref = ref.trim();
-			if(ref == null) return;  // **FIXME** FCPify
-			if(ref.equals("")) return;  // **FIXME** FCPify
+			if(ref == null) {
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">", null);
+			}
+			if(ref.equals("")) {
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">", null);
+			}
 			try {
 				fs = new SimpleFieldSet(ref, true);
 			} catch (IOException e) {
-				// **FIXME** FCPify
-				System.err.println("Did not parse: "+e);
-				e.printStackTrace();
-				return;
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">: "+e.getMessage(), null);
 			}
 		} else if(fileString != null) {
 			File f = new File(fileString);
 			if(!f.isFile()) {
-				// **FIXME** FCPify
-				System.err.println("Not a file: "+fileString);
-				return;
+				throw new MessageInvalidException(ProtocolErrorMessage.NOT_A_FILE_ERROR, "The given ref file path <"+fileString+"> is not a file", null);
 			}
 			try {
 				in = new BufferedReader(new FileReader(f));
@@ -93,41 +86,30 @@ public class AddPeer extends FCPMessage {
 				}
 				in.close();
 			} catch (FileNotFoundException e) {
-				// **FIXME** FCPify
-				System.err.println("Did not parse: "+e);
-				e.printStackTrace();
-				return;
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "File not found when retrieving ref file <"+fileString+">: "+e.getMessage(), null);
 			} catch (IOException e) {
-				// **FIXME** FCPify
-				System.err.println("Did not parse: "+e);
-				e.printStackTrace();
-				return;
+				throw new MessageInvalidException(ProtocolErrorMessage.FILE_PARSE_ERROR, "IO error while retrieving ref file <"+fileString+">: "+e.getMessage(), null);
 			}
 			ref = ref.trim();
-			if(ref == null) return;  // **FIXME** FCPify
-			if(ref.equals("")) return;  // **FIXME** FCPify
+			if(ref == null) {
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">", null);
+			}
+			if(ref.equals("")) {
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">", null);
+			}
 			try {
 				fs = new SimpleFieldSet(ref, true);
 			} catch (IOException e) {
-				// **FIXME** FCPify
-				System.err.println("Did not parse: "+e);
-				e.printStackTrace();
-				return;
+				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">: "+e.getMessage(), null);
 			}
 		}
 		PeerNode pn;
 		try {
 			pn = new PeerNode(fs, node, false);
-		} catch (FSParseException e1) {
-			// **FIXME** FCPify
-			System.err.println("Did not parse: "+e1);
-			Logger.error(this, "Did not parse: "+e1, e1);
-			return;
-		} catch (PeerParseException e1) {
-			// **FIXME** FCPify
-			System.err.println("Did not parse: "+e1);
-			Logger.error(this, "Did not parse: "+e1, e1);
-			return;
+		} catch (FSParseException e) {
+			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null);
+		} catch (PeerParseException e) {
+			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null);
 		}
 		// **FIXME** Handle duplicates somehow maybe?  What about when node.addDarknetConnection() fails for some reason?
 		if(node.addDarknetConnection(pn))

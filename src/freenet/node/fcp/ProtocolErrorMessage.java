@@ -38,6 +38,10 @@ public class ProtocolErrorMessage extends FCPMessage {
 	static final int INTERNAL_ERROR = 17;
 	static final int SHUTTING_DOWN = 18;
 	static final int NO_SUCH_NODE_IDENTIFIER = 19;
+	static final int URL_PARSE_ERROR = 20;
+	static final int REF_PARSE_ERROR = 21;
+	static final int FILE_PARSE_ERROR = 22;
+	static final int NOT_A_FILE_ERROR = 23;
 	
 	final int code;
 	final String extra;
@@ -84,6 +88,14 @@ public class ProtocolErrorMessage extends FCPMessage {
 			return "Shutting down";
 		case NO_SUCH_NODE_IDENTIFIER:
 			return "No such nodeIdentifier";
+		case URL_PARSE_ERROR:
+			return "Error parsing URL";
+		case REF_PARSE_ERROR:
+			return "Reference could not be parsed";
+		case FILE_PARSE_ERROR:
+			return "File could not be read";
+		case NOT_A_FILE_ERROR:
+			return "Filepath is not a file";
 		default:
 			Logger.error(this, "Unknown error code: "+code, new Exception("debug"));
 		return "(Unknown)";
