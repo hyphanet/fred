@@ -21,19 +21,8 @@ public interface LowLevelFilter {
      */
     void process(byte[] buf, int offset, int length, Peer peer);
 
-    /**
-     * Process an outgoing packet. Takes a byte[], which is an
-     * encoded message. Then does whatever encryption or other
-     * things need doing, and calls UdpSocketManager.sendPacket(...)
-     * to send the processed data.
-     * @param buf The buffer to read from.
-     * @param offset The offset to start reading from.
-     * @param length The length in bytes to read.
-     * @param peer The PeerContext the messages will be sent to.
-     * @throws PacketSequenceException 
-     */
-    void processOutgoing(byte[] buf, int offset, int length, PeerContext peer) throws NotConnectedException, LowLevelFilterException;
-
+    // Outgoing packets are handled elsewhere...
+    
     /**
      * Is the given connection closed?
      */

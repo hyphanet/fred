@@ -172,6 +172,11 @@ public class DMT {
 		return msg;
 	}
 	
+	public static int packetTransmitSize(int size, int _packets) {
+		return size + 8 /* uid */ + 4 /* packet# */ + 
+			BitArray.serializedLength(_packets) + 4 /* Message header */;
+	}
+	
 	public static final MessageType allSent = new MessageType("allSent") {{
 		addField(UID, Long.class);
 	}};

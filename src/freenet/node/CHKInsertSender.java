@@ -66,7 +66,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
 		
 		AwaitingCompletion(PeerNode pn, PartiallyReceivedBlock prb) {
 			this.pn = pn;
-			bt = new BlockTransmitter(node.usm, pn, uid, prb);
+			bt = new BlockTransmitter(node.usm, pn, uid, prb, node.outputThrottle);
 		}
 		
 		void start() {

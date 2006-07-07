@@ -73,7 +73,6 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
 import freenet.io.xfer.AbortedException;
-import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -109,6 +108,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Bucket;
 import freenet.support.BucketFactory;
+import freenet.support.DoubleTokenBucket;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
@@ -561,6 +561,7 @@ public class Node {
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
 	final StaticSwapRequestInterval swapInterval;
+	public final DoubleTokenBucket outputThrottle;
 	static short MAX_HTL = 10;
 	static final int EXIT_STORE_FILE_NOT_FOUND = 1;
 	static final int EXIT_STORE_IOEXCEPTION = 2;
@@ -610,7 +611,7 @@ public class Node {
 	final MyRequestThrottle sskInsertThrottle;
 	final RequestStarter sskInsertStarter;
 	public final UserAlertManager alerts;
-	final RunningAverage throttledPacketSendAverage;
+	final TimeDecayingRunningAverage throttledPacketSendAverage;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
 	public final String formPassword;
 
@@ -1013,7 +1014,7 @@ public class Node {
 		bootID = random.nextLong();
 		throttledPacketSendAverage =
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
-
+		
 		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
 
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert();
@@ -1204,19 +1205,19 @@ public class Node {
 				"Output bandwidth limit (bytes per second)", "Hard output bandwidth limit (bytes/sec); the node should almost never exceed this", 
 				new IntCallback() {
 					public int get() {
-						return BlockTransmitter.getHardBandwidthLimit();
+						//return BlockTransmitter.getHardBandwidthLimit();
+						return (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick());
 					}
 					public void set(int val) throws InvalidConfigValueException {
-						BlockTransmitter.setHardBandwidthLimit(val);
+						if(val <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive");
+						outputThrottle.changeNanosAndBucketSizes((1000L * 1000L * 1000L) / val, val, (val * 4) / 5);
 					}
 		});
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
-		BlockTransmitter.setHardBandwidthLimit(obwLimit);
+		this.outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 4) / 5);
+		
 		// FIXME add an averaging/long-term/soft bandwidth limit. (bug 76)
-		// There is already untested support for this in BlockTransmitter.
-		// No long-term limit for now.
-		BlockTransmitter.setSoftBandwidthLimit(0, 0);
 		
 		// SwapRequestInterval
 		
@@ -2168,19 +2169,23 @@ public class Node {
 	
 	long lastCheckedUncontended = -1;
 	
+	static final int ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET = 
+		1024 + DMT.packetTransmitSize(1024, 32)
+		+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
+	
     /* return reject reason as string if should reject, otherwise return null */
 	public synchronized String shouldRejectRequest(boolean canAcceptAnyway) {
 		long now = System.currentTimeMillis();
 		
-		if(now - lastCheckedUncontended > 1000) {
-			lastCheckedUncontended = now;
-			if(BlockTransmitter.isUncontended()) {
-				Logger.minor(this, "Reporting 0 because throttle uncontended: now "+throttledPacketSendAverage.currentValue());
-				throttledPacketSendAverage.report(0);
-				Logger.minor(this, "New average: "+throttledPacketSendAverage.currentValue());
-				Logger.minor(this, "Average: "+throttledPacketSendAverage.toString());
-			} else
-				Logger.minor(this, "Not uncontended");
+		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
+		
+		if(throttledPacketSendAverage.lastReportTime() < System.currentTimeMillis() - 5000) {
+			outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
+			outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
+			long after = System.currentTimeMillis();
+			throttledPacketSendAverage.report(after - now);
+			now = after;
+			bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		}
 		
 		// Round trip time
@@ -2202,7 +2207,6 @@ public class Node {
 		
 		// Bandwidth limited packets
 		
-		double bwlimitDelayTime = this.throttledPacketSendAverage.currentValue();
 		Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
 		if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
 			if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {

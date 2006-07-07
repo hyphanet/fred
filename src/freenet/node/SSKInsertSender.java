@@ -172,7 +172,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
             // Send to next node
             
             try {
-				next.sendAsync(req, null);
+				next.sendAsync(req, null, 0);
 			} catch (NotConnectedException e1) {
 				Logger.minor(this, "Not connected to "+next);
 				continue;
@@ -245,7 +245,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
             	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey.asBytes());
             	try {
-            		next.sendAsync(pkMsg, null);
+            		next.sendAsync(pkMsg, null, 0);
             	} catch (NotConnectedException e) {
             		Logger.minor(this, "Node disconnected while sending pubkey: "+next);
             		continue;

@@ -75,7 +75,7 @@ public class RequestHandler implements Runnable {
             	PartiallyReceivedBlock prb =
             		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
             	BlockTransmitter bt =
-            		new BlockTransmitter(node.usm, source, uid, prb);
+            		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle);
             	bt.send();
             }
             return;
@@ -95,7 +95,7 @@ public class RequestHandler implements Runnable {
             if(rs.waitUntilStatusChange()) {
             	// Forward RejectedOverload
             	Message msg = DMT.createFNPRejectedOverload(uid, false);
-            	source.sendAsync(msg, null);
+            	source.sendAsync(msg, null, 0);
             }
             
             if(rs.transferStarted()) {
@@ -104,7 +104,7 @@ public class RequestHandler implements Runnable {
                 source.send(df);
                 PartiallyReceivedBlock prb = rs.getPRB();
             	BlockTransmitter bt =
-            	    new BlockTransmitter(node.usm, source, uid, prb);
+            	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle);
             	bt.send(); // either fails or succeeds; other side will see, we don't care
         	    return;
             }
@@ -116,7 +116,7 @@ public class RequestHandler implements Runnable {
             	    continue;
             	case RequestSender.DATA_NOT_FOUND:
                     Message dnf = DMT.createFNPDataNotFound(uid);
-            		source.sendAsync(dnf, null);
+            		source.sendAsync(dnf, null, 0);
             		return;
             	case RequestSender.GENERATED_REJECTED_OVERLOAD:
             	case RequestSender.TIMED_OUT:
@@ -124,12 +124,12 @@ public class RequestHandler implements Runnable {
             		// Locally generated.
             	    // Propagate back to source who needs to reduce send rate
             	    Message reject = DMT.createFNPRejectedOverload(uid, true);
-            		source.sendAsync(reject, null);
+            		source.sendAsync(reject, null, 0);
             		return;
             	case RequestSender.ROUTE_NOT_FOUND:
             	    // Tell source
             	    Message rnf = DMT.createFNPRouteNotFound(uid, rs.getHTL());
-            		source.sendAsync(rnf, null);
+            		source.sendAsync(rnf, null, 0);
             		return;
             	case RequestSender.SUCCESS:
             		if(key instanceof NodeSSK) {
@@ -151,7 +151,7 @@ public class RequestHandler implements Runnable {
             			continue; // should have started transfer
             		}
             	    reject = DMT.createFNPRejectedOverload(uid, true);
-            		source.sendAsync(reject, null);
+            		source.sendAsync(reject, null, 0);
             		return;
             	case RequestSender.TRANSFER_FAILED:
             		if(key instanceof NodeCHK) {

@@ -28,6 +28,7 @@ public class DoubleTokenBucket extends TokenBucket {
 	 */
 	public DoubleTokenBucket(long max, long nanosPerTick, long initialValue, long maxForced) {
 		super(max, nanosPerTick, initialValue);
+		Logger.minor(this, "Max: "+max+" nanosPerTick: "+nanosPerTick+" initialValue: "+initialValue+" maxForced: "+maxForced);
 		this.maxForced = maxForced;
 		this.curForced = 0;
 	}
@@ -39,11 +40,16 @@ public class DoubleTokenBucket extends TokenBucket {
 	public synchronized void forceGrab(long tokens) {
 		addTokens();
 		long thisMax = maxForced - curForced;
-		if(tokens > thisMax) tokens = thisMax;
+		if(tokens > thisMax) {
+			Logger.minor(this, "Limiting force-grab to "+thisMax+" tokens was "+tokens);
+			tokens = thisMax;
+		}
 		curForced += tokens;
 		current -= tokens;
-		if(current > max) current = max;
-		if(curForced > maxForced) curForced = maxForced;
+		if(curForced > maxForced) {
+			curForced = maxForced;
+		}
+		Logger.minor(this, "Force-Grabbed "+tokens+" current="+current+" forced="+curForced);
 	}
 	
 	// blockingGrab is unchanged
@@ -54,12 +60,37 @@ public class DoubleTokenBucket extends TokenBucket {
 		if(curForced > maxForced) curForced = maxForced;
 	}
 	
-	public synchronized void addTokens() {
+	public synchronized void changeNanosAndBucketSizes(long nanos, long newMax, long newMaxForced) {
+		// FIXME maybe should be combined
+		changeSizeOfBuckets(newMax, newMaxForced);
+		changeNanosPerTick(nanos);
+	}
+	
+	public synchronized void addTokensNoClip() {
 		long add = tokensToAdd();
 		current += add;
 		curForced -= add;
 		if(curForced < 0) curForced = 0;
 		timeLastTick += add * nanosPerTick;
+		Logger.minor(this, "Added "+add+" tokens current="+current+" forced="+curForced);
+	}
+
+	public synchronized void addTokens() {
+		addTokensNoClip();
+		if(curForced > maxForced) curForced = maxForced;
+		if(current > max) current = max;
+	}
+	
+	public synchronized long getNanosPerTick() {
+		return nanosPerTick;
+	}
+
+	public synchronized long getSize() {
+		return max;
+	}
+
+	protected long offset() {
+		return curForced;
 	}
 	
 }

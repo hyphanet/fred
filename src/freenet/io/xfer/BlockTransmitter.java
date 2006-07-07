@@ -29,8 +29,10 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
+import freenet.node.FNPPacketMangler;
 import freenet.node.PeerNode;
 import freenet.support.BitArray;
+import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
 
 /**
@@ -52,116 +54,17 @@ public class BlockTransmitter {
 	boolean failedByOverload = false;
 	final PacketThrottle throttle;
 	long timeAllSent = -1;
+	final DoubleTokenBucket _masterThrottle;
+	final int PACKET_SIZE;
 	
-	// FIXME make this stuff non-static. Have a context object for limiting.
-	
-	// Static stuff for global bandwidth limiter
-	/** Synchronization object for bandwidth limiting */
-	static final Object lastPacketSendTimeSync = new Object();
-	// Use nanosecond long values for accuracy reasons
-	/** Time at which the last known packet is scheduled to be sent.
-	 * We will not send another packet until at least minPacketDelay ms after this time. */
-	static long hardLastPacketSendTimeNSec = System.currentTimeMillis() * 1000*1000;
-	/** Minimum interval between packet sends, for overall hard bandwidth limiter */
-	static int minPacketDelayNSec = 0;
-	/** Minimum average interval between packet sends, for averaged (soft) overall
-	 * bandwidth usage limiter. */
-	static int minSoftDelayNSec = 0;
-	/** "Soft" equivalent to hardLastPacketSendTime. Can lag up to half the softLimitPeriod
-	 * behind the current time. Otherwise is similar. This gives it flexibility; we can have
-	 * spurts above the average limit, but over the softLimitPeriod, it will average out to 
-	 * the target minSoftDelay. */
-	static long softLastPacketSendTimeNSec = System.currentTimeMillis() * 1000*1000;
-	/** Period over which the soft limiter should work */
-	static long softLimitPeriodNSec;
-
-	/**
-	 * Set the hard bandwidth limiter.
-	 * @param bytesPerSecond The maximum number of bytes (of data blocks) to be sent in any
-	 * one second.
-	 */
-	public static void setHardBandwidthLimit(int bytesPerSecond) {
-		int newMinPacketDelayNS = convertBytesPerSecondToNanosPerPacket(bytesPerSecond);
-		synchronized(lastPacketSendTimeSync) {
-			if(minPacketDelayNSec != newMinPacketDelayNS) {
-				minPacketDelayNSec = newMinPacketDelayNS;
-				hardLastPacketSendTimeNSec = System.currentTimeMillis() * 1000*1000;
-			}
-		}
-	}
-
-	public static int convertBytesPerSecondToNanosPerPacket(int bytesPerSecond) {
-		if(bytesPerSecond <= 0)
-			return 0; // no limits
-		
-		int packetSize = getPacketSize();
-		double minNanoSecondsBetweenPackets =
-			((1000.0*1000.0*1000.0) * packetSize) / ((double) bytesPerSecond);
-		int newMinPacketDelayNS = (int) minNanoSecondsBetweenPackets;
-		double inaccuracy = minNanoSecondsBetweenPackets - newMinPacketDelayNS;
-		double inaccuracyPercent = (inaccuracy / minNanoSecondsBetweenPackets) * 100.0;
-		Logger.minor(BlockTransmitter.class, "Quantization inaccuracy: "+inaccuracyPercent+"%");
-		return newMinPacketDelayNS;
-	}
-	
-	public static int convertBytesPerPeriodToNanosPerPacket(int bytesPerSecond, long periodLengthNanos) {
-		if(bytesPerSecond <= 0)
-			return 0; // no limits
-		
-		int packetSize = getPacketSize();
-		double minNanoSecondsBetweenPackets =
-			(periodLengthNanos * packetSize) / ((double) bytesPerSecond);
-		int newMinPacketDelayNS = (int) minNanoSecondsBetweenPackets;
-		double inaccuracy = minNanoSecondsBetweenPackets - newMinPacketDelayNS;
-		double inaccuracyPercent = (inaccuracy / minNanoSecondsBetweenPackets) * 100.0;
-		Logger.minor(BlockTransmitter.class, "Quantization inaccuracy: "+inaccuracyPercent+"%");
-		return newMinPacketDelayNS;
-	}
-	
-	public static int convertNanosPerPacketToBytesPerSecond(int delay) {
-		if(delay == 0) return 0;
-		return (int) (((1000.0*1000.0*1000.0) * getPacketSize()) / ((double)delay));
-	}
-
-	/** @return The average packet size for a block sent by a BlockTransmitter, including all 
-	 * headers and protocol overhead */
-	private static int getPacketSize() {
-		// FIXME make this more accurate!
-		return 1024 + 200;
-	}
-
-	public static int getHardBandwidthLimit() {
-		int delay;
-		synchronized(lastPacketSendTimeSync) {
-			delay = minPacketDelayNSec;
-		}
-		return convertNanosPerPacketToBytesPerSecond(delay);
-	}
-
-	/**
-	 * Set the long-term bandwidth limiter.
-	 * @param bytes The number of bytes to allow at most over the period. (in data packets)
-	 * @param period The length of time over which the limit should apply. (ms)
-	 */
-	public static void setSoftBandwidthLimit(int bytes, long period) {
-		if(period > Long.MAX_VALUE / (1000*1000)) throw new IllegalArgumentException("Period too long");
-		int newSoftLimit = convertBytesPerPeriodToNanosPerPacket(bytes, period);
-		period = period * 1000 * 1000;
-		synchronized(lastPacketSendTimeSync) {
-			minSoftDelayNSec = newSoftLimit;
-			softLimitPeriodNSec = period;
-			long nowNS = System.currentTimeMillis() * 1000 * 1000;
-			if(nowNS - softLastPacketSendTimeNSec > period / 2) {
-				softLastPacketSendTimeNSec = nowNS - (period / 2);
-			}
-		}
-	}
-	
-	public BlockTransmitter(UdpSocketManager usm, PeerContext destination, long uid, PartiallyReceivedBlock source) {
+	public BlockTransmitter(UdpSocketManager usm, PeerContext destination, long uid, PartiallyReceivedBlock source, DoubleTokenBucket masterThrottle) {
 		_usm = usm;
 		_destination = destination;
 		_uid = uid;
 		_prb = source;
+		this._masterThrottle = masterThrottle;
+		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
+			+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
 		try {
 			_sentPackets = new BitArray(_prb.getNumPackets());
 		} catch (AbortedException e) {
@@ -177,7 +80,7 @@ public class BlockTransmitter {
 						long startCycleTime = System.currentTimeMillis();
 						try {
 							while (true) {
-								synchronized(_unsent) {
+								synchronized(_senderThread) {
 									if(_unsent.size() != 0) break;
 									// No unsent packets
 									if(getNumSent() == _prb.getNumPackets()) {
@@ -185,9 +88,7 @@ public class BlockTransmitter {
 										if(timeAllSent <= 0)
 											timeAllSent = System.currentTimeMillis();
 									}
-								}
-								if(_sendComplete) return;
-								synchronized (_senderThread) {
+									if(_sendComplete) return;
 									_senderThread.wait(10*1000);
 								}
 							}
@@ -200,35 +101,25 @@ public class BlockTransmitter {
 							}
 							return;
 						}
-						long startDelayTime = System.currentTimeMillis();
-						delay(startCycleTime);
 						int packetNo;
 						try {
-							synchronized(_unsent) {
+							synchronized(_senderThread) {
 								packetNo = ((Integer) _unsent.removeFirst()).intValue();
 							}
 						} catch (NoSuchElementException nsee) {
 							// back up to the top to check for completion
 							continue;
 						}
+						delay(startCycleTime);
 						_sentPackets.setBit(packetNo, true);
 						try {
-							long endDelayTime = System.currentTimeMillis();
-							long delayTime = endDelayTime - startDelayTime;
-							((PeerNode)_destination).reportThrottledPacketSendTime(delayTime);
-							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null);
-							// May have been delays in sending, so update to avoid sending more frequently than allowed
-							long nowNS = System.currentTimeMillis() * 1000 * 1000;
-							synchronized(lastPacketSendTimeSync) {
-								if(hardLastPacketSendTimeNSec < nowNS)
-									hardLastPacketSendTimeNSec = nowNS;
-							}
+							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE);
 						// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
 						sentSinceLastPing++;
 						if (sentSinceLastPing >= PING_EVERY) {
 							sentSinceLastPing = 0;
 							//_usm.send(BlockTransmitter.this._destination, DMT.createPing());
-							((PeerNode)_destination).sendAsync(DMT.createPing(), null);
+							((PeerNode)_destination).sendAsync(DMT.createPing(), null, 0);
 						}
 						} catch (NotConnectedException e) {
 						    Logger.normal(this, "Terminating send: "+e);
@@ -247,101 +138,33 @@ public class BlockTransmitter {
 			}
 
 			/** @return True if _sendComplete */
-			private boolean delay(long startCycleTime) {
+			private void delay(long startCycleTime) {
 				
 				// Get the current inter-packet delay
 				long delay = throttle.getDelay();
 				Logger.minor(this, "Throttle delay: "+delay);
 				
-				while(true) {
-					
-					long nowNS = System.currentTimeMillis() * 1000 * 1000;
-					
-					Logger.minor(this, "Now="+nowNS/(1000*1000));
-					
-					long endTime = -1;
-					
-					boolean thenSend = true;
-					
-					// Synchronize on the static lock, and update
-					synchronized(lastPacketSendTimeSync) {
-						
-						// Get the current time
-						nowNS = System.currentTimeMillis() * 1000 * 1000;
-						
-						// Update time if necessary to avoid spurts
-						if(hardLastPacketSendTimeNSec < (nowNS - minPacketDelayNSec)) {
-							Logger.minor(this, "Updating hard limit counter - was "+hardLastPacketSendTimeNSec/1000);
-							hardLastPacketSendTimeNSec = nowNS - minPacketDelayNSec;
-							Logger.minor(this, "Updated hard limit counter - now "+hardLastPacketSendTimeNSec/1000);
+				long startThrottle = System.currentTimeMillis();
+				_masterThrottle.blockingGrab(PACKET_SIZE);
+				
+				long now = System.currentTimeMillis();
+				
+				long delayTime = now - startThrottle;
+				
+				((PeerNode)_destination).reportThrottledPacketSendTime(delayTime);
+				
+				long end = startCycleTime + delay;
+				
+				if(now > end) return;
+				while(now < end) {
+					long l = end - now;
+					int x = (int) (Math.min(l, Integer.MAX_VALUE));
+					if(x > 0)
+						try {
+							Thread.sleep(x);
+						} catch (InterruptedException e) {
+							// Ignore
 						}
-						
-						// Wait until the next send window
-						long newHardLastPacketSendTimeNS =
-							hardLastPacketSendTimeNSec + minPacketDelayNSec;
-						
-						Logger.minor(this, "Waiting for "+minPacketDelayNSec+" until "+newHardLastPacketSendTimeNS/1000);
-						
-						long newHardLastPacketSendTime =
-							newHardLastPacketSendTimeNS / (1000 * 1000);
-						
-						long earliestSendTime = startCycleTime + delay;
-						
-						Logger.minor(this, "Earliest time by hard limit: "+newHardLastPacketSendTime);
-						Logger.minor(this, "Earliest time by throttle:   "+earliestSendTime);
-						
-						if(earliestSendTime > newHardLastPacketSendTime) {
-							// Don't clog up other senders!
-							thenSend = false;
-							endTime = earliestSendTime;
-							Logger.minor(this, "Looping");
-						} else {
-							hardLastPacketSendTimeNSec = newHardLastPacketSendTimeNS;
-							endTime = hardLastPacketSendTimeNSec / (1000 * 1000);
-							
-							// What about the soft limit?
-							
-							// We can only accumulate burst traffic rights for a full period at most.
-							// If we have a period of 1 hour, and we send no traffic in the first 30 minutes,
-							// then we can use up our whole hour's quota in the next 30 minutes if we need to.
-							// We could even use our entire quota in the last 5 minutes. After that, we can
-							// only send at the limit (which may be very low), since we have no quota left.
-							// However, after 1 hour we forget our burst rights.
-							if(nowNS - softLastPacketSendTimeNSec > softLimitPeriodNSec) {
-								softLastPacketSendTimeNSec = nowNS - (softLimitPeriodNSec);
-								Logger.minor(this, "Updating soft limit");
-							}
-							
-							softLastPacketSendTimeNSec += minSoftDelayNSec;
-							
-							if(softLastPacketSendTimeNSec > hardLastPacketSendTimeNSec) {
-								endTime = ((hardLastPacketSendTimeNSec = softLastPacketSendTimeNSec) / (1000 * 1000));
-								Logger.minor(this, "endTime now "+endTime+" because of soft limit");
-							}
-						}
-					}
-					
-					long now = nowNS / (1000 * 1000);
-					
-					while(now < endTime) {
-						synchronized(_senderThread) {
-							if(_sendComplete)
-								return true;
-							try {
-								_senderThread.wait(endTime - now);
-							} catch (InterruptedException e) {
-								// Ignore
-							}
-						}
-						if(_sendComplete)
-							return true;
-						now = System.currentTimeMillis();
-					}
-					Logger.minor(this, "Completed wait at "+now);
-					
-					nowNS = now * 1000 * 1000;
-					
-					if(thenSend) return false;
 				}
 			}
 		};
@@ -362,16 +185,16 @@ public class BlockTransmitter {
 		_unsent = _prb.addListener(myListener = new PartiallyReceivedBlock.PacketReceivedListener() {;
 
 			public void packetReceived(int packetNo) {
-				_unsent.addLast(new Integer(packetNo));
-				_sentPackets.setBit(packetNo, false);
 				synchronized(_senderThread) {
+					_unsent.addLast(new Integer(packetNo));
+					_sentPackets.setBit(packetNo, false);
 					_senderThread.notify();
 				}
 			}
 
 			public void receiveAborted(int reason, String description) {
 				try {
-					((PeerNode)_destination).sendAsync(DMT.createSendAborted(_uid, reason, description), null);
+					((PeerNode)_destination).sendAsync(DMT.createSendAborted(_uid, reason, description), null, 0);
                 } catch (NotConnectedException e) {
                     Logger.minor(this, "Receive aborted and receiver is not connected");
                 }
@@ -427,13 +250,11 @@ public class BlockTransmitter {
 				for (Iterator i = missing.iterator(); i.hasNext();) {
 					Integer packetNo = (Integer) i.next();
 					if (_prb.isReceived(packetNo.intValue())) {
-						synchronized(_unsent) {
+						synchronized(_senderThread) {
 							_unsent.addFirst(packetNo);
-						}
-					    _sentPackets.setBit(packetNo.intValue(), false);
-					    synchronized(_senderThread) {
+						    _sentPackets.setBit(packetNo.intValue(), false);
 					        _senderThread.notify();
-					    }
+						}
 					}
 				}
 			} else if (msg.getSpec().equals(DMT.allReceived)) {
@@ -508,45 +329,5 @@ public class BlockTransmitter {
 	public PeerContext getDestination() {
 		return _destination;
 	}
-
-	public static boolean isUncontended() {
-		long nowNS = System.currentTimeMillis() * 1000 * 1000;
-		
-		// Synchronize on the static lock, and update
-		synchronized(lastPacketSendTimeSync) {
-			
-			// Get the current time
-			nowNS = System.currentTimeMillis() * 1000 * 1000;
-			
-			// Update time if necessary to avoid spurts
-			if(hardLastPacketSendTimeNSec < (nowNS - minPacketDelayNSec)) {
-				// Can send immediately!
-			} else {
-				Logger.minor(BlockTransmitter.class, "Is contended (hard limit)");
-				return false; // is contended.
-			}
-			
-			// What about the soft limit?
-			
-			// We can only accumulate burst traffic rights for a full period at most.
-			// If we have a period of 1 hour, and we send no traffic in the first 30 minutes,
-			// then we can use up our whole hour's quota in the next 30 minutes if we need to.
-			// We could even use our entire quota in the last 5 minutes. After that, we can
-			// only send at the limit (which may be very low), since we have no quota left.
-			// However, after 1 hour we forget our burst rights.
-			if(nowNS - softLastPacketSendTimeNSec > softLimitPeriodNSec) {
-				softLastPacketSendTimeNSec = nowNS - (softLimitPeriodNSec);
-			}
-			
-			//softLastPacketSendTimeNSec += minSoftDelayNSec;
-			
-			if(softLastPacketSendTimeNSec + minSoftDelayNSec > nowNS) {
-				Logger.minor(BlockTransmitter.class, "Is contended (soft limit)");
-				// Can't send immediately due to soft limit.
-				return false;
-			}
-		}
-		
-		return true;
-	}
+	
 }

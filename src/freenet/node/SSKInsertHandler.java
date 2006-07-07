@@ -109,7 +109,7 @@ public class SSKInsertHandler implements Runnable {
 					Logger.minor(this, "Got pubkey on "+uid+" : "+pubKey);
 					Message confirm = DMT.createFNPSSKPubKeyAccepted(uid);
 					try {
-						source.sendAsync(confirm, null);
+						source.sendAsync(confirm, null, 0);
 					} catch (NotConnectedException e) {
 						Logger.minor(this, "Lost connection to source on "+uid);
 						return;

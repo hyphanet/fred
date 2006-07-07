@@ -156,4 +156,8 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     public long countReports() {
         return totalReports;
     }
+
+	public long lastReportTime() {
+		return lastReportTime;
+	}
 }

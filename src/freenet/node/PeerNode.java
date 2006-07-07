@@ -687,11 +687,15 @@ public class PeerNode implements PeerContext {
     /**
      * Send a message, off-thread, to this node.
      * @param msg The message to be sent.
+     * @param cb The callback to be called when the packet has been sent, or null.
+     * @param alreadyReportedBytes The number of bytes already reported to the throttle
+     * relating to this packet (normally set when we have delayed a packet in order to
+     * throttle it).
      */
-    public void sendAsync(Message msg, AsyncMessageCallback cb) throws NotConnectedException {
+    public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes) throws NotConnectedException {
         Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected) throw new NotConnectedException();
-        MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb});
+        MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes);
 	synchronized(routingBackoffSync) {
 		reportBackoffStatus(System.currentTimeMillis());
 	}
@@ -1203,8 +1207,8 @@ public class PeerNode implements PeerContext {
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         
         try {
-            sendAsync(locMsg, null);
-            sendAsync(ipMsg, null);
+            sendAsync(locMsg, null, 0);
+            sendAsync(ipMsg, null, 0);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected!!!", new Exception("error"));
         }
@@ -1419,7 +1423,7 @@ public class PeerNode implements PeerContext {
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {
-                    node.packetMangler.processOutgoing(null, 0, 0, tracker);
+                    node.packetMangler.processOutgoing(null, 0, 0, tracker, 0);
                 } catch (NotConnectedException e) {
                     // Ignore
                 } catch (KeyChangedException e) {
@@ -1436,7 +1440,7 @@ public class PeerNode implements PeerContext {
             long t = tracker.getNextUrgentTime();
             if(t < now) {
                 try {
-                    node.packetMangler.processOutgoing(null, 0, 0, tracker);
+                    node.packetMangler.processOutgoing(null, 0, 0, tracker, 0);
                 } catch (NotConnectedException e) {
                     // Ignore
                 } catch (KeyChangedException e) {
@@ -1597,7 +1601,7 @@ public class PeerNode implements PeerContext {
                 Logger.error(this, "No tracker to resend packet "+item.packetNumber+" on");
                 continue;
             }
-            MessageItem mi = new MessageItem(item.buf, item.callbacks, true);
+            MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0);
             requeueMessageItems(new MessageItem[] {mi}, 0, 1, true);
         }
     }
@@ -1747,7 +1751,7 @@ public class PeerNode implements PeerContext {
 		}
 		Message msg = DMT.createFNPLinkPing(pingNo);
 		try {
-			sendAsync(msg, null);
+			sendAsync(msg, null, 0);
 		} catch (NotConnectedException e) {
 			synchronized(pingSync) {
 				pingsSentTimes.removeKey(lPingNo);
@@ -1782,7 +1786,7 @@ public class PeerNode implements PeerContext {
 		node.throttledPacketSendAverage.report(timeDiff);
 		Logger.minor(this, "Reporting throttled packet send time: "+timeDiff+" to "+getPeer());
 	}
-
+	
 	public void setRemoteDetectedPeer(Peer p) {
 		this.remoteDetectedPeer = p;
 	}

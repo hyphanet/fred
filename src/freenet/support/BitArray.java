@@ -78,6 +78,10 @@ public class BitArray implements WritableToDataOutputStream {
 		dos.write(_bits);
 	}
 
+	public static int serializedLength(int size) {
+		return ((size / 8) + (size % 8 == 0 ? 0 : 1)) + 4;
+	}
+
 	public int getSize() {
 		return _size;
 	}

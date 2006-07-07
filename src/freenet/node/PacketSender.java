@@ -196,7 +196,7 @@ public class PacketSender implements Runnable {
                         if(item == null) continue;
                         try {
                             Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
-                            node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks);
+                            node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks, 0);
                         } catch (KeyChangedException e) {
                             Logger.error(this, "Caught "+e+" resending packets to "+kt);
                             pn.requeueResendItems(resendItems);
@@ -250,7 +250,7 @@ public class PacketSender implements Runnable {
                    	// Force packet to have a sequence number.
                    	Message m = DMT.createFNPVoid();
                    	pn.addToLocalNodeSentMessagesToStatistic(m);
-                   	node.packetMangler.processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null) }, pn, true, true);
+                   	node.packetMangler.processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null, 0) }, pn, true, true);
                 }
             } else {
                 // Not connected

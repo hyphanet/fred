@@ -106,9 +106,9 @@ public class InsertHandler implements Runnable {
         		if(source.isConnected() && startTime > (source.timeLastConnected()+Node.HANDSHAKE_TIMEOUT*4))
         			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
         		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
-        		source.sendAsync(tooSlow, null);
+        		source.sendAsync(tooSlow, null, 0);
         		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
-        		source.sendAsync(m, null);
+        		source.sendAsync(m, null, 0);
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         		br = new BlockReceiver(node.usm, source, uid, prb);
         		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
@@ -314,7 +314,7 @@ public class InsertHandler implements Runnable {
         	boolean failed = sender.anyTransfersFailed();
         	Message m = DMT.createFNPInsertTransfersCompleted(uid, failed);
         	try {
-        		source.sendAsync(m, null);
+        		source.sendAsync(m, null, 0);
         		Logger.minor(this, "Sent completion: "+failed+" for "+this);
         	} catch (NotConnectedException e1) {
         		Logger.minor(this, "Not connected: "+source+" for "+this);
@@ -344,7 +344,7 @@ public class InsertHandler implements Runnable {
         }
         if(toSend != null) {
             try {
-                source.sendAsync(toSend, null);
+                source.sendAsync(toSend, null, 0);
             } catch (NotConnectedException e) {
                 // :(
                 Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");

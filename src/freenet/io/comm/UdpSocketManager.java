@@ -503,7 +503,7 @@ public class UdpSocketManager extends Thread {
 //		} else {
 //		    sendPacket(blockToSend, destination.getPeer());
 //		}
-		((PeerNode)destination).sendAsync(m, null);
+		((PeerNode)destination).sendAsync(m, null, 0);
 	}
 
 	/**
