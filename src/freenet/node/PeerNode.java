@@ -1201,7 +1201,8 @@ public class PeerNode implements PeerContext {
             else return;
             if(unverifiedTracker != null) return;
         }
-        sendInitialMessages();
+        if(isReallyConnected())
+        	sendInitialMessages();
     }
     
     /**
@@ -1212,8 +1213,7 @@ public class PeerNode implements PeerContext {
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         
         try {
-        	if(isReallyConnected())
-        		sendAsync(locMsg, null, 0, null);
+        	sendAsync(locMsg, null, 0, null);
             sendAsync(ipMsg, null, 0, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected!!!", new Exception("error"));
