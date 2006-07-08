@@ -96,20 +96,30 @@ public class PartiallyReceivedBlock {
 		return _packetSize;
 	}
 	
-	public synchronized void addPacket(int position, Buffer packet) throws AbortedException {
-		if (_aborted) {
-			throw new AbortedException("PRB is aborted");
+	public void addPacket(int position, Buffer packet) throws AbortedException {
+		
+		PacketReceivedListener[] prls;
+		
+		synchronized(this) {
+			if (_aborted) {
+				throw new AbortedException("PRB is aborted");
+			}
+			if (packet.getLength() != _packetSize) {
+				throw new RuntimeException("New packet size "+packet.getLength()+" but expecting packet of size "+_packetSize);
+			}
+			if (!_received[position]) {
+				_receivedCount++;
+			}
+			packet.copyTo(_data, position * _packetSize);
+			_received[position] = true;
+			
+			// FIXME keep it as as an array
+			prls = (PacketReceivedListener[]) _packetReceivedListeners.toArray(new PacketReceivedListener[_packetReceivedListeners.size()]);
 		}
-		if (packet.getLength() != _packetSize) {
-			throw new RuntimeException("New packet size "+packet.getLength()+" but expecting packet of size "+_packetSize);
-		}
-		if (!_received[position]) {
-			_receivedCount++;
-		}
-		packet.copyTo(_data, position * _packetSize);
-		_received[position] = true;
-		for (Iterator i = _packetReceivedListeners.iterator(); i.hasNext();) {
-			PacketReceivedListener prl = (PacketReceivedListener) i.next();
+		
+		
+		for (int i=0;i<prls.length;i++) {
+			PacketReceivedListener prl = prls[i];
 			prl.packetReceived(position);
 		}
 	}
