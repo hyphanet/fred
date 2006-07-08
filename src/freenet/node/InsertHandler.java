@@ -103,7 +103,7 @@ public class InsertHandler implements Runnable {
         
         if(msg == null) {
         	try {
-        		if(source.isReallyConnected() && startTime > (source.timeLastConnected()+Node.HANDSHAKE_TIMEOUT*4))
+        		if(source.isConnected() && startTime > (source.timeLastConnected()+Node.HANDSHAKE_TIMEOUT*4))
         			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
         		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
         		source.sendAsync(tooSlow, null, 0, null);

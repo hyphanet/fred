@@ -126,7 +126,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 if(tryProcessAuth(buf, offset, length, pn, peer)) return;
             }
         }
-        if(opn != null && !opn.isReallyConnected())
+        if(opn != null && !opn.isConnected())
             Logger.minor(this,"Unmatchable packet from "+peer);
         else
             Logger.error(this,"Unmatchable packet from "+peer);
@@ -1126,7 +1126,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             else log += (""+callbacks.length+(callbacks.length >= 1 ? String.valueOf(callbacks[0]) : ""));
             Logger.minor(this, log);
         }
-        if(tracker == null || (!tracker.pn.isReallyConnected())) {
+        if(tracker == null || (!tracker.pn.isConnected())) {
             throw new NotConnectedException();
         }
         
@@ -1398,11 +1398,6 @@ public class FNPPacketMangler implements LowLevelFilter {
 
     public boolean isDisconnected(PeerContext context) {
         if(context == null) return false;
-        return !((PeerNode)context).isReallyConnected();
-    }
-    
-    public boolean isRestricted(PeerContext context) {
-        if(context == null) return false;
-        return (!((PeerNode)context).isReallyConnected() && ((PeerNode)context).isConnected());
+        return !((PeerNode)context).isConnected();
     }
 }

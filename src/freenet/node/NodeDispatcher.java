@@ -50,32 +50,7 @@ public class NodeDispatcher implements Dispatcher {
                 Logger.minor(this, "Lost connection replying to "+m);
             }
             return true;
-        }else if(spec == DMT.FNPLinkPing) {
-        	long id = m.getLong(DMT.PING_SEQNO);
-        	Message msg = DMT.createFNPLinkPong(id);
-        	try {
-				source.sendAsync(msg, null, 0, null);
-			} catch (NotConnectedException e) {
-				// Ignore
-			}
-        	return true;
-        } else if(spec == DMT.FNPLinkPong) {
-        	long id = m.getLong(DMT.PING_SEQNO);
-        	source.receivedLinkPong(id);
-        	return true;
-        } else if(spec == DMT.FNPDetectedIPAddress) {
-        	Peer p = (Peer) m.getObject(DMT.EXTERNAL_ADDRESS);
-        	source.setRemoteDetectedPeer(p);
-        	node.redetectAddress();
-        } else if(spec == DMT.FNPVoid) {
-        	return true;
-        } else if(spec == DMT.nodeToNodeTextMessage) {
-        	node.receivedNodeToNodeTextMessage(m);
-        	return true;
         }
-        
-        if(!source.isReallyConnected()) return false;
-        
         if(spec == DMT.FNPLocChangeNotification) {
             double newLoc = m.getDouble(DMT.LOCATION);
             source.updateLocation(newLoc);
@@ -104,7 +79,29 @@ public class NodeDispatcher implements Dispatcher {
         	return handleInsertRequest(m, false);
         } else if(spec == DMT.FNPSSKInsertRequest) {
             return handleInsertRequest(m, true);
-        } 
+        } else if(spec == DMT.FNPLinkPing) {
+        	long id = m.getLong(DMT.PING_SEQNO);
+        	Message msg = DMT.createFNPLinkPong(id);
+        	try {
+				source.sendAsync(msg, null, 0, null);
+			} catch (NotConnectedException e) {
+				// Ignore
+			}
+        	return true;
+        } else if(spec == DMT.FNPLinkPong) {
+        	long id = m.getLong(DMT.PING_SEQNO);
+        	source.receivedLinkPong(id);
+        	return true;
+        } else if(spec == DMT.FNPDetectedIPAddress) {
+        	Peer p = (Peer) m.getObject(DMT.EXTERNAL_ADDRESS);
+        	source.setRemoteDetectedPeer(p);
+        	node.redetectAddress();
+        } else if(spec == DMT.FNPVoid) {
+        	return true;
+        } else if(spec == DMT.nodeToNodeTextMessage) {
+        	node.receivedNodeToNodeTextMessage(m);
+        	return true;
+        }
         return false;
     }
 

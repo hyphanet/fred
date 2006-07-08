@@ -13,9 +13,6 @@ public interface PeerContext {
     /** Force the peer to disconnect */
 	void forceDisconnect();
 
-	/** Is the peer connected? Have we established the session link? */
+	/** Is the peer connected? If we can't tell, return true. */
 	boolean isConnected();
-	
-	/** Is the peer connected? are we able to route requests to it? */
-	boolean isReallyConnected();
 }
