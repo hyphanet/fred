@@ -1539,7 +1539,7 @@ public class Node {
 		
 		// Downloads directory
 		
-		nodeConfig.register("downloadsDir", "downloads", sortOrder++, false, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
+		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
 
 			public String get() {
 				return downloadDir.getPath();
