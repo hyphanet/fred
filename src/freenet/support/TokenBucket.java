@@ -184,4 +184,8 @@ public class TokenBucket {
 		}
 		return (nowNS - nextTick) / nanosPerTick;
 	}
+	
+	public synchronized long getNanosPerTick() {
+		return nanosPerTick;
+	}
 }

@@ -250,7 +250,7 @@ public class PacketSender implements Runnable {
                    	// Force packet to have a sequence number.
                    	Message m = DMT.createFNPVoid();
                    	pn.addToLocalNodeSentMessagesToStatistic(m);
-                   	node.packetMangler.processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null, 0) }, pn, true, true);
+                   	node.packetMangler.processOutgoingOrRequeue(new MessageItem[] { new MessageItem(m, null, 0, null) }, pn, true, true);
                 }
             } else {
                 // Not connected

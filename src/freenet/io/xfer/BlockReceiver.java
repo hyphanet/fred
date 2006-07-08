@@ -29,6 +29,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.io.comm.UdpSocketManager;
+import freenet.node.ByteCounter;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;
@@ -49,16 +50,18 @@ public class BlockReceiver {
 	UdpSocketManager _usm;
 	/** packet : Integer -> reportTime : Long * */
 	HashMap _recentlyReportedMissingPackets = new HashMap();
+	ByteCounter _ctr;
 
-	public BlockReceiver(UdpSocketManager usm, PeerContext sender, long uid, PartiallyReceivedBlock prb) {
+	public BlockReceiver(UdpSocketManager usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr) {
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;
 		_usm = usm;
+		_ctr = ctr;
 	}
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
-		_usm.send(_sender, DMT.createSendAborted(_uid, reason, desc));
+		_usm.send(_sender, DMT.createSendAborted(_uid, reason, desc), _ctr);
 	}
 	
 	public byte[] receive() throws RetrievalException {
@@ -70,7 +73,7 @@ public class BlockReceiver {
             	MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
             	MessageFilter mfAllSent = MessageFilter.create().setType(DMT.allSent).setField(DMT.UID, _uid).setSource(_sender);
             	MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setSource(_sender);
-                m1 = _usm.waitFor(mfPacketTransmit.or(mfAllSent.or(mfSendAborted)));
+                m1 = _usm.waitFor(mfPacketTransmit.or(mfAllSent.or(mfSendAborted)), _ctr);
                 if(!_sender.isConnected()) throw new DisconnectedException();
             } catch (DisconnectedException e1) {
                 Logger.normal(this, "Disconnected during receive: "+_uid+" from "+_sender);
@@ -110,7 +113,7 @@ public class BlockReceiver {
 				Logger.minor(this, "Missing: "+missing.size());
 				if (missing.size() > 0) {
 					Message mn = DMT.createMissingPacketNotification(_uid, missing);
-					_usm.send(_sender, mn);
+					_usm.send(_sender, mn, _ctr);
 					consecutiveMissingPacketReports++;
 					if (missing.size() > 50) {
 						Logger.normal(this, "Excessive packet loss : "+mn);
@@ -131,14 +134,14 @@ public class BlockReceiver {
 					}
 				}
 				Message mn = DMT.createMissingPacketNotification(_uid, missing);
-				_usm.send(_sender, mn);
+				_usm.send(_sender, mn, _ctr);
 				consecutiveMissingPacketReports++;
 				if (missing.size() > 50) {
 					Logger.normal(this, "Sending large missingPacketNotification due to packet receiver timeout after "+RECEIPT_TIMEOUT+"ms");
 				}
 			}
 		}
-		_usm.send(_sender, DMT.createAllReceived(_uid));
+		_usm.send(_sender, DMT.createAllReceived(_uid), _ctr);
 		return _prb.getBlock();
 		} catch(NotConnectedException e) {
 		    throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);

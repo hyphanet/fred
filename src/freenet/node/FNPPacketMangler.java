@@ -630,7 +630,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         node.random.acceptEntropyBytes(myPacketDataSource, packetHash, 0, md.getDigestLength(), 0.5);
         
         // Lots more to do yet!
-        processDecryptedData(plaintext, seqNumber, tracker);
+        processDecryptedData(plaintext, seqNumber, tracker, length - plaintext.length);
         return true;
     }
 
@@ -640,7 +640,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param seqNumber The detected sequence number of the packet.
      * @param tracker The KeyTracker responsible for the key used to encrypt the packet.
      */
-    private void processDecryptedData(byte[] decrypted, int seqNumber, KeyTracker tracker) {
+    private void processDecryptedData(byte[] decrypted, int seqNumber, KeyTracker tracker, int overhead) {
         /**
          * Decoded format:
          * 1 byte - version number (0)
@@ -777,6 +777,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         int messages = decrypted[ptr++] & 0xff;
         
+        overhead += ptr;
+        
         for(int i=0;i<messages;i++) {
             if(ptr+1 >= decrypted.length) {
                 Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
@@ -788,7 +790,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 return;
             }
             Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
-            Message m = usm.decodePacket(decrypted, ptr, length, tracker.pn);
+            Message m = usm.decodePacket(decrypted, ptr, length, tracker.pn, 1 + (overhead / messages));
             ptr+=length;
             if(m != null) {
                 //Logger.minor(this, "Dispatching packet: "+m);
@@ -805,6 +807,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn+" ("+neverWaitForPacketNumber+")");
         byte[][] messageData = new byte[messages.length][];
         int[] alreadyReported = new int[messages.length];
+        MessageItem[] newMsgs = new MessageItem[messages.length];
         int length = 1;
         int callbacksCount = 0;
         int x = 0;
@@ -821,35 +824,45 @@ public class FNPPacketMangler implements LowLevelFilter {
                     }
                     int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
                     this.processOutgoingPreformatted(buf, 0, buf.length, pn.getCurrentKeyTracker(), packetNumber, mi.cb, mi.alreadyReportedBytes);
+                    if(mi.ctrCallback != null)
+                    	mi.ctrCallback.sentBytes(buf.length + HEADERS_LENGTH_ONE_MESSAGE);
                 } catch (NotConnectedException e) {
                     Logger.minor(this, "Caught "+e+" while sending messages, requeueing");
                     // Requeue
-                    if(!dontRequeue)
+                    if(!dontRequeue) {
+                    	pn.requeueMessageItems(messages, 0, x, false, "NotConnectedException");
                     	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException");
+                    }
                     return;
                 } catch (WouldBlockException e) {
                     Logger.minor(this, "Caught "+e+" while sending messages, requeueing", e);
                     // Requeue
-                    if(!dontRequeue)
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "WouldBlockException");
+                    if(!dontRequeue) {
+                    	pn.requeueMessageItems(messages, 0, x, false, "NotConnectedException");
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException");
+                    }
                     return;
                 } catch (KeyChangedException e) {
                     Logger.minor(this, "Caught "+e+" while sending messages, requeueing");
                     // Requeue
-                    if(!dontRequeue)
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "KeyChangedException");
+                    if(!dontRequeue) {
+                    	pn.requeueMessageItems(messages, 0, x, false, "NotConnectedException");
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException");
+                    }
                     return;
                 } catch (Throwable e) {
                     Logger.error(this, "Caught "+e+" while sending messages, requeueing", e);
                     // Requeue
-                    if(!dontRequeue)
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "Throwable");
+                    if(!dontRequeue) {
+                    	pn.requeueMessageItems(messages, 0, x, false, "NotConnectedException");
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException");
+                    }
                     return;
-                    
                 }
             } else {
                 byte[] data = mi.getData(this, pn);
                 messageData[x] = data;
+                newMsgs[x] = mi;
                 alreadyReported[x] = mi.alreadyReportedBytes;
                 x++;
                 if(mi.cb != null) callbacksCount += mi.cb.length;
@@ -876,9 +889,17 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(x != callbacksCount) throw new IllegalStateException();
         
         if(length < node.usm.getMaxPacketSize() &&
-                messages.length < 256) {
+                messageData.length < 256) {
             try {
                 innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber, callbacks, alreadyReportedBytes);
+                for(int i=0;i<messageData.length;i++) {
+                	MessageItem mi = newMsgs[i];
+                	if(mi.ctrCallback != null) {
+                		mi.ctrCallback.sentBytes(messageData[i].length + 
+                				1 + (HEADERS_LENGTH_MINIMUM / messageData.length));
+                		// FIXME rounding issues
+                	}
+                }
             } catch (NotConnectedException e) {
                 Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
                 // Requeue
@@ -920,6 +941,14 @@ public class FNPPacketMangler implements LowLevelFilter {
                     if(lastIndex != i) {
                         try {
                             innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks, alreadyReportedBytes);
+                            for(int j=lastIndex;j<i;j++) {
+                            	MessageItem mi = newMsgs[j];
+                            	if(mi.ctrCallback != null) {
+                            		mi.ctrCallback.sentBytes(messageData[j].length + 
+                            				1 + (HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
+                            		// FIXME rounding issues
+                            	}
+                            }
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
                             // Requeue
@@ -941,7 +970,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                         }
                     }
                     lastIndex = i;
-                    if(i != messages.length)
+                    if(i != messageData.length)
                         length = 1 + (messageData[i].length + 2);
                     count = 0;
                 } else {

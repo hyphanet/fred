@@ -25,6 +25,7 @@ import java.util.*;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.io.comm.Peer.LocalAddressException;
+import freenet.node.ByteCounter;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.Logger;
@@ -207,7 +208,7 @@ public class UdpSocketManager extends Thread {
 			} else {
 				// Create a bogus context since no filter
 				Message m = decodePacket(data, offset, length,
-						new DummyPeerContext(peer));
+						new DummyPeerContext(peer), 0);
 				if (m != null)
 					checkFilters(m);
 			}
@@ -223,9 +224,9 @@ public class UdpSocketManager extends Thread {
      * @param length
      * @param peer
      */
-    public Message decodePacket(byte[] data, int offset, int length, PeerContext peer) {
+    public Message decodePacket(byte[] data, int offset, int length, PeerContext peer, int overhead) {
         try {
-            return Message.decodeFromPacket(data, offset, length, peer);
+            return Message.decodeFromPacket(data, offset, length, peer, overhead);
         } catch (Throwable t) {
             Logger.error(this, "Could not decode packet: "+t, t);
             return null;
@@ -397,7 +398,7 @@ public class UdpSocketManager extends Thread {
 	    }
 	}
 	
-	public Message waitFor(MessageFilter filter) throws DisconnectedException {
+	public Message waitFor(MessageFilter filter, ByteCounter ctr) throws DisconnectedException {
 		Logger.debug(this, "Waiting for "+filter);
 		long startTime = System.currentTimeMillis();
 		Message ret = null;
@@ -471,6 +472,8 @@ public class UdpSocketManager extends Thread {
 //		}
 		long endTime = System.currentTimeMillis();
 		Logger.debug(this, "Returning in "+(endTime-startTime)+"ms");
+		if(ctr != null && ret != null)
+			ctr.receivedBytes(ret._receivedByteCount);
 		return ret;
 	}
 
@@ -478,7 +481,7 @@ public class UdpSocketManager extends Thread {
 	 * Send a Message to a PeerContext.
 	 * @throws NotConnectedException If we are not currently connected to the node.
 	 */
-	public void send(PeerContext destination, Message m) throws NotConnectedException {
+	public void send(PeerContext destination, Message m, ByteCounter ctr) throws NotConnectedException {
 	    if(m.getSpec().isInternalOnly()) {
 	        Logger.error(this, "Trying to send internal-only message "+m+" of spec "+m.getSpec(), new Exception("debug"));
 	        return;
@@ -503,7 +506,7 @@ public class UdpSocketManager extends Thread {
 //		} else {
 //		    sendPacket(blockToSend, destination.getPeer());
 //		}
-		((PeerNode)destination).sendAsync(m, null, 0);
+		((PeerNode)destination).sendAsync(m, null, 0, ctr);
 	}
 
 	/**

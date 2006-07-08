@@ -3,6 +3,8 @@ package freenet.node;
 import freenet.client.async.RequestScheduler;
 import freenet.client.async.SendableRequest;
 import freenet.support.Logger;
+import freenet.support.TokenBucket;
+import freenet.support.math.RunningAverage;
 
 /**
  * Starts requests.
@@ -37,14 +39,23 @@ public class RequestStarter implements Runnable {
 	}
 	
 	final BaseRequestThrottle throttle;
+	final TokenBucket inputBucket;
+	final TokenBucket outputBucket;
+	final RunningAverage averageInputBytesPerRequest;
+	final RunningAverage averageOutputBytesPerRequest;
 	RequestScheduler sched;
 	final Node node;
 	private long sentRequestTime;
 	
-	public RequestStarter(Node node, BaseRequestThrottle throttle, String name) {
+	public RequestStarter(Node node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
+			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest) {
 		this.node = node;
 		this.throttle = throttle;
 		this.name = name;
+		this.outputBucket = outputBucket;
+		this.inputBucket = inputBucket;
+		this.averageOutputBytesPerRequest = averageOutputBytesPerRequest;
+		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
 	}
 
 	void setScheduler(RequestScheduler sched) {
@@ -92,6 +103,8 @@ public class RequestStarter implements Runnable {
 				long delay = throttle.getDelay();
 				Logger.minor(this, "Delay="+delay+" from "+throttle);
 				long sleepUntil = sentRequestTime + delay;
+				inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
+				outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
 				long now;
 				do {
 					now = System.currentTimeMillis();

@@ -81,10 +81,6 @@ public class DoubleTokenBucket extends TokenBucket {
 		if(current > max) current = max;
 	}
 	
-	public synchronized long getNanosPerTick() {
-		return nanosPerTick;
-	}
-
 	public synchronized long getSize() {
 		return max;
 	}

@@ -39,8 +39,9 @@ public class Message {
 	private final PeerContext _source;
 	private final HashMap _payload = new HashMap();
 	public final long localInstantiationTime;
+	final int _receivedByteCount;
 
-	public static Message decodeFromPacket(byte[] buf, int offset, int length, PeerContext peer) {
+	public static Message decodeFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
 		DataInputStream dis
 	    = new DataInputStream(new ByteArrayInputStream(buf,
 	        offset, length));
@@ -56,7 +57,7 @@ public class Message {
 		}
 		if(mspec.isInternalOnly())
 		    return null; // silently discard internal-only messages
-		Message m = new Message(mspec, peer);
+		Message m = new Message(mspec, peer, length + overhead);
 		try {
 		    for (Iterator i = mspec.getOrderedFields().iterator(); i.hasNext();) {
 		        String name = (String) i.next();
@@ -78,13 +79,14 @@ public class Message {
 	}
 	
 	public Message(MessageType spec) {
-		this(spec, null);
+		this(spec, null, 0);
 	}
 
-	private Message(MessageType spec, PeerContext source) {
+	private Message(MessageType spec, PeerContext source, int recvByteCount) {
 		localInstantiationTime = System.currentTimeMillis();
 		_spec = spec;
 		_source = source;
+		_receivedByteCount = recvByteCount;
 	}
 
 	public boolean getBoolean(String key) {

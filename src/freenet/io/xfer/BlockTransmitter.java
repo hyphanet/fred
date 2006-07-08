@@ -29,6 +29,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.UdpSocketManager;
+import freenet.node.ByteCounter;
 import freenet.node.FNPPacketMangler;
 import freenet.node.PeerNode;
 import freenet.support.BitArray;
@@ -55,14 +56,16 @@ public class BlockTransmitter {
 	final PacketThrottle throttle;
 	long timeAllSent = -1;
 	final DoubleTokenBucket _masterThrottle;
+	final ByteCounter _ctr;
 	final int PACKET_SIZE;
 	
-	public BlockTransmitter(UdpSocketManager usm, PeerContext destination, long uid, PartiallyReceivedBlock source, DoubleTokenBucket masterThrottle) {
+	public BlockTransmitter(UdpSocketManager usm, PeerContext destination, long uid, PartiallyReceivedBlock source, DoubleTokenBucket masterThrottle, ByteCounter ctr) {
 		_usm = usm;
 		_destination = destination;
 		_uid = uid;
 		_prb = source;
-		this._masterThrottle = masterThrottle;
+		_ctr = ctr;
+		_masterThrottle = masterThrottle;
 		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
 			+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
 		try {
@@ -113,13 +116,13 @@ public class BlockTransmitter {
 						delay(startCycleTime);
 						_sentPackets.setBit(packetNo, true);
 						try {
-							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE);
+							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
 						// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
 						sentSinceLastPing++;
 						if (sentSinceLastPing >= PING_EVERY) {
 							sentSinceLastPing = 0;
 							//_usm.send(BlockTransmitter.this._destination, DMT.createPing());
-							((PeerNode)_destination).sendAsync(DMT.createPing(), null, 0);
+							((PeerNode)_destination).sendAsync(DMT.createPing(), null, 0, _ctr);
 						}
 						} catch (NotConnectedException e) {
 						    Logger.normal(this, "Terminating send: "+e);
@@ -172,7 +175,7 @@ public class BlockTransmitter {
 	}
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
-		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc));
+		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc), _ctr);
 	}
 	
 	public boolean send() {
@@ -194,7 +197,7 @@ public class BlockTransmitter {
 
 			public void receiveAborted(int reason, String description) {
 				try {
-					((PeerNode)_destination).sendAsync(DMT.createSendAborted(_uid, reason, description), null, 0);
+					((PeerNode)_destination).sendAsync(DMT.createSendAborted(_uid, reason, description), null, 0, _ctr);
                 } catch (NotConnectedException e) {
                     Logger.minor(this, "Receive aborted and receiver is not connected");
                 }
@@ -215,7 +218,7 @@ public class BlockTransmitter {
 				MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 				MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 				MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
-                msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)));
+                msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)), _ctr);
                 Logger.minor(this, "Got "+msg);
             } catch (DisconnectedException e) {
             	// Ignore, see below

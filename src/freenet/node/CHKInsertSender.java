@@ -16,7 +16,7 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 
-public final class CHKInsertSender implements Runnable, AnyInsertSender {
+public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 	
 	private static class Sender implements Runnable {
 		
@@ -66,7 +66,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
 		
 		AwaitingCompletion(PeerNode pn, PartiallyReceivedBlock prb) {
 			this.pn = pn;
-			bt = new BlockTransmitter(node.usm, pn, uid, prb, node.outputThrottle);
+			bt = new BlockTransmitter(node.usm, pn, uid, prb, node.outputThrottle, CHKInsertSender.this);
 		}
 		
 		void start() {
@@ -114,8 +114,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
 		}
 	}
 	
-   
-    
 	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
             PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore, double closestLocation) {
         this.myKey = myKey;
@@ -263,7 +261,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
             // Send to next node
             
             try {
-				next.send(req);
+				next.send(req, this);
 			} catch (NotConnectedException e1) {
 				Logger.minor(this, "Not connected to "+next);
 				continue;
@@ -282,7 +280,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
             while (true) {
             	
 				try {
-					msg = node.usm.waitFor(mf);
+					msg = node.usm.waitFor(mf, this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for Accepted");
@@ -363,7 +361,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
             Logger.minor(this, "Sending DataInsert");
             if(receiveFailed) return;
             try {
-				next.send(dataInsert);
+				next.send(dataInsert, this);
 			} catch (NotConnectedException e1) {
 				Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
 				continue;
@@ -385,7 +383,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
 					return;
 				
 				try {
-					msg = node.usm.waitFor(mf);
+					msg = node.usm.waitFor(mf, this);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
@@ -549,6 +547,15 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender {
         	notifyAll();
         }
         
+        if(code != TIMED_OUT && code != GENERATED_REJECTED_OVERLOAD && code != INTERNAL_ERROR
+        		&& code != ROUTE_REALLY_NOT_FOUND) {
+        	Logger.minor(this, "CHK insert cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+code+")");
+        	(source == null ? node.localChkInsertBytesSentAverage : node.remoteChkInsertBytesSentAverage)
+        			.report(getTotalSentBytes());
+        	(source == null ? node.localChkInsertBytesReceivedAverage : node.remoteChkInsertBytesReceivedAverage)
+        			.report(getTotalReceivedBytes());
+        }
+        
         Logger.minor(this, "Returning from finish()");
     }
 
@@ -695,7 +702,7 @@ outer:		while(true) {
 			} else {
 				Message m;
 				try {
-					m = node.usm.waitFor(mf);
+					m = node.usm.waitFor(mf, CHKInsertSender.this);
 				} catch (DisconnectedException e) {
 					// Which one? I have no idea.
 					// Go around the loop again.
@@ -818,5 +825,34 @@ outer:		while(true) {
 
 	public long getUID() {
 		return uid;
+	}
+
+	private final Object totalBytesSync = new Object();
+	private int totalBytesSent;
+	
+	public void sentBytes(int x) {
+		synchronized(totalBytesSync) {
+			totalBytesSent += x;
+		}
+	}
+	
+	public int getTotalSentBytes() {
+		synchronized(totalBytesSync) {
+			return totalBytesSent;
+		}
+	}
+	
+	private int totalBytesReceived;
+	
+	public void receivedBytes(int x) {
+		synchronized(totalBytesSync) {
+			totalBytesReceived += x;
+		}
+	}
+	
+	public int getTotalReceivedBytes() {
+		synchronized(totalBytesSync) {
+			return totalBytesReceived;
+		}
 	}
 }

@@ -692,13 +692,13 @@ public class PeerNode implements PeerContext {
      * relating to this packet (normally set when we have delayed a packet in order to
      * throttle it).
      */
-    public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes) throws NotConnectedException {
+    public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
         Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected) throw new NotConnectedException();
-        MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes);
-	synchronized(routingBackoffSync) {
-		reportBackoffStatus(System.currentTimeMillis());
-	}
+        MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes, ctr);
+        synchronized(routingBackoffSync) {
+        	reportBackoffStatus(System.currentTimeMillis());
+        }
         synchronized(messagesToSendNow) {
             messagesToSendNow.addLast(item);
         }
@@ -915,10 +915,10 @@ public class PeerNode implements PeerContext {
      */
     public boolean ping(int pingID) throws NotConnectedException {
         Message ping = DMT.createFNPPing(pingID);
-        node.usm.send(this, ping);
+        node.usm.send(this, ping, null);
         Message msg;
         try {
-            msg = node.usm.waitFor(MessageFilter.create().setTimeout(2000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID));
+            msg = node.usm.waitFor(MessageFilter.create().setTimeout(2000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID), null);
         } catch (DisconnectedException e) {
             throw new NotConnectedException("Disconnected while waiting for pong");
         }
@@ -949,14 +949,14 @@ public class PeerNode implements PeerContext {
     /**
      * Send a message, right now, on this thread, to this node.
      */
-    public void send(Message req) throws NotConnectedException {
+    public void send(Message req, ByteCounter ctr) throws NotConnectedException {
     	synchronized (this) {
             if(!isConnected()) {
                 Logger.error(this, "Tried to send "+req+" but not connected to "+this, new Exception("debug"));
                 return;
             }
 		}
-        node.usm.send(this, req);
+        node.usm.send(this, req, ctr);
     }
 
     /**
@@ -1207,8 +1207,8 @@ public class PeerNode implements PeerContext {
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         
         try {
-            sendAsync(locMsg, null, 0);
-            sendAsync(ipMsg, null, 0);
+            sendAsync(locMsg, null, 0, null);
+            sendAsync(ipMsg, null, 0, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected!!!", new Exception("error"));
         }
@@ -1601,7 +1601,7 @@ public class PeerNode implements PeerContext {
                 Logger.error(this, "No tracker to resend packet "+item.packetNumber+" on");
                 continue;
             }
-            MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0);
+            MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, null);
             requeueMessageItems(new MessageItem[] {mi}, 0, 1, true);
         }
     }
@@ -1751,7 +1751,7 @@ public class PeerNode implements PeerContext {
 		}
 		Message msg = DMT.createFNPLinkPing(pingNo);
 		try {
-			sendAsync(msg, null, 0);
+			sendAsync(msg, null, 0, null);
 		} catch (NotConnectedException e) {
 			synchronized(pingSync) {
 				pingsSentTimes.removeKey(lPingNo);

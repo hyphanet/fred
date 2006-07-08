@@ -34,7 +34,7 @@ import freenet.support.ShortBuffer;
  * transferring senders when starts transferring, and remove from it
  * when finishes transferring.
  */
-public final class RequestSender implements Runnable {
+public final class RequestSender implements Runnable, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
@@ -141,7 +141,7 @@ public final class RequestSender implements Runnable {
             Message req = createDataRequest();
             
             
-            next.send(req);
+            next.send(req, this);
             sentRequest = true;
             
             Message msg = null;
@@ -166,7 +166,7 @@ public final class RequestSender implements Runnable {
                 MessageFilter mf = mfAccepted.or(mfRejectedLoop.or(mfRejectedOverload));
                 
                 try {
-                    msg = node.usm.waitFor(mf);
+                    msg = node.usm.waitFor(mf, this);
                     Logger.minor(this, "first part got "+msg);
                 } catch (DisconnectedException e) {
                     Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
@@ -235,7 +235,7 @@ public final class RequestSender implements Runnable {
 
                 
             	try {
-            		msg = node.usm.waitFor(mf);
+            		msg = node.usm.waitFor(mf, this);
             	} catch (DisconnectedException e) {
             		Logger.normal(this, "Disconnected from "+next+" while waiting for data on "+uid);
             		break;
@@ -302,7 +302,7 @@ public final class RequestSender implements Runnable {
                 			notifyAll();
                 		}
                 		
-                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb);
+                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this);
                 		
                 		try {
                 			Logger.minor(this, "Receiving data");
@@ -402,6 +402,7 @@ public final class RequestSender implements Runnable {
 			return;
 		} catch (KeyCollisionException e) {
 			Logger.normal(this, "Collision on "+this);
+			finish(SUCCESS, next);
 		}
 	}
 
@@ -502,6 +503,22 @@ public final class RequestSender implements Runnable {
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
+        
+        if(status != TIMED_OUT && status != GENERATED_REJECTED_OVERLOAD && status != INTERNAL_ERROR) {
+        	if(key instanceof NodeSSK) {
+            	Logger.minor(this, "SSK fetch cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+status+")");
+            	(source == null ? node.localSskFetchBytesSentAverage : node.remoteSskFetchBytesSentAverage)
+            			.report(getTotalSentBytes());
+            	(source == null ? node.localSskFetchBytesReceivedAverage : node.remoteSskFetchBytesReceivedAverage)
+            			.report(getTotalReceivedBytes());
+        	} else {
+            	Logger.minor(this, "CHK fetch cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+status+")");
+            	(source == null ? node.localChkFetchBytesSentAverage : node.remoteChkFetchBytesSentAverage)
+            		.report(getTotalSentBytes());
+            	(source == null ? node.localChkFetchBytesReceivedAverage : node.remoteChkFetchBytesReceivedAverage)
+        			.report(getTotalReceivedBytes());
+        	}
+        }
 
         synchronized(this) {
             notifyAll();
@@ -527,4 +544,33 @@ public final class RequestSender implements Runnable {
     public SSKBlock getSSKBlock() {
     	return block;
     }
+
+	private final Object totalBytesSync = new Object();
+	private int totalBytesSent;
+	
+	public void sentBytes(int x) {
+		synchronized(totalBytesSync) {
+			totalBytesSent += x;
+		}
+	}
+	
+	public int getTotalSentBytes() {
+		synchronized(totalBytesSync) {
+			return totalBytesSent;
+		}
+	}
+	
+	private int totalBytesReceived;
+	
+	public void receivedBytes(int x) {
+		synchronized(totalBytesSync) {
+			totalBytesReceived += x;
+		}
+	}
+	
+	public int getTotalReceivedBytes() {
+		synchronized(totalBytesSync) {
+			return totalBytesReceived;
+		}
+	}
 }

@@ -24,7 +24,7 @@ import freenet.support.ShortBuffer;
  *   wait for a long data-transfer timeout.
  * - SSKs have pubkeys, which don't always need to be sent.
  */
-public class SSKInsertSender implements Runnable, AnyInsertSender {
+public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
@@ -172,7 +172,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
             // Send to next node
             
             try {
-				next.sendAsync(req, null, 0);
+				next.sendAsync(req, null, 0, this);
 			} catch (NotConnectedException e1) {
 				Logger.minor(this, "Not connected to "+next);
 				continue;
@@ -190,7 +190,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
             while (true) {
             	
 				try {
-					msg = node.usm.waitFor(mf);
+					msg = node.usm.waitFor(mf, null);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for Accepted");
@@ -245,7 +245,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
             	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey.asBytes());
             	try {
-            		next.sendAsync(pkMsg, null, 0);
+            		next.sendAsync(pkMsg, null, 0, this);
             	} catch (NotConnectedException e) {
             		Logger.minor(this, "Node disconnected while sending pubkey: "+next);
             		continue;
@@ -257,7 +257,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
             	
             	Message newAck;
 				try {
-					newAck = node.usm.waitFor(mf1);
+					newAck = node.usm.waitFor(mf1, null);
 				} catch (DisconnectedException e) {
 					Logger.minor(this, "Disconnected from "+next);
 					htl--;
@@ -299,7 +299,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
             
             while (true) {
 				try {
-					msg = node.usm.waitFor(mf);
+					msg = node.usm.waitFor(mf, null);
 				} catch (DisconnectedException e) {
 					Logger.normal(this, "Disconnected from " + next
 							+ " while waiting for InsertReply on " + this);
@@ -456,6 +456,15 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
             notifyAll();
         }
 
+        if(code != TIMED_OUT && code != GENERATED_REJECTED_OVERLOAD && code != INTERNAL_ERROR
+        		&& code != ROUTE_REALLY_NOT_FOUND) {
+        	Logger.minor(this, "SSK insert cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+code+")");
+        	(source == null ? node.localChkInsertBytesSentAverage : node.remoteChkInsertBytesSentAverage)
+        			.report(getTotalSentBytes());
+        	(source == null ? node.localChkInsertBytesReceivedAverage : node.remoteChkInsertBytesReceivedAverage)
+        			.report(getTotalReceivedBytes());
+        }
+        
         Logger.minor(this, "Set status code: "+getStatusString());
         // Nothing to wait for, no downstream transfers, just exit.
     }
@@ -521,6 +530,35 @@ public class SSKInsertSender implements Runnable, AnyInsertSender {
 
 	public long getUID() {
 		return uid;
+	}
+
+	private final Object totalBytesSync = new Object();
+	private int totalBytesSent;
+	
+	public void sentBytes(int x) {
+		synchronized(totalBytesSync) {
+			totalBytesSent += x;
+		}
+	}
+	
+	public int getTotalSentBytes() {
+		synchronized(totalBytesSync) {
+			return totalBytesSent;
+		}
+	}
+	
+	private int totalBytesReceived;
+	
+	public void receivedBytes(int x) {
+		synchronized(totalBytesSync) {
+			totalBytesReceived += x;
+		}
+	}
+	
+	public int getTotalReceivedBytes() {
+		synchronized(totalBytesSync) {
+			return totalBytesReceived;
+		}
 	}
 
 }

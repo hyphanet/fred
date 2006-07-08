@@ -328,7 +328,7 @@ public class PeerManager {
         PeerNode[] peers = connectedPeers; // avoid synchronization
         for(int i=0;i<peers.length;i++) {
             if(peers[i].isConnected()) try {
-                peers[i].sendAsync(msg, null, 0);
+                peers[i].sendAsync(msg, null, 0, null);
             } catch (NotConnectedException e) {
                 // Ignore
             }

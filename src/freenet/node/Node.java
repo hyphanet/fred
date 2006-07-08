@@ -120,6 +120,7 @@ import freenet.support.Logger;
 import freenet.support.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.TokenBucket;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
@@ -562,6 +563,9 @@ public class Node {
 	final TestnetHandler testnetHandler;
 	final StaticSwapRequestInterval swapInterval;
 	public final DoubleTokenBucket outputThrottle;
+	final TokenBucket requestOutputThrottle;
+	final TokenBucket requestInputThrottle;
+	private boolean inputLimitDefault = false;
 	static short MAX_HTL = 10;
 	static final int EXIT_STORE_FILE_NOT_FOUND = 1;
 	static final int EXIT_STORE_IOEXCEPTION = 2;
@@ -614,6 +618,22 @@ public class Node {
 	final TimeDecayingRunningAverage throttledPacketSendAverage;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
 	public final String formPassword;
+	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
+	final TimeDecayingRunningAverage remoteSskFetchBytesSentAverage;
+	final TimeDecayingRunningAverage remoteChkInsertBytesSentAverage;
+	final TimeDecayingRunningAverage remoteSskInsertBytesSentAverage;
+	final TimeDecayingRunningAverage remoteChkFetchBytesReceivedAverage;
+	final TimeDecayingRunningAverage remoteSskFetchBytesReceivedAverage;
+	final TimeDecayingRunningAverage remoteChkInsertBytesReceivedAverage;
+	final TimeDecayingRunningAverage remoteSskInsertBytesReceivedAverage;
+	final TimeDecayingRunningAverage localChkFetchBytesSentAverage;
+	final TimeDecayingRunningAverage localSskFetchBytesSentAverage;
+	final TimeDecayingRunningAverage localChkInsertBytesSentAverage;
+	final TimeDecayingRunningAverage localSskInsertBytesSentAverage;
+	final TimeDecayingRunningAverage localChkFetchBytesReceivedAverage;
+	final TimeDecayingRunningAverage localSskFetchBytesReceivedAverage;
+	final TimeDecayingRunningAverage localChkInsertBytesReceivedAverage;
+	final TimeDecayingRunningAverage localSskInsertBytesReceivedAverage;
 
 	File downloadDir;
 	public final ClientRequestScheduler chkFetchScheduler;
@@ -1208,14 +1228,43 @@ public class Node {
 						//return BlockTransmitter.getHardBandwidthLimit();
 						return (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick());
 					}
-					public void set(int val) throws InvalidConfigValueException {
-						if(val <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive");
-						outputThrottle.changeNanosAndBucketSizes((1000L * 1000L * 1000L) / val, val, (val * 4) / 5);
+					public void set(int obwLimit) throws InvalidConfigValueException {
+						if(obwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive");
+						outputThrottle.changeNanosAndBucketSizes((1000L * 1000L * 1000L) / obwLimit, obwLimit/2, (obwLimit * 2) / 5);
+						requestOutputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  obwLimit, Math.max(obwLimit*60, 32768*20));
+						if(inputLimitDefault) {
+							int ibwLimit = obwLimit * 4;
+							requestInputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  ibwLimit, Math.max(ibwLimit*60, 32768*20));
+						}
 					}
 		});
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
-		this.outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 4) / 5);
+		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 2) / 5);
+		requestOutputThrottle = 
+			new TokenBucket(Math.max(obwLimit*60, 32768*20), (1000L*1000L*1000L) /  obwLimit, 0);
+		
+		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false,
+				"Input bandwidth limit (bytes per second)", "Input bandwidth limit (bytes/sec); the node will try not to exceed this; -1 = 4x set outputBandwidthLimit",
+				new IntCallback() {
+					public int get() {
+						if(inputLimitDefault) return -1;
+						return (int) ((1000L * 1000L * 1000L) / requestInputThrottle.getNanosPerTick());
+					}
+					public void set(int ibwLimit) throws InvalidConfigValueException {
+						if(ibwLimit == -1) {
+							inputLimitDefault = true;
+							ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
+						}
+						if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
+						requestInputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  ibwLimit, Math.max(ibwLimit*60, 32768*20));
+					}
+		});
+		
+		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
+		requestInputThrottle = 
+			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (1000L*1000L*1000L) / ibwLimit, 0);
+		
 		
 		// FIXME add an averaging/long-term/soft bandwidth limit. (bug 76)
 		
@@ -1522,35 +1571,54 @@ public class Node {
 		
 		// Select the request scheduler
 		
+		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+		localChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE);
+		localSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE);
+		localChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE);
+		localSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE);
+		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+
+		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE);
+		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE);
+		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE);
+		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE);
+		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+
 		// FIXME make all the below arbitrary constants configurable!
 		
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
 		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request");
-		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "CHK Request starter ("+portNumber+")");
+		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "CHK Request starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localChkFetchBytesSentAverage, localChkFetchBytesReceivedAverage);
 		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, this);
 		chkRequestStarter.setScheduler(chkFetchScheduler);
 		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "CHK Insert");
-		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "CHK Insert starter ("+portNumber+")");
+		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "CHK Insert starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localChkInsertBytesSentAverage, localChkInsertBytesReceivedAverage);
 		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, this);
 		chkInsertStarter.setScheduler(chkPutScheduler);
 		chkInsertStarter.start();
 
 		sskRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "SSK Request");
-		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "SSK Request starter ("+portNumber+")");
+		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "SSK Request starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localSskFetchBytesSentAverage, localSskFetchBytesReceivedAverage);
 		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, this);
 		sskRequestStarter.setScheduler(sskFetchScheduler);
 		sskRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "SSK Insert");
-		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "SSK Insert starter ("+portNumber+")");
+		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "SSK Insert starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localSskInsertBytesSentAverage, localSskFetchBytesReceivedAverage);
 		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, this);
 		sskInsertStarter.setScheduler(sskPutScheduler);
 		sskInsertStarter.start();
 		
+
 		
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
@@ -2174,10 +2242,28 @@ public class Node {
 		+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
 	
     /* return reject reason as string if should reject, otherwise return null */
-	public synchronized String shouldRejectRequest(boolean canAcceptAnyway) {
+	public synchronized String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
 		long now = System.currentTimeMillis();
+
+		dumpByteCostAverages();
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
+		
+		// Do we have the bandwidth?
+		
+		double expected = 
+			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
+					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
+		int e = (int)Math.max(expected, 0);
+		if(!requestOutputThrottle.instantGrab(e)) return "Insufficient output bandwidth";
+		expected = 
+			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
+					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
+		e = (int)Math.max(expected, 0);
+		if(!requestInputThrottle.instantGrab(e)) return "Insufficient input bandwidth";
+
+		
+		// If no recent reports, no packets have been sent; correct the average downwards.
 		
 		if(throttledPacketSendAverage.lastReportTime() < System.currentTimeMillis() - 5000) {
 			outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
@@ -2229,6 +2315,19 @@ public class Node {
 		return null;
 	}
 	
+	private void dumpByteCostAverages() {
+		Logger.minor(this, "Byte cost averages: REMOTE:"+
+				" CHK insert "+remoteChkInsertBytesSentAverage.currentValue()+"/"+remoteChkInsertBytesReceivedAverage.currentValue()+
+				" SSK insert "+remoteSskInsertBytesSentAverage.currentValue()+"/"+remoteSskInsertBytesReceivedAverage.currentValue()+
+				" CHK fetch "+remoteChkFetchBytesSentAverage.currentValue()+"/"+remoteChkFetchBytesReceivedAverage.currentValue()+
+				" SSK fetch "+remoteSskFetchBytesSentAverage.currentValue()+"/"+remoteSskFetchBytesReceivedAverage.currentValue());
+		Logger.minor(this, "Byte cost averages: LOCAL"+
+				" CHK insert "+localChkInsertBytesSentAverage.currentValue()+"/"+localChkInsertBytesReceivedAverage.currentValue()+
+				" SSK insert "+localSskInsertBytesSentAverage.currentValue()+"/"+localSskInsertBytesReceivedAverage.currentValue()+
+				" CHK fetch "+localChkFetchBytesSentAverage.currentValue()+"/"+localChkFetchBytesReceivedAverage.currentValue()+
+				" SSK fetch "+localSskFetchBytesSentAverage.currentValue()+"/"+localSskFetchBytesReceivedAverage.currentValue());
+	}
+
 	public SimpleFieldSet exportPrivateFieldSet() {
 		SimpleFieldSet fs = exportPublicFieldSet();
 		fs.put("dsaPrivKey", myPrivKey.asFieldSet());
@@ -2387,7 +2486,7 @@ public class Node {
 		try {
 			//MessageFilter mf2 = MessageFilter.create().setField(DMT.UID, uid).setType(DMT.FNPRoutedRejected).setTimeout(5000);
 			// Ignore Rejected - let it be retried on other peers
-			m = usm.waitFor(mf1/*.or(mf2)*/);
+			m = usm.waitFor(mf1/*.or(mf2)*/, null);
 		} catch (DisconnectedException e) {
 			Logger.normal(this, "Disconnected in waiting for pong");
 			return -1;

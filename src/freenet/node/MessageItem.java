@@ -14,22 +14,25 @@ public class MessageItem {
      * for sending as a single packet.
      */
     final boolean formatted;
+    final ByteCounter ctrCallback;
     
-    public MessageItem(Message msg2, AsyncMessageCallback[] cb2, int alreadyReportedBytes) {
+    public MessageItem(Message msg2, AsyncMessageCallback[] cb2, int alreadyReportedBytes, ByteCounter ctr) {
     	this.alreadyReportedBytes = alreadyReportedBytes;
         this.msg = msg2;
         this.cb = cb2;
         buf = null;
         formatted = false;
+        this.ctrCallback = ctr;
         this.submitted = System.currentTimeMillis();
     }
 
-    public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, int alreadyReportedBytes) {
+    public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, int alreadyReportedBytes, ByteCounter ctr) {
     	this.alreadyReportedBytes = alreadyReportedBytes;
         this.cb = cb2;
         this.msg = null;
         this.buf = data;
         this.formatted = formatted;
+        this.ctrCallback = ctr;
         this.submitted = System.currentTimeMillis();
     }
 
