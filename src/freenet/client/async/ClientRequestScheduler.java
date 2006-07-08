@@ -100,7 +100,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		allRequestsByClientRequest = new HashMap();
 		
 		//FIXME implement the config. hook
-		this.choosenPriorityScheduler = PRIORITY_SOFT;
+		this.choosenPriorityScheduler = PRIORITY_HARD;
 	}
 	
 	/** Called by the  config. Callback
