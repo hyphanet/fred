@@ -741,6 +741,7 @@ public class PeerNode implements PeerContext {
         synchronized(this) {
         	// Force renegotiation.
             isConnected = false;
+            completedHandshake = false;
             setPeerNodeStatus(now);
             // Prevent sending packets to the node until that happens.
             if(currentTracker != null)
