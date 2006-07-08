@@ -153,7 +153,7 @@ public class IPDetectorPluginManager {
 						// Unique IP address?
 						Peer peer = p.getPeer();
 						InetAddress addr = peer.getAddress(false);
-						if(p.isConnected() && peer != null && addr != null && IPUtil.checkAddress(peer.getAddress())) {
+						if(p.isReallyConnected() && peer != null && addr != null && IPUtil.checkAddress(peer.getAddress())) {
 							// Connected node, on a real internet IP address.
 							// Is it internal?
 							boolean internal = false;
@@ -250,7 +250,7 @@ public class IPDetectorPluginManager {
 						if(firstTimeMaybeFakePeers > 0) timeref = firstTimeMaybeFakePeers;
 						for(int i=0;i<peers.length;i++) {
 							PeerNode p = peers[i];
-							if((!p.isConnected()) || now - p.lastReceivedPacketTime() < 5*60*1000) {
+							if((!p.isReallyConnected()) || now - p.lastReceivedPacketTime() < 5*60*1000) {
 								// Not connected now but has been within the past 5 minutes.
 								count++;
 							}

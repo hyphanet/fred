@@ -645,7 +645,7 @@ outer:		while(true) {
 			MessageFilter mf = null;
 			for(int i=0;i<waiters.length;i++) {
 				AwaitingCompletion awc = waiters[i];
-				if(!awc.pn.isConnected()) {
+				if(!awc.pn.isReallyConnected()) {
 					Logger.normal(this, "Disconnected: "+awc.pn+" in "+CHKInsertSender.this);
 					continue;
 				}
@@ -677,7 +677,7 @@ outer:		while(true) {
 					}
 					if(noTimeLeft) {
 						for(int i=0;i<waiters.length;i++) {
-							if(!waiters[i].pn.isConnected()) continue;
+							if(!waiters[i].pn.isReallyConnected()) continue;
 							if(!waiters[i].completedTransfer) {
 								waiters[i].completedTransfer(false);
 							}
@@ -744,7 +744,7 @@ outer:		while(true) {
 					if(noTimeLeft) {
 						Logger.minor(this, "Overall timeout on "+CHKInsertSender.this);
 						for(int i=0;i<waiters.length;i++) {
-							if(!waiters[i].pn.isConnected()) continue;
+							if(!waiters[i].pn.isReallyConnected()) continue;
 							if(!waiters[i].receivedCompletionNotice)
 								waiters[i].completed(false, false);
 							if(!waiters[i].completedTransfer)
@@ -769,7 +769,7 @@ outer:		while(true) {
 			boolean completedTransfers = true;
 			synchronized(nodesWaitingForCompletion) {
 				for(int i=0;i<waiters.length;i++) {
-					if(!waiters[i].pn.isConnected()) continue;
+					if(!waiters[i].pn.isReallyConnected()) continue;
 					if(!waiters[i].completedTransfer) {
 						completedTransfers = false;
 						break;
@@ -785,7 +785,7 @@ outer:		while(true) {
 						}
 						completedTransfers = true;
 						for(int i=0;i<waiters.length;i++) {
-							if(!waiters[i].pn.isConnected()) continue;
+							if(!waiters[i].pn.isReallyConnected()) continue;
 							if(!waiters[i].completedTransfer) {
 								completedTransfers = false;
 								break;

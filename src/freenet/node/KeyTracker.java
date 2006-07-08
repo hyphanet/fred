@@ -634,7 +634,7 @@ public class KeyTracker {
      */
     public int allocateOutgoingPacketNumber() throws KeyChangedException, NotConnectedException {
         int packetNumber;
-        if(!pn.isConnected()) throw new NotConnectedException();
+        if(!pn.isReallyConnected()) throw new NotConnectedException();
         synchronized(this) {
             if(isDeprecated) throw new KeyChangedException();
             packetNumber = nextPacketNumber++;
@@ -658,7 +658,7 @@ public class KeyTracker {
      */
     public int allocateOutgoingPacketNumberNeverBlock() throws KeyChangedException, NotConnectedException, WouldBlockException {
         int packetNumber;
-        if(!pn.isConnected()) throw new NotConnectedException();
+        if(!pn.isReallyConnected()) throw new NotConnectedException();
         synchronized(this) {
             packetNumber = nextPacketNumber;
             if(isDeprecated) throw new KeyChangedException();
