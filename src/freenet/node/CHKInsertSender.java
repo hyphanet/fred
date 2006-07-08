@@ -516,22 +516,21 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
 
-        setStatusTime = System.currentTimeMillis();
-        
-        if(code == ROUTE_NOT_FOUND && !sentRequest)
-        	code = ROUTE_REALLY_NOT_FOUND;
-        
-        status = code;
-        
-		synchronized(this) {
-        	notifyAll();
-        }
-
-        Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
-        
-        // Now wait for transfers, or for downstream transfer notifications.
-
         synchronized(this) {
+        
+        	setStatusTime = System.currentTimeMillis();
+        	
+        	if(code == ROUTE_NOT_FOUND && !sentRequest)
+        		code = ROUTE_REALLY_NOT_FOUND;
+        	
+        	status = code;
+        
+        	notifyAll();
+
+        	Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
+        
+        	// Now wait for transfers, or for downstream transfer notifications.
+
         	if(cw != null) {
         		while(!allTransfersCompleted) {
         			try {
@@ -629,17 +628,19 @@ outer:		while(true) {
 			int timeout;
 			boolean noTimeLeft = false;
 
-			long now = System.currentTimeMillis();
-			if(status == NOT_FINISHED) {
-				// Wait 5 seconds, then try again
-				timeout = 5000;
-			} else {
-				// Completed, wait for everything
-				timeout = (int)Math.min(Integer.MAX_VALUE, (setStatusTime + TRANSFER_COMPLETION_TIMEOUT) - now);
-			}
-			if(timeout <= 0) {
-				noTimeLeft = true;
-				timeout = 1;
+			synchronized(this) {
+				long now = System.currentTimeMillis();
+				if(status == NOT_FINISHED || setStatusTime == -1) {
+					// Wait 5 seconds, then try again
+					timeout = 5000;
+				} else {
+					// Completed, wait for everything
+					timeout = (int)Math.min(Integer.MAX_VALUE, (setStatusTime + TRANSFER_COMPLETION_TIMEOUT) - now);
+				}
+				if(timeout <= 0) {
+					noTimeLeft = true;
+					timeout = 1;
+				}
 			}
 			
 			MessageFilter mf = null;

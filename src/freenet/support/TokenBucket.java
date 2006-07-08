@@ -86,6 +86,7 @@ public class TokenBucket {
 		Logger.minor(this, "current="+current);
 		if(current > tokens) {
 			current -= tokens;
+			Logger.minor(this, "Got tokens instantly, current="+current);
 			return;
 		}
 		long extra = 0;

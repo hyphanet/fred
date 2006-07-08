@@ -1231,6 +1231,7 @@ public class Node {
 					public void set(int obwLimit) throws InvalidConfigValueException {
 						if(obwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive");
 						outputThrottle.changeNanosAndBucketSizes((1000L * 1000L * 1000L) / obwLimit, obwLimit/2, (obwLimit * 2) / 5);
+						obwLimit = (obwLimit * 4) / 5; // fudge factor; take into account non-request activity
 						requestOutputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  obwLimit, Math.max(obwLimit*60, 32768*20));
 						if(inputLimitDefault) {
 							int ibwLimit = obwLimit * 4;
@@ -1241,6 +1242,7 @@ public class Node {
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) /  obwLimit, obwLimit, (obwLimit * 2) / 5);
+		obwLimit = (obwLimit * 4) / 5;  // fudge factor; take into account non-request activity
 		requestOutputThrottle = 
 			new TokenBucket(Math.max(obwLimit*60, 32768*20), (1000L*1000L*1000L) /  obwLimit, 0);
 		
@@ -1249,7 +1251,7 @@ public class Node {
 				new IntCallback() {
 					public int get() {
 						if(inputLimitDefault) return -1;
-						return (int) ((1000L * 1000L * 1000L) / requestInputThrottle.getNanosPerTick());
+						return (((int) ((1000L * 1000L * 1000L) / requestInputThrottle.getNanosPerTick())) * 5) / 4;
 					}
 					public void set(int ibwLimit) throws InvalidConfigValueException {
 						if(ibwLimit == -1) {
@@ -1257,11 +1259,13 @@ public class Node {
 							ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
 						}
 						if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
+						ibwLimit = ibwLimit * 4 / 5; // fudge factor; take into account non-request activity
 						requestInputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  ibwLimit, Math.max(ibwLimit*60, 32768*20));
 					}
 		});
 		
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
+		ibwLimit = ibwLimit * 4 / 5;
 		requestInputThrottle = 
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (1000L*1000L*1000L) / ibwLimit, 0);
 		
