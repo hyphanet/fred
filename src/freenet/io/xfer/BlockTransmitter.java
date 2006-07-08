@@ -160,6 +160,7 @@ public class BlockTransmitter {
 				
 				if(now > end) return;
 				while(now < end) {
+					now = System.currentTimeMillis();
 					long l = end - now;
 					int x = (int) (Math.min(l, Integer.MAX_VALUE));
 					if(x > 0)

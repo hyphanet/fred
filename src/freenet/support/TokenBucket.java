@@ -65,6 +65,7 @@ public class TokenBucket {
 	}
 	
 	public synchronized void blockingGrab(long tokens) {
+		Logger.minor(this, "Blocking grab: "+tokens);
 		if(tokens < max)
 			innerBlockingGrab(tokens);
 		else {
@@ -79,7 +80,7 @@ public class TokenBucket {
 	 * @param tokens The number of tokens to grab.
 	 */
 	public synchronized void innerBlockingGrab(long tokens) {
-		Logger.minor(this, "Blocking grab: "+tokens);
+		Logger.minor(this, "Inner blocking grab: "+tokens);
 		addTokens();
 		if(current > max) current = max;
 		Logger.minor(this, "current="+current);
