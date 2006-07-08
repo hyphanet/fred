@@ -21,9 +21,9 @@ public abstract class Version {
 	private static final int buildNumber = 865;
 
 	/** Oldest build of Fred we will talk to */
-	private static final int oldLastGoodBuild = 865;
+	private static final int oldLastGoodBuild = 844;
 	private static final int newLastGoodBuild = 865;
-	private static final long transitionTime = 0L; // 0:00 GMT 30/06/06
+	private static final long transitionTime = 1152316800000L; // 0:00 GMT 30/06/06
 
 	public static final int buildNumber() {
 		return buildNumber;
