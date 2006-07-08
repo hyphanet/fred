@@ -1257,15 +1257,21 @@ public class Node {
 						if(ibwLimit == -1) {
 							inputLimitDefault = true;
 							ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
+						} else {
+							ibwLimit = ibwLimit * 4 / 5; // fudge factor; take into account non-request activity
 						}
 						if(ibwLimit <= 0) throw new InvalidConfigValueException("Bandwidth limit must be positive or -1");
-						ibwLimit = ibwLimit * 4 / 5; // fudge factor; take into account non-request activity
 						requestInputThrottle.changeNanosAndBucketSize((1000L*1000L*1000L) /  ibwLimit, Math.max(ibwLimit*60, 32768*20));
 					}
 		});
 		
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
-		ibwLimit = ibwLimit * 4 / 5;
+		if(ibwLimit == -1) {
+			inputLimitDefault = true;
+			ibwLimit = (int) ((1000L * 1000L * 1000L) / outputThrottle.getNanosPerTick()) * 4;
+		} else {
+			ibwLimit = ibwLimit * 4 / 5;
+		}
 		requestInputThrottle = 
 			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (1000L*1000L*1000L) / ibwLimit, 0);
 		
