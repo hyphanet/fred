@@ -62,8 +62,22 @@ public class QueueToadlet extends Toadlet {
 			}
 			writePermanentRedirect(ctx, "Done", "/queue/");
 			return;
-		}
-		if(request.isParameterSet("download")) {
+		}else if(request.isParameterSet("remove_AllRequests") && request.getParam("remove_AllRequests").length() > 0) {
+			
+			ClientRequest[] reqs = fcp.getGlobalRequests();
+			Logger.minor(this, "Request count: "+reqs.length);
+			
+			for(int i=0; i<reqs.length ; i++){
+				Logger.minor(this, "Removing "+reqs[i].getIdentifier());
+				try {
+					fcp.removeGlobalRequest(reqs[i].getIdentifier());
+				} catch (MessageInvalidException e) {
+					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(reqs[i].getIdentifier())+" : "+HTMLEncoder.encode(e.getMessage()));
+				}
+			}
+			writePermanentRedirect(ctx, "Done", "/queue/");
+			return;
+		}else if(request.isParameterSet("download")) {
 			// Queue a download
 			if(!request.isParameterSet("key")) {
 				writeError("No key specified to download", "No key specified to download");
@@ -177,6 +191,8 @@ public class QueueToadlet extends Toadlet {
 		}
 		buf.append("</tr>\n");
 		writeTableEnd(buf);
+		if(reqs.length > 1)
+			writeDeleteAll(buf);
 		writeBigEnding(buf);
 		
 		if(!(completedDownloadToTemp.isEmpty() && completedDownloadToDisk.isEmpty() &&
@@ -521,6 +537,15 @@ public class QueueToadlet extends Toadlet {
 		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"");
 		buf.append(HTMLEncoder.encode(p.getIdentifier()));
 		buf.append("\"><input type=\"submit\" name=\"remove_request\" value=\"Delete\">");
+		buf.append("</form>\n");
+		buf.append("</td>\n");
+	}
+	
+	private void writeDeleteAll(StringBuffer buf) {
+		buf.append("<td>");
+		buf.append("<form action=\"/queue/\" method=\"post\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+		buf.append("<input type=\"submit\" name=\"remove_AllRequests\" value=\"Delete Everything\">");
 		buf.append("</form>\n");
 		buf.append("</td>\n");
 	}
