@@ -75,7 +75,7 @@ public class BlockTransmitter {
 			// Will throw on running
 		}
 		throttle = PacketThrottle.getThrottle(_destination.getPeer(), _prb._packetSize);
-		_senderThread = new Thread("_senderThread for "+_uid) {
+		_senderThread = new Thread("_senderThread for "+_uid+ " to "+_destination.getPeer()) {
 		    
 			public void run() {
 				int sentSinceLastPing = 0;

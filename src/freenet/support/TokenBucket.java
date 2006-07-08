@@ -94,6 +94,7 @@ public class TokenBucket {
 			current = 0;
 		} else if(current < 0) {
 			extra = -current;
+			Logger.minor(this, "Neutralizing debt: "+extra);
 			current = 0;
 		}
 		long minDelayNS = nanosPerTick * (tokens + extra);
@@ -102,8 +103,14 @@ public class TokenBucket {
 		
 		// Schedule between the blockingGrab's.
 		
-		if(nextWake < now) nextWake = now;
-		long wakeAt = (nextWake += minDelayMS);
+		if(nextWake < now) {
+			Logger.minor(this, "Resetting nextWake to now");
+			nextWake = now;
+		}
+		Logger.minor(this, "nextWake: "+(nextWake - now)+"ms");
+		long wakeAt = nextWake + minDelayMS;
+		nextWake = wakeAt;
+		Logger.minor(this, "nextWake now: "+(nextWake - now)+"ms");
 		while(true) {
 			now = System.currentTimeMillis();
 			int delay = (int) Math.min(Integer.MAX_VALUE, wakeAt - now);

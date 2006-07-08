@@ -128,7 +128,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					return;
 				}
 				if(block != null) {
-					Logger.minor(this, "Can fulfill immediately from store");
+					Logger.minor(this, "Can fulfill "+req+" immediately from store");
 					getter.onSuccess(block, true);
 					return;
 				}
@@ -141,6 +141,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	private synchronized void innerRegister(SendableRequest req) {
+		Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount());
 		addToGrabArray(req.getPriorityClass(), req.getRetryCount(), req.getClient(), req.getClientRequest(), req);
 		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
@@ -193,8 +194,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
-			if(result != null && !result.isEmpty())	
+			if(result != null && !result.isEmpty()) {
+				Logger.minor(this, "Found "+priority);
 				return result;
+			}
 			
 			Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
 			fuzz++;

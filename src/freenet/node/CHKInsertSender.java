@@ -541,6 +541,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         			}
         		}
         	} else {
+        		Logger.minor(this, "No completion waiter");
         		// There weren't any transfers
        			allTransfersCompleted = true;
         	}
@@ -602,7 +603,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	
 	private void makeCompletionWaiter() {
 		synchronized(this) {
-			if(cw != null)
+			if(cw == null)
 				cw = new CompletionWaiter();
 			else
 				return;
@@ -668,6 +669,7 @@ outer:		while(true) {
 					}
 					if(waitForCompletedTransfers(waiters, timeout, noTimeLeft)) {
 						synchronized(CHKInsertSender.this) {
+							Logger.minor(this, "All transfers completed (1) on "+uid);
 							allTransfersCompleted = true;
 							CHKInsertSender.this.notifyAll();
 						}
@@ -681,6 +683,7 @@ outer:		while(true) {
 							}
 						}
 						synchronized(CHKInsertSender.this) {
+							Logger.minor(this, "All transfers completed (2) on "+uid);
 							allTransfersCompleted = true;
 							CHKInsertSender.this.notifyAll();
 						}
@@ -748,6 +751,7 @@ outer:		while(true) {
 								waiters[i].completedTransfer(false);
 						}
 						synchronized(CHKInsertSender.this) {
+							Logger.minor(this, "All transfers completed (2) on "+uid);
 							transferTimedOut = true;
 							allTransfersCompleted = true;
 							CHKInsertSender.this.notifyAll();
@@ -774,6 +778,7 @@ outer:		while(true) {
 				if(!completedTransfers) {
 					try {
 						if(!noTimeLeft) {
+							Logger.minor(this, "Waiting for completion ("+timeout+"ms)");
 							nodesWaitingForCompletion.wait(timeout);
 						} else {
 							// Timed out
@@ -793,7 +798,7 @@ outer:		while(true) {
 			}
 			if(completedTransfers) {
 				// All done!
-				Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for.");
+				Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for for "+uid+" .");
 				synchronized(CHKInsertSender.this) {
 					allTransfersCompleted = true;
 					CHKInsertSender.this.notifyAll();
