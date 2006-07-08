@@ -41,6 +41,7 @@ public class FileBucket implements Bucket {
 	 * @param deleteOnExit If true, delete the file on a clean exit of the JVM. Irreversible - use with care!
 	 */
 	public FileBucket(File file, boolean readOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
+		if(file == null) throw new NullPointerException();
 		this.readOnly = readOnly;
 		this.file = file;
 		this.deleteOnFinalize = deleteOnFinalize;
