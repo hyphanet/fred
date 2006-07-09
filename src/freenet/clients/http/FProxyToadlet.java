@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.BindException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -368,7 +369,11 @@ public class FProxyToadlet extends Toadlet {
 			// Now start the server.
 			server.start();
 			
-		} catch (IOException ioe) {
+		}catch (BindException e){
+			Logger.error(node,"Failed to start FProxy port already bound: isn't freenet already running ?");
+			System.err.println("Failed to start FProxy port already bound: isn't freenet already running ?");
+			throw new InvalidConfigValueException("Can't bind fproxy on that port!");
+		}catch (IOException ioe) {
 			Logger.error(node,"Failed to start FProxy: "+ioe, ioe);
 		}
 		
