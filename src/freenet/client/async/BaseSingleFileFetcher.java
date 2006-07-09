@@ -12,7 +12,7 @@ import freenet.support.Logger;
 public abstract class BaseSingleFileFetcher implements SendableGet {
 
 	final ClientKey key;
-	private boolean cancelled;
+	protected boolean cancelled;
 	final int maxRetries;
 	private int retryCount;
 	final FetcherContext ctx;
@@ -95,7 +95,7 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 		cancelled = true;
 	}
 
-	public boolean isFinished() {
+	public synchronized boolean isFinished() {
 		return cancelled;
 	}
 	
