@@ -239,7 +239,7 @@ public class TextModeClientInterface implements Runnable {
 				outsb.append(new String(dataBytes));
 			} catch (FetchException e) {
 				outsb.append("Error: "+e.getMessage()+"\r\n");
-            	if(e.getMode() == e.SPLITFILE_ERROR && e.errorCodes != null) {
+            	if(e.getMode() == FetchException.SPLITFILE_ERROR && e.errorCodes != null) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)

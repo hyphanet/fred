@@ -8,6 +8,7 @@ package freenet.config;
  * it.
  */
 public class InvalidConfigValueException extends Exception {
+	private static final long serialVersionUID = -1;
 
 	public InvalidConfigValueException(String msg) {
 		super(msg);

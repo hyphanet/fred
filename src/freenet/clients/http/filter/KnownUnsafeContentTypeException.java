@@ -1,7 +1,7 @@
 package freenet.clients.http.filter;
 
 public class KnownUnsafeContentTypeException extends UnsafeContentTypeException {
-
+	private static final long serialVersionUID = -1;
 	MIMEType type;
 	
 	public KnownUnsafeContentTypeException(MIMEType type) {

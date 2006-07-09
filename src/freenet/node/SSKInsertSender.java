@@ -53,9 +53,6 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
     private boolean hasRecentlyCollided;
     private SSKBlock block;
     
-    /** Time at which we set status to a value other than NOT_FINISHED */
-    private long setStatusTime = -1;
-    
     private int status = -1;
     /** Still running */
     static final int NOT_FINISHED = -1;
@@ -444,8 +441,6 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
         Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
-
-        setStatusTime = System.currentTimeMillis();
         
         if(code == ROUTE_NOT_FOUND && !sentRequest)
         	code = ROUTE_REALLY_NOT_FOUND;

@@ -220,7 +220,7 @@ outer:		while(true) {
 					OutputStream out = output.getOutputStream();
 
 					int readBytes;
-inner:				while((readBytes = zis.read(buf)) > 0) {
+					while((readBytes = zis.read(buf)) > 0) {
 						out.write(buf, 0, readBytes);
 						readBytes += realLen;
 						if(readBytes > maxArchivedFileSize) {

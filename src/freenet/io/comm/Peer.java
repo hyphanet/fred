@@ -34,7 +34,7 @@ import freenet.transport.IPUtil;
 public class Peer implements WritableToDataOutputStream {
 
     public class LocalAddressException extends Exception {
-
+    	private static final long serialVersionUID = -1;
 	}
 
 	public static final String VERSION = "$Id: Peer.java,v 1.4 2005/08/25 17:28:19 amphibian Exp $";

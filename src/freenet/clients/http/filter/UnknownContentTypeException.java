@@ -3,7 +3,7 @@ package freenet.clients.http.filter;
 import freenet.support.HTMLEncoder;
 
 public class UnknownContentTypeException extends UnsafeContentTypeException {
-
+	private static final long serialVersionUID = -1;
 	final String type;
 	final String encodedType;
 	

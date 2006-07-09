@@ -37,7 +37,6 @@ public class PluginManager {
 	
 	private HashMap toadletList;
 	private HashMap pluginInfo;
-	private PluginManager pluginManager = null;
 	private PluginRespirator pluginRespirator = null;
 	private Node node;
 	SubConfig pmconfig;

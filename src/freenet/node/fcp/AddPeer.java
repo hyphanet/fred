@@ -11,12 +11,9 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import freenet.io.comm.PeerParseException;
-import freenet.keys.FreenetURI;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
-import freenet.support.Fields;
-import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class AddPeer extends FCPMessage {

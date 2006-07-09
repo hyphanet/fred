@@ -136,7 +136,6 @@ public class RequestHandler implements Runnable {
                         Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
                         source.send(df, null);
                         if(needsPubKey) {
-                        	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey().asBytes());
                         	source.send(df, null);
                         }
             		} else if(!rs.transferStarted()) {

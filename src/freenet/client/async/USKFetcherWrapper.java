@@ -2,7 +2,6 @@ package freenet.client.async;
 
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.node.RequestStarter;
 
 /**
  * Wrapper for a backgrounded USKFetcher.

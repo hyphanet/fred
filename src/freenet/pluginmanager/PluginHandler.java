@@ -57,10 +57,7 @@ public class PluginHandler {
 					return;
 			}
 			
-			if (plugin instanceof FredPlugin) {
-				FredPlugin plug = ((FredPlugin)plugin);
-				//if (plug.handles(FredPlugin.handleFProxy))
-				
+			if (plugin instanceof FredPlugin) {	
 				((FredPlugin)plugin).runPlugin(pr);
 			}
 			// If not FredPlugin, then the whole thing is aborted,

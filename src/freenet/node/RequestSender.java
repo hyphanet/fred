@@ -53,7 +53,6 @@ public final class RequestSender implements Runnable, ByteCounter {
     private DSAPublicKey pubKey;
     private byte[] headers;
     private byte[] sskData;
-    private boolean sentRequest;
     private SSKBlock block;
     
     // Terminal status
@@ -142,7 +141,6 @@ public final class RequestSender implements Runnable, ByteCounter {
             
             
             next.send(req, this);
-            sentRequest = true;
             
             Message msg = null;
             
@@ -309,7 +307,6 @@ public final class RequestSender implements Runnable, ByteCounter {
                 			byte[] data = br.receive();
                 			Logger.minor(this, "Received data");
                 			// Received data
-                			CHKBlock block;
                 			try {
                 				verifyAndCommit(data);
                 			} catch (KeyVerifyException e1) {

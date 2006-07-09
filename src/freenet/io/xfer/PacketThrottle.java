@@ -33,7 +33,6 @@ public class PacketThrottle {
 	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
 	private static Map _throttles = new HashMap();
-	private static Map _lastThrottleUse = new HashMap();
 	private final Peer _peer;
 	private long _roundTripTime = 500, _totalPackets = 0, _droppedPackets = 0;
 	private float _simulatedWindowSize = 2;

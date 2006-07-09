@@ -33,7 +33,7 @@ public class DHGroup extends CryptoKey {
 	}
 
 	public static CryptoKey readFromField(String field) {
-		BigInteger p, q, g;
+		BigInteger p, g;
 		StringTokenizer str = new StringTokenizer(field, ",");
 		p = new NativeBigInteger(1, HexUtil.hexToBytes(str.nextToken()));
 		g = new NativeBigInteger(1, HexUtil.hexToBytes(str.nextToken()));

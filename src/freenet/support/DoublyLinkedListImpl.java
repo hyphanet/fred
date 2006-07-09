@@ -69,7 +69,6 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     	// Help to detect removal after clear().
     	// The check in remove() is enough, strictly,
     	// as long as people don't add elements afterwards.
-    	Enumeration e = forwardElements();
     	DoublyLinkedList.Item pos = _headptr.next;
     	DoublyLinkedList.Item opos = _headptr;
     	while(true) {

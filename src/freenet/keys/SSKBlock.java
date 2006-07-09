@@ -8,7 +8,6 @@ import net.i2p.util.NativeBigInteger;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
-import freenet.node.DSAPublicKeyDatabase;
 import freenet.support.HexUtil;
 
 /**

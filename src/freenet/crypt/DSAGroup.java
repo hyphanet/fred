@@ -21,7 +21,6 @@ import net.i2p.util.NativeBigInteger;
  */
 public class DSAGroup extends CryptoKey {
 	private static final long serialVersionUID = -1;
-    private static final boolean DEBUG = false;
 
     private BigInteger p, q, g;
 
@@ -222,7 +221,7 @@ public class DSAGroup extends CryptoKey {
             qg.start();
         }
 
-        step1: do {
+        do {
             if ((cc++) % 15 == 0) System.err.print(".");
             if (multithread) {
                 while (qg.qs.size() < 1) {

@@ -616,7 +616,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		
 		public void run() {
 			Logger.minor(this, "Starting "+this);
-outer:		while(true) {
+			while(true) {
 			AwaitingCompletion[] waiters;
 			synchronized(nodesWaitingForCompletion) {
 				waiters = new AwaitingCompletion[nodesWaitingForCompletion.size()];

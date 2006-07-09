@@ -59,14 +59,11 @@ public final class Twofish_Algorithm // implicit no-argument constructor
 
    static final int BLOCK_SIZE = 16; // bytes in a data-block
    private static final int ROUNDS = 16;
-   private static final int MAX_ROUNDS = 16; // max # rounds (for allocating subkeys)
    
    /* Subkey array indices */
    private static final int INPUT_WHITEN = 0;
    private static final int OUTPUT_WHITEN = INPUT_WHITEN +  BLOCK_SIZE/4;
    private static final int ROUND_SUBKEYS = OUTPUT_WHITEN + BLOCK_SIZE/4; // 2*(# rounds)
-
-   private static final int TOTAL_SUBKEYS = ROUND_SUBKEYS + 2*MAX_ROUNDS;
 
    private static final int SK_STEP = 0x02020202;
    private static final int SK_BUMP = 0x01010101;
@@ -238,7 +235,6 @@ public final class Twofish_Algorithm // implicit no-argument constructor
    private static final int P_34 = 1;
 
    /** Primitive polynomial for GF(256) */
-   private static final int GF256_FDBK =   0x169;
    private static final int GF256_FDBK_2 = 0x169 / 2;
    private static final int GF256_FDBK_4 = 0x169 / 4;
 
@@ -331,7 +327,6 @@ System.out.println();
             ((x & 0x01) != 0 ? GF256_FDBK_4 : 0);
    }
 
-   private static final int Mx_1( int x ) { return x; }
    private static final int Mx_X( int x ) { return x ^ LFSR2(x); }            // 5B
    private static final int Mx_Y( int x ) { return x ^ LFSR1(x) ^ LFSR2(x); } // EF
 

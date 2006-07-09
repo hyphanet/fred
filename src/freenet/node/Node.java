@@ -498,8 +498,6 @@ public class Node {
 	private long myARKNumber;
 	/** FetcherContext for ARKs */
 	public final FetcherContext arkFetcherContext;
-	/** ARK currently inserting? */
-	private boolean arkCurrentlyInserting = false;
 	/** ARKFetcher's currently running, by identity */
 	private final HashMap arkFetchers;
 	/** Next time to log the PeerNode status summary */
@@ -3575,8 +3573,6 @@ public class Node {
 	 * IP address.
 	 */
 	public void processDetectedIPs(DetectedIP[] list) {
-		Vector fullAccess = new Vector();
-		Vector fullCone = new Vector();
 		pluginDetectedIPs = list;
 		redetectAddress();
 		shouldInsertARK();

@@ -1,11 +1,7 @@
 package freenet.node.fcp;
 
-import java.io.File;
-
-import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.PeerNode;
-import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 
 public class RemovePeer extends FCPMessage {

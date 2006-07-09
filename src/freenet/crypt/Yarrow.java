@@ -242,7 +242,7 @@ public class Yarrow extends RandomSource {
 	 */
 	private BlockCipher cipher_ctx;
 	private byte[] output_buffer, counter, allZeroString, tmp;
-	private int output_count, fetch_counter, block_bytes;
+	private int output_count, fetch_counter;
 
 	private void generator_init(String cipher) {
 		cipher_ctx = Util.getCipherByName(cipher);
@@ -360,15 +360,13 @@ public class Yarrow extends RandomSource {
 	 * 5.2 Entropy Accumulator
 	 */
 	private MessageDigest fast_pool, slow_pool;
-	private int fast_entropy, slow_entropy, digestSize;
+	private int fast_entropy, slow_entropy;
 	private boolean fast_select;
-	private byte[] long_buffer = new byte[8];
 	private Hashtable entropySeen;
 
 	private void accumulator_init(String digest) throws NoSuchAlgorithmException {
         fast_pool = MessageDigest.getInstance(digest);
  		slow_pool = MessageDigest.getInstance(digest);
-		digestSize = fast_pool.getDigestLength()<<3;
 		entropySeen = new Hashtable();
 	}
 

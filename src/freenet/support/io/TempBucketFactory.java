@@ -19,7 +19,6 @@ import freenet.support.Logger;
  * @author giannij
  */
 public class TempBucketFactory implements BucketFactory {
-	private File tmpDir = null;
 
 	private static class NOPHook implements TempBucketHook {
 		public void enlargeFile(long curLength, long finalLength) {

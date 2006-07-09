@@ -1,8 +1,5 @@
 package freenet.io.comm;
 
-import freenet.node.PacketSequenceException;
-
-
 /**
  * Filter interface used by Freenet to decrypt incoming packets.
  */
