@@ -57,10 +57,10 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private final HashMap urisByWord = new HashMap();
 	private final HashMap titlesOfURIs = new HashMap();
 
-	private final int minTimeBetweenEachIndexRewriting = 10;
+	private static final int minTimeBetweenEachIndexRewriting = 10;
 
 	// Can have many; this limit only exists to save memory.
-	private final int maxParallelRequests = 20;
+	private static final int maxParallelRequests = 20;
 	private int maxShownURIs = 50;
 
 	private Node node;

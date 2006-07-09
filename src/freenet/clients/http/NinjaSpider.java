@@ -83,10 +83,10 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	private final HashMap urisByWord = new HashMap();
 	private final HashMap titlesOfURIs = new HashMap();
 
-	private final int minTimeBetweenEachIndexRewriting = 10;
+	private static final int minTimeBetweenEachIndexRewriting = 10;
 
 	// Can have many; this limit only exists to save memory.
-	private final int maxParallelRequests = 20;
+	private static final int maxParallelRequests = 20;
 	private int maxShownURIs = 50;
 
 	private Node node;
@@ -94,19 +94,19 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	private final short PRIORITY_CLASS = RequestStarter.PREFETCH_PRIORITY_CLASS;
 	private boolean stopped = true;
 
-	private final String indexFilename = "new.index.xml";
+	private static final String indexFilename = "new.index.xml";
 
-	private final String pluginName = "Ninja spider";
+	private static final String pluginName = "Ninja spider";
 
-	private final boolean htmlOnly = true;
+	private static final boolean htmlOnly = true;
 
 
 	/* The ones below are required to genereate a correct index, see:
 	 * http://wiki.freenetproject.org/AnotherFreenetIndexFormat
 	 */
-	private final String indexTitle= "This is an index";
-	private final String indexOwner = "Another anonymous";
-	private final String indexOwnerEmail = null; /* can be null */
+	private static final String indexTitle= "This is an index";
+	private static final String indexOwner = "Another anonymous";
+	private static final String indexOwnerEmail = null; /* can be null */
 	private final HashMap sizeOfURIs = new HashMap(); /* String (URI) -> Long */
 	private final HashMap mimeOfURIs = new HashMap(); /* String (URI) -> String */
 	private final HashMap lastPositionByURI = new HashMap(); /* String (URI) -> Integer */ /* Use to determine word position on each uri */

@@ -507,7 +507,7 @@ public class Node {
 	/** Next time to log the PeerNode status summary */
 	private long nextPeerNodeStatusLogTime = -1;
 	/** PeerNode status summary log interval (milliseconds) */
-	private final long peerNodeStatusLogInterval = 1000;
+	private static final long peerNodeStatusLogInterval = 1000;
 	/** PeerNode statuses, by status */
 	private final HashMap peerNodeStatuses;
 	/** PeerNode routing backoff reasons, by reason */
@@ -515,17 +515,17 @@ public class Node {
 	/** Next time to update oldestNeverConnectedPeerAge */
 	private long nextOldestNeverConnectedPeerAgeUpdateTime = -1;
 	/** oldestNeverConnectedPeerAge update interval (milliseconds) */
-	private final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
+	private static final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
 	/** age of oldest never connected peer (milliseconds) */
 	private long oldestNeverConnectedPeerAge = 0;
 	/** Next time to start a ready ARKFetcher */
 	private long nextReadyARKFetcherStartTime = -1;
 	/** Ready ARKFetcher start interval (milliseconds) */
-	private final long readyARKFetcherStartInterval = 1000;
+	private static final long readyARKFetcherStartInterval = 1000;
 	/** Next time to update PeerManagerUserAlert stats */
 	private long nextPeerManagerUserAlertStatsUpdateTime = -1;
 	/** PeerManagerUserAlert stats update interval (milliseconds) */
-	private final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
+	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 	/** first time bwlimitDelay was over PeerManagerUserAlert threshold */
 	private long firstBwlimitDelayTimeThresholdBreak = 0;
 	/** first time nodeAveragePing was over PeerManagerUserAlert threshold */

@@ -8,7 +8,7 @@ import freenet.support.Logger;
 public class UpdateURICallback implements StringCallback{
 
 	private final Node node;
-	private final String baseURI = "freenet:USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/update/";
+	private static final String baseURI = "freenet:USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/update/";
 			
 	public UpdateURICallback(Node node) {
 		this.node = node;
