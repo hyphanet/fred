@@ -69,7 +69,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         curValue = dis.readDouble();
         if(Double.isInfinite(curValue) || Double.isNaN(curValue))
             throw new IOException("Invalid weightedTotal: "+curValue);
-        if(curValue < min || curValue > max)
+        if((curValue < min) || (curValue > max))
             throw new IOException("Out of range: curValue = "+curValue);
         started = dis.readBoolean();
         long priorExperienceTime = dis.readLong();
@@ -117,7 +117,7 @@ public class TimeDecayingRunningAverage implements RunningAverage {
             if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);
             if(thisHalfLife == 0) thisHalfLife = 1;
             double changeFactor =
-            	Math.pow(0.5, ((double)thisInterval) / thisHalfLife);
+            	Math.pow(0.5, (thisInterval) / thisHalfLife);
             double oldCurValue = curValue;
             curValue = curValue * changeFactor /* close to 1.0 if short interval, close to 0.0 if long interval */ 
             	+ (1.0 - changeFactor) * d;

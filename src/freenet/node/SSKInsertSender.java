@@ -233,7 +233,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 				break;
             }
             
-            if(msg == null || msg.getSpec() != DMT.FNPSSKAccepted) continue;
+            if((msg == null) || (msg.getSpec() != DMT.FNPSSKAccepted)) continue;
             
             Logger.minor(this, "Got Accepted on "+this);
             
@@ -442,7 +442,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         
-        if(code == ROUTE_NOT_FOUND && !sentRequest)
+        if((code == ROUTE_NOT_FOUND) && !sentRequest)
         	code = ROUTE_REALLY_NOT_FOUND;
         
         status = code;
@@ -451,8 +451,8 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             notifyAll();
         }
 
-        if(code != TIMED_OUT && code != GENERATED_REJECTED_OVERLOAD && code != INTERNAL_ERROR
-        		&& code != ROUTE_REALLY_NOT_FOUND) {
+        if((code != TIMED_OUT) && (code != GENERATED_REJECTED_OVERLOAD) && (code != INTERNAL_ERROR)
+        		&& (code != ROUTE_REALLY_NOT_FOUND)) {
         	Logger.minor(this, "SSK insert cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+code+")");
         	(source == null ? node.localChkInsertBytesSentAverage : node.remoteChkInsertBytesSentAverage)
         			.report(getTotalSentBytes());

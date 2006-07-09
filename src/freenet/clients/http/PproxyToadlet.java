@@ -56,7 +56,7 @@ public class PproxyToadlet extends Toadlet {
 		MultiValueTable headers = new MultiValueTable();
 		
 		String pass = request.getParam("formPassword");
-		if(pass == null || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(node.formPassword)) {
 			MultiValueTable hdrs = new MultiValueTable();
 			headers.put("Location", "/queue/");
 			ctx.sendReplyHeaders(302, "Found", hdrs, null, 0);

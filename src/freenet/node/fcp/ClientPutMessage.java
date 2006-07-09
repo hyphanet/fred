@@ -99,14 +99,14 @@ public class ClientPutMessage extends DataCarryingMessage {
 		} else {
 			try {
 				priorityClass = Short.parseShort(priorityString, 10);
-				if(priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS || priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)
+				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS))
 					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
 			}
 		}
 		String uploadFrom = fs.get("UploadFrom");
-		if(uploadFrom == null || uploadFrom.equalsIgnoreCase("direct")) {
+		if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
 			uploadFromType = UPLOAD_FROM_DIRECT;
 			String dataLengthString = fs.get("DataLength");
 			if(dataLengthString == null)
@@ -148,7 +148,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "UploadFrom invalid or unrecognized: "+uploadFrom, identifier);
 		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		String persistenceString = fs.get("Persistence");
-		if(persistenceString == null || persistenceString.equalsIgnoreCase("connection")) {
+		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
 			// Default: persists until connection loss.
 			persistenceType = ClientRequest.PERSIST_CONNECTION;
 		} else if(persistenceString.equalsIgnoreCase("reboot")) {

@@ -390,7 +390,7 @@ public class KeyTracker {
         }
         if(seqNumber > max) {
         	try {
-            if(max != -1 && seqNumber - max > 1) {
+            if((max != -1) && (seqNumber - max > 1)) {
                 Logger.minor(this, "Queueing resends from "+max+" to "+seqNumber);
                 // Missed some packets out
                 for(int i=max+1;i<seqNumber;i++) {

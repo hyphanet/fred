@@ -37,7 +37,7 @@ public class InsertableClientSSK extends ClientSSK {
 			return ClientKSK.create(uri);
 		if(!uri.getKeyType().equalsIgnoreCase("SSK"))
 			throw new MalformedURLException();
-		if(uri.getDocName() == null || uri.getDocName().length() == 0)
+		if((uri.getDocName() == null) || (uri.getDocName().length() == 0))
 			throw new MalformedURLException("SSK URIs must have a document name (to avoid ambiguity)");
 		if(uri.getExtra() != null)
 			throw new MalformedURLException("Insertable SSK URIs must NOT have ,extra - inserting from a pubkey rather than the privkey perhaps?");
@@ -58,7 +58,7 @@ public class InsertableClientSSK extends ClientSSK {
 		byte[] compressedData;
 		short compressionAlgo;
 		try {
-			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH, ClientSSKBlock.DATA_LENGTH, true);
+			Compressed comp = Key.compress(sourceData, dontCompress, alreadyCompressedCodec, sourceLength, ClientSSKBlock.MAX_DECOMPRESSED_DATA_LENGTH, SSKBlock.DATA_LENGTH, true);
 			compressedData = comp.compressedData;
 			compressionAlgo = comp.compressionAlgorithm;
 		} catch (KeyEncodeException e) {
@@ -74,17 +74,17 @@ public class InsertableClientSSK extends ClientSSK {
         }
         byte[] data;
         // First pad it
-        if(compressedData.length != ClientSSKBlock.DATA_LENGTH) {
+        if(compressedData.length != SSKBlock.DATA_LENGTH) {
             // Hash the data
             if(compressedData.length != 0)
             	md256.update(compressedData);
             byte[] digest = md256.digest();
             MersenneTwister mt = new MersenneTwister(digest);
-            data = new byte[ClientSSKBlock.DATA_LENGTH];
+            data = new byte[SSKBlock.DATA_LENGTH];
             System.arraycopy(compressedData, 0, data, 0, compressedData.length);
-            byte[] randomBytes = new byte[ClientSSKBlock.DATA_LENGTH-compressedData.length];
+            byte[] randomBytes = new byte[SSKBlock.DATA_LENGTH-compressedData.length];
             mt.nextBytes(randomBytes);
-            System.arraycopy(randomBytes, 0, data, compressedData.length, ClientSSKBlock.DATA_LENGTH-compressedData.length);
+            System.arraycopy(randomBytes, 0, data, compressedData.length, SSKBlock.DATA_LENGTH-compressedData.length);
         } else {
         	data = compressedData;
         }
@@ -114,8 +114,8 @@ public class InsertableClientSSK extends ClientSSK {
         byte[] headers = new byte[SSKBlock.TOTAL_HEADERS_LENGTH];
         // First two bytes = hash ID
         int x = 0;
-        headers[x++] = (byte) (ClientSSKBlock.HASH_SHA256 >> 8);
-        headers[x++] = (byte) (ClientSSKBlock.HASH_SHA256);
+        headers[x++] = (byte) (KeyBlock.HASH_SHA256 >> 8);
+        headers[x++] = (byte) (KeyBlock.HASH_SHA256);
         // Then crypto ID
         headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256 >> 8);
         headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256);
@@ -149,8 +149,8 @@ public class InsertableClientSSK extends ClientSSK {
 		// Pack R and S into 32 bytes each, and copy to headers.
 		
 		// Then create and return the ClientSSKBlock.
-		byte[] rBuf = truncate(sig.getR().toByteArray(), ClientSSKBlock.SIG_R_LENGTH);
-		byte[] sBuf = truncate(sig.getS().toByteArray(), ClientSSKBlock.SIG_S_LENGTH);
+		byte[] rBuf = truncate(sig.getR().toByteArray(), SSKBlock.SIG_R_LENGTH);
+		byte[] sBuf = truncate(sig.getS().toByteArray(), SSKBlock.SIG_S_LENGTH);
 		System.arraycopy(rBuf, 0, headers, x, rBuf.length);
 		x+=rBuf.length;
 		System.arraycopy(sBuf, 0, headers, x, sBuf.length);

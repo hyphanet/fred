@@ -83,10 +83,10 @@ public class Serializer {
 			return new BitArray(dis);
 		} else if (type.equals(NodeCHK.class)) {
 			// Use Key.read(...) because write(...) writes the TYPE field.
-			return (NodeCHK) Key.read(dis);
+			return Key.read(dis);
 		} else if (type.equals(NodeSSK.class)) {
 			// Use Key.read(...) because write(...) writes the TYPE field.
-			return (NodeSSK) Key.read(dis);
+			return Key.read(dis);
 		} else if (type.equals(Key.class)) {
 		    return Key.read(dis);
 		} else {

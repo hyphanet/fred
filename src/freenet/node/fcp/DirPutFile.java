@@ -39,7 +39,7 @@ abstract class DirPutFile {
 	 */
 	public static DirPutFile create(SimpleFieldSet subset, String identifier, BucketFactory bf) throws MessageInvalidException {
 		String type = subset.get("UploadFrom");
-		if(type == null || type.equalsIgnoreCase("direct")) {
+		if((type == null) || type.equalsIgnoreCase("direct")) {
 			return new DirectDirPutFile(subset, identifier, bf);
 		} else if(type.equalsIgnoreCase("disk")) {
 			return new DiskDirPutFile(subset, identifier);

@@ -92,7 +92,7 @@ public class ReceivedPacketNumbers {
                     li.add(r1);
                     return true;
                 }
-                if(seqNumber >= r.start && seqNumber <= r.end) {
+                if((seqNumber >= r.start) && (seqNumber <= r.end)) {
                     // Duh
                     return true;
                 }
@@ -144,10 +144,10 @@ public class ReceivedPacketNumbers {
             if(r.start > r.end) {
                 Logger.error(this, "Bad Range: "+r);
             }
-            if(last != null && r.start < last.end) {
+            if((last != null) && (r.start < last.end)) {
                 Logger.error(this, "This range: "+r+" but last was: "+last);
             }
-            if(r.start <= seqNumber && r.end >= seqNumber)
+            if((r.start <= seqNumber) && (r.end >= seqNumber))
                 return true;
         }
         return false;

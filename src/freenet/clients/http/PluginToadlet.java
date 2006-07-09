@@ -121,7 +121,7 @@ public class PluginToadlet extends Toadlet {
 		}
 		
 		String pass = httpRequest.getParam("formPassword");
-		if(pass == null || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(node.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/plugin/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);

@@ -45,7 +45,7 @@ public class FileLoggerHook extends LoggerHook {
 
 	private volatile boolean closed = false;
 
-	protected int INTERVAL = GregorianCalendar.MINUTE;
+	protected int INTERVAL = Calendar.MINUTE;
 	protected int INTERVAL_MULTIPLIER = 5;
 
 	/** Name of the local host (called uname in Unix-like operating systems). */
@@ -254,7 +254,7 @@ public class FileLoggerHook extends LoggerHook {
 				try {
 					thisTime = System.currentTimeMillis();
 					if (baseFilename != null) {
-						if (thisTime > nextHour || switchedBaseFilename) {
+						if ((thisTime > nextHour) || switchedBaseFilename) {
 							// Switch logs
 							try {
 								logStream.flush();
@@ -506,7 +506,7 @@ public class FileLoggerHook extends LoggerHook {
 					name = name.substring(0, name.length()-".log.gz".length());
 				}
 				name = name.substring(prefix.length());
-				if(name.length() == 0 || name.charAt(0) != '-') {
+				if((name.length() == 0) || (name.charAt(0) != '-')) {
 					Logger.minor(this, "Deleting unrecognized: "+name+" ("+f.getPath()+")");
 					f.delete();
 					continue;
@@ -692,7 +692,7 @@ public class FileLoggerHook extends LoggerHook {
 		super(threshold);
 		this.maxOldLogfilesDiskUsage = maxOldLogfilesDiskUsage;
 		this.logOverwrite = overwrite;
-		if (dfmt != null && dfmt.length() != 0) {
+		if ((dfmt != null) && (dfmt.length() != 0)) {
 			try {
 				df = new SimpleDateFormat(dfmt);
 			} catch (RuntimeException e) {
@@ -702,7 +702,7 @@ public class FileLoggerHook extends LoggerHook {
 			df = DateFormat.getDateTimeInstance();
 
 		df.setTimeZone(TimeZone.getTimeZone("UTC"));
-		if (fmt == null || fmt.length() == 0)
+		if ((fmt == null) || (fmt.length() == 0))
 			fmt = "d:c:h:t:p:m";
 		char[] f = fmt.toCharArray();
 
@@ -712,7 +712,7 @@ public class FileLoggerHook extends LoggerHook {
 
 		boolean comment = false;
 		for (int i = 0; i < f.length; ++i) {
-			if (!comment && numberOf(f[i]) != 0) {
+			if (!comment && (numberOf(f[i]) != 0)) {
 				if (sb.length() > 0) {
 					strVec.addElement(sb.toString());
 					fmtVec.addElement(new Integer(0));
@@ -812,9 +812,9 @@ public class FileLoggerHook extends LoggerHook {
 			list.add(b);
 			listBytes += (b.length + 16); /* total guess */
 			int x = 0;
-			if (list.size() > MAX_LIST_SIZE || listBytes > MAX_LIST_BYTES) {
-				while (list.size() > (MAX_LIST_SIZE * 0.9F)
-					|| listBytes > (MAX_LIST_BYTES * 0.9F)) {
+			if ((list.size() > MAX_LIST_SIZE) || (listBytes > MAX_LIST_BYTES)) {
+				while ((list.size() > (MAX_LIST_SIZE * 0.9F))
+					|| (listBytes > (MAX_LIST_BYTES * 0.9F))) {
 					byte[] ss = (byte[]) (list.removeFirst());
 					listBytes -= (ss.length + 16);
 					x++;
@@ -905,7 +905,7 @@ public class FileLoggerHook extends LoggerHook {
 			while(i.hasNext()) {
 				OldLogFile olf = (OldLogFile) i.next();
 				Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
-				if(time >= olf.start && time < olf.end) {
+				if((time >= olf.start) && (time < olf.end)) {
 					toReturn = olf;
 					Logger.minor(this, "Found "+olf);
 					break;
@@ -963,7 +963,7 @@ public class FileLoggerHook extends LoggerHook {
 			long startTime = System.currentTimeMillis();
 			long endTime = startTime + 10000;
 			long now;
-			while((now = System.currentTimeMillis()) < endTime && !switchedBaseFilename) {
+			while(((now = System.currentTimeMillis()) < endTime) && !switchedBaseFilename) {
 				try {
 					wait(Math.max(1, endTime-now));
 				} catch (InterruptedException e) {

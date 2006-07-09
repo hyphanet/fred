@@ -114,7 +114,7 @@ public class PageMaker {
 			if (url.getProtocol().equals("file")) {
 				File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1").replaceAll("\\|", ":"));
 				File[] themeDirectories = themesDirectory.listFiles();
-				for (int themeIndex = 0; themeDirectories != null && themeIndex < themeDirectories.length; themeIndex++) {
+				for (int themeIndex = 0; (themeDirectories != null) && (themeIndex < themeDirectories.length); themeIndex++) {
 					File themeDirectory = themeDirectories[themeIndex];
 					if (themeDirectory.isDirectory() && !themeDirectory.getName().startsWith(".")) {
 						themes.add(themeDirectory.getName());

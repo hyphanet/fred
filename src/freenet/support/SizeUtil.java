@@ -30,7 +30,7 @@ public class SizeUtil {
 			String o = Double.toString(mantissa);
 			if(o.indexOf('.') == 3)
 				o = o.substring(0, 3);
-			else if(o.indexOf('.') > -1 && o.indexOf('E') == -1 && o.length() > 4)
+			else if((o.indexOf('.') > -1) && (o.indexOf('E') == -1) && (o.length() > 4))
 				o = o.substring(0, 4);
 			o += " " + suffixes[i];
 			return o;

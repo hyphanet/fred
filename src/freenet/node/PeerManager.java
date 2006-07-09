@@ -133,7 +133,7 @@ public class PeerManager {
         // removing from connectedPeers
         ArrayList a = new ArrayList();
         for(int i=0;i<myPeers.length;i++) {
-        	if(myPeers[i]!=pn && myPeers[i].isConnected())
+        	if((myPeers[i]!=pn) && myPeers[i].isConnected())
         		a.add(myPeers[i]);
         }
         
@@ -168,7 +168,7 @@ public class PeerManager {
 			// removing from connectedPeers
 			ArrayList a = new ArrayList();
 			for(int i=0;i<myPeers.length;i++) {
-				if(myPeers[i]!=pn && myPeers[i].isConnected())
+				if((myPeers[i]!=pn) && myPeers[i].isConnected())
 					a.add(myPeers[i]);
 			}
 			PeerNode[] newConnectedPeers = new PeerNode[a.size()];
@@ -311,7 +311,7 @@ public class PeerManager {
             }
         }
         int lengthWithoutExcluded = v.size();
-        if(exclude != null && exclude.isConnected())
+        if((exclude != null) && exclude.isConnected())
             v.add(exclude);
         PeerNode[] newConnectedPeers = new PeerNode[v.size()];
         newConnectedPeers = (PeerNode[]) v.toArray(newConnectedPeers);
@@ -383,7 +383,7 @@ public class PeerManager {
      */
     public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf) {
 	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false);
-	if (best != null && node.getToadletContainer() != null &&
+	if ((best != null) && (node.getToadletContainer() != null) &&
 			node.getToadletContainer().isAdvancedDarknetEnabled()) {
 		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
 		if(nbo != null) {
@@ -435,7 +435,7 @@ public class PeerManager {
             any = p;
             double diff = distance(p, loc);
             Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+" for "+p.getPeer());
-            if((!ignoreSelf) && diff > maxDiff) continue;
+            if((!ignoreSelf) && (diff > maxDiff)) continue;
             if(diff < bestDiff) {
                 best = p;
                 bestDiff = diff;

@@ -46,7 +46,7 @@ public class DetectedIP {
 			return false;
 		}
 		DetectedIP d = (DetectedIP)o;
-		return (d.natType == natType && d.publicAddress.equals(publicAddress));
+		return ((d.natType == natType) && d.publicAddress.equals(publicAddress));
 	}
 	
 	public int hashCode() {

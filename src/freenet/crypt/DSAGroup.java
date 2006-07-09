@@ -46,8 +46,8 @@ public class DSAGroup extends CryptoKey {
         this.gAsHexString = gAsHexString;
 
         //Sanity check. Needed because of the Kaffe workaround further down
-        if (pAsHexString == null || qAsHexString == null
-                || gAsHexString == null)
+        if ((pAsHexString == null) || (qAsHexString == null)
+                || (gAsHexString == null))
                 throw new NullPointerException("Invalid DSAGroup");
 
         try {
@@ -267,11 +267,11 @@ public class DSAGroup extends CryptoKey {
         q = grp.getQ();
         g = grp.getG();
         BigInteger pmin1 = p.subtract(BigInteger.ONE);
-        boolean rv = !(p.bitLength() > 1024 || p.bitLength() < 512)
-                && (p.bitLength() % 64) == 0 && q.bitLength() == 160
-                && q.compareTo(p) == -1 && isPrime(p, 80) && isPrime(q, 80)
+        boolean rv = !((p.bitLength() > 1024) || (p.bitLength() < 512))
+                && ((p.bitLength() % 64) == 0) && (q.bitLength() == 160)
+                && (q.compareTo(p) == -1) && isPrime(p, 80) && isPrime(q, 80)
                 && pmin1.mod(q).equals(BigInteger.ZERO)
-                && g.compareTo(BigInteger.ONE) == 1
+                && (g.compareTo(BigInteger.ONE) == 1)
                 && !g.equals(pmin1.modPow(pmin1.divide(q), p));
         return rv;
     }

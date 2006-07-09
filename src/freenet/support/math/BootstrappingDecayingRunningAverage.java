@@ -69,8 +69,8 @@ public final class BootstrappingDecayingRunningAverage implements
         double decayFactor = 1.0 / (Math.min(reports, maxReports));
         currentValue = (d * decayFactor) + 
         	(currentValue * (1-decayFactor));
-        if(d < 0.1 && d >= 0.0) zeros++;
-        if(d > 0.9 && d <= 1.0) ones++;
+        if((d < 0.1) && (d >= 0.0)) zeros++;
+        if((d > 0.9) && (d <= 1.0)) ones++;
     }
 
     public void report(long d) {
@@ -121,7 +121,7 @@ public final class BootstrappingDecayingRunningAverage implements
         if(reports < 0)
             throw new IOException("Negative reports");
         currentValue = dis.readDouble();
-        if(currentValue < min || currentValue > max)
+        if((currentValue < min) || (currentValue > max))
             throw new IOException("Value out of range: "+currentValue);
     }
     

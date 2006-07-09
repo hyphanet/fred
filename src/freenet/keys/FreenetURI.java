@@ -101,16 +101,16 @@ public class FreenetURI {
 			if(keyType.equals("USK")) {
 				if(!(suggestedEdition == f.suggestedEdition)) return false;
 			}
-			if(docName == null ^ f.docName == null) return false;
-			if(metaStr == null ^ f.metaStr == null) return false;
-			if(routingKey == null ^ f.routingKey == null) return false;
-			if(cryptoKey == null ^ f.cryptoKey == null) return false;
-			if(extra == null ^ f.extra == null) return false;
-			if(docName != null && !docName.equals(f.docName)) return false;
-			if(metaStr != null && !Arrays.equals(metaStr, f.metaStr)) return false;
-			if(routingKey != null && !Arrays.equals(routingKey, f.routingKey)) return false;
-			if(cryptoKey != null && !Arrays.equals(cryptoKey, f.cryptoKey)) return false;
-			if(extra != null && !Arrays.equals(extra, f.extra)) return false;
+			if((docName == null) ^ (f.docName == null)) return false;
+			if((metaStr == null) ^ (f.metaStr == null)) return false;
+			if((routingKey == null) ^ (f.routingKey == null)) return false;
+			if((cryptoKey == null) ^ (f.cryptoKey == null)) return false;
+			if((extra == null) ^ (f.extra == null)) return false;
+			if((docName != null) && !docName.equals(f.docName)) return false;
+			if((metaStr != null) && !Arrays.equals(metaStr, f.metaStr)) return false;
+			if((routingKey != null) && !Arrays.equals(routingKey, f.routingKey)) return false;
+			if((cryptoKey != null) && !Arrays.equals(cryptoKey, f.cryptoKey)) return false;
+			if((extra != null) && !Arrays.equals(extra, f.extra)) return false;
 			return true;
 		}
 	}
@@ -213,7 +213,7 @@ public class FreenetURI {
 		}
 		// check scheme
 		int colon = URI.indexOf(':');
-		if (colon != -1
+		if ((colon != -1)
 			&& !URI.substring(0, colon).equalsIgnoreCase("freenet")) {
 			throw new MalformedURLException("Invalid scheme for Freenet URI");
 		}
@@ -354,7 +354,7 @@ public class FreenetURI {
 	}
 
 	public String getMetaString() {
-		return (metaStr == null || metaStr.length == 0 ? null : metaStr[0]);
+		return ((metaStr == null) || (metaStr.length == 0) ? null : metaStr[0]);
 	}
 
 	public String[] getAllMetaStrings() {
@@ -382,7 +382,7 @@ public class FreenetURI {
 	 */
 	public FreenetURI popMetaString() {
 		String[] newMetaStr = null;
-		if (metaStr != null && metaStr.length > 1) {
+		if ((metaStr != null) && (metaStr.length > 1)) {
 			newMetaStr = new String[metaStr.length - 1];
 			System.arraycopy(metaStr, 1, newMetaStr, 0, newMetaStr.length);
 		}
@@ -568,7 +568,7 @@ public class FreenetURI {
 		byte[] routingKey = null;
 		byte[] cryptoKey = null;
 		byte[] extra = null;
-		if(type == CHK || type == SSK) {
+		if((type == CHK) || (type == SSK)) {
 			// routingKey is a hash, so is exactly 32 bytes
 			routingKey = new byte[32];
 			dis.readFully(routingKey);
@@ -638,9 +638,9 @@ public class FreenetURI {
 			if(cryptoKey.length != 32)
 				throw new MalformedURLException("Crypto key must be of length 32");
 			dos.write(cryptoKey);
-			if(keyType.equals("CHK") && extra.length != ClientCHK.EXTRA_LENGTH)
+			if(keyType.equals("CHK") && (extra.length != ClientCHK.EXTRA_LENGTH))
 				throw new MalformedURLException("Wrong number of extra bytes for CHK");
-			if(keyType.equals("SSK") && extra.length != ClientSSK.EXTRA_LENGTH)
+			if(keyType.equals("SSK") && (extra.length != ClientSSK.EXTRA_LENGTH))
 				throw new MalformedURLException("Wrong number of extra bytes for SSK");
 			dos.write(extra);
 		}
@@ -700,7 +700,7 @@ public class FreenetURI {
 		StringBuffer sb = new StringBuffer(s.length());
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
-			if(c == '/' || c == '\\' || c == '%' || c == '>' || c == '<' || c == ':' || c == '\'' || c == '\"')
+			if((c == '/') || (c == '\\') || (c == '%') || (c == '>') || (c == '<') || (c == ':') || (c == '\'') || (c == '\"'))
 				continue;
 			if(Character.isDigit(c))
 				sb.append(c);
@@ -708,7 +708,7 @@ public class FreenetURI {
 				sb.append(c);
 			else if(Character.isWhitespace(c))
 				sb.append(' ');
-			else if(c == '-' || c == '_' || c == '.')
+			else if((c == '-') || (c == '_') || (c == '.'))
 				sb.append(c);
 		}
 		return sb.toString();

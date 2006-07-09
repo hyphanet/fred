@@ -89,9 +89,9 @@ public class NumberedRecentItems {
         for(int i=0;i<Math.min(count, items.length);i++) {
             NumberedItem item = items[i];
             long num = item == null ? -1 : item.getNumber();
-            if(item != null && num < 0)
+            if((item != null) && (num < 0))
                 throw new IllegalStateException("getNumber() must return positive numbers");
-            if(num < prevNum || num != -1 && num == prevNum) {
+            if((num < prevNum) || ((num != -1) && (num == prevNum))) {
                 throw new IllegalStateException("Must be higher than prev: "+num+" "+prevNum);
             }
             prevNum = num;

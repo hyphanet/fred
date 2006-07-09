@@ -169,13 +169,13 @@ public class Metadata implements Cloneable {
 		if(version != 0)
 			throw new MetadataParseException("Unsupported version "+version);
 		documentType = dis.readByte();
-		if(documentType < 0 || documentType > 5)
+		if((documentType < 0) || (documentType > 5))
 			throw new MetadataParseException("Unsupported document type: "+documentType);
 		Logger.minor(this, "Document type: "+documentType);
 		
 		boolean compressed = false;
-		if(documentType == SIMPLE_REDIRECT || documentType == MULTI_LEVEL_METADATA
-				|| documentType == ZIP_MANIFEST || documentType == ZIP_INTERNAL_REDIRECT) {
+		if((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA)
+				|| (documentType == ZIP_MANIFEST) || (documentType == ZIP_INTERNAL_REDIRECT)) {
 			short flags = dis.readShort();
 			splitfile = (flags & FLAGS_SPLITFILE) == FLAGS_SPLITFILE;
 			dbr = (flags & FLAGS_DBR) == FLAGS_DBR;
@@ -222,7 +222,7 @@ public class Metadata implements Cloneable {
 				Logger.minor(this, "Compressed MIME");
 				short x = dis.readShort();
 				compressedMIMEValue = (short) (x & 32767); // chop off last bit
-				hasCompressedMIMEParams = ((int)compressedMIMEValue & 32768) == 32768;
+				hasCompressedMIMEParams = (compressedMIMEValue & 32768) == 32768;
 				if(hasCompressedMIMEParams) {
 					compressedMIMEParams = dis.readShort();
 					if(compressedMIMEParams != 0) {
@@ -261,15 +261,15 @@ public class Metadata implements Cloneable {
 		
 		clientMetadata = new ClientMetadata(mimeType);
 		
-		if((!splitfile) && (documentType == SIMPLE_REDIRECT || documentType == ZIP_MANIFEST)) {
+		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ZIP_MANIFEST))) {
 			simpleRedirectKey = readKey(dis);
 		} else if(splitfile) {
 			splitfileAlgorithm = dis.readShort();
-			if(!(splitfileAlgorithm == SPLITFILE_NONREDUNDANT ||
-					splitfileAlgorithm == SPLITFILE_ONION_STANDARD))
+			if(!((splitfileAlgorithm == SPLITFILE_NONREDUNDANT) ||
+					(splitfileAlgorithm == SPLITFILE_ONION_STANDARD)))
 				throw new MetadataParseException("Unknown splitfile algorithm "+splitfileAlgorithm);
 			
-			if(splitfileAlgorithm == SPLITFILE_NONREDUNDANT &&
+			if((splitfileAlgorithm == SPLITFILE_NONREDUNDANT) &&
 					!(fullKeys || splitUseLengths))
 				throw new MetadataParseException("Non-redundant splitfile invalid unless whacky");
 			
@@ -522,17 +522,17 @@ public class Metadata implements Cloneable {
 	 * @param cm The client metadata, if any.
 	 */
 	public Metadata(byte docType, FreenetURI uri, ClientMetadata cm) {
-		if(docType == SIMPLE_REDIRECT || docType == ZIP_MANIFEST) {
+		if((docType == SIMPLE_REDIRECT) || (docType == ZIP_MANIFEST)) {
 			documentType = docType;
 			clientMetadata = cm;
-			if(cm != null && !cm.isTrivial()) {
+			if((cm != null) && !cm.isTrivial()) {
 				setMIMEType(cm.getMIMEType());
 			} else {
 				setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
 				noMIME = true;
 			}
 			simpleRedirectKey = uri;
-			if(!(uri.getKeyType().equals("CHK") && (uri.getAllMetaStrings() == null || uri.getAllMetaStrings().length == 0)))
+			if(!(uri.getKeyType().equals("CHK") && ((uri.getAllMetaStrings() == null) || (uri.getAllMetaStrings().length == 0))))
 				fullKeys = true;
 		} else
 			throw new IllegalArgumentException();
@@ -617,7 +617,7 @@ public class Metadata implements Cloneable {
 			freenetURI.writeFullBinaryKeyWithLength(dos);
 		} else {
 			String[] meta = freenetURI.getAllMetaStrings();
-			if(meta != null && meta.length > 0)
+			if((meta != null) && (meta.length > 0))
 				throw new MalformedURLException("Not a plain CHK");
 			BaseClientKey key = BaseClientKey.getBaseKey(freenetURI);
 			if(key instanceof ClientCHK) {
@@ -651,9 +651,9 @@ public class Metadata implements Cloneable {
 	 * Does the metadata point to a single URI?
 	 */
 	public boolean isSingleFileRedirect() {
-		return ((!splitfile) &&
-				documentType == SIMPLE_REDIRECT || documentType == MULTI_LEVEL_METADATA ||
-				documentType == ZIP_MANIFEST);
+		return (((!splitfile) &&
+				(documentType == SIMPLE_REDIRECT)) || (documentType == MULTI_LEVEL_METADATA) ||
+				(documentType == ZIP_MANIFEST));
 	}
 
 	/**
@@ -700,7 +700,7 @@ public class Metadata implements Cloneable {
 
 	/** Is this a simple splitfile? */
 	public boolean isSimpleSplitfile() {
-		return splitfile && documentType == SIMPLE_REDIRECT;
+		return splitfile && (documentType == SIMPLE_REDIRECT);
 	}
 
 	/** Is multi-level/indirect metadata? */
@@ -727,8 +727,8 @@ public class Metadata implements Cloneable {
 		dos.writeLong(FREENET_METADATA_MAGIC);
 		dos.writeShort(0); // version
 		dos.writeByte(documentType);
-		if(documentType == SIMPLE_REDIRECT || documentType == MULTI_LEVEL_METADATA
-				|| documentType == ZIP_MANIFEST || documentType == ZIP_INTERNAL_REDIRECT) {
+		if((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA)
+				|| (documentType == ZIP_MANIFEST) || (documentType == ZIP_INTERNAL_REDIRECT)) {
 			short flags = 0;
 			if(splitfile) flags |= FLAGS_SPLITFILE;
 			if(dbr) flags |= FLAGS_DBR;
@@ -775,7 +775,7 @@ public class Metadata implements Cloneable {
 		if(extraMetadata)
 			throw new UnsupportedOperationException("No extra metadata support yet");
 		
-		if((!splitfile) && (documentType == SIMPLE_REDIRECT || documentType == ZIP_MANIFEST)) {
+		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ZIP_MANIFEST))) {
 			writeKey(dos, simpleRedirectKey);
 		} else if(splitfile) {
 			dos.writeShort(splitfileAlgorithm);

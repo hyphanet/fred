@@ -76,7 +76,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private final Bucket data;
 		
 		public void start() throws InserterException {
-			if(origSFI == null && metadata != null) return;
+			if((origSFI == null) && (metadata != null)) return;
 			origSFI.start();
 			origSFI = null;
 		}
@@ -279,8 +279,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					// FIXME support multiple ZIPs and size limits.
 					// FIXME support better heuristics.
 					int sz = (int)data.size() + 40 + element.fullName.length();
-					if(data.size() <= 65536 && 
-							bytesOnZip + sz < ((2048-64)*1024)) { // totally dumb heuristic!
+					if((data.size() <= 65536) && 
+							(bytesOnZip + sz < ((2048-64)*1024))) { // totally dumb heuristic!
 						bytesOnZip += sz;
 						// Put it in the zip.
 						ph = new PutHandler(name, ZipPrefix+element.fullName, cm, data);

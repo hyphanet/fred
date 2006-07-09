@@ -29,7 +29,7 @@ public class BookmarkManager {
 			StringBuffer buf = new StringBuffer("");
 			
 			for (Enumeration e = bookmarks.elements(); e.hasMoreElements(); ) {
-				buf.append((String)e.nextElement().toString());
+				buf.append(e.nextElement().toString());
 				buf.append(StringArrOption.delimiter);
 			}
 			

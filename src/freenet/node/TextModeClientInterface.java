@@ -198,9 +198,9 @@ public class TextModeClientInterface implements Runnable {
         if(uline.startsWith("GET:")) {
             // Should have a key next
             String key = line.substring("GET:".length());
-            while(key.length() > 0 && key.charAt(0) == ' ')
+            while((key.length() > 0) && (key.charAt(0) == ' '))
                 key = key.substring(1);
-            while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
+            while((key.length() > 0) && (key.charAt(key.length()-1) == ' '))
                 key = key.substring(0, key.length()-2);
             Logger.normal(this, "Key: "+key);
             FreenetURI uri;
@@ -239,7 +239,7 @@ public class TextModeClientInterface implements Runnable {
 				outsb.append(new String(dataBytes));
 			} catch (FetchException e) {
 				outsb.append("Error: "+e.getMessage()+"\r\n");
-            	if(e.getMode() == FetchException.SPLITFILE_ERROR && e.errorCodes != null) {
+            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
@@ -248,9 +248,9 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
             String key = line.substring("GETFILE:".length());
-            while(key.length() > 0 && key.charAt(0) == ' ')
+            while((key.length() > 0) && (key.charAt(0) == ' '))
                 key = key.substring(1);
-            while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
+            while((key.length() > 0) && (key.charAt(key.length()-1) == ' '))
                 key = key.substring(0, key.length()-2);
             Logger.normal(this, "Key: "+key);
             FreenetURI uri;
@@ -272,7 +272,7 @@ public class TextModeClientInterface implements Runnable {
                 if(fnam.length() == 0) {
                     fnam = "freenet-download-"+HexUtil.bytesToHex(BucketTools.hash(data), 0, 10);
                     String ext = DefaultMIMETypes.getExtension(cm.getMIMEType());
-                    if(ext != null && !ext.equals(""))
+                    if((ext != null) && !ext.equals(""))
                     	fnam += "." + ext;
                 }
                 File f = new File(downloadsDir, fnam);
@@ -302,7 +302,7 @@ public class TextModeClientInterface implements Runnable {
                 outsb.append("Download rate: "+rate+" bytes / second");
 			} catch (FetchException e) {
 				outsb.append("Error: "+e.getMessage());
-            	if(e.getMode() == FetchException.SPLITFILE_ERROR && e.errorCodes != null) {
+            	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
@@ -328,7 +328,7 @@ public class TextModeClientInterface implements Runnable {
 		out.write(sb.toString().getBytes());
 		out.flush();
 		n.getNodeStarter().restart();
-	} else if(uline.startsWith("QUIT") && n.directTMCI == this) {
+	} else if(uline.startsWith("QUIT") && (n.directTMCI == this)) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("QUIT command not available in console mode.\r\n");
 		out.write(sb.toString().getBytes());
@@ -349,9 +349,9 @@ public class TextModeClientInterface implements Runnable {
         		line = line.substring(("GETCHK:").length());
         	else
         		line = line.substring("PUT:".length());
-            while(line.length() > 0 && line.charAt(0) == ' ')
+            while((line.length() > 0) && (line.charAt(0) == ' '))
                 line = line.substring(1);
-            while(line.length() > 0 && line.charAt(line.length()-1) == ' ')
+            while((line.length() > 0) && (line.charAt(line.length()-1) == ' '))
                 line = line.substring(0, line.length()-2);
             String content;
             if(line.length() > 0) {
@@ -374,7 +374,7 @@ public class TextModeClientInterface implements Runnable {
             	if(e.uri != null)
             		outsb.append("URI would have been: "+e.uri);
             	int mode = e.getMode();
-            	if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
+            	if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
             		outsb.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString());
             	}
             	return false;
@@ -464,9 +464,9 @@ public class TextModeClientInterface implements Runnable {
         	} else {
         		line = line.substring("PUTFILE:".length());
         	}
-            while(line.length() > 0 && line.charAt(0) == ' ')
+            while((line.length() > 0) && (line.charAt(0) == ' '))
                 line = line.substring(1);
-            while(line.length() > 0 && line.charAt(line.length()-1) == ' ')
+            while((line.length() > 0) && (line.charAt(line.length()-1) == ' '))
                 line = line.substring(0, line.length()-2);
             String mimeType = DefaultMIMETypes.guessMIMEType(line);
             if (line.indexOf('#') > -1) {
@@ -569,9 +569,9 @@ public class TextModeClientInterface implements Runnable {
             } else {
                 key = line.substring("ADDPEER:".length());
             }
-            while(key.length() > 0 && key.charAt(0) == ' ')
+            while((key.length() > 0) && (key.charAt(0) == ' '))
                 key = key.substring(1);
-            while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
+            while((key.length() > 0) && (key.charAt(key.length()-1) == ' '))
                 key = key.substring(0, key.length()-2);
             
             String content = null;
@@ -602,9 +602,9 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("NAME:")) {
             outsb.append("Node name currently: "+n.myName);
             String key = line.substring("NAME:".length());
-            while(key.length() > 0 && key.charAt(0) == ' ')
+            while((key.length() > 0) && (key.charAt(0) == ' '))
                 key = key.substring(1);
-            while(key.length() > 0 && key.charAt(key.length()-1) == ' ')
+            while((key.length() > 0) && (key.charAt(key.length()-1) == ' '))
                 key = key.substring(0, key.length()-2);
             outsb.append("New name: "+key);
             
@@ -843,7 +843,7 @@ public class TextModeClientInterface implements Runnable {
                                 int x = 0;
                                 for(int j=before.length()-1;j>=0;j--) {
                                     char c = before.charAt(j);
-                                    if(c == '.' || Character.isLetterOrDigit(c)) {
+                                    if((c == '.') || Character.isLetterOrDigit(c)) {
                                         // Valid character for field
                                     } else {
                                         x=j+1;
@@ -997,7 +997,7 @@ public class TextModeClientInterface implements Runnable {
         StringBuffer sb = new StringBuffer(fnam.length());
         for(int i=0;i<fnam.length();i++) {
             char c = fnam.charAt(i);
-            if(Character.isLetterOrDigit(c) || c == '-' || c == '.')
+            if(Character.isLetterOrDigit(c) || (c == '-') || (c == '.'))
                 sb.append(c);
         }
         return sb.toString();

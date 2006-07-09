@@ -42,7 +42,7 @@ public class SortedVectorByNumber {
 				System.arraycopy(data, x+1, data, x, length-x-1);
 			data[--length] = null;
 		}
-		if(length*4 < data.length && length > MIN_SIZE) {
+		if((length*4 < data.length) && (length > MIN_SIZE)) {
 			IntNumberedItem[] newData = new IntNumberedItem[Math.max(length*2, MIN_SIZE)];
 			System.arraycopy(data, 0, newData, 0, length);
 			data = newData;

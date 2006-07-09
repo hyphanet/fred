@@ -108,7 +108,7 @@ public class Util {
 	public static BigInteger readMPI(InputStream in) throws IOException {
 		int b1 = in.read();
 		int b2 = in.read();
-		if (b1 == -1 || b2 == -1)
+		if ((b1 == -1) || (b2 == -1))
 			throw new EOFException();
 		byte[] data = new byte[(((b1 << 8) + b2) + 8) >> 3];
 		readFully(in, data, 0, data.length);
@@ -194,7 +194,7 @@ public class Util {
 	//if you have two method if you have two equally sized arrays
 	public static boolean byteArrayEqual(byte[] a, byte[] b, int offset, int length) {
 		int lim = offset + length;
-		if (a.length < lim || b.length < lim)
+		if ((a.length < lim) || (b.length < lim))
 			return false;
 		for (int i = offset; i < lim; ++i)
 			if (a[i] != b[i])
@@ -272,7 +272,7 @@ public class Util {
 	}
 
 	public static void main(String[] args) throws Exception {
-		if (args.length == 0 || args[0].equals("write")) {
+		if ((args.length == 0) || args[0].equals("write")) {
 			writeMPI(new BigInteger("9"), System.out);
 			writeMPI(new BigInteger("1234567890123456789"), System.out);
 			writeMPI(new BigInteger("100200300400500600700800900"), System.out);
@@ -309,7 +309,7 @@ public class Util {
 	 */
 	public static int log2(long n) {
 		int log2 = 0;
-		while (log2 < 63 && 1L << log2 < n)
+		while ((log2 < 63) && (1L << log2 < n))
 			++log2;
 		return log2;
 	}

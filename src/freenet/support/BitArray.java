@@ -58,7 +58,7 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 
 	public static int unsignedByteToInt(byte b) {
-		return (int) b & 0xFF;
+		return b & 0xFF;
 	}
 
 	public String toString() {

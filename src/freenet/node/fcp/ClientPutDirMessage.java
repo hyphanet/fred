@@ -83,7 +83,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		} else {
 			try {
 				priorityClass = Short.parseShort(priorityString, 10);
-				if(priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS || priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)
+				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS))
 					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
@@ -91,7 +91,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		}
 		dontCompress = Fields.stringToBool(fs.get("DontCompress"), false);
 		String persistenceString = fs.get("Persistence");
-		if(persistenceString == null || persistenceString.equalsIgnoreCase("connection")) {
+		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
 			// Default: persists until connection loss.
 			persistenceType = ClientRequest.PERSIST_CONNECTION;
 		} else if(persistenceString.equalsIgnoreCase("reboot")) {

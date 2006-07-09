@@ -541,7 +541,7 @@ public class NativeBigInteger extends BigInteger {
     	String pref = getLibraryPrefix();
     	String middle = getMiddleName(optimized);
     	String suff = getLibrarySuffix();
-    	if(pref == null || middle == null || suff == null)
+    	if((pref == null) || (middle == null) || (suff == null))
     		return null;
     	return pname+"/"+pref+middle+"."+suff;
     }

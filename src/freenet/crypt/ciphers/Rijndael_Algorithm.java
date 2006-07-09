@@ -88,7 +88,7 @@ public final class Rijndael_Algorithm // implicit no-argument constructor
     static {
         long time = System.currentTimeMillis();
 
-if (RDEBUG && debuglevel > 6) {
+if (RDEBUG && (debuglevel > 6)) {
 System.out.println("Algorithm Name: "+Rijndael_Properties.FULL_NAME);
 System.out.println("Electronic Codebook (ECB) Mode");
 System.out.println();
@@ -224,7 +224,7 @@ System.out.println();
 
         time = System.currentTimeMillis() - time;
 
-if (RDEBUG && debuglevel > 8) {
+if (RDEBUG && (debuglevel > 8)) {
 System.out.println("==========");
 System.out.println();
 System.out.println("Static Data");
@@ -273,7 +273,7 @@ System.out.println();
 
     // multiply two elements of GF(2^m)
     static final int mul (int a, int b) {
-        return (a != 0 && b != 0) ?
+        return ((a != 0) && (b != 0)) ?
             alog[(log[a & 0xFF] + log[b & 0xFF]) % 255] :
             0;
     }
@@ -361,7 +361,7 @@ if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+")");
             t1 = a1;
             t2 = a2;
             t3 = a3;
-if (RDEBUG && debuglevel > 6) System.out.println("CT"+r+"="+intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+"="+intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
         }
 
         // last round is special
@@ -386,7 +386,7 @@ if (RDEBUG && debuglevel > 6) System.out.println("CT"+r+"="+intToString(t0)+intT
         result[13] = (byte)(S[(t0 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[14] = (byte)(S[(t1 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[15] = (byte)(S[ t2         & 0xFF] ^  tt        );
-if (RDEBUG && debuglevel > 6) {
+if (RDEBUG && (debuglevel > 6)) {
 System.out.println("CT="+toString(result));
 System.out.println();
 }
@@ -450,7 +450,7 @@ if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+")");
             t1 = a1;
             t2 = a2;
             t3 = a3;
-if (RDEBUG && debuglevel > 6) System.out.println("PT"+r+"="+intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
+if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+"="+intToString(t0)+intToString(t1)+intToString(t2)+intToString(t3));
         }
 
         // last round is special
@@ -475,7 +475,7 @@ if (RDEBUG && debuglevel > 6) System.out.println("PT"+r+"="+intToString(t0)+intT
         result[13] = (byte)(Si[(t2 >>> 16) & 0xFF] ^ (tt >>> 16));
         result[14] = (byte)(Si[(t1 >>>  8) & 0xFF] ^ (tt >>>  8));
         result[15] = (byte)(Si[ t0         & 0xFF] ^  tt        );
-if (RDEBUG && debuglevel > 6) {
+if (RDEBUG && (debuglevel > 6)) {
 System.out.println("PT="+toString(result));
 System.out.println();
 }
@@ -514,7 +514,7 @@ if (RDEBUG) trace(OUT, "blockDecrypt()");
 if (RDEBUG) trace(IN, "makeKey("+k+", "+blockSize+")");
         if (k == null)
             throw new InvalidKeyException("Empty key");
-        if (!(k.length == 16 || k.length == 24 || k.length == 32))
+        if (!((k.length == 16) || (k.length == 24) || (k.length == 32)))
              throw new InvalidKeyException("Incorrect key length");
         int ROUNDS = getRounds(k.length, blockSize);
         int BC = blockSize / 4;
@@ -638,7 +638,7 @@ if (RDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+", "+bloc
                         T3[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
                         T4[ t[(i + s3) % BC]         & 0xFF]  ) ^ Ke[r][i];
             System.arraycopy(a, 0, t, 0, BC);
-if (RDEBUG && debuglevel > 6) System.out.println("CT"+r+"="+toString(t));
+if (RDEBUG && (debuglevel > 6)) System.out.println("CT"+r+"="+toString(t));
         }
         for (i = 0; i < BC; i++) {                   // last round is special
             tt = Ke[ROUNDS][i];
@@ -647,7 +647,7 @@ if (RDEBUG && debuglevel > 6) System.out.println("CT"+r+"="+toString(t));
             result[j++] = (byte)(S[(t[(i + s2) % BC] >>>  8) & 0xFF] ^ (tt >>>  8));
             result[j++] = (byte)(S[ t[(i + s3) % BC]         & 0xFF] ^ tt);
         }
-if (RDEBUG && debuglevel > 6) {
+if (RDEBUG && (debuglevel > 6)) {
 System.out.println("CT="+toString(result));
 System.out.println();
 }
@@ -697,7 +697,7 @@ if (RDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+", "+bloc
                         T7[(t[(i + s2) % BC] >>>  8) & 0xFF] ^
                         T8[ t[(i + s3) % BC]         & 0xFF]  ) ^ Kd[r][i];
             System.arraycopy(a, 0, t, 0, BC);
-if (RDEBUG && debuglevel > 6) System.out.println("PT"+r+"="+toString(t));
+if (RDEBUG && (debuglevel > 6)) System.out.println("PT"+r+"="+toString(t));
         }
         for (i = 0; i < BC; i++) {                   // last round is special
             tt = Kd[ROUNDS][i];
@@ -706,7 +706,7 @@ if (RDEBUG && debuglevel > 6) System.out.println("PT"+r+"="+toString(t));
             result[j++] = (byte)(Si[(t[(i + s2) % BC] >>>  8) & 0xFF] ^ (tt >>>  8));
             result[j++] = (byte)(Si[ t[(i + s3) % BC]         & 0xFF] ^ tt);
         }
-if (RDEBUG && debuglevel > 6) {
+if (RDEBUG && (debuglevel > 6)) {
 System.out.println("PT="+toString(result));
 System.out.println();
 }
@@ -727,7 +727,7 @@ if (RDEBUG) trace(IN, "self_test("+keysize+")");
             for (i = 0; i < BLOCK_SIZE; i++)
                 pt[i] = (byte) i;
 
-if (RDEBUG && debuglevel > 6) {
+if (RDEBUG && (debuglevel > 6)) {
 System.out.println("==========");
 System.out.println();
 System.out.println("KEYSIZE="+(8*keysize));
@@ -736,7 +736,7 @@ System.out.println();
 }
             Object key = makeKey(kb, BLOCK_SIZE);
 
-if (RDEBUG && debuglevel > 6) {
+if (RDEBUG && (debuglevel > 6)) {
 System.out.println("Intermediate Ciphertext Values (Encryption)");
 System.out.println();
 System.out.println("PT="+toString(pt));
@@ -744,7 +744,7 @@ System.out.println("PT="+toString(pt));
             byte[] ct = new byte[BLOCK_SIZE];
             blockEncrypt(pt, ct, 0, key, BLOCK_SIZE);
 
-if (RDEBUG && debuglevel > 6) {
+if (RDEBUG && (debuglevel > 6)) {
 System.out.println("Intermediate Plaintext Values (Decryption)");
 System.out.println();
 System.out.println("CT="+toString(ct));
@@ -757,12 +757,12 @@ System.out.println("CT="+toString(ct));
                 throw new RuntimeException("Symmetric operation failed");
         }
         catch (Exception x) {
-if (RDEBUG && debuglevel > 0) {
+if (RDEBUG && (debuglevel > 0)) {
     debug("Exception encountered during self-test: " + x.getMessage());
     x.printStackTrace();
 }
         }
-if (RDEBUG && debuglevel > 0) debug("Self-test OK? " + ok);
+if (RDEBUG && (debuglevel > 0)) debug("Self-test OK? " + ok);
 if (RDEBUG) trace(OUT, "self_test()");
         return ok;
     }

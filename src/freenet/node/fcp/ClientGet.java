@@ -162,7 +162,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				throw e;
 			}
 		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
-		if(persistenceType != PERSIST_CONNECTION && handler != null)
+		if((persistenceType != PERSIST_CONNECTION) && (handler != null))
 			sendPendingMessages(handler.outputHandler, true, true, false);
 			
 	}
@@ -286,7 +286,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
 				}
 				try {
-					if(fos != null && !closed)
+					if((fos != null) && !closed)
 						fos.close();
 				} catch (IOException e) {
 					Logger.error(this, "Caught "+e+" closing file "+tempFile, e);
@@ -361,7 +361,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(finished)
 				trySendDataFoundOrGetFailed(handler);
 		}
-		if(includeData && allDataPending != null)
+		if(includeData && (allDataPending != null))
 			handler.queue(allDataPending);
 	}
 

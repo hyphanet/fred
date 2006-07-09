@@ -29,7 +29,7 @@ public class HTMLDecoder {
 					if (d == '#') {
 						if (tmpPos < maxPos) {
 							d = s.charAt(tmpPos++);
-							if (d == 'x' || d == 'X') {
+							if ((d == 'x') || (d == 'X')) {
 								if (tmpPos < maxPos) {
 									d = s.charAt(tmpPos++);
 									if (isHexDigit(d)) {
@@ -46,8 +46,8 @@ public class HTMLDecoder {
 															Integer.parseInt(
 																t,
 																16);
-														if (i >= 0
-															&& i < 65536) {
+														if ((i >= 0)
+															&& (i < 65536)) {
 															c = (char) i;
 															curPos = tmpPos;
 														}
@@ -70,7 +70,7 @@ public class HTMLDecoder {
 													tmpPos - 1);
 											try {
 												i = Integer.parseInt(t);
-												if (i >= 0 && i < 65536) {
+												if ((i >= 0) && (i < 65536)) {
 													c = (char) i;
 													curPos = tmpPos;
 												}
@@ -114,15 +114,15 @@ public class HTMLDecoder {
 	}
 
 	private static boolean isLetter(char c) {
-		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+		return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'));
 	}
 
 	private static boolean isHexLetter(char c) {
-		return (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+		return ((c >= 'a') && (c <= 'f')) || ((c >= 'A') && (c <= 'F'));
 	}
 
 	private static boolean isDigit(char c) {
-		return c >= '0' && c <= '9';
+		return (c >= '0') && (c <= '9');
 	}
 
 	public static String compact(String s) {
@@ -132,7 +132,7 @@ public class HTMLDecoder {
 		while (curPos < maxPos) {
 			char c = s.charAt(curPos++);
 			if (isWhitespace(c)) {
-				while (curPos < maxPos && isWhitespace(s.charAt(curPos))) {
+				while ((curPos < maxPos) && isWhitespace(s.charAt(curPos))) {
 					curPos++;
                 }
 				c = '\u0020';
@@ -144,12 +144,12 @@ public class HTMLDecoder {
 
 	// HTML is very particular about what constitutes white space.
 	public static boolean isWhitespace(char ch) {
-		return ch == '\u0020'
-			|| ch == '\r'
-			|| ch == '\n'
-			|| ch == '\u0009'
-			|| ch == '\u000c'
-			|| ch == '\u200b';
+		return (ch == '\u0020')
+			|| (ch == '\r')
+			|| (ch == '\n')
+			|| (ch == '\u0009')
+			|| (ch == '\u000c')
+			|| (ch == '\u200b');
 	}
 
 	static {

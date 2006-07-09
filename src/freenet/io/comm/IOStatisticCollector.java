@@ -124,8 +124,8 @@ public class IOStatisticCollector {
 				tin += inres[i];
 				tout += outres[i];
 				
-				int in = (int) (((double)tin*10.0) / (divby*(double)(i+1)));
-				int out =(int) (((double)tout*10.0) /(divby*(double)(i+1)));
+				int in = (int) ((tin*10.0) / (divby*(i+1)));
+				int out =(int) ((tout*10.0) /(divby*(i+1)));
 				
 				System.err.print("i:" + (in/10) + "." + (in%10));
 				System.err.print(" o:" + (out/10) + "." + (out%10));

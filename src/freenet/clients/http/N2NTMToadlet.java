@@ -95,7 +95,7 @@ public class N2NTMToadlet extends Toadlet {
 	  StringBuffer buf = new StringBuffer(1024);
 	  
 	  String pass = request.getPartAsString("formPassword", 32);
-	  if(pass == null || !pass.equals(node.formPassword)) {
+	  if((pass == null) || !pass.equals(node.formPassword)) {
 		  MultiValueTable headers = new MultiValueTable();
 		  headers.put("Location", "/send_n2ntm/");
 		  ctx.sendReplyHeaders(302, "Found", headers, null, 0);

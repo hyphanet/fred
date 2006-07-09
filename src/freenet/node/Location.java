@@ -36,7 +36,7 @@ public class Location {
     }
 
     public void setValue(double newLoc) {
-        if(loc < 0.0 || loc > 1.0)
+        if((loc < 0.0) || (loc > 1.0))
             throw new IllegalArgumentException();
         this.loc = newLoc;
         long l = Double.doubleToLongBits(newLoc);

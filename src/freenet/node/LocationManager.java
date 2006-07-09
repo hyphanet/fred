@@ -253,7 +253,7 @@ class LocationManager {
             
             byte[] hisBuf = ((ShortBuffer)commit.getObject(DMT.DATA)).getData();
 
-            if(hisBuf.length % 8 != 0 || hisBuf.length < 16) {
+            if((hisBuf.length % 8 != 0) || (hisBuf.length < 16)) {
                 Logger.error(this, "Bad content length in SwapComplete - malicious node? on "+uid);
                 return;
             }
@@ -274,7 +274,7 @@ class LocationManager {
             long hisRandom = hisBufLong[0];
             
             double hisLoc = Double.longBitsToDouble(hisBufLong[1]);
-            if(hisLoc < 0.0 || hisLoc > 1.0) {
+            if((hisLoc < 0.0) || (hisLoc > 1.0)) {
                 Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                 return;
             }
@@ -283,7 +283,7 @@ class LocationManager {
             double[] hisFriendLocs = new double[hisBufLong.length-2];
             for(int i=0;i<hisFriendLocs.length;i++) {
                 hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
-                if(hisFriendLocs[i] < 0.0 || hisFriendLocs[i] > 1.0) {
+                if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
                     Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                     return;
                 }
@@ -386,7 +386,7 @@ class LocationManager {
                 }
 
                 if(reply == null) {
-                    if(pn.isConnected() && System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2) {
+                    if(pn.isConnected() && (System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2)) {
                         // Timed out! Abort...
                         Logger.error(this, "Timed out waiting for SwapRejected/SwapReply on "+uid);
                     }
@@ -421,7 +421,7 @@ class LocationManager {
                 }
                 
                 if(reply == null) {
-                    if(pn.isConnected() && System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2) {
+                    if(pn.isConnected() && (System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2)) {
                         // Hrrrm!
                         Logger.error(this, "Timed out waiting for SwapComplete - malicious node?? on "+uid);
                     }
@@ -435,7 +435,7 @@ class LocationManager {
                 
                 byte[] hisBuf = ((ShortBuffer)reply.getObject(DMT.DATA)).getData();
 
-                if(hisBuf.length % 8 != 0 || hisBuf.length < 16) {
+                if((hisBuf.length % 8 != 0) || (hisBuf.length < 16)) {
                     Logger.error(this, "Bad content length in SwapComplete - malicious node? on "+uid);
                     return;
                 }
@@ -456,7 +456,7 @@ class LocationManager {
                 long hisRandom = hisBufLong[0];
                 
                 double hisLoc = Double.longBitsToDouble(hisBufLong[1]);
-                if(hisLoc < 0.0 || hisLoc > 1.0) {
+                if((hisLoc < 0.0) || (hisLoc > 1.0)) {
                     Logger.error(this, "Bad loc: "+hisLoc+" on "+uid);
                     return;
                 }
@@ -465,7 +465,7 @@ class LocationManager {
                 double[] hisFriendLocs = new double[hisBufLong.length-2];
                 for(int i=0;i<hisFriendLocs.length;i++) {
                     hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
-                    if(hisFriendLocs[i] < 0.0 || hisFriendLocs[i] > 1.0) {
+                    if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
                         Logger.error(this, "Bad friend loc: "+hisFriendLocs[i]+" on "+uid);
                         return;
                     }

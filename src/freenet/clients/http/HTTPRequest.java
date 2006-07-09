@@ -89,7 +89,7 @@ public class HTTPRequest {
 		this.data = null;
 		this.parts = null;
 		this.bucketfactory = null;
-		if (encodedQueryString!=null && encodedQueryString.length()>0) {
+		if ((encodedQueryString!=null) && (encodedQueryString.length()>0)) {
 			this.uri = new URI(path+"?"+encodedQueryString);
 		} else {
 			this.uri = new URI(path);
@@ -155,7 +155,7 @@ public class HTTPRequest {
 		Logger.minor(this, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
 		
 		// nothing to do if there was no query string in the URI
-		if (queryString == null || queryString.length() == 0) {
+		if ((queryString == null) || (queryString.length() == 0)) {
 			return;
 		}
 
@@ -406,19 +406,19 @@ public class HTTPRequest {
 			String s = new String(buf, "us-ascii");
 			parseRequestParameters(s, true);
 		}
-		if (!ctypeparts[0].trim().equalsIgnoreCase("multipart/form-data") || ctypeparts.length < 2) {
+		if (!ctypeparts[0].trim().equalsIgnoreCase("multipart/form-data") || (ctypeparts.length < 2)) {
 			return;
 		}
 		
 		String boundary = null;
 		for (int i = 0; i < ctypeparts.length; i++) {
 			String[] subparts = ctypeparts[i].split("=");
-			if (subparts.length == 2 && subparts[0].trim().equalsIgnoreCase("boundary")) {
+			if ((subparts.length == 2) && subparts[0].trim().equalsIgnoreCase("boundary")) {
 				boundary = subparts[1];
 			}
 		}
 		
-		if (boundary == null || boundary.length() == 0) return;
+		if ((boundary == null) || (boundary.length() == 0)) return;
 		if (boundary.charAt(0) == '"') boundary = boundary.substring(1);
 		if (boundary.charAt(boundary.length() - 1) == '"')
 			boundary = boundary.substring(0, boundary.length() - 1);
@@ -430,7 +430,7 @@ public class HTTPRequest {
 		
 		String line;
 		line = lis.readLine(100, 100, false); // really it's US-ASCII, but ISO-8859-1 is close enough.
-		while (is.available() > 0 && !line.equals(boundary)) {
+		while ((is.available() > 0) && !line.equals(boundary)) {
 			line = lis.readLine(100, 100, false);
 		}
 		
@@ -480,13 +480,13 @@ public class HTTPRequest {
 			byte[] buf = new byte[boundary.length()];
 			byte[] bbound = boundary.getBytes("UTF-8");
 			int offset = 0;
-			while (is.available() > 0 && !boundary.equals(new String(buf))) {
+			while ((is.available() > 0) && !boundary.equals(new String(buf))) {
 				byte b = (byte)is.read();
 				
 				if (b == bbound[offset]) {
 					buf[offset] = b;
 					offset++;
-				} else if (b != bbound[offset] && offset > 0) {
+				} else if ((b != bbound[offset]) && (offset > 0)) {
 					// empty the buffer out
 					bucketos.write(buf, 0, offset);
 					bucketos.write(b);

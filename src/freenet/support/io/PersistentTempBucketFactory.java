@@ -52,7 +52,7 @@ public class PersistentTempBucketFactory implements BucketFactory {
 			throw new IOException("Directory is not a directory: "+dir);
 		originalFiles = new HashSet();
 		File[] files = dir.listFiles();
-		if(files != null && files.length > 0) {
+		if((files != null) && (files.length > 0)) {
 			for(int i=0;i<files.length;i++) {
 				File f = files[i];
 				String name = f.getName();

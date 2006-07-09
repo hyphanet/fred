@@ -63,7 +63,7 @@ public class ClientCHK extends ClientKey {
         routingKey = uri.getRoutingKey();
         cryptoKey = uri.getCryptoKey();
         byte[] extra = uri.getExtra();
-        if(extra == null || extra.length < 5)
+        if((extra == null) || (extra.length < 5))
             throw new MalformedURLException();
         cryptoAlgorithm = (short)(((extra[0] & 0xff) << 8) + (extra[1] & 0xff));
 		if(cryptoAlgorithm != Key.ALGO_AES_PCFB_256_SHA256)

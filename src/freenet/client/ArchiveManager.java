@@ -168,7 +168,7 @@ public class ArchiveManager {
 		 * after we have unpacked everything.
 		 */
 		boolean throwAtExit = false;
-		if(expectedSize != -1 && archiveSize != expectedSize) {
+		if((expectedSize != -1) && (archiveSize != expectedSize)) {
 			throwAtExit = true;
 			ctx.setLastSize(archiveSize);
 		}
@@ -334,7 +334,7 @@ outer:		while(true) {
 				after = "";
 			} else
 				after = name.substring(x+1, name.length());
-			Object o = (Object) dir.get(before);
+			Object o = dir.get(before);
 			HashMap map;
 			if(o == null) {
 				map = new HashMap();
@@ -382,7 +382,7 @@ outer:		while(true) {
 	 * Call synchronized on storedData.
 	 */
 	private void trimStoredData() {
-		while(cachedData > maxCachedData || storedData.size() > maxCachedElements) {
+		while((cachedData > maxCachedData) || (storedData.size() > maxCachedElements)) {
 			ArchiveStoreItem e = (ArchiveStoreItem) storedData.popValue();
 			e.finalize();
 		}

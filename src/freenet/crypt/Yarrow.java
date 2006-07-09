@@ -459,7 +459,7 @@ public class Yarrow extends RandomSource {
 				// "+slow_entropy, Logger.NORMAL);
 				System.err.println("Fast pool: " + fast_entropy + "\tSlow pool: " + slow_entropy);
 		}
-		if (performedPoolReseed && seedfile != null) {
+		if (performedPoolReseed && (seedfile != null)) {
 			//Dont do this while synchronized on 'this' since
 			//opening a file seems to be suprisingly slow on windows
 			write_seed(seedfile); 
@@ -595,7 +595,7 @@ public class Yarrow extends RandomSource {
 
 		byte[] b = new byte[1024];
 
-		if (args.length == 0 || args[0].equalsIgnoreCase("latency")) {
+		if ((args.length == 0) || args[0].equalsIgnoreCase("latency")) {
 			if (args.length == 2)
 				b = new byte[Integer.parseInt(args[1])];
 			long start = System.currentTimeMillis();
@@ -666,7 +666,7 @@ public class Yarrow extends RandomSource {
 				}
 			}
 		} else if (args[0].equalsIgnoreCase("sample")) {
-			if (args.length == 1 || args[1].equals("general")) {
+			if ((args.length == 1) || args[1].equals("general")) {
 				System.out.println("nextInt(): ");
 				for (int i = 0; i < 3; i++)
 					System.out.println(r.nextInt());

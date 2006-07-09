@@ -115,7 +115,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Check failed: Decrypted IV == H(decryption key)");
         // Checks complete
         int size = ((hbuf[32] & 0xff) << 8) + (hbuf[33] & 0xff);
-        if(size > 32768 || size < 0)
+        if((size > 32768) || (size < 0))
             throw new CHKDecodeException("Invalid size: "+size);
         byte[] output = new byte[size];
         // No particular reason to check the padding, is there?
@@ -177,8 +177,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         // IV = E(H(crypto key))
         byte[] plainIV = md256.digest(encKey);
         header = new byte[plainIV.length+2+2];
-        header[0] = (byte)(CHKBlock.HASH_SHA256 >> 8);
-        header[1] = (byte)(CHKBlock.HASH_SHA256 & 0xff);
+        header[0] = (byte)(KeyBlock.HASH_SHA256 >> 8);
+        header[1] = (byte)(KeyBlock.HASH_SHA256 & 0xff);
         System.arraycopy(plainIV, 0, header, 2, plainIV.length);
         header[plainIV.length+2] = (byte)(finalData.length >> 8);
         header[plainIV.length+3] = (byte)(finalData.length & 0xff);

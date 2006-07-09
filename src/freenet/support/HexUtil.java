@@ -43,7 +43,7 @@ public class HexUtil {
 		int length,
 		StringBuffer sb) {
 		sb.ensureCapacity(sb.length() + length * 2);
-		for (int i = off; i < (off + length) && i < bs.length; i++) {
+		for (int i = off; (i < (off + length)) && (i < bs.length); i++) {
 			sb.append(Character.forDigit((bs[i] >>> 4) & 0xf, 16));
 			sb.append(Character.forDigit(bs[i] & 0xf, 16));
 		}
@@ -96,7 +96,7 @@ public class HexUtil {
 		for (int i = 0; i < slen; i += 2) {
 			b1 = (byte) Character.digit(s.charAt(i), 16);
 			b2 = (byte) Character.digit(s.charAt(i + 1), 16);
-			if (b1 < 0 || b2 < 0) {
+			if ((b1 < 0) || (b2 < 0)) {
 				throw new NumberFormatException();
 			}
 			out[off + i / 2] = (byte) (b1 << 4 | b2);

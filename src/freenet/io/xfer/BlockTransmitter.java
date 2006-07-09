@@ -237,8 +237,8 @@ public class BlockTransmitter {
             if(_sendComplete)
             	return false;
 			if (msg == null) {
-				if(timeAllSent > 0 && (System.currentTimeMillis() - timeAllSent) > SEND_TIMEOUT &&
-						getNumSent() == _prb.getNumPackets()) {
+				if((timeAllSent > 0) && ((System.currentTimeMillis() - timeAllSent) > SEND_TIMEOUT) &&
+						(getNumSent() == _prb.getNumPackets())) {
 					synchronized(_senderThread) {
 						_sendComplete = true;
 						_senderThread.notifyAll();

@@ -103,7 +103,7 @@ public class USK extends BaseClientKey {
 			if(!Arrays.equals(pubKeyHash, u.pubKeyHash)) return false;
 			if(!Arrays.equals(cryptoKey, u.cryptoKey)) return false;
 			if(!siteName.equals(u.siteName)) return false;
-			if(includeVersion && suggestedEdition != u.suggestedEdition) return false;
+			if(includeVersion && (suggestedEdition != u.suggestedEdition)) return false;
 			return true;
 		}
 		return false;

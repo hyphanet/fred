@@ -77,8 +77,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	public void onFoundEdition(long l, USK key) {
 		edition = Math.max(l, edition);
 		consecutiveCollisions = 0;
-		if(fetcher.lastContentWasMetadata() == isMetadata && fetcher.hasLastData()
-				&& fetcher.lastCompressionCodec() == compressionCodec) {
+		if((fetcher.lastContentWasMetadata() == isMetadata) && fetcher.hasLastData()
+				&& (fetcher.lastCompressionCodec() == compressionCodec)) {
 			try {
 				byte[] myData = BucketTools.toByteArray(data);
 				byte[] hisData = BucketTools.toByteArray(fetcher.getLastData());

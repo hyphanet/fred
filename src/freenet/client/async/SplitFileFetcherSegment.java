@@ -106,7 +106,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	/** Write the decoded segment's data to an OutputStream */
 	public long writeDecodedDataTo(OutputStream os, long truncateLength) throws IOException {
 		long len = decodedData.size();
-		if(truncateLength >= 0 && truncateLength < len)
+		if((truncateLength >= 0) && (truncateLength < len))
 			len = truncateLength;
 		BucketTools.copyTo(decodedData, os, Math.min(truncateLength, decodedData.size()));
 		return len;

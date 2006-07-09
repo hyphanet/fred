@@ -227,7 +227,7 @@ public abstract class Logger {
 
 	public synchronized static void destroyChainIfEmpty() {
 		if(logger instanceof VoidLogger) return;
-		if(logger instanceof LoggerHookChain && ((LoggerHookChain)logger).getHooks().length == 0) {
+		if((logger instanceof LoggerHookChain) && (((LoggerHookChain)logger).getHooks().length == 0)) {
 			logger = new VoidLogger();
 		}
 	}

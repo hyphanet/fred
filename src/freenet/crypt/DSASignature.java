@@ -54,7 +54,7 @@ public class DSASignature implements CryptoElement, java.io.Serializable {
     public DSASignature(BigInteger r, BigInteger s) {
 		this.r=r;
 		this.s=s;
-		if(r == null || s == null) //Do not allow this sice we wont do any sanity checking beyond this place
+		if((r == null) || (s == null)) //Do not allow this sice we wont do any sanity checking beyond this place
 			throw new NullPointerException();
     }
 

@@ -103,7 +103,7 @@ public class InsertHandler implements Runnable {
         
         if(msg == null) {
         	try {
-        		if(source.isConnected() && startTime > (source.timeLastConnected()+Node.HANDSHAKE_TIMEOUT*4))
+        		if(source.isConnected() && (startTime > (source.timeLastConnected()+Node.HANDSHAKE_TIMEOUT*4)))
         			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
         		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
         		source.sendAsync(tooSlow, null, 0, null);
@@ -220,9 +220,9 @@ public class InsertHandler implements Runnable {
             // Local RejectedOverload's (fatal).
             // Internal error counts as overload. It'd only create a timeout otherwise, which is the same thing anyway.
             // We *really* need a good way to deal with nodes that constantly R_O!
-            if(status == CHKInsertSender.TIMED_OUT ||
-            		status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD ||
-            		status == CHKInsertSender.INTERNAL_ERROR) {
+            if((status == CHKInsertSender.TIMED_OUT) ||
+            		(status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD) ||
+            		(status == CHKInsertSender.INTERNAL_ERROR)) {
                 msg = DMT.createFNPRejectedOverload(uid, true);
                 try {
 					source.send(msg, null);
@@ -231,14 +231,14 @@ public class InsertHandler implements Runnable {
 					return;
 				}
                 // Might as well store it anyway.
-                if(status == CHKInsertSender.TIMED_OUT ||
-                		status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD)
+                if((status == CHKInsertSender.TIMED_OUT) ||
+                		(status == CHKInsertSender.GENERATED_REJECTED_OVERLOAD))
                 	canCommit = true;
                 finish();
                 return;
             }
             
-            if(status == CHKInsertSender.ROUTE_NOT_FOUND || status == CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
+            if((status == CHKInsertSender.ROUTE_NOT_FOUND) || (status == CHKInsertSender.ROUTE_REALLY_NOT_FOUND)) {
                 msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
 					source.send(msg, null);
@@ -327,7 +327,7 @@ public class InsertHandler implements Runnable {
         Message toSend = null;
         
         synchronized(this) { // REDFLAG do not use synch(this) for any other purpose!
-        	if(prb == null || prb.isAborted()) return;
+        	if((prb == null) || prb.isAborted()) return;
             try {
                 if(!canCommit) return;
                 if(!prb.allReceived()) return;

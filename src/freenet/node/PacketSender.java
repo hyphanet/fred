@@ -63,7 +63,7 @@ public class PacketSender implements Runnable {
 				long now = System.currentTimeMillis();
 				long recordedTime = ((long)lastTimeInSeconds) * 1000;
 				long diff = now - recordedTime;
-				if(diff > 3*60*1000 && node.isHasStarted()) {
+				if((diff > 3*60*1000) && node.isHasStarted()) {
 					if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
 						System.err.println("Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
 					
@@ -219,14 +219,14 @@ public class PacketSender implements Runnable {
                 // Any messages to send?
                 MessageItem[] messages = null;
                 messages = pn.grabQueuedMessageItems();
-                if(messages != null && messages.length > 0) {
+                if((messages != null) && (messages.length > 0)) {
                 	long l = Long.MAX_VALUE;
                 	int sz = 56; // overhead; FIXME should be a constant or something
                 	for(int j=0;j<messages.length;j++) {
                 		if(l > messages[j].submitted) l = messages[j].submitted;
                 		sz += 2 + /* FIXME only 2? */ messages[j].getData(node.packetMangler, pn).length;
                 	}
-                	if(l + 100 > now && sz < 1024) {
+                	if((l + 100 > now) && (sz < 1024)) {
                 		// Don't send immediately
                 		if(nextActionTime > (l+100))
                 			nextActionTime = l+100;

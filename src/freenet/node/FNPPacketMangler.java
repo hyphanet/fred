@@ -126,7 +126,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 if(tryProcessAuth(buf, offset, length, pn, peer)) return;
             }
         }
-        if(opn != null && !opn.isConnected())
+        if((opn != null) && !opn.isConnected())
             Logger.minor(this,"Unmatchable packet from "+peer);
         else
             Logger.error(this,"Unmatchable packet from "+peer);
@@ -212,7 +212,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             return;
         }
         int packetType = payload[2];
-        if(packetType < 0 || packetType > 3) {
+        if((packetType < 0) || (packetType > 3)) {
             Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
             return;
         }
@@ -318,7 +318,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         int targetLength = DiffieHellman.modulusLengthInBytes();
         if(data.length != targetLength) {
             byte[] newData = new byte[targetLength];
-            if(data.length == targetLength+1 && data[0] == 0) {
+            if((data.length == targetLength+1) && (data[0] == 0)) {
                 // Sign bit
                 System.arraycopy(data, 1, newData, 0, targetLength);
             } else if(data.length < targetLength) {
@@ -406,7 +406,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private DiffieHellmanContext processDHTwoOrThree(int i, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
         DiffieHellmanContext ctx = pn.getDHContext();
-        if(ctx == null || !ctx.canGetCipher()) {
+        if((ctx == null) || !ctx.canGetCipher()) {
             if(shouldLogErrorInHandshake()) {
                 Logger.error(this, "Cannot get cipher");
             }
@@ -473,7 +473,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private DiffieHellmanContext processDHZeroOrOne(int phase, byte[] payload, PeerNode pn) {
         
-        if(phase == 0 && pn.hasLiveHandshake(System.currentTimeMillis())) {
+        if((phase == 0) && pn.hasLiveHandshake(System.currentTimeMillis())) {
             Logger.minor(this, "Rejecting phase "+phase+" handshake on "+pn+" - already running one");
             return null;
         }
@@ -582,7 +582,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         } else {
             // Now is it credible?
             // As long as it's within +/- 256, this is valid.
-            if(targetSeqNumber != -1 && Math.abs(targetSeqNumber - seqNumber) > MAX_PACKETS_IN_FLIGHT)
+            if((targetSeqNumber != -1) && (Math.abs(targetSeqNumber - seqNumber) > MAX_PACKETS_IN_FLIGHT))
                 return false;
         }
         Logger.minor(this, "Sequence number received: "+seqNumber);
@@ -618,7 +618,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         // Verify
         tracker.pn.verified(tracker);
         
-        if(seqNumber != -1 && tracker.alreadyReceived(seqNumber)) {
+        if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
             tracker.queueAck(seqNumber);
             Logger.normal(this, "Received packet twice from "+tracker.pn.getPeer()+": "+seqNumber);
             return true;
@@ -888,8 +888,8 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         if(x != callbacksCount) throw new IllegalStateException();
         
-        if(length < node.usm.getMaxPacketSize() &&
-                messageData.length < 256) {
+        if((length < node.usm.getMaxPacketSize()) &&
+                (messageData.length < 256)) {
             try {
                 innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber, callbacks, alreadyReportedBytes);
                 for(int i=0;i<messageData.length;i++) {
@@ -935,7 +935,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                     // Send the last lot, then send this
                 }
                 count++;
-                if(newLength > node.usm.getMaxPacketSize() || count > 255 || i == messages.length) {
+                if((newLength > node.usm.getMaxPacketSize()) || (count > 255) || (i == messages.length)) {
                     // lastIndex up to the message right before this one
                     // e.g. lastIndex = 0, i = 1, we just send message 0
                     if(lastIndex != i) {
@@ -1126,7 +1126,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             else log += (""+callbacks.length+(callbacks.length >= 1 ? String.valueOf(callbacks[0]) : ""));
             Logger.minor(this, log);
         }
-        if(tracker == null || (!tracker.pn.isConnected())) {
+        if((tracker == null) || (!tracker.pn.isConnected())) {
             throw new NotConnectedException();
         }
         
@@ -1214,7 +1214,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             int ackSeq = acks[i];
             Logger.minor(this, "Acking "+ackSeq);
             int offsetSeq = otherSideSeqNumber - ackSeq;
-            if(offsetSeq > 255 || offsetSeq < 0)
+            if((offsetSeq > 255) || (offsetSeq < 0))
                 throw new PacketSequenceException("bad ack offset "+offsetSeq+
                         " - seqNumber="+otherSideSeqNumber+", ackNumber="+ackSeq+" talking to "+tracker.pn.getPeer());
             plaintext[ptr++] = (byte)offsetSeq;
@@ -1225,7 +1225,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             int reqSeq = resendRequests[i];
             Logger.minor(this, "Resend req: "+reqSeq);
             int offsetSeq = otherSideSeqNumber - reqSeq;
-            if(offsetSeq > 255 || offsetSeq < 0)
+            if((offsetSeq > 255) || (offsetSeq < 0))
                 throw new PacketSequenceException("bad resend request offset "+offsetSeq+
                         " - reqSeq="+reqSeq+", otherSideSeqNumber="+otherSideSeqNumber+" talking to "+tracker.pn.getPeer());
             plaintext[ptr++] = (byte)offsetSeq;
@@ -1239,7 +1239,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             // Relative to packetNumber - we are asking them to ack
             // a packet we sent to them.
             int offsetSeq = realSeqNumber - ackReqSeq;
-            if(offsetSeq > 255 || offsetSeq < 0)
+            if((offsetSeq > 255) || (offsetSeq < 0))
                 throw new PacketSequenceException("bad ack requests offset: "+offsetSeq+
                         " - ackReqSeq="+ackReqSeq+", packetNumber="+realSeqNumber+" talking to "+tracker.pn.getPeer());
             plaintext[ptr++] = (byte)offsetSeq;

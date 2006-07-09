@@ -23,20 +23,20 @@ public class IPUtil {
 	    return false;
 	
 	for (int j = 0 ; j < 4 ; j++)
-	    if (i[j] < 0 || i[j] > 255)
+	    if ((i[j] < 0) || (i[j] > 255))
 		return false;
 	
-	if (i[0] == 10 || (i[0] == 172 && i[1] >= 16 && i[1] < 31) 
-	    || (i[0] == 192 && i[1] == 168)) // local network
+	if ((i[0] == 10) || ((i[0] == 172) && (i[1] >= 16) && (i[1] < 31)) 
+	    || ((i[0] == 192) && (i[1] == 168))) // local network
 	    return false;
 	
-	if (i[0] == 169 && i[1] == 254) 
+	if ((i[0] == 169) && (i[1] == 254)) 
 		return false; // link local
 	
-	if (i[0] == 198 && (i[1] == 18 || i[1] == 19))
+	if ((i[0] == 198) && ((i[1] == 18) || (i[1] == 19)))
 		return false; // RFC2544
 	
-	if (i[0] == 192 && i[1] == 0 && i[2] == 2)
+	if ((i[0] == 192) && (i[1] == 0) && (i[2] == 2))
 		return false; // test-net, see RFC3330
 	
 	if (i[0] == 127) // loopback
@@ -45,7 +45,7 @@ public class IPUtil {
 	if (i[0] == 0) // "this" net
 	    return false;
 	
-	if (i[0] >= 224 && i[0] < 240)
+	if ((i[0] >= 224) && (i[0] < 240))
 		return false; // multicast
 	
 	return true;
@@ -90,7 +90,7 @@ public class IPUtil {
 	    a = st.nextToken();
 	    try {
 		int p = Integer.parseInt(st.nextToken());
-		if (p < 0 || p >= (1 << 16))
+		if ((p < 0) || (p >= (1 << 16)))
 		    return false;
 	    } catch (NumberFormatException e) {
 		return false;

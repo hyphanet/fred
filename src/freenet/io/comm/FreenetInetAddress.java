@@ -56,7 +56,7 @@ public class FreenetInetAddress {
 
 	public FreenetInetAddress(String host, boolean allowUnknown) throws UnknownHostException {
         InetAddress addr = null;
-        if(host != null && host.startsWith("/")) host = host.substring(1);
+        if((host != null) && host.startsWith("/")) host = host.substring(1);
         // if we were created with an explicit IP address, use it as such
         // debugging log messages because AddressIdentifier doesn't appear to handle all IPv6 literals correctly, such as "fe80::204:1234:dead:beef"
         AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
@@ -97,12 +97,12 @@ public class FreenetInetAddress {
 				return false;
 			}
 			// Now that we know we have the same hostname, we can propagate the IP.
-			if(_address != null && addr._address == null)
+			if((_address != null) && (addr._address == null))
 				addr._address = _address;
-			if(addr._address != null && _address == null)
+			if((addr._address != null) && (_address == null))
 				_address = addr._address;
 			// Except if we actually do have two different looked-up IPs!
-			if(addr._address != null && _address != null && !addr._address.equals(_address))
+			if((addr._address != null) && (_address != null) && !addr._address.equals(_address))
 				return false;
 			// Equal.
 			return true;
@@ -124,12 +124,12 @@ public class FreenetInetAddress {
 				return false;
 			}
 			// Now that we know we have the same hostname, we can propagate the IP.
-			if(_address != null && addr._address == null)
+			if((_address != null) && (addr._address == null))
 				addr._address = _address;
-			if(addr._address != null && _address == null)
+			if((addr._address != null) && (_address == null))
 				_address = addr._address;
 			// Except if we actually do have two different looked-up IPs!
-			if(addr._address != null && _address != null && !addr._address.equals(_address))
+			if((addr._address != null) && (_address != null) && !addr._address.equals(_address))
 				return false;
 			// Equal.
 			return true;
@@ -179,7 +179,7 @@ public class FreenetInetAddress {
 	 */
 	public InetAddress getHandshakeAddress() {
 	    // Since we're handshaking, hostname-to-IP may have changed
-	    if (_address != null && hostname == null) {
+	    if ((_address != null) && (hostname == null)) {
 	    	Logger.minor(this, "hostname is null, returning "+_address);
 	        return _address;
 	    } else {

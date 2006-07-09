@@ -185,8 +185,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		long chkBlocksFromFile = countCHKBlocksFromFile();
 		lastRecentlyUsed = getMaxRecentlyUsed();
 		
-		if((chkBlocksInStore == 0 && chkBlocksFromFile != 0) ||
-				((chkBlocksInStore + 10) * 1.1) < chkBlocksFromFile) {
+		if(((chkBlocksInStore == 0) && (chkBlocksFromFile != 0)) ||
+				(((chkBlocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
 			if(throwOnTooFewKeys) {
 				try {
 					close();
@@ -276,7 +276,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				t = null;
 				
-				if(deleted == 0 || dontCheck) break;
+				if((deleted == 0) || dontCheck) break;
 				else {
 					System.err.println("Checking...");
 					synchronized(this) {
@@ -1037,7 +1037,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	private synchronized void checkSecondaryDatabaseError(Throwable ex) {
-    	if(ex instanceof DatabaseException && ex.getMessage().indexOf("missing key in the primary database") > -1) {
+    	if((ex instanceof DatabaseException) && (ex.getMessage().indexOf("missing key in the primary database") > -1)) {
     		try {
 				fixSecondaryFile.createNewFile();
 			} catch (IOException e) {

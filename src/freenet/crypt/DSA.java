@@ -29,7 +29,7 @@ public class DSA {
 	BigInteger k;
 	do {
 	    k=new NativeBigInteger(256, r);
-	} while (k.compareTo(g.getQ())>-1 || k.compareTo(BigInteger.ZERO)==0);
+	} while ((k.compareTo(g.getQ())>-1) || (k.compareTo(BigInteger.ZERO)==0));
 	return sign(g, x, k, m);
     }
 
@@ -44,7 +44,7 @@ public class DSA {
 			BigInteger k;
 			do {
 				k=new NativeBigInteger(160, r);
-			} while (k.compareTo(g.getQ())>-1 || k.compareTo(BigInteger.ZERO)==0);
+			} while ((k.compareTo(g.getQ())>-1) || (k.compareTo(BigInteger.ZERO)==0));
 			
 			result[i][0] = g.getG().modPow(k, g.getP()); // r 
 			result[i][1] = k.modInverse(g.getQ()); // k^-1 

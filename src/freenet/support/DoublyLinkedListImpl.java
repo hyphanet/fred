@@ -211,12 +211,12 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     
     public final boolean hasNext(DoublyLinkedList.Item i) {
         DoublyLinkedList.Item next = i.getNext();
-        return next != null && next != _tailptr;
+        return (next != null) && (next != _tailptr);
     }
 
     public final boolean hasPrev(DoublyLinkedList.Item i) {
         DoublyLinkedList.Item prev = i.getPrev();
-        return prev != null && prev != _headptr;
+        return (prev != null) && (prev != _headptr);
     }
 
     public final DoublyLinkedList.Item next(DoublyLinkedList.Item i) {
@@ -245,10 +245,10 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     	if (i.getParent() != this)
     		throw new PromiscuousItemException(i, i.getParent());
         DoublyLinkedList.Item next = i.getNext(), prev = i.getPrev();
-        if (next == null && prev == null) return null;  // not in the list
-        if (next == null || prev == null)
+        if ((next == null) && (prev == null)) return null;  // not in the list
+        if ((next == null) || (prev == null))
         	throw new NullPointerException("next="+next+", prev="+prev); // partially in the list?!
-        if(next.getPrev() != i || prev.getNext() != i) {
+        if((next.getPrev() != i) || (prev.getNext() != i)) {
         	String msg = "Illegal ERROR: i="+i+", next="+next+", next.prev="+next.getPrev()+", prev="+prev+", prev.next="+prev.getNext();
         	Logger.error(this, msg);
         	throw new IllegalStateException(msg);
@@ -272,7 +272,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     		throw new PromiscuousItemException(i, i.getParent());
     	if (j.getParent() != null)
     		throw new PromiscuousItemException(j, j.getParent());
-        if (j.getNext() != null || j.getPrev() != null)
+        if ((j.getNext() != null) || (j.getPrev() != null))
             throw new PromiscuousItemException(j);
         DoublyLinkedList.Item prev = i.getPrev();
         if (prev == null)
@@ -301,7 +301,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     		throw new PromiscuousItemException(i, i.getParent());
     	if (j.getParent() != null)
     		throw new PromiscuousItemException(j, i.getParent());
-        if (j.getNext() != null || j.getPrev() != null)
+        if ((j.getNext() != null) || (j.getPrev() != null))
             throw new PromiscuousItemException(j);
         DoublyLinkedList.Item next = i.getNext();
         if (next == null)
@@ -351,7 +351,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     protected Enumeration forwardElements(DoublyLinkedList.Item startAt, boolean inclusive)
                             throws VirginItemException, NoSuchElementException {
 
-        if (startAt.getNext() == null || startAt.getPrev() == null)
+        if ((startAt.getNext() == null) || (startAt.getPrev() == null))
             throw new VirginItemException(startAt);
         else
             return new ForwardWalker(startAt, inclusive);
@@ -383,7 +383,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     protected Enumeration reverseElements(DoublyLinkedList.Item startAt, boolean inclusive)
                             throws VirginItemException, NoSuchElementException {
 
-        if (startAt.getNext() == null || startAt.getPrev() == null)
+        if ((startAt.getNext() == null) || (startAt.getPrev() == null))
             throw new VirginItemException(startAt);
         else
             return new ReverseWalker(startAt, inclusive);

@@ -114,7 +114,7 @@ class SingleFileInserter implements ClientPutState {
 		Compressor bestCodec = null;
 		Bucket bestCompressedData = null;
 
-		if(origSize > blockSize && (!ctx.dontCompress) && (!dontCompress)) {
+		if((origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress)) {
 			// Try to compress the data.
 			// Try each algorithm, starting with the fastest and weakest.
 			// Stop when run out of algorithms, or the compressed data fits in a single block.
@@ -135,12 +135,12 @@ class SingleFileInserter implements ClientPutState {
 						bestCompressedData = data;
 						break;
 					}
-					if(bestCompressedData != null && result.size() <  bestCompressedData.size()) {
+					if((bestCompressedData != null) && (result.size() <  bestCompressedData.size())) {
 						ctx.bf.freeBucket(bestCompressedData);
 						bestCompressedData = result;
 						data = result;
 						bestCodec = comp;
-					} else if(bestCompressedData == null && result.size() < data.size()) {
+					} else if((bestCompressedData == null) && (result.size() < data.size())) {
 						bestCompressedData = result;
 						bestCodec = comp;
 						data = result;
@@ -167,7 +167,7 @@ class SingleFileInserter implements ClientPutState {
 		if(block.getData().size() > Integer.MAX_VALUE)
 			throw new InserterException(InserterException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 		
-		if((block.clientMetadata == null || block.clientMetadata.isTrivial()) && !insertAsArchiveManifest) {
+		if(((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && !insertAsArchiveManifest) {
 			if(data.size() < blockSize) {
 				// Just insert it
 				ClientPutState bi =

@@ -704,7 +704,7 @@ public class Node {
 		br.close();
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
-		if(udp != null && udp.length > 0) {
+		if((udp != null) && (udp.length > 0)) {
 			// Just keep the first one.
 			Peer myOldPeer;
 			try {
@@ -1309,7 +1309,7 @@ public class Node {
 				logConfigHandler.forceEnableLogging();
 			}
 			int x = Logger.globalGetThreshold();
-			if(!(x == Logger.MINOR || x == Logger.DEBUG)) {
+			if(!((x == Logger.MINOR) || (x == Logger.DEBUG))) {
 				System.err.println("Forcing log threshold to MINOR for testnet, was "+x);
 				Logger.globalSetThreshold(Logger.MINOR);
 			}
@@ -1446,7 +1446,7 @@ public class Node {
 					}
 
 					public void set(long storeSize) throws InvalidConfigValueException {
-						if(storeSize < 0 || storeSize < (32 * 1024 * 1024))
+						if((storeSize < 0) || (storeSize < (32 * 1024 * 1024)))
 							throw new InvalidConfigValueException("Invalid store size");
 						long newMaxStoreKeys = storeSize / sizePerKey;
 						if(newMaxStoreKeys == maxStoreKeys) return;
@@ -1500,7 +1500,7 @@ public class Node {
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
 			BerkeleyDBFreenetStore tmp;
 			try {
-				if(lastVersion > 0 && lastVersion < 852) {
+				if((lastVersion > 0) && (lastVersion < 852)) {
 					throw new DatabaseException("Reconstructing store because started from old version");
 				}
 				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
@@ -1515,7 +1515,7 @@ public class Node {
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			try {
-				if(lastVersion > 0 && lastVersion < 852) {
+				if((lastVersion > 0) && (lastVersion < 852)) {
 					throw new DatabaseException("Reconstructing store because started from old version");
 				}
 				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, true);
@@ -1774,7 +1774,7 @@ public class Node {
 		// If we are using the wrapper, we ignore:
 		// Any problem should be detected by the watchdog and the node will be restarted
 		if(osName.equals("Linux") && jvmVendor.startsWith("Sun ") && 
-				(osVersion.indexOf("nptl")!=-1 || osVersion.startsWith("2.6") || 
+				((osVersion.indexOf("nptl")!=-1) || osVersion.startsWith("2.6") || 
 						osVersion.startsWith("2.7") || osVersion.startsWith("3."))
 						&& !isUsingWrapper()) {
 			// Hopefully we won't still have to deal with this **** when THAT comes out! 
@@ -1788,7 +1788,7 @@ public class Node {
 				assumeKernel = null;
 				assumeKernel = WrapperManager.getProperties().getProperty("set.LD_ASSUME_KERNEL");
 			}
-			if(assumeKernel == null || assumeKernel.length() == 0 || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
+			if((assumeKernel == null) || (assumeKernel.length() == 0) || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
 				System.err.println(ERROR_SUN_NPTL);
 				Logger.error(this, ERROR_SUN_NPTL);
 				this.alerts.register(new UserAlert() {
@@ -1880,18 +1880,18 @@ public class Node {
 			if(status == RequestSender.NOT_FINISHED) 
 				continue;
 			
-			if(status == RequestSender.TIMED_OUT ||
-					status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
+			if((status == RequestSender.TIMED_OUT) ||
+					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 				if(!rejectedOverload) {
 					// See below
 					throttleWindow.rejectedOverload();
 					rejectedOverload = true;
 				}
 			} else {
-				if(status == RequestSender.DATA_NOT_FOUND ||
-						status == RequestSender.SUCCESS ||
-						status == RequestSender.ROUTE_NOT_FOUND ||
-						status == RequestSender.VERIFY_FAILURE) {
+				if((status == RequestSender.DATA_NOT_FOUND) ||
+						(status == RequestSender.SUCCESS) ||
+						(status == RequestSender.ROUTE_NOT_FOUND) ||
+						(status == RequestSender.VERIFY_FAILURE)) {
 					long rtt = System.currentTimeMillis() - startTime;
 					if(!rejectedOverload)
 						throttleWindow.requestCompleted();
@@ -1969,17 +1969,17 @@ public class Node {
 			if(status == RequestSender.NOT_FINISHED) 
 				continue;
 			
-			if(status == RequestSender.TIMED_OUT ||
-					status == RequestSender.GENERATED_REJECTED_OVERLOAD) {
+			if((status == RequestSender.TIMED_OUT) ||
+					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 				if(!rejectedOverload) {
 					throttleWindow.rejectedOverload();
 					rejectedOverload = true;
 				}
 			} else {
-				if(status == RequestSender.DATA_NOT_FOUND ||
-						status == RequestSender.SUCCESS ||
-						status == RequestSender.ROUTE_NOT_FOUND ||
-						status == RequestSender.VERIFY_FAILURE) {
+				if((status == RequestSender.DATA_NOT_FOUND) ||
+						(status == RequestSender.SUCCESS) ||
+						(status == RequestSender.ROUTE_NOT_FOUND) ||
+						(status == RequestSender.VERIFY_FAILURE)) {
 					long rtt = System.currentTimeMillis() - startTime;
 					
 					if(!rejectedOverload)
@@ -2092,8 +2092,8 @@ public class Node {
 		// Finished?
 		if(!hasReceivedRejectedOverload) {
 			// Is it ours? Did we send a request?
-			if(is.sentRequest() && is.uid == uid && (is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND 
-					|| is.getStatus() == CHKInsertSender.SUCCESS)) {
+			if(is.sentRequest() && (is.uid == uid) && ((is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND) 
+					|| (is.getStatus() == CHKInsertSender.SUCCESS))) {
 				// It worked!
 				long endTime = System.currentTimeMillis();
 				long len = endTime - startTime;
@@ -2191,8 +2191,8 @@ public class Node {
 		// Finished?
 		if(!hasReceivedRejectedOverload) {
 			// Is it ours? Did we send a request?
-			if(is.sentRequest() && is.uid == uid && (is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND 
-					|| is.getStatus() == SSKInsertSender.SUCCESS)) {
+			if(is.sentRequest() && (is.uid == uid) && ((is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND) 
+					|| (is.getStatus() == SSKInsertSender.SUCCESS))) {
 				// It worked!
 				long endTime = System.currentTimeMillis();
 				long rtt = endTime - startTime;
@@ -2289,7 +2289,7 @@ public class Node {
 		// Round trip time
 		double pingTime = nodePinger.averagePingTime();
 		if(pingTime > MAX_PING_TIME) {
-			if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
+			if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 				Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				lastAcceptedRequest = now;
 				return null;
@@ -2307,7 +2307,7 @@ public class Node {
 		
 		Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
 		if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
-			if(now - lastAcceptedRequest > MAX_INTERREQUEST_TIME && canAcceptAnyway) {
+			if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 				Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				lastAcceptedRequest = now;
 				return null;
@@ -2402,7 +2402,7 @@ public class Node {
 	   		if(!addresses.contains(a))
 	   			addresses.add(a);
 	   	}
-	   	if(pluginDetectedIPs != null && pluginDetectedIPs.length > 0) {
+	   	if((pluginDetectedIPs != null) && (pluginDetectedIPs.length > 0)) {
 	   		for(int i=0;i<pluginDetectedIPs.length;i++) {
 	   			InetAddress addr = pluginDetectedIPs[i].publicAddress;
 	   			if(addr == null) continue;
@@ -2411,7 +2411,7 @@ public class Node {
 	   				addresses.add(a);
 	   		}
 	   	}
-	   	if(detectedAddr == null && oldIPAddress != null && !oldIPAddress.equals(overrideIPAddress))
+	   	if((detectedAddr == null) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
 	   		addresses.add(new Peer(oldIPAddress, portNumber));
    		// Try to pick it up from our connections
 	   	if(peers != null) {
@@ -2420,7 +2420,7 @@ public class Node {
 	   		// FIXME use a standard mutable int object, we have one somewhere
 	   		for(int i=0;i<peerList.length;i++) {
 	   			Peer p = peerList[i].getRemoteDetectedPeer();
-	   			if(p == null || p.isNull()) continue;
+	   			if((p == null) || p.isNull()) continue;
 	   			// DNSRequester doesn't deal with our own node
 	   			InetAddress ip = p.getAddress(true);
 	   			if(!IPUtil.checkAddress(ip)) continue;
@@ -2454,10 +2454,10 @@ public class Node {
 		   			}
 		   		}
 		   		if(best != null) {
-		   			if(bestPopularity > 2 || detectedAddr == null) {
+		   			if((bestPopularity > 2) || (detectedAddr == null)) {
 		   				if(!addresses.contains(best))
 		   					addresses.add(best);
-		   				if(secondBest != null && secondBestPopularity > 2) {
+		   				if((secondBest != null) && (secondBestPopularity > 2)) {
 		   					if(!addresses.contains(secondBest))
 		   						addresses.add(secondBest);
 		   				}
@@ -2599,7 +2599,7 @@ public class Node {
 		public boolean equals(Object o) {
 			if(o instanceof KeyHTLPair) {
 				KeyHTLPair p = (KeyHTLPair) o;
-				return (p.key.equals(key) && p.htl == htl);
+				return (p.key.equals(key) && (p.htl == htl));
 			} else return false;
 		}
 		
@@ -2854,7 +2854,7 @@ public class Node {
 		synchronized(insertSenders) {
 			int x = getNumInserts();
 			sb.append(x);
-			if(x < 5 && x > 0) {
+			if((x < 5) && (x > 0)) {
 				sb.append('\n');
 				// Dump
 				Iterator i = insertSenders.values().iterator();
@@ -3044,7 +3044,7 @@ public class Node {
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
-			if(key2 != null && !key2.equals(key)) {
+			if((key2 != null) && !key2.equals(key)) {
 				MessageDigest md256;
 				// Check the hash.
 				try {
@@ -3510,7 +3510,7 @@ public class Node {
 			} else {
 				firstBwlimitDelayTimeThresholdBreak = 0;
 			}
-			if(firstBwlimitDelayTimeThresholdBreak != 0 && (now - firstBwlimitDelayTimeThresholdBreak) >= MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY) {
+			if((firstBwlimitDelayTimeThresholdBreak != 0) && ((now - firstBwlimitDelayTimeThresholdBreak) >= MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY)) {
 				bwlimitDelayAlertRelevant = true;
 			} else {
 				bwlimitDelayAlertRelevant = false;
@@ -3522,7 +3522,7 @@ public class Node {
 			} else {
 				firstNodeAveragePingTimeThresholdBreak = 0;
 			}
-			if(firstNodeAveragePingTimeThresholdBreak != 0 && (now - firstNodeAveragePingTimeThresholdBreak) >= MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY) {
+			if((firstNodeAveragePingTimeThresholdBreak != 0) && ((now - firstNodeAveragePingTimeThresholdBreak) >= MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY)) {
 				nodeAveragePingAlertRelevant = true;
 			} else {
 				nodeAveragePingAlertRelevant = false;

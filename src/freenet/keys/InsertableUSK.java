@@ -29,7 +29,7 @@ public class InsertableUSK extends USK {
 	public static InsertableUSK createInsertable(FreenetURI uri) throws MalformedURLException {
 		if(!uri.getKeyType().equalsIgnoreCase("USK"))
 			throw new MalformedURLException();
-		if(uri.getDocName() == null || uri.getDocName().length() == 0)
+		if((uri.getDocName() == null) || (uri.getDocName().length() == 0))
 			throw new MalformedURLException("USK URIs must have a document name (to avoid ambiguity)");
 		if(uri.getExtra() != null)
 			throw new MalformedURLException("Insertable SSK URIs must NOT have ,extra - inserting from a pubkey rather than the privkey perhaps?");

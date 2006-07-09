@@ -65,7 +65,7 @@ public class DefaultMIMETypes {
 					Logger.normal(DefaultMIMETypes.class, "Extension "+ext+" assigned to "+byNumber(s.shortValue())+" in preference to "+number+":"+type);
 				} else {
 					// If only one, make it primary
-					if(outExtension == null && extensions.length == 1)
+					if((outExtension == null) && (extensions.length == 1))
 						primaryExtensionByMimeNumber.put(t, ext);
 					mimeTypesByExtension.put(ext, t);
 				}
@@ -96,7 +96,7 @@ public class DefaultMIMETypes {
 	 * Get a known MIME type by number.
 	 */
 	public static String byNumber(short x) {
-		if(x > mimeTypesByNumber.size() || x < 0)
+		if((x > mimeTypesByNumber.size()) || (x < 0))
 			return null;
 		return (String) mimeTypesByNumber.get(x);
 	}
@@ -738,7 +738,7 @@ public class DefaultMIMETypes {
 	/** Guess a MIME type from a filename */
 	public static String guessMIMEType(String arg) {
 		int x = arg.lastIndexOf('.');
-		if(x == -1 || x == arg.length()-1)
+		if((x == -1) || (x == arg.length()-1))
 			return DEFAULT_MIME_TYPE;
 		String ext = arg.substring(x+1).toLowerCase();
 		Short mimeIndexOb = (Short) mimeTypesByExtension.get(ext);

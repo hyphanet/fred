@@ -130,7 +130,7 @@ public class NodeSSK extends Key {
 	public void setPubKey(DSAPublicKey pubKey2) throws SSKVerifyException {
 		if(pubKey == pubKey2) return;
 		if(pubKey2 == null) return;
-		if(pubKey == null || !pubKey2.equals(pubKey)) {
+		if((pubKey == null) || !pubKey2.equals(pubKey)) {
 			if(pubKey2 != null) {
 				MessageDigest md256;
 				try {

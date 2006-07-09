@@ -74,7 +74,7 @@ public class ClientSSK extends ClientKey {
 	}
 	
 	public void setPublicKey(DSAPublicKey pubKey) {
-		if(this.pubKey != null && this.pubKey != pubKey && !this.pubKey.equals(pubKey))
+		if((this.pubKey != null) && (this.pubKey != pubKey) && !this.pubKey.equals(pubKey))
 			throw new IllegalArgumentException("Cannot reassign: was "+this.pubKey+" now "+pubKey);
 		this.pubKey = pubKey;
 	}
@@ -87,7 +87,7 @@ public class ClientSSK extends ClientKey {
 		// 5 bytes.
 		byte[] extra = new byte[5];
 
-		short cryptoAlgorithm = NodeSSK.ALGO_AES_PCFB_256_SHA256;
+		short cryptoAlgorithm = Key.ALGO_AES_PCFB_256_SHA256;
 		
 		extra[0] = NodeSSK.SSK_VERSION;
 		extra[1] = (byte) (cryptoAlgorithm >> 8);

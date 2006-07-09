@@ -156,14 +156,14 @@ public class ClientGetMessage extends FCPMessage {
 		} else {
 			try {
 				priorityClass = Short.parseShort(priorityString, 10);
-				if(priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS || priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS)
+				if((priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS) || (priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS))
 					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Valid priorities are from "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" to "+RequestStarter.MINIMUM_PRIORITY_CLASS, identifier);
 			} catch (NumberFormatException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing PriorityClass field: "+e.getMessage(), identifier);
 			}
 		}
 		String persistenceString = fs.get("Persistence");
-		if(persistenceString == null || persistenceString.equalsIgnoreCase("connection")) {
+		if((persistenceString == null) || persistenceString.equalsIgnoreCase("connection")) {
 			// Default: persists until connection loss.
 			persistenceType = ClientRequest.PERSIST_CONNECTION;
 		} else if(persistenceString.equalsIgnoreCase("reboot")) {
@@ -176,7 +176,7 @@ public class ClientGetMessage extends FCPMessage {
 		} else {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
 		}
-		if(global && persistenceType == ClientRequest.PERSIST_CONNECTION) {
+		if(global && (persistenceType == ClientRequest.PERSIST_CONNECTION)) {
 			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Global requests must be persistent", identifier);
 		}
 	}
@@ -237,7 +237,7 @@ public class ClientGetMessage extends FCPMessage {
 
 	public static short parseValidReturnType(String string) {
 		short s = parseReturnType(string);
-		if(s == RETURN_TYPE_DIRECT || s == RETURN_TYPE_NONE || s == RETURN_TYPE_DISK)
+		if((s == RETURN_TYPE_DIRECT) || (s == RETURN_TYPE_NONE) || (s == RETURN_TYPE_DISK))
 			return s;
 		throw new IllegalArgumentException("Invalid or unsupported return type: "+returnTypeString(s));
 	}

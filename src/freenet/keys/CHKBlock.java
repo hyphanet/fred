@@ -48,7 +48,7 @@ public class CHKBlock implements KeyBlock {
         	throw new IllegalArgumentException("Wrong length: "+headers.length+" should be "+TOTAL_HEADERS_LENGTH);
         hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
 //        Logger.debug(CHKBlock.class, "Data length: "+data.length+", header length: "+header.length);
-        if(key != null && !verify) {
+        if((key != null) && !verify) {
         	this.chk = key;
         	return;
         }

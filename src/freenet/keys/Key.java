@@ -136,7 +136,7 @@ public abstract class Key implements WritableToDataOutputStream {
         // because compressing it improves its entropy.
         if(sourceData.size() > MAX_LENGTH_BEFORE_COMPRESSION)
             throw new KeyEncodeException("Too big");
-        if((!dontCompress) || alreadyCompressedCodec >= 0) {
+        if((!dontCompress) || (alreadyCompressedCodec >= 0)) {
         	byte[] cbuf = null;
         	if(alreadyCompressedCodec >= 0) {
            		if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH)

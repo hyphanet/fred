@@ -77,7 +77,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			Logger.minor(this, "Parsing "+i);
 			Logger.minor(this, "UploadFrom="+uploadFrom);
 			ManifestElement me;
-			if(uploadFrom == null || uploadFrom.equalsIgnoreCase("direct")) {
+			if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
 				long sz = Long.parseLong(subset.get("DataLength"));
 				if(!finished) {
 					// Direct (persistent temp bucket)
@@ -111,7 +111,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			} else
 				throw new PersistenceParseException("Don't know UploadFrom="+uploadFrom);
 			v.add(me);
-			if(data != null && data.size() > 0)
+			if((data != null) && (data.size() > 0))
 				size += data.size();
 		}
 		manifestElements = SimpleManifestPutter.unflatten(v);

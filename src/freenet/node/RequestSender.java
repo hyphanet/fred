@@ -94,7 +94,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     }
     
     public void run() {
-        if(key instanceof NodeSSK && pubKey == null) {
+        if((key instanceof NodeSSK) && (pubKey == null)) {
         	pubKey = ((NodeSSK)key).getPubKey();
         	if(pubKey == null)
         		pubKey = node.getKey(((NodeSSK)key).getPubKeyHash());
@@ -209,7 +209,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	break;
             }
             
-            if(msg == null || msg.getSpec() != DMT.FNPAccepted) {
+            if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) {
             	// Try another node
             	continue;
             }
@@ -466,7 +466,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         		hadROLastTimeWaited = true;
         		return true;
         	}
-        	if((!prbWasNonNull) && prb != null) {
+        	if((!prbWasNonNull) && (prb != null)) {
         		prbWasNonNull = true;
         		return false;
         	}
@@ -499,7 +499,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
         
-        if(status != TIMED_OUT && status != GENERATED_REJECTED_OVERLOAD && status != INTERNAL_ERROR) {
+        if((status != TIMED_OUT) && (status != GENERATED_REJECTED_OVERLOAD) && (status != INTERNAL_ERROR)) {
         	if(key instanceof NodeSSK) {
             	Logger.minor(this, "SSK fetch cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+status+")");
             	(source == null ? node.localSskFetchBytesSentAverage : node.remoteSskFetchBytesSentAverage)

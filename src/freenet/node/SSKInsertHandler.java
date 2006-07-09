@@ -146,7 +146,7 @@ public class SSKInsertHandler implements Runnable {
 		
 		SSKBlock storedBlock = node.fetch(key);
 		
-		if(storedBlock != null && !storedBlock.equals(block)) {
+		if((storedBlock != null) && !storedBlock.equals(block)) {
 			Message msg = DMT.createFNPSSKDataFound(uid, storedBlock.getRawHeaders(), storedBlock.getRawData());
 			try {
 				source.send(msg, null);
@@ -226,9 +226,9 @@ public class SSKInsertHandler implements Runnable {
             // Local RejectedOverload's (fatal).
             // Internal error counts as overload. It'd only create a timeout otherwise, which is the same thing anyway.
             // We *really* need a good way to deal with nodes that constantly R_O!
-            if(status == SSKInsertSender.TIMED_OUT ||
-            		status == SSKInsertSender.GENERATED_REJECTED_OVERLOAD ||
-            		status == SSKInsertSender.INTERNAL_ERROR) {
+            if((status == SSKInsertSender.TIMED_OUT) ||
+            		(status == SSKInsertSender.GENERATED_REJECTED_OVERLOAD) ||
+            		(status == SSKInsertSender.INTERNAL_ERROR)) {
                 Message msg = DMT.createFNPRejectedOverload(uid, true);
                 try {
 					source.send(msg, null);
@@ -237,14 +237,14 @@ public class SSKInsertHandler implements Runnable {
 					return;
 				}
                 // Might as well store it anyway.
-                if(status == SSKInsertSender.TIMED_OUT ||
-                		status == SSKInsertSender.GENERATED_REJECTED_OVERLOAD)
+                if((status == SSKInsertSender.TIMED_OUT) ||
+                		(status == SSKInsertSender.GENERATED_REJECTED_OVERLOAD))
                 	canCommit = true;
                 finish();
                 return;
             }
             
-            if(status == SSKInsertSender.ROUTE_NOT_FOUND || status == SSKInsertSender.ROUTE_REALLY_NOT_FOUND) {
+            if((status == SSKInsertSender.ROUTE_NOT_FOUND) || (status == SSKInsertSender.ROUTE_REALLY_NOT_FOUND)) {
                 Message msg = DMT.createFNPRouteNotFound(uid, sender.getHTL());
                 try {
 					source.send(msg, null);

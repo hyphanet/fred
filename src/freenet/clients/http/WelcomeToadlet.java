@@ -243,7 +243,7 @@ public class WelcomeToadlet extends Toadlet {
 					if(e.uri != null)
 						buf.append("URI would have been: "+e.uri+"<br>");
 					int mode = e.getMode();
-					if(mode == InserterException.FATAL_ERRORS_IN_BLOCKS || mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS) {
+					if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
 						buf.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString()+"<br>");
 					}
 				}
@@ -352,7 +352,7 @@ public class WelcomeToadlet extends Toadlet {
 		
 		if (useragent != null) {
 			useragent = useragent.toLowerCase();
-			if (useragent.indexOf("msie") > -1 && useragent.indexOf("opera") == -1) {
+			if ((useragent.indexOf("msie") > -1) && (useragent.indexOf("opera") == -1)) {
 				buf.append("<div class=\"infobox infobox-alert\">\n");
 				buf.append("<div class=\"infobox-header\">\n");
 				buf.append("Security risk!\n");
@@ -427,7 +427,7 @@ public class WelcomeToadlet extends Toadlet {
                  // Compatibility code ... will be removed 	 
          }
 		
-		if(Version.buildNumber() < Version.highestSeenBuild && advancedDarknetOutputEnabled) {
+		if((Version.buildNumber() < Version.highestSeenBuild) && advancedDarknetOutputEnabled) {
 			buf.append("<br />");
 			buf.append("<b>A newer version is available! (Build #"+Version.highestSeenBuild+")</b>");
 		}

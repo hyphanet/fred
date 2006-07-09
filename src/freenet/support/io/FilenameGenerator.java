@@ -38,7 +38,7 @@ public class FilenameGenerator {
 				for(int i=0;i<filenames.length;i++) {
 					File f = filenames[i];
 					String name = f.getName();
-					if((File.separatorChar == '\\' && name.toLowerCase().startsWith(prefix.toLowerCase()) ||
+					if((((File.separatorChar == '\\') && name.toLowerCase().startsWith(prefix.toLowerCase())) ||
 							name.startsWith(prefix))) {
 						f.delete();
 					}

@@ -152,15 +152,15 @@ public class CPUID {
 	{
 		public boolean IsK6Compatible()
 		{
-			return getCPUFamily() >= 5 && getCPUModel() >= 6;
+			return (getCPUFamily() >= 5) && (getCPUModel() >= 6);
 		}
 		public boolean IsK6_2_Compatible()
 		{
-			return getCPUFamily() >= 5 && getCPUModel() >= 8;
+			return (getCPUFamily() >= 5) && (getCPUModel() >= 8);
 		}
 		public boolean IsK6_3_Compatible()
 		{
-			return getCPUFamily() >= 5 && getCPUModel() >= 9;
+			return (getCPUFamily() >= 5) && (getCPUModel() >= 9);
 		}
 		public boolean IsAthlonCompatible()
 		{
@@ -168,7 +168,7 @@ public class CPUID {
 		}
 		public boolean IsAthlon64Compatible()
 		{
-			return getCPUFamily() == 15 && getCPUExtendedFamily() == 0;
+			return (getCPUFamily() == 15) && (getCPUExtendedFamily() == 0);
 		}
 
 		public String getCPUModelString() throws UnknownCPUException
@@ -257,15 +257,15 @@ public class CPUID {
 		}
 		public boolean IsPentiumMMXCompatible()
 		{
-			return IsPentium2Compatible() || (getCPUFamily() == 5 && (getCPUModel() ==4 || getCPUModel() == 8));
+			return IsPentium2Compatible() || ((getCPUFamily() == 5) && ((getCPUModel() ==4) || (getCPUModel() == 8)));
 		}
 		public boolean IsPentium2Compatible()
 		{
-			return getCPUFamily() > 6 || (getCPUFamily() == 6 && getCPUModel() >=3);
+			return (getCPUFamily() > 6) || ((getCPUFamily() == 6) && (getCPUModel() >=3));
 		}
 		public boolean IsPentium3Compatible()
 		{
-			return getCPUFamily() > 6 || (getCPUFamily() == 6 && getCPUModel() >=7);
+			return (getCPUFamily() > 6) || ((getCPUFamily() == 6) && (getCPUModel() >=7));
 		}
 		public boolean IsPentium4Compatible()
 		{

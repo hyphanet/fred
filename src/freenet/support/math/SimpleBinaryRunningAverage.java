@@ -42,7 +42,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 		ba = new BitSet(maxSize);
 		totalZeros = totalOnes = index = 0;
 		totalReported = 0;
-		if(start < 0.0 || start > 1.0) {
+		if((start < 0.0) || (start > 1.0)) {
 		    Logger.error(this, "Illegal default value: "+start+" on "+this,
 		            new Exception("debug"));
 		    start = Math.max(1.0, Math.min(0.0, start));
@@ -52,12 +52,12 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 	}
 	
 	public synchronized double currentValue() {
-	    if(totalZeros < 0 || totalOnes < 0) {
+	    if((totalZeros < 0) || (totalOnes < 0)) {
 	        Logger.error(this, "Argh in currentValue(): "+this,
 	                new Exception("debug"));
 	        calculateTotalOnesZeros();
 	    }
-		if(totalZeros == 0 && totalOnes == 0)
+		if((totalZeros == 0) && (totalOnes == 0))
 			return defaultValue;
 		return ((double)totalOnes) / (double)(totalZeros + totalOnes);
 	}
@@ -91,7 +91,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 			totalZeros++;
 		if(logDEBUG)
 			Logger.debug(this, "Reported: "+value+" on "+this);
-	    if(totalZeros < 0 || totalOnes < 0) {
+	    if((totalZeros < 0) || (totalOnes < 0)) {
 	        Logger.error(this, "Argh in report("+value+"): "+this,
 	                new Exception("debug"));
 	        calculateTotalOnesZeros();
@@ -219,7 +219,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 	}
 
 	public boolean convert(double d) {
-		if(d > 1.0 || d < 0.0) throw new IllegalArgumentException("invalid : "+d);
+		if((d > 1.0) || (d < 0.0)) throw new IllegalArgumentException("invalid : "+d);
 		if(d > 0.9) return true;
 		if(d < 0.1) return false;
 		throw new IllegalArgumentException("not one or other extreme!");

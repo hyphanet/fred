@@ -180,7 +180,7 @@ if (GLOBAL_DEBUG) System.err.println(">>> " + NAME + ": Default properties now s
     static PrintWriter getOutput() {
         PrintWriter pw;
         String name = getProperty("Output");
-        if (name != null && name.equals("out"))
+        if ((name != null) && name.equals("out"))
             pw = new PrintWriter(System.out, true);
         else
             pw = new PrintWriter(System.err, true);

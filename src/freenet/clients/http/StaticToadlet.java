@@ -36,7 +36,7 @@ public class StaticToadlet extends Toadlet {
 		}
 		
 		// be very strict about what characters we allow in the path, since
-		if (!path.matches("^[A-Za-z0-9\\._\\/\\-]*$") || path.indexOf("..") != -1) {
+		if (!path.matches("^[A-Za-z0-9\\._\\/\\-]*$") || (path.indexOf("..") != -1)) {
 			this.sendErrorPage(ctx, 404, "Path not found", "The given URI contains disallowed characters.");
 			return;
 		}

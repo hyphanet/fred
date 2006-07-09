@@ -123,7 +123,7 @@ public class Base64
       int inLength = in.length;
 
         // Strip trailing equals signs.
-      while (inLength > 0 && in[inLength-1] == '_')
+      while ((inLength > 0) && (in[inLength-1] == '_'))
         inLength--;
 
       int blocks = inLength/4;

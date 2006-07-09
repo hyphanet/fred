@@ -235,7 +235,7 @@ public class USKFetcher implements ClientGetState {
 					sleepTime = origSleepTime;
 				} else {
 					// Not exponential; it is more likely that it is close to the known edition than not.
-					long newMinFailures = Math.max(((int)((double)minFailures * 1.25)), minFailures+1);
+					long newMinFailures = Math.max(((int)(minFailures * 1.25)), minFailures+1);
 					if(newMinFailures > maxMinFailures)
 						newMinFailures = maxMinFailures;
 					minFailures = newMinFailures;
@@ -248,7 +248,7 @@ public class USKFetcher implements ClientGetState {
 			long end = now + sleepTime;
 			long newValAtEnd = valAtEnd;
 			// FIXME do this without occupying a thread
-			while(now < end && ((newValAtEnd = uskManager.lookup(origUSK)) == valAtEnd)) {
+			while((now < end) && ((newValAtEnd = uskManager.lookup(origUSK)) == valAtEnd)) {
 				long d = end - now;
 				if(d > 0)
 					try {
@@ -320,7 +320,7 @@ public class USKFetcher implements ClientGetState {
 				// So don't start obsolete requests.
 				USKAttempt a = (USKAttempt) i.next();
 				lastEd = uskManager.lookup(origUSK);
-				if(lastEd <= a.number && !a.cancelled)
+				if((lastEd <= a.number) && !a.cancelled)
 					a.schedule();
 			}
 		}

@@ -17,7 +17,7 @@ public class ImmutableByteArrayWrapper {
 	public boolean equals(Object o) {
 		if(o instanceof ImmutableByteArrayWrapper) {
 			ImmutableByteArrayWrapper w = (ImmutableByteArrayWrapper) o;
-			if(w.hashCode == hashCode &&
+			if((w.hashCode == hashCode) &&
 					Arrays.equals(data, w.data))
 				return true;
 		}

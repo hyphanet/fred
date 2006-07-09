@@ -35,7 +35,7 @@ public class RequestStarter implements Runnable {
 	public static final short NUMBER_OF_PRIORITY_CLASSES = MINIMUM_PRIORITY_CLASS - MAXIMUM_PRIORITY_CLASS + 1; // include 0 and max !!
 	
 	public static boolean isValidPriorityClass(int prio) {
-		return !(prio < MAXIMUM_PRIORITY_CLASS || prio > MINIMUM_PRIORITY_CLASS);
+		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
 	}
 	
 	final BaseRequestThrottle throttle;

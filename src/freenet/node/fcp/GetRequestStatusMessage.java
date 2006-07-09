@@ -33,8 +33,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 		if(global)
 			req = handler.server.globalClient.getRequest(identifier);
 		else
-			req = (ClientRequest) 
-				handler.getClient().getRequest(identifier);
+			req = handler.getClient().getRequest(identifier);
 		if(req == null) {
 			ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier);
 			handler.outputHandler.queue(msg);

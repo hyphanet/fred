@@ -89,7 +89,7 @@ public class ContentFilter {
 		synchronized(mimeTypesByName) {
 			mimeTypesByName.put(mimeType.primaryMimeType, mimeType);
 			String[] alt = mimeType.alternateMimeTypes;
-			if(alt != null && alt.length > 0) {
+			if((alt != null) && (alt.length > 0)) {
 				for(int i=0;i<alt.length;i++)
 					mimeTypesByName.put(alt[i], mimeType);
 			}
@@ -160,7 +160,7 @@ public class ContentFilter {
 			}
 			
 			if(handler.readFilter != null) {
-				if(handler.takesACharset && (charset == null || charset.length() == 0)) {
+				if(handler.takesACharset && ((charset == null) || (charset.length() == 0))) {
 					charset = detectCharset(data, handler);
 				}
 				
@@ -180,7 +180,7 @@ public class ContentFilter {
 		
 		String charset = detectBOM(data);
 		
-		if(charset == null && handler.charsetExtractor != null) {
+		if((charset == null) && (handler.charsetExtractor != null)) {
 
 			// Obviously, this is slow!
 			// This is why we need to detect on insert.

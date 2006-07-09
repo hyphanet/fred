@@ -93,7 +93,7 @@ public abstract class ClientRequest {
 		persistenceType = ClientRequest.parsePersistence(fs.get("Persistence"));
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			throw new IllegalArgumentException("Reading persistent get with type CONNECTION !!");
-		if(!(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT))
+		if(!((persistenceType == ClientRequest.PERSIST_FOREVER) || (persistenceType == ClientRequest.PERSIST_REBOOT)))
 			throw new IllegalArgumentException("Unknown persistence type "+ClientRequest.persistenceTypeString(persistenceType));
 		this.client = client2;
 		this.origHandler = null;
@@ -128,7 +128,7 @@ public abstract class ClientRequest {
 	}
 
 	public static short parsePersistence(String string) {
-		if(string == null || string.equalsIgnoreCase("connection"))
+		if((string == null) || string.equalsIgnoreCase("connection"))
 			return PERSIST_CONNECTION;
 		if(string.equalsIgnoreCase("reboot"))
 			return PERSIST_REBOOT;

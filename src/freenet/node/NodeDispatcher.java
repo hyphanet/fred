@@ -256,7 +256,7 @@ public class NodeDispatcher implements Dispatcher {
      */
     boolean handleRouted(Message m) {
         Logger.minor(this, "handleRouted("+m+")");
-        if(m.getSource() != null && (!(m.getSource() instanceof PeerNode))) {
+        if((m.getSource() != null) && (!(m.getSource() instanceof PeerNode))) {
             Logger.error(this, "Routed message but source "+m.getSource()+" not a PeerNode!");
             return true;
         }

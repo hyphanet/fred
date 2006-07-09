@@ -298,7 +298,7 @@ public class FCPServer implements Runnable {
 		String persistentDownloadsDir = 
 			fcpConfig.getString("persistentDownloadsFile");
 		
-		fcpConfig.register("persistentDownloadsInterval", (long)(5*60*1000), 5, true, "Interval between writing persistent downloads to disk", "Interval between writing persistent downloads to disk",
+		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), 5, true, "Interval between writing persistent downloads to disk", "Interval between writing persistent downloads to disk",
 				cb3 = new PersistentDownloadsIntervalCallback());
 		
 		long persistentDownloadsInterval = fcpConfig.getLong("persistentDownloadsInterval");
@@ -339,7 +339,7 @@ public class FCPServer implements Runnable {
 		if(f.isFile() && !(f.canRead() && f.canWrite()))
 			throw new InvalidConfigValueException("File exists but cannot be read");
 		File parent = f.getParentFile();
-		if(parent != null && !parent.exists())
+		if((parent != null) && !parent.exists())
 			throw new InvalidConfigValueException("Parent directory does not exist");
 		if(!f.exists()) {
 			try {
@@ -432,7 +432,7 @@ public class FCPServer implements Runnable {
 					if(killed) return;
 					long startTime = System.currentTimeMillis();
 					long now;
-					while((now = System.currentTimeMillis()) < startTime + persistenceInterval && !storeNow) {
+					while(((now = System.currentTimeMillis()) < startTime + persistenceInterval) && !storeNow) {
 						try {
 							long wait = Math.max((startTime + persistenceInterval) - now, Integer.MAX_VALUE);
 							if(wait > 0)
@@ -611,7 +611,7 @@ public class FCPServer implements Runnable {
 
 	private File makeReturnFilename(FreenetURI uri, String expectedMimeType) {
 		String ext;
-		if(expectedMimeType != null && expectedMimeType.length() > 0 &&
+		if((expectedMimeType != null) && (expectedMimeType.length() > 0) &&
 				!expectedMimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE)) {
 			ext = DefaultMIMETypes.getExtension(expectedMimeType);
 		} else ext = null;

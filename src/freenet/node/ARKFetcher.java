@@ -196,7 +196,7 @@ public class ARKFetcher implements ClientCallback {
 			queueWithBackoff();
 			return;
 		}
-		Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", now backing off ARK fetches for "+(int) (backoff / 1000)+" seconds");
+		Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", now backing off ARK fetches for "+(backoff / 1000)+" seconds");
 		// We may be on the PacketSender thread.
 		// FIXME should this be exponential backoff?
 		queueWithBackoff();

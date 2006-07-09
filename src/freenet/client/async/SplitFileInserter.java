@@ -9,6 +9,7 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
+import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
@@ -49,7 +50,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.ctx = ctx;
 		Bucket[] dataBuckets;
 		try {
-			dataBuckets = BucketTools.split(data, ClientCHKBlock.DATA_LENGTH, ctx.bf);
+			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, ctx.bf);
 		} catch (IOException e) {
 			throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 		}
@@ -81,7 +82,7 @@ public class SplitFileInserter implements ClientPutState {
 		Vector segs = new Vector();
 		
 		// First split the data up
-		if(dataBlocks < segmentSize || segmentSize == -1) {
+		if((dataBlocks < segmentSize) || (segmentSize == -1)) {
 			// Single segment
 			FECCodec codec = FECCodec.getCodec(splitfileAlgorithm, origDataBlocks.length);
 			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, codec, origDataBlocks, ctx, getCHKOnly, 0);
@@ -117,7 +118,7 @@ public class SplitFileInserter implements ClientPutState {
 		Logger.minor(this, "Encoded segment "+segment.segNo+" of "+this);
 		synchronized(this) {
 			for(int i=0;i<segments.length;i++) {
-				if(segments[i] == null || !segments[i].isEncoded())
+				if((segments[i] == null) || !segments[i].isEncoded())
 					return;
 			}
 		}
@@ -228,7 +229,7 @@ public class SplitFileInserter implements ClientPutState {
 				if(!segments[i].isFinished()) allGone = false;
 			
 			InserterException e = segment.getException();
-			if(e != null && e.isFatal()) {
+			if((e != null) && e.isFatal()) {
 				cancel();
 			} else {
 				if(!allGone) return;

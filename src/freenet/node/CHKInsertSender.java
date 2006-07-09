@@ -282,7 +282,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
              * followed by an Accepted. So we must loop here.
              */
             
-            while (msg==null || (msg.getSpec() != DMT.FNPAccepted)) {
+            while ((msg==null) || (msg.getSpec() != DMT.FNPAccepted)) {
             	
 				try {
 					msg = node.usm.waitFor(mf, this);
@@ -333,7 +333,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				// Otherwise is an FNPAccepted
 			}
             
-            if(msg == null || msg.getSpec() != DMT.FNPAccepted) continue;
+            if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) continue;
             
             Logger.minor(this, "Got Accepted on "+this);
             
@@ -396,7 +396,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				if (receiveFailed)
 					return;
 				
-				if (msg == null || msg.getSpec() == DMT.FNPRejectedTimeout) {
+				if ((msg == null) || (msg.getSpec() == DMT.FNPRejectedTimeout)) {
 					// Timeout :(
 					// Fairly serious problem
 					Logger.error(this, "Timeout (" + msg
@@ -527,7 +527,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
          	
         	setStatusTime = System.currentTimeMillis();
         	
-        	if(code == ROUTE_NOT_FOUND && !sentRequest)
+        	if((code == ROUTE_NOT_FOUND) && !sentRequest)
         		code = ROUTE_REALLY_NOT_FOUND;
         	
         	status = code;
@@ -554,8 +554,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         	notifyAll();
         }
         
-        if(code != TIMED_OUT && code != GENERATED_REJECTED_OVERLOAD && code != INTERNAL_ERROR
-        		&& code != ROUTE_REALLY_NOT_FOUND) {
+        if((code != TIMED_OUT) && (code != GENERATED_REJECTED_OVERLOAD) && (code != INTERNAL_ERROR)
+        		&& (code != ROUTE_REALLY_NOT_FOUND)) {
         	Logger.minor(this, "CHK insert cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+code+")");
         	(source == null ? node.localChkInsertBytesSentAverage : node.remoteChkInsertBytesSentAverage)
         			.report(getTotalSentBytes());
@@ -638,7 +638,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 
 			synchronized(this) {
 				long now = System.currentTimeMillis();
-				if(status == NOT_FINISHED || setStatusTime == -1) {
+				if((status == NOT_FINISHED) || (setStatusTime == -1)) {
 					// Wait 5 seconds, then try again
 					timeout = 5000;
 				} else {

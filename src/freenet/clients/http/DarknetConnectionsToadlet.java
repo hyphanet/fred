@@ -268,7 +268,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				long routingBackedOffUntil = pn.getRoutingBackedOffUntil();
 				int backoff = (int)(Math.max(routingBackedOffUntil - now, 0));
 				// Don't list the backoff as zero before it's actually zero
-				if(backoff > 0 && backoff < 1000 )
+				if((backoff > 0) && (backoff < 1000) )
 					backoff = 1000;
 				
 				// Elements must be HTML encoded.
@@ -339,7 +339,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 				}
 				String statusString = ((PeerNode) row[0]).getPeerNodeStatusString();
-				if(!advancedEnabled && ((PeerNode) row[0]).getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+				if(!advancedEnabled && (((PeerNode) row[0]).getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
 					statusString = "BUSY";
 				}
 				row[2] = "<span class=\""+((PeerNode) row[0]).getPeerNodeStatusCSSClassName()+"\">"+statusString+arkAsterisk+"</span>";
@@ -354,7 +354,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				    	continue;
 				    }
 					if(!advancedEnabled) {  // if not in advanced Darknet page output mode
-						if( j == 4 || j == 6 || j == 7 ) {  // skip IP address/name, location and backoff times
+						if( (j == 4) || (j == 6) || (j == 7) ) {  // skip IP address/name, location and backoff times
 							continue;
 						}
 					}
@@ -466,7 +466,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
 		String pass = request.getPartAsString("formPassword", 32);
-		if(pass == null || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(node.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -623,7 +623,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			return " ";
 		}
 		long idleSeconds = (now - idle) / 1000;
-		if(idleSeconds < 60 && (peerNodeStatus == Node.PEER_NODE_STATUS_CONNECTED || peerNodeStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
+		if((idleSeconds < 60) && ((peerNodeStatus == Node.PEER_NODE_STATUS_CONNECTED) || (peerNodeStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF))) {
 		  return "0m";
 		}
 		return timeIntervalToString( idleSeconds );

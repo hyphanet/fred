@@ -109,7 +109,7 @@ public class SimpleFieldSet {
                 	throw new IOException("No end marker");
                 return;
             }
-            if(line.length() == 0 && tolerant) continue; // ignore
+            if((line.length() == 0) && tolerant) continue; // ignore
             firstLine = false;
             int index = line.indexOf('=');
             if(index >= 0) {
@@ -170,7 +170,7 @@ public class SimpleFieldSet {
 	public void put(String key, String value) {
 		int idx;
 		if(value == null) return;
-		if((!multiLevel) || (idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
+		if((!multiLevel) || ((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1)) {
 			String x = (String) map.get(key);
 			
 			if(x == null) {
@@ -273,14 +273,14 @@ public class SimpleFieldSet {
     	}
 
 		public boolean hasNext() {
-			if(subIterator != null && subIterator.hasNext()) return true;
+			if((subIterator != null) && subIterator.hasNext()) return true;
 			if(subIterator != null) subIterator = null;
 			return mapIterator.hasNext();
 		}
 
 		public Object next() {
 			while(true) { // tail-recurse so we get infinite loop instead of OOM in case of a loop...
-				if(subIterator != null && subIterator.hasNext()) {
+				if((subIterator != null) && subIterator.hasNext()) {
 					return subIterator.next();
 				}
 				if(subIterator != null) subIterator = null;
@@ -319,7 +319,7 @@ public class SimpleFieldSet {
 
 	public void remove(String key) {
 		int idx;
-		if((!multiLevel) || (idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
+		if((!multiLevel) || ((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1)) {
 			map.remove(key);
 		} else {
 			String before = key.substring(0, idx);

@@ -25,10 +25,10 @@ public final class Twofish implements BlockCipher {
     }
 
     public Twofish(int keysize) throws UnsupportedCipherException {
-	if (! (keysize == 64 ||
-	       keysize == 128 ||
-	       keysize == 192 ||
-	       keysize == 256))
+	if (! ((keysize == 64) ||
+	       (keysize == 128) ||
+	       (keysize == 192) ||
+	       (keysize == 256)))
 	    throw new UnsupportedCipherException("Invalid keysize");
 	this.keysize=keysize;
     }

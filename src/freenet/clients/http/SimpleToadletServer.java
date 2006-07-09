@@ -103,7 +103,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public void set(String CSSName) throws InvalidConfigValueException {
-			if(CSSName.indexOf(':') != -1 || CSSName.indexOf('/') != -1)
+			if((CSSName.indexOf(':') != -1) || (CSSName.indexOf('/') != -1))
 				throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 			cssName = CSSName;
 		}
@@ -169,7 +169,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			if (url.getProtocol().equals("file")) {
 				File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1").replaceAll("\\|", ":"));
 				File[] themeDirectories = themesDirectory.listFiles();
-				for (int themeIndex = 0; themeDirectories != null && themeIndex < themeDirectories.length; themeIndex++) {
+				for (int themeIndex = 0; (themeDirectories != null) && (themeIndex < themeDirectories.length); themeIndex++) {
 					File themeDirectory = themeDirectories[themeIndex];
 					if (themeDirectory.isDirectory() && !themeDirectory.getName().startsWith(".")) {
 						themes.add(themeDirectory.getName());
@@ -219,7 +219,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		bindTo = fproxyConfig.getString("bindTo");
 		allowedHosts = fproxyConfig.getString("allowedHosts");
 		cssName = fproxyConfig.getString("css");
-		if(cssName.indexOf(':') != -1 || cssName.indexOf('/') != -1)
+		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 		this.advancedDarknetEnabled = fproxyConfig.getBoolean("advancedDarknetEnabled");
 		

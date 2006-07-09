@@ -57,8 +57,8 @@ public class IPAddressDetector implements Runnable {
 	 * @return Detected ip address
 	 */
 	public InetAddress getAddress(long recheckTime, String preferedAddress) {
-		if (lastInetAddress == null
-			|| System.currentTimeMillis() > (lastDetectedTime + recheckTime))
+		if ((lastInetAddress == null)
+			|| (System.currentTimeMillis() > (lastDetectedTime + recheckTime)))
 			checkpoint(preferedAddress);
 		return lastInetAddress;
 	}
@@ -142,8 +142,8 @@ public class IPAddressDetector implements Runnable {
 					"Finished scanning interfaces");
 		}
 
-		if (preferedInetAddress == null
-			&& lastInetAddress != null
+		if ((preferedInetAddress == null)
+			&& (lastInetAddress != null)
 				? isInternetAddress(lastInetAddress)
 				: true) //If no specific other address is preferred then we prefer to keep our old address
 			preferedInetAddress = lastInetAddress;
@@ -151,7 +151,7 @@ public class IPAddressDetector implements Runnable {
 		InetAddress oldAddress = lastInetAddress;
 		onGetAddresses(addrs, preferedInetAddress);
 		lastDetectedTime = System.currentTimeMillis();
-		if (oldAddress != null && lastInetAddress != null && 
+		if ((oldAddress != null) && (lastInetAddress != null) && 
 		        !lastInetAddress.equals(oldAddress)) {
 			Logger.minor(
 				this,
@@ -230,7 +230,7 @@ public class IPAddressDetector implements Runnable {
 						addrDetected = i;
 						//Use the last detected valid IP as 'detected' IP
 						detectedInetAddress = true;
-						if (preferedInetAddress != null
+						if ((preferedInetAddress != null)
 							&& addrDetected.equals(
 								preferedInetAddress)) { //Prefer the specified address if it is still available to us. Do not look for more ones
 							if (logDEBUG)

@@ -169,7 +169,7 @@ public class DSAGroupGenerator {
     		System.exit(1);
     	}
     	}
-    	System.out.println("Successfully signed and verified 10,000 times, average sig time "+(double)totalSigTime / 10000.0 +", average verify time "+(double)totalVerifyTime/10000.0);
+    	System.out.println("Successfully signed and verified 10,000 times, average sig time "+totalSigTime / 10000.0 +", average verify time "+totalVerifyTime/10000.0);
 	}
 
 	private static byte[] increment(byte[] seed) {

@@ -255,7 +255,7 @@ public final class Twofish_Algorithm // implicit no-argument constructor
    static {
       long time = System.currentTimeMillis();
 
-if (TDEBUG && debuglevel > 6) {
+if (TDEBUG && (debuglevel > 6)) {
 System.out.println("Algorithm Name: "+Twofish_Properties.FULL_NAME);
 System.out.println("Electronic Codebook (ECB) Mode");
 System.out.println();
@@ -298,7 +298,7 @@ System.out.println();
       
       time = System.currentTimeMillis() - time;
 
-if (TDEBUG && debuglevel > 8) {
+if (TDEBUG && (debuglevel > 8)) {
 System.out.println("==========");
 System.out.println();
 System.out.println("Static Data");
@@ -347,10 +347,10 @@ if (TDEBUG) trace(IN, "makeKey("+k+")");
       if (k == null)
          throw new InvalidKeyException("Empty key");
       int length = k.length;
-      if (!(length == 8 || length == 16 || length == 24 || length == 32))
+      if (!((length == 8) || (length == 16) || (length == 24) || (length == 32)))
           throw new InvalidKeyException("Incorrect key length");
 
-if (TDEBUG && debuglevel > 7) {
+if (TDEBUG && (debuglevel > 7)) {
 System.out.println("Intermediate Session Key Values");
 System.out.println();
 System.out.println("Raw="+toString(k));
@@ -366,7 +366,7 @@ System.out.println();
       // compute S-box keys using (12, 8) Reed-Solomon code over GF(256)
       //
       int i, j, offset = 0;
-      for (i = 0, j = k64Cnt-1; i < 4 && offset < length; i++, j--) {
+      for (i = 0, j = k64Cnt-1; (i < 4) && (offset < length); i++, j--) {
          k32e[i] = (k[offset++] & 0xFF)       |
                    (k[offset++] & 0xFF) <<  8 |
                    (k[offset++] & 0xFF) << 16 |
@@ -428,7 +428,7 @@ System.out.println();
 
       Object sessionKey = new Object[] { sBox, subKeys };
 
-if (TDEBUG && debuglevel > 7) {
+if (TDEBUG && (debuglevel > 7)) {
 System.out.println("S-box[]:");
 for(i=0;i<64;i++) { for(j=0;j<4;j++) System.out.print("0x"+intToString(sBox[i*4+j])+", "); System.out.println();}
 System.out.println();
@@ -464,7 +464,7 @@ if (TDEBUG) trace(IN, "blockEncrypt("+in+", "+inOffset+", "+sessionKey+")");
       int[] sBox = (int[]) sk[0];
       int[] sKey = (int[]) sk[1];
 
-if (TDEBUG && debuglevel > 6) System.out.println("PT="+toString(in, inOffset, BLOCK_SIZE));
+if (TDEBUG && (debuglevel > 6)) System.out.println("PT="+toString(in, inOffset, BLOCK_SIZE));
 
       int x0 = (in[inOffset++] & 0xFF)       |
                (in[inOffset++] & 0xFF) <<  8 |
@@ -487,7 +487,7 @@ if (TDEBUG && debuglevel > 6) System.out.println("PT="+toString(in, inOffset, BL
       x1 ^= sKey[INPUT_WHITEN + 1];
       x2 ^= sKey[INPUT_WHITEN + 2];
       x3 ^= sKey[INPUT_WHITEN + 3];
-if (TDEBUG && debuglevel > 6) System.out.println("PTw="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
+if (TDEBUG && (debuglevel > 6)) System.out.println("PTw="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
 
       int t0, t1;
       int k = ROUND_SUBKEYS;
@@ -498,7 +498,7 @@ if (TDEBUG && debuglevel > 6) System.out.println("PTw="+intToString(x0)+intToStr
          x2  = x2 >>> 1 | x2 << 31;
          x3  = x3 << 1 | x3 >>> 31;
          x3 ^= t0 + 2*t1 + sKey[k++];
-if (TDEBUG && debuglevel > 6) System.out.println("CT"+(R)+"="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
+if (TDEBUG && (debuglevel > 6)) System.out.println("CT"+(R)+"="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
 
          t0 = Fe32_0( sBox, x2 );
          t1 = Fe32_3( sBox, x3 );
@@ -506,13 +506,13 @@ if (TDEBUG && debuglevel > 6) System.out.println("CT"+(R)+"="+intToString(x0)+in
          x0  = x0 >>> 1 | x0 << 31;
          x1  = x1 << 1 | x1 >>> 31;
          x1 ^= t0 + 2*t1 + sKey[k++];
-if (TDEBUG && debuglevel > 6) System.out.println("CT"+(R+1)+"="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
+if (TDEBUG && (debuglevel > 6)) System.out.println("CT"+(R+1)+"="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
       }
       x2 ^= sKey[OUTPUT_WHITEN    ];
       x3 ^= sKey[OUTPUT_WHITEN + 1];
       x0 ^= sKey[OUTPUT_WHITEN + 2];
       x1 ^= sKey[OUTPUT_WHITEN + 3];
-if (TDEBUG && debuglevel > 6) System.out.println("CTw="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
+if (TDEBUG && (debuglevel > 6)) System.out.println("CTw="+intToString(x0)+intToString(x1)+intToString(x2)+intToString(x3));
 
      result[0] = (byte) x2;
      result[1] = (byte)(x2 >>> 8);
@@ -531,7 +531,7 @@ if (TDEBUG && debuglevel > 6) System.out.println("CTw="+intToString(x0)+intToStr
      result[14] = (byte)(x1 >>> 16);
      result[15] = (byte)(x1 >>> 24);
 
-if (TDEBUG && debuglevel > 6) {
+if (TDEBUG && (debuglevel > 6)) {
 System.out.println("CT="+toString(result));
 System.out.println();
 }
@@ -552,7 +552,7 @@ if (TDEBUG) trace(IN, "blockDecrypt("+in+", "+inOffset+", "+sessionKey+")");
       int[] sBox = (int[]) sk[0];
       int[] sKey = (int[]) sk[1];
 
-if (TDEBUG && debuglevel > 6) System.out.println("CT="+toString(in, inOffset, BLOCK_SIZE));
+if (TDEBUG && (debuglevel > 6)) System.out.println("CT="+toString(in, inOffset, BLOCK_SIZE));
 
       int x2 = (in[inOffset++] & 0xFF)       |
                (in[inOffset++] & 0xFF) <<  8 |
@@ -575,7 +575,7 @@ if (TDEBUG && debuglevel > 6) System.out.println("CT="+toString(in, inOffset, BL
       x3 ^= sKey[OUTPUT_WHITEN + 1];
       x0 ^= sKey[OUTPUT_WHITEN + 2];
       x1 ^= sKey[OUTPUT_WHITEN + 3];
-if (TDEBUG && debuglevel > 6) System.out.println("CTw="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
+if (TDEBUG && (debuglevel > 6)) System.out.println("CTw="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
 
       int k = ROUND_SUBKEYS + 2*ROUNDS - 1;
       int t0, t1;
@@ -586,7 +586,7 @@ if (TDEBUG && debuglevel > 6) System.out.println("CTw="+intToString(x2)+intToStr
          x1  = x1 >>> 1 | x1 << 31;
          x0  = x0 << 1 | x0 >>> 31;
          x0 ^= t0 + t1 + sKey[k--];
-if (TDEBUG && debuglevel > 6) System.out.println("PT"+(ROUNDS-R)+"="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
+if (TDEBUG && (debuglevel > 6)) System.out.println("PT"+(ROUNDS-R)+"="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
 
          t0 = Fe32_0( sBox, x0 );
          t1 = Fe32_3( sBox, x1 );
@@ -594,13 +594,13 @@ if (TDEBUG && debuglevel > 6) System.out.println("PT"+(ROUNDS-R)+"="+intToString
          x3  = x3 >>> 1 | x3 << 31;
          x2  = x2 << 1 | x2 >>> 31;
          x2 ^= t0 + t1 + sKey[k--];
-if (TDEBUG && debuglevel > 6) System.out.println("PT"+(ROUNDS-R-1)+"="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
+if (TDEBUG && (debuglevel > 6)) System.out.println("PT"+(ROUNDS-R-1)+"="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
       }
       x0 ^= sKey[INPUT_WHITEN    ];
       x1 ^= sKey[INPUT_WHITEN + 1];
       x2 ^= sKey[INPUT_WHITEN + 2];
       x3 ^= sKey[INPUT_WHITEN + 3];
-if (TDEBUG && debuglevel > 6) System.out.println("PTw="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
+if (TDEBUG && (debuglevel > 6)) System.out.println("PTw="+intToString(x2)+intToString(x3)+intToString(x0)+intToString(x1));
 
 
      result[0] = (byte) x0;
@@ -620,7 +620,7 @@ if (TDEBUG && debuglevel > 6) System.out.println("PTw="+intToString(x2)+intToStr
      result[14] = (byte)(x3 >>> 16);
      result[15] = (byte)(x3 >>> 24);
 
-if (TDEBUG && debuglevel > 6) {
+if (TDEBUG && (debuglevel > 6)) {
 System.out.println("PT="+toString(result));
 System.out.println();
 }
@@ -744,7 +744,7 @@ if (TDEBUG) trace(IN, "self_test("+keysize+")");
          for (i = 0; i < BLOCK_SIZE; i++)
             pt[i] = (byte) i;
 
-if (TDEBUG && debuglevel > 6) {
+if (TDEBUG && (debuglevel > 6)) {
 System.out.println("==========");
 System.out.println();
 System.out.println("KEYSIZE="+(8*keysize));
@@ -753,14 +753,14 @@ System.out.println();
 }
          Object key = makeKey(kb);
 
-if (TDEBUG && debuglevel > 6) {
+if (TDEBUG && (debuglevel > 6)) {
 System.out.println("Intermediate Ciphertext Values (Encryption)");
 System.out.println();
 }
          byte[] ct = new byte[BLOCK_SIZE];
          blockEncrypt(pt, ct, 0, key);
 
-if (TDEBUG && debuglevel > 6) {
+if (TDEBUG && (debuglevel > 6)) {
 System.out.println("Intermediate Plaintext Values (Decryption)");
 System.out.println();
 }
@@ -771,12 +771,12 @@ System.out.println();
          if (!ok)
             throw new RuntimeException("Symmetric operation failed");
       } catch (Exception x) {
-if (TDEBUG && debuglevel > 0) {
+if (TDEBUG && (debuglevel > 0)) {
    debug("Exception encountered during self-test: " + x.getMessage());
    x.printStackTrace();
 }
       }
-if (TDEBUG && debuglevel > 0) debug("Self-test OK? " + ok);
+if (TDEBUG && (debuglevel > 0)) debug("Self-test OK? " + ok);
 if (TDEBUG) trace(OUT, "self_test()");
       return ok;
    }

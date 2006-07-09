@@ -392,7 +392,7 @@ public class FProxyToadlet extends Toadlet {
 		String ext = DefaultMIMETypes.getExtension(expectedMimeType);
 		if(ext == null)
 			ext = "bin";
-		if(dotIdx == -1 && expectedMimeType != null) {
+		if((dotIdx == -1) && (expectedMimeType != null)) {
 			s += "." + ext;
 			return s;
 		}
@@ -407,7 +407,7 @@ public class FProxyToadlet extends Toadlet {
 	
 	private String getFilename(FetchException e, FreenetURI uri) {
 		String fnam = sanitize(uri.getDocName());
-		if(fnam != null && fnam.length() > 0) return fnam;
+		if((fnam != null) && (fnam.length() > 0)) return fnam;
 		String[] meta = uri.getAllMetaStrings();
 		if(meta != null) {
 			for(int i=meta.length-1;i>=0;i++) {
@@ -415,7 +415,7 @@ public class FProxyToadlet extends Toadlet {
 				if(s == null) continue;
 				if(s.length() == 0) continue;
 				fnam = sanitize(s);
-				if(s != null && s.length() > 0) return fnam;
+				if((s != null) && (s.length() > 0)) return fnam;
 			}
 		}
 		return Base64.encode(uri.getRoutingKey());
@@ -427,8 +427,8 @@ public class FProxyToadlet extends Toadlet {
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
 			if(Character.isLetterOrDigit(c) ||
-					c == ' ' || c == '.' || c == '-' || c == '_' ||
-					c == '+' || c == ',')
+					(c == ' ') || (c == '.') || (c == '-') || (c == '_') ||
+					(c == '+') || (c == ','))
 				sb.append(c);
 		}
 		return sb.toString();

@@ -108,7 +108,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		synchronized(this) {
-			if(generatedURI != null && !uri.equals(generatedURI))
+			if((generatedURI != null) && !uri.equals(generatedURI))
 				Logger.error(this, "onGeneratedURI("+uri+","+state+") but already set generatedURI to "+generatedURI);
 			generatedURI = uri;
 		}

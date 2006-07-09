@@ -122,8 +122,8 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		*/
 
 		if(htmlOnly
-		   && uri.toString(false).toLowerCase().indexOf(".htm") < 0
-		   && uriBytes[uriBytes.length - 1] != '/')
+		   && (uri.toString(false).toLowerCase().indexOf(".htm") < 0)
+		   && (uriBytes[uriBytes.length - 1] != '/'))
 			return;
 
 		/* We remove HTML targets from URI (http://my.server/file#target) */
@@ -156,7 +156,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 			int running = runningFetchesByURI.size();
 			int queued = queuedURIList.size();
 			
-			if (running >= maxParallelRequests || queued == 0)
+			if ((running >= maxParallelRequests) || (queued == 0))
 				return;
 			
 			toStart = new ArrayList(Math.min(maxParallelRequests - running, queued));
@@ -252,8 +252,8 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 			return;
 		}
 
-		if(type != null && type.length() != 0 && type.toLowerCase().equals("title")
-		   && s != null && s.length() != 0 && s.indexOf('\n') < 0) {
+		if((type != null) && (type.length() != 0) && type.toLowerCase().equals("title")
+		   && (s != null) && (s.length() != 0) && (s.indexOf('\n') < 0)) {
 			/* We should have a correct title */
 			titlesOfURIs.put(uri.toString(false), s);
 			type = "title";
@@ -273,7 +273,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 
 		for (int i = 0; i < words.length; i++) {
 			String word = words[i];
-			if (word == null || word.length() == 0)
+			if ((word == null) || (word.length() == 0))
 				continue;
 			word = word.toLowerCase();
 			

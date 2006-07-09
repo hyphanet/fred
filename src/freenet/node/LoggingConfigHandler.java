@@ -272,7 +272,7 @@ public class LoggingConfigHandler {
 			for(int i=0;i<files.length;i++) {
 				File f = files[i];
 				String s = f.getName();
-				if(s.startsWith("freenet-") && s.indexOf(".log") != -1) {
+				if(s.startsWith("freenet-") && (s.indexOf(".log") != -1)) {
 					if(f.isFile()) {
 						if(!f.delete()) failed = true;
 					} else if(f.isDirectory()) {

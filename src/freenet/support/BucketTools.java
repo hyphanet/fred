@@ -354,15 +354,15 @@ public class BucketTools {
 			long bucketLength = data.size();
 			long bytesRead = 0;
 			byte[] buf = new byte[4096];
-			while(bytesRead < bucketLength || bucketLength == -1) {
+			while((bytesRead < bucketLength) || (bucketLength == -1)) {
 				int readBytes = is.read(buf);
 				if(readBytes < 0) break;
 				bytesRead += readBytes;
 				md.update(buf, 0, readBytes);
 			}
-			if(bytesRead < bucketLength && bucketLength > 0)
+			if((bytesRead < bucketLength) && (bucketLength > 0))
 				throw new EOFException();
-			if(bytesRead != bucketLength && bucketLength > 0)
+			if((bytesRead != bucketLength) && (bucketLength > 0))
 				throw new IOException("Read "+bytesRead+" but bucket length "+bucketLength+"!");
 			return md.digest();
 		} catch (NoSuchAlgorithmException e) {

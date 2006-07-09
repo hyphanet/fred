@@ -18,11 +18,11 @@ public class SimpleIntNumberedItemComparator implements Comparator {
     
     public int ocompare(Object o1, Object o2) {
         // Nulls at the end of the list
-        if(o1 == null && o2 == null)
+        if((o1 == null) && (o2 == null))
             return 0; // null == null
-        if(o1 != null && o2 == null)
+        if((o1 != null) && (o2 == null))
             return nullAtStart? -1 : 1; // anything > null
-        if(o2 != null && o1 == null)
+        if((o2 != null) && (o1 == null))
             return nullAtStart ? 1 : -1;
         long i1, i2;
         if(o1 instanceof IntNumberedItem)

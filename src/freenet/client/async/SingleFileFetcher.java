@@ -292,7 +292,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				Logger.minor(this, "Redirecting to "+uri);
 				ClientKey key;
 				try {
-					BaseClientKey k = ClientKey.getBaseKey(uri);
+					BaseClientKey k = BaseClientKey.getBaseKey(uri);
 					if(k instanceof ClientKey)
 						key = (ClientKey) k;
 					else
@@ -303,7 +303,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				} catch (MalformedURLException e) {
 					throw new FetchException(FetchException.INVALID_URI, e);
 				}
-				if(key instanceof ClientCHK && !((ClientCHK)key).isMetadata())
+				if((key instanceof ClientCHK) && !((ClientCHK)key).isMetadata())
 					rcb.onBlockSetFinished(this);
 				LinkedList newMetaStrings = uri.listMetaStrings();
 				
@@ -339,8 +339,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				if(metadata.uncompressedDataLength() > len)
 					len = metadata.uncompressedDataLength();
 				
-				if(len > ctx.maxOutputLength ||
-						len > ctx.maxTempLength) {
+				if((len > ctx.maxOutputLength) ||
+						(len > ctx.maxTempLength)) {
 					
 					boolean finished = (rcb == parent);
 					
@@ -541,7 +541,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	}
 
 	public static ClientGetState create(ClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
-		BaseClientKey key = ClientKey.getBaseKey(uri);
+		BaseClientKey key = BaseClientKey.getBaseKey(uri);
 		if(key instanceof ClientKey)
 			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
 		else {

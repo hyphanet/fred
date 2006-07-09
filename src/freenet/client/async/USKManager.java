@@ -83,7 +83,7 @@ public class USKManager {
 		if(temporaryBackgroundFetchersLRU.contains(clear))
 		temporaryBackgroundFetchersLRU.push(clear);
 		if(f != null) {
-			if(f.parent.priorityClass == parent.priorityClass && f.ctx.equals(ctx))
+			if((f.parent.priorityClass == parent.priorityClass) && f.ctx.equals(ctx))
 				return f;
 		}
 		f = new USKFetcher(usk, this, ctx, parent, 3, false);
@@ -136,7 +136,7 @@ public class USKManager {
 		synchronized(this) {
 			Long l = (Long) latestVersionByClearUSK.get(clear);
 			Logger.minor(this, "Old value: "+l);
-			if(l == null || number > l.longValue()) {
+			if((l == null) || (number > l.longValue())) {
 				l = new Long(number);
 				latestVersionByClearUSK.put(clear, l);
 				Logger.minor(this, "Put "+number);
@@ -195,7 +195,7 @@ public class USKManager {
 			int j=0;
 			for(int i=0;i<callbacks.length;i++) {
 				USKCallback c = callbacks[i];
-				if(c != null && c != cb) {
+				if((c != null) && (c != cb)) {
 					callbacks[j++] = c;
 				}
 			}

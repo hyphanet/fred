@@ -54,7 +54,7 @@ public class MultiValueTable {
     public boolean containsElement(Object key, Object value) {
         synchronized (table) {
             Vector v = (Vector) table.get(key);
-            return v != null && v.contains(value);
+            return (v != null) && v.contains(value);
         }
     }
 

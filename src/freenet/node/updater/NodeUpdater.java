@@ -143,7 +143,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		System.err.println("Starting the update process: found the update, now fetching it.");
 //		We fetch it
 		try{
-			if(cg==null||cg.isCancelled()){
+			if((cg==null)||cg.isCancelled()){
 				cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
 						URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, 
 						this, new ArrayBucket());
@@ -385,10 +385,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			this.cg = state;
 			isFetching=false;
 			cg.cancel();
-			if(errorCode == FetchException.DATA_NOT_FOUND ||
-					errorCode == FetchException.ROUTE_NOT_FOUND ||
-					errorCode == FetchException.PERMANENT_REDIRECT ||
-					errorCode == FetchException.REJECTED_OVERLOAD){
+			if((errorCode == FetchException.DATA_NOT_FOUND) ||
+					(errorCode == FetchException.ROUTE_NOT_FOUND) ||
+					(errorCode == FetchException.PERMANENT_REDIRECT) ||
+					(errorCode == FetchException.REJECTED_OVERLOAD)){
 				
 				Logger.normal(this, "Rescheduling new request");
 				maybeUpdate();

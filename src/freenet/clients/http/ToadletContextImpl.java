@@ -154,7 +154,7 @@ public class ToadletContextImpl implements ToadletContext {
 		char prev = 0;
 		for(int i=0;i<key.length();i++) {
 			char c = key.charAt(i);
-			if(i == 0 || prev == '-') {
+			if((i == 0) || (prev == '-')) {
 				c = Character.toUpperCase(c);
 			}
 			sb.append(c);

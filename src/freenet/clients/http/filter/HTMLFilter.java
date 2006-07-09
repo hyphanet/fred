@@ -179,7 +179,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								splitTag.add(b.toString());
 								mode = INTAGWHITESPACE;
 								b.setLength(0);
-							} else if (c == '<' && Character.isWhitespace(balt.charAt(0))) {
+							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
 								saveText(b, currentTag, w, this);
 
@@ -195,10 +195,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								balt.setLength(0);
 								mode = INTEXT;
 							} else if (
-								b.length() == 2
-									&& c == '-'
-									&& prevC == '-'
-									&& pprevC == '!') {
+								(b.length() == 2)
+									&& (c == '-')
+									&& (prevC == '-')
+									&& (pprevC == '!')) {
 								mode = INTAGCOMMENT;
 								b.append(c);
 							} else if (c == '"') {
@@ -218,7 +218,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							if (c == '"') {
 								mode = INTAG;
 								b.append(c); // Part of the element
-							} else if (c == '>' || c == '<') {
+							} else if ((c == '>') || (c == '<')) {
 								if (!deleteErrors) {
 									throwFilterException("Tags in markup");
 									b.append(c);
@@ -247,7 +247,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							if (c == '\'') {
 								mode = INTAG;
 								b.append(c); // Part of the element
-							} else if (c == '>' || c == '<') {
+							} else if ((c == '>') || (c == '<')) {
 								if (!deleteErrors) {
 									throwFilterException("Tags in markup");
 									b.append(c);
@@ -294,7 +294,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							 * (avian)
 							 */
 						case INTAGCOMMENT :
-							if (b.length() >= 4 && c == '-' && prevC == '-') {
+							if ((b.length() >= 4) && (c == '-') && (prevC == '-')) {
 								b.append(c);
 								mode = INTAGCOMMENTCLOSING;
 							} else
@@ -324,7 +324,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.setLength(0);
 								balt.setLength(0);
 								mode = INTEXT;
-							} else if (c == '<' && Character.isWhitespace(balt.charAt(0))) {
+							} else if ((c == '<') && Character.isWhitespace(balt.charAt(0))) {
 								// Previous was an un-escaped < in a script.
 								saveText(balt, currentTag, w, this);
 								balt.setLength(0);
@@ -375,7 +375,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
-			if(c < 32 && c != '\n' && c != '\r' ) {
+			if((c < 32) && (c != '\n') && (c != '\r') ) {
 				// Not a real character
 				// STRONGLY suggests somebody is using a bogus charset.
 				// This could be in order to break the filter.
@@ -417,7 +417,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				if (pc.writeStyleScriptWithTag) {
 					pc.writeStyleScriptWithTag = false;
 					String style = pc.currentStyleScriptChunk;
-					if (style == null || style.length() == 0)
+					if ((style == null) || (style.length() == 0))
 						pc.writeAfterTag += "<!-- deleted unknown style -->";
 					else
 						w.write(style);
@@ -438,7 +438,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	void saveComment(StringBuffer s, Writer w, HTMLParseContext pc)
 		throws IOException {
-		if(s.length() > 3 && s.charAt(0) == '!' && s.charAt(1) == '-' && s.charAt(2) == '-') {
+		if((s.length() > 3) && (s.charAt(0) == '!') && (s.charAt(1) == '-') && (s.charAt(2) == '-')) {
 			s.delete(0, 3);
 			if(s.charAt(s.length()-1) == '-')
 				s.setLength(s.length()-1);
@@ -506,7 +506,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				return;
 			}
 			String s = (String) v.elementAt(len - 1);
-			if ((len - 1 != 0 || s.length() > 1) && s.endsWith("/")) {
+			if (((len - 1 != 0) || (s.length() > 1)) && s.endsWith("/")) {
 				s = s.substring(0, s.length() - 1);
 				v.setElementAt(s, len - 1);
 				if (s.length() == 0)
@@ -515,7 +515,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				// Don't need to set it back because everything is an I-value
 			} else endSlash = false;
 			s = (String) v.elementAt(0);
-			if (s.length() > 1 && s.startsWith("/")) {
+			if ((s.length() > 1) && s.startsWith("/")) {
 				s = s.substring(1);
 				v.setElementAt(s, 0);
 				startSlash = true;
@@ -1228,7 +1228,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (s != null)
 				hn.put("xml:lang", s);
 			s = getHashString(h, "dir");
-			if (s != null
+			if ((s != null)
 				&& (s.equalsIgnoreCase("ltr") || s.equalsIgnoreCase("rtl")))
 				hn.put("dir", s);
 			return hn;
@@ -1241,7 +1241,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			int n = quotes.length();
 			for (int x = 0; x < n; x++) {
 				char cc = quotes.charAt(x);
-				if (s.charAt(0) == cc && s.charAt(s.length() - 1) == cc) {
+				if ((s.charAt(0) == cc) && (s.charAt(s.length() - 1) == cc)) {
 					if (s.length() > 2)
 						s = s.substring(1, s.length() - 1);
 					else
@@ -1541,7 +1541,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (type != null) {
 				String[] typesplit = splitType(type);
 				type = typesplit[0];
-				if (typesplit[1] != null && typesplit[1].length() > 0)
+				if ((typesplit[1] != null) && (typesplit[1].length() > 0))
 					charset = typesplit[1];
 				Logger.debug(
 					this,
@@ -1585,7 +1585,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						hn.put("type", type);
 					if (charset != null)
 						hn.put("charset", charset);
-					if (charset != null && hreflang != null)
+					if ((charset != null) && (hreflang != null))
 						hn.put("hreflang", hreflang);
 				}
 			}
@@ -1685,7 +1685,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String scheme = getHashString(h, "scheme");
 			Logger.minor(this, "meta: name="+name+", content="+content+", http-equiv="+http_equiv+", scheme="+scheme);
 			if (content != null) {
-				if (name != null && http_equiv == null) {
+				if ((name != null) && (http_equiv == null)) {
 					if (name.equalsIgnoreCase("Author")) {
 						hn.put("name", name);
 						hn.put("content", content);
@@ -1696,7 +1696,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						hn.put("name", name);
 						hn.put("content", content);
 					}
-				} else if (http_equiv != null && name == null) {
+				} else if ((http_equiv != null) && (name == null)) {
 					if (http_equiv.equalsIgnoreCase("Expires")) {
 						hn.put("http-equiv", http_equiv);
 						hn.put("content", content);
@@ -1724,7 +1724,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						for(int i=0;i<typesplit.length;i++)
 							Logger.minor(this, "["+i+"] = "+typesplit[i]);
 						if (typesplit[0].equalsIgnoreCase("text/html")
-							&& (typesplit[1] == null
+							&& ((typesplit[1] == null)
 								|| typesplit[1].equalsIgnoreCase(pc.charset))) {
 							hn.put("http-equiv", http_equiv);
 							hn.put(
@@ -1779,7 +1779,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) {
-			if (!(t.unparsedAttrs.length == 3 || t.unparsedAttrs.length == 4))
+			if (!((t.unparsedAttrs.length == 3) || (t.unparsedAttrs.length == 4)))
 				return null;
 			if (!t.unparsedAttrs[0].equalsIgnoreCase("html"))
 				return null;
@@ -1791,7 +1791,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (t.unparsedAttrs.length == 4) {
 				String ss = stripQuotes(t.unparsedAttrs[3]);
 				String spec = getHashString(DTDs, s);
-				if (spec != null && !spec.equals(ss))
+				if ((spec != null) && !spec.equals(ss))
 					return null;
 			}
 			return t;
@@ -1831,7 +1831,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			HTMLParseContext pc) throws DataFilterException {
 			Hashtable hn = super.sanitizeHash(h, p, pc);
 			String xmlns = getHashString(h, "xmlns");
-			if (xmlns != null && xmlns.equals("http://www.w3.org/1999/xhtml"))
+			if ((xmlns != null) && xmlns.equals("http://www.w3.org/1999/xhtml"))
 				hn.put("xmlns", xmlns);
 			return hn;
 		}
@@ -1887,7 +1887,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				throw e;
 		}
 		String s = w.toString();
-		if (s == null || s.length() == 0)
+		if ((s == null) || (s.length() == 0))
 			return null;
 		//		Core.logger.log(SaferFilter.class, "Style now: " + s, Logger.DEBUG);
 		Logger.debug(HTMLFilter.class, "Style finally: " + s);
@@ -1969,7 +1969,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if (curPos > maxPos)
 				return null;
 			start = curPos;
-			while (curPos < maxPos && str.charAt(curPos) != c)
+			while ((curPos < maxPos) && (str.charAt(curPos) != c))
 				curPos++;
 			end = curPos;
 			curPos++;
@@ -1983,7 +1983,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String overrideCharset,
 		FilterCallback cb) {
 		Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" )");
-		if(overrideCharset != null && overrideCharset.length() > 0)
+		if((overrideCharset != null) && (overrideCharset.length() > 0))
 			overrideType += ";charset="+overrideCharset;
 		return cb.processURI(suri, overrideType);
 	}

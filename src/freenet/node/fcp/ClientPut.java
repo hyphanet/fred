@@ -71,7 +71,7 @@ public class ClientPut extends ClientPutBase {
 		inserter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client);
-		if(persistenceType != PERSIST_CONNECTION && handler != null)
+		if((persistenceType != PERSIST_CONNECTION) && (handler != null))
 			sendPendingMessages(handler.outputHandler, true, false, false);
 	}
 	

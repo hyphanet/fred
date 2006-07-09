@@ -135,7 +135,7 @@ public class PluginManager {
 		Object removeKey = null;
 		synchronized (pluginInfo) {
 			Iterator it = pluginInfo.keySet().iterator();
-			while (it.hasNext() && removeKey == null) {
+			while (it.hasNext() && (removeKey == null)) {
 				Object key = it.next();
 				PluginInfoWrapper pi = (PluginInfoWrapper) pluginInfo.get(key);
 				if (pi.sameThread(t)) {
@@ -283,7 +283,7 @@ public class PluginManager {
         
         if ((filename.indexOf("@") >= 0)) {
         	// Open from external file
-        	for (int tries = 0 ; tries <= 5 && cls == null ; tries++)
+        	for (int tries = 0 ; (tries <= 5) && (cls == null) ; tries++)
         		try {
         			String realURL = null;
         			String realClass = null;

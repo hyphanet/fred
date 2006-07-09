@@ -58,7 +58,7 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 		retryCount++;
 		Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+")");
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once)
-		if(retryCount <= maxRetries || maxRetries == -1) {
+		if((retryCount <= maxRetries) || (maxRetries == -1)) {
 			schedule();
 			return true;
 		}

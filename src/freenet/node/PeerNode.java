@@ -477,7 +477,7 @@ public class PeerNode implements PeerContext {
         }
 
         if(ark != null) {
-        	if(myARK == null || (myARK != ark && !myARK.equals(ark))) {
+        	if((myARK == null) || ((myARK != ark) && !myARK.equals(ark))) {
         		myARK = ark;
         		return true;
         	}
@@ -610,7 +610,7 @@ public class PeerNode implements PeerContext {
     		Peer p = myNominalPeer[i];
     		if(p == null) continue;
     		if(detectedPeer != null) {
-    			if(p != detectedPeer && p.equals(detectedPeer)) {
+    			if((p != detectedPeer) && p.equals(detectedPeer)) {
     				// Equal but not the same object; need to update the copy.
     				detectedDuplicate = p;
     			}
@@ -635,7 +635,7 @@ public class PeerNode implements PeerContext {
     	localHandshakeIPs = updateHandshakeIPs(localHandshakeIPs, ignoreHostnames);
     	synchronized(this) {
     		handshakeIPs = localHandshakeIPs;
-        	if(detectedDuplicate != null && detectedDuplicate.equals(detectedPeer)) {
+        	if((detectedDuplicate != null) && detectedDuplicate.equals(detectedPeer)) {
         		detectedPeer = detectedDuplicate;
         	}
     	}
@@ -845,7 +845,7 @@ public class PeerNode implements PeerContext {
         DiffieHellmanContext c = ctx;
         if(c != null)
             Logger.minor(this, "Last used: "+(now - c.lastUsedTime()));
-        return !(c == null || now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT);
+        return !((c == null) || (now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT));
     }
 
     boolean firstHandshake = true;
@@ -873,7 +873,7 @@ public class PeerNode implements PeerContext {
             this.handshakeCount++;
         }
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
-        if(handshakeCount == MAX_HANDSHAKE_COUNT && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
+        if((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
 			long arkFetcherStartTime1 = System.currentTimeMillis();
 			arkFetcher.queue();
 			long arkFetcherStartTime2 = System.currentTimeMillis();
@@ -999,7 +999,7 @@ public class PeerNode implements PeerContext {
     private void setDetectedPeer(Peer newPeer) {
     	// Only clear lastAttemptedHandshakeIPUpdateTime if we have a new IP.
     	// Also, we need to call .equals() to propagate any DNS lookups that have been done if the two have the same domain.
-    	if(newPeer != null && (detectedPeer == null || !detectedPeer.equals(newPeer))) {
+    	if((newPeer != null) && ((detectedPeer == null) || !detectedPeer.equals(newPeer))) {
     		this.detectedPeer=newPeer;
     		this.lastAttemptedHandshakeIPUpdateTime = 0;
     	}
@@ -1049,8 +1049,8 @@ public class PeerNode implements PeerContext {
      * can be used in handshaking when the connection hasn't been verified yet.
      */
     synchronized void receivedPacket(boolean dontLog) throws NotConnectedException {
-        if(isConnected == false && !dontLog) {
-        	if(unverifiedTracker == null && currentTracker == null) {
+        if((isConnected == false) && !dontLog) {
+        	if((unverifiedTracker == null) && (currentTracker == null)) {
         		Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
         		throw new NotConnectedException();
         	} else {
@@ -1460,7 +1460,7 @@ public class PeerNode implements PeerContext {
     public String getTMCIPeerInfo() {
 		    long now = System.currentTimeMillis();
         int idle = (int) ((now - timeLastReceivedPacket) / 1000);
-        if(peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED && peerAddedTime > 1)
+        if((peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED) && (peerAddedTime > 1))
             idle = (int) ((now - peerAddedTime) / 1000);
         return myName+"\t"+getPeer()+"\t"+getIdentityString()+"\t"+currentLocation.getValue()+"\t"+getPeerNodeStatusString()+"\t"+idle;
     }
@@ -1581,17 +1581,17 @@ public class PeerNode implements PeerContext {
             if(item.pn != this)
                 throw new IllegalArgumentException("item.pn != this!");
             KeyTracker kt = cur;
-            if(kt != null && item.kt == kt) {
+            if((kt != null) && (item.kt == kt)) {
                 kt.resendPacket(item.packetNumber);
                 continue;
             }
             kt = prev;
-            if(kt != null && item.kt == kt) {
+            if((kt != null) && (item.kt == kt)) {
                 kt.resendPacket(item.packetNumber);
                 continue;
             }
             kt = unv;
-            if(kt != null && item.kt == kt) {
+            if((kt != null) && (item.kt == kt)) {
                 kt.resendPacket(item.packetNumber);
                 continue;
             }
@@ -1969,7 +1969,7 @@ public class PeerNode implements PeerContext {
 			peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
 			if(now < routingBackedOffUntil) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
-				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || previousRoutingBackoffReason == null) {
+				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || (previousRoutingBackoffReason == null)) {
 					if(previousRoutingBackoffReason != null) {
 						node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
 					}
@@ -1995,7 +1995,7 @@ public class PeerNode implements PeerContext {
 		} else {
 			peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
 		}
-		if(!isConnected && previousRoutingBackoffReason != null) {
+		if(!isConnected && (previousRoutingBackoffReason != null)) {
 			node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
 			previousRoutingBackoffReason = null;
 		}

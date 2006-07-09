@@ -223,7 +223,7 @@ public abstract class Fields {
 		if (date.length() == 0)
 			throw new NumberFormatException("Date time empty");
 
-		if (date.charAt(0) == '-' || date.charAt(0) == '+') {
+		if ((date.charAt(0) == '-') || (date.charAt(0) == '+')) {
 			// Relative date
 			StringBuffer sb = new StringBuffer(10);
 			for (int x = 1; x < date.length(); x++) {
@@ -279,8 +279,8 @@ public abstract class Fields {
 
 		int dash = date.indexOf('-');
 
-		if (!(dash == -1 && date.length() == 8)
-			&& !(dash == 8 && date.length() == 17))
+		if (!((dash == -1) && (date.length() == 8))
+			&& !((dash == 8) && (date.length() == 17)))
 			throw new NumberFormatException(
 				"Date time: " + date + " not correct.");
 		int year = Integer.parseInt(date.substring(0, 4));
@@ -375,7 +375,7 @@ public abstract class Fields {
 		int aoff,
 		int boff,
 		int len) {
-		if (a.length < aoff + len || b.length < boff + len)
+		if ((a.length < aoff + len) || (b.length < boff + len))
 			return false;
 		for (int i = 0; i < len; ++i)
 			if (a[i + aoff] != b[i + boff])
@@ -536,7 +536,7 @@ public abstract class Fields {
 				{
 					1000,
 					1 << 10 };
-			while (x >= 0
+			while ((x >= 0)
 				&& ((idx = "kK".indexOf(s.charAt(x))) != -1)) {
 				x--;
 				res *= l[idx];
@@ -567,7 +567,7 @@ public abstract class Fields {
 					1 << 20,
 					1000 * 1000 * 1000,
 					1 << 30 };
-			while (x >= 0
+			while ((x >= 0)
 				&& ((idx = "kKmMgG".indexOf(s.charAt(x))) != -1)) {
 				x--;
 				res *= l[idx];
@@ -604,7 +604,7 @@ public abstract class Fields {
 					1 << 50,
 					1000 * 1000 * 1000 * 1000 * 1000 * 1000,
 					1 << 60 };
-			while (x >= 0
+			while ((x >= 0)
 				&& ((idx = "kKmMgGtTpPeE".indexOf(s.charAt(x))) != -1)) {
 				x--;
 				res *= l[idx];

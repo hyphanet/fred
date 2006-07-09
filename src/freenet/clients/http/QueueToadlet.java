@@ -45,14 +45,14 @@ public class QueueToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
 		String pass = request.getParam("formPassword");
-		if(pass == null || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(node.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/queue/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
 		
-		if(request.isParameterSet("remove_request") && request.getParam("remove_request").length() > 0) {
+		if(request.isParameterSet("remove_request") && (request.getParam("remove_request").length() > 0)) {
 			String identifier = request.getParam("identifier");
 			Logger.minor(this, "Removing "+identifier);
 			try {
@@ -62,7 +62,7 @@ public class QueueToadlet extends Toadlet {
 			}
 			writePermanentRedirect(ctx, "Done", "/queue/");
 			return;
-		}else if(request.isParameterSet("remove_AllRequests") && request.getParam("remove_AllRequests").length() > 0) {
+		}else if(request.isParameterSet("remove_AllRequests") && (request.getParam("remove_AllRequests").length() > 0)) {
 			
 			ClientRequest[] reqs = fcp.getGlobalRequests();
 			Logger.minor(this, "Request count: "+reqs.length);

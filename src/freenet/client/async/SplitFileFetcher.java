@@ -85,12 +85,12 @@ public class SplitFileFetcher implements ClientGetState {
 			segmentCount = 1;
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
 			byte[] params = metadata.splitfileParams();
-			if(params == null || params.length < 8)
+			if((params == null) || (params.length < 8))
 				throw new MetadataParseException("No splitfile params");
 			blocksPerSegment = Fields.bytesToInt(params, 0);
 			checkBlocksPerSegment = Fields.bytesToInt(params, 4);
-			if(blocksPerSegment > fetchContext.maxDataBlocksPerSegment
-					|| checkBlocksPerSegment > fetchContext.maxCheckBlocksPerSegment)
+			if((blocksPerSegment > fetchContext.maxDataBlocksPerSegment)
+					|| (checkBlocksPerSegment > fetchContext.maxCheckBlocksPerSegment))
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
 			segmentCount = (splitfileDataBlocks.length / blocksPerSegment) +
 				(splitfileDataBlocks.length % blocksPerSegment == 0 ? 0 : 1);
@@ -143,7 +143,7 @@ public class SplitFileFetcher implements ClientGetState {
 		OutputStream os = null;
 		Bucket output;
 		try {
-			if(returnBucket != null && decompressors.isEmpty())
+			if((returnBucket != null) && decompressors.isEmpty())
 				output = returnBucket;
 			else
 				output = fetchContext.bucketFactory.makeBucket(finalLength);

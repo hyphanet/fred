@@ -8,6 +8,7 @@ import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
+import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
@@ -55,7 +56,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	public void start() throws InserterException {
 		for(int i=0;i<dataBlockInserters.length;i++) {
 			dataBlockInserters[i] = 
-				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i, getCHKOnly, false, false, parent.token);
+				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i, getCHKOnly, false, false, parent.token);
 			dataBlockInserters[i].schedule();
 		}
 		if(splitfileAlgo == null) {
@@ -77,11 +78,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	void encode() {
 		try {
-			splitfileAlgo.encode(dataBlocks, checkBlocks, ClientCHKBlock.DATA_LENGTH, blockInsertContext.bf);
+			splitfileAlgo.encode(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.bf);
 			// Start the inserts
 			for(int i=0;i<checkBlockInserters.length;i++) {
 				checkBlockInserters[i] = 
-					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, ClientCHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false, false, parent.token);
+					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false, false, parent.token);
 				checkBlockInserters[i].schedule();
 			}
 			// Tell parent only after have started the inserts.

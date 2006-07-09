@@ -47,7 +47,7 @@ public class FCPConnectionHandler {
 		}
 		for(int i=0;i<requests.length;i++)
 			requests[i].onLostConnection();
-		if(client != null && !client.hasPersistentRequests())
+		if((client != null) && !client.hasPersistentRequests())
 			server.unregisterClient(client);
 	}
 	
@@ -102,7 +102,7 @@ public class FCPConnectionHandler {
 		String id = message.identifier;
 		ClientGet cg = null;
 		boolean success;
-		boolean persistent = message.persistenceType != ClientGet.PERSIST_CONNECTION;
+		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
 		synchronized(this) {
 			if(isClosed) return;
 			// We need to track non-persistent requests anyway, so we may as well check
@@ -140,7 +140,7 @@ public class FCPConnectionHandler {
 		String id = message.identifier;
 		ClientPut cp = null;
 		boolean success;
-		boolean persistent = message.persistenceType != ClientGet.PERSIST_CONNECTION;
+		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
 		synchronized(this) {
 			if(isClosed) return;
 			// We need to track non-persistent requests anyway, so we may as well check
@@ -179,7 +179,7 @@ public class FCPConnectionHandler {
 		String id = message.identifier;
 		ClientPutDir cp = null;
 		boolean success;
-		boolean persistent = message.persistenceType != ClientGet.PERSIST_CONNECTION;
+		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
 		synchronized(this) {
 			if(isClosed) return;
 			// We need to track non-persistent requests anyway, so we may as well check

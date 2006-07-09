@@ -148,12 +148,12 @@ public class IPDetectorPluginManager {
 				HashSet addressesConnected = null;
 				for(int i=0;i<peers.length;i++) {
 					PeerNode p = peers[i];
-					if(p.isConnected() || now - p.lastReceivedPacketTime() < 24*60*60*1000) {
+					if(p.isConnected() || (now - p.lastReceivedPacketTime() < 24*60*60*1000)) {
 						// Has been connected in the last 24 hours.
 						// Unique IP address?
 						Peer peer = p.getPeer();
 						InetAddress addr = peer.getAddress(false);
-						if(p.isConnected() && peer != null && addr != null && IPUtil.checkAddress(peer.getAddress())) {
+						if(p.isConnected() && (peer != null) && (addr != null) && IPUtil.checkAddress(peer.getAddress())) {
 							// Connected node, on a real internet IP address.
 							// Is it internal?
 							boolean internal = false;
@@ -178,7 +178,7 @@ public class IPDetectorPluginManager {
 						}
 					}
 					long l = p.getPeerAddedTime();
-					if(l <= 0 || now - l < 30*60*1000) {
+					if((l <= 0) || (now - l < 30*60*1000)) {
 						// Less than 30 minutes old, don't run a detection yet as
 						// it is likely we are simply directly connected. (But we do
 						// want it to work out of the box if we are not!).
@@ -242,7 +242,7 @@ public class IPDetectorPluginManager {
 			
 				if(!node.hasDirectlyDetectedIP()) {
 					
-					if(conns.length > 0 && conns.length < 3) {
+					if((conns.length > 0) && (conns.length < 3)) {
 						// No locally detected IP, only one or two connections.
 						// Have we had more relatively recently?
 						int count = 0;
@@ -250,7 +250,7 @@ public class IPDetectorPluginManager {
 						if(firstTimeMaybeFakePeers > 0) timeref = firstTimeMaybeFakePeers;
 						for(int i=0;i<peers.length;i++) {
 							PeerNode p = peers[i];
-							if((!p.isConnected()) || now - p.lastReceivedPacketTime() < 5*60*1000) {
+							if((!p.isConnected()) || (now - p.lastReceivedPacketTime() < 5*60*1000)) {
 								// Not connected now but has been within the past 5 minutes.
 								count++;
 							}
@@ -338,7 +338,7 @@ public class IPDetectorPluginManager {
 					failed = true;
 					for(int i=0;i<v.size();i++) {
 						DetectedIP ip = (DetectedIP) v.get(i);
-						if(!(ip.publicAddress == null || !IPUtil.checkAddress(ip.publicAddress))) {
+						if(!((ip.publicAddress == null) || !IPUtil.checkAddress(ip.publicAddress))) {
 							Logger.minor(this, "Address checked out");
 							failed = false;
 						}

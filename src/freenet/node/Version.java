@@ -108,7 +108,7 @@ public abstract class Version {
 	    }
 		String[] v = Fields.commaList(version);
 
-		if (v.length < 3 || !goodProtocol(v[2])) {
+		if ((v.length < 3) || !goodProtocol(v[2])) {
 			return false;
 		}
 		if (sameVersion(v)) {
@@ -176,10 +176,10 @@ public abstract class Version {
 		String[] v = Fields.commaList(version);
 		String[] lgv = Fields.commaList(lastGoodVersion);
 
-		if (v.length < 3 || !goodProtocol(v[2])) {
+		if ((v.length < 3) || !goodProtocol(v[2])) {
 			return false;
 		}
-		if (lgv.length < 3 || !goodProtocol(lgv[2])) {
+		if ((lgv.length < 3) || !goodProtocol(lgv[2])) {
 			return false;
 		}
 		if (sameArbitraryVersion(v,lgv)) {
@@ -234,7 +234,7 @@ public abstract class Version {
 	public static final String explainBadVersion(String version) {
 		String[] v = Fields.commaList(version);
 		
-		if (v.length < 3 || !goodProtocol(v[2])) {
+		if ((v.length < 3) || !goodProtocol(v[2])) {
 			return "Required protocol version is "
 						+ protocolVersion
 // uncomment next line if accepting stable, see also goodProtocol() above
@@ -275,7 +275,7 @@ public abstract class Version {
 	    }
 		String[] v = Fields.commaList(version);
 
-		if (v.length < 3 || !goodProtocol(v[2])) {
+		if ((v.length < 3) || !goodProtocol(v[2])) {
 	        throw new NumberFormatException();
 		}
 		return Integer.parseInt(v[3]);
@@ -317,7 +317,7 @@ public abstract class Version {
 	public static boolean sameVersion(String[] v) {
 		return v[0].equals(nodeName)
 			&& v[1].equals(nodeVersion)
-			&& v.length >= 4;
+			&& (v.length >= 4);
 	}
 
 	/**
@@ -327,8 +327,8 @@ public abstract class Version {
 	public static boolean sameArbitraryVersion(String[] v, String[] lgv) {
 		return v[0].equals(lgv[0])
 			&& v[1].equals(lgv[1])
-			&& v.length >= 4
-			&& lgv.length >= 4;
+			&& (v.length >= 4)
+			&& (lgv.length >= 4);
 	}
 
 	/**
@@ -337,7 +337,7 @@ public abstract class Version {
 	private static boolean stableVersion(String[] v) {
 		return v[0].equals(nodeName)
 			&& v[1].equals(stableNodeVersion)
-			&& v.length >= 4;
+			&& (v.length >= 4);
 	}
 
 	public static void main(String[] args) throws Throwable {

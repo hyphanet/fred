@@ -8,6 +8,7 @@ import org.spaceroots.mantissa.random.MersenneTwister;
 
 import com.onionnetworks.fec.DefaultFECCodeFactory;
 import com.onionnetworks.fec.FECCode;
+import com.onionnetworks.fec.FECCodeFactory;
 import com.onionnetworks.util.Buffer;
 
 import freenet.support.Bucket;
@@ -89,7 +90,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		public boolean equals(Object o) {
 			if(o instanceof MyKey) {
 				MyKey key = (MyKey)o;
-				return key.n == n && key.k == k;
+				return (key.n == n) && (key.k == k);
 			} else return false;
 		}
 		
@@ -125,7 +126,7 @@ public class StandardOnionFECCodec extends FECCodec {
 		this.k = k;
 		this.n = n;
 		// Best performance, doesn't crash
-		encoder = DefaultFECCodeFactory.getDefault().createFECCode(k,n);
+		encoder = FECCodeFactory.getDefault().createFECCode(k,n);
 		// revert to below if above causes JVM crashes
 		// Worst performance, but decode crashes
 		//decoder = new PureCode(k,n);
@@ -362,8 +363,8 @@ public class StandardOnionFECCodec extends FECCodec {
 				+ " data blocks, " + checkBlockStatus.length
 				+ " check blocks, block length " + blockLength + " with "
 				+ this);
-		if (dataBlockStatus.length + checkBlockStatus.length != n ||
-				dataBlockStatus.length != k)
+		if ((dataBlockStatus.length + checkBlockStatus.length != n) ||
+				(dataBlockStatus.length != k))
 			throw new IllegalArgumentException("Data blocks: "+dataBlockStatus.length+", Check blocks: "+checkBlockStatus.length+", n: "+n+", k: "+k);
 		Buffer[] dataPackets = new Buffer[k];
 		Buffer[] checkPackets = new Buffer[n - k];

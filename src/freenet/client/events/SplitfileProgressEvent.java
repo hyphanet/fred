@@ -26,7 +26,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 	public String getDescription() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("Completed ");
-		if(minSuccessfulBlocks == 0 && fetchedBlocks == 0)
+		if((minSuccessfulBlocks == 0) && (fetchedBlocks == 0))
 			minSuccessfulBlocks = 1;
 		if(minSuccessfulBlocks == 0) {
 			if(Logger.globalGetThreshold() > Logger.MINOR)

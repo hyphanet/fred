@@ -75,7 +75,7 @@ public class FCPConnectionInputHandler implements Runnable {
 					continue;
 				}
 			}
-			if((!firstMessage) && msg instanceof ClientHelloMessage) {
+			if((!firstMessage) && (msg instanceof ClientHelloMessage)) {
 				FCPMessage err = new ProtocolErrorMessage(ProtocolErrorMessage.NO_LATE_CLIENT_HELLOS, false, null, null);
 				handler.outputHandler.queue(err);
 				continue;

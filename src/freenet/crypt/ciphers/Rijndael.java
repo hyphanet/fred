@@ -31,13 +31,13 @@ public class Rijndael implements BlockCipher {
     }
 
     public Rijndael(int keysize, int blocksize) throws UnsupportedCipherException {
-	if (! (keysize == 128 ||
-	       keysize == 192 ||
-	       keysize == 256))
+	if (! ((keysize == 128) ||
+	       (keysize == 192) ||
+	       (keysize == 256)))
 	    throw new UnsupportedCipherException("Invalid keysize");
-	if (! (blocksize == 128 ||
-	       blocksize == 192 ||
-	       blocksize == 256))
+	if (! ((blocksize == 128) ||
+	       (blocksize == 192) ||
+	       (blocksize == 256)))
 	    throw new UnsupportedCipherException("Invalid blocksize");
 	this.keysize=keysize;
 	this.blocksize=blocksize;

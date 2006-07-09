@@ -692,9 +692,9 @@ class CSSTokenizerFilter {
 	// This is not very efficient. The parser below knows the quoting rules too.
 	
 	static boolean isHexDigit(char c) {
-		return ('a' <= c && c <= 'f' ||
-		  	'A' <= c && c <= 'F' ||
-			'0' <= c && c <= '9');
+		return ((('a' <= c) && (c <= 'f')) ||
+		  	(('A' <= c) && (c <= 'F')) ||
+			(('0' <= c) && (c <= '9')));
 	}
 	
 	class DecodedStringThingy {
@@ -708,7 +708,7 @@ class CSSTokenizerFilter {
 				url = true;
 			}
 			char q = s.charAt(0);
-			if(q == '\'' || q == '\"') {
+			if((q == '\'') || (q == '\"')) {
 				quote = q;
 				s = s.substring(1);
 			} else quote = ' ';
@@ -734,7 +734,7 @@ class CSSTokenizerFilter {
 						justEscaping = false;
 					}
 				} else if(stillEscaping) {
-					if(isHexDigit(c) && hexEscape.length() < 6) {
+					if(isHexDigit(c) && (hexEscape.length() < 6)) {
 						hexEscape.append(c);
 					} else if(Character.isWhitespace(c)) {
 						// Ignore one whitespace char after an escape
@@ -772,7 +772,7 @@ class CSSTokenizerFilter {
 						hexEscape = new StringBuffer();
 					}
 				} else {
-					if(quote != ' ' && c == quote) {
+					if((quote != ' ') && (c == quote)) {
 						break;
 					} else if (c == '\\') {
 						justEscaping = true;
@@ -802,7 +802,7 @@ class CSSTokenizerFilter {
 			StringBuffer sb = new StringBuffer();
 			for(int i=0;i<data.length();i++) {
 				char c = data.charAt(i);
-				if(c == quote || c == '\n') {
+				if((c == quote) || (c == '\n')) {
 					sb.append('\\');
 				}
 				sb.append(c);
@@ -1176,7 +1176,7 @@ class CSSTokenizerFilter {
 	if(debug) log("URL now: "+s);
 	s = processURL(s);
 	dst.data = s;
-	if(s == null || s.equals("")) {
+	if((s == null) || s.equals("")) {
 		if(debug) log("URL invalid");
 		w.write("url()");
 	} else {
@@ -1223,7 +1223,7 @@ class CSSTokenizerFilter {
 	s = dst.data;
 	if(debug) log("URL: "+s);
 	s = processURL(s);
-	if (!(s == null || s.equals(""))) {
+	if (!((s == null) || s.equals(""))) {
 		if(debug) log("URL now: "+s);
 		s = "@import "+dst.toString();
 		if(debug) log("Writing: "+s);
@@ -1326,7 +1326,7 @@ class CSSTokenizerFilter {
           { 
 	String s = yytext();
 	if(debug) log("Matched string: "+s);
-	if(paranoidStringCheck && s.indexOf(':') != -1) {
+	if(paranoidStringCheck && (s.indexOf(':') != -1)) {
 		w.write("/* Deleted disallowed string */");
 		log("Deleted disallowed string: "+s);
 	} else {
@@ -1483,7 +1483,7 @@ class CSSTokenizerFilter {
  }
         case 336: break;
         default: 
-          if (yy_input == YYEOF && yy_startRead == yy_currentPos) {
+          if ((yy_input == YYEOF) && (yy_startRead == yy_currentPos)) {
             yy_atEOF = true;
             return null;
           } 

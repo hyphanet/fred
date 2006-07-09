@@ -51,9 +51,9 @@ public class PeerManagerUserAlert implements UserAlert {
 			return "Too many open connections";
 		if(peers > MAX_PEER_ALERT_THRESHOLD)
 			return "Too many peers";
-		if(n.bwlimitDelayAlertRelevant && bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)
+		if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD))
 			return "bwlimitDelayTime too high";
-		if(n.nodeAveragePingAlertRelevant && nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)
+		if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
 			return "nodeAveragePingTime too high";
 		if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD)
 			return "Never connected peer(s) too old";
@@ -89,9 +89,9 @@ public class PeerManagerUserAlert implements UserAlert {
 			s = "This node has too many connections ("+conns+" > "+MAX_CONN_ALERT_THRESHOLD+"). We don't encourage such a behaviour; Ubernodes are hurting the network.";
 		} else if(peers > MAX_PEER_ALERT_THRESHOLD) {
 			s = "This node has too many peers ("+peers+" > "+MAX_PEER_ALERT_THRESHOLD+"). This will impact your performance as all peers (connected or not) consume bandwidth and CPU. Consider \"cleaning up\" your peer list.";
-		} else if(n.bwlimitDelayAlertRelevant && bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD) {
+		} else if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
 			s = "This node has to wait too long for available bandwidth ("+bwlimitDelayTime+" > "+Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
-		} else if(n.nodeAveragePingAlertRelevant && nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD) {
+		} else if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
 			s = "This node is having trouble talking with it's peers quickly enough ("+nodeAveragePingTime+" > "+Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Decrease your output bandwidth limit and/or remove some peers to improve the situation.";
 		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
 			s = "One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are affecting performance.";
@@ -100,13 +100,13 @@ public class PeerManagerUserAlert implements UserAlert {
 	}
 
 	public short getPriorityClass() {
-		if(peers == 0 ||
-				conns == 0 ||
-				(peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD ||
-				conns > MAX_CONN_ALERT_THRESHOLD ||
-				peers > MAX_PEER_ALERT_THRESHOLD ||
-				(n.bwlimitDelayAlertRelevant && bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD) ||
-				(n.nodeAveragePingAlertRelevant && nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
+		if((peers == 0) ||
+				(conns == 0) ||
+				((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
+				(conns > MAX_CONN_ALERT_THRESHOLD) ||
+				(peers > MAX_PEER_ALERT_THRESHOLD) ||
+				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
+				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)))
 			return UserAlert.CRITICAL_ERROR;
 		return UserAlert.ERROR;
 	}
@@ -116,14 +116,14 @@ public class PeerManagerUserAlert implements UserAlert {
 		bwlimitDelayTime = (int) n.getBwlimitDelayTime();
 		nodeAveragePingTime = (int) n.getNodeAveragePingTime();
 		oldestNeverConnectedPeerAge = (int) n.getOldestNeverConnectedPeerAge();
-		return (peers == 0 ||
-				conns < 3 ||
-				(peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD ||
-				conns > MAX_CONN_ALERT_THRESHOLD ||
-				peers > MAX_PEER_ALERT_THRESHOLD ||
-				(n.bwlimitDelayAlertRelevant && bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD) ||
-				(n.nodeAveragePingAlertRelevant && nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD) ||
-				oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) &&
+		return ((peers == 0) ||
+				(conns < 3) ||
+				((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
+				(conns > MAX_CONN_ALERT_THRESHOLD) ||
+				(peers > MAX_PEER_ALERT_THRESHOLD) ||
+				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
+				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) ||
+				(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD)) &&
 				isValid;
 	}
 	

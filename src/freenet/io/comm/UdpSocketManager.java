@@ -386,7 +386,7 @@ public class UdpSocketManager extends Thread {
 			ListIterator i = _filters.listIterator();
 			while (i.hasNext()) {
 			    MessageFilter f = (MessageFilter) i.next();
-			    if(f.matchesDroppedConnection() && f._source == ctx) {
+			    if(f.matchesDroppedConnection() && (f._source == ctx)) {
 			        f.onDroppedConnection(ctx);
 			        if(f.droppedConnection() != null) {
 			            synchronized(f) {
@@ -402,7 +402,7 @@ public class UdpSocketManager extends Thread {
 		Logger.debug(this, "Waiting for "+filter);
 		long startTime = System.currentTimeMillis();
 		Message ret = null;
-		if(lowLevelFilter != null && filter._source != null && 
+		if((lowLevelFilter != null) && (filter._source != null) && 
 		        filter.matchesDroppedConnection() &&
 		        lowLevelFilter.isDisconnected(filter._source))
 		    throw new DisconnectedException();
@@ -448,7 +448,7 @@ public class UdpSocketManager extends Thread {
 					// Precaution against filter getting matched between being added to _filters and
 					// here - bug discovered by Mason
 				    boolean fmatched = false;
-				    while(!(fmatched = (filter.matched() || filter.droppedConnection() != null))) {
+				    while(!(fmatched = (filter.matched() || (filter.droppedConnection() != null)))) {
 				        long wait = filter.getTimeout()-System.currentTimeMillis();
 				        if(wait > 0)
 				            filter.wait(wait);
@@ -472,7 +472,7 @@ public class UdpSocketManager extends Thread {
 //		}
 		long endTime = System.currentTimeMillis();
 		Logger.debug(this, "Returning in "+(endTime-startTime)+"ms");
-		if(ctr != null && ret != null)
+		if((ctr != null) && (ret != null))
 			ctr.receivedBytes(ret._receivedByteCount);
 		return ret;
 	}

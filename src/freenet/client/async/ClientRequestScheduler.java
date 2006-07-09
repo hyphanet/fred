@@ -113,7 +113,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public void register(SendableRequest req) {
 		Logger.minor(this, "Registering "+req, new Exception("debug"));
-		if((!isInsertScheduler) && req instanceof ClientPutter)
+		if((!isInsertScheduler) && (req instanceof ClientPutter))
 			throw new IllegalArgumentException("Expected a ClientPut: "+req);
 		if(req instanceof SendableGet) {
 			SendableGet getter = (SendableGet)req;
@@ -153,7 +153,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	private synchronized void addToGrabArray(short priorityClass, int retryCount, Object client, ClientRequester cr, SendableRequest req) {
-		if(priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS || priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS)
+		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Priority
 		SortedVectorByNumber prio = priorities[priorityClass];
@@ -194,7 +194,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
-			if(result != null && !result.isEmpty()) {
+			if((result != null) && !result.isEmpty()) {
 				Logger.minor(this, "Found "+priority);
 				return result;
 			}

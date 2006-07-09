@@ -54,14 +54,14 @@ public class RandomGrabArray {
 			if(ret != null)
 				contents.remove(ret);
 			// Shrink array
-			if(index < reqs.length / 4 && reqs.length > MIN_SIZE) {
+			if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
 				// Shrink array
 				int newSize = Math.max(index * 2, MIN_SIZE);
 				RandomGrabArrayItem[] r = new RandomGrabArrayItem[newSize];
 				System.arraycopy(reqs, 0, r, 0, r.length);
 				reqs = r;
 			}
-			if(ret != null && !ret.isFinished()) return ret;
+			if((ret != null) && !ret.isFinished()) return ret;
 		}
 	}
 	
@@ -69,7 +69,7 @@ public class RandomGrabArray {
 		if(!contents.contains(it)) return;
 		contents.remove(it);
 		for(int i=0;i<index;i++) {
-			if(reqs[i] == it || reqs[i].equals(it)) {
+			if((reqs[i] == it) || reqs[i].equals(it)) {
 				reqs[i] = reqs[--index];
 				reqs[index] = null;
 				return;

@@ -116,7 +116,7 @@ public class LimitedRangeIntByteArrayMap {
             	Logger.minor(this, "Interrupted");
             	throw new InterruptedException();
             }
-            if(index - minValue < maxRange || minValue == -1) {
+            if((index - minValue < maxRange) || (minValue == -1)) {
             	Logger.minor(this, "index="+index+", minValue="+minValue+", maxRange="+maxRange+" - returning");
             	return;
             }
@@ -140,7 +140,7 @@ public class LimitedRangeIntByteArrayMap {
     public synchronized boolean remove(int index) {
         Logger.minor(this, "Removing "+index+" - min="+minValue+" max="+maxValue);
         if(contents.remove(new Integer(index)) != null) {
-            if(index > minValue && index < maxValue) return true;
+            if((index > minValue) && (index < maxValue)) return true;
             if(contents.size() == 0) {
                 minValue = maxValue = -1;
                 notifyAll();

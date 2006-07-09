@@ -114,7 +114,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 			if(closed) throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
 				throw new IllegalStateException("Writing to old stream in "+getName());
-			if(b < 0 || b > 255)
+			if((b < 0) || (b > 255))
 				throw new IllegalArgumentException();
 			int toWrite = pcfb.encipher(b);
 			synchronized(PaddedEphemerallyEncryptedBucket.this) {
@@ -202,7 +202,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		
 		public int read(byte[] buf, int offset, int length) throws IOException {
 			// FIXME remove debugging
-			if(length+offset > buf.length || offset < 0 || length < 0)
+			if((length+offset > buf.length) || (offset < 0) || (length < 0))
 				throw new ArrayIndexOutOfBoundsException("a="+offset+", b="+length+", length "+buf.length);
 			int x = available();
 			if(x <= 0) return -1;
@@ -248,7 +248,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 				throw new Error("Impossible size: "+size+" - min="+min+", max="+max);
 			if(size < min)
 				throw new IllegalStateException("???");
-			if(size >= min && size <= max) {
+			if((size >= min) && (size <= max)) {
 				Logger.minor(this, "Padded: "+max+" was: "+dataLength+" for "+getName());
 				return max;
 			}

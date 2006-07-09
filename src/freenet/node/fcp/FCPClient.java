@@ -131,7 +131,7 @@ public class FCPClient {
 		synchronized(this) {
 			String ident = cg.getIdentifier();
 			ClientRequest old = (ClientRequest) clientRequestsByIdentifier.get(ident);
-			if(old != null && old != cg)
+			if((old != null) && (old != cg))
 				throw new IdentifierCollisionException();
 			if(cg.hasFinished())
 				completedUnackedRequests.push(cg);
