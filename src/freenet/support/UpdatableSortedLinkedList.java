@@ -54,13 +54,10 @@ public class UpdatableSortedLinkedList {
         throw new IllegalStateException("impossible");
     }
 
-    private StringBuffer sb = new StringBuffer(1000);
-    
     protected synchronized void checkList() {
     	// FIXME once satisfied that this works, make it only happen occasionally
     	int statedLength = list.size();
     	int realLength = 0;
-    	sb.setLength(0);
     	for(Enumeration e = list.elements();e.hasMoreElements();) {
     		UpdatableSortedLinkedListItem i = (UpdatableSortedLinkedListItem) e.nextElement();
     		// Sanity check for infinite looping 

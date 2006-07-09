@@ -716,7 +716,7 @@ public class FileLoggerHook extends LoggerHook {
 				if (sb.length() > 0) {
 					strVec.addElement(sb.toString());
 					fmtVec.addElement(new Integer(0));
-					sb.setLength(0);
+					sb = new StringBuffer();
 				}
 				fmtVec.addElement(new Integer(numberOf(f[i])));
 			} else if (f[i] == '\\') {
@@ -729,7 +729,7 @@ public class FileLoggerHook extends LoggerHook {
 		if (sb.length() > 0) {
 			strVec.addElement(sb.toString());
 			fmtVec.addElement(new Integer(0));
-			sb.setLength(0);
+			sb = new StringBuffer();
 		}
 
 		this.fmt = new int[fmtVec.size()];
