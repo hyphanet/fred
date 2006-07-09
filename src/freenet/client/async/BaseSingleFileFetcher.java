@@ -12,7 +12,7 @@ import freenet.support.Logger;
 public abstract class BaseSingleFileFetcher implements SendableGet {
 
 	final ClientKey key;
-	protected boolean cancelled;
+	private boolean cancelled;
 	final int maxRetries;
 	private int retryCount;
 	final FetcherContext ctx;
@@ -32,9 +32,11 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 
 	/** Do the request, blocking. Called by RequestStarter. */
 	public void send(Node node) {
-		if(cancelled) {
-			onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED));
-			return;
+		synchronized (this) {
+			if(cancelled) {
+				onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED));
+				return;
+			}	
 		}
 		// Do we need to support the last 3?
 		ClientKeyBlock block;

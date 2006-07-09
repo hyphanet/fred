@@ -189,11 +189,13 @@ public class Node {
 				return true; // no point inserting
 			}
 			Peer[] p = getPrimaryIPAddress();
-			if(lastInsertedPeers != null) {
-				if(p.length != lastInsertedPeers.length) return true;
-				for(int i=0;i<p.length;i++)
-					if(!p[i].strictEquals(lastInsertedPeers[i]))
-						return true;
+			synchronized (this) {
+				if(lastInsertedPeers != null) {
+					if(p.length != lastInsertedPeers.length) return true;
+					for(int i=0;i<p.length;i++)
+						if(!p[i].strictEquals(lastInsertedPeers[i]))
+							return true;
+				}
 			}
 			return false;
 		}
@@ -226,30 +228,32 @@ public class Node {
 			
 			Logger.minor(this, "Inserting ARK: "+uri);
 			
-			inserter = new ClientPutter(this, b, uri,
-					new ClientMetadata("text/plain") /* it won't quite fit in an SSK anyway */, 
-					Node.this.makeClient((short)0).getInserterContext(),
-					chkPutScheduler, sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this);
-			
-			try {
-				inserter.start();
-				if(fs.get("physical.udp") == null)
-					lastInsertedPeers = null;
-				else {
-					try {
-						String[] all = fs.getAll("physical.udp");
-						Peer[] peers = new Peer[all.length];
-						for(int i=0;i<all.length;i++)
-							peers[i] = new Peer(all[i], false);
-						lastInsertedPeers = peers;
-					} catch (PeerParseException e1) {
-						Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
-					} catch (UnknownHostException e1) {
-						Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
+			synchronized (this) {
+				inserter = new ClientPutter(this, b, uri,
+						new ClientMetadata("text/plain") /* it won't quite fit in an SSK anyway */, 
+						Node.this.makeClient((short)0).getInserterContext(),
+						chkPutScheduler, sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this);
+
+				try {
+					inserter.start();
+					if(fs.get("physical.udp") == null)
+						lastInsertedPeers = null;
+					else {
+						try {
+							String[] all = fs.getAll("physical.udp");
+							Peer[] peers = new Peer[all.length];
+							for(int i=0;i<all.length;i++)
+								peers[i] = new Peer(all[i], false);
+							lastInsertedPeers = peers;
+						} catch (PeerParseException e1) {
+							Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
+						} catch (UnknownHostException e1) {
+							Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
+						}
 					}
+				} catch (InserterException e) {
+					onFailure(e, inserter);
 				}
-			} catch (InserterException e) {
-				onFailure(e, inserter);
 			}
 		}
 
