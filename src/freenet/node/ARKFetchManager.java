@@ -16,7 +16,7 @@ public class ARKFetchManager {
 	final Node node;
 	
 	/** All the ARKFetchers who want to fetch */
-	private LinkedList readyARKFetchers = new LinkedList();
+	private final LinkedList readyARKFetchers = new LinkedList();
 	
 	/**
 	 * Create a ARKFetchManager
@@ -28,14 +28,13 @@ public class ARKFetchManager {
 		this.node = node;
 	}
 
-	public void addReadyARKFetcher(ARKFetcher arkFetcher) {
-		synchronized(readyARKFetchers) {
+	public synchronized void addReadyARKFetcher(ARKFetcher arkFetcher) {
 			if(hasReadyARKFetcher(arkFetcher)) {
 				Logger.error(this, arkFetcher.peer.getPeer()+" already in readyARKFetchers");
 				return;
 			}
 			readyARKFetchers.addLast(arkFetcher);
-		}
+		
 	}
 
 	public boolean hasReadyARKFetcher(ARKFetcher arkFetcher) {
@@ -48,8 +47,10 @@ public class ARKFetchManager {
 	}
 	
 	public boolean hasReadyARKFetchers() {
-		if(readyARKFetchers.size() > 0) {
-			return true;
+		synchronized (readyARKFetchers) {
+			if(readyARKFetchers.size() > 0) {
+				return true;
+			}	
 		}
 		return false;
 	}
