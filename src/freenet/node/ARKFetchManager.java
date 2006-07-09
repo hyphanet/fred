@@ -28,13 +28,14 @@ public class ARKFetchManager {
 		this.node = node;
 	}
 
-	public synchronized void addReadyARKFetcher(ARKFetcher arkFetcher) {
+	public void addReadyARKFetcher(ARKFetcher arkFetcher) {
+		synchronized(readyARKFetchers) {
 			if(hasReadyARKFetcher(arkFetcher)) {
 				Logger.error(this, arkFetcher.peer.getPeer()+" already in readyARKFetchers");
 				return;
 			}
 			readyARKFetchers.addLast(arkFetcher);
-		
+		}
 	}
 
 	public boolean hasReadyARKFetcher(ARKFetcher arkFetcher) {
