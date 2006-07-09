@@ -234,8 +234,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 										// End tag now
 									} else {
 										killTag = true;
-										writeAfterTag
-											+= "<!-- Tags in string attribute -->";
+										writeAfterTag.append(
+											"<!-- Tags in string attribute -->");
 										// Wait for end of tag then zap it
 									}
 								}
@@ -263,12 +263,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 										// End tag now
 									} else {
 										killTag = true;
-										writeAfterTag
-											+= "<!-- Tags in string attribute -->";
+										writeAfterTag.append(
+											"<!-- Tags in string attribute -->");
 										// Wait for end of tag then zap it
 									}
-									writeAfterTag
-										+= "<!-- Tags in string attribute -->";
+									writeAfterTag.append(
+										"<!-- Tags in string attribute -->");
 									killTag = true;
 								}
 							} else {
@@ -361,7 +361,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		boolean killStyle = false;
 		int styleScriptRecurseCount = 0;
 		String currentStyleScriptChunk = new String();
-		String writeAfterTag = "";
+		StringBuffer writeAfterTag = new StringBuffer(1024);
 	}
 
 
@@ -418,15 +418,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					pc.writeStyleScriptWithTag = false;
 					String style = pc.currentStyleScriptChunk;
 					if ((style == null) || (style.length() == 0))
-						pc.writeAfterTag += "<!-- deleted unknown style -->";
+						pc.writeAfterTag.append("<!-- deleted unknown style -->");
 					else
 						w.write(style);
 					pc.currentStyleScriptChunk = "";
 				}
 				t.write(w);
 				if (pc.writeAfterTag.length() > 0) {
-					w.write(pc.writeAfterTag);
-					pc.writeAfterTag = "";
+					w.write(pc.writeAfterTag.toString());
+					pc.writeAfterTag = new StringBuffer(1024);
 				}
 			} else
 				pc.writeStyleScriptWithTag = false;
@@ -1182,10 +1182,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					y = (String) o;
 				else
 					y = null;
-				String out = x;
+				StringBuffer out = new StringBuffer(x);
 				if (y != null)
-					out += "=\"" + y + '"';
-				outAttrs[i++] = out;
+					out.append( "=\"" ).append( y ).append( '"' );
+				outAttrs[i++] = out.toString();
 			}
 			return new ParsedTag(t, outAttrs);
 		}
@@ -1291,8 +1291,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			pc.styleScriptRecurseCount--;
 			if (pc.styleScriptRecurseCount < 0) {
 				if (deleteErrors)
-					pc.writeAfterTag
-						+= "<!-- Too many nested style or script tags - ambiguous or invalid parsing -->";
+					pc.writeAfterTag.append(
+						"<!-- Too many nested style or script tags - ambiguous or invalid parsing -->");
 				else
 					throwFilterException("Too many nested </style> tags - ambiguous or invalid parsing, can't reliably filter so removing the inner tags - garbage may appear in browser");
 				return null;
@@ -1314,8 +1314,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			pc.styleScriptRecurseCount++;
 			if (pc.styleScriptRecurseCount > 1) {
 				if (deleteErrors)
-					pc.writeAfterTag
-						+= "<!-- Too many nested style or script tags -->";
+					pc.writeAfterTag.append(
+						"<!-- Too many nested style or script tags -->");
 				else
 					throwFilterException("Too many nested </style> tags - ambiguous or invalid parsing, can't reliably filter so removing the inner tags - garbage may appear in browser");
 				return null;

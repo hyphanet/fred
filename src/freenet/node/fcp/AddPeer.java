@@ -37,18 +37,18 @@ public class AddPeer extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		String urlString = fs.get("URL");
 		String fileString = fs.get("File");
-		String ref = null;
+		StringBuffer ref = null;
 		BufferedReader in;
 		if(urlString != null) {
 			try {
 				URL url = new URL(urlString);
 				URLConnection uc = url.openConnection();
 				in = new BufferedReader( new InputStreamReader(uc.getInputStream()));
-				ref = "";
+				ref = new StringBuffer(1024);
 				String line;
 				while((line = in.readLine()) != null) {
 					line = line.trim();
-					ref += line+"\n";
+					ref.append( line ).append( "\n" );
 				}
 				in.close();
 			} catch (MalformedURLException e) {
@@ -56,7 +56,7 @@ public class AddPeer extends FCPMessage {
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "IO error while retrieving ref URL <"+urlString+">: "+e.getMessage(), null);
 			}
-			ref = ref.trim();
+			ref = new StringBuffer(ref.toString().trim());
 			if(ref == null) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">", null);
 			}
@@ -64,7 +64,7 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">", null);
 			}
 			try {
-				fs = new SimpleFieldSet(ref, true);
+				fs = new SimpleFieldSet(ref.toString(), true);
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+">: "+e.getMessage(), null);
 			}
@@ -75,11 +75,11 @@ public class AddPeer extends FCPMessage {
 			}
 			try {
 				in = new BufferedReader(new FileReader(f));
-				ref = "";
+				ref = new StringBuffer(1024);
 				String line;
 				while((line = in.readLine()) != null) {
 					line = line.trim();
-					ref += line+"\n";
+					ref.append( line ).append( "\n" );
 				}
 				in.close();
 			} catch (FileNotFoundException e) {
@@ -87,7 +87,7 @@ public class AddPeer extends FCPMessage {
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.FILE_PARSE_ERROR, "IO error while retrieving ref file <"+fileString+">: "+e.getMessage(), null);
 			}
-			ref = ref.trim();
+			ref = new StringBuffer(ref.toString().trim());
 			if(ref == null) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">", null);
 			}
@@ -95,7 +95,7 @@ public class AddPeer extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">", null);
 			}
 			try {
-				fs = new SimpleFieldSet(ref, true);
+				fs = new SimpleFieldSet(ref.toString(), true);
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+">: "+e.getMessage(), null);
 			}

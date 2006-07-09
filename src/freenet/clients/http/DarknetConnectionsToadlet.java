@@ -484,7 +484,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				reftext = reftext.trim();
 			}
 			
-			String ref = "";
+			StringBuffer ref = new StringBuffer(1024);
 			if (urltext.length() > 0) {
 				// fetch reference from a URL
 				BufferedReader in = null;
@@ -494,7 +494,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
 					String line;
 					while ( (line = in.readLine()) != null) {
-						ref += line+"\n";
+						ref.append( line ).append( "\n" );
 					}
 				} catch (IOException e) {
 					this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to retrieve node reference from " + HTMLEncoder.encode(urltext) + ".<br /> <a href=\".\">Please try again</a>.");
@@ -507,32 +507,32 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			} else if (reftext.length() > 0) {
 				// read from post data or file upload
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
-				ref = reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n");
+				ref = new StringBuffer(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
 			} else {
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Could not detect either a node reference or a URL.<br /> <a href=\".\">Please try again</a>.");
 				request.freeParts();
 				return;
 			}
-			ref = ref.trim();
+			ref = new StringBuffer(ref.toString().trim());
 
 			request.freeParts();
 			// we have a node reference in ref
 			SimpleFieldSet fs;
 			
 			try {
-				fs = new SimpleFieldSet(ref, true);
+				fs = new SimpleFieldSet(ref.toString(), true);
 			} catch (IOException e) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref) + "</pre> as a node reference: "+HTMLEncoder.encode(e.toString())+".<br /> <a href=\".\">Please try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref.toString()) + "</pre> as a node reference: "+HTMLEncoder.encode(e.toString())+".<br /> <a href=\".\">Please try again</a>.");
 				return;
 			}
 			PeerNode pn;
 			try {
 				pn = new PeerNode(fs, this.node, false);
 			} catch (FSParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref) + "</pre> as a node reference: " + HTMLEncoder.encode(e1.toString()) + ".<br /> Please <a href=\".\">Try again</a>");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref.toString()) + "</pre> as a node reference: " + HTMLEncoder.encode(e1.toString()) + ".<br /> Please <a href=\".\">Try again</a>");
 				return;
 			} catch (PeerParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref) + "</pre> as a node reference: " + HTMLEncoder.encode(e1.toString()) + ".<br /> Please <a href=\".\">Try again</a>");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref.toString()) + "</pre> as a node reference: " + HTMLEncoder.encode(e1.toString()) + ".<br /> Please <a href=\".\">Try again</a>");
 				return;
 			}
 			if(pn.getIdentityHash()==node.getIdentityHash()) {
