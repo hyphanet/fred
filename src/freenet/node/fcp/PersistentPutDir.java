@@ -54,14 +54,13 @@ public class PersistentPutDir extends FCPMessage {
 		for(int i=0;i<elements.length;i++) {
 			String num = Integer.toString(i);
 			ManifestElement e = elements[i];
-			String name = e.getName();
 			String mimeOverride = e.getMimeTypeOverride();
 			SimpleFieldSet subset = new SimpleFieldSet(true);
-			FreenetURI uri = e.getTargetURI();
-			subset.put("Name", name);
-			if(uri != null) {
+			FreenetURI tempURI = e.getTargetURI();
+			subset.put("Name", e.getName());
+			if(tempURI != null) {
 				subset.put("UploadFrom", "redirect");
-				subset.put("TargetURI", uri.toString());
+				subset.put("TargetURI", tempURI.toString());
 			} else {
 				Bucket data = e.getData();
 				subset.put("DataLength", Long.toString(e.getSize()));

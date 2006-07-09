@@ -206,11 +206,11 @@ public class TextModeClientInterfaceServer implements Runnable {
     public void run() {
     	while(true) {
     		int curPort = port;
-    		String bindTo = this.bindTo;
+    		String tempBindTo = this.bindTo;
     		try {
-    			networkInterface = new NetworkInterface(curPort, bindTo, allowedHosts);
+    			networkInterface = new NetworkInterface(curPort, tempBindTo, allowedHosts);
     		} catch (IOException e) {
-    			Logger.error(this, "Could not bind to TMCI port: "+bindTo+":"+port);
+    			Logger.error(this, "Could not bind to TMCI port: "+tempBindTo+":"+port);
     			System.exit(-1);
     			return;
     		}
@@ -225,7 +225,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     		while(isEnabled) {
     			// Maybe something has changed?
 				if(port != curPort) break;
-				if(!(this.bindTo.equals(bindTo))) break;
+				if(!(this.bindTo.equals(tempBindTo))) break;
     			try {
     				Socket s = networkInterface.accept();
     				InputStream in = s.getInputStream();

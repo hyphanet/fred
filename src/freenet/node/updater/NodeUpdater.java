@@ -80,10 +80,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		alert.isValid(false);
 		node.alerts.register(alert);
 		
-		FetcherContext ctx = n.makeClient((short)0).getFetcherContext();		
-		ctx.allowSplitfiles = true;
-		ctx.dontEnterImplicitArchives = false;
-		this.ctx = ctx;
+		FetcherContext tempContext = n.makeClient((short)0).getFetcherContext();		
+		tempContext.allowSplitfiles = true;
+		tempContext.dontEnterImplicitArchives = false;
+		this.ctx = tempContext;
 		
 		ctxRevocation = n.makeClient((short)0).getFetcherContext();
 		ctxRevocation.allowSplitfiles = false;
@@ -97,10 +97,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		
 		try{		
 			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion));
-			ctx.uskManager.subscribe(myUsk, this,	true);
+			ctx.uskManager.subscribe(myUsk, this, true);
 			ctx.uskManager.startTemporaryBackgroundFetcher(myUsk);
 			
-			ClientGetter cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.UPDATE_PRIORITY_CLASS, this, null);
+			this.cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.UPDATE_PRIORITY_CLASS, this, null);
 			cg.start();
 			
 		}catch(MalformedURLException e){

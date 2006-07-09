@@ -425,12 +425,10 @@ public final class RequestSender implements Runnable, ByteCounter {
 
 	private void verifyAndCommit(byte[] data) throws KeyVerifyException {
     	if(key instanceof NodeCHK) {
-    		CHKBlock block = new CHKBlock(data, headers, (NodeCHK)key);
-    		node.store(block);
+    		node.store(new CHKBlock(data, headers, (NodeCHK)key));
     	} else if (key instanceof NodeSSK) {
-    		SSKBlock block = new SSKBlock(data, headers, (NodeSSK)key, false);
     		try {
-				node.store(block);
+				node.store(new SSKBlock(data, headers, (NodeSSK)key, false));
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}

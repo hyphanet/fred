@@ -1524,9 +1524,9 @@ public class PeerNode implements PeerContext {
 			fs.put("idle", Long.toString(idle));
 		}
 		fs.put("lastRoutingBackoffReason", getLastBackoffReason());
-		long peerAddedTime = getPeerAddedTime();
-		if(peerAddedTime > 1) {
-			fs.put("peerAddedTime", Long.toString(peerAddedTime));
+		long tempPeerAddedTime = getPeerAddedTime();
+		if(tempPeerAddedTime > 1) {
+			fs.put("peerAddedTime", Long.toString(tempPeerAddedTime));
 		}
 		fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
 		fs.put("routingBackoff", Long.toString((Math.max(routingBackedOffUntil - now, 0))));

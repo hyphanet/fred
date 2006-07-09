@@ -45,15 +45,15 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
-		byte[] key = new byte[32];
-		origRandom.nextBytes(key);
-		aes.initialize(key);
+		byte[] tempKey = new byte[32];
+		origRandom.nextBytes(tempKey);
+		aes.initialize(tempKey);
 		if(forgetKey) {
 			// Might as well blank it
-			for(int i=0;i<key.length;i++) key[i] = 0;
+			for(int i=0;i<tempKey.length;i++) tempKey[i] = 0;
 			this.key = null;
 		} else {
-			this.key = key;
+			this.key = tempKey;
 		}
 		this.minPaddedSize = minSize;
 		readOnly = false;

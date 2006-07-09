@@ -313,6 +313,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					metaStrings.addFirst(o);
 				}
 
+				// **FIXME** Is key in the call to SingleFileFetcher here supposed to be this.key or the same key used in the try block above?  MultiLevelMetadataCallback.onSuccess() below uses this.key, thus the question
 				SingleFileFetcher f = new SingleFileFetcher((ClientGetter)parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, null, true, returnBucket);
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());

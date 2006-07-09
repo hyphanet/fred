@@ -27,11 +27,11 @@ public class DSAPrivateKey extends CryptoKey {
     //}
 
     public DSAPrivateKey(DSAGroup g, Random r) {
-        BigInteger x;
+        BigInteger tempX;
         do {
-            x = new NativeBigInteger(256, r);
-        } while (x.compareTo(g.getQ()) > -1);
-        this.x = x;
+            tempX = new NativeBigInteger(256, r);
+        } while (tempX.compareTo(g.getQ()) > -1);
+        this.x = tempX;
     }
 
     public String keyType() {

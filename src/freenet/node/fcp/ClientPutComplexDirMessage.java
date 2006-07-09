@@ -58,8 +58,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		if(files == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Files section", identifier);
 		for(int i=0;;i++) {
-			String name = Integer.toString(i);
-			SimpleFieldSet subset = files.subset(name);
+			SimpleFieldSet subset = files.subset(Integer.toString(i));
 			if(subset == null) break;
 			DirPutFile f = DirPutFile.create(subset, identifier, (persistenceType == ClientRequest.PERSIST_FOREVER) ? bfPersistent : bfTemp);
 			addFile(f);
@@ -150,17 +149,17 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 	private void convertFilesByNameToManifestElements(HashMap filesByName, HashMap manifestElements) {
 		Iterator i = filesByName.keySet().iterator();
 		while(i.hasNext()) {
-			String name = (String) (i.next());
-			Object val = filesByName.get(name);
+			String tempName = (String) (i.next());
+			Object val = filesByName.get(tempName);
 			if(val instanceof HashMap) {
 				HashMap h = (HashMap) val;
 				HashMap manifests = new HashMap();
-				manifestElements.put(name, manifests);
+				manifestElements.put(tempName, manifests);
 				convertFilesByNameToManifestElements(h, manifests);
 			} else {
 				DirPutFile f = (DirPutFile) val;
 				ManifestElement e = f.getElement();
-				manifestElements.put(name, e);
+				manifestElements.put(tempName, e);
 			}
 		}
 	}

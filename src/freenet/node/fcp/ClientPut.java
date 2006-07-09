@@ -41,10 +41,10 @@ public class ClientPut extends ClientPutBase {
 		clientToken = message.clientToken;
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this);
-		Bucket data = message.bucket;
+		Bucket tempData = message.bucket;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
-		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = message.redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
@@ -61,11 +61,11 @@ public class ClientPut extends ClientPutBase {
 				inserter = null;
 				return;
 			}
-			data = new SimpleReadOnlyArrayBucket(d);
+			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
 		} else
 			targetURI = null;
-		this.data = data;
+		this.data = tempData;
 		this.clientMetadata = cm;
 		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		inserter = new ClientPutter(this, data, uri, cm, 

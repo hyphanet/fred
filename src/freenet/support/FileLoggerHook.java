@@ -890,11 +890,11 @@ public class FileLoggerHook extends LoggerHook {
 		synchronized(logFiles) {
 			oldLogFiles = (OldLogFile[]) logFiles.toArray(new OldLogFile[logFiles.size()]);
 		}
-		DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.ENGLISH);
-		df.setTimeZone(TimeZone.getTimeZone("GMT"));
+		DateFormat tempDF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.ENGLISH);
+		tempDF.setTimeZone(TimeZone.getTimeZone("GMT"));
 		for(int i=0;i<oldLogFiles.length;i++) {
 			OldLogFile olf = oldLogFiles[i];
-			writer.write(olf.filename.getName()+" : "+df.format(new Date(olf.start))+" to "+df.format(new Date(olf.end))+ " - "+olf.size+" bytes\n");
+			writer.write(olf.filename.getName()+" : "+tempDF.format(new Date(olf.start))+" to "+tempDF.format(new Date(olf.end))+ " - "+olf.size+" bytes\n");
 		}
 	}
 

@@ -31,15 +31,15 @@ public abstract class DataCarryingMessage extends BaseDataCarryingMessage {
 		if(len < 0)
 			throw new IllegalArgumentException("Invalid length: "+len);
 		if(len == 0) return;
-		Bucket bucket;
+		Bucket tempBucket;
 		try {
-			bucket = createBucket(bf, len, server);
+			tempBucket = createBucket(bf, len, server);
 		} catch (IOException e) {
 			Logger.error(this, "Bucket error: "+e, e);
 			throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, e.toString(), getIdentifier());
 		}
-		BucketTools.copyFrom(bucket, is, len);
-		this.bucket = bucket;
+		BucketTools.copyFrom(tempBucket, is, len);
+		this.bucket = tempBucket;
 	}
 	
 	protected void writeData(OutputStream os) throws IOException {
