@@ -12,7 +12,7 @@ public class SimpleIntNumberedItemComparator implements Comparator {
 	
     public int compare(Object o1, Object o2) {
         int x = ocompare(o1, o2);
-        Logger.minor(this, "compare("+o1+","+o2+") = "+x);
+       Logger.debug(this, "compare("+o1+","+o2+") = "+x);
         return x;
     }
     

@@ -32,13 +32,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		finished = false;
 	}
 
-	public void onSuccess(ClientPutState state) {
-		synchronized(this) {
+	public synchronized void onSuccess(ClientPutState state) {
 			if(finished) return;
 			waitingFor.remove(state);
 			if(!(waitingFor.isEmpty() && started))
 				return;
-		}
 		/* Using this.e here will cause complete to consider the
 		 * insert as failed if onFailed has been called in the past
 		 * for this request. This makes collisions work. It does
@@ -78,14 +76,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		waitingFor.add(ps);
 	}
 
-	public void arm() {
+	public synchronized void arm() {
 		boolean allDone;
 		boolean allGotBlocks;
-		synchronized(this) {
-			started = true;
-			allDone = waitingFor.isEmpty();
-			allGotBlocks = waitingForBlockSet.isEmpty();
-		}
+		started = true;
+		allDone = waitingFor.isEmpty();
+		allGotBlocks = waitingForBlockSet.isEmpty();
+
 		if(allGotBlocks) {
 			cb.onBlockSetFinished(this);
 		}
@@ -126,7 +123,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 	}
 
-	public void onMetadata(Metadata m, ClientPutState state) {
+	public synchronized void onMetadata(Metadata m, ClientPutState state) {
 		if(generator == state) {
 			cb.onMetadata(m, this);
 		} else {

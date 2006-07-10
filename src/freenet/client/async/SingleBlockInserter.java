@@ -36,7 +36,6 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	private final FailureCodeTracker errors;
 	private boolean finished;
 	private final boolean dontSendEncoded;
-	private ClientKey key;
 	private WeakReference refToClientKeyBlock;
 	final int token; // for e.g. splitfiles
 	private final Object tokenObject;
@@ -191,8 +190,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
 	public ClientKeyBlock getBlock() {
 		try {
-			if(finished) return null;
-			return encode();
+			synchronized (this) {
+				if(finished) return null;
+				return encode();				
+			}
 		} catch (InserterException e) {
 			cb.onFailure(e, this);
 			return null;
@@ -203,7 +204,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		}
 	}
 
-	public void schedule() throws InserterException {
+	public synchronized void schedule() throws InserterException {
 		if(finished) return;
 		if(getCHKOnly) {
 			ClientKeyBlock block = encode();
@@ -224,7 +225,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		else throw new IllegalArgumentException();
 	}
 
-	public FreenetURI getURI() {
+	public synchronized FreenetURI getURI() {
 		if(resultingURI == null)
 			getBlock();
 		return resultingURI;
@@ -251,7 +252,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		cb.onFailure(new InserterException(InserterException.CANCELLED), this);
 	}
 
-	public boolean isFinished() {
+	public synchronized boolean isFinished() {
 		return finished;
 	}
 

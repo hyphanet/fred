@@ -42,7 +42,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	private SingleBlockInserter sbi;
 	private long edition;
 	/** Number of collisions while trying to insert so far */
-	private int consecutiveCollisions = 0;
+	private int consecutiveCollisions;
 	private boolean finished;
 	/** After attempting inserts on this many slots, go back to the Fetcher */
 	private static final long MAX_TRIED_SLOTS = 10;
@@ -65,16 +65,15 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	 * The Fetcher must be insert-mode, in other words, it must know that we want the latest edition,
 	 * including author errors and so on.
 	 */
-	private void scheduleFetcher() {
+	private synchronized void scheduleFetcher() {
 		Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
-		synchronized(this) {
-			if(finished) return;
-			fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this);
-		}
+		if(finished) return;
+		fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this);
+
 		fetcher.schedule();
 	}
 
-	public void onFoundEdition(long l, USK key) {
+	public synchronized void onFoundEdition(long l, USK key) {
 		edition = Math.max(l, edition);
 		consecutiveCollisions = 0;
 		if((fetcher.lastContentWasMetadata() == isMetadata) && fetcher.hasLastData()
@@ -87,10 +86,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 					// Success!
 					cb.onEncode(pubUSK.copy(edition), this);
 					cb.onSuccess(this);
-					synchronized(this) {
-						finished = true;
-						sbi = null;
-					}
+					finished = true;
+					sbi = null;
 					return;
 				}
 			} catch (IOException e) {
@@ -101,19 +98,17 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		scheduleInsert();
 	}
 
-	private void scheduleInsert() {
+	private synchronized void scheduleInsert() {
 		long edNo = Math.max(edition, ctx.uskManager.lookup(pubUSK))+1;
-		synchronized(this) {
-			if(finished) return;
-			edition = edNo;
-			Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+" "+edition);
-			try {
-				sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-						ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject);
-			} catch (InserterException e) {
-				cb.onFailure(e, this);
-				return;
-			}
+		if(finished) return;
+		edition = edNo;
+		Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+" "+edition);
+		try {
+			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
+					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject);
+		} catch (InserterException e) {
+			cb.onFailure(e, this);
+			return;
 		}
 		try {
 			sbi.schedule();
@@ -122,13 +117,11 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		}
 	}
 
-	public void onSuccess(ClientPutState state) {
+	public synchronized void onSuccess(ClientPutState state) {
 		cb.onEncode(pubUSK.copy(edition), this);
 		cb.onSuccess(this);
-		synchronized(this) {
-			finished = true;
-			sbi = null;
-		}
+		finished = true;
+		sbi = null;
 		FreenetURI targetURI = pubUSK.getSSK(edition).getURI();
 		FreenetURI realURI = ((SingleBlockInserter)state).getURI();
 		if(!targetURI.equals(realURI))
@@ -140,7 +133,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		// FINISHED!!!! Yay!!!
 	}
 
-	public void onFailure(InserterException e, ClientPutState state) {
+	public synchronized void onFailure(InserterException e, ClientPutState state) {
 		sbi = null;
 		if(e.getMode() == InserterException.COLLISION) {
 			// Try the next slot
@@ -195,7 +188,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		scheduleInsert();
 	}
 
-	public void onCancelled() {
+	public synchronized void onCancelled() {
 		if(finished) return;
 		Logger.error(this, "Unexpected onCancelled()", new Exception("error"));
 		cancel();

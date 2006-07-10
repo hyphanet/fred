@@ -8,7 +8,7 @@ public class PrioritySchedulerCallback implements StringCallback{
 	ClientRequestScheduler cs;
 	
 	PrioritySchedulerCallback(ClientRequestScheduler cs){
-		this.value = new String(ClientRequestScheduler.PRIORITY_HARD);
+		this.value = ClientRequestScheduler.PRIORITY_HARD;
 		this.cs = cs;
 	}
 	

@@ -194,10 +194,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private long totalSize;
 	private boolean metadataBlockSetFinalized;
 	private Metadata baseMetadata;
-	private boolean hasResolvedBase = false;
+	private boolean hasResolvedBase;
 	private final static String[] defaultDefaultNames =
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
-	private int bytesOnZip = 0;
+	private int bytesOnZip;
 	private LinkedList elementsToPutInZip;
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
@@ -224,12 +224,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// FIXME do something.
 	}
 
-	public void start() throws InserterException {
+	public synchronized void start() throws InserterException {
 		Logger.minor(this, "Starting "+this);
 		PutHandler[] running;
-		synchronized(this) {
-			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
-		}
+		running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 
 		try {
 			for(int i=0;i<running.length;i++) {
@@ -309,7 +307,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return finalURI;
 	}
 
-	public boolean isFinished() {
+	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
 
@@ -338,10 +336,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Metadata.mkRedirectionManifestWithMetadata(namesToByteArrays);
 		resolveAndStartBase();
 		
-	}
-
-	private void startMetadataInsert() {
-		resolveAndStartBase();
 	}
 	
 	private void resolveAndStartBase() {

@@ -10,7 +10,6 @@ import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.keys.CHKBlock;
-import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
@@ -154,8 +153,9 @@ public class SplitFileInserter implements ClientPutState {
 				// Create Metadata
 				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, isMetadata, insertAsArchiveManifest);
 			}
-			haveSentMetadata = true;
 		}
+		haveSentMetadata = true;
+		
 		if(missingURIs) {
 			Logger.minor(this, "Missing URIs");
 			// Error

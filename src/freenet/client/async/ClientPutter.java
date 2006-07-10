@@ -51,7 +51,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.cancelled = false;
 	}
 
-	public void start() throws InserterException {
+	public synchronized void start() throws InserterException {
 		try {
 			currentState =
 				new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false);
@@ -66,13 +66,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		}
 	}
 
-	public void onSuccess(ClientPutState state) {
+	public synchronized void onSuccess(ClientPutState state) {
 		finished = true;
 		currentState = null;
 		client.onSuccess(this);
 	}
 
-	public void onFailure(InserterException e, ClientPutState state) {
+	public synchronized void onFailure(InserterException e, ClientPutState state) {
 		finished = true;
 		currentState = null;
 		client.onFailure(e, this);
@@ -83,15 +83,13 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onGeneratedURI(uri, this);
 	}
 	
-	public void cancel() {
-		synchronized(this) {
-			super.cancel();
-			if(currentState != null)
-				currentState.cancel();
-		}
+	public synchronized void cancel() {
+		super.cancel();
+		if(currentState != null)
+			currentState.cancel();
 	}
 	
-	public boolean isFinished() {
+	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
 

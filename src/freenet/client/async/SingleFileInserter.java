@@ -42,7 +42,7 @@ class SingleFileInserter implements ClientPutState {
 	final boolean insertAsArchiveManifest;
 	/** If true, we are not the top level request, and should not
 	 * update our parent to point to us as current put-stage. */
-	private boolean cancelled = false;
+	private boolean cancelled;
 	private boolean reportMetadataOnly;
 	public final Object token;
 
@@ -230,7 +230,6 @@ class SingleFileInserter implements ClientPutState {
 			cb.onTransition(this, sh);
 			sfi.start();
 		}
-		return;
 	}
 	
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
@@ -258,11 +257,11 @@ class SingleFileInserter implements ClientPutState {
 
 		ClientPutState sfi;
 		ClientPutState metadataPutter;
-		boolean finished = false;
-		boolean splitInsertSuccess = false;
-		boolean metaInsertSuccess = false;
-		boolean splitInsertSetBlocks = false;
-		boolean metaInsertSetBlocks = false;
+		boolean finished;
+		boolean splitInsertSuccess;
+		boolean metaInsertSuccess;
+		boolean splitInsertSetBlocks;
+		boolean metaInsertSetBlocks;
 
 		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
 			if(oldState == sfi)
@@ -298,7 +297,7 @@ class SingleFileInserter implements ClientPutState {
 			fail(e);
 		}
 
-		public void onMetadata(Metadata meta, ClientPutState state) {
+		public synchronized void onMetadata(Metadata meta, ClientPutState state) {
 			if(finished) return;
 			if(state == metadataPutter) {
 				Logger.error(this, "Got metadata for metadata");
@@ -311,30 +310,29 @@ class SingleFileInserter implements ClientPutState {
 				cb.onMetadata(meta, this);
 				metaInsertSuccess = true;
 			} else {
-				synchronized(this) {
-					Bucket metadataBucket;
-					try {
-						metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
-					} catch (IOException e) {
-						InserterException ex = new InserterException(InserterException.BUCKET_ERROR, e, null);
-						fail(ex);
-						return;
-					} catch (MetadataUnresolvedException e) {
-						Logger.error(this, "Impossible: "+e, e);
-						InserterException ex = new InserterException(InserterException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e, null);
-						ex.initCause(e);
-						fail(ex);
-						return;
-					}
-					InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
-					try {
-						metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false);
-						Logger.minor(this, "Putting metadata on "+metadataPutter);
-					} catch (InserterException e) {
-						cb.onFailure(e, this);
-						return;
-					}
+				Bucket metadataBucket;
+				try {
+					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
+				} catch (IOException e) {
+					InserterException ex = new InserterException(InserterException.BUCKET_ERROR, e, null);
+					fail(ex);
+					return;
+				} catch (MetadataUnresolvedException e) {
+					Logger.error(this, "Impossible: "+e, e);
+					InserterException ex = new InserterException(InserterException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e, null);
+					ex.initCause(e);
+					fail(ex);
+					return;
 				}
+				InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
+				try {
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false);
+					Logger.minor(this, "Putting metadata on "+metadataPutter);
+				} catch (InserterException e) {
+					cb.onFailure(e, this);
+					return;
+				}
+
 				try {
 					((SingleFileInserter)metadataPutter).start();
 				} catch (InserterException e) {
@@ -359,12 +357,12 @@ class SingleFileInserter implements ClientPutState {
 			return parent;
 		}
 
-		public void onEncode(BaseClientKey key, ClientPutState state) {
+		public synchronized void onEncode(BaseClientKey key, ClientPutState state) {
 			if(state == metadataPutter)
 				cb.onEncode(key, this);
 		}
 
-		public void cancel() {
+		public synchronized void cancel() {
 			if(sfi != null)
 				sfi.cancel();
 			if(metadataPutter != null)

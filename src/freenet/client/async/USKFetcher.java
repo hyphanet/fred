@@ -99,7 +99,7 @@ public class USKFetcher implements ClientGetState {
 		boolean succeeded;
 		/** DNF? */
 		boolean dnf;
-		boolean cancelled = false;
+		boolean cancelled;
 		public USKAttempt(long i) {
 			this.number = i;
 			this.succeeded = false;
@@ -181,7 +181,7 @@ public class USKFetcher implements ClientGetState {
 	/** Keep going forever? */
 	private final boolean backgroundPoll;
 	
-	private boolean started = false;
+	private boolean started;
 
 	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever) {
 		this(origUSK, manager, ctx, parent, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES);
@@ -227,6 +227,8 @@ public class USKFetcher implements ClientGetState {
 	private void finishSuccess() {
 		if(backgroundPoll) {
 			long valAtEnd = uskManager.lookup(origUSK);
+			long end, newValAtEnd;
+			long now = System.currentTimeMillis();
 			synchronized(this) {
 				started = false; // don't finish before have rescheduled
 				if(valAtEnd > valueAtSchedule) {
@@ -243,10 +245,9 @@ public class USKFetcher implements ClientGetState {
 				long newSleepTime = sleepTime * 2;
 				if(newSleepTime > maxSleepTime) newSleepTime = maxSleepTime;
 				sleepTime = newSleepTime;
+				end = now + sleepTime;
+				newValAtEnd = valAtEnd;
 			}
-			long now = System.currentTimeMillis();
-			long end = now + sleepTime;
-			long newValAtEnd = valAtEnd;
 			// FIXME do this without occupying a thread
 			while((now < end) && ((newValAtEnd = uskManager.lookup(origUSK)) == valAtEnd)) {
 				long d = end - now;
@@ -311,17 +312,18 @@ public class USKFetcher implements ClientGetState {
 				}
 			}
 			cancelBefore(curLatest);
-		}
-		if(l == null) return;
-		// If we schedule them here, we don't get icky recursion problems.
-		else if(!cancelled) {
-			for(Iterator i=l.iterator();i.hasNext();) {
-				// We may be called recursively through onSuccess().
-				// So don't start obsolete requests.
-				USKAttempt a = (USKAttempt) i.next();
-				lastEd = uskManager.lookup(origUSK);
-				if((lastEd <= a.number) && !a.cancelled)
-					a.schedule();
+
+			if(l == null) return;
+			// If we schedule them here, we don't get icky recursion problems.
+			else if(!cancelled) {
+				for(Iterator i=l.iterator();i.hasNext();) {
+					// We may be called recursively through onSuccess().
+					// So don't start obsolete requests.
+					USKAttempt a = (USKAttempt) i.next();
+					lastEd = uskManager.lookup(origUSK);
+					if((lastEd <= a.number) && !a.cancelled)
+						a.schedule();
+				}
 			}
 		}
 	}
@@ -330,9 +332,10 @@ public class USKFetcher implements ClientGetState {
 		synchronized(this) {
 			runningAttempts.remove(att);
 			if(!runningAttempts.isEmpty()) return;
+		
+			if(cancelled)
+				finishCancelled();
 		}
-		if(cancelled)
-			finishCancelled();
 	}
 
 	private void finishCancelled() {
@@ -386,7 +389,9 @@ public class USKFetcher implements ClientGetState {
 	}
 
 	public boolean isFinished() {
-		return completed || cancelled;
+		synchronized (this) {
+			return completed || cancelled;			
+		}
 	}
 
 	public USK getOriginalUSK() {
@@ -404,10 +409,10 @@ public class USKFetcher implements ClientGetState {
 				add(i);
 			attempts = (USKAttempt[]) runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
 			started = true;
-		}
 		if(!cancelled)
 			for(int i=0;i<attempts.length;i++)
 				attempts[i].schedule();
+		}
 	}
 
 	public void cancel() {
@@ -439,23 +444,23 @@ public class USKFetcher implements ClientGetState {
 		subscribers.remove(cb);
 	}
 
-	public boolean hasLastData() {
+	public synchronized boolean hasLastData() {
 		return this.lastRequestData != null;
 	}
 
-	public boolean lastContentWasMetadata() {
+	public synchronized boolean lastContentWasMetadata() {
 		return this.lastWasMetadata;
 	}
 
-	public short lastCompressionCodec() {
+	public synchronized short lastCompressionCodec() {
 		return this.lastCompressionCodec;
 	}
 
-	public Bucket getLastData() {
+	public synchronized Bucket getLastData() {
 		return this.lastRequestData;
 	}
 
-	public void freeLastData() {
+	public synchronized void freeLastData() {
 		lastRequestData.free();
 		lastRequestData = null;
 	}

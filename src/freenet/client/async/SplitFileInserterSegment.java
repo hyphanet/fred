@@ -9,7 +9,6 @@ import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
-import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Logger;
@@ -60,8 +59,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			dataBlockInserters[i].schedule();
 		}
 		if(splitfileAlgo == null) {
-			// Don't need to encode blocks
-		} else {
 			// Encode blocks
 			Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
 			t.setDaemon(true);
@@ -113,8 +110,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
+			toThrow = InserterException.construct(errors);
 		}
-		toThrow = InserterException.construct(errors);
 		parent.segmentFinished(this);
 	}
 	
@@ -172,30 +169,29 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		finish();
 	}
 
-	private boolean completed(int x) {
+	private synchronized boolean completed(int x) {
 		Logger.minor(this, "Completed: "+x+" on "+this+" ( completed="+blocksCompleted+", total="+(dataBlockInserters.length+checkBlockInserters.length));
-		synchronized(this) {
-			if(finished) return true;
-			if(x >= dataBlocks.length) {
-				if(checkBlockInserters[x-dataBlocks.length] == null) {
-					Logger.error(this, "Completed twice: check block "+x+" on "+this);
-					return true;
-				}
-				checkBlockInserters[x-dataBlocks.length] = null;
-			} else {
-				if(dataBlockInserters[x] == null) {
-					Logger.error(this, "Completed twice: data block "+x+" on "+this);
-					return true;
-				}
-				dataBlockInserters[x] = null;
+
+		if(finished) return true;
+		if(x >= dataBlocks.length) {
+			if(checkBlockInserters[x-dataBlocks.length] == null) {
+				Logger.error(this, "Completed twice: check block "+x+" on "+this);
+				return true;
 			}
-			blocksCompleted++;
-			if(blocksCompleted != dataBlockInserters.length + checkBlockInserters.length) return true;
-			return false;
+			checkBlockInserters[x-dataBlocks.length] = null;
+		} else {
+			if(dataBlockInserters[x] == null) {
+				Logger.error(this, "Completed twice: data block "+x+" on "+this);
+				return true;
+			}
+			dataBlockInserters[x] = null;
 		}
+		blocksCompleted++;
+		if(blocksCompleted != dataBlockInserters.length + checkBlockInserters.length) return true;
+		return false;
 	}
 
-	public boolean isFinished() {
+	public synchronized boolean isFinished() {
 		return finished;
 	}
 	
@@ -216,16 +212,18 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 	
 	InserterException getException() {
-		return toThrow;
+		synchronized (this) {
+			return toThrow;			
+		}
 	}
 
 	public void cancel() {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
+			if(toThrow != null)
+				toThrow = new InserterException(InserterException.CANCELLED);
 		}
-		if(toThrow != null)
-			toThrow = new InserterException(InserterException.CANCELLED);
 		for(int i=0;i<dataBlockInserters.length;i++) {
 			SingleBlockInserter sbi = dataBlockInserters[i];
 			if(sbi != null)
@@ -252,7 +250,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		Logger.error(this, "Should not happen: onBlockSetFinished("+state+") on "+this);
 	}
 
-	public boolean hasURIs() {
+	public synchronized boolean hasURIs() {
 		return hasURIs;
 	}
 }

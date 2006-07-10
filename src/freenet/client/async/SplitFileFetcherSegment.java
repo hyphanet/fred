@@ -88,7 +88,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		Logger.minor(this, "Created "+this+" for "+parentFetcher);
 	}
 
-	public boolean isFinished() {
+	public synchronized boolean isFinished() {
 		return finished;
 	}
 
@@ -129,7 +129,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	}
 
 	/** How many blocks failed permanently due to fatal errors? */
-	public int fatallyFailedBlocks() {
+	public synchronized int fatallyFailedBlocks() {
 		return fatallyFailedBlocks;
 	}
 

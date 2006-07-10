@@ -182,11 +182,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		int priority;
 		
 		short fuzz = -1, iteration = 0;
-		if(choosenPriorityScheduler.equals(PRIORITY_SOFT))
-			fuzz = -1;
-		else if(choosenPriorityScheduler.equals(PRIORITY_HARD))
-			fuzz = 0;
-		
+		synchronized (this) {
+			if(choosenPriorityScheduler.equals(PRIORITY_SOFT))
+				fuzz = -1;
+			else if(choosenPriorityScheduler.equals(PRIORITY_HARD))
+				fuzz = 0;	
+		}
 		// we loop to ensure we try every possibilities ( n + 1)
 		//
 		// PRIO will do 0,1,2,3,4,5,6,0
@@ -195,11 +196,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
 			if((result != null) && !result.isEmpty()) {
-				Logger.minor(this, "Found "+priority);
+				Logger.minor(this, "using priority : "+priority);
 				return result;
 			}
 			
-			Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
+			Logger.debug(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
 			fuzz++;
 		}
 		

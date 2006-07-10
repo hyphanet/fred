@@ -54,7 +54,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		Logger.minor(this, "Checking cache: "+key+" "+internalName);
 		if((data = manager.getCached(key, internalName)) != null) {
 			return data;
-		}
+		}	
 		
 		return null;
 	}
@@ -74,7 +74,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 
 	// Archive hash
 	
-	byte[] lastHash = null;
+	byte[] lastHash;
 	
 	/** Returns the hash of the archive last time we fetched it, or null */
 	public byte[] getLastHash() {
@@ -95,12 +95,10 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	 * Remove all ArchiveStoreItems with this key from the cache.
 	 */
 	public void removeAllCachedItems() {
-		synchronized(myItems) {
-			ArchiveStoreItem item;
-			while((item = (ArchiveStoreItem) myItems.pop()) != null) {
-				manager.removeCachedItem(item);
-				item.finalize();
-			}
+		ArchiveStoreItem item;
+		while((item = (ArchiveStoreItem) myItems.pop()) != null) {
+			manager.removeCachedItem(item);
+			item.finalize();
 		}
 	}
 

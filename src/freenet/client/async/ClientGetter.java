@@ -53,7 +53,7 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 		archiveRestarts = 0;
 	}
 	
-	public void start() throws FetchException {
+	public synchronized void start() throws FetchException {
 		try {
 			currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
 					uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true,
@@ -65,7 +65,7 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 		}
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state) {
+	public synchronized void onSuccess(FetchResult result, ClientGetState state) {
 		finished = true;
 		currentState = null;
 		if((returnBucket != null) && (result.asBucket() != returnBucket)) {
@@ -87,7 +87,7 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 		client.onSuccess(result, this);
 	}
 
-	public void onFailure(FetchException e, ClientGetState state) {
+	public synchronized void onFailure(FetchException e, ClientGetState state) {
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				archiveRestarts++;
@@ -120,7 +120,7 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 		}
 	}
 
-	public boolean isFinished() {
+	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
 
