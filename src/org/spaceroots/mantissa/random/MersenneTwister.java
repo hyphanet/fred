@@ -71,7 +71,7 @@ import freenet.support.Fields;
 public class MersenneTwister
   extends Random {
 
-	static final long serialVersionUID = -1;
+	private static final long serialVersionUID = -1;
 	
   /** Creates a new random number generator.
    * <p>The instance is initialized using the current time as the

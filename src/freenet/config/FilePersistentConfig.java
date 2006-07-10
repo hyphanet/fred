@@ -81,7 +81,9 @@ public class FilePersistentConfig extends Config {
 		try {
 			LineReadingInputStream lis = new LineReadingInputStream(bis);
 			// Config file is UTF-8 too!
-			origConfigFileContents = new SimpleFieldSet(lis, 32768, 128, true, true, true);
+			synchronized (this) {
+				origConfigFileContents = new SimpleFieldSet(lis, 32768, 128, true, true, true);	
+			}
 		} finally {
 			try {
 				fis.close();

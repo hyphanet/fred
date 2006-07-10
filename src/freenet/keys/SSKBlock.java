@@ -75,6 +75,10 @@ public class SSKBlock implements KeyBlock {
     	return true;
     }
     
+    public int hashCode(){
+    	return super.hashCode();
+    }
+    
 	/**
 	 * Initialize, and verify data, headers against key. Provided
 	 * key must have a pubkey, or we throw.

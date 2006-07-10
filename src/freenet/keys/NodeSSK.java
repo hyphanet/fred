@@ -144,9 +144,8 @@ public class NodeSSK extends Key {
 						// same hash, yet different keys!
 						Logger.error(this, "Found SHA-256 collision or something... WTF?");
 						throw new SSKVerifyException("Invalid new pubkey: "+pubKey2+" old pubkey: "+pubKey);
-					} else {
-						// Valid key, assign.
-					}
+					} 
+					// Valid key, assign.
 				} else {
 					throw new SSKVerifyException("New pubkey has invalid hash");
 				}

@@ -94,6 +94,11 @@ public abstract class Key implements WritableToDataOutputStream {
         return hash;
     }
     
+    public boolean equals(Object o){
+    	if(o == null) return false;
+    	return this.hash == o.hashCode();
+    }
+    
     static Bucket decompress(boolean isCompressed, byte[] output, BucketFactory bf, int maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
         if(isCompressed) {
         	Logger.minor(Key.class, "Decompressing "+output.length+" bytes in decode with codec "+compressionAlgorithm);

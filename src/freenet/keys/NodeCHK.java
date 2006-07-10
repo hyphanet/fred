@@ -57,6 +57,10 @@ public class NodeCHK extends Key {
         }
         return false;
     }
+    
+    public int hashCode(){
+    	return super.hashCode();
+    }
 
 	public short getType() {
 		return TYPE;

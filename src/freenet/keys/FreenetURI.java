@@ -62,7 +62,7 @@ import freenet.support.Logger;
  * REDFLAG: Old code has a FieldSet, and the ability to put arbitrary metadata
  * in through name/value pairs. Do we want this?
  */
-public class FreenetURI {
+public class FreenetURI implements Cloneable{
 
 	private final String keyType, docName;
 	private final String[] metaStr;
@@ -115,7 +115,7 @@ public class FreenetURI {
 		}
 	}
 
-	public Object clone() {
+	public final Object clone() {
 		return new FreenetURI(this);
 	}
 	

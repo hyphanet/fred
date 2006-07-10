@@ -74,7 +74,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private long lastRecentlyUsed;
 	private final Object lastRecentlyUsedSync = new Object();
 	
-	private boolean closed = false;
+	private boolean closed;
 	private final static byte[] dummy = new byte[0];
 	
 	/**
