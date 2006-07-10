@@ -22,11 +22,10 @@ public class UpdateRevocationURICallback implements StringCallback{
 	}
 
 	public void set(String val) {
-		if(val == get()) return;
+		if(val.equals(get())) return;
 		// Good idea to prevent it ? 
 		//
 		// Maybe it NEEDS to be implemented
 		Logger.error(this, "Node's updater revocationURI can't be updated on the fly");
-		return;
 	}	
 }
