@@ -37,7 +37,7 @@ public class Bookmark {
 		}
 		
 		public String getDesc() {
-			if (desc == "") {
+			if (desc.equals("")) {
 				return "Unnamed Bookmark";
 			} else {
 				return desc;

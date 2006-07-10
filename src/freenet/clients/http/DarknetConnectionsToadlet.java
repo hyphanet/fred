@@ -83,7 +83,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if(advancedEnabled) {
 			titleCountString = "(" + numberOfConnected + "/" + numberOfRoutingBackedOff + "/" + numberOfTooNew+numberOfTooOld + "/" + numberOfNotConnected + ")";
 		} else {
-			titleCountString = new Integer(numberOfSimpleConnected).toString();
+			titleCountString = Integer.valueOf(numberOfSimpleConnected).toString();
 		}
 		
 		String pageTitle = titleCountString + " Darknet Peers";
