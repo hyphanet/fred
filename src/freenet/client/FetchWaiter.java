@@ -37,16 +37,15 @@ public class FetchWaiter implements ClientCallback {
 		throw new UnsupportedOperationException();
 	}
 
-	public FetchResult waitForCompletion() throws FetchException {
-		synchronized(this) {
-			while(!finished) {
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					// Ignore
-				}
+	public synchronized FetchResult waitForCompletion() throws FetchException {
+		while(!finished) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				// Ignore
 			}
 		}
+
 		if(error != null) throw error;
 		return result;
 	}

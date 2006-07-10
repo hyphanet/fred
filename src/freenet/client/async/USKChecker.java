@@ -38,6 +38,8 @@ class USKChecker extends BaseSingleFileFetcher {
 		case LowLevelGetException.DATA_NOT_FOUND:
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
 			dnfs++;
+			canRetry = true;
+			break;
 		case LowLevelGetException.INTERNAL_ERROR:
 		case LowLevelGetException.REJECTED_OVERLOAD:
 		case LowLevelGetException.ROUTE_NOT_FOUND:
@@ -55,11 +57,10 @@ class USKChecker extends BaseSingleFileFetcher {
 		
 		// Ran out of retries.
 		
-		switch(e.code) {
-		case LowLevelGetException.CANCELLED:
+		if(e.code == LowLevelGetException.CANCELLED){
 			cb.onCancelled();
 			return;
-		case LowLevelGetException.DECODE_FAILED:
+		}else if(e.code == LowLevelGetException.DECODE_FAILED){
 			cb.onFatalAuthorError();
 			return;
 		}

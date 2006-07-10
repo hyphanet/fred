@@ -52,7 +52,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	/**
 	 * Return the estimated space used by the data.
 	 */
-	long spaceUsed() {
+	synchronized long spaceUsed() {
 		return FileUtil.estimateUsage(myFilename, underBucket.size());
 	}
 	

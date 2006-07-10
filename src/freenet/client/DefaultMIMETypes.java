@@ -95,7 +95,7 @@ public class DefaultMIMETypes {
 	/**
 	 * Get a known MIME type by number.
 	 */
-	public static String byNumber(short x) {
+	public synchronized static String byNumber(short x) {
 		if((x > mimeTypesByNumber.size()) || (x < 0))
 			return null;
 		return (String) mimeTypesByNumber.get(x);
@@ -105,7 +105,7 @@ public class DefaultMIMETypes {
 	 * Get the number of a MIME type, or -1 if it is not in the table of known MIME
 	 * types, in which case it will have to be sent uncompressed.
 	 */
-	public static short byName(String s) {
+	public synchronized static short byName(String s) {
 		Short x = (Short) mimeTypesByName.get(s);
 		if(x != null) return x.shortValue();
 		else return -1;
@@ -736,7 +736,7 @@ public class DefaultMIMETypes {
 	}
 	
 	/** Guess a MIME type from a filename */
-	public static String guessMIMEType(String arg) {
+	public synchronized static String guessMIMEType(String arg) {
 		int x = arg.lastIndexOf('.');
 		if((x == -1) || (x == arg.length()-1))
 			return DEFAULT_MIME_TYPE;
@@ -747,13 +747,13 @@ public class DefaultMIMETypes {
 		} else return DEFAULT_MIME_TYPE;
 	}
 
-	public static String getExtension(String type) {
+	public synchronized static String getExtension(String type) {
 		short typeNumber = byName(type);
 		if(typeNumber < 0) return null;
 		return (String) primaryExtensionByMimeNumber.get(new Short(typeNumber));
 	}
 	
-	public static boolean isValidExt(String expectedMimeType, String oldExt) {
+	public synchronized static boolean isValidExt(String expectedMimeType, String oldExt) {
 		Short s = (Short) mimeTypesByExtension.get(oldExt);
 		if(s == null) return false;
 		String type = byNumber(s.shortValue());

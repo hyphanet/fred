@@ -48,7 +48,7 @@ public class SplitFileFetcher implements ClientGetState {
 	/** Maximum temporary length */
 	final long maxTempLength;
 	/** Have all segments finished? Access synchronized. */
-	private boolean allSegmentsFinished = false;
+	private boolean allSegmentsFinished;
 	/** Override length. If this is positive, truncate the splitfile to this length. */
 	private final long overrideLength;
 	/** Accept non-full splitfile chunks? */

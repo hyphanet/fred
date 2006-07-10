@@ -6,7 +6,6 @@ import java.io.OutputStream;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
-import com.onionnetworks.fec.DefaultFECCodeFactory;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.FECCodeFactory;
 import com.onionnetworks.util.Buffer;
