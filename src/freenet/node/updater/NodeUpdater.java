@@ -39,7 +39,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private FetcherContext ctxRevocation;
 	private FetchResult result;
 	private ClientGetter cg;
-	private boolean finalCheck = false;
+	private boolean finalCheck;
 	private final FreenetURI URI;
 	private final FreenetURI revocationURI;
 	private final Node node;
@@ -51,8 +51,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private boolean hasBeenBlown;
 	private int revocationDNFCounter;
 	
-	private boolean isRunning = false;
-	private boolean isFetching = false;
+	private boolean isRunning;
+	private boolean isFetching;
 	
 	public boolean isAutoUpdateAllowed;
 	
@@ -126,17 +126,16 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 
-	public void maybeUpdate(){
-		synchronized(this) {
-			try{
-				if(isFetching || (!isRunning) || (!isUpdatable())) return;
-			}catch (PrivkeyHasBeenBlownException e){
-				// Handled in blow().
-				isRunning=false;
-				return;
-			}
+	public synchronized void maybeUpdate(){
+		try{
+			if(isFetching || (!isRunning) || (!isUpdatable())) return;
+		}catch (PrivkeyHasBeenBlownException e){
+			// Handled in blow().
+			isRunning=false;
+			return;
 		}
-		
+
+
 		alert.set(availableVersion,false);
 		alert.isValid(true);
 		Logger.normal(this,"Starting the update process");
@@ -159,7 +158,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	
 	private volatile Object updateSync = new Object();
 	
-	public void Update() {
+	public synchronized void Update() {
 		if(!isRunning) return;
 		synchronized(updateSync) {
 			innerUpdate();
@@ -170,47 +169,45 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	 * We try to update the node :p
 	 * Must run on its own thread.
 	 */
-	void innerUpdate(){
+	private synchronized void innerUpdate(){
 		Logger.minor(this, "Update() called");
-		synchronized(this) {
-			if((result == null) || hasBeenBlown) {
-				Logger.minor(this, "Returning: result="+result+", isAutoUpdateAllowed="+isAutoUpdateAllowed+", hasBeenBlown="+hasBeenBlown);
-				return;
-			}
-			
-			this.revocationDNFCounter = 0;
-			this.finalCheck = true;
+		if((result == null) || hasBeenBlown) {
+			Logger.minor(this, "Returning: result="+result+", isAutoUpdateAllowed="+isAutoUpdateAllowed+", hasBeenBlown="+hasBeenBlown);
+			return;
 		}
-		
+
+		this.revocationDNFCounter = 0;
+		this.finalCheck = true;
+
+
 		System.err.println("Searching for revocation key");
 		this.queueFetchRevocation(100);
-		synchronized(this) {
-			while(revocationDNFCounter < 3) {
-				System.err.println("Revocation counter: "+revocationDNFCounter);
-				if(this.hasBeenBlown) {
-					Logger.error(this, "The revocation key has been found on the network : blocking auto-update");
-					return;
-				}
-				try {
-					wait(100*1000);
-				} catch (InterruptedException e) {
-					// Ignore
-				}
+		while(revocationDNFCounter < 3) {
+			System.err.println("Revocation counter: "+revocationDNFCounter);
+			if(this.hasBeenBlown) {
+				Logger.error(this, "The revocation key has been found on the network : blocking auto-update");
+				return;
+			}
+			try {
+				wait(100*1000);
+			} catch (InterruptedException e) {
+				// Ignore
 			}
 		}
+
 
 		System.err.println("Update in progress");
 		Logger.normal(this, "Update in progress");
 		try{
 			ArrayBucket bucket = (ArrayBucket) result.asBucket();
 			byte[] data = bucket.toByteArray();
-			
+
 			File fRunning = new File("freenet-cvs-snapshot.jar");
 			File fNew = new File("freenet-cvs-snapshot.jar.new");
-			
+
 			boolean nastyRestart = false;
-			
-			if(File.separatorChar != '\\') {
+
+			if(File.separatorChar == '\\') {
 				// Do nothing.
 			} else {
 				nastyRestart = true;
@@ -239,11 +236,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					}
 				}
 			}
-			
+
 			fNew.delete();
-			
+
 			FileOutputStream fos = new FileOutputStream(fNew);
-			
+
 			fos.write(data);
 			fos.flush();
 			fos.close();
@@ -260,27 +257,27 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				}
 			} else {
 				// Hard way.
-				
+
 				if(!WrapperManager.isControlledByNativeWrapper()) {
 					Logger.error(this, "Cannot update because not running under wrapper");
 					System.err.println("Cannot update because not running under wrapper");
 					return;
 				}
-				
+
 				try {
-					
+
 					File oldConfig = new File("wrapper.conf");
 					File newConfig = new File("wrapper.conf.new");
-					
+
 					FileInputStream fis = new FileInputStream(oldConfig);
 					BufferedInputStream bis = new BufferedInputStream(fis);
 					InputStreamReader isr = new InputStreamReader(bis);
 					BufferedReader br = new BufferedReader(isr);
-					
+
 					fos = new FileOutputStream(newConfig);
 					OutputStreamWriter osw = new OutputStreamWriter(fos);
 					BufferedWriter bw = new BufferedWriter(osw);
-					
+
 					String line;
 					boolean succeeded = false;
 					boolean stillSucceeded = false;
@@ -299,19 +296,19 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					}
 					bw.close();
 					br.close();
-					
+
 					if(!succeeded) {
 						System.err.println("Not able to update because of non-standard config");
 						Logger.error(this, "Not able to update because of non-standard config");
 						return;
 					}
-					
+
 					if(!stillSucceeded) {
 						System.err.println("Not able to update because of non-standard or old config, add a line saying \"wrapper.restart.reload_configuration=TRUE\"");
 						Logger.error(this, "Not able to update because of non-standard or old config, add a line saying \"wrapper.restart.reload_configuration=TRUE\"");
 						return;
 					}
-					
+
 					if(!newConfig.renameTo(oldConfig)) {
 						oldConfig.delete();
 						if(!newConfig.renameTo(oldConfig)) {
@@ -320,9 +317,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 							return;
 						}
 					}
-					
+
 					// New config installed.
-					
+
 				} catch (IOException e) {
 					Logger.error(this, "Not able to update because of I/O error: "+e, e);
 					System.err.println("Not able to update because of I/O error: "+e);
@@ -337,7 +334,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				node.exit();
 			}
 			System.err.println("WTF? Restart returned!?");
-			
+
 		}catch(Exception e){
 			Logger.error(this, "Error while updating the node : "+e);
 			System.out.println("Exception : "+e);
@@ -345,18 +342,16 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 	
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		if(!state.getURI().equals(revocationURI)){
 			System.out.println("Found "+availableVersion);
 			Logger.normal(this, "Found a new version! (" + availableVersion + ", setting up a new UpdatedVersionAviableUserAlert");
 			alert.set(availableVersion,true);
 			alert.isValid(true);		
-			synchronized(this){
-				this.cg = state;
-				this.result = result;
-				if(this.isAutoUpdateAllowed)
-					scheduleUpdate();
-			}
+			this.cg = state;
+			this.result = result;
+			if(this.isAutoUpdateAllowed)
+				scheduleUpdate();
 		}else{
 			// The key has been blown !
 			// FIXME: maybe we need a bigger warning message.
@@ -378,7 +373,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public synchronized void onFailure(FetchException e, ClientGetter state) {
 		int errorCode = e.getMode();
 		
 		if(!state.getURI().equals(revocationURI)){	
@@ -395,22 +390,20 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			} else
 				Logger.error(this, "Canceling fetch : "+ e.getMessage());
 		}else{
-			synchronized(this) {
-				if(errorCode == FetchException.DATA_NOT_FOUND){
-					revocationDNFCounter++;
-				}
-				if(e.isFatal()) this.blow("Permanent error fetching revocation (invalid data inserted?): "+e.toString());
-				// Start it again
-				if(this.finalCheck) {
-					if(revocationDNFCounter < 3)
-						queueFetchRevocation(1000);
-					else
-						notifyAll();
-				} else {
-					boolean pause = (revocationDNFCounter == 3);
-					if(pause) revocationDNFCounter = 0;
-					queueFetchRevocation(pause ? 60*60*1000 : 5000);
-				}
+			if(errorCode == FetchException.DATA_NOT_FOUND){
+				revocationDNFCounter++;
+			}
+			if(e.isFatal()) this.blow("Permanent error fetching revocation (invalid data inserted?): "+e.toString());
+			// Start it again
+			if(this.finalCheck) {
+				if(revocationDNFCounter < 3)
+					queueFetchRevocation(1000);
+				else
+					notifyAll();
+			} else {
+				boolean pause = (revocationDNFCounter == 3);
+				if(pause) revocationDNFCounter = 0;
+				queueFetchRevocation(pause ? 60*60*1000 : 5000);
 			}
 		}
 	}
@@ -454,14 +447,14 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		// Impossible
 	}
 
-	public boolean isUpdatable() throws PrivkeyHasBeenBlownException{
+	public synchronized boolean isUpdatable() throws PrivkeyHasBeenBlownException{
 		if(hasBeenBlown) 
 			throw new PrivkeyHasBeenBlownException(revocationMessage);
 		else 
 			return (currentVersion<availableVersion);
 	}
 	
-	public boolean isRunning(){
+	public synchronized boolean isRunning(){
 		return isRunning;
 	}
 	
