@@ -18,7 +18,7 @@ import freenet.support.Logger;
  * is separated off into RequestSender so we get transfer coalescing
  * and both ends for free. 
  */
-public class RequestHandler implements Runnable {
+public class RequestHandler implements Runnable, ByteCounter {
 
     final Message req;
     final Node node;
@@ -28,6 +28,7 @@ public class RequestHandler implements Runnable {
     private double closestLoc;
     private boolean needsPubKey;
     final Key key;
+    private boolean finalTransferFailed = false;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -51,6 +52,8 @@ public class RequestHandler implements Runnable {
     }
 
     public void run() {
+    	int status = RequestSender.NOT_FINISHED;
+    	RequestSender rs = null;
         try {
         Logger.minor(this, "Handling a request: "+uid);
         htl = source.decrementHTL(htl);
@@ -70,21 +73,24 @@ public class RequestHandler implements Runnable {
                 	Logger.minor(this, "Sending PK: "+key+" "+key.writeAsField());
                 	source.send(pk, null);
                 }
+                status = RequestSender.SUCCESS; // for byte logging
             }
             if(block instanceof CHKBlock) {
             	PartiallyReceivedBlock prb =
             		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
             	BlockTransmitter bt =
             		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, null);
-            	bt.send();
+            	if(bt.send())
+            		status = RequestSender.SUCCESS; // for byte logging
             }
             return;
         }
-        RequestSender rs = (RequestSender) o;
+        rs = (RequestSender) o;
         
         if(rs == null) { // ran out of htl?
             Message dnf = DMT.createFNPDataNotFound(uid);
             source.send(dnf, null);
+            status = RequestSender.DATA_NOT_FOUND; // for byte logging
             return;
         }
         
@@ -105,18 +111,20 @@ public class RequestHandler implements Runnable {
                 PartiallyReceivedBlock prb = rs.getPRB();
             	BlockTransmitter bt =
             	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, null);
-            	bt.send(); // either fails or succeeds; other side will see, we don't care
+            	if(!bt.send());
+            		finalTransferFailed = true;
         	    return;
             }
             
-            int status = rs.getStatus();
+            status = rs.getStatus();
+
+            if(status == RequestSender.NOT_FINISHED) continue;
             
             switch(status) {
             	case RequestSender.NOT_FINISHED:
-            	    continue;
             	case RequestSender.DATA_NOT_FOUND:
                     Message dnf = DMT.createFNPDataNotFound(uid);
-            		source.sendAsync(dnf, null, 0, null);
+            		source.send(dnf, this);
             		return;
             	case RequestSender.GENERATED_REJECTED_OVERLOAD:
             	case RequestSender.TIMED_OUT:
@@ -124,19 +132,20 @@ public class RequestHandler implements Runnable {
             		// Locally generated.
             	    // Propagate back to source who needs to reduce send rate
             	    Message reject = DMT.createFNPRejectedOverload(uid, true);
-            		source.sendAsync(reject, null, 0, null);
+            		source.send(reject, this);
             		return;
             	case RequestSender.ROUTE_NOT_FOUND:
             	    // Tell source
             	    Message rnf = DMT.createFNPRouteNotFound(uid, rs.getHTL());
-            		source.sendAsync(rnf, null, 0, null);
+            		source.send(rnf, this);
             		return;
             	case RequestSender.SUCCESS:
             		if(key instanceof NodeSSK) {
                         Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
-                        source.send(df, null);
+                        source.send(df, this);
                         if(needsPubKey) {
-                        	source.send(df, null);
+                        	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey().asBytes());
+                        	source.send(pk, this);
                         }
             		} else if(!rs.transferStarted()) {
             			Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
@@ -150,7 +159,7 @@ public class RequestHandler implements Runnable {
             			continue; // should have started transfer
             		}
             	    reject = DMT.createFNPRejectedOverload(uid, true);
-            		source.sendAsync(reject, null, 0, null);
+            		source.send(reject, this);
             		return;
             	case RequestSender.TRANSFER_FAILED:
             		if(key instanceof NodeCHK) {
@@ -169,6 +178,21 @@ public class RequestHandler implements Runnable {
             Logger.error(this, "Caught "+t, t);
         } finally {
             node.unlockUID(uid);
+            if((!finalTransferFailed) && rs != null && status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD 
+            		&& status != RequestSender.INTERNAL_ERROR) {
+            	int sent = rs.getTotalSentBytes() + sentBytes;
+            	int rcvd = rs.getTotalReceivedBytes() + receivedBytes;
+            	if(key instanceof NodeSSK) {
+                	Logger.minor(this, "Remote SSK fetch cost "+sent+"/"+rcvd+" bytes ("+status+")");
+                	node.remoteSskFetchBytesSentAverage.report(sent);
+                	node.remoteSskFetchBytesReceivedAverage.report(rcvd);
+            	} else {
+                	Logger.minor(this, "Remote CHK fetch cost "+sent+"/"+rcvd+" bytes ("+status+")");
+                	node.remoteChkFetchBytesSentAverage.report(sent);
+                	node.remoteChkFetchBytesReceivedAverage.report(rcvd);
+            	}
+            }
+
         }
     }
 
@@ -179,6 +203,22 @@ public class RequestHandler implements Runnable {
 			return DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
 		else
 			throw new IllegalStateException("Unknown key block type: "+block.getClass());
+	}
+
+	private int sentBytes;
+	private int receivedBytes;
+	private final Object bytesSync = new Object();
+	
+	public void sentBytes(int x) {
+		synchronized(bytesSync) {
+			sentBytes += x;
+		}
+	}
+
+	public void receivedBytes(int x) {
+		synchronized(bytesSync) {
+			receivedBytes += x;
+		}
 	}
 
 }

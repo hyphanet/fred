@@ -188,6 +188,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     static final int GENERATED_REJECTED_OVERLOAD = 5;
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
+    /** Receive failed. Not used internally; only used by CHKInsertHandler. */
+    static final int RECEIVE_FAILED = 7;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -552,15 +554,6 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
        			allTransfersCompleted = true;
         	}
         	notifyAll();
-        }
-        
-        if((code != TIMED_OUT) && (code != GENERATED_REJECTED_OVERLOAD) && (code != INTERNAL_ERROR)
-        		&& (code != ROUTE_REALLY_NOT_FOUND)) {
-        	Logger.minor(this, "CHK insert cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+code+")");
-        	(source == null ? node.localChkInsertBytesSentAverage : node.remoteChkInsertBytesSentAverage)
-        			.report(getTotalSentBytes());
-        	(source == null ? node.localChkInsertBytesReceivedAverage : node.remoteChkInsertBytesReceivedAverage)
-        			.report(getTotalReceivedBytes());
         }
         
         Logger.minor(this, "Returning from finish()");

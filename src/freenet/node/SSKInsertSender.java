@@ -451,15 +451,6 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             notifyAll();
         }
 
-        if((code != TIMED_OUT) && (code != GENERATED_REJECTED_OVERLOAD) && (code != INTERNAL_ERROR)
-        		&& (code != ROUTE_REALLY_NOT_FOUND)) {
-        	Logger.minor(this, "SSK insert cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+code+")");
-        	(source == null ? node.localChkInsertBytesSentAverage : node.remoteChkInsertBytesSentAverage)
-        			.report(getTotalSentBytes());
-        	(source == null ? node.localChkInsertBytesReceivedAverage : node.remoteChkInsertBytesReceivedAverage)
-        			.report(getTotalReceivedBytes());
-        }
-        
         Logger.minor(this, "Set status code: "+getStatusString());
         // Nothing to wait for, no downstream transfers, just exit.
     }

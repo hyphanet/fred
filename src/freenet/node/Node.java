@@ -1585,23 +1585,24 @@ public class Node {
 		
 		// Select the request scheduler
 		
-		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
-		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+		// Guesstimates. Hopefully well over the reality.
+		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE);
+		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE);
 		localChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE);
 		localSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE);
 		localChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE);
 		localSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE);
-		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
-		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024, 180000, 0.0, Long.MAX_VALUE);
+		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE);
 
-		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
-		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
-		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE);
-		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE);
-		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE);
-		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE);
-		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
-		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(0.0, 180000, 0.0, Long.MAX_VALUE);
+		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Long.MAX_VALUE);
+		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Long.MAX_VALUE);
+		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, Long.MAX_VALUE);
+		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Long.MAX_VALUE);
+		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Long.MAX_VALUE);
+		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, Long.MAX_VALUE);
+		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Long.MAX_VALUE);
+		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Long.MAX_VALUE);
 
 		// FIXME make all the below arbitrary constants configurable!
 		
@@ -1882,6 +1883,12 @@ public class Node {
 			if(status == RequestSender.NOT_FINISHED) 
 				continue;
 			
+	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
+            	Logger.minor(this, "CHK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
+            	localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
+            	localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+	        }
+			
 			if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 				if(!rejectedOverload) {
@@ -1970,6 +1977,12 @@ public class Node {
 			
 			if(status == RequestSender.NOT_FINISHED) 
 				continue;
+
+	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
+            	Logger.minor(this, "SSK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
+            	localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
+            	localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
+	        }
 			
 			if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
@@ -2106,11 +2119,20 @@ public class Node {
 			}
 		}
 		
-		if(is.getStatus() == CHKInsertSender.SUCCESS) {
+		int status = is.getStatus();
+        if(status != CHKInsertSender.TIMED_OUT && status != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && status != CHKInsertSender.INTERNAL_ERROR
+        		&& status != CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
+        	int sent = is.getTotalSentBytes();
+        	int received = is.getTotalReceivedBytes();
+        	Logger.minor(this, "Local CHK insert cost "+sent+"/"+received+" bytes ("+status+")");
+        	localChkInsertBytesSentAverage.report(sent);
+        	localChkInsertBytesReceivedAverage.report(received);
+        }
+        
+		if(status == CHKInsertSender.SUCCESS) {
 			Logger.normal(this, "Succeeded inserting "+block);
 			return;
 		} else {
-			int status = is.getStatus();
 			String msg = "Failed inserting "+block+" : "+is.getStatusString();
 			if(status == CHKInsertSender.ROUTE_NOT_FOUND)
 				msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
@@ -2203,6 +2225,17 @@ public class Node {
 			}
 		}
 
+		int status = is.getStatus();
+		
+        if(status != CHKInsertSender.TIMED_OUT && status != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && status != CHKInsertSender.INTERNAL_ERROR
+        		&& status != CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
+        	int sent = is.getTotalSentBytes();
+        	int received = is.getTotalReceivedBytes();
+        	Logger.minor(this, "Local SSK insert cost "+sent+"/"+received+" bytes ("+status+")");
+        	localSskInsertBytesSentAverage.report(sent);
+        	localSskInsertBytesReceivedAverage.report(received);
+        }
+        
 		if(is.hasCollided()) {
 			// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
 			try {
@@ -2215,11 +2248,10 @@ public class Node {
 			throw new LowLevelPutException(LowLevelPutException.COLLISION);
 		}
 		
-		if(is.getStatus() == SSKInsertSender.SUCCESS) {
+		if(status == SSKInsertSender.SUCCESS) {
 			Logger.normal(this, "Succeeded inserting "+block);
 			return;
 		} else {
-			int status = is.getStatus();
 			String msg = "Failed inserting "+block+" : "+is.getStatusString();
 			if(status == CHKInsertSender.ROUTE_NOT_FOUND)
 				msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
@@ -2266,13 +2298,16 @@ public class Node {
 		double expected = 
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
 					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
-		int e = (int)Math.max(expected, 0);
-		if(!requestOutputThrottle.instantGrab(e)) return "Insufficient output bandwidth";
+		int expectedSent = (int)Math.max(expected, 0);
+		if(!requestOutputThrottle.instantGrab(expectedSent)) return "Insufficient output bandwidth";
 		expected = 
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
 					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
-		e = (int)Math.max(expected, 0);
-		if(!requestInputThrottle.instantGrab(e)) return "Insufficient input bandwidth";
+		int expectedReceived = (int)Math.max(expected, 0);
+		if(!requestInputThrottle.instantGrab(expectedReceived)) {
+			requestOutputThrottle.recycle(expectedSent);
+			return "Insufficient input bandwidth";
+		}
 
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.

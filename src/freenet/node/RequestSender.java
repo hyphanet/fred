@@ -499,22 +499,6 @@ public final class RequestSender implements Runnable, ByteCounter {
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;
         
-        if((status != TIMED_OUT) && (status != GENERATED_REJECTED_OVERLOAD) && (status != INTERNAL_ERROR)) {
-        	if(key instanceof NodeSSK) {
-            	Logger.minor(this, "SSK fetch cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+status+")");
-            	(source == null ? node.localSskFetchBytesSentAverage : node.remoteSskFetchBytesSentAverage)
-            			.report(getTotalSentBytes());
-            	(source == null ? node.localSskFetchBytesReceivedAverage : node.remoteSskFetchBytesReceivedAverage)
-            			.report(getTotalReceivedBytes());
-        	} else {
-            	Logger.minor(this, "CHK fetch cost "+getTotalSentBytes()+"/"+getTotalReceivedBytes()+" bytes ("+status+")");
-            	(source == null ? node.localChkFetchBytesSentAverage : node.remoteChkFetchBytesSentAverage)
-            		.report(getTotalSentBytes());
-            	(source == null ? node.localChkFetchBytesReceivedAverage : node.remoteChkFetchBytesReceivedAverage)
-        			.report(getTotalReceivedBytes());
-        	}
-        }
-
         synchronized(this) {
             notifyAll();
         }

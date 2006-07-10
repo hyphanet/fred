@@ -20,7 +20,7 @@ import freenet.support.ShortBuffer;
  * Handles an incoming SSK insert.
  * SSKs need their own insert/request classes, see comments in SSKInsertSender.
  */
-public class SSKInsertHandler implements Runnable {
+public class SSKInsertHandler implements Runnable, ByteCounter {
 
     static final int PUBKEY_TIMEOUT = 10000;
     
@@ -85,7 +85,7 @@ public class SSKInsertHandler implements Runnable {
         Message accepted = DMT.createFNPSSKAccepted(uid, pubKey == null);
         
         try {
-			source.send(accepted, null);
+			source.send(accepted, this);
 		} catch (NotConnectedException e1) {
 			Logger.minor(this, "Lost connection to source");
 			return;
@@ -98,7 +98,7 @@ public class SSKInsertHandler implements Runnable {
 			MessageFilter mfPK = MessageFilter.create().setType(DMT.FNPSSKPubKey).setField(DMT.UID, uid).setSource(source).setTimeout(PUBKEY_TIMEOUT);
 			
 			try {
-				Message pk = node.usm.waitFor(mfPK, null);
+				Message pk = node.usm.waitFor(mfPK, this);
 				if(pk == null) {
 					Logger.normal(this, "Failed to receive FNPSSKPubKey for "+uid);
 					return;
@@ -109,7 +109,7 @@ public class SSKInsertHandler implements Runnable {
 					Logger.minor(this, "Got pubkey on "+uid+" : "+pubKey);
 					Message confirm = DMT.createFNPSSKPubKeyAccepted(uid);
 					try {
-						source.sendAsync(confirm, null, 0, null);
+						source.sendAsync(confirm, null, 0, this);
 					} catch (NotConnectedException e) {
 						Logger.minor(this, "Lost connection to source on "+uid);
 						return;
@@ -118,7 +118,7 @@ public class SSKInsertHandler implements Runnable {
 					Logger.error(this, "Invalid pubkey from "+source+" on "+uid);
 					Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
 					try {
-						source.send(msg, null);
+						source.send(msg, this);
 					} catch (NotConnectedException ee) {
 						// Ignore
 					}
@@ -137,7 +137,7 @@ public class SSKInsertHandler implements Runnable {
 			Logger.error(this, "Invalid SSK from "+source, e1);
 			Message msg = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_SSK_ERROR);
 			try {
-				source.send(msg, null);
+				source.send(msg, this);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
@@ -149,7 +149,7 @@ public class SSKInsertHandler implements Runnable {
 		if((storedBlock != null) && !storedBlock.equals(block)) {
 			Message msg = DMT.createFNPSSKDataFound(uid, storedBlock.getRawHeaders(), storedBlock.getRawData());
 			try {
-				source.send(msg, null);
+				source.send(msg, this);
 			} catch (NotConnectedException e) {
 				Logger.minor(this, "Lost connection to source on "+uid);
 			}
@@ -162,12 +162,12 @@ public class SSKInsertHandler implements Runnable {
         	Message msg = DMT.createFNPInsertReply(uid);
         	sentSuccess = true;
         	try {
-				source.send(msg, null);
+				source.send(msg, this);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
 			canCommit = true;
-            finish();
+            finish(SSKInsertSender.SUCCESS);
             return;
         }
         
@@ -191,7 +191,7 @@ public class SSKInsertHandler implements Runnable {
             	// Forward it
             	Message m = DMT.createFNPRejectedOverload(uid, false);
             	try {
-					source.send(m, null);
+					source.send(m, this);
 				} catch (NotConnectedException e) {
 					Logger.minor(this, "Lost connection to source");
 					return;
@@ -210,7 +210,7 @@ public class SSKInsertHandler implements Runnable {
 				}
             	Message msg = DMT.createFNPSSKDataFound(uid, headers, data);
             	try {
-            		source.send(msg, null);
+            		source.send(msg, this);
             	} catch (NotConnectedException e) {
             		Logger.minor(this, "Lost connection to source");
             		return;
@@ -231,7 +231,7 @@ public class SSKInsertHandler implements Runnable {
             		(status == SSKInsertSender.INTERNAL_ERROR)) {
                 Message msg = DMT.createFNPRejectedOverload(uid, true);
                 try {
-					source.send(msg, null);
+					source.send(msg, this);
 				} catch (NotConnectedException e) {
 					Logger.minor(this, "Lost connection to source");
 					return;
@@ -240,7 +240,7 @@ public class SSKInsertHandler implements Runnable {
                 if((status == SSKInsertSender.TIMED_OUT) ||
                 		(status == SSKInsertSender.GENERATED_REJECTED_OVERLOAD))
                 	canCommit = true;
-                finish();
+                finish(status);
                 return;
             }
             
@@ -253,7 +253,7 @@ public class SSKInsertHandler implements Runnable {
 					return;
 				}
                 canCommit = true;
-                finish();
+                finish(status);
                 return;
             }
             
@@ -267,7 +267,7 @@ public class SSKInsertHandler implements Runnable {
 					return;
 				}
                 canCommit = true;
-                finish();
+                finish(status);
                 return;
             }
             
@@ -279,7 +279,7 @@ public class SSKInsertHandler implements Runnable {
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
-            finish();
+            finish(status);
             return;
         }
     }
@@ -288,7 +288,7 @@ public class SSKInsertHandler implements Runnable {
      * If canCommit, and we have received all the data, and it
      * verifies, then commit it.
      */
-    private void finish() {
+    private void finish(int code) {
     	Logger.minor(this, "Finishing");
     	
     	if(canCommit) {
@@ -298,6 +298,44 @@ public class SSKInsertHandler implements Runnable {
 				Logger.normal(this, "Collision on "+this);
 			}
     	}
+    	
+        if(code != SSKInsertSender.TIMED_OUT && code != SSKInsertSender.GENERATED_REJECTED_OVERLOAD &&
+        		code != SSKInsertSender.INTERNAL_ERROR && code != SSKInsertSender.ROUTE_REALLY_NOT_FOUND) {
+        	int totalSent = getTotalSentBytes();
+        	int totalReceived = getTotalReceivedBytes();
+        	if(sender != null) {
+        		totalSent += sender.getTotalSentBytes();
+        		totalReceived += sender.getTotalReceivedBytes();
+        	}
+        	Logger.minor(this, "Remote SSK insert cost "+totalSent+"/"+totalReceived+" bytes ("+code+")");
+        	node.remoteSskInsertBytesSentAverage.report(totalSent);
+        	node.remoteSskInsertBytesReceivedAverage.report(totalReceived);
+        }
+
     }
+
+    private final Object totalBytesSync = new Object();
+    private int totalBytesSent;
+    private int totalBytesReceived;
+    
+	public void sentBytes(int x) {
+		synchronized(totalBytesSync) {
+			totalBytesSent += x;
+		}
+	}
+
+	public void receivedBytes(int x) {
+		synchronized(totalBytesSync) {
+			totalBytesReceived += x;
+		}
+	}
+	
+	public int getTotalSentBytes() {
+		return totalBytesSent;
+	}
+	
+	public int getTotalReceivedBytes() {
+		return totalBytesReceived;
+	}
     
 }
