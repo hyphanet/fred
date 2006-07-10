@@ -24,11 +24,13 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.Vector;
 
 import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Logger;
@@ -156,6 +158,7 @@ public class NetworkInterface {
 	 *             if the timeout has expired waiting for a connection
 	 */
 	public Socket accept() throws SocketTimeoutException {
+		Vector tempThreads = new Vector();
 		synchronized (syncObject) {
 			if (!started) {
 				started = true;
@@ -163,9 +166,14 @@ public class NetworkInterface {
 				while (acceptors.hasNext()) {
 					Thread t = new Thread((Acceptor) acceptors.next(), "Network Interface Acceptor");
 					t.setDaemon(true);
-					t.start();
+					tempThreads.add(t);
 				}
 			}
+		}
+		for(Enumeration e = tempThreads.elements(); e.hasMoreElements(); ) {
+			((Thread) e.nextElement()).start();
+		}
+		synchronized (syncObject) {
 			while (acceptedSockets.size() == 0) {
 				try {
 					syncObject.wait(timeout);
