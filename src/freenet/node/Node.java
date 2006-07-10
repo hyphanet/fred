@@ -278,7 +278,9 @@ public class Node {
 
 		public void onFailure(InserterException e, BaseClientPutter state) {
 			Logger.minor(this, "ARK insert failed: "+e);
-			lastInsertedPeers = null;
+			synchronized(this) {
+				lastInsertedPeers = null;
+			}
 			// :(
 			// Better try again
 			try {
@@ -2254,9 +2256,7 @@ public class Node {
 		+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
 	
     /* return reject reason as string if should reject, otherwise return null */
-	public synchronized String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
-		long now = System.currentTimeMillis();
-
+	public synchronized String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, long now) {
 		dumpByteCostAverages();
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
@@ -2277,11 +2277,11 @@ public class Node {
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
 		
-		if(throttledPacketSendAverage.lastReportTime() < System.currentTimeMillis() - 5000) {
+		if(throttledPacketSendAverage.lastReportTime() < System.currentTimeMillis() - 5000) {  // if last report more than 5 seconds ago
 			outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
 			outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
 			long after = System.currentTimeMillis();
-			throttledPacketSendAverage.report(after - now);
+			throttledPacketSendAverage.report(after - now);  // **FIXME** shouldn't this be (after - lastReportTime())?  Otherwise, we measure how long it's been since we started executing this shouldRejectRequest method
 			now = after;
 			bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		}

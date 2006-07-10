@@ -161,10 +161,10 @@ public class ARKFetcher implements ClientCallback {
 		try {
 			fs = new SimpleFieldSet(ref, true);
 			Logger.minor(this, "Got ARK for "+peer.getPeer());
-			peer.gotARK(fs, startedEdition);
+			peer.gotARK(fs, getStartedEdition());
 		} catch (IOException e) {
 			// Corrupt ref.
-			Logger.error(this, "Corrupt ARK reference? Fetched "+fetchingURI+" got while parsing: "+e+" from:\n"+ref, e);
+			Logger.error(this, "Corrupt ARK reference? Fetched "+getFetchingURI()+" got while parsing: "+e+" from:\n"+ref, e);
 		}
 	}
 
@@ -191,12 +191,12 @@ public class ARKFetcher implements ClientCallback {
 			}
 		}
 		if(e.newURI != null) {
-			Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", "+fetchingURI+" gave redirect to "+e.newURI);
+			Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", "+getFetchingURI()+" gave redirect to "+e.newURI);
 			peer.updateARK(e.newURI);
 			queueWithBackoff();
 			return;
 		}
-		Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", now backing off ARK fetches for "+(backoff / 1000)+" seconds");
+		Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", now backing off ARK fetches for "+(getBackoff() / 1000)+" seconds");
 		// We may be on the PacketSender thread.
 		// FIXME should this be exponential backoff?
 		queueWithBackoff();
@@ -217,7 +217,7 @@ public class ARKFetcher implements ClientCallback {
 		Logger.error(this, "Impossible reached in ARKFetcher.onGeneratredURI(FreenetURI,BaseClientPutter) for peer "+peer.getPeer(), new Exception("error"));
 	}
 
-	public boolean isFetching() {
+	public synchronized boolean isFetching() {
 		return isFetching;
 	}
 	
@@ -233,6 +233,18 @@ public class ARKFetcher implements ClientCallback {
 	 * Queue a call to our queue method on the PacketSender timed job queue to be run after our ARK fetch backoff expires
 	 */
 	private void queueWithBackoff() {
-		node.ps.queueTimedJob(new Runnable() { public void run() { queue(); }}, backoff);  // Runnable rather than FastRunnable so we don't put it on the PacketSender thread
+		node.ps.queueTimedJob(new Runnable() { public void run() { queue(); }}, getBackoff());  // Runnable rather than FastRunnable so we don't put it on the PacketSender thread
+	}
+
+	private synchronized int getBackoff() {
+		return backoff;
+	}
+
+	private synchronized FreenetURI getFetchingURI() {
+		return fetchingURI;
+	}
+
+	private synchronized long getStartedEdition() {
+		return startedEdition;
 	}
 }
