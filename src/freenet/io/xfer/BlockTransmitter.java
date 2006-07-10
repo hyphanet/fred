@@ -46,13 +46,13 @@ public class BlockTransmitter {
 	
 	UdpSocketManager _usm;
 	PeerContext _destination;
-	boolean _sendComplete = false;
+	boolean _sendComplete;
 	long _uid;
 	PartiallyReceivedBlock _prb;
 	LinkedList _unsent;
 	Thread _receiverThread, _senderThread;
 	BitArray _sentPackets;
-	boolean failedByOverload = false;
+	boolean failedByOverload;
 	final PacketThrottle throttle;
 	long timeAllSent = -1;
 	final DoubleTokenBucket _masterThrottle;

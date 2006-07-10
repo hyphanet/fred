@@ -22,7 +22,7 @@ public class UpdateRevocationURICallback implements StringCallback{
 	}
 
 	public void set(String val) {
-		if(val.equals(get())) return;
+		if(val!=null && val.equals(get())) return;
 		// Good idea to prevent it ? 
 		//
 		// Maybe it NEEDS to be implemented

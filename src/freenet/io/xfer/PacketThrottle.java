@@ -34,7 +34,7 @@ public class PacketThrottle {
 	public static final long DEFAULT_DELAY = 200;
 	private static Map _throttles = new HashMap();
 	private final Peer _peer;
-	private long _roundTripTime = 500, _totalPackets = 0, _droppedPackets = 0;
+	private long _roundTripTime = 500, _totalPackets, _droppedPackets;
 	private float _simulatedWindowSize = 2;
 	private final int PACKET_SIZE;
 
@@ -88,7 +88,7 @@ public class PacketThrottle {
 		return Math.max(MIN_DELAY, (long) (_roundTripTime / _simulatedWindowSize));
 	}
 
-	public String toString() {
+	public synchronized String toString() {
 		return Double.toString((((PACKET_SIZE * 1000.0 / getDelay())) / 1024)) + " k/sec, (w: "
 				+ _simulatedWindowSize + ", r:" + _roundTripTime + ", d:"
 				+ (((float) _droppedPackets / (float) _totalPackets)) + ") for "+_peer;

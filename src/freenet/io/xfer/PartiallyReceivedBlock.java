@@ -33,9 +33,9 @@ public class PartiallyReceivedBlock {
 
 	byte[] _data;
 	boolean[] _received;
-	int _receivedCount = 0;
+	int _receivedCount;
 	int _packets, _packetSize;
-	boolean _aborted = false;
+	boolean _aborted;
 	int _abortReason;
 	String _abortDescription;
 	LinkedList _packetReceivedListeners = new LinkedList();
@@ -124,14 +124,14 @@ public class PartiallyReceivedBlock {
 		}
 	}
 
-	public boolean allReceived() throws AbortedException {
+	public synchronized boolean allReceived() throws AbortedException {
 		if (_aborted) {
 			throw new AbortedException("PRB is aborted");
 		}
 		return _receivedCount == _packets;
 	}
 	
-	public byte[] getBlock() throws AbortedException {
+	public synchronized byte[] getBlock() throws AbortedException {
 		if (_aborted) {
 			throw new AbortedException("PRB is aborted");
 		}
@@ -141,7 +141,7 @@ public class PartiallyReceivedBlock {
 		return _data;
 	}
 	
-	public Buffer getPacket(int x) throws AbortedException {
+	public synchronized Buffer getPacket(int x) throws AbortedException {
 		if (_aborted) {
 			throw new AbortedException("PRB is aborted");
 		}

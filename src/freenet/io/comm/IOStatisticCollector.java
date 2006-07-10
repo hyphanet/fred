@@ -8,12 +8,12 @@ public class IOStatisticCollector {
 	public static final int STATISTICS_ENTRIES = 10;
 	public static final int STATISTICS_DURATION_S = 30;
 	public static final int STATISTICS_DURATION = 1000*STATISTICS_DURATION_S;
-	private long lastrotate=0;
+	private long lastrotate;
 	
-	private static IOStatisticCollector _currentSC = null;
-	private long totalbytesin = 0;
-	private long totalbytesout = 0;
-	private HashMap targets = null;
+	private static IOStatisticCollector _currentSC;
+	private long totalbytesin;
+	private long totalbytesout;
+	private HashMap targets;
 	
 	private IOStatisticCollector() {
 		// Only I should be able to create myself

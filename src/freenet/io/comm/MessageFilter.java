@@ -34,14 +34,14 @@ public class MessageFilter {
     public static final String VERSION = "$Id: MessageFilter.java,v 1.7 2005/08/25 17:28:19 amphibian Exp $";
 
     private static final int DEFAULT_TIMEOUT = 10000;
-    private boolean _matched = false;
+    private boolean _matched;
     private PeerContext _droppedConnection;
 	private MessageType _type;
     private HashMap _fields = new HashMap();
     PeerContext _source;
     private long _timeout;
     private int _initialTimeout;
-    private MessageFilter _or = null;
+    private MessageFilter _or;
     private Message _message;
     private boolean _matchesDroppedConnections;
 

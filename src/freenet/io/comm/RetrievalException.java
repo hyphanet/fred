@@ -41,7 +41,7 @@ public class RetrievalException extends Exception {
     public static final int NO_DATAINSERT = 8;
 	
 	int _reason;
-	String _cause = null;
+	String _cause;
 
 	public RetrievalException(int reason) {
 		_reason = reason;

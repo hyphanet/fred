@@ -33,7 +33,7 @@ import freenet.transport.IPUtil;
  */
 public class Peer implements WritableToDataOutputStream {
 
-    public class LocalAddressException extends Exception {
+    public static class LocalAddressException extends Exception {
     	private static final long serialVersionUID = -1;
 	}
 
