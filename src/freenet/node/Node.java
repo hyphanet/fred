@@ -729,20 +729,22 @@ public class Node {
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
 		if((udp != null) && (udp.length > 0)) {
-			// Just keep the first one.
-			Peer myOldPeer;
-			try {
-				myOldPeer = new Peer(udp[0], false);
-			} catch (PeerParseException e) {
-				IOException e1 = new IOException();
-				e1.initCause(e);
-				throw e1;
+			for(int i=0;i<udp.length;i++) {
+				// Just keep the first one with the correct port number.
+				Peer p;
+				try {
+					p = new Peer(udp[i], false);
+				} catch (PeerParseException e) {
+					IOException e1 = new IOException();
+					e1.initCause(e);
+					throw e1;
+				}
+				if(p.getPort() == portNumber) {
+					// DNSRequester doesn't deal with our own node
+					oldIPAddress = p.getFreenetAddress();
+					break;
+				}
 			}
-			if(myOldPeer.getPort() != portNumber)
-				throw new IllegalArgumentException("Wrong port number "+
-						myOldPeer.getPort()+" should be "+portNumber);
-			// DNSRequester doesn't deal with our own node
-			oldIPAddress = myOldPeer.getFreenetAddress();
 		}
 		String identity = fs.get("identity");
 		if(identity == null)
