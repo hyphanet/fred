@@ -51,7 +51,7 @@ public class FCPConnectionHandler {
 			server.unregisterClient(client);
 	}
 	
-	public boolean isClosed() {
+	public synchronized boolean isClosed() {
 		return isClosed;
 	}
 	

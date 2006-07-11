@@ -115,13 +115,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		trySendGeneratedURIMessage(null);
 	}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {
-		// ignore
-	}
+	public void onSuccess(FetchResult result, ClientGetter state){}
 
-	public void onFailure(FetchException e, ClientGetter state) {
-		// ignore
-	}
+	public void onFailure(FetchException e, ClientGetter state){}
 
 	public void receive(ClientEvent ce) {
 		if(finished) return;
@@ -149,11 +145,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	private void trySendFinalMessage(FCPConnectionOutputHandler handler) {
 		
 		FCPMessage msg;
-		
-		if(succeeded) {
-			msg = new PutSuccessfulMessage(identifier, generatedURI);
-		} else {
-			msg = putFailedMessage;
+		synchronized (this) {
+			if(succeeded) {
+				msg = new PutSuccessfulMessage(identifier, generatedURI);
+			} else {
+				msg = putFailedMessage;
+			}
 		}
 		
 		if(msg == null) {
@@ -166,7 +163,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 	}
 
-	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler) {
+	private synchronized void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler) {
 		FCPMessage msg = new URIGeneratedMessage(generatedURI, identifier);
 		if(handler != null)
 			handler.queue(msg);
@@ -174,7 +171,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			client.queueClientRequestMessage(msg, 0);
 	}
 
-	private void trySendProgressMessage(FCPMessage msg, int verbosity, FCPConnectionOutputHandler handler) {
+	private synchronized void trySendProgressMessage(FCPMessage msg, int verbosity, FCPConnectionOutputHandler handler) {
 		if(persistenceType != PERSIST_CONNECTION)
 			progressMessage = msg;
 		if(handler != null)
@@ -192,17 +189,20 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			FCPMessage msg = persistentTagMessage();
 			handler.queue(msg);
 		}
-		if(generatedURI != null)
-			trySendGeneratedURIMessage(handler);
-		if(progressMessage != null)
-			handler.queue(progressMessage);
-		if(finished)
-			trySendFinalMessage(handler);
+		
+		synchronized (this) {
+			if(generatedURI != null)
+				trySendGeneratedURIMessage(handler);
+			if(progressMessage != null)
+				handler.queue(progressMessage);
+			if(finished)
+				trySendFinalMessage(handler);
+		}
 	}
 
 	protected abstract FCPMessage persistentTagMessage();
 	
-	public SimpleFieldSet getFieldSet() {
+	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true); // we will need multi-level later...
 		fs.put("Type", getTypeName());
 		fs.put("URI", uri.toString(false));
@@ -228,7 +228,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	
 	protected abstract String getTypeName();
 
-	public double getSuccessFraction() {
+	public synchronized double getSuccessFraction() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFraction();
@@ -238,7 +238,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 
 	
-	public double getTotalBlocks() {
+	public synchronized double getTotalBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getTotalBlocks();
@@ -247,7 +247,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 	
-	public double getMinBlocks() {
+	public synchronized double getMinBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getMinBlocks();
@@ -256,7 +256,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 	
-	public double getFailedBlocks() {
+	public synchronized double getFailedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFailedBlocks();
@@ -265,7 +265,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 	
-	public double getFatalyFailedBlocks() {
+	public synchronized double getFatalyFailedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFatalyFailedBlocks();
@@ -274,7 +274,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 	
-	public double getFetchedBlocks() {
+	public synchronized double getFetchedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFetchedBlocks();
@@ -283,12 +283,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 	
-	public boolean isTotalFinalized() {
+	public synchronized boolean isTotalFinalized() {
 		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
 		else return ((SimpleProgressMessage)progressMessage).isTotalFinalized();
 	}
 	
-	public String getFailureReason() {
+	public synchronized String getFailureReason() {
 		if(putFailedMessage == null)
 			return null;
 		String s = putFailedMessage.shortCodeDescription;
