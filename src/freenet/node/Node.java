@@ -166,24 +166,25 @@ public class Node {
 			Logger.minor(this, "update()");
 			if(!checkIPUpdated()) return;
 			Logger.minor(this, "Inserting ARK because peers list changed");
-			synchronized (inserter) {
-				if(inserter != null) {
-					// Already inserting.
-					// Re-insert after finished.
-					synchronized(this) {
-						shouldInsert = true;
-					}
-					return;
+			
+			if(inserter != null) {
+				// Already inserting.
+				// Re-insert after finished.
+				synchronized(this) {
+					shouldInsert = true;
 				}
-				// Otherwise need to start an insert
-				if(!peers.anyConnectedPeers()) {
-					// Can't start an insert yet
-					synchronized (this) {
-						shouldInsert = true;
-					}
-					return;
-				}	
+
+				return;
 			}
+			// Otherwise need to start an insert
+			if(!peers.anyConnectedPeers()) {
+				// Can't start an insert yet
+				synchronized (this) {
+					shouldInsert = true;
+				}
+				return;
+			}	
+
 			startInserter();
 		}
 
@@ -232,17 +233,15 @@ public class Node {
 			
 			Logger.minor(this, "Inserting ARK: "+uri);
 			
-			synchronized (inserter) {
-				inserter = new ClientPutter(this, b, uri,
+
+			inserter = new ClientPutter(this, b, uri,
 						new ClientMetadata("text/plain") /* it won't quite fit in an SSK anyway */, 
 						Node.this.makeClient((short)0).getInserterContext(),
 						chkPutScheduler, sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this);
-			}
 			
 			try {
-				synchronized (inserter) {
-					inserter.start();	
-				}
+				
+				inserter.start();
 				
 				synchronized (this) {
 					if(fs.get("physical.udp") == null)
@@ -262,9 +261,7 @@ public class Node {
 					}
 				}
 			} catch (InserterException e) {
-				synchronized (inserter) {
-					onFailure(e, inserter);	
-				}
+				onFailure(e, inserter);	
 			}
 		}
 
@@ -278,7 +275,6 @@ public class Node {
 
 		public void onSuccess(BaseClientPutter state) {
 			Logger.minor(this, "ARK insert succeeded");
-			synchronized(inserter) {
 				inserter = null;
 				boolean myShouldInsert;
 				synchronized (this) {
@@ -291,7 +287,6 @@ public class Node {
 				synchronized (this){
 					shouldInsert = myShouldInsert;
 				}
-			}
 		}
 
 		public void onFailure(InserterException e, BaseClientPutter state) {
@@ -324,25 +319,24 @@ public class Node {
 
 		public void onConnectedPeer() {
 			if(!checkIPUpdated()) return;
-			synchronized(inserter) {
-				synchronized (this) {
-					if(!shouldInsert) return;
-				}
-				// Already inserting.
-				if(inserter != null) return; 	
-				
-				// Otherwise need to start an insert
-				if(!peers.anyConnectedPeers()) {
-					// Can't start an insert yet
-					synchronized (this) {
-						shouldInsert = true;	
-					}
-					return;
-				}
-				synchronized (this) {
-					shouldInsert = false;	
-				}
+			synchronized (this) {
+				if(!shouldInsert) return;
 			}
+			// Already inserting.
+			if(inserter != null) return; 	
+
+			// Otherwise need to start an insert
+			if(!peers.anyConnectedPeers()) {
+				// Can't start an insert yet
+				synchronized (this) {
+					shouldInsert = true;	
+				}
+				return;
+			}
+			synchronized (this) {
+				shouldInsert = false;	
+			}
+
 			startInserter();
 		}
 	
@@ -541,7 +535,7 @@ public class Node {
 	/** oldestNeverConnectedPeerAge update interval (milliseconds) */
 	private static final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
 	/** age of oldest never connected peer (milliseconds) */
-	private long oldestNeverConnectedPeerAge = 0;
+	private long oldestNeverConnectedPeerAge;
 	/** Next time to start a ready ARKFetcher */
 	private long nextReadyARKFetcherStartTime = -1;
 	/** Ready ARKFetcher start interval (milliseconds) */
@@ -551,15 +545,15 @@ public class Node {
 	/** PeerManagerUserAlert stats update interval (milliseconds) */
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 	/** first time bwlimitDelay was over PeerManagerUserAlert threshold */
-	private long firstBwlimitDelayTimeThresholdBreak = 0;
+	private long firstBwlimitDelayTimeThresholdBreak ;
 	/** first time nodeAveragePing was over PeerManagerUserAlert threshold */
-	private long firstNodeAveragePingTimeThresholdBreak = 0;
+	private long firstNodeAveragePingTimeThresholdBreak;
 	/** bwlimitDelay PeerManagerUserAlert should happen if true */
-	public boolean bwlimitDelayAlertRelevant = false;
+	public boolean bwlimitDelayAlertRelevant;
 	/** nodeAveragePing PeerManagerUserAlert should happen if true */
-	public boolean nodeAveragePingAlertRelevant = false;
+	public boolean nodeAveragePingAlertRelevant;
 	/** If true, include local addresses on noderefs */
-	public boolean includeLocalAddressesInNoderefs = false;
+	public boolean includeLocalAddressesInNoderefs;
 	
 	private final HashSet runningUIDs;
 	
@@ -591,7 +585,7 @@ public class Node {
 	public final DoubleTokenBucket outputThrottle;
 	final TokenBucket requestOutputThrottle;
 	final TokenBucket requestInputThrottle;
-	private boolean inputLimitDefault = false;
+	private boolean inputLimitDefault;
 	static short MAX_HTL = 10;
 	static final int EXIT_STORE_FILE_NOT_FOUND = 1;
 	static final int EXIT_STORE_IOEXCEPTION = 2;
@@ -706,7 +700,7 @@ public class Node {
 	private static NodeStarter nodeStarter;
 	
 	// The watchdog will be silenced until it's true
-	private boolean hasStarted = false;
+	private boolean hasStarted;
 	
 	// Debugging stuff
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
