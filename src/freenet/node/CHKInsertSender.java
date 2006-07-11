@@ -531,17 +531,16 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     private void finish(int code, PeerNode next) {
         Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
         setStatusTime = System.currentTimeMillis();
-        synchronized(this) {
+     
+        synchronized(this) {   
         	if(status != NOT_FINISHED)
-             	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
+        		throw new IllegalStateException("finish() called with "+code+" when was already "+status);
 
         	if((code == ROUTE_NOT_FOUND) && !sentRequest)
         		code = ROUTE_REALLY_NOT_FOUND;
-        	
-        	status = code;
-        
-        	notifyAll();
 
+            status = code;
+        	notifyAll();
         	Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         }
         // Now wait for transfers, or for downstream transfer notifications.
@@ -611,7 +610,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		Thread t;
 
 		if(cw == null)
-			cw = new CompletionWaiter();
+			synchronized (this) {
+				cw = new CompletionWaiter();
+			}
 		else
 			return;
 		t = new Thread(cw, "Completion waiter for "+uid);
@@ -636,20 +637,19 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			int timeout;
 			boolean noTimeLeft = false;
 
-			synchronized(this) {
-				long now = System.currentTimeMillis();
-				if((status == NOT_FINISHED) || (setStatusTime == -1)) {
-					// Wait 5 seconds, then try again
-					timeout = 5000;
-				} else {
-					// Completed, wait for everything
-					timeout = (int)Math.min(Integer.MAX_VALUE, (setStatusTime + TRANSFER_COMPLETION_TIMEOUT) - now);
-				}
-				if(timeout <= 0) {
-					noTimeLeft = true;
-					timeout = 1;
-				}
+			long now = System.currentTimeMillis();
+			if((status == NOT_FINISHED) || (setStatusTime == -1)) {
+				// Wait 5 seconds, then try again
+				timeout = 5000;
+			} else {
+				// Completed, wait for everything
+				timeout = (int)Math.min(Integer.MAX_VALUE, (setStatusTime + TRANSFER_COMPLETION_TIMEOUT) - now);
 			}
+			if(timeout <= 0) {
+				noTimeLeft = true;
+				timeout = 1;
+			}
+
 			
 			MessageFilter mf = null;
 			for(int i=0;i<waiters.length;i++) {
