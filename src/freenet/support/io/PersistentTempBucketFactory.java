@@ -25,9 +25,6 @@ public class PersistentTempBucketFactory implements BucketFactory {
 	/** Directory containing persistent temporary files */
 	private final File dir;
 	
-	/** Temp file prefix; anything not matching this prefix will be ignored */
-	private final String prefix;
-	
 	/** Original contents of directory */
 	private HashSet originalFiles;
 	
@@ -40,7 +37,6 @@ public class PersistentTempBucketFactory implements BucketFactory {
 	public PersistentTempBucketFactory(File dir, String prefix, RandomSource rand) throws IOException {
 		this.dir = dir;
 		this.rand = rand;
-		this.prefix = prefix;
 		this.fg = new FilenameGenerator(rand, false, dir, prefix);
 		if(!dir.exists()) {
 			dir.mkdir();

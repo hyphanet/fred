@@ -32,32 +32,18 @@ import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
-	private boolean debug = false;
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
-	private boolean allowSecurityErrors = false;
-	private boolean allowSecurityWarnings = false;
-	private boolean cssParanoidStringCheck = false;
-
-	private final static String possibleAnonCompromiseMsg =
-		"You have retrieved some content which is not recognised by FProxy, and so we "
-			+ "don't know what your web browser might do with it.  It could be harmless, "
-			+ "but it could make your web browser do something which would compromise your "
-			+ "anonymity.";
 	public void setParanoidStringCheck(boolean b) {
-		cssParanoidStringCheck = b;
 	}
 
 	public void setAllowSecurityWarnings(boolean value) {
-		allowSecurityWarnings = value;
 	}
 
 	public void setAllowSecurityErrors(boolean value) {
-		allowSecurityErrors = value;
 	}
 
 	public void setDebug(boolean debug) {
-		this.debug = debug;
 	}
 
 	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap otherParams, FilterCallback cb) throws DataFilterException, IOException {
@@ -413,7 +399,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if (!pc.killTag) {
 			t = t.sanitize(pc);
 			if (t != null) {
-				boolean deletedStyle = false;
 				if (pc.writeStyleScriptWithTag) {
 					pc.writeStyleScriptWithTag = false;
 					String style = pc.currentStyleScriptChunk;
@@ -1385,7 +1370,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
 			// Call parent so we swallow the scripting
-			Hashtable h = super.sanitizeHash(hn, p, pc);
+			super.sanitizeHash(hn, p, pc);
 			return null; // Lose the tags
 		}
 

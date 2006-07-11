@@ -42,7 +42,6 @@ class SingleFileInserter implements ClientPutState {
 	final boolean insertAsArchiveManifest;
 	/** If true, we are not the top level request, and should not
 	 * update our parent to point to us as current put-stage. */
-	private boolean cancelled;
 	private boolean reportMetadataOnly;
 	public final Object token;
 
@@ -396,7 +395,6 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	public void cancel() {
-		cancelled = true;
 	}
 
 	public void schedule() throws InserterException {

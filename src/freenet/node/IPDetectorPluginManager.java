@@ -246,8 +246,6 @@ public class IPDetectorPluginManager {
 						// No locally detected IP, only one or two connections.
 						// Have we had more relatively recently?
 						int count = 0;
-						long timeref = now;
-						if(firstTimeMaybeFakePeers > 0) timeref = firstTimeMaybeFakePeers;
 						for(int i=0;i<peers.length;i++) {
 							PeerNode p = peers[i];
 							if((!p.isConnected()) || (now - p.lastReceivedPacketTime() < 5*60*1000)) {

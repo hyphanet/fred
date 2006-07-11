@@ -15,8 +15,6 @@ public class NumberedRecentItems {
     private NumberedItem[] items;
     private int count;
     private Comparator myComparator;
-    private boolean wrapAround;
-    
     /**
      * Create a NumberedRecentItems list.
      * @param maxSize The maximum number of NumberedItems to keep.
@@ -27,7 +25,6 @@ public class NumberedRecentItems {
     public NumberedRecentItems(int maxSize, boolean wrap) {
         items = new NumberedItem[maxSize];
         count = 0;
-        wrapAround = wrap;
         myComparator = new NumberedItemComparator(wrap);
     }
 

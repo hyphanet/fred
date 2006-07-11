@@ -8,7 +8,6 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.xfer.BlockReceiver;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
@@ -37,12 +36,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
     private SSKInsertSender sender;
     private byte[] data;
     private byte[] headers;
-    private BlockReceiver br;
-    private Thread runThread;
-    private boolean sentSuccess;
     private boolean canCommit;
-    private boolean collided;
-
     SSKInsertHandler(Message req, long id, Node node, long startTime) {
         this.req = req;
         this.node = node;
@@ -79,8 +73,6 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
     }
 
     private void realRun() {
-        runThread = Thread.currentThread();
-        
         // Send Accepted
         Message accepted = DMT.createFNPSSKAccepted(uid, pubKey == null);
         
@@ -160,7 +152,6 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 		
         if(htl == 0) {
         	Message msg = DMT.createFNPInsertReply(uid);
-        	sentSuccess = true;
         	try {
 				source.send(msg, this);
 			} catch (NotConnectedException e) {
@@ -259,7 +250,6 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             
             if(status == SSKInsertSender.SUCCESS) {
             	Message msg = DMT.createFNPInsertReply(uid);
-            	sentSuccess = true;
             	try {
 					source.send(msg, null);
 				} catch (NotConnectedException e) {

@@ -32,44 +32,36 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		protected PutHandler(String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) throws InserterException {
 			super(SimpleManifestPutter.this.getPriorityClass(), SimpleManifestPutter.this.chkScheduler, SimpleManifestPutter.this.sskScheduler, SimpleManifestPutter.this.client);
-			this.name = name;
 			this.cm = cm;
 			this.data = data;
 			InsertBlock block = 
 				new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
 				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, false);
-			currentState = origSFI;
 			metadata = null;
 		}
 
 		protected PutHandler(String name, FreenetURI target, ClientMetadata cm) {
 			super(SimpleManifestPutter.this.getPriorityClass(), SimpleManifestPutter.this.chkScheduler, SimpleManifestPutter.this.sskScheduler, SimpleManifestPutter.this.client);
-			this.name = name;
 			this.cm = cm;
 			this.data = null;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, target, cm);
 			metadata = m;
 			origSFI = null;
-			currentState = null;
 		}
 		
 		protected PutHandler(String name, String targetInZip, ClientMetadata cm, Bucket data) {
 			super(SimpleManifestPutter.this.getPriorityClass(), SimpleManifestPutter.this.chkScheduler, SimpleManifestPutter.this.sskScheduler, SimpleManifestPutter.this.client);
-			this.name = name;
 			this.cm = cm;
 			this.data = data;
 			this.targetInZip = targetInZip;
 			Metadata m = new Metadata(Metadata.ZIP_INTERNAL_REDIRECT, targetInZip, cm);
 			metadata = m;
 			origSFI = null;
-			currentState = null;
 		}
 		
 		private SingleFileInserter origSFI;
-		private ClientPutState currentState;
 		private ClientMetadata cm;
-		private final String name;
 		private Metadata metadata;
 		private boolean finished;
 		private String targetInZip;
@@ -118,9 +110,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		public void onTransition(ClientPutState oldState, ClientPutState newState) {
 			if(oldState == this) {
-				// We do not need to have a hashtable of state -> PutHandler.
-				// Because we can just pull the parent off the state!
-				this.currentState = newState;
 			}
 		}
 

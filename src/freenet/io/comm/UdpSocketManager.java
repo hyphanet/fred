@@ -38,14 +38,12 @@ public class UdpSocketManager extends Thread {
 	/** _filters serves as lock for both */
 	private LinkedList _filters = new LinkedList();
 	private LinkedList _unclaimed = new LinkedList();
-	private int _unclaimedPos;
 	private int _dropProbability;
 	private LowLevelFilter lowLevelFilter;
 	/** RNG for debugging, used with _dropProbability.
 	 * NOT CRYPTO SAFE. DO NOT USE FOR THINGS THAT NEED CRYPTO SAFE RNG!
 	 */
 	private Random dropRandom;
-	private boolean _active;
 	private boolean _isDone;
 	private static UdpSocketManager _usm;
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
@@ -546,7 +544,6 @@ public class UdpSocketManager extends Thread {
 
     public void close(boolean exit) {
     	Logger.error(this, "Closing.", new Exception("error"));
-		_active = false;
 		synchronized (this) {
 			while (!_isDone) {
 				try {

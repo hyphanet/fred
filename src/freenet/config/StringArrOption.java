@@ -67,5 +67,9 @@ public class StringArrOption extends Option {
 			return null;
 		}
 	}
+
+	public String getDefaultValue() {
+		return defaultValue;
+	}
 	
 }

@@ -58,7 +58,6 @@ public final class SHA1 implements Digest {
     
     private int state[] = new int[5];
     private long count;
-    private boolean digestValid = false;
     private byte[] digestBits;
     private boolean NSA = true;
 
@@ -83,7 +82,6 @@ public final class SHA1 implements Digest {
      */
     public SHA1(boolean b) {
         count = 0;
-        digestValid = false;
         NSA = b;
         init();
     }
@@ -250,7 +248,6 @@ public final class SHA1 implements Digest {
         state[4] = 0xC3D2E1F0;
         count = 0;
         digestBits = new byte[20];
-        digestValid = false;
         blockIndex = 0;
     }
 
@@ -336,7 +333,6 @@ public final class SHA1 implements Digest {
             digestBits[i] = (byte)
                 ((state[i>>2] >>> ((3-(i & 3)) << 3) ) & 0xff);
         }
-        digestValid = true;
     }
 
     /**
@@ -394,8 +390,6 @@ public final class SHA1 implements Digest {
         for (int i = 0; i < count; i++) 
             sha1.update(data);
         long endSameUpdate = System.currentTimeMillis();
-        byte digested[] = sha1.digest();
-        long afterDigested = System.currentTimeMillis();
         long updateTime = endSameUpdate - startSameUpdate;
         long speed = 0;
         long eachTime = 0;
@@ -414,8 +408,6 @@ public final class SHA1 implements Digest {
         for (int i = 0; i < count; i++) 
             sha1.update(data2[i]);
         long endDifferentUpdate = System.currentTimeMillis();
-        digested = sha1.digest();
-        afterDigested = System.currentTimeMillis();
         updateTime = endDifferentUpdate - differentStartTime;
         speed = 0;
         eachTime = 0;
@@ -454,7 +446,7 @@ public final class SHA1 implements Digest {
      * perfoms a self-test - spits out the test vector outputs on System.out
      */
     public static void SHAselfTest(Digest s) {
-        int i, j;
+        int i;
         // This line may be safely deleted, its to make it easy to see
         // the output of the program.
         System.out.println("SHA-1 Test PROGRAM.");

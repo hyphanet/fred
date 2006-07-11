@@ -39,8 +39,6 @@ public class InsertHandler implements Runnable, ByteCounter {
     private byte[] headers;
     private BlockReceiver br;
     private Thread runThread;
-    private boolean sentSuccess;
-    
     PartiallyReceivedBlock prb;
     
     InsertHandler(Message req, long id, Node node, long startTime) {
@@ -144,7 +142,6 @@ public class InsertHandler implements Runnable, ByteCounter {
         if(htl == 0) {
             canCommit = true;
         	msg = DMT.createFNPInsertReply(uid);
-        	sentSuccess = true;
         	try {
 				source.send(msg, this);
 			} catch (NotConnectedException e) {
@@ -253,7 +250,6 @@ public class InsertHandler implements Runnable, ByteCounter {
             
             if(status == CHKInsertSender.SUCCESS) {
             	msg = DMT.createFNPInsertReply(uid);
-            	sentSuccess = true;
             	try {
 					source.send(msg, this);
 				} catch (NotConnectedException e) {

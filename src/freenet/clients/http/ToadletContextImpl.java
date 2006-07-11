@@ -28,7 +28,6 @@ import freenet.support.io.TooLongException;
  */
 public class ToadletContextImpl implements ToadletContext {
 	
-	private final Socket sock;
 	private final MultiValueTable headers;
 	private final OutputStream sockOutputStream;
 	private final PageMaker pagemaker;
@@ -40,7 +39,6 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean closed;
 	
 	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName, BucketFactory bf) throws IOException {
-		this.sock = sock;
 		this.headers = headers;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();

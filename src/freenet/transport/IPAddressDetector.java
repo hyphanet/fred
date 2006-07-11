@@ -205,7 +205,6 @@ public class IPAddressDetector implements Runnable {
 			Logger.debug(
 				this,
 				"onGetAddresses found " + v.size() + " potential addresses)");
-		boolean detectedInetAddress = false;
 		InetAddress addrDetected = null;
 		if (v.size() == 0) {
 			Logger.error(this, "No addresses found!");
@@ -229,7 +228,6 @@ public class IPAddressDetector implements Runnable {
 
 						addrDetected = i;
 						//Use the last detected valid IP as 'detected' IP
-						detectedInetAddress = true;
 						if ((preferedInetAddress != null)
 							&& addrDetected.equals(
 								preferedInetAddress)) { //Prefer the specified address if it is still available to us. Do not look for more ones
