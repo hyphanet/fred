@@ -2338,7 +2338,8 @@ public class Node {
 			outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
 			outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
 			long after = System.currentTimeMillis();
-			throttledPacketSendAverage.report(after - now);  // **FIXME** shouldn't this be (after - lastReportTime())?  Otherwise, we measure how long it's been since we started executing this shouldRejectRequest method
+			// Report time it takes to grab the bytes.
+			throttledPacketSendAverage.report(after - now);
 			now = after;
 			bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		}
