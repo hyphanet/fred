@@ -195,14 +195,22 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         return super.toString()+" for "+uid;
     }
     
-    public synchronized void run() {
-        short origHTL = htl;
-        node.addInsertSender(myKey, htl, this);
+    public void run() {
+        short origHTL;
+    	synchronized (this) {
+            origHTL = htl;			
+		}
+
+        node.addInsertSender(myKey, origHTL, this);
         try {
         	realRun();
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
-            if(status == NOT_FINISHED)
+            int myStatus;
+            synchronized (this) {
+				myStatus = status;
+			}
+            if(myStatus == NOT_FINISHED)
             	finish(INTERNAL_ERROR, null);
         } finally {
             node.completed(uid);
@@ -522,13 +530,11 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
     
     private void finish(int code, PeerNode next) {
         Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
-       
+        setStatusTime = System.currentTimeMillis();
         synchronized(this) {
-        	 if(status != NOT_FINISHED)
+        	if(status != NOT_FINISHED)
              	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
-         	
-        	setStatusTime = System.currentTimeMillis();
-        	
+
         	if((code == ROUTE_NOT_FOUND) && !sentRequest)
         		code = ROUTE_REALLY_NOT_FOUND;
         	
@@ -537,25 +543,26 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         	notifyAll();
 
         	Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
-        
-        	// Now wait for transfers, or for downstream transfer notifications.
-
-        	if(cw != null) {
-        		while(!allTransfersCompleted) {
-        			try {
-        				wait(10*1000);
-        			} catch (InterruptedException e) {
-        				// Try again
-        			}
-        		}
-        	} else {
-        		Logger.minor(this, "No completion waiter");
-        		// There weren't any transfers
-       			allTransfersCompleted = true;
-        	}
-        	notifyAll();
         }
-        
+        // Now wait for transfers, or for downstream transfer notifications.
+        if(cw != null) {
+        	while(!allTransfersCompleted) {
+        		try {
+        			synchronized (this) {
+            			wait(10*1000);
+					}
+        		} catch (InterruptedException e) {
+        			// Try again
+        		}
+        	}
+        } else {
+        	Logger.minor(this, "No completion waiter");
+        	// There weren't any transfers
+        	allTransfersCompleted = true;
+        }
+        synchronized (this) {
+            notifyAll();	
+		}
         Logger.minor(this, "Returning from finish()");
     }
 
@@ -602,13 +609,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	
 	private void makeCompletionWaiter() {
 		Thread t;
-		synchronized(this) {
-			if(cw == null)
-				cw = new CompletionWaiter();
-			else
-				return;
-			t = new Thread(cw, "Completion waiter for "+uid);
-		}
+
+		if(cw == null)
+			cw = new CompletionWaiter();
+		else
+			return;
+		t = new Thread(cw, "Completion waiter for "+uid);
+
 		t.setDaemon(true);
 		t.start();
 	}
@@ -814,7 +821,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		}
 	}
 
-	public synchronized boolean completed() {
+	public boolean completed() {
 		return allTransfersCompleted;
 	}
 
