@@ -66,7 +66,7 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 	}
 
 	public void schedule() {
-		Logger.minor(this, "Scheduling "+this);
+		Logger.minor(this, "Scheduling "+this+" for "+key);
 		if(key instanceof ClientCHK)
 			parent.chkScheduler.register(this);
 		else if(key instanceof ClientSSK)

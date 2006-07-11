@@ -710,7 +710,7 @@ public class Node {
 	
 	// Debugging stuff
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
-
+	
 	// various metrics
 	public RunningAverage missRoutingDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
 	public RunningAverage backedoffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);

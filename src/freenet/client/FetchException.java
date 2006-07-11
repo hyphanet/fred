@@ -196,6 +196,25 @@ public class FetchException extends Exception {
 		}
 	}
 	
+	public String toString() {
+		StringBuffer sb = new StringBuffer(200);
+		sb.append("FetchException:");
+		sb.append(getShortMessage(mode));
+		sb.append(":");
+		sb.append(newURI);
+		sb.append(":");
+		sb.append(expectedSize);
+		sb.append(":");
+		sb.append(expectedMimeType);
+		sb.append(":");
+		sb.append(finalizedSizeAndMimeType);
+		sb.append(":");
+		sb.append(errorCodes);
+		sb.append(":");
+		sb.append(extraMessage);
+		return sb.toString();
+	}
+	
 	public static String getMessage(int mode) {
 		switch(mode) {
 		case TOO_DEEP_ARCHIVE_RECURSION:

@@ -112,4 +112,7 @@ public class ClientSSK extends ClientKey {
 		return pubKey;
 	}
 
+	public String toString() {
+		return "ClientSSK:"+getURI().toString();
+	}
 }
