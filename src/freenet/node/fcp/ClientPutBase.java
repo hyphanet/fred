@@ -163,17 +163,22 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 	}
 
-	private synchronized void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler) {
-		FCPMessage msg = new URIGeneratedMessage(generatedURI, identifier);
+	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler) {
+		FCPMessage msg;
+		synchronized(this) {
+			msg = new URIGeneratedMessage(generatedURI, identifier);
+		}
 		if(handler != null)
 			handler.queue(msg);
 		else
 			client.queueClientRequestMessage(msg, 0);
 	}
 
-	private synchronized void trySendProgressMessage(FCPMessage msg, int verbosity, FCPConnectionOutputHandler handler) {
-		if(persistenceType != PERSIST_CONNECTION)
-			progressMessage = msg;
+	private void trySendProgressMessage(FCPMessage msg, int verbosity, FCPConnectionOutputHandler handler) {
+		synchronized(this) {
+			if(persistenceType != PERSIST_CONNECTION)
+				progressMessage = msg;
+		}
 		if(handler != null)
 			handler.queue(msg);
 		else
@@ -190,14 +195,20 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			handler.queue(msg);
 		}
 		
+		boolean generated = false;
+		FCPMessage msg = null;
+		boolean fin = false;
 		synchronized (this) {
-			if(generatedURI != null)
-				trySendGeneratedURIMessage(handler);
-			if(progressMessage != null)
-				handler.queue(progressMessage);
-			if(finished)
-				trySendFinalMessage(handler);
+			generated = generatedURI != null;
+			msg = progressMessage;
+			fin = finished;
 		}
+		if(generated)
+			trySendGeneratedURIMessage(handler);
+		if(msg != null)
+			handler.queue(msg);
+		if(fin)
+			trySendFinalMessage(handler);
 	}
 
 	protected abstract FCPMessage persistentTagMessage();
