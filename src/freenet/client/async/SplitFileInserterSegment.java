@@ -58,7 +58,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i, getCHKOnly, false, false, parent.token);
 			dataBlockInserters[i].schedule();
 		}
-		if(splitfileAlgo == null) {
+		if(splitfileAlgo != null) {
 			// Encode blocks
 			Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
 			t.setDaemon(true);

@@ -137,6 +137,7 @@ public class FCPConnectionHandler {
 	}
 
 	public void startClientPut(ClientPutMessage message) {
+		Logger.minor(this, "Starting insert ID=\""+message.identifier+"\"");
 		String id = message.identifier;
 		ClientPut cp = null;
 		boolean success;
@@ -164,6 +165,7 @@ public class FCPConnectionHandler {
 			outputHandler.queue(msg);
 			return;
 		} else {
+			Logger.minor(this, "Starting "+cp);
 			// Register before starting, because it may complete immediately, and if it does,
 			// we may end up with it not being removable because it wasn't registered!
 			if(cp.isPersistent()) {
