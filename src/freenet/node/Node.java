@@ -166,21 +166,25 @@ public class Node {
 			Logger.minor(this, "update()");
 			if(!checkIPUpdated()) return;
 			Logger.minor(this, "Inserting ARK because peers list changed");
-			synchronized(this) {
+			synchronized (inserter) {
 				if(inserter != null) {
 					// Already inserting.
 					// Re-insert after finished.
-					shouldInsert = true;
+					synchronized(this) {
+						shouldInsert = true;
+					}
 					return;
 				}
 				// Otherwise need to start an insert
 				if(!peers.anyConnectedPeers()) {
 					// Can't start an insert yet
-					shouldInsert = true;
+					synchronized (this) {
+						shouldInsert = true;
+					}
 					return;
-				}
-				startInserter();
+				}	
 			}
+			startInserter();
 		}
 
 		private boolean checkIPUpdated() {
@@ -228,14 +232,19 @@ public class Node {
 			
 			Logger.minor(this, "Inserting ARK: "+uri);
 			
-			synchronized (this) {
+			synchronized (inserter) {
 				inserter = new ClientPutter(this, b, uri,
 						new ClientMetadata("text/plain") /* it won't quite fit in an SSK anyway */, 
 						Node.this.makeClient((short)0).getInserterContext(),
 						chkPutScheduler, sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this);
-
-				try {
-					inserter.start();
+			}
+			
+			try {
+				synchronized (inserter) {
+					inserter.start();	
+				}
+				
+				synchronized (this) {
 					if(fs.get("physical.udp") == null)
 						lastInsertedPeers = null;
 					else {
@@ -251,8 +260,10 @@ public class Node {
 							Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
 						}
 					}
-				} catch (InserterException e) {
-					onFailure(e, inserter);
+				}
+			} catch (InserterException e) {
+				synchronized (inserter) {
+					onFailure(e, inserter);	
 				}
 			}
 		}
@@ -267,11 +278,18 @@ public class Node {
 
 		public void onSuccess(BaseClientPutter state) {
 			Logger.minor(this, "ARK insert succeeded");
-			synchronized(this) {
+			synchronized(inserter) {
 				inserter = null;
-				if(shouldInsert) {
-					shouldInsert = false;
+				boolean myShouldInsert;
+				synchronized (this) {
+					myShouldInsert = shouldInsert;
+				}
+				if(myShouldInsert) {
+					myShouldInsert = false;
 					startInserter();
+				}
+				synchronized (this){
+					shouldInsert = myShouldInsert;
 				}
 			}
 		}
@@ -288,9 +306,8 @@ public class Node {
 			} catch (InterruptedException e1) {
 				// Ignore
 			}
-			synchronized(this) {
-				startInserter();
-			}
+			
+			startInserter();
 		}
 
 		public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
@@ -307,21 +324,26 @@ public class Node {
 
 		public void onConnectedPeer() {
 			if(!checkIPUpdated()) return;
-			synchronized(this) {
-				if(!shouldInsert) return;
-				if(inserter != null) {
-					// Already inserting.
-					return;
+			synchronized(inserter) {
+				synchronized (this) {
+					if(!shouldInsert) return;
 				}
+				// Already inserting.
+				if(inserter != null) return; 	
+				
 				// Otherwise need to start an insert
 				if(!peers.anyConnectedPeers()) {
 					// Can't start an insert yet
-					shouldInsert = true;
+					synchronized (this) {
+						shouldInsert = true;	
+					}
 					return;
 				}
-				shouldInsert = false;
-				startInserter();
+				synchronized (this) {
+					shouldInsert = false;	
+				}
 			}
+			startInserter();
 		}
 	
 	}
