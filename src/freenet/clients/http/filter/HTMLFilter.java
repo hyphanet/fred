@@ -34,17 +34,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
-	public void setParanoidStringCheck(boolean b) {
-	}
-
-	public void setAllowSecurityWarnings(boolean value) {
-	}
-
-	public void setAllowSecurityErrors(boolean value) {
-	}
-
-	public void setDebug(boolean debug) {
-	}
 
 	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap otherParams, FilterCallback cb) throws DataFilterException, IOException {
 		Logger.minor(this, "readFilter(): charset="+charset);

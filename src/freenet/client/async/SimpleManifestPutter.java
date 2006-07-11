@@ -108,10 +108,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		}
 
-		public void onTransition(ClientPutState oldState, ClientPutState newState) {
-			if(oldState == this) {
-			}
-		}
+		public void onTransition(ClientPutState oldState, ClientPutState newState) {}
 
 		public void onMetadata(Metadata m, ClientPutState state) {
 			Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state,
