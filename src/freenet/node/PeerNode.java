@@ -113,7 +113,7 @@ public class PeerNode implements PeerContext {
      * handshake.
      */
     private boolean isConnected;
-    
+    private boolean isRoutable;
     /**
      * ARK fetcher.
      */
@@ -680,12 +680,15 @@ public class PeerNode implements PeerContext {
      * Note possible deadlocks! PeerManager calls this, we call
      * PeerManager in e.g. verified.
      */
-    public boolean isReallyConnected() {
-        return isConnected;
+    public boolean isRoutable() {
+        return isConnected() && isRoutingCompatible();
     }
     
+    public boolean isRoutingCompatible(){
+    	return isRoutable;
+    }
     public boolean isConnected(){
-    	return (isConnected) || (completedHandshake && (verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion));
+    	return isConnected;
     }
 
     /**
@@ -736,6 +739,7 @@ public class PeerNode implements PeerContext {
         synchronized(this) {
         	// Force renegotiation.
             isConnected = false;
+            isRoutable = false;
             completedHandshake = false;
             setPeerNodeStatus(now);
             // Prevent sending packets to the node until that happens.
@@ -1109,6 +1113,7 @@ public class PeerNode implements PeerContext {
         		Logger.error(this, "Failed to parse new noderef for "+this+": "+e1, e1);
         		// Treat as invalid version
         	}
+        	isRoutable = true;
         	if(reverseInvalidVersion()) {
         		try {
         			node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(lastGoodVersion));
@@ -1117,7 +1122,7 @@ public class PeerNode implements PeerContext {
         		}
         		Logger.normal(this, "Not connecting to "+this+" - reverse invalid version "+Version.getVersionString()+" for peer's lastGoodversion: "+lastGoodVersion);
         		verifiedIncompatibleNewerVersion = true;
-        		isConnected = false;
+        		isRoutable = false;
         		node.peers.disconnected(this);
         	} else {
         		verifiedIncompatibleNewerVersion = false;
@@ -1125,12 +1130,12 @@ public class PeerNode implements PeerContext {
         	if(invalidVersion()) {
         		Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
         		verifiedIncompatibleOlderVersion = true;
-        		isConnected = false;
+        		isRoutable = false;
         		node.peers.disconnected(this);
         	} else {
         		verifiedIncompatibleOlderVersion = false;
         	}
-        	
+        	isConnected = true;
         	setPeerNodeStatus(now);
         	KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
         	changedIP(replyTo);
@@ -1194,7 +1199,7 @@ public class PeerNode implements PeerContext {
             else return;
             if(unverifiedTracker != null) return;
         }
-        if(isReallyConnected())
+        if(isRoutable())
         	sendInitialMessages();
     }
     
@@ -1461,12 +1466,12 @@ public class PeerNode implements PeerContext {
 
     public String getStatus() {
     	String status;
-    	if(isConnected)
-    		status = new String("CONNECTED");
+    	if(isRoutable())
+    		status = "CONNECTED";
     	else if (isConnected())
-    		status = new String("INCOMPATIBLE");
+    		status = "INCOMPATIBLE";
     	else
-    		status = new String("DISCONNECTED");
+    		status = "DISCONNECTED";
         return 
         	status + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+routingBackoffLength+" ("+(Math.max(routingBackedOffUntil - System.currentTimeMillis(),0))+")";
     }
@@ -1490,7 +1495,7 @@ public class PeerNode implements PeerContext {
 	}
 	
 	public String getSimpleVersion(){
-		return (new Integer(Version.getArbitraryBuildNumber(version))).toString();
+		return String.valueOf(Version.getArbitraryBuildNumber(version));
 	}
 
     /**
@@ -1790,7 +1795,8 @@ public class PeerNode implements PeerContext {
 			pingAverage.report(now - startTime);
 			Logger.minor(this, "Reporting ping time to "+this+" : "+(now - startTime));
 		}
-		if(!isReallyConnected()){
+		
+		if(!shouldDisconnectNow()){
 				invalidate();
 				setPeerNodeStatus(now);
 		}
@@ -1983,7 +1989,7 @@ public class PeerNode implements PeerContext {
 
 	public synchronized void setPeerNodeStatus(long now) {
 		int oldPeerNodeStatus = peerNodeStatus;
-		if(isConnected) {
+		if(isRoutable()) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
 			if(now < routingBackedOffUntil) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
@@ -2002,9 +2008,9 @@ public class PeerNode implements PeerContext {
 			}
 		} else if(isDisabled) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_DISABLED;
-		} else if(completedHandshake && verifiedIncompatibleNewerVersion) {
+		} else if(isConnected && verifiedIncompatibleNewerVersion) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_NEW;
-		} else if(completedHandshake && verifiedIncompatibleOlderVersion) {
+		} else if(isConnected && verifiedIncompatibleOlderVersion) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_OLD;
 		} else if(neverConnected) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_NEVER_CONNECTED;
@@ -2070,6 +2076,7 @@ public class PeerNode implements PeerContext {
 	 * This will return true if our lastGoodBuild has changed due to a timed mandatory.
 	 */
 	public synchronized boolean shouldDisconnectNow() {
+		// We should disconnect here if "protocol version missmatch", maybe throwing an exception
 		verifiedIncompatibleOlderVersion = invalidVersion();
 		verifiedIncompatibleNewerVersion = reverseInvalidVersion();
 		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion) return true;
@@ -2077,7 +2084,7 @@ public class PeerNode implements PeerContext {
 	}
 
 	protected synchronized void invalidate(){
-		isConnected = false;
+		isRoutable = false;
         Logger.normal(this, "Invalidated "+this);
 	}
 	

@@ -153,7 +153,7 @@ public class PacketSender implements Runnable {
                 Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
             if(pn.isConnected()) {
             	
-            	if(pn.isReallyConnected() && pn.shouldDisconnectNow()) {
+            	if(pn.isRoutable() && pn.shouldDisconnectNow()) {
             		// we don't disconnect but we mark it incompatible
             		pn.invalidate();
             		pn.setPeerNodeStatus(now);

@@ -74,7 +74,7 @@ public class NodeDispatcher implements Dispatcher {
         	return true;
         }
         
-        if(!source.isReallyConnected()) return false;
+        if(!source.isRoutable()) return false;
         
         if(spec == DMT.FNPLocChangeNotification) {
             double newLoc = m.getDouble(DMT.LOCATION);

@@ -17,5 +17,5 @@ public interface PeerContext {
 	boolean isConnected();
 	
 	/** Is the peer connected? are we able to route requests to it? */
-	boolean isReallyConnected();
+	boolean isRoutable();
 }

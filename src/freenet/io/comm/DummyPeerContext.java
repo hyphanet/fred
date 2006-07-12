@@ -22,7 +22,7 @@ public class DummyPeerContext implements PeerContext {
 		// Do nothing
 	}
 
-	public boolean isReallyConnected() {
+	public boolean isRoutable() {
 		return false;
 	}
 	

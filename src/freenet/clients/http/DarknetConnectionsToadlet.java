@@ -303,7 +303,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 				String namePrefixString = "";
 				String nameSuffixString = "";
-				if(pn.isConnected()) {
+				if(pn.isConnected() && (Integer.valueOf(pn.getSimpleVersion()).intValue() > 476)) {
 				  namePrefixString = "<a href=\"/send_n2ntm/?peernode_hashcode="+pn.hashCode()+"\">";
 				  nameSuffixString = "</a>";
 				}
