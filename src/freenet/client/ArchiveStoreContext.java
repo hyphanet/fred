@@ -95,15 +95,15 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	 * Remove all ArchiveStoreItems with this key from the cache.
 	 */
 	public void removeAllCachedItems() {
-		ArchiveStoreItem item;
-		do{
+		ArchiveStoreItem item = null;
+		while(true) {
 			synchronized (myItems) {
 				item = (ArchiveStoreItem) myItems.pop();
 			}
+			if(item == null) break;
 			manager.removeCachedItem(item);
 			item.finalize();
 		}
-		while(item != null);
 	}
 
 	/** Notify that a new archive store item with this key has been added to the cache. */
