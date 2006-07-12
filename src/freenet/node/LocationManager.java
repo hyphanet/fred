@@ -923,7 +923,6 @@ class LocationManager {
      * We lost the connection to a node, or it was restarted.
      */
     public void lostOrRestartedNode(PeerNode pn) {
-    	if(!pn.isReallyConnected()) return;
         Vector v = new Vector();
         synchronized(recentlyForwardedIDs) {
             Enumeration e = recentlyForwardedIDs.keys();

@@ -952,7 +952,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
                             // Requeue
-                            if(pn.isReallyConnected() && !dontRequeue)
+                            if(!dontRequeue)
                             	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "NotConnectedException(3)");
                             return;
                         } catch (WouldBlockException e) {
