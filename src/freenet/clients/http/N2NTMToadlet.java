@@ -164,7 +164,7 @@ public class N2NTMToadlet extends Toadlet {
 				  buf.append("PeerNode.hashCode '"+request.getParam("hashcode")+"' not found.<br /><br />\n");
 				  buf.append("</div>");
 				  buf.append("</div>");
-			  } else if(!pn.isConnected() && !pn.isVerifiedIncompatibleNewerVersion() && !pn.isVerifiedIncompatibleOlderVersion()) {
+			  } else if(!pn.isConnected()) {
 				  ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Failed");
 				  
 				  buf.append("<div class=\"infobox infobox-error\">");

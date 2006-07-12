@@ -124,7 +124,7 @@ class LocationManager {
                                 PeerNode[] peers = node.peers.connectedPeers;
                                 for(int i=0;i<peers.length;i++) {
                                     PeerNode pn = peers[i];
-                                    if(pn.isConnected()) {
+                                    if(pn.isReallyConnected()) {
                                         double ploc = pn.getLocation().getValue();
                                         if(ploc == myLoc) {
                                             myFlag = true;
@@ -386,7 +386,7 @@ class LocationManager {
                 }
 
                 if(reply == null) {
-                    if(pn.isConnected() && (System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2)) {
+                    if(pn.isReallyConnected() && (System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2)) {
                         // Timed out! Abort...
                         Logger.error(this, "Timed out waiting for SwapRejected/SwapReply on "+uid);
                     }
@@ -421,7 +421,7 @@ class LocationManager {
                 }
                 
                 if(reply == null) {
-                    if(pn.isConnected() && (System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2)) {
+                    if(pn.isReallyConnected() && (System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2)) {
                         // Hrrrm!
                         Logger.error(this, "Timed out waiting for SwapComplete - malicious node?? on "+uid);
                     }
@@ -923,6 +923,7 @@ class LocationManager {
      * We lost the connection to a node, or it was restarted.
      */
     public void lostOrRestartedNode(PeerNode pn) {
+    	if(!pn.isReallyConnected()) return;
         Vector v = new Vector();
         synchronized(recentlyForwardedIDs) {
             Enumeration e = recentlyForwardedIDs.keys();

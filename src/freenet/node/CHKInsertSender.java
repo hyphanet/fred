@@ -654,7 +654,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			MessageFilter mf = null;
 			for(int i=0;i<waiters.length;i++) {
 				AwaitingCompletion awc = waiters[i];
-				if(!awc.pn.isConnected()) {
+				if(!awc.pn.isReallyConnected()) {
 					Logger.normal(this, "Disconnected: "+awc.pn+" in "+CHKInsertSender.this);
 					continue;
 				}
@@ -686,7 +686,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					}
 					if(noTimeLeft) {
 						for(int i=0;i<waiters.length;i++) {
-							if(!waiters[i].pn.isConnected()) continue;
+							if(!waiters[i].pn.isReallyConnected()) continue;
 							if(!waiters[i].completedTransfer) {
 								waiters[i].completedTransfer(false);
 							}
@@ -753,7 +753,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					if(noTimeLeft) {
 						Logger.minor(this, "Overall timeout on "+CHKInsertSender.this);
 						for(int i=0;i<waiters.length;i++) {
-							if(!waiters[i].pn.isConnected()) continue;
+							if(!waiters[i].pn.isReallyConnected()) continue;
 							if(!waiters[i].receivedCompletionNotice)
 								waiters[i].completed(false, false);
 							if(!waiters[i].completedTransfer)
@@ -778,7 +778,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			boolean completedTransfers = true;
 			synchronized(nodesWaitingForCompletion) {
 				for(int i=0;i<waiters.length;i++) {
-					if(!waiters[i].pn.isConnected()) continue;
+					if(!waiters[i].pn.isReallyConnected()) continue;
 					if(!waiters[i].completedTransfer) {
 						completedTransfers = false;
 						break;
@@ -794,7 +794,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 						}
 						completedTransfers = true;
 						for(int i=0;i<waiters.length;i++) {
-							if(!waiters[i].pn.isConnected()) continue;
+							if(!waiters[i].pn.isReallyConnected()) continue;
 							if(!waiters[i].completedTransfer) {
 								completedTransfers = false;
 								break;

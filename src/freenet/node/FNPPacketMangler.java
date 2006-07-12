@@ -952,7 +952,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                         } catch (NotConnectedException e) {
                             Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
                             // Requeue
-                            if(!dontRequeue)
+                            if(pn.isReallyConnected() && !dontRequeue)
                             	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "NotConnectedException(3)");
                             return;
                         } catch (WouldBlockException e) {
@@ -1019,7 +1019,13 @@ public class FNPPacketMangler implements LowLevelFilter {
             throw new IllegalArgumentException();
         PeerNode pn = (PeerNode)peer;
         byte[] newBuf = preformat(buf, offset, length);
+        try{
         processOutgoingPreformatted(newBuf, 0, newBuf.length, pn, -1, null, alreadyReportedBytes);
+        }catch (NotConnectedException e){
+        	pn.invalidate();
+        	pn.setPeerNodeStatus(System.currentTimeMillis());
+        	throw e;
+        }
     }
 
 

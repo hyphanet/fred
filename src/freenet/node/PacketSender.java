@@ -153,8 +153,11 @@ public class PacketSender implements Runnable {
                 Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
             if(pn.isConnected()) {
             	
-            	if(pn.shouldDisconnectNow()) {
-            		pn.forceDisconnect();
+            	if(pn.isReallyConnected() && pn.shouldDisconnectNow()) {
+            		// we don't disconnect but we mark it incompatible
+            		pn.invalidate();
+            		pn.setPeerNodeStatus(now);
+            		Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible");
             		continue;
             	}
             	
@@ -175,7 +178,7 @@ public class PacketSender implements Runnable {
                     try {
 						pn.sendAnyUrgentNotifications();
 					} catch (PacketSequenceException e) {
-                    	Logger.error(this, "Caught "+e+" - disconnecting", e);
+                    	Logger.error(this, "Caught "+e+" - while sending urgent notifications : disconnecting", e);
                     	pn.forceDisconnect();
 					}
                 } else {

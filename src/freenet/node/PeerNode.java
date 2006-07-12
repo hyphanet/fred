@@ -680,8 +680,12 @@ public class PeerNode implements PeerContext {
      * Note possible deadlocks! PeerManager calls this, we call
      * PeerManager in e.g. verified.
      */
-    public boolean isConnected() {
+    public boolean isReallyConnected() {
         return isConnected;
+    }
+    
+    public boolean isConnected(){
+    	return (isConnected) || (completedHandshake && (verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion));
     }
 
     /**
@@ -694,7 +698,7 @@ public class PeerNode implements PeerContext {
      */
     public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
         Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
-        if(!isConnected) throw new NotConnectedException();
+        if(!isConnected()) throw new NotConnectedException();
         MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes, ctr);
         synchronized(routingBackoffSync) {
         	reportBackoffStatus(System.currentTimeMillis());
@@ -732,6 +736,7 @@ public class PeerNode implements PeerContext {
         synchronized(this) {
         	// Force renegotiation.
             isConnected = false;
+            completedHandshake = false;
             setPeerNodeStatus(now);
             // Prevent sending packets to the node until that happens.
             if(currentTracker != null)
@@ -829,7 +834,7 @@ public class PeerNode implements PeerContext {
      */
     public boolean shouldSendHandshake() {
         long now = System.currentTimeMillis();
-        return (!isConnected) &&
+        return (!isConnected()) &&
 				(!isDisabled) &&  // don't connect to disabled peers
 				(!isListenOnly) &&  // don't send handshake requests to isListenOnly peers
                 (handshakeIPs != null) &&
@@ -1049,7 +1054,7 @@ public class PeerNode implements PeerContext {
      * can be used in handshaking when the connection hasn't been verified yet.
      */
     synchronized void receivedPacket(boolean dontLog) throws NotConnectedException {
-        if((isConnected == false) && !dontLog) {
+        if(!isConnected() && !dontLog) {
         	if((unverifiedTracker == null) && (currentTracker == null)) {
         		Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
         		throw new NotConnectedException();
@@ -1113,31 +1118,25 @@ public class PeerNode implements PeerContext {
         		Logger.normal(this, "Not connecting to "+this+" - reverse invalid version "+Version.getVersionString()+" for peer's lastGoodversion: "+lastGoodVersion);
         		verifiedIncompatibleNewerVersion = true;
         		isConnected = false;
-        		setPeerNodeStatus(now);
         		node.peers.disconnected(this);
-        		return false;
         	} else {
         		verifiedIncompatibleNewerVersion = false;
-        		setPeerNodeStatus(now);
         	}
         	if(invalidVersion()) {
         		Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
         		verifiedIncompatibleOlderVersion = true;
         		isConnected = false;
-        		setPeerNodeStatus(now);
         		node.peers.disconnected(this);
-        		return false;
         	} else {
         		verifiedIncompatibleOlderVersion = false;
-        		setPeerNodeStatus(now);
         	}
+        	
+        	setPeerNodeStatus(now);
         	KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
         	changedIP(replyTo);
         	if(thisBootID != this.bootID) {
         		connectedTime = System.currentTimeMillis();
         		Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
-        		isConnected = false; // Will be reset below
-        		setPeerNodeStatus(now);
         		if(previousTracker != null) {
         			KeyTracker old = previousTracker;
         			previousTracker = null;
@@ -1164,7 +1163,6 @@ public class PeerNode implements PeerContext {
         		unverifiedTracker = null;
         		if(previousTracker != null)
         			previousTracker.deprecated();
-        		isConnected = true;
         		neverConnected = false;
         		peerAddedTime = 0;  // don't store anymore
         		setPeerNodeStatus(now);
@@ -1196,7 +1194,8 @@ public class PeerNode implements PeerContext {
             else return;
             if(unverifiedTracker != null) return;
         }
-        sendInitialMessages();
+        if(isReallyConnected())
+        	sendInitialMessages();
     }
     
     /**
@@ -1207,7 +1206,7 @@ public class PeerNode implements PeerContext {
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         
         try {
-            sendAsync(locMsg, null, 0, null);
+        	sendAsync(locMsg, null, 0, null);
             sendAsync(ipMsg, null, 0, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected!!!", new Exception("error"));
@@ -1461,8 +1460,15 @@ public class PeerNode implements PeerContext {
     }
 
     public String getStatus() {
+    	String status;
+    	if(isConnected)
+    		status = new String("CONNECTED");
+    	else if (isConnected())
+    		status = new String("INCOMPATIBLE");
+    	else
+    		status = new String("DISCONNECTED");
         return 
-        	(isConnected ? "CONNECTED   " : "DISCONNECTED") + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+routingBackoffLength+" ("+(Math.max(routingBackedOffUntil - System.currentTimeMillis(),0))+")";
+        	status + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+routingBackoffLength+" ("+(Math.max(routingBackedOffUntil - System.currentTimeMillis(),0))+")";
     }
 
     public String getTMCIPeerInfo() {
@@ -1772,6 +1778,7 @@ public class PeerNode implements PeerContext {
 	public void receivedLinkPong(long id) {
 		Long lid = new Long(id);
 		long startTime;
+		long now = System.currentTimeMillis();
 		synchronized(pingSync) {
 			Long s = (Long) pingsSentTimes.get(lid);
 			if(s == null) {
@@ -1780,12 +1787,13 @@ public class PeerNode implements PeerContext {
 			}
 			startTime = s.longValue();
 			pingsSentTimes.removeKey(lid);
-			long now = System.currentTimeMillis();
 			pingAverage.report(now - startTime);
 			Logger.minor(this, "Reporting ping time to "+this+" : "+(now - startTime));
 		}
-		if(verifiedIncompatibleOlderVersion)
-				forceDisconnect();
+		if(!isReallyConnected()){
+				invalidate();
+				setPeerNodeStatus(now);
+		}
 	}
 
 	public double averagePingTime() {
@@ -2063,9 +2071,16 @@ public class PeerNode implements PeerContext {
 	 */
 	public synchronized boolean shouldDisconnectNow() {
 		verifiedIncompatibleOlderVersion = invalidVersion();
-		return verifiedIncompatibleOlderVersion;
+		verifiedIncompatibleNewerVersion = reverseInvalidVersion();
+		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion) return true;
+		return false;
 	}
 
+	protected synchronized void invalidate(){
+		isConnected = false;
+        Logger.normal(this, "Invalidated "+this);
+	}
+	
 	public boolean allowLocalAddresses() {
 		return allowLocalAddresses;
 	}

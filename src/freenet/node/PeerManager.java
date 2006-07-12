@@ -133,7 +133,7 @@ public class PeerManager {
         // removing from connectedPeers
         ArrayList a = new ArrayList();
         for(int i=0;i<myPeers.length;i++) {
-        	if((myPeers[i]!=pn) && myPeers[i].isConnected())
+        	if((myPeers[i]!=pn) && myPeers[i].isReallyConnected())
         		a.add(myPeers[i]);
         }
         
@@ -168,7 +168,7 @@ public class PeerManager {
 			// removing from connectedPeers
 			ArrayList a = new ArrayList();
 			for(int i=0;i<myPeers.length;i++) {
-				if((myPeers[i]!=pn) && myPeers[i].isConnected())
+				if((myPeers[i]!=pn) && myPeers[i].isReallyConnected())
 					a.add(myPeers[i]);
 			}
 			PeerNode[] newConnectedPeers = new PeerNode[a.size()];
@@ -180,8 +180,8 @@ public class PeerManager {
 	}
 	
     public void addConnectedPeer(PeerNode pn) {
-    	if(!pn.isConnected()) {
-    		Logger.minor(this, "Not connected: "+pn);
+    	if(!pn.isReallyConnected()) {
+    		Logger.minor(this, "Not ReallyConnected: "+pn);
     		return;
     	}
     	synchronized(this) {
@@ -272,7 +272,7 @@ public class PeerManager {
         locs = new double[connectedPeers.length];
         int x = 0;
         for(int i=0;i<conns.length;i++) {
-            if(conns[i].isConnected())
+            if(conns[i].isReallyConnected())
                 locs[x++] = conns[i].getLocation().getValue();
         }
         // Wipe out any information contained in the order
@@ -294,7 +294,7 @@ public class PeerManager {
         for(int i=0;i<5;i++) {
             PeerNode pn = connectedPeers[node.random.nextInt(connectedPeers.length)];
             if(pn == exclude) continue;
-            if(pn.isConnected()) return pn;
+            if(pn.isReallyConnected()) return pn;
         }
         // None of them worked
         // Move the un-connected ones out
@@ -304,14 +304,14 @@ public class PeerManager {
         for(int i=0;i<myPeers.length;i++) {
             PeerNode pn = myPeers[i];
             if(pn == exclude) continue;
-            if(pn.isConnected()) {
+            if(pn.isReallyConnected()) {
                 v.add(pn);
             } else {
             	Logger.minor(this, "Excluding "+pn+" because is disconnected");
             }
         }
         int lengthWithoutExcluded = v.size();
-        if((exclude != null) && exclude.isConnected())
+        if((exclude != null) && exclude.isReallyConnected())
             v.add(exclude);
         PeerNode[] newConnectedPeers = new PeerNode[v.size()];
         newConnectedPeers = (PeerNode[]) v.toArray(newConnectedPeers);
@@ -327,7 +327,7 @@ public class PeerManager {
     public void localBroadcast(Message msg) {
         PeerNode[] peers = connectedPeers; // avoid synchronization
         for(int i=0;i<peers.length;i++) {
-            if(peers[i].isConnected()) try {
+            if(peers[i].isReallyConnected()) try {
                 peers[i].sendAsync(msg, null, 0, null);
             } catch (NotConnectedException e) {
                 // Ignore
@@ -348,7 +348,7 @@ public class PeerManager {
         PeerNode best = null;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
-            if(!p.isConnected()) continue;
+            if(!p.isReallyConnected()) continue;
             double diff = distance(p, loc);
             if(diff < bestDiff) {
                 best = p;
@@ -423,7 +423,7 @@ public class PeerManager {
             	Logger.minor(this, "Skipping (req came from): "+p.getPeer());
             	continue;
             }
-            if(!p.isConnected()) {
+            if(!p.isReallyConnected()) {
             	Logger.minor(this, "Skipping (not connected): "+p.getPeer());
             	continue;
             }
@@ -580,7 +580,7 @@ public class PeerManager {
 	public boolean anyConnectedPeers() {
 		PeerNode[] conns = connectedPeers;
 		for(int i=0;i<conns.length;i++) {
-			if(conns[i].isConnected()) return true;
+			if(conns[i].isReallyConnected()) return true;
 		}
 		return false;
 	}
