@@ -1315,8 +1315,15 @@ public class PeerNode implements PeerContext {
     /**
      * Process a new nodereference, as a SimpleFieldSet.
      */
-    private synchronized void processNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
+    private void processNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
         Logger.minor(this, "Parsing: \n"+fs);
+        boolean changedAnything = innerProcessNewNoderef(fs, forARK);
+        if(changedAnything) node.peers.writePeers();
+    }
+
+    /** The synchronized part of processNewNoderef 
+     * @throws FSParseException */
+    private synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
         boolean changedAnything = false;
         String identityString = fs.get("identity");
         try {
@@ -1402,10 +1409,11 @@ public class PeerNode implements PeerContext {
         	changedAnything = true;
         if(!name.equals(myName)) changedAnything = true;
         myName = name;
-        if(changedAnything) node.peers.writePeers();
-    }
+        
+		return changedAnything;
+	}
 
-    /**
+	/**
      * Send a payload-less packet on either key if necessary.
      * @throws PacketSequenceException If there is an error sending the packet
      * caused by a sequence inconsistency. 
@@ -2026,10 +2034,10 @@ public class PeerNode implements PeerContext {
 	}
 	
 	public void disablePeer() {
+		isDisabled = true;
 		if(isConnected) {
 			forceDisconnect();
 		}
-		isDisabled = true;
     	arkFetcher.stop();
 		setPeerNodeStatus(System.currentTimeMillis());
         node.peers.writePeers();

@@ -53,11 +53,16 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 		archiveRestarts = 0;
 	}
 	
-	public synchronized void start() throws FetchException {
+	public void start() throws FetchException {
 		try {
-			currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
-					uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true,
-					returnBucket);
+			// FIXME synchronization is probably unnecessary.
+			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
+			// which can call onSuccess and thereby almost anything.
+			synchronized(this) {
+				currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
+						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true,
+						returnBucket);
+			}
 			if(currentState != null)
 				currentState.schedule();
 		} catch (MalformedURLException e) {
@@ -65,9 +70,16 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 		}
 	}
 
-	public synchronized void onSuccess(FetchResult result, ClientGetState state) {
-		finished = true;
-		currentState = null;
+	public void onSuccess(FetchResult result, ClientGetState state) {
+		synchronized(this) {
+			finished = true;
+			currentState = null;
+		}
+		// Rest of method does not need to be synchronized.
+		// Variables will be updated on exit of method, and the only thing that is
+		// set is the returnBucket and the result. Not locking not only prevents
+		// nested locking resulting in deadlocks, it also prevents long locks due to
+		// doing massive encrypted I/Os while holding a lock.
 		if((returnBucket != null) && (result.asBucket() != returnBucket)) {
 			Bucket from = result.asBucket();
 			Bucket to = returnBucket;

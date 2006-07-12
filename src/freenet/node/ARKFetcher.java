@@ -62,40 +62,42 @@ public class ARKFetcher implements ClientCallback {
 	/**
 	 * Called when the ARKFetchManager says it's our turn to start fetching.
 	 */
-	public synchronized void start() {
+	public void start() {
 		if(node.arkFetchManager.hasReadyARKFetcher(this)) {
 			node.arkFetchManager.removeReadyARKFetcher(this);
 		}
 		if(peer.isConnected()) {
 			return;
 		}
-		if(isFetching) {
-			return;
-		}
 		ClientGetter cg = null;
-		if(started) {  // We only need one ARKFetcher per PeerNode
-		  return;
-		}
-		Logger.minor(this, "Starting ... for "+peer+" on "+this);
-		Logger.normal( this, "Starting ARK Fetcher after "+peer.getHandshakeCount()+" failed handshakes for "+peer.getPeer()+" with identity '"+peer.getIdentityString()+"'");
-		started = true;
-		// Start fetch
-		shouldRun = true;
-		if(getter == null) {
-			USK ark = peer.getARK();
-			if(ark == null) {
+		synchronized(this) {
+			if(isFetching) {
 				return;
 			}
-			FreenetURI uri = ark.getURI();
-			startedEdition = uri.getSuggestedEdition();
-			fetchingURI = uri;
-			Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
-			cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
-					uri, node.arkFetcherContext, RequestStarter.UPDATE_PRIORITY_CLASS, 
-					this, new ArrayBucket());
-			getter = cg;
-		} else return; // already running
-		
+			if(started) {  // We only need one ARKFetcher per PeerNode
+				return;
+			}
+			Logger.minor(this, "Starting ... for "+peer+" on "+this);
+			Logger.normal( this, "Starting ARK Fetcher after "+peer.getHandshakeCount()+" failed handshakes for "+peer.getPeer()+" with identity '"+peer.getIdentityString()+"'");
+			started = true;
+			// Start fetch
+			shouldRun = true;
+			if(getter == null) {
+				USK ark = peer.getARK();
+				if(ark == null) {
+					return;
+				}
+				FreenetURI uri = ark.getURI();
+				startedEdition = uri.getSuggestedEdition();
+				fetchingURI = uri;
+				Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
+				cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
+						uri, node.arkFetcherContext, RequestStarter.UPDATE_PRIORITY_CLASS, 
+						this, new ArrayBucket());
+				getter = cg;
+			} else return; // already running
+		}
+			
 		if(cg != null)
 			try {
 				if(!isFetching) {
