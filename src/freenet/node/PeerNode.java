@@ -1199,8 +1199,8 @@ public class PeerNode implements PeerContext {
             else return;
             if(unverifiedTracker != null) return;
         }
-        if(isRoutable())
-        	sendInitialMessages();
+       
+       sendInitialMessages();
     }
     
     /**
@@ -1211,7 +1211,8 @@ public class PeerNode implements PeerContext {
         Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
         
         try {
-        	sendAsync(locMsg, null, 0, null);
+        	if(isRoutable())
+        		 sendAsync(locMsg, null, 0, null);
             sendAsync(ipMsg, null, 0, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected!!!", new Exception("error"));
@@ -1796,7 +1797,7 @@ public class PeerNode implements PeerContext {
 			Logger.minor(this, "Reporting ping time to "+this+" : "+(now - startTime));
 		}
 		
-		if(!shouldDisconnectNow()){
+		if(shouldDisconnectNow()){
 				invalidate();
 				setPeerNodeStatus(now);
 		}
