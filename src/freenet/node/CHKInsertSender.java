@@ -608,15 +608,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	
 	private void makeCompletionWaiter() {
 		Thread t;
-
-		if(cw == null)
-			synchronized (this) {
+		synchronized (this) {
+			if(cw == null)
 				cw = new CompletionWaiter();
-			}
-		else
-			return;
+			else
+				return;
+		}
 		t = new Thread(cw, "Completion waiter for "+uid);
-
 		t.setDaemon(true);
 		t.start();
 	}
