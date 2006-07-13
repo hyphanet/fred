@@ -416,6 +416,8 @@ public class Node {
 	/** Log config handler */
 	public static LoggingConfigHandler logConfigHandler;
 	
+	static int aggressiveGCModificator = 250;
+	
 	/** If true, local requests and inserts aren't cached.
 	 * This opens up a glaring vulnerability; connected nodes
 	 * can then probe the store, and if the node doesn't have the
@@ -1067,16 +1069,30 @@ public class Node {
 
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert();
 
+		int sortOrder = 0;
+		// Setup node-specific configuration
+		SubConfig nodeConfig = new SubConfig("node", config);
+		
+		
+		nodeConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, "AggressiveGC modificator", "Enables the user to tweak the time in between GC and forced finalization. SHOULD NOT BE CHANGED unless you know what you're doing! -1 means : disable forced call to System.gc() and System.runFinalization()",
+				new IntCallback() {
+					public int get() {
+						return aggressiveGCModificator;
+					}
+					public void set(int val) throws InvalidConfigValueException {
+						if(val == get()) return;
+						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
+						aggressiveGCModificator = val;
+					}
+		});
+		
 		//Memory Checking thread
+		// TODO: proper config. callbacks : maybe we shoudln't start the thread at all if it's not worthy
     	this.myMemoryChecker = new Thread(new MemoryChecker(), "Memory checker");
     	this.myMemoryChecker.setPriority(Thread.MAX_PRIORITY);
     	this.myMemoryChecker.setDaemon(true);
-		
-		// Setup node-specific configuration
-		SubConfig nodeConfig = new SubConfig("node", config);
 
 		// IP address override
-		int sortOrder = 0;
 		nodeConfig.register("ipAddressOverride", "", sortOrder++, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
 
 			public String get() {
