@@ -28,7 +28,7 @@ public class NodeStarter
 {
     private Node node;
 	static LoggingConfigHandler logConfigHandler;
-	public static int RECOMMENDED_EXT_BUILD_NUMBER = 1;
+	public static int RECOMMENDED_EXT_BUILD_NUMBER = 2;
 	public static int extBuildNumber;
 	public static String extRevisionNumber;
 	private FilePersistentConfig cfg;
