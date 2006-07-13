@@ -10,6 +10,7 @@ import freenet.support.BucketFactory;
 public class InserterContext {
 
 	public final BucketFactory bf;
+	public final BucketFactory persistentBucketFactory;
 	/** If true, don't try to compress the data */
 	public boolean dontCompress;
 	public final RandomSource random;
@@ -24,10 +25,11 @@ public class InserterContext {
 	public final boolean cacheLocalRequests;
 	public final USKManager uskManager;
 	
-	public InserterContext(BucketFactory bf, RandomSource random,
+	public InserterContext(BucketFactory bf, BucketFactory persistentBF, RandomSource random,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
 			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager) {
 		this.bf = bf;
+		this.persistentBucketFactory = persistentBF;
 		this.uskManager = uskManager;
 		this.random = random;
 		dontCompress = false;
@@ -41,9 +43,10 @@ public class InserterContext {
 		this.cacheLocalRequests = cacheLocalRequests;
 	}
 
-	public InserterContext(InserterContext ctx) {
+	public InserterContext(InserterContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {
 		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
+		this.persistentBucketFactory = forceNonPersistent ? ctx.bf : ctx.persistentBucketFactory;
 		this.random = ctx.random;
 		this.dontCompress = ctx.dontCompress;
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
@@ -59,6 +62,7 @@ public class InserterContext {
 	public InserterContext(InserterContext ctx, SimpleEventProducer producer) {
 		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
+		this.persistentBucketFactory = ctx.persistentBucketFactory;
 		this.random = ctx.random;
 		this.dontCompress = ctx.dontCompress;
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;

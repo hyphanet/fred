@@ -471,4 +471,8 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		}
 	}
 
+	public void onMajorProgress() {
+		// Ignore
+	}
+
 }

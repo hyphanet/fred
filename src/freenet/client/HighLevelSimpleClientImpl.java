@@ -23,6 +23,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private final ArchiveManager archiveManager;
 	private final short priorityClass;
 	private final BucketFactory bucketFactory;
+	private final BucketFactory persistentBucketFactory;
 	private final Node node;
 	/** One CEP for all requests and inserts */
 	private final ClientEventProducer globalEventProducer;
@@ -77,6 +78,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
 		this.cacheLocalRequests = cacheLocalRequests;
+		this.persistentBucketFactory = node.persistentEncryptedTempBucketFactory;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -113,7 +115,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, boolean isMetadata) throws InserterException {
-		InserterContext context = getInserterContext();
+		InserterContext context = getInserterContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.data, insert.desiredURI, insert.clientMetadata, 
 				context, node.chkPutScheduler, node.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this);
@@ -141,7 +143,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, node.chkPutScheduler, node.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(), false, this);
+			new SimpleManifestPutter(pw, node.chkPutScheduler, node.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(true), false, this);
 		putter.start();
 		return pw.waitForCompletion();
 	}
@@ -171,8 +173,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				cacheLocalRequests, node.uskManager);
 	}
 
-	public InserterContext getInserterContext() {
-		return new InserterContext(bucketFactory, random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
+	public InserterContext getInserterContext(boolean forceNonPersistent) {
+		return new InserterContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory, random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
 				globalEventProducer, cacheLocalRequests, node.uskManager);
 	}

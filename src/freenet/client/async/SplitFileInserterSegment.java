@@ -11,7 +11,12 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.PaddedEphemerallyEncryptedBucket;
+import freenet.support.SimpleFieldSet;
+import freenet.support.io.FileBucket;
+import freenet.support.io.SerializableToFieldSetBucket;
 
 public class SplitFileInserterSegment implements PutCompletionCallback {
 
@@ -33,6 +38,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	private final FailureCodeTracker errors;
 	private int blocksGotURI;
 	private int blocksCompleted;
+	private boolean started;
 	
 	public SplitFileInserterSegment(SplitFileInserter parent, FECCodec splitfileAlgo, Bucket[] origDataBlocks, InserterContext blockInsertContext, boolean getCHKOnly, int segNo) {
 		this.parent = parent;
@@ -52,12 +58,84 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		this.segNo = segNo;
 	}
 	
+	public synchronized SimpleFieldSet getProgressFieldset() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("Type", "SplitFileInserterSegment");
+		fs.put("Finished", Boolean.toString(finished));
+		// If true, check blocks which are null are finished 
+		fs.put("Encoded", Boolean.toString(encoded));
+		// If true, data blocks which are null are finished
+		fs.put("Started", Boolean.toString(started));
+		errors.copyToFieldSet(fs, "Errors.", false);
+		SimpleFieldSet dataFS = new SimpleFieldSet(true);
+		dataFS.put("Count", Integer.toString(dataBlocks.length));
+		for(int i=0;i<dataBlocks.length;i++) {
+			SimpleFieldSet block = new SimpleFieldSet(true);
+			if(dataURIs[i] != null)
+				block.put("URI", dataURIs[i].toString());
+			SingleBlockInserter sbi =
+				dataBlockInserters[i];
+			// If started, then sbi = null => block finished.
+			boolean finished = started && sbi == null;
+			if(started) {
+				block.put("Finished", finished);
+			}
+			if(finished) continue;
+			if(!finished) {
+				Bucket data = dataBlocks[i];
+				if(data instanceof SerializableToFieldSetBucket) {
+					SimpleFieldSet tmp = ((SerializableToFieldSetBucket)data).toFieldSet();
+					if(tmp == null) {
+						Logger.minor(this, "Could not save to disk: "+data);
+						return null;
+					}
+					block.put("Data", tmp);
+				} else {
+					Logger.minor(this, "Could not save to disk (not serializable to fieldset): "+data);
+					return null;
+				}
+			}
+			if(!block.isEmpty())
+				dataFS.put(Integer.toString(i), block);
+		}
+		fs.put("DataBlocks", dataFS);
+		SimpleFieldSet checkFS = new SimpleFieldSet(true);
+		checkFS.put("Count", Integer.toString(dataBlocks.length));
+		for(int i=0;i<checkBlocks.length;i++) {
+			SimpleFieldSet block = new SimpleFieldSet(true);
+			if(checkURIs[i] != null)
+				block.put("URI", checkURIs[i].toString());
+			SingleBlockInserter sbi =
+				checkBlockInserters[i];
+			// If encoded, then sbi == null => block finished
+			boolean finished = encoded && sbi == null;
+			if(encoded) {
+				block.put("Finished", finished);
+			}
+			if(!finished) {
+				Bucket data = checkBlocks[i];
+				if(data != null &&
+						data instanceof SerializableToFieldSetBucket) {
+					block.put("Data", ((SerializableToFieldSetBucket)data).toFieldSet());
+				} else if(encoded) {
+					Logger.minor(this, "Could not save to disk (null or not serializable to fieldset): "+data);
+					return null;
+				}
+			}
+			if(!block.isEmpty())
+				checkFS.put(Integer.toString(i), block);
+		}
+		fs.put("CheckBlocks", checkFS);
+		return fs;
+	}
+	
 	public void start() throws InserterException {
 		for(int i=0;i<dataBlockInserters.length;i++) {
 			dataBlockInserters[i] = 
 				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i, getCHKOnly, false, false, parent.token);
 			dataBlockInserters[i].schedule();
 		}
+		started = true;
 		if(splitfileAlgo != null) {
 			// Encode blocks
 			Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
@@ -75,7 +153,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	void encode() {
 		try {
-			splitfileAlgo.encode(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.bf);
+			splitfileAlgo.encode(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory);
 			// Start the inserts
 			for(int i=0;i<checkBlockInserters.length;i++) {
 				checkBlockInserters[i] = 

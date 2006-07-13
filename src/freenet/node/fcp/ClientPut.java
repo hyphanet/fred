@@ -171,7 +171,6 @@ public class ClientPut extends ClientPutBase {
 	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		fs.put("Metadata.ContentType", clientMetadata.getMIMEType());
-		fs.put("GetCHKOnly", Boolean.toString(getCHKOnly));
 		fs.put("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			fs.put("Filename", origFilename.getPath());
@@ -183,6 +182,10 @@ public class ClientPut extends ClientPutBase {
 			fs.put("TempBucket.Size", Long.toString(bucket.size()));
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			fs.put("TargetURI", targetURI.toString());
+		}
+		if(inserter != null)  {
+			SimpleFieldSet sfs = inserter.getProgressFieldset();
+			fs.put("progress", sfs);
 		}
 		return fs;
 	}

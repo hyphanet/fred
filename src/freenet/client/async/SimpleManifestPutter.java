@@ -160,6 +160,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			SimpleManifestPutter.this.blockSetFinalized();
 		}
+
+		public void onMajorProgress() {
+			SimpleManifestPutter.this.onMajorProgress();
+		}
 	}
 
 	private final HashMap putHandlersByName;
@@ -658,5 +662,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	public long totalSize() {
 		return totalSize;
+	}
+
+	public void onMajorProgress() {
+		cb.onMajorProgress();
 	}
 }

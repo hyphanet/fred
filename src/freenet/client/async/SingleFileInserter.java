@@ -18,6 +18,7 @@ import freenet.keys.SSKBlock;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 
@@ -125,7 +126,7 @@ class SingleFileInserter implements ClientPutState {
 						ctx.eventProducer.produceEvent(new StartedCompressionEvent(i));
 					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
 					Bucket result;
-					result = comp.compress(origData, ctx.bf, Long.MAX_VALUE);
+					result = comp.compress(origData, ctx.persistentBucketFactory, Long.MAX_VALUE);
 					if(result.size() < blockSize) {
 						bestCodec = comp;
 						data = result;
@@ -387,6 +388,16 @@ class SingleFileInserter implements ClientPutState {
 		public Object getToken() {
 			return token;
 		}
+
+		public synchronized SimpleFieldSet getProgressFieldset() {
+			SimpleFieldSet fs = new SimpleFieldSet(true);
+			fs.put("Type", "SplitHandler");
+			if(sfi != null)
+				fs.put("SplitFileInserter", sfi.getProgressFieldset());
+			if(metadataPutter != null)
+				fs.put("MetadataPutter", metadataPutter.getProgressFieldset());
+			return fs;
+		}
 		
 	}
 
@@ -403,5 +414,9 @@ class SingleFileInserter implements ClientPutState {
 
 	public Object getToken() {
 		return token;
+	}
+
+	public SimpleFieldSet getProgressFieldset() {
+		return null;
 	}
 }

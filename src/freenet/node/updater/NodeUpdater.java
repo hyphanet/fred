@@ -565,4 +565,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public boolean inFinalCheck() {
 		return finalCheck;
 	}
+
+	public void onMajorProgress() {
+		// Ignore
+	}
 }

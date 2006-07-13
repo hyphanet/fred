@@ -10,13 +10,14 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.io.SerializableToFieldSetBucket;
 
 /**
  * A proxy Bucket which adds:
  * - Encryption with the supplied cipher, and a random, ephemeral key.
  * - Padding to the next PO2 size.
  */
-public class PaddedEphemerallyEncryptedBucket implements Bucket {
+public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToFieldSetBucket {
 
 	private final Bucket bucket;
 	private final int minPaddedSize;
@@ -293,6 +294,25 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket {
 	 */
 	public byte[] getKey() {
 		return key;
+	}
+
+	public SimpleFieldSet toFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("Type", "PaddedEphemerallyEncryptedBucket");
+		fs.put("DataLength", dataLength);
+		if(key != null) {
+			fs.put("DecryptKey", HexUtil.bytesToHex(key));
+		} else {
+			Logger.error(this, "Cannot serialize because no key");
+			return null;
+		}
+		if(bucket instanceof SerializableToFieldSetBucket) {
+			fs.put("Underlying", ((SerializableToFieldSetBucket)bucket).toFieldSet());
+		} else {
+			Logger.error(this, "Cannot serialize underlying bucket: "+bucket);
+			return null;
+		}
+		return fs;
 	}
 
 }

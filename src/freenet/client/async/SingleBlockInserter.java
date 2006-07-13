@@ -18,6 +18,7 @@ import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.support.Bucket;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * Insert *ONE KEY*.
@@ -282,6 +283,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
 	public Object getToken() {
 		return tokenObject;
+	}
+
+	public SimpleFieldSet getProgressFieldset() {
+		return null;
 	}
 
 }

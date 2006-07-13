@@ -46,7 +46,12 @@ public interface HighLevelSimpleClient {
 	
 	public FetcherContext getFetcherContext();
 
-	public InserterContext getInserterContext();
+	/**
+	 * Get an InserterContext.
+	 * @param forceNonPersistent If true, force the request to use the non-persistent
+	 * bucket pool.
+	 */
+	public InserterContext getInserterContext(boolean forceNonPersistent);
 	
 	/**
 	 * Add a ClientEventListener.

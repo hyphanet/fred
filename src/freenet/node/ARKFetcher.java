@@ -249,4 +249,8 @@ public class ARKFetcher implements ClientCallback {
 	private synchronized long getStartedEdition() {
 		return startedEdition;
 	}
+
+	public void onMajorProgress() {
+		// Ignore
+	}
 }

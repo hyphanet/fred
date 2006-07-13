@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.util.Vector;
 
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /*
  *  This code is part of FProxy, an HTTP proxy server for Freenet.
@@ -425,4 +426,9 @@ public class TempFileBucket extends FileBucket {
 
 	}
 
+	public SimpleFieldSet toFieldSet() {
+		SimpleFieldSet fs = super.toFieldSet();
+		fs.put("Type", "TempFileBucket");
+		return fs;
+	}
 }

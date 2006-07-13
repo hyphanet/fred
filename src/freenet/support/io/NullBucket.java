@@ -3,8 +3,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import freenet.support.Bucket;
+import freenet.support.SimpleFieldSet;
 
-public class NullBucket implements Bucket {
+public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 
     public final OutputStream nullOut = new NullOutputStream();
     public final InputStream  nullIn  = new NullInputStream();
@@ -59,6 +60,12 @@ public class NullBucket implements Bucket {
 
 	public void free() {
 		// Do nothing
+	}
+
+	public SimpleFieldSet toFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("Type", "NullBucket");
+		return fs;
 	}
 }
 

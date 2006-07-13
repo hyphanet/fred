@@ -223,6 +223,8 @@ public abstract class ClientRequest {
 	protected void finish() {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
+		else
+			client.server.forceStorePersistentRequests();
 		client.finishedClientRequest(this);
 	}
 	
@@ -259,4 +261,12 @@ public abstract class ClientRequest {
 	 * Has the total number of blocks to insert been determined yet?
 	 */
 	public abstract boolean isTotalFinalized();
+	
+	public void onMajorProgress() {
+		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
+			if(client != null)
+				client.server.forceStorePersistentRequests();
+		}
+	}
+
 }

@@ -14,6 +14,7 @@ import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 import freenet.support.compress.Compressor;
 
 public class SplitFileInserter implements ClientPutState {
@@ -37,6 +38,23 @@ public class SplitFileInserter implements ClientPutState {
 	public final Object token;
 	final boolean insertAsArchiveManifest;
 
+	public SimpleFieldSet getProgressFieldset() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		// don't save basic infrastructure such as ctx and parent
+		// only save details of the request
+		fs.put("Type", "SplitFileInserter");
+		fs.put("DataLength", Long.toString(dataLength));
+		fs.put("CompressionCodec", Short.toString(compressionCodec));
+		fs.put("Finished", Boolean.toString(finished));
+		SimpleFieldSet segs = new SimpleFieldSet(true);
+		for(int i=0;i<segments.length;i++) {
+			segs.put(Integer.toString(i), segments[i].getProgressFieldset());
+		}
+		segs.put("Count", Integer.toString(segments.length));
+		fs.put("Segments", segs);
+		return fs;
+	}
+
 	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest) throws InserterException {
 		this.parent = put;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
@@ -49,7 +67,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.ctx = ctx;
 		Bucket[] dataBuckets;
 		try {
-			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, ctx.bf);
+			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, ctx.persistentBucketFactory);
 		} catch (IOException e) {
 			throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 		}
@@ -111,6 +129,8 @@ public class SplitFileInserter implements ClientPutState {
 	public void start() throws InserterException {
 		for(int i=0;i<segments.length;i++)
 			segments[i].start();
+		if(countDataBlocks > 32)
+			parent.onMajorProgress();
 	}
 
 	public void encodedSegment(SplitFileInserterSegment segment) {
@@ -122,6 +142,8 @@ public class SplitFileInserter implements ClientPutState {
 			}
 		}
 		cb.onBlockSetFinished(this);
+		if(countDataBlocks > 32)
+			parent.onMajorProgress();
 	}
 	
 	public void segmentHasURIs(SplitFileInserterSegment segment) {
@@ -223,6 +245,8 @@ public class SplitFileInserter implements ClientPutState {
 	public void segmentFinished(SplitFileInserterSegment segment) {
 		Logger.minor(this, "Segment finished: "+segment);
 		boolean allGone = true;
+		if(countDataBlocks > 32)
+			parent.onMajorProgress();
 		synchronized(this) {
 			if(finished) return;
 			for(int i=0;i<segments.length;i++)

@@ -122,6 +122,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.TokenBucket;
 import freenet.support.io.FilenameGenerator;
+import freenet.support.io.PersistentEncryptedTempBucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
@@ -236,7 +237,7 @@ public class Node {
 
 			inserter = new ClientPutter(this, b, uri,
 						new ClientMetadata("text/plain") /* it won't quite fit in an SSK anyway */, 
-						Node.this.makeClient((short)0).getInserterContext(),
+						Node.this.makeClient((short)0).getInserterContext(true),
 						chkPutScheduler, sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this);
 			
 			try {
@@ -338,6 +339,10 @@ public class Node {
 			}
 
 			startInserter();
+		}
+
+		public void onMajorProgress() {
+			// Ignore
 		}
 	
 	}
@@ -675,6 +680,7 @@ public class Node {
 	
 	// Persistent temporary buckets
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
+	public final PersistentEncryptedTempBucketFactory persistentEncryptedTempBucketFactory;
 	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
@@ -1451,6 +1457,7 @@ public class Node {
 		});
 		try {
 			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random);
+			persistentEncryptedTempBucketFactory = new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
 		} catch (IOException e2) {
 			String msg = "Could not find or create persistent temporary directory";
 			throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);

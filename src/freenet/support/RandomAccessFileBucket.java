@@ -8,12 +8,14 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.Vector;
 
+import freenet.support.io.SerializableToFieldSetBucket;
+
 /**
  * Bucket implementation that can efficiently access any arbitrary byte-range
  * of a file.
  *
  **/
-public class RandomAccessFileBucket implements Bucket {
+public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBucket {
 
     public RandomAccessFileBucket(File file, long offset, long len, boolean readOnly)
         throws IOException {
@@ -136,7 +138,7 @@ public class RandomAccessFileBucket implements Bucket {
             }
         }
         streams.removeAllElements();
-	streams.trimToSize();
+        streams.trimToSize();
         // We don't delete anything because we don't own anything.
         released = true;
         return true;
@@ -422,7 +424,7 @@ public class RandomAccessFileBucket implements Bucket {
     }
     ////////////////////////////////////////////////////////////
 
-    private File file = null;
+    private final File file;
     private long offset = -1;
     private long localOffset = 0;
     private long len = -1;
@@ -440,5 +442,14 @@ public class RandomAccessFileBucket implements Bucket {
 
 	public void free() {
 		release();
+	}
+
+	public SimpleFieldSet toFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("Type", "RandomAccessFileBucket");
+		fs.put("Filename", file.toString());
+		fs.put("Offset", offset);
+		fs.put("Length", len);
+		return fs;
 	}
 }

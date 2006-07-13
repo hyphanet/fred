@@ -49,4 +49,8 @@ public class FetchWaiter implements ClientCallback {
 		if(error != null) throw error;
 		return result;
 	}
+
+	public void onMajorProgress() {
+		// Ignore
+	}
 }

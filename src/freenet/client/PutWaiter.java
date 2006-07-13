@@ -58,4 +58,8 @@ public class PutWaiter implements ClientCallback {
 		throw new InserterException(InserterException.INTERNAL_ERROR, "Did not succeed but no error", uri);
 	}
 
+	public void onMajorProgress() {
+		// Ignore
+	}
+
 }

@@ -22,4 +22,7 @@ public interface ClientCallback {
 	
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
 	
+	/** Called when freenet.async thinks that the request should be serialized to
+	 * disk, if it is a persistent request. */
+	public void onMajorProgress();
 }

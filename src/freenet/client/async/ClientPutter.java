@@ -10,6 +10,7 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 public class ClientPutter extends BaseClientPutter implements PutCompletionCallback {
 
@@ -51,14 +52,18 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.cancelled = false;
 	}
 
-	public synchronized void start() throws InserterException {
+	public void start() throws InserterException {
 		try {
-			currentState =
-				new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false);
+			synchronized(this) {
+				currentState =
+					new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false);
+			}
 			((SingleFileInserter)currentState).start();
 		} catch (InserterException e) {
-			finished = true;
-			currentState = null;
+			synchronized(this) {
+				finished = true;
+				currentState = null;
+			}
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
 				this.client.onFailure(e, this);
@@ -66,18 +71,26 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		}
 	}
 
-	public synchronized void onSuccess(ClientPutState state) {
-		finished = true;
-		currentState = null;
+	public void onSuccess(ClientPutState state) {
+		synchronized(this) {
+			finished = true;
+			currentState = null;
+		}
 		client.onSuccess(this);
 	}
 
-	public synchronized void onFailure(InserterException e, ClientPutState state) {
-		finished = true;
-		currentState = null;
+	public void onFailure(InserterException e, ClientPutState state) {
+		synchronized(this) {
+			finished = true;
+			currentState = null;
+		}
 		client.onFailure(e, this);
 	}
 
+	public void onMajorProgress() {
+		client.onMajorProgress();
+	}
+	
 	public void onEncode(BaseClientKey key, ClientPutState state) {
 		this.uri = key.getURI();
 		client.onGeneratedURI(uri, this);
@@ -115,6 +128,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void onBlockSetFinished(ClientPutState state) {
 		Logger.minor(this, "Set finished", new Exception("debug"));
 		blockSetFinalized();
+	}
+
+	public SimpleFieldSet getProgressFieldset() {
+		return currentState.getProgressFieldset();
 	}
 	
 }

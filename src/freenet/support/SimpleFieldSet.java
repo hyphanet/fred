@@ -190,6 +190,26 @@ public class SimpleFieldSet {
 		}
     }
 
+	public void put(String key, int value) {
+		put(key, Integer.toString(value));
+	}
+	
+	public void put(String key, long value) {
+		put(key, Long.toString(value));
+	}
+	
+	public void put(String key, short value) {
+		put(key, Short.toString(value));
+	}
+	
+	public void put(String key, char c) {
+		put(key, ""+c);
+	}
+	
+	public void put(String key, boolean b) {
+		put(key, Boolean.toString(b));
+	}
+	
     /**
      * Write the contents of the SimpleFieldSet to a Writer.
      * @param osr
@@ -306,6 +326,7 @@ public class SimpleFieldSet {
 	}
 
 	public void put(String key, SimpleFieldSet fs) {
+		if(fs == null) return; // legal no-op, because used everywhere
 		if(fs.isEmpty())
 			throw new IllegalArgumentException("Empty");
 		if(!multiLevel)
@@ -387,6 +408,5 @@ public class SimpleFieldSet {
 		while(i.hasNext()) v.add(i.next());
 		return (String[]) v.toArray(new String[v.size()]);
 	}
-	
 
 }

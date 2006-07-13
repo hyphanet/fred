@@ -12,13 +12,14 @@ import freenet.crypt.RandomSource;
 import freenet.support.Bucket;
 import freenet.support.Logger;
 import freenet.support.ReadOnlyFileSliceBucket;
+import freenet.support.SimpleFieldSet;
 
 /**
  * A file Bucket is an implementation of Bucket that writes to a file.
  * 
  * @author oskar
  */
-public class FileBucket implements Bucket {
+public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 
 	protected File file;
 	protected boolean readOnly;
@@ -324,5 +325,14 @@ public class FileBucket implements Bucket {
 	
 	public String toString() {
 		return super.toString()+":"+file.getPath();
+	}
+
+	public SimpleFieldSet toFieldSet() {
+		if(deleteOnFinalize) return null;
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("Type", "FileBucket");
+		fs.put("Filename", file.toString());
+		fs.put("Length", length);
+		return fs;
 	}
 }

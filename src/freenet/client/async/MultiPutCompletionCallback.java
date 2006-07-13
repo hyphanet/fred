@@ -7,6 +7,7 @@ import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
@@ -145,6 +146,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 
 	public Object getToken() {
 		return token;
+	}
+
+	public SimpleFieldSet getProgressFieldset() {
+		return null;
 	}
 
 }

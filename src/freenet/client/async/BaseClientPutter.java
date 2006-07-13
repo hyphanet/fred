@@ -6,4 +6,6 @@ public abstract class BaseClientPutter extends ClientRequester {
 		super(priorityClass, chkScheduler, sskScheduler, context);
 	}
 
+	public abstract void onMajorProgress();
+	
 }

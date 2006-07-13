@@ -374,6 +374,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null);
 		finish();
+		if(persistenceType != PERSIST_CONNECTION)
+			client.server.forceStorePersistentRequests();
 	}
 
 	public void onSuccess(BaseClientPutter state) {

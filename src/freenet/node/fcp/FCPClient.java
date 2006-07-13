@@ -33,7 +33,7 @@ public class FCPClient {
 		this.client = node.makeClient((short)0);
 		this.isGlobalQueue = isGlobalQueue;
 		defaultFetchContext = client.getFetcherContext();
-		defaultInsertContext = client.getInserterContext();
+		defaultInsertContext = client.getInserterContext(false);
 		clientsWatching = new LinkedList();
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 	}

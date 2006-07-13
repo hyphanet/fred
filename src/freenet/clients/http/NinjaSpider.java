@@ -737,6 +737,10 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		}
 	}
 
+	public void onMajorProgress() {
+		// Ignore
+	}
+
 
 
 }

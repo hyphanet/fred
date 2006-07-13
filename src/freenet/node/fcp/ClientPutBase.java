@@ -53,7 +53,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			boolean dontCompress, int maxRetries) {
 		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
-		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer());
+		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
@@ -94,6 +94,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		trySendFinalMessage(null);
 		freeData();
 		finish();
+		if(persistenceType != PERSIST_CONNECTION)
+			client.server.forceStorePersistentRequests();
 	}
 
 	public void onFailure(InserterException e, BaseClientPutter state) {
@@ -104,6 +106,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		trySendFinalMessage(null);
 		freeData();
 		finish();
+		if(persistenceType != PERSIST_CONNECTION)
+			client.server.forceStorePersistentRequests();
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
