@@ -505,6 +505,7 @@ public class FCPServer implements Runnable {
 			GZIPInputStream gis = new GZIPInputStream(fis);
 			BufferedInputStream bis = new BufferedInputStream(gis);
 			loadPersistentRequests(bis);
+			persistentDownloadsFile.delete();
 		} catch (IOException e) {
 			if(fis != null) {
 				try {
