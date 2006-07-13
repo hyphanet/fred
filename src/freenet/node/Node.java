@@ -94,6 +94,7 @@ import freenet.keys.SSKVerifyException;
 import freenet.node.fcp.FCPServer;
 import freenet.node.updater.NodeUpdater;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
+import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
@@ -1874,6 +1875,10 @@ public class Node {
 				});
 			}
 		}
+		
+		// TODO: implement a "required" version if needed
+		if(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber)
+			this.alerts.register(new ExtOldAgeUserAlert());
 		
 		this.hasStarted = true;
 	}

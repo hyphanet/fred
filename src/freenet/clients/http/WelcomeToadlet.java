@@ -12,7 +12,6 @@ import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
-import freenet.node.ExtVersion;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
