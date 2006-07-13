@@ -14,6 +14,7 @@ import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.ExtVersion;
 import freenet.node.Node;
+import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.Bucket;
@@ -416,17 +417,8 @@ public class WelcomeToadlet extends Toadlet {
 		buf.append("<div class=\"infobox-content\">\n");
 		
 		buf.append("Freenet "+Version.nodeVersion+" Build #"+Version.buildNumber()+" r"+Version.cvsRevision+"<br/>");
-		
-		 int ExtBuildNumber = -1; 	 
-         String ExtVer = null; 	 
-         try{ 	 
-                 ExtBuildNumber = ExtVersion.buildNumber(); 	 
-                 ExtVer = ExtVersion.cvsRevision;
-                 buf.append("Freenet-ext Build #"+ExtBuildNumber+" r"+ExtVer+"<br/>"); 	 
-         }catch(Throwable t){ 	 
-                 // Compatibility code ... will be removed 	 
-         }
-		
+		buf.append("Freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+"<br/>"); 	 
+        
 		if((Version.buildNumber() < Version.highestSeenBuild) && advancedDarknetOutputEnabled) {
 			buf.append("<br />");
 			buf.append("<b>A newer version is available! (Build #"+Version.highestSeenBuild+")</b>");

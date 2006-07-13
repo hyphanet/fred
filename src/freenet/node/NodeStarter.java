@@ -13,6 +13,7 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.Yarrow;
 import freenet.node.Node.NodeInitException;
+import freenet.support.Logger;
        
 
 /**
@@ -27,6 +28,9 @@ public class NodeStarter
 {
     private Node node;
 	static LoggingConfigHandler logConfigHandler;
+	public static int RECOMMENDED_EXT_BUILD_NUMBER = 1;
+	public static int extBuildNumber;
+	public static String extRevisionNumber;
 	private FilePersistentConfig cfg;
 
     /*---------------------------------------------------------------
@@ -59,7 +63,7 @@ public class NodeStarter
     		System.out.println("Usage: $ java freenet.node.Node <configFile>");
     		return new Integer(-1);
     	}
-    	
+    	 
     	File configFilename;
     	if(args.length == 0) {
     		System.out.println("Using default config filename freenet.ini");
@@ -89,6 +93,17 @@ public class NodeStarter
     		System.err.println("Error: could not set up logging: "+e.getMessage());
     		e.printStackTrace();
     		return new Integer(-2);
+    	}
+    	
+    	try{ 	 
+    		extBuildNumber = ExtVersion.buildNumber();
+    		extRevisionNumber = ExtVersion.cvsRevision;
+    		if(extBuildNumber == 0 || extRevisionNumber == null) throw new Throwable();
+    	}catch(Throwable t){ 	 
+    		// Compatibility code ... will be removed
+    		Logger.error(this, "Unable to get the version of your freenet-ext file : it's probably corrupted!");
+    		extRevisionNumber = "INVALID";
+    		extBuildNumber = -1;
     	}
     	
     	// Setup RNG
