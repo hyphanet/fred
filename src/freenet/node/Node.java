@@ -1459,7 +1459,6 @@ public class Node {
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
 
 		// Persistent temp files
-		
 		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), sortOrder++, true, "Persistent temp files directory", "Name of directory to put persistent temp files in",
 				new StringCallback() {
 					public String get() {
@@ -1480,8 +1479,13 @@ public class Node {
 			throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
 		}
 		
-		// Datastore
+        // Name 	 
+        nodeConfig.register("name", myName, sortOrder++, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node", 	 
+                        new NodeNameCallback(this)); 	 
+        myName = nodeConfig.getString("name"); 	 
+
 		
+		// Datastore
 		nodeConfig.register("storeSize", "1G", sortOrder++, false, "Store size in bytes", "Store size in bytes", 
 				new LongCallback() {
 
