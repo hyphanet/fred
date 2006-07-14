@@ -703,8 +703,9 @@ public class PeerNode implements PeerContext {
         Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected()) throw new NotConnectedException();
         MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes, ctr);
+        long now = System.currentTimeMillis();
         synchronized(routingBackoffSync) {
-        	reportBackoffStatus(System.currentTimeMillis());
+        	reportBackoffStatus(now);
         }
         synchronized(messagesToSendNow) {
             messagesToSendNow.addLast(item);
@@ -860,9 +861,8 @@ public class PeerNode implements PeerContext {
     boolean firstHandshake = true;
 
     private void calcNextHandshake(boolean couldSendHandshake) {
-        long now = -1;
+        long now = System.currentTimeMillis();
         synchronized(this) {
-            now = System.currentTimeMillis();
             if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
                 // Let them know we're here, but have no hope of connecting
                 sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
@@ -979,21 +979,23 @@ public class PeerNode implements PeerContext {
     /**
      * Should we reject a swap request?
      */
-    public synchronized boolean shouldRejectSwapRequest() {
+    public boolean shouldRejectSwapRequest() {
         long now = System.currentTimeMillis();
-        if(timeLastReceivedSwapRequest > 0) {
-            long timeSinceLastTime = now - timeLastReceivedSwapRequest;
-            swapRequestsInterval.report(timeSinceLastTime);
-            double averageInterval = swapRequestsInterval.currentValue();
-            if(averageInterval < Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS) {
-                double p = 
-                    (Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS - averageInterval) /
-                    Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS;
-                return node.random.nextDouble() < p;
-            } else return false;
-                
-        }
-        timeLastReceivedSwapRequest = now;
+        synchronized(this) {
+			if(timeLastReceivedSwapRequest > 0) {
+				long timeSinceLastTime = now - timeLastReceivedSwapRequest;
+				swapRequestsInterval.report(timeSinceLastTime);
+				double averageInterval = swapRequestsInterval.currentValue();
+				if(averageInterval < Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS) {
+					double p = 
+						(Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS - averageInterval) /
+						Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS;
+					return node.random.nextDouble() < p;
+				} else return false;
+					
+			}
+			timeLastReceivedSwapRequest = now;
+		}
         return false;
     }
 
@@ -1057,17 +1059,22 @@ public class PeerNode implements PeerContext {
      * @param dontLog If true, don't log an error or throw an exception if we are not connected. This
      * can be used in handshaking when the connection hasn't been verified yet.
      */
-    synchronized void receivedPacket(boolean dontLog) throws NotConnectedException {
-        if(!isConnected() && !dontLog) {
-        	if((unverifiedTracker == null) && (currentTracker == null)) {
-        		Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
-        		throw new NotConnectedException();
-        	} else {
-        		Logger.minor(this, "Received packet while disconnected on "+this+" - recently disconnected() ?");
-        	}
-        }
-        timeLastReceivedPacket = System.currentTimeMillis();
-    }
+	void receivedPacket(boolean dontLog) throws NotConnectedException {
+		synchronized(this) {
+			if(!isConnected() && !dontLog) {
+				if((unverifiedTracker == null) && (currentTracker == null)) {
+					Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
+					throw new NotConnectedException();
+				} else {
+					Logger.minor(this, "Received packet while disconnected on "+this+" - recently disconnected() ?");
+				}
+			}
+		}
+    	long now = System.currentTimeMillis();
+		synchronized(this) {
+			timeLastReceivedPacket = now;
+		}
+	}
 
     /**
      * Update timeLastSentPacket
@@ -1140,7 +1147,7 @@ public class PeerNode implements PeerContext {
         	KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
         	changedIP(replyTo);
         	if(thisBootID != this.bootID) {
-        		connectedTime = System.currentTimeMillis();
+        		connectedTime = now;
         		Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
         		if(previousTracker != null) {
         			KeyTracker old = previousTracker;
@@ -1635,8 +1642,9 @@ public class PeerNode implements PeerContext {
 	private final Object routingBackoffSync = new Object();
 	
 	public boolean isRoutingBackedOff() {
+		long now = System.currentTimeMillis();
 		synchronized(routingBackoffSync) {
-			if(System.currentTimeMillis() < routingBackedOffUntil) {
+			if(now < routingBackedOffUntil) {
 				Logger.minor(this, "Routing is backed off");
 				return true;
 			} else return false;
@@ -1697,8 +1705,8 @@ public class PeerNode implements PeerContext {
 	 */
 	public void localRejectedOverload(String reason) {
 		Logger.minor(this, "Local rejected overload on "+this);
+		long now = System.currentTimeMillis();
 		synchronized(routingBackoffSync) {
-			long now = System.currentTimeMillis();
 			reportBackoffStatus(now);
 			// Don't back off any further if we are already backed off
 			if(now > routingBackedOffUntil) {
@@ -1727,8 +1735,8 @@ public class PeerNode implements PeerContext {
 	 */
 	public void successNotOverload() {
 		Logger.minor(this, "Success not overload on "+this);
+		long now = System.currentTimeMillis();
 		synchronized(routingBackoffSync) {
-			long now = System.currentTimeMillis();
 			reportBackoffStatus(now);
 			// Don't un-backoff if still backed off
 			if(now > routingBackedOffUntil) {
