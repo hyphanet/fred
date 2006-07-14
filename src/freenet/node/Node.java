@@ -1619,13 +1619,6 @@ public class Node {
 			throw new NodeInitException(EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
 		}
 
-		// Name
-		nodeConfig.register("name", myName, sortOrder++, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node",
-				new NodeNameCallback(this));
-		myName = nodeConfig.getString("name");
-		 
-		
-		// Select the request scheduler
 		
 		// Guesstimates. Hopefully well over the reality.
 		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE);
@@ -1646,35 +1639,36 @@ public class Node {
 		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Long.MAX_VALUE);
 		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Long.MAX_VALUE);
 
-		// FIXME make all the below arbitrary constants configurable!
+		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
 		
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
 		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request");
 		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "CHK Request starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localChkFetchBytesSentAverage, localChkFetchBytesReceivedAverage);
-		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, this);
+		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, this, schedulerConfig, "CHKrequester");
 		chkRequestStarter.setScheduler(chkFetchScheduler);
 		chkRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "CHK Insert");
 		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "CHK Insert starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localChkInsertBytesSentAverage, localChkInsertBytesReceivedAverage);
-		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, this);
+		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, this, schedulerConfig, "CHKinserter");
 		chkInsertStarter.setScheduler(chkPutScheduler);
 		chkInsertStarter.start();
 
 		sskRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "SSK Request");
 		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "SSK Request starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localSskFetchBytesSentAverage, localSskFetchBytesReceivedAverage);
-		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, this);
+		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, this, schedulerConfig, "SSKrequester");
 		sskRequestStarter.setScheduler(sskFetchScheduler);
 		sskRequestStarter.start();
 		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
 		// FIXME reenable the above
 		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "SSK Insert");
 		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "SSK Insert starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localSskInsertBytesSentAverage, localSskFetchBytesReceivedAverage);
-		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, this);
+		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, this, schedulerConfig, "SSKinserter");
 		sskInsertStarter.setScheduler(sskPutScheduler);
 		sskInsertStarter.start();
 		
+		schedulerConfig.finishedInitialization();
 
 		
 		nodeConfig.finishedInitialization();

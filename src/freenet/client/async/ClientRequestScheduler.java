@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyVerifyException;
@@ -38,6 +39,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final HashMap allRequestsByClientRequest;
 	private final RequestStarter starter;
 	private final Node node;
+	public final String name;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
@@ -90,7 +92,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
 	
-	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node) {
+	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, SubConfig sc, String name) {
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
@@ -99,8 +101,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		allRequestsByClientRequest = new HashMap();
 		
-		//FIXME implement the config. hook
-		this.choosenPriorityScheduler = PRIORITY_HARD;
+		this.name = name;
+		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, "Priority policy of the "+name+"scheduler", "Set the priority policy scheme used by the scheduler. Could be one of ["+PRIORITY_HARD+"|"+PRIORITY_SOFT+"]",
+				new PrioritySchedulerCallback(this));
+		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 	}
 	
 	/** Called by the  config. Callback
@@ -262,5 +266,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(starter) {
 			starter.notifyAll();
 		}
+	}
+
+	public String getChoosenPriorityScheduler() {
+		return choosenPriorityScheduler;
 	}
 }
