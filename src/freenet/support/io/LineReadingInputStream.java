@@ -20,7 +20,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 	 */
 	public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
 		if(buf == null)
-			buf = new byte[Math.max(128, Math.min(1024, bufferSize))];
+			buf = new byte[Math.max(Math.min(128,maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
 		while(true) {
 			int x = read();
