@@ -10,7 +10,11 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.support.io.CannotCreateFromFieldSetException;
+import freenet.support.io.PersistentFileTracker;
+import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.SerializableToFieldSetBucket;
+import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 /**
  * A proxy Bucket which adds:
@@ -88,6 +92,42 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		this.minPaddedSize = minSize;
 		readOnly = false;
 		lastOutputStream = 0;
+	}
+
+	public PaddedEphemerallyEncryptedBucket(SimpleFieldSet fs, RandomSource origRandom, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
+		this.origRandom = origRandom;
+		String tmp = fs.get("DataLength");
+		if(tmp == null)
+			throw new CannotCreateFromFieldSetException("No DataLength");
+		try {
+			dataLength = Long.parseLong(tmp);
+		} catch (NumberFormatException e) {
+			throw new CannotCreateFromFieldSetException("Corrupt dataLength: "+tmp, e);
+		}
+		SimpleFieldSet underlying = fs.subset("Underlying");
+		if(underlying == null)
+			throw new CannotCreateFromFieldSetException("No underlying bucket");
+		bucket = SerializableToFieldSetBucketUtil.create(underlying, origRandom, f);
+		tmp = fs.get("DecryptKey");
+		if(tmp == null)
+			throw new CannotCreateFromFieldSetException("No key");
+		key = HexUtil.hexToBytes(tmp);
+		try {
+			aes = new Rijndael(256, 256);
+		} catch (UnsupportedCipherException e) {
+			throw new Error(e);
+		}
+		aes.initialize(key);
+		tmp = fs.get("MinPaddedSize");
+		if(tmp == null)
+			minPaddedSize = 1024; // FIXME throw! back compatibility hack
+		else {
+			try {
+				minPaddedSize = Integer.parseInt(tmp);
+			} catch (NumberFormatException e) {
+				throw new CannotCreateFromFieldSetException("Corrupt dataLength: "+tmp, e);
+			}
+		}
 	}
 
 	public OutputStream getOutputStream() throws IOException {
@@ -312,6 +352,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			Logger.error(this, "Cannot serialize underlying bucket: "+bucket);
 			return null;
 		}
+		fs.put("MinPaddedSize", minPaddedSize);
 		return fs;
 	}
 

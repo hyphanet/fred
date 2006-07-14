@@ -70,7 +70,7 @@ public class ClientPut extends ClientPutBase {
 		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		inserter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, 
-				getCHKOnly, isMetadata, client);
+				getCHKOnly, isMetadata, client, null);
 		if((persistenceType != PERSIST_CONNECTION) && (handler != null))
 			sendPendingMessages(handler.outputHandler, true, false, false);
 	}
@@ -150,7 +150,7 @@ public class ClientPut extends ClientPutBase {
 		}
 		this.clientMetadata = cm;
 		inserter = new ClientPutter(this, data, uri, cm, ctx, client.node.chkPutScheduler, 
-				client.node.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client);
+				client.node.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client, fs.subset("progress"));
 		if(!finished)
 			start();
 	}

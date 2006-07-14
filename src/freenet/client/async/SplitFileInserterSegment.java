@@ -1,6 +1,7 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
@@ -11,12 +12,13 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
-import freenet.support.HexUtil;
+import freenet.support.Fields;
 import freenet.support.Logger;
-import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.FileBucket;
+import freenet.support.io.CannotCreateFromFieldSetException;
+import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.SerializableToFieldSetBucket;
+import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class SplitFileInserterSegment implements PutCompletionCallback {
 
@@ -58,6 +60,138 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		this.segNo = segNo;
 	}
 	
+	/** Resume an insert segment 
+	 * @throws ResumeException */
+	public SplitFileInserterSegment(SplitFileInserter parent, SimpleFieldSet fs, short splitfileAlgorithm, InserterContext ctx, boolean getCHKOnly, int segNo) throws ResumeException {
+		this.parent = parent;
+		this.getCHKOnly = getCHKOnly;
+		this.blockInsertContext = ctx;
+		this.segNo = segNo;
+		if(!"SplitFileInserterSegment".equals(fs.get("Type")))
+			throw new ResumeException("Wrong Type: "+fs.get("Type"));
+		finished = Fields.stringToBool(fs.get("Finished"), false);
+		encoded = Fields.stringToBool(fs.get("Encoded"), false);
+		started = Fields.stringToBool(fs.get("Started"), false);
+		SimpleFieldSet errorsFS = fs.subset("Errors");
+		if(errorsFS != null)
+			this.errors = new FailureCodeTracker(true, errorsFS);
+		else
+			this.errors = new FailureCodeTracker(true);
+		if(finished && !errors.isEmpty())
+			toThrow = InserterException.construct(errors);
+		blocksGotURI = 0;
+		blocksCompleted = 0;
+		SimpleFieldSet dataFS = fs.subset("DataBlocks");
+		if(dataFS == null)
+			throw new ResumeException("No data blocks");
+		String tmp = dataFS.get("Count");
+		if(tmp == null) throw new ResumeException("No data block count");
+		int dataBlockCount;
+		try {
+			dataBlockCount = Integer.parseInt(tmp);
+		} catch (NumberFormatException e) {
+			throw new ResumeException("Corrupt data blocks count: "+e+" : "+tmp);
+		}
+		
+		hasURIs = true;
+		
+		dataBlocks = new Bucket[dataBlockCount];
+		dataURIs = new FreenetURI[dataBlockCount];
+		dataBlockInserters = new SingleBlockInserter[dataBlockCount];
+		for(int i=0;i<dataBlockCount;i++) {
+			SimpleFieldSet blockFS = dataFS.subset(Integer.toString(i));
+			if(blockFS == null) throw new ResumeException("No data block "+i+" on segment "+segNo);
+			tmp = blockFS.get("URI");
+			if(tmp != null) {
+				try {
+					dataURIs[i] = new FreenetURI(tmp);
+					blocksGotURI++;
+				} catch (MalformedURLException e) {
+					throw new ResumeException("Corrupt URI: "+e+" : "+tmp);
+				}
+			} else hasURIs = false;
+			boolean blockFinished = Fields.stringToBool(blockFS.get("Finished"), false);
+			if(blockFinished && dataURIs[i] == null)
+				throw new ResumeException("Block "+i+" of "+segNo+" finished but no URI");
+			if(blockFinished && !encoded)
+				throw new ResumeException("Block "+i+" of "+segNo+" finished but not encoded");
+			if(!blockFinished) {
+				// Read data
+				SimpleFieldSet bucketFS = blockFS.subset("Data");
+				if(bucketFS == null)
+					throw new ResumeException("Block "+i+" of "+segNo+" not finished but no data");
+				try {
+					dataBlocks[i] = SerializableToFieldSetBucketUtil.create(bucketFS, ctx.random, ctx.persistentFileTracker);
+				} catch (CannotCreateFromFieldSetException e) {
+					throw new ResumeException("Failed to deserialize block "+i+" of "+segNo+" : "+e, e);
+				}
+				if(dataBlocks[i] == null)
+					throw new ResumeException("Block "+i+" of "+segNo+" not finished but no data (create returned null)");
+				// Don't create fetcher yet; that happens in start()
+			} else blocksCompleted++;
+		}
+
+		SimpleFieldSet checkFS = fs.subset("CheckBlocks");
+		if(checkFS != null) {
+			tmp = checkFS.get("Count");
+			if(tmp == null) throw new ResumeException("Check blocks but no check block count");
+			int checkBlockCount;
+			try {
+				checkBlockCount = Integer.parseInt(tmp);
+			} catch (NumberFormatException e) {
+				throw new ResumeException("Corrupt check blocks count: "+e+" : "+tmp);
+			}
+			checkBlocks = new Bucket[checkBlockCount];
+			checkURIs = new FreenetURI[checkBlockCount];
+			checkBlockInserters = new SingleBlockInserter[checkBlockCount];
+			for(int i=0;i<checkBlockCount;i++) {
+				SimpleFieldSet blockFS = checkFS.subset(Integer.toString(i));
+				if(blockFS == null) {
+					if(encoded) throw new ResumeException("No check block "+i+" of "+segNo);
+					else continue;
+				}
+				tmp = blockFS.get("URI");
+				if(tmp != null) {
+					try {
+						checkURIs[i] = new FreenetURI(tmp);
+						blocksGotURI++;
+					} catch (MalformedURLException e) {
+						throw new ResumeException("Corrupt URI: "+e+" : "+tmp);
+					}
+				} else hasURIs = false;
+				boolean blockFinished = Fields.stringToBool(blockFS.get("Finished"), false);
+				if(blockFinished && checkURIs[i] == null)
+					throw new ResumeException("Check block "+i+" of "+segNo+" finished but no URI");
+				if(blockFinished && !encoded)
+					throw new ResumeException("Check block "+i+" of "+segNo+" finished but not encoded");
+				if(!blockFinished) {
+					// Read data
+					SimpleFieldSet bucketFS = blockFS.subset("Data");
+					if(bucketFS == null)
+						throw new ResumeException("Check block "+i+" of "+segNo+" not finished but no data");
+					try {
+						checkBlocks[i] = SerializableToFieldSetBucketUtil.create(bucketFS, ctx.random, ctx.persistentFileTracker);
+					} catch (CannotCreateFromFieldSetException e) {
+						throw new ResumeException("Failed to deserialize check block "+i+" of "+segNo+" : "+e, e);
+					}
+					if(checkBlocks[i] == null)
+						throw new ResumeException("Check block "+i+" of "+segNo+" not finished but no data (create returned null)");
+				// Don't create fetcher yet; that happens in start()
+				} else blocksCompleted++;
+			}
+			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount, checkBlocks.length);
+		} else {
+			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount);
+			int checkBlocksCount = splitfileAlgo.countCheckBlocks();
+			this.checkURIs = new FreenetURI[checkBlocksCount];
+			this.checkBlocks = new Bucket[checkBlocksCount];
+			this.checkBlockInserters = new SingleBlockInserter[checkBlocksCount];
+			hasURIs = false;
+		}
+		parent.parent.addBlocks(dataURIs.length+checkURIs.length);
+		parent.parent.addMustSucceedBlocks(dataURIs.length+checkURIs.length);
+	}
+
 	public synchronized SimpleFieldSet getProgressFieldset() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("Type", "SplitFileInserterSegment");
@@ -80,7 +214,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			if(started) {
 				block.put("Finished", finished);
 			}
-			if(finished) continue;
 			if(!finished) {
 				Bucket data = dataBlocks[i];
 				if(data instanceof SerializableToFieldSetBucket) {
@@ -100,7 +233,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		}
 		fs.put("DataBlocks", dataFS);
 		SimpleFieldSet checkFS = new SimpleFieldSet(true);
-		checkFS.put("Count", Integer.toString(dataBlocks.length));
+		checkFS.put("Count", Integer.toString(checkBlocks.length));
 		for(int i=0;i<checkBlocks.length;i++) {
 			SimpleFieldSet block = new SimpleFieldSet(true);
 			if(checkURIs[i] != null)
@@ -131,16 +264,30 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	
 	public void start() throws InserterException {
 		for(int i=0;i<dataBlockInserters.length;i++) {
-			dataBlockInserters[i] = 
-				new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i, getCHKOnly, false, false, parent.token);
-			dataBlockInserters[i].schedule();
+			if(dataBlocks[i] != null) { // else already finished on creation
+				dataBlockInserters[i] = 
+					new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i, getCHKOnly, false, false, parent.token);
+				dataBlockInserters[i].schedule();
+			} else {
+				parent.parent.completedBlock(true);
+			}
 		}
+		parent.parent.notifyClients();
 		started = true;
-		if(splitfileAlgo != null) {
+		if(splitfileAlgo != null && !encoded) {
 			// Encode blocks
 			Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
 			t.setDaemon(true);
 			t.start();
+		}
+		if(encoded) {
+			parent.encodedSegment(this);
+		}
+		if(hasURIs) {
+			parent.segmentHasURIs(this);
+		}
+		if(finished) {
+			parent.segmentFinished(this);
 		}
 	}
 	
@@ -156,9 +303,13 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			splitfileAlgo.encode(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory);
 			// Start the inserts
 			for(int i=0;i<checkBlockInserters.length;i++) {
-				checkBlockInserters[i] = 
-					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false, false, parent.token);
-				checkBlockInserters[i].schedule();
+				if(checkBlocks[i] != null) { // else already finished on creation
+					checkBlockInserters[i] = 
+						new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false, false, parent.token);
+					checkBlockInserters[i].schedule();
+				} else {
+					parent.parent.completedBlock(true);
+				}
 			}
 			// Tell parent only after have started the inserts.
 			// Because of the counting.
@@ -279,6 +430,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	public int countCheckBlocks() {
 		return checkBlocks.length;
+	}
+	
+
+	public int countDataBlocks() {
+		return dataBlocks.length;
 	}
 
 	public FreenetURI[] getCheckURIs() {

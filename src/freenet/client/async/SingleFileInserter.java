@@ -43,7 +43,7 @@ class SingleFileInserter implements ClientPutState {
 	final boolean insertAsArchiveManifest;
 	/** If true, we are not the top level request, and should not
 	 * update our parent to point to us as current put-stage. */
-	private boolean reportMetadataOnly;
+	private final boolean reportMetadataOnly;
 	public final Object token;
 
 	/**
@@ -72,7 +72,22 @@ class SingleFileInserter implements ClientPutState {
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
 	}
 	
-	public void start() throws InserterException {
+	public void start(SimpleFieldSet fs) throws InserterException {
+		if(fs != null) {
+			String type = fs.get("Type");
+			if(type.equals("SplitHandler")) {
+				// Try to reconstruct SplitHandler.
+				// If we succeed, we bypass both compression and FEC encoding!
+				try {
+					SplitHandler sh = new SplitHandler();
+					sh.start(fs);
+					cb.onTransition(this, sh);
+					return;
+				} catch (ResumeException e) {
+					Logger.error(this, "Failed to restore: "+e, e);
+				}
+			}
+		}
 		if(block.getData().size() > COMPRESS_OFF_THREAD_LIMIT) {
 			// Run off thread
 			OffThreadCompressor otc = new OffThreadCompressor();
@@ -263,6 +278,42 @@ class SingleFileInserter implements ClientPutState {
 		boolean splitInsertSetBlocks;
 		boolean metaInsertSetBlocks;
 
+		/**
+		 * Create a SplitHandler from a stored progress SimpleFieldSet.
+		 * @throws ResumeException Thrown if the resume fails.
+		 * @throws InserterException Thrown if some other error prevents the insert
+		 * from starting.
+		 */
+		void start(SimpleFieldSet fs) throws ResumeException, InserterException {
+			
+			// FIXME: Include the booleans?
+			
+			SimpleFieldSet sfiFS = fs.subset("SplitFileInserter");
+			if(sfiFS == null)
+				throw new ResumeException("No SplitFileInserter");
+			sfi = new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, sfiFS);
+			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
+			if(metaFS != null) {
+				String type = metaFS.get("Type");
+				if(type.equals("SplitFileInserter")) {
+					metadataPutter = 
+						new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, metaFS);
+				} else if(type.equals("SplitHandler")) {
+					metadataPutter = new SplitHandler();
+					((SplitHandler)metadataPutter).start(metaFS);
+				}
+			}
+			
+			sfi.schedule();
+			if(metadataPutter != null) {
+				metadataPutter.schedule();
+			}
+		}
+
+		public SplitHandler() {
+			// Default constructor
+		}
+
 		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
 			if(oldState == sfi)
 				sfi = newState;
@@ -310,6 +361,8 @@ class SingleFileInserter implements ClientPutState {
 				cb.onMetadata(meta, this);
 				metaInsertSuccess = true;
 			} else {
+				if(metadataPutter != null)
+					return;
 				Bucket metadataBucket;
 				try {
 					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
@@ -334,7 +387,7 @@ class SingleFileInserter implements ClientPutState {
 				}
 
 				try {
-					((SingleFileInserter)metadataPutter).start();
+					((SingleFileInserter)metadataPutter).start(null);
 				} catch (InserterException e) {
 					fail(e);
 					return;
@@ -409,7 +462,7 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	public void schedule() throws InserterException {
-		start();
+		start(null);
 	}
 
 	public Object getToken() {

@@ -239,7 +239,7 @@ public class Node {
 			inserter = new ClientPutter(this, b, uri,
 						new ClientMetadata("text/plain") /* it won't quite fit in an SSK anyway */, 
 						Node.this.makeClient((short)0).getInserterContext(true),
-						chkPutScheduler, sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this);
+						chkPutScheduler, sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null);
 			
 			try {
 				

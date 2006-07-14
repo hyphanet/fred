@@ -82,6 +82,20 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		file.deleteOnExit();
 	}
 
+	public FileBucket(SimpleFieldSet fs, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
+		String tmp = fs.get("Filename");
+		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
+		this.file = new File(tmp);
+		tmp = fs.get("Length");
+		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
+		try {
+			length = Long.parseLong(tmp);
+		} catch (NumberFormatException e) {
+			throw new CannotCreateFromFieldSetException("Corrupt length "+tmp, e);
+		}
+		f.register(file);
+	}
+
 	public OutputStream getOutputStream() throws IOException {
 		synchronized (this) {
 			if(readOnly)

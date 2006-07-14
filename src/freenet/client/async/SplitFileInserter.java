@@ -13,6 +13,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.Compressor;
@@ -45,7 +46,10 @@ public class SplitFileInserter implements ClientPutState {
 		fs.put("Type", "SplitFileInserter");
 		fs.put("DataLength", Long.toString(dataLength));
 		fs.put("CompressionCodec", Short.toString(compressionCodec));
+		fs.put("SplitfileCodec", Short.toString(splitfileAlgorithm));
 		fs.put("Finished", Boolean.toString(finished));
+		fs.put("SegmentSize", Integer.toString(segmentSize));
+		fs.put("CheckSegmentSize", Integer.toString(checkSegmentSize));
 		SimpleFieldSet segs = new SimpleFieldSet(true);
 		for(int i=0;i<segments.length;i++) {
 			segs.put(Integer.toString(i), segments[i].getProgressFieldset());
@@ -90,6 +94,79 @@ public class SplitFileInserter implements ClientPutState {
 		countCheckBlocks = count;
 	}
 
+	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs) throws ResumeException {
+		this.parent = parent;
+		this.insertAsArchiveManifest = insertAsArchiveManifest;
+		this.token = token;
+		this.finished = false;
+		this.isMetadata = metadata;
+		this.cm = clientMetadata;
+		this.getCHKOnly = getCHKOnly;
+		this.cb = cb;
+		this.ctx = ctx;
+		finished = Fields.stringToBool(fs.get("Finished"), false);
+		String length = fs.get("DataLength");
+		if(length == null) throw new ResumeException("No DataLength");
+		try {
+			dataLength = Long.parseLong(length);
+		} catch (NumberFormatException e) {
+			throw new ResumeException("Corrupt DataLength: "+e+" : "+length);
+		}
+		String tmp = fs.get("SegmentSize");
+		if(length == null) throw new ResumeException("No SegmentSize");
+		try {
+			segmentSize = Integer.parseInt(tmp);
+		} catch (NumberFormatException e) {
+			throw new ResumeException("Corrupt SegmentSize: "+e+" : "+length);
+		}
+		tmp = fs.get("CheckSegmentSize");
+		if(length == null) throw new ResumeException("No CheckSegmentSize");
+		try {
+			checkSegmentSize = Integer.parseInt(tmp);
+		} catch (NumberFormatException e) {
+			throw new ResumeException("Corrupt CheckSegmentSize: "+e+" : "+length);
+		}
+		String ccodec = fs.get("CompressionCodec");
+		if(ccodec == null) throw new ResumeException("No compression codec");
+		try {
+			compressionCodec = Short.parseShort(ccodec);
+		} catch (NumberFormatException e) {
+			throw new ResumeException("Corrupt CompressionCodec: "+e+" : "+ccodec);
+		}
+		String scodec = fs.get("CompressionCodec");
+		if(scodec == null) throw new ResumeException("No compression codec");
+		try {
+			splitfileAlgorithm = Short.parseShort(scodec);
+		} catch (NumberFormatException e) {
+			throw new ResumeException("Corrupt SplitfileCodec: "+e+" : "+scodec);
+		}
+		SimpleFieldSet segFS = fs.subset("Segments");
+		if(segFS == null) throw new ResumeException("No segments");
+		String segc = segFS.get("Count");
+		if(segc == null) throw new ResumeException("No segment count");
+		int segmentCount;
+		try {
+			segmentCount = Integer.parseInt(segc);
+		} catch (NumberFormatException e) {
+			throw new ResumeException("Corrupt segment count: "+e+" : "+segc);
+		}
+		segments = new SplitFileInserterSegment[segmentCount];
+		
+		int dataBlocks = 0;
+		int checkBlocks = 0;
+		
+		for(int i=0;i<segments.length;i++) {
+			SimpleFieldSet segment = segFS.subset(Integer.toString(i));
+			if(segment == null) throw new ResumeException("No segment "+i);
+			segments[i] = new SplitFileInserterSegment(this, segment, splitfileAlgorithm, ctx, getCHKOnly, i);
+			dataBlocks += segments[i].countDataBlocks();
+			checkBlocks += segments[i].countCheckBlocks();
+		}
+		
+		this.countDataBlocks = dataBlocks;
+		this.countCheckBlocks = checkBlocks;
+	}
+
 	/**
 	 * Group the blocks into segments.
 	 */
@@ -129,8 +206,14 @@ public class SplitFileInserter implements ClientPutState {
 	public void start() throws InserterException {
 		for(int i=0;i<segments.length;i++)
 			segments[i].start();
+		
+		if(finished) {
+			// FIXME call callback with metadata etc
+		}
+
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
+		
 	}
 
 	public void encodedSegment(SplitFileInserterSegment segment) {

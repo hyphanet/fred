@@ -24,6 +24,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	private final boolean getCHKOnly;
 	private final boolean isMetadata;
 	private FreenetURI uri;
+	/** SimpleFieldSet containing progress information from last startup.
+	 * Will be progressively cleared during startup. */
+	private final SimpleFieldSet oldProgress;
 
 	/**
 	 * @param client The object to call back when we complete, or don't.
@@ -36,10 +39,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param getCHKOnly
 	 * @param isMetadata
 	 * @param clientContext The client object for purposs of round-robin client balancing.
+	 * @param stored The progress so far, stored as a SimpleFieldSet. Advisory; if there 
+	 * is an error reading this in, we will restart from scratch.
 	 */
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InserterContext ctx,
 			ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
-			boolean isMetadata, Object clientContext) {
+			boolean isMetadata, Object clientContext, SimpleFieldSet stored) {
 		super(priorityClass, chkScheduler, sskScheduler, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
@@ -50,6 +55,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.ctx = ctx;
 		this.finished = false;
 		this.cancelled = false;
+		this.oldProgress = stored;
 	}
 
 	public void start() throws InserterException {
@@ -58,7 +64,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				currentState =
 					new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false);
 			}
-			((SingleFileInserter)currentState).start();
+			((SingleFileInserter)currentState).start(oldProgress);
 		} catch (InserterException e) {
 			synchronized(this) {
 				finished = true;

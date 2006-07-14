@@ -20,7 +20,7 @@ import freenet.support.PaddedEphemerallyEncryptedBucket;
  * Once startup is completed, any unclaimed temp buckets which match the 
  * temporary file pattern will be deleted.
  */
-public class PersistentTempBucketFactory implements BucketFactory {
+public class PersistentTempBucketFactory implements BucketFactory, PersistentFileTracker {
 
 	/** Directory containing persistent temporary files */
 	private final File dir;
@@ -72,6 +72,10 @@ public class PersistentTempBucketFactory implements BucketFactory {
 		Bucket b = new FileBucket(f, false, false, false, true);
 		originalFiles.remove(f);
 		return b;
+	}
+	
+	public void register(File file) {
+		originalFiles.remove(file);
 	}
 	
 	/**

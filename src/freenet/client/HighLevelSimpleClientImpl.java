@@ -17,6 +17,8 @@ import freenet.support.Bucket;
 import freenet.support.BucketFactory;
 import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.io.NullPersistentFileTracker;
+import freenet.support.io.PersistentFileTracker;
 
 public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 
@@ -24,6 +26,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private final short priorityClass;
 	private final BucketFactory bucketFactory;
 	private final BucketFactory persistentBucketFactory;
+	private final PersistentFileTracker persistentFileTracker;
 	private final Node node;
 	/** One CEP for all requests and inserts */
 	private final ClientEventProducer globalEventProducer;
@@ -71,6 +74,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		archiveManager = mgr;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
+		this.persistentFileTracker = node.persistentTempBucketFactory;
 		random = r;
 		this.globalEventProducer = new SimpleEventProducer();
 		globalEventProducer.addEventListener(new EventLogger(Logger.MINOR));
@@ -118,7 +122,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		InserterContext context = getInserterContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.data, insert.desiredURI, insert.clientMetadata, 
-				context, node.chkPutScheduler, node.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this);
+				context, node.chkPutScheduler, node.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null);
 		put.start();
 		return pw.waitForCompletion();
 	}
@@ -174,7 +178,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public InserterContext getInserterContext(boolean forceNonPersistent) {
-		return new InserterContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory, random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
+		return new InserterContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory,
+				forceNonPersistent ? new NullPersistentFileTracker() : persistentFileTracker,
+				random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
 				globalEventProducer, cacheLocalRequests, node.uskManager);
 	}

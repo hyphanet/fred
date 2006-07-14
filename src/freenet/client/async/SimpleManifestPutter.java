@@ -69,7 +69,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		
 		public void start() throws InserterException {
 			if((origSFI == null) && (metadata != null)) return;
-			origSFI.start();
+			origSFI.start(null);
 			origSFI = null;
 		}
 		
@@ -415,7 +415,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, insertAsArchiveManifest);
 			Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
-			metadataInserter.start();
+			metadataInserter.start(null);
 		} catch (InserterException e) {
 			fail(e);
 		}
@@ -441,7 +441,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
 				}
-				metadataInserter.start();
+				metadataInserter.start(null);
 			} catch (MetadataUnresolvedException e1) {
 				resolve(e1);
 			}

@@ -8,6 +8,9 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.Vector;
 
+import freenet.support.io.CannotCreateFromFieldSetException;
+import freenet.support.io.PersistentFileTracker;
+import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.SerializableToFieldSetBucket;
 
 /**
@@ -17,6 +20,14 @@ import freenet.support.io.SerializableToFieldSetBucket;
  **/
 public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBucket {
 
+    private final File file;
+    private long offset = -1;
+    private long localOffset = 0;
+    private long len = -1;
+    private boolean readOnly = false;
+    private boolean released = false;
+    private Vector streams = new Vector();
+    
     public RandomAccessFileBucket(File file, long offset, long len, boolean readOnly)
         throws IOException {
         if (!(file.exists() && file.canRead())) {
@@ -32,7 +43,27 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         setRange(offset, len);
     }
 
-    public synchronized void setRange(long offset, long len) throws IOException {
+    public RandomAccessFileBucket(SimpleFieldSet fs, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
+   		String tmp = fs.get("Filename");
+   		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
+   		this.file = new File(tmp);
+   		tmp = fs.get("Length");
+   		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
+   		try {
+   			len = Long.parseLong(tmp);
+   		} catch (NumberFormatException e) {
+   			throw new CannotCreateFromFieldSetException("Corrupt length "+tmp, e);
+   		}
+   		tmp = fs.get("Offset");
+   		if(tmp == null) throw new CannotCreateFromFieldSetException("No offset");
+   		try {
+   			offset = Long.parseLong(tmp);
+   		} catch (NumberFormatException e) {
+   			throw new CannotCreateFromFieldSetException("Corrupt offset "+tmp, e);
+   		}
+	}
+
+	public synchronized void setRange(long offset, long len) throws IOException {
         if (isReleased()) {
             throw new IOException("Attempt to use a released RandomAccessFileBucket: " + getName() );
         }
@@ -424,14 +455,6 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
     }
     ////////////////////////////////////////////////////////////
 
-    private final File file;
-    private long offset = -1;
-    private long localOffset = 0;
-    private long len = -1;
-    private boolean readOnly = false;
-    private boolean released = false;
-    private Vector streams = new Vector();
-    
     public boolean isReadOnly() {
     	return readOnly;
     }
