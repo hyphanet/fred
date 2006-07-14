@@ -320,7 +320,7 @@ public class PeerNode implements PeerContext {
                 throw new FSParseException(e1);
         }
         if(nominalPeer.isEmpty()) {
-        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+"' with name '"+myName+"'");
+        	Logger.normal(this, "No IP addresses found for identity '"+Base64.encode(identity)+"', possibly at location '"+Double.toString(currentLocation.getValue())+"' with name '"+getName()+"'");
         	detectedPeer = null;
         } else {
         	detectedPeer = (Peer) nominalPeer.firstElement();
@@ -476,12 +476,14 @@ public class PeerNode implements PeerContext {
         	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
         }
 
-        if(ark != null) {
-        	if((myARK == null) || ((myARK != ark) && !myARK.equals(ark))) {
-        		myARK = ark;
-        		return true;
-        	}
-        }
+		synchronized(this) {
+			if(ark != null) {
+				if((myARK == null) || ((myARK != ark) && !myARK.equals(ark))) {
+					myARK = ark;
+					return true;
+				}
+			}
+		}
         return false;
 	}
 
@@ -494,18 +496,18 @@ public class PeerNode implements PeerContext {
     /**
      * Get my low-level address
      */
-    public Peer getDetectedPeer() {
+    public synchronized Peer getDetectedPeer() {
         return detectedPeer;
     }
 
-    public Peer getPeer(){
+    public synchronized Peer getPeer(){
     	return detectedPeer;
     }
     
     /**
      * Returns an array with the advertised addresses and the detected one
      */
-    protected Peer[] getHandshakeIPs(){
+    protected synchronized Peer[] getHandshakeIPs(){
         return handshakeIPs;
     }
     
@@ -546,11 +548,11 @@ public class PeerNode implements PeerContext {
           if(ignoreHostnames) {
             // Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
             // upon startup (I suspect the following won't do anything, but just in case)
-            Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+myName+"' ("+ignoreHostnames+")");
+            Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
             localHandshakeIPs[i].getAddress(false);
           } else {
             // Actually do the DNS request for the member Peer of localHandshakeIPs
-            Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+myName+"' ("+ignoreHostnames+")");
+            Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
             localHandshakeIPs[i].getHandshakeAddress();
           }
         }
@@ -563,14 +565,19 @@ public class PeerNode implements PeerContext {
       */
     public void maybeUpdateHandshakeIPs(boolean ignoreHostnames) {
     	long now = System.currentTimeMillis();
-    	if((now - lastAttemptedHandshakeIPUpdateTime) < (5*60*1000)) {  // 5 minutes
-    		//Logger.minor(this, "Looked up recently (detectedPeer = "+detectedPeer + " : "+((detectedPeer == null) ? "" : detectedPeer.getAddress(false).toString()));
-    		return;  // 5 minutes FIXME
-    	}
-    	// We want to come back right away for DNS requesting if this is our first time through
-    	if(!ignoreHostnames)
-    		lastAttemptedHandshakeIPUpdateTime = now;
-    	Logger.minor(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+myName+"' ("+ignoreHostnames+")");
+    	Peer localDetectedPeer = null;
+    	synchronized(this) {
+    		localDetectedPeer = detectedPeer;
+	    	if((now - lastAttemptedHandshakeIPUpdateTime) < (5*60*1000)) {  // 5 minutes
+	    		//Logger.minor(this, "Looked up recently (localDetectedPeer = "+localDetectedPeer + " : "+((localDetectedPeer == null) ? "" : localDetectedPeer.getAddress(false).toString()));
+	    		return;  // 5 minutes FIXME
+	    	}
+			// We want to come back right away for DNS requesting if this is our first time through
+			if(!ignoreHostnames) {
+				lastAttemptedHandshakeIPUpdateTime = now;
+			}
+	    }
+    	Logger.minor(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
     	Peer[] localHandshakeIPs;
     	Peer[] myNominalPeer;
     	
@@ -580,7 +587,7 @@ public class PeerNode implements PeerContext {
     	}
     	
     	if(myNominalPeer.length == 0) {
-    		if(detectedPeer == null) {
+    		if(localDetectedPeer == null) {
     			localHandshakeIPs = null;
         		synchronized(this) {
     				handshakeIPs = localHandshakeIPs;
@@ -588,7 +595,7 @@ public class PeerNode implements PeerContext {
     			Logger.minor(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     			return;
     		}
-    		localHandshakeIPs = new Peer[] { detectedPeer };
+    		localHandshakeIPs = new Peer[] { localDetectedPeer };
     		localHandshakeIPs = updateHandshakeIPs(localHandshakeIPs, ignoreHostnames);
         	synchronized(this) {
     			handshakeIPs = localHandshakeIPs;
@@ -602,15 +609,18 @@ public class PeerNode implements PeerContext {
     	Peer[] nodePeers = node.getPrimaryIPAddress();
 //    	FreenetInetAddress nodeAddr = node.getPrimaryIPAddress();
     	
-    	Vector peers = new Vector(nominalPeer);
+    	Vector peers = null;
+    	synchronized(this) {
+    		peers = new Vector(nominalPeer);
+    	}
     	
     	boolean addedLocalhost = false;
     	Peer detectedDuplicate = null;
     	for(int i=0;i<myNominalPeer.length;i++) {
     		Peer p = myNominalPeer[i];
     		if(p == null) continue;
-    		if(detectedPeer != null) {
-    			if((p != detectedPeer) && p.equals(detectedPeer)) {
+    		if(localDetectedPeer != null) {
+    			if((p != localDetectedPeer) && p.equals(localDetectedPeer)) {
     				// Equal but not the same object; need to update the copy.
     				detectedDuplicate = p;
     			}
@@ -635,11 +645,11 @@ public class PeerNode implements PeerContext {
     	localHandshakeIPs = updateHandshakeIPs(localHandshakeIPs, ignoreHostnames);
     	synchronized(this) {
     		handshakeIPs = localHandshakeIPs;
-        	if((detectedDuplicate != null) && detectedDuplicate.equals(detectedPeer)) {
-        		detectedPeer = detectedDuplicate;
+        	if((detectedDuplicate != null) && detectedDuplicate.equals(localDetectedPeer)) {
+        		localDetectedPeer = detectedPeer = detectedDuplicate;
         	}
     	}
-    	Logger.minor(this, "3: detectedPeer = "+detectedPeer+" ("+detectedPeer.getAddress(false)+")");
+    	Logger.minor(this, "3: detectedPeer = "+localDetectedPeer+" ("+localDetectedPeer.getAddress(false)+")");
     	Logger.minor(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     	return;
     }
@@ -647,7 +657,7 @@ public class PeerNode implements PeerContext {
     /**
      * What is my current keyspace location?
      */
-    public Location getLocation() {
+    public synchronized Location getLocation() {
         return currentLocation;
     }
     
@@ -662,7 +672,7 @@ public class PeerNode implements PeerContext {
      * Is this peer too old for us? (i.e. our lastGoodVersion is newer than it's version)
      * 
      */
-    public boolean isVerifiedIncompatibleOlderVersion() {
+    public synchronized boolean isVerifiedIncompatibleOlderVersion() {
         return verifiedIncompatibleOlderVersion;
     }
     
@@ -670,7 +680,7 @@ public class PeerNode implements PeerContext {
      * Is this peer too new for us? (i.e. our version is older than it's lastGoodVersion)
      * 
      */
-    public boolean isVerifiedIncompatibleNewerVersion() {
+    public synchronized boolean isVerifiedIncompatibleNewerVersion() {
         return verifiedIncompatibleNewerVersion;
     }
     
@@ -684,10 +694,10 @@ public class PeerNode implements PeerContext {
         return isConnected() && isRoutingCompatible();
     }
     
-    public boolean isRoutingCompatible(){
+    public synchronized boolean isRoutingCompatible(){
     	return isRoutable;
     }
-    public boolean isConnected(){
+    public synchronized boolean isConnected(){
     	return isConnected;
     }
 
@@ -718,14 +728,14 @@ public class PeerNode implements PeerContext {
     /**
      * @return The last time we received a packet.
      */
-    public long lastReceivedPacketTime() {
+    public synchronized long lastReceivedPacketTime() {
         return timeLastReceivedPacket;
     }
 
     /**
      * @return The time this PeerNode was added to the node
      */
-    public long getPeerAddedTime() {
+    public synchronized long getPeerAddedTime() {
         return peerAddedTime;
     }
 
@@ -753,7 +763,9 @@ public class PeerNode implements PeerContext {
             // DO NOT clear trackers, so can still receive.
         }
         node.lm.lostOrRestartedNode(this);
-        sendHandshakeTime = System.currentTimeMillis();
+        synchronized(this) {
+			sendHandshakeTime = now;
+	    }
     }
 
     public void forceDisconnect() {
@@ -839,12 +851,14 @@ public class PeerNode implements PeerContext {
      */
     public boolean shouldSendHandshake() {
         long now = System.currentTimeMillis();
-        return (!isConnected()) &&
+        synchronized(this) {
+        	return (!isConnected()) &&
 				(!isDisabled) &&  // don't connect to disabled peers
 				(!isListenOnly) &&  // don't send handshake requests to isListenOnly peers
                 (handshakeIPs != null) &&
                 (now > sendHandshakeTime) &&
                 !(hasLiveHandshake(now));
+		}
     }
     
     /**
@@ -852,7 +866,10 @@ public class PeerNode implements PeerContext {
      * @param now The current time.
      */
     public boolean hasLiveHandshake(long now) {
-        DiffieHellmanContext c = ctx;
+        DiffieHellmanContext c = null;
+        synchronized(this) {
+	        c = ctx;
+		}
         if(c != null)
             Logger.minor(this, "Last used: "+(now - c.lastUsedTime()));
         return !((c == null) || (now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT));
@@ -862,6 +879,7 @@ public class PeerNode implements PeerContext {
 
     private void calcNextHandshake(boolean couldSendHandshake) {
         long now = System.currentTimeMillis();
+        boolean fetchARKFlag = false;
         synchronized(this) {
             if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
                 // Let them know we're here, but have no hope of connecting
@@ -880,14 +898,15 @@ public class PeerNode implements PeerContext {
                 handshakeIPs = null;
             }
             this.handshakeCount++;
+        	fetchARKFlag = ((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion));
         }
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
-        if((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion)) {
+        if(fetchARKFlag) {
 			long arkFetcherStartTime1 = System.currentTimeMillis();
 			arkFetcher.queue();
 			long arkFetcherStartTime2 = System.currentTimeMillis();
 			if((arkFetcherStartTime2 - arkFetcherStartTime1) > 500) {
-				Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 ("+(arkFetcherStartTime2 - arkFetcherStartTime1)+") working on "+myName);
+				Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 ("+(arkFetcherStartTime2 - arkFetcherStartTime1)+") working on "+getName());
 			}
         }
     }
@@ -972,7 +991,9 @@ public class PeerNode implements PeerContext {
      * Update the Location to a new value.
      */
     public void updateLocation(double newLoc) {
-        currentLocation.setValue(newLoc);
+		synchronized(this) {
+			currentLocation.setValue(newLoc);
+		}
         node.peers.writePeers();
     }
 
@@ -1007,7 +1028,7 @@ public class PeerNode implements PeerContext {
     	setDetectedPeer(newPeer);
     }
 
-    private void setDetectedPeer(Peer newPeer) {
+    private synchronized void setDetectedPeer(Peer newPeer) {
     	// Only clear lastAttemptedHandshakeIPUpdateTime if we have a new IP.
     	// Also, we need to call .equals() to propagate any DNS lookups that have been done if the two have the same domain.
     	if((newPeer != null) && ((detectedPeer == null) || !detectedPeer.equals(newPeer))) {
@@ -1020,7 +1041,7 @@ public class PeerNode implements PeerContext {
      * @return The current primary KeyTracker, or null if we
      * don't have one.
      */
-    public KeyTracker getCurrentKeyTracker() {
+    public synchronized KeyTracker getCurrentKeyTracker() {
         return currentTracker;
     }
 
@@ -1028,7 +1049,7 @@ public class PeerNode implements PeerContext {
      * @return The previous primary KeyTracker, or null if we
      * don't have one.
      */
-    public KeyTracker getPreviousKeyTracker() {
+    public synchronized KeyTracker getPreviousKeyTracker() {
         return previousTracker;
     }
     
@@ -1037,14 +1058,14 @@ public class PeerNode implements PeerContext {
      * don't have one. The caller MUST call verified(KT) if a
      * decrypt succeeds with this KT.
      */
-    public KeyTracker getUnverifiedKeyTracker() {
+    public synchronized KeyTracker getUnverifiedKeyTracker() {
         return unverifiedTracker;
     }
 
     /**
      * @return short version of toString()
      */
-    public String shortToString() {
+    public synchronized String shortToString() {
         return super.toString()+"@"+detectedPeer+"@"+HexUtil.bytesToHex(identity);
     }
 
@@ -1084,11 +1105,11 @@ public class PeerNode implements PeerContext {
         randomizeMaxTimeBetweenPacketSends();
     }
 
-    public DiffieHellmanContext getDHContext() {
+    public synchronized DiffieHellmanContext getDHContext() {
         return ctx;
     }
 
-    public void setDHContext(DiffieHellmanContext ctx2) {
+    public synchronized void setDHContext(DiffieHellmanContext ctx2) {
         this.ctx = ctx2;
         Logger.minor(this, "setDHContext("+ctx2+") on "+this);
     }
@@ -1182,7 +1203,7 @@ public class PeerNode implements PeerContext {
         	}
         	if(!isConnected)
         		node.peers.disconnected(this);
-        	Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" myName: "+myName);
+        	Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
         	try {
         		receivedPacket(unverified);
         	} catch (NotConnectedException e) {
@@ -1215,7 +1236,7 @@ public class PeerNode implements PeerContext {
      */
     private void sendInitialMessages() {
         Message locMsg = DMT.createFNPLocChangeNotification(node.lm.loc.getValue());
-        Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
+        Message ipMsg = DMT.createFNPDetectedIPAddress(getDetectedPeer());
         
         try {
         	if(isRoutable())
@@ -1255,19 +1276,19 @@ public class PeerNode implements PeerContext {
         node.peers.addConnectedPeer(this);
     }
     
-    private boolean invalidVersion() {
+    private synchronized boolean invalidVersion() {
         return bogusNoderef || (!Version.checkGoodVersion(version));
     }
     
-    private boolean reverseInvalidVersion() {
+    private synchronized boolean reverseInvalidVersion() {
         return bogusNoderef || (!Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion));
     }
     
     public boolean publicInvalidVersion() {
-        return !Version.checkGoodVersion(version);
+        return !Version.checkGoodVersion(getVersion());
     }
     
-    public boolean publicReverseInvalidVersion() {
+    public synchronized boolean publicReverseInvalidVersion() {
         return !Version.checkArbitraryGoodVersion(Version.getVersionString(),lastGoodVersion);
     }
 
@@ -1473,29 +1494,30 @@ public class PeerNode implements PeerContext {
     }
 
     public String getStatus() {
-        return getPeerNodeStatusString() + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+getRoutingBackoffLength()+" ("+(Math.max(getRoutingBackedOffUntil() - System.currentTimeMillis(),0))+")";
+        return getPeerNodeStatusString() + " " + getPeer()+" "+getName()+" "+getLocation().getValue()+" "+getVersion()+" backoff: "+getRoutingBackoffLength()+" ("+(Math.max(getRoutingBackedOffUntil() - System.currentTimeMillis(),0))+")";
     }
 
     public String getTMCIPeerInfo() {
-		    long now = System.currentTimeMillis();
-        int idle = (int) ((now - timeLastReceivedPacket) / 1000);
-        if((peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED) && (peerAddedTime > 1))
-            idle = (int) ((now - peerAddedTime) / 1000);
-        return myName+"\t"+getPeer()+"\t"+getIdentityString()+"\t"+currentLocation.getValue()+"\t"+getPeerNodeStatusString()+"\t"+idle;
+		long now = System.currentTimeMillis();
+        int idle = -1;
+        synchronized(this) {
+        	idle = (int) ((now - timeLastReceivedPacket) / 1000);
+        }
+        if((getPeerNodeStatus() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) && (getPeerAddedTime() > 1))
+            idle = (int) ((now - getPeerAddedTime()) / 1000);
+        return getName()+"\t"+getPeer()+"\t"+getIdentityString()+"\t"+getLocation().getValue()+"\t"+getPeerNodeStatusString()+"\t"+idle;
     }
     
     public String getFreevizOutput() {
-    	return
-    	
-       		getStatus()+"|"+ Base64.encode(identity);
+    	return getStatus()+"|"+ Base64.encode(identity);
     }
 	
-	public String getVersion(){
+	public synchronized String getVersion(){
 		return version;
 	}
 	
 	public String getSimpleVersion(){
-		return String.valueOf(Version.getArbitraryBuildNumber(version));
+		return String.valueOf(Version.getArbitraryBuildNumber(getVersion()));
 	}
 
     /**
@@ -1512,7 +1534,7 @@ public class PeerNode implements PeerContext {
     /**
      * Export metadata about the node as a SimpleFieldSet
      */
-    public SimpleFieldSet exportMetadataFieldSet() {
+    public synchronized SimpleFieldSet exportMetadataFieldSet() {
     	SimpleFieldSet fs = new SimpleFieldSet(true);
     	if(detectedPeer != null)
     		fs.put("detected.udp", detectedPeer.toString());
@@ -1535,29 +1557,31 @@ public class PeerNode implements PeerContext {
      * Export volatile data about the node as a SimpleFieldSet
      */
     public SimpleFieldSet exportVolatileFieldSet() {
-    	SimpleFieldSet fs = new SimpleFieldSet(true);
-		fs.put("averagePingTime", Double.toString(averagePingTime()));
+		SimpleFieldSet fs = new SimpleFieldSet(true);
 		long now = System.currentTimeMillis();
-		long idle = now - lastReceivedPacketTime();
-		if(idle > (60 * 1000)) {  // 1 minute
-			fs.put("idle", Long.toString(idle));
+    	synchronized(this) {
+			fs.put("averagePingTime", Double.toString(averagePingTime()));
+			long idle = now - lastReceivedPacketTime();
+			if(idle > (60 * 1000)) {  // 1 minute
+				fs.put("idle", Long.toString(idle));
+			}
+			fs.put("lastRoutingBackoffReason", getLastBackoffReason());
+			long tempPeerAddedTime = getPeerAddedTime();
+			if(tempPeerAddedTime > 1) {
+				fs.put("peerAddedTime", Long.toString(tempPeerAddedTime));
+			}
+			fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
+			fs.put("routingBackoff", Long.toString((Math.max(getRoutingBackedOffUntil() - now, 0))));
+			fs.put("routingBackoffLength", Integer.toString(getRoutingBackoffLength()));
+			fs.put("status", getPeerNodeStatusString());
 		}
-		fs.put("lastRoutingBackoffReason", getLastBackoffReason());
-		long tempPeerAddedTime = getPeerAddedTime();
-		if(tempPeerAddedTime > 1) {
-			fs.put("peerAddedTime", Long.toString(tempPeerAddedTime));
-		}
-		fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
-		fs.put("routingBackoff", Long.toString((Math.max(getRoutingBackedOffUntil() - now, 0))));
-		fs.put("routingBackoffLength", Integer.toString(getRoutingBackoffLength()));
-		fs.put("status", getPeerNodeStatusString());
-    	return fs;
+		return fs;
 	}
 
 	/**
      * Export the peer's noderef as a SimpleFieldSet
      */
-    public SimpleFieldSet exportFieldSet() {
+    public synchronized SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet(true);
         if(lastGoodVersion != null)
         	fs.put("lastGoodVersion", lastGoodVersion);
@@ -1568,13 +1592,11 @@ public class PeerNode implements PeerContext {
         fs.put("location", Double.toString(currentLocation.getValue()));
         fs.put("testnet", Boolean.toString(testnetEnabled));
         fs.put("version", version);
-        fs.put("myName", myName);
+        fs.put("myName", getName());
         if(myARK != null) {
-        	synchronized (this) {
-            	// Decrement it because we keep the number we would like to fetch, not the last one fetched.
-            	fs.put("ark.number", Long.toString(myARK.suggestedEdition-1));
-            	fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));				
-			}
+          	// Decrement it because we keep the number we would like to fetch, not the last one fetched.
+           	fs.put("ark.number", Long.toString(myARK.suggestedEdition - 1));
+           	fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));				
         }
         return fs;
     }
@@ -1582,7 +1604,7 @@ public class PeerNode implements PeerContext {
     /**
      * @return The time at which we last connected (or reconnected).
      */
-    public long timeLastConnected() {
+    public synchronized long timeLastConnected() {
         return connectedTime;
     }
 
@@ -1685,18 +1707,20 @@ public class PeerNode implements PeerContext {
 		synchronized(routingBackoffSync) {
 			localRoutingBackedOffUntil = routingBackedOffUntil;
 		}
-		if(now > lastSampleTime) {
-			if (now > localRoutingBackedOffUntil) {
-				if (lastSampleTime > localRoutingBackedOffUntil) {
-					backedOffPercent.report(0.0);
+		synchronized(this) {
+			if(now > lastSampleTime) {
+				if (now > localRoutingBackedOffUntil) {
+					if (lastSampleTime > localRoutingBackedOffUntil) {
+						backedOffPercent.report(0.0);
+					} else {
+						backedOffPercent.report((double)(localRoutingBackedOffUntil - lastSampleTime)/(double)(now - lastSampleTime));
+					}
 				} else {
-					backedOffPercent.report((double)(localRoutingBackedOffUntil - lastSampleTime)/(double)(now - lastSampleTime));
+					backedOffPercent.report(1.0);
 				}
-			} else {
-				backedOffPercent.report(1.0);
 			}
+			lastSampleTime = now;
 		}
-		lastSampleTime = now;
 	}
 	
 	/**
@@ -1706,6 +1730,7 @@ public class PeerNode implements PeerContext {
 	public void localRejectedOverload(String reason) {
 		Logger.minor(this, "Local rejected overload on "+this);
 		long now = System.currentTimeMillis();
+		Peer peer = getPeer();
 		synchronized(routingBackoffSync) {
 			reportBackoffStatus(now);
 			// Don't back off any further if we are already backed off
@@ -1722,9 +1747,9 @@ public class PeerNode implements PeerContext {
 					reasonWrapper = " because of '"+reason+"'";
 				}
 
-				Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+getPeer());
+				Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+peer);
 			} else {
-				Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+getPeer());
+				Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
 			}
 		}
 	}
@@ -1735,16 +1760,17 @@ public class PeerNode implements PeerContext {
 	 */
 	public void successNotOverload() {
 		Logger.minor(this, "Success not overload on "+this);
+		Peer peer = getPeer();
 		long now = System.currentTimeMillis();
 		synchronized(routingBackoffSync) {
 			reportBackoffStatus(now);
 			// Don't un-backoff if still backed off
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
-				Logger.minor(this, "Resetting routing backoff on "+getPeer());
+				Logger.minor(this, "Resetting routing backoff on "+peer);
 				setPeerNodeStatus(now);
 			} else {
-				Logger.minor(this, "Ignoring successNotOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+getPeer());
+				Logger.minor(this, "Ignoring successNotOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
 			}
 		}
 	}
@@ -1824,7 +1850,7 @@ public class PeerNode implements PeerContext {
 		return remoteDetectedPeer;
 	}
 
-	public String getName() {
+	public synchronized String getName() {
 		return myName;
 	}
 
@@ -1852,7 +1878,7 @@ public class PeerNode implements PeerContext {
 		lastRoutingBackoffReason = s;
 	}
 
-	public boolean hasCompletedHandshake() {
+	public synchronized boolean hasCompletedHandshake() {
 		return completedHandshake;
 	}
 	
@@ -1897,18 +1923,18 @@ public class PeerNode implements PeerContext {
 	}
 	
 	//FIXME: maybe return a copy insteed
-	public Hashtable getLocalNodeSentMessagesToStatistic ()
+	public synchronized Hashtable getLocalNodeSentMessagesToStatistic ()
 	{
 		return localNodeSentMessageTypes;
 	}
 	
 	//FIXME: maybe return a copy insteed
-	public Hashtable getLocalNodeReceivedMessagesFromStatistic ()
+	public synchronized Hashtable getLocalNodeReceivedMessagesFromStatistic ()
 	{
 		return localNodeReceivedMessageTypes;
 	}
 
-	USK getARK() {
+	synchronized USK getARK() {
 		return myARK;
 	}
 
@@ -1950,12 +1976,12 @@ public class PeerNode implements PeerContext {
 		}
 	}
 
-  public int getPeerNodeStatus() {
+  public synchronized int getPeerNodeStatus() {
 		return peerNodeStatus;
   }
 
   public String getPeerNodeStatusString() {
-  	int status = peerNodeStatus;
+  	int status = getPeerNodeStatus();
   	if(status == Node.PEER_NODE_STATUS_CONNECTED)
   		return "CONNECTED";
   	if(status == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
@@ -1976,7 +2002,7 @@ public class PeerNode implements PeerContext {
   }
 
   public String getPeerNodeStatusCSSClassName() {
-  	int status = peerNodeStatus;
+  	int status = getPeerNodeStatus();
   	if(status == Node.PEER_NODE_STATUS_CONNECTED)
   		return "peer_connected";
   	if(status == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
@@ -2046,19 +2072,23 @@ public class PeerNode implements PeerContext {
 		return arkFetcher.isFetching();
 	}
 
-	public int getHandshakeCount() {
+	public synchronized int getHandshakeCount() {
 		return handshakeCount;
 	}
 	
 	public void enablePeer() {
-		isDisabled = false;
+		synchronized(this) {
+			isDisabled = false;
+		}
 		setPeerNodeStatus(System.currentTimeMillis());
         node.peers.writePeers();
 	}
 	
 	public void disablePeer() {
-		isDisabled = true;
-		if(isConnected) {
+		synchronized(this) {
+			isDisabled = true;
+		}
+		if(isConnected()) {
 			forceDisconnect();
 		}
     	arkFetcher.stop();
@@ -2066,17 +2096,19 @@ public class PeerNode implements PeerContext {
         node.peers.writePeers();
 	}
 
-	public boolean isDisabled() {
+	public synchronized boolean isDisabled() {
 		return isDisabled;
 	}
 	
 	public void setListenOnly(boolean setting) {
-		isListenOnly = setting;
+		synchronized(this) {
+			isListenOnly = setting;
+		}
 		setPeerNodeStatus(System.currentTimeMillis());
         node.peers.writePeers();
 	}
 
-	public boolean isListenOnly() {
+	public synchronized boolean isListenOnly() {
 		return isListenOnly;
 	}
 
@@ -2097,7 +2129,7 @@ public class PeerNode implements PeerContext {
         Logger.normal(this, "Invalidated "+this);
 	}
 	
-	public boolean allowLocalAddresses() {
+	public synchronized boolean allowLocalAddresses() {
 		return allowLocalAddresses;
 	}
 }
