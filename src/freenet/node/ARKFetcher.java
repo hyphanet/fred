@@ -100,9 +100,19 @@ public class ARKFetcher implements ClientCallback {
 			
 		if(cg != null)
 			try {
-				if(!isFetching) {
-					node.addARKFetcher(identity,this);
-					isFetching = true;
+				boolean localIsFetching = false;
+				synchronized(this) {
+					localIsFetching = isFetching;
+				}
+				if(!localIsFetching) {
+					String localIdentity = null;
+					synchronized(this) {
+						localIdentity = identity;
+					}
+					node.addARKFetcher(localIdentity,this);
+					synchronized(this) {
+						isFetching = true;
+					}
 				}
 				
 				cg.start();
