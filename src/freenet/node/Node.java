@@ -2332,78 +2332,83 @@ public class Node {
 		+ FNPPacketMangler.HEADERS_LENGTH_ONE_MESSAGE;
 	
     /* return reject reason as string if should reject, otherwise return null */
-	public synchronized String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, long now) {
+	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
 		dumpByteCostAverages();
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
 		// Do we have the bandwidth?
-		
-		double expected = 
-			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
-					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
-		int expectedSent = (int)Math.max(expected, 0);
-		if(!requestOutputThrottle.instantGrab(expectedSent)) return "Insufficient output bandwidth";
-		expected = 
-			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
-					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
-		int expectedReceived = (int)Math.max(expected, 0);
-		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-			requestOutputThrottle.recycle(expectedSent);
-			return "Insufficient input bandwidth";
+		synchronized(this) {
+			double expected = 
+				(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
+						: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
+			int expectedSent = (int)Math.max(expected, 0);
+			if(!requestOutputThrottle.instantGrab(expectedSent)) return "Insufficient output bandwidth";
+			expected = 
+				(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
+						: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
+			int expectedReceived = (int)Math.max(expected, 0);
+			if(!requestInputThrottle.instantGrab(expectedReceived)) {
+				requestOutputThrottle.recycle(expectedSent);
+				return "Insufficient input bandwidth";
+			}
 		}
-
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
-		
-		if(throttledPacketSendAverage.lastReportTime() < System.currentTimeMillis() - 5000) {  // if last report more than 5 seconds ago
+		long now = System.currentTimeMillis();
+		if(throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
 			outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
 			outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
 			long after = System.currentTimeMillis();
 			// Report time it takes to grab the bytes.
 			throttledPacketSendAverage.report(after - now);
 			now = after;
-			bwlimitDelayTime = throttledPacketSendAverage.currentValue();
+			synchronized(this) {
+				bwlimitDelayTime = throttledPacketSendAverage.currentValue();
+			}
 		}
 		
 		// Round trip time
 		double pingTime = nodePinger.averagePingTime();
-		if(pingTime > MAX_PING_TIME) {
-			if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
-				Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-				lastAcceptedRequest = now;
-				return null;
+		synchronized(this) {
+			if(pingTime > MAX_PING_TIME) {
+				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
+					Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
+					lastAcceptedRequest = now;
+					return null;
+				}
+				return ">MAX_PING_TIME";
 			}
-			return ">MAX_PING_TIME";
-		}
-		if(pingTime > SUB_MAX_PING_TIME) {
-			double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
-			if(random.nextDouble() < x) {
-				return ">SUB_MAX_PING_TIME";
+			if(pingTime > SUB_MAX_PING_TIME) {
+				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
+				if(random.nextDouble() < x) {
+					return ">SUB_MAX_PING_TIME";
+				}
 			}
 		}
 		
 		// Bandwidth limited packets
-		
-		Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
-		if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
-			if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
-				Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-				lastAcceptedRequest = now;
-				return null;
+		synchronized(this) {
+			Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
+			if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
+				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
+					Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
+					lastAcceptedRequest = now;
+					return null;
+				}
+				return ">MAX_THROTTLE_DELAY";
 			}
-			return ">MAX_THROTTLE_DELAY";
-		}
-		if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
-			double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
-			if(random.nextDouble() < x) {
-				return ">SUB_MAX_THROTTLE_DELAY";
+			if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
+				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
+				if(random.nextDouble() < x) {
+					return ">SUB_MAX_THROTTLE_DELAY";
+				}
 			}
+			
+			Logger.minor(this, "Accepting request");
+			
+			lastAcceptedRequest = now;
 		}
-		
-		Logger.minor(this, "Accepting request");
-		
-		lastAcceptedRequest = now;
 		return null;
 	}
 	

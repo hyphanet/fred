@@ -851,14 +851,18 @@ public class PeerNode implements PeerContext {
      */
     public boolean shouldSendHandshake() {
         long now = System.currentTimeMillis();
+        boolean tempShouldSendHandshake = false;
         synchronized(this) {
-        	return (!isConnected()) &&
+        	tempShouldSendHandshake = (!isConnected()) &&
 				(!isDisabled) &&  // don't connect to disabled peers
 				(!isListenOnly) &&  // don't send handshake requests to isListenOnly peers
                 (handshakeIPs != null) &&
-                (now > sendHandshakeTime) &&
-                !(hasLiveHandshake(now));
+                (now > sendHandshakeTime);
 		}
+		if(tempShouldSendHandshake && !(hasLiveHandshake(now))) {
+			return true;
+		}
+		return false;
     }
     
     /**
@@ -978,7 +982,7 @@ public class PeerNode implements PeerContext {
      * Send a message, right now, on this thread, to this node.
      */
     public void send(Message req, ByteCounter ctr) throws NotConnectedException {
-    	synchronized (this) {
+    	synchronized(this) {
             if(!isConnected()) {
                 Logger.error(this, "Tried to send "+req+" but not connected to "+this, new Exception("debug"));
                 return;
@@ -1133,88 +1137,148 @@ public class PeerNode implements PeerContext {
     		completedHandshake = true;
     		handshakeCount = 0;
         	bogusNoderef = false;
-        	try {
-        		// First, the new noderef
-        		processNewNoderef(data, offset, length);
-        	} catch (FSParseException e1) {
-        		bogusNoderef = true;
-        		Logger.error(this, "Failed to parse new noderef for "+this+": "+e1, e1);
-        		// Treat as invalid version
-        	}
+        }
+		try {
+			// First, the new noderef
+			processNewNoderef(data, offset, length);
+		} catch (FSParseException e1) {
+			synchronized(this) {
+				bogusNoderef = true;
+			}
+			Logger.error(this, "Failed to parse new noderef for "+this+": "+e1, e1);
+			// Treat as invalid version
+		}
+    	synchronized(this) {
         	isRoutable = true;
-        	if(reverseInvalidVersion()) {
-        		try {
-        			node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(lastGoodVersion));
-        		} catch (NumberFormatException e) {
-        			// ignore
-        		}
-        		Logger.normal(this, "Not connecting to "+this+" - reverse invalid version "+Version.getVersionString()+" for peer's lastGoodversion: "+lastGoodVersion);
-        		verifiedIncompatibleNewerVersion = true;
-        		isRoutable = false;
-        		node.peers.disconnected(this);
-        	} else {
-        		verifiedIncompatibleNewerVersion = false;
-        	}
-        	if(invalidVersion()) {
-        		Logger.normal(this, "Not connecting to "+this+" - invalid version "+version);
-        		verifiedIncompatibleOlderVersion = true;
-        		isRoutable = false;
-        		node.peers.disconnected(this);
-        	} else {
-        		verifiedIncompatibleOlderVersion = false;
-        	}
-        	isConnected = true;
-        	setPeerNodeStatus(now);
-        	KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
-        	changedIP(replyTo);
-        	if(thisBootID != this.bootID) {
-        		connectedTime = now;
-        		Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
-        		if(previousTracker != null) {
-        			KeyTracker old = previousTracker;
-        			previousTracker = null;
-        			old.completelyDeprecated(newTracker);
-        		}
-        		previousTracker = null;
-        		if(currentTracker != null) {
-        			KeyTracker old = currentTracker;
-        			currentTracker = null;
-        			old.completelyDeprecated(newTracker);
-        		}
-        		this.bootID = thisBootID;
-        		node.lm.lostOrRestartedNode(this);
-        	} // else it's a rekey
-        	
-        	if(unverified) {
-        		unverifiedTracker = newTracker;
-        		ctx = null;
-        		Logger.minor(this, "sentHandshake() being called for unverifiedTracker: "+getPeer());
-        		sentHandshake();
-        	} else {
-        		previousTracker = currentTracker;
-        		currentTracker = newTracker;
-        		unverifiedTracker = null;
-        		if(previousTracker != null)
-        			previousTracker.deprecated();
-        		neverConnected = false;
-        		peerAddedTime = 0;  // don't store anymore
-        		setPeerNodeStatus(now);
-        		ctx = null;
-        	}
-        	if(!isConnected)
-        		node.peers.disconnected(this);
-        	Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
-        	try {
-        		receivedPacket(unverified);
-        	} catch (NotConnectedException e) {
-        		Logger.error(this, "Disconnected in completedHandshake with "+this);
-        		return true; // i suppose
-        	}
-        	if(isConnected)
-        		node.peers.addConnectedPeer(this);
-        	sentInitialMessages = false;
-        	return true;
-    	}
+        }
+		if(reverseInvalidVersion()) {
+			try {
+				node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(getLastGoodVersion()));
+			} catch (NumberFormatException e) {
+				// ignore
+			}
+			Logger.normal(this, "Not connecting to "+this+" - reverse invalid version "+Version.getVersionString()+" for peer's lastGoodversion: "+getLastGoodVersion());
+	    	synchronized(this) {
+				verifiedIncompatibleNewerVersion = true;
+				isRoutable = false;
+			}
+			node.peers.disconnected(this);
+		} else {
+	    	synchronized(this) {
+				verifiedIncompatibleNewerVersion = false;
+			}
+		}
+		if(invalidVersion()) {
+			Logger.normal(this, "Not connecting to "+this+" - invalid version "+getVersion());
+	    	synchronized(this) {
+				verifiedIncompatibleOlderVersion = true;
+				isRoutable = false;
+			}
+			node.peers.disconnected(this);
+		} else {
+	    	synchronized(this) {
+				verifiedIncompatibleOlderVersion = false;
+			}
+		}
+    	synchronized(this) {
+			isConnected = true;
+		}
+		setPeerNodeStatus(now);
+		KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
+		changedIP(replyTo);
+		boolean bootIDChanged = false;
+    	synchronized(this) {
+			bootIDChanged = (thisBootID != this.bootID);
+		}
+		if(bootIDChanged) {
+	    	synchronized(this) {
+				connectedTime = now;
+				Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
+			}
+			boolean previousTrackerIsNull = true;
+			synchronized(this) {
+				previousTrackerIsNull = (previousTracker == null);
+			}
+			if(!previousTrackerIsNull) {
+				KeyTracker old = null;
+				synchronized(this) {
+					old = previousTracker;
+					previousTracker = null;
+				}
+				old.completelyDeprecated(newTracker);
+			}
+			synchronized(this) {
+				previousTracker = null;
+			}
+			boolean currentTrackerIsNull = true;
+			synchronized(this) {
+				currentTrackerIsNull = (currentTracker == null);
+			}
+			if(!currentTrackerIsNull) {
+				KeyTracker old = null;
+				synchronized(this) {
+					old = currentTracker;
+					currentTracker = null;
+				}
+				old.completelyDeprecated(newTracker);
+			}
+			synchronized(this) {
+				this.bootID = thisBootID;
+			}
+			node.lm.lostOrRestartedNode(this);
+		} // else it's a rekey
+		
+		if(unverified) {
+			synchronized(this) {
+				unverifiedTracker = newTracker;
+				ctx = null;
+			}
+			Logger.minor(this, "sentHandshake() being called for unverifiedTracker: "+getPeer());
+			sentHandshake();
+		} else {
+			synchronized(this) {
+				previousTracker = currentTracker;
+				currentTracker = newTracker;
+				unverifiedTracker = null;
+			}
+			boolean previousTrackerIsNull = true;
+			synchronized(this) {
+				previousTrackerIsNull = (previousTracker == null);
+			}
+			if(!previousTrackerIsNull) {
+				KeyTracker localPreviousTracker = null;
+				synchronized(this) {
+					localPreviousTracker = previousTracker;
+				}
+				localPreviousTracker.deprecated();
+			}
+			synchronized(this) {
+				neverConnected = false;
+				peerAddedTime = 0;  // don't store anymore
+			}
+			setPeerNodeStatus(now);
+			synchronized(this) {
+				ctx = null;
+			}
+		}
+		if(!isConnected())
+			node.peers.disconnected(this);
+		synchronized(this) {
+			Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
+		}
+		try {
+			receivedPacket(unverified);
+		} catch (NotConnectedException e) {
+			Logger.error(this, "Disconnected in completedHandshake with "+this);
+			return true; // i suppose
+		}
+		if(isConnected()) {
+			node.peers.addConnectedPeer(this);
+		}
+		synchronized(this) {
+			sentInitialMessages = false;
+		}
+		return true;
     }
 
     boolean sentInitialMessages = false;
@@ -1516,6 +1580,10 @@ public class PeerNode implements PeerContext {
 		return version;
 	}
 	
+	private synchronized String getLastGoodVersion(){
+		return lastGoodVersion;
+	}
+	
 	public String getSimpleVersion(){
 		return String.valueOf(Version.getArbitraryBuildNumber(getVersion()));
 	}
@@ -1534,21 +1602,21 @@ public class PeerNode implements PeerContext {
     /**
      * Export metadata about the node as a SimpleFieldSet
      */
-    public synchronized SimpleFieldSet exportMetadataFieldSet() {
+    public SimpleFieldSet exportMetadataFieldSet() {
     	SimpleFieldSet fs = new SimpleFieldSet(true);
-    	if(detectedPeer != null)
-    		fs.put("detected.udp", detectedPeer.toString());
-    	if(timeLastReceivedPacket > 0)
-    		fs.put("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
-    	if(peerAddedTime > 0)
-    		fs.put("peerAddedTime", Long.toString(peerAddedTime));
-    	if(neverConnected)
+    	if(getDetectedPeer() != null)
+    		fs.put("detected.udp", getDetectedPeer().toString());
+    	if(lastReceivedPacketTime() > 0)
+    		fs.put("timeLastReceivedPacket", Long.toString(lastReceivedPacketTime()));
+    	if(getPeerAddedTime() > 0)
+    		fs.put("peerAddedTime", Long.toString(getPeerAddedTime()));
+    	if(neverConnected())
     		fs.put("neverConnected", "true");
-    	if(isDisabled)
+    	if(isDisabled())
     		fs.put("isDisabled", "true");
-    	if(isListenOnly)
+    	if(isListenOnly())
     		fs.put("isListenOnly", "true");
-    	if(allowLocalAddresses)
+    	if(allowLocalAddresses())
     		fs.put("allowLocalAddresses", "true");
     	return fs;
 	}
@@ -1559,44 +1627,51 @@ public class PeerNode implements PeerContext {
     public SimpleFieldSet exportVolatileFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		long now = System.currentTimeMillis();
-    	synchronized(this) {
-			fs.put("averagePingTime", Double.toString(averagePingTime()));
-			long idle = now - lastReceivedPacketTime();
-			if(idle > (60 * 1000)) {  // 1 minute
-				fs.put("idle", Long.toString(idle));
-			}
-			fs.put("lastRoutingBackoffReason", getLastBackoffReason());
-			long tempPeerAddedTime = getPeerAddedTime();
-			if(tempPeerAddedTime > 1) {
-				fs.put("peerAddedTime", Long.toString(tempPeerAddedTime));
-			}
-			fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
-			fs.put("routingBackoff", Long.toString((Math.max(getRoutingBackedOffUntil() - now, 0))));
-			fs.put("routingBackoffLength", Integer.toString(getRoutingBackoffLength()));
-			fs.put("status", getPeerNodeStatusString());
+		fs.put("averagePingTime", Double.toString(averagePingTime()));
+		long idle = now - lastReceivedPacketTime();
+		if(idle > (60 * 1000)) {  // 1 minute
+			fs.put("idle", Long.toString(idle));
 		}
+		fs.put("lastRoutingBackoffReason", getLastBackoffReason());
+		long tempPeerAddedTime = getPeerAddedTime();
+		if(tempPeerAddedTime > 1) {
+			fs.put("peerAddedTime", Long.toString(tempPeerAddedTime));
+		}
+		synchronized(this) {
+			fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
+		}
+		fs.put("routingBackoff", Long.toString((Math.max(getRoutingBackedOffUntil() - now, 0))));
+		fs.put("routingBackoffLength", Integer.toString(getRoutingBackoffLength()));
+		fs.put("status", getPeerNodeStatusString());
 		return fs;
 	}
 
 	/**
      * Export the peer's noderef as a SimpleFieldSet
      */
-    public synchronized SimpleFieldSet exportFieldSet() {
+    public SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet(true);
-        if(lastGoodVersion != null)
-        	fs.put("lastGoodVersion", lastGoodVersion);
-        for(int i=0;i<nominalPeer.size();i++)
-        	fs.put("physical.udp", nominalPeer.get(i).toString());
+        if(getLastGoodVersion() != null)
+        	fs.put("lastGoodVersion", getLastGoodVersion());
+		synchronized(this) {
+			for(int i=0;i<nominalPeer.size();i++) {
+				fs.put("physical.udp", nominalPeer.get(i).toString());
+			}
+		}
         fs.put("base64", "true");
-        fs.put("identity", Base64.encode(identity));
-        fs.put("location", Double.toString(currentLocation.getValue()));
-        fs.put("testnet", Boolean.toString(testnetEnabled));
-        fs.put("version", version);
+        fs.put("identity", getIdentityString());
+        fs.put("location", Double.toString(getLocation().getValue()));
+		synchronized(this) {
+	        fs.put("testnet", Boolean.toString(testnetEnabled));
+		}
+        fs.put("version", getVersion());
         fs.put("myName", getName());
-        if(myARK != null) {
-          	// Decrement it because we keep the number we would like to fetch, not the last one fetched.
-           	fs.put("ark.number", Long.toString(myARK.suggestedEdition - 1));
-           	fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));				
+		synchronized(this) {
+			if(myARK != null) {
+				// Decrement it because we keep the number we would like to fetch, not the last one fetched.
+				fs.put("ark.number", Long.toString(myARK.suggestedEdition - 1));
+				fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));
+			}
         }
         return fs;
     }
@@ -1882,7 +1957,7 @@ public class PeerNode implements PeerContext {
 		return completedHandshake;
 	}
 	
-	public synchronized void addToLocalNodeSentMessagesToStatistic (Message m)
+	public void addToLocalNodeSentMessagesToStatistic (Message m)
 	{
 	String messageSpecName;
 	Long count;
@@ -1902,7 +1977,7 @@ public class PeerNode implements PeerContext {
 		localNodeSentMessageTypes.put(messageSpecName,count);
 	}
 	
-	public synchronized void addToLocalNodeReceivedMessagesFromStatistic (Message m)
+	public void addToLocalNodeReceivedMessagesFromStatistic (Message m)
 	{
 	String messageSpecName;
 	Long count;
@@ -1923,13 +1998,13 @@ public class PeerNode implements PeerContext {
 	}
 	
 	//FIXME: maybe return a copy insteed
-	public synchronized Hashtable getLocalNodeSentMessagesToStatistic ()
+	public Hashtable getLocalNodeSentMessagesToStatistic ()
 	{
 		return localNodeSentMessageTypes;
 	}
 	
 	//FIXME: maybe return a copy insteed
-	public synchronized Hashtable getLocalNodeReceivedMessagesFromStatistic ()
+	public Hashtable getLocalNodeReceivedMessagesFromStatistic ()
 	{
 		return localNodeReceivedMessageTypes;
 	}
@@ -2124,12 +2199,16 @@ public class PeerNode implements PeerContext {
 		return false;
 	}
 
-	protected synchronized void invalidate(){
+	protected synchronized void invalidate() {
 		isRoutable = false;
         Logger.normal(this, "Invalidated "+this);
 	}
 	
 	public synchronized boolean allowLocalAddresses() {
 		return allowLocalAddresses;
+	}
+	
+	private synchronized boolean neverConnected() {
+		return neverConnected;
 	}
 }

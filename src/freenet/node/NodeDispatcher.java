@@ -122,8 +122,7 @@ public class NodeDispatcher implements Dispatcher {
             }
             return true;
         }
-		long now = System.currentTimeMillis();
-        String rejectReason = node.shouldRejectRequest(!isSSK, false, isSSK, now);
+        String rejectReason = node.shouldRejectRequest(!isSSK, false, isSSK);
         if(rejectReason != null) {
         	// can accept 1 CHK request every so often, but not with SSKs because they aren't throttled so won't sort out bwlimitDelayTime, which was the whole reason for accepting them when overloaded...
         	Logger.normal(this, "Rejecting request from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
@@ -167,9 +166,8 @@ public class NodeDispatcher implements Dispatcher {
             }
             return true;
         }
-        long now = System.currentTimeMillis();
         // SSKs don't fix bwlimitDelayTime so shouldn't be accepted when overloaded.
-        String rejectReason = node.shouldRejectRequest(!isSSK, true, isSSK, now);
+        String rejectReason = node.shouldRejectRequest(!isSSK, true, isSSK);
         if(rejectReason != null) {
         	Logger.normal(this, "Rejecting insert from "+m.getSource().getPeer()+" preemptively because "+rejectReason);
         	Message rejected = DMT.createFNPRejectedOverload(id, true);
@@ -191,6 +189,7 @@ public class NodeDispatcher implements Dispatcher {
             }
             return true;
         }
+        long now = System.currentTimeMillis();
         if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
         	SSKInsertHandler rh = new SSKInsertHandler(m, id, node, now);
             Thread t = new Thread(rh, "InsertHandler for "+id+" on "+node.portNumber);
