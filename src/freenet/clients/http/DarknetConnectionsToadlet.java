@@ -81,7 +81,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfListening;
 		String titleCountString = null;
 		if(advancedEnabled) {
-			titleCountString = "(" + numberOfConnected + "/" + numberOfRoutingBackedOff + "/" + numberOfTooNew+numberOfTooOld + "/" + numberOfNotConnected + ")";
+			titleCountString = "(" + numberOfConnected + "/" + numberOfRoutingBackedOff + "/" + numberOfTooNew + "/" + numberOfTooOld + "/" + numberOfNotConnected + ")";
 		} else {
 			titleCountString = String.valueOf(numberOfSimpleConnected);
 		}
