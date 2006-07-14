@@ -804,6 +804,10 @@ public class FNPPacketMangler implements LowLevelFilter {
      * Build a packet and send it, from a whole bunch of messages.
      */
     public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue) {
+    	String requeueLogString = "";
+    	if(!dontRequeue) {
+    		requeueLogString = ", requeueing";
+    	}
         Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn+" ("+neverWaitForPacketNumber+")");
         byte[][] messageData = new byte[messages.length][];
         int[] alreadyReported = new int[messages.length];
@@ -811,8 +815,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         int length = 1;
         int callbacksCount = 0;
         int x = 0;
+		String mi_name = null;
         for(int i=0;i<messageData.length;i++) {
             MessageItem mi = messages[i];
+			mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
             if(mi.formatted) {
                 try {
                     byte[] buf = mi.getData(this, pn);
@@ -827,35 +833,35 @@ public class FNPPacketMangler implements LowLevelFilter {
                     if(mi.ctrCallback != null)
                     	mi.ctrCallback.sentBytes(buf.length + HEADERS_LENGTH_ONE_MESSAGE);
                 } catch (NotConnectedException e) {
-                    Logger.minor(this, "Caught "+e+" while sending messages, requeueing");
+                    Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
                     // Requeue
                     if(!dontRequeue) {
-                    	pn.requeueMessageItems(messages, 0, x, false, "NotConnectedException");
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException");
+                    	pn.requeueMessageItems(messages, 0, x, false, "NotConnectedException(1a)");
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException(1b)");
                     }
                     return;
                 } catch (WouldBlockException e) {
-                    Logger.minor(this, "Caught "+e+" while sending messages, requeueing", e);
+                    Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                     // Requeue
                     if(!dontRequeue) {
-                    	pn.requeueMessageItems(messages, 0, x, false, "NotConnectedException");
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException");
+                    	pn.requeueMessageItems(messages, 0, x, false, "WouldBlockException(1a)");
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "WouldBlockException(1b)");
                     }
                     return;
                 } catch (KeyChangedException e) {
-                    Logger.minor(this, "Caught "+e+" while sending messages, requeueing");
+                    Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                     // Requeue
                     if(!dontRequeue) {
-                    	pn.requeueMessageItems(messages, 0, x, false, "NotConnectedException");
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException");
+                    	pn.requeueMessageItems(messages, 0, x, false, "KeyChangedException(1a)");
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "KeyChangedException(1b)");
                     }
                     return;
                 } catch (Throwable e) {
-                    Logger.error(this, "Caught "+e+" while sending messages, requeueing", e);
+                    Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                     // Requeue
                     if(!dontRequeue) {
-                    	pn.requeueMessageItems(messages, 0, x, false, "NotConnectedException");
-                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException");
+                    	pn.requeueMessageItems(messages, 0, x, false, "Throwable(1)");
+                    	pn.requeueMessageItems(messages, i, messages.length-i, false, "Throwable(1)");
                     }
                     return;
                 }
@@ -890,10 +896,12 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         if((length < node.usm.getMaxPacketSize()) &&
                 (messageData.length < 256)) {
+			mi_name = null;
             try {
                 innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber, callbacks, alreadyReportedBytes);
                 for(int i=0;i<messageData.length;i++) {
                 	MessageItem mi = newMsgs[i];
+					mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
                 	if(mi.ctrCallback != null) {
                 		mi.ctrCallback.sentBytes(messageData[i].length + 
                 				1 + (HEADERS_LENGTH_MINIMUM / messageData.length));
@@ -901,19 +909,19 @@ public class FNPPacketMangler implements LowLevelFilter {
                 	}
                 }
             } catch (NotConnectedException e) {
-                Logger.normal(this, "Caught "+e+" while sending messages, requeueing");
+                Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
                 // Requeue
                 if(!dontRequeue)
                 	pn.requeueMessageItems(messages, 0, messages.length, false, "NotConnectedException(2)");
                 return;
             } catch (WouldBlockException e) {
-                Logger.minor(this, "Caught "+e+" while sending messages, requeueing", e);
+                Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                 // Requeue
                 if(!dontRequeue)
                 	pn.requeueMessageItems(messages, 0, messages.length, false, "WouldBlockException(2)");
                 return;
             } catch (Throwable e) {
-                Logger.error(this, "Caught "+e+" while sending messages, requeueing", e);
+                Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                 // Requeue
                 if(!dontRequeue)
                 	pn.requeueMessageItems(messages, 0, messages.length, false, "Throwable(2)");
@@ -921,6 +929,9 @@ public class FNPPacketMangler implements LowLevelFilter {
                 
             }
         } else {
+			if(!dontRequeue) {
+				requeueLogString = ", requeueing remaining messages";
+			}
             length = 56;
             int count = 0;
             int lastIndex = 0;
@@ -939,10 +950,12 @@ public class FNPPacketMangler implements LowLevelFilter {
                     // lastIndex up to the message right before this one
                     // e.g. lastIndex = 0, i = 1, we just send message 0
                     if(lastIndex != i) {
+						mi_name = null;
                         try {
                             innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks, alreadyReportedBytes);
                             for(int j=lastIndex;j<i;j++) {
                             	MessageItem mi = newMsgs[j];
+								mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
                             	if(mi.ctrCallback != null) {
                             		mi.ctrCallback.sentBytes(messageData[j].length + 
                             				1 + (HEADERS_LENGTH_MINIMUM / (i-lastIndex)));
@@ -950,19 +963,19 @@ public class FNPPacketMangler implements LowLevelFilter {
                             	}
                             }
                         } catch (NotConnectedException e) {
-                            Logger.normal(this, "Caught "+e+" while sending messages, requeueing remaining messages");
+                            Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
                             // Requeue
                             if(!dontRequeue)
                             	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "NotConnectedException(3)");
                             return;
                         } catch (WouldBlockException e) {
-                            Logger.minor(this, "Caught "+e+" while sending messages, requeueing remaining messages", e);
+                            Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                             // Requeue
                             if(!dontRequeue)
                             	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "WouldBlockException(3)");
                             return;
                         } catch (Throwable e) {
-                            Logger.error(this, "Caught "+e+" while sending messages, requeueing remaining messages", e);
+                            Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                             // Requeue
                             if(!dontRequeue)
                             	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "Throwable(3)");
@@ -1054,13 +1067,13 @@ public class FNPPacketMangler implements LowLevelFilter {
             	Logger.minor(this, "At beginning of processOutgoingPreformatted loop for "+peer.getPeer());
                 KeyTracker tracker = peer.getCurrentKeyTracker();
                 if(tracker == null) {
-                    Logger.normal(this, "Dropping packet: Not connected yet");
+                    Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(1)");
                     throw new NotConnectedException();
                 }
                 processOutgoingPreformatted(buf, offset, length, tracker, k, callbacks, alreadyReportedBytes);
                 return;
             } catch (KeyChangedException e) {
-            	Logger.normal(this, "Key changed");
+            	Logger.normal(this, "Key changed(1)");
                 // Go around again
             }
         }
@@ -1076,7 +1089,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             try {
                 KeyTracker tracker = peer.getCurrentKeyTracker();
                 if(tracker == null) {
-                    Logger.normal(this, "Dropping packet: Not connected yet");
+                    Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(2)");
                     throw new NotConnectedException();
                 }
                 int seqNo = neverWaitForPacketNumber ? tracker.allocateOutgoingPacketNumberNeverBlock() :
@@ -1084,6 +1097,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 processOutgoingPreformatted(buf, offset, length, tracker, seqNo, callbacks, alreadyReportedBytes);
                 return;
             } catch (KeyChangedException e) {
+            	Logger.normal(this, "Key changed(2)");
                 // Go around again
             }
         }

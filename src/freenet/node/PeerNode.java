@@ -2077,7 +2077,7 @@ public class PeerNode implements PeerContext {
 	 * This will return true if our lastGoodBuild has changed due to a timed mandatory.
 	 */
 	public synchronized boolean shouldDisconnectNow() {
-		// We should disconnect here if "protocol version missmatch", maybe throwing an exception
+		// TODO: We should disconnect here if "protocol version mismatch", maybe throwing an exception
 		verifiedIncompatibleOlderVersion = invalidVersion();
 		verifiedIncompatibleNewerVersion = reverseInvalidVersion();
 		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion) return true;
