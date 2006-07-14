@@ -16,7 +16,6 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.CannotCreateFromFieldSetException;
-import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.SerializableToFieldSetBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
@@ -147,6 +146,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			for(int i=0;i<checkBlockCount;i++) {
 				SimpleFieldSet blockFS = checkFS.subset(Integer.toString(i));
 				if(blockFS == null) {
+					hasURIs = false;
 					if(encoded) throw new ResumeException("No check block "+i+" of "+segNo);
 					else continue;
 				}
