@@ -31,11 +31,16 @@ public class MemoryChecker implements Runnable {
 			// memory usage *more predictable*. This will make
 			// tracking down the sort of nasty unpredictable OOMs
 			// we are getting much easier. 
-			if(Node.aggressiveGCModificator > 0){
-				Logger.minor(this, "Memory in use before GC: "+(r.totalMemory()-r.freeMemory()));
+			if(Node.aggressiveGCModificator > 0) {
+				long beforeGCUsedMemory = (r.totalMemory()-r.freeMemory());
+				Logger.minor(this, "Memory in use before GC: "+beforeGCUsedMemory);
+				long beforeGCTime = System.currentTimeMillis();
 				System.gc();
 				System.runFinalization();
-				Logger.minor(this, "Memory in use after GC: "+(r.totalMemory()-r.freeMemory()));
+				long afterGCTime = System.currentTimeMillis();
+				long afterGCUsedMemory = (r.totalMemory()-r.freeMemory());
+				Logger.minor(this, "Memory in use after GC: "+afterGCUsedMemory);
+				Logger.minor(this, "GC completed after "+(afterGCTime - beforeGCTime)+"ms and \"recovered\" "+(beforeGCUsedMemory - afterGCUsedMemory)+" bytes, leaving "+afterGCUsedMemory+" bytes used");
 			}
 		}
 	}
