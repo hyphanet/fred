@@ -96,8 +96,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		ctxRevocation.maxSplitfileBlockRetries = -1; // if we find content, try forever to get it.
 		ctxRevocation.maxNonSplitfileRetries = 0; // but return quickly normally
 		
-		try{		
-			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion));
+		try{
+			// start at next version, not interested in this version
+			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion+1));
 			ctx.uskManager.subscribe(myUsk, this, true);
 			ctx.uskManager.startTemporaryBackgroundFetcher(myUsk);
 			
