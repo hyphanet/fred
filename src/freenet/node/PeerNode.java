@@ -1466,15 +1466,7 @@ public class PeerNode implements PeerContext {
     }
 
     public String getStatus() {
-    	String status;
-    	if(isRoutable())
-    		status = "CONNECTED";
-    	else if (isConnected())
-    		status = "INCOMPATIBLE";
-    	else
-    		status = "DISCONNECTED";
-        return 
-        	status + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+routingBackoffLength+" ("+(Math.max(routingBackedOffUntil - System.currentTimeMillis(),0))+")";
+        return getPeerNodeStatusString() + " " + getPeer()+" "+myName+" "+currentLocation.getValue()+" "+getVersion()+" backoff: "+getRoutingBackoffLength()+" ("+(Math.max(getRoutingBackedOffUntil() - System.currentTimeMillis(),0))+")";
     }
 
     public String getTMCIPeerInfo() {
@@ -1549,7 +1541,7 @@ public class PeerNode implements PeerContext {
 			fs.put("peerAddedTime", Long.toString(tempPeerAddedTime));
 		}
 		fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
-		fs.put("routingBackoff", Long.toString((Math.max(routingBackedOffUntil - now, 0))));
+		fs.put("routingBackoff", Long.toString((Math.max(getRoutingBackedOffUntil() - now, 0))));
 		fs.put("routingBackoffLength", Integer.toString(getRoutingBackoffLength()));
 		fs.put("status", getPeerNodeStatusString());
     	return fs;
@@ -1681,12 +1673,16 @@ public class PeerNode implements PeerContext {
 	 * Track the percentage of time a peer spends backed off
 	 */
 	private void reportBackoffStatus(long now) {
+		long localRoutingBackedOffUntil = -1;
+		synchronized(routingBackoffSync) {
+			localRoutingBackedOffUntil = routingBackedOffUntil;
+		}
 		if(now > lastSampleTime) {
-			if (now > routingBackedOffUntil) {
-				if (lastSampleTime > routingBackedOffUntil) {
+			if (now > localRoutingBackedOffUntil) {
+				if (lastSampleTime > localRoutingBackedOffUntil) {
 					backedOffPercent.report(0.0);
 				} else {
-					backedOffPercent.report((double)(routingBackedOffUntil-lastSampleTime)/(double)(now-lastSampleTime));
+					backedOffPercent.report((double)(localRoutingBackedOffUntil - lastSampleTime)/(double)(now - lastSampleTime));
 				}
 			} else {
 				backedOffPercent.report(1.0);
@@ -1825,23 +1821,27 @@ public class PeerNode implements PeerContext {
 	}
 
 	public int getRoutingBackoffLength() {
-		return this.routingBackoffLength;
+        synchronized(routingBackoffSync) {
+			return routingBackoffLength;
+		}
 	}
 
 	public long getRoutingBackedOffUntil() {
-		return routingBackedOffUntil;
+        synchronized(routingBackoffSync) {
+			return routingBackedOffUntil;
+		}
 	}
 
-	public String getLastBackoffReason() {
+	public synchronized String getLastBackoffReason() {
 		return lastRoutingBackoffReason;
 	}
 
-	public String getPreviousBackoffReason() {
+	public synchronized String getPreviousBackoffReason() {
 		return previousRoutingBackoffReason;
 	}
 
-	public void setLastBackoffReason(String s) {
-		this.lastRoutingBackoffReason = s;
+	public synchronized void setLastBackoffReason(String s) {
+		lastRoutingBackoffReason = s;
 	}
 
 	public boolean hasCompletedHandshake() {
@@ -1992,7 +1992,7 @@ public class PeerNode implements PeerContext {
 		int oldPeerNodeStatus = peerNodeStatus;
 		if(isRoutable()) {
 			peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
-			if(now < routingBackedOffUntil) {
+			if(now < getRoutingBackedOffUntil()) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
 				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || (previousRoutingBackoffReason == null)) {
 					if(previousRoutingBackoffReason != null) {
