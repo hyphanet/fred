@@ -714,9 +714,7 @@ public class PeerNode implements PeerContext {
         if(!isConnected()) throw new NotConnectedException();
         MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes, ctr);
         long now = System.currentTimeMillis();
-        synchronized(routingBackoffSync) {
-        	reportBackoffStatus(now);
-        }
+		reportBackoffStatus(now);
         synchronized(messagesToSendNow) {
             messagesToSendNow.addLast(item);
         }
@@ -1806,8 +1804,8 @@ public class PeerNode implements PeerContext {
 		Logger.minor(this, "Local rejected overload on "+this);
 		long now = System.currentTimeMillis();
 		Peer peer = getPeer();
+		reportBackoffStatus(now);
 		synchronized(routingBackoffSync) {
-			reportBackoffStatus(now);
 			// Don't back off any further if we are already backed off
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
@@ -1837,8 +1835,8 @@ public class PeerNode implements PeerContext {
 		Logger.minor(this, "Success not overload on "+this);
 		Peer peer = getPeer();
 		long now = System.currentTimeMillis();
+		reportBackoffStatus(now);
 		synchronized(routingBackoffSync) {
-			reportBackoffStatus(now);
 			// Don't un-backoff if still backed off
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
@@ -2097,45 +2095,48 @@ public class PeerNode implements PeerContext {
   	return "peer_unknown_status";
   }
 
-	public synchronized void setPeerNodeStatus(long now) {
+	public void setPeerNodeStatus(long now) {
 		int oldPeerNodeStatus = peerNodeStatus;
-		if(isRoutable()) {
-			peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
-			if(now < getRoutingBackedOffUntil()) {
-				peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
-				if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || (previousRoutingBackoffReason == null)) {
+		long localRoutingBackedOffUntil = getRoutingBackedOffUntil();
+		synchronized(this) {
+			if(isRoutable()) {
+				peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
+				if(now < localRoutingBackedOffUntil ) {
+					peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
+					if(!lastRoutingBackoffReason.equals(previousRoutingBackoffReason) || (previousRoutingBackoffReason == null)) {
+						if(previousRoutingBackoffReason != null) {
+							node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+						}
+						node.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
+						previousRoutingBackoffReason = lastRoutingBackoffReason;
+					}
+				} else {
 					if(previousRoutingBackoffReason != null) {
 						node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+						previousRoutingBackoffReason = null;
 					}
-					node.addPeerNodeRoutingBackoffReason(lastRoutingBackoffReason, this);
-					previousRoutingBackoffReason = lastRoutingBackoffReason;
 				}
+			} else if(isDisabled) {
+				peerNodeStatus = Node.PEER_NODE_STATUS_DISABLED;
+			} else if(isConnected && verifiedIncompatibleNewerVersion) {
+				peerNodeStatus = Node.PEER_NODE_STATUS_TOO_NEW;
+			} else if(isConnected && verifiedIncompatibleOlderVersion) {
+				peerNodeStatus = Node.PEER_NODE_STATUS_TOO_OLD;
+			} else if(neverConnected) {
+				peerNodeStatus = Node.PEER_NODE_STATUS_NEVER_CONNECTED;
+			} else if(isListenOnly) {
+				peerNodeStatus = Node.PEER_NODE_STATUS_LISTENING;
 			} else {
-				if(previousRoutingBackoffReason != null) {
-					node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
-					previousRoutingBackoffReason = null;
-				}
+				peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
 			}
-		} else if(isDisabled) {
-			peerNodeStatus = Node.PEER_NODE_STATUS_DISABLED;
-		} else if(isConnected && verifiedIncompatibleNewerVersion) {
-			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_NEW;
-		} else if(isConnected && verifiedIncompatibleOlderVersion) {
-			peerNodeStatus = Node.PEER_NODE_STATUS_TOO_OLD;
-		} else if(neverConnected) {
-			peerNodeStatus = Node.PEER_NODE_STATUS_NEVER_CONNECTED;
-		} else if(isListenOnly) {
-			peerNodeStatus = Node.PEER_NODE_STATUS_LISTENING;
-		} else {
-			peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
-		}
-		if(!isConnected && (previousRoutingBackoffReason != null)) {
-			node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
-			previousRoutingBackoffReason = null;
-		}
-		if(peerNodeStatus != oldPeerNodeStatus) {
-		  node.removePeerNodeStatus( oldPeerNodeStatus, this );
-		  node.addPeerNodeStatus( peerNodeStatus, this );
+			if(!isConnected && (previousRoutingBackoffReason != null)) {
+				node.removePeerNodeRoutingBackoffReason(previousRoutingBackoffReason, this);
+				previousRoutingBackoffReason = null;
+			}
+			if(peerNodeStatus != oldPeerNodeStatus) {
+			  node.removePeerNodeStatus( oldPeerNodeStatus, this );
+			  node.addPeerNodeStatus( peerNodeStatus, this );
+			}
 		}
 	}
 
