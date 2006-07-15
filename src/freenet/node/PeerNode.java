@@ -58,24 +58,24 @@ import freenet.support.math.TimeDecayingRunningAverage;
 public class PeerNode implements PeerContext {
 
     /** Set to true when we complete a handshake. */
-    private boolean completedHandshake = false;
+    private boolean completedHandshake;
     
     private String lastGoodVersion; 
 	
     /** Set to true based on a relevant incoming handshake from this peer
      *  Set true if this peer has a incompatible older build than we are
      */
-    private boolean verifiedIncompatibleOlderVersion = false;
+    private boolean verifiedIncompatibleOlderVersion;
 	
     /** Set to true based on a relevant incoming handshake from this peer
      *  Set true if this peer has a incompatible newer build than we are
      */
-    private boolean verifiedIncompatibleNewerVersion = false;
+    private boolean verifiedIncompatibleNewerVersion;
 	
     /** For debugging/testing, set this to true to stop the
      * probabilistic decrement at the edges of the HTLs.
      */
-    static boolean disableProbabilisticHTLs = false;
+    static boolean disableProbabilisticHTLs;
 
     /** My low-level address for SocketManager purposes */
     private Peer detectedPeer;
@@ -124,7 +124,7 @@ public class PeerNode implements PeerContext {
     private USK myARK;
     
     /** Number of handshake attempts since last successful connection or ARK fetch */
-    private int handshakeCount = 0;
+    private int handshakeCount;
     
     /** After this many failed handshakes, we start the ARK fetcher. */
     private static final int MAX_HANDSHAKE_COUNT = 2;
@@ -169,7 +169,7 @@ public class PeerNode implements PeerContext {
     private long sendHandshakeTime;
     
     /** Time after which we log message requeues while rate limiting */
-    private long nextMessageRequeueLogTime = 0;
+    private long nextMessageRequeueLogTime;
     
     /** Interval between rate limited message requeue logs (in milliseconds) */
     private long messageRequeueLogRateLimitInterval = 1000;
@@ -220,25 +220,25 @@ public class PeerNode implements PeerContext {
     private Hashtable localNodeReceivedMessageTypes = new Hashtable();
 
     /** Hold collected IP addresses for handshake attempts, populated by DNSRequestor */
-    private Peer[] handshakeIPs = null;
+    private Peer[] handshakeIPs;
     
     /** The last time we attempted to update handshakeIPs */
-    private long lastAttemptedHandshakeIPUpdateTime = 0;
+    private long lastAttemptedHandshakeIPUpdateTime;
     
     /** True if we have never connected to this peer since it was added to this node */
-    private boolean neverConnected = false;
+    private boolean neverConnected;
     
     /** When this peer was added to this node */
     private long peerAddedTime = 1;
     
     /** True if this peer is not to be connected with */
-    private boolean isDisabled = false;
+    private boolean isDisabled;
     
     /** True if we don't send handshake requests to this peer, but will connect if we receive one */
-    private boolean isListenOnly = false;
+    private boolean isListenOnly;
     
     /** True if we want to allow LAN/localhost addresses. */
-    private boolean allowLocalAddresses = false;
+    private boolean allowLocalAddresses;
 
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
@@ -651,7 +651,6 @@ public class PeerNode implements PeerContext {
     	}
     	Logger.minor(this, "3: detectedPeer = "+localDetectedPeer+" ("+localDetectedPeer.getAddress(false)+")");
     	Logger.minor(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
-    	return;
     }
     
     /**
@@ -1279,7 +1278,7 @@ public class PeerNode implements PeerContext {
 		return true;
     }
 
-    boolean sentInitialMessages = false;
+    boolean sentInitialMessages;
     
     void maybeSendInitialMessages() {
         synchronized(this) {
@@ -1756,9 +1755,9 @@ public class PeerNode implements PeerContext {
 	/** Current nominal routing backoff length */
 	int routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
 	/** Last backoff reason */
-	String lastRoutingBackoffReason = null;
+	String lastRoutingBackoffReason;
 	/** Previous backoff reason (used by setPeerNodeStatus)*/
-	String previousRoutingBackoffReason = null;
+	String previousRoutingBackoffReason;
 	/* percent of time this peer is backedoff */
 	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
 	/* time of last sample */
@@ -2096,9 +2095,9 @@ public class PeerNode implements PeerContext {
   }
 
 	public void setPeerNodeStatus(long now) {
-		int oldPeerNodeStatus = peerNodeStatus;
 		long localRoutingBackedOffUntil = getRoutingBackedOffUntil();
 		synchronized(this) {
+			int oldPeerNodeStatus = peerNodeStatus;
 			if(isRoutable()) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
 				if(now < localRoutingBackedOffUntil ) {
