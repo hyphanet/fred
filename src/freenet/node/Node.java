@@ -449,6 +449,10 @@ public class Node {
 	public static final int RANDOMIZED_TIME_BETWEEN_VERSION_PROBES = HANDSHAKE_TIMEOUT*2; // 20-30 secs
 	public static final int MIN_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*4;
 	public static final int RANDOMIZED_TIME_BETWEEN_VERSION_SENDS = HANDSHAKE_TIMEOUT*2; // 20-30 secs
+	public static final int MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS = HANDSHAKE_TIMEOUT*24; // 2-5 minutes
+	public static final int RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS = HANDSHAKE_TIMEOUT*36;
+	public static final int MIN_BURSTING_HANDSHAKE_BURST_SIZE = 1; // 1-4 handshake sends per burst
+	public static final int RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE = 3;
 	// If we don't receive any packets at all in this period, from any node, tell the user
 	public static final long ALARM_TIME = 60*1000;
 	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
@@ -623,7 +627,9 @@ public class Node {
 	public static final int PEER_NODE_STATUS_DISCONNECTED = 5;
 	public static final int PEER_NODE_STATUS_NEVER_CONNECTED = 6;
 	public static final int PEER_NODE_STATUS_DISABLED = 7;
-	public static final int PEER_NODE_STATUS_LISTENING = 8;
+	public static final int PEER_NODE_STATUS_BURSTING = 8;
+	public static final int PEER_NODE_STATUS_LISTENING = 9;
+	public static final int PEER_NODE_STATUS_LISTEN_ONLY = 10;
 	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
 	
 	public final long bootID;
@@ -3429,8 +3435,10 @@ public class Node {
 		int numberOfDisconnected = getPeerNodeStatusSize(PEER_NODE_STATUS_DISCONNECTED);
 		int numberOfNeverConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
 		int numberOfDisabled = getPeerNodeStatusSize(PEER_NODE_STATUS_DISABLED);
+		int numberOfListenOnly = getPeerNodeStatusSize(PEER_NODE_STATUS_LISTEN_ONLY);
 		int numberOfListening = getPeerNodeStatusSize(PEER_NODE_STATUS_LISTENING);
-		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Listening: "+numberOfListening);
+		int numberOfBursting = getPeerNodeStatusSize(PEER_NODE_STATUS_BURSTING);
+		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly);
 		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 	  }
 	}

@@ -55,6 +55,16 @@ public class ModifyPeer extends FCPMessage {
 				return;
 			}
 		}
+		String isBurstOnlyString = fs.get("IsBurstOnly");
+		if(isBurstOnlyString != null) {
+			if(!isBurstOnlyString.equals("")) {
+				pn.setBurstOnly(Fields.stringToBool(isBurstOnlyString, false));
+			} else {
+				ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "IsBurstOnly had no value", nodeIdentifier);
+				handler.outputHandler.queue(msg);
+				return;
+			}
+		}
 		handler.outputHandler.queue(new Peer(pn, true, true));
 	}
 

@@ -129,6 +129,12 @@ public class PeerNode implements PeerContext {
     /** After this many failed handshakes, we start the ARK fetcher. */
     private static final int MAX_HANDSHAKE_COUNT = 2;
     
+    /** Number of handshake attempts (while in ListenOnly mode) since the beginning of this burst */
+    private int listeningHandshakeBurstCount;
+    
+    /** Total number of handshake attempts (while in ListenOnly mode) to be in this burst */
+    private int listeningHandshakeBurstSize;
+    
     /** Current location in the keyspace */
     private Location currentLocation;
     
@@ -236,6 +242,12 @@ public class PeerNode implements PeerContext {
     
     /** True if we don't send handshake requests to this peer, but will connect if we receive one */
     private boolean isListenOnly;
+    
+    /** True if we send handshake requests to this peer in infrequent bursts */
+    private boolean isBurstOnly;
+    
+    /** True if we are currently sending this peer a burst of handshake requests */
+    private boolean isBursting;
     
     /** True if we want to allow LAN/localhost addresses. */
     private boolean allowLocalAddresses;
@@ -440,6 +452,7 @@ public class PeerNode implements PeerContext {
             	}
             	isDisabled = Fields.stringToBool(metadata.get("isDisabled"), false);
             	isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
+            	isBurstOnly = Fields.stringToBool(metadata.get("isBurstOnly"), false);
             	allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
         	}
         } else {
@@ -448,7 +461,16 @@ public class PeerNode implements PeerContext {
         }
         // populate handshakeIPs so handshakes can start ASAP
         maybeUpdateHandshakeIPs(true);
+        
+        sendHandshakeTime = now;  // Be sure we're ready to handshake right away
     
+		listeningHandshakeBurstCount = 0;
+		listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
+				+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
+		if(isBurstOnly) {
+			Logger.minor(this, "First BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+")");
+		}
+
         // status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
         setPeerNodeStatus(now);
     }
@@ -856,10 +878,16 @@ public class PeerNode implements PeerContext {
                 (handshakeIPs != null) &&
                 (now > sendHandshakeTime);
 		}
-		if(tempShouldSendHandshake && !(hasLiveHandshake(now))) {
-			return true;
+		if(tempShouldSendHandshake && (hasLiveHandshake(now))) {
+			tempShouldSendHandshake = false;
 		}
-		return false;
+		if(tempShouldSendHandshake && isBurstOnly()) {
+			synchronized(this) {
+				isBursting = true;
+			}
+			setPeerNodeStatus(now);
+		}
+		return tempShouldSendHandshake;
     }
     
     /**
@@ -882,25 +910,51 @@ public class PeerNode implements PeerContext {
         long now = System.currentTimeMillis();
         boolean fetchARKFlag = false;
         synchronized(this) {
-            if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
-                // Let them know we're here, but have no hope of connecting
-                sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
-            } else if(invalidVersion() && !firstHandshake) {
-                sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
-            } else {
-                sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
-                  + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
-            }
-            if(couldSendHandshake) {
-                firstHandshake = false;
-            } else {
-                handshakeIPs = null;
-            }
-            this.handshakeCount++;
-        	fetchARKFlag = ((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion));
+			if(!isBurstOnly) {
+				if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
+					// Let them know we're here, but have no hope of connecting
+					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_SENDS
+						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+				} else if(invalidVersion() && !firstHandshake) {
+					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_VERSION_PROBES
+						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+				} else {
+					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
+						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+				}
+				if(couldSendHandshake) {
+					firstHandshake = false;
+				} else {
+					handshakeIPs = null;
+				}
+				handshakeCount++;
+				fetchARKFlag = ((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion));
+			} else {
+				listeningHandshakeBurstCount++;
+				if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
+					// Let them know we're here, but have no hope of connecting
+					listeningHandshakeBurstCount = 0;
+				} else if(listeningHandshakeBurstCount >= listeningHandshakeBurstSize) {
+					listeningHandshakeBurstCount = 0;
+					fetchARKFlag = true;
+				}
+				if(listeningHandshakeBurstCount == 0) {  // 0 only if we just reset it above
+					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS
+						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_BURSTING_HANDSHAKE_BURSTS);
+					listeningHandshakeBurstSize = Node.MIN_BURSTING_HANDSHAKE_BURST_SIZE
+							+ node.random.nextInt(Node.RANDOMIZED_BURSTING_HANDSHAKE_BURST_SIZE);
+					isBursting = false;
+				} else {
+					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
+						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+				}
+				if(!couldSendHandshake) {
+					handshakeIPs = null;
+				}
+				Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+")", new Exception("double-called debug"));
+			}
         }
+		setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
         if(fetchARKFlag) {
 			long arkFetcherStartTime1 = System.currentTimeMillis();
@@ -1613,6 +1667,8 @@ public class PeerNode implements PeerContext {
     		fs.put("isDisabled", "true");
     	if(isListenOnly())
     		fs.put("isListenOnly", "true");
+    	if(isBurstOnly())
+    		fs.put("isBurstOnly", "true");
     	if(allowLocalAddresses())
     		fs.put("allowLocalAddresses", "true");
     	return fs;
@@ -2068,8 +2124,12 @@ public class PeerNode implements PeerContext {
   		return "NEVER CONNECTED";
   	if(status == Node.PEER_NODE_STATUS_DISABLED)
   		return "DISABLED";
+  	if(status == Node.PEER_NODE_STATUS_LISTEN_ONLY)
+  		return "LISTEN ONLY";
   	if(status == Node.PEER_NODE_STATUS_LISTENING)
   		return "LISTENING";
+  	if(status == Node.PEER_NODE_STATUS_BURSTING)
+  		return "BURSTING";
   	return "UNKNOWN STATUS";
   }
 
@@ -2089,7 +2149,11 @@ public class PeerNode implements PeerContext {
   		return "peer_never_connected";
   	if(status == Node.PEER_NODE_STATUS_DISABLED)
   		return "peer_disconnected";  // **FIXME**
+  	if(status == Node.PEER_NODE_STATUS_LISTEN_ONLY)
+  		return "peer_disconnected";  // **FIXME**
   	if(status == Node.PEER_NODE_STATUS_LISTENING)
+  		return "peer_disconnected";  // **FIXME**
+  	if(status == Node.PEER_NODE_STATUS_BURSTING)
   		return "peer_disconnected";  // **FIXME**
   	return "peer_unknown_status";
   }
@@ -2124,6 +2188,10 @@ public class PeerNode implements PeerContext {
 			} else if(neverConnected) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_NEVER_CONNECTED;
 			} else if(isListenOnly) {
+				peerNodeStatus = Node.PEER_NODE_STATUS_LISTEN_ONLY;
+			} else if(isBursting) {
+				peerNodeStatus = Node.PEER_NODE_STATUS_BURSTING;
+			} else if(isBurstOnly) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_LISTENING;
 			} else {
 				peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
@@ -2179,12 +2247,36 @@ public class PeerNode implements PeerContext {
 		synchronized(this) {
 			isListenOnly = setting;
 		}
+		if(setting && isBurstOnly()) {
+			setBurstOnly(false);
+		}
 		setPeerNodeStatus(System.currentTimeMillis());
         node.peers.writePeers();
 	}
 
 	public synchronized boolean isListenOnly() {
 		return isListenOnly;
+	}
+	
+	public void setBurstOnly(boolean setting) {
+		synchronized(this) {
+			isBurstOnly = setting;
+		}
+		if(setting && isListenOnly()) {
+			setListenOnly(false);
+		}
+		long now = System.currentTimeMillis();
+		if(!setting) {
+			synchronized(this) {
+				sendHandshakeTime = now;  // don't keep any long handshake delays we might have had under BurstOnly
+			}
+		}
+		setPeerNodeStatus(now);
+		node.peers.writePeers();
+	}
+
+	public synchronized boolean isBurstOnly() {
+		return isBurstOnly;
 	}
 
 	/**
@@ -2201,7 +2293,7 @@ public class PeerNode implements PeerContext {
 
 	protected synchronized void invalidate() {
 		isRoutable = false;
-        Logger.normal(this, "Invalidated "+this);
+		Logger.normal(this, "Invalidated "+this);
 	}
 	
 	public synchronized boolean allowLocalAddresses() {

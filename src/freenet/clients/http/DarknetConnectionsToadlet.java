@@ -75,10 +75,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int numberOfDisconnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_DISCONNECTED);
 		int numberOfNeverConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_NEVER_CONNECTED);
 		int numberOfDisabled = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_DISABLED);
+		int numberOfBursting = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_BURSTING);
 		int numberOfListening = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_LISTENING);
+		int numberOfListenOnly = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_LISTEN_ONLY);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
-		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfListening;
+		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
 		String titleCountString = null;
 		if(advancedEnabled) {
 			titleCountString = "(" + numberOfConnected + "/" + numberOfRoutingBackedOff + "/" + numberOfTooNew + "/" + numberOfTooOld + "/" + numberOfNotConnected + ")";
@@ -192,8 +194,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if (numberOfDisabled > 0) {
 			buf.append("<li><span class=\"peer_never_connected\">Disabled:&nbsp;").append(numberOfDisabled).append("</span></li>");  // **FIXME**
 		}
+		if (numberOfBursting > 0) {
+			buf.append("<li><span class=\"peer_never_connected\">Bursting:&nbsp;").append(numberOfBursting).append("</span></li>");  // **FIXME**
+		}
 		if (numberOfListening > 0) {
 			buf.append("<li><span class=\"peer_never_connected\">Listening:&nbsp;").append(numberOfListening).append("</span></li>");  // **FIXME**
+		}
+		if (numberOfListenOnly > 0) {
+			buf.append("<li><span class=\"peer_never_connected\">Listen Only:&nbsp;").append(numberOfListenOnly).append("</span></li>");  // **FIXME**
 		}
 		buf.append("</ul>");
 		buf.append("</div>");
@@ -404,6 +412,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				buf.append(" <option value=\"\">-- Select Action --</option>\n");
 				buf.append(" <option value=\"enable\">Enable Selected Peers</option>\n");
 				buf.append(" <option value=\"disable\">Disable Selected Peers</option>\n");
+				buf.append(" <option value=\"set_burst_only\">On Selected Peers, Set BurstOnly</option>\n");
+				buf.append(" <option value=\"clear_burst_only\">On Selected Peers, Clear BurstOnly</option>\n");
 				buf.append(" <option value=\"set_listen_only\">On Selected Peers, Set ListenOnly</option>\n");
 				buf.append(" <option value=\"clear_listen_only\">On Selected Peers, Clear ListenOnly</option>\n");
 				buf.append(" <option value=\"\">-- -- --</option>\n");
@@ -568,6 +578,32 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
 					peerNodes[i].disablePeer();
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("submit") && request.getPartAsString("action",25).equals("set_burst_only")) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					peerNodes[i].setBurstOnly(true);
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("submit") && request.getPartAsString("action",25).equals("clear_burst_only")) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					peerNodes[i].setBurstOnly(false);
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
