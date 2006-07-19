@@ -2329,9 +2329,9 @@ public class Node {
 		}
 	}
 
-	long lastAcceptedRequest = -1;
+	private long lastAcceptedRequest = -1;
 	
-	long lastCheckedUncontended = -1;
+	private long lastCheckedUncontended = -1;
 	
 	static final int ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET = 
 		1024 + DMT.packetTransmitSize(1024, 32)
@@ -2344,20 +2344,18 @@ public class Node {
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
 		// Do we have the bandwidth?
-		synchronized(this) {
-			double expected = 
-				(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
-						: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
-			int expectedSent = (int)Math.max(expected, 0);
-			if(!requestOutputThrottle.instantGrab(expectedSent)) return "Insufficient output bandwidth";
-			expected = 
-				(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
-						: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
-			int expectedReceived = (int)Math.max(expected, 0);
-			if(!requestInputThrottle.instantGrab(expectedReceived)) {
-				requestOutputThrottle.recycle(expectedSent);
-				return "Insufficient input bandwidth";
-			}
+		double expected = 
+			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
+					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
+		int expectedSent = (int)Math.max(expected, 0);
+		if(!requestOutputThrottle.instantGrab(expectedSent)) return "Insufficient output bandwidth";
+		expected = 
+			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
+					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
+		int expectedReceived = (int)Math.max(expected, 0);
+		if(!requestInputThrottle.instantGrab(expectedReceived)) {
+			requestOutputThrottle.recycle(expectedSent);
+			return "Insufficient input bandwidth";
 		}
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
