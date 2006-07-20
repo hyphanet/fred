@@ -104,7 +104,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.getCHKOnly = getCHKOnly;
 		this.cb = cb;
 		this.ctx = ctx;
-		finished = Fields.stringToBool(fs.get("Finished"), false);
+		// Don't read finished, wait for the segmentFinished()'s.
 		String length = fs.get("DataLength");
 		if(length == null) throw new ResumeException("No DataLength");
 		try {
@@ -207,10 +207,6 @@ public class SplitFileInserter implements ClientPutState {
 		for(int i=0;i<segments.length;i++)
 			segments[i].start();
 		
-		if(finished) {
-			// FIXME call callback with metadata etc
-		}
-
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
 		
@@ -343,26 +339,30 @@ public class SplitFileInserter implements ClientPutState {
 			}
 			finished = true;
 		}
+		onAllFinished();
+	}
+	
+	private void onAllFinished() {
 		try {
-		// Finished !!
-		FailureCodeTracker tracker = new FailureCodeTracker(true);
-		boolean allSucceeded = true;
-		for(int i=0;i<segments.length;i++) {
-			InserterException e = segments[i].getException();
-			if(e == null) continue;
-			allSucceeded = false;
-			if(e.errorCodes != null)
-				tracker.merge(e.errorCodes);
-			tracker.inc(e.getMode());
-		}
-		if(allSucceeded)
-			cb.onSuccess(this);
-		else {
-			if(tracker.isFatal(true))
-				cb.onFailure(new InserterException(InserterException.FATAL_ERRORS_IN_BLOCKS, tracker, null), this);
-			else
-				cb.onFailure(new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, tracker, null), this);
-		}
+			// Finished !!
+			FailureCodeTracker tracker = new FailureCodeTracker(true);
+			boolean allSucceeded = true;
+			for(int i=0;i<segments.length;i++) {
+				InserterException e = segments[i].getException();
+				if(e == null) continue;
+				allSucceeded = false;
+				if(e.errorCodes != null)
+					tracker.merge(e.errorCodes);
+				tracker.inc(e.getMode());
+			}
+			if(allSucceeded)
+				cb.onSuccess(this);
+			else {
+				if(tracker.isFatal(true))
+					cb.onFailure(new InserterException(InserterException.FATAL_ERRORS_IN_BLOCKS, tracker, null), this);
+				else
+					cb.onFailure(new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, tracker, null), this);
+			}
 		} catch (Throwable t) {
 			// We MUST tell the parent *something*!
 			Logger.error(this, "Caught "+t, t);
