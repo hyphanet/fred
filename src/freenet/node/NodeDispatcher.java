@@ -283,7 +283,7 @@ public class NodeDispatcher implements Dispatcher {
         // pn == null => originated locally, keep full htl
         double target = m.getDouble(DMT.TARGET_LOCATION);
         Logger.minor(this, "id "+id+" from "+pn+" htl "+htl+" target "+target);
-        if(node.lm.getLocation().getValue() == target) {
+        if(Math.abs(node.lm.getLocation().getValue() - target) <= Double.MIN_VALUE) {
             Logger.minor(this, "Dispatching "+m.getSpec()+" on "+node.portNumber);
             // Handle locally
             // Message type specific processing

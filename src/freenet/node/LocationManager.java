@@ -126,7 +126,7 @@ class LocationManager {
                                     PeerNode pn = peers[i];
                                     if(pn.isRoutable()) {
                                         double ploc = pn.getLocation().getValue();
-                                        if(ploc == myLoc) {
+                                        if(Math.abs(ploc - myLoc) <= Double.MIN_VALUE) {
                                             myFlag = true;
                                             // Log an ERROR
                                             // As this is an ERROR, it results from either a bug or malicious action.
@@ -595,22 +595,22 @@ class LocationManager {
         
         double A = 1.0;
         for(int i=0;i<friendLocs.length;i++) {
-            if(friendLocs[i] == myLoc) continue;
+            if(Math.abs(friendLocs[i] - myLoc) <= Double.MIN_VALUE) continue;
             A *= PeerManager.distance(friendLocs[i], myLoc);
         }
         for(int i=0;i<hisFriendLocs.length;i++) {
-            if(hisFriendLocs[i] == hisLoc) continue;
+            if(Math.abs(hisFriendLocs[i] - hisLoc) <= Double.MIN_VALUE) continue;
             A *= PeerManager.distance(hisFriendLocs[i], hisLoc);
         }
         
         // B = the same, with our two values swapped
         double B = 1.0;
         for(int i=0;i<friendLocs.length;i++) {
-            if(friendLocs[i] == hisLoc) continue;
+            if(Math.abs(friendLocs[i] - hisLoc) <= Double.MIN_VALUE) continue;
             B *= PeerManager.distance(friendLocs[i], hisLoc);
         }
         for(int i=0;i<hisFriendLocs.length;i++) {
-            if(hisFriendLocs[i] == myLoc) continue;
+            if(Math.abs(hisFriendLocs[i] - myLoc) <= Double.MIN_VALUE) continue;
             B *= PeerManager.distance(hisFriendLocs[i], myLoc);
         }
         

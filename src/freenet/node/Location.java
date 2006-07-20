@@ -45,7 +45,7 @@ public class Location {
     
     public boolean equals(Object o) {
         if(o instanceof Location) {
-            return ((Location)o).loc == loc;
+            return Math.abs(((Location)o).loc - loc) <= Double.MIN_VALUE;
         }
         return false;
     }
