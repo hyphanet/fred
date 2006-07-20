@@ -61,6 +61,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void start() throws InserterException {
 		try {
 			synchronized(this) {
+				if(currentState != null) return;
 				currentState =
 					new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false);
 			}

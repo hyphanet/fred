@@ -1884,6 +1884,8 @@ public class Node {
 		if(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber)
 			this.alerts.register(new ExtOldAgeUserAlert());
 		
+		this.fcpServer.finishStart();
+		
 		this.hasStarted = true;
 	}
 	

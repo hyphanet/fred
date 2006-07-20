@@ -36,6 +36,7 @@ public class FCPClient {
 		defaultInsertContext = client.getInserterContext(false);
 		clientsWatching = new LinkedList();
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
+		toStart = new LinkedList();
 	}
 	
 	/** The client's Name sent in the ClientHello message */
@@ -64,6 +65,7 @@ public class FCPClient {
 	// FIXME how do we lazily init this without synchronization problems?
 	// We obviously can't synchronize on it when it hasn't been constructed yet...
 	final LinkedList clientsWatching;
+	private final LinkedList toStart;
 	
 	public synchronized FCPConnectionHandler getConnection() {
 		return currentConnection;
@@ -127,7 +129,7 @@ public class FCPClient {
 			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false);
 	}
 	
-	public void register(ClientRequest cg) throws IdentifierCollisionException {
+	public void register(ClientRequest cg, boolean startLater) throws IdentifierCollisionException {
 		synchronized(this) {
 			String ident = cg.getIdentifier();
 			ClientRequest old = (ClientRequest) clientRequestsByIdentifier.get(ident);
@@ -138,6 +140,8 @@ public class FCPClient {
 			else
 				runningPersistentRequests.add(cg);
 			clientRequestsByIdentifier.put(ident, cg);
+			if(startLater)
+				toStart.add(cg);
 		}
 	}
 
@@ -238,4 +242,16 @@ public class FCPClient {
 		return (ClientRequest) clientRequestsByIdentifier.get(identifier);
 	}
 
+	/**
+	 * Start all delayed-start requests.
+	 */
+	public void finishStart() {
+		ClientRequest[] reqs;
+		synchronized(this) {
+			reqs = (ClientRequest[]) toStart.toArray(new ClientRequest[toStart.size()]);
+		}
+		for(int i=0;i<reqs.length;i++)
+			reqs[i].start();
+	}
+	
 }

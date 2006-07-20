@@ -150,15 +150,16 @@ public abstract class ClientRequest {
 			String type = fs.get("Type");
 			if(type.equals("GET")) {
 				ClientGet cg = new ClientGet(fs, client);
-				client.register(cg);
+				client.register(cg, true);
 				return cg;
 			} else if(type.equals("PUT")) {
 				ClientPut cp = new ClientPut(fs, client);
-				client.register(cp);
+				client.register(cp, true);
 				return cp;
 			} else if(type.equals("PUTDIR")) {
 				ClientPutDir cp = new ClientPutDir(fs, client);
-				client.register(cp);
+				// FIXME ,true when it doesn't self-start and supports resuming.
+				client.register(cp, false);
 				return cp;
 			} else {
 				Logger.error(ClientRequest.class, "Unrecognized type: "+type);
@@ -268,5 +269,8 @@ public abstract class ClientRequest {
 				client.server.forceStorePersistentRequests();
 		}
 	}
+
+	/** Start the request, if it has not already been started. */
+	public abstract void start();
 
 }

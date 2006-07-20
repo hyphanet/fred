@@ -106,14 +106,14 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		returnBucket = ret;
 		if(persistenceType != PERSIST_CONNECTION)
 			try {
-				client.register(this);
+				client.register(this, false);
 			} catch (IdentifierCollisionException e) {
 				ret.free();
 				throw e;
 			}
 		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 	}
-			
+	
 	
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
@@ -156,7 +156,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		returnBucket = ret;
 		if(persistenceType != PERSIST_CONNECTION)
 			try {
-				client.register(this);
+				client.register(this, false);
 			} catch (IdentifierCollisionException e) {
 				ret.free();
 				throw e;
@@ -223,11 +223,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		returnBucket = ret;
 		
 		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
-		if(!finished)
-			start();
 	}
 
-	void start() {
+	public void start() {
 		try {
 			getter.start();
 		} catch (FetchException e) {

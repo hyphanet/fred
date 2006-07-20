@@ -40,7 +40,7 @@ public class ClientPut extends ClientPutBase {
 		String mimeType = message.contentType;
 		clientToken = message.clientToken;
 		if(persistenceType != PERSIST_CONNECTION)
-			client.register(this);
+			client.register(this, false);
 		Bucket tempData = message.bucket;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
@@ -151,11 +151,10 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 		inserter = new ClientPutter(this, data, uri, cm, ctx, client.node.chkPutScheduler, 
 				client.node.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client, fs.subset("progress"));
-		if(!finished)
-			start();
 	}
 
-	void start() {
+	public void start() {
+		if(finished) return;
 		try {
 			inserter.start();
 		} catch (InserterException e) {

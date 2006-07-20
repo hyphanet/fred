@@ -663,4 +663,12 @@ public class FCPServer implements Runnable {
 		cg.start();
 	}
 
+	/**
+	 * Start requests which were not started immediately because it might have taken
+	 * some time to start them.
+	 */
+	public void finishStart() {
+		this.globalClient.finishStart();
+	}
+	
 }

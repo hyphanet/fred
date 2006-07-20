@@ -52,7 +52,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		}
 		putter = p;
 		if(persistenceType != PERSIST_CONNECTION)
-			client.register(this);
+			client.register(this, false);
 	}
 
 	public ClientPutDir(SimpleFieldSet fs, FCPClient client) throws PersistenceParseException, IOException {
