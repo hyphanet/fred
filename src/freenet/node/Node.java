@@ -2360,21 +2360,30 @@ public class Node {
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
 		long now = System.currentTimeMillis();
-		if(throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
+		boolean checkUncontended = false;
+		synchronized(this) {
+			if(now - lastCheckedUncontended > 1000) {
+				checkUncontended = true;
+			}
+			lastCheckedUncontended = now;
+		}
+		if(checkUncontended && throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
+			// shouldn't take long
 			outputThrottle.blockingGrab(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
 			outputThrottle.recycle(ESTIMATED_SIZE_OF_ONE_THROTTLED_PACKET);
 			long after = System.currentTimeMillis();
 			// Report time it takes to grab the bytes.
 			throttledPacketSendAverage.report(after - now);
 			now = after;
+			// will have changed, use new value
 			synchronized(this) {
 				bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 			}
 		}
 		
-		// Round trip time
 		double pingTime = nodePinger.averagePingTime();
 		synchronized(this) {
+			// Round trip time
 			if(pingTime > MAX_PING_TIME) {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 					Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
@@ -2389,10 +2398,8 @@ public class Node {
 					return ">SUB_MAX_PING_TIME";
 				}
 			}
-		}
 		
-		// Bandwidth limited packets
-		synchronized(this) {
+			// Bandwidth limited packets
 			Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
 			if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
