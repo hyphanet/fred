@@ -64,7 +64,7 @@ public class N2NTMToadlet extends Toadlet {
 		  }
 		  
 		  buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
-		  buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+		  buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">");
 		  buf.append("<div class=\"infobox infobox-normal\">");
 		  buf.append("<div class=\"infobox-header\">");
 		  buf.append("Sending Node To Node Text Message to "+HTMLEncoder.encode(peernode_name)+"\n");
@@ -95,7 +95,7 @@ public class N2NTMToadlet extends Toadlet {
 	  StringBuffer buf = new StringBuffer(1024);
 	  
 	  String pass = request.getPartAsString("formPassword", 32);
-	  if((pass == null) || !pass.equals(node.formPassword)) {
+	  if((pass == null) || !pass.equals(Node.formPassword)) {
 		  MultiValueTable headers = new MultiValueTable();
 		  headers.put("Location", "/send_n2ntm/");
 		  ctx.sendReplyHeaders(302, "Found", headers, null, 0);

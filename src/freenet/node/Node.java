@@ -651,7 +651,11 @@ public class Node {
 	public final UserAlertManager alerts;
 	final TimeDecayingRunningAverage throttledPacketSendAverage;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
-	public final String formPassword;
+	public static final String formPassword = String.valueOf(
+			String.valueOf(
+					System.getProperties().toString()+System.currentTimeMillis()
+				).hashCode()
+			);
 	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
 	final TimeDecayingRunningAverage remoteSskFetchBytesSentAverage;
 	final TimeDecayingRunningAverage remoteChkInsertBytesSentAverage;
@@ -1030,9 +1034,6 @@ public class Node {
 		// Easy stuff
 		Logger.normal(this, "Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
 		System.out.println("Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
-		byte[] pwdBuf = new byte[16];
-		random.nextBytes(pwdBuf);
-		this.formPassword = Base64.encode(pwdBuf);
 	  	nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
@@ -1041,7 +1042,7 @@ public class Node {
 		throttleWindow = new ThrottleWindowManager(2.0);
 		alerts = new UserAlertManager();
 		ipDetectorManager = new IPDetectorPluginManager(this);
-		nodeNameUserAlert = new MeaningfulNodeNameUserAlert();
+		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
 		this.random = random;

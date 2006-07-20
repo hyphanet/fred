@@ -49,7 +49,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     private double nearestLoc;
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
-    private PartiallyReceivedBlock prb = null;
+    private PartiallyReceivedBlock prb;
     private DSAPublicKey pubKey;
     private byte[] headers;
     private byte[] sskData;
@@ -452,8 +452,8 @@ public final class RequestSender implements Runnable, ByteCounter {
         return prb != null;
     }
 
-    boolean hadROLastTimeWaited = false;
-    boolean prbWasNonNull = false;
+    boolean hadROLastTimeWaited;
+    boolean prbWasNonNull;
     
     /**
      * Wait until either the transfer has started or we have a 

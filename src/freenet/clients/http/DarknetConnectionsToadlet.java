@@ -422,7 +422,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				buf.append("<input type=\"submit\" name=\"submit\" value=\"Go\" />\n");
 				buf.append("&nbsp;&nbsp;&nbsp;<span class=\"darknet_connections\">* Requesting ARK</span>\n");
 			}
-			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
+			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(Node.formPassword).append("\" />");
 			buf.append("</form>\n");
 		}
 		buf.append("</div>\n");
@@ -444,7 +444,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		buf.append("or file:\n");
 		buf.append("<input id=\"reffile\" type=\"file\" name=\"reffile\" />\n");
 		buf.append("<br />\n");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(Node.formPassword).append("\" />");
 		buf.append("<input type=\"submit\" name=\"add\" value=\"Add\" />\n");
 		buf.append("</form>\n");
 		buf.append("</div>\n");
@@ -476,7 +476,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
 		String pass = request.getPartAsString("formPassword", 32);
-		if((pass == null) || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(Node.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);

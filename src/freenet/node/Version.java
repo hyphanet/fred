@@ -6,7 +6,7 @@ import freenet.support.Logger;
 /**
  * Central spot for stuff related to the versioning of the codebase.
  */
-public abstract class Version {
+public class Version {
 
 	/** FReenet Reference Daemon */
 	public static final String nodeName = "Fred";
@@ -267,7 +267,7 @@ public abstract class Version {
 	 * @return the build number of an arbitrary version string
 	 */
 	public static final int getArbitraryBuildNumber(
-		String version ) throws NumberFormatException {
+		String version ) {
 	    if(version == null) {
 	        Logger.error(Version.class, "version == null!",
 	                new Exception("error"));

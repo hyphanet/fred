@@ -48,7 +48,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 		
 		String pass = request.getParam("formPassword");
-		if((pass == null) || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(Node.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/config/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -126,7 +126,7 @@ public class ConfigToadlet extends Toadlet {
 		buf.append("</div>\n");
 		buf.append("<div class=\"infobox-content\">\n");
 		buf.append("<form method=\"post\" action=\".\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">");
 		
 		for(int i=0; i<sc.length;i++){
 			StringBuffer buf2 = new StringBuffer();

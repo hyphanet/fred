@@ -12,7 +12,6 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.PersistentFileTracker;
-import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.SerializableToFieldSetBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 

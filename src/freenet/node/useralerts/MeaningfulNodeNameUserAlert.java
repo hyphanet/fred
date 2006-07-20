@@ -1,8 +1,18 @@
 package freenet.node.useralerts;
 
+import freenet.config.Option;
+import freenet.config.SubConfig;
+import freenet.node.Node;
+import freenet.support.HTMLEncoder;
+
 public class MeaningfulNodeNameUserAlert implements UserAlert {
 	private boolean isValid=true;
+	private final Node node;
 
+	public MeaningfulNodeNameUserAlert(Node n) {
+		this.node = n;
+	}
+	
 	public boolean userCanDismiss() {
 		return true;
 	}
@@ -12,12 +22,38 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 	}
 
 	public String getText() {
-		return "It seems that your node's name isn't defined. Setting " +
+		SubConfig sc = node.config.get("node");
+		Option o = sc.getOption("name");
+		StringBuffer buf = new StringBuffer();
+		
+		buf.append("It seems that your node's name isn't defined. Setting " +
 		"up a node name doesn't affect your anonymity in any way but " +
 		"is useful for your peers to know who you are in case they have " +
 		"to reach you. You can change the node's name at the Configuration page. " +
 		"Putting your e-mail address or IRC nickname there is generally speaking " +
-		"a good idea and helps your friends to identify your node.";
+		"a good idea and helps your friends to identify your node.");
+		buf.append("<form method=\"post\" action=\"/config/\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">");
+		//buf.append("<ul class=\"config\"><span class=\"configprefix\">"+sc.getPrefix()+"</span>\n");
+		buf.append("<ul class=\"config\">\n");
+		buf.append("<li>");
+		buf.append("<span class=\"configshortdesc\">");
+		buf.append(o.getShortDesc());
+		buf.append("</span>");	
+		buf.append("<span class=\"config\">");
+		buf.append("<input alt=\""+o.getShortDesc()+"\" class=\"config\"" +
+				" type=\"text\" name=\""+sc.getPrefix()+".name\" value=\""+HTMLEncoder.encode(o.getValueString())+"\" />");				
+		buf.append("</span>");
+		buf.append("<span class=\"configlongdesc\">");
+		buf.append(o.getLongDesc());
+		buf.append("</span>");
+		buf.append("</li>\n");
+		buf.append("</ul>\n");
+		buf.append("<input type=\"submit\" value=\"Apply\" />");
+		buf.append("<input type=\"reset\" value=\"Reset\" />");
+		buf.append("</form>");
+		
+		return buf.toString();
 	}
 
 	public short getPriorityClass() {

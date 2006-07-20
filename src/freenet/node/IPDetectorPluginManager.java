@@ -119,8 +119,8 @@ public class IPDetectorPluginManager {
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getDarknetConnections();
 		Peer[] nodeAddrs = node.getPrimaryIPAddress();
+		long now = System.currentTimeMillis();
 		synchronized(this) {
-			long now = System.currentTimeMillis();
 			if(runner != null) {
 				Logger.minor(this, "Already running IP detection plugins");
 				return;

@@ -10,7 +10,6 @@ import java.util.Vector;
 
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.PersistentFileTracker;
-import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.SerializableToFieldSetBucket;
 
 /**

@@ -11,7 +11,7 @@ public class DNSRequester implements Runnable {
 
     final Thread myThread;
     final Node node;
-    private long lastLogTime = 0;
+    private long lastLogTime;
 
     DNSRequester(Node node) {
         this.node = node;

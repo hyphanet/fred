@@ -265,7 +265,7 @@ public class FProxyToadlet extends Toadlet {
 				buf.append("<input type=\"hidden\" name=\"key\" value=\""+key.toString(false)+"\">");
 				buf.append("<input type=\"hidden\" name=\"return-type\" value=\"disk\">");
 				buf.append("<input type=\"hidden\" name=\"persistence\" value=\"forever\">");
-				buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+				buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">");
 				if(mime != null)
 					buf.append("<input type=\"hidden\" name=\"type\" value=\""+URLEncoder.encode(mime)+"\">");
 				buf.append("<input type=\"submit\" name=\"download\" value=\"Download in background and store in downloads directory\">");

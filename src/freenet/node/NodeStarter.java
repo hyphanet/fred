@@ -102,6 +102,8 @@ public class NodeStarter
     	}catch(Throwable t){ 	 
     		// Compatibility code ... will be removed
     		Logger.error(this, "Unable to get the version of your freenet-ext file : it's probably corrupted!");
+    		System.err.println("Unable to get the version of your freenet-ext file : it's probably corrupted!");
+    		System.err.println(t.getMessage());
     		extRevisionNumber = "INVALID";
     		extBuildNumber = -1;
     	}

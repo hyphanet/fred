@@ -45,7 +45,7 @@ public class QueueToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
 		String pass = request.getParam("formPassword");
-		if((pass == null) || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(Node.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/queue/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -533,7 +533,7 @@ public class QueueToadlet extends Toadlet {
 	private void writeDeleteCell(ClientRequest p, StringBuffer buf) {
 		buf.append("<td>");
 		buf.append("<form action=\"/queue/\" method=\"post\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">");
 		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"");
 		buf.append(HTMLEncoder.encode(p.getIdentifier()));
 		buf.append("\"><input type=\"submit\" name=\"remove_request\" value=\"Delete\">");
@@ -544,7 +544,7 @@ public class QueueToadlet extends Toadlet {
 	private void writeDeleteAll(StringBuffer buf) {
 		buf.append("<td>");
 		buf.append("<form action=\"/queue/\" method=\"post\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">");
 		buf.append("<input type=\"submit\" name=\"remove_AllRequests\" value=\"Delete Everything\">");
 		buf.append("</form>\n");
 		buf.append("</td>\n");

@@ -422,7 +422,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
         }
     }
 
-	private boolean hasForwardedRejectedOverload = false;
+	private boolean hasForwardedRejectedOverload;
     
     synchronized boolean receivedRejectedOverload() {
     	return hasForwardedRejectedOverload;

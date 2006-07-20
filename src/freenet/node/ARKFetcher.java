@@ -24,13 +24,13 @@ public class ARKFetcher implements ClientCallback {
 	final Node node;
 	private ClientGetter getter;
 	private FreenetURI fetchingURI;
-	private boolean shouldRun = false;
+	private boolean shouldRun;
 	private static final int MAX_BACKOFF = 60*60*1000;  // 1 hour
 	private static final int MIN_BACKOFF = 5*1000;  // 5 seconds
 	private int backoff = MIN_BACKOFF;
 	private String identity;
-	private boolean isFetching = false;
-	private boolean started = false;
+	private boolean isFetching;
+	private boolean started;
 	private long startedEdition;
 
 	public ARKFetcher(PeerNode peer, Node node) {

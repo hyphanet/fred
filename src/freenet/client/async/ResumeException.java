@@ -7,6 +7,7 @@ import freenet.support.io.CannotCreateFromFieldSetException;
  * then we simply restart the request from the beginning.
  */
 public class ResumeException extends Exception {
+	private static final long serialVersionUID = 1L;
 
 	public ResumeException(String msg) {
 		super(msg);

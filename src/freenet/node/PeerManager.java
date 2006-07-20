@@ -268,8 +268,11 @@ public class PeerManager {
      */
     public double[] getPeerLocationDoubles() {
         double[] locs;
-        PeerNode[] conns = connectedPeers;
-        locs = new double[connectedPeers.length];
+        PeerNode[] conns;
+        synchronized (this) {
+			conns = connectedPeers;
+		}
+        locs = new double[conns.length];
         int x = 0;
         for(int i=0;i<conns.length;i++) {
             if(conns[i].isRoutable())
@@ -325,7 +328,10 @@ public class PeerManager {
      * Asynchronously send this message to every connected peer.
      */
     public void localBroadcast(Message msg) {
-        PeerNode[] peers = connectedPeers; // avoid synchronization
+        PeerNode[] peers;
+        synchronized (this) {
+			peers = connectedPeers;
+		}
         for(int i=0;i<peers.length;i++) {
             if(peers[i].isRoutable()) try {
                 peers[i].sendAsync(msg, null, 0, null);
@@ -343,7 +349,10 @@ public class PeerManager {
      * Find the peer which is closest to the target location
      */
     public PeerNode closestPeer(double loc) {
-        PeerNode[] peers = connectedPeers;
+        PeerNode[] peers;
+        synchronized (this) {
+        	peers = connectedPeers;
+		}
         double bestDiff = 1.0;
         PeerNode best = null;
         for(int i=0;i<peers.length;i++) {
@@ -403,8 +412,10 @@ public class PeerManager {
      * than we are, and is not included in the provided set.
      */
     private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean ignoreBackedOff) {
-        PeerNode[] peers = connectedPeers;
-        // No locking necessary. We won't modify it, and if another method does, it will copy-and-assign.
+        PeerNode[] peers;  
+        synchronized (this) {
+			peers = connectedPeers;
+		}
         Logger.minor(this, "Choosing closest peer: connectedPeers="+peers.length);
         double bestDiff = Double.MAX_VALUE;
         double maxDiff = 0.0;
@@ -450,10 +461,13 @@ public class PeerManager {
      */
     public String getStatus() {
         StringBuffer sb = new StringBuffer();
-        PeerNode[] peers = myPeers;
+        PeerNode[] peers;
+        synchronized (this) {
+            peers = myPeers;			
+		}
         String[] status = new String[peers.length];
-        for(int i=0;i<myPeers.length;i++) {
-            PeerNode pn = myPeers[i];
+        for(int i=0;i<peers.length;i++) {
+            PeerNode pn = peers[i];
             status[i] = pn.getStatus();
 	    Version.seenVersion(pn.getVersion());
         }
@@ -470,10 +484,13 @@ public class PeerManager {
      */
     public String getTMCIPeerList() {
         StringBuffer sb = new StringBuffer();
-        PeerNode[] peers = myPeers;
+        PeerNode[] peers;
+        synchronized (this) {
+			peers = myPeers;
+		}
         String[] peerList = new String[peers.length];
-        for(int i=0;i<myPeers.length;i++) {
-            PeerNode pn = myPeers[i];
+        for(int i=0;i<peers.length;i++) {
+            PeerNode pn = peers[i];
             peerList[i] = pn.getTMCIPeerInfo();
         }
         Arrays.sort(peerList);
@@ -486,10 +503,13 @@ public class PeerManager {
 
     public String getFreevizOutput() {
         StringBuffer sb = new StringBuffer();
-        PeerNode[] peers = myPeers;
+        PeerNode[] peers;
+        synchronized (this) {
+			peers = myPeers;
+		}
         String[] identity = new String[peers.length];
-        for(int i=0;i<myPeers.length;i++) {
-            PeerNode pn = myPeers[i];
+        for(int i=0;i<peers.length;i++) {
+            PeerNode pn = peers[i];
             identity[i] = pn.getFreevizOutput();
         }
         Arrays.sort(identity);
@@ -541,7 +561,10 @@ public class PeerManager {
     }
 
 	public boolean writePeers(OutputStreamWriter w) {
-        PeerNode[] peers = myPeers;
+        PeerNode[] peers;
+        synchronized (this) {
+			peers = myPeers;
+		}
         for (int i = 0; i < peers.length; i++) {
             try {
                 peers[i].write(w);
@@ -578,7 +601,10 @@ public class PeerManager {
 	}
 
 	public boolean anyConnectedPeers() {
-		PeerNode[] conns = connectedPeers;
+		PeerNode[] conns;
+		synchronized (this) {
+			conns = connectedPeers;
+		}
 		for(int i=0;i<conns.length;i++) {
 			if(conns[i].isRoutable()) return true;
 		}
