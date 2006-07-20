@@ -279,6 +279,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
 			t.setDaemon(true);
 			t.start();
+		} else if(encoded) {
+			for(int i=0;i<checkBlockInserters.length;i++) {
+				if(checkBlocks[i] == null)
+					parent.parent.completedBlock(true);
+			}
 		}
 		if(encoded) {
 			parent.encodedSegment(this);
