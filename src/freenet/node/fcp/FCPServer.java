@@ -64,6 +64,7 @@ public class FCPServer implements Runnable {
 	public InserterContext defaultInsertContext;
 	public static final int QUEUE_MAX_RETRIES = -1;
 	public static final long QUEUE_MAX_DATA_SIZE = Long.MAX_VALUE;
+	private boolean canStartPersister = false;
 	
 	private void startPersister() {
 		Thread t = new Thread(persister = new FCPServerPersister(), "FCP request persistence handler");
@@ -105,7 +106,6 @@ public class FCPServer implements Runnable {
 			
 			if(enablePersistentDownloads) {
 				loadPersistentRequests();
-				startPersister();
 			}
 			
 			Logger.normal(this, "Starting FCP server on "+bindTo+":"+port+".");
@@ -359,7 +359,8 @@ public class FCPServer implements Runnable {
 			if(set) {
 				if(!haveLoadedPersistentRequests)
 					loadPersistentRequests();
-				startPersister();
+				if(canStartPersister)
+					startPersister();
 			} else {
 				killPersister();
 			}
@@ -669,6 +670,9 @@ public class FCPServer implements Runnable {
 	 */
 	public void finishStart() {
 		this.globalClient.finishStart();
+		if(enablePersistentDownloads)
+			startPersister();
+		canStartPersister = true;
 	}
 	
 }

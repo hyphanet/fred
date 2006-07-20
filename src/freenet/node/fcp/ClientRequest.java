@@ -158,8 +158,7 @@ public abstract class ClientRequest {
 				return cp;
 			} else if(type.equals("PUTDIR")) {
 				ClientPutDir cp = new ClientPutDir(fs, client);
-				// FIXME ,true when it doesn't self-start and supports resuming.
-				client.register(cp, false);
+				client.register(cp, true);
 				return cp;
 			} else {
 				Logger.error(ClientRequest.class, "Unrecognized type: "+type);
