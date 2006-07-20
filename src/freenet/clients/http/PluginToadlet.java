@@ -121,7 +121,7 @@ public class PluginToadlet extends Toadlet {
 		}
 		
 		String pass = httpRequest.getParam("formPassword");
-		if((pass == null) || !pass.equals(Node.formPassword)) {
+		if((pass == null) || !pass.equals(node.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/plugin/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -219,10 +219,10 @@ public class PluginToadlet extends Toadlet {
 				outputBuffer.append("<td/>");
 			}
 			outputBuffer.append("<td><form action=\"./\" method=\"post\"><input type=\"hidden\" name=\"action\" value=\"reload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Reload\" />" +
-					"<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">"+
+					"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
 					"</form></td>");
 			outputBuffer.append("<td><form action=\"./\" method=\"post\"><input type=\"hidden\" name=\"action\" value=\"unload\"/><input type=\"hidden\" name=\"pluginName\" value=\"").append(internalName).append("\" /><input type=\"submit\" value=\"Unload\" />" +
-					"<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">"+
+					"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
 					"</form></td>");
 			outputBuffer.append("</tr>\n");
 		}
@@ -275,7 +275,7 @@ public class PluginToadlet extends Toadlet {
 		outputBuffer.append("<div class=\"infobox-content\">");
 		outputBuffer.append("<form action=\"./\" method=\"post\">");
 		outputBuffer.append("<input type=\"hidden\" name=\"action\" value=\"add\" />");
-		outputBuffer.append("<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">");
+		outputBuffer.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 		outputBuffer.append("<input type=\"text\" size=\"40\" name=\"pluginName\" value=\"\" />&nbsp;");
 		outputBuffer.append("<input type=\"submit\" value=\"Load plugin\" />");
 		outputBuffer.append("</form>");

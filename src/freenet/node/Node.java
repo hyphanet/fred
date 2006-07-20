@@ -651,11 +651,7 @@ public class Node {
 	public final UserAlertManager alerts;
 	final TimeDecayingRunningAverage throttledPacketSendAverage;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
-	public static final String formPassword = String.valueOf(
-			String.valueOf(
-					System.getProperties().toString()+System.currentTimeMillis()
-				).hashCode()
-			);
+	public final String formPassword;
 	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
 	final TimeDecayingRunningAverage remoteSskFetchBytesSentAverage;
 	final TimeDecayingRunningAverage remoteChkInsertBytesSentAverage;
@@ -1034,6 +1030,9 @@ public class Node {
 		// Easy stuff
 		Logger.normal(this, "Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
 		System.out.println("Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
+	  	byte[] pwdBuf = new byte[16];
+		random.nextBytes(pwdBuf);
+		this.formPassword = Base64.encode(pwdBuf);
 	  	nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;

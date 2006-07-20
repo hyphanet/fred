@@ -33,7 +33,7 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 		"Putting your e-mail address or IRC nickname there is generally speaking " +
 		"a good idea and helps your friends to identify your node.");
 		buf.append("<form method=\"post\" action=\"/config/\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 		//buf.append("<ul class=\"config\"><span class=\"configprefix\">"+sc.getPrefix()+"</span>\n");
 		buf.append("<ul class=\"config\">\n");
 		buf.append("<li>");

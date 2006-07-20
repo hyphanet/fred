@@ -56,7 +56,7 @@ public class PproxyToadlet extends Toadlet {
 		MultiValueTable headers = new MultiValueTable();
 		
 		String pass = request.getParam("formPassword");
-		if((pass == null) || !pass.equals(Node.formPassword)) {
+		if((pass == null) || !pass.equals(node.formPassword)) {
 			MultiValueTable hdrs = new MultiValueTable();
 			headers.put("Location", "/queue/");
 			ctx.sendReplyHeaders(302, "Found", hdrs, null, 0);
@@ -98,7 +98,7 @@ public class PproxyToadlet extends Toadlet {
 			buf.append("<div class=\"infobox-content\">\n");
 			buf.append("Are you sure you wish to unload " + HTMLEncoder.encode(request.getParam("unload")) + "?\n");
 			buf.append("<form action=\"/plugins/\" method=\"post\">\n");
-			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">");
+			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
 			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
 			buf.append("<input type=\"hidden\" name=\"unloadconfirm\" value=\"" + HTMLEncoder.encode(request.getParam("unload")) + "\">\n");
 			buf.append("<input type=\"submit\" name=\"confirm\" value=\"Unload\" />\n");
@@ -219,16 +219,16 @@ public class PproxyToadlet extends Toadlet {
 					out.append("<td>");
 					if (pi.isPproxyPlugin()) {
 						out.append("<form method=\"get\" action=\"" + pi.getPluginClassName() + "\">" +
-								"<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">"+
+								"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
 								"<input type=\"submit\" value=\"Visit\"></form>");
 					}
 					out.append("<form method=\"post\" action=\".\">" +
 							"<input type=\"hidden\" name=\"unload\" value=\"" + pi.getThreadName() + "\" />"+
-							"<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">"+
+							"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
 							"<input type=\"submit\" value=\"Unload\"></form>");
 					out.append("<form method=\"post\" action=\".\">" +
 							"<input type=\"hidden\" name=\"reload\" value=\"" + pi.getThreadName() + "\" />"+
-							"<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">"+
+							"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
 							"<input type=\"submit\" value=\"Reload\"></form>");
 					out.append("</td></tr>\n");
 				}
@@ -244,7 +244,7 @@ public class PproxyToadlet extends Toadlet {
 			// Obsolete
 			//out.append("<form method=\"get\"><div>Remove plugin: (enter ID) <input type=\"text\" name=\"remove\" size=40/><input type=\"submit\" value=\"Remove\"/></div></form>\n");
 			out.append("<form method=\"post\" action=\".\">" +
-					"<input type=\"hidden\" name=\"formPassword\" value=\""+Node.formPassword+"\">"+
+					"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
 					"<div>Load plugin: <input type=\"text\" name=\"load\" size=\"40\"/><input type=\"submit\" value=\"Load\" /></div></form>\n");
 			//
 			out.append("</div>\n");
