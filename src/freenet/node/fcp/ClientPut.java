@@ -119,9 +119,13 @@ public class ClientPut extends ClientPutBase {
 				byte[] key = HexUtil.hexToBytes(fs.get("TempBucket.DecryptKey"));
 				String fnam = fs.get("TempBucket.Filename");
 				long sz = Long.parseLong(fs.get("TempBucket.Size"));
-				data = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
-				if(data.size() != sz)
-					throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
+				try {
+					data = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
+					if(data.size() != sz)
+						throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
+				} catch (IOException e) {
+					throw new PersistenceParseException("Could not read old bucket (should be "+sz+" bytes) for "+identifier);
+				}
 			} else data = null;
 			targetURI = null;
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
@@ -195,7 +199,8 @@ public class ClientPut extends ClientPutBase {
 
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPut(identifier, uri, verbosity, priorityClass, uploadFrom, targetURI, 
-				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue);
+				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
+				data == null ? -1 : data.size());
 	}
 
 	protected String getTypeName() {

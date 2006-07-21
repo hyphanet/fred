@@ -20,11 +20,12 @@ public class PersistentPut extends FCPMessage {
 	final String mimeType;
 	final boolean global;
 	final FreenetURI targetURI;
+	final long size;
 	
 	public PersistentPut(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short uploadFrom, FreenetURI targetURI, 
 			short persistenceType, File origFilename, String mimeType, 
-			boolean global) {
+			boolean global, long size) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -35,14 +36,15 @@ public class PersistentPut extends FCPMessage {
 		this.origFilename = origFilename;
 		this.mimeType = mimeType;
 		this.global = global;
+		this.size = size;
 	}
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
 		fs.put("Identifier", identifier);
 		fs.put("URI", uri.toString(false));
-		fs.put("Verbosity", Integer.toString(verbosity));
-		fs.put("PriorityClass", Short.toString(priorityClass));
+		fs.put("Verbosity", verbosity);
+		fs.put("PriorityClass", priorityClass);
 		fs.put("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
 		fs.put("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		if(origFilename != null)
@@ -52,6 +54,8 @@ public class PersistentPut extends FCPMessage {
 		if(mimeType != null)
 			fs.put("Metadata.ContentType", mimeType);
 		fs.put("Global", Boolean.toString(global));
+		if(size != -1)
+			fs.put("DataLength", size);
 		return fs;
 	}
 

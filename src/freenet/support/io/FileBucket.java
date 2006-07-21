@@ -90,6 +90,8 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
 		try {
 			length = Long.parseLong(tmp);
+			if(length !=  file.length())
+				throw new CannotCreateFromFieldSetException("Invalid length: should be "+length+" actually "+file.length()+" on "+file);
 		} catch (NumberFormatException e) {
 			throw new CannotCreateFromFieldSetException("Corrupt length "+tmp, e);
 		}

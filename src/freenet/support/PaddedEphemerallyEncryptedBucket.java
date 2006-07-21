@@ -127,6 +127,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 				throw new CannotCreateFromFieldSetException("Corrupt dataLength: "+tmp, e);
 			}
 		}
+		if(dataLength > bucket.size())
+			throw new CannotCreateFromFieldSetException("Underlying bucket is too small: should be "+dataLength+" actually "+bucket.size());
 	}
 
 	public OutputStream getOutputStream() throws IOException {

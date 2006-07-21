@@ -59,6 +59,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public void start() throws InserterException {
+		Logger.minor(this, "Starting "+this);
 		try {
 			synchronized(this) {
 				if(currentState != null) return;
@@ -76,6 +77,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				this.client.onFailure(e, this);
 			}
 		}
+		Logger.minor(this, "Started "+this);
 	}
 
 	public void onSuccess(ClientPutState state) {
@@ -118,6 +120,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+		if(newState == null) throw new NullPointerException();
 		if(currentState == oldState)
 			currentState = newState;
 		else
@@ -138,6 +141,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public SimpleFieldSet getProgressFieldset() {
+		if(currentState == null) {
+			Logger.error(this, "getProgressFieldset() called on "+this+" but no current progress");
+			throw new NullPointerException();
+		}
 		return currentState.getProgressFieldset();
 	}
 	

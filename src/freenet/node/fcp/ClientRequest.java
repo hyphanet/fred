@@ -164,6 +164,9 @@ public abstract class ClientRequest {
 				Logger.error(ClientRequest.class, "Unrecognized type: "+type);
 				return null;
 			}
+		} catch (PersistenceParseException e) {
+			Logger.error(ClientRequest.class, "Failed to parse request: "+e, e);
+			return null;
 		} catch (Throwable t) {
 			Logger.error(ClientRequest.class, "Failed to parse: "+t, t);
 			return null;

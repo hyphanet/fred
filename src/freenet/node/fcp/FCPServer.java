@@ -459,10 +459,12 @@ public class FCPServer implements Runnable {
 
 	public void forceStorePersistentRequests() {
 		Logger.minor(this, "Forcing store persistent requests");
+		if(!enablePersistentDownloads) return;
 		if(persister != null) {
 			persister.force();
 		} else {
-			Logger.error(this, "Persister not running, cannot store persistent requests");
+			if(canStartPersister)
+				Logger.error(this, "Persister not running, cannot store persistent requests");
 		}
 	}
 	
