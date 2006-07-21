@@ -172,7 +172,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 					try {
 						checkBlocks[i] = SerializableToFieldSetBucketUtil.create(bucketFS, ctx.random, ctx.persistentFileTracker);
 					} catch (CannotCreateFromFieldSetException e) {
-						throw new ResumeException("Failed to deserialize check block "+i+" of "+segNo+" : "+e, e);
+						Logger.error(this, "Failed to deserialize check block "+i+" of "+segNo+" : "+e, e);
+						// Re-encode it.
+						checkBlocks[i] = null;
+						encoded = false;
 					}
 					if(checkBlocks[i] == null)
 						throw new ResumeException("Check block "+i+" of "+segNo+" not finished but no data (create returned null)");
