@@ -211,4 +211,8 @@ span.config {
 	display: block;
 }
 
+#legend {
+	display: none;
+}
+
 /* vim: set ts=4: sw=4: */

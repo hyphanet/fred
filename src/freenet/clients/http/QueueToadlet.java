@@ -183,7 +183,7 @@ public class QueueToadlet extends Toadlet {
 		
 		node.alerts.toSummaryHtml(buf);
 		
-		writeBigHeading("Legend", buf);
+		writeBigHeading("Legend", buf, "legend");
 		buf.append("<table class=\"queue\">\n");
 		buf.append("<tr>");
 		for(int i=0; i<7; i++){
@@ -197,7 +197,7 @@ public class QueueToadlet extends Toadlet {
 		
 		if(!(completedDownloadToTemp.isEmpty() && completedDownloadToDisk.isEmpty() &&
 				completedUpload.isEmpty() && completedDirUpload.isEmpty())) {
-			writeBigHeading("Completed requests", buf);
+			writeBigHeading("Completed requests", buf, "completed_requests");
 			
 			if(!completedDownloadToTemp.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
@@ -290,7 +290,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		if(!(failedDownload.isEmpty() && failedUpload.isEmpty())) {
-			writeBigHeading("Failed requests", buf);
+			writeBigHeading("Failed requests", buf, "failed_requests");
 			if(!failedDownload.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
 					writeTableHead("Failed downloads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
@@ -369,7 +369,7 @@ public class QueueToadlet extends Toadlet {
 		
 		if(!(uncompletedDownload.isEmpty() && uncompletedUpload.isEmpty() && 
 				uncompletedDirUpload.isEmpty())) {
-			writeBigHeading("Requests in progress", buf);
+			writeBigHeading("Requests in progress", buf, "requests_in_progress");
 			if(!uncompletedDownload.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
 					writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
@@ -648,8 +648,8 @@ public class QueueToadlet extends Toadlet {
 		buf.append("</table>");
 	}
 
-	private void writeBigHeading(String header, StringBuffer buf) {
-		buf.append("<div class=\"infobox infobox-normal\">\n");
+	private void writeBigHeading(String header, StringBuffer buf, String id) {
+		buf.append("<div class=\"infobox infobox-normal\"" + ((id != null) ? " id=\"" + id + "\"" : "") + ">\n");
 		buf.append("<div class=\"infobox-header\">\n");
 		buf.append(header);
 		buf.append("</div>\n");
