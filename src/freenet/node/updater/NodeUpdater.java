@@ -207,10 +207,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			File fNew = new File("freenet-cvs-snapshot.jar.new");
 
 			boolean nastyRestart = false;
-
-			if(File.separatorChar == '\\') {
-				// Do nothing.
-			} else {
+			
+			if((File.separatorChar == '\\') || (System.getProperty("os.name").toLowerCase().startsWith("win"))){
 				nastyRestart = true;
 				Properties p = WrapperManager.getProperties();
 				String cp1 = p.getProperty("wrapper.java.classpath.1");
