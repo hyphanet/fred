@@ -411,17 +411,30 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 		if(finished) return true;
 		if(x >= dataBlocks.length) {
-			if(checkBlockInserters[x-dataBlocks.length] == null) {
+			x -= dataBlocks.length;
+			if(checkBlockInserters[x] == null) {
 				Logger.error(this, "Completed twice: check block "+x+" on "+this);
 				return true;
 			}
-			checkBlockInserters[x-dataBlocks.length] = null;
+			checkBlockInserters[x] = null;
+			try {
+				parent.ctx.persistentBucketFactory.freeBucket(checkBlocks[x]);
+			} catch (IOException e) {
+				Logger.error(this, "Could not free "+checkBlocks[x]+" : "+e, e);
+			}
+			checkBlocks[x] = null;
 		} else {
 			if(dataBlockInserters[x] == null) {
 				Logger.error(this, "Completed twice: data block "+x+" on "+this);
 				return true;
 			}
 			dataBlockInserters[x] = null;
+			try {
+				parent.ctx.persistentBucketFactory.freeBucket(dataBlocks[x]);
+			} catch (IOException e) {
+				Logger.error(this, "Could not free "+dataBlocks[x]+" : "+e, e);
+			}
+			dataBlocks[x] = null;
 		}
 		blocksCompleted++;
 		if(blocksCompleted != dataBlockInserters.length + checkBlockInserters.length) return true;

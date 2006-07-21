@@ -1801,8 +1801,6 @@ public class Node {
 		if(testnetHandler != null)
 			testnetHandler.start();
 		
-		persistentTempBucketFactory.completedInit();
-
 		redetectAddress();
 		shouldInsertARK();
 		
@@ -1885,6 +1883,8 @@ public class Node {
 			this.alerts.register(new ExtOldAgeUserAlert());
 		
 		this.fcpServer.finishStart();
+		
+		persistentTempBucketFactory.completedInit();
 		
 		this.hasStarted = true;
 	}

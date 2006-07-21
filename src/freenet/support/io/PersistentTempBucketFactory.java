@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 import freenet.crypt.RandomSource;
 import freenet.support.Bucket;
@@ -33,6 +34,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	/** Random number generator */
 	private final RandomSource rand;
+	
+	/** Buckets to free */
+	private final LinkedList bucketsToFree;
 
 	public PersistentTempBucketFactory(File dir, String prefix, RandomSource rand) throws IOException {
 		this.dir = dir;
@@ -61,6 +65,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 				originalFiles.add(f);
 			}
 		}
+		bucketsToFree = new LinkedList();
 	}
 	
 	/**
@@ -109,10 +114,21 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		return new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, len, key, rand);
 	}
 	
+	/**
+	 * Free an allocated bucket, but only after the change has been written to disk.
+	 */
 	public void freeBucket(Bucket b) throws IOException {
-		b.free();
+		synchronized(this) {
+			bucketsToFree.add(b);
+		}
 	}
 
+	public Bucket[] grabBucketsToFree() {
+		synchronized(this) {
+			return (Bucket[]) bucketsToFree.toArray(new Bucket[bucketsToFree.size()]);
+		}
+	}
+	
 	public File getDir() {
 		return dir;
 	}

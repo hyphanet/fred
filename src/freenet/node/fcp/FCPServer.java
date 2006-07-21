@@ -35,6 +35,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
+import freenet.support.Bucket;
 import freenet.support.Logger;
 
 /**
@@ -473,31 +474,40 @@ public class FCPServer implements Runnable {
 		Logger.minor(this, "Storing persistent requests");
 		ClientRequest[] persistentRequests = getPersistentRequests();
 		Logger.minor(this, "Persistent requests count: "+persistentRequests.length);
-		synchronized(persistenceSync) {
-			try {
-				File compressedTemp = new File(persistentDownloadsTempFile+".gz");
-				File compressedFinal = new File(persistentDownloadsFile.toString()+".gz");
-				FileOutputStream fos = new FileOutputStream(compressedTemp);
-				BufferedOutputStream bos = new BufferedOutputStream(fos);
-				GZIPOutputStream gos = new GZIPOutputStream(bos);
-				OutputStreamWriter osw = new OutputStreamWriter(gos);
-				BufferedWriter w = new BufferedWriter(osw);
-				w.write(Integer.toString(persistentRequests.length)+"\n");
-				for(int i=0;i<persistentRequests.length;i++)
-					persistentRequests[i].write(w);
-				w.close();
-				if(!compressedTemp.renameTo(compressedFinal)) {
-					Logger.minor(this, "Rename failed");
-					compressedFinal.delete();
+		Bucket[] toFree = null;
+		try {
+			synchronized(persistenceSync) {
+				toFree = node.persistentTempBucketFactory.grabBucketsToFree();
+				try {
+					File compressedTemp = new File(persistentDownloadsTempFile+".gz");
+					File compressedFinal = new File(persistentDownloadsFile.toString()+".gz");
+					FileOutputStream fos = new FileOutputStream(compressedTemp);
+					BufferedOutputStream bos = new BufferedOutputStream(fos);
+					GZIPOutputStream gos = new GZIPOutputStream(bos);
+					OutputStreamWriter osw = new OutputStreamWriter(gos);
+					BufferedWriter w = new BufferedWriter(osw);
+					w.write(Integer.toString(persistentRequests.length)+"\n");
+					for(int i=0;i<persistentRequests.length;i++)
+						persistentRequests[i].write(w);
+					w.close();
 					if(!compressedTemp.renameTo(compressedFinal)) {
-						Logger.error(this, "Could not rename persisted requests temp file "+persistentDownloadsTempFile+".gz to "+persistentDownloadsFile);
+						Logger.minor(this, "Rename failed");
+						compressedFinal.delete();
+						if(!compressedTemp.renameTo(compressedFinal)) {
+							Logger.error(this, "Could not rename persisted requests temp file "+persistentDownloadsTempFile+".gz to "+persistentDownloadsFile);
+						}
 					}
+				} catch (IOException e) {
+					Logger.error(this, "Cannot write persistent requests to disk: "+e);
 				}
-			} catch (IOException e) {
-				Logger.error(this, "Cannot write persistent requests to disk: "+e);
+			}
+			Logger.minor(this, "Stored persistent requests");
+		} finally {
+			if(toFree != null) {
+				for(int i=0;i<toFree.length;i++)
+					toFree[i].free();
 			}
 		}
-		Logger.minor(this, "Stored persistent requests");
 	}
 
 	private void loadPersistentRequests() {

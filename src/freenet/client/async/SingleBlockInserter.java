@@ -164,6 +164,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 				fail(new InserterException(errors.getFirstCode()));
 			else
 				fail(new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, errors, getURI()));
+			return;
 		}
 		try {
 			getScheduler(encode()).register(this);
