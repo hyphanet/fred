@@ -229,8 +229,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		try {
 			getter.start();
 		} catch (FetchException e) {
+			started = true;
 			onFailure(e, null);
 		}
+		started = true;
 	}
 	
 	public void onLostConnection() {
@@ -351,7 +353,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		if(!onlyData) {
 			if(includePersistentRequest) {
-				FCPMessage msg = new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue);
+				FCPMessage msg = new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started);
 				handler.queue(msg);
 			}
 			if(progressPending != null)

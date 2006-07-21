@@ -68,6 +68,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			((SingleFileInserter)currentState).start(oldProgress);
 		} catch (InserterException e) {
+			Logger.error(this, "Failed to start insert: "+e, e);
 			synchronized(this) {
 				finished = true;
 				currentState = null;
@@ -141,10 +142,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public SimpleFieldSet getProgressFieldset() {
-		if(currentState == null) {
-			Logger.error(this, "getProgressFieldset() called on "+this+" but no current progress");
-			throw new NullPointerException();
-		}
+		if(currentState == null) return null;
 		return currentState.getProgressFieldset();
 	}
 	

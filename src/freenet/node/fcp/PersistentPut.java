@@ -22,11 +22,12 @@ public class PersistentPut extends FCPMessage {
 	final FreenetURI targetURI;
 	final long size;
 	final String token;
+	final boolean started;
 	
 	public PersistentPut(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short uploadFrom, FreenetURI targetURI, 
 			short persistenceType, File origFilename, String mimeType, 
-			boolean global, long size, String clientToken) {
+			boolean global, long size, String clientToken, boolean started) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -39,6 +40,7 @@ public class PersistentPut extends FCPMessage {
 		this.global = global;
 		this.size = size;
 		this.token = clientToken;
+		this.started = started;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -60,6 +62,7 @@ public class PersistentPut extends FCPMessage {
 			fs.put("DataLength", size);
 		if(token != null)
 			fs.put("ClientToken", token);
+		fs.put("Started", started);
 		return fs;
 	}
 

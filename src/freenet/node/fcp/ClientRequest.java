@@ -275,4 +275,10 @@ public abstract class ClientRequest {
 	/** Start the request, if it has not already been started. */
 	public abstract void start();
 
+	protected boolean started;
+	
+	public boolean isStarted() {
+		return started;
+	}
+	
 }

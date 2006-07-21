@@ -462,6 +462,11 @@ public class QueueToadlet extends Toadlet {
 	private void writeProgressFractionCell(ClientRequest p, StringBuffer buf) {
 		buf.append("<td>");
 		
+		if(!p.isStarted()) {
+			buf.append("STARTING</td>");
+			return;
+		}
+		
 		//double frac = p.getSuccessFraction();
 		double total;
 		if(node.getToadletContainer().isAdvancedDarknetEnabled())
@@ -478,6 +483,7 @@ public class QueueToadlet extends Toadlet {
 		if (Double.isNaN(failed)) failed = 0.0;
 		if (Double.isNaN(failed2)) failed2 = 0.0;
 		if (Double.isNaN(min)) min = 0.0;
+		if(min == 0.0) min = 1.0;
 		
 		boolean b = p.isTotalFinalized();
 		if(fetched < 0) {

@@ -162,8 +162,10 @@ public class ClientPut extends ClientPutBase {
 		try {
 			inserter.start();
 		} catch (InserterException e) {
+			started = true;
 			onFailure(e, null);
 		}
+		started = true;
 	}
 
 	protected void freeData() {
@@ -200,7 +202,7 @@ public class ClientPut extends ClientPutBase {
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPut(identifier, uri, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				data == null ? -1 : data.size(), clientToken);
+				data == null ? -1 : data.size(), clientToken, started);
 	}
 
 	protected String getTypeName() {

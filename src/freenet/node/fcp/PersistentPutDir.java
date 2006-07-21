@@ -23,10 +23,12 @@ public class PersistentPutDir extends FCPMessage {
 	final boolean global;
 	private final HashMap manifestElements;
 	final String defaultName;
+	final String token;
+	final boolean started;
 	
 	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short persistenceType, boolean global,
-			String defaultName, HashMap manifestElements) {
+			String defaultName, HashMap manifestElements, String token, boolean started) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -35,6 +37,8 @@ public class PersistentPutDir extends FCPMessage {
 		this.global = global;
 		this.defaultName = defaultName;
 		this.manifestElements = manifestElements;
+		this.token = token;
+		this.started = started;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -80,6 +84,9 @@ public class PersistentPutDir extends FCPMessage {
 			files.put(num, subset);
 		}
 		fs.put("Files", files);
+		if(token != null)
+			fs.put("ClientToken", token);
+		fs.put("Started", Boolean.toString(started));
 		return fs;
 	}
 

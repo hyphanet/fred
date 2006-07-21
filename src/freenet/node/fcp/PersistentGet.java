@@ -25,10 +25,11 @@ public class PersistentGet extends FCPMessage {
 	final File tempFile;
 	final String clientToken;
 	final boolean global;
+	final boolean started;
 	
 	public PersistentGet(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short returnType, short persistenceType, 
-			File targetFile, File tempFile, String clientToken, boolean global) {
+			File targetFile, File tempFile, String clientToken, boolean global, boolean started) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -39,6 +40,7 @@ public class PersistentGet extends FCPMessage {
 		this.tempFile = tempFile;
 		this.clientToken = clientToken;
 		this.global = global;
+		this.started = started;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -56,6 +58,7 @@ public class PersistentGet extends FCPMessage {
 		if(clientToken != null)
 			fs.put("ClientToken", clientToken);
 		fs.put("Global", Boolean.toString(global));
+		fs.put("Started", Boolean.toString(started));
 		return fs;
 	}
 

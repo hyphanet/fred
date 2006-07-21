@@ -92,6 +92,7 @@ class SingleFileInserter implements ClientPutState {
 			// Run off thread
 			OffThreadCompressor otc = new OffThreadCompressor();
 			Thread t = new Thread(otc, "Compressor for "+this);
+			Logger.minor(this, "Compressing off-thread: "+t);
 			t.setDaemon(true);
 			t.start();
 		} else {

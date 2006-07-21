@@ -135,8 +135,10 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		try {
 			if(putter != null)
 				putter.start();
+			started = true;
 			Logger.minor(this, "Started "+putter);
 		} catch (InserterException e) {
+			started = true;
 			onFailure(e, null);
 		}
 	}
@@ -217,7 +219,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPutDir(identifier, uri, verbosity, priorityClass,
-				persistenceType, global, defaultName, manifestElements);
+				persistenceType, global, defaultName, manifestElements, clientToken, started);
 	}
 
 	protected String getTypeName() {
