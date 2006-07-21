@@ -258,7 +258,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			buf2.append("  <th>Location</th>\n");
 			buf2.append("  <th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th>\n");
 		}
-		buf2.append("  <th><span title=\"How long since the node was last seen\" style=\"border-bottom:1px dotted;cursor:help;\">Idle</span></th>\n");
+		buf2.append("  <th><span title=\"How long since the node connected or was last seen\" style=\"border-bottom:1px dotted;cursor:help;\">Connected&nbsp;/ Idle</span></th>\n");
 		buf2.append(" </tr>\n");
 		
 		if (peerNodes.length == 0) {
@@ -284,9 +284,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				rows[i] = row;
 				
 				Object status = new Integer(pn.getPeerNodeStatus());
-				long idle = pn.lastReceivedPacketTime();
-				if(((Integer) status).intValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
+				long idle = pn.timeLastRoutable();
+				if(pn.isRoutable()) {
+					idle = pn.timeLastConnectionCompleted();
+				} else if(((Integer) status).intValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
 					idle = pn.getPeerAddedTime();
+				}
 				String lastBackoffReasonOutputString = "";
 				if(advancedEnabled) {
 					String backoffReason = pn.getLastBackoffReason();
@@ -659,9 +662,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			return " ";
 		}
 		long idleSeconds = (now - idle) / 1000;
-		if((idleSeconds < 60) && ((peerNodeStatus == Node.PEER_NODE_STATUS_CONNECTED) || (peerNodeStatus == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF))) {
-		  return "0m";
-		}
 		return timeIntervalToString( idleSeconds );
 	}
 	

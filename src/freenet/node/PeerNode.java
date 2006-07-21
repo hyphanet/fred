@@ -108,6 +108,12 @@ public class PeerNode implements PeerContext {
        
     /** When did we last receive a packet? */
     private long timeLastReceivedPacket;
+       
+    /** When was isConnected() last true? */
+    private long timeLastConnected;
+       
+    /** When was isRoutingCompatible() last true? */
+    private long timeLastRoutable;
     
     /** Are we connected? If not, we need to start trying to
      * handshake.
@@ -375,6 +381,8 @@ public class PeerNode implements PeerContext {
         timeLastSentPacket = -1;
         timeLastReceivedPacket = -1;
         timeLastReceivedSwapRequest = -1;
+        timeLastConnected = -1;
+        timeLastRoutable = -1;
         
         randomizeMaxTimeBetweenPacketSends();
         swapRequestsInterval = new SimpleRunningAverage(50, Node.MIN_INTERVAL_BETWEEN_INCOMING_SWAP_REQUESTS);
@@ -435,6 +443,22 @@ public class PeerNode implements PeerContext {
             	if(tempTimeLastReceivedPacketString != null) {
             		long tempTimeLastReceivedPacket = Long.parseLong(tempTimeLastReceivedPacketString);
             		timeLastReceivedPacket = tempTimeLastReceivedPacket;
+            	}
+            	String tempTimeLastConnectedString = metadata.get("timeLastConnected");
+            	if(tempTimeLastConnectedString != null) {
+            		long tempTimeLastConnected = Long.parseLong(tempTimeLastConnectedString);
+            		timeLastConnected = tempTimeLastConnected;
+            	}
+            	String tempTimeLastRoutableString = metadata.get("timeLastRoutable");
+            	if(tempTimeLastRoutableString != null) {
+            		long tempTimeLastRoutable = Long.parseLong(tempTimeLastRoutableString);
+            		timeLastRoutable = tempTimeLastRoutable;
+            	}
+            	if(timeLastConnected < 1 && timeLastReceivedPacket > 1) {
+            		timeLastConnected = timeLastReceivedPacket;
+            	}
+            	if(timeLastRoutable < 1 && timeLastReceivedPacket > 1) {
+            		timeLastRoutable = timeLastReceivedPacket;
             	}
             	String tempPeerAddedTimeString = metadata.get("peerAddedTime");
             	if(tempPeerAddedTimeString != null) {
@@ -715,11 +739,25 @@ public class PeerNode implements PeerContext {
         return isConnected() && isRoutingCompatible();
     }
     
-    public synchronized boolean isRoutingCompatible(){
-    	return isRoutable;
+    public boolean isRoutingCompatible(){
+    	long now = System.currentTimeMillis();
+    	synchronized(this) {
+	    	if( isRoutable ) {
+    			timeLastRoutable = now;
+    			return true;
+    		}
+			return false;
+    	}
     }
-    public synchronized boolean isConnected(){
-    	return isConnected;
+    public boolean isConnected(){
+    	long now = System.currentTimeMillis();
+    	synchronized(this) {
+	    	if( isConnected ) {
+    			timeLastConnected = now;
+    			return true;
+    		}
+			return false;
+    	}
     }
 
     /**
@@ -749,6 +787,14 @@ public class PeerNode implements PeerContext {
      */
     public synchronized long lastReceivedPacketTime() {
         return timeLastReceivedPacket;
+    }
+
+    public synchronized long timeLastConnected() {
+        return timeLastConnected;
+    }
+
+    public synchronized long timeLastRoutable() {
+        return timeLastRoutable;
     }
 
     /**
@@ -1659,6 +1705,10 @@ public class PeerNode implements PeerContext {
     		fs.put("detected.udp", getDetectedPeer().toString());
     	if(lastReceivedPacketTime() > 0)
     		fs.put("timeLastReceivedPacket", Long.toString(lastReceivedPacketTime()));
+    	if(timeLastConnected() > 0)
+    		fs.put("timeLastConnected", Long.toString(timeLastConnected()));
+    	if(timeLastRoutable() > 0)
+    		fs.put("timeLastRoutable", Long.toString(timeLastRoutable()));
     	if(getPeerAddedTime() > 0)
     		fs.put("peerAddedTime", Long.toString(getPeerAddedTime()));
     	if(neverConnected())
@@ -1732,7 +1782,7 @@ public class PeerNode implements PeerContext {
     /**
      * @return The time at which we last connected (or reconnected).
      */
-    public synchronized long timeLastConnected() {
+    public synchronized long timeLastConnectionCompleted() {
         return connectedTime;
     }
 
@@ -2162,7 +2212,7 @@ public class PeerNode implements PeerContext {
 		long localRoutingBackedOffUntil = getRoutingBackedOffUntil();
 		synchronized(this) {
 			int oldPeerNodeStatus = peerNodeStatus;
-			if(isRoutable()) {
+			if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 				peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
 				if(now < localRoutingBackedOffUntil ) {
 					peerNodeStatus = Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF;
@@ -2181,7 +2231,7 @@ public class PeerNode implements PeerContext {
 				}
 			} else if(isDisabled) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_DISABLED;
-			} else if(isConnected && verifiedIncompatibleNewerVersion) {
+			} else if(isConnected() && verifiedIncompatibleNewerVersion) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_TOO_NEW;
 			} else if(isConnected && verifiedIncompatibleOlderVersion) {
 				peerNodeStatus = Node.PEER_NODE_STATUS_TOO_OLD;

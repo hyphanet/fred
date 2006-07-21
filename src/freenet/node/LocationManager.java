@@ -386,7 +386,7 @@ class LocationManager {
                 }
 
                 if(reply == null) {
-                    if(pn.isRoutable() && (System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2)) {
+                    if(pn.isRoutable() && (System.currentTimeMillis() - pn.timeLastConnectionCompleted() > TIMEOUT*2)) {
                         // Timed out! Abort...
                         Logger.error(this, "Timed out waiting for SwapRejected/SwapReply on "+uid);
                     }
@@ -421,7 +421,7 @@ class LocationManager {
                 }
                 
                 if(reply == null) {
-                    if(pn.isRoutable() && (System.currentTimeMillis() - pn.timeLastConnected() > TIMEOUT*2)) {
+                    if(pn.isRoutable() && (System.currentTimeMillis() - pn.timeLastConnectionCompleted() > TIMEOUT*2)) {
                         // Hrrrm!
                         Logger.error(this, "Timed out waiting for SwapComplete - malicious node?? on "+uid);
                     }
