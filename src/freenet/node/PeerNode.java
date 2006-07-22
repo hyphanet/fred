@@ -1723,7 +1723,7 @@ public class PeerNode implements PeerContext {
     /**
      * Export volatile data about the node as a SimpleFieldSet
      */
-    public SimpleFieldSet exportVolatileFieldSet() {
+    public synchronized SimpleFieldSet exportVolatileFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		long now = System.currentTimeMillis();
 		fs.put("averagePingTime", Double.toString(averagePingTime()));
@@ -1731,16 +1731,14 @@ public class PeerNode implements PeerContext {
 		if(idle > (60 * 1000)) {  // 1 minute
 			fs.put("idle", Long.toString(idle));
 		}
-		fs.put("lastRoutingBackoffReason", getLastBackoffReason());
+		fs.put("lastRoutingBackoffReason", lastRoutingBackoffReason);
 		long tempPeerAddedTime = getPeerAddedTime();
 		if(tempPeerAddedTime > 1) {
 			fs.put("peerAddedTime", Long.toString(tempPeerAddedTime));
 		}
-		synchronized(this) {
-			fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
-		}
-		fs.put("routingBackoff", Long.toString((Math.max(getRoutingBackedOffUntil() - now, 0))));
-		fs.put("routingBackoffLength", Integer.toString(getRoutingBackoffLength()));
+		fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
+		fs.put("routingBackoff", Long.toString((Math.max(routingBackedOffUntil - now, 0))));
+		fs.put("routingBackoffLength", Integer.toString(routingBackoffLength));
 		fs.put("status", getPeerNodeStatusString());
 		return fs;
 	}
