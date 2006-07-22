@@ -58,7 +58,7 @@ public class InserterContext {
 		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
 		this.maxInsertRetries = ctx.maxInsertRetries;
 		this.maxSplitInsertThreads = ctx.maxSplitInsertThreads;
-		this.eventProducer = ctx.eventProducer;
+		this.eventProducer = producer;
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
