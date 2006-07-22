@@ -226,10 +226,10 @@ public class PeerNode implements PeerContext {
     public int peerNodeStatus = Node.PEER_NODE_STATUS_DISCONNECTED;
 
     /** Holds a String-Long pair that shows which message types (as name) have been send to this peer. */
-    private Hashtable localNodeSentMessageTypes = new Hashtable();
+    private final Hashtable localNodeSentMessageTypes = new Hashtable();
     
     /** Holds a String-Long pair that shows which message types (as name) have been received by this peer. */
-    private Hashtable localNodeReceivedMessageTypes = new Hashtable();
+    private final Hashtable localNodeReceivedMessageTypes = new Hashtable();
 
     /** Hold collected IP addresses for handshake attempts, populated by DNSRequestor */
     private Peer[] handshakeIPs;
@@ -2048,55 +2048,47 @@ public class PeerNode implements PeerContext {
 		return completedHandshake;
 	}
 	
-	public void addToLocalNodeSentMessagesToStatistic (Message m)
-	{
-	String messageSpecName;
-	Long count;
+	public void addToLocalNodeSentMessagesToStatistic (Message m) {
+		String messageSpecName;
+		Long count;
 	
 		messageSpecName = m.getSpec().getName();
-		//
-		count = (Long)localNodeSentMessageTypes.get(messageSpecName);
-		if (count == null)
-		{
-			count = new Long(1);
+		// Synchronize to make increments atomic.
+		synchronized(this) {
+			count = (Long)localNodeSentMessageTypes.get(messageSpecName);
+			if (count == null) {
+				count = new Long(1);
+			} else {
+				count = new Long(count.longValue() + 1);
+			}
+			localNodeSentMessageTypes.put(messageSpecName,count);
 		}
-		else
-		{
-			count = new Long(count.longValue() + 1);
-		}
-		//
-		localNodeSentMessageTypes.put(messageSpecName,count);
 	}
 	
-	public void addToLocalNodeReceivedMessagesFromStatistic (Message m)
-	{
-	String messageSpecName;
-	Long count;
-	
+	public void addToLocalNodeReceivedMessagesFromStatistic (Message m) {
+		String messageSpecName;
+		Long count;
+		
 		messageSpecName = m.getSpec().getName();
-		//
-		count = (Long)localNodeReceivedMessageTypes.get(messageSpecName);
-		if (count == null)
-		{
-			count = new Long(1);
+		// Synchronize to make increments atomic.
+		synchronized(this) {
+			count = (Long)localNodeReceivedMessageTypes.get(messageSpecName);
+			if (count == null) {
+				count = new Long(1);
+			} else {
+				count = new Long(count.longValue() + 1);
+			}
+			localNodeReceivedMessageTypes.put(messageSpecName,count);
 		}
-		else
-		{
-			count = new Long(count.longValue() + 1);
-		}
-		//
-		localNodeReceivedMessageTypes.put(messageSpecName,count);
 	}
 	
 	//FIXME: maybe return a copy insteed
-	public Hashtable getLocalNodeSentMessagesToStatistic ()
-	{
+	public Hashtable getLocalNodeSentMessagesToStatistic () {
 		return localNodeSentMessageTypes;
 	}
 	
 	//FIXME: maybe return a copy insteed
-	public Hashtable getLocalNodeReceivedMessagesFromStatistic ()
-	{
+	public Hashtable getLocalNodeReceivedMessagesFromStatistic () {
 		return localNodeReceivedMessageTypes;
 	}
 
