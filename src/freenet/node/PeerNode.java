@@ -979,6 +979,7 @@ public class PeerNode implements PeerContext {
 				listeningHandshakeBurstCount++;
 				if(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion) { 
 					// Let them know we're here, but have no hope of connecting
+					// Send one packet only.
 					listeningHandshakeBurstCount = 0;
 				} else if(listeningHandshakeBurstCount >= listeningHandshakeBurstSize) {
 					listeningHandshakeBurstCount = 0;

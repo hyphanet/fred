@@ -39,30 +39,18 @@ public class ModifyPeer extends FCPMessage {
 				} else {
 					pn.enablePeer();
 				}
-			} else {
-				ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "IsDisabled had no value", nodeIdentifier);
-				handler.outputHandler.queue(msg);
-				return;
 			}
 		}
 		String isListenOnlyString = fs.get("IsListenOnly");
 		if(isListenOnlyString != null) {
 			if(!isListenOnlyString.equals("")) {
 				pn.setListenOnly(Fields.stringToBool(isListenOnlyString, false));
-			} else {
-				ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "IsListenOnly had no value", nodeIdentifier);
-				handler.outputHandler.queue(msg);
-				return;
 			}
 		}
 		String isBurstOnlyString = fs.get("IsBurstOnly");
 		if(isBurstOnlyString != null) {
 			if(!isBurstOnlyString.equals("")) {
 				pn.setBurstOnly(Fields.stringToBool(isBurstOnlyString, false));
-			} else {
-				ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.MESSAGE_PARSE_ERROR, false, "IsBurstOnly had no value", nodeIdentifier);
-				handler.outputHandler.queue(msg);
-				return;
 			}
 		}
 		handler.outputHandler.queue(new Peer(pn, true, true));
