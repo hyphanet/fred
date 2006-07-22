@@ -28,7 +28,7 @@ public class ARKFetcher implements ClientCallback {
 	private static final int MAX_BACKOFF = 60*60*1000;  // 1 hour
 	private static final int MIN_BACKOFF = 5*1000;  // 5 seconds
 	private int backoff = MIN_BACKOFF;
-	private String identity;
+	private final String identity;
 	private boolean isFetching;
 	private boolean started;
 	private long startedEdition;
@@ -100,19 +100,15 @@ public class ARKFetcher implements ClientCallback {
 			
 		if(cg != null)
 			try {
-				boolean localIsFetching = false;
+				boolean mustAdd = false;
 				synchronized(this) {
-					localIsFetching = isFetching;
-				}
-				if(!localIsFetching) {
-					String localIdentity = null;
-					synchronized(this) {
-						localIdentity = identity;
-					}
-					node.addARKFetcher(localIdentity,this);
-					synchronized(this) {
+					if(!isFetching) {
+						mustAdd = true;
 						isFetching = true;
 					}
+				}
+				if(mustAdd) {
+					node.addARKFetcher(identity, this);
 				}
 				
 				cg.start();

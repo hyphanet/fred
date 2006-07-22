@@ -3332,7 +3332,10 @@ public class Node {
 		synchronized(arkFetchers) {
 			if(arkFetchers.containsKey(identity)) {
 				ARKFetcher af = (ARKFetcher) arkFetchers.get(identity);
-				Logger.error(this, "addARKFetcher(): identity '"+identity+"' already in arkFetcher as "+af+" and you want to add"+fetcher);
+				if(af != fetcher)
+					Logger.error(this, "addARKFetcher(): identity '"+identity+"' already in arkFetcher as "+af+" and you want to add"+fetcher);
+				else
+					Logger.minor(this, "Re-adding "+identity+" : "+fetcher);
 				return;
 			}
 			Logger.minor(this, "addARKFetcher(): adding ARK Fetcher for "+identity);
