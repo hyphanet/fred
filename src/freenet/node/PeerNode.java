@@ -1695,27 +1695,27 @@ public class PeerNode implements PeerContext {
     /**
      * Export metadata about the node as a SimpleFieldSet
      */
-    public SimpleFieldSet exportMetadataFieldSet() {
+    public synchronized SimpleFieldSet exportMetadataFieldSet() {
     	SimpleFieldSet fs = new SimpleFieldSet(true);
     	if(getDetectedPeer() != null)
-    		fs.put("detected.udp", getDetectedPeer().toString());
+    		fs.put("detected.udp", detectedPeer.toString());
     	if(lastReceivedPacketTime() > 0)
-    		fs.put("timeLastReceivedPacket", Long.toString(lastReceivedPacketTime()));
+    		fs.put("timeLastReceivedPacket", Long.toString(timeLastReceivedPacket));
     	if(timeLastConnected() > 0)
-    		fs.put("timeLastConnected", Long.toString(timeLastConnected()));
+    		fs.put("timeLastConnected", Long.toString(timeLastConnected));
     	if(timeLastRoutable() > 0)
-    		fs.put("timeLastRoutable", Long.toString(timeLastRoutable()));
+    		fs.put("timeLastRoutable", Long.toString(timeLastRoutable));
     	if(getPeerAddedTime() > 0)
-    		fs.put("peerAddedTime", Long.toString(getPeerAddedTime()));
-    	if(neverConnected())
+    		fs.put("peerAddedTime", Long.toString(peerAddedTime));
+    	if(neverConnected)
     		fs.put("neverConnected", "true");
-    	if(isDisabled())
+    	if(isDisabled)
     		fs.put("isDisabled", "true");
-    	if(isListenOnly())
+    	if(isListenOnly)
     		fs.put("isListenOnly", "true");
-    	if(isBurstOnly())
+    	if(isBurstOnly)
     		fs.put("isBurstOnly", "true");
-    	if(allowLocalAddresses())
+    	if(allowLocalAddresses)
     		fs.put("allowLocalAddresses", "true");
     	return fs;
 	}
