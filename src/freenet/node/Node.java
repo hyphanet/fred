@@ -193,7 +193,7 @@ public class Node {
 		private boolean checkIPUpdated() {
 			if(lastIPAddress == null) {
 				Logger.minor(this, "Not inserting because no IP address");
-				return true; // no point inserting
+				return false; // no point inserting
 			}
 			Peer[] p = getPrimaryIPAddress();
 			synchronized (this) {
@@ -202,6 +202,9 @@ public class Node {
 					for(int i=0;i<p.length;i++)
 						if(!p[i].strictEquals(lastInsertedPeers[i]))
 							return true;
+				} else {
+					// we've not inserted an ARK that we know about (ie since startup)
+					return true;
 				}
 			}
 			return false;
