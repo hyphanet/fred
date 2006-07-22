@@ -952,7 +952,7 @@ public class PeerNode implements PeerContext {
 
     boolean firstHandshake = true;
 
-    private void calcNextHandshake(boolean couldSendHandshake) {
+    private void calcNextHandshake(boolean successfulHandshakeSend) {
         long now = System.currentTimeMillis();
         boolean fetchARKFlag = false;
         synchronized(this) {
@@ -968,7 +968,7 @@ public class PeerNode implements PeerContext {
 					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
 						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 				}
-				if(couldSendHandshake) {
+				if(successfulHandshakeSend) {
 					firstHandshake = false;
 				} else {
 					handshakeIPs = null;
@@ -994,7 +994,7 @@ public class PeerNode implements PeerContext {
 					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
 						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 				}
-				if(!couldSendHandshake) {
+				if(!successfulHandshakeSend) {
 					handshakeIPs = null;
 				}
 				Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+")", new Exception("double-called debug"));
