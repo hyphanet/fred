@@ -1746,30 +1746,24 @@ public class PeerNode implements PeerContext {
 	/**
      * Export the peer's noderef as a SimpleFieldSet
      */
-    public SimpleFieldSet exportFieldSet() {
+    public synchronized SimpleFieldSet exportFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet(true);
         if(getLastGoodVersion() != null)
-        	fs.put("lastGoodVersion", getLastGoodVersion());
-		synchronized(this) {
-			for(int i=0;i<nominalPeer.size();i++) {
-				fs.put("physical.udp", nominalPeer.get(i).toString());
-			}
+        	fs.put("lastGoodVersion", lastGoodVersion);
+		for(int i=0;i<nominalPeer.size();i++) {
+			fs.put("physical.udp", nominalPeer.get(i).toString());
 		}
         fs.put("base64", "true");
         fs.put("identity", getIdentityString());
-        fs.put("location", Double.toString(getLocation().getValue()));
-		synchronized(this) {
-	        fs.put("testnet", Boolean.toString(testnetEnabled));
-		}
-        fs.put("version", getVersion());
+        fs.put("location", Double.toString(currentLocation.getValue()));
+        fs.put("testnet", Boolean.toString(testnetEnabled));
+        fs.put("version", version);
         fs.put("myName", getName());
-		synchronized(this) {
-			if(myARK != null) {
-				// Decrement it because we keep the number we would like to fetch, not the last one fetched.
-				fs.put("ark.number", Long.toString(myARK.suggestedEdition - 1));
-				fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));
-			}
-        }
+		if(myARK != null) {
+			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
+			fs.put("ark.number", Long.toString(myARK.suggestedEdition - 1));
+			fs.put("ark.pubURI", myARK.getBaseSSK().toString(false));
+		}
         return fs;
     }
 
