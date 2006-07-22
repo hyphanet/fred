@@ -1234,6 +1234,7 @@ public class PeerNode implements PeerContext {
     		completedHandshake = true;
     		handshakeCount = 0;
         	bogusNoderef = false;
+			isConnected = true;
         }
 		try {
 			// First, the new noderef
@@ -1277,15 +1278,13 @@ public class PeerNode implements PeerContext {
 				verifiedIncompatibleOlderVersion = false;
 			}
 		}
-    	synchronized(this) {
-			isConnected = true;
-		}
 		setPeerNodeStatus(now);
 		KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
 		changedIP(replyTo);
 		boolean bootIDChanged = false;
     	synchronized(this) {
 			bootIDChanged = (thisBootID != this.bootID);
+			this.bootID = thisBootID;
 		}
 		if(bootIDChanged) {
 	    	synchronized(this) {
@@ -1318,9 +1317,6 @@ public class PeerNode implements PeerContext {
 					currentTracker = null;
 				}
 				old.completelyDeprecated(newTracker);
-			}
-			synchronized(this) {
-				this.bootID = thisBootID;
 			}
 			node.lm.lostOrRestartedNode(this);
 		} // else it's a rekey
