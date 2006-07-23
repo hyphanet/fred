@@ -29,9 +29,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	// Only implements PutCompletionCallback for the final metadata insert
 
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
-
-		protected PutHandler(String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) throws InserterException {
-			super(SimpleManifestPutter.this.getPriorityClass(), SimpleManifestPutter.this.chkScheduler, SimpleManifestPutter.this.sskScheduler, SimpleManifestPutter.this.client);
+		
+		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) throws InserterException {
+			super(smp.priorityClass, smp.chkScheduler, smp.sskScheduler, smp.client);
 			this.cm = cm;
 			this.data = data;
 			InsertBlock block = 
@@ -41,8 +41,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			metadata = null;
 		}
 
-		protected PutHandler(String name, FreenetURI target, ClientMetadata cm) {
-			super(SimpleManifestPutter.this.getPriorityClass(), SimpleManifestPutter.this.chkScheduler, SimpleManifestPutter.this.sskScheduler, SimpleManifestPutter.this.client);
+		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm) {
+			super(smp.getPriorityClass(), smp.chkScheduler, smp.sskScheduler, smp.client);
 			this.cm = cm;
 			this.data = null;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, target, cm);
@@ -50,8 +50,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			origSFI = null;
 		}
 		
-		protected PutHandler(String name, String targetInZip, ClientMetadata cm, Bucket data) {
-			super(SimpleManifestPutter.this.getPriorityClass(), SimpleManifestPutter.this.chkScheduler, SimpleManifestPutter.this.sskScheduler, SimpleManifestPutter.this.client);
+		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInZip, ClientMetadata cm, Bucket data) {
+			super(smp.getPriorityClass(), smp.chkScheduler, smp.sskScheduler, smp.client);
 			this.cm = cm;
 			this.data = data;
 			this.targetInZip = targetInZip;
@@ -260,7 +260,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				PutHandler ph;
 				Bucket data = element.data;
 				if(element.targetURI != null) {
-					ph = new PutHandler(name, element.targetURI, cm);
+					ph = new PutHandler(this, name, element.targetURI, cm);
 					// Just a placeholder, don't actually run it
 				} else {
 					// Decide whether to put it in the ZIP.
@@ -271,13 +271,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 							(bytesOnZip + sz < ((2048-64)*1024))) { // totally dumb heuristic!
 						bytesOnZip += sz;
 						// Put it in the zip.
-						ph = new PutHandler(name, ZipPrefix+element.fullName, cm, data);
+						ph = new PutHandler(this, name, ZipPrefix+element.fullName, cm, data);
 						elementsToPutInZip.addLast(ph);
 						numberOfFiles++;
 						totalSize += data.size();
 					} else {
 						try {
-							ph = new PutHandler(name, data, cm, getCHKOnly);
+							ph = new PutHandler(this,name, data, cm, getCHKOnly);
 						} catch (InserterException e) {
 							cancelAndFinish();
 							throw e;
