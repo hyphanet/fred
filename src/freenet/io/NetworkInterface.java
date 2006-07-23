@@ -24,13 +24,11 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.Vector;
 
 import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Logger;
@@ -59,14 +57,14 @@ public class NetworkInterface {
 	/** Queue of accepted client connections. */
 	protected final List/* <Socket> */acceptedSockets = new ArrayList();
 
-	/**
-	 * Whether the acceptors have already been started. Necessary for
-	 * {@link #setSoTimeout(int)} to work.
-	 */
-	private boolean started = false;
-
 	/** The timeout set by {@link #setSoTimeout(int)}. */
 	private int timeout = 0;
+
+	/** The port to bind to. */
+	private final int port;
+
+	/** The number of running acceptors. */
+	private int runningAcceptors = 0;
 
 	/**
 	 * Creates a new network interface that can bind to several addresses and
@@ -78,18 +76,61 @@ public class NetworkInterface {
 	 *            A comma-separated list of allowed addresses
 	 */
 	public NetworkInterface(int port, String bindTo, String allowedHosts) throws IOException {
+		this.port = port;
+		setBindTo(bindTo);
+		setAllowedHosts(allowedHosts);
+	}
+
+	/**
+	 * Sets the list of IP address this network interface binds to.
+	 * 
+	 * @param bindTo
+	 *            A comma-separated list of IP address to bind to
+	 */
+	public void setBindTo(String bindTo) throws IOException {
 		StringTokenizer bindToTokens = new StringTokenizer(bindTo, ",");
 		List bindToTokenList = new ArrayList();
 		while (bindToTokens.hasMoreTokens()) {
 			bindToTokenList.add(bindToTokens.nextToken().trim());
 		}
+		/* stop the old acceptors. */
+		for (int acceptorIndex = 0, acceptorCount = acceptors.size(); acceptorIndex < acceptorCount; acceptorIndex++) {
+			Acceptor acceptor = (Acceptor) acceptors.get(acceptorIndex);
+			try {
+				acceptor.close();
+			} catch (IOException e) {
+				/* swallow exception. */
+			}
+		}
+		while (runningAcceptors > 0) {
+			synchronized (syncObject) {
+				try {
+					syncObject.wait();
+				} catch (InterruptedException e) {
+				}
+			}
+		}
+		acceptors.clear();
 		for (int serverSocketIndex = 0; serverSocketIndex < bindToTokenList.size(); serverSocketIndex++) {
 			ServerSocket serverSocket = new ServerSocket();
 			serverSocket.bind(new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port));
 			Acceptor acceptor = new Acceptor(serverSocket);
 			acceptors.add(acceptor);
 		}
-		setAllowedHosts(allowedHosts);
+		setSoTimeout(timeout);
+		List tempThreads = new ArrayList();
+		synchronized (syncObject) {
+			Iterator acceptors = this.acceptors.iterator();
+			while (acceptors.hasNext()) {
+				Thread t = new Thread((Acceptor) acceptors.next(), "Network Interface Acceptor");
+				t.setDaemon(true);
+				tempThreads.add(t);
+			}
+		}
+		for (Iterator i = tempThreads.iterator(); i.hasNext();) {
+			((Thread) i.next()).start();
+			runningAcceptors++;
+		}
 	}
 
 	/**
@@ -158,21 +199,6 @@ public class NetworkInterface {
 	 *             if the timeout has expired waiting for a connection
 	 */
 	public Socket accept() throws SocketTimeoutException {
-		Vector tempThreads = new Vector();
-		synchronized (syncObject) {
-			if (!started) {
-				started = true;
-				Iterator acceptors = this.acceptors.iterator();
-				while (acceptors.hasNext()) {
-					Thread t = new Thread((Acceptor) acceptors.next(), "Network Interface Acceptor");
-					t.setDaemon(true);
-					tempThreads.add(t);
-				}
-			}
-		}
-		for(Enumeration e = tempThreads.elements(); e.hasMoreElements(); ) {
-			((Thread) e.nextElement()).start();
-		}
 		synchronized (syncObject) {
 			while (acceptedSockets.size() == 0) {
 				try {
@@ -207,6 +233,16 @@ public class NetworkInterface {
 		}
 		if (exception != null) {
 			throw (exception);
+		}
+	}
+
+	/**
+	 * Gets called by an acceptor if it has stopped.
+	 */
+	private void acceptorStopped() {
+		synchronized (syncObject) {
+			runningAcceptors--;
+			syncObject.notifyAll();
 		}
 	}
 
@@ -304,9 +340,10 @@ public class NetworkInterface {
 				} catch (SocketTimeoutException ste1) {
 					Logger.minor(this, "Timeout");
 				} catch (IOException ioe1) {
-					Logger.minor(this, "Caught "+ioe1);
+					Logger.minor(this, "Caught " + ioe1);
 				}
 			}
+			NetworkInterface.this.acceptorStopped();
 		}
 
 	}

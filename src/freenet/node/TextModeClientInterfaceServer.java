@@ -28,7 +28,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     final Hashtable streams;
     final File downloadsDir;
     int port;
-    final String bindTo;
+    String bindTo;
     String allowedHosts;
     boolean isEnabled;
     NetworkInterface networkInterface;
@@ -150,7 +150,12 @@ public class TextModeClientInterfaceServer implements Runnable {
     	
     	public void set(String val) throws InvalidConfigValueException {
     		if(val.equals(get())) return;
-    		throw new InvalidConfigValueException("Cannot be updated on the fly");
+    		try {
+				node.getTextModeClientInterface().networkInterface.setBindTo(val);
+				node.getTextModeClientInterface().bindTo = val;
+			} catch (IOException e) {
+				throw new InvalidConfigValueException("could not change bind to!");
+			}
     	}
     }
     

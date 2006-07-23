@@ -47,7 +47,7 @@ public class FCPServer implements Runnable {
 	final Node node;
 	final int port;
 	public final boolean enabled;
-	final String bindTo;
+	String bindTo;
 	String allowedHosts;
 	final WeakHashMap clientsByName;
 	final FCPClient globalClient;
@@ -205,10 +205,14 @@ public class FCPServer implements Runnable {
 			return node.getFCPServer().bindTo;
 		}
 
-//TODO: Allow it
 		public void set(String val) throws InvalidConfigValueException {
 			if(!val.equals(get())) {
-				throw new InvalidConfigValueException("Cannot change the ip address the server is binded to on the fly");
+				try {
+					node.getFCPServer().networkInterface.setBindTo(val);
+					node.getFCPServer().bindTo = val;
+				} catch (IOException e) {
+					throw new InvalidConfigValueException("could not change bind to!");
+				}
 			}
 		}
 	}

@@ -45,7 +45,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 
 	final int port;
-	final String bindTo;
+	String bindTo;
 	String allowedHosts;
 	final BucketFactory bf;
 	final NetworkInterface networkInterface;
@@ -76,8 +76,14 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public void set(String bindTo) throws InvalidConfigValueException {
-			if(!bindTo.equals(get()))
-				throw new InvalidConfigValueException("Cannot change FProxy bind address on the fly");
+			if(!bindTo.equals(get())) {
+				try {
+					networkInterface.setBindTo(bindTo);
+					SimpleToadletServer.this.bindTo = bindTo;
+				} catch (IOException e) {
+					throw new InvalidConfigValueException("could not change bind to! " + e.getMessage()); 
+				}
+			}
 		}
 	}
 	
