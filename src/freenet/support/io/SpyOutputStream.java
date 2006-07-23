@@ -27,9 +27,11 @@ public class SpyOutputStream extends FilterOutputStream {
 	}
 
 	private final void checkValid() throws IOException {
-		if (tfb.isReleased()) {
-			throw new IOException(
-				"Attempt to use a released TempFileBucket: " + prefix);
+		synchronized (tfb) {
+			if (tfb.isReleased()) {
+				throw new IOException(
+					"Attempt to use a released TempFileBucket: " + prefix);
+			}
 		}
 	}
 

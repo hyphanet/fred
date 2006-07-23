@@ -31,9 +31,11 @@ class SpyInputStream extends java.io.FilterInputStream {
 	}
 
 	private final void checkValid() throws IOException {
-		if (tfb.isReleased()) {
-			throw new IOException(
-				"Attempt to use a released TempFileBucket: " + prefix);
+		synchronized (tfb) {
+			if (tfb.isReleased()) {
+				throw new IOException(
+					"Attempt to use a released TempFileBucket: " + prefix);
+			}
 		}
 	}
 

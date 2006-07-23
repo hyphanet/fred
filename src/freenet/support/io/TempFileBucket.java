@@ -39,7 +39,9 @@ public class TempFileBucket extends FileBucket {
 		float factor)
 		throws IOException {
 		super(f, false, true, true, true);
-		logDebug = Logger.shouldLog(Logger.DEBUG, this);
+		synchronized(this) {
+			logDebug = Logger.shouldLog(Logger.DEBUG, this);
+		}
 		if (minAlloc > 0)
 			this.minAlloc = minAlloc;
 		else
@@ -58,10 +60,12 @@ public class TempFileBucket extends FileBucket {
 		long x = startLength <= 0 ? minAlloc : startLength;
 		hook.createFile(x);
 		this.fakeLength = x;
-		if (logDebug)
-			Logger.debug(
-				this,
-				"Initializing TempFileBucket(" + f + "," + hook + ")");
+		synchronized(this) {
+			if (logDebug)
+				Logger.debug(
+					this,
+					"Initializing TempFileBucket(" + f + "," + hook + ")");
+		}
 	}
 
 	/**
@@ -70,7 +74,7 @@ public class TempFileBucket extends FileBucket {
 	 * @return                  The realInputStream value
 	 * @exception  IOException  Description of the Exception
 	 */
-	InputStream getRealInputStream() throws IOException {
+	synchronized InputStream getRealInputStream() throws IOException {
 		if (released)
 			throw new IllegalStateException(
 				"Trying to getInputStream on " + "released TempFileBucket!");
@@ -92,11 +96,13 @@ public class TempFileBucket extends FileBucket {
 	 * @exception  IOException  Description of the Exception
 	 */
 	OutputStream getRealOutputStream() throws IOException {
-		if (logDebug)
-			Logger.debug(
-				this,
-				"getRealOutputStream() for " + file,
-				new Exception("debug"));
+		synchronized(this) {
+			if (logDebug)
+				Logger.debug(
+					this,
+					"getRealOutputStream() for " + file,
+					new Exception("debug"));
+		}
 		return super.getOutputStream();
 	}
 
@@ -256,7 +262,7 @@ public class TempFileBucket extends FileBucket {
 	protected Vector streams = new Vector();
 	private boolean released;
 
-	protected FileBucketOutputStream newFileBucketOutputStream(
+	protected synchronized FileBucketOutputStream newFileBucketOutputStream(
 		String s,
 		boolean append,
 		long restartCount)
@@ -270,7 +276,7 @@ public class TempFileBucket extends FileBucket {
 			return super.newFileBucketOutputStream(s, restartCount);
 	}
 
-	protected void deleteFile() {
+	protected synchronized void deleteFile() {
 		if (logDebug)
 			Logger.debug(this, "Deleting " + file);
 		file.delete();
@@ -290,7 +296,7 @@ public class TempFileBucket extends FileBucket {
 		}
 	}
 
-	protected final void getLengthSynchronized(long len) throws IOException {
+	protected final synchronized void getLengthSynchronized(long len) throws IOException {
 		//       Core.logger.log(this, "getLengthSynchronized("+len+
 		// 		      "); fakeLength = "+fakeLength, Logger.DEBUG);
 		long l = fakeLength;
@@ -324,7 +330,7 @@ public class TempFileBucket extends FileBucket {
 		fakeLength = l;
 	}
 
-	public String toString(){
+	public synchronized String toString(){
 		return "TempFileBucket (File: '"+getFile().getAbsolutePath()+"', streams: "+streams.size()+", hook: "+hook+")";
 	}
 

@@ -67,6 +67,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	 * directory.
 	 */
 	public FileBucket(RandomSource random) {
+		// **FIXME**/TODO: locking on tempDir needs to be checked by a Java guru for consistency
 		file =
 			new File(
 				tempDir,
@@ -117,7 +118,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		return new FileBucketOutputStream(s, streamNumber);
 	}
 
-	protected void resetLength() {
+	protected synchronized void resetLength() {
 		length = 0;
 	}
 
@@ -175,7 +176,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		}
 	}
 
-	public InputStream getInputStream() throws IOException {
+	public synchronized InputStream getInputStream() throws IOException {
 		return file.exists()
 			? (InputStream) new FileBucketInputStream(file)
 			: (InputStream) new NullInputStream();
@@ -184,18 +185,18 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	/**
 	 * @return the name of the file.
 	 */
-	public String getName() {
+	public synchronized String getName() {
 		return file.getName();
 	}
 
-	public long size() {
+	public synchronized long size() {
 		return length;
 	}
 
 	/**
 	 * Returns the file object this buckets data is kept in.
 	 */
-	public File getFile() {
+	public synchronized File getFile() {
 		return file;
 	}
 
@@ -203,7 +204,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	 * Actually delete the underlying file. Called by finalizer, will not be
 	 * called twice. But length must still be valid when calling it.
 	 */
-	protected void deleteFile() {
+	protected synchronized void deleteFile() {
 		file.delete();
 	}
 
@@ -216,7 +217,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	 * Return directory used for temp files.
 	 */
 	public final synchronized static String getTempDir() {
-		return tempDir;
+		return tempDir;  // **FIXME**/TODO: locking on tempDir needs to be checked by a Java guru for consistency
 	}
 
 	/**
@@ -230,7 +231,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 			throw new IllegalArgumentException(
 				"Bad Temp Directory: " + dir.getAbsolutePath());
 		}
-		tempDir = dirName;
+		tempDir = dirName;  // **FIXME**/TODO: locking on tempDir needs to be checked by a Java guru for consistency
 	}
 
 	// determine the temp directory in one of several ways
@@ -292,11 +293,11 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		}
 	}
 
-	public boolean isReadOnly() {
+	public synchronized boolean isReadOnly() {
 		return readOnly;
 	}
 
-	public void setReadOnly() {
+	public synchronized void setReadOnly() {
 		readOnly = true;
 	}
 
@@ -305,11 +306,11 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 	 * Note that if you have already set delete file on exit, there is little that you
 	 * can do to recover it! Delete file on finalize, on the other hand, is reversible.
 	 */
-	public void dontDeleteOnFinalize() {
+	public synchronized void dontDeleteOnFinalize() {
 		deleteOnFinalize = false;
 	}
 
-	public Bucket[] split(int splitSize) {
+	public synchronized Bucket[] split(int splitSize) {
 		if(length > ((long)Integer.MAX_VALUE) * splitSize)
 			throw new IllegalArgumentException("Way too big!: "+length+" for "+splitSize);
 		int bucketCount = (int) (length / splitSize);
@@ -328,7 +329,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		free(false);
 	}
 	
-	public void free(boolean forceFree) {
+	public synchronized void free(boolean forceFree) {
 		if ((deleteOnFree || forceFree) && file.exists()) {
 			Logger.debug(this,
 				"Deleting bucket " + file.getName());
@@ -339,11 +340,11 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		}
 	}
 	
-	public String toString() {
+	public synchronized String toString() {
 		return super.toString()+":"+file.getPath();
 	}
 
-	public SimpleFieldSet toFieldSet() {
+	public synchronized SimpleFieldSet toFieldSet() {
 		if(deleteOnFinalize) return null;
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("Type", "FileBucket");
