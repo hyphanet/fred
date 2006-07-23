@@ -449,7 +449,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 					t = environment.beginTransaction(null,null);
 					long blockNum = chkBlocksInStore++;
-					StoreBlock storeBlock = new StoreBlock(blockNum);
+					StoreBlock storeBlock = new StoreBlock(this, blockNum);
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
 					DatabaseEntry blockDBE = new DatabaseEntry();
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
@@ -1003,7 +1003,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		c.close();
 		// Deleted, so we can now reuse it.
 		// Because we acquired a write lock, nobody else has taken it.
-		StoreBlock storeBlock = new StoreBlock(oldStoreBlock.getOffset());
+		StoreBlock storeBlock = new StoreBlock(this, oldStoreBlock.getOffset());
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 		chkDB.put(t,routingkeyDBE,blockDBE);
@@ -1016,7 +1016,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	private void writeNewBlock(long blockNum, byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE) throws DatabaseException, IOException {
 		long byteOffset = blockNum*(dataBlockSize+headerBlockSize);
-		StoreBlock storeBlock = new StoreBlock(blockNum);
+		StoreBlock storeBlock = new StoreBlock(this, blockNum);
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 		chkDB.put(t,routingkeyDBE,blockDBE);
@@ -1132,8 +1132,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	private long recentlyUsed;
     	private long offset;
     	
-    	public StoreBlock(long offset) {
-    		this(offset,getNewRecentlyUsed());
+    	public StoreBlock(final BerkeleyDBFreenetStore bdbfs, long offset) {
+    		this(offset, bdbfs.getNewRecentlyUsed());
     	}
     	
     	public StoreBlock(long offset,long recentlyUsed) {
