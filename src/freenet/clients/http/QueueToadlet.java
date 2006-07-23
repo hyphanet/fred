@@ -197,7 +197,7 @@ public class QueueToadlet extends Toadlet {
 		
 		if(!(completedDownloadToTemp.isEmpty() && completedDownloadToDisk.isEmpty() &&
 				completedUpload.isEmpty() && completedDirUpload.isEmpty())) {
-			writeBigHeading("Completed requests", buf, "completed_requests");
+			writeBigHeading("Completed requests (" + (completedDownloadToTemp.size() + completedDownloadToDisk.size() + completedUpload.size() + completedDirUpload.size()) + ")", buf, "completed_requests");
 			
 			if(!completedDownloadToTemp.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
@@ -289,8 +289,8 @@ public class QueueToadlet extends Toadlet {
 			writeBigEnding(buf);
 		}
 		
-		if(!(failedDownload.isEmpty() && failedUpload.isEmpty())) {
-			writeBigHeading("Failed requests", buf, "failed_requests");
+		if(!(failedDownload.isEmpty() && failedUpload.isEmpty() && failedDirUpload.isEmpty())) {
+			writeBigHeading("Failed requests (" + (failedDownload.size() + failedUpload.size() + failedDirUpload.size()) + ")", buf, "failed_requests");
 			if(!failedDownload.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
 					writeTableHead("Failed downloads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
@@ -369,7 +369,7 @@ public class QueueToadlet extends Toadlet {
 		
 		if(!(uncompletedDownload.isEmpty() && uncompletedUpload.isEmpty() && 
 				uncompletedDirUpload.isEmpty())) {
-			writeBigHeading("Requests in progress", buf, "requests_in_progress");
+			writeBigHeading("Requests in progress (" + (uncompletedDownload.size() + uncompletedUpload.size() + uncompletedDirUpload.size()) + ")", buf, "requests_in_progress");
 			if(!uncompletedDownload.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
 					writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
