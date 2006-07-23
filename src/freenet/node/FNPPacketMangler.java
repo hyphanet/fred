@@ -1073,7 +1073,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 processOutgoingPreformatted(buf, offset, length, tracker, k, callbacks, alreadyReportedBytes);
                 return;
             } catch (KeyChangedException e) {
-            	Logger.normal(this, "Key changed(1)");
+            	Logger.normal(this, "Key changed(1) for "+peer.getPeer());
                 // Go around again
             }
         }
@@ -1097,7 +1097,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 processOutgoingPreformatted(buf, offset, length, tracker, seqNo, callbacks, alreadyReportedBytes);
                 return;
             } catch (KeyChangedException e) {
-            	Logger.normal(this, "Key changed(2)");
+            	Logger.normal(this, "Key changed(2) for "+peer.getPeer());
                 // Go around again
             }
         }
