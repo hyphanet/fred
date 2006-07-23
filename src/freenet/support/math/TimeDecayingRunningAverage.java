@@ -38,11 +38,14 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     boolean logDEBUG;
     
     public String toString() {
-        return super.toString() + ": currentValue="+curValue+", halfLife="+halfLife+
-        	", lastReportTime="+(System.currentTimeMillis()-lastReportTime)+
-        	"ms ago, createdTime="+(System.currentTimeMillis()-createdTime)+
-        	"ms ago, totalReports="+totalReports+", started="+started+
-        	", defaultValue="+defaultValue+", min="+minReport+", max="+maxReport;
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+		return super.toString() + ": currentValue="+curValue+", halfLife="+halfLife+
+			", lastReportTime="+(now - lastReportTime)+
+			"ms ago, createdTime="+(now - createdTime)+
+			"ms ago, totalReports="+totalReports+", started="+started+
+			", defaultValue="+defaultValue+", min="+minReport+", max="+maxReport;
+		}
     }
     
     public TimeDecayingRunningAverage(double defaultValue, long halfLife,
@@ -99,38 +102,40 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     	return curValue;
     }
 
-    public synchronized void report(double d) {
-        if(d < minReport) d = minReport;
-        if(d > maxReport) d = maxReport;
-        totalReports++;
-        long now = System.currentTimeMillis(); 
-        if(!started) {
-        	curValue = d;
-            started = true;
-            if(logDEBUG)
-                Logger.debug(this, "Reported "+d+" on "+this+" when just started");
-        } else if(lastReportTime != -1) { // might be just serialized in
-            long thisInterval =
-                 now - lastReportTime;
-            double thisHalfLife = halfLife;
-            long uptime = now - createdTime;
-            if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);
-            if(thisHalfLife == 0) thisHalfLife = 1;
-            double changeFactor =
-            	Math.pow(0.5, (thisInterval) / thisHalfLife);
-            double oldCurValue = curValue;
-            curValue = curValue * changeFactor /* close to 1.0 if short interval, close to 0.0 if long interval */ 
-            	+ (1.0 - changeFactor) * d;
-            if(logDEBUG)
-                Logger.debug(this, "Reported "+d+" on "+this+": thisInterval="+thisInterval+
-                		", halfLife="+halfLife+", uptime="+uptime+", thisHalfLife="+thisHalfLife+
-                        ", changeFactor="+changeFactor+", oldCurValue="+oldCurValue+
-						", currentValue="+currentValue()+
-						", thisInterval="+thisInterval+", thisHalfLife="+thisHalfLife+
-						", uptime="+uptime+", changeFactor="+changeFactor);
-        }
-        lastReportTime = now;
-    }
+	public void report(double d) {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(d < minReport) d = minReport;
+			if(d > maxReport) d = maxReport;
+			totalReports++;
+			if(!started) {
+				curValue = d;
+				started = true;
+				if(logDEBUG)
+					Logger.debug(this, "Reported "+d+" on "+this+" when just started");
+			} else if(lastReportTime != -1) { // might be just serialized in
+				long thisInterval =
+					 now - lastReportTime;
+				double thisHalfLife = halfLife;
+				long uptime = now - createdTime;
+				if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);
+				if(thisHalfLife == 0) thisHalfLife = 1;
+				double changeFactor =
+					Math.pow(0.5, (thisInterval) / thisHalfLife);
+				double oldCurValue = curValue;
+				curValue = curValue * changeFactor /* close to 1.0 if short interval, close to 0.0 if long interval */ 
+					+ (1.0 - changeFactor) * d;
+				if(logDEBUG)
+					Logger.debug(this, "Reported "+d+" on "+this+": thisInterval="+thisInterval+
+							", halfLife="+halfLife+", uptime="+uptime+", thisHalfLife="+thisHalfLife+
+							", changeFactor="+changeFactor+", oldCurValue="+oldCurValue+
+							", currentValue="+currentValue()+
+							", thisInterval="+thisInterval+", thisHalfLife="+thisHalfLife+
+							", uptime="+uptime+", changeFactor="+changeFactor);
+			}
+			lastReportTime = now;
+		}
+	}
 
     public void report(long d) {
         report((double)d);
@@ -140,24 +145,27 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         throw new UnsupportedOperationException();
     }
 
-    public synchronized void writeDataTo(DataOutputStream out) throws IOException {
-        out.writeInt(MAGIC);
-        out.writeInt(1);
-        out.writeDouble(curValue);
-        out.writeBoolean(started);
-        out.writeLong(totalReports);
-        out.writeLong(System.currentTimeMillis() - createdTime);
-    }
+	public void writeDataTo(DataOutputStream out) throws IOException {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			out.writeInt(MAGIC);
+			out.writeInt(1);
+			out.writeDouble(curValue);
+			out.writeBoolean(started);
+			out.writeLong(totalReports);
+			out.writeLong(now - createdTime);
+		}
+	}
 
     public int getDataLength() {
         return 4 + 4 + 8 + 8 + 1 + 8 + 8;
     }
 
-    public long countReports() {
+    public synchronized long countReports() {
         return totalReports;
     }
 
-	public long lastReportTime() {
+	public synchronized long lastReportTime() {
 		return lastReportTime;
 	}
 }

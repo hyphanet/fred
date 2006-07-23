@@ -61,29 +61,29 @@ public class SimpleRunningAverage implements RunningAverage {
         }
     }
 
-    public void report(double d) {
+    public synchronized void report(double d) {
         totalReports++;
 		if (logDEBUG)
 			Logger.debug(this, "report(" + d + ") on " + this);
-		synchronized (this) {
-			if (curLen < refs.length)
-				curLen++;
-			else
-				total -= popValue();
-			pushValue(d);
-			total += d;
-		}
+		if (curLen < refs.length)
+			curLen++;
+		else
+			total -= popValue();
+		pushValue(d);
+		total += d;
 	}
-    protected void pushValue(double value){
+
+    protected synchronized void pushValue(double value){
 		refs[nextSlotPtr] = value;
 		nextSlotPtr++;
 		if(nextSlotPtr >= refs.length) nextSlotPtr = 0;
     }
-	protected double popValue(){
+
+	protected synchronized double popValue(){
 		return refs[nextSlotPtr];
 	}
 
-    public String toString() {
+    public synchronized String toString() {
         return super.toString() + ": curLen="+curLen+", ptr="+nextSlotPtr+", total="+
         	total+", average="+total/curLen;
     }
@@ -96,7 +96,7 @@ public class SimpleRunningAverage implements RunningAverage {
         throw new UnsupportedOperationException();
     }
 
-    public long countReports() {
+    public synchronized long countReports() {
         return totalReports;
     }
 

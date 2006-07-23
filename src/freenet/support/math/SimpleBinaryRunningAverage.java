@@ -33,7 +33,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 	final BitSet ba;
 	boolean logDEBUG;
 
-	private final int baSize() {
+	private synchronized final int baSize() {
 		return Math.min((int)totalReported, maximumSize);
 	}
 	
@@ -121,13 +121,13 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 		return ((double)to) / (double)(tz + to);
 	}
 	
-	public String extraToString() {
+	public synchronized  String extraToString() {
 		return Integer.toString(totalZeros) + " 0s, "+
 			totalOnes + " 1s, "+(totalZeros+totalOnes)+
 			" total";
 	}
 	
-	public String toString() {
+	public synchronized String toString() {
 		return super.toString() + " ("+extraToString()+")"+
 			", init="+defaultValue+", index="+index+", totalReported="+
 			totalReported;
@@ -178,7 +178,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
         this.totalZeros = a.totalZeros;
     }
 
-	private void calculateTotalOnesZeros() {
+	private synchronized void calculateTotalOnesZeros() {
 		StringBuffer sb = new StringBuffer();
 		int tones = 0;
 		int tzeros = 0;
@@ -229,7 +229,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 		return valueIfReported(convert(d));
 	}
 
-    public long countReports() {
+    public synchronized long countReports() {
         return totalReported;
     }
 }

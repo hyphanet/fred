@@ -35,7 +35,7 @@ public final class BootstrappingDecayingRunningAverage implements
     long zeros;
     long ones;
     
-    public String toString() {
+    public synchronized String toString() {
         return super.toString() + ": min="+min+", max="+max+", currentValue="+
         	currentValue+", reports="+reports+", maxReports="+maxReports
         	// FIXME
@@ -137,7 +137,7 @@ public final class BootstrappingDecayingRunningAverage implements
         return 4 + 4 + 4 + 8 + 8;
     }
 
-    public long countReports() {
+    public synchronized  long countReports() {
         return reports;
     }
 }
