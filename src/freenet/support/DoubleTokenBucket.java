@@ -85,7 +85,7 @@ public class DoubleTokenBucket extends TokenBucket {
 		return max;
 	}
 
-	protected long offset() {
+	protected synchronized long offset() {
 		return curForced;
 	}
 	

@@ -88,7 +88,7 @@ public class SortedLongSet {
 		push(num, x);
 	}
 
-	private void push(long num, int x) {
+	private synchronized void push(long num, int x) {
 		Logger.minor(this, "Insertion point: "+x+" length "+length+" data.length "+data.length);
 		// Move the data
 		if(length == data.length) {

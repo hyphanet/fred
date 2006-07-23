@@ -48,7 +48,9 @@ public class MultiValueTable {
     }
 
     public boolean containsKey(Object key) {
-        return table.containsKey(key);
+		synchronized (table) {
+			return table.containsKey(key);
+		}
     }
 
     public boolean containsElement(Object key, Object value) {
@@ -62,14 +64,20 @@ public class MultiValueTable {
      * Users will have to handle synchronizing.
      */
     public Enumeration getAll(Object key) {
-        Vector v = (Vector) table.get(key);
+    	Vector v;
+		synchronized (table) {
+			v = (Vector) table.get(key);
+		}
         return (v == null ?
                 new LimitedEnumeration(null) :
                 v.elements());
     }
     
     public int countAll(Object key) {
-    	Vector v = (Vector)table.get(key);
+    	Vector v;
+		synchronized (table) {
+			v = (Vector)table.get(key);
+		}
     	if(v != null) 
         	return v.size();
         else
@@ -77,7 +85,9 @@ public class MultiValueTable {
     }
     
     public Object getSync(Object key) {
-	return table.get(key);
+		synchronized (table) {
+			return table.get(key);
+		}
     }
     
     public Object[] getArray(Object key) {
@@ -94,15 +104,21 @@ public class MultiValueTable {
     }
 
     public void remove(Object key) {
-        table.remove(key);
+		synchronized (table) {
+			table.remove(key);
+		}
     }
 
     public boolean isEmpty() {
-        return table.isEmpty();
+		synchronized (table) {
+			return table.isEmpty();
+		}
     }
 
     public void clear() {
-        table.clear();
+		synchronized (table) {
+			table.clear();
+		}
     }
 
     public boolean removeElement(Object key, Object value) {
@@ -120,21 +136,27 @@ public class MultiValueTable {
     }
 
     public Enumeration keys() {
-        return table.keys();
+		synchronized (table) {
+			return table.keys();
+		}
     }
 
     public Enumeration elements() {
-        if (table.isEmpty())
-            return new LimitedEnumeration(null);
-        else 
-            return new MultiValueEnumeration();
+		synchronized (table) {
+			if (table.isEmpty())
+				return new LimitedEnumeration(null);
+			else 
+				return new MultiValueEnumeration();
+		}
     }
 
     private class MultiValueEnumeration implements Enumeration {
         private Enumeration current;
         private Enumeration global;
         public MultiValueEnumeration() {
-            global = table.elements();
+			synchronized (table) {
+				global = table.elements();
+			}
             current = ((Vector) global.nextElement()).elements();
             step();
         }

@@ -77,7 +77,7 @@ public class RandomGrabArray {
 		}
 	}
 
-	public boolean isEmpty() {
+	public synchronized boolean isEmpty() {
 		return index == 0;
 	}
 }

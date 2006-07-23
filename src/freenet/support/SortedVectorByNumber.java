@@ -86,7 +86,7 @@ public class SortedVectorByNumber {
 		push(grabber, x);
 	}
 
-	private void push(IntNumberedItem grabber, int x) {
+	private synchronized void push(IntNumberedItem grabber, int x) {
 		Logger.minor(this, "Insertion point: "+x);
 		// Move the data
 		if(length == data.length) {

@@ -32,11 +32,11 @@ public class LimitedRangeIntByteArrayMap {
         flag = false;
     }
     
-    public int minValue() {
+    public synchronized int minValue() {
         return minValue;
     }
     
-    public int maxValue() {
+    public synchronized int maxValue() {
         return maxValue;
     }
     
@@ -208,7 +208,7 @@ public class LimitedRangeIntByteArrayMap {
     /**
      * Empty the structure.
      */
-    private void clear() {
+    private synchronized void clear() {
         contents.clear();
         minValue = maxValue = -1;
     }

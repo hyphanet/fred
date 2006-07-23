@@ -30,7 +30,7 @@ public abstract class Logger {
 	 */
 	static Logger logger = new VoidLogger();
 	
-	public static FileLoggerHook setupStdoutLogging(int level, String detail) throws InvalidThresholdException {
+	public synchronized static FileLoggerHook setupStdoutLogging(int level, String detail) throws InvalidThresholdException {
 	    setupChain();
 	    logger.setThreshold(level);
 	    logger.setDetailedThresholds(detail);
@@ -43,55 +43,55 @@ public abstract class Logger {
 	    return fh;
 	}
 
-    public static void setupChain() {
+    public synchronized static void setupChain() {
         logger = new LoggerHookChain();
     }
 
-    public static void debug(Object o, String s) {
+    public synchronized static void debug(Object o, String s) {
 	    logger.log(o, s, DEBUG);
 	}
 	
-    public static void debug(Object o, String s, Throwable t) {
+    public synchronized static void debug(Object o, String s, Throwable t) {
         logger.log(o, s, t, DEBUG);
     }
     
-	public static void error(Class c, String s) {
+	public synchronized static void error(Class c, String s) {
 	    logger.log(c, s, ERROR);
 	}
 	
-	public static void error(Object o, String s) {
+	public synchronized static void error(Object o, String s) {
 	    logger.log(o, s, ERROR);
 	}
 	
-	public static void error(Object o, String s, Throwable e) {
+	public synchronized static void error(Object o, String s, Throwable e) {
 	    logger.log(o, s, e, ERROR);
 	}
 	
-	public static void minor(Object o, String s) {
+	public synchronized static void minor(Object o, String s) {
 	    logger.log(o, s, MINOR);
 	}
 	
-	public static void minor(Object o, String s, Throwable t) {
+	public synchronized static void minor(Object o, String s, Throwable t) {
 	    logger.log(o, s, t, MINOR);
 	}
 	
-    public static void minor(Class class1, String string, Throwable t) {
+    public synchronized static void minor(Class class1, String string, Throwable t) {
         logger.log(class1, string, t, MINOR);
     }
     
-	public static void normal(Object o, String s) {
+	public synchronized static void normal(Object o, String s) {
 	    logger.log(o, s, NORMAL);
 	}
 	
-	public static void normal(Object o, String s, Throwable t) {
+	public synchronized static void normal(Object o, String s, Throwable t) {
 	    logger.log(o, s, t, NORMAL);
 	}
 	
-	public static void normal(Class c, String s) {
+	public synchronized static void normal(Class c, String s) {
 	    logger.log(c, s, NORMAL);
 	}
 	
-	public static void logStatic(Object o, String s, int prio) {
+	public synchronized static void logStatic(Object o, String s, int prio) {
 		logger.log(o, s, prio);
 	}
 	
@@ -159,7 +159,7 @@ public abstract class Logger {
 	
 	public abstract boolean instanceShouldLog(int priority, Class c);
 	
-	public static boolean shouldLog(int priority, Class c) {
+	public synchronized static boolean shouldLog(int priority, Class c) {
 	    return logger.instanceShouldLog(priority, c);
 	}
 	
@@ -210,11 +210,11 @@ public abstract class Logger {
    		((LoggerHookChain)logger).addHook(logger2);
     }
 
-    public static void globalSetThreshold(int i) {
+    public synchronized static void globalSetThreshold(int i) {
         logger.setThreshold(i);
     }
 
-	public static int globalGetThreshold() {
+	public synchronized static int globalGetThreshold() {
 		return logger.getThreshold();
 	}
 	
@@ -232,7 +232,7 @@ public abstract class Logger {
 		}
 	}
 
-	public static LoggerHookChain getChain() {
+	public synchronized static LoggerHookChain getChain() {
 		if(logger instanceof LoggerHookChain)
 			return (LoggerHookChain) logger;
 		else {

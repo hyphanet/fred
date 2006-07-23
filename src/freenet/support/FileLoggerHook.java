@@ -114,11 +114,15 @@ public class FileLoggerHook extends LoggerHook {
 	}
 	
 	public void setMaxListLength(int len) {
-		MAX_LIST_SIZE = len;
+		synchronized(list) {
+			MAX_LIST_SIZE = len;
+		}
 	}
 
 	public void setMaxListBytes(long len) {
-		MAX_LIST_BYTES = len;
+		synchronized(list) {
+			MAX_LIST_BYTES = len;
+		}
 	}
 
 	public void setInterval(String intervalName) throws IntervalParseException {
@@ -458,7 +462,7 @@ public class FileLoggerHook extends LoggerHook {
 		synchronized(trimOldLogFilesLock) {
 			while(oldLogFilesDiskSpaceUsage > maxOldLogfilesDiskUsage) {
 				OldLogFile olf;
-				synchronized(logFiles) {
+				synchronized(logFiles) {  // **FIXME**/TODO: creates a double lock situation, but only here
 					if(logFiles.isEmpty()) {
 						System.err.println("ERROR: INCONSISTENT LOGGER TOTALS: Log file list is empty but still used "+oldLogFilesDiskSpaceUsage+" bytes!");
 					}
@@ -551,7 +555,9 @@ public class FileLoggerHook extends LoggerHook {
 					synchronized(logFiles) {
 						logFiles.addLast(olf);
 					}
-					oldLogFilesDiskSpaceUsage += l;
+					synchronized(trimOldLogFilesLock) {
+						oldLogFilesDiskSpaceUsage += l;
+					}
 				}
 				lastStartTime = startTime;
 				oldFile = f;
@@ -566,7 +572,9 @@ public class FileLoggerHook extends LoggerHook {
 			synchronized(logFiles) {
 				logFiles.addLast(olf);
 			}
-			oldLogFilesDiskSpaceUsage += l;
+			synchronized(trimOldLogFilesLock) {
+				oldLogFilesDiskSpaceUsage += l;
+			}
 		}
 		trimOldLogFiles();
 	}
@@ -757,8 +765,9 @@ public class FileLoggerHook extends LoggerHook {
 					sb.append(str[sctr++]);
 					break;
 				case DATE :
+					long now = System.currentTimeMillis();
 					synchronized (this) {
-						myDate.setTime(System.currentTimeMillis());
+						myDate.setTime(now);
 						sb.append(df.format(myDate));
 					}
 					break;
@@ -835,7 +844,9 @@ public class FileLoggerHook extends LoggerHook {
 	}
 
 	public long listBytes() {
-		return listBytes;
+		synchronized (list) {
+			return listBytes;
+		}
 	}
 
 	public static int numberOf(char c) {
@@ -937,7 +948,9 @@ public class FileLoggerHook extends LoggerHook {
 	 * by the time the function returns as it is run off-thread.
 	 */
 	public void setMaxOldLogsSize(long val) {
-		maxOldLogfilesDiskUsage = val;
+		synchronized(trimOldLogFilesLock) {
+			maxOldLogfilesDiskUsage = val;
+		}
 		Runnable r = new Runnable() {
 			public void run() {
 				trimOldLogFiles();
@@ -958,11 +971,11 @@ public class FileLoggerHook extends LoggerHook {
 	}
 
 	public void waitForSwitch() {
+		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(!switchedBaseFilename) return;
-			long startTime = System.currentTimeMillis();
+			long startTime = now;
 			long endTime = startTime + 10000;
-			long now;
 			while(((now = System.currentTimeMillis()) < endTime) && !switchedBaseFilename) {
 				try {
 					wait(Math.max(1, endTime-now));

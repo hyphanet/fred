@@ -38,7 +38,7 @@ public class LoggerHookChain extends LoggerHook {
      * one logger receive events from another.
      * @implements LoggerHook.log()
      */
-    public void log(Object o, Class c, String msg, Throwable e, int priority){
+    public synchronized void log(Object o, Class c, String msg, Throwable e, int priority){
         LoggerHook[] myHooks = hooks;
         for(int i=0;i<myHooks.length;i++) {
             myHooks[i].log(o,c,msg,e,priority);
@@ -82,7 +82,7 @@ public class LoggerHookChain extends LoggerHook {
     /**
      * Returns all the current hooks.
      */
-    public LoggerHook[] getHooks() {
+    public synchronized LoggerHook[] getHooks() {
         return hooks;
     }
 

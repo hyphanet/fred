@@ -134,7 +134,9 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
 		OutputStream os = bucket.getOutputStream();
-		dataLength = 0;
+		synchronized(this) {
+			dataLength = 0;
+		}
 		return new PaddedEphemerallyEncryptedOutputStream(os, ++lastOutputStream);
 	}
 
@@ -307,7 +309,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		return super.toString()+":"+bucket.toString();
 	}
 	
-	public long size() {
+	public synchronized long size() {
 		return dataLength;
 	}
 
@@ -340,7 +342,9 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	public SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("Type", "PaddedEphemerallyEncryptedBucket");
-		fs.put("DataLength", dataLength);
+		synchronized(this) {
+			fs.put("DataLength", dataLength);
+		}
 		if(key != null) {
 			fs.put("DecryptKey", HexUtil.bytesToHex(key));
 		} else {

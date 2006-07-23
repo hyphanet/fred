@@ -164,11 +164,11 @@ public class ReceivedPacketNumbers {
         StringBuffer sb = new StringBuffer();
         sb.append(super.toString());
         sb.append(": max=");
-        sb.append(highestSeqNumber);
-        sb.append(", min=");
-        sb.append(lowestSeqNumber);
-        sb.append(", ranges=");
         synchronized(this) {
+			sb.append(highestSeqNumber);
+			sb.append(", min=");
+			sb.append(lowestSeqNumber);
+			sb.append(", ranges=");
             Iterator i = ranges.iterator();
             while(i.hasNext()) {
                 Range r = (Range) i.next();

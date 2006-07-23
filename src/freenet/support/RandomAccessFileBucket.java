@@ -124,7 +124,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         return newOut;
     }
 
-    public String getName() {
+    public synchronized String getName() {
         return file.getAbsolutePath() + " [" + offset + ", " + 
             (offset + len - 1) + "]";
     }
@@ -140,7 +140,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         localOffset = 0;
     }
 
-    public long size() { return len; }
+    public synchronized long size() { return len; }
 
     public synchronized boolean release() {
         if (released) {
@@ -176,7 +176,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
 
     public synchronized final boolean isReleased() { return released; }
 
-    public void finalize() throws Throwable {
+    public synchronized void finalize() throws Throwable {
         if (!released) {
             release();
         }
@@ -246,7 +246,9 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         // FilterInput implementation
 
         private final int bytesLeft() throws IOException {
-            return (int)(rafb.offset + rafb.len - raf.getFilePointer()); 
+			synchronized (rafb) {
+				return (int)(rafb.offset + rafb.len - raf.getFilePointer());
+			}
         }
 
         public int read() throws java.io.IOException {
@@ -346,9 +348,11 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
         
         private final void checkValid() throws IOException {
-            if (rafb.released) {
-                throw new IOException("Attempt to use a released RandomAccessFileBucket: " + prefix);
-            }
+			synchronized(rafb) {
+				if (rafb.released) {
+					throw new IOException("Attempt to use a released RandomAccessFileBucket: " + prefix);
+				}
+			}
         }
 
         ////////////////////////////////////////////////////////////
@@ -439,12 +443,16 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
 
         private final void checkValid() throws IOException {
-            if (rafb.isReleased()) {
-                throw new IOException("Attempt to use a released RandomAccessFileBucket: " + prefix);
-            }
+			synchronized (rafb) {
+				if (rafb.isReleased()) {
+					throw new IOException("Attempt to use a released RandomAccessFileBucket: " + prefix);
+				}
+			}
         }
         private final int bytesLeft() throws IOException {
-            return (int)(rafb.offset + rafb.len - raf.getFilePointer()); 
+			synchronized (rafb) {
+				return (int)(rafb.offset + rafb.len - raf.getFilePointer());
+			}
         }
 
         private RandomAccessFileBucket rafb = null;
@@ -454,19 +462,19 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
     }
     ////////////////////////////////////////////////////////////
 
-    public boolean isReadOnly() {
+    public synchronized boolean isReadOnly() {
     	return readOnly;
     }
     
-    public void setReadOnly() {
+    public synchronized void setReadOnly() {
     	readOnly = true;
     }
 
-	public void free() {
+	public synchronized void free() {
 		release();
 	}
 
-	public SimpleFieldSet toFieldSet() {
+	public synchronized SimpleFieldSet toFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("Type", "RandomAccessFileBucket");
 		fs.put("Filename", file.toString());
