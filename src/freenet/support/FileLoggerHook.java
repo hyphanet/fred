@@ -462,7 +462,8 @@ public class FileLoggerHook extends LoggerHook {
 		synchronized(trimOldLogFilesLock) {
 			while(oldLogFilesDiskSpaceUsage > maxOldLogfilesDiskUsage) {
 				OldLogFile olf;
-				synchronized(logFiles) {  // **FIXME**/TODO: creates a double lock situation, but only here
+				// TODO: creates a double lock situation, but only here. I think this is okay because the inner lock is only used for trivial things.
+				synchronized(logFiles) {
 					if(logFiles.isEmpty()) {
 						System.err.println("ERROR: INCONSISTENT LOGGER TOTALS: Log file list is empty but still used "+oldLogFilesDiskSpaceUsage+" bytes!");
 					}

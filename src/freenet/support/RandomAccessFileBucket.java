@@ -20,9 +20,9 @@ import freenet.support.io.SerializableToFieldSetBucket;
 public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBucket {
 
     private final File file;
-    private long offset = -1;
+    private final long offset;
     private long localOffset = 0;
-    private long len = -1;
+    private final long len;
     private boolean readOnly = false;
     private boolean released = false;
     private Vector streams = new Vector();
@@ -39,7 +39,8 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
 
         this.file = file;
         this.readOnly = readOnly;
-        setRange(offset, len);
+        this.offset = offset;
+        this.len = len;
     }
 
     public RandomAccessFileBucket(SimpleFieldSet fs, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
@@ -61,22 +62,6 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
    			throw new CannotCreateFromFieldSetException("Corrupt offset "+tmp, e);
    		}
 	}
-
-	public synchronized void setRange(long offset, long len) throws IOException {
-        if (isReleased()) {
-            throw new IOException("Attempt to use a released RandomAccessFileBucket: " + getName() );
-        }
-
-        if (streams.size() > 0) {
-            throw new IllegalStateException("Can't reset range.  There are open streams.");
-        }
-        if ((offset < 0) || (len < 0) || (offset + len > file.length())) {
-            throw new IllegalArgumentException("Bad range arguments.");
-        }
-        this.offset = offset;
-        this.len = len;
-        localOffset = 0;
-    }
 
     public static class Range {
         Range(long offset, long len) {
@@ -105,7 +90,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
             throw new IOException("Attempt to use a released RandomAccessFileBucket: " + getName() );
         }
 
-        InputStream newIn = new RAInputStream(this, file.getAbsolutePath());
+        InputStream newIn = new RAInputStream(file.getAbsolutePath());
         streams.addElement(newIn);
         return newIn;
     }
@@ -119,12 +104,12 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
             throw new IOException("Tried to write a read-only Bucket.");
         }
 
-        OutputStream newOut = new RAOutputStream(this, file.getAbsolutePath());
+        OutputStream newOut = new RAOutputStream(file.getAbsolutePath());
         streams.addElement(newOut);
         return newOut;
     }
 
-    public synchronized String getName() {
+    public String getName() {
         return file.getAbsolutePath() + " [" + offset + ", " + 
             (offset + len - 1) + "]";
     }
@@ -140,7 +125,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         localOffset = 0;
     }
 
-    public synchronized long size() { return len; }
+    public long size() { return len; }
 
     public synchronized boolean release() {
         if (released) {
@@ -176,10 +161,11 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
 
     public synchronized final boolean isReleased() { return released; }
 
-    public synchronized void finalize() throws Throwable {
-        if (!released) {
-            release();
-        }
+    public void finalize() throws Throwable {
+    	synchronized(this) {
+    		if(released) return;
+    	}
+    	release();
     }
 
     // REDFLAG: RETEST
@@ -234,25 +220,24 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
     private final static boolean vociferous = false;
 
     class RAInputStream extends InputStream  {
-        public RAInputStream(RandomAccessFileBucket rafb, String prefix) throws IOException {
-            this.rafb = rafb;
-            raf = new RandomAccessFile(rafb.file, "r");
+        public RAInputStream(String prefix) throws IOException {
+            raf = new RandomAccessFile(file, "r");
             raf.seek(offset);
-            println(" -- Created new InputStream [" + rafb.offset + 
-                    ", " + (rafb.offset + rafb.len -1) + "]" );
+            println(" -- Created new InputStream [" + offset + 
+                    ", " + (offset + len -1) + "]" );
         }
         
         ////////////////////////////////////////////////////////////
         // FilterInput implementation
 
         private final int bytesLeft() throws IOException {
-			synchronized (rafb) {
-				return (int)(rafb.offset + rafb.len - raf.getFilePointer());
+			synchronized (RandomAccessFileBucket.this) {
+				return (int)(offset + len - raf.getFilePointer());
 			}
         }
 
         public int read() throws java.io.IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".read()");
                 checkValid();
                 if (bytesLeft() < 1) {
@@ -263,7 +248,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
         
         public int read(byte[] bytes) throws java.io.IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".read(byte[])");
                 checkValid();
                 int nAvailable = bytesLeft();
@@ -278,7 +263,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
         
         public int read(byte[] bytes, int a, int b) throws java.io.IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".read(byte[], int, int)");
                 checkValid();
                 int nAvailable = bytesLeft();
@@ -293,7 +278,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
         
         public long skip(long a) throws java.io.IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".skip(long)");
                 checkValid();
                 int nAvailable = bytesLeft();
@@ -309,7 +294,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
         
         public int available() throws java.io.IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".available()");
                 checkValid();
                 return bytesLeft();
@@ -317,14 +302,14 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
         
         public void close() throws java.io.IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".close()");
                 checkValid();       
                 raf.close();
-                if (rafb.streams.contains(RAInputStream.this)) {
-                    rafb.streams.removeElement(RAInputStream.this);
+                if (streams.contains(RAInputStream.this)) {
+                    streams.removeElement(RAInputStream.this);
                 }
-		rafb.streams.trimToSize();
+                streams.trimToSize();
             }
         }
         
@@ -348,32 +333,30 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
         
         private final void checkValid() throws IOException {
-			synchronized(rafb) {
-				if (rafb.released) {
+			synchronized(RandomAccessFileBucket.this) {
+				if (released) {
 					throw new IOException("Attempt to use a released RandomAccessFileBucket: " + prefix);
 				}
 			}
         }
 
         ////////////////////////////////////////////////////////////
-        private RandomAccessFileBucket rafb = null;
         private RandomAccessFile raf = null;
         private String prefix = "";
     }
 
     private class RAOutputStream extends OutputStream {
-        public RAOutputStream(RandomAccessFileBucket rafb, String pref) throws IOException {
-            this.rafb = rafb;
-            raf = new RandomAccessFile(rafb.file, "rw");
-            raf.seek(rafb.offset + rafb.localOffset);
-            println(" -- Created new OutputStream [" + rafb.offset + ", " 
-                    + (rafb.offset + rafb.len -1) + "]" );
+        public RAOutputStream(String pref) throws IOException {
+            raf = new RandomAccessFile(file, "rw");
+            raf.seek(offset + localOffset);
+            println(" -- Created new OutputStream [" + offset + ", " 
+                    + (offset + len -1) + "]" );
         }
     
         ////////////////////////////////////////////////////////////
         // OutputStream implementation
         public void write(int b) throws IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".write(b)");
                 checkValid();
                 int nAvailable = bytesLeft();
@@ -385,7 +368,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
     
         public void write(byte[] buf) throws IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".write(buf)");
                 checkValid();
                 int nAvailable = bytesLeft();
@@ -397,7 +380,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
     
         public void write(byte[] buf, int off, int len) throws IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".write(buf,off,len)");
                 checkValid();
                 int nAvailable = bytesLeft();
@@ -409,7 +392,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
     
         public void flush() throws IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".flush()");
                 checkValid();
                 // NOP? Bytes written immediately?
@@ -418,17 +401,17 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
     
         public void close() throws IOException {
-            synchronized (rafb) {
+            synchronized (RandomAccessFileBucket.this) {
                 println(".close()");
                 checkValid();
-                if (rafb.streams.contains(RAOutputStream.this)) {
-                    rafb.streams.removeElement(RAOutputStream.this);
+                if (streams.contains(RAOutputStream.this)) {
+                    streams.removeElement(RAOutputStream.this);
                 }
-		rafb.streams.trimToSize();
-                long added = raf.getFilePointer() - rafb.offset;
+                streams.trimToSize();
+                long added = raf.getFilePointer() - offset;
                 if (added > 0) {
                     // To get proper append behavior.
-                    rafb.localOffset = added;
+                    localOffset = added;
                 }
                 
                 raf.close();
@@ -443,19 +426,18 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         }
 
         private final void checkValid() throws IOException {
-			synchronized (rafb) {
-				if (rafb.isReleased()) {
+			synchronized (RandomAccessFileBucket.this) {
+				if (isReleased()) {
 					throw new IOException("Attempt to use a released RandomAccessFileBucket: " + prefix);
 				}
 			}
         }
         private final int bytesLeft() throws IOException {
-			synchronized (rafb) {
-				return (int)(rafb.offset + rafb.len - raf.getFilePointer());
+			synchronized (RandomAccessFileBucket.this) {
+				return (int)(offset + len - raf.getFilePointer());
 			}
         }
 
-        private RandomAccessFileBucket rafb = null;
         private RandomAccessFile raf = null;
         private String prefix = "";
 
@@ -470,7 +452,7 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
     	readOnly = true;
     }
 
-	public synchronized void free() {
+	public void free() {
 		release();
 	}
 
