@@ -946,9 +946,6 @@ public class Node {
 		
 		DiffieHellman.init(random);
 		
-		Thread t = new Thread(new MemoryChecker(), "Memory checker");
-		t.setPriority(Thread.MAX_PRIORITY);
-		t.start();
 		/*
 		SimpleToadletServer server = new SimpleToadletServer(port+2000);
 		FProxyToadlet fproxy = new FProxyToadlet(n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS));
@@ -989,6 +986,7 @@ public class Node {
 			}
 		};
 		Thread plug = new Thread(useless, "Plug");
+		// Don't setDaemon as this thread doesn't do anything, and we need one non-daemon thread to keep the JVM alive.
 		plug.start();
 		
 

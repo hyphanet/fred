@@ -130,6 +130,9 @@ public class NodeStarter
 			}
 		};
 		Thread plug = new Thread(useless, "Plug");
+		// Not daemon, but doesn't do anything.
+		// Keeps the JVM alive.
+		// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
 		plug.start();
 		
     	WrapperManager.signalStarting(500000);

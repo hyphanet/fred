@@ -38,6 +38,7 @@ public class PluginHandler {
 		
 		public PluginStarter(PluginRespirator pr) {
 			this.pr = pr;
+			setDaemon(true);
 		}
 		
 		public void setPlugin(PluginManager pm, Object plugin) {

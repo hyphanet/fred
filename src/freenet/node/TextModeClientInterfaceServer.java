@@ -240,9 +240,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 					new TextModeClientInterface(this, in, out);
     				
     				Thread t = new Thread(tmci, "Text mode client interface handler for "+s.getPort());
-    				
     				t.setDaemon(true);
-    				
     				t.start();
     				
     			} catch (SocketTimeoutException e) {

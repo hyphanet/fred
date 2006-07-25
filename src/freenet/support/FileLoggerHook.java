@@ -657,7 +657,7 @@ public class FileLoggerHook extends LoggerHook {
 		if(redirectStdErr)
 			System.setErr(new PrintStream(new OutputStreamLogger(Logger.ERROR, "Stderr: ")));
 		WriterThread wt = new WriterThread();
-		//wt.setDaemon(true);
+		wt.setDaemon(true);
 		CloserThread ct = new CloserThread();
 		Runtime.getRuntime().addShutdownHook(ct);
 		wt.start();

@@ -52,10 +52,6 @@ public class UdpSocketManager extends Thread {
 	// Icky layer violation, but we need to know the Node to work around the EvilJVMBug.
 	private final Node node;
 	
-	protected UdpSocketManager(Node node) {
-		this.node = node;
-	}
-
 	public void start() {
 		lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
 		setDaemon(true);
