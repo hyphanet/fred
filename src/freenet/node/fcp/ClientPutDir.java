@@ -13,12 +13,12 @@ import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
 import freenet.support.io.FileBucket;
+import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 
 public class ClientPutDir extends ClientPutBase implements ClientEventListener, ClientCallback {
 

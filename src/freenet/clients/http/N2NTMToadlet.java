@@ -10,10 +10,10 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.UdpSocketManager;
 import freenet.node.Node;
 import freenet.node.PeerNode;
-import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.io.Bucket;
 
 public class N2NTMToadlet extends Toadlet {
 

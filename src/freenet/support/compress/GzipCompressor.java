@@ -8,8 +8,8 @@ import java.io.OutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
 
 public class GzipCompressor extends Compressor {
 

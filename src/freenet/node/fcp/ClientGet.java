@@ -17,15 +17,15 @@ import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.NullBucket;
+import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 
 /**
  * A simple client fetch. This can of course fetch arbitrarily large

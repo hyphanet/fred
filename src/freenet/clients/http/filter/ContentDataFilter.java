@@ -3,8 +3,8 @@ package freenet.clients.http.filter;
 import java.io.IOException;
 import java.util.HashMap;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
 
 /**
  * Data filter for a specific MIME type.

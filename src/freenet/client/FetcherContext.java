@@ -4,7 +4,7 @@ import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
-import freenet.support.BucketFactory;
+import freenet.support.io.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
 public class FetcherContext implements Cloneable {

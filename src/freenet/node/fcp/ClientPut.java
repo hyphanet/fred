@@ -9,13 +9,13 @@ import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
+import freenet.support.io.Bucket;
 import freenet.support.io.FileBucket;
+import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 
 public class ClientPut extends ClientPutBase {
 

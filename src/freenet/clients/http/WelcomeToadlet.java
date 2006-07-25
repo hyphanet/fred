@@ -16,9 +16,9 @@ import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
-import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.io.Bucket;
 
 public class WelcomeToadlet extends Toadlet {
 	private final static int MODE_ADD = 1;

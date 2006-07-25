@@ -16,9 +16,9 @@ import freenet.keys.InsertableClientSSK;
 import freenet.keys.SSKEncodeException;
 import freenet.node.LowLevelPutException;
 import freenet.node.Node;
-import freenet.support.Bucket;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
 
 /**
  * Insert *ONE KEY*.

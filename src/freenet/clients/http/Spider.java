@@ -35,10 +35,10 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.PluginManager;
-import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.io.Bucket;
 
 /**
  * Spider. Produces an index.

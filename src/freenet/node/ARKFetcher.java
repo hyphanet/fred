@@ -11,9 +11,9 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.support.ArrayBucket;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.ArrayBucket;
 
 /**
  * Fetch an ARK. Permanent, tied to a PeerNode, stops itself after a successful fetch.

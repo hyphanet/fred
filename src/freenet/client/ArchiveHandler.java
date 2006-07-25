@@ -1,6 +1,6 @@
 package freenet.client;
 
-import freenet.support.Bucket;
+import freenet.support.io.Bucket;
 
 /**
  * The public face (to Fetcher, for example) of ArchiveStoreContext.

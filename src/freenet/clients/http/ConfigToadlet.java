@@ -9,11 +9,11 @@ import freenet.config.Config;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.node.Node;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 
 
 // FIXME: add logging, comments

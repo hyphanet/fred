@@ -11,9 +11,9 @@ import freenet.node.Node;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.Plugin;
 import freenet.plugin.PluginManager;
-import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.MultiValueTable;
+import freenet.support.io.Bucket;
 
 /**
  * Toadlet for the plugin manager.
@@ -98,7 +98,7 @@ public class PluginToadlet extends Toadlet {
 	}
 	
 	/**
-	 * @see freenet.clients.http.Toadlet#handlePost(java.net.URI, freenet.support.Bucket, freenet.clients.http.ToadletContext)
+	 * @see freenet.clients.http.Toadlet#handlePost(java.net.URI, freenet.support.io.Bucket, freenet.clients.http.ToadletContext)
 	 */
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		HTTPRequest httpRequest = new HTTPRequest(uri, data, ctx);

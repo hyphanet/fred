@@ -2,7 +2,7 @@ package freenet.clients.http.filter;
 
 import java.io.IOException;
 
-import freenet.support.Bucket;
+import freenet.support.io.Bucket;
 
 /**
  * For a specific text/-based MIME type, extracts the charset if

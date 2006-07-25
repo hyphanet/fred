@@ -1,4 +1,4 @@
-package freenet.support;
+package freenet.support.io;
 
 import java.io.EOFException;
 import java.io.File;
@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+
 
 /**
  * FIXME: implement a hash verifying version of this.

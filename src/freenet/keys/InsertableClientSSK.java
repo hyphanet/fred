@@ -20,7 +20,7 @@ import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
-import freenet.support.Bucket;
+import freenet.support.io.Bucket;
 
 public class InsertableClientSSK extends ClientSSK {
 

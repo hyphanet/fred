@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.HashMap;
 
-import freenet.support.BucketFactory;
 import freenet.support.Logger;
+import freenet.support.io.BucketFactory;
 
 public class FCPConnectionHandler {
 

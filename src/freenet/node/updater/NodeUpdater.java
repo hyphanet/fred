@@ -31,8 +31,8 @@ import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.node.useralerts.RevocationKeyFoundUserAlert;
 import freenet.node.useralerts.UpdatedVersionAvailableUserAlert;
-import freenet.support.ArrayBucket;
 import freenet.support.Logger;
+import freenet.support.io.ArrayBucket;
 
 public class NodeUpdater implements ClientCallback, USKCallback {
 	private FetcherContext ctx;

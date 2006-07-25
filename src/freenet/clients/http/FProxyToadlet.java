@@ -25,13 +25,13 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
-import freenet.support.Bucket;
 import freenet.support.HTMLEncoder;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
+import freenet.support.io.Bucket;
 
 public class FProxyToadlet extends Toadlet {
 	

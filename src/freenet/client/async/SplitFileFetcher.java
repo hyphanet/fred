@@ -12,11 +12,11 @@ import freenet.client.FetcherContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
+import freenet.support.io.Bucket;
 
 /**
  * Fetch a splitfile, decompress it if need be, and return it to the GetCompletionCallback.

@@ -9,9 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import freenet.crypt.RandomSource;
-import freenet.support.Bucket;
 import freenet.support.Logger;
-import freenet.support.ReadOnlyFileSliceBucket;
 import freenet.support.SimpleFieldSet;
 
 /**

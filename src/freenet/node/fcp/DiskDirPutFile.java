@@ -3,8 +3,8 @@ package freenet.node.fcp;
 import java.io.File;
 
 import freenet.client.DefaultMIMETypes;
-import freenet.support.Bucket;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
 import freenet.support.io.FileBucket;
 
 public class DiskDirPutFile extends DirPutFile {

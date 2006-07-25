@@ -1,8 +1,8 @@
 package freenet.node.fcp;
 
 import freenet.node.Node;
-import freenet.support.Bucket;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
 
 /**
  * All the data, all in one big chunk. Obviously we must already have

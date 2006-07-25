@@ -10,11 +10,11 @@ import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.FECCodeFactory;
 import com.onionnetworks.util.Buffer;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
+import freenet.support.io.BucketTools;
 
 /**
  * FECCodec implementation using the onion code.

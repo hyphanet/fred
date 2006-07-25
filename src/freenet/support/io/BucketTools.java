@@ -1,4 +1,4 @@
-package freenet.support;
+package freenet.support.io;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -15,7 +15,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-import freenet.support.io.FileBucket;
+import freenet.support.Logger;
 
 /**
  * Helper functions for working with Buckets.

@@ -1,4 +1,4 @@
-package freenet.support;
+package freenet.support.io;
 import java.io.*;
 /**
  * A bucket is any arbitrary object can temporarily store data.

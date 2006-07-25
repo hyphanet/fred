@@ -21,9 +21,9 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 
 public class SimpleManifestPutter extends BaseClientPutter implements PutCompletionCallback {
 	// Only implements PutCompletionCallback for the final metadata insert

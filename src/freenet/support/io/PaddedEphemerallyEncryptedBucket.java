@@ -1,4 +1,4 @@
-package freenet.support;
+package freenet.support.io;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,10 +10,9 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
-import freenet.support.io.CannotCreateFromFieldSetException;
-import freenet.support.io.PersistentFileTracker;
-import freenet.support.io.SerializableToFieldSetBucket;
-import freenet.support.io.SerializableToFieldSetBucketUtil;
+import freenet.support.HexUtil;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * A proxy Bucket which adds:

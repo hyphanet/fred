@@ -13,11 +13,11 @@ import freenet.node.Node;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 
 public class PproxyToadlet extends Toadlet {
 	private final PluginManager pm;

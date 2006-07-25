@@ -2,8 +2,8 @@ package freenet.client;
 
 import java.io.IOException;
 
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 
 /**
  * Class to contain the result of a key fetch.

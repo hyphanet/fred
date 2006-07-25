@@ -11,11 +11,11 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.TimeZone;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
+import freenet.support.io.BucketTools;
 import freenet.support.io.LineReadingInputStream;
 import freenet.support.io.TooLongException;
 

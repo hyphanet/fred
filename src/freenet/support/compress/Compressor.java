@@ -3,8 +3,8 @@ package freenet.support.compress;
 import java.io.IOException;
 
 import freenet.client.Metadata;
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
 
 /**
  * A data compressor. Contains methods to get all data compressors.

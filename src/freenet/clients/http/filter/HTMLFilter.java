@@ -22,11 +22,11 @@ import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
 import freenet.support.io.NullBucket;
 import freenet.support.io.NullWriter;
 

@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
+import freenet.support.io.BucketTools;
 
 /**
  * Specialized DirPutFile for direct uploads.

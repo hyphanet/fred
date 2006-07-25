@@ -12,13 +12,13 @@ import java.util.zip.ZipInputStream;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
-import freenet.support.PaddedEphemerallyEncryptedBucket;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FilenameGenerator;
+import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 
 /**
  * Cache of recently decoded archives:

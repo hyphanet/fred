@@ -5,9 +5,9 @@ import java.net.MalformedURLException;
 import freenet.client.ClientMetadata;
 import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
 
 public class RedirectDirPutFile extends DirPutFile {
 

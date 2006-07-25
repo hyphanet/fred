@@ -15,12 +15,12 @@ import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 
 /**
  * Attempt to insert a file. May include metadata.

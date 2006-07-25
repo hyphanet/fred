@@ -2,8 +2,6 @@ package freenet.support.io;
 
 import java.io.IOException;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 
 public class PersistentEncryptedTempBucketFactory implements BucketFactory {
 

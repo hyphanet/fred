@@ -2,7 +2,6 @@ package freenet.support.io;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import freenet.support.Bucket;
 import freenet.support.SimpleFieldSet;
 
 public class NullBucket implements Bucket, SerializableToFieldSetBucket {

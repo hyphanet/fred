@@ -8,10 +8,10 @@ import java.util.HashMap;
 
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
-import freenet.support.BucketFactory;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.BucketFactory;
 import freenet.support.io.FileBucket;
 
 /**

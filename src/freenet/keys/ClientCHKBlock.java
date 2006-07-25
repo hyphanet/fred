@@ -13,11 +13,11 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
 import freenet.node.Node;
-import freenet.support.ArrayBucket;
-import freenet.support.ArrayBucketFactory;
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
+import freenet.support.io.ArrayBucket;
+import freenet.support.io.ArrayBucketFactory;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
+import freenet.support.io.BucketTools;
 
 /**
  * @author amphibian

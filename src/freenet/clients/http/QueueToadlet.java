@@ -17,13 +17,13 @@ import freenet.node.fcp.ClientRequest;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.node.Node;
-import freenet.support.Bucket;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
+import freenet.support.io.Bucket;
 
 public class QueueToadlet extends Toadlet {
 

@@ -1,7 +1,7 @@
 package freenet.client.async;
 
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
+import freenet.support.io.Bucket;
 
 /**
  * Represents an element in a manifest. Fed to SimpleManifestPutter.

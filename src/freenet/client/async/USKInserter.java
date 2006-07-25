@@ -11,10 +11,10 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableUSK;
 import freenet.keys.USK;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 
 /**
  * Insert a USK. The algorithm is simply to do a thorough search for the latest edition, and insert at the

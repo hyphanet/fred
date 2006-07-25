@@ -1,5 +1,5 @@
 // REDFLAG: test and javadoc
-package freenet.support;
+package freenet.support.io;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,9 +8,8 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.Vector;
 
-import freenet.support.io.CannotCreateFromFieldSetException;
-import freenet.support.io.PersistentFileTracker;
-import freenet.support.io.SerializableToFieldSetBucket;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * Bucket implementation that can efficiently access any arbitrary byte-range

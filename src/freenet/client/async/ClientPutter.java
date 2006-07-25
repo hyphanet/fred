@@ -8,9 +8,9 @@ import freenet.client.Metadata;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
 
 public class ClientPutter extends BaseClientPutter implements PutCompletionCallback {
 

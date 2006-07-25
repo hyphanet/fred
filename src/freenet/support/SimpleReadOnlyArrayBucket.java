@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import freenet.support.io.Bucket;
+
 /**
  * Simple read-only array bucket. Just an adapter class to save some RAM.
  * Not the same as ArrayBucket, which can't take a (byte[], offset, len) in

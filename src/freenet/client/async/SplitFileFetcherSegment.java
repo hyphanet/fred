@@ -14,9 +14,9 @@ import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 
 /**
  * A single segment within a SplitFileFetcher.

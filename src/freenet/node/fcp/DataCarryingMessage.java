@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
+import freenet.support.io.BucketTools;
 
 
 public abstract class DataCarryingMessage extends BaseDataCarryingMessage {

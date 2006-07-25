@@ -2,9 +2,9 @@ package freenet.clients.http;
 
 import java.io.IOException;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 import freenet.support.MultiValueTable;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
 
 /**
  * Object represents context for a single request. Is used as a token,

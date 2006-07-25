@@ -9,9 +9,9 @@ import java.util.LinkedList;
 
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
-import freenet.support.BucketFactory;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.BucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 
 /**

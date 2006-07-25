@@ -1,9 +1,6 @@
 package freenet.support.io;
 
 import freenet.crypt.RandomSource;
-import freenet.support.Bucket;
-import freenet.support.PaddedEphemerallyEncryptedBucket;
-import freenet.support.RandomAccessFileBucket;
 import freenet.support.SimpleFieldSet;
 
 public class SerializableToFieldSetBucketUtil {

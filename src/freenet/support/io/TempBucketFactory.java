@@ -3,8 +3,6 @@ package freenet.support.io;
 import java.io.File;
 import java.io.IOException;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 import freenet.support.Logger;
 
 /*

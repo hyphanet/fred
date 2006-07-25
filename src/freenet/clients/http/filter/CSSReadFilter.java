@@ -12,10 +12,10 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.HashMap;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
 import freenet.support.io.NullWriter;
 
 public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {

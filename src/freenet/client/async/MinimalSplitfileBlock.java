@@ -1,7 +1,7 @@
 package freenet.client.async;
 
 import freenet.client.SplitfileBlock;
-import freenet.support.Bucket;
+import freenet.support.io.Bucket;
 
 public class MinimalSplitfileBlock implements SplitfileBlock {
 

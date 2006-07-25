@@ -6,10 +6,10 @@ import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.support.Bucket;
-import freenet.support.PaddedEphemerallyEncryptedBucket;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
 import freenet.support.io.FileBucket;
+import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 
 public class PersistentPutDir extends FCPMessage {
 

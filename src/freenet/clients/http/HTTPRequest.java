@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
-import freenet.support.BucketTools;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
+import freenet.support.io.BucketTools;
 import freenet.support.io.LineReadingInputStream;
 
 /**

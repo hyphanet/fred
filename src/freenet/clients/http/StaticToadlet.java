@@ -7,7 +7,7 @@ import java.net.URI;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
-import freenet.support.Bucket;
+import freenet.support.io.Bucket;
 
 /**
  * Static Toadlet.

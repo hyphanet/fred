@@ -3,10 +3,10 @@ package freenet.node.fcp;
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ManifestElement;
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
 
 /**
  * A request to upload a file to a manifest.

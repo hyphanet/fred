@@ -1,7 +1,7 @@
 package freenet.client;
 
-import freenet.support.Bucket;
 import freenet.support.DoublyLinkedListImpl;
+import freenet.support.io.Bucket;
 
 /**
  * Base class for items stored in the archive cache.

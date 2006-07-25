@@ -7,10 +7,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import freenet.crypt.RandomSource;
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 import freenet.support.Logger;
-import freenet.support.PaddedEphemerallyEncryptedBucket;
 
 /**
  * Handles persistent temp files. These are used for e.g. persistent downloads.

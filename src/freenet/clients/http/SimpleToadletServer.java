@@ -26,10 +26,10 @@ import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.NetworkInterface;
 import freenet.node.Node;
-import freenet.support.BucketFactory;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.FileLoggerHook.IntervalParseException;
+import freenet.support.io.BucketFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.TempBucketFactory;
 

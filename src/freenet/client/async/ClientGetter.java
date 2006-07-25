@@ -10,9 +10,9 @@ import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.FreenetURI;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.Logger;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 
 /**
  * A high level data request.

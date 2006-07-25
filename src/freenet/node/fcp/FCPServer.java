@@ -35,8 +35,8 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
-import freenet.support.Bucket;
 import freenet.support.Logger;
+import freenet.support.io.Bucket;
 
 /**
  * FCP server process.

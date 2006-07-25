@@ -7,10 +7,10 @@ import java.net.MalformedURLException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
-import freenet.support.Bucket;
-import freenet.support.BucketFactory;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
 import freenet.support.io.FileBucket;
 
 /**

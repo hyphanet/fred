@@ -32,12 +32,12 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
-import freenet.support.ArrayBucket;
-import freenet.support.Bucket;
-import freenet.support.BucketTools;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.ArrayBucket;
+import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
 /**
