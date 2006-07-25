@@ -115,7 +115,7 @@ public class ClientPut extends ClientPutBase {
 			targetURI = null;
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
 			origFilename = null;
-			if(!succeeded) {
+			if(!finished) {
 				byte[] key = HexUtil.hexToBytes(fs.get("TempBucket.DecryptKey"));
 				String fnam = fs.get("TempBucket.Filename");
 				long sz = Long.parseLong(fs.get("TempBucket.Size"));
@@ -180,12 +180,14 @@ public class ClientPut extends ClientPutBase {
 		fs.put("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			fs.put("Filename", origFilename.getPath());
-		}  else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
-			// the bucket is a persistent encrypted temp bucket
-			PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) data;
-			fs.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
-			fs.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
-			fs.put("TempBucket.Size", Long.toString(bucket.size()));
+		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DIRECT) {
+			if(!finished) {
+				// the bucket is a persistent encrypted temp bucket
+				PaddedEphemerallyEncryptedBucket bucket = (PaddedEphemerallyEncryptedBucket) data;
+				fs.put("TempBucket.DecryptKey", HexUtil.bytesToHex(bucket.getKey()));
+				fs.put("TempBucket.Filename", ((FileBucket)(bucket.getUnderlying())).getName());
+				fs.put("TempBucket.Size", Long.toString(bucket.size()));
+			}
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			fs.put("TargetURI", targetURI.toString());
 		}

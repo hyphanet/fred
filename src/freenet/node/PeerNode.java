@@ -752,7 +752,7 @@ public class PeerNode implements PeerContext {
     public boolean isConnected(){
     	long now = System.currentTimeMillis();
     	synchronized(this) {
-	    	if( isConnected ) {
+	    	if( isConnected && currentTracker != null ) {
     			timeLastConnected = now;
     			return true;
     		}
@@ -1243,13 +1243,14 @@ public class PeerNode implements PeerContext {
 		} catch (FSParseException e1) {
 			synchronized(this) {
 				bogusNoderef = true;
+				// Disconnect, something broke
+				isConnected = false;
 			}
 			Logger.error(this, "Failed to parse new noderef for "+this+": "+e1, e1);
-			// Treat as invalid version
 		}
-    	synchronized(this) {
-        	isRoutable = true;
-        }
+		boolean routable = true;
+		boolean newer = false;
+		boolean older = false;
 		if(reverseInvalidVersion()) {
 			try {
 				node.setNewestPeerLastGoodVersion(Version.getArbitraryBuildNumber(getLastGoodVersion()));
@@ -1257,68 +1258,45 @@ public class PeerNode implements PeerContext {
 				// ignore
 			}
 			Logger.normal(this, "Not connecting to "+this+" - reverse invalid version "+Version.getVersionString()+" for peer's lastGoodversion: "+getLastGoodVersion());
-	    	synchronized(this) {
-				verifiedIncompatibleNewerVersion = true;
-				isRoutable = false;
-			}
-			node.peers.disconnected(this);
+			newer = true;
 		} else {
-	    	synchronized(this) {
-				verifiedIncompatibleNewerVersion = false;
-			}
+			newer = false;
 		}
 		if(invalidVersion()) {
 			Logger.normal(this, "Not connecting to "+this+" - invalid version "+getVersion());
-	    	synchronized(this) {
-				verifiedIncompatibleOlderVersion = true;
-				isRoutable = false;
-			}
-			node.peers.disconnected(this);
+			older = true;
+			routable = false;
 		} else {
-	    	synchronized(this) {
-				verifiedIncompatibleOlderVersion = false;
-			}
+			older = false;
 		}
-		setPeerNodeStatus(now);
+    	synchronized(this) {
+    		isRoutable = routable;
+    		verifiedIncompatibleNewerVersion = newer;
+    		verifiedIncompatibleOlderVersion = older;
+        }
 		KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
 		changedIP(replyTo);
 		boolean bootIDChanged = false;
     	synchronized(this) {
 			bootIDChanged = (thisBootID != this.bootID);
+			if(bootIDChanged)
+				Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
 			this.bootID = thisBootID;
+			connectedTime = now;
 		}
 		if(bootIDChanged) {
-	    	synchronized(this) {
-				connectedTime = now;
-				Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
-			}
-			boolean previousTrackerIsNull = true;
+			KeyTracker oldPrev = null;
+			KeyTracker oldCur = null;
 			synchronized(this) {
-				previousTrackerIsNull = (previousTracker == null);
+				oldPrev = previousTracker;
+				oldCur = currentTracker;
+				previousTracker = currentTracker = null;
 			}
-			if(!previousTrackerIsNull) {
-				KeyTracker old = null;
-				synchronized(this) {
-					old = previousTracker;
-					previousTracker = null;
-				}
-				old.completelyDeprecated(newTracker);
+			if(oldPrev != null) {
+				oldPrev.completelyDeprecated(newTracker);
 			}
-			synchronized(this) {
-				previousTracker = null;
-			}
-			boolean currentTrackerIsNull = true;
-			synchronized(this) {
-				currentTrackerIsNull = (currentTracker == null);
-			}
-			if(!currentTrackerIsNull) {
-				KeyTracker old = null;
-				synchronized(this) {
-					old = currentTracker;
-					currentTracker = null;
-				}
-				old.completelyDeprecated(newTracker);
-			}
+			if(oldCur != null)
+				oldCur.completelyDeprecated(newTracker);
 			node.lm.lostOrRestartedNode(this);
 		} // else it's a rekey
 		
@@ -1330,33 +1308,20 @@ public class PeerNode implements PeerContext {
 			Logger.minor(this, "sentHandshake() being called for unverifiedTracker: "+getPeer());
 			sentHandshake();
 		} else {
+			KeyTracker prev;
 			synchronized(this) {
-				previousTracker = currentTracker;
+				prev = currentTracker;
+				previousTracker = prev;
 				currentTracker = newTracker;
 				unverifiedTracker = null;
-			}
-			boolean previousTrackerIsNull = true;
-			synchronized(this) {
-				previousTrackerIsNull = (previousTracker == null);
-			}
-			if(!previousTrackerIsNull) {
-				KeyTracker localPreviousTracker = null;
-				synchronized(this) {
-					localPreviousTracker = previousTracker;
-				}
-				localPreviousTracker.deprecated();
-			}
-			synchronized(this) {
 				neverConnected = false;
 				peerAddedTime = 0;  // don't store anymore
-			}
-			setPeerNodeStatus(now);
-			synchronized(this) {
 				ctx = null;
 			}
+			if(prev != null)
+				prev.deprecated();
+			setPeerNodeStatus(now);
 		}
-		if(!isConnected())
-			node.peers.disconnected(this);
 		synchronized(this) {
 			Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
 		}
@@ -1366,9 +1331,11 @@ public class PeerNode implements PeerContext {
 			Logger.error(this, "Disconnected in completedHandshake with "+this);
 			return true; // i suppose
 		}
-		if(isConnected()) {
-			node.peers.addConnectedPeer(this);
-		}
+    	if(newer || older || !isConnected())
+    		node.peers.disconnected(this);
+    	else 
+    		node.peers.addConnectedPeer(this);
+		setPeerNodeStatus(now);
 		synchronized(this) {
 			sentInitialMessages = false;
 		}
@@ -1401,7 +1368,7 @@ public class PeerNode implements PeerContext {
         		 sendAsync(locMsg, null, 0, null);
             sendAsync(ipMsg, null, 0, null);
         } catch (NotConnectedException e) {
-            Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected!!!", new Exception("error"));
+            Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected ("+isConnected+":"+currentTracker+"!!!: "+e, e);
         }
     }
 

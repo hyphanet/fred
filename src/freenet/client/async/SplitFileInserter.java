@@ -227,7 +227,6 @@ public class SplitFileInserter implements ClientPutState {
 	
 	public void segmentHasURIs(SplitFileInserterSegment segment) {
 		if(haveSentMetadata) {
-			Logger.error(this, "WTF? Already sent metadata");
 			return;
 		}
 		

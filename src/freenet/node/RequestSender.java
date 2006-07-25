@@ -74,7 +74,12 @@ public final class RequestSender implements Runnable, ByteCounter {
     public String toString() {
         return super.toString()+" for "+uid;
     }
-    
+
+    /**
+     * RequestSender constructor.
+     * @param key The key to request. Its public key should have been looked up
+     * already; RequestSender will not look it up.
+     */
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n, double nearestLoc, 
             PeerNode source) {
         this.key = key;
@@ -85,6 +90,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         this.source = source;
         this.nearestLoc = nearestLoc;
         target = key.toNormalizedDouble();
+        node.addRequestSender(key, htl, this);
     }
 
     public void start() {
@@ -96,12 +102,9 @@ public final class RequestSender implements Runnable, ByteCounter {
     public void run() {
         if((key instanceof NodeSSK) && (pubKey == null)) {
         	pubKey = ((NodeSSK)key).getPubKey();
-        	if(pubKey == null)
-        		pubKey = node.getKey(((NodeSSK)key).getPubKeyHash());
         }
         
         short origHTL = htl;
-        node.addRequestSender(key, htl, this);
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
         try {

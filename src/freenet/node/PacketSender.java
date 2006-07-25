@@ -163,7 +163,7 @@ public class PacketSender implements Runnable {
             	
                 // Is the node dead?
                 if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
-                	Logger.error(this, "Disconnecting from "+pn+" - haven't received packets recently");
+                	Logger.normal(this, "Disconnecting from "+pn+" - haven't received packets recently");
                     pn.disconnected();
                     continue;
                 }

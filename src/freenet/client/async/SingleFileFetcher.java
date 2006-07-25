@@ -303,8 +303,6 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				} catch (MalformedURLException e) {
 					throw new FetchException(FetchException.INVALID_URI, e);
 				}
-				if((key instanceof ClientCHK) && !((ClientCHK)key).isMetadata())
-					rcb.onBlockSetFinished(this);
 				LinkedList newMetaStrings = uri.listMetaStrings();
 				
 				// Move any new meta strings to beginning of our list of remaining meta strings
@@ -315,6 +313,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 
 				// **FIXME** Is key in the call to SingleFileFetcher here supposed to be this.key or the same key used in the try block above?  MultiLevelMetadataCallback.onSuccess() below uses this.key, thus the question
 				SingleFileFetcher f = new SingleFileFetcher((ClientGetter)parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, null, true, returnBucket);
+				if((key instanceof ClientCHK) && !((ClientCHK)key).isMetadata())
+					rcb.onBlockSetFinished(this);
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
 					f.addDecompressor(codec);
