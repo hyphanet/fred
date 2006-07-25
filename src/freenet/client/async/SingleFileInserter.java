@@ -287,27 +287,36 @@ class SingleFileInserter implements ClientPutState {
 		 */
 		void start(SimpleFieldSet fs) throws ResumeException, InserterException {
 			
-			// FIXME: Include the booleans?
+			// Don't include the booleans; wait for the callback.
 			
 			SimpleFieldSet sfiFS = fs.subset("SplitFileInserter");
 			if(sfiFS == null)
 				throw new ResumeException("No SplitFileInserter");
-			sfi = new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, sfiFS);
+			ClientPutState newSFI, newMetaPutter = null;
+			newSFI = new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, sfiFS);
 			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
 			if(metaFS != null) {
-				String type = metaFS.get("Type");
-				if(type.equals("SplitFileInserter")) {
-					metadataPutter = 
-						new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, metaFS);
-				} else if(type.equals("SplitHandler")) {
-					metadataPutter = new SplitHandler();
-					((SplitHandler)metadataPutter).start(metaFS);
+				try {
+					String type = metaFS.get("Type");
+					if(type.equals("SplitFileInserter")) {
+						newMetaPutter = 
+							new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, metaFS);
+					} else if(type.equals("SplitHandler")) {
+						newMetaPutter = new SplitHandler();
+						((SplitHandler)metadataPutter).start(metaFS);
+					}
+				} catch (ResumeException e) {
+					// Ignore, it will be reconstructed later
 				}
 			}
+			synchronized(this) {
+				sfi = newSFI;
+				metadataPutter = newMetaPutter;
+			}
 			
-			sfi.schedule();
-			if(metadataPutter != null) {
-				metadataPutter.schedule();
+			newSFI.schedule();
+			if(newMetaPutter != null) {
+				newMetaPutter.schedule();
 			}
 		}
 
@@ -344,65 +353,89 @@ class SingleFileInserter implements ClientPutState {
 			cb.onSuccess(this);
 		}
 
-		public synchronized void onFailure(InserterException e, ClientPutState state) {
-			if(finished) return;
+		public void onFailure(InserterException e, ClientPutState state) {
+			synchronized(this) {
+				if(finished) return;
+			}
 			fail(e);
 		}
 
-		public synchronized void onMetadata(Metadata meta, ClientPutState state) {
-			if(finished) return;
-			if(state == metadataPutter) {
-				Logger.error(this, "Got metadata for metadata");
-				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null), state);
-			} else if(state != sfi) {
-				Logger.error(this, "Got unknown metadata");
-				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null), state);
+		public void onMetadata(Metadata meta, ClientPutState state) {
+			InserterException e = null;
+			synchronized(this) {
+				if(finished) return;
+				if(reportMetadataOnly) {
+					if(state != sfi) {
+						Logger.error(this, "Got metadata from unknown object "+state+" when expecting to report metadata");
+						return;
+					}
+					metaInsertSuccess = true;
+				} else if(state == metadataPutter) {
+					Logger.error(this, "Got metadata for metadata");
+					e = new InserterException(InserterException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null);
+				} else if(state != sfi) {
+					Logger.error(this, "Got metadata from unknown state "+state);
+					e = new InserterException(InserterException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null);
+				} else {
+					// Already started metadata putter ? (in which case we've got the metadata twice)
+					if(metadataPutter != null) return;
+				}
 			}
 			if(reportMetadataOnly) {
 				cb.onMetadata(meta, this);
-				metaInsertSuccess = true;
-			} else {
-				if(metadataPutter != null)
-					return;
-				Bucket metadataBucket;
-				try {
-					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
-				} catch (IOException e) {
-					InserterException ex = new InserterException(InserterException.BUCKET_ERROR, e, null);
-					fail(ex);
-					return;
-				} catch (MetadataUnresolvedException e) {
-					Logger.error(this, "Impossible: "+e, e);
-					InserterException ex = new InserterException(InserterException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e, null);
-					ex.initCause(e);
-					fail(ex);
-					return;
-				}
-				InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
-				try {
+				return;
+			}
+			if(e != null) {
+				onFailure(e, state);
+				return;
+			}
+			Bucket metadataBucket;
+			try {
+				metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
+			} catch (IOException e1) {
+				InserterException ex = new InserterException(InserterException.BUCKET_ERROR, e1, null);
+				fail(ex);
+				return;
+			} catch (MetadataUnresolvedException e1) {
+				Logger.error(this, "Impossible: "+e, e);
+				InserterException ex = new InserterException(InserterException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null);
+				ex.initCause(e1);
+				fail(ex);
+				return;
+			}
+			InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
+			try {
+				synchronized(this) {
 					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false);
-					Logger.minor(this, "Putting metadata on "+metadataPutter);
-				} catch (InserterException e) {
-					cb.onFailure(e, this);
-					return;
 				}
+				Logger.minor(this, "Putting metadata on "+metadataPutter);
+			} catch (InserterException e1) {
+				cb.onFailure(e1, this);
+				return;
+			}
 
-				try {
-					((SingleFileInserter)metadataPutter).start(null);
-				} catch (InserterException e) {
-					fail(e);
-					return;
-				}
+			try {
+				((SingleFileInserter)metadataPutter).start(null);
+			} catch (InserterException e1) {
+				fail(e1);
+				return;
 			}
 		}
 
-		private synchronized void fail(InserterException e) {
+		private void fail(InserterException e) {
 			Logger.minor(this, "Failing: "+e, e);
-			if(finished) return;
-			if(sfi != null)
-				sfi.cancel();
-			if(metadataPutter != null)
-				metadataPutter.cancel();
+			ClientPutState oldSFI = null;
+			ClientPutState oldMetadataPutter = null;
+			synchronized(this) {
+				if(finished) return;
+				finished = true;
+				oldSFI = sfi;
+				oldMetadataPutter = metadataPutter;
+			}
+			if(oldSFI != null)
+				oldSFI.cancel();
+			if(oldMetadataPutter != null)
+				oldMetadataPutter.cancel();
 			finished = true;
 			cb.onFailure(e, this);
 		}
@@ -411,16 +444,24 @@ class SingleFileInserter implements ClientPutState {
 			return parent;
 		}
 
-		public synchronized void onEncode(BaseClientKey key, ClientPutState state) {
-			if(state == metadataPutter)
-				cb.onEncode(key, this);
+		public void onEncode(BaseClientKey key, ClientPutState state) {
+			synchronized(this) {
+				if(state != metadataPutter) return;
+			}
+			cb.onEncode(key, this);
 		}
 
-		public synchronized void cancel() {
-			if(sfi != null)
-				sfi.cancel();
-			if(metadataPutter != null)
-				metadataPutter.cancel();
+		public void cancel() {
+			ClientPutState oldSFI = null;
+			ClientPutState oldMetadataPutter = null;
+			synchronized(this) {
+				oldSFI = sfi;
+				oldMetadataPutter = metadataPutter;
+			}
+			if(oldSFI != null)
+				oldSFI.cancel();
+			if(oldMetadataPutter != null)
+				oldMetadataPutter.cancel();
 		}
 
 		public void onBlockSetFinished(ClientPutState state) {
@@ -444,11 +485,17 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public synchronized SimpleFieldSet getProgressFieldset() {
+			ClientPutState curSFI;
+			ClientPutState curMetadataPutter;
+			synchronized(this) {
+				curSFI = sfi;
+				curMetadataPutter = metadataPutter;
+			}
 			SimpleFieldSet fs = new SimpleFieldSet(true);
 			fs.put("Type", "SplitHandler");
-			if(sfi != null)
-				fs.put("SplitFileInserter", sfi.getProgressFieldset());
-			if(metadataPutter != null)
+			if(curSFI != null)
+				fs.put("SplitFileInserter", curSFI.getProgressFieldset());
+			if(curMetadataPutter != null)
 				fs.put("MetadataPutter", metadataPutter.getProgressFieldset());
 			return fs;
 		}

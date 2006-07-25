@@ -98,15 +98,18 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		}
 	}
 
-	protected synchronized ClientKeyBlock encode() throws InserterException {
-		if(refToClientKeyBlock != null) {
-			ClientKeyBlock block = (ClientKeyBlock) refToClientKeyBlock.get();
-			if(block != null) return block;
+	protected ClientKeyBlock encode() throws InserterException {
+		ClientKeyBlock block;
+		synchronized(this) {
+			if(refToClientKeyBlock != null) {
+				block = (ClientKeyBlock) refToClientKeyBlock.get();
+				if(block != null) return block;
+			}
+			block = innerEncode();
+			refToClientKeyBlock = 
+				new WeakReference(block);
+			resultingURI = block.getClientKey().getURI();
 		}
-		ClientKeyBlock block = innerEncode();
-		refToClientKeyBlock = 
-			new WeakReference(block);
-		resultingURI = block.getClientKey().getURI();
 		if(!dontSendEncoded)
 			cb.onEncode(block.getClientKey(), this);
 		return block;
@@ -193,8 +196,8 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		try {
 			synchronized (this) {
 				if(finished) return null;
-				return encode();				
 			}
+			return encode();				
 		} catch (InserterException e) {
 			cb.onFailure(e, this);
 			return null;
@@ -205,8 +208,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		}
 	}
 
-	public synchronized void schedule() throws InserterException {
-		if(finished) return;
+	public void schedule() throws InserterException {
+		synchronized(this) {
+			if(finished) return;
+		}
 		if(getCHKOnly) {
 			ClientKeyBlock block = encode();
 			cb.onEncode(block.getClientKey(), this);
@@ -226,10 +231,16 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		else throw new IllegalArgumentException();
 	}
 
-	public synchronized FreenetURI getURI() {
-		if(resultingURI == null)
-			getBlock();
-		return resultingURI;
+	public FreenetURI getURI() {
+		synchronized(this) {
+			if(resultingURI != null)
+				return resultingURI;
+		}
+		getBlock();
+		synchronized(this) {
+			// FIXME not really necessary? resultingURI is never dropped, only set.
+			return resultingURI;
+		}
 	}
 
 	public void onSuccess() {
