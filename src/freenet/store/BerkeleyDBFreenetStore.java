@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Vector;
 
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
@@ -66,8 +67,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final Object chkBlocksInStoreLock = new Object();
 	private long maxChkBlocks;
 	private final Database chkDB;
-	private final Database chkDB_accessTime;
-	private final Database chkDB_blockNum;
+	private final SecondaryDatabase chkDB_accessTime;
+	private final SecondaryDatabase chkDB_blockNum;
 	private final RandomAccessFile chkStore;
 	private final SortedLongSet freeBlocks;
 	
@@ -204,7 +205,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Logger.minor(this, "Keys in store: "+chkBlocksInStore);
 		System.out.println("Keys in store: "+chkBlocksInStore+" / "+maxChkBlocks);
 
-		maybeShrink(true);
+		maybeShrink(true, true);
 		
 //		 Add shutdownhook
 		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
@@ -232,7 +233,147 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Checked database, found "+holes+" holes");
 	}
 
-	private void maybeShrink(boolean dontCheck) throws DatabaseException, IOException {
+	private void maybeShrink(boolean dontCheck, boolean offline) throws DatabaseException, IOException {
+		if(chkBlocksInStore <= maxChkBlocks) return;
+		if(offline)
+			maybeSlowShrink(dontCheck);
+		else {
+			if(chkBlocksInStore * 0.9 > maxChkBlocks) {
+				Logger.error(this, "Doing quick and indiscriminate online shrink. Offline shrinks will preserve the LRU, this doesn't.");
+				maybeQuickShrink(dontCheck);
+			} else {
+				Logger.error(this, "Online shrink only supported for small deltas because online shrink does not preserve LRU order. Suggest you restart the node.");
+			}
+		}
+	}
+	
+	private void maybeSlowShrink(boolean dontCheck) throws DatabaseException, IOException {
+		Vector wantedKeep = new Vector(); // keep; content is wanted, and is in the right place
+		Vector unwantedIgnore = new Vector(); // ignore; content is not wanted, and is not in the right place
+		Vector wantedMove = new Vector(); // content is wanted, but is in the wrong part of the store
+		Vector unwantedMove = new Vector(); // content is not wanted, but is in the wrong part of the store
+		
+    	Cursor c = null;
+    	Transaction t = null;
+
+    	long newSize = maxChkBlocks;
+    	if(chkBlocksInStore < maxChkBlocks) return;
+    	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks);
+    	
+    	try {
+			t = environment.beginTransaction(null,null);
+			c = chkDB_accessTime.openCursor(t,null);
+			
+			DatabaseEntry keyDBE = new DatabaseEntry();
+			DatabaseEntry blockDBE = new DatabaseEntry();
+			OperationStatus opStat;
+			opStat = c.getLast(keyDBE, blockDBE, LockMode.RMW);
+			
+			if(opStat == OperationStatus.NOTFOUND) {
+				System.err.println("Database is empty.");
+				c.close();
+				c = null;
+				t.abort();
+				t = null;
+				return;
+			}
+
+			//Logger.minor(this, "Found first key");
+			int x = 0;
+			while(true) {
+		    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+				//Logger.minor(this, "Found another key ("+(x++)+") ("+storeBlock.offset+")");
+				long block = storeBlock.offset;
+				Long blockNum = new Long(storeBlock.offset);
+				Long seqNum = new Long(storeBlock.recentlyUsed);
+				//System.out.println("#"+x+" seq "+seqNum+": block "+blockNum);
+				if(x < newSize) {
+					// Wanted
+					if(block < newSize) {
+						//System.out.println("Keep where it is: block "+blockNum+" seq # "+x+" / "+newSize);
+						wantedKeep.add(blockNum);
+					} else {
+						//System.out.println("Move to where it should go: "+blockNum+" seq # "+x+" / "+newSize);
+						wantedMove.add(blockNum);
+					}
+				} else {
+					// Unwanted
+					if(block < newSize) {
+						//System.out.println("Overwrite: "+blockNum+" seq # "+x+" / "+newSize);
+						unwantedMove.add(blockNum);
+					} else {
+						//System.out.println("Ignore, will be wiped: block "+blockNum+" seq # "+x+" / "+newSize);
+						unwantedIgnore.add(blockNum);
+					}
+				}
+				
+				opStat = c.getPrev(keyDBE, blockDBE, LockMode.RMW);
+				if(opStat == OperationStatus.NOTFOUND) {
+					break;
+				}
+				x++;
+			}
+			
+    	} finally {
+    		if(c != null)
+    			c.close();
+    		if(t != null)
+    			t.abort();
+    	}
+    	
+    	System.err.println("Keys to keep where they are:     "+wantedKeep.size());
+    	System.err.println("Keys which will be wiped anyway: "+unwantedIgnore.size());
+    	System.err.println("Keys to move:                    "+wantedMove.size());
+    	System.err.println("Keys to be moved over:           "+unwantedMove.size());
+    	
+    	// Now move all the wantedMove blocks onto the corresponding unwantedMove's.
+    	
+    	byte[] buf = new byte[headerBlockSize + dataBlockSize];
+    	t = null;
+    	try {
+    	t = environment.beginTransaction(null,null);
+    	for(int i=0;i<wantedMove.size();i++) {
+    		Long wantedBlock = (Long)wantedMove.get(i);
+    		Long unwantedBlock = (Long)unwantedMove.get(i);
+    		// Delete unwantedBlock from the store
+    		DatabaseEntry wantedBlockEntry = new DatabaseEntry();
+    		longTupleBinding.objectToEntry(wantedBlock, wantedBlockEntry);
+    		DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
+    		longTupleBinding.objectToEntry(unwantedBlock, unwantedBlockEntry);
+    		// Delete the old block from the database.
+    		chkDB_blockNum.delete(t, unwantedBlockEntry);
+    		long seekTo = wantedBlock.longValue() * (headerBlockSize + dataBlockSize);
+    		chkStore.seek(seekTo);
+    		chkStore.readFully(buf);
+    		seekTo = unwantedBlock.longValue() * (headerBlockSize + dataBlockSize);
+    		chkStore.seek(seekTo);
+    		chkStore.write(buf);
+    		DatabaseEntry routingKeyDBE = new DatabaseEntry();
+    		DatabaseEntry blockDBE = new DatabaseEntry();
+    		chkDB_blockNum.get(t, wantedBlockEntry, routingKeyDBE, blockDBE, LockMode.RMW);
+    		StoreBlock block = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+    		block.offset = unwantedBlock.longValue();
+    		storeBlockTupleBinding.objectToEntry(block, blockDBE);
+    		chkDB.put(t, routingKeyDBE, blockDBE);
+    		if((i+1) % 2048 == 0) {
+    			t.commit();
+    			t = environment.beginTransaction(null,null);
+    		}
+    		System.err.println("Moved "+wantedBlock+" to "+unwantedBlock);
+    	}
+    	if(t != null) {
+    		t.commit();
+    		t = null;
+    	}
+    	} finally {
+    		if(t != null)
+    			t.abort();
+    	}
+    	maybeQuickShrink(false);
+    	
+	}
+	
+	private void maybeQuickShrink(boolean dontCheck) throws DatabaseException, IOException {
 		Transaction t = null;
 		try {
 			// long's are not atomic.
@@ -408,7 +549,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		chkBlocksInStore = countCHKBlocksFromFile();
 		lastRecentlyUsed = getMaxRecentlyUsed();
 		
-		maybeShrink(true);
+		maybeShrink(true, true);
 		
 //		 Add shutdownhook
 		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
@@ -1331,6 +1472,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		synchronized(this) {
 			maxChkBlocks = maxStoreKeys;
 		}
-		maybeShrink(false);
+		maybeShrink(false, false);
 	}
 }
