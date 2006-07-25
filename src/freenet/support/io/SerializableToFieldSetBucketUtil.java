@@ -20,6 +20,8 @@ public class SerializableToFieldSetBucketUtil {
 			return new NullBucket();
 		} else if(type.equals("RandomAccessFileBucket")) {
 			return new RandomAccessFileBucket(fs, f);
+		} else if(type.equals("ReadOnlyFileSliceBucket")) {
+			return new ReadOnlyFileSliceBucket(fs);
 		} else
 			throw new CannotCreateFromFieldSetException("Unrecognized type "+type);
 	}

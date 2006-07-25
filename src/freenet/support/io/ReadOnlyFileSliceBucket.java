@@ -8,11 +8,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
+import freenet.support.SimpleFieldSet;
+
 
 /**
  * FIXME: implement a hash verifying version of this.
  */
-public class ReadOnlyFileSliceBucket implements Bucket {
+public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBucket {
 
 	private final File file;
 	private final long startAt;
@@ -24,6 +26,26 @@ public class ReadOnlyFileSliceBucket implements Bucket {
 		this.length = length;
 	}
 	
+    public ReadOnlyFileSliceBucket(SimpleFieldSet fs) throws CannotCreateFromFieldSetException {
+   		String tmp = fs.get("Filename");
+   		if(tmp == null) throw new CannotCreateFromFieldSetException("No filename");
+   		this.file = new File(tmp);
+   		tmp = fs.get("Length");
+   		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
+   		try {
+   			length = Long.parseLong(tmp);
+   		} catch (NumberFormatException e) {
+   			throw new CannotCreateFromFieldSetException("Corrupt length "+tmp, e);
+   		}
+   		tmp = fs.get("Offset");
+   		if(tmp == null) throw new CannotCreateFromFieldSetException("No offset");
+   		try {
+   			startAt = Long.parseLong(tmp);
+   		} catch (NumberFormatException e) {
+   			throw new CannotCreateFromFieldSetException("Corrupt offset "+tmp, e);
+   		}
+	}
+    
 	public OutputStream getOutputStream() throws IOException {
 		throw new IOException("Bucket is read-only");
 	}
@@ -115,6 +137,15 @@ public class ReadOnlyFileSliceBucket implements Bucket {
 
 	public void free() {
 		// Do nothing
+	}
+
+	public SimpleFieldSet toFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		fs.put("Type", "ReadOnlyFileSliceBucket");
+		fs.put("Filename", file.toString());
+		fs.put("Offset", startAt);
+		fs.put("Length", length);
+		return fs;
 	}
 	
 }
