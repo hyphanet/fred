@@ -303,7 +303,7 @@ class SingleFileInserter implements ClientPutState {
 							new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, metaFS);
 					} else if(type.equals("SplitHandler")) {
 						newMetaPutter = new SplitHandler();
-						((SplitHandler)metadataPutter).start(metaFS);
+						((SplitHandler)newMetaPutter).start(metaFS);
 					}
 				} catch (ResumeException e) {
 					// Ignore, it will be reconstructed later
