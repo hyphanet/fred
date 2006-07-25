@@ -2369,8 +2369,8 @@ public class Node {
 		synchronized(this) {
 			if(now - lastCheckedUncontended > 1000) {
 				checkUncontended = true;
+				lastCheckedUncontended = now;
 			}
-			lastCheckedUncontended = now;
 		}
 		if(checkUncontended && throttledPacketSendAverage.lastReportTime() < now - 5000) {  // if last report more than 5 seconds ago
 			// shouldn't take long

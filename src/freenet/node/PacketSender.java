@@ -229,7 +229,7 @@ public class PacketSender implements Runnable {
                 		if(l > messages[j].submitted) l = messages[j].submitted;
                 		sz += 2 + /* FIXME only 2? */ messages[j].getData(node.packetMangler, pn).length;
                 	}
-                	if((l + 100 > now) && (sz < 1024)) {
+                	if((l + 100 > now) && (sz < 1024 /* sensible size */)) {
                 		// Don't send immediately
                 		if(nextActionTime > (l+100))
                 			nextActionTime = l+100;
