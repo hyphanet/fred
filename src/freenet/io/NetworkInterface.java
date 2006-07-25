@@ -102,8 +102,8 @@ public class NetworkInterface {
 				/* swallow exception. */
 			}
 		}
-		while (runningAcceptors > 0) {
-			synchronized (syncObject) {
+		synchronized (syncObject) {
+			while (runningAcceptors > 0) {
 				try {
 					syncObject.wait();
 				} catch (InterruptedException e) {
