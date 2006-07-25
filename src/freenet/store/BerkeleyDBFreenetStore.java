@@ -262,11 +262,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					if(result.equals(OperationStatus.SUCCESS))
 						deleted++;
 					
+					if((curBlocks-i) % 2048 == 0) {
+						t.commit();
+						if(i-1 >= maxBlocks)
+							t = environment.beginTransaction(null,null);
+						else
+							t = null;
+					}
+					
 					synchronized(this) {
 						maxBlocks = maxChkBlocks;
 						curBlocks = chkBlocksInStore;
-						if(maxBlocks >= curBlocks)
-							return;
+						if(maxBlocks >= curBlocks) break;
 					}
 				}
 				

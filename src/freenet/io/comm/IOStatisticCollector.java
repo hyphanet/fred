@@ -13,7 +13,7 @@ public class IOStatisticCollector {
 	private static IOStatisticCollector _currentSC;
 	private long totalbytesin;
 	private long totalbytesout;
-	private HashMap targets;
+	private final HashMap targets;
 	
 	private IOStatisticCollector() {
 		// Only I should be able to create myself
