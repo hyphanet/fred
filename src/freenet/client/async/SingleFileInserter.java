@@ -484,7 +484,7 @@ class SingleFileInserter implements ClientPutState {
 			return token;
 		}
 
-		public synchronized SimpleFieldSet getProgressFieldset() {
+		public SimpleFieldSet getProgressFieldset() {
 			ClientPutState curSFI;
 			ClientPutState curMetadataPutter;
 			synchronized(this) {

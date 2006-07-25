@@ -474,7 +474,7 @@ public class FCPServer implements Runnable {
 	}
 	
 	/** Store all persistent requests to disk */
-	public void storePersistentRequests() {
+	private void storePersistentRequests() {
 		Logger.minor(this, "Storing persistent requests");
 		ClientRequest[] persistentRequests = getPersistentRequests();
 		Logger.minor(this, "Persistent requests count: "+persistentRequests.length);

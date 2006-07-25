@@ -173,8 +173,9 @@ public class ClientPut extends ClientPutBase {
 		data.free();
 	}
 	
-	public synchronized SimpleFieldSet getFieldSet() {
+	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
+		// This is all fixed, so no need for synchronization.
 		fs.put("Metadata.ContentType", clientMetadata.getMIMEType());
 		fs.put("UploadFrom", ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
@@ -202,7 +203,7 @@ public class ClientPut extends ClientPutBase {
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPut(identifier, uri, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				data == null ? -1 : data.size(), clientToken, started);
+				getDataSize(), clientToken, started);
 	}
 
 	protected String getTypeName() {
