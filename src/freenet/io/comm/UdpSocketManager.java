@@ -26,8 +26,10 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.ByteCounter;
+import freenet.node.LoggingConfigHandler;
 import freenet.node.Node;
 import freenet.node.PeerNode;
+import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 
 public class UdpSocketManager extends Thread {
@@ -81,7 +83,11 @@ public class UdpSocketManager extends Thread {
 						// Probably caused by the EvilJVMBug (see PacketSender).
 						// We'd better restart... :(
 						
-						if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
+						LoggingConfigHandler lch = Node.logConfigHandler;
+						FileLoggerHook flh = lch == null ? null : lch.getFileLoggerHook();
+						boolean hasRedirected = flh == null ? false : flh.hasRedirectedStdOutErrNoLock();
+						
+						if(!hasRedirected)
 							System.err.println("Restarting node: UdpSocketManager froze for 3 minutes!");
 						
 						try {
@@ -89,14 +95,14 @@ public class UdpSocketManager extends Thread {
 								WrapperManager.requestThreadDump();
 								WrapperManager.restart();
 							}else{
-								if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
+								if(!hasRedirected)
 									System.err.println("Exiting on deadlock, but not running in the wrapper! Please restart the node manually.");
 								
 								// No wrapper : we don't want to let it harm the network!
 								node.exit();
 							}
 						} catch (Throwable t) {
-							if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock()) {
+							if(!hasRedirected) {
 								System.err.println("Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
 								t.printStackTrace();
 							}
