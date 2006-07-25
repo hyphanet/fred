@@ -162,7 +162,7 @@ public class PacketSender implements Runnable {
             	}
             	
                 // Is the node dead?
-                if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
+                if(pn.isRoutable() && now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
                 	Logger.normal(this, "Disconnecting from "+pn+" - haven't received packets recently");
                     pn.disconnected();
                     continue;
