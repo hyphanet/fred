@@ -13,7 +13,6 @@ import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Bucket;
 import freenet.support.BucketTools;
-import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.Compressor;
@@ -209,6 +208,7 @@ public class SplitFileInserter implements ClientPutState {
 		
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
+		parent.notifyClients();
 		
 	}
 

@@ -112,8 +112,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			boolean blockFinished = Fields.stringToBool(blockFS.get("Finished"), false);
 			if(blockFinished && dataURIs[i] == null)
 				throw new ResumeException("Block "+i+" of "+segNo+" finished but no URI");
-			if(blockFinished && !encoded)
-				throw new ResumeException("Block "+i+" of "+segNo+" finished but not encoded");
 			if(!blockFinished) {
 				// Read data
 				SimpleFieldSet bucketFS = blockFS.subset("Data");
@@ -275,7 +273,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				parent.parent.completedBlock(true);
 			}
 		}
-		parent.parent.notifyClients();
+		//parent.parent.notifyClients();
 		started = true;
 		if(splitfileAlgo != null && !encoded) {
 			// Encode blocks
