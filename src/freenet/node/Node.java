@@ -1883,11 +1883,19 @@ public class Node {
 		if(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber)
 			this.alerts.register(new ExtOldAgeUserAlert());
 		
-		this.fcpServer.finishStart();
-		
-		persistentTempBucketFactory.completedInit();
-		
-		this.hasStarted = true;
+		Thread completer = new Thread(new Runnable() {
+			public void run() {
+				System.out.println("Resuming persistent requests");
+				Logger.normal(this, "Resuming persistent requests");
+				fcpServer.finishStart();
+				persistentTempBucketFactory.completedInit();
+				hasStarted = true;
+				System.out.println("Completed startup: All persistent requests resumed or restarted");
+				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
+			}
+		}, "Startup completion thread");
+		completer.setDaemon(true);
+		completer.start();
 	}
 	
 	private void shouldInsertARK() {
