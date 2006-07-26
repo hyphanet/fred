@@ -273,7 +273,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				if(data != null &&
 						data instanceof SerializableToFieldSetBucket) {
 					SimpleFieldSet tmp = ((SerializableToFieldSetBucket)data).toFieldSet();
-					if(tmp != null)
+					if(tmp == null)
 						Logger.error(this, "Could not serialize "+data+" - check block "+i+" of "+segNo);
 					else
 						block.put("Data", tmp);
