@@ -230,11 +230,11 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	public void segmentHasURIs(SplitFileInserterSegment segment) {
-		if(haveSentMetadata) {
-			return;
-		}
-		
 		synchronized(this) {
+			if(haveSentMetadata) {
+				return;
+			}
+			
 			for(int i=0;i<segments.length;i++) {
 				if(!segments[i].hasURIs())
 					return;
@@ -257,9 +257,8 @@ public class SplitFileInserter implements ClientPutState {
 				// Create Metadata
 				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, isMetadata, insertAsArchiveManifest);
 			}
+			haveSentMetadata = true;
 		}
-		haveSentMetadata = true;
-		
 		if(missingURIs) {
 			Logger.minor(this, "Missing URIs");
 			// Error
@@ -330,9 +329,17 @@ public class SplitFileInserter implements ClientPutState {
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
 		synchronized(this) {
-			if(finished) return;
-			for(int i=0;i<segments.length;i++)
-				if(!segments[i].isFinished()) allGone = false;
+			if(finished) {
+				Logger.minor(this, "Finished already");
+				return;
+			}
+			for(int i=0;i<segments.length;i++) {
+				if(!segments[i].isFinished()) {
+					Logger.minor(this, "Segment not finished: "+i+": "+segments[i]);
+					allGone = false;
+					break;
+				}
+			}
 			
 			InserterException e = segment.getException();
 			if((e != null) && e.isFatal()) {
@@ -346,6 +353,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	private void onAllFinished() {
+		Logger.minor(this, "All finished");
 		try {
 			// Finished !!
 			FailureCodeTracker tracker = new FailureCodeTracker(true);
@@ -353,6 +361,7 @@ public class SplitFileInserter implements ClientPutState {
 			for(int i=0;i<segments.length;i++) {
 				InserterException e = segments[i].getException();
 				if(e == null) continue;
+				Logger.minor(this, "Failure on segment "+i+" : "+segments[i]+" : "+e, e);
 				allSucceeded = false;
 				if(e.errorCodes != null)
 					tracker.merge(e.errorCodes);

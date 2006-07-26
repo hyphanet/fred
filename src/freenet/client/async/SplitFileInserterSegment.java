@@ -268,11 +268,13 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 	
 	public void start() throws InserterException {
+		boolean fin = true;
 		for(int i=0;i<dataBlockInserters.length;i++) {
 			if(dataBlocks[i] != null) { // else already finished on creation
 				dataBlockInserters[i] = 
 					new SingleBlockInserter(parent.parent, dataBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i, getCHKOnly, false, false, parent.token);
 				dataBlockInserters[i].schedule();
+				fin = false;
 			} else {
 				parent.parent.completedBlock(true);
 			}
@@ -284,10 +286,13 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
 			t.setDaemon(true);
 			t.start();
+			fin = false;
 		} else if(encoded) {
 			for(int i=0;i<checkBlockInserters.length;i++) {
 				if(checkBlocks[i] == null)
 					parent.parent.completedBlock(true);
+				else
+					fin = false;
 			}
 		}
 		if(encoded) {
@@ -296,6 +301,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		if(hasURIs) {
 			parent.segmentHasURIs(this);
 		}
+		if(fin) finish();
 		if(finished) {
 			parent.segmentFinished(this);
 		}

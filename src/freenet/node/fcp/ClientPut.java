@@ -166,6 +166,7 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	public void start() {
+		Logger.minor(this, "Starting "+this+" : "+identifier);
 		if(finished) return;
 		try {
 			inserter.start();
