@@ -113,6 +113,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			if(blockFinished && dataURIs[i] == null)
 				throw new ResumeException("Block "+i+" of "+segNo+" finished but no URI");
 			if(!blockFinished) {
+				finished = false;
 				// Read data
 				SimpleFieldSet bucketFS = blockFS.subset("Data");
 				if(bucketFS == null)
@@ -145,8 +146,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				SimpleFieldSet blockFS = checkFS.subset(Integer.toString(i));
 				if(blockFS == null) {
 					hasURIs = false;
-					if(encoded) throw new ResumeException("No check block "+i+" of "+segNo);
-					else continue;
+					encoded = false;
+					continue;
 				}
 				tmp = blockFS.get("URI");
 				if(tmp != null) {
@@ -179,6 +180,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 						throw new ResumeException("Check block "+i+" of "+segNo+" not finished but no data (create returned null)");
 				// Don't create fetcher yet; that happens in start()
 				} else blocksCompleted++;
+				if(checkBlocks[i] == null && checkURIs[i] == null)
+					encoded = false;
 			}
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount, checkBlocks.length);
 		} else {
@@ -189,6 +192,13 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			this.checkBlocks = new Bucket[checkBlocksCount];
 			this.checkBlockInserters = new SingleBlockInserter[checkBlocksCount];
 			hasURIs = false;
+		}
+		if(!encoded) {
+			finished = false;
+			hasURIs = false;
+			for(int i=0;i<dataBlocks.length;i++)
+				if(dataBlocks[i] == null)
+					throw new ResumeException("Missing data block "+i+" and need to reconstruct check blocks");
 		}
 		parent.parent.addBlocks(dataURIs.length+checkURIs.length);
 		parent.parent.addMustSucceedBlocks(dataURIs.length+checkURIs.length);
@@ -268,6 +278,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 	
 	public void start() throws InserterException {
+		Logger.minor(this, "Starting segment "+segNo+" of "+parent+" ("+parent.dataLength+"): "+this+" ( finished="+finished+" encoded="+encoded+" hasURIs="+hasURIs+")");
 		boolean fin = true;
 		for(int i=0;i<dataBlockInserters.length;i++) {
 			if(dataBlocks[i] != null) { // else already finished on creation
@@ -281,7 +292,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		}
 		//parent.parent.notifyClients();
 		started = true;
+		if(!encoded)
+			Logger.minor(this, "Segment "+segNo+" of "+parent+" ("+parent.dataLength+") is not encoded");
 		if(splitfileAlgo != null && !encoded) {
+			Logger.minor(this, "Encoding segment "+segNo+" of "+parent+" ("+parent.dataLength+")");
 			// Encode blocks
 			Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
 			t.setDaemon(true);
@@ -336,6 +350,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				new InserterException(InserterException.BUCKET_ERROR, e, null);
 			finish(ex);
 		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t+" while encoding "+this, t);
 			InserterException ex = 
 				new InserterException(InserterException.INTERNAL_ERROR, t, null);
 			finish(ex);
@@ -343,6 +358,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 
 	private void finish(InserterException ex) {
+		Logger.minor(this, "Finishing "+this+" with "+ex, ex);
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -368,13 +384,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			if(finished) return;
 			if(x >= dataBlocks.length) {
 				if(checkURIs[x-dataBlocks.length] != null) {
-					Logger.normal(this, "Got uri twice for check block "+x+" on "+this);
 					return;
 				}
 				checkURIs[x-dataBlocks.length] = uri;
 			} else {
 				if(dataURIs[x] != null) {
-					Logger.normal(this, "Got uri twice for data block "+x+" on "+this);
 					return;
 				}
 				dataURIs[x] = uri;

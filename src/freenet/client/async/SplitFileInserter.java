@@ -230,14 +230,17 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	public void segmentHasURIs(SplitFileInserterSegment segment) {
+		Logger.minor(this, "Segment has URIs: "+segment);
 		synchronized(this) {
 			if(haveSentMetadata) {
 				return;
 			}
 			
 			for(int i=0;i<segments.length;i++) {
-				if(!segments[i].hasURIs())
+				if(!segments[i].hasURIs()) {
+					Logger.minor(this, "Segment does not have URIs: "+segments[i]);
 					return;
+				}
 			}
 		}
 		
@@ -324,7 +327,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public void segmentFinished(SplitFileInserterSegment segment) {
-		Logger.minor(this, "Segment finished: "+segment);
+		Logger.minor(this, "Segment finished: "+segment, new Exception("debug"));
 		boolean allGone = true;
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
@@ -397,6 +400,10 @@ public class SplitFileInserter implements ClientPutState {
 
 	public Object getToken() {
 		return token;
+	}
+
+	public long getLength() {
+		return dataLength;
 	}
 
 }

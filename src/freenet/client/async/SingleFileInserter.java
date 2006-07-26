@@ -408,7 +408,7 @@ class SingleFileInserter implements ClientPutState {
 				synchronized(this) {
 					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false);
 				}
-				Logger.minor(this, "Putting metadata on "+metadataPutter);
+				Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength());
 			} catch (InserterException e1) {
 				cb.onFailure(e1, this);
 				return;
