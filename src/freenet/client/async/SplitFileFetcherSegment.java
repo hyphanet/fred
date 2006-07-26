@@ -51,6 +51,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	private int failedBlocks;
 	private int fetchedBlocks;
 	private final FailureCodeTracker errors;
+	private boolean createdFetchers;
 	
 	public SplitFileFetcherSegment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetcherContext fetchContext, long maxTempLength, boolean splitUseLengths, int recursionLevel) throws MetadataParseException, FetchException {
 		this.parentFetcher = fetcher;
@@ -327,7 +328,6 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
 				dataBlockStatus[i] =
 					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(i), true, null);
-				dataBlockStatus[i].schedule();
 			}
 			for(int i=0;i<checkBlocks.length;i++) {
 				// FIXME maybe within a non-FECced splitfile at least?
@@ -335,8 +335,14 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
 				checkBlockStatus[i] =
 					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null);
-				checkBlockStatus[i].schedule();
 			}
+			synchronized(this) {
+				createdFetchers = true;
+			}
+			for(int i=0;i<dataBlocks.length;i++)
+				dataBlockStatus[i].schedule();
+			for(int i=0;i<checkBlocks.length;i++)
+				checkBlockStatus[i].schedule();
 		} catch (MalformedURLException e) {
 			// Invalidates the whole splitfile
 			fail(new FetchException(FetchException.INVALID_URI, "Invalid URI in splitfile"));

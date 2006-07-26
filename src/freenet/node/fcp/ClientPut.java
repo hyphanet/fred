@@ -182,6 +182,7 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	protected void freeData() {
+		if(data == null) return;
 		finishedSize=data.size();
 		data.free();
 	}
