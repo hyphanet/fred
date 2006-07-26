@@ -69,7 +69,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		if(!"SplitFileInserterSegment".equals(fs.get("Type")))
 			throw new ResumeException("Wrong Type: "+fs.get("Type"));
 		finished = Fields.stringToBool(fs.get("Finished"), false);
-		encoded = Fields.stringToBool(fs.get("Encoded"), false);
+		encoded = true;
 		started = Fields.stringToBool(fs.get("Started"), false);
 		SimpleFieldSet errorsFS = fs.subset("Errors");
 		if(errorsFS != null)
@@ -97,38 +97,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		dataBlocks = new Bucket[dataBlockCount];
 		dataURIs = new FreenetURI[dataBlockCount];
 		dataBlockInserters = new SingleBlockInserter[dataBlockCount];
-		for(int i=0;i<dataBlockCount;i++) {
-			SimpleFieldSet blockFS = dataFS.subset(Integer.toString(i));
-			if(blockFS == null) throw new ResumeException("No data block "+i+" on segment "+segNo);
-			tmp = blockFS.get("URI");
-			if(tmp != null) {
-				try {
-					dataURIs[i] = new FreenetURI(tmp);
-					blocksGotURI++;
-				} catch (MalformedURLException e) {
-					throw new ResumeException("Corrupt URI: "+e+" : "+tmp);
-				}
-			} else hasURIs = false;
-			boolean blockFinished = Fields.stringToBool(blockFS.get("Finished"), false);
-			if(blockFinished && dataURIs[i] == null)
-				throw new ResumeException("Block "+i+" of "+segNo+" finished but no URI");
-			if(!blockFinished) {
-				finished = false;
-				// Read data
-				SimpleFieldSet bucketFS = blockFS.subset("Data");
-				if(bucketFS == null)
-					throw new ResumeException("Block "+i+" of "+segNo+" not finished but no data");
-				try {
-					dataBlocks[i] = SerializableToFieldSetBucketUtil.create(bucketFS, ctx.random, ctx.persistentFileTracker);
-				} catch (CannotCreateFromFieldSetException e) {
-					throw new ResumeException("Failed to deserialize block "+i+" of "+segNo+" : "+e, e);
-				}
-				if(dataBlocks[i] == null)
-					throw new ResumeException("Block "+i+" of "+segNo+" not finished but no data (create returned null)");
-				// Don't create fetcher yet; that happens in start()
-			} else blocksCompleted++;
-		}
 
+		// Check blocks first, because if there are missing check blocks, we need
+		// all the data blocks so we can re-encode.
+		
 		SimpleFieldSet checkFS = fs.subset("CheckBlocks");
 		if(checkFS != null) {
 			tmp = checkFS.get("Count");
@@ -157,31 +129,31 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 					} catch (MalformedURLException e) {
 						throw new ResumeException("Corrupt URI: "+e+" : "+tmp);
 					}
-				} else hasURIs = false;
-				boolean blockFinished = Fields.stringToBool(blockFS.get("Finished"), false);
-				if(blockFinished && checkURIs[i] == null)
-					throw new ResumeException("Check block "+i+" of "+segNo+" finished but no URI");
-				if(blockFinished && !encoded)
-					throw new ResumeException("Check block "+i+" of "+segNo+" finished but not encoded");
+				} else {
+					hasURIs = false;
+					encoded = false;
+				}
+				boolean blockFinished = Fields.stringToBool(blockFS.get("Finished"), false) && checkURIs[i] != null;
+				// Read data; only necessary if the block isn't finished.
 				if(!blockFinished) {
-					// Read data
 					SimpleFieldSet bucketFS = blockFS.subset("Data");
-					if(bucketFS == null)
-						throw new ResumeException("Check block "+i+" of "+segNo+" not finished but no data");
-					try {
-						checkBlocks[i] = SerializableToFieldSetBucketUtil.create(bucketFS, ctx.random, ctx.persistentFileTracker);
-					} catch (CannotCreateFromFieldSetException e) {
-						Logger.error(this, "Failed to deserialize check block "+i+" of "+segNo+" : "+e, e);
-						// Re-encode it.
-						checkBlocks[i] = null;
-						encoded = false;
+					if(bucketFS != null) {
+						try {
+							checkBlocks[i] = SerializableToFieldSetBucketUtil.create(bucketFS, ctx.random, ctx.persistentFileTracker);
+						} catch (CannotCreateFromFieldSetException e) {
+							Logger.error(this, "Failed to deserialize check block "+i+" of "+segNo+" : "+e, e);
+							// Re-encode it.
+							checkBlocks[i] = null;
+							encoded = false;
+						}
+						if(checkBlocks[i] == null)
+							throw new ResumeException("Check block "+i+" of "+segNo+" not finished but no data (create returned null)");
 					}
-					if(checkBlocks[i] == null)
-						throw new ResumeException("Check block "+i+" of "+segNo+" not finished but no data (create returned null)");
 				// Don't create fetcher yet; that happens in start()
 				} else blocksCompleted++;
-				if(checkBlocks[i] == null && checkURIs[i] == null)
+				if(checkBlocks[i] == null && checkURIs[i] == null) {
 					encoded = false;
+				}
 			}
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount, checkBlocks.length);
 		} else {
@@ -193,6 +165,46 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			this.checkBlockInserters = new SingleBlockInserter[checkBlocksCount];
 			hasURIs = false;
 		}
+
+		for(int i=0;i<dataBlockCount;i++) {
+			SimpleFieldSet blockFS = dataFS.subset(Integer.toString(i));
+			if(blockFS == null) throw new ResumeException("No data block "+i+" on segment "+segNo);
+			tmp = blockFS.get("URI");
+			if(tmp != null) {
+				try {
+					dataURIs[i] = new FreenetURI(tmp);
+					blocksGotURI++;
+				} catch (MalformedURLException e) {
+					throw new ResumeException("Corrupt URI: "+e+" : "+tmp);
+				}
+			} else hasURIs = false;
+			boolean blockFinished = Fields.stringToBool(blockFS.get("Finished"), false);
+			if(blockFinished && dataURIs[i] == null)
+				throw new ResumeException("Block "+i+" of "+segNo+" finished but no URI");
+			if(!blockFinished)
+				finished = false;
+			else
+				blocksCompleted++;
+			
+			// Read data
+			SimpleFieldSet bucketFS = blockFS.subset("Data");
+			if(bucketFS == null) {
+				if(!blockFinished)
+					throw new ResumeException("Block "+i+" of "+segNo+" not finished but no data");
+				else if(splitfileAlgorithm > 0 && !encoded)
+					throw new ResumeException("Block "+i+" of "+segNo+" data not available even though not encoded");
+			} else {
+				try {
+					dataBlocks[i] = SerializableToFieldSetBucketUtil.create(bucketFS, ctx.random, ctx.persistentFileTracker);
+				} catch (CannotCreateFromFieldSetException e) {
+					throw new ResumeException("Failed to deserialize block "+i+" of "+segNo+" : "+e, e);
+				}
+				if(dataBlocks[i] == null)
+					throw new ResumeException("Block "+i+" of "+segNo+" could not serialize data (create returned null) from "+bucketFS);
+				// Don't create fetcher yet; that happens in start()
+			}
+		}
+
 		if(!encoded) {
 			finished = false;
 			hasURIs = false;
@@ -253,7 +265,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			SingleBlockInserter sbi =
 				checkBlockInserters[i];
 			// If encoded, then sbi == null => block finished
-			boolean finished = encoded && sbi == null;
+			boolean finished = encoded && sbi == null && checkURIs[i] != null;
 			if(encoded) {
 				block.put("Finished", finished);
 			}
@@ -310,6 +322,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			}
 		}
 		if(encoded) {
+			onEncodedSegment();
 			parent.encodedSegment(this);
 		}
 		if(hasURIs) {
@@ -345,18 +358,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			// Because of the counting.
 			encoded = true;
 			parent.encodedSegment(this);
-			synchronized(this) {
-				for(int i=0;i<dataBlockInserters.length;i++) {
-					if(dataBlockInserters[i] == null && dataBlocks[i] != null) {
-						try {
-							parent.ctx.persistentBucketFactory.freeBucket(dataBlocks[i]);
-						} catch (IOException e) {
-							Logger.error(this, "Could not free "+dataBlocks[i]+" : "+e, e);
-						}
-						dataBlocks[i] = null;
-					}
-				}
-			}
+			onEncodedSegment();
 		} catch (IOException e) {
 			InserterException ex = 
 				new InserterException(InserterException.BUCKET_ERROR, e, null);
@@ -366,6 +368,21 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			InserterException ex = 
 				new InserterException(InserterException.INTERNAL_ERROR, t, null);
 			finish(ex);
+		}
+	}
+
+	private void onEncodedSegment() {
+		synchronized(this) {
+			for(int i=0;i<dataBlockInserters.length;i++) {
+				if(dataBlockInserters[i] == null && dataBlocks[i] != null) {
+					try {
+						parent.ctx.persistentBucketFactory.freeBucket(dataBlocks[i]);
+					} catch (IOException e) {
+						Logger.error(this, "Could not free "+dataBlocks[i]+" : "+e, e);
+					}
+					dataBlocks[i] = null;
+				}
+			}
 		}
 	}
 
