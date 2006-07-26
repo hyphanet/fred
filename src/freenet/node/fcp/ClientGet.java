@@ -112,6 +112,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				throw e;
 			}
 		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+		}
 	}
 	
 	
@@ -162,9 +166,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				throw e;
 			}
 		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
-		if((persistenceType != PERSIST_CONNECTION) && (handler != null))
-			sendPendingMessages(handler.outputHandler, true, true, false);
-			
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+			if(handler != null && (!handler.isGlobalSubscribed()))
+				handler.outputHandler.queue(msg);
+		}
 	}
 
 	/**
@@ -223,16 +230,24 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		returnBucket = ret;
 		
 		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+		}
 	}
 
 	public void start() {
 		try {
 			getter.start();
+			started = true;
+			if(persistenceType != PERSIST_CONNECTION && !finished) {
+				FCPMessage msg = persistentTagMessage();
+				client.queueClientRequestMessage(msg, 0);
+			}
 		} catch (FetchException e) {
 			started = true;
 			onFailure(e, null);
 		}
-		started = true;
 	}
 	
 	public void onLostConnection() {
@@ -353,7 +368,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		if(!onlyData) {
 			if(includePersistentRequest) {
-				FCPMessage msg = new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started);
+				FCPMessage msg = persistentTagMessage();
 				handler.queue(msg);
 			}
 			if(progressPending != null)
@@ -363,6 +378,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		if(includeData && (allDataPending != null))
 			handler.queue(allDataPending);
+	}
+
+	private FCPMessage persistentTagMessage() {
+		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started);
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {

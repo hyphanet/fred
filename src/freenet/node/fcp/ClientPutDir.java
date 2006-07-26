@@ -51,8 +51,13 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			totalSize = -1;
 		}
 		putter = p;
-		if(persistenceType != PERSIST_CONNECTION)
+		if(persistenceType != PERSIST_CONNECTION) {
 			client.register(this, false);
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+			if(handler != null && (!handler.isGlobalSubscribed()))
+				handler.outputHandler.queue(msg);
+		}
 	}
 
 	public ClientPutDir(SimpleFieldSet fs, FCPClient client) throws PersistenceParseException, IOException {
@@ -127,16 +132,24 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		putter = p;
 		numberOfFiles = fileCount;
 		totalSize = size;
-		if(!finished)
-			start();
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+		}
 	}
 
 	public void start() {
+		if(finished) return;
+		if(started) return;
 		try {
 			if(putter != null)
 				putter.start();
 			started = true;
 			Logger.minor(this, "Started "+putter);
+			if(persistenceType != PERSIST_CONNECTION && !finished) {
+				FCPMessage msg = persistentTagMessage();
+				client.queueClientRequestMessage(msg, 0);
+			}
 		} catch (InserterException e) {
 			started = true;
 			onFailure(e, null);

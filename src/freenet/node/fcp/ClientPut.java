@@ -71,8 +71,12 @@ public class ClientPut extends ClientPutBase {
 		inserter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client, null);
-		if((persistenceType != PERSIST_CONNECTION) && (handler != null))
-			sendPendingMessages(handler.outputHandler, true, false, false);
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+			if(handler != null && (!handler.isGlobalSubscribed()))
+				handler.outputHandler.queue(msg);
+		}
 	}
 	
 	/**
@@ -155,17 +159,25 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 		inserter = new ClientPutter(this, data, uri, cm, ctx, client.node.chkPutScheduler, 
 				client.node.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client, fs.subset("progress"));
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+		}
 	}
 
 	public void start() {
 		if(finished) return;
 		try {
 			inserter.start();
+			started = true;
+			if(persistenceType != PERSIST_CONNECTION && !finished) {
+				FCPMessage msg = persistentTagMessage();
+				client.queueClientRequestMessage(msg, 0);
+			}
 		} catch (InserterException e) {
 			started = true;
 			onFailure(e, null);
 		}
-		started = true;
 	}
 
 	protected void freeData() {

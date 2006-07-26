@@ -226,4 +226,8 @@ public class FCPConnectionHandler {
 		}
 	}
 
+	public boolean isGlobalSubscribed() {
+		return client.watchGlobal;
+	}
+
 }
