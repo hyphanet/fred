@@ -182,6 +182,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			}
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount, checkBlocks.length);
 		} else {
+			encoded = false;
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount);
 			int checkBlocksCount = splitfileAlgo.countCheckBlocks();
 			this.checkURIs = new FreenetURI[checkBlocksCount];
@@ -250,7 +251,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				Bucket data = checkBlocks[i];
 				if(data != null &&
 						data instanceof SerializableToFieldSetBucket) {
-					block.put("Data", ((SerializableToFieldSetBucket)data).toFieldSet());
+					SimpleFieldSet tmp = ((SerializableToFieldSetBucket)data).toFieldSet();
+					if(tmp != null)
+						Logger.minor(this, "Could not serialize "+data+" - check block "+i+" of "+segNo);
+					block.put("Data", tmp);
 				} else if(encoded) {
 					Logger.minor(this, "Could not save to disk (null or not serializable to fieldset): "+data);
 					return null;
