@@ -348,7 +348,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		try {
 			synchronized(this) {
 				if(encoded) return;
-				encoded = true;
 			}
 			splitfileAlgo.encode(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory);
 			// Start the inserts
@@ -359,6 +358,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			}
 			// Tell parent only after have started the inserts.
 			// Because of the counting.
+			synchronized(this) {
+				encoded = true;
+			}
 			parent.encodedSegment(this);
 			onEncodedSegment();
 		} catch (IOException e) {
