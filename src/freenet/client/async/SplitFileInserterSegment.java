@@ -16,6 +16,7 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
+import freenet.support.io.NullBucket;
 import freenet.support.io.SerializableToFieldSetBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
@@ -304,24 +305,26 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		}
 		//parent.parent.notifyClients();
 		started = true;
-		if(!encoded)
+		if(!encoded) {
 			Logger.minor(this, "Segment "+segNo+" of "+parent+" ("+parent.dataLength+") is not encoded");
-		if(splitfileAlgo != null && !encoded) {
-			Logger.minor(this, "Encoding segment "+segNo+" of "+parent+" ("+parent.dataLength+")");
-			// Encode blocks
-			Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
-			t.setDaemon(true);
-			t.start();
-			fin = false;
-		} else if(encoded) {
-			for(int i=0;i<checkBlockInserters.length;i++) {
-				if(checkBlocks[i] == null)
-					parent.parent.completedBlock(true);
-				else
-					fin = false;
+			if(splitfileAlgo != null) {
+				Logger.minor(this, "Encoding segment "+segNo+" of "+parent+" ("+parent.dataLength+")");
+				// Encode blocks
+				Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
+				t.setDaemon(true);
+				t.start();
+				fin = false;
 			}
-		}
-		if(encoded) {
+		} else {
+			for(int i=0;i<checkBlockInserters.length;i++) {
+				if(checkBlocks[i] != null) {
+					checkBlockInserters[i] = 
+						new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false, false, parent.token);
+					checkBlockInserters[i].schedule();
+					fin = false;
+				} else
+					parent.parent.completedBlock(true);
+			}
 			onEncodedSegment();
 			parent.encodedSegment(this);
 		}
@@ -343,20 +346,19 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	void encode() {
 		try {
+			synchronized(this) {
+				if(encoded) return;
+				encoded = true;
+			}
 			splitfileAlgo.encode(dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory);
 			// Start the inserts
 			for(int i=0;i<checkBlockInserters.length;i++) {
-				if(checkBlocks[i] != null) { // else already finished on creation
-					checkBlockInserters[i] = 
-						new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false, false, parent.token);
-					checkBlockInserters[i].schedule();
-				} else {
-					parent.parent.completedBlock(true);
-				}
+				checkBlockInserters[i] = 
+					new SingleBlockInserter(parent.parent, checkBlocks[i], (short)-1, FreenetURI.EMPTY_CHK_URI, blockInsertContext, this, false, CHKBlock.DATA_LENGTH, i + dataBlocks.length, getCHKOnly, false, false, parent.token);
+				checkBlockInserters[i].schedule();
 			}
 			// Tell parent only after have started the inserts.
 			// Because of the counting.
-			encoded = true;
 			parent.encodedSegment(this);
 			onEncodedSegment();
 		} catch (IOException e) {
