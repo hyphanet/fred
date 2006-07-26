@@ -123,9 +123,15 @@ public class NodeStarter
 			public void run() {
 				while(true)
 					try {
-						Thread.sleep(Long.MAX_VALUE);
+						Thread.sleep(60*60*1000);
 					} catch (InterruptedException e) {
 						// Ignore
+					} catch (Throwable t) {
+						try {
+							Logger.error(this, "Caught "+t, t);
+						} catch (Throwable t1) {
+							// Ignore
+						}
 					}
 			}
 		};
