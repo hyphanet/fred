@@ -139,6 +139,7 @@ public class NodeStarter
 		// Not daemon, but doesn't do anything.
 		// Keeps the JVM alive.
 		// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
+		plug.setDaemon(false);
 		plug.start();
 		
     	WrapperManager.signalStarting(500000);
