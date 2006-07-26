@@ -56,7 +56,10 @@ public class PutFailedMessage extends FCPMessage {
 		
 		extraDescription = fs.get("ExtraDescription");
 		String euri = fs.get("ExpectedURI");
-		expectedURI = new FreenetURI(euri);
+		if(euri != null && euri.length() > 0)
+			expectedURI = new FreenetURI(euri);
+		else
+			expectedURI = null;
 		SimpleFieldSet trackerSubset = fs.subset("Errors");
 		if(trackerSubset != null) {
 			tracker = new FailureCodeTracker(true, trackerSubset);

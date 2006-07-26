@@ -239,19 +239,17 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			if(started) {
 				block.put("Finished", finished);
 			}
-			if(!finished) {
-				Bucket data = dataBlocks[i];
-				if(data instanceof SerializableToFieldSetBucket) {
-					SimpleFieldSet tmp = ((SerializableToFieldSetBucket)data).toFieldSet();
-					if(tmp == null) {
-						Logger.minor(this, "Could not save to disk: "+data);
-						return null;
-					}
-					block.put("Data", tmp);
-				} else {
-					Logger.minor(this, "Could not save to disk (not serializable to fieldset): "+data);
+			Bucket data = dataBlocks[i];
+			if(data instanceof SerializableToFieldSetBucket) {
+				SimpleFieldSet tmp = ((SerializableToFieldSetBucket)data).toFieldSet();
+				if(tmp == null) {
+					Logger.minor(this, "Could not save to disk: "+data);
 					return null;
 				}
+				block.put("Data", tmp);
+			} else {
+				Logger.minor(this, "Could not save to disk (not serializable to fieldset): "+data);
+				return null;
 			}
 			if(!block.isEmpty())
 				dataFS.put(Integer.toString(i), block);
@@ -276,10 +274,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 						data instanceof SerializableToFieldSetBucket) {
 					SimpleFieldSet tmp = ((SerializableToFieldSetBucket)data).toFieldSet();
 					if(tmp != null)
-						Logger.minor(this, "Could not serialize "+data+" - check block "+i+" of "+segNo);
-					block.put("Data", tmp);
+						Logger.error(this, "Could not serialize "+data+" - check block "+i+" of "+segNo);
+					else
+						block.put("Data", tmp);
 				} else if(encoded) {
-					Logger.minor(this, "Could not save to disk (null or not serializable to fieldset): "+data);
+					Logger.error(this, "Could not save to disk (null or not serializable to fieldset): "+data);
 					return null;
 				}
 			}
