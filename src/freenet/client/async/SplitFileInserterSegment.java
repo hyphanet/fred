@@ -345,6 +345,18 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			// Because of the counting.
 			encoded = true;
 			parent.encodedSegment(this);
+			synchronized(this) {
+				for(int i=0;i<dataBlockInserters.length;i++) {
+					if(dataBlockInserters[i] == null && dataBlocks[i] != null) {
+						try {
+							parent.ctx.persistentBucketFactory.freeBucket(dataBlocks[i]);
+						} catch (IOException e) {
+							Logger.error(this, "Could not free "+dataBlocks[i]+" : "+e, e);
+						}
+						dataBlocks[i] = null;
+					}
+				}
+			}
 		} catch (IOException e) {
 			InserterException ex = 
 				new InserterException(InserterException.BUCKET_ERROR, e, null);
@@ -451,12 +463,14 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				return true;
 			}
 			dataBlockInserters[x] = null;
-			try {
-				parent.ctx.persistentBucketFactory.freeBucket(dataBlocks[x]);
-			} catch (IOException e) {
-				Logger.error(this, "Could not free "+dataBlocks[x]+" : "+e, e);
+			if(encoded) {
+				try {
+					parent.ctx.persistentBucketFactory.freeBucket(dataBlocks[x]);
+				} catch (IOException e) {
+					Logger.error(this, "Could not free "+dataBlocks[x]+" : "+e, e);
+				}
+				dataBlocks[x] = null;
 			}
-			dataBlocks[x] = null;
 		}
 		blocksCompleted++;
 		if(blocksCompleted != dataBlockInserters.length + checkBlockInserters.length) return true;
