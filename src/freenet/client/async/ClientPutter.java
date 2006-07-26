@@ -23,6 +23,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	private boolean finished;
 	private final boolean getCHKOnly;
 	private final boolean isMetadata;
+	private boolean startedStarting;
 	private FreenetURI uri;
 	/** SimpleFieldSet containing progress information from last startup.
 	 * Will be progressively cleared during startup. */
@@ -61,12 +62,36 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	public void start() throws InserterException {
 		Logger.minor(this, "Starting "+this);
 		try {
+			boolean cancel = false;
 			synchronized(this) {
+				if(startedStarting) return;
+				startedStarting = true;
 				if(currentState != null) return;
-				currentState =
-					new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false);
+				cancel = this.cancelled;
+				if(!cancel) {
+					currentState =
+						new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false);
+				}
+			}
+			if(cancel) {
+				onFailure(new InserterException(InserterException.CANCELLED), null);
+				return;
+			}
+			synchronized(this) {
+				cancel = cancelled;
+			}
+			if(cancel) {
+				onFailure(new InserterException(InserterException.CANCELLED), null);
+				return;
 			}
 			((SingleFileInserter)currentState).start(oldProgress);
+			synchronized(this) {
+				cancel = cancelled;
+			}
+			if(cancel) {
+				onFailure(new InserterException(InserterException.CANCELLED), null);
+				return;
+			}
 		} catch (InserterException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
 			synchronized(this) {
@@ -106,10 +131,16 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onGeneratedURI(uri, this);
 	}
 	
-	public synchronized void cancel() {
-		super.cancel();
-		if(currentState != null)
-			currentState.cancel();
+	public void cancel() {
+		synchronized(this) {
+			if(cancelled) return;
+			super.cancel();
+			if(currentState != null)
+				currentState.cancel();
+			if(startedStarting) return;
+			startedStarting = true;
+		}
+		onFailure(new InserterException(InserterException.CANCELLED), null);
 	}
 	
 	public synchronized boolean isFinished() {

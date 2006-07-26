@@ -219,11 +219,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		PutHandler[] running;
 		running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 
+		if(cancelled) cancel();
 		try {
 			for(int i=0;i<running.length;i++) {
 				running[i].start();
 			}
 			Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
+			if(cancelled) cancel();
 			if(running.length == 0) {
 				insertedAllFiles = true;
 				gotAllMetadata();
@@ -506,6 +508,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		for(int i=0;i<running.length;i++) {
 			running[i].cancel();
 		}
+	}
+	
+	public void cancel() {
+		fail(new InserterException(InserterException.CANCELLED));
 	}
 	
 	public void onSuccess(ClientPutState state) {

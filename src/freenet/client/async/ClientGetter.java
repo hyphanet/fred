@@ -63,8 +63,10 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true,
 						returnBucket);
 			}
+			if(cancelled) cancel();
 			if(currentState != null)
 				currentState.schedule();
+			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
 		}
