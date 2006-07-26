@@ -270,7 +270,6 @@ public class FProxyToadlet extends Toadlet {
 					buf.append("<input type=\"hidden\" name=\"type\" value=\""+URLEncoder.encode(mime)+"\">");
 				buf.append("<input type=\"submit\" name=\"download\" value=\"Download in background and store in downloads directory\">");
 				buf.append("</form></li>\n");
-				// FIXME add a queue-a-download option.
 //				buf.append("<li>Save it to disk at </li>");
 				// FIXME add return-to-referring-page
 				//buf.append("<li>Return to the referring page: ");
