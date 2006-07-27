@@ -3,6 +3,7 @@ package freenet.node.fcp;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -64,9 +65,13 @@ public class ModifyPersistentRequest extends FCPMessage {
 			throws MessageInvalidException {
 		FCPClient client = global ? handler.server.globalClient : handler.getClient();
 		ClientRequest req = client.getRequest(identifier);
+		if(req==null){
+			Logger.error(this, "Huh ? the request is null!");
+			return;
+		}
 		if(clientToken != null)
 			req.setClientToken(clientToken);
-		if(priorityClass != null && priorityClass >= 0)
+		if(priorityClass >= 0)
 			req.setPriorityClass(priorityClass);
 		if(req.isPersistentForever())
 			client.server.forceStorePersistentRequests();
