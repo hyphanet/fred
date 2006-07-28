@@ -48,8 +48,10 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
         double targetLoc = key.toNormalizedDouble();
         double myLoc = node.lm.getLocation().getValue();
-        if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc))
+        if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc)) {
             closestLoc = myLoc;
+            htl = Node.MAX_HTL;
+        }
         byte[] pubKeyHash = ((ShortBuffer)req.getObject(DMT.PUBKEY_HASH)).getData();
         pubKey = node.getKey(pubKeyHash);
         data = ((ShortBuffer) req.getObject(DMT.DATA)).getData();
