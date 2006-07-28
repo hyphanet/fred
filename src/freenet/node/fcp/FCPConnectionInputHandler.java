@@ -43,7 +43,7 @@ public class FCPConnectionInputHandler implements Runnable {
 		while(true) {
 			SimpleFieldSet fs;
 			// Read a message
-			String messageType = lis.readLine(64, 64, true);
+			String messageType = lis.readLine(128, 128, true);
 			if(messageType == null) {
 				is.close();
 				return;
