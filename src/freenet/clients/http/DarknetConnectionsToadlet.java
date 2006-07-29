@@ -51,6 +51,23 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		return "GET, POST";
 	}
 
+	/**
+	 * Counts the peers in <code>peerNodes</code> that have the specified
+	 * status.
+	 * @param peerNodeStatuses The peer nodes' statuses
+	 * @param status The status to count
+	 * @return The number of peers that have the specified status.
+	 */
+	private int getPeerStatusCount(int[] peerNodeStatuses, int status) {
+		int count = 0;
+		for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
+			if (peerNodeStatuses[peerIndex] == status) {
+				count++;
+			}
+		}
+		return count;
+	}
+
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
 		String path = uri.getPath();
@@ -68,16 +85,24 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		final boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
 		/* gather connection statistics */
-		int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
-		int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-		int numberOfTooNew = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_TOO_NEW);
-		int numberOfTooOld = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_TOO_OLD);
-		int numberOfDisconnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_DISCONNECTED);
-		int numberOfNeverConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_NEVER_CONNECTED);
-		int numberOfDisabled = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_DISABLED);
-		int numberOfBursting = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_BURSTING);
-		int numberOfListening = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_LISTENING);
-		int numberOfListenOnly = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_LISTEN_ONLY);
+		PeerNode[] peerNodes = node.getDarknetConnections();
+
+		/* copy peer node statuses for consistent display. */
+		int[] peerNodeStatuses = new int[peerNodes.length];
+		for (int peerIndex = 0, peerCount = peerNodes.length; peerIndex < peerCount; peerIndex++) {
+			peerNodeStatuses[peerIndex] = peerNodes[peerIndex].getPeerNodeStatus();
+		}
+		
+		int numberOfConnected = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_CONNECTED);
+		int numberOfRoutingBackedOff = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+		int numberOfTooNew = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_NEW);
+		int numberOfTooOld = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_OLD);
+		int numberOfDisconnected = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISCONNECTED);
+		int numberOfNeverConnected = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_NEVER_CONNECTED);
+		int numberOfDisabled = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISABLED);
+		int numberOfBursting = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_BURSTING);
+		int numberOfListening = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTENING);
+		int numberOfListenOnly = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTEN_ONLY);
 		
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
@@ -93,8 +118,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		ctx.getPageMaker().makeHead(buf, pageTitle);
 		
 		// FIXME! We need some nice images
-		PeerNode[] peerNodes = node.getDarknetConnections();
-		
 		long now = System.currentTimeMillis();
 		
 		node.alerts.toSummaryHtml(buf);
@@ -283,11 +306,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				Object[] row = new Object[10];  // where [0] is the pn object and 9 is the node name only for sorting!
 				rows[i] = row;
 				
-				Object status = new Integer(pn.getPeerNodeStatus());
+				Object status = new Integer(peerNodeStatuses[i]);
 				long idle = pn.timeLastRoutable();
 				if(pn.isRoutable()) {
 					idle = pn.timeLastConnectionCompleted();
-				} else if(((Integer) status).intValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
+				} else if(peerNodeStatuses[i] == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
 					idle = pn.getPeerAddedTime();
 				}
 				String lastBackoffReasonOutputString = "";
@@ -350,7 +373,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 				}
 				String statusString = ((PeerNode) row[0]).getPeerNodeStatusString();
-				if(!advancedEnabled && (((PeerNode) row[0]).getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
+				if(!advancedEnabled && (((Integer) row[2]).intValue() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
 					statusString = "BUSY";
 				}
 				row[2] = "<span class=\""+((PeerNode) row[0]).getPeerNodeStatusCSSClassName()+"\">"+statusString+arkAsterisk+"</span>";
