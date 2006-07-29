@@ -85,7 +85,7 @@ public class WelcomeToadlet extends Toadlet {
 			ctx.getPageMaker().makeHead(buf, "Node Updating", true);
 			buf.append("<div class=\"infobox infobox-information\">\n");
 			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("The Freenet node is beeing updated and will self-restart\n");
+			buf.append("The Freenet node is being updated and will self-restart\n");
 			buf.append("</div>\n");
 			buf.append("<div class=\"infobox-content\">\n");
 			buf.append("The restart process might take up to 10 minutes. <br>");
