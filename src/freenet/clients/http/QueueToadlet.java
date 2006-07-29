@@ -244,7 +244,7 @@ public class QueueToadlet extends Toadlet {
 
 			if(!completedUpload.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Completed uploads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Persistence", "Identifier" }, buf);
+					writeTableHead("Completed uploads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Persistence", "Key" }, buf);
 				else
 					writeTableHead("Completed uploads", new String[] { "", "Filename", "Size", "MIME-Type", "Persistence", "Key" }, buf);
 				for(Iterator i=completedUpload.iterator();i.hasNext();) {
