@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import freenet.config.InvalidConfigValueException;
+import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKeyBlock;
@@ -22,6 +24,31 @@ import freenet.support.SortedVectorByNumber;
  * thread. It is removed at that point.
  */
 public class ClientRequestScheduler implements RequestScheduler {
+	
+	public class PrioritySchedulerCallback implements StringCallback{
+		final ClientRequestScheduler cs;
+		
+		PrioritySchedulerCallback(ClientRequestScheduler cs){
+			this.cs = cs;
+		}
+		
+		public String get(){
+			return cs.getChoosenPriorityScheduler();
+		}
+		
+		public void set(String val) throws InvalidConfigValueException{
+			String value;
+			if(val.equalsIgnoreCase(get())) return;
+			if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_HARD)){
+				value = ClientRequestScheduler.PRIORITY_HARD;
+			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_SOFT)){
+				value = ClientRequestScheduler.PRIORITY_SOFT;
+			}else{
+				throw new InvalidConfigValueException("Invalid priority scheme");
+			}
+			cs.setPriorityScheduler(value);
+		}
+	}
 	
 	/**
 	 * Structure:
@@ -102,7 +129,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		allRequestsByClientRequest = new HashMap();
 		
 		this.name = name;
-		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, "Priority policy of the "+name+"scheduler", "Set the priority policy scheme used by the scheduler. Could be one of ["+PRIORITY_HARD+"|"+PRIORITY_SOFT+"]",
+		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, "Priority policy of the "+name+"scheduler", "Set the priority policy scheme used by the scheduler. Could be one of ["+PRIORITY_HARD+", "+PRIORITY_SOFT+"]",
 				new PrioritySchedulerCallback(this));
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 	}
