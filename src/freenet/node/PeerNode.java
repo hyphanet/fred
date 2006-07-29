@@ -12,6 +12,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
@@ -772,14 +773,28 @@ public class PeerNode implements PeerContext {
         Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected()) throw new NotConnectedException();
         MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes, ctr);
+        item.getData(this);
         long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
+		int x = 0;
         synchronized(messagesToSendNow) {
             messagesToSendNow.addLast(item);
+            Iterator i = messagesToSendNow.iterator();
+            for(;i.hasNext();) {
+            	MessageItem it = (MessageItem) (i.next());
+            	x += it.getData(this).length + 2;
+            	if(x > 1024) break;
+            }
         }
-        synchronized(node.ps) {
-            node.ps.notifyAll();
+        if(x > 1024) {
+        	// If there is a packet's worth to send, wake up the packetsender.
+        	synchronized(node.ps) {
+        		node.ps.notifyAll();
+        	}
         }
+        // We DO NOT NEED to wake up the PacketSender
+        // It will wake up before the maximum coalescing delay (100ms) because
+        // it wakes up every 100ms *anyway*.
     }
 
     /**

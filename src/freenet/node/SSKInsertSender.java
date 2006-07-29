@@ -199,8 +199,8 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 					// Try to propagate back to source
 					Logger.minor(this, "Timeout");
 					next.localRejectedOverload("Timeout");
-					finish(TIMED_OUT, next);
-					return;
+					forwardRejectedOverload();
+					break;
 				}
 				
 				if (msg.getSpec() == DMT.FNPRejectedOverload) {
@@ -262,12 +262,12 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 				}
             	
             	if(newAck == null) {
-					// Terminal overload
 					// Try to propagate back to source
 					Logger.minor(this, "Timeout");
 					next.localRejectedOverload("Timeout2");
-					finish(TIMED_OUT, next);
-					return;
+					forwardRejectedOverload();
+					// Try another peer
+					break;
             	}
             }
             
@@ -406,7 +406,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 						hasCollided = true;
 						notifyAll();
 					}
-					break; // go to next node
+					continue;
 				}
 				
 				if (msg.getSpec() != DMT.FNPInsertReply) {

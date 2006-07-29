@@ -51,7 +51,6 @@ import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.BooleanCallback;
 import freenet.config.Config;
-import freenet.config.FilePersistentConfig;
 import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.LongCallback;
@@ -60,10 +59,8 @@ import freenet.config.SubConfig;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
-import freenet.crypt.DiffieHellman;
 import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
-import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
@@ -405,6 +402,10 @@ public class Node {
 		public synchronized void successfulCompletion(long rtt) {
 			roundTripTime.report(Math.max(rtt, 10));
 			Logger.minor(this, "Reported successful completion: "+rtt+" on "+this+" avg "+roundTripTime.currentValue());
+		}
+		
+		public String toString() {
+			return "rtt: "+roundTripTime.currentValue()+" _s="+throttleWindow.currentValue();
 		}
 	}
 	
@@ -1112,6 +1113,8 @@ public class Node {
 
 			public void set(boolean val) throws InvalidConfigValueException {
 				includeLocalAddressesInNoderefs = val;
+				lastIPAddress = null;
+				ipDetector.clearCached();
 			}
 			
 		});
@@ -2423,11 +2426,12 @@ public class Node {
 			// If the IP is overridden, the override has to be the first element.
 			addresses.add(new Peer(overrideIPAddress, portNumber));
 		}
-	   	InetAddress detectedAddr = ipDetector.getAddress();
-	   	if(detectedAddr != null) {
-	   		Peer a = new Peer(new FreenetInetAddress(detectedAddr), portNumber);
-	   		if(!addresses.contains(a))
-	   			addresses.add(a);
+	   	InetAddress[] detectedAddrs = ipDetector.getAddress();
+	   	if(detectedAddrs != null) {
+	   		for(int i=0;i<detectedAddrs.length;i++) {
+	   			Peer p = new Peer(detectedAddrs[i], portNumber);
+	   			if(!addresses.contains(p)) addresses.add(p);
+	   		}
 	   	}
 	   	if((pluginDetectedIPs != null) && (pluginDetectedIPs.length > 0)) {
 	   		for(int i=0;i<pluginDetectedIPs.length;i++) {
@@ -2438,7 +2442,7 @@ public class Node {
 	   				addresses.add(a);
 	   		}
 	   	}
-	   	if((detectedAddr == null) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
+	   	if((detectedAddrs == null) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
 	   		addresses.add(new Peer(oldIPAddress, portNumber));
    		// Try to pick it up from our connections
 	   	if(peers != null) {
@@ -2481,7 +2485,7 @@ public class Node {
 		   			}
 		   		}
 		   		if(best != null) {
-		   			if((bestPopularity > 2) || (detectedAddr == null)) {
+		   			if((bestPopularity > 2) || (detectedAddrs == null)) {
 		   				if(!addresses.contains(best))
 		   					addresses.add(best);
 		   				if((secondBest != null) && (secondBestPopularity > 2)) {

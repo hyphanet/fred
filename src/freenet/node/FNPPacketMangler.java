@@ -821,7 +821,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 			mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
             if(mi.formatted) {
                 try {
-                    byte[] buf = mi.getData(this, pn);
+                    byte[] buf = mi.getData(pn);
                     KeyTracker kt = pn.getCurrentKeyTracker();
                     if(kt == null) {
                         Logger.minor(this, "kt = null");
@@ -866,7 +866,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                     return;
                 }
             } else {
-                byte[] data = mi.getData(this, pn);
+                byte[] data = mi.getData(pn);
                 messageData[x] = data;
                 newMsgs[x] = mi;
                 alreadyReported[x] = mi.alreadyReportedBytes;
@@ -1104,7 +1104,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     }
 
     public byte[] preformat(Message msg, PeerNode pn) {
-        byte[] buf = msg.encodeToPacket(this, pn);
+        byte[] buf = msg.encodeToPacket(pn);
         return preformat(buf, 0, buf.length);
     }
     

@@ -227,7 +227,7 @@ public class PacketSender implements Runnable {
                 	int sz = 56; // overhead; FIXME should be a constant or something
                 	for(int j=0;j<messages.length;j++) {
                 		if(l > messages[j].submitted) l = messages[j].submitted;
-                		sz += 2 + /* FIXME only 2? */ messages[j].getData(node.packetMangler, pn).length;
+                		sz += 2 + /* FIXME only 2? */ messages[j].getData(pn).length;
                 	}
                 	if((l + 100 > now) && (sz < 1024 /* sensible size */)) {
                 		// Don't send immediately
@@ -324,8 +324,8 @@ public class PacketSender implements Runnable {
         	}
         
         long sleepTime = nextActionTime - now;
-        // 200ms maximum sleep time
-        sleepTime = Math.min(sleepTime, 200);
+        // 100ms maximum sleep time - same as the maximum coalescing delay
+        sleepTime = Math.min(sleepTime, 100);
         
         if(now - node.startupTime > 60*1000*5) {
             if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {

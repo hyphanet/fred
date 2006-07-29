@@ -39,9 +39,9 @@ public class MessageItem {
     /**
      * Return the data contents of this MessageItem.
      */
-    public byte[] getData(FNPPacketMangler mangler, PeerNode pn) {
+    public byte[] getData(PeerNode pn) {
         if(buf == null)
-            buf = msg.encodeToPacket(mangler, pn);
+            buf = msg.encodeToPacket(pn);
         return buf;
     }
 }

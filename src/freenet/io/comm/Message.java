@@ -155,7 +155,7 @@ public class Message {
 		_payload.put(key, value);
 	}
 
-	public byte[] encodeToPacket(LowLevelFilter f, PeerContext destination) {
+	public byte[] encodeToPacket(PeerContext destination) {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 

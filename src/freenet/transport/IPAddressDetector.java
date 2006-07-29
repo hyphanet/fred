@@ -47,51 +47,28 @@ public class IPAddressDetector implements Runnable {
 	 * Fetches the currently detected IP address. If not detected yet a detection is forced
 	 * @return Detected ip address
 	 */
-	public InetAddress getAddress() {
-		return getAddress(0, null);
-	}
-
-	/**
-	 * Get the IP address
-	 * @param preferedAddress An address that for some reason is prefered above others. Might be null
-	 * @return Detected ip address
-	 */
-	public InetAddress getAddress(long recheckTime, String preferedAddress) {
-		if ((lastInetAddress == null)
-			|| (System.currentTimeMillis() > (lastDetectedTime + recheckTime)))
-			checkpoint(preferedAddress);
-		return lastInetAddress;
+	public InetAddress[] getAddress() {
+		return getAddress(0);
 	}
 
 	/**
 	 * Get the IP address
 	 * @return Detected ip address
 	 */
-	public InetAddress getAddress(long recheckTime) {
-		return getAddress(recheckTime, null);
-	}
-
-	public void checkpoint() {
-		checkpoint((InetAddress)null);
+	public InetAddress[] getAddress(long recheckTime) {
+		if(System.currentTimeMillis() > (lastDetectedTime + recheckTime)
+				|| lastAddressList == null)
+			checkpoint();
+		return lastAddressList;
 	}
 
 	boolean old = false;
 
-	protected synchronized void checkpoint(String preferredAddress) {
-	    InetAddress preferredInetAddress = null;
-		try {
-			preferredInetAddress = InetAddress.getByName(preferredAddress);
-			//It there was something preferred then convert it to a proper class
-		} catch (UnknownHostException e) {
-		}
-		checkpoint(preferredInetAddress);
-	}
-	
 	/**
 	 * Execute a checkpoint - detect our internet IP address and log it
 	 * @param preferedAddress An address that for some reason is prefered above others. Might be null
 	 */
-	protected synchronized void checkpoint(InetAddress preferedInetAddress) {
+	protected synchronized void checkpoint() {
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		Vector addrs = new Vector();
 
@@ -142,14 +119,8 @@ public class IPAddressDetector implements Runnable {
 					"Finished scanning interfaces");
 		}
 
-		if ((preferedInetAddress == null)
-			&& (lastInetAddress != null)
-				? isInternetAddress(lastInetAddress)
-				: true) //If no specific other address is preferred then we prefer to keep our old address
-			preferedInetAddress = lastInetAddress;
-
 		InetAddress oldAddress = lastInetAddress;
-		onGetAddresses(addrs, preferedInetAddress);
+		onGetAddresses(addrs);
 		lastDetectedTime = System.currentTimeMillis();
 		if ((oldAddress != null) && (lastInetAddress != null) && 
 		        !lastInetAddress.equals(oldAddress)) {
@@ -199,16 +170,16 @@ public class IPAddressDetector implements Runnable {
 	 * @param v Vector of InetAddresses
 	 * @param preferedInetAddress An address that for some reason is prefered above others. Might be null
 	 */
-	protected void onGetAddresses(Vector v, InetAddress preferedInetAddress) {
+	protected void onGetAddresses(Vector v) {
+		Vector output = new Vector();
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if (logDEBUG)
 			Logger.debug(
 				this,
 				"onGetAddresses found " + v.size() + " potential addresses)");
-		InetAddress addrDetected = null;
 		if (v.size() == 0) {
 			Logger.error(this, "No addresses found!");
-			addrDetected = null;
+			lastAddressList = null;
 		} else {
 //			InetAddress lastNonValidAddress = null;
 			for (int x = 0; x < v.size(); x++) {
@@ -218,39 +189,22 @@ public class IPAddressDetector implements Runnable {
 						Logger.debug(
 							this,
 							"Address " + x + ": " + i);
-					if (isInternetAddress(i)) {
-						//Do not even consider this address if it isn't globally addressable
-						if (logDEBUG)
-							Logger.debug(
-								this,
-								"Setting default address to "
-									+ i.getHostAddress());
-
-						addrDetected = i;
-						//Use the last detected valid IP as 'detected' IP
-						if ((preferedInetAddress != null)
-							&& addrDetected.equals(
-								preferedInetAddress)) { //Prefer the specified address if it is still available to us. Do not look for more ones
-							if (logDEBUG)
-								Logger.debug(
-									this,
-									"Detected address is the preferred address, setting final address to "
-										+ lastInetAddress.getHostAddress());
-							lastInetAddress = addrDetected;
-							return;
+					if(i.isAnyLocalAddress()) {
+						// Wildcard address, 0.0.0.0, ignore.
+					} else if(i.isLinkLocalAddress() || i.isLoopbackAddress() ||
+							i.isSiteLocalAddress()) {
+						if(node.includeLocalAddressesInNoderefs) {
+							output.add(i);
 						}
-
-					}// else
-//						lastNonValidAddress = i;
+					} else if(i.isMulticastAddress()) {
+						// Ignore
+					} else {
+						output.add(i);
+					}
 				}
 			}
-			//If we are here we didn't manage to find a valid globally addressable IP. Do the best of the situation, return the last valid non-addressable IP
-			//This address will be used by the node if the user has configured localIsOK.
-//			if (lastInetAddress == null || (!detectedInetAddress))
-//				lastInetAddress = lastNonValidAddress;
 		}
-		lastInetAddress = addrDetected;
-		// FIXME: add support for multihoming
+		lastAddressList = (InetAddress[]) output.toArray(new InetAddress[output.size()]);
 	}
 
 	protected boolean isInternetAddress(InetAddress addr) {
@@ -270,5 +224,10 @@ public class IPAddressDetector implements Runnable {
 				Logger.error(this, "Caught "+t, t);
 			}
 		}
+	}
+
+	public void clearCached() {
+		lastAddressList = null;
+		lastDetectedTime = -1;
 	}
 }

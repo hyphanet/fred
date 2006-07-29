@@ -335,6 +335,9 @@ public class InsertHandler implements Runnable, ByteCounter {
         }
     }
     
+    /**
+     * Verify data, or send DataInsertRejected.
+     */
     private void maybeCommit() {
         Message toSend = null;
         

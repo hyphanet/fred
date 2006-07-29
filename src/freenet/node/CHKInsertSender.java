@@ -138,7 +138,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
-    static final int SEARCH_TIMEOUT = 60000;
+    static final int SEARCH_TIMEOUT = 120000;
     static final int TRANSFER_COMPLETION_TIMEOUT = 120000;
 
     // Basics
@@ -310,8 +310,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					// Try to propagate back to source
 					Logger.minor(this, "Timeout");
 					next.localRejectedOverload("Timeout3");
-					finish(TIMED_OUT, next);
-					return;
+					// Try another node.
+					forwardRejectedOverload();
+					break;
 				}
 				
 				if (msg.getSpec() == DMT.FNPRejectedOverload) {
