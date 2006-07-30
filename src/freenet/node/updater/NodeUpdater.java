@@ -35,6 +35,9 @@ import freenet.support.Logger;
 import freenet.support.io.ArrayBucket;
 
 public class NodeUpdater implements ClientCallback, USKCallback {
+	public final static String UPDATE_URI = "freenet:USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/update/"+Version.buildNumber()+"/";
+	public final static String REVOCATION_URI = "freenet:SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked/";
+	
 	private FetcherContext ctx;
 	private FetcherContext ctxRevocation;
 	private FetchResult result;
@@ -531,17 +534,15 @@ public class NodeUpdater implements ClientCallback, USKCallback {
         			new AutoUpdateAllowedCallback(node));
         	boolean autoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
         	
-        	updaterConfig.register("URI",
-        			"freenet:USK@SIDKS6l-eOU8IQqDo03d~3qqBd-69WG60aDgg4nWqss,CPFqYi95Is3GwzAdAKtAuFMCXDZFFWC3~uPoidCD67s,AQABAAE/update/"+Version.buildNumber()+"/",
-        			3, true, "Where should the node look for updates?",
+        	updaterConfig.register("URI", NodeUpdater.UPDATE_URI, 3,
+        			true, "Where should the node look for updates?",
         			"Where should the node look for updates?",
         			new UpdateURICallback(node));
         	
         	String URI = updaterConfig.getString("URI");
         	
         	
-        	updaterConfig.register("revocationURI",
-        			"freenet:SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked/",
+        	updaterConfig.register("revocationURI",	NodeUpdater.REVOCATION_URI,
         			3, true, "Where should the node look for revocation ?",
         			"Where should the node look for revocation ?",
         			new UpdateRevocationURICallback(node));

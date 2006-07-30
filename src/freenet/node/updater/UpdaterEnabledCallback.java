@@ -3,7 +3,6 @@ package freenet.node.updater;
 import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.support.Logger;
@@ -30,10 +29,9 @@ public class UpdaterEnabledCallback implements BooleanCallback {
 			if(val == get()) return;
 			if(val){
 				try{
-					SubConfig sc = nodeConfig.get("node.updater");
 					if(node.nodeUpdater != null)
 						node.nodeUpdater.kill();
-					node.nodeUpdater = new NodeUpdater(node , sc.getBoolean("autoupdate"), new FreenetURI(sc.getString("URI")), new FreenetURI(sc.getString("revocationURI")));
+					node.nodeUpdater = new NodeUpdater(node , false, new FreenetURI(NodeUpdater.UPDATE_URI), new FreenetURI(NodeUpdater.REVOCATION_URI));
 					Logger.normal(this, "Starting up the node updater");
 				}catch (Exception e){
 					Logger.error(this, "unable to start the node updater up "+e);
