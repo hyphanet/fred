@@ -528,29 +528,29 @@ public class NodeUpdater implements ClientCallback, USKCallback {
         
         boolean enabled = updaterConfig.getBoolean("enabled");
 
+        // is the auto-update allowed ?
+        updaterConfig.register("autoupdate", false, 2, false, "Automatically install new versions", "Should your node automatically update to the newest version of Freenet, without asking?",
+        		new AutoUpdateAllowedCallback(node));
+        boolean autoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
+
+        updaterConfig.register("URI", NodeUpdater.UPDATE_URI, 3,
+        		true, "Where should the node look for updates?",
+        		"Where should the node look for updates?",
+        		new UpdateURICallback(node));
+
+        String URI = updaterConfig.getString("URI");
+
+
+        updaterConfig.register("revocationURI",	NodeUpdater.REVOCATION_URI,
+        		3, true, "Where should the node look for revocation ?",
+        		"Where should the node look for revocation ?",
+        		new UpdateRevocationURICallback(node));
+
+        String revURI = updaterConfig.getString("revocationURI");
+
+        updaterConfig.finishedInitialization();
+        
         if(enabled) {
-        	// is the auto-update allowed ?
-        	updaterConfig.register("autoupdate", false, 2, false, "Automatically install new versions", "Should your node automatically update to the newest version of Freenet, without asking?",
-        			new AutoUpdateAllowedCallback(node));
-        	boolean autoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
-        	
-        	updaterConfig.register("URI", NodeUpdater.UPDATE_URI, 3,
-        			true, "Where should the node look for updates?",
-        			"Where should the node look for updates?",
-        			new UpdateURICallback(node));
-        	
-        	String URI = updaterConfig.getString("URI");
-        	
-        	
-        	updaterConfig.register("revocationURI",	NodeUpdater.REVOCATION_URI,
-        			3, true, "Where should the node look for revocation ?",
-        			"Where should the node look for revocation ?",
-        			new UpdateRevocationURICallback(node));
-        	
-        	String revURI = updaterConfig.getString("revocationURI");
-        	
-        	
-        	updaterConfig.finishedInitialization();
         	try{
         		return new NodeUpdater(node , autoUpdateAllowed, new FreenetURI(URI), new FreenetURI(revURI));
         	}catch(Exception e){
@@ -558,7 +558,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
         		throw new Exception("Unable to start the NodeUpdater up");
         	}
         } else {
-        	updaterConfig.finishedInitialization();
         	return null;
         }
 	}

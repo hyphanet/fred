@@ -5,10 +5,8 @@ import freenet.node.Node;
 import freenet.support.Logger;
 
 public class UpdateRevocationURICallback implements StringCallback{
-
 	private final Node node;
-	private static final String baseURI = "SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked/";
-			
+		
 	public UpdateRevocationURICallback(Node node) {
 		this.node = node;
 	}
@@ -18,7 +16,7 @@ public class UpdateRevocationURICallback implements StringCallback{
 		if (nu != null)
 			return nu.getRevocationKey().toString(true);
 		else
-			return baseURI;
+			return NodeUpdater.REVOCATION_URI;
 	}
 
 	public void set(String val) {
