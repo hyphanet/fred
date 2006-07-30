@@ -37,6 +37,7 @@ public class UpdaterEnabledCallback implements BooleanCallback {
 					Logger.normal(this, "Starting up the node updater");
 				}catch (Exception e){
 					Logger.error(this, "unable to start the node updater up "+e);
+					e.printStackTrace();
 					throw new InvalidConfigValueException("Unable to enable the Node Updater "+e);
 				}
 			}else{
