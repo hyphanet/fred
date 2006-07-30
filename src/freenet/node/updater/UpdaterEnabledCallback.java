@@ -31,7 +31,7 @@ public class UpdaterEnabledCallback implements BooleanCallback {
 			if(val){
 				try{
 					SubConfig sc = nodeConfig.get("node.updater");
-					if(node.getNodeUpdater()!=null)
+					if(node.nodeUpdater != null)
 						node.nodeUpdater.kill();
 					node.nodeUpdater = new NodeUpdater(node , sc.getBoolean("autoupdate"), new FreenetURI(sc.getString("URI")), new FreenetURI(sc.getString("revocationURI")));
 					Logger.normal(this, "Starting up the node updater");
