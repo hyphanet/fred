@@ -483,6 +483,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion));
 			ctx.uskManager.unsubscribe(myUsk, this,	true);
 			cg.cancel();
+			revocationGetter.cancel();
 		}catch(Exception e){
 		}
 	}
