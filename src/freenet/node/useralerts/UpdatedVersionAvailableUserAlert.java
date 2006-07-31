@@ -4,7 +4,7 @@ import freenet.node.updater.NodeUpdater;
 
 public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	private boolean isValid, isReady;
-	private NodeUpdater updater;
+	private final NodeUpdater updater;
 	private int version;
 
 	public UpdatedVersionAvailableUserAlert(int version, NodeUpdater updater){
@@ -32,7 +32,7 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 		"Updating to "+version+" is advised. ";
 		
 		if(updater.inFinalCheck()) {
-			return s + "Your node is currently doing a final check to verify the security of the update.";
+			return s + "Your node is currently doing a final check to verify the security of the update. ("+updater.getRevocationDNFCounter()+"/"+NodeUpdater.REVOCATION_DNF_MIN+")";
 		} else {
 			if(isReady) return s+
 				" <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update Now\" /></form>";
@@ -42,7 +42,10 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	}
 	
 	public short getPriorityClass() {
-		return UserAlert.MINOR;
+		if(isReady || updater.inFinalCheck())
+			return UserAlert.WARNING;
+		else
+			return UserAlert.MINOR;
 	}
 	
 	public boolean isValid() {
