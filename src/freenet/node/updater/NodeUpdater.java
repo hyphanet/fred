@@ -541,8 +541,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
         String URI = updaterConfig.getString("URI");
 
 
-        updaterConfig.register("revocationURI",	NodeUpdater.REVOCATION_URI,
-        		3, true, "Where should the node look for revocation ?",
+        updaterConfig.register("revocationURI",	NodeUpdater.REVOCATION_URI,4,
+        		true, "Where should the node look for revocation ?",
         		"Where should the node look for revocation ?",
         		new UpdateRevocationURICallback(node));
 

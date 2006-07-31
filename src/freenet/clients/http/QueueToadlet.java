@@ -136,6 +136,22 @@ public class QueueToadlet extends Toadlet {
 		
 		ClientRequest[] reqs = fcp.getGlobalRequests();
 		Logger.minor(this, "Request count: "+reqs.length);
+		
+		if(reqs.length < 1){
+			ctx.getPageMaker().makeHead(buf, "Global Queue");
+			buf.append("<div class=\"infobox infobox-information\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("Global queue is empty!\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("There is no task queued on the global queue at the moment.\n");
+			buf.append("</form>\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
+		}
 
 		for(int i=0;i<reqs.length;i++) {
 			ClientRequest req = reqs[i];
