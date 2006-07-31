@@ -18,6 +18,7 @@ import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
+import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
 
 public class WelcomeToadlet extends Toadlet {
@@ -47,37 +48,15 @@ public class WelcomeToadlet extends Toadlet {
 		StringBuffer buf = new StringBuffer();
 		
 		if (request.getParam("shutdownconfirm").length() > 0) {
-			// false for no navigation bars, because that would be very silly
-			ctx.getPageMaker().makeHead(buf, "Node Shutdown", false);
-			buf.append("<div class=\"infobox infobox-information\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("The Freenet node has been successfully shut down\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("Thank you for using Freenet\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-				
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", ".?shutdownconfirm="+node.formPassword.hashCode());
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			this.node.exit();
 			return;
 		}else if(request.getParam("restartconfirm").length() > 0){
-			// false for no navigation bars, because that would be very silly
-			ctx.getPageMaker().makeHead(buf, "Node Restart", false);
-			buf.append("<div class=\"infobox infobox-information\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("The Freenet node is beeing restarted\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("The restart process might take up to 3 minutes. <br>");
-			buf.append("Thank you for using Freenet\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-			
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
-			Logger.normal(this, "Node is restarting");
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", ".?restartconfirm="+node.formPassword.hashCode());
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			node.getNodeStarter().restart();
 			return;
 		}else if(request.getParam("updateconfirm").length() > 0){
@@ -332,6 +311,49 @@ public class WelcomeToadlet extends Toadlet {
 			ctx.getPageMaker().makeTail(buf);
 		
 			this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
+		}else if (request.getParam("shutdownconfirm").length() > 0) {
+			if(request.getIntParam("shutdownconfirm") != node.formPassword.hashCode()){
+				MultiValueTable headers = new MultiValueTable();
+				headers.put("Location", "/");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
+			// false for no navigation bars, because that would be very silly
+			ctx.getPageMaker().makeHead(buf, "Node Shutdown", false);
+			buf.append("<div class=\"infobox infobox-information\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("The Freenet node has been successfully shut down\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("Thank you for using Freenet\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			return;
+		}else if(request.getParam("restartconfirm").length() > 0){
+			if(request.getIntParam("restartconfirm") != node.formPassword.hashCode()){
+				MultiValueTable headers = new MultiValueTable();
+				headers.put("Location", "/");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
+			// false for no navigation bars, because that would be very silly
+			ctx.getPageMaker().makeHead(buf, "Node Restart", false);
+			buf.append("<div class=\"infobox infobox-information\">\n");
+			buf.append("<div class=\"infobox-header\">\n");
+			buf.append("The Freenet node is beeing restarted\n");
+			buf.append("</div>\n");
+			buf.append("<div class=\"infobox-content\">\n");
+			buf.append("The restart process might take up to 3 minutes. <br>");
+			buf.append("Thank you for using Freenet\n");
+			buf.append("</div>\n");
+			buf.append("</div>\n");
+			ctx.getPageMaker().makeTail(buf);
+			
+			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			Logger.normal(this, "Node is restarting");
 			return;
 		}
 		
