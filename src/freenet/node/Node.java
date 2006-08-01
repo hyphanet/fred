@@ -160,6 +160,12 @@ public class Node {
 		private ClientPutter inserter;
 		private boolean shouldInsert;
 		private Peer[] lastInsertedPeers;
+		private boolean canStart;
+		
+		void start() {
+			canStart = true;
+			update();
+		}
 		
 		public void update() {
 			Logger.minor(this, "update()");
@@ -209,6 +215,11 @@ public class Node {
 
 		private void startInserter() {
 
+			if(!canStart) {
+				Logger.minor(this, "ARK inserter can't start yet");
+				return;
+			}
+			
 			Logger.minor(this, "starting inserter");
 			
 			SimpleFieldSet fs = exportPublicFieldSet();
@@ -986,7 +997,6 @@ public class Node {
 		runningUIDs = new HashSet();
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
-		nextPeerNodeStatusLogTime = System.currentTimeMillis() + (3*1000);
 		// FIXME maybe these should persist? They need to be private though, so after the node/peers split. (bug 51).
 		decrementAtMax = random.nextDouble() <= DECREMENT_AT_MAX_PROB;
 		decrementAtMin = random.nextDouble() <= DECREMENT_AT_MIN_PROB;
@@ -1036,7 +1046,6 @@ public class Node {
 					overrideIPAddress = null;
 					lastIPAddress = null;
 					redetectAddress();
-					shouldInsertARK();
 					return;
 				}
 				FreenetInetAddress addr;
@@ -1086,7 +1095,6 @@ public class Node {
 					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
 				}
 				redetectAddress();
-				shouldInsertARK();
 			}
 			
 		});
@@ -1725,9 +1733,6 @@ public class Node {
 		if(testnetHandler != null)
 			testnetHandler.start();
 		
-		redetectAddress();
-		shouldInsertARK();
-		
 		Thread t = new Thread(ipDetector, "IP address re-detector");
 		t.setDaemon(true);
 		t.start();
@@ -1819,6 +1824,15 @@ public class Node {
 		}, "Startup completion thread");
 		completer.setDaemon(true);
 		completer.start();
+		
+		redetectAddress();
+		
+		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
+		ps.queueTimedJob(new FastRunnable() {
+			public void run() {
+				arkPutter.start();
+			}
+		}, 60*1000);
 	}
 	
 	private void shouldInsertARK() {
@@ -3369,7 +3383,7 @@ public class Node {
 	 */
 	public void maybeLogPeerNodeStatusSummary(long now) {
 	  if(now > nextPeerNodeStatusLogTime) {
-		if((now - nextPeerNodeStatusLogTime) > (3*1000))
+		if((now - nextPeerNodeStatusLogTime) > (3*1000) && nextPeerNodeStatusLogTime > 0)
 		  Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 3 seconds ("+(now - nextPeerNodeStatusLogTime)+").  PacketSender getting bogged down or something?");
 		int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
