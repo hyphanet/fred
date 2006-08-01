@@ -517,11 +517,27 @@ public class NativeBigInteger extends BigInteger {
             System.load(outFile.getAbsolutePath()); //System.load requires an absolute path to the lib
             return true;
         } catch (UnsatisfiedLinkError ule) {
-            if (_doLog) {
-                System.err.println("ERROR: The resource " + resourceName 
-                                   + " was not a valid library for this platform");
-                ule.printStackTrace();
-            }
+        	try{
+        		System.err.println("We have detected a NOEXEC on your temporary directory, trying in current one insteed.");
+        		InputStream libStream = resource.openStream();
+        		outFile = new File("jbigi-lib.tmp");
+        		FileOutputStream fos = new FileOutputStream(outFile);
+                byte buf[] = new byte[4096*1024];
+                while (true) {
+                    int read = libStream.read(buf);
+                    if (read < 0) break;
+                    fos.write(buf, 0, read);
+                }
+                fos.close();
+                System.load(outFile.getAbsolutePath());
+                return true;
+        	} catch (Exception aule) {
+        		if (_doLog) {
+        			System.err.println("ERROR: The resource " + resourceName 
+        					+ " was not a valid library for this platform");
+        			ule.printStackTrace();
+        		}
+        	}
             return false;
         } catch (IOException ioe) {
             if (_doLog) {
