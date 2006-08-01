@@ -301,7 +301,11 @@ public class PacketSender implements Runnable {
        					Runnable r = (Runnable) o;
        					jobsToRun.add(r);
        				}
-       			} else break;
+       			} else {
+       				// FIXME how accurately do we want ticker jobs to be scheduled?
+       				// FIXME can they wait the odd 200ms?
+       				break;
+       			}
         	}
         }
 

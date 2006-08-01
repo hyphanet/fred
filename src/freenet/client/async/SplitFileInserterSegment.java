@@ -16,7 +16,6 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
-import freenet.support.io.NullBucket;
 import freenet.support.io.SerializableToFieldSetBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
@@ -240,7 +239,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				block.put("Finished", finished);
 			}
 			Bucket data = dataBlocks[i];
-			if(data instanceof SerializableToFieldSetBucket) {
+			if(data == null && finished) {
+				// Ignore
+				Logger.minor(this, "Could not save to disk: null");
+			} else if(data instanceof SerializableToFieldSetBucket) {
 				SimpleFieldSet tmp = ((SerializableToFieldSetBucket)data).toFieldSet();
 				if(tmp == null) {
 					Logger.minor(this, "Could not save to disk: "+data);
