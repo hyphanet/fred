@@ -7,7 +7,6 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -96,12 +95,12 @@ public class PageMaker {
 	}
 	
 	/**
-	 * Returns a {@link Collection} containing the names of all available
+	 * Returns an {@link ArrayList} containing the names of all available
 	 * themes. If freenet was started from a JAR file the list is cached
 	 * (because the JAR file only changes between invocations), otherwise the
 	 * filesystem is read on every page access.
 	 * 
-	 * @return A {@link Collection} containing the names of all available themes
+	 * @return An {@link ArrayList} containing the names of all available themes
 	 */
 	public List getThemes() {
 		if (jarThemesCache != null) {
@@ -142,7 +141,8 @@ public class PageMaker {
 		} catch (IOException ioe1) {
 			Logger.error(this, "error creating list of themes", ioe1);
 		} catch (NullPointerException npe) {
-			Logger.error(this, "error creating list of themes", npe);
+			Logger.error(this, "error creating list of themes (if you're using the gnu-classpath, it's \"normal\")", npe);
+			themes.add("clean");
 		} finally {
 			if (!themes.contains("clean")) {
 				themes.add("clean");

@@ -1,6 +1,5 @@
 package freenet.config;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 /** Global configuration object for a node. SubConfig's register here.
