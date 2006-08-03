@@ -27,7 +27,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	private FreenetURI uri;
 	/** SimpleFieldSet containing progress information from last startup.
 	 * Will be progressively cleared during startup. */
-	private final SimpleFieldSet oldProgress;
+	private SimpleFieldSet oldProgress;
 
 	/**
 	 * @param client The object to call back when we complete, or don't.
@@ -75,6 +75,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			if(cancel) {
 				onFailure(new InserterException(InserterException.CANCELLED), null);
+				oldProgress = null;
 				return;
 			}
 			synchronized(this) {
@@ -82,10 +83,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			if(cancel) {
 				onFailure(new InserterException(InserterException.CANCELLED), null);
+				oldProgress = null;
 				return;
 			}
 			((SingleFileInserter)currentState).start(oldProgress);
 			synchronized(this) {
+				oldProgress = null;
 				cancel = cancelled;
 			}
 			if(cancel) {
@@ -96,6 +99,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			Logger.error(this, "Failed to start insert: "+e, e);
 			synchronized(this) {
 				finished = true;
+				oldProgress = null;
 				currentState = null;
 			}
 			// notify the client that the insert could not even be started
@@ -110,6 +114,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		synchronized(this) {
 			finished = true;
 			currentState = null;
+			oldProgress = null;
 		}
 		client.onSuccess(this);
 	}
@@ -118,6 +123,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		synchronized(this) {
 			finished = true;
 			currentState = null;
+			oldProgress = null;
 		}
 		client.onFailure(e, this);
 	}

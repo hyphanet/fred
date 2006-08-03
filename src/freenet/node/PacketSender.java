@@ -310,7 +310,7 @@ public class PacketSender implements Runnable {
         	}
         }
 
-        if(jobsToRun != null)
+        if(jobsToRun != null) {
         	for(int i=0;i<jobsToRun.size();i++) {
         		Runnable r = (Runnable) jobsToRun.get(i);
         		Logger.minor(this, "Running "+r);
@@ -327,6 +327,7 @@ public class PacketSender implements Runnable {
         			t.start();
         		}
         	}
+        }
         
         long sleepTime = nextActionTime - now;
         // 100ms maximum sleep time - same as the maximum coalescing delay

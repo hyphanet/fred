@@ -159,7 +159,9 @@ public class SplitFileInserter implements ClientPutState {
 		int checkBlocks = 0;
 		
 		for(int i=0;i<segments.length;i++) {
-			SimpleFieldSet segment = segFS.subset(Integer.toString(i));
+			String index = Integer.toString(i);
+			SimpleFieldSet segment = segFS.subset(index);
+			segFS.remove(index);
 			if(segment == null) throw new ResumeException("No segment "+i);
 			segments[i] = new SplitFileInserterSegment(this, segment, splitfileAlgorithm, ctx, getCHKOnly, i);
 			dataBlocks += segments[i].countDataBlocks();
