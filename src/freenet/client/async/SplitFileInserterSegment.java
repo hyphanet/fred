@@ -115,7 +115,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			checkURIs = new FreenetURI[checkBlockCount];
 			checkBlockInserters = new SingleBlockInserter[checkBlockCount];
 			for(int i=0;i<checkBlockCount;i++) {
-				SimpleFieldSet blockFS = checkFS.subset(Integer.toString(i));
+				String index = Integer.toString(i);
+				SimpleFieldSet blockFS = checkFS.subset(index);
 				if(blockFS == null) {
 					hasURIs = false;
 					encoded = false;
@@ -154,6 +155,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				if(checkBlocks[i] == null && checkURIs[i] == null) {
 					encoded = false;
 				}
+				checkFS.removeSubset(index);
 			}
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount, checkBlocks.length);
 		} else {
@@ -167,7 +169,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		}
 
 		for(int i=0;i<dataBlockCount;i++) {
-			SimpleFieldSet blockFS = dataFS.subset(Integer.toString(i));
+			String index = Integer.toString(i);
+			SimpleFieldSet blockFS = dataFS.subset(index);
 			if(blockFS == null) throw new ResumeException("No data block "+i+" on segment "+segNo);
 			tmp = blockFS.get("URI");
 			if(tmp != null) {
@@ -203,6 +206,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 					throw new ResumeException("Block "+i+" of "+segNo+" could not serialize data (create returned null) from "+bucketFS);
 				// Don't create fetcher yet; that happens in start()
 			}
+			dataFS.removeSubset(index);
 		}
 
 		if(!encoded) {
