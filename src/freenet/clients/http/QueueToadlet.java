@@ -17,6 +17,7 @@ import freenet.node.fcp.ClientRequest;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
@@ -26,6 +27,8 @@ import freenet.support.URLEncoder;
 import freenet.support.io.Bucket;
 
 public class QueueToadlet extends Toadlet {
+
+	private static final String[] priorityClasses = new String[] { "emergency", "very high", "high", "medium", "low", "very low", "will never finish" };
 
 	private Node node;
 	final FCPServer fcp;
@@ -97,6 +100,18 @@ public class QueueToadlet extends Toadlet {
 			String persistence = request.getParam("persistence");
 			String returnType = request.getParam("return-type");
 			fcp.makePersistentGlobalRequest(fetchURI, expectedMIMEType, persistence, returnType);
+			writePermanentRedirect(ctx, "Done", "/queue/");
+			return;
+		} else if (request.isParameterSet("change_priority")) {
+			String identifier = HTMLDecoder.decode(request.getParam("identifier"));
+			short newPriority = Short.parseShort(request.getParam("priority"));
+			ClientRequest[] clientRequests = fcp.getGlobalRequests();
+			for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
+				ClientRequest clientRequest = clientRequests[requestIndex];
+				if (identifier.equals(clientRequest.getIdentifier())) {
+					clientRequest.setPriorityClass(newPriority);
+				}
+			}
 			writePermanentRedirect(ctx, "Done", "/queue/");
 			return;
 		}
@@ -388,7 +403,7 @@ public class QueueToadlet extends Toadlet {
 			writeBigHeading("Requests in progress (" + (uncompletedDownload.size() + uncompletedUpload.size() + uncompletedDirUpload.size()) + ")", buf, "requests_in_progress");
 			if(!uncompletedDownload.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+					writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Priority", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				else
 					writeTableHead("Downloads in progress", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i = uncompletedDownload.iterator();i.hasNext();) {
@@ -401,6 +416,9 @@ public class QueueToadlet extends Toadlet {
 						writeDirectCell(buf);
 					else
 						writeFilenameCell(p.getDestFilename(), buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled()) {
+						writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
+					}
 					writeSizeCell(p.getDataSize(), buf);
 					writeTypeCell(p.getMIMEType(), buf);
 					writeProgressFractionCell(p, buf);
@@ -550,6 +568,27 @@ public class QueueToadlet extends Toadlet {
 		else
 			buf.append("<span class=\"filename_is\">" + HTMLEncoder.encode(destFilename.toString()) + "</span>");
 		buf.append("</td>\n");
+	}
+
+	private void writePriorityCell(String identifier, short priorityClass, StringBuffer buf) {
+		buf.append("<td class=\"nowrap\">");
+		buf.append("<form action=\"/queue/\" method=\"post\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\">");
+		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"").append(HTMLEncoder.encode(identifier)).append("\">");
+		buf.append("<select name=\"priority\">");
+		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
+			buf.append("<option name=\"priority\" value=\"").append(p);
+			if (p == priorityClass) {
+				buf.append("\" selected=\"selected");
+			}
+			buf.append("\">");
+			buf.append(priorityClasses[p]);
+			buf.append("</option>");
+		}
+		buf.append("</select>");
+		buf.append("<input type=\"submit\" name=\"change_priority\" value=\"Change\" />");
+		buf.append("</form>");
+		buf.append("</td>");
 	}
 
 	private void writeDeleteCell(ClientRequest p, StringBuffer buf) {
