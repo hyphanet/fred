@@ -188,7 +188,7 @@ public class DSAPublicKey extends CryptoKey {
     }
 
 	public SimpleFieldSet asFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("y", Base64.encode(y.toByteArray()));
 		return fs;
 	}

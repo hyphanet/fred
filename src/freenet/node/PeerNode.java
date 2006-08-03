@@ -1477,7 +1477,7 @@ public class PeerNode implements PeerContext {
         BufferedReader br = new BufferedReader(isr);
         SimpleFieldSet fs;
         try {
-            fs = new SimpleFieldSet(br, false);
+            fs = new SimpleFieldSet(br);
         } catch (IOException e) {
             Logger.error(this, "Impossible: e", e);
             return;
@@ -1679,7 +1679,7 @@ public class PeerNode implements PeerContext {
      * Export metadata about the node as a SimpleFieldSet
      */
     public synchronized SimpleFieldSet exportMetadataFieldSet() {
-    	SimpleFieldSet fs = new SimpleFieldSet(true);
+    	SimpleFieldSet fs = new SimpleFieldSet();
     	if(getDetectedPeer() != null)
     		fs.put("detected.udp", detectedPeer.toString());
     	if(lastReceivedPacketTime() > 0)
@@ -1707,7 +1707,7 @@ public class PeerNode implements PeerContext {
      * Export volatile data about the node as a SimpleFieldSet
      */
     public SimpleFieldSet exportVolatileFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			fs.put("averagePingTime", Double.toString(averagePingTime()));
@@ -1733,7 +1733,7 @@ public class PeerNode implements PeerContext {
      * Export the peer's noderef as a SimpleFieldSet
      */
     public synchronized SimpleFieldSet exportFieldSet() {
-        SimpleFieldSet fs = new SimpleFieldSet(true);
+        SimpleFieldSet fs = new SimpleFieldSet();
         if(getLastGoodVersion() != null)
         	fs.put("lastGoodVersion", lastGoodVersion);
 		for(int i=0;i<nominalPeer.size();i++) {

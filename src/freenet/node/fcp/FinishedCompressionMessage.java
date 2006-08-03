@@ -19,7 +19,7 @@ public class FinishedCompressionMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
 		fs.put("Codec", Integer.toString(codec));
 		fs.put("OriginalSize", Long.toString(origSize));

@@ -48,7 +48,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
 		fs.put("Global", Boolean.toString(global));
 		fs.put("PriorityClass", Short.toString(priorityClass));

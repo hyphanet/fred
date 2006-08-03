@@ -294,7 +294,7 @@ class SingleFileInserter implements ClientPutState {
 				throw new ResumeException("No SplitFileInserter");
 			ClientPutState newSFI, newMetaPutter = null;
 			newSFI = new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, sfiFS);
-			fs.remove("SplitFileInserter");
+			fs.removeSubset("SplitFileInserter");
 			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
 			if(metaFS != null) {
 				try {
@@ -310,7 +310,7 @@ class SingleFileInserter implements ClientPutState {
 					// Ignore, it will be reconstructed later
 				}
 			}
-			fs.remove("MetadataPutter");
+			fs.removeSubset("MetadataPutter");
 			synchronized(this) {
 				sfi = newSFI;
 				metadataPutter = newMetaPutter;
@@ -493,7 +493,7 @@ class SingleFileInserter implements ClientPutState {
 				curSFI = sfi;
 				curMetadataPutter = metadataPutter;
 			}
-			SimpleFieldSet fs = new SimpleFieldSet(true);
+			SimpleFieldSet fs = new SimpleFieldSet();
 			fs.put("Type", "SplitHandler");
 			if(curSFI != null)
 				fs.put("SplitFileInserter", curSFI.getProgressFieldset());

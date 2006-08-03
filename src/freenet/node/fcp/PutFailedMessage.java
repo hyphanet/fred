@@ -73,7 +73,7 @@ public class PutFailedMessage extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet(boolean verbose) {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
 		fs.put("Code", Integer.toString(code));
 		if(verbose)

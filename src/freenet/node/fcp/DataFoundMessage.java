@@ -23,7 +23,7 @@ public class DataFoundMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
 		fs.put("Metadata.ContentType", mimeType);
 		fs.put("DataLength", Long.toString(dataLength));

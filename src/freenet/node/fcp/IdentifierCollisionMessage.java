@@ -12,7 +12,7 @@ public class IdentifierCollisionMessage extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet();
 		sfs.put("Identifier", identifier);
 		return sfs;
 	}

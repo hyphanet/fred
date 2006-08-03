@@ -227,8 +227,8 @@ public class Node {
 			// Remove some unnecessary fields that only cause collisions.
 			
 			// Delete entire ark.* field for now. Changing this and automatically moving to the new may be supported in future.
-			fs.remove("ark");
-			fs.remove("location");
+			fs.removeSubset("ark");
+			fs.removeValue("location");
 			//fs.remove("version"); - keep version because of its significance in reconnection
 			
 			String s = fs.toString();
@@ -748,7 +748,7 @@ public class Node {
 		FileInputStream fis = new FileInputStream(filename);
 		InputStreamReader isr = new InputStreamReader(fis);
 		BufferedReader br = new BufferedReader(isr);
-		SimpleFieldSet fs = new SimpleFieldSet(br, true);
+		SimpleFieldSet fs = new SimpleFieldSet(br);
 		br.close();
 		// Read contents
 		String[] udp = fs.getAll("physical.udp");
@@ -2396,7 +2396,7 @@ public class Node {
 	 * @return
 	 */
 	public SimpleFieldSet exportPublicFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		Peer[] ips = getPrimaryIPAddress();
 		fs.put("base64", "true");
 		if(ips != null) {

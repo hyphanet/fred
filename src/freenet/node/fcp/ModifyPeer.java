@@ -16,7 +16,7 @@ public class ModifyPeer extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(false);
+		return new SimpleFieldSet();
 	}
 
 	public String getName() {

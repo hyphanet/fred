@@ -44,7 +44,7 @@ public class PersistentGet extends FCPMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(false);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
 		fs.put("URI", uri.toString(false));
 		fs.put("Verbosity", Integer.toString(verbosity));

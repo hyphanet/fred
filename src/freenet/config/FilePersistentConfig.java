@@ -82,7 +82,7 @@ public class FilePersistentConfig extends Config {
 			LineReadingInputStream lis = new LineReadingInputStream(bis);
 			// Config file is UTF-8 too!
 			synchronized (this) {
-				origConfigFileContents = new SimpleFieldSet(lis, 32768, 128, true, true, true);	
+				origConfigFileContents = new SimpleFieldSet(lis, 32768, 128, true, true);	
 			}
 		} finally {
 			try {
@@ -137,7 +137,7 @@ public class FilePersistentConfig extends Config {
 	}
 
 	private synchronized SimpleFieldSet exportFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		SubConfig[] configs;
 		synchronized(this) {
 			configs = (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
@@ -155,7 +155,7 @@ public class FilePersistentConfig extends Config {
 			if(origConfigFileContents == null) return;
 			name = config.prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+o.name;
 			val = origConfigFileContents.get(name);
-			origConfigFileContents.remove(name);
+			origConfigFileContents.removeValue(name);
 			if(val == null) return;
 		}
 		try {

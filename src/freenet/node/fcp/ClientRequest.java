@@ -138,7 +138,7 @@ public abstract class ClientRequest {
 	}
 
 	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server) throws IOException {
-		SimpleFieldSet fs = new SimpleFieldSet(br, true);
+		SimpleFieldSet fs = new SimpleFieldSet(br);
 		String clientName = fs.get("ClientName");
 		boolean isGlobal = Fields.stringToBool(fs.get("Global"), false);
 		FCPClient client;

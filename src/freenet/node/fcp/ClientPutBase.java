@@ -218,7 +218,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	protected abstract FCPMessage persistentTagMessage();
 	
 	public synchronized SimpleFieldSet getFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true); // we will need multi-level later...
+		SimpleFieldSet fs = new SimpleFieldSet(); // we will need multi-level later...
 		fs.put("Type", getTypeName());
 		fs.put("URI", uri.toString(false));
 		fs.put("Identifier", identifier);

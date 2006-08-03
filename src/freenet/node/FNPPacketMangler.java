@@ -143,7 +143,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode opn, Peer peer) {
         BlockCipher authKey = opn.incomingSetupCipher;
-        Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey));
+        Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey)+" for "+peer+" : "+opn);
         // Does the packet match IV E( H(data) data ) ?
         PCFBMode pcfb = new PCFBMode(authKey);
         int ivLength = pcfb.lengthIV();

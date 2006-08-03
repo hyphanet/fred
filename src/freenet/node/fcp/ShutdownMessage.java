@@ -11,7 +11,7 @@ public class ShutdownMessage extends FCPMessage{
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(false);
+		return new SimpleFieldSet();
 	}
 
 	public String getName() {

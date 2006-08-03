@@ -9,8 +9,6 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
-import java.util.Vector;
 
 import freenet.support.io.LineReader;
 
@@ -22,29 +20,29 @@ import freenet.support.io.LineReader;
  */
 public class SimpleFieldSet {
 
-    private final Map map;
+    private final Map values;
+    private Map subsets;
     private String endMarker;
-    private final boolean multiLevel;
     static public final char MULTI_LEVEL_CHAR = '.';
     
-    public SimpleFieldSet(BufferedReader br, boolean multiLevel) throws IOException {
-        map = new HashMap();
-        this.multiLevel = multiLevel;
+    public SimpleFieldSet(BufferedReader br) throws IOException {
+        values = new HashMap();
+       	subsets = null;
         read(br);
     }
 
-    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean multiLevel, boolean tolerant, boolean utf8OrIso88591) throws IOException {
-    	map = new HashMap();
-    	this.multiLevel = multiLevel;
+    public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591) throws IOException {
+    	values = new HashMap();
+       	subsets = null;
     	read(lis, maxLineLength, lineBufferSize, tolerant, utf8OrIso88591);
     }
     
     /**
      * Empty constructor
      */
-    public SimpleFieldSet(boolean multiLevel) {
-        map = new HashMap();
-        this.multiLevel = multiLevel;
+    public SimpleFieldSet() {
+        values = new HashMap();
+       	subsets = null;
     }
 
     /**
@@ -52,8 +50,8 @@ public class SimpleFieldSet {
      * @throws IOException if the string is too short or invalid.
      */
     public SimpleFieldSet(String content, boolean multiLevel) throws IOException {
-        map = new HashMap();
-        this.multiLevel = multiLevel;
+    	values = new HashMap();
+    	subsets = null;
         StringReader sr = new StringReader(content);
         BufferedReader br = new BufferedReader(sr);
 	    read(br);
@@ -125,23 +123,20 @@ public class SimpleFieldSet {
         }
     }
     
-    public String get(String key) {
-    	if(multiLevel) {
-    		int idx = key.indexOf(MULTI_LEVEL_CHAR);
-    		if(idx == -1)
-    			return (String) map.get(key);
-    		else if(idx == 0)
-    			return null;
-    		else {
-    			String before = key.substring(0, idx);
-    			String after = key.substring(idx+1);
-    			SimpleFieldSet fs = (SimpleFieldSet) (map.get(before));
-    			if(fs == null) return null;
-    			return fs.get(after);
-    		}
-    	} else {
-    		return (String) map.get(key);
-    	}
+    public synchronized String get(String key) {
+   		int idx = key.indexOf(MULTI_LEVEL_CHAR);
+   		if(idx == -1)
+   			return (String) values.get(key);
+   		else if(idx == 0)
+   			return null;
+   		else {
+   			if(subsets == null) return null;
+   			String before = key.substring(0, idx);
+   			String after = key.substring(idx+1);
+   			SimpleFieldSet fs = (SimpleFieldSet) (subsets.get(before));
+   			if(fs == null) return null;
+   			return fs.get(after);
+   		}
     }
     
     public String[] getAll(String key) {
@@ -167,24 +162,27 @@ public class SimpleFieldSet {
 //    	return (String[]) v.toArray();
 	}
 
-	public void put(String key, String value) {
+	public synchronized void put(String key, String value) {
 		int idx;
 		if(value == null) return;
-		if((!multiLevel) || ((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1)) {
-			String x = (String) map.get(key);
+		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
+			String x = (String) values.get(key);
 			
 			if(x == null) {
-				map.put(key, value);
+				values.put(key, value);
 			} else {
-				map.put(key, ((String)map.get(key))+";"+value);
+				values.put(key, ((String)values.get(key))+";"+value);
 			}
 		} else {
 			String before = key.substring(0, idx);
 			String after = key.substring(idx+1);
-			SimpleFieldSet fs = (SimpleFieldSet) (map.get(before));
+			SimpleFieldSet fs = null;
+			if(subsets == null)
+				subsets = new HashMap();
+			fs = (SimpleFieldSet) (subsets.get(before));
 			if(fs == null) {
-				fs = new SimpleFieldSet(true);
-				map.put(before, fs);
+				fs = new SimpleFieldSet();
+				subsets.put(before, fs);
 			}
 			fs.put(after, value);
 		}
@@ -218,28 +216,28 @@ public class SimpleFieldSet {
 		writeTo(w, "", false);
 	}
 	
-    void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
-        Set s = map.entrySet();
-        Iterator i = s.iterator();
-        for(;i.hasNext();) {
+    synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
+    	for(Iterator i = values.entrySet().iterator();i.hasNext();) {
             Map.Entry entry = (Map.Entry) i.next();
             String key = (String) entry.getKey();
-            Object v = entry.getValue();
-            if(v instanceof String) {
-                String value = (String) v;
-                w.write(prefix+key+"="+value+"\n");
-            } else {
-            	SimpleFieldSet sfs = (SimpleFieldSet) v;
-            	if(sfs == null) throw new NullPointerException();
-            	sfs.writeTo(w, prefix+key+MULTI_LEVEL_CHAR, true);
-            }
-        }
-        if(!noEndMarker) {
-        	if(endMarker != null)
-        		w.write(endMarker+"\n");
-        	else
-        		w.write("End\n");
-        }
+            String value = (String) entry.getValue();
+            w.write(prefix+key+"="+value+"\n");
+    	}
+    	if(subsets != null) {
+    		for(Iterator i = subsets.entrySet().iterator();i.hasNext();) {
+    			Map.Entry entry = (Map.Entry) i.next();
+    			String key = (String) entry.getKey();
+    			SimpleFieldSet subset = (SimpleFieldSet) entry.getValue();
+    			if(subset == null) throw new NullPointerException();
+    			subset.writeTo(w, prefix+key+MULTI_LEVEL_CHAR, true);
+    		}
+    	}
+    	if(!noEndMarker) {
+    		if(endMarker == null)
+    			w.write("End\n");
+    		else
+    			w.write(endMarker+"\n");
+    	}
     }
     
     public String toString() {
@@ -260,15 +258,14 @@ public class SimpleFieldSet {
     	endMarker = s;
     }
 
-	public SimpleFieldSet subset(String key) {
-		if(!multiLevel)
-			throw new IllegalArgumentException("Not multi-level!");
+	public synchronized SimpleFieldSet subset(String key) {
+		if(subsets == null) return null;
 		int idx = key.indexOf(MULTI_LEVEL_CHAR);
 		if(idx == -1)
-			return (SimpleFieldSet) map.get(key);
+			return (SimpleFieldSet) subsets.get(key);
 		String before = key.substring(0, idx);
 		String after = key.substring(idx+1);
-		SimpleFieldSet fs = (SimpleFieldSet) map.get(before);
+		SimpleFieldSet fs = (SimpleFieldSet) subsets.get(before);
 		if(fs == null) return null;
 		return fs.subset(after);
 	}
@@ -283,130 +280,132 @@ public class SimpleFieldSet {
 	
     public class KeyIterator implements Iterator {
     	
-    	final Iterator mapIterator;
+    	final Iterator valuesIterator;
+    	final Iterator subsetIterator;
     	KeyIterator subIterator;
     	String prefix;
     	
     	public KeyIterator(String prefix) {
-    		mapIterator = map.keySet().iterator();
+    		valuesIterator = values.keySet().iterator();
+    		if(subsets != null)
+    			subsetIterator = subsets.keySet().iterator();
+    		else
+    			subsetIterator = null;
     		this.prefix = prefix;
     	}
 
 		public boolean hasNext() {
-			if((subIterator != null) && subIterator.hasNext()) return true;
-			if(subIterator != null) subIterator = null;
-			return mapIterator.hasNext();
-		}
-
-		public Object next() {
-			while(true) { // tail-recurse so we get infinite loop instead of OOM in case of a loop...
-				if((subIterator != null) && subIterator.hasNext()) {
-					return subIterator.next();
-				}
+			synchronized(SimpleFieldSet.this) {
+				if(valuesIterator.hasNext()) return true;
+				if((subIterator != null) && subIterator.hasNext()) return true;
 				if(subIterator != null) subIterator = null;
-				if(mapIterator.hasNext()) {
-					String key = (String) mapIterator.next();
-					Object value = map.get(key);
-					if(value instanceof String)
-						return prefix + MULTI_LEVEL_CHAR + key;
-					else {
-						SimpleFieldSet fs = (SimpleFieldSet) value;
-						subIterator = fs.keyIterator((prefix.length() == 0) ? key : (prefix+MULTI_LEVEL_CHAR+key));
-						continue;
-					}
-				}
-				return null;
+				return false;
 			}
 		}
 
-		public void remove() {
-			throw new UnsupportedOperationException();
+		public final Object next() {
+			return nextKey();
+		}
+		
+		public String nextKey() {
+			synchronized(SimpleFieldSet.this) {
+				String ret = null;
+				if(ret == null && valuesIterator.hasNext()) {
+					return prefix + valuesIterator.next();
+				}
+				while(true) {
+					// Iterate subsets.
+					if(subIterator != null && subIterator.hasNext()) {
+						if(ret != null)
+							// Found next but one, can return next
+							return ret;
+						ret = (String) subIterator.next();
+						if(subIterator.hasNext()) {
+							if(ret != null) return ret;
+						} else {
+							subIterator = null;
+						}
+					} else
+						subIterator = null;
+					if(subsetIterator != null && subsetIterator.hasNext()) {
+						String key = (String) subsetIterator.next();
+						SimpleFieldSet fs = (SimpleFieldSet) subsets.get(key);
+						String newPrefix = prefix + key + MULTI_LEVEL_CHAR;
+						subIterator = fs.keyIterator(newPrefix);
+					}
+				}
+			}
 		}
 
+		public synchronized void remove() {
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	public void put(String key, SimpleFieldSet fs) {
 		if(fs == null) return; // legal no-op, because used everywhere
 		if(fs.isEmpty())
 			throw new IllegalArgumentException("Empty");
-		if(!multiLevel)
-			throw new IllegalArgumentException("Not multi-level");
-		if(!fs.multiLevel)
-			throw new IllegalArgumentException("Argument not multi-level");
-		if(map.containsKey(key))
+		if(subsets == null)
+			subsets = new HashMap();
+		if(subsets.containsKey(key))
 			throw new IllegalArgumentException("Already contains "+key+" but trying to add a SimpleFieldSet!");
-		map.put(key, fs);
+		subsets.put(key, fs);
 	}
 
-	public void remove(String key) {
+	public synchronized void removeValue(String key) {
 		int idx;
-		if((!multiLevel) || ((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1)) {
-			map.remove(key);
+		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
+			values.remove(key);
 		} else {
+			if(subsets == null) return;
 			String before = key.substring(0, idx);
 			String after = key.substring(idx+1);
-			SimpleFieldSet fs = (SimpleFieldSet) (map.get(before));
+			SimpleFieldSet fs = (SimpleFieldSet) (subsets.get(before));
 			if(fs == null) {
 				return;
 			}
-			fs.remove(after);
-			if(fs.isEmpty())
-				map.remove(before);
+			fs.removeValue(after);
+			if(fs.isEmpty()) {
+				subsets.remove(before);
+				if(subsets.isEmpty())
+					subsets = null;
+			}
 		}
 	}
 
+	public synchronized void removeSubset(String key) {
+		if(subsets == null) return;
+		int idx;
+		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
+			subsets.remove(key);
+		} else {
+			String before = key.substring(0, idx);
+			String after = key.substring(idx+1);
+			SimpleFieldSet fs = (SimpleFieldSet) (subsets.get(before));
+			if(fs == null) {
+				return;
+			}
+			fs.removeSubset(after);
+			if(fs.isEmpty()) {
+				subsets.remove(before);
+				if(subsets.isEmpty())
+					subsets = null;
+			}
+		}
+	}
+	
 	/** Is this SimpleFieldSet empty? */
 	public boolean isEmpty() {
-		return map.isEmpty();
+		return values.isEmpty() && (subsets == null || subsets.isEmpty());
 	}
 
 	public Iterator directSubsetNameIterator() {
-		return new DirectSubsetNameIterator();
-	}
-
-	public class DirectSubsetNameIterator implements Iterator {
-
-		Iterator mapIterator;
-		String nextName;
-		
-		DirectSubsetNameIterator() {
-			mapIterator = map.keySet().iterator();
-			fetchNext();
-		}
-		
-		public boolean hasNext() {
-			return nextName != null;
-		}
-
-		public Object next() {
-			String next = nextName;
-			fetchNext();
-			return next;
-		}
-
-		public void remove() {
-			throw new UnsupportedOperationException();
-		}
-		
-		void fetchNext() {
-			// Maybe more efficient with Entry's???
-			while(mapIterator.hasNext()) {
-				String name = (String) mapIterator.next();
-				Object target = map.get(name);
-				if(target instanceof SimpleFieldSet) {
-					nextName = name;
-					return;
-				}
-			}
-			nextName = null;
-		}
+		return subsets.keySet().iterator();
 	}
 
 	public String[] namesOfDirectSubsets() {
-		Iterator i = new DirectSubsetNameIterator();
-		Vector v = new Vector();
-		while(i.hasNext()) v.add(i.next());
-		return (String[]) v.toArray(new String[v.size()]);
+		return (String[]) subsets.keySet().toArray(new String[subsets.size()]);
 	}
 
 }

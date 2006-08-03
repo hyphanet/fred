@@ -93,7 +93,7 @@ public class GetFailedMessage extends FCPMessage {
 	 * or another node).
 	 */
 	public SimpleFieldSet getFieldSet(boolean verbose) {
-		SimpleFieldSet sfs = new SimpleFieldSet(true);
+		SimpleFieldSet sfs = new SimpleFieldSet();
 		sfs.put("Code", Integer.toString(code));
 		if(verbose)
 			sfs.put("CodeDescription", codeDescription);

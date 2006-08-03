@@ -186,7 +186,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		// Translate manifestElements directly into a fieldset
-		SimpleFieldSet files = new SimpleFieldSet(true);
+		SimpleFieldSet files = new SimpleFieldSet();
 		// Flatten the hierarchy, it can be reconstructed on restarting.
 		// Storing it directly would be a PITA.
 		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
@@ -196,7 +196,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			ManifestElement e = elements[i];
 			String name = e.getName();
 			String mimeOverride = e.getMimeTypeOverride();
-			SimpleFieldSet subset = new SimpleFieldSet(true);
+			SimpleFieldSet subset = new SimpleFieldSet();
 			subset.put("Name", name);
 			if(mimeOverride != null)
 				subset.put("Metadata.ContentType", mimeOverride);

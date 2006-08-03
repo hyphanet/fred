@@ -178,7 +178,7 @@ public class SubConfig {
 	}
 
 	public SimpleFieldSet exportFieldSet() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		Set entrySet = map.entrySet();
 		Iterator i = entrySet.iterator();
 		while(i.hasNext()) {

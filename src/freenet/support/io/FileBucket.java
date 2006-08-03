@@ -344,7 +344,7 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 
 	public synchronized SimpleFieldSet toFieldSet() {
 		if(deleteOnFinalize) return null;
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Type", "FileBucket");
 		fs.put("Filename", file.toString());
 		fs.put("Length", length);

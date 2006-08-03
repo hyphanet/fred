@@ -8,7 +8,7 @@ public class EndListPeersMessage extends FCPMessage {
 	static final String name = "EndListPeers";
 	
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(true);
+		return new SimpleFieldSet();
 	}
 
 	public String getName() {

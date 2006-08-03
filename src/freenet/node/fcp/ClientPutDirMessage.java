@@ -108,7 +108,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 	}
 
 	public SimpleFieldSet getFieldSet() {
-		SimpleFieldSet sfs = new SimpleFieldSet(false);
+		SimpleFieldSet sfs = new SimpleFieldSet();
 		sfs.put("URI", uri.toString());
 		sfs.put("Identifier", identifier);
 		sfs.put("Verbosity", Integer.toString(verbosity));

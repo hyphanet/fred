@@ -39,7 +39,7 @@ public class SplitFileInserter implements ClientPutState {
 	final boolean insertAsArchiveManifest;
 
 	public SimpleFieldSet getProgressFieldset() {
-		SimpleFieldSet fs = new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet();
 		// don't save basic infrastructure such as ctx and parent
 		// only save details of the request
 		fs.put("Type", "SplitFileInserter");
@@ -49,7 +49,7 @@ public class SplitFileInserter implements ClientPutState {
 		fs.put("Finished", Boolean.toString(finished));
 		fs.put("SegmentSize", Integer.toString(segmentSize));
 		fs.put("CheckSegmentSize", Integer.toString(checkSegmentSize));
-		SimpleFieldSet segs = new SimpleFieldSet(true);
+		SimpleFieldSet segs = new SimpleFieldSet();
 		for(int i=0;i<segments.length;i++) {
 			segs.put(Integer.toString(i), segments[i].getProgressFieldset());
 		}
@@ -161,7 +161,7 @@ public class SplitFileInserter implements ClientPutState {
 		for(int i=0;i<segments.length;i++) {
 			String index = Integer.toString(i);
 			SimpleFieldSet segment = segFS.subset(index);
-			segFS.remove(index);
+			segFS.removeSubset(index);
 			if(segment == null) throw new ResumeException("No segment "+i);
 			segments[i] = new SplitFileInserterSegment(this, segment, splitfileAlgorithm, ctx, getCHKOnly, i);
 			dataBlocks += segments[i].countDataBlocks();
