@@ -33,7 +33,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		
 		public String get(){
-			return cs.getChoosenPriorityScheduler();
+			if(cs != null)
+				return cs.getChoosenPriorityScheduler();
+			else
+				return ClientRequestScheduler.PRIORITY_HARD;
 		}
 		
 		public void set(String val) throws InvalidConfigValueException{
