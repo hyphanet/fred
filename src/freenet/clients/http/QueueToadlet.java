@@ -403,9 +403,13 @@ public class QueueToadlet extends Toadlet {
 			writeBigHeading("Requests in progress (" + (uncompletedDownload.size() + uncompletedUpload.size() + uncompletedDirUpload.size()) + ")", buf, "requests_in_progress");
 			if(!uncompletedDownload.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Downloads in progress", new String[] { "", "Identifier", "Filename", "Priority", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+					writeTableHead("Downloads in progress", new String[] {
+							"", "Identifier", "Filename", "Priority", "Size", "MIME-Type", "Progress", "Persistence", "Key" 
+					}, buf);
 				else
-					writeTableHead("Downloads in progress", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+					writeTableHead("Downloads in progress", new String[] {
+							"", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" 
+					}, buf);
 				for(Iterator i = uncompletedDownload.iterator();i.hasNext();) {
 					ClientGet p = (ClientGet) i.next();
 					writeRowStart(buf,p);
@@ -430,9 +434,13 @@ public class QueueToadlet extends Toadlet {
 
 			if(!uncompletedUpload.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Uploads in progress", new String[] { "", "Identifier", "Filename", "Priority",  "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+					writeTableHead("Uploads in progress", new String[] { 
+							"", "Identifier", "Filename", "Priority",  "Size", "MIME-Type", "Progress", "Persistence", "Key" 
+					}, buf);
 				else
-					writeTableHead("Uploads in progress", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+					writeTableHead("Uploads in progress", new String[] {
+							"", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" 
+					}, buf);
 				for(Iterator i = uncompletedUpload.iterator();i.hasNext();) {
 					ClientPut p = (ClientPut) i.next();
 					writeRowStart(buf,p);
@@ -443,43 +451,47 @@ public class QueueToadlet extends Toadlet {
 						writeDirectCell(buf);
 					else
 						writeFilenameCell(p.getOrigFilename(), buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled()) {
-						writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
-						writeSizeCell(p.getDataSize(), buf);
-						writeTypeCell(p.getMIMEType(), buf);
-						writeProgressFractionCell(p, buf);
-						writePersistenceCell(p, buf);
-						writeKeyCell(p.getFinalURI(), buf);
-						writeRowEnd(buf);
-					}
-					writeTableEnd(buf);
-				}
-
-				if(!uncompletedDirUpload.isEmpty()) {
 					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeTableHead("Directory uploads in progress", new String[] { "", "Identifier", "Priority", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
-					else
-						writeTableHead("Directory uploads in progress", new String[] { "", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
-					for(Iterator i=uncompletedDirUpload.iterator();i.hasNext();) {
-						ClientPutDir p = (ClientPutDir) i.next();
-						writeRowStart(buf,p);
-						writeDeleteCell(p, buf);
-						if (node.getToadletContainer().isAdvancedDarknetEnabled()){
-							writeIdentifierCell(p, p.getFinalURI(), buf);
-							writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
-						}
-						writeNumberCell(p.getNumberOfFiles(), buf);
-						writeSizeCell(p.getTotalDataSize(), buf);
-						writeProgressFractionCell(p, buf);
-						writePersistenceCell(p, buf);
-						writeKeyCell(p.getFinalURI(), buf);
-						writeRowEnd(buf);
-					}
-					writeTableEnd(buf);
+						writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
+					writeSizeCell(p.getDataSize(), buf);
+					writeTypeCell(p.getMIMEType(), buf);
+					writeProgressFractionCell(p, buf);
+					writePersistenceCell(p, buf);
+					writeKeyCell(p.getFinalURI(), buf);
+					writeRowEnd(buf);
 				}
-				writeBigEnding(buf);
+				writeTableEnd(buf);
 			}
+
+			if(!uncompletedDirUpload.isEmpty()) {
+				if (node.getToadletContainer().isAdvancedDarknetEnabled())
+					writeTableHead("Directory uploads in progress", new String[] {
+							"", "Identifier", "Priority", "Files", "Total Size", "Progress", "Persistence", "Key"
+					}, buf);
+				else
+					writeTableHead("Directory uploads in progress", new String[] {
+							"", "Files", "Total Size", "Progress", "Persistence", "Key"
+					}, buf);
+				for(Iterator i=uncompletedDirUpload.iterator();i.hasNext();) {
+					ClientPutDir p = (ClientPutDir) i.next();
+					writeRowStart(buf,p);
+					writeDeleteCell(p, buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled()){
+						writeIdentifierCell(p, p.getFinalURI(), buf);
+						writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
+					}
+					writeNumberCell(p.getNumberOfFiles(), buf);
+					writeSizeCell(p.getTotalDataSize(), buf);
+					writeProgressFractionCell(p, buf);
+					writePersistenceCell(p, buf);
+					writeKeyCell(p.getFinalURI(), buf);
+					writeRowEnd(buf);
+				}
+				writeTableEnd(buf);
+			}
+			writeBigEnding(buf);
 		}
+		
 		ctx.getPageMaker().makeTail(buf);
 
 		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
