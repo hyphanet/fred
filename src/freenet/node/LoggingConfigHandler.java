@@ -76,7 +76,7 @@ public class LoggingConfigHandler {
     	
     	// max space used by zipped logs
     	
-    	config.register("maxZippedLogsSize", "128M", 3, false, "Maximum disk space used by old logs", "Maximum disk space used by old logs",
+    	config.register("maxZippedLogsSize", "128M", 3, true, "Maximum disk space used by old logs", "Maximum disk space used by old logs",
     			new LongCallback() {
 					public long get() {
 						return maxZippedLogsSize;

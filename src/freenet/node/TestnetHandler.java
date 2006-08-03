@@ -242,7 +242,8 @@ public class TestnetHandler implements Runnable {
 	public static TestnetHandler maybeCreate(Node node, Config config) throws NodeInitException {
         SubConfig testnetConfig = new SubConfig("node.testnet", config);
         
-        testnetConfig.register("enabled", false, 1, false, "Enable testnet mode? (DANGEROUS)",
+        testnetConfig.register("enabled", false, 1, true /*Switch it to false if we want large-scale testing */,
+        		"Enable testnet mode? (DANGEROUS)",
         		"Whether to enable testnet mode (DANGEROUS!). Testnet mode eliminates your anonymity in exchange for greatly assisting the developers in debugging the node.",
         		new TestnetEnabledCallback(node));
         
