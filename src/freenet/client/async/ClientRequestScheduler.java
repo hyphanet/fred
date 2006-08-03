@@ -41,7 +41,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		public void set(String val) throws InvalidConfigValueException{
 			String value;
-			if(val.equalsIgnoreCase(get())) return;
+			if(val == null || val.equalsIgnoreCase(get())) return;
 			if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_HARD)){
 				value = ClientRequestScheduler.PRIORITY_HARD;
 			}else if(val.equalsIgnoreCase(ClientRequestScheduler.PRIORITY_SOFT)){
