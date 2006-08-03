@@ -416,9 +416,8 @@ public class QueueToadlet extends Toadlet {
 						writeDirectCell(buf);
 					else
 						writeFilenameCell(p.getDestFilename(), buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled()) {
+					if (node.getToadletContainer().isAdvancedDarknetEnabled()) 
 						writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
-					}
 					writeSizeCell(p.getDataSize(), buf);
 					writeTypeCell(p.getMIMEType(), buf);
 					writeProgressFractionCell(p, buf);
@@ -428,10 +427,10 @@ public class QueueToadlet extends Toadlet {
 				}
 				writeTableEnd(buf);
 			}
-			
+
 			if(!uncompletedUpload.isEmpty()) {
 				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Uploads in progress", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
+					writeTableHead("Uploads in progress", new String[] { "", "Identifier", "Filename", "Priority",  "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				else
 					writeTableHead("Uploads in progress", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" }, buf);
 				for(Iterator i = uncompletedUpload.iterator();i.hasNext();) {
@@ -444,41 +443,45 @@ public class QueueToadlet extends Toadlet {
 						writeDirectCell(buf);
 					else
 						writeFilenameCell(p.getOrigFilename(), buf);
-					writeSizeCell(p.getDataSize(), buf);
-					writeTypeCell(p.getMIMEType(), buf);
-					writeProgressFractionCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getFinalURI(), buf);
-					writeRowEnd(buf);
+					if (node.getToadletContainer().isAdvancedDarknetEnabled()) {
+						writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
+						writeSizeCell(p.getDataSize(), buf);
+						writeTypeCell(p.getMIMEType(), buf);
+						writeProgressFractionCell(p, buf);
+						writePersistenceCell(p, buf);
+						writeKeyCell(p.getFinalURI(), buf);
+						writeRowEnd(buf);
+					}
+					writeTableEnd(buf);
 				}
-				writeTableEnd(buf);
-			}
-			
-			if(!uncompletedDirUpload.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Directory uploads in progress", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
-				else
-					writeTableHead("Directory uploads in progress", new String[] { "", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
-				for(Iterator i=uncompletedDirUpload.iterator();i.hasNext();) {
-					ClientPutDir p = (ClientPutDir) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
+
+				if(!uncompletedDirUpload.isEmpty()) {
 					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getFinalURI(), buf);
-					writeNumberCell(p.getNumberOfFiles(), buf);
-					writeSizeCell(p.getTotalDataSize(), buf);
-					writeProgressFractionCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getFinalURI(), buf);
-					writeRowEnd(buf);
+						writeTableHead("Directory uploads in progress", new String[] { "", "Identifier", "Priority", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
+					else
+						writeTableHead("Directory uploads in progress", new String[] { "", "Files", "Total Size", "Progress", "Persistence", "Key" }, buf);
+					for(Iterator i=uncompletedDirUpload.iterator();i.hasNext();) {
+						ClientPutDir p = (ClientPutDir) i.next();
+						writeRowStart(buf,p);
+						writeDeleteCell(p, buf);
+						if (node.getToadletContainer().isAdvancedDarknetEnabled()){
+							writeIdentifierCell(p, p.getFinalURI(), buf);
+							writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
+						}
+						writeNumberCell(p.getNumberOfFiles(), buf);
+						writeSizeCell(p.getTotalDataSize(), buf);
+						writeProgressFractionCell(p, buf);
+						writePersistenceCell(p, buf);
+						writeKeyCell(p.getFinalURI(), buf);
+						writeRowEnd(buf);
+					}
+					writeTableEnd(buf);
 				}
-				writeTableEnd(buf);
+				writeBigEnding(buf);
 			}
-			writeBigEnding(buf);
 		}
-		
 		ctx.getPageMaker().makeTail(buf);
-		
+
 		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
 	}
 
