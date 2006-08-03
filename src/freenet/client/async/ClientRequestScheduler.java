@@ -208,9 +208,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		clientGrabber.add(cr, req);
 	}
 	
-	private SortedVectorByNumber removeFirstAccordingToPriorities(){
+	private SortedVectorByNumber removeFirstAccordingToPriorities(int priority){
 		SortedVectorByNumber result = null;
-		int priority;
 		
 		short fuzz = -1, iteration = 0;
 		synchronized (this) {
@@ -242,7 +241,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public SendableRequest removeFirst() {
 		// Priorities start at 0
 		Logger.minor(this, "removeFirst()");
-		SortedVectorByNumber s = removeFirstAccordingToPriorities();
+		int choosenPriorityClass = Integer.MAX_VALUE;
+		SortedVectorByNumber s = removeFirstAccordingToPriorities(choosenPriorityClass);
 		if(s != null){
 			while(true) {
 				SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst();
@@ -261,6 +261,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(req == null) {
 					Logger.minor(this, "No requests, retrycount "+rga.getNumber()+" ("+rga+")");
 					break;
+				}else if(req.getPriorityClass() > choosenPriorityClass) {
+					// Reinsert it : shouldn't happen if we are calling reregisterAll,
+					// maybe we should ask people to report that error if seen
+					Logger.minor(this, "In wrong priority class: "+req);
+					innerRegister(req);
+					continue;
 				}
 				
 				Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+")");
