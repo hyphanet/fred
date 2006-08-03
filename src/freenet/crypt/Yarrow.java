@@ -226,7 +226,17 @@ public class Yarrow extends RandomSource {
 		fast_pool_reseed();
 	}
 
+	private long timeLastWroteSeed = -1;
+	
 	private void write_seed(File filename) {
+		synchronized(this) {
+			long now = System.currentTimeMillis();
+			if(now - timeLastWroteSeed <= 60*1000) {
+				return;
+			} else
+				timeLastWroteSeed = now;
+		}
+		
 		try {
 			DataOutputStream dos =
 				new DataOutputStream(new BufferedOutputStream(new FileOutputStream(filename)));
@@ -235,6 +245,7 @@ public class Yarrow extends RandomSource {
 			dos.close();
 		} catch (Exception e) {
 		}
+		
 	}
 
 	/**
@@ -462,7 +473,9 @@ public class Yarrow extends RandomSource {
 		if (performedPoolReseed && (seedfile != null)) {
 			//Dont do this while synchronized on 'this' since
 			//opening a file seems to be suprisingly slow on windows
+			Logger.minor(this, "Writing seedfile");
 			write_seed(seedfile); 
+			Logger.minor(this, "Written seedfile");
 		}
 
 		return actualEntropy;

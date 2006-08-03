@@ -627,7 +627,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         for(int i=0;i<md.getDigestLength();i++) {
             packetHash[i] ^= buf[offset+i];
         }
+        Logger.minor(this, "Contributing entropy");
         node.random.acceptEntropyBytes(myPacketDataSource, packetHash, 0, md.getDigestLength(), 0.5);
+        Logger.minor(this, "Contributed entropy");
         
         // Lots more to do yet!
         processDecryptedData(plaintext, seqNumber, tracker, length - plaintext.length);

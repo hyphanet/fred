@@ -54,8 +54,12 @@ public class UpdatableSortedLinkedList {
         throw new IllegalStateException("impossible");
     }
 
+    private int ctr;
+    
     protected synchronized void checkList() {
-    	// FIXME once satisfied that this works, make it only happen occasionally
+    	// If get errors, make this happen all the time.
+    	ctr++;
+    	if(ctr % 256 != 0) return;
     	int statedLength = list.size();
     	int realLength = 0;
     	for(Enumeration e = list.elements();e.hasMoreElements();) {
@@ -70,7 +74,7 @@ public class UpdatableSortedLinkedList {
     		Logger.error(this, "Illegal ERROR: "+err, new Exception("error"));
     		throw new IllegalStateException(err);
     	} else {
-    		Logger.minor(this, "checkList() successful: realLength = statedLength = "+realLength+" on "+this);
+    		//Logger.minor(this, "checkList() successful: realLength = statedLength = "+realLength+" on "+this);
     	}
 	}
 

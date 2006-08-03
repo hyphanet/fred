@@ -191,14 +191,30 @@ public class UdpSocketManager extends Thread {
 		removeTimedOutFilters();
 		// Check for matched _filters
 		if (packet != null) {
+			long startTime = System.currentTimeMillis();
 			Peer peer = new Peer(packet.getAddress(), packet.getPort());
+			long endTime = System.currentTimeMillis();
+			if(endTime - startTime > 50) {
+				if(endTime-startTime > 500)
+					Logger.error(this, "packet creation took "+(endTime-startTime)+"ms");
+				else
+					Logger.normal(this, "packet creation took "+(endTime-startTime)+"ms");
+			}
 			byte[] data = packet.getData();
 			int offset = packet.getOffset();
 			int length = packet.getLength();
 			if (lowLevelFilter != null) {
 				try {
 					Logger.minor(this, "Processing packet of length "+length+" from "+peer);
+					startTime = System.currentTimeMillis();
 					lowLevelFilter.process(data, offset, length, peer);
+					endTime = System.currentTimeMillis();
+					if(endTime - startTime > 50) {
+						if(endTime-startTime > 500)
+							Logger.error(this, "processing packet took "+(endTime-startTime)+"ms");
+						else
+							Logger.normal(this, "processing packet took "+(endTime-startTime)+"ms");
+					}
 					Logger.minor(this,
 							"Successfully handled packet length " + length);
 				} catch (Throwable t) {
@@ -209,8 +225,9 @@ public class UdpSocketManager extends Thread {
 				// Create a bogus context since no filter
 				Message m = decodePacket(data, offset, length,
 						new DummyPeerContext(peer), 0);
-				if (m != null)
+				if (m != null) {
 					checkFilters(m);
+				}
 			}
 		} else
 			Logger.minor(this, "Null packet");
@@ -262,6 +279,7 @@ public class UdpSocketManager extends Thread {
 	}
 
 	private void removeTimedOutFilters() {
+		long tStart = System.currentTimeMillis();
 		synchronized (_filters) {
 			for (ListIterator i = _filters.listIterator(); i.hasNext();) {
 				MessageFilter f = (MessageFilter) i.next();
@@ -277,6 +295,13 @@ public class UdpSocketManager extends Thread {
 					break;
 				}
 			}
+		}
+		long tEnd = System.currentTimeMillis();
+		if(tEnd - tStart > 50) {
+			if(tEnd - tStart > 500)
+				Logger.error(this, "removeTimedOutFilters took "+(tEnd-tStart)+"ms");
+			else
+				Logger.normal(this, "removeTimedOutFilters took "+(tEnd-tStart)+"ms");
 		}
 	}
 

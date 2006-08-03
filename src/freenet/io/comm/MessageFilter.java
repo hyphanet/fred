@@ -166,7 +166,7 @@ public class MessageFilter {
     }
 
     public void setMessage(Message message) {
-        Logger.debug(this, "setMessage("+message+") on "+this, new Exception("debug"));
+        //Logger.debug(this, "setMessage("+message+") on "+this, new Exception("debug"));
         _message = message;
     }
 

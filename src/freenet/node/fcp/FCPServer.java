@@ -436,18 +436,21 @@ public class FCPServer implements Runnable {
 		
 		public void run() {
 			while(true) {
+				long startTime = System.currentTimeMillis();
 				try {
 					storePersistentRequests();
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
 				}
+				long delta = System.currentTimeMillis() - startTime;
 				synchronized(this) {
+					long delay = Math.max(persistenceInterval, delta * 20);
 					if(killed) return;
-					long startTime = System.currentTimeMillis();
+					startTime = System.currentTimeMillis();
 					long now;
-					while(((now = System.currentTimeMillis()) < startTime + persistenceInterval) && !storeNow) {
+					while(((now = System.currentTimeMillis()) < startTime + delay) && !storeNow) {
 						try {
-							long wait = Math.max((startTime + persistenceInterval) - now, Integer.MAX_VALUE);
+							long wait = Math.max((startTime + delay) - now, Integer.MAX_VALUE);
 							if(wait > 0)
 								wait(Math.min(wait, 5000));
 						} catch (InterruptedException e) {

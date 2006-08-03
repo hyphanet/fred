@@ -38,6 +38,7 @@ public class PacketSender implements Runnable {
         this.node = node;
         myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
+        myThread.setPriority(Thread.MAX_PRIORITY);
     }
 
     
