@@ -1,5 +1,7 @@
 package freenet.node.updater;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
@@ -18,13 +20,17 @@ public class UpdaterEnabledCallback implements BooleanCallback {
 	}
 	
 	public boolean get() {
-		if(node.nodeUpdater==null)
+		if((node.nodeUpdater==null) || (!WrapperManager.isControlledByNativeWrapper()))
 			return false;
 		else 
 			return node.nodeUpdater.isRunning();
 	}
 	
 	public void set(boolean val) throws InvalidConfigValueException {
+		if((val == true) && (!WrapperManager.isControlledByNativeWrapper())) {
+			Logger.error(this, "Cannot update because not running under wrapper");
+			throw new InvalidConfigValueException("Cannot update because not running under wrapper");
+		}
 		synchronized (node) {
 			if(val == get()) return;
 			if(val){

@@ -945,7 +945,7 @@ public class Node {
 	}
 	
 	public boolean isUsingWrapper(){
-		if(nodeStarter!=null)
+		if(nodeStarter!=null && WrapperManager.isControlledByNativeWrapper())
 			return true;
 		else 
 			return false;
