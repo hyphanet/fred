@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Vector;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
@@ -235,7 +237,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private void maybeShrink(boolean dontCheck, boolean offline) throws DatabaseException, IOException {
 		if(chkBlocksInStore <= maxChkBlocks) return;
 		if(offline)
-			maybeSlowShrink(dontCheck);
+			maybeSlowShrink(dontCheck, offline);
 		else {
 			if(chkBlocksInStore * 0.9 > maxChkBlocks) {
 				Logger.error(this, "Doing quick and indiscriminate online shrink. Offline shrinks will preserve the LRU, this doesn't.");
@@ -246,7 +248,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 	
-	private void maybeSlowShrink(boolean dontCheck) throws DatabaseException, IOException {
+	private void maybeSlowShrink(boolean dontCheck, boolean inStartUp) throws DatabaseException, IOException {
 		Vector wantedKeep = new Vector(); // keep; content is wanted, and is in the right place
 		Vector unwantedIgnore = new Vector(); // ignore; content is not wanted, and is not in the right place
 		Vector wantedMove = new Vector(); // content is wanted, but is in the wrong part of the store
@@ -257,6 +259,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
     	long newSize = maxChkBlocks;
     	if(chkBlocksInStore < maxChkBlocks) return;
+    	
+    	WrapperManager.signalStarting(24*60*60*1000);
+    	
     	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks);
     	
     	try {
