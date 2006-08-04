@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.text.NumberFormat;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -206,6 +208,24 @@ public class QueueToadlet extends Toadlet {
 			}
 		}
 		
+		Comparator identifierComparator = new Comparator() {
+			public int compare(Object first, Object second) {
+				ClientRequest firstRequest = (ClientRequest) first;
+				ClientRequest secondRequest = (ClientRequest) second;
+				return firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
+			}
+		};
+		
+		Collections.sort(completedDownloadToDisk, identifierComparator);
+		Collections.sort(completedDownloadToTemp, identifierComparator);
+		Collections.sort(completedUpload, identifierComparator);
+		Collections.sort(completedDirUpload, identifierComparator);
+		Collections.sort(failedDownload, identifierComparator);
+		Collections.sort(failedUpload, identifierComparator);
+		Collections.sort(failedDirUpload, identifierComparator);
+		Collections.sort(uncompletedDownload, identifierComparator);
+		Collections.sort(uncompletedUpload, identifierComparator);
+		Collections.sort(uncompletedDirUpload, identifierComparator);
 		
 		ctx.getPageMaker().makeHead(buf, "("+(uncompletedDirUpload.size()+uncompletedDownload.size()+uncompletedUpload.size())+
 				"/"+(failedDirUpload.size()+failedDownload.size()+failedUpload.size())+
