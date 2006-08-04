@@ -125,12 +125,14 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 	
 	public void cancel() {
 		Logger.minor(this, "Cancelling "+this);
+		super.cancel();
+		ClientGetState s;
 		synchronized(this) {
-			super.cancel();
-			if(currentState != null) {
-				Logger.minor(this, "Cancelling "+currentState);
-				currentState.cancel();
-			}
+			s = currentState;
+		}
+		if(s != null) {
+			Logger.minor(this, "Cancelling "+currentState);
+			s.cancel();
 		}
 	}
 

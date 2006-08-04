@@ -95,7 +95,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			targetFile = null;
 			tempFile = null;
 			try {
-				ret = client.server.node.persistentTempBucketFactory.makeEncryptedBucket();
+				if(persistenceType == PERSIST_FOREVER)
+					ret = client.server.node.persistentTempBucketFactory.makeEncryptedBucket();
+				else
+					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
 				onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
 				getter = null;
@@ -149,7 +152,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			targetFile = null;
 			tempFile = null;
 			try {
-				ret = handler.server.node.persistentTempBucketFactory.makeEncryptedBucket();
+				if(persistenceType == PERSIST_FOREVER)
+					ret = client.server.node.persistentTempBucketFactory.makeEncryptedBucket();
+				else
+					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
 				onFailure(new FetchException(FetchException.BUCKET_ERROR), null);
 				getter = null;
@@ -256,11 +262,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Otherwise ignore
 	}
 	
-	public void cancel() {
-		Logger.minor(this, "Cancelling "+this);
-		getter.cancel();
-	}
-
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Bucket data = result.asBucket();
 		if(returnBucket != data)

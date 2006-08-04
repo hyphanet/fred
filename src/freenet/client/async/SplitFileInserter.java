@@ -58,7 +58,7 @@ public class SplitFileInserter implements ClientPutState {
 		return fs;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest) throws InserterException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData) throws InserterException {
 		this.parent = put;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
 		this.token = token;
@@ -74,6 +74,7 @@ public class SplitFileInserter implements ClientPutState {
 		} catch (IOException e) {
 			throw new InserterException(InserterException.BUCKET_ERROR, e, null);
 		}
+		if(freeData) data.free();
 		countDataBlocks = dataBuckets.length;
 		// Encoding is done by segments
 		if(bestCodec == null)

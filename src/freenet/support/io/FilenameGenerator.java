@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import freenet.crypt.RandomSource;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 
 public class FilenameGenerator {
 
@@ -53,7 +54,10 @@ public class FilenameGenerator {
 			random.nextBytes(randomFilename);
 			String filename = prefix + HexUtil.bytesToHex(randomFilename);
 			File ret = new File(tmpDir, filename);
-			if(!ret.exists()) return ret;
+			if(!ret.exists()) {
+				Logger.minor(this, "Made random filename: "+ret, new Exception("debug"));
+				return ret;
+			}
 		}
 	}
 

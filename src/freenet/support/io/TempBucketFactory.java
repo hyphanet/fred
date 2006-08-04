@@ -68,17 +68,6 @@ public class TempBucketFactory implements BucketFactory {
 		logDebug = Logger.shouldLog(Logger.DEBUG,this);
 		File f = filenameGenerator.makeRandomFilename();
 
-		//if (logDebug)
-			Logger.minor(
-				this,
-				"Temp bucket created: "
-					+ f.getAbsolutePath()
-					+ " with hook "
-					+ hook
-					+ " initial length "
-					+ size,
-				new Exception("creating TempBucket"));
-
 		return new TempFileBucket(f, hook, size, increment, factor);
 	}
 

@@ -145,7 +145,7 @@ public class BookmarkManager {
 		if (b.getKeyType().equals("USK")) {
 			try {
 				USK u = USK.create(b.key);
-				this.node.uskManager.subscribe(u, this.uskcb, true);
+				this.node.uskManager.unsubscribe(u, this.uskcb, true);
 			} catch (MalformedURLException mue) {
 			
 			}

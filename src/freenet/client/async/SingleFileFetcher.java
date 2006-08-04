@@ -572,7 +572,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		} else {
 			// Do a thorough, blocking search
 			USKFetcher fetcher =
-				ctx.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, parent);
+				ctx.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, parent, false);
 			if(isEssential)
 				parent.addMustSucceedBlocks(1);
 			fetcher.addCallback(new MyUSKFetcherCallback(parent, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, returnBucket));

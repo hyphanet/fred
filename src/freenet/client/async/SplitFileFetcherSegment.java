@@ -218,41 +218,51 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			
 			// Now heal
 			
-			// Encode any check blocks we don't have
-			if(codec != null) {
-				try {
-					codec.encode(dataBuckets, checkBuckets, 32768, fetcherContext.bucketFactory);
-				} catch (IOException e) {
-					Logger.error(this, "Bucket error while healing: "+e, e);
-				}
-			}
-			
-			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
-			for(int i=0;i<dataBlockStatus.length;i++) {
-				if(dataBuckets[i].getData() != null) continue;
-				SingleFileFetcher fetcher = dataBlockStatus[i];
-				if(fetcher.getRetryCount() == 0) {
-					// 80% chance of not inserting, if we never tried it
-					if(fetcherContext.random.nextInt(5) == 0) continue;
-				}
-				queueHeal(dataBuckets[i].getData());
-			}
-			for(int i=0;i<checkBlockStatus.length;i++) {
-				if(checkBuckets[i].getData() != null) continue;
-				SingleFileFetcher fetcher = checkBlockStatus[i];
-				if(fetcher.getRetryCount() == 0) {
-					// 80% chance of not inserting, if we never tried it
-					if(fetcherContext.random.nextInt(5) == 0) continue;
-				}
-				queueHeal(checkBuckets[i].getData());
-			}
+//			// Encode any check blocks we don't have
+//			if(codec != null) {
+//				try {
+//					codec.encode(dataBuckets, checkBuckets, 32768, fetcherContext.bucketFactory);
+//				} catch (IOException e) {
+//					Logger.error(this, "Bucket error while healing: "+e, e);
+//				}
+//			}
+//			
+//			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
+//			for(int i=0;i<dataBlockStatus.length;i++) {
+//				if(dataBuckets[i].getData() != null) continue;
+//				SingleFileFetcher fetcher = dataBlockStatus[i];
+//				if(fetcher.getRetryCount() == 0) {
+//					// 80% chance of not inserting, if we never tried it
+//					if(fetcherContext.random.nextInt(5) == 0) continue;
+//				}
+//				queueHeal(dataBuckets[i].getData());
+//			}
+//			for(int i=0;i<checkBlockStatus.length;i++) {
+//				if(checkBuckets[i].getData() != null) continue;
+//				SingleFileFetcher fetcher = checkBlockStatus[i];
+//				if(fetcher.getRetryCount() == 0) {
+//					// 80% chance of not inserting, if we never tried it
+//					if(fetcherContext.random.nextInt(5) == 0) continue;
+//				}
+//				queueHeal(checkBuckets[i].getData());
+//			}
 			
 			for(int i=0;i<dataBlocks.length;i++) {
+				MinimalSplitfileBlock b = dataBuckets[i];
+				if(b != null) {
+					Bucket d = b.getData();
+					if(d != null) d.free();
+				}
 				dataBuckets[i] = null;
 				dataBlockStatus[i] = null;
 				dataBlocks[i] = null;
 			}
 			for(int i=0;i<checkBlocks.length;i++) {
+				MinimalSplitfileBlock b = checkBuckets[i];
+				if(b != null) {
+					Bucket d = b.getData();
+					if(d != null) d.free();
+				}
 				checkBuckets[i] = null;
 				checkBlockStatus[i] = null;
 				checkBlocks[i] = null;
@@ -311,11 +321,23 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			SingleFileFetcher f = dataBlockStatus[i];
 			if(f != null)
 				f.cancel();
+			MinimalSplitfileBlock b = dataBuckets[i];
+			if(b != null) {
+				Bucket d = b.getData();
+				if(d != null) d.free();
+			}
+			dataBuckets[i] = null;
 		}
 		for(int i=0;i<checkBlockStatus.length;i++) {
-			SingleFileFetcher f = dataBlockStatus[i];
+			SingleFileFetcher f = checkBlockStatus[i];
 			if(f != null)
 				f.cancel();
+			MinimalSplitfileBlock b = checkBuckets[i];
+			if(b != null) {
+				Bucket d = b.getData();
+				if(d != null) d.free();
+			}
+			checkBuckets[i] = null;
 		}
 		parentFetcher.segmentFinished(this);
 	}

@@ -70,7 +70,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = this.cancelled;
 				if(!cancel) {
 					currentState =
-						new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false);
+						new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false, false);
 				}
 			}
 			if(cancel) {

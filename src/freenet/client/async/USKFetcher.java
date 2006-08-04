@@ -181,14 +181,17 @@ public class USKFetcher implements ClientGetState {
 	/** Keep going forever? */
 	private final boolean backgroundPoll;
 	
+	/** Keep the last fetched data? */
+	final boolean keepLastData;
+	
 	private boolean started;
 
-	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever) {
-		this(origUSK, manager, ctx, parent, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES);
+	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever, boolean keepLastData) {
+		this(origUSK, manager, ctx, parent, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData);
 	}
 	
 	// FIXME use this!
-	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever, long maxProbeEditions) {
+	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData) {
 		this.parent = parent;
 		this.maxMinFailures = maxProbeEditions;
 		this.origUSK = origUSK;
@@ -201,6 +204,7 @@ public class USKFetcher implements ClientGetState {
 		lastAddedEdition = -1;
 		this.ctx = ctx;
 		this.backgroundPoll = pollForever;
+		this.keepLastData = keepLastData;
 	}
 	
 	void onDNF(USKAttempt att) {
@@ -291,9 +295,13 @@ public class USKFetcher implements ClientGetState {
 			if(completed || cancelled) return;
 			if(curLatest >= lastEd) {
 				try {
-					this.lastRequestData = block.decode(ctx.bucketFactory, 1025 /* it's an SSK */, true);
-					this.lastCompressionCodec = block.getCompressionCodec();
-					this.lastWasMetadata = block.isMetadata();
+					Bucket data = lastRequestData = block.decode(ctx.bucketFactory, 1025 /* it's an SSK */, true);
+					lastCompressionCodec = block.getCompressionCodec();
+					lastWasMetadata = block.isMetadata();
+					if(keepLastData)
+						lastRequestData = data;
+					else
+						data.free();
 				} catch (KeyDecodeException e) {
 					lastRequestData = null;
 				} catch (IOException e) {
@@ -461,6 +469,7 @@ public class USKFetcher implements ClientGetState {
 	}
 
 	public synchronized void freeLastData() {
+		if(lastRequestData == null) return;
 		lastRequestData.free();
 		lastRequestData = null;
 	}

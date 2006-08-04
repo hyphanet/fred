@@ -545,11 +545,21 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			SingleBlockInserter sbi = dataBlockInserters[i];
 			if(sbi != null)
 				sbi.cancel();
+			Bucket d = dataBlocks[i];
+			if(d != null) {
+				d.free();
+				dataBlocks[i] = null;
+			}
 		}
 		for(int i=0;i<checkBlockInserters.length;i++) {
 			SingleBlockInserter sbi = checkBlockInserters[i];
 			if(sbi != null)
 				sbi.cancel();
+			Bucket d = checkBlocks[i];
+			if(d != null) {
+				d.free();
+				checkBlocks[i] = null;
+			}
 		}
 		parent.segmentFinished(this);
 	}
