@@ -118,7 +118,7 @@ public class ConfigToadlet extends Toadlet {
 		SubConfig[] sc = config.getConfigs();
 		boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
-		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration");
+		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration of "+node.getMyName());
 
 		buf.append("<div class=\"infobox infobox-normal\">\n");
 		buf.append("<div class=\"infobox-header\">\n");

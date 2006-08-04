@@ -113,7 +113,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			titleCountString = String.valueOf(numberOfSimpleConnected);
 		}
 		
-		String pageTitle = titleCountString + " Darknet Peers";
+		String pageTitle = titleCountString + " Darknet Peers of "+node.getMyName();
 		
 		ctx.getPageMaker().makeHead(buf, pageTitle);
 		

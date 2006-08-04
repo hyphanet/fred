@@ -155,7 +155,7 @@ public class QueueToadlet extends Toadlet {
 		Logger.minor(this, "Request count: "+reqs.length);
 		
 		if(reqs.length < 1){
-			ctx.getPageMaker().makeHead(buf, "Global Queue");
+			ctx.getPageMaker().makeHead(buf, "Global Queue of "+node.getMyName());
 			buf.append("<div class=\"infobox infobox-information\">\n");
 			buf.append("<div class=\"infobox-header\">\n");
 			buf.append("Global queue is empty!\n");

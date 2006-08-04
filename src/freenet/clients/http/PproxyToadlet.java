@@ -195,7 +195,7 @@ public class PproxyToadlet extends Toadlet {
 	private void showPluginList(ToadletContext ctx, HTTPRequest request) throws ToadletContextClosedException, IOException {
 		if (!request.hasParameters()) {
 			StringBuffer out = new StringBuffer();
-			ctx.getPageMaker().makeHead(out, "Plugins");
+			ctx.getPageMaker().makeHead(out, "Plugins of "+node.getMyName());
 			//
 			out.append("<div class=\"infobox infobox-normal\">\n");
 			out.append("<div class=\"infobox-header\">\n");

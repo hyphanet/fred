@@ -358,7 +358,7 @@ public class WelcomeToadlet extends Toadlet {
 		}
 		
 		
-		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage");
+		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage of "+node.getMyName());
 		if(node.isTestnetEnabled()) {
 			buf.append("<div class=\"infobox infobox-alert\">\n");
 			buf.append("<div class=\"infobox-header\">\n");
