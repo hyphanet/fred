@@ -48,6 +48,7 @@ import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleHealingQueue;
+import freenet.client.async.SimpleSendableInsert;
 import freenet.client.async.USKManager;
 import freenet.client.events.SimpleEventProducer;
 import freenet.clients.http.BookmarkManager;
@@ -2046,16 +2047,16 @@ public class Node {
 		}
 	}
 
-	public void realPut(ClientKeyBlock block, boolean cache) throws LowLevelPutException {
-		if(block instanceof ClientCHKBlock)
-			realPutCHK((ClientCHKBlock)block, cache);
-		else if(block instanceof ClientSSKBlock)
-			realPutSSK((ClientSSKBlock)block, cache);
+	public void realPut(KeyBlock block, boolean cache) throws LowLevelPutException {
+		if(block instanceof CHKBlock)
+			realPutCHK((CHKBlock)block, cache);
+		else if(block instanceof SSKBlock)
+			realPutSSK((SSKBlock)block, cache);
 		else
 			throw new IllegalArgumentException("Unknown put type "+block.getClass());
 	}
 	
-	public void realPutCHK(ClientCHKBlock block, boolean cache) throws LowLevelPutException {
+	public void realPutCHK(CHKBlock block, boolean cache) throws LowLevelPutException {
 		byte[] data = block.getData();
 		byte[] headers = block.getHeaders();
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
@@ -2073,7 +2074,7 @@ public class Node {
 				Logger.error(this, "Datastore failure: "+e, e);
 			}
 		}
-		is = makeInsertSender((NodeCHK)block.getClientKey().getNodeKey(), 
+		is = makeInsertSender((NodeCHK)block.getKey(), 
 				MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
 		boolean hasReceivedRejectedOverload = false;
 		// Wait for status
@@ -2168,7 +2169,7 @@ public class Node {
 		}
 	}
 
-	public void realPutSSK(ClientSSKBlock block, boolean cache) throws LowLevelPutException {
+	public void realPutSSK(SSKBlock block, boolean cache) throws LowLevelPutException {
 		SSKInsertSender is;
 		long uid = random.nextLong();
 		if(!lockUID(uid)) {
@@ -3644,5 +3645,16 @@ public class Node {
 
 	public HealingQueue getHealingQueue() {
 		return healingQueue;
+	}
+
+	public void queueRandomReinsert(KeyBlock block) {
+		SimpleSendableInsert ssi = new SimpleSendableInsert(this, block, RequestStarter.MAXIMUM_PRIORITY_CLASS);
+		Logger.minor(this, "Queueing random reinsert for "+block+" : "+ssi);
+		if(block instanceof CHKBlock)
+			chkPutScheduler.register(ssi);
+		else if(block instanceof SSKBlock)
+			sskPutScheduler.register(ssi);
+		else
+			Logger.error(this, "Don't know what to do with "+block+" should be queued for reinsert");
 	}
 }

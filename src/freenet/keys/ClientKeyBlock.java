@@ -5,7 +5,7 @@ import java.io.IOException;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
 
-public interface ClientKeyBlock {
+public interface ClientKeyBlock extends KeyBlock {
 
 	/** Decode with the key
 	 * @param factory The BucketFactory to use to create the Bucket to return the data in.

@@ -11,12 +11,6 @@ import freenet.node.LowLevelPutException;
  */
 public interface SendableInsert extends SendableRequest {
 
-	/** Get the ClientKeyBlock to insert. This may be created
-	 * just-in-time, and may return null; ClientRequestScheduler
-	 * will simply unregister the SendableInsert if this happens.
-	 */
-	public ClientKeyBlock getBlock();
-	
 	/** Called when we successfully insert the data */
 	public void onSuccess();
 	

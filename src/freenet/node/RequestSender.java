@@ -39,6 +39,9 @@ public final class RequestSender implements Runnable, ByteCounter {
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
     static final int FETCH_TIMEOUT = 60000;
+    /** One in this many successful requests is randomly reinserted.
+     * This is probably a good idea anyway but with the split store it's essential. */
+    static final int RANDOM_REINSERT_INTERVAL = 200;
     
     // Basics
     final Key key;
@@ -395,6 +398,8 @@ public final class RequestSender implements Runnable, ByteCounter {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
 			node.store(block);
+			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
+				node.queueRandomReinsert(block);
 			finish(SUCCESS, next);
 		} catch (SSKVerifyException e) {
 			Logger.error(this, "Failed to verify: "+e+" from "+next, e);
@@ -428,7 +433,10 @@ public final class RequestSender implements Runnable, ByteCounter {
 
 	private void verifyAndCommit(byte[] data) throws KeyVerifyException {
     	if(key instanceof NodeCHK) {
-    		node.store(new CHKBlock(data, headers, (NodeCHK)key));
+    		CHKBlock block = new CHKBlock(data, headers, (NodeCHK)key);
+    		node.store(block);
+			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
+				node.queueRandomReinsert(block);
     	} else if (key instanceof NodeSSK) {
     		try {
 				node.store(new SSKBlock(data, headers, (NodeSSK)key, false));
