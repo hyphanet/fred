@@ -378,11 +378,8 @@ public class PeerManager {
      */
     public static double distance(double a, double b) {
         // Circular keyspace
-	double dist;
-	if (a > b) dist = a - b;
-	else dist = b - a;
-	if (dist > 0.5) dist = 1.0 - dist;
-	return dist;
+    	if (a > b) return Math.min (a - b, 1.0 - a + b);
+    	else return Math.min (b - a, 1.0 - b + a);
     }
 
     /**
