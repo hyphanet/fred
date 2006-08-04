@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.client.async.HealingQueue;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
@@ -43,6 +44,7 @@ public class FetcherContext implements Cloneable {
 	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
 	 * return the manifest contents as data. */
 	public boolean returnZIPManifests;
+	public final HealingQueue healingQueue;
 	
 	public FetcherContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -51,7 +53,7 @@ public class FetcherContext implements Cloneable {
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
-			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager) {
+			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, HealingQueue hq) {
 		this.maxOutputLength = curMaxLength;
 		this.uskManager = uskManager;
 		this.maxTempLength = curMaxTempLength;
@@ -74,9 +76,11 @@ public class FetcherContext implements Cloneable {
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
 		this.cacheLocalRequests = cacheLocalRequests;
+		this.healingQueue = hq;
 	}
 
 	public FetcherContext(FetcherContext ctx, int maskID, boolean keepProducer) {
+		this.healingQueue = ctx.healingQueue;
 		if(keepProducer)
 			this.eventProducer = ctx.eventProducer;
 		else

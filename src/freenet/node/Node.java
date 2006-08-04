@@ -39,13 +39,17 @@ import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
+import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.HealingQueue;
+import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
+import freenet.client.events.SimpleEventProducer;
 import freenet.clients.http.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
@@ -665,6 +669,7 @@ public class Node {
 	final RequestStarter sskInsertStarter;
 	public final UserAlertManager alerts;
 	final TimeDecayingRunningAverage throttledPacketSendAverage;
+	private final HealingQueue healingQueue;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
 	public final String formPassword;
 	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
@@ -1625,6 +1630,11 @@ public class Node {
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
+		
+		healingQueue = new SimpleHealingQueue(chkPutScheduler,
+				new InserterContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
+						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
+						false, uskManager), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		FetcherContext ctx = makeClient((short)0).getFetcherContext();
 		
@@ -3630,5 +3640,9 @@ public class Node {
 		pluginDetectedIPs = list;
 		redetectAddress();
 		shouldInsertARK();
+	}
+
+	public HealingQueue getHealingQueue() {
+		return healingQueue;
 	}
 }

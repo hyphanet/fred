@@ -186,6 +186,13 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			// Now decode
 			Logger.minor(this, "Decoding "+this);
 			
+			boolean[] dataBlocksSucceeded = new boolean[dataBuckets.length];
+			boolean[] checkBlocksSucceeded = new boolean[checkBuckets.length];
+			for(int i=0;i<dataBuckets.length;i++)
+				dataBlocksSucceeded[i] = dataBuckets[i].data != null;
+			for(int i=0;i<checkBuckets.length;i++)
+				checkBlocksSucceeded[i] = checkBuckets[i].data != null;
+			
 			FECCodec codec = FECCodec.getCodec(splitfileType, dataBlocks.length, checkBlocks.length);
 			try {
 				if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
@@ -218,50 +225,48 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			
 			// Now heal
 			
-//			// Encode any check blocks we don't have
-//			if(codec != null) {
-//				try {
-//					codec.encode(dataBuckets, checkBuckets, 32768, fetcherContext.bucketFactory);
-//				} catch (IOException e) {
-//					Logger.error(this, "Bucket error while healing: "+e, e);
-//				}
-//			}
-//			
-//			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
-//			for(int i=0;i<dataBlockStatus.length;i++) {
-//				if(dataBuckets[i].getData() != null) continue;
-//				SingleFileFetcher fetcher = dataBlockStatus[i];
-//				if(fetcher.getRetryCount() == 0) {
-//					// 80% chance of not inserting, if we never tried it
-//					if(fetcherContext.random.nextInt(5) == 0) continue;
-//				}
-//				queueHeal(dataBuckets[i].getData());
-//			}
-//			for(int i=0;i<checkBlockStatus.length;i++) {
-//				if(checkBuckets[i].getData() != null) continue;
-//				SingleFileFetcher fetcher = checkBlockStatus[i];
-//				if(fetcher.getRetryCount() == 0) {
-//					// 80% chance of not inserting, if we never tried it
-//					if(fetcherContext.random.nextInt(5) == 0) continue;
-//				}
-//				queueHeal(checkBuckets[i].getData());
-//			}
+			/** Splitfile healing:
+			 * Any block which we have tried and failed to download should be 
+			 * reconstructed and reinserted.
+			 */
 			
-			for(int i=0;i<dataBlocks.length;i++) {
-				MinimalSplitfileBlock b = dataBuckets[i];
-				if(b != null) {
-					Bucket d = b.getData();
-					if(d != null) d.free();
+			// Encode any check blocks we don't have
+			if(codec != null) {
+				try {
+					codec.encode(dataBuckets, checkBuckets, 32768, fetcherContext.bucketFactory);
+				} catch (IOException e) {
+					Logger.error(this, "Bucket error while healing: "+e, e);
+				}
+			}
+			
+			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
+			for(int i=0;i<dataBlockStatus.length;i++) {
+				boolean heal = false;
+				if(!dataBlocksSucceeded[i]) {
+					SingleFileFetcher fetcher = dataBlockStatus[i];
+					if(fetcher.getRetryCount() > 0)
+						heal = true;
+				}
+				if(heal) {
+					queueHeal(dataBuckets[i].getData());
+				} else {
+					dataBuckets[i].data.free();
 				}
 				dataBuckets[i] = null;
 				dataBlockStatus[i] = null;
 				dataBlocks[i] = null;
 			}
-			for(int i=0;i<checkBlocks.length;i++) {
-				MinimalSplitfileBlock b = checkBuckets[i];
-				if(b != null) {
-					Bucket d = b.getData();
-					if(d != null) d.free();
+			for(int i=0;i<checkBlockStatus.length;i++) {
+				boolean heal = false;
+				if(!checkBlocksSucceeded[i]) {
+					SingleFileFetcher fetcher = checkBlockStatus[i];
+					if(fetcher.getRetryCount() > 0)
+						heal = true;
+				}
+				if(heal) {
+					queueHeal(checkBuckets[i].getData());
+				} else {
+					checkBuckets[i].data.free();
 				}
 				checkBuckets[i] = null;
 				checkBlockStatus[i] = null;
@@ -272,8 +277,8 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	}
 
 	private void queueHeal(Bucket data) {
-		// TODO Auto-generated method stub
-		
+		Logger.minor(this, "Queueing healing insert");
+		fetcherContext.healingQueue.queue(data);
 	}
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal */

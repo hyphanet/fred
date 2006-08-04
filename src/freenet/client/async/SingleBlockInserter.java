@@ -44,7 +44,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	final int sourceLength;
 	private int consecutiveRNFs;
 	
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject) throws InserterException {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject) {
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
 		this.token = token;

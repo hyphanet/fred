@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
+import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ClientEventProducer;
@@ -34,6 +35,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
 	private final RandomSource random;
+	private final HealingQueue healingQueue;
 	/** See comments in Node */
 	private final boolean cacheLocalRequests;
 	static final int MAX_RECURSION = 10;
@@ -83,6 +85,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		curMaxMetadataLength = 1024 * 1024;
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.persistentBucketFactory = node.persistentEncryptedTempBucketFactory;
+		this.healingQueue = node.getHealingQueue();
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -174,7 +177,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				random, archiveManager, bucketFactory, globalEventProducer, 
-				cacheLocalRequests, node.uskManager);
+				cacheLocalRequests, node.uskManager, healingQueue);
 	}
 
 	public InserterContext getInserterContext(boolean forceNonPersistent) {
