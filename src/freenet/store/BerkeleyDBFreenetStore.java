@@ -316,6 +316,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					break;
 				}
 				x++;
+				if(x % 1024 == 0) {
+					System.out.println("Reading store prior to shrink: "+(x*100/chkBlocksInStore)+ "% ( "+x+"/"+chkBlocksInStore+")");
+				}
+				if(x == Integer.MAX_VALUE) {
+					System.err.println("Key number "+x+" - ignoring store after "+(x*(dataBlockSize+headerBlockSize)+" bytes"));
+					break;
+				}
 			}
 			
     	} finally {
@@ -362,9 +369,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if((i+1) % 2048 == 0) {
     			t.commit();
     			t = environment.beginTransaction(null,null);
+				System.out.println("Moving blocks: "+(i*100/wantedMove.size())+ "% ( "+i+"/"+wantedMove.size()+")");
     		}
-    		System.err.println("Moved "+wantedBlock+" to "+unwantedBlock);
+    		//System.err.println("Moved "+wantedBlock+" to "+unwantedBlock);
     	}
+    	System.out.println("Moved all "+wantedMove.size()+" blocks");
     	if(t != null) {
     		t.commit();
     		t = null;
