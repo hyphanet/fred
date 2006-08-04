@@ -219,7 +219,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(pn.isDisabled()) {
         	return;  // We don't connect to disabled peers
         }
-        Logger.minor(this, "Version="+version+", negType="+negType+", packetType="+packetType);
+        long now = System.currentTimeMillis();
+        int delta = (int) (now - pn.lastSentPacketTime());
+        Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (pt="+packetType+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) from "+replyTo+"");
         // We keep one DiffieHellmanContext per node ONLY
         /*
          * Now, to the real meat
@@ -354,7 +356,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         output[1] = (byte) negType;
         output[2] = (byte) phase;
         System.arraycopy(data, 0, output, 3, data.length);
-        Logger.minor(this, "Sending auth packet ("+version+","+negType+" to "+replyTo+" - version="+version+" negType="+negType+" phase="+phase+" data.length="+data.length+" for "+pn.getPeer()+" (last packet sent "+delta+"ms ago)");
+        Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (ph="+phase+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) to "+replyTo+" data.length="+data.length);
         sendAuthPacket(output, pn, replyTo);
     }
 
@@ -1368,7 +1370,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         Logger.minor(this, "Possibly sending handshake to "+pn);
         DiffieHellmanContext ctx;
         Peer[] handshakeIPs;
-        if(!pn.shouldSendHandshake()) return;
+        if(!pn.shouldSendHandshake()) {
+	        Logger.debug(this, "Not sending handshake to "+pn.getPeer()+" because pn.shouldSendHandshake() returned false");
+        	return;
+        }
         long firstTime = System.currentTimeMillis();
         handshakeIPs = pn.getHandshakeIPs();
         long secondTime = System.currentTimeMillis();
@@ -1395,8 +1400,14 @@ public class FNPPacketMangler implements LowLevelFilter {
         long loopTime1 = System.currentTimeMillis();
         for(int i=0;i<handshakeIPs.length;i++){
         	long innerLoopTime1 = System.currentTimeMillis();
-        	if(handshakeIPs[i].getAddress(false) == null) continue;
-        	if(!handshakeIPs[i].isRealInternetAddress(false, false)) continue;
+        	if(handshakeIPs[i].getAddress(false) == null) {
+	        	Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
+        		continue;
+        	}
+        	if(!pn.allowLocalAddresses() && !handshakeIPs[i].isRealInternetAddress(false, false)) {
+	        	Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
+        		continue;
+        	}
         	long innerLoopTime2 = System.currentTimeMillis();
         	if((innerLoopTime2 - innerLoopTime1) > 500)
         		Logger.normal(this, "innerLoopTime2 is more than half a second after innerLoopTime1 ("+(innerLoopTime2 - innerLoopTime1)+") working on "+handshakeIPs[i]+" of "+pn.getName());
