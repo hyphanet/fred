@@ -517,7 +517,9 @@ public class NativeBigInteger extends BigInteger {
             System.load(outFile.getAbsolutePath()); //System.load requires an absolute path to the lib
             return true;
         } catch (UnsatisfiedLinkError ule) {
-        	try{
+        	try{	
+        		if((File.separatorChar == '\\') || (System.getProperty("os.name").toLowerCase().startsWith("win")))
+        			throw new Exception("not possible on windows!");
         		System.err.println("We have detected a NOEXEC on your temporary directory, trying in current one insteed.");
         		InputStream libStream = resource.openStream();
         		outFile = new File("jbigi-lib.tmp");
