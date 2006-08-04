@@ -209,11 +209,11 @@ public class PluginManager {
 				return plugin;
 			}
 		} catch (ClassNotFoundException e) {
-			Logger.normal(this, "could not find plugin class: " + pluginName, e);
+			Logger.normal(this, "could not find plugin class: " + pluginName+" : "+e, e);
 		} catch (InstantiationException e) {
-			Logger.normal(this, "could not instantiate plugin class: " + pluginName, e);
+			Logger.normal(this, "could not instantiate plugin class: " + pluginName+" : "+e, e);
 		} catch (IllegalAccessException e) {
-			Logger.normal(this, "could not instantiate plugin class: " + pluginName, e);
+			Logger.normal(this, "could not instantiate plugin class: " + pluginName+" : "+e, e);
 		}
 		return null;
 	}
