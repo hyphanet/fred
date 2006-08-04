@@ -216,10 +216,10 @@ public class FreenetInetAddress {
 	}
 
 	public int hashCode() {
-		if (_address != null) {
-			return _address.hashCode();
-		} else {
+		if(hostname != null) {
 			return hostname.hashCode();
+		} else {
+			return _address.hashCode();
 		}
 	}
 	

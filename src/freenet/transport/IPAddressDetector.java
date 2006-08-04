@@ -59,7 +59,7 @@ public class IPAddressDetector implements Runnable {
 		if(System.currentTimeMillis() > (lastDetectedTime + recheckTime)
 				|| lastAddressList == null)
 			checkpoint();
-		return lastAddressList;
+		return lastAddressList == null ? new InetAddress[0] : lastAddressList;
 	}
 
 	boolean old = false;

@@ -2456,7 +2456,7 @@ public class Node {
 	   				addresses.add(a);
 	   		}
 	   	}
-	   	if((detectedAddrs == null) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
+	   	if((detectedAddrs.length == 0) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
 	   		addresses.add(new Peer(oldIPAddress, portNumber));
    		// Try to pick it up from our connections
 	   	if(peers != null) {
@@ -2491,15 +2491,15 @@ public class Node {
 		   		while(it.hasNext()) {
 		   			Peer cur = (Peer) (it.next());
 		   			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
-		   			if(curPop > bestPopularity) {
+		   			if(curPop >= bestPopularity) {
+		   				secondBestPopularity = bestPopularity;
 		   				bestPopularity = curPop;
 		   				secondBest = best;
 		   				best = cur;
-		   				secondBestPopularity = bestPopularity;
 		   			}
 		   		}
 		   		if(best != null) {
-		   			if((bestPopularity > 2) || (detectedAddrs == null)) {
+		   			if((bestPopularity > 2) || (detectedAddrs.length == 0)) {
 		   				if(!addresses.contains(best))
 		   					addresses.add(best);
 		   				if((secondBest != null) && (secondBestPopularity > 2)) {
