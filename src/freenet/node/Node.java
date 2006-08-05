@@ -1526,20 +1526,22 @@ public class Node {
 		File sskCacheFile = new File(sskCachePath);
 		
 		// Upgrade
-		if(chkStoreFile.exists() && !chkCacheFile.exists()) {
-			System.err.println("Renaming CHK store to CHK cache.");
-			if(!chkStoreFile.renameTo(chkCacheFile))
-				throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+chkStoreFile+" to "+chkCacheFile);
-		}
-		if(pkStoreFile.exists() && !pkCacheFile.exists()) {
-			System.err.println("Renaming PK store to PK cache.");
-			if(!pkStoreFile.renameTo(pkCacheFile))
-				throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+pkStoreFile+" to "+pkCacheFile);
-		}
-		if(sskStoreFile.exists() && !sskCacheFile.exists()) {
-			System.err.println("Renaming SSK store to SSK cache.");
-			if(!sskStoreFile.renameTo(sskCacheFile))
-				throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+sskStoreFile+" to "+sskCacheFile);
+		if(this.lastVersion < 927) {
+			if(chkStoreFile.exists() && !chkCacheFile.exists()) {
+				System.err.println("Renaming CHK store to CHK cache.");
+				if(!chkStoreFile.renameTo(chkCacheFile))
+					throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+chkStoreFile+" to "+chkCacheFile);
+			}
+			if(pkStoreFile.exists() && !pkCacheFile.exists()) {
+				System.err.println("Renaming PK store to PK cache.");
+				if(!pkStoreFile.renameTo(pkCacheFile))
+					throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+pkStoreFile+" to "+pkCacheFile);
+			}
+			if(sskStoreFile.exists() && !sskCacheFile.exists()) {
+				System.err.println("Renaming SSK store to SSK cache.");
+				if(!sskStoreFile.renameTo(sskCacheFile))
+					throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+sskStoreFile+" to "+sskCacheFile);
+			}
 		}
 
 		maxStoreKeys = (maxTotalKeys * 4) / 5;
