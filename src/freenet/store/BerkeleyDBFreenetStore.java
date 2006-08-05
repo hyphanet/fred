@@ -184,8 +184,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		if(!storeFile.exists())
 			storeFile.createNewFile();
 		chkStore = new RandomAccessFile(storeFile,"rw");
-			
-		chkBlocksInStore = countCHKBlocksFromDatabase();
+
+		long chkBlocksInDatabase = countCHKBlocksFromDatabase();
+		chkBlocksInStore = chkBlocksInDatabase;
 		long chkBlocksFromFile = countCHKBlocksFromFile();
 		lastRecentlyUsed = getMaxRecentlyUsed();
 		
@@ -206,7 +207,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
 		Logger.minor(this, "Keys in store: "+chkBlocksInStore);
-		System.out.println("Keys in store: "+chkBlocksInStore+" / "+maxChkBlocks);
+		System.out.println("Keys in store: "+chkBlocksInStore+" / "+maxChkBlocks+" (db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+")");
 
 		maybeShrink(true, true);
 		
@@ -264,7 +265,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	WrapperManager.signalStarting(24*60*60*1000);
     	
-    	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks);
+    	long realSize = countCHKBlocksFromFile();
+    	
+    	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+")");
     	
     	try {
 			t = environment.beginTransaction(null,null);
@@ -290,8 +293,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
 				//Logger.minor(this, "Found another key ("+(x++)+") ("+storeBlock.offset+")");
 				long block = storeBlock.offset;
-				Long blockNum = new Long(storeBlock.offset);
-				Long seqNum = new Long(storeBlock.recentlyUsed);
+				if(storeBlock.offset > Integer.MAX_VALUE) {
+					// 2^31 * blockSize; ~ 70TB for CHKs, 2TB for the others
+					System.err.println("Store too big, doing quick shrink");
+					t.abort();
+					t = null;
+					c.close();
+					c = null;
+					maybeQuickShrink(false);
+					return;
+				}
+				Integer blockNum = new Integer((int)storeBlock.offset);
+				//Long seqNum = new Long(storeBlock.recentlyUsed);
 				//System.out.println("#"+x+" seq "+seqNum+": block "+blockNum);
 				if(x < newSize) {
 					// Wanted
@@ -315,6 +328,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				opStat = c.getPrev(keyDBE, blockDBE, LockMode.RMW);
 				if(opStat == OperationStatus.NOTFOUND) {
+					System.out.println("Read store: "+x+" keys.");
 					break;
 				}
 				x++;
@@ -334,10 +348,25 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     			t.abort();
     	}
     	
-    	System.err.println("Keys to keep where they are:     "+wantedKeep.size());
-    	System.err.println("Keys which will be wiped anyway: "+unwantedIgnore.size());
-    	System.err.println("Keys to move:                    "+wantedMove.size());
-    	System.err.println("Keys to be moved over:           "+unwantedMove.size());
+    	Integer[] wantedKeepNums = (Integer[]) wantedKeep.toArray(new Integer[wantedKeep.size()]);
+    	Integer[] unwantedIgnoreNums = (Integer[]) unwantedIgnore.toArray(new Integer[unwantedIgnore.size()]);
+    	Integer[] wantedMoveNums = (Integer[]) wantedMove.toArray(new Integer[wantedMove.size()]);
+    	Integer[] unwantedMoveNums = (Integer[]) unwantedMove.toArray(new Integer[unwantedMove.size()]);
+    	
+    	for(int i=0;i<realSize;i++) {
+    		Integer ii = new Integer(i);
+    		if(Arrays.binarySearch(wantedKeepNums, ii) >= 0) continue;
+    		if(Arrays.binarySearch(unwantedIgnoreNums, ii) >= 0) continue;
+    		if(Arrays.binarySearch(wantedMoveNums, ii) >= 0) continue;
+    		if(Arrays.binarySearch(unwantedMoveNums, ii) >= 0) continue;
+    		unwantedMove.add(ii);
+    	}
+    	unwantedMoveNums = (Integer[]) unwantedMove.toArray(new Integer[unwantedMove.size()]);
+    	
+    	System.err.println("Keys to keep where they are:     "+wantedKeepNums.length);
+    	System.err.println("Keys which will be wiped anyway: "+unwantedIgnoreNums.length);
+    	System.err.println("Keys to move:                    "+wantedMoveNums.length);
+    	System.err.println("Keys to be moved over:           "+unwantedMoveNums.length);
     	
     	// Now move all the wantedMove blocks onto the corresponding unwantedMove's.
     	
@@ -346,8 +375,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	try {
     	t = environment.beginTransaction(null,null);
     	for(int i=0;i<wantedMove.size();i++) {
-    		Long wantedBlock = (Long)wantedMove.get(i);
-    		Long unwantedBlock = (Long)unwantedMove.get(i);
+    		Integer wantedBlock = wantedMoveNums[i];
+    		if(unwantedMove.size() < i+1) {
+    			System.err.println("Keys to move but no keys to move over! Moved "+i);
+    			t.commit();
+    			t = null;
+    			break;
+    		}
+    		Integer unwantedBlock = unwantedMoveNums[i];
     		// Delete unwantedBlock from the store
     		DatabaseEntry wantedBlockEntry = new DatabaseEntry();
     		longTupleBinding.objectToEntry(wantedBlock, wantedBlockEntry);
@@ -400,8 +435,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if(maxBlocks >= curBlocks)
 					return;
 			}
-			System.err.println("Shrinking store: "+curBlocks+" -> "+maxBlocks);
-			Logger.error(this, "Shrinking store: "+curBlocks+" -> "+maxBlocks);
+			System.err.println("Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+")");
+			Logger.error(this, "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+")");
 			while(true) {
 				t = environment.beginTransaction(null,null);
 				long deleted = 0;
