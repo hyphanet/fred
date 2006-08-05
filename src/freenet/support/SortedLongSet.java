@@ -112,4 +112,11 @@ public class SortedLongSet {
 		return val;
 	}
 
+	public void clear() {
+		data = new long[MIN_SIZE];
+		for(int i=0;i<data.length;i++)
+			data[i] = Long.MAX_VALUE;
+		length = 0;
+	}
+
 }

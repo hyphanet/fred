@@ -380,7 +380,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     			System.err.println("Keys to move but no keys to move over! Moved "+i);
     			t.commit();
     			t = null;
-    			break;
+    			return;
     		}
     		Integer unwantedBlock = unwantedMoveNums[i];
     		// Delete unwantedBlock from the store
@@ -419,6 +419,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		if(t != null)
     			t.abort();
     	}
+		freeBlocks.clear();
+		for(int i=wantedMoveNums.length;i<unwantedMoveNums.length;i++)
+			addFreeBlock(unwantedMoveNums[i].longValue());
     	maybeQuickShrink(false);
     	
 	}
