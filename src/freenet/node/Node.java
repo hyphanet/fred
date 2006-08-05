@@ -1458,9 +1458,11 @@ public class Node {
 						long newMaxStoreKeys = storeSize / sizePerKey;
 						if(newMaxStoreKeys == maxTotalKeys) return;
 						// Update each datastore
-						maxTotalKeys = newMaxStoreKeys;
-						long maxStoreKeys = (maxTotalKeys * 4) / 5;
-						long maxCacheKeys = maxTotalKeys - maxStoreKeys;
+						synchronized(Node.this) {
+							maxTotalKeys = newMaxStoreKeys;
+							maxStoreKeys = (maxTotalKeys * 4) / 5;
+							maxCacheKeys = maxTotalKeys - maxStoreKeys;
+						}
 						try {
 							long sz;
 							chkDatastore.setMaxKeys(maxStoreKeys, false);
