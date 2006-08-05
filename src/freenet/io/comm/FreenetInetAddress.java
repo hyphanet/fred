@@ -100,6 +100,8 @@ public class FreenetInetAddress {
 			// Equal.
 			return true;
 		}
+		if(addr.hostname != null)
+			return false;
 
 		// No hostname, go by address.
 		if(!_address.equals(addr._address)) {
