@@ -1,7 +1,6 @@
-package freenet.client.async;
+package freenet.node;
 
 import freenet.keys.ClientKeyBlock;
-import freenet.node.LowLevelPutException;
 
 /**
  * Callback interface for a low level insert, which is immediately sendable. These

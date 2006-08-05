@@ -7,6 +7,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
+import freenet.node.SendableGet;
 import freenet.support.Logger;
 
 public abstract class BaseSingleFileFetcher implements SendableGet {

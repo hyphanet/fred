@@ -1,4 +1,4 @@
-package freenet.client.async;
+package freenet.node;
 
 public interface RequestScheduler {
 

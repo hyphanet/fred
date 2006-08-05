@@ -1,9 +1,8 @@
-package freenet.client.async;
+package freenet.node;
 
+import freenet.client.async.ClientRequester;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyBlock;
-import freenet.node.LowLevelPutException;
-import freenet.node.Node;
 import freenet.support.Logger;
 
 /**

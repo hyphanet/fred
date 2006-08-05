@@ -1,6 +1,6 @@
-package freenet.client.async;
+package freenet.node;
 
-import freenet.node.Node;
+import freenet.client.async.ClientRequester;
 import freenet.support.RandomGrabArrayItem;
 
 /**

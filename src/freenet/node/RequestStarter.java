@@ -1,7 +1,5 @@
 package freenet.node;
 
-import freenet.client.async.RequestScheduler;
-import freenet.client.async.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.TokenBucket;
 import freenet.support.math.RunningAverage;

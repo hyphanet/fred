@@ -1,8 +1,7 @@
-package freenet.client.async;
+package freenet.node;
 
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
-import freenet.node.LowLevelGetException;
 
 /**
  * A low-level key fetch which can be sent immediately. @see SendableRequest
