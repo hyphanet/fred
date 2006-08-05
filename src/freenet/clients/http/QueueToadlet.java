@@ -129,7 +129,7 @@ public class QueueToadlet extends Toadlet {
 				insertURI = new FreenetURI("CHK@");
 			} else if ("ksk".equals(keyType)) {
 				try {
-					insertURI = new FreenetURI(request.getPartAsString("key", 128));
+					insertURI = new FreenetURI(HTMLDecoder.decode(request.getPartAsString("key", 128)));
 				} catch (MalformedURLException mue1) {
 					writeError("Invalid URI to insert", "You did not specify a valid URI to insert the file to.", ctx);
 					return;
