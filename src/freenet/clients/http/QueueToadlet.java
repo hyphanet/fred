@@ -111,7 +111,7 @@ public class QueueToadlet extends Toadlet {
 			ClientRequest[] clientRequests = fcp.getGlobalRequests();
 			for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
 				ClientRequest clientRequest = clientRequests[requestIndex];
-				if (identifier.equals(clientRequest.getIdentifier())) {
+				if (clientRequest.getIdentifier().equals(identifier)) {
 					clientRequest.setPriorityClass(newPriority);
 				}
 			}
