@@ -33,15 +33,9 @@ public class FreenetInetAddress {
 		dis.readFully(ba);
 		_address = InetAddress.getByAddress(ba);
 		String name = null;
-		// FIXME once everyone has upgraded, remove the try { } catch () { }.
-		try {
-			String s = dis.readUTF();
-			if(s.length() > 0)
-				name = s;
-		} catch (EOFException e) {
-			// Ignore
-			name = null;
-		}
+		String s = dis.readUTF();
+		if(s.length() > 0)
+			name = s;
 		hostname = name;
 	}
 
@@ -69,7 +63,7 @@ public class FreenetInetAddress {
                 addr = null;
             }
             Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+addr.getHostAddress()+"'");
-            if(addr.getHostAddress().equals(host)) {
+            if(addr != null && addr.getHostAddress().equals(host)) {
                 Logger.debug(this, "'"+host+"' looks like an IP address");
                 host = null;
             } else {
@@ -137,8 +131,7 @@ public class FreenetInetAddress {
 
 		// No hostname, go by address.
 		if(!getHostName(_address).equalsIgnoreCase(getHostName(addr._address))) {
-			// FIXME remove excessive logging
-			Logger.minor(this, "Addresses do not match: mine="+getHostName(_address)+" his="+getHostName(addr._address));
+			//Logger.minor(this, "Addresses do not match: mine="+getHostName(_address)+" his="+getHostName(addr._address));
 			return false;
 		}
 		
@@ -234,7 +227,10 @@ public class FreenetInetAddress {
 	public void writeToDataOutputStream(DataOutputStream dos) throws IOException {
 		InetAddress addr = this.getAddress();
 		if (addr == null) throw new UnknownHostException();
-		dos.write(addr.getAddress());
+		byte[] data = addr.getAddress();
+		if(data.length > 4)
+			throw new IllegalArgumentException("IPv6 not supported at present");
+		dos.write(data);
 		if(hostname != null)
 			dos.writeUTF(hostname);
 		else
