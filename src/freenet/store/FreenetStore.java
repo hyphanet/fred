@@ -54,10 +54,11 @@ public interface FreenetStore {
     /**
      * Change the store size.
      * @param maxStoreKeys The maximum number of keys to be cached.
+     * @param shrinkNow If false, don't shrink the store immediately.
      * @throws IOException 
      * @throws DatabaseException 
      */
-	public void setMaxKeys(long maxStoreKeys) throws DatabaseException, IOException;
+	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException;
 	
 	public long hits();
 	

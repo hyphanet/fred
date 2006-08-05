@@ -518,22 +518,30 @@ public class Node {
 	static final int sizePerKey = CHKBlock.DATA_LENGTH + CHKBlock.TOTAL_HEADERS_LENGTH +
 		DSAPublicKey.PADDED_SIZE + SSKBlock.DATA_LENGTH + SSKBlock.TOTAL_HEADERS_LENGTH;
 	
-	/** The maximum number of keys stored in each of the datastores. */
+	/** The maximum number of keys stored in each of the datastores, cache and store combined. */
+	private long maxTotalKeys;
+	private long maxCacheKeys;
 	private long maxStoreKeys;
 	
-	/** These 3 are private because must be protected by synchronized(this) */
-	/** The CHK datastore */
+	/* These are private because must be protected by synchronized(this) */
+	/** The CHK datastore. Long term storage; data should only be inserted here if
+	 * this node is the closest location on the chain so far, and it is on an 
+	 * insert (because inserts will always reach the most specialized node; if we
+	 * allow requests to store here, then we get pollution by inserts for keys not
+	 * close to our specialization). These conclusions derived from Oskar's simulations. */
 	private final FreenetStore chkDatastore;
-	/** The SSK datastore */
+	/** The SSK datastore. See description for chkDatastore. */
 	private final FreenetStore sskDatastore;
-	/** The store of DSAPublicKeys (by hash) */
+	/** The store of DSAPublicKeys (by hash). See description for chkDatastore. */
 	private final FreenetStore pubKeyDatastore;
-	/** These 3 are private because must be protected by synchronized(this) */
-	/** The CHK datastore */
+	/** The CHK datacache. Short term cache which stores everything that passes
+	 * through this node. */
 	private final FreenetStore chkDatacache;
-	/** The SSK datastore */
+	/** The SSK datacache. Short term cache which stores everything that passes
+	 * through this node. */
 	private final FreenetStore sskDatacache;
-	/** The store of DSAPublicKeys (by hash) */
+	/** The public key datacache (by hash). Short term cache which stores 
+	 * everything that passes through this node. */
 	private final FreenetStore pubKeyDatacache;
 	/** RequestSender's currently running, by KeyHTLPair */
 	private final HashMap requestSenders;
@@ -1441,23 +1449,29 @@ public class Node {
 				new LongCallback() {
 
 					public long get() {
-						return maxStoreKeys * sizePerKey;
+						return maxTotalKeys * sizePerKey;
 					}
 
 					public void set(long storeSize) throws InvalidConfigValueException {
 						if((storeSize < 0) || (storeSize < (32 * 1024 * 1024)))
 							throw new InvalidConfigValueException("Invalid store size");
 						long newMaxStoreKeys = storeSize / sizePerKey;
-						if(newMaxStoreKeys == maxStoreKeys) return;
+						if(newMaxStoreKeys == maxTotalKeys) return;
 						// Update each datastore
-						maxStoreKeys = newMaxStoreKeys;
+						maxTotalKeys = newMaxStoreKeys;
+						long maxStoreKeys = (maxTotalKeys * 4) / 5;
+						long maxCacheKeys = maxTotalKeys - maxStoreKeys;
 						try {
-							chkDatastore.setMaxKeys(maxStoreKeys);
-							sskDatastore.setMaxKeys(maxStoreKeys);
-							pubKeyDatastore.setMaxKeys(maxStoreKeys);
-							chkDatacache.setMaxKeys(maxStoreKeys);
-							sskDatacache.setMaxKeys(maxStoreKeys);
-							pubKeyDatacache.setMaxKeys(maxStoreKeys);
+							long sz;
+							chkDatastore.setMaxKeys(maxStoreKeys, false);
+							sz = Math.max(maxCacheKeys, maxTotalKeys - chkDatastore.keyCount());
+							chkDatacache.setMaxKeys(sz, false);
+							pubKeyDatastore.setMaxKeys(maxStoreKeys, false);
+							sz = Math.max(maxCacheKeys, maxTotalKeys - pubKeyDatastore.keyCount());
+							pubKeyDatacache.setMaxKeys(sz, false);
+							sskDatastore.setMaxKeys(maxStoreKeys, false);
+							sz = Math.max(maxCacheKeys, maxTotalKeys - sskDatastore.keyCount());
+							sskDatacache.setMaxKeys(sz, false);
 						} catch (IOException e) {
 							// FIXME we need to be able to tell the user.
 							Logger.error(this, "Caught "+e+" resizing the datastore", e);
@@ -1477,7 +1491,7 @@ public class Node {
 			throw new NodeInitException(EXIT_INVALID_STORE_SIZE, "Invalid store size");
 		}
 
-		maxStoreKeys = storeSize / sizePerKey;
+		maxTotalKeys = storeSize / sizePerKey;
 		
 		nodeConfig.register("storeDir", ".", sortOrder++, true, "Store directory", "Name of directory to put store files in", 
 				new StringCallback() {
@@ -1527,11 +1541,15 @@ public class Node {
 			if(!sskStoreFile.renameTo(sskCacheFile))
 				throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+sskStoreFile+" to "+sskCacheFile);
 		}
+
+		maxStoreKeys = (maxTotalKeys * 4) / 5;
+		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
 		try {
+			BerkeleyDBFreenetStore tmp;
+			long sz;
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
-			BerkeleyDBFreenetStore tmp;
 			try {
 				if((lastVersion > 0) && (lastVersion < 852)) {
 					throw new DatabaseException("Reconstructing store because started from old version");
@@ -1546,20 +1564,23 @@ public class Node {
 			}
 			chkDatastore = tmp;
 			Logger.normal(this, "Initializing CHK Datacache");
-			System.out.println("Initializing CHK Datacache ("+maxStoreKeys+" keys)");
+			sz = Math.max(maxCacheKeys, maxTotalKeys - tmp.keyCount());
+			System.out.println("Initializing CHK Datacache ("+sz+":"+maxCacheKeys+" keys)");
 			try {
 				if((lastVersion > 0) && (lastVersion < 852)) {
 					throw new DatabaseException("Reconstructing store because started from old version");
 				}
-				tmp = new BerkeleyDBFreenetStore(chkCachePath, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
+				tmp = new BerkeleyDBFreenetStore(chkCachePath, sz, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
 			} catch (DatabaseException e) {
 				System.err.println("Could not open store: "+e);
 				e.printStackTrace();
 				System.err.println("Attempting to reconstruct...");
 				WrapperManager.signalStarting(5*60*60*1000);
-				tmp = new BerkeleyDBFreenetStore(chkCachePath, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
+				tmp = new BerkeleyDBFreenetStore(chkCachePath, sz, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
 			}
 			chkDatacache = tmp;
+			chkDatacache.setMaxKeys(maxCacheKeys, false);
+			// Shrink pubkey store immediately; it's tiny anyway.
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			try {
@@ -1576,18 +1597,18 @@ public class Node {
 			}
 			this.pubKeyDatastore = tmp;
 			Logger.normal(this, "Initializing pubKey Datacache");
-			System.out.println("Initializing pubKey Datacache");
+			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
 			try {
 				if((lastVersion > 0) && (lastVersion < 852)) {
 					throw new DatabaseException("Reconstructing store because started from old version");
 				}
-				tmp = new BerkeleyDBFreenetStore(pkCachePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, true);
+				tmp = new BerkeleyDBFreenetStore(pkCachePath, maxCacheKeys, DSAPublicKey.PADDED_SIZE, 0, true);
 			} catch (DatabaseException e) {
 				System.err.println("Could not open store: "+e);
 				e.printStackTrace();
 				System.err.println("Attempting to reconstruct...");
 				WrapperManager.signalStarting(5*60*60*1000);
-				tmp = new BerkeleyDBFreenetStore(pkCachePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
+				tmp = new BerkeleyDBFreenetStore(pkCachePath, maxCacheKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
 			}
 			this.pubKeyDatacache = tmp;
 			// FIXME can't auto-fix SSK stores.
@@ -1595,8 +1616,10 @@ public class Node {
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new BerkeleyDBFreenetStore(sskStorePath, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
 			Logger.normal(this, "Initializing SSK Datacache");
-			System.out.println("Initializing SSK Datacache");
-			sskDatacache = new BerkeleyDBFreenetStore(sskCachePath, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
+			sz = Math.max(maxCacheKeys, maxTotalKeys - sskDatastore.keyCount());
+			System.out.println("Initializing SSK Datacache ("+sz+":"+maxCacheKeys+" keys)");
+			sskDatacache = new BerkeleyDBFreenetStore(sskCachePath, sz, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
+			sskDatacache.setMaxKeys(maxCacheKeys, false);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
@@ -2814,22 +2837,46 @@ public class Node {
 	
 	/**
 	 * Store a datum.
-	 * @param deep If true, insert to the store as well as the cache.
+	 * @param deep If true, insert to the store as well as the cache. Do not set
+	 * this to true unless the store results from an insert, and this node is the
+	 * closest node to the target; see the description of chkDatastore.
 	 */
 	public void store(CHKBlock block, boolean deep) {
 		try {
-			if(deep)
+			if(deep) {
 				chkDatastore.put(block);
+				long sz = Math.max(maxCacheKeys, maxTotalKeys - chkDatastore.keyCount());
+				try {
+					chkDatacache.setMaxKeys(sz, false);
+				} catch (DatabaseException e) {
+					// Impossible
+					Logger.error(this, "Caught "+e, e);
+				}
+			}
 			chkDatacache.put(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
 		}
 	}
 
+	/**
+	 * Store a datum.
+	 * @param deep If true, insert to the store as well as the cache. Do not set
+	 * this to true unless the store results from an insert, and this node is the
+	 * closest node to the target; see the description of chkDatastore.
+	 */
 	public void store(SSKBlock block, boolean deep) throws KeyCollisionException {
 		try {
-			if(deep)
+			if(deep) {
 				sskDatastore.put(block, false);
+				long sz = Math.max(maxCacheKeys, maxTotalKeys - sskDatastore.keyCount());
+				try {
+					chkDatacache.setMaxKeys(sz, false);
+				} catch (DatabaseException e) {
+					// Impossible
+					Logger.error(this, "Caught "+e, e);
+				}
+			}
 			sskDatacache.put(block, false);
 			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey(), deep);
 		} catch (IOException e) {

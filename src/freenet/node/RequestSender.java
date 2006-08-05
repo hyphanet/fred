@@ -436,7 +436,11 @@ public final class RequestSender implements Runnable, ByteCounter {
 	private void verifyAndCommit(byte[] data) throws KeyVerifyException {
     	if(key instanceof NodeCHK) {
     		CHKBlock block = new CHKBlock(data, headers, (NodeCHK)key);
-    		node.store(block, resetNearestLoc);
+    		// Cache only in the cache, not the store. The reason for this is that
+    		// requests don't go to the full distance, and therefore pollute the 
+    		// store; simulations it is best to only include data from requests
+    		// which go all the way i.e. inserts.
+    		node.store(block, false);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
     	} else if (key instanceof NodeSSK) {
