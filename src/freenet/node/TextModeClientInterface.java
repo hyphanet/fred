@@ -311,7 +311,11 @@ public class TextModeClientInterface implements Runnable {
     } else if(uline.startsWith("UPDATE")) {
     		outsb.append("starting the update process");
     		// FIXME run on separate thread
-    		n.getNodeUpdater().Update();
+    		n.ps.queueTimedJob(new Runnable() {
+    			public void run() {
+    				n.getNodeUpdater().Update();
+    			}
+    		}, 0);
     		return false;
     }else if(uline.startsWith("BLOW")) {
     			n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p");

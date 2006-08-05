@@ -6,6 +6,7 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	private boolean isValid, isReady;
 	private final NodeUpdater updater;
 	private int version;
+	private int readyVersion;
 
 	public UpdatedVersionAvailableUserAlert(int version, NodeUpdater updater){
 		this.version=version;
@@ -14,8 +15,9 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 		this.updater = updater;
 	}
 	
-	public synchronized void set(int v, boolean ready){
-		version = v;
+	public synchronized void set(int availableVersion, int readyVersion, boolean ready){
+		version = availableVersion;
+		this.readyVersion = readyVersion;
 		isReady = ready;
 	}
 	
@@ -32,10 +34,12 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 		"Updating to "+version+" is advised. ";
 		
 		if(updater.inFinalCheck()) {
-			return s + "Your node is currently doing a final check to verify the security of the update. ("+updater.getRevocationDNFCounter()+"/"+NodeUpdater.REVOCATION_DNF_MIN+")";
+			return s + "Your node is currently doing a final check to verify the security of the update"+
+			(version == readyVersion ? "" : (" to "+readyVersion)) +
+			". ("+updater.getRevocationDNFCounter()+"/"+NodeUpdater.REVOCATION_DNF_MIN+")";
 		} else {
 			if(isReady) return s+
-				" <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update Now\" /></form>";
+				" <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update to "+readyVersion+" Now\" /></form>";
 			else return s+
 				"Your node is currently fetching the update and will ask you whether you want to update or not when it's ready.";
 		}

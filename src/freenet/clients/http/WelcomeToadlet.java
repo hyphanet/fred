@@ -76,8 +76,8 @@ public class WelcomeToadlet extends Toadlet {
 			
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 			Logger.normal(this, "Node is updating/restarting");
-			// FIXME run on separate thread
-			node.getNodeUpdater().Update();
+			node.ps.queueTimedJob(new Runnable() {
+				public void run() { node.getNodeUpdater().Update(); }}, 0);
 			return;
 		}else if (request.getParam("restart").length() > 0) {
 			ctx.getPageMaker().makeHead(buf, "Node Restart");
