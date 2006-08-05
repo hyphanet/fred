@@ -47,117 +47,121 @@ public class QueueToadlet extends Toadlet {
 	
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
-		if ((data.size() > 1024 * 1024) && (request.getPartAsString("insert", 128).length() == 0)) {
-			this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
-			return;
-		}
-
-		String pass = request.getParam("formPassword");
-		if (pass.length() == 0) {
-			pass = request.getPartAsString("formPassword", 128);
-		}
-		if ((pass.length() == 0) || !pass.equals(node.formPassword)) {
-			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/queue/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
-		
-		if(request.isParameterSet("remove_request") && (request.getParam("remove_request").length() > 0)) {
-			String identifier = HTMLDecoder.decode(request.getParam("identifier"));
-			Logger.minor(this, "Removing "+identifier);
-			try {
-				fcp.removeGlobalRequest(identifier);
-			} catch (MessageInvalidException e) {
-				this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
+		try {
+			if ((data.size() > 1024 * 1024) && (request.getPartAsString("insert", 128).length() == 0)) {
+				this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
+				return;
 			}
-			writePermanentRedirect(ctx, "Done", "/queue/");
-			return;
-		}else if(request.isParameterSet("remove_AllRequests") && (request.getParam("remove_AllRequests").length() > 0)) {
-			
-			ClientRequest[] reqs = fcp.getGlobalRequests();
-			Logger.minor(this, "Request count: "+reqs.length);
-			
-			for(int i=0; i<reqs.length ; i++){
-				String identifier = HTMLDecoder.decode(reqs[i].getIdentifier());
+	
+			String pass = request.getParam("formPassword");
+			if (pass.length() == 0) {
+				pass = request.getPartAsString("formPassword", 128);
+			}
+			if ((pass.length() == 0) || !pass.equals(node.formPassword)) {
+				MultiValueTable headers = new MultiValueTable();
+				headers.put("Location", "/queue/");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
+
+			if(request.isParameterSet("remove_request") && (request.getParam("remove_request").length() > 0)) {
+				String identifier = HTMLDecoder.decode(request.getParam("identifier"));
 				Logger.minor(this, "Removing "+identifier);
 				try {
 					fcp.removeGlobalRequest(identifier);
 				} catch (MessageInvalidException e) {
 					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
 				}
-			}
-			writePermanentRedirect(ctx, "Done", "/queue/");
-			return;
-		}else if(request.isParameterSet("download")) {
-			// Queue a download
-			if(!request.isParameterSet("key")) {
-				writeError("No key specified to download", "You did not specify a key to download.", ctx);
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
-			}
-			String expectedMIMEType = null;
-			if(request.isParameterSet("type")) {
-				expectedMIMEType = request.getParam("type");
-			}
-			FreenetURI fetchURI;
-			try {
-				fetchURI = new FreenetURI(HTMLDecoder.decode(request.getParam("key")));
-			} catch (MalformedURLException e) {
-				writeError("Invalid URI to download", "The URI is invalid and can not be downloaded.", ctx);
-				return;
-			}
-			String persistence = request.getParam("persistence");
-			String returnType = request.getParam("return-type");
-			fcp.makePersistentGlobalRequest(fetchURI, expectedMIMEType, persistence, returnType);
-			writePermanentRedirect(ctx, "Done", "/queue/");
-			return;
-		} else if (request.isParameterSet("change_priority")) {
-			String identifier = HTMLDecoder.decode(request.getParam("identifier"));
-			short newPriority = Short.parseShort(request.getParam("priority"));
-			ClientRequest[] clientRequests = fcp.getGlobalRequests();
-			for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
-				ClientRequest clientRequest = clientRequests[requestIndex];
-				if (clientRequest.getIdentifier().equals(identifier)) {
-					clientRequest.setPriorityClass(newPriority);
+			}else if(request.isParameterSet("remove_AllRequests") && (request.getParam("remove_AllRequests").length() > 0)) {
+				
+				ClientRequest[] reqs = fcp.getGlobalRequests();
+				Logger.minor(this, "Request count: "+reqs.length);
+				
+				for(int i=0; i<reqs.length ; i++){
+					String identifier = HTMLDecoder.decode(reqs[i].getIdentifier());
+					Logger.minor(this, "Removing "+identifier);
+					try {
+						fcp.removeGlobalRequest(identifier);
+					} catch (MessageInvalidException e) {
+						this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
+					}
 				}
-			}
-			writePermanentRedirect(ctx, "Done", "/queue/");
-			return;
-		} else if (request.getPartAsString("insert", 128).length() > 0) {
-			FreenetURI insertURI;
-			String keyType = request.getPartAsString("keytype", 3);
-			if ("chk".equals(keyType)) {
-				insertURI = new FreenetURI("CHK@");
-			} else if ("ksk".equals(keyType)) {
-				try {
-					insertURI = new FreenetURI(HTMLDecoder.decode(request.getPartAsString("key", 128)));
-				} catch (MalformedURLException mue1) {
-					writeError("Invalid URI to insert", "You did not specify a valid URI to insert the file to.", ctx);
+				writePermanentRedirect(ctx, "Done", "/queue/");
+				return;
+			}else if(request.isParameterSet("download")) {
+				// Queue a download
+				if(!request.isParameterSet("key")) {
+					writeError("No key specified to download", "You did not specify a key to download.", ctx);
 					return;
 				}
-			} else {
-				writeError("Invalid URI to insert", "You fooled around with the POST request. Shame on you.", ctx);
+				String expectedMIMEType = null;
+				if(request.isParameterSet("type")) {
+					expectedMIMEType = request.getParam("type");
+				}
+				FreenetURI fetchURI;
+				try {
+					fetchURI = new FreenetURI(HTMLDecoder.decode(request.getParam("key")));
+				} catch (MalformedURLException e) {
+					writeError("Invalid URI to download", "The URI is invalid and can not be downloaded.", ctx);
+					return;
+				}
+				String persistence = request.getParam("persistence");
+				String returnType = request.getParam("return-type");
+				fcp.makePersistentGlobalRequest(fetchURI, expectedMIMEType, persistence, returnType);
+				writePermanentRedirect(ctx, "Done", "/queue/");
+				return;
+			} else if (request.isParameterSet("change_priority")) {
+				String identifier = HTMLDecoder.decode(request.getParam("identifier"));
+				short newPriority = Short.parseShort(request.getParam("priority"));
+				ClientRequest[] clientRequests = fcp.getGlobalRequests();
+				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
+					ClientRequest clientRequest = clientRequests[requestIndex];
+					if (clientRequest.getIdentifier().equals(identifier)) {
+						clientRequest.setPriorityClass(newPriority);
+					}
+				}
+				writePermanentRedirect(ctx, "Done", "/queue/");
+				return;
+			} else if (request.getPartAsString("insert", 128).length() > 0) {
+				FreenetURI insertURI;
+				String keyType = request.getPartAsString("keytype", 3);
+				if ("chk".equals(keyType)) {
+					insertURI = new FreenetURI("CHK@");
+				} else if ("ksk".equals(keyType)) {
+					try {
+						insertURI = new FreenetURI(HTMLDecoder.decode(request.getPartAsString("key", 128)));
+					} catch (MalformedURLException mue1) {
+						writeError("Invalid URI to insert", "You did not specify a valid URI to insert the file to.", ctx);
+						return;
+					}
+				} else {
+					writeError("Invalid URI to insert", "You fooled around with the POST request. Shame on you.", ctx);
+					return;
+				}
+				HTTPRequest.File file = request.getUploadedFile("filename");
+				if (file.getFilename().trim().length() == 0) {
+					writeError("No file selected", "You did not select a file to upload.", ctx);
+					return;
+				}
+				boolean dontCompress = request.getPartAsString("dontCompress", 128).length() > 0;
+				String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
+				/* copy bucket data */
+				Bucket copiedBucket = node.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
+				BucketTools.copy(file.getData(), copiedBucket);
+				try {
+					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, dontCompress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, new File(file.getFilename()), file.getContentType(), copiedBucket, null);
+					clientPut.start();
+					fcp.forceStorePersistentRequests();
+				} catch (IdentifierCollisionException e) {
+					e.printStackTrace();
+				}
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			}
-			HTTPRequest.File file = request.getUploadedFile("filename");
-			if (file.getFilename().trim().length() == 0) {
-				writeError("No file selected", "You did not select a file to upload.", ctx);
-				return;
-			}
-			boolean dontCompress = request.getPartAsString("dontCompress", 128).length() > 0;
-			String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
-			/* copy bucket data */
-			Bucket copiedBucket = node.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
-			BucketTools.copy(file.getData(), copiedBucket);
-			try {
-				ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, dontCompress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, new File(file.getFilename()), file.getContentType(), copiedBucket, null);
-				clientPut.start();
-				fcp.forceStorePersistentRequests();
-			} catch (IdentifierCollisionException e) {
-				e.printStackTrace();
-			}
-			writePermanentRedirect(ctx, "Done", "/queue/");
-			return;
+		} finally {
+			request.freeParts();
 		}
 		this.handleGet(uri, ctx);
 	}
