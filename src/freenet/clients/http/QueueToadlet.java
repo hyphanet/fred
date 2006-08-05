@@ -12,14 +12,16 @@ import java.util.LinkedList;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
+import freenet.node.Node;
+import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
 import freenet.node.fcp.ClientPutDir;
+import freenet.node.fcp.ClientPutMessage;
 import freenet.node.fcp.ClientRequest;
 import freenet.node.fcp.FCPServer;
+import freenet.node.fcp.IdentifierCollisionException;
 import freenet.node.fcp.MessageInvalidException;
-import freenet.node.Node;
-import freenet.node.RequestStarter;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
@@ -43,14 +45,17 @@ public class QueueToadlet extends Toadlet {
 	}
 	
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		if(data.size() > 1024*1024) {
+		HTTPRequest request = new HTTPRequest(uri, data, ctx);
+		if ((data.size() > 1024 * 1024) && (request.getPartAsString("insert", 128).length() == 0)) {
 			this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
 			return;
 		}
-		HTTPRequest request = new HTTPRequest(uri, data, ctx);
-		
+
 		String pass = request.getParam("formPassword");
-		if((pass == null) || !pass.equals(node.formPassword)) {
+		if (pass.length() == 0) {
+			pass = request.getPartAsString("formPassword", 128);
+		}
+		if ((pass.length() == 0) || !pass.equals(node.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/queue/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -86,7 +91,7 @@ public class QueueToadlet extends Toadlet {
 		}else if(request.isParameterSet("download")) {
 			// Queue a download
 			if(!request.isParameterSet("key")) {
-				writeError("No key specified to download", "No key specified to download");
+				writeError("No key specified to download", "You did not specify a key to download.", ctx);
 				return;
 			}
 			String expectedMIMEType = null;
@@ -97,7 +102,7 @@ public class QueueToadlet extends Toadlet {
 			try {
 				fetchURI = new FreenetURI(HTMLDecoder.decode(request.getParam("key")));
 			} catch (MalformedURLException e) {
-				writeError("Invalid URI to download", "Invalid URI to download");
+				writeError("Invalid URI to download", "The URI is invalid and can not be downloaded.", ctx);
 				return;
 			}
 			String persistence = request.getParam("persistence");
@@ -117,13 +122,46 @@ public class QueueToadlet extends Toadlet {
 			}
 			writePermanentRedirect(ctx, "Done", "/queue/");
 			return;
+		} else if (request.getPartAsString("insert", 128).length() > 0) {
+			FreenetURI insertURI;
+			String keyType = request.getPartAsString("keytype", 3);
+			if ("chk".equals(keyType)) {
+				insertURI = new FreenetURI("CHK@");
+			} else if ("ksk".equals(keyType)) {
+				try {
+					insertURI = new FreenetURI(request.getPartAsString("key", 128));
+				} catch (MalformedURLException mue1) {
+					writeError("Invalid URI to insert", "You did not specify a valid URI to insert the file to.", ctx);
+					return;
+				}
+			} else {
+				writeError("Invalid URI to insert", "You fooled around with the POST request. Shame on you.", ctx);
+				return;
+			}
+			boolean dontCompress = request.getPartAsString("dontCompress", 128).length() > 0;
+			HTTPRequest.File file = request.getUploadedFile("filename");
+			String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
+			try {
+				ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, dontCompress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, new File(file.getFilename()), file.getContentType(), file.getData(), null);
+				clientPut.start();
+				fcp.forceStorePersistentRequests();
+			} catch (IdentifierCollisionException e) {
+				e.printStackTrace();
+			}
+			writePermanentRedirect(ctx, "Done", "/queue/");
+			return;
 		}
 		this.handleGet(uri, ctx);
 	}
 	
-	private void writeError(String string, String string2) {
-		// TODO Auto-generated method stub
-		
+	private void writeError(String string, String string2, ToadletContext context) throws ToadletContextClosedException, IOException {
+		StringBuffer buffer = new StringBuffer();
+		context.getPageMaker().makeHead(buffer, "Error processing request");
+		writeBigHeading(string, buffer, null);
+		buffer.append(string2);
+		writeBigEnding(buffer);
+		context.getPageMaker().makeTail(buffer);
+		writeReply(context, 400, "text/html; charset=utf-8", "Error", buffer.toString());
 	}
 
 	public void handleGet(URI uri, ToadletContext ctx) 
@@ -166,6 +204,7 @@ public class QueueToadlet extends Toadlet {
 			buf.append("</form>\n");
 			buf.append("</div>\n");
 			buf.append("</div>\n");
+			writeInsertBox(buf);
 			ctx.getPageMaker().makeTail(buf);
 			writeReply(ctx, 200, "text/html", "OK", buf.toString());
 			return;
@@ -234,6 +273,8 @@ public class QueueToadlet extends Toadlet {
 				") Queued Requests");
 		
 		node.alerts.toSummaryHtml(buf);
+		
+		writeInsertBox(buf);
 		
 		writeBigHeading("Legend", buf, "legend");
 		buf.append("<table class=\"queue\">\n");
@@ -609,11 +650,11 @@ public class QueueToadlet extends Toadlet {
 	private void writePriorityCell(String identifier, short priorityClass, StringBuffer buf) {
 		buf.append("<td class=\"nowrap\">");
 		buf.append("<form action=\"/queue/\" method=\"post\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\">");
-		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"").append(HTMLEncoder.encode(identifier)).append("\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
+		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"").append(HTMLEncoder.encode(identifier)).append("\" />");
 		buf.append("<select name=\"priority\">");
 		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
-			buf.append("<option name=\"priority\" value=\"").append(p);
+			buf.append("<option value=\"").append(p);
 			if (p == priorityClass) {
 				buf.append("\" selected=\"selected");
 			}
@@ -630,10 +671,10 @@ public class QueueToadlet extends Toadlet {
 	private void writeDeleteCell(ClientRequest p, StringBuffer buf) {
 		buf.append("<td>");
 		buf.append("<form action=\"/queue/\" method=\"post\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\" />");
 		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"");
 		buf.append(HTMLEncoder.encode(p.getIdentifier()));
-		buf.append("\"><input type=\"submit\" name=\"remove_request\" value=\"Delete\">");
+		buf.append("\" /><input type=\"submit\" name=\"remove_request\" value=\"Delete\" />");
 		buf.append("</form>\n");
 		buf.append("</td>\n");
 	}
@@ -641,8 +682,8 @@ public class QueueToadlet extends Toadlet {
 	private void writeDeleteAll(StringBuffer buf) {
 		buf.append("<td>");
 		buf.append("<form action=\"/queue/\" method=\"post\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
-		buf.append("<input type=\"submit\" name=\"remove_AllRequests\" value=\"Delete Everything\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\" />");
+		buf.append("<input type=\"submit\" name=\"remove_AllRequests\" value=\"Delete Everything\" />");
 		buf.append("</form>\n");
 		buf.append("</td>\n");
 	}
@@ -749,6 +790,25 @@ public class QueueToadlet extends Toadlet {
 
 	private void writeBigEnding(StringBuffer buf) {
 		buf.append("</div>\n");
+		buf.append("</div>\n");
+	}
+	
+	private void writeInsertBox(StringBuffer buf) {
+		/* the insert file box */
+		buf.append("<div class=\"infobox\">");
+		buf.append("<div class=\"infobox-header\">Insert File</div>");
+		buf.append("<div class=\"infobox-content\">");
+		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
+		buf.append("Insert as: <input type=\"radio\" name=\"keytype\" value=\"chk\" checked /> CHK &nbsp; ");
+		buf.append("<input type=\"radio\" name=\"keytype\" value=\"ksk\" /> KSK &nbsp; ");
+		buf.append("<input type=\"text\" name=\"key\" value=\"KSK@\" /> &nbsp; ");
+		buf.append("File: <input type=\"file\" name=\"filename\" value=\"\" /> &nbsp; ");
+		buf.append("<input type=\"checkbox\" name=\"dontCompress\" /> Don&rsquo;t Compress &nbsp; ");
+		buf.append("<input type=\"submit\" name=\"insert\" value=\"Insert File\" /> &nbsp; ");
+		buf.append("<input type=\"reset\" value=\"Reset Form\" />");
+		buf.append("</form>");
+		buf.append("</div>");
 		buf.append("</div>\n");
 	}
 

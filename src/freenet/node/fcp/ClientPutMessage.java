@@ -52,9 +52,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final boolean global;
 	final FreenetURI redirectTarget;
 	
-	static final short UPLOAD_FROM_DIRECT = 0;
-	static final short UPLOAD_FROM_DISK = 1;
-	static final short UPLOAD_FROM_REDIRECT = 2;
+	public static final short UPLOAD_FROM_DIRECT = 0;
+	public static final short UPLOAD_FROM_DISK = 1;
+	public static final short UPLOAD_FROM_REDIRECT = 2;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
 		identifier = fs.get("Identifier");

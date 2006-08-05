@@ -110,9 +110,9 @@ public abstract class ClientRequest {
 
 	// Persistence
 	
-	static final short PERSIST_CONNECTION = 0;
-	static final short PERSIST_REBOOT = 1;
-	static final short PERSIST_FOREVER = 2;
+	public static final short PERSIST_CONNECTION = 0;
+	public static final short PERSIST_REBOOT = 1;
+	public static final short PERSIST_FOREVER = 2;
 	
 	public static String persistenceTypeString(short type) {
 		switch(type) {

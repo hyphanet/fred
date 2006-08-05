@@ -61,6 +61,9 @@ public class HTTPRequest {
 	 */
 	private HashMap parts;
 	
+	/** A map for uploaded files. */
+	private Map uploadedFiles = new HashMap();
+	
 	private final BucketFactory bucketfactory;
 
 	/**
@@ -438,33 +441,45 @@ public class HTTPRequest {
 		
 		Bucket filedata = null;
 		String name = null;
+		String filename = null;
+		String contentType = null;
 		
 		while(is.available() > 0) {
 			name = null;
+			filename = null;
+			contentType = null;
 			// chomp headers
-			while( (line = lis.readLine(100, 100, false)) /* see above */ != null) {
+			while( (line = lis.readLine(200, 200, false)) /* see above */ != null) {
 				if (line.length() == 0) break;
 				
 				String[] lineparts = line.split(":");
 				if (lineparts == null) continue;
 				String hdrname = lineparts[0].trim();
 				
-				if (lineparts.length < 2) continue;
-				String[] valueparts = lineparts[1].split(";");
-				
-				for (int i = 0; i < valueparts.length; i++) {
-					String[] subparts = valueparts[i].split("=");
-					if (subparts.length != 2) {
-						continue;
-					}
-					if (hdrname.equalsIgnoreCase("Content-Disposition")) {
-						if (subparts[0].trim().equalsIgnoreCase("name")) {
-							name = subparts[1].trim();
-							if (name.charAt(0) == '"') name = name.substring(1);
-							if (name.charAt(name.length() - 1) == '"')
-								name = name.substring(0, name.length() - 1);
+				if (hdrname.equalsIgnoreCase("Content-Disposition")) {
+					if (lineparts.length < 2) continue;
+					String[] valueparts = lineparts[1].split(";");
+					
+					for (int i = 0; i < valueparts.length; i++) {
+						String[] subparts = valueparts[i].split("=");
+						if (subparts.length != 2) {
+							continue;
+						}
+						String fieldname = subparts[0].trim();
+						String value = subparts[1].trim();
+						if (value.startsWith("\"") && value.endsWith("\"")) {
+							value = value.substring(1, value.length() - 1);
+						}
+						if (fieldname.equalsIgnoreCase("name")) {
+							name = value;
+						} else if (fieldname.equalsIgnoreCase("filename")) {
+							filename = value;
 						}
 					}
+				} else if (hdrname.equalsIgnoreCase("Content-Type")) {
+					contentType = lineparts[1].trim();
+				} else {
+					
 				}
 			}
 			
@@ -480,7 +495,7 @@ public class HTTPRequest {
 			byte[] buf = new byte[boundary.length()];
 			byte[] bbound = boundary.getBytes("UTF-8");
 			int offset = 0;
-			while ((is.available() > 0) && !boundary.equals(new String(buf))) {
+			while ((is.available() > 0) && (offset < buf.length)) {
 				byte b = (byte)is.read();
 				
 				if (b == bbound[offset]) {
@@ -499,7 +514,14 @@ public class HTTPRequest {
 			bucketos.close();
 			
 			this.parts.put(name, filedata);
+			if (filename != null) {
+				this.uploadedFiles.put(name, new File(filename, contentType, filedata));
+			}
 		}
+	}
+	
+	public File getUploadedFile(String name) {
+		return (File) uploadedFiles.get(name);
 	}
 	
 	public Bucket getPart(String name) {
@@ -551,4 +573,68 @@ public class HTTPRequest {
 			return defaultValue;
 		}
 	}
+
+	/**
+	 * Container for uploaded files in HTTP POST requests.
+	 * 
+	 * @author David 'Bombe' Roden &lt;bombe@freenetproject.org&gt;
+	 * @version $Id$
+	 */
+	public static class File {
+
+		/** The filename. */
+		private final String filename;
+
+		/** The content type. */
+		private final String contentType;
+
+		/** The data. */
+		private final Bucket data;
+
+		/**
+		 * Creates a new file with the specified filename, content type, and
+		 * data.
+		 * 
+		 * @param filename
+		 *            The name of the file
+		 * @param contentType
+		 *            The content type of the file
+		 * @param data
+		 *            The data of the file
+		 */
+		public File(String filename, String contentType, Bucket data) {
+			this.filename = filename;
+			this.contentType = contentType;
+			this.data = data;
+		}
+
+		/**
+		 * Returns the content type of the file.
+		 * 
+		 * @return The content type of the file
+		 */
+		public String getContentType() {
+			return contentType;
+		}
+
+		/**
+		 * Returns the data of the file.
+		 * 
+		 * @return The data of the file
+		 */
+		public Bucket getData() {
+			return data;
+		}
+
+		/**
+		 * Returns the name of the file.
+		 * 
+		 * @return The name of the file
+		 */
+		public String getFilename() {
+			return filename;
+		}
+
+	}
+
 }

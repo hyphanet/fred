@@ -30,6 +30,94 @@ public class ClientPut extends ClientPutBase {
 	/** We store the size of inserted data before freeing it */
 	private long finishedSize;
 	
+	/**
+	 * Creates a new persistent insert.
+	 * 
+	 * @param uri
+	 *            The URI to insert data to
+	 * @param identifier
+	 *            The identifier of the insert
+	 * @param verbosity
+	 *            The verbosity bitmask
+	 * @param handler
+	 *            The FCP connection handler
+	 * @param priorityClass
+	 *            The priority for this insert
+	 * @param persistenceType
+	 *            The persistence type of this insert
+	 * @param clientToken
+	 *            The client token of this insert
+	 * @param global
+	 *            Whether this insert appears on the global queue
+	 * @param getCHKOnly
+	 *            Whether only the resulting CHK is requested
+	 * @param dontCompress
+	 *            Whether the file should not be compressed
+	 * @param maxRetries
+	 *            The maximum number of retries
+	 * @param uploadFromType
+	 *            Where the file is uploaded from
+	 * @param origFilename
+	 *            The original filename
+	 * @param contentType
+	 *            The content type of the data
+	 * @param data
+	 *            The data (may be <code>null</code> if
+	 *            <code>uploadFromType</code> is UPLOAD_FROM_DISK or
+	 *            UPLOAD_FROM_REDIRECT)
+	 * @param redirectTarget
+	 *            The URI to redirect to (if <code>uploadFromType</code> is
+	 *            UPLOAD_FROM_REDIRECT)
+	 * @throws IdentifierCollisionException
+	 */
+	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
+			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
+			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
+			Bucket data, FreenetURI redirectTarget) throws IdentifierCollisionException {
+		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries);
+		this.uploadFrom = uploadFromType;
+		this.origFilename = origFilename;
+		// Now go through the fields one at a time
+		String mimeType = contentType;
+		this.clientToken = clientToken;
+		if(persistenceType != PERSIST_CONNECTION)
+			client.register(this, false);
+		Bucket tempData = data;
+		ClientMetadata cm = new ClientMetadata(mimeType);
+		boolean isMetadata = false;
+		Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
+			this.targetURI = redirectTarget;
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
+			cm = null;
+			byte[] d;
+			try {
+				d = m.writeToByteArray();
+			} catch (MetadataUnresolvedException e) {
+				// Impossible
+				Logger.error(this, "Impossible: "+e, e);
+				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
+				this.data = null;
+				clientMetadata = null;
+				inserter = null;
+				return;
+			}
+			tempData = new SimpleReadOnlyArrayBucket(d);
+			isMetadata = true;
+		} else
+			targetURI = null;
+		this.data = tempData;
+		this.clientMetadata = cm;
+		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		inserter = new ClientPutter(this, data, uri, cm, 
+				ctx, client.node.chkPutScheduler, client.node.sskPutScheduler, priorityClass, 
+				getCHKOnly, isMetadata, client, null);
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+		}
+	}
+	
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,

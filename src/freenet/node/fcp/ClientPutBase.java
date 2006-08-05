@@ -59,6 +59,17 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		ctx.maxInsertRetries = maxRetries;
 	}
 
+	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler,
+			FCPClient client, short priorityClass, short persistenceType, String clientToken, boolean global,
+			boolean getCHKOnly, boolean dontCompress, int maxRetries) {
+		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global);
+		this.getCHKOnly = getCHKOnly;
+		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
+		ctx.dontCompress = dontCompress;
+		ctx.eventProducer.addEventListener(this);
+		ctx.maxInsertRetries = maxRetries;
+	}
+
 	public ClientPutBase(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
 		super(fs, client2);
 		getCHKOnly = Fields.stringToBool(fs.get("CHKOnly"), false);

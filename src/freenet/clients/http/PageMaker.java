@@ -19,10 +19,10 @@ import freenet.support.Logger;
 public class PageMaker {
 	
 	private static final String DEFAULT_THEME = "clean";
-	public String theme;
+	private String theme;
 	
 	/** Cache for themes read from the JAR file. */
-	public List jarThemesCache = null;
+	private List jarThemesCache = null;
 	
 	PageMaker(String t) {
 		if (t == null) {

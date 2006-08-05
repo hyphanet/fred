@@ -694,4 +694,14 @@ public class FCPServer implements Runnable {
 		canStartPersister = true;
 	}
 	
+	
+	/**
+	 * Returns the global FCP client.
+	 * 
+	 * @return The global FCP client
+	 */
+	public FCPClient getGlobalClient() {
+		return globalClient;
+	}
+	
 }

@@ -131,14 +131,26 @@ public abstract class Toadlet {
 	 * Client calls to write a reply to the HTTP requestor.
 	 */
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, Bucket data) throws ToadletContextClosedException, IOException {
-		ctx.sendReplyHeaders(code, desc, null, mimeType, data.size());
-		ctx.writeData(data);
+		writeReply(ctx, code, mimeType, desc, null, data);
+	}
+	
+	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable headers, Bucket data) throws ToadletContextClosedException, IOException {
+		context.sendReplyHeaders(code, desc, headers, mimeType, data.size());
+		context.writeData(data);
 	}
 
 	protected void writeReply(ToadletContext ctx, int code, String mimeType, String desc, String reply) throws ToadletContextClosedException, IOException {
-		byte[] buf = reply.getBytes("UTF-8");
-		ctx.sendReplyHeaders(code, desc, null, mimeType, buf.length);
-		ctx.writeData(buf, 0, buf.length);
+		writeReply(ctx, code, mimeType, desc, null, reply);
+	}
+	
+	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable headers, String reply) throws ToadletContextClosedException, IOException {
+		byte[] buffer = reply.getBytes("UTF-8");
+		writeReply(context, code, mimeType, desc, headers, buffer, 0, buffer.length);
+	}
+	
+	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable headers, byte[] buffer, int startIndex, int length) throws ToadletContextClosedException, IOException {
+		context.sendReplyHeaders(code, desc, headers, mimeType, length);
+		context.writeData(buffer, startIndex, length);
 	}
 	
 	protected void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
