@@ -352,6 +352,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	Integer[] unwantedIgnoreNums = (Integer[]) unwantedIgnore.toArray(new Integer[unwantedIgnore.size()]);
     	Integer[] wantedMoveNums = (Integer[]) wantedMove.toArray(new Integer[wantedMove.size()]);
     	Integer[] unwantedMoveNums = (Integer[]) unwantedMove.toArray(new Integer[unwantedMove.size()]);
+    	Arrays.sort(wantedKeepNums);
+    	Arrays.sort(unwantedIgnoreNums);
+    	Arrays.sort(wantedMoveNums);
+    	Arrays.sort(unwantedMoveNums);
     	
     	for(int i=0;i<realSize;i++) {
     		Integer ii = new Integer(i);
