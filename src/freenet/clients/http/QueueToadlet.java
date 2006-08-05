@@ -29,6 +29,7 @@ import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
 import freenet.support.io.Bucket;
+import freenet.support.io.BucketTools;
 
 public class QueueToadlet extends Toadlet {
 
@@ -141,8 +142,11 @@ public class QueueToadlet extends Toadlet {
 			boolean dontCompress = request.getPartAsString("dontCompress", 128).length() > 0;
 			HTTPRequest.File file = request.getUploadedFile("filename");
 			String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
+			/* copy bucket data */
+			Bucket copiedBucket = node.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
+			BucketTools.copy(file.getData(), copiedBucket);
 			try {
-				ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, dontCompress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, new File(file.getFilename()), file.getContentType(), file.getData(), null);
+				ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, dontCompress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, new File(file.getFilename()), file.getContentType(), copiedBucket, null);
 				clientPut.start();
 				fcp.forceStorePersistentRequests();
 			} catch (IdentifierCollisionException e) {
