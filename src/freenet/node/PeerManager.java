@@ -592,6 +592,7 @@ public class PeerManager {
 		synchronized(ua) {
 			ua.conns = conns;
 			ua.peers = peers;
+			ua.neverConn = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_NEVER_CONNECTED);
 		}
 		if(anyConnectedPeers())
 			node.onConnectedPeer();

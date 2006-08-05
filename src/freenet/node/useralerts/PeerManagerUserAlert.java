@@ -7,6 +7,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	final Node n;
 	public int conns = 0;
 	public int peers = 0;
+	public int neverConn = 0;
 	boolean isValid=true;
 	int bwlimitDelayTime = 1;
 	int nodeAveragePingTime = 1;
@@ -20,6 +21,9 @@ public class PeerManagerUserAlert implements UserAlert {
 	
 	/** How many disconnected peers we can have without getting alerted about too many */
 	static final int MAX_DISCONN_PEER_ALERT_THRESHOLD = 30;
+	
+	/** How many never-connected peers can we have without getting alerted about too many */
+	static final int MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD = 5;
 	
 	/** How many peers we can have without getting alerted about too many */
 	static final int MAX_PEER_ALERT_THRESHOLD = 50;
@@ -45,6 +49,8 @@ public class PeerManagerUserAlert implements UserAlert {
 			if (conns > 1) suff = "s";
 			return "Only "+conns+" open connection"+suff;
 		}
+		if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD)
+			return "Many peers have not connected once yet";
 		if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD)
 			return "Too many disconnected peers";
 		if(conns > MAX_CONN_ALERT_THRESHOLD)
@@ -83,8 +89,12 @@ public class PeerManagerUserAlert implements UserAlert {
 			s = "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. " +
 			"Your node is embedded like a 'chain' in the network and does not contribute to the network's health. " +
 			"Try to get at least 3 connected peers at any given time.";
+		} else if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
+			s = "Many of this node's peers have never connected even once: "+neverConn+". You should not add peers unless you know that they have also added <a href=\"/darknet/myref.txt>your reference</a>.";
 		} else if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD){ 
-			s = "This node has too many disconnected peers ("+(peers - conns)+" > "+MAX_DISCONN_PEER_ALERT_THRESHOLD+"). This will have a impact your performance as disconnected peers also consume bandwidth and CPU. Consider \"cleaning up\" your peer list.";
+			s = "This node has too many disconnected peers ("+(peers - conns)+" > "+MAX_DISCONN_PEER_ALERT_THRESHOLD+
+			"). This will have a slight impact on your performance as disconnected peers also consume a small amount of bandwidth and CPU. Consider \"cleaning up\" your peer list. " +
+			"Note that ideally you should connect to nodes run by people you know.";
 		} else if(conns > MAX_CONN_ALERT_THRESHOLD) {
 			s = "This node has too many connections ("+conns+" > "+MAX_CONN_ALERT_THRESHOLD+"). We don't encourage such a behaviour; Ubernodes are hurting the network.";
 		} else if(peers > MAX_PEER_ALERT_THRESHOLD) {
@@ -94,7 +104,7 @@ public class PeerManagerUserAlert implements UserAlert {
 		} else if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
 			s = "This node is having trouble talking with it's peers quickly enough ("+nodeAveragePingTime+" > "+Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Decrease your output bandwidth limit and/or remove some peers to improve the situation.";
 		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
-			s = "One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are affecting performance.";
+			s = "One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are marginally affecting performance.";
 		} else throw new IllegalArgumentException("Not valid");
 		return s;
 	}
@@ -102,6 +112,7 @@ public class PeerManagerUserAlert implements UserAlert {
 	public short getPriorityClass() {
 		if((peers == 0) ||
 				(conns == 0) ||
+				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
 				((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
@@ -118,6 +129,7 @@ public class PeerManagerUserAlert implements UserAlert {
 		oldestNeverConnectedPeerAge = (int) n.getOldestNeverConnectedPeerAge();
 		return ((peers == 0) ||
 				(conns < 3) ||
+				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
 				((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
