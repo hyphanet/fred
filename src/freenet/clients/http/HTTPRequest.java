@@ -489,10 +489,10 @@ public class HTTPRequest {
 				} else if ((b != bbound[offset]) && (offset > 0)) {
 					// empty the buffer out
 					bucketos.write(buf, 0, offset);
-					bucketos.write(b);
+					bucketos.write((int) b & 0xff);
 					offset = 0;
 				} else {
-					bucketos.write(b);
+					bucketos.write((int) b & 0xff);
 				}
 			}
 			
