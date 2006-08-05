@@ -19,4 +19,7 @@ public interface SendableGet extends SendableRequest {
 	
 	/** Should the request ignore the datastore? */
 	public boolean ignoreStore();
+
+	/** If true, don't cache local requests */
+	public boolean dontCache();
 }

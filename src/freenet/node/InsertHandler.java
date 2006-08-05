@@ -39,6 +39,7 @@ public class InsertHandler implements Runnable, ByteCounter {
     private byte[] headers;
     private BlockReceiver br;
     private Thread runThread;
+    private final boolean resetNearestLoc;
     PartiallyReceivedBlock prb;
     
     InsertHandler(Message req, long id, Node node, long startTime) {
@@ -55,7 +56,8 @@ public class InsertHandler implements Runnable, ByteCounter {
         if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc)) {
             closestLoc = myLoc;
             htl = Node.MAX_HTL;
-        }
+            resetNearestLoc = true;
+        } else resetNearestLoc = false;
     }
     
     public String toString() {
@@ -347,7 +349,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 if(!canCommit) return;
                 if(!prb.allReceived()) return;
                 CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
-                node.store(block);
+                node.store(block, resetNearestLoc);
                 Logger.minor(this, "Committed");
             } catch (CHKVerifyException e) {
                 Logger.error(this, "Verify failed in InsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);

@@ -32,6 +32,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
     private SSKBlock block;
     private DSAPublicKey pubKey;
     private double closestLoc;
+    private final boolean resetClosestLoc;
     private short htl;
     private SSKInsertSender sender;
     private byte[] data;
@@ -51,7 +52,8 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         if(PeerManager.distance(targetLoc, myLoc) < PeerManager.distance(targetLoc, closestLoc)) {
             closestLoc = myLoc;
             htl = Node.MAX_HTL;
-        }
+            resetClosestLoc = true;
+        } else resetClosestLoc = false;
         byte[] pubKeyHash = ((ShortBuffer)req.getObject(DMT.PUBKEY_HASH)).getData();
         pubKey = node.getKey(pubKeyHash);
         data = ((ShortBuffer) req.getObject(DMT.DATA)).getData();
@@ -138,7 +140,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 			return;
 		}
 		
-		SSKBlock storedBlock = node.fetch(key);
+		SSKBlock storedBlock = node.fetch(key, false);
 		
 		if((storedBlock != null) && !storedBlock.equals(block)) {
 			Message msg = DMT.createFNPSSKDataFound(uid, storedBlock.getRawHeaders(), storedBlock.getRawData());
@@ -165,7 +167,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         }
         
         if(htl > 0)
-            sender = node.makeInsertSender(block, htl, uid, source, false, closestLoc, true);
+            sender = node.makeInsertSender(block, htl, uid, source, false, closestLoc, resetClosestLoc, true);
         
         boolean receivedRejectedOverload = false;
         
@@ -285,7 +287,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
     	
     	if(canCommit) {
     		try {
-				node.store(block);
+				node.store(block, resetClosestLoc);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}

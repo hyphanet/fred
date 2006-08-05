@@ -58,4 +58,10 @@ public interface FreenetStore {
      * @throws DatabaseException 
      */
 	public void setMaxKeys(long maxStoreKeys) throws DatabaseException, IOException;
+	
+	public long hits();
+	
+	public long misses();
+
+	public long keyCount();
 }

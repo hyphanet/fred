@@ -103,4 +103,9 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 		return parent.getClient();
 	}
 
+	public boolean dontCache() {
+		return !ctx.cacheLocalRequests;
+	}
+	
+
 }

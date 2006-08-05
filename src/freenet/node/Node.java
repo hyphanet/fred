@@ -528,6 +528,13 @@ public class Node {
 	private final FreenetStore sskDatastore;
 	/** The store of DSAPublicKeys (by hash) */
 	private final FreenetStore pubKeyDatastore;
+	/** These 3 are private because must be protected by synchronized(this) */
+	/** The CHK datastore */
+	private final FreenetStore chkDatacache;
+	/** The SSK datastore */
+	private final FreenetStore sskDatacache;
+	/** The store of DSAPublicKeys (by hash) */
+	private final FreenetStore pubKeyDatacache;
 	/** RequestSender's currently running, by KeyHTLPair */
 	private final HashMap requestSenders;
 	/** RequestSender's currently transferring, by key */
@@ -1448,6 +1455,9 @@ public class Node {
 							chkDatastore.setMaxKeys(maxStoreKeys);
 							sskDatastore.setMaxKeys(maxStoreKeys);
 							pubKeyDatastore.setMaxKeys(maxStoreKeys);
+							chkDatacache.setMaxKeys(maxStoreKeys);
+							sskDatacache.setMaxKeys(maxStoreKeys);
+							pubKeyDatacache.setMaxKeys(maxStoreKeys);
 						} catch (IOException e) {
 							// FIXME we need to be able to tell the user.
 							Logger.error(this, "Caught "+e+" resizing the datastore", e);
@@ -1487,6 +1497,37 @@ public class Node {
 			throw new NodeInitException(EXIT_STORE_OTHER, msg);
 		}
 
+		
+		String chkStorePath = storeDir.getPath()+File.separator+"store-"+portNumber;
+		String chkCachePath = storeDir.getPath()+File.separator+"cache-"+portNumber;
+		String pkStorePath  = storeDir.getPath()+File.separator+"pubkeystore-"+portNumber;
+		String pkCachePath  = storeDir.getPath()+File.separator+"pubkeycache-"+portNumber;
+		String sskStorePath = storeDir.getPath()+File.separator+"sskstore-"+portNumber;
+		String sskCachePath = storeDir.getPath()+File.separator+"sskcache-"+portNumber;
+		File chkStoreFile = new File(chkStorePath);
+		File chkCacheFile = new File(chkCachePath);
+		File pkStoreFile = new File(pkStorePath);
+		File pkCacheFile = new File(pkCachePath);
+		File sskStoreFile = new File(sskStorePath);
+		File sskCacheFile = new File(sskCachePath);
+		
+		// Upgrade
+		if(chkStoreFile.exists() && !chkCacheFile.exists()) {
+			System.err.println("Renaming CHK store to CHK cache.");
+			if(!chkStoreFile.renameTo(chkCacheFile))
+				throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+chkStoreFile+" to "+chkCacheFile);
+		}
+		if(pkStoreFile.exists() && !pkCacheFile.exists()) {
+			System.err.println("Renaming PK store to PK cache.");
+			if(!pkStoreFile.renameTo(pkCacheFile))
+				throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+pkStoreFile+" to "+pkCacheFile);
+		}
+		if(sskStoreFile.exists() && !sskCacheFile.exists()) {
+			System.err.println("Renaming SSK store to SSK cache.");
+			if(!sskStoreFile.renameTo(sskCacheFile))
+				throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+sskStoreFile+" to "+sskCacheFile);
+		}
+		
 		try {
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
@@ -1495,34 +1536,67 @@ public class Node {
 				if((lastVersion > 0) && (lastVersion < 852)) {
 					throw new DatabaseException("Reconstructing store because started from old version");
 				}
-				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
+				tmp = new BerkeleyDBFreenetStore(chkStorePath, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
 			} catch (DatabaseException e) {
 				System.err.println("Could not open store: "+e);
 				e.printStackTrace();
 				System.err.println("Attempting to reconstruct...");
 				WrapperManager.signalStarting(5*60*60*1000);
-				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"store-"+portNumber, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
+				tmp = new BerkeleyDBFreenetStore(chkStorePath, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
 			}
 			chkDatastore = tmp;
+			Logger.normal(this, "Initializing CHK Datacache");
+			System.out.println("Initializing CHK Datacache ("+maxStoreKeys+" keys)");
+			try {
+				if((lastVersion > 0) && (lastVersion < 852)) {
+					throw new DatabaseException("Reconstructing store because started from old version");
+				}
+				tmp = new BerkeleyDBFreenetStore(chkCachePath, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
+			} catch (DatabaseException e) {
+				System.err.println("Could not open store: "+e);
+				e.printStackTrace();
+				System.err.println("Attempting to reconstruct...");
+				WrapperManager.signalStarting(5*60*60*1000);
+				tmp = new BerkeleyDBFreenetStore(chkCachePath, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
+			}
+			chkDatacache = tmp;
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			try {
 				if((lastVersion > 0) && (lastVersion < 852)) {
 					throw new DatabaseException("Reconstructing store because started from old version");
 				}
-				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, true);
+				tmp = new BerkeleyDBFreenetStore(pkStorePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, true);
 			} catch (DatabaseException e) {
 				System.err.println("Could not open store: "+e);
 				e.printStackTrace();
 				System.err.println("Attempting to reconstruct...");
 				WrapperManager.signalStarting(5*60*60*1000);
-				tmp = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"pubkeystore-"+portNumber, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
+				tmp = new BerkeleyDBFreenetStore(pkStorePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
 			}
 			this.pubKeyDatastore = tmp;
+			Logger.normal(this, "Initializing pubKey Datacache");
+			System.out.println("Initializing pubKey Datacache");
+			try {
+				if((lastVersion > 0) && (lastVersion < 852)) {
+					throw new DatabaseException("Reconstructing store because started from old version");
+				}
+				tmp = new BerkeleyDBFreenetStore(pkCachePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, true);
+			} catch (DatabaseException e) {
+				System.err.println("Could not open store: "+e);
+				e.printStackTrace();
+				System.err.println("Attempting to reconstruct...");
+				WrapperManager.signalStarting(5*60*60*1000);
+				tmp = new BerkeleyDBFreenetStore(pkCachePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
+			}
+			this.pubKeyDatacache = tmp;
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
-			sskDatastore = new BerkeleyDBFreenetStore(storeDir.getPath()+File.separator+"sskstore-"+portNumber, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
+			sskDatastore = new BerkeleyDBFreenetStore(sskStorePath, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
+			Logger.normal(this, "Initializing SSK Datacache");
+			System.out.println("Initializing SSK Datacache");
+			sskDatacache = new BerkeleyDBFreenetStore(sskCachePath, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
@@ -1866,7 +1940,7 @@ public class Node {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
-		Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache, ignoreStore);
+		Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, uid, null, lm.loc.getValue(), false, localOnly, cache, ignoreStore);
 		if(o instanceof CHKBlock) {
 			try {
 				return new ClientCHKBlock((CHKBlock)o, key);
@@ -1960,7 +2034,7 @@ public class Node {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
-		Object o = makeRequestSender(key.getNodeKey(), MAX_HTL, uid, null, lm.loc.getValue(), localOnly, cache, ignoreStore);
+		Object o = makeRequestSender(key.getNodeKey(), MAX_HTL, uid, null, lm.loc.getValue(), false, localOnly, cache, ignoreStore);
 		if(o instanceof SSKBlock) {
 			try {
 				SSKBlock block = (SSKBlock)o;
@@ -2068,11 +2142,7 @@ public class Node {
 		}
 		long startTime = System.currentTimeMillis();
 		if(cache) {
-			try {
-				chkDatastore.put(block);
-			} catch (IOException e) {
-				Logger.error(this, "Datastore failure: "+e, e);
-			}
+			store(block, false);
 		}
 		is = makeInsertSender((NodeCHK)block.getKey(), 
 				MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
@@ -2179,15 +2249,14 @@ public class Node {
 		long startTime = System.currentTimeMillis();
 		if(cache) {
 			try {
-				sskDatastore.put(block, false);
-			} catch (IOException e) {
-				Logger.error(this, "Datastore failure: "+e, e);
+				if(cache)
+					store(block, false);
 			} catch (KeyCollisionException e) {
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			}
 		}
 		is = makeInsertSender(block, 
-				MAX_HTL, uid, null, false, lm.getLocation().getValue(), cache);
+				MAX_HTL, uid, null, false, lm.getLocation().getValue(), false, cache);
 		boolean hasReceivedRejectedOverload = false;
 		// Wait for status
 		while(true) {
@@ -2248,7 +2317,7 @@ public class Node {
 		if(is.hasCollided()) {
 			// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
 			try {
-				sskDatastore.put(is.getBlock(), true);
+				sskDatacache.put(is.getBlock(), true);
 			} catch (KeyCollisionException e) {
 				// Impossible
 			} catch (IOException e) {
@@ -2575,37 +2644,33 @@ public class Node {
 	 * a RequestSender, unless the HTL is 0, in which case NULL.
 	 * RequestSender.
 	 */
-	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
+	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean resetClosestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
 		Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
 		// In store?
 		KeyBlock chk = null;
 		if(!ignoreStore) {
-			try {
-				if(key instanceof NodeCHK)
-					chk = chkDatastore.fetch((NodeCHK)key, !cache);
-				else if(key instanceof NodeSSK) {
-					NodeSSK k = (NodeSSK)key;
-					DSAPublicKey pubKey = k.getPubKey();
-					if(pubKey == null) {
-						pubKey = getKey(k.getPubKeyHash());
-						Logger.minor(this, "Fetched pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
-						try {
-							k.setPubKey(pubKey);
-						} catch (SSKVerifyException e) {
-							Logger.error(this, "Error setting pubkey: "+e, e);
-						}
+			if(key instanceof NodeCHK) {
+				chk = fetch((NodeCHK)key, !cache);
+			} else if(key instanceof NodeSSK) {
+				NodeSSK k = (NodeSSK)key;
+				DSAPublicKey pubKey = k.getPubKey();
+				if(pubKey == null) {
+					pubKey = getKey(k.getPubKeyHash());
+					Logger.minor(this, "Fetched pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
+					try {
+						k.setPubKey(pubKey);
+					} catch (SSKVerifyException e) {
+						Logger.error(this, "Error setting pubkey: "+e, e);
 					}
-					if(pubKey != null) {
-						Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
-						chk = sskDatastore.fetch((NodeSSK)key, !cache);
-					} else {
-						Logger.minor(this, "Not found because no pubkey: "+uid);
-					}
-				} else
-					throw new IllegalStateException("Unknown key type: "+key.getClass());
-			} catch (IOException e) {
-				Logger.error(this, "Error accessing store: "+e, e);
-			}
+				}
+				if(pubKey != null) {
+					Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
+					chk = fetch((NodeSSK)key, !cache);
+				} else {
+					Logger.minor(this, "Not found because no pubkey: "+uid);
+				}
+			} else
+				throw new IllegalStateException("Unknown key type: "+key.getClass());
 			if(chk != null) return chk;
 		}
 		if(localOnly) return null;
@@ -2636,7 +2701,7 @@ public class Node {
 				return sender;
 			}
 			
-			sender = new RequestSender(key, null, htl, uid, this, closestLocation, source);
+			sender = new RequestSender(key, null, htl, uid, this, closestLocation, resetClosestLocation, source);
 			// RequestSender adds itself to requestSenders
 		}
 		sender.start();
@@ -2707,39 +2772,66 @@ public class Node {
 		}
 	}
 
-	public SSKBlock fetch(NodeSSK key) {
+	public SSKBlock fetch(NodeSSK key, boolean dontPromote) {
+		dumpStoreHits();
 		try {
-			return sskDatastore.fetch(key, false);
+			SSKBlock block = sskDatastore.fetch(key, dontPromote);
+			if(block != null) {
+				return block;
+			}
+			return sskDatacache.fetch(key, dontPromote);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot fetch data: "+e, e);
 			return null;
 		}
 	}
 
-	public CHKBlock fetch(NodeCHK key) {
+	public CHKBlock fetch(NodeCHK key, boolean dontPromote) {
+		dumpStoreHits();
 		try {
-			return chkDatastore.fetch(key, false);
+			CHKBlock block = chkDatastore.fetch(key, dontPromote);
+			if(block != null) return block;
+			return chkDatacache.fetch(key, dontPromote);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot fetch data: "+e, e);
 			return null;
 		}
 	}
+
+	long timeLastDumpedHits;
+	
+	public void dumpStoreHits() {
+		long now = System.currentTimeMillis();
+		if(now - timeLastDumpedHits > 5000) {
+			timeLastDumpedHits = now;
+		} else return;
+		Logger.minor(this, "Distribution of hits and misses over stores:\n"+
+				"CHK Datastore: "+chkDatastore.hits()+"/"+(chkDatastore.hits()+chkDatastore.misses())+"/"+chkDatastore.keyCount()+
+				"\nCHK Datacache: "+chkDatacache.hits()+"/"+(chkDatacache.hits()+chkDatacache.misses())+"/"+chkDatacache.keyCount()+
+				"\nSSK Datastore: "+sskDatastore.hits()+"/"+(sskDatastore.hits()+sskDatastore.misses())+"/"+sskDatastore.keyCount()+
+				"\nSSK Datacache: "+sskDatacache.hits()+"/"+(sskDatacache.hits()+sskDatacache.misses())+"/"+sskDatacache.keyCount());
+	}
 	
 	/**
 	 * Store a datum.
+	 * @param deep If true, insert to the store as well as the cache.
 	 */
-	public void store(CHKBlock block) {
+	public void store(CHKBlock block, boolean deep) {
 		try {
-			chkDatastore.put(block);
+			if(deep)
+				chkDatastore.put(block);
+			chkDatacache.put(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
 		}
 	}
 
-	public void store(SSKBlock block) throws KeyCollisionException {
+	public void store(SSKBlock block, boolean deep) throws KeyCollisionException {
 		try {
-			sskDatastore.put(block, false);
-			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey());
+			if(deep)
+				sskDatastore.put(block, false);
+			sskDatacache.put(block, false);
+			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey(), deep);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
 		}
@@ -2852,12 +2944,13 @@ public class Node {
 	 * if it originated locally.
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-			boolean fromStore, double closestLoc, boolean cache) {
+			boolean fromStore, double closestLoc, boolean resetClosestLoc, boolean cache) {
 		NodeSSK key = (NodeSSK) block.getKey();
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}
-		cacheKey(key.getPubKeyHash(), key.getPubKey());
+		if(cache)
+			cacheKey(key.getPubKeyHash(), key.getPubKey(), resetClosestLoc);
 		Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl);
 		SSKInsertSender is = null;
@@ -3079,9 +3172,12 @@ public class Node {
 			}
 		}
 		try {
-			DSAPublicKey key = pubKeyDatastore.fetchPubKey(hash, false);
+			DSAPublicKey key;
+			key = pubKeyDatastore.fetchPubKey(hash, false);
+			if(key == null)
+				key = pubKeyDatacache.fetchPubKey(hash, false);
 			if(key != null) {
-				cacheKey(hash, key);
+				cacheKey(hash, key, false);
 				Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
 			}
 			return key;
@@ -3095,7 +3191,7 @@ public class Node {
 	/**
 	 * Cache a public key
 	 */
-	public void cacheKey(byte[] hash, DSAPublicKey key) {
+	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep) {
 		Logger.minor(this, "Cache key: "+HexUtil.bytesToHex(hash)+" : "+key);
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
 		synchronized(cachedPubKeys) {
@@ -3118,7 +3214,7 @@ public class Node {
 					} else {
 						Logger.error(this, "Old hash is wrong!");
 						cachedPubKeys.removeKey(w);
-						cacheKey(hash, key);
+						cacheKey(hash, key, deep);
 					}
 				} else {
 					Logger.error(this, "New hash is wrong");
@@ -3130,8 +3226,12 @@ public class Node {
 				cachedPubKeys.popKey();
 		}
 		try {
-			pubKeyDatastore.put(hash, key);
-			pubKeyDatastore.fetchPubKey(hash, true);
+			if(deep) {
+				pubKeyDatastore.put(hash, key);
+				pubKeyDatastore.fetchPubKey(hash, true);
+			}
+			pubKeyDatacache.put(hash, key);
+			pubKeyDatacache.fetchPubKey(hash, true);
 		} catch (IOException e) {
 			// FIXME deal with disk full, access perms etc; tell user about it.
 			Logger.error(this, "Error accessing pubkey store: "+e, e);
@@ -3142,32 +3242,32 @@ public class Node {
 		return testnetEnabled;
 	}
 
-	public ClientKeyBlock fetchKey(ClientKey key) throws KeyVerifyException {
+	public ClientKeyBlock fetchKey(ClientKey key, boolean dontPromote) throws KeyVerifyException {
 		if(key instanceof ClientCHK)
-			return fetch((ClientCHK)key);
+			return fetch((ClientCHK)key, dontPromote);
 		else if(key instanceof ClientSSK)
-			return fetch((ClientSSK)key);
+			return fetch((ClientSSK)key, dontPromote);
 		else
 			throw new IllegalStateException("Don't know what to do with "+key);
 	}
 
-	private ClientKeyBlock fetch(ClientSSK clientSSK) throws SSKVerifyException {
+	private ClientKeyBlock fetch(ClientSSK clientSSK, boolean dontPromote) throws SSKVerifyException {
 		DSAPublicKey key = clientSSK.getPubKey();
 		if(key == null) {
 			key = getKey(clientSSK.pubKeyHash);
 		}
 		if(key == null) return null;
 		clientSSK.setPublicKey(key);
-		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey());
+		SSKBlock block = fetch((NodeSSK)clientSSK.getNodeKey(), dontPromote);
 		if(block == null) return null;
 		// Move the pubkey to the top of the LRU, and fix it if it
 		// was corrupt.
-		cacheKey(clientSSK.pubKeyHash, key);
+		cacheKey(clientSSK.pubKeyHash, key, false);
 		return new ClientSSKBlock(block, clientSSK);
 	}
 
-	private ClientKeyBlock fetch(ClientCHK clientCHK) throws CHKVerifyException {
-		CHKBlock block = fetch(clientCHK.getNodeCHK());
+	private ClientKeyBlock fetch(ClientCHK clientCHK, boolean dontPromote) throws CHKVerifyException {
+		CHKBlock block = fetch(clientCHK.getNodeCHK(), dontPromote);
 		if(block == null) return null;
 		return new ClientCHKBlock(block, clientCHK);
 	}

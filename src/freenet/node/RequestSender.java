@@ -46,6 +46,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     // Basics
     final Key key;
     final double target;
+    final boolean resetNearestLoc;
     private short htl;
     final long uid;
     final Node node;
@@ -83,7 +84,7 @@ public final class RequestSender implements Runnable, ByteCounter {
      * @param key The key to request. Its public key should have been looked up
      * already; RequestSender will not look it up.
      */
-    public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n, double nearestLoc, 
+    public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n, double nearestLoc, boolean resetNearestLoc, 
             PeerNode source) {
         this.key = key;
         this.pubKey = pubKey;
@@ -92,6 +93,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         this.node = n;
         this.source = source;
         this.nearestLoc = nearestLoc;
+        this.resetNearestLoc = resetNearestLoc;
         target = key.toNormalizedDouble();
         node.addRequestSender(key, htl, this);
     }
@@ -397,7 +399,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     private void finishSSK(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
-			node.store(block);
+			node.store(block, resetNearestLoc);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next);
@@ -434,12 +436,12 @@ public final class RequestSender implements Runnable, ByteCounter {
 	private void verifyAndCommit(byte[] data) throws KeyVerifyException {
     	if(key instanceof NodeCHK) {
     		CHKBlock block = new CHKBlock(data, headers, (NodeCHK)key);
-    		node.store(block);
+    		node.store(block, resetNearestLoc);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
     	} else if (key instanceof NodeSSK) {
     		try {
-				node.store(new SSKBlock(data, headers, (NodeSSK)key, false));
+				node.store(new SSKBlock(data, headers, (NodeSSK)key, false), resetNearestLoc);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}

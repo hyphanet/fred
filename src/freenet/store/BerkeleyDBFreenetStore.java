@@ -67,6 +67,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private long chkBlocksInStore;
 	private final Object chkBlocksInStoreLock = new Object();
 	private long maxChkBlocks;
+	private long hits;
+	private long misses;
 	private final Database chkDB;
 	private final SecondaryDatabase chkDB_accessTime;
 	private final SecondaryDatabase chkDB_blockNum;
@@ -725,6 +727,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     			c = null;
     			t.abort();
     			t = null;
+    			synchronized(this) {
+    				misses++;
+    			}
     			return null;
     		}
 
@@ -783,7 +788,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		t.commit();
 	    		t = null;
 	    		addFreeBlock(storeBlock.offset);
+	    		synchronized(this) {
+	    			misses++;
+	    		}
 	            return null;
+	    	}
+	    	synchronized(this) {
+	    		hits++;
 	    	}
 	    	return block;
     	}catch(Throwable ex) {  // FIXME: ugly  
@@ -825,6 +836,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     			c = null;
     			t.abort();
     			t = null;
+    			synchronized(this) {
+    				misses++;
+    			}
     			return null;
     		}
 
@@ -871,7 +885,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		t.commit();
 	    		t = null;
 	    		addFreeBlock(storeBlock.offset);
+	    		synchronized(this) {
+	    			misses++;
+	    		}
 	            return null;
+	    	}
+	    	synchronized(this) {
+	    		hits++;
 	    	}
 	    	return block;
     	}catch(Throwable ex) {  // FIXME: ugly  
@@ -921,6 +941,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     			c = null;
     			t.abort();
     			t = null;
+    			synchronized(this) {
+    				misses++;
+    			}
     			return null;
     		}
 
@@ -938,55 +961,36 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		
 	    	DSAPublicKey block = null;
 	    	
-	    		byte[] data = new byte[dataBlockSize];
-	    		Logger.minor(this, "Reading from store... "+storeBlock.offset+" ("+storeBlock.recentlyUsed+")");
-	    		synchronized(chkStore) {
-		    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
-		    		chkStore.readFully(data);
-	    		}
-	    		Logger.minor(this, "Read");
-	    		
-	    		try {
-	    			block = new DSAPublicKey(data);
-	    		} catch (IOException e) {
-	    			Logger.error(this, "Could not read key");
-	    			c.close();
-	    			c = null;
-	    			t.abort();
-	    			t = null;
-	    			return null;
-	    		}
-
-	    		if(!Arrays.equals(block.asBytesHash(), hash)) {
-	    			
-	    			if(replacement != null) {
-	    				Logger.normal(this, "Replacing corrupt DSAPublicKey ("+HexUtil.bytesToHex(hash));
-	    				synchronized(chkStore) {
-	    					chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
-	    					byte[] toWrite = block.asPaddedBytes();
-	    					chkStore.write(toWrite);
-	    				}
-	    			} else {
-	    				Logger.error(this, "DSAPublicKey: Does not verify (unequal hashes), setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
-	    				c.close();
-	    				c = null;
-	    				chkDB.delete(t, routingkeyDBE);
-	    				t.commit();
-	    				t = null;
-	    				addFreeBlock(storeBlock.offset);
-	    				return null;
-	    			}
-	    		}
-
-	    		// Finished, commit.
-	    		c.close();
-	    		c = null;
-	    		t.commit();
-	    		t = null;
-	    		
-	    		Logger.minor(this, "Get key: "+HexUtil.bytesToHex(hash));
-	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
-	    		
+    		byte[] data = new byte[dataBlockSize];
+    		Logger.minor(this, "Reading from store... "+storeBlock.offset+" ("+storeBlock.recentlyUsed+")");
+    		synchronized(chkStore) {
+	    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+	    		chkStore.readFully(data);
+    		}
+    		Logger.minor(this, "Read");
+    		
+    		try {
+    			block = new DSAPublicKey(data);
+    		} catch (IOException e) {
+    			Logger.error(this, "Could not read key: "+e, e);
+    			finishKey(storeBlock, c, t, routingkeyDBE, hash, replacement);
+    		}
+    		
+    		if(!Arrays.equals(block.asBytesHash(), hash)) {
+    			finishKey(storeBlock, c, t, routingkeyDBE, hash, replacement);
+    		}
+	    	// Finished, commit.
+	    	c.close();
+	    	c = null;
+	    	t.commit();
+	    	t = null;
+	    	
+	    	Logger.minor(this, "Get key: "+HexUtil.bytesToHex(hash));
+	        Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    	
+	        synchronized(this) {
+	        	hits++;
+	        }
 	    	return block;
     	}catch(Throwable ex) {  // FIXME: ugly  
     		if(c!=null) {
@@ -1004,7 +1008,31 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 //    	return null;
     }
 
-    private void addFreeBlock(long offset) {
+    private boolean finishKey(StoreBlock storeBlock, Cursor c, Transaction t, DatabaseEntry routingkeyDBE, byte[] hash, DSAPublicKey replacement) throws IOException, DatabaseException {
+		if(replacement != null) {
+			Logger.normal(this, "Replacing corrupt DSAPublicKey ("+HexUtil.bytesToHex(hash));
+			synchronized(chkStore) {
+				chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+				byte[] toWrite = replacement.asPaddedBytes();
+				chkStore.write(toWrite);
+			}
+			return true;
+		} else {
+			Logger.error(this, "DSAPublicKey: Does not verify (unequal hashes), setting accessTime to 0 for : "+HexUtil.bytesToHex(hash));
+			c.close();
+			c = null;
+			chkDB.delete(t, routingkeyDBE);
+			t.commit();
+			t = null;
+			addFreeBlock(storeBlock.offset);
+			synchronized(this) {
+				misses++;
+			}
+			return false;
+		}
+	}
+
+	private void addFreeBlock(long offset) {
    		if(freeBlocks.push(offset)) {
    			System.err.println("Freed block "+offset);
    			Logger.normal(this, "Freed block "+offset);
@@ -1486,5 +1514,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			maxChkBlocks = maxStoreKeys;
 		}
 		maybeShrink(false, false);
+	}
+
+	public long hits() {
+		return hits;
+	}
+	
+	public long misses() {
+		return misses;
+	}
+
+	public long keyCount() {
+		return chkBlocksInStore;
 	}
 }

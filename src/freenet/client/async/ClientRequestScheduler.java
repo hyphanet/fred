@@ -154,7 +154,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(!getter.ignoreStore()) {
 				ClientKeyBlock block;
 				try {
-					block = node.fetchKey(getter.getKey());
+					block = node.fetchKey(getter.getKey(), getter.dontCache());
 				} catch (KeyVerifyException e) {
 					// Verify exception, probably bogus at source;
 					// verifies at low-level, but not at decode.

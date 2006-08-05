@@ -29,6 +29,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     private boolean needsPubKey;
     final Key key;
     private boolean finalTransferFailed = false;
+    final boolean resetClosestLoc;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -47,7 +48,9 @@ public class RequestHandler implements Runnable, ByteCounter {
         if(PeerManager.distance(keyLoc, myLoc) < PeerManager.distance(keyLoc, closestLoc)) {
             closestLoc = myLoc;
             htl = Node.MAX_HTL;
-        }
+            resetClosestLoc = true;
+        } else
+        	resetClosestLoc = false;
         if(key instanceof NodeSSK)
         	needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
     }
@@ -62,7 +65,7 @@ public class RequestHandler implements Runnable, ByteCounter {
         Message accepted = DMT.createFNPAccepted(uid);
         source.send(accepted, null);
         
-        Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, false, true, false);
+        Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, resetClosestLoc, false, true, false);
         if(o instanceof KeyBlock) {
             KeyBlock block = (KeyBlock) o;
             Message df = createDataFound(block);
