@@ -139,8 +139,12 @@ public class QueueToadlet extends Toadlet {
 				writeError("Invalid URI to insert", "You fooled around with the POST request. Shame on you.", ctx);
 				return;
 			}
-			boolean dontCompress = request.getPartAsString("dontCompress", 128).length() > 0;
 			HTTPRequest.File file = request.getUploadedFile("filename");
+			if (file.getFilename().trim().length() == 0) {
+				writeError("No file selected", "You did not select a file to upload.", ctx);
+				return;
+			}
+			boolean dontCompress = request.getPartAsString("dontCompress", 128).length() > 0;
 			String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 			/* copy bucket data */
 			Bucket copiedBucket = node.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
