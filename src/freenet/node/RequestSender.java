@@ -399,7 +399,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     private void finishSSK(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
-			node.store(block, resetNearestLoc);
+			node.store(block, false);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next);
@@ -445,7 +445,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 				node.queueRandomReinsert(block);
     	} else if (key instanceof NodeSSK) {
     		try {
-				node.store(new SSKBlock(data, headers, (NodeSSK)key, false), resetNearestLoc);
+				node.store(new SSKBlock(data, headers, (NodeSSK)key, false), false);
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}
