@@ -58,10 +58,10 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		if(request.isParameterSet("remove_request") && (request.getParam("remove_request").length() > 0)) {
-			String identifier = request.getParam("identifier");
+			String identifier = HTMLDecoder.decode(request.getParam("identifier"));
 			Logger.minor(this, "Removing "+identifier);
 			try {
-				fcp.removeGlobalRequest(HTMLDecoder.decode(identifier));
+				fcp.removeGlobalRequest(identifier);
 			} catch (MessageInvalidException e) {
 				this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
 			}
@@ -73,11 +73,12 @@ public class QueueToadlet extends Toadlet {
 			Logger.minor(this, "Request count: "+reqs.length);
 			
 			for(int i=0; i<reqs.length ; i++){
-				Logger.minor(this, "Removing "+reqs[i].getIdentifier());
+				String identifier = HTMLDecoder.decode(reqs[i].getIdentifier());
+				Logger.minor(this, "Removing "+identifier);
 				try {
-					fcp.removeGlobalRequest(reqs[i].getIdentifier());
+					fcp.removeGlobalRequest(identifier);
 				} catch (MessageInvalidException e) {
-					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(reqs[i].getIdentifier())+" : "+HTMLEncoder.encode(e.getMessage()));
+					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
 				}
 			}
 			writePermanentRedirect(ctx, "Done", "/queue/");
@@ -94,7 +95,7 @@ public class QueueToadlet extends Toadlet {
 			}
 			FreenetURI fetchURI;
 			try {
-				fetchURI = new FreenetURI(request.getParam("key"));
+				fetchURI = new FreenetURI(HTMLDecoder.decode(request.getParam("key")));
 			} catch (MalformedURLException e) {
 				writeError("Invalid URI to download", "Invalid URI to download");
 				return;
@@ -650,7 +651,7 @@ public class QueueToadlet extends Toadlet {
 		buf.append("<td>");
 		if(uri != null) {
 			buf.append("<span class=\"identifier_with_uri\"><a href=\"/");
-			buf.append(uri.toString(false));
+			buf.append(HTMLEncoder.encode(uri.toString(false)));
 			buf.append("\">");
 			buf.append(HTMLEncoder.encode(p.getIdentifier()));
 			buf.append("</a></span>");
