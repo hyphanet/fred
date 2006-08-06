@@ -90,7 +90,7 @@ public class PeerManagerUserAlert implements UserAlert {
 			"Your node is embedded like a 'chain' in the network and does not contribute to the network's health. " +
 			"Try to get at least 3 connected peers at any given time.";
 		} else if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
-			s = "Many of this node's peers have never connected even once: "+neverConn+". You should not add peers unless you know that they have also added <a href=\"/darknet/myref.txt>your reference</a>.";
+			s = "Many of this node's peers have never connected even once: "+neverConn+". You should not add peers unless you know that they have also added <a href=\"/darknet/myref.txt\">your reference</a>.";
 		} else if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD){ 
 			s = "This node has too many disconnected peers ("+(peers - conns)+" > "+MAX_DISCONN_PEER_ALERT_THRESHOLD+
 			"). This will have a slight impact on your performance as disconnected peers also consume a small amount of bandwidth and CPU. Consider \"cleaning up\" your peer list. " +
