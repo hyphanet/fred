@@ -234,8 +234,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			ArrayBucket bucket = (ArrayBucket) result.asBucket();
 			byte[] data = bucket.toByteArray();
 
-			File fRunning = new File("freenet-cvs-snapshot.jar");
-			File fNew = new File("freenet-cvs-snapshot.jar.new");
+			File fRunning = new File("freenet-stable-latest.jar");
+			File fNew = new File("freenet-stable-latest.jar.new");
 
 			boolean nastyRestart = false;
 			
@@ -247,18 +247,18 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				if(cp1 == null) {
 					Logger.error(this, "wrapper.java.classpath.1 = null - maybe wrapper.conf is broken?");
 					System.err.println("wrapper.java.classpath.1 = null - maybe wrapper.conf is broken?");
-				} else if(cp1.equals("freenet-cvs-snapshot.jar")) {
+				} else if(cp1.equals("freenet-stable-latest.jar")) {
 					// Cool!
-				} else if(cp1.equals("freenet-cvs-snapshot.jar.new")) {
+				} else if(cp1.equals("freenet-stable-latest.jar.new")) {
 					// Swapped; we are running .new
 					File tmp = fRunning;
 					fRunning = fNew;
 					fNew = tmp;
 				} else {
 					cp1 = p.getProperty("wrapper.java.classpath.2");
-					if(cp1 != null && cp1.equals("freenet-cvs-snapshot.jar")) {
+					if(cp1 != null && cp1.equals("freenet-stable-latest.jar")) {
 						// Cool!
-					} else if(cp1 != null && cp1.equals("freenet-cvs-snapshot.jar.new")) {
+					} else if(cp1 != null && cp1.equals("freenet-stable-latest.jar.new")) {
 						// Swapped; we are running .new
 						File tmp = fRunning;
 						fRunning = fNew;
