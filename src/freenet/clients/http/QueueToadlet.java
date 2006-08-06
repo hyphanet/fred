@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
@@ -30,6 +31,7 @@ import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.FileBucket;
 
 public class QueueToadlet extends Toadlet {
 
@@ -152,6 +154,24 @@ public class QueueToadlet extends Toadlet {
 				BucketTools.copy(file.getData(), copiedBucket);
 				try {
 					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, dontCompress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, new File(file.getFilename()), file.getContentType(), copiedBucket, null);
+					clientPut.start();
+					fcp.forceStorePersistentRequests();
+				} catch (IdentifierCollisionException e) {
+					e.printStackTrace();
+				}
+				writePermanentRedirect(ctx, "Done", "/queue/");
+				return;
+			} else if (request.isParameterSet("insert-local")) {
+				String filename = request.getParam("filename");
+				try {
+					filename = new String(filename.getBytes("ISO-8859-1"), "UTF-8");
+				} catch (Throwable t) {
+				}
+				File file = new File(filename);
+				String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
+				String contentType = DefaultMIMETypes.guessMIMEType(filename);
+				try {
+					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), new FreenetURI("CHK@"), identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false), null);
 					clientPut.start();
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {

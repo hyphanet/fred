@@ -364,6 +364,9 @@ public class FProxyToadlet extends Toadlet {
 			
 			QueueToadlet queueToadlet = new QueueToadlet(node, node.getFCPServer(), client);
 			server.register(queueToadlet, "/queue/", true);
+			
+			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(node, client);
+			server.register(localFileInsertToadlet, "/files/", true);
 
 			// Now start the server.
 			server.start();
