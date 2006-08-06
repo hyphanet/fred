@@ -1,11 +1,9 @@
-
 body {
 	font-family: tahoma;
 	font-size: 11px;
 	background-image: url("background.png");
 
-	width: 750px;
-	margin: 15px auto;
+	margin: 15px;
 }
 
 #topbar {
@@ -215,4 +213,51 @@ span.config {
 	display: none;
 }
 
+.nowrap {
+	white-space: nowrap;
+}
+
+.right-align {
+	text-align: right;
+}
+
+.unreadable-file {
+	color: #f00;
+}
+
+.progressbar {
+	border: solid 1px black;
+	height: 1em;
+	width: 100px;
+}
+
+.progressbar-done {
+	float: left;
+	background-color: #4c4;
+	height: 1em;
+}
+
+.progressbar-min {
+	float: left;
+	background-color: #ccc;
+	height: 1em;
+}
+
+.progress_fraction_finalized {
+	position: relative;
+	top: -1.6em;
+	left: 4px;
+	font-weight: bold;
+	font-size: 80%;
+}
+
+.progress_fraction_not_finalized {
+	position: relative;
+	top: -1.6em;
+	left: 4px;
+	font-style: oblique;
+	font-size: 80%;
+}
+
 /* vim: set ts=4: sw=4: */
+
