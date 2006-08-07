@@ -18,7 +18,7 @@ import freenet.support.URLEncoder;
  */
 public class LocalFileInsertToadlet extends Toadlet {
 
-	private Node node;
+	private final Node node;
 
 	private File currentPath;
 

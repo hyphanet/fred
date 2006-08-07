@@ -216,6 +216,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     			networkInterface = new NetworkInterface(curPort, tempBindTo, allowedHosts);
     		} catch (IOException e) {
     			Logger.error(this, "Could not bind to TMCI port: "+tempBindTo+":"+port);
+    			System.err.println("Could not bind to TMCI port: "+tempBindTo+":"+port);
     			System.exit(-1);
     			return;
     		}
