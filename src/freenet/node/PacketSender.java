@@ -9,6 +9,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
+import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.WouldBlockException;
 
@@ -65,7 +66,9 @@ public class PacketSender implements Runnable {
 				long recordedTime = ((long)lastTimeInSeconds) * 1000;
 				long diff = now - recordedTime;
 				if((diff > 3*60*1000) && node.isHasStarted()) {
-					if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
+					FileLoggerHook flh = Node.logConfigHandler.getFileLoggerHook();
+					boolean redirected = flh != null && !flh.hasRedirectedStdOutErrNoLock();
+					if(!redirected)
 						System.err.println("Restarting node: PacketSender froze for 3 minutes! ("+diff+")");
 					
 					try {
@@ -73,7 +76,7 @@ public class PacketSender implements Runnable {
 							WrapperManager.requestThreadDump();
 							WrapperManager.restart();
 						}else{
-							if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock())
+							if(!redirected)
 								System.err.println("Exiting on deadlock, but not running in the wrapper! Please restart the node manually.");
 							
 							// No wrapper : we don't want to let it harm the network!
