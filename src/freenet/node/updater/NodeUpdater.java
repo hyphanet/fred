@@ -247,9 +247,13 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			if(cp1 == null) {
 				Logger.error(this, "wrapper.java.classpath.1 = null - maybe wrapper.conf is broken?");
 				System.err.println("wrapper.java.classpath.1 = null - maybe wrapper.conf is broken?");
-			}else if(cp1.equals("freenet-cvs-snapshot.jar")||cp1.equals("freenet-latest-stable.jar"))
+			}else if(cp1.equals("freenet-cvs-snapshot.jar")||cp1.equals("freenet-latest-stable.jar")){
 				p.setProperty("wrapper.java.classpath.1", "freenet.jar");
-			
+				FileOutputStream fos = new FileOutputStream("wrapper.conf");
+				p.store(fos, "updated by the node");
+				fos.close();
+			}
+				
 			if((File.separatorChar == '\\') || (System.getProperty("os.name").toLowerCase().startsWith("win"))) {
 				nastyRestart = true;
 				
