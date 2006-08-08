@@ -271,7 +271,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	
     	try {
 			t = environment.beginTransaction(null,null);
-			c = chkDB_accessTime.openCursor(t,null);
+			c = chkDB_accessTime.openCursor(null,null);
 			
 			DatabaseEntry keyDBE = new DatabaseEntry();
 			DatabaseEntry blockDBE = new DatabaseEntry();
@@ -296,8 +296,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if(storeBlock.offset > Integer.MAX_VALUE) {
 					// 2^31 * blockSize; ~ 70TB for CHKs, 2TB for the others
 					System.err.println("Store too big, doing quick shrink");
-					t.abort();
-					t = null;
 					c.close();
 					c = null;
 					maybeQuickShrink(false);
