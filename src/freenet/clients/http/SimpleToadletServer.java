@@ -113,6 +113,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			if((CSSName.indexOf(':') != -1) || (CSSName.indexOf('/') != -1))
 				throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 			cssName = CSSName;
+			pageMaker.setTheme(cssName);
 		}
 	}
 	

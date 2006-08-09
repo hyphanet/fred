@@ -33,14 +33,18 @@ public class PageMaker {
 	private List jarThemesCache = null;
 	
 	PageMaker(String t) {
-		if (t == null) {
+		setTheme(t);
+	}
+	
+	void setTheme(String theme) {
+		if (theme == null) {
 			this.theme = DEFAULT_THEME;
 		} else {
-			URL themeurl = getClass().getResource("staticfiles/themes/"+t+"/theme.css");
+			URL themeurl = getClass().getResource("staticfiles/themes/" + theme + "/theme.css");
 			if (themeurl == null)
 				this.theme = DEFAULT_THEME;
 			else
-				this.theme = t;
+				this.theme = theme;
 		}
 	}
 	
