@@ -2168,7 +2168,7 @@ public class Node {
 		}
 		long startTime = System.currentTimeMillis();
 		if(cache) {
-			store(block, false);
+			store(block);
 		}
 		is = makeInsertSender((NodeCHK)block.getKey(), 
 				MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
@@ -2276,7 +2276,7 @@ public class Node {
 		if(cache) {
 			try {
 				if(cache)
-					store(block, false);
+					storeInsert(block);
 			} catch (KeyCollisionException e) {
 				throw new LowLevelPutException(LowLevelPutException.COLLISION);
 			}
@@ -2838,13 +2838,26 @@ public class Node {
 				"\nSSK Datacache: "+sskDatacache.hits()+"/"+(sskDatacache.hits()+sskDatacache.misses())+"/"+sskDatacache.keyCount());
 	}
 	
+	public void store(CHKBlock block) {
+		store(block, block.getKey().toNormalizedDouble());
+	}
+	
 	/**
 	 * Store a datum.
 	 * @param deep If true, insert to the store as well as the cache. Do not set
 	 * this to true unless the store results from an insert, and this node is the
 	 * closest node to the target; see the description of chkDatastore.
 	 */
-	public void store(CHKBlock block, boolean deep) {
+	public void store(CHKBlock block, double loc) {
+		boolean deep = !peers.isCloserLocation(loc);
+		store(block, deep);
+	}
+
+	public void storeShallow(CHKBlock block) {
+		store(block, false);
+	}
+	
+	private void store(CHKBlock block, boolean deep) {
 		try {
 			if(deep) {
 				chkDatastore.put(block);
@@ -2861,14 +2874,19 @@ public class Node {
 			Logger.error(this, "Cannot store data: "+e, e);
 		}
 	}
+	
+	/** Store the block if this is a sink. Call for inserts. */
+	public void storeInsert(SSKBlock block) throws KeyCollisionException {
+		store(block, block.getKey().toNormalizedDouble());
+	}
 
-	/**
-	 * Store a datum.
-	 * @param deep If true, insert to the store as well as the cache. Do not set
-	 * this to true unless the store results from an insert, and this node is the
-	 * closest node to the target; see the description of chkDatastore.
-	 */
-	public void store(SSKBlock block, boolean deep) throws KeyCollisionException {
+	/** Store only to the cache, and not the store. Called by requests,
+	 * as only inserts cause data to be added to the store. */
+	public void storeShallow(SSKBlock block) throws KeyCollisionException {
+		store(block, false);
+	}
+	
+	private void store(SSKBlock block, boolean deep) throws KeyCollisionException {
 		try {
 			if(deep) {
 				sskDatastore.put(block, false);
@@ -2885,6 +2903,17 @@ public class Node {
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
 		}
+	}
+	
+	/**
+	 * Store a datum.
+	 * @param deep If true, insert to the store as well as the cache. Do not set
+	 * this to true unless the store results from an insert, and this node is the
+	 * closest node to the target; see the description of chkDatastore.
+	 */
+	public void store(SSKBlock block, double loc) throws KeyCollisionException {
+		boolean deep = !peers.isCloserLocation(loc);
+		store(block, deep);
 	}
 	
 	/**
@@ -3000,7 +3029,7 @@ public class Node {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}
 		if(cache)
-			cacheKey(key.getPubKeyHash(), key.getPubKey(), resetClosestLoc);
+			cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble()));
 		Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl);
 		SSKInsertSender is = null;

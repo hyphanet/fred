@@ -373,6 +373,36 @@ public class PeerManager {
         return getRandomPeer(null);
     }
 
+    public double closestPeerLocation(double loc, double ignoreLoc) {
+        PeerNode[] peers;
+        synchronized (this) {
+        	peers = connectedPeers;
+		}
+        double bestDiff = 1.0;
+        double bestLoc = Double.MAX_VALUE;
+        for(int i=0;i<peers.length;i++) {
+            PeerNode p = peers[i];
+            if(!p.isRoutable()) continue;
+            double peerloc = p.getLocation().getValue();
+            if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
+            	continue;
+            double diff = distance(peerloc, loc);
+            if(diff < bestDiff) {
+                bestDiff = diff;
+                bestLoc = peerloc;
+            }
+        }
+        return bestLoc;
+    }
+
+    public boolean isCloserLocation(double loc) {
+    	double nodeLoc = node.lm.getLocation().getValue();
+    	double nodeDist = distance(nodeLoc, loc);
+    	double closest = closestPeerLocation(loc, nodeLoc);
+    	double closestDist = distance(closest, loc);
+    	return closestDist < nodeDist;
+    }
+    
     /**
      * Find the peer which is closest to the target location
      */

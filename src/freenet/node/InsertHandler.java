@@ -349,7 +349,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 if(!canCommit) return;
                 if(!prb.allReceived()) return;
                 CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
-                node.store(block, resetNearestLoc);
+                node.store(block);
                 Logger.minor(this, "Committed");
             } catch (CHKVerifyException e) {
                 Logger.error(this, "Verify failed in InsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);

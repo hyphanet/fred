@@ -287,7 +287,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
     	
     	if(canCommit) {
     		try {
-				node.store(block, resetClosestLoc);
+				node.store(block, block.getKey().toNormalizedDouble());
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}

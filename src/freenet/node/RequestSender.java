@@ -399,7 +399,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     private void finishSSK(PeerNode next) {
     	try {
 			block = new SSKBlock(sskData, headers, (NodeSSK)key, false);
-			node.store(block, false);
+			node.storeShallow(block);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
 			finish(SUCCESS, next);
@@ -440,12 +440,12 @@ public final class RequestSender implements Runnable, ByteCounter {
     		// requests don't go to the full distance, and therefore pollute the 
     		// store; simulations it is best to only include data from requests
     		// which go all the way i.e. inserts.
-    		node.store(block, false);
+    		node.storeShallow(block);
 			if(node.random.nextInt(RANDOM_REINSERT_INTERVAL) == 0)
 				node.queueRandomReinsert(block);
     	} else if (key instanceof NodeSSK) {
     		try {
-				node.store(new SSKBlock(data, headers, (NodeSSK)key, false), false);
+				node.storeShallow(new SSKBlock(data, headers, (NodeSSK)key, false));
 			} catch (KeyCollisionException e) {
 				Logger.normal(this, "Collision on "+this);
 			}
