@@ -730,7 +730,6 @@ public class Node {
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
 	public freenet.plugin.PluginManager pluginManager2;
-	public freenet.plugin_new.PluginManager pluginManager3;
 	
 	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
