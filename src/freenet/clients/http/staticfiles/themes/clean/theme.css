@@ -287,7 +287,7 @@ span.peer_connected {
 }
 
 span.peer_backedoff {
-	color: #ff0000;
+	color: #ff8c00;
 }
 
 span.peer_too_new {
