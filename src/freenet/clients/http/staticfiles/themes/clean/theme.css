@@ -291,7 +291,7 @@ span.peer_backedoff {
 }
 
 span.peer_too_new {
-	color: #d0a0a0;
+	color: #ff0000;
 }
 
 span.peer_too_old {
