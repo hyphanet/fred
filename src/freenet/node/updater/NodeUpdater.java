@@ -239,27 +239,20 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 			boolean nastyRestart = false;
 			
-			/*
-			 * MyUglyHack ... FIXME: REMOVE:!
-			 */
 			Properties p = WrapperManager.getProperties();
 			String cp1 = p.getProperty("wrapper.java.classpath.1");
-			if(cp1 == null) {
-				Logger.error(this, "wrapper.java.classpath.1 = null - maybe wrapper.conf is broken?");
-				System.err.println("wrapper.java.classpath.1 = null - maybe wrapper.conf is broken?");
-			}else if(cp1.equals("freenet-cvs-snapshot.jar")||cp1.equals("freenet-latest-stable.jar")){
-				p.setProperty("wrapper.java.classpath.1", "freenet.jar");
-				FileOutputStream fos = new FileOutputStream("wrapper.conf");
-				p.store(fos, "updated by the node");
-				fos.close();
-			}
-				
-			if((File.separatorChar == '\\') || (System.getProperty("os.name").toLowerCase().startsWith("win"))) {
+			
+			if((File.separatorChar == '\\') || (System.getProperty("os.name").toLowerCase().startsWith("win"))
+					|| (cp1 != null && (cp1.equals("freenet-cvs-snapshot.jar")||cp1.equals("freenet-latest-stable.jar")))) {
 				nastyRestart = true;
 				
 				if(cp1 == null) {
 					Logger.error(this, "wrapper.java.classpath.1 = null - maybe wrapper.conf is broken?");
 					System.err.println("wrapper.java.classpath.1 = null - maybe wrapper.conf is broken?");
+				} else if(cp1.equals("freenet-cvs-snapshot.jar") || cp1.equals("freenet-stable-latest.jar")) {
+					// Upgrade from an older version
+					fNew = fRunning;
+					fRunning = new File(cp1);
 				} else if(cp1.equals("freenet.jar")) {
 					// Cool!
 				} else if(cp1.equals("freenet.jar.new")) {
@@ -298,12 +291,13 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				if(!fNew.renameTo(fRunning)) {
 					fRunning.delete();
 					if(!fNew.renameTo(fRunning)) {
-						System.err.println("ERROR renaming the file!");
+						System.err.println("ERROR renaming the file!: "+fNew+" to "+fRunning);
 						return;
 					}
 				}
 			} else {
 				// Hard way.
+				// Don't just write it out from properties; we want to keep it as close to what it was as possible.
 
 				try {
 
@@ -330,12 +324,13 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 							bw.write("wrapper.java.classpath.2="+fNew.getName()+"\r\n");
 							succeeded = true;
 						} else {
-							if(line.equals("wrapper.restart.reload_configuration=TRUE"))
+							if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE"))
 								stillSucceeded = true;
+							else if(line.equalsIgnoreCase("wrapper.restart.reload_configuration=TRUE"))
+								line = "wrapper.restart.reload_configuration=TRUE";
 							bw.write(line+"\r\n");
 						}
 					}
-					bw.close();
 					br.close();
 
 					if(!succeeded) {
@@ -345,16 +340,23 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					}
 
 					if(!stillSucceeded) {
-						System.err.println("Not able to update because of non-standard or old config, add a line saying \"wrapper.restart.reload_configuration=TRUE\"");
-						Logger.error(this, "Not able to update because of non-standard or old config, add a line saying \"wrapper.restart.reload_configuration=TRUE\"");
-						return;
+						// Add it.
+						bw.write("wrapper.restart.reload_configuration=TRUE");
 					}
+					
+					bw.close();
 
 					if(!newConfig.renameTo(oldConfig)) {
-						oldConfig.delete();
+						if(!oldConfig.delete()) {
+							System.err.println("Cannot delete "+oldConfig+" so cannot rename over it. Update failed.");
+							Logger.error(this, "Cannot delete "+oldConfig+" so cannot rename over it. Update failed.");
+							return;
+						}
 						if(!newConfig.renameTo(oldConfig)) {
-							System.err.println("Failed to rename over old config: update failed.");
-							Logger.error(this, "Failed to rename over old config: update failed.");
+							String err = "CATASTROPHIC ERROR: Deleted "+oldConfig+" but cannot rename "+newConfig+" to "+oldConfig+" THEREFORE THE NODE WILL NOT START! Please resolve the problem by renaming "+newConfig+" to "+oldConfig;
+							System.err.println(err);
+							Logger.error(this, err);
+							node.exit();
 							return;
 						}
 					}
@@ -376,7 +378,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 			System.err.println("WTF? Restart returned!?");
 
-		}catch(Exception e){
+		} catch(Exception e) {
 			Logger.error(this, "Error while updating the node : "+e);
 			System.out.println("Exception : "+e);
 			e.printStackTrace();
