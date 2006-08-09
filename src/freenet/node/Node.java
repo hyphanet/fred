@@ -793,9 +793,8 @@ public class Node {
 		String identity = fs.get("identity");
 		if(identity == null)
 			throw new IOException();
-		boolean base64 = Fields.stringToBool(fs.get("base64"), false);
 		try {
-			myIdentity = base64 ? Base64.decode(identity) : HexUtil.hexToBytes(identity);
+			myIdentity = Base64.decode(identity);
 		} catch (IllegalBase64Exception e2) {
 			throw new IOException();
 		}
@@ -832,9 +831,9 @@ public class Node {
 
 		// FIXME: Back compatibility; REMOVE !!
 		try {
-			this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"), base64);
-			this.myPrivKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup, base64);
-			this.myPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup, base64);
+			this.myCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
+			this.myPrivKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup);
+			this.myPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup);
 		} catch (NullPointerException e) {
 			Logger.minor(this, "Caught "+e, e);
 			this.myCryptoGroup = Global.DSAgroupBigA;

@@ -274,15 +274,11 @@ public class PeerNode implements PeerContext {
      */
     public PeerNode(SimpleFieldSet fs, Node node2, boolean fromLocal) throws FSParseException, PeerParseException {
         this.node = node2;
-        boolean base64 = Fields.stringToBool(fs.get("base64"), false);
         String identityString = fs.get("identity");
     	if(identityString == null)
     		throw new PeerParseException("No identity!");
-        try {
-        	if(base64)
+        try {	
         		identity = Base64.decode(identityString);
-        	else
-        		identity = HexUtil.hexToBytes(identityString);
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
         } catch (IllegalBase64Exception e) {
@@ -1500,9 +1496,7 @@ public class PeerNode implements PeerContext {
         boolean changedAnything = false;
         String identityString = fs.get("identity");
         try {
-            boolean base64 = Fields.stringToBool(fs.get("base64"), false);
-            byte[] newIdentity = base64 ? Base64.decode(identityString) :
-            	HexUtil.hexToBytes(identityString);
+            byte[] newIdentity = Base64.decode(identityString);
             if(!Arrays.equals(newIdentity, identity))
                 throw new FSParseException("Identity changed!!");
         } catch (NumberFormatException e) {
@@ -1740,7 +1734,6 @@ public class PeerNode implements PeerContext {
 		for(int i=0;i<nominalPeer.size();i++) {
 			fs.put("physical.udp", nominalPeer.get(i).toString());
 		}
-        fs.put("base64", "true");
         fs.put("identity", getIdentityString());
         fs.put("location", Double.toString(currentLocation.getValue()));
         fs.put("testnet", Boolean.toString(testnetEnabled));
@@ -2315,9 +2308,5 @@ public class PeerNode implements PeerContext {
 	
 	public synchronized boolean allowLocalAddresses() {
 		return allowLocalAddresses;
-	}
-	
-	private synchronized boolean neverConnected() {
-		return neverConnected;
 	}
 }

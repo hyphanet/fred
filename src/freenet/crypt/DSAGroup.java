@@ -336,17 +336,10 @@ public class DSAGroup extends CryptoKey {
 		return fs;
 	}
 
-	public static DSAGroup create(SimpleFieldSet fs, boolean base64) throws IllegalBase64Exception {
-		if(base64) {
-			BigInteger p = new NativeBigInteger(1, Base64.decode(fs.get("p")));
-			BigInteger q = new NativeBigInteger(1, Base64.decode(fs.get("q")));
-			BigInteger g = new NativeBigInteger(1, Base64.decode(fs.get("g")));
-			return new DSAGroup(p, q, g);
-		} else {
-			BigInteger p = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("p")));
-			BigInteger q = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("q")));
-			BigInteger g = new NativeBigInteger(1, HexUtil.hexToBytes(fs.get("g")));
-			return new DSAGroup(p, q, g);
-		}
+	public static DSAGroup create(SimpleFieldSet fs) throws IllegalBase64Exception {
+		BigInteger p = new NativeBigInteger(1, Base64.decode(fs.get("p")));
+		BigInteger q = new NativeBigInteger(1, Base64.decode(fs.get("q")));
+		BigInteger g = new NativeBigInteger(1, Base64.decode(fs.get("g")));
+		return new DSAGroup(p, q, g);
 	}
 }
