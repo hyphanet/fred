@@ -48,10 +48,18 @@ a:hover {
 	z-index: 5;
 }
 
+.infobox-success .infobox-header {
+	background-color: #afa;
+	color: #040;
+}
+
+.infobox-success .infobox-content {
+	background-color: #cfc;
+}
+
 .infobox-error .infobox-header {
 	background-color: #f00;
 	color: #ff0;
-	font-weigth: bold;
 }
 
 .infobox-error .infobox-content, .infobox-alert .infobox-content {
@@ -103,11 +111,12 @@ a:hover {
 	padding: 0px 5px;
 }
 
-ul.config span.configprefix {
+div.configprefix {
 	font-size: larger;
+	text-transform: capitalize;
 }
 
-ul.config span.configprefix:before {
+div.configprefix:before {
 	content: "Section: ";
 	font-weight: bold;
 }
@@ -141,11 +150,11 @@ li .configlongdesc {
 	color: #840;
 }
 
-.peer_disconnected {
+.peer_disconnected, .peer_too_old {
 	color: #444;
 }
 
-.peer_version_problem, .peer_too_new, .peer_too_old {
+.peer_too_new {
 	color: #f00;
 }
 
@@ -204,12 +213,16 @@ span.config {
 	width: 100%;
 }
 
-#bookmarkedit {
+.bookmarkedit {
 	margin-top: 1em;
 	display: block;
 }
 
-#legend {
+.bookmarkedit > input {
+	width: 100%;
+}
+
+.legend {
 	display: none;
 }
 
@@ -225,38 +238,64 @@ span.config {
 	color: #f00;
 }
 
+.table-header {
+	white-space: nowrap;
+}
+
+.request-progress {
+	width: 100px;
+	vertical-align: center;
+}
+
 .progressbar {
-	border: solid 1px black;
-	height: 1em;
+	position: relative;
+	border: solid 1px #000;
+	height: 1.5em;
 	width: 100px;
 }
 
 .progressbar-done {
 	float: left;
+	height: 1.5em;
 	background-color: #4c4;
-	height: 1em;
 }
 
 .progressbar-min {
 	float: left;
+	height: 1.5em;
 	background-color: #ccc;
-	height: 1em;
+}
+
+.progressbar-failed {
+	float: left;
+	height: 1.5em;
+	background-color: #fcc;
+}
+
+.progressbar-failed2 {
+	float: left;
+	height: 1.5em;
+	background-color: #f44;
 }
 
 .progress_fraction_finalized {
-	position: relative;
-	top: -1.6em;
-	left: 4px;
+	position: absolute;
+	top: 0.1em;
+	left: 5px;
 	font-weight: bold;
-	font-size: 80%;
 }
 
 .progress_fraction_not_finalized {
-	position: relative;
-	top: -1.6em;
-	left: 4px;
+	position: absolute;
+	top: 0.1em;
+	left: 5px;
 	font-style: oblique;
-	font-size: 80%;
+	color: #333;
+}
+
+.warning {
+	color: #f00;
+	font-weight: bold;
 }
 
 /* vim: set ts=4: sw=4: */
