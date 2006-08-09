@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 
 /** Simple class to output standard heads and tail for web interface pages. 
@@ -61,12 +62,13 @@ public class PageMaker {
 	}
 	
 	public void makeBottomHead(StringBuffer buf, String title, boolean navbars) {
-		buf.append("<title>"+title+" - Freenet</title>\n"
+		String sanitizedTitle = HTMLEncoder.encode(title);
+		buf.append("<title>"+sanitizedTitle+" - Freenet</title>\n"
 				+ "</head>\n"
 				+ "<body>\n"
 				+ "<div id=\"page\">\n"
 				+ "<div id=\"topbar\">\n"
-				+ "<h1>"+title+"</h1>\n"
+				+ "<h1>"+sanitizedTitle+"</h1>\n"
 				+ "</div>\n");
 		if (navbars) this.makeNavBar(buf);
 		buf.append("<div id=\"content\">\n");
