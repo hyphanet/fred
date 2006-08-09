@@ -273,7 +273,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		} else {
 			HTMLNode peerForm = peerTableInfoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
 			peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
-			HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connection");
+			HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connections");
 			HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 			peerTableHeaderRow.addChild("th");
 			peerTableHeaderRow.addChild("th", "Status");
