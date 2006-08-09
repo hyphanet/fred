@@ -26,10 +26,11 @@ public class PersistentGet extends FCPMessage {
 	final String clientToken;
 	final boolean global;
 	final boolean started;
+	final int maxRetries;
 	
 	public PersistentGet(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short returnType, short persistenceType, 
-			File targetFile, File tempFile, String clientToken, boolean global, boolean started) {
+			File targetFile, File tempFile, String clientToken, boolean global, boolean started, int maxRetries) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -41,24 +42,26 @@ public class PersistentGet extends FCPMessage {
 		this.clientToken = clientToken;
 		this.global = global;
 		this.started = started;
+		this.maxRetries = maxRetries;
 	}
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
 		fs.put("URI", uri.toString(false));
-		fs.put("Verbosity", Integer.toString(verbosity));
+		fs.put("Verbosity", verbosity);
 		fs.put("ReturnType", ClientGetMessage.returnTypeString(returnType));
 		fs.put("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			fs.put("Filename", targetFile.getAbsolutePath());
 			fs.put("TempFilename", tempFile.getAbsolutePath());
 		}
-		fs.put("PriorityClass", Short.toString(priorityClass));
+		fs.put("PriorityClass", priorityClass);
 		if(clientToken != null)
 			fs.put("ClientToken", clientToken);
-		fs.put("Global", Boolean.toString(global));
-		fs.put("Started", Boolean.toString(started));
+		fs.put("Global", global);
+		fs.put("Started", started);
+		fs.put("MaxRetries", maxRetries);
 		return fs;
 	}
 

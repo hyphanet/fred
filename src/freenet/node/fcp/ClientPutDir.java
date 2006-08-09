@@ -232,7 +232,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPutDir(identifier, uri, verbosity, priorityClass,
-				persistenceType, global, defaultName, manifestElements, clientToken, started);
+				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries);
 	}
 
 	protected String getTypeName() {

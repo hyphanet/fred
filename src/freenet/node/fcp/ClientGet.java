@@ -382,7 +382,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	private FCPMessage persistentTagMessage() {
-		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started);
+		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries);
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {

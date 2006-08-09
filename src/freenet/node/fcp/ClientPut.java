@@ -307,7 +307,7 @@ public class ClientPut extends ClientPutBase {
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPut(identifier, uri, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				getDataSize(), clientToken, started);
+				getDataSize(), clientToken, started, ctx.maxInsertRetries);
 	}
 
 	protected String getTypeName() {

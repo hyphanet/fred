@@ -25,10 +25,11 @@ public class PersistentPutDir extends FCPMessage {
 	final String defaultName;
 	final String token;
 	final boolean started;
+	final int maxRetries;
 	
 	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short persistenceType, boolean global,
-			String defaultName, HashMap manifestElements, String token, boolean started) {
+			String defaultName, HashMap manifestElements, String token, boolean started, int maxRetries) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -39,6 +40,7 @@ public class PersistentPutDir extends FCPMessage {
 		this.manifestElements = manifestElements;
 		this.token = token;
 		this.started = started;
+		this.maxRetries = maxRetries;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -87,6 +89,7 @@ public class PersistentPutDir extends FCPMessage {
 		if(token != null)
 			fs.put("ClientToken", token);
 		fs.put("Started", Boolean.toString(started));
+		fs.put("MaxRetries", maxRetries);
 		return fs;
 	}
 
