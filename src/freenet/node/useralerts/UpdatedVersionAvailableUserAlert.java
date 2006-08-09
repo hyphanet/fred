@@ -30,14 +30,13 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	}
 
 	public String getText() {
-		String s ="It seems that your node isn't running the latest version of the software. "+
-		"Updating to "+version+" is advised. ";
-		
+		String s ="It seems that your node isn't running the latest version of the software. ";
 		if(updater.inFinalCheck()) {
 			return s + "Your node is currently doing a final check to verify the security of the update"+
 			(version == readyVersion ? "" : (" to "+readyVersion)) +
 			". ("+updater.getRevocationDNFCounter()+"/"+NodeUpdater.REVOCATION_DNF_MIN+")";
 		} else {
+			s+="Updating to "+version+" is advised. ";
 			if(isReady) return s+
 				" <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update to "+readyVersion+" Now\" /></form>";
 			else return s+
