@@ -479,9 +479,9 @@ public class QueueToadlet extends Toadlet {
 			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(1);
 			if (finalized) {
-				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", "finalized" }, (int) ((fetched / (double) min) * 100) + "%");
+				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", "finalized" }, nf.format((int) ((fetched / (double) min) * 1000) / 10.0) + "%");
 			} else {
-				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", "not finalized" }, (int) ((fetched / (double) min) * 100) + "%");
+				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", "not finalized" }, nf.format((int) ((fetched / (double) min) * 1000) / 10.0)+ "%");
 			}
 		}
 		return progressCell;
