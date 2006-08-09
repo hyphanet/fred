@@ -16,6 +16,7 @@ import java.net.URL;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.File;
 
 import freenet.support.HexUtil;
@@ -471,6 +472,46 @@ public class NativeBigInteger extends BigInteger {
     }
     
     /**
+     * A helper function to make loading the native library easier.
+     * @param f The File to which to write the library
+     * @param URL The URL of the resource
+     * @return True is the library was loaded, false on error
+     * @throws FileNotFoundException If the library could not be read from the reference
+     * @throws UnsatisfiedLinkError If and only if the library is incompatible with this system
+     */
+
+    private static final boolean tryLoadResource(File f, URL resource)
+	throws FileNotFoundException, UnsatisfiedLinkError {
+	InputStream is;
+	try {
+	    is=resource.openStream();
+	} catch(IOException e) {
+	    throw new FileNotFoundException();
+	}
+	
+	try {
+	    FileOutputStream fos=new FileOutputStream(f);
+	    byte[] buf=new byte[4096*1024];
+	    int read;
+	    while((read=is.read(buf))>0)
+		fos.write(buf,0,read);
+	    fos.close();
+	    System.load(f.getAbsolutePath());
+	    f.deleteOnExit();
+	    return true;
+	} catch(IOException e) {
+	    f.delete();
+	} catch(UnsatisfiedLinkError ule) {
+	    f.delete();
+	    // likely to be "noexec" 
+	    if(!ule.toString().contains("permitted"))
+	    	throw ule;
+	}
+
+	return false;	
+    }
+
+    /**
      * <p>Check all of the jars in the classpath for the file specified by the 
      * environmental property "jbigi.impl" and load it as the native library 
      * implementation.  For instance, a windows user on a p4 would define
@@ -487,6 +528,7 @@ public class NativeBigInteger extends BigInteger {
      * @return true if it was loaded successfully, else false
      *
      */
+    
     private static final boolean loadFromResource(boolean optimized) {
         String resourceName = getResourceName(optimized);
         if (resourceName == null) return false;
@@ -497,63 +539,26 @@ public class NativeBigInteger extends BigInteger {
             return false;
         }
 
-        File outFile = null;
         try {
-            InputStream libStream = resource.openStream();
-            try{
-            	outFile = File.createTempFile("jbigi", "lib.tmp");
-            }catch (IOException e){
-            	Logger.error("NativeBigInt", "Can't create the temporary file in "+System.getProperty("java.io.tmpdir")+" trying something else now.");
-            	outFile = new File("jbigi-lib.tmp");
-            }
-            FileOutputStream fos = new FileOutputStream(outFile);
-            byte buf[] = new byte[4096*1024];
-            while (true) {
-                int read = libStream.read(buf);
-                if (read < 0) break;
-                fos.write(buf, 0, read);
-            }
-            fos.close();
-            System.load(outFile.getAbsolutePath()); //System.load requires an absolute path to the lib
-            return true;
-        } catch (UnsatisfiedLinkError ule) {
-        	try{	
-        		if((File.separatorChar == '\\') || (System.getProperty("os.name").toLowerCase().startsWith("win")))
-        			throw new Exception("not possible on windows!");
-        		System.err.println("We have detected a NOEXEC on your temporary directory, trying in current one insteed.");
-        		InputStream libStream = resource.openStream();
-        		outFile = new File("jbigi-lib.tmp");
-        		FileOutputStream fos = new FileOutputStream(outFile);
-                byte buf[] = new byte[4096*1024];
-                while (true) {
-                    int read = libStream.read(buf);
-                    if (read < 0) break;
-                    fos.write(buf, 0, read);
-                }
-                fos.close();
-                System.load(outFile.getAbsolutePath());
-                return true;
-        	} catch (Exception aule) {
-        		if (_doLog) {
-        			System.err.println("ERROR: The resource " + resourceName 
-        					+ " was not a valid library for this platform");
-        			ule.printStackTrace();
-        		}
-        	}
-            return false;
-        } catch (IOException ioe) {
-            if (_doLog) {
-                System.err.println("ERROR: Problem writing out the temporary native library data");
-                ioe.printStackTrace();
-            }
-            return false;
-        } finally {
-            if (outFile != null) {
-                outFile.deleteOnExit();
-            }
+        	try {
+        		if(tryLoadResource(File.createTempFile("jbigi", "lib.tmp"), resource))
+        			return true;
+        	} catch(IOException e) { }
+        	Logger.error(NativeBigInteger.class, "Can't load from " + System.getProperty("java.io.tmpdir"));
+        	System.err.println("Can't load from " + System.getProperty("java.io.tmpdir"));
+        	if(tryLoadResource(new File("jbigi-lib.tmp"), resource))
+        		return true;
+        } catch(Exception fnf) {
+        	Logger.error(NativeBigInteger.class, "Error reading jbigi resource");
+        	System.err.println("Error reading jbigi resource");
+        } catch(UnsatisfiedLinkError ule) {
+        	Logger.error(NativeBigInteger.class, "Library " + resourceName + " is not appropriate for this system.");
+        	System.err.println("Library " + resourceName + " is not appropriate for this system.");
         }
+
+        return false;
     }
-    
+
     private static final String getResourceName(boolean optimized) {
     	String pname = NativeBigInteger.class.getPackage().getName().replace('.','/');
     	String pref = getLibraryPrefix();
