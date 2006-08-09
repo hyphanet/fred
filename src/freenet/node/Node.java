@@ -2396,21 +2396,6 @@ public class Node {
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
-		// Do we have the bandwidth?
-		double expected = 
-			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
-					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
-		int expectedSent = (int)Math.max(expected, 0);
-		if(!requestOutputThrottle.instantGrab(expectedSent)) return "Insufficient output bandwidth";
-		expected = 
-			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
-					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
-		int expectedReceived = (int)Math.max(expected, 0);
-		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-			requestOutputThrottle.recycle(expectedSent);
-			return "Insufficient input bandwidth";
-		}
-		
 		// If no recent reports, no packets have been sent; correct the average downwards.
 		long now = System.currentTimeMillis();
 		boolean checkUncontended = false;
@@ -2443,29 +2428,28 @@ public class Node {
 					lastAcceptedRequest = now;
 					return null;
 				}
-				return ">MAX_PING_TIME";
+				return ">MAX_PING_TIME ("+pingTime+")";
 			}
 			if(pingTime > SUB_MAX_PING_TIME) {
 				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
 				if(random.nextDouble() < x) {
-					return ">SUB_MAX_PING_TIME";
+					return ">SUB_MAX_PING_TIME ("+pingTime+")";
 				}
 			}
 		
 			// Bandwidth limited packets
-			Logger.minor(this, "bwlimitDelayTime = "+bwlimitDelayTime);
 			if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 					Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 					lastAcceptedRequest = now;
 					return null;
 				}
-				return ">MAX_THROTTLE_DELAY";
+				return ">MAX_THROTTLE_DELAY ("+bwlimitDelayTime+")";
 			}
 			if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 				if(random.nextDouble() < x) {
-					return ">SUB_MAX_THROTTLE_DELAY";
+					return ">SUB_MAX_THROTTLE_DELAY ("+bwlimitDelayTime+")";
 				}
 			}
 			
@@ -2473,6 +2457,23 @@ public class Node {
 			
 			lastAcceptedRequest = now;
 		}
+		
+		// Do we have the bandwidth?
+		double expected = 
+			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
+					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
+		int expectedSent = (int)Math.max(expected, 0);
+		if(!requestOutputThrottle.instantGrab(expectedSent)) return "Insufficient output bandwidth";
+		expected = 
+			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
+					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
+		int expectedReceived = (int)Math.max(expected, 0);
+		if(!requestInputThrottle.instantGrab(expectedReceived)) {
+			requestOutputThrottle.recycle(expectedSent);
+			return "Insufficient input bandwidth";
+		}
+		
+		// Accept
 		return null;
 	}
 	
@@ -2503,6 +2504,7 @@ public class Node {
 	public SimpleFieldSet exportPublicFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		Peer[] ips = getPrimaryIPAddress();
+		fs.put("base64", "true");
 		if(ips != null) {
 			for(int i=0;i<ips.length;i++)
 				fs.put("physical.udp", ips[i].toString());
