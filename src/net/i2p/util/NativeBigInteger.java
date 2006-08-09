@@ -504,7 +504,7 @@ public class NativeBigInteger extends BigInteger {
 	} catch(UnsatisfiedLinkError ule) {
 	    f.delete();
 	    // likely to be "noexec" 
-	    if(!ule.toString().contains("permitted"))
+	    if(ule.toString().indexOf("permitted")>-1)
 	    	throw ule;
 	}
 
