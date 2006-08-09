@@ -8,9 +8,14 @@ import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.comm.PeerParseException;
@@ -18,6 +23,7 @@ import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Bucket;
@@ -78,15 +84,24 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/plain", "OK", sw.toString());
 			return;
 		}
-		StringBuffer buf = new StringBuffer(1024);
-		
-		//HTTPRequest request = new HTTPRequest(uri);
 		
 		final boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
 		/* gather connection statistics */
 		PeerNode[] peerNodes = node.getDarknetConnections();
 
+		Arrays.sort(peerNodes, new Comparator() {
+			public int compare(Object first, Object second) {
+				PeerNode firstNode = (PeerNode) first;
+				PeerNode secondNode = (PeerNode) second;
+				int statusDifference = firstNode.getPeerNodeStatus() - secondNode.getPeerNodeStatus();
+				if (statusDifference != 0) {
+					return statusDifference;
+				}
+				return firstNode.getName().compareTo(secondNode.getName());
+			}
+		});
+		
 		/* copy peer node statuses for consistent display. */
 		int[] peerNodeStatuses = new int[peerNodes.length];
 		for (int peerIndex = 0, peerCount = peerNodes.length; peerIndex < peerCount; peerIndex++) {
@@ -113,42 +128,42 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			titleCountString = String.valueOf(numberOfSimpleConnected);
 		}
 		
-		String pageTitle = titleCountString + " Darknet Peers of "+node.getMyName();
-		
-		ctx.getPageMaker().makeHead(buf, pageTitle);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(titleCountString + " Darknet Peers of " + node.getMyName());
+		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
 		
-		node.alerts.toSummaryHtml(buf);
+		contentNode.addChild(node.alerts.createSummary());
 	
 		/* node status values */
 		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
 		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
-		int networkSizeEstimate = (int) node.getNetworkSizeEstimate( 0 );
+		int networkSizeEstimate = node.getNetworkSizeEstimate(0);
 		DecimalFormat fix4 = new DecimalFormat("0.0000");
 		double missRoutingDistance =  node.missRoutingDistance.currentValue();
 		DecimalFormat fix1 = new DecimalFormat("##0.0%");
 		double backedoffPercent =  node.backedoffPercent.currentValue();
 		String nodeUptimeString = timeIntervalToString(( now - node.startupTime ) / 1000);
 		
-		buf.append("<table class=\"column\"><tr><td class=\"first\">");
+		// BEGIN OVERVIEW TABLE
+		HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
+		HTMLNode overviewTableRow = overviewTable.addChild("tr");
+		HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
 		
 		/* node status overview box */
 		if(advancedEnabled) {
-			buf.append("<div class=\"infobox\">");
-			buf.append("<div class=\"infobox-header\">Node status overview</div>");
-			buf.append("<div class=\"infobox-content\">");
-			buf.append("<ul>");
-			buf.append("<li>bwlimitDelayTime:&nbsp;").append(bwlimitDelayTime).append("ms</li>");
-			buf.append("<li>nodeAveragePingTime:&nbsp;").append(nodeAveragePingTime).append("ms</li>");
-			buf.append("<li>networkSizeEstimate:&nbsp;").append(networkSizeEstimate).append("&nbsp;nodes</li>");
-			buf.append("<li>nodeUptime:&nbsp;").append(nodeUptimeString).append("</li>");
-			buf.append("<li>missRoutingDistance:&nbsp;").append(fix4.format(missRoutingDistance)).append("</li>");
-			buf.append("<li>backedoffPercent:&nbsp;").append(fix1.format(backedoffPercent)).append("</li>");
-			buf.append("</ul></div>");
-			buf.append("</div>\n");
-			buf.append("</td><td>");
+			HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
+			overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
+			HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
+			HTMLNode overviewList = overviewInfoboxContent.addChild("ul");
+			overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
+			overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
+			overviewList.addChild("li", "networkSizeEstimate:\u00a0" + networkSizeEstimate + "\u00a0nodes");
+			overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
+			overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix4.format(missRoutingDistance));
+			overviewList.addChild("li", "backedoffPercent:\u00a0" + fix1.format(backedoffPercent));
+			nextTableCell = overviewTableRow.addChild("td");
 		}
 		
 		// Activity box
@@ -157,340 +172,276 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		int numTransferringRequests = node.getNumTransferringRequests();
 		int numARKFetchers = node.getNumARKFetchers();
 		
-		buf.append("<div class=\"infobox\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("Current Activity\n");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
+		HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
+		activityInfobox.addChild("div", "class", "infobox-header", "Current activity");
+		HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
 		if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) && (numARKFetchers == 0)) {
-			buf.append("Your node is not processing any requests right now.");
+			activityInfoboxContent.addChild("#", "Your node is not processing any requests right now.");
 		} else {
-			buf.append("<ul id=\"activity\">\n");
+			HTMLNode activityList = activityInfoboxContent.addChild("ul", "id", "activity");
 			if (numInserts > 0) {
-				buf.append("<li>Inserts:&nbsp;").append(numInserts).append("</li>");
+				activityList.addChild("li", "Inserts:\u00a0" + numInserts);
 			}
 			if (numRequests > 0) {
-				buf.append("<li>Requests:&nbsp;").append(numRequests).append("</li>");
+				activityList.addChild("li", "Requests:\u00a0" + numRequests);
 			}
 			if (numTransferringRequests > 0) {
-				buf.append("<li>Transferring&nbsp;Requests:&nbsp;").append(numTransferringRequests).append("</li>");
+				activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);
 			}
-			if(advancedEnabled) {
+			if (advancedEnabled) {
 				if (numARKFetchers > 0) {
-					buf.append("<li>ARK&nbsp;Fetch&nbsp;Requests:&nbsp;").append(numARKFetchers).append("</li>");
+					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 				}
 			}
-			buf.append("</ul>\n");
 		}
-		buf.append("</div>\n");
-		buf.append("</div>\n");
 		
-		buf.append("</td><td>");
+		nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 		
 		// Peer statistics box
-		buf.append("<div class=\"infobox\">");
-		buf.append("<div class=\"infobox-header\">Peer statistics</div>");
-		buf.append("<div class=\"infobox-content\">");
-		buf.append("<ul>");
+		HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+		peerStatsInfobox.addChild("div", "class", "infobox-header", "Peer statistics");
+		HTMLNode peerStatsContent = peerStatsInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode peerStatsList = peerStatsContent.addChild("ul");
 		if (numberOfConnected > 0) {
-			buf.append("<li><span class=\"peer_connected\">Connected:&nbsp;").append(numberOfConnected).append("</span></li>");
+			peerStatsList.addChild("li").addChild("span", "class", "peer_connected", "Connected:\u00a0" + numberOfConnected);
 		}
 		if (numberOfRoutingBackedOff > 0) {
-			String backoffName = "Busy";
-			if(advancedEnabled) {
-				backoffName = "Backed off";
-			}
-			buf.append("<li><span class=\"peer_backedoff\">").append(backoffName).append(":&nbsp;").append(numberOfRoutingBackedOff).append("</span></li>");
+			peerStatsList.addChild("li").addChild("span", "class", "peer_backedoff", (advancedEnabled ? "Backed off" : "Busy") + ":\u00a0" + numberOfRoutingBackedOff);
 		}
 		if (numberOfTooNew > 0) {
-			buf.append("<li><span class=\"peer_too_new\">Too new:&nbsp;").append(numberOfTooNew).append("</span></li>");
+			peerStatsList.addChild("li").addChild("span", "class", "peer_too_new", "Too new:\u00a0" + numberOfTooNew);
 		}
 		if (numberOfTooOld > 0) {
-			buf.append("<li><span class=\"peer_too_old\">Too old:&nbsp;").append(numberOfTooOld).append("</span></li>");
+			peerStatsList.addChild("li").addChild("span", "class", "peer_too_old", "Too old:\u00a0" + numberOfTooOld);
 		}
 		if (numberOfDisconnected > 0) {
-			buf.append("<li><span class=\"peer_disconnected\">Disconnected:&nbsp;").append(numberOfDisconnected).append("</span></li>");
+			peerStatsList.addChild("li").addChild("span", "class", "peer_disconnected", "Disconnected:\u00a0" + numberOfDisconnected);
 		}
 		if (numberOfNeverConnected > 0) {
-			buf.append("<li><span class=\"peer_never_connected\">Never Connected:&nbsp;").append(numberOfNeverConnected).append("</span></li>");
+			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Never Connected:\u00a0" + numberOfNeverConnected);
 		}
 		if (numberOfDisabled > 0) {
-			buf.append("<li><span class=\"peer_never_connected\">Disabled:&nbsp;").append(numberOfDisabled).append("</span></li>");  // **FIXME**
+			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Disabled:\u00a0" + numberOfDisabled); /* TODO */
 		}
 		if (numberOfBursting > 0) {
-			buf.append("<li><span class=\"peer_never_connected\">Bursting:&nbsp;").append(numberOfBursting).append("</span></li>");  // **FIXME**
+			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Bursting:\u00a0" + numberOfBursting); /* TODO */
 		}
 		if (numberOfListening > 0) {
-			buf.append("<li><span class=\"peer_never_connected\">Listening:&nbsp;").append(numberOfListening).append("</span></li>");  // **FIXME**
+			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Listening:\u00a0" + numberOfListening); /* TODO */
 		}
 		if (numberOfListenOnly > 0) {
-			buf.append("<li><span class=\"peer_never_connected\">Listen Only:&nbsp;").append(numberOfListenOnly).append("</span></li>");  // **FIXME**
+			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Listen Only:\u00a0" + numberOfListenOnly); /* TODO */
 		}
-		buf.append("</ul>");
-		buf.append("</div>");
-		buf.append("</div>\n");
 		
 		// Peer routing backoff reason box
 		if(advancedEnabled) {
-			buf.append("</td><td class=\"last\">");
-			buf.append("<div class=\"infobox\">");
-			buf.append("<div class=\"infobox-header\">Peer backoff reasons</div>");
-			buf.append("<div class=\"infobox-content\">");
+			nextTableCell = overviewTableRow.addChild("td", "class", "last");
+			HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
+			backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
+			HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
 			String [] routingBackoffReasons = node.getPeerNodeRoutingBackoffReasons();
 			if(routingBackoffReasons.length == 0) {
-				buf.append("Good, your node is not backed off from any peers!<br/>\n");
+				backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
 			} else {
-				buf.append("<ul>\n");
+				HTMLNode reasonList = backoffReasonContent.addChild("ul");
 				for(int i=0;i<routingBackoffReasons.length;i++) {
 					int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
 					if(reasonCount > 0) {
-						buf.append("<li>").append(routingBackoffReasons[i]).append(":&nbsp;").append(reasonCount).append("</li>\n");
+						reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
 					}
 				}
-				buf.append("</ul>\n");
-			}
-			buf.append("</div>");
-			buf.append("</div>\n");
-		}
-		
-		buf.append("</td></tr></table>\n");
-		
-		buf.append("<div class=\"infobox infobox-normal\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("My Peers");
-		if(advancedEnabled) {
-			if (!path.endsWith("displaymessagetypes.html"))
-			{
-				buf.append(" <a href=\"displaymessagetypes.html\">(more detailed)</a>");
 			}
 		}
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
-		StringBuffer buf2 = new StringBuffer(1024);
-		buf2.append("<table class=\"darknet_connections\">\n");
-		buf2.append(" <tr>\n");
-		buf2.append("  <th></th>\n");
-		buf2.append("  <th>Status</th>\n");
-		buf2.append("  <th><span title=\"Click on the nodename link to send a N2NTM\" style=\"border-bottom:1px dotted;cursor:help;\">Name</span></th>\n");
-		if(advancedEnabled) {
-			buf2.append("  <th><span title=\"Address:Port\" style=\"border-bottom:1px dotted;cursor:help;\">Address</span></th>\n");
+		// END OVERVIEW TABLE
+		
+		// BEGIN PEER TABLE
+		HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
+		peerTableInfoboxHeader.addChild("#", "My peers");
+		if (advancedEnabled) {
+			if (!path.endsWith("displaymessagetypes.html")) {
+				peerTableInfoboxHeader.addChild("#", " ");
+				peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", "(more detailed)");
+			}
 		}
-		buf2.append("  <th>Version</th>\n");
-		if(advancedEnabled) {
-			buf2.append("  <th>Location</th>\n");
-			buf2.append("  <th><span title=\"Temporarily disconnected. Other node busy? Wait time(s) remaining/total\" style=\"border-bottom:1px dotted;cursor:help;\">Backoff</span></th>\n");
-		}
-		buf2.append("  <th><span title=\"How long since the node connected or was last seen\" style=\"border-bottom:1px dotted;cursor:help;\">Connected&nbsp;/ Idle</span></th>\n");
-		buf2.append(" </tr>\n");
+		HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
 		
 		if (peerNodes.length == 0) {
-			buf2.append("<tr><td colspan=\"8\">Freenet can't work - you have not added any peers so far. <a href=\"/\">Go here</a> and read the top infobox to see how it's done.</td></tr>\n");
-			buf2.append("</table>\n");
-			//
-			buf.append(buf2);
-		}
-		else {
-			
-			// Create array
-			Object[][] rows = new Object[peerNodes.length][];
-			for(int i=0;i<peerNodes.length;i++) {
-				PeerNode pn = peerNodes[i];
-				long routingBackedOffUntil = pn.getRoutingBackedOffUntil();
-				int backoff = (int)(Math.max(routingBackedOffUntil - now, 0));
-				// Don't list the backoff as zero before it's actually zero
-				if((backoff > 0) && (backoff < 1000) )
-					backoff = 1000;
-				
-				// Elements must be HTML encoded.
-				Object[] row = new Object[10];  // where [0] is the pn object and 9 is the node name only for sorting!
-				rows[i] = row;
-				
-				Object status = new Integer(peerNodeStatuses[i]);
-				long idle = pn.timeLastRoutable();
-				if(pn.isRoutable()) {
-					idle = pn.timeLastConnectionCompleted();
-				} else if(peerNodeStatuses[i] == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
-					idle = pn.getPeerAddedTime();
-				}
-				String lastBackoffReasonOutputString = "";
-				if(advancedEnabled) {
-					String backoffReason = pn.getLastBackoffReason();
-					if( backoffReason != null ) {
-						lastBackoffReasonOutputString = "/"+backoffReason;
-					} else {
-						lastBackoffReasonOutputString = "/";
-					}
-				}
-				String avgPingTimeString = "";
-				if(advancedEnabled) {
-					if(pn.isConnected()) {
-						avgPingTimeString = " ("+(int) pn.averagePingTime()+"ms)";
-					}
-				}
-				String versionPrefixString = "";
-				String versionString = "";
-				String versionSuffixString = "";
-				if(pn.publicInvalidVersion() || pn.publicReverseInvalidVersion()) {
-					versionPrefixString = "<span class=\"peer_version_problem\">";
-					versionSuffixString = "</span>";
-				}
-				String namePrefixString = "";
-				String nameSuffixString = "";
-				if(pn.isConnected() && (Integer.valueOf(pn.getSimpleVersion()).intValue() > 476)) {
-				  namePrefixString = "<a href=\"/send_n2ntm/?peernode_hashcode="+pn.hashCode()+"\">";
-				  nameSuffixString = "</a>";
-				}
-				
-				if(advancedEnabled) {
-					versionString = HTMLEncoder.encode(pn.getVersion());
-				} else {
-					versionString = HTMLEncoder.encode(pn.getSimpleVersion());
-				}
-
-				row[0] = pn;
-				row[1] = "<input type=\"checkbox\" name=\"node_"+pn.hashCode()+"\" />";
-				row[2] = status;
-				row[3] = namePrefixString+HTMLEncoder.encode(pn.getName())+nameSuffixString;
-				row[4] = ( pn.getDetectedPeer() != null ? HTMLEncoder.encode(pn.getDetectedPeer().toString()) : "(address unknown)" ) + avgPingTimeString;
-				row[5] = versionPrefixString+versionString+versionSuffixString;
-				row[6] = new Double(pn.getLocation().getValue());
-				row[7] = fix1.format(pn.backedOffPercent.currentValue())+" "+backoff/1000 + "/" + pn.getRoutingBackoffLength()/1000+lastBackoffReasonOutputString;
-				row[8] = idleToString(now, idle, ((Integer) status).intValue());
-				row[9] = HTMLEncoder.encode(pn.getName());
+			peerTableInfoboxContent.addChild("#", "Freenet can not work as you have not added any peers so far. Please go to the ");
+			peerTableInfoboxContent.addChild("a", "href", "/", "node homepage");
+			peerTableInfoboxContent.addChild("#", " and read the top infobox to see how it is done.");
+		} else {
+			HTMLNode peerForm = peerTableInfoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
+			peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+			HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connection");
+			HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
+			peerTableHeaderRow.addChild("th");
+			peerTableHeaderRow.addChild("th", "Status");
+			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Click on the nodename link to send N2NTM", "border-bottom: 1px dotted; cursor: help;" }, "Name");
+			if (advancedEnabled) {
+				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Address:Port", "border-bottom: 1px dotted; cursor: help;" }, "Address");
 			}
-	
-			// Sort array
-			Arrays.sort(rows, new MyComparator());
+			peerTableHeaderRow.addChild("th", "Version");
+			if (advancedEnabled) {
+				peerTableHeaderRow.addChild("th", "Location");
+				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Temporarily disconnected. Other node busy? Wait time(s) remaining/total", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
+			}
+			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node connected or was last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
 			
-			// Convert status codes into status strings
-			for(int i=0;i<rows.length;i++) {
-				Object[] row = rows[i];
-				String arkAsterisk = "";
-				if(advancedEnabled) {
-					if(((PeerNode) row[0]).isFetchingARK()) {
-						arkAsterisk = "*";
-					}
-				}
-				String statusString = ((PeerNode) row[0]).getPeerNodeStatusString();
-				if(!advancedEnabled && (((Integer) row[2]).intValue() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
+			for (int peerIndex = 0, peerCount = peerNodes.length; peerIndex < peerCount; peerIndex++) {
+				PeerNode peerNode = peerNodes[peerIndex];
+				HTMLNode peerRow = peerTable.addChild("tr");
+				
+				// check box column
+				peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peerNode.hashCode() });
+				
+				// status column
+				String statusString = peerNode.getPeerNodeStatusString();
+				if (!advancedEnabled && (peerNode.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
 					statusString = "BUSY";
 				}
-				row[2] = "<span class=\""+((PeerNode) row[0]).getPeerNodeStatusCSSClassName()+"\">"+statusString+arkAsterisk+"</span>";
-			}
-			
-			// Turn array into HTML
-			for(int i=0;i<rows.length;i++) {
-				Object[] row = rows[i];
-				buf2.append("<tr>");
-				for(int j=1;j<row.length;j++) {  // skip index 0 as it's the PeerNode object
-					if(j == 9) { // skip index 9 as it's used for sorting purposes only
-				    	continue;
-				    }
-					if(!advancedEnabled) {  // if not in advanced Darknet page output mode
-						if( (j == 4) || (j == 6) || (j == 7) ) {  // skip IP address/name, location and backoff times
-							continue;
+				peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNode.getPeerNodeStatusCSSClassName(), statusString + (peerNode.isFetchingARK() ? "*" : ""));
+				
+				// name column
+				if (peerNode.isConnected() && (Integer.parseInt(peerNode.getSimpleVersion()) > 476)) {
+					peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNode.hashCode(), peerNode.getName());
+				} else {
+					peerRow.addChild("td", "class", "peer-name").addChild("#", peerNode.getName());
+				}
+				
+				// address column
+				if (advancedEnabled) {
+					String pingTime = "";
+					if (peerNode.isConnected()) {
+						pingTime = " (" + String.valueOf((int) peerNode.averagePingTime()) + "ms)";
+					}
+					peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNode.getDetectedPeer() != null) ? (peerNode.getDetectedPeer().toString()) : ("(unknown address)")) + pingTime);
+				}
+				
+				// version column
+				if (peerNode.publicReverseInvalidVersion()) {
+					peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_too_new", advancedEnabled ? peerNode.getVersion() : peerNode.getSimpleVersion());
+				} else {
+					peerRow.addChild("td", "class", "peer-version").addChild("#", advancedEnabled ? peerNode.getVersion() : peerNode.getSimpleVersion());
+				}
+				
+				// location column
+				if (advancedEnabled) {
+					peerRow.addChild("td", "class", "peer-location", String.valueOf(peerNode.getLocation().getValue()));
+				}
+				
+				// backoff column
+				if (advancedEnabled) {
+					HTMLNode backoffCell = peerRow.addChild("td", "class", "peer-backoff");
+					backoffCell.addChild("#", fix1.format(peerNode.backedOffPercent.currentValue()));
+					int backoff = (int) (Math.max(peerNode.getRoutingBackedOffUntil() - now, 0));
+					// Don't list the backoff as zero before it's actually zero
+					if ((backoff > 0) && (backoff < 1000)) {
+						backoff = 1000;
+					}
+					backoffCell.addChild("#", " " + String.valueOf(backoff / 1000) + "/" + String.valueOf(peerNode.getRoutingBackoffLength() / 1000));
+					backoffCell.addChild("#", (peerNode.getLastBackoffReason() == null) ? "" : ("/" + (peerNode.getLastBackoffReason())));
+				}
+				
+				// idle column
+				long idle = peerNode.timeLastRoutable();
+				if(peerNode.isRoutable()) {
+					idle = peerNode.timeLastConnectionCompleted();
+				} else if(peerNodeStatuses[peerIndex] == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
+					idle = peerNode.getPeerAddedTime();
+				}
+				peerRow.addChild("td", "class", "peer-idle", idleToString(now, idle));
+				
+				if (path.endsWith("displaymessagetypes.html")) {
+					HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");
+					messageCountRow.addChild("td", "colspan", "2");
+					HTMLNode messageCountCell = messageCountRow.addChild("td", "colspan", String.valueOf(advancedEnabled ? 6 : 3));
+					HTMLNode messageCountTable = messageCountCell.addChild("table", "class", "message-count");
+					HTMLNode countHeaderRow = messageCountTable.addChild("tr");
+					countHeaderRow.addChild("th", "Message");
+					countHeaderRow.addChild("th", "Incoming");
+					countHeaderRow.addChild("th", "Outgoing");
+					List messageNames = new ArrayList();
+					Map messageCounts = new HashMap();
+					for (Iterator incomingMessages = peerNode.getLocalNodeReceivedMessagesFromStatistic().keySet().iterator(); incomingMessages.hasNext(); ) {
+						String messageName = (String) incomingMessages.next();
+						messageNames.add(messageName);
+						Long messageCount = (Long) peerNode.getLocalNodeReceivedMessagesFromStatistic().get(messageName);
+						messageCounts.put(messageName, new Long[] { messageCount, new Long(0) });
+					}
+					for (Iterator outgoingMessages = peerNode.getLocalNodeSentMessagesToStatistic().keySet().iterator(); outgoingMessages.hasNext(); ) {
+						String messageName = (String) outgoingMessages.next();
+						if (!messageNames.contains(messageName)) {
+							messageNames.add(messageName);
+						}
+						Long messageCount = (Long) peerNode.getLocalNodeSentMessagesToStatistic().get(messageName);
+						Long[] existingCounts = (Long[]) messageCounts.get(messageName);
+						if (existingCounts == null) {
+							messageCounts.put(messageName, new Long[] { new Long(0), messageCount });
+						} else {
+							existingCounts[1] = messageCount;
 						}
 					}
-					buf2.append("<td>"+row[j]+"</td>");
-				}
-				buf2.append("</tr>\n");
-				
-				if (path.endsWith("displaymessagetypes.html"))
-				{
-					buf2.append("<tr class=\"messagetypes\"><td colspan=\"8\">\n");
-					buf2.append("<table class=\"sentmessagetypes\">\n");
-					buf2.append("<tr><th>Sent Message Type</th><th>Count</th></tr>\n");
-					for (Enumeration keys=((PeerNode)row[0]).getLocalNodeSentMessagesToStatistic().keys(); keys.hasMoreElements(); )
-					{
-						Object curkey = keys.nextElement();
-						buf2.append("<tr><td>");
-						buf2.append((String)curkey);
-						buf2.append("</td><td>");
-						buf2.append(((Long)((PeerNode)row[0]).getLocalNodeSentMessagesToStatistic().get(curkey)) + "");
-						buf2.append("</td></tr>\n");
+					Collections.sort(messageNames, new Comparator() {
+						public int compare(Object first, Object second) {
+							return ((String) first).compareToIgnoreCase((String) second);
+						}
+					});
+					for (Iterator messageNamesIterator = messageNames.iterator(); messageNamesIterator.hasNext(); ) {
+						String messageName = (String) messageNamesIterator.next();
+						Long[] messageCount = (Long[]) messageCounts.get(messageName);
+						HTMLNode messageRow = messageCountTable.addChild("tr");
+						messageRow.addChild("td", messageName);
+						messageRow.addChild("td", "class", "right-align", String.valueOf(messageCount[0]));
+						messageRow.addChild("td", "class", "right-align", String.valueOf(messageCount[1]));
 					}
-					buf2.append("</table>\n");
-		
-					buf2.append("<table class=\"receivedmessagetypes\">\n");
-					buf2.append("<tr><th>Received Message Type</th><th>Count</th></tr>\n");
-					for (Enumeration keys=((PeerNode)row[0]).getLocalNodeReceivedMessagesFromStatistic().keys(); keys.hasMoreElements(); )
-					{
-						Object curkey = keys.nextElement();
-						buf2.append("<tr><td>");
-						buf2.append((String)curkey);
-						buf2.append("</td><td>");
-						buf2.append(((Long)((PeerNode)row[0]).getLocalNodeReceivedMessagesFromStatistic().get(curkey)) + "");
-						buf2.append("</td></tr>\n");
-					}
-					buf2.append("</table>\n");
-					buf2.append("</td></tr>\n");
 				}
 			}
-			buf2.append("</table>\n");
-			//
-			buf.append(buf2);
-			//
+			
 			if(!advancedEnabled) {
-				buf.append("<input type=\"submit\" name=\"remove\" value=\"Remove selected peers\" />");
+				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", "Remove selected peers" });
 			} else {
-				buf.append("<select name=\"action\">\n");
-				buf.append(" <option value=\"\">-- Select Action --</option>\n");
-				buf.append(" <option value=\"enable\">Enable Selected Peers</option>\n");
-				buf.append(" <option value=\"disable\">Disable Selected Peers</option>\n");
-				buf.append(" <option value=\"set_burst_only\">On Selected Peers, Set BurstOnly</option>\n");
-				buf.append(" <option value=\"clear_burst_only\">On Selected Peers, Clear BurstOnly</option>\n");
-				buf.append(" <option value=\"set_listen_only\">On Selected Peers, Set ListenOnly</option>\n");
-				buf.append(" <option value=\"clear_listen_only\">On Selected Peers, Clear ListenOnly</option>\n");
-				buf.append(" <option value=\"\">-- -- --</option>\n");
-				buf.append(" <option value=\"remove\">Remove Selected Peers</option>\n");
-				buf.append("</select>\n");
-				buf.append("<input type=\"submit\" name=\"submit\" value=\"Go\" />\n");
-				buf.append("&nbsp;&nbsp;&nbsp;<span class=\"darknet_connections\">* Requesting ARK</span>\n");
+				HTMLNode actionSelect = peerForm.addChild("select", "name", "action");
+				actionSelect.addChild("option", "value", "", "-- Select action --");
+				actionSelect.addChild("option", "value", "enable", "Enable selected peers");
+				actionSelect.addChild("option", "value", "disable", "Disable selected peers");
+				actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly");
+				actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
+				actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly");
+				actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
+				actionSelect.addChild("option", "value", "", "-- -- --");
+				actionSelect.addChild("option", "value", "remove", "Remove selected peers");
+				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Go" });
 			}
-			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
-			buf.append("</form>\n");
 		}
-		buf.append("</div>\n");
-		buf.append("</div>\n");
+		// END PEER TABLE
 		
-		// new peer addition box
-		buf.append("<div class=\"infobox infobox-normal\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("Add another peer\n");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
-		buf.append("Reference:<br />\n");
-		buf.append("<textarea id=\"reftext\" name=\"ref\" rows=\"8\" cols=\"74\"></textarea>\n");
-		buf.append("<br />\n");
-		buf.append("or URL:\n");
-		buf.append("<input id=\"refurl\" type=\"text\" name=\"url\" />\n");
-		buf.append("<br />\n");
-		buf.append("or file:\n");
-		buf.append("<input id=\"reffile\" type=\"file\" name=\"reffile\" />\n");
-		buf.append("<br />\n");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
-		buf.append("<input type=\"submit\" name=\"add\" value=\"Add\" />\n");
-		buf.append("</form>\n");
-		buf.append("</div>\n");
-		buf.append("</div>\n");
+		// BEGIN PEER ADDITION BOX
+		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		peerAdditionInfobox.addChild("div", "class", "infobox-header", "Add another peer");
+		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
+		HTMLNode peerAdditionForm = peerAdditionContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
+		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+		peerAdditionForm.addChild("#", "Paste the reference here:");
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("#", "Enter the URL of the reference here: ");
+		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "refurl", "text", "url" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("#", "Choose the file containing the reference here: ");
+		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", "Add" });
 		
 		// our reference
-		buf.append("<div class=\"infobox infobox-normal\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("<a href=\"myref.txt\">My Reference</a>\n");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("<pre id=\"reference\">\n");
-		buf.append(HTMLEncoder.encode(this.node.exportPublicFieldSet().toString()));
-		buf.append("</pre>\n");
-		buf.append("</div>\n");
-		buf.append("</div>\n");
+		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		referenceInfobox.addChild("div", "class", "infobox-header").addChild("a", "href", "myref.txt", "My reference");
+		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", node.exportPublicFieldSet().toString());
 		
-		ctx.getPageMaker().makeTail(buf);
-		
-		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		StringBuffer pageBuffer = new StringBuffer();
+		pageNode.generate(pageBuffer);
+		this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 	}
 	
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
@@ -533,7 +484,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						ref.append( line ).append( "\n" );
 					}
 				} catch (IOException e) {
-					this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to retrieve node reference from " + HTMLEncoder.encode(urltext) + ".<br /> <a href=\".\">Please try again</a>.");
+					this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to retrieve node reference from " + urltext + ". Please try again.");
 					return;
 				} finally {
 					if( in != null ){
@@ -545,7 +496,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
 				ref = new StringBuffer(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
 			} else {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Could not detect either a node reference or a URL.<br /> <a href=\".\">Please try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Could not detect either a node reference or a URL. Please try again.");
 				request.freeParts();
 				return;
 			}
@@ -558,25 +509,25 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			try {
 				fs = new SimpleFieldSet(ref.toString(), true);
 			} catch (IOException e) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref.toString()) + "</pre> as a node reference: "+HTMLEncoder.encode(e.toString())+".<br /> <a href=\".\">Please try again</a>.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference. Please try again.");
 				return;
 			}
 			PeerNode pn;
 			try {
 				pn = new PeerNode(fs, this.node, false);
 			} catch (FSParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref.toString()) + "</pre> as a node reference: " + HTMLEncoder.encode(e1.toString()) + ".<br /> Please <a href=\".\">Try again</a>");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference. Please try again.");
 				return;
 			} catch (PeerParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text: <pre>" + HTMLEncoder.encode(ref.toString()) + "</pre> as a node reference: " + HTMLEncoder.encode(e1.toString()) + ".<br /> Please <a href=\".\">Try again</a>");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference. Please try again.");
 				return;
 			}
 			if(pn.getIdentityHash()==node.getIdentityHash()) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "You can't add your own node to the list of remote peers.<br /> <a href=\".\">Return to the peers page</a>");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "You can\u2019t add your own node to the list of remote peers.");
 				return;
 			}
 			if(!this.node.addDarknetConnection(pn)) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "We already have the given reference.<br /> <a href=\".\">Return to the peers page</a>");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "We already have the given reference.");
 				return;
 			}
 			
@@ -680,7 +631,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 	}
 	
-	private String idleToString(long now, long idle, int peerNodeStatus) {
+	private String idleToString(long now, long idle) {
 		if (idle == -1) {
 			return " ";
 		}

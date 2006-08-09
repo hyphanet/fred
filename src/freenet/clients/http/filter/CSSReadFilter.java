@@ -13,6 +13,7 @@ import java.io.Writer;
 import java.util.HashMap;
 
 import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
@@ -43,9 +44,12 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 		} catch (UnsupportedEncodingException e) {
 			os.close();
 			strm.close();
+			HTMLNode explanation = new HTMLNode("p");
+			explanation.addChild("b", "Unknown character set!");
+			explanation.addChild("#", " The page you are about to display has an unknown character set. This means that we are not able to filter the page, and it may compromize your anonymity.");
 			throw new DataFilterException("Warning: Unknown character set ("+charset+")", "Warning: Unknown character set ("+HTMLEncoder.encode(charset)+")",
 					"<p><b>Unknown character set</b> The page you are about to display has an unknown character set. "+
-					"This means that we are not able to filter the page, and it may compromize your anonymity.");
+					"This means that we are not able to filter the page, and it may compromize your anonymity.", explanation);
 		}
 		CSSParser parser = new CSSParser(r, w, false, cb);
 		parser.parse();

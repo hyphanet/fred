@@ -10,13 +10,13 @@ import java.util.Set;
 
 public class HTMLNode {
 
-	private final String name;
+	protected final String name;
 
 	private final String content;
 
-	private final Map attributes = new HashMap();
+	protected final Map attributes = new HashMap();
 
-	private final List children = new ArrayList();
+	protected final List children = new ArrayList();
 
 	public HTMLNode(String name) {
 		this(name, null);
@@ -91,8 +91,15 @@ public class HTMLNode {
 	}
 
 	public HTMLNode addChild(HTMLNode childNode) {
+		if (childNode == null) throw new NullPointerException();
 		children.add(childNode);
 		return childNode;
+	}
+	
+	public void addChildren(HTMLNode[] childNodes) {
+		for (int i = 0, c = childNodes.length; i < c; i++) {
+			addChild(childNodes[i]);
+		}
 	}
 
 	public HTMLNode addChild(String nodeName) {
@@ -138,7 +145,11 @@ public class HTMLNode {
 			tagBuffer.append(" ").append(HTMLEncoder.encode(attributeName)).append("=\"").append(HTMLEncoder.encode(attributeValue)).append("\"");
 		}
 		if (children.size() == 0) {
-			tagBuffer.append(" />");
+			if (name.equals("textarea") || name.equals("div")) {
+				tagBuffer.append("></" + name + ">");
+			} else {
+				tagBuffer.append(" />");
+			}
 		} else {
 			tagBuffer.append(">");
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
@@ -148,6 +159,36 @@ public class HTMLNode {
 			tagBuffer.append("</").append(name).append(">");
 		}
 		return tagBuffer;
+	}
+
+	/**
+	 * Special HTML node for the DOCTYPE declaration. This node differs from a
+	 * normal HTML node in that it's child (and it should only have exactly one
+	 * child, the "html" node) is rendered <em>after</em> this node.
+	 * 
+	 * @author David 'Bombe' Roden &lt;bombe@freenetproject.org&gt;
+	 * @version $Id$
+	 */
+	public static class HTMLDoctype extends HTMLNode {
+
+		protected final String systemUri;
+
+		/**
+		 * 
+		 */
+		public HTMLDoctype(String doctype, String systemUri) {
+			super(doctype);
+			this.systemUri = systemUri;
+		}
+
+		/**
+		 * @see freenet.support.HTMLNode#generate(java.lang.StringBuffer)
+		 */
+		public StringBuffer generate(StringBuffer tagBuffer) {
+			tagBuffer.append("<!DOCTYPE ").append(name).append(" PUBLIC \"").append(systemUri).append("\">\n");
+			return ((HTMLNode) children.get(0)).generate(tagBuffer);
+		}
+
 	}
 
 }

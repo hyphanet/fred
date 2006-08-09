@@ -1,8 +1,12 @@
 package freenet.node.useralerts;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
+
+import freenet.support.HTMLNode;
 
 /**
  * Collection of UserAlert's.
@@ -41,46 +45,46 @@ public class UserAlertManager implements Comparator {
 		UserAlert a1 = (UserAlert) arg1;
 		return a0.getPriorityClass() - a1.getPriorityClass();
 	}
-
+	
 	/**
 	 * Write the alerts as HTML to a StringBuffer
 	 */
-	public void toHtml(StringBuffer buf) {
+	public HTMLNode createAlerts() {
+		HTMLNode alertsNode = new HTMLNode("div");
 		UserAlert[] alerts = getAlerts();
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
 			if (!alert.isValid())
 				continue;
 
+			HTMLNode alertNode = null;
 			short level = alert.getPriorityClass();
 			if (level <= UserAlert.CRITICAL_ERROR)
-				buf.append("<div class=\"infobox infobox-error\">\n");
+				alertNode = new HTMLNode("div", "class", "infobox infobox-error");
 			else if (level <= UserAlert.ERROR)
-				buf.append("<div class=\"infobox infobox-alert\">\n");
+				alertNode = new HTMLNode("div", "class", "infobox infobox-alert");
 			else if (level <= UserAlert.WARNING)
-				buf.append("<div class=\"infobox infobox-warning\">\n");
+				alertNode = new HTMLNode("div", "class", "infobox infobox-warning");
 			else if (level <= UserAlert.MINOR)
-				buf.append("<div class=\"infobox infobox-information\">\n");
-			//
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append(alert.getTitle());
-			buf.append("</div>\n");
-			//
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append(alert.getText());
-			//
-			if (alert.userCanDismiss())
-				buf.append("<form method=\"post\" action=\".\"><input type=\"hidden\" name=\"disable\" value=\"").append(alert.hashCode()).append("\" /><input type=\"submit\" value=\"").append(alert.dismissButtonText()).append("\" /></form>");
-			//
-			buf.append("</div>\n");
-			buf.append("</div>\n");
+				alertNode = new HTMLNode("div", "class", "infobox infobox-information");
+
+			alertsNode.addChild(alertNode);
+			alertNode.addChild("div", "class", "infobox-header", alert.getTitle());
+			HTMLNode alertContentNode = alertNode.addChild("div", "class", "infobox-content");
+			alertContentNode.addChild(alert.getHTMLText());
+			if (alert.userCanDismiss()) {
+				HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(alert.hashCode()) });
+				dismissFormNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", alert.dismissButtonText() });
+			}
 		}
+		return alertsNode;
 	}
 
 	/**
 	 * Write the alert summary as HTML to a StringBuffer
 	 */
-	public void toSummaryHtml(StringBuffer buf) {
+	public HTMLNode createSummary() {
 		short highestLevel = 99;
 		int numberOfCriticalError = 0;
 		int numberOfError = 0;
@@ -96,17 +100,19 @@ public class UserAlertManager implements Comparator {
 			if (level < highestLevel)
 				highestLevel = level;
 			if (level <= UserAlert.CRITICAL_ERROR)
-				numberOfCriticalError += 1;
+				numberOfCriticalError++;
 			else if (level <= UserAlert.ERROR)
-				numberOfError += 1;
+				numberOfError++;
 			else if (level <= UserAlert.WARNING)
-				numberOfWarning += 1;
+				numberOfWarning++;
 			else if (level <= UserAlert.MINOR)
-				numberOfMinor += 1;
-			totalNumber += 1;
+				numberOfMinor++;
+			totalNumber++;
 		}
+		
 		if (totalNumber == 0)
-			return;
+			return new HTMLNode("#", "");
+		
 		boolean separatorNeeded = false;
 		StringBuffer alertSummaryString = new StringBuffer(1024);
 		if (numberOfCriticalError != 0) {
@@ -134,22 +140,23 @@ public class UserAlertManager implements Comparator {
 		if (separatorNeeded)
 			alertSummaryString.append(" | ");
 		alertSummaryString.append("Total: ").append(totalNumber);
-		alertSummaryString.append(" | See them on <a href=\"/\">the Freenet FProxy Homepage</a>");
+
+		HTMLNode summaryBox = null;
+
 		if (highestLevel <= UserAlert.CRITICAL_ERROR)
-			buf.append("<div class=\"infobox infobox-error\">\n");
+			summaryBox = new HTMLNode("div", "class", "infobox infobox-error");
 		else if (highestLevel <= UserAlert.ERROR)
-			buf.append("<div class=\"infobox infobox-alert\">\n");
+			summaryBox = new HTMLNode("div", "class", "infobox infobox-alert");
 		else if (highestLevel <= UserAlert.WARNING)
-			buf.append("<div class=\"infobox infobox-warning\">\n");
+			summaryBox = new HTMLNode("div", "class", "infobox infobox-warning");
 		else if (highestLevel <= UserAlert.MINOR)
-			buf.append("<div class=\"infobox infobox-information\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("Outstanding Alerts");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		buf.append(alertSummaryString);
-		buf.append("</div>\n");
-		buf.append("</div>\n");
+			summaryBox = new HTMLNode("div", "class", "infobox infobox-information");
+		summaryBox.addChild("div", "class", "infobox-header", "Outstanding alerts");
+		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content", alertSummaryString.toString());
+		summaryContent.addChild("#", " | See them on ");
+		summaryContent.addChild("a", "href", "/", "the Freenet FProxy Homepage");
+		summaryContent.addChild("#", ".");
+		return summaryBox;
 	}
 
 }

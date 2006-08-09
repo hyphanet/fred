@@ -9,7 +9,7 @@ import freenet.config.Config;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.node.Node;
-import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
@@ -80,119 +80,89 @@ public class ConfigToadlet extends Toadlet {
 		}
 		config.store();
 		
-		StringBuffer outbuf = new StringBuffer();
-		
-		ctx.getPageMaker().makeHead(outbuf, "Configuration Applied");
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Configuration Applied");
+		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if (errbuf.length() == 0) {
-			outbuf.append("<div class=\"infobox infobox-success\">\n");
-			outbuf.append("<div class=\"infobox-header\">\n");
-			outbuf.append("Configuration Applied\n");
-			outbuf.append("</div>\n");
-			outbuf.append("<div class=\"infobox-content\">\n");
-			outbuf.append("Your configuration changes were applied successfully<br />\n");
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Configuration Applied"));
+			ctx.getPageMaker().getContentNode(infobox).addChild("#", "Your configuration changes were applied successfully.");
 		} else {
-			outbuf.append("<div class=\"infobox infobox-error\">\n");
-			outbuf.append("<div class=\"infobox-header\">\n");
-			outbuf.append("Configuration Could Not Be Applied\n");
-			outbuf.append("</div>\n");
-			outbuf.append("<div class=\"infobox-content\">\n");
-			outbuf.append("Your configuration changes were applied with the following exceptions:<br />\n");
-			outbuf.append(HTMLEncoder.encode(errbuf.toString()));
-			outbuf.append("<br />\n");
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", "Configuration Not Applied"));
+			HTMLNode content = infobox.addChild("div", "class", "infobox-content");
+			content.addChild("#", "Your configuration changes were applied with the following exceptions:");
+			content.addChild("br");
+			content.addChild("#", errbuf.toString());
 		}
 		
-		outbuf.append("<a href=\".\" title=\"Configuration\">Return to Node Configuration</a><br />\n");
-		outbuf.append("<a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
-		
-		outbuf.append("</div>\n");
-		outbuf.append("</div>\n");
-		
-		ctx.getPageMaker().makeTail(outbuf);
-		writeReply(ctx, 200, "text/html", "OK", outbuf.toString());
+		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "Your Possibilities"));
+		HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+		content.addChild("a", new String[]{"href", "title"}, new String[]{".", "Configuration"}, "Return to node configuration");
+		content.addChild("br");
+		content.addChild("a", new String[]{"href", "title"}, new String[]{"/", "Node homepage"}, "Return to node homepage");
+
+		writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 		
 	}
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		StringBuffer buf = new StringBuffer(1024);
 		SubConfig[] sc = config.getConfigs();
 		boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
-		ctx.getPageMaker().makeHead(buf, "Freenet Node Configuration of "+node.getMyName());
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet Node Configuration of " + node.getMyName());
+		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
-		buf.append("<div class=\"infobox infobox-normal\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("Freenet Node Configuration\n");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("<form method=\"post\" action=\".\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		infobox.addChild("div", "class", "infobox-header", "Freenet node configuration");
+		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
+		HTMLNode formNode = configNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
 		
 		for(int i=0; i<sc.length;i++){
-			StringBuffer buf2 = new StringBuffer();
 			short displayedConfigElements = 0;
 			
 			Option[] o = sc[i].getOptions();
-			buf2.append("<ul class=\"config\"><span class=\"configprefix\">"+sc[i].getPrefix()+"</span>\n");
+			HTMLNode configGroupUlNode = new HTMLNode("ul", "class", "config");
 			
 			for(int j=0; j<o.length; j++){
 				if(! (!advancedEnabled && o[j].isExpert())){
 					displayedConfigElements++;
 					String configName = o[j].getName();
 					
-					buf2.append("<li>");
-					buf2.append("<span class=\"configshortdesc\">");
-					buf2.append(o[j].getShortDesc());
-					buf2.append("</span>");	
-					buf2.append("<span class=\"config\">");
+					HTMLNode configItemNode = configGroupUlNode.addChild("li");
+					configItemNode.addChild("span", "class", "configshortdesc", o[j].getShortDesc());
+					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					
 					if(o[j].getValueString().equals("true") || o[j].getValueString().equals("false")){
-						buf2.append("<select name=\""+sc[i].getPrefix()+"."+configName+"\" >");
+						HTMLNode selectNode = configItemValueNode.addChild("select", "name", sc[i].getPrefix() + "." + configName);
 						if(o[j].getValueString().equals("true")){
-							buf2.append("<option value=\"true\" selected>true</option>");
-							buf2.append("<option value=\"false\">false</option>");
+							selectNode.addChild("option", new String[] { "value", "selected" }, new String[] { "true", "selected" }, "true");
+							selectNode.addChild("option", "value", "false", "false");
 						}else{
-							buf2.append("<option value=\"true\">true</option>");
-							buf2.append("<option value=\"false\" selected>false</option>");
+							selectNode.addChild("option", "value", "true", "true");
+							selectNode.addChild("option", new String[] { "value", "selected" }, new String[] { "false", "selected" }, "false");
 						}
-						buf2.append("</select>");
 					}else{
-						buf2.append("<input alt=\""+o[j].getShortDesc()+"\" class=\"config\"" +
-								" type=\"text\" name=\""+sc[i].getPrefix()+"."+configName+"\" value=\""+HTMLEncoder.encode(o[j].getValueString())+"\" />");				
+						configItemValueNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o[j].getShortDesc(), sc[i].getPrefix() + "." + configName, o[j].getValueString() });
 					}
-					buf2.append("</span>");
-					buf2.append("<span class=\"configlongdesc\">");
-					buf2.append(o[j].getLongDesc());
-					buf2.append("</span>");
-					
-					buf2.append("</li>\n");
+					configItemNode.addChild("span", "class", "configlongdesc", o[j].getLongDesc());
 				}
 			}
-			buf2.append("</ul>\n");
 			
-			if(displayedConfigElements>0)
-				buf.append(buf2);
+			if(displayedConfigElements>0) {
+				formNode.addChild("div", "class", "configprefix", sc[i].getPrefix());
+				formNode.addChild(configGroupUlNode);
+			}
 		}
 		
-		buf.append("<input type=\"submit\" value=\"Apply\" />");
-		buf.append("<input type=\"reset\" value=\"Reset\" />");
-		buf.append("</form>");
-		buf.append("</div>\n");
-		buf.append("</div>\n");
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Apply" });
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", "Reset" });
 		
-		ctx.getPageMaker().makeTail(buf);
-		
-		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
-	}
-	
-	public void handlePut(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		StringBuffer buf = new StringBuffer();
-		buf.append("ok!\n");
-		buf.append(uri);
-		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		StringBuffer pageBuffer = new StringBuffer();
+		pageNode.generate(pageBuffer);
+		this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 	}
 	
 	public String supportedMethods() {
-		return "GET, PUT";
+		return "GET, POST";
 	}
 }

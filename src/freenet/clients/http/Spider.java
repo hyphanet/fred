@@ -36,6 +36,7 @@ import freenet.node.RequestStarter;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.PluginManager;
 import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
@@ -292,39 +293,38 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 			return;
 		} else if ("list".equals(action)) {
 			String listName = request.getParam("listName", null);
-			StringBuffer responseBuffer = new StringBuffer();
-			pageMaker.makeHead(responseBuffer, "The Definitive Spider");
+			HTMLNode pageNode = pageMaker.getPageNode("The Definitive Spider");
+			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			/* create copies for multi-threaded use */
 			if (listName == null) {
 				Map runningFetches = new HashMap(runningFetchesByURI);
 				List queued = new ArrayList(queuedURIList);
 				Set visited = new HashSet(visitedURIs);
 				Set failed = new HashSet(failedURIs);
-				responseBuffer.append(createNavbar(runningFetches.size(), queued.size(), visited.size(), failed.size()));
-				responseBuffer.append(createAddBox());
-				responseBuffer.append(createList("Running Fetches", "running", runningFetches.keySet(), maxShownURIs));
-				responseBuffer.append(createList("Queued URIs", "queued", queued, maxShownURIs));
-				responseBuffer.append(createList("Visited URIs", "visited", visited, maxShownURIs));
-				responseBuffer.append(createList("Failed URIs", "failed", failed, maxShownURIs));
+				contentNode.addChild(createNavbar(pageMaker, runningFetches.size(), queued.size(), visited.size(), failed.size()));
+				contentNode.addChild(createAddBox(pageMaker));
+				contentNode.addChild(createList(pageMaker, "Running Fetches", "running", runningFetches.keySet(), maxShownURIs));
+				contentNode.addChild(createList(pageMaker, "Queued URIs", "queued", queued, maxShownURIs));
+				contentNode.addChild(createList(pageMaker, "Visited URIs", "visited", visited, maxShownURIs));
+				contentNode.addChild(createList(pageMaker, "Failed URIs", "failed", failed, maxShownURIs));
 			} else {
-				responseBuffer.append(createBackBox());
+				contentNode.addChild(createBackBox(pageMaker));
 				if ("failed".equals(listName)) {
 					Set failed = new HashSet(failedURIs);
-					responseBuffer.append(createList("Failed URIs", "failed", failed, -1));	
+					contentNode.addChild(createList(pageMaker, "Failed URIs", "failed", failed, -1));	
 				} else if ("visited".equals(listName)) {
 					Set visited = new HashSet(visitedURIs);
-					responseBuffer.append(createList("Visited URIs", "visited", visited, -1));
+					contentNode.addChild(createList(pageMaker, "Visited URIs", "visited", visited, -1));
 				} else if ("queued".equals(listName)) {
 					List queued = new ArrayList(queuedURIList);
-					responseBuffer.append(createList("Queued URIs", "queued", queued, -1));
+					contentNode.addChild(createList(pageMaker, "Queued URIs", "queued", queued, -1));
 				} else if ("running".equals(listName)) {
 					Map runningFetches = new HashMap(runningFetchesByURI);
-					responseBuffer.append(createList("Running Fetches", "running", runningFetches.keySet(), -1));
+					contentNode.addChild(createList(pageMaker, "Running Fetches", "running", runningFetches.keySet(), -1));
 				}
 			}
-			pageMaker.makeTail(responseBuffer);
 			MultiValueTable responseHeaders = new MultiValueTable();
-			byte[] responseBytes = responseBuffer.toString().getBytes("utf-8");
+			byte[] responseBytes = pageNode.generate().getBytes("utf-8");
 			context.sendReplyHeaders(200, "OK", responseHeaders, "text/html; charset=utf-8", responseBytes.length);
 			context.writeData(responseBytes);
 		} else if ("add".equals(action)) {
@@ -338,7 +338,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 				queueURI(uri);
 				startSomeRequests();
 			} catch (MalformedURLException mue1) {
-				sendSimpleResponse(context, "URL invalid", "The given URI is not valid. Please <a href=\"?action=list\">return</a> and try again.");
+				sendSimpleResponse(context, "URL invalid", "The given URI is not valid.");
 				return;
 			}
 			MultiValueTable responseHeaders = new MultiValueTable();
@@ -356,71 +356,63 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	
 	private void sendSimpleResponse(ToadletContext context, String title, String message) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = context.getPageMaker();
-		StringBuffer outputBuffer = new StringBuffer();
-		pageMaker.makeHead(outputBuffer, title);
-		outputBuffer.append("<div class=\"infobox infobox-alert\">");
-		outputBuffer.append("<div class=\"infobox-header\">").append(HTMLEncoder.encode(title)).append("</div>\n");
-		outputBuffer.append("<div class=\"infobox-content\">").append(HTMLEncoder.encode(message)).append("</div>\n");
-		outputBuffer.append("</div>\n");
-		byte[] responseBytes = outputBuffer.toString().getBytes("utf-8");
+		HTMLNode pageNode = pageMaker.getPageNode(title);
+		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-alter", title));
+		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
+		infoboxContent.addChild("#", message);
+		byte[] responseBytes = pageNode.generate().getBytes("utf-8");
 		context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", responseBytes.length);
 		context.writeData(responseBytes);
 	}
 	
-	private StringBuffer createBackBox() {
-		StringBuffer outputBuffer = new StringBuffer();
-		outputBuffer.append("<div class=\"infobox\">");
-		outputBuffer.append("<div class=\"infobox-content\">Return to the <a href=\"?action=list\">list of all URIs</a>.</div>");
-		outputBuffer.append("</div>\n");
-		return outputBuffer;
+	private HTMLNode createBackBox(PageMaker pageMaker) {
+		HTMLNode backbox = pageMaker.getInfobox((String) null);
+		HTMLNode backContent = pageMaker.getContentNode(backbox);
+		backContent.addChild("#", "Return to the ");
+		backContent.addChild("a", "href", "?action=list", "list of all URIs");
+		backContent.addChild("#", ".");
+		return backbox;
 	}
 	
-	private StringBuffer createAddBox() {
-		StringBuffer outputBuffer = new StringBuffer();
-		outputBuffer.append("<div class=\"infobox\">");
-		outputBuffer.append("<div class=\"infobox-header\">Add a URI</div>");
-		outputBuffer.append("<div class=\"infobox-content\"><form action=\"\" method=\"get\">");
-		outputBuffer.append("<input type=\"hidden\" name=\"action\" value=\"add\" />");
-		outputBuffer.append("<input type=\"text\" size=\"40\" name=\"key\" value=\"\" />");
-		outputBuffer.append("<input type=\"submit\" value=\"Add URI\" />");
-		outputBuffer.append("</form></div>\n");
-		outputBuffer.append("</div>\n");
-		return outputBuffer;
+	private HTMLNode createAddBox(PageMaker pageMaker) {
+		HTMLNode addBox = pageMaker.getInfobox("Add a URI");
+		HTMLNode formNode = pageMaker.getContentNode(addBox);
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "add" });
+		formNode.addChild("input", new String[] { "type", "size", "name", "value" }, new String[] { "text", "40", "key", "" });
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Add URI" });
+		return addBox;
 	}
 
-	private StringBuffer createNavbar(int running, int queued, int visited, int failed) {
-		StringBuffer outputBuffer = new StringBuffer();
-		outputBuffer.append("<div class=\"infobox navbar\">");
-		outputBuffer.append("<div class=\"infobox-header\">Page navigation</div>");
-		outputBuffer.append("<div class=\"infobox-content\"><ul>");
-		outputBuffer.append("<li><a href=\"#running\">Running (").append(running).append(")</a></li>");
-		outputBuffer.append("<li><a href=\"#queued\">Queued (").append(queued).append(")</a></li>");
-		outputBuffer.append("<li><a href=\"#visited\">Visited (").append(visited).append(")</a></li>");
-		outputBuffer.append("<li><a href=\"#failed\">Failed (").append(failed).append(")</a></li>");
-		outputBuffer.append("</ul></div>\n");
-		outputBuffer.append("</div>\n");
-		return outputBuffer;
+	private HTMLNode createNavbar(PageMaker pageMaker, int running, int queued, int visited, int failed) {
+		HTMLNode navbar = pageMaker.getInfobox("navbar", "Page Navigation");
+		HTMLNode list = pageMaker.getContentNode(navbar).addChild("ul");
+		list.addChild("li").addChild("a", "href", "#running", "Running (" + running + ")");
+		list.addChild("li").addChild("a", "href", "#queued", "Queued (" + queued + ")");
+		list.addChild("li").addChild("a", "href", "#visited", "Visited (" + visited + ")");
+		list.addChild("li").addChild("a", "href", "#failed", "Failed (" + failed + ")");
+		return navbar;
 	}
 
-	private StringBuffer createList(String listName, String anchorName, Collection collection, int maxCount) {
-		StringBuffer outputBuffer = new StringBuffer();
-		outputBuffer.append("<a name=\"").append(HTMLEncoder.encode(anchorName)).append("\"></a>");
-		outputBuffer.append("<div class=\"infobox\">");
-		outputBuffer.append("<div class=\"infobox-header\">").append(HTMLEncoder.encode(listName)).append(" (").append(collection.size()).append(")</div>\n");
-		outputBuffer.append("<div class=\"infobox-content\">");
+	private HTMLNode createList(PageMaker pageMaker, String listName, String anchorName, Collection collection, int maxCount) {
+		HTMLNode listNode = new HTMLNode("div");
+		listNode.addChild("a", "name", anchorName);
+		HTMLNode listBox = pageMaker.getInfobox(listName);
+		HTMLNode listContent = pageMaker.getContentNode(listBox);
+		listNode.addChild(listBox);
 		Iterator collectionItems = collection.iterator();
 		int itemCount = 0;
 		while (collectionItems.hasNext()) {
 			FreenetURI uri = (FreenetURI) collectionItems.next();
-			outputBuffer.append(HTMLEncoder.encode(uri.toString())).append("<br/>\n");
+			listContent.addChild("#", uri.toString(false));
+			listContent.addChild("br");
 			if (itemCount++ == maxCount) {
-				outputBuffer.append("<br/><a href=\"?action=list&amp;listName=").append(HTMLEncoder.encode(anchorName)).append("\">Show all&hellip;</a>");
+				listContent.addChild("br");
+				listContent.addChild("a", "href", "?action=list&listName=" + anchorName, "Show all\u2026");
 				break;
 			}
 		}
-		outputBuffer.append("</div>\n");
-		outputBuffer.append("</div>\n");
-		return outputBuffer;
+		return listNode;
 	}
 
 	/**

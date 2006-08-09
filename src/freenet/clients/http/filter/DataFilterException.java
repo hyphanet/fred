@@ -1,5 +1,7 @@
 package freenet.clients.http.filter;
 
+import freenet.support.HTMLNode;
+
 /**
  * Exception thrown when the data cannot be filtered.
  */
@@ -9,15 +11,21 @@ public class DataFilterException extends UnsafeContentTypeException {
 	final String rawTitle;
 	final String encodedTitle;
 	final String explanation;
+	final HTMLNode htmlExplanation;
 	
-	DataFilterException(String raw, String encoded, String explanation) {
+	DataFilterException(String raw, String encoded, String explanation, HTMLNode htmlExplanation) {
 		this.rawTitle = raw;
 		this.encodedTitle = encoded;
 		this.explanation = explanation;
+		this.htmlExplanation = htmlExplanation;
 	}
 	
 	public String getExplanation() {
 		return explanation;
+	}
+	
+	public HTMLNode getHTMLExplanation() {
+		return htmlExplanation;
 	}
 
 	public String getHTMLEncodedTitle() {

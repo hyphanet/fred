@@ -38,12 +38,12 @@ public class ToadletContextImpl implements ToadletContext {
 	 */
 	private boolean closed;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName, BucketFactory bf) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName, BucketFactory bf, PageMaker pageMaker) throws IOException {
 		this.headers = headers;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
 		this.bf = bf;
-		pagemaker = new PageMaker(CSSName);
+		this.pagemaker = pageMaker;
 	}
 	
 	private void close() {
@@ -164,7 +164,7 @@ public class ToadletContextImpl implements ToadletContext {
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
-	public static void handle(Socket sock, ToadletContainer container, BucketFactory bf) {
+	public static void handle(Socket sock, ToadletContainer container, BucketFactory bf, PageMaker pageMaker) {
 		try {
 			InputStream is = sock.getInputStream();
 			
@@ -228,7 +228,7 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				boolean shouldDisconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
 				
-				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName(), bf);
+				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName(), bf, pageMaker);
 				
 				/*
 				 * if we're handling a POST, copy the data into a bucket now,

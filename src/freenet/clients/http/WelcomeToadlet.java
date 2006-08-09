@@ -16,7 +16,7 @@ import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
-import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
@@ -45,8 +45,6 @@ public class WelcomeToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri,data,ctx);
 		if(request==null) return;
 		
-		StringBuffer buf = new StringBuffer();
-		
 		if (request.getParam("shutdownconfirm").length() > 0) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", ".?shutdownconfirm="+node.formPassword.hashCode());
@@ -61,74 +59,49 @@ public class WelcomeToadlet extends Toadlet {
 			return;
 		}else if(request.getParam("updateconfirm").length() > 0){
 			// false for no navigation bars, because that would be very silly
-			ctx.getPageMaker().makeHead(buf, "Node Updating", true);
-			buf.append("<div class=\"infobox infobox-information\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("The Freenet node is being updated and will self-restart\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("The restart process might take up to 10 minutes. <br>");
-			buf.append("(The node will try to fetch a revocation key before updating)<br>");
-			buf.append("Thank you for using Freenet\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-			
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node updating");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Node updating"));
+			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			content.addChild("p").addChild("#", "The Freenet node is being updated will self-restart. The restart process might take up to 10 minutes, because the node will try to fetch a revocation key before updating.");
+			content.addChild("p").addChild("#", "Thank you for using Freenet.");
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			Logger.normal(this, "Node is updating/restarting");
 			node.ps.queueTimedJob(new Runnable() {
 				public void run() { node.getNodeUpdater().Update(); }}, 0);
 			return;
 		}else if (request.getParam("restart").length() > 0) {
-			ctx.getPageMaker().makeHead(buf, "Node Restart");
-			buf.append("<div class=\"infobox infobox-query\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Node Restart?\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("Are you sure you wish to restart your Freenet node?\n");
-			buf.append("<form action=\"/\" method=\"post\">\n");
-			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("<input type=\"submit\" name=\"restartconfirm\" value=\"Restart\" />\n");
-			buf.append("</form>\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Restart"));
+			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			content.addChild("p").addChild("#", "Are you sure you want to restart your Freenet node?");
+			HTMLNode restartForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
+			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restartconfirm", "Restart" });
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if (request.getParam("update").length() > 0) {
-			ctx.getPageMaker().makeHead(buf, "Node Update");
-			buf.append("<div class=\"infobox infobox-query\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Update the node?\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("Are you sure you wish to update your Freenet node?\n");
-			buf.append("<form action=\"/\" method=\"post\">\n");
-			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("<input type=\"submit\" name=\"updateconfirm\" value=\"Update\" />\n");
-			buf.append("</form>\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Update");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Update"));
+			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			content.addChild("p").addChild("#", "Are you sure you wish to update your Freenet node?");
+			HTMLNode updateForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
+			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "updateconfirm", "Update" });
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		} else if (request.getParam("exit").equalsIgnoreCase("true")) {
-			ctx.getPageMaker().makeHead(buf, "Node Shutdown");
-			buf.append("<div class=\"infobox infobox-query\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Node Shutdown?\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("Are you sure you wish to shut down your Freenet node?\n");
-			buf.append("<form action=\"/\" method=\"post\">\n");
-			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("<input type=\"submit\" name=\"shutdownconfirm\" value=\"Shut down\" />\n");
-			buf.append("</form>\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Shutdown"));
+			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			content.addChild("p").addChild("#", "Are you sure you wish to shut down your Freenet node?");
+			HTMLNode shutdownForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
+			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "shutdownconfirm", "Shut down" });
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		} else if (request.isParameterSet("addbookmark")) {
 			try {
@@ -201,39 +174,36 @@ public class WelcomeToadlet extends Toadlet {
 				
 				Bucket bucket = request.getPart("filename");
 				
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode content;
 				InsertBlock block = new InsertBlock(bucket, contentType, key);
 				try {
-					ctx.getPageMaker().makeHead(buf, "Insertion");
 					key = this.insert(block, false);
-					buf.append("<div class=\"infobox infobox-success\">\n");
-					buf.append("<div class=\"infobox-header\">\n");
-					buf.append("Insert Succeeded\n");
-					buf.append("</div>\n");
-					buf.append("<div class=\"infobox-content\">\n");
-					buf.append("The key : <a href=\"/" + key.getKeyType() + "@" + key.getGuessableKey() + "\">" +
-							key.getKeyType() + "@" + key.getGuessableKey() +"</a> has been inserted successfully.<br>");
+					HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
+					content = ctx.getPageMaker().getContentNode(infobox);
+					content.addChild("#", "The key ");
+					content.addChild("a", "href", "/" + key.getKeyType() + "@" + key.getGuessableKey(), key.getKeyType() + "@" + key.getGuessableKey());
+					content.addChild("#", " has been inserted successfully.");
 				} catch (InserterException e) {
-					buf.append("<div class=\"infobox infobox-error\">\n");
-					buf.append("<div class=\"infobox-header\">\n");
-					buf.append("Insert Failed\n");
-					buf.append("</div>\n");
-					buf.append("<div class=\"infobox-content\">\n");
-					buf.append("Error: "+e.getMessage()+"<br>");
-					if(e.uri != null)
-						buf.append("URI would have been: "+e.uri+"<br>");
+					HTMLNode infobox = ctx.getPageMaker().getInfobox("infobox-error", "Insert Failed");
+					content = ctx.getPageMaker().getContentNode(infobox);
+					content.addChild("#", "The insert failed with the message: " + e.getMessage());
+					content.addChild("br");
+					if (e.uri != null) {
+						content.addChild("#", "The URI would have been: " + e.uri);
+					}
 					int mode = e.getMode();
 					if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
-						buf.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString()+"<br>");
+						content.addChild("br"); /* TODO */
+						content.addChild("#", "Splitfile-specific error: " + e.errorCodes.toVerboseString());
 					}
 				}
+
+				content.addChild("br");
+				content.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node Homepage" }, "Homepage");
 				
-				ctx.getPageMaker().makeBackLink(buf,ctx);
-				buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
-				buf.append("</div>\n");
-				buf.append("</div>\n");
-				
-				ctx.getPageMaker().makeTail(buf);
-				writeReply(ctx, 200, "text/html", "OK", buf.toString());
+				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 				request.freeParts();
 				bucket.free();
 		}else {
@@ -242,75 +212,45 @@ public class WelcomeToadlet extends Toadlet {
 	}
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		StringBuffer buf = new StringBuffer();
-		
 		boolean advancedDarknetOutputEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
 		HTTPRequest request = new HTTPRequest(uri);
 		if (request.getParam("newbookmark").length() > 0) {
-			ctx.getPageMaker().makeHead(buf, "Add A Bookmark");
-			
-			buf.append("<div class=\"infobox infobox-query\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Confirm action\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("<form action=\".\" method=\"post\">\n");
-			buf.append("Please confirm that you wish to add the key:<br />\n");
-			buf.append("<i>"+request.getParam("newbookmark")+"</i><br />");
-			buf.append("To your bookmarks, and enter the description that you would prefer:<br />\n");
-			buf.append("Description:\n");
-			buf.append("<input type=\"text\" name=\"name\" value=\""+HTMLEncoder.encode(request.getParam("desc"))+"\" style=\"width: 100%; \" />\n");
-			buf.append("<input type=\"hidden\" name=\"key\" value=\""+HTMLEncoder.encode(request.getParam("newbookmark"))+"\" />\n");
-			buf.append("<input type=\"submit\" name=\"addbookmark\" value=\"Add bookmark\" />\n");
-			buf.append("</form>\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			
-			ctx.getPageMaker().makeTail(buf);
-		
-			this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Confirm Bookmark Addition"));
+			HTMLNode addForm = ctx.getPageMaker().getContentNode(infobox).addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+			addForm.addChild("#", "Please confirm that you want to add the key " + request.getParam("newbookmark") + " to your bookmarks and enter the description that you would prefer:");
+			addForm.addChild("br");
+			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", request.getParam("newbookmark") });
+			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
+			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", "Add bookmark" });
+			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		} else if (request.isParameterSet("managebookmarks")) {
-			ctx.getPageMaker().makeHead(buf, "Bookmark Manager");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Bookmark Manager");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "My Bookmarks"));
+			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
 			
-			// existing bookmarks
-			buf.append("<div class=\"infobox infobox-normal\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("My Bookmarks\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("<form action=\".\" method=\"post\">\n");
 			Enumeration e = bookmarks.getBookmarks();
 			if (!e.hasMoreElements()) {
-				buf.append("<i>You currently have no bookmarks defined</i>");
+				infoboxContent.addChild("#", "You currently do not have any bookmarks defined.");
 			} else {
-				buf.append("<ul id=\"bookmarks\">\n");
+				HTMLNode manageForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+				HTMLNode bookmarkList = manageForm.addChild("ul", "id", "bookmarks");
 				while (e.hasMoreElements()) {
 					Bookmark b = (Bookmark)e.nextElement();
 				
-					buf.append("<li style=\"clear: right; \">\n");
-					buf.append("<input type=\"submit\" name=\"delete_"+b.hashCode()+"\" value=\"Delete\" style=\"float: right; \" />\n");
-					buf.append("<input type=\"submit\" name=\"edit_"+b.hashCode()+"\" value=\"Edit\" style=\"float: right; \" />\n");
-					buf.append("<a href=\"/"+HTMLEncoder.encode(b.getKey())+"\">");
-					buf.append(HTMLEncoder.encode(b.getDesc()));
-					buf.append("</a>\n");
-
-					buf.append("</li>\n");
+					HTMLNode bookmark = bookmarkList.addChild("li", "style", "clear: right;"); /* TODO */
+					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "delete_" + b.hashCode(), "Delete", "float: right;" });
+					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "edit_" + b.hashCode(), "Edit", "float: right;" });
+					bookmark.addChild("a", "href", "/" + b.getKey(), b.getDesc());
 				}
-				buf.append("</ul>\n");
+				manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
 			}
-			buf.append("<input type=\"hidden\" name=\"managebookmarks\" value=\"yes\" />\n");
-			buf.append("</form>\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			
-			// new bookmark
-			this.makeBookmarkEditForm(buf, MODE_ADD, null, "", "", null);
-			
-			ctx.getPageMaker().makeTail(buf);
-		
-			this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			contentNode.addChild(createBookmarkEditForm(ctx.getPageMaker(), MODE_ADD, null, "", ""));
+			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if (request.getParam("shutdownconfirm").length() > 0) {
 			if(request.getIntParam("shutdownconfirm") != node.formPassword.hashCode()){
@@ -319,18 +259,12 @@ public class WelcomeToadlet extends Toadlet {
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
-			// false for no navigation bars, because that would be very silly
-			ctx.getPageMaker().makeHead(buf, "Node Shutdown", false);
-			buf.append("<div class=\"infobox infobox-information\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("The Freenet node has been successfully shut down\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("Thank you for using Freenet\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet node has been successfully shut down."));
+			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+			infoboxContent.addChild("#", "Thank you for using Freenet.");
+			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
 		}else if(request.getParam("restartconfirm").length() > 0){
 			if(request.getIntParam("restartconfirm") != node.formPassword.hashCode()){
@@ -340,34 +274,23 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 			// false for no navigation bars, because that would be very silly
-			ctx.getPageMaker().makeHead(buf, "Node Restart", false);
-			buf.append("<div class=\"infobox infobox-information\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("The Freenet node is beeing restarted\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("The restart process might take up to 3 minutes. <br>");
-			buf.append("Thank you for using Freenet\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-			
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", false);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet is being restarted."));
+			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+			infoboxContent.addChild("#", "Please wait while the node is being restarted. This might take up to 3 minutes. Thank you for using Freenet.");
+			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			Logger.normal(this, "Node is restarting");
 			return;
 		}
 		
-		
-		ctx.getPageMaker().makeHead(buf, "Freenet FProxy Homepage of "+node.getMyName());
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet FProxy Homepage of " + node.getMyName());
+		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+
 		if(node.isTestnetEnabled()) {
-			buf.append("<div class=\"infobox infobox-alert\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Testnet mode!\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("This node runs in testnet mode. This WILL seriously jeopardize your anonymity!\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
+			HTMLNode testnetBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-alert", "Testnet Mode!"));
+			HTMLNode testnetContent = ctx.getPageMaker().getContentNode(testnetBox);
+			testnetContent.addChild("#", "This node runs in testnet mode. This WILL seriously jeopardize your anonymity!");
 		}
 		
 		String useragent = (String)ctx.getHeaders().get("user-agent");
@@ -375,106 +298,71 @@ public class WelcomeToadlet extends Toadlet {
 		if (useragent != null) {
 			useragent = useragent.toLowerCase();
 			if ((useragent.indexOf("msie") > -1) && (useragent.indexOf("opera") == -1)) {
-				buf.append("<div class=\"infobox infobox-alert\">\n");
-				buf.append("<div class=\"infobox-header\">\n");
-				buf.append("Security risk!\n");
-				buf.append("</div>\n");
-				buf.append("<div class=\"infobox-content\">\n");
-				buf.append("You appear to be using Internet Explorer. This means that some sites within Freenet may be able to compromise your anonymity!\n");
-				buf.append("</div>\n");
-				buf.append("</div>\n");
+				HTMLNode browserWarningBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-alert", "Security Risk!"));
+				HTMLNode browserWarningContent = ctx.getPageMaker().getContentNode(browserWarningBox);
+				browserWarningContent.addChild("#", "You appear to be using Microsoft Internet Explorer. This means that some sites within Freenet may be able to compromise your anonymity!");
 			}
 		}
 
 		// Alerts
-		
-		node.alerts.toHtml(buf);
+		contentNode.addChild(node.alerts.createAlerts());
 		
 		// Fetch-a-key box
-		buf.append("<div class=\"infobox infobox-normal\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("Fetch a Key\n");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\" id=\"keyfetchbox\">\n");
-		buf.append("<form action=\"/\" method=\"get\">\n");
-		buf.append("Key: <input type=\"text\" size=\"80\" name=\"key\"/>\n");
-		buf.append("<input type=\"submit\" value=\"Fetch\" />\n");
-		buf.append("</form>\n");
-		buf.append("</div>\n");
-		buf.append("</div>\n");
+		HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "Fetch a Key"));
+		HTMLNode fetchKeyContent = ctx.getPageMaker().getContentNode(fetchKeyBox);
+		fetchKeyContent.addAttribute("id", "keyfetchbox");
+		HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[] { "action", "method" }, new String[] { "/", "get" });
+		fetchKeyForm.addChild("#", "Key: ");
+		fetchKeyForm.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "key" });
+		fetchKeyForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Fetch" });
 		
 		// Bookmarks
-		buf.append("<div class=\"infobox infobox-normal\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("My Bookmarks\n");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
+		HTMLNode bookmarkBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "My Bookmarks"));
+		HTMLNode bookmarkContent = ctx.getPageMaker().getContentNode(bookmarkBox);
 		
 		Enumeration e = bookmarks.getBookmarks();
 		if (!e.hasMoreElements()) {
-			buf.append("<i>You currently have no bookmarks defined</i>");
+			bookmarkContent.addChild("#", "You currently do not have any bookmarks defined.");
 		} else {
-			buf.append("<ul id=\"bookmarks\">\n");
+			HTMLNode bookmarkList = bookmarkContent.addChild("ul", "id", "bookmarks");
 			while (e.hasMoreElements()) {
 				Bookmark b = (Bookmark)e.nextElement();
-				
-				buf.append("<li><a href=\"/"+HTMLEncoder.encode(b.getKey())+"\">");
-				buf.append(HTMLEncoder.encode(b.getDesc()));
-				buf.append("</a></li>\n");
+				bookmarkList.addChild("li").addChild("a", "href", "/" + b.getKey(), b.getDesc());
 			}
-			buf.append("</ul>\n");
 		}
-		buf.append("<div id=\"bookmarkedit\">\n");
-		buf.append("<a href=\"?managebookmarks\" class=\"interfacelink\">Edit My Bookmarks</a>\n");
-		buf.append("</div>\n");
-		buf.append("</div>\n");
-		buf.append("</div>\n");
+		bookmarkContent.addChild("div", "id", "bookmarkedit").addChild("a", new String[] { "href", "class" }, new String[] { "?managebookmarks", "interfacelink" }, "Edit my bookmarks");
 		
 		// Version info and Quit Form
-		buf.append("<div class=\"infobox infobox-information\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("Version\n");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		
-		buf.append("Freenet "+Version.nodeVersion+" Build #"+Version.buildNumber()+" r"+Version.cvsRevision+"<br/>");
-		buf.append("Freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+"<br/>"); 	 
-        
+		HTMLNode versionBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Version Information & Node Control"));
+		HTMLNode versionContent = ctx.getPageMaker().getContentNode(versionBox);
+		versionContent.addChild("#", "Freenet " + Version.nodeVersion + " Build #" + Version.buildNumber() + " r" + Version.cvsRevision);
+		versionContent.addChild("br");
+		versionContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
+		versionContent.addChild("br");
 		if((Version.buildNumber() < Version.highestSeenBuild) && advancedDarknetOutputEnabled) {
-			buf.append("<br />");
-			buf.append("<b>A newer version is available! (Build #"+Version.highestSeenBuild+")</b>");
+			versionContent.addChild("b", "A newer version is available! (Build #" + Version.highestSeenBuild + ")");
+			versionContent.addChild("br");
 		}
-		buf.append("<form method=\"post\" action=\".\">\n");
-		buf.append("<input type=\"hidden\" name=\"exit\" value=\"true\" /><input type=\"submit\" value=\"Shut down the node\" />\n");
-		buf.append("</form>");
+		HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+		shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "exit", "true" });
+		shutdownForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Shutdown the node" });
 		if(node.isUsingWrapper()){
-			buf.append("<form action=\"/\" method=\"post\">\n");
-			buf.append("<input type=\"submit\" name=\"restart\" value=\"Restart the node\" />\n");
-			buf.append("</form>");
+			HTMLNode restartForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart", "Restart the node" });
 		}
-		buf.append("\n</div>\n");
-		buf.append("</div>\n");
 		
 		// Activity
-		buf.append("<div class=\"infobox infobox-information\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append("Current Activity\n");
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		buf.append("<ul id=\"activity\">\n");
-		buf.append("<li>Inserts: "+this.node.getNumInserts()+"</li>\n");
-		buf.append("<li>Requests: "+this.node.getNumRequests()+"</li>\n");
-		buf.append("<li>Transferring Requests: "+this.node.getNumTransferringRequests()+"</li>\n");
-		if(advancedDarknetOutputEnabled) {
-			buf.append("<li>ARK Fetch Requests: "+this.node.getNumARKFetchers()+"</li>\n");
+		HTMLNode activityBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Current Activity"));
+		HTMLNode activityContent = ctx.getPageMaker().getContentNode(activityBox);
+		HTMLNode activityList = activityContent.addChild("ul", "id", "activity");
+		activityList.addChild("li", "Inserts: " + node.getNumInserts());
+		activityList.addChild("li", "Requests: " + node.getNumRequests());
+		activityList.addChild("li", "Transferring Requests: " + node.getNumTransferringRequests());
+		if (advancedDarknetOutputEnabled) {
+			activityList.addChild("li", "ARK Fetch Requests: " + node.getNumARKFetchers());
 		}
-		buf.append("</ul>\n");
-		buf.append("</div>\n");
-		buf.append("</div>\n");
 		
-		ctx.getPageMaker().makeTail(buf);
-		
-		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	
 	private void sendBookmarkEditPage(ToadletContext ctx, Bookmark b) throws ToadletContextClosedException, IOException {
@@ -482,66 +370,37 @@ public class WelcomeToadlet extends Toadlet {
 	}
 	
 	private void sendBookmarkEditPage(ToadletContext ctx, int mode, Bookmark b, String origKey, String origDesc, String message) throws ToadletContextClosedException, IOException {
-		StringBuffer buf = new StringBuffer();
-		
-		if (mode == MODE_ADD) {
-			ctx.getPageMaker().makeHead(buf, "Add a Bookmark");
-		} else {
-			ctx.getPageMaker().makeHead(buf, "Edit a Bookmark");
-		}
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode((mode == MODE_ADD) ? "Add a Bookmark" : "Edit a Bookmark");
+		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if (message != null) {  // only used for error messages so far...
-			buf.append("<div class=\"infobox infobox-error\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("An Error Occured\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append(message);
-			buf.append("</div>\n");
-			buf.append("</div>\n");
+			HTMLNode errorBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", "An Error Occured"));
+			ctx.getPageMaker().getContentNode(errorBox).addChild("#", message);
 		}
 		
-		this.makeBookmarkEditForm(buf, mode, b, origKey, origDesc, message);
+		contentNode.addChild(createBookmarkEditForm(ctx.getPageMaker(), mode, b, origKey, origDesc));
 		
-		ctx.getPageMaker().makeTail(buf);
-		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 	
-	private void makeBookmarkEditForm(StringBuffer buf, int mode, Bookmark b, String origKey, String origDesc, String message) {
-		buf.append("<div class=\"infobox infobox-normal\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
+	private HTMLNode createBookmarkEditForm(PageMaker pageMaker, int mode, Bookmark b, String origKey, String origDesc) {
+		HTMLNode infobox = pageMaker.getInfobox("infobox-normal bookmark-edit", (mode == MODE_ADD) ? "New Bookmark" : "Update Bookmark");
+		HTMLNode content = pageMaker.getContentNode(infobox);
+		HTMLNode editForm = content.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+		editForm.addChild("#", "Key: ");
+		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", origKey });
+		editForm.addChild("br");
+		editForm.addChild("#", "Description: ");
+		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", origDesc });
+		editForm.addChild("br");
 		if (mode == MODE_ADD) {
-			buf.append("New Bookmark\n");
+			editForm.addChild("input", new String[] { "type", "name", "value", "class" }, new String[] { "submit", "addbookmark", "Add bookmark", "confirm" });
 		} else {
-			buf.append("Update Bookmark\n");
+			editForm.addChild("input", new String[] { "type", "name", "value", "class" }, new String[] { "submit", "update_" + b.hashCode(), "Update bookmark", "confirm" });
 		}
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		
-		buf.append("<form action=\".\" method=\"post\">\n");
-		buf.append("<div style=\"text-align: right; \">\n");
-		
-		buf.append("Key: \n");
-		buf.append("<input type=\"text\" name=\"key\" value=\""+origKey+"\" size=\"80\" />\n");
-		buf.append("<br />\n");
-		
-		buf.append("Description: \n");
-		buf.append("<input type=\"text\" name=\"name\" value=\""+origDesc+"\" size=\"80\" />\n");
-		buf.append("<br />\n");
-		
-		if (mode == MODE_ADD) {
-			buf.append("<input type=\"submit\" name=\"addbookmark\" value=\"Add bookmark\" class=\"confirm\" />\n");
-		} else {
-			buf.append("<input type=\"submit\" name=\"update_"+b.hashCode()+"\" value=\"Update bookmark\" class=\"confirm\" />\n");
-		}
-		
-		buf.append("<input type=\"submit\" value=\"Cancel\" class=\"cancel\" />\n");
-		buf.append("<input type=\"hidden\" name=\"managebookmarks\" value=\"yes\" />\n");
-		buf.append("</div>\n");
-		buf.append("</form>\n");
-		
-		buf.append("</div>\n");
-		buf.append("</div>\n");
+		editForm.addChild("input", new String[] { "type", "value", "class" }, new String[] { "submit", "Cancel", "cancel" });
+		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
+		return infobox;
 	}
 	
 	public String supportedMethods() {

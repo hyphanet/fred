@@ -1,6 +1,7 @@
 package freenet.clients.http.filter;
 
 import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 
 public class UnknownContentTypeException extends UnsafeContentTypeException {
 	private static final long serialVersionUID = -1;
@@ -32,6 +33,16 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 				"because they can ruin your anonymity and expose your IP address (if the attacker " +
 				"runs the web site or has access to its logs). Hyperlinks to the Web can also be a " +
 				"threat, for much the same reason, as can scripting, for this and other reasons.</p>";
+	}
+	
+	public HTMLNode getHTMLExplanation() {
+		return new HTMLNode("div", "Your Freenet node does not know anything about this MIME type. " +
+				"This means that your browser might do something dangerous in response " +
+				"to downloading this file. For example, many formats can contain embedded images " +
+				"or videos, which are downloaded from the web; this is by no means innocuous, " +
+				"because they can ruin your anonymity and expose your IP address (if the attacker " +
+				"runs the web site or has access to its logs). Hyperlinks to the Web can also be a " +
+				"threat, for much the same reason, as can scripting, for this and other reasons.");
 	}
 	
 }

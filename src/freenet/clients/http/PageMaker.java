@@ -8,11 +8,14 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
 /** Simple class to output standard heads and tail for web interface pages. 
@@ -21,6 +24,10 @@ public class PageMaker {
 	
 	private static final String DEFAULT_THEME = "clean";
 	private String theme;
+	private final List navigationLinkTexts = new ArrayList();
+	private final Map navigationLinkTitles = new HashMap();
+	private final Map navigationLinks = new HashMap();
+	private final Map contentNodes = new HashMap();
 	
 	/** Cache for themes read from the JAR file. */
 	private List jarThemesCache = null;
@@ -37,63 +44,99 @@ public class PageMaker {
 		}
 	}
 	
-	public void makeBackLink(StringBuffer buf, ToadletContext ctx){
-		// My browser sends it with one 'r'
-		String ref = (String)ctx.getHeaders().get("referer");
-		if(ref!=null) 
-			buf.append("<br><a href=\""+ref+"\" title=\"Back\" Back</a>\n");
-		else
-			buf.append("<br><a href=\"javascript:back()\" title=\"Back\">Back</a>\n");
-		
+	public void addNavigationLink(String path, String name, String title) {
+		navigationLinkTexts.add(name);
+		navigationLinkTitles.put(name, title);
+		navigationLinks.put(name, path);
 	}
 	
-	public void makeTopHead(StringBuffer buf) {
-		buf.append("<!DOCTYPE\n"
-				+ "	html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\">\n"
-				+ "<html xml:lang=\"en\">\n"
-				+ "<head>\n"
-				+ "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
-				+ "<link rel=\"stylesheet\" href=\"/static/themes/"+this.theme+"/theme.css\" type=\"text/css\" />\n");
-		List themes = getThemes();
-		for(int i=0; i<themes.size() ; i++){
-			if(!themes.get(i).toString().equals(theme))
-				buf.append("<link rel=\"alternate stylesheet\" type=\"text/css\" href=\"/static/themes/"+themes.get(i)+"/theme.css\" media=\"screen\" title=\""+themes.get(i)+"\" />\n");
+	public void removeNavigationLink(String name) {
+		navigationLinkTexts.remove(name);
+		navigationLinkTitles.remove(name);
+		navigationLinks.remove(name);
+	}
+	
+	public HTMLNode createBackLink(ToadletContext toadletContext) {
+		String referer = (String) toadletContext.getHeaders().get("referer");
+		if (referer != null) {
+			return new HTMLNode("a", new String[] { "href", "title" }, new String[] { referer, "Back" }, "Back");
 		}
+		return new HTMLNode("a", new String[] { "href", "title" }, new String[] { "javascript:back()", "Back" }, "Back");
 	}
 	
-	public void makeBottomHead(StringBuffer buf, String title, boolean navbars) {
-		String sanitizedTitle = HTMLEncoder.encode(title);
-		buf.append("<title>"+sanitizedTitle+" - Freenet</title>\n"
-				+ "</head>\n"
-				+ "<body>\n"
-				+ "<div id=\"page\">\n"
-				+ "<div id=\"topbar\">\n"
-				+ "<h1>"+sanitizedTitle+"</h1>\n"
-				+ "</div>\n");
-		if (navbars) this.makeNavBar(buf);
-		buf.append("<div id=\"content\">\n");
+	public HTMLNode getPageNode(String title) {
+		return getPageNode(title, true);
+	}
+
+	public HTMLNode getPageNode(String title, boolean renderNavigationLinks) {
+		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
+		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", "en");
+		HTMLNode headNode = htmlNode.addChild("head");
+		headNode.addChild("title", title + " - Freenet");
+		headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "Content-Type", "text/html; charset=utf-8" });
+		headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme + "/theme.css", "text/css", theme });
+		List themes = getThemes();
+		for (Iterator themesIterator = themes.iterator(); themesIterator.hasNext();) {
+			String themeName = (String) themesIterator.next();
+			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+		}
+		HTMLNode bodyNode = htmlNode.addChild("body");
+		HTMLNode pageDiv = bodyNode.addChild("div", "id", "page");
+		HTMLNode topBarDiv = pageDiv.addChild("div", "id", "topbar");
+		topBarDiv.addChild("h1", title);
+		if (renderNavigationLinks) {
+			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
+			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
+			for (Iterator navigationLinkIterator = navigationLinkTexts.iterator(); navigationLinkIterator.hasNext();) {
+				String navigationLink = (String) navigationLinkIterator.next();
+				String navigationTitle = (String) navigationLinkTitles.get(navigationLink);
+				String navigationPath = (String) navigationLinks.get(navigationLink);
+				HTMLNode listItem = navbarUl.addChild("li");
+				listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, navigationTitle }, navigationLink);
+			}
+		}
+		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
+		contentNodes.put(pageNode, contentDiv);
+		return pageNode;
 	}
 	
-	public void makeBottomHead(StringBuffer buf, String title) {
-		makeBottomHead(buf, title, true);
+	/**
+	 * Returns the content node that belongs to the specified page node.
+	 * <p>
+	 * <strong>Warning:</strong> this method can only be called once!
+	 * 
+	 * @param pageNode
+	 *            The page node to get the content node for
+	 * @return The content node for the specified page node
+	 */
+	public HTMLNode getContentNode(HTMLNode pageNode) {
+		return (HTMLNode) contentNodes.remove(pageNode);
 	}
 	
-	public void makeHead(StringBuffer buf, String title) {
-		makeTopHead(buf);
-		makeBottomHead(buf, title);
+	public HTMLNode getInfobox(String header) {
+		return getInfobox((header != null) ? new HTMLNode("#", header) : (HTMLNode) null);
 	}
 	
-	public void makeHead(StringBuffer buf, String title, boolean navbars) {
-		makeTopHead(buf);
-		makeBottomHead(buf, title, navbars);
+	public HTMLNode getInfobox(HTMLNode header) {
+		return getInfobox(null, header);
 	}
 	
-	public void makeTail(StringBuffer buf) {
-		buf.append("<br style=\"clear: all;\"/>\n"
-				+ "</div>\n"
-				+"</div>\n"
-				+"</body>\n"
-				+ "</html>\n");
+	public HTMLNode getInfobox(String category, String header) {
+		return getInfobox(category, (header != null) ? new HTMLNode("#", header) : (HTMLNode) null);
+	}
+	
+	public HTMLNode getInfobox(String category, HTMLNode header) {
+		if (header == null) throw new NullPointerException();
+		HTMLNode infobox = new HTMLNode("div", "class", "infobox" + ((category == null) ? "" : (" " + category)));
+		if (header != null) {
+			infobox.addChild("div", "class", "infobox-header").addChild(header);
+		}
+		contentNodes.put(infobox, infobox.addChild("div", "class", "infobox-content"));
+		return infobox;
+	}
+	
+	public HTMLNode createFormPasswordInput(String formPassword) {
+		return new HTMLNode("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", formPassword });
 	}
 	
 	/**
@@ -153,15 +196,4 @@ public class PageMaker {
 		return themes;
 	}
 	
-	private void makeNavBar(StringBuffer buf) {
-		buf.append("<div id=\"navbar\">\n"
-				+ "<ul id=\"navlist\">\n"
-				+ "<li><a href=\"/\" title=\"Homepage\">Home</a></li>\n"
-				+ "<li><a href=\"/plugins/\" title=\"Configure Plugins\">Plugins</a></li>\n"
-				+ "<li><a href=\"/config/\" title=\"Configure your node\">Configuration</a></li>\n"
-				+ "<li><a href=\"/darknet/\" title=\"Manage darknet connections\">Darknet</a></li>\n"
-				+ "<li><a href=\"/queue/\" title=\"Manage queued requests\">Queue</a></li>\n"
-				+ "</ul>\n"
-				+ "</div>\n");
-	}
 }

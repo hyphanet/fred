@@ -2,6 +2,7 @@ package freenet.node.useralerts;
 
 import freenet.node.PeerNode;
 import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 
 // Node To Node Text Message User Alert
 public class N2NTMUserAlert implements UserAlert {
@@ -42,6 +43,17 @@ public class N2NTMUserAlert implements UserAlert {
 		String s;
 		s = "From: &lt;"+HTMLEncoder.encode(sourceNodename)+"&gt;<br />To: &lt;"+HTMLEncoder.encode(targetNodename)+"&gt;<hr /><br /><br />"+messageTextBuf2+"<br /><br />"+replyString;
 		return s;
+	}
+
+	public HTMLNode getHTMLText() {
+		HTMLNode alertNode = new HTMLNode("div");
+		alertNode.addChild("p", "From: " + sourceNodename);
+		String[] lines = messageText.split("\n");
+		for (int i = 0, c = lines.length; i < c; i++) {
+			alertNode.addChild("div", lines[i]);
+		}
+		alertNode.addChild("p").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + sourcePeerNode.hashCode(), "Reply");
+		return alertNode;
 	}
 
 	public short getPriorityClass() {

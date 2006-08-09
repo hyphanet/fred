@@ -1,5 +1,7 @@
 package freenet.node.useralerts;
 
+import freenet.support.HTMLNode;
+
 public class ExtOldAgeUserAlert implements UserAlert {
 	private boolean isValid=true;
 	
@@ -15,6 +17,10 @@ public class ExtOldAgeUserAlert implements UserAlert {
 		String s;
 		s = "Your freenet-ext.jar file seems to be outdated : we strongly advise you to update it using http://downloads.freenetproject.org/alpha/freenet-ext.jar.";
 		return s;
+	}
+
+	public HTMLNode getHTMLText() {
+		return new HTMLNode("div", "Your freenet-ext.jar file seems to be outdated: we strongly advise you to update it using http://downloads.freenetproject.org/alpha/freenet-ext.jar.");
 	}
 
 	public short getPriorityClass() {

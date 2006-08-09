@@ -112,6 +112,7 @@ import freenet.support.DoubleTokenBucket;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
 import freenet.support.HexUtil;
+import freenet.support.HTMLNode;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
@@ -729,6 +730,7 @@ public class Node {
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
 	public freenet.plugin.PluginManager pluginManager2;
+	public freenet.plugin_new.PluginManager pluginManager3;
 	
 	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -1806,6 +1808,8 @@ public class Node {
 		bookmarkManager = new BookmarkManager(this, fproxyConfig);
 		pluginManager2 = new freenet.plugin.PluginManager(this);
 		
+//		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
+//		pluginManager3 = new freenet.plugin_new.PluginManager(pluginManagerConfig);
 		
 		// FProxy
 		// FIXME this is a hack, the real way to do this is plugins
@@ -1889,6 +1893,10 @@ public class Node {
 
 					public String getText() {
 						return ERROR_SUN_NPTL;
+					}
+
+					public HTMLNode getHTMLText() {
+						return new HTMLNode("div", ERROR_SUN_NPTL);
 					}
 
 					public short getPriorityClass() {

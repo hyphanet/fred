@@ -1,5 +1,7 @@
 package freenet.node.useralerts;
 
+import freenet.support.HTMLNode;
+
 public interface UserAlert {
 	
 	/**
@@ -17,6 +19,11 @@ public interface UserAlert {
 	 * Content of alert (plain text).
 	 */
 	public String getText();
+
+	/**
+	 * Content of alert (HTML).
+	 */
+	public HTMLNode getHTMLText();
 	
 	/**
 	 * Priority class

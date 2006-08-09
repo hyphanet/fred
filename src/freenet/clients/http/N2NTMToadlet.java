@@ -11,6 +11,7 @@ import freenet.io.comm.UdpSocketManager;
 import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
@@ -33,9 +34,10 @@ public class N2NTMToadlet extends Toadlet {
   public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 	  
 	  HTTPRequest request = new HTTPRequest(uri, null, ctx);
-	  StringBuffer buf = new StringBuffer(1024);
 	  if (request.isParameterSet("peernode_hashcode")) {
-		  ctx.getPageMaker().makeHead(buf, "Send Node To Node Text Message");
+		  HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message");
+		  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		  
 		  String peernode_name = null;
 		  String input_hashcode_string = request.getParam("peernode_hashcode");
 		  int input_hashcode = -1;
@@ -55,34 +57,41 @@ public class N2NTMToadlet extends Toadlet {
 			  }
 		  }
 		  if(peernode_name == null) {
-			  buf.append("PeerNode.hashCode '"+input_hashcode_string+"' not found.<br /><br />\n");
-			  buf.append("<a href=\"/\" title=\"Back to Node Homepage\">Homepage</a>\n");
-			  buf.append("<a href=\"/darknet/\">Back to Darknet page</a>\n");
-			  ctx.getPageMaker().makeTail(buf);
-			  this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not found", "The peer with the hash code \u201c" + input_hashcode_string + "\u201d could not be found."));
+			  StringBuffer pageBuffer = new StringBuffer();
+			  pageNode.generate(pageBuffer);
+			  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 			  return;
 		  }
 		  
-		  buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">\n");
-		  buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
-		  buf.append("<div class=\"infobox infobox-normal\">");
-		  buf.append("<div class=\"infobox-header\">");
-		  buf.append("Sending Node To Node Text Message to "+HTMLEncoder.encode(peernode_name)+"\n");
-		  buf.append("</div>");
-		  buf.append("<div class=\"infobox-content\" id=\"n2nbox\">");
-		  buf.append("<input type=\"hidden\" name=\"hashcode\" value=\""+input_hashcode_string+"\" />\n");
-		  buf.append("<textarea id=\"n2ntmtext\" name=\"message\" rows=\"8\" cols=\"74\"></textarea><br />\n");
-		  buf.append("<input type=\"submit\" name=\"send\" value=\"Send message to "+HTMLEncoder.encode(peernode_name)+"\" />\n");
-		  buf.append("</div>");
-		  buf.append("</div>");
-		  buf.append("</form>\n");
-		  ctx.getPageMaker().makeTail(buf);
-		  this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		  HTMLNode infobox = contentNode.addChild("div", new String[] { "class", "id" }, new String[] { "infobox", "n2nbox" });
+		  infobox.addChild("div", "class", "infobox-header", "Send Node to Node Text Message");
+		  HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+		  HTMLNode messageForm = infoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
+		  messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+		  messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "hashcode", input_hashcode_string });
+		  messageForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
+		  messageForm.addChild("br");
+		  messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "send", "Send message to " + peernode_name });
+		  StringBuffer pageBuffer = new StringBuffer();
+		  pageNode.generate(pageBuffer);
+		  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 		  return;
 	  }
 	  MultiValueTable headers = new MultiValueTable();
 	  headers.put("Location", "/darknet/");
 	  ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+  }
+  
+  private HTMLNode createPeerInfobox(String infoboxType, String header, String message) {
+	  HTMLNode infobox = new HTMLNode("div", "class", "infobox " + infoboxType);
+	  infobox.addChild("div", "class", "infobox-header", header);
+	  HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+	  infoboxContent.addChild("#", message);
+	  HTMLNode list = infoboxContent.addChild("ul");
+	  list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "Back to node homepage" }, "Homepage");
+	  list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/darknet/", "Back to darknet connections" }, "Darknet connections");
+	  return infobox;
   }
   
   public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
@@ -92,7 +101,6 @@ public class N2NTMToadlet extends Toadlet {
 	  }
 	  
 	  HTTPRequest request = new HTTPRequest(uri, data, ctx);
-	  StringBuffer buf = new StringBuffer(1024);
 	  
 	  String pass = request.getPartAsString("formPassword", 32);
 	  if((pass == null) || !pass.equals(node.formPassword)) {
@@ -126,96 +134,47 @@ public class N2NTMToadlet extends Toadlet {
 			  }
 		  }
 		  if(pn == null) {
-			  ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Failed");
-			  buf.append("<div class=\"infobox infobox-error\">");
-			  buf.append("<div class=\"infobox-header\">");
-			  buf.append("Peer not Found");
-			  buf.append("</div>");
-			  buf.append("<div class=\"infobox-content\">");
-			  buf.append("PeerNode.hashCode '"+input_hashcode_string+"' not found.<br /><br />\n");
-			  buf.append("</div>");
-			  buf.append("</div>");
-			  buf.append("<a href=\"/\" title=\"Node Homepage\">Back to Homepage</a>\n");
-			  buf.append("<a href=\"/darknet/\">Back to Darknet page</a>\n");
-			  ctx.getPageMaker().makeTail(buf);
-			  this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			  HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message failed");
+			  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not found", "The peer with the hash code \u201c" + input_hashcode_string + "\u201d could not be found."));
+			  StringBuffer pageBuffer = new StringBuffer();
+			  pageNode.generate(pageBuffer);
+			  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 			  return;
 		  }
+		  HTMLNode pageNode = null;
 		  try {
 			  Message n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), pn.getName(), message);
-			  String messageTextBuf = HTMLEncoder.encode(message);
-			  int j = messageTextBuf.length();
-			  StringBuffer messageTextBuf2 = new StringBuffer(j);
-			  for (int i = 0; i < j; i++) {
-				  char ch = messageTextBuf.charAt(i);
-				  if(ch == '\n')
-					  messageTextBuf2.append("<br />");
-				  else
-					  messageTextBuf2.append(ch);
-			  }
 			  if(pn == null) {
-				  ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Failed");
-				  
-				  buf.append("<div class=\"infobox infobox-error\">");
-				  buf.append("<div class=\"infobox-header\">");
-				  buf.append("Peer not Found");
-				  buf.append("</div>");
-				  buf.append("<div class=\"infobox-content\">");
-				  buf.append("PeerNode.hashCode '"+request.getParam("hashcode")+"' not found.<br /><br />\n");
-				  buf.append("</div>");
-				  buf.append("</div>");
+				  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message failed");
+				  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not found", "The peer with the hash code \u201c" + request.getParam("hashcode") + "\u201d could not be found."));
 			  } else if(!pn.isConnected()) {
-				  ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Failed");
-				  
-				  buf.append("<div class=\"infobox infobox-error\">");
-				  buf.append("<div class=\"infobox-header\">");
-				  buf.append("Peer not Connected");
-				  buf.append("</div>");
-				  buf.append("<div class=\"infobox-content\">");
-				  buf.append("Peer '"+HTMLEncoder.encode(pn.getName())+"' is not connected.  Not sending N2NTM.<br /><br />\n");
-				  buf.append("</div>");
-				  buf.append("</div>");
+				  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message failed");
+				  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not connected", "The peer \u201c" + pn.getName() + " is not connected."));
 			  } else if(pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				  ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Succeeded");
-				  
-				  buf.append("<div class=\"infobox infobox-warning\">");
-				  buf.append("<div class=\"infobox-header\">");
-				  buf.append("Sent, but Peer is Backed Off");
-				  buf.append("</div>");
-				  buf.append("<div class=\"infobox-content\">");
-				  buf.append("Peer '"+HTMLEncoder.encode(pn.getName())+"' is \"backed off\".  N2NTM receipt may be significantly delayed.<br /><br />\n");
-				  
+				  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message succeeded");
+				  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				  contentNode.addChild(createPeerInfobox("infobox-warning", "Node to Node Text Message sent", "The message was successfully sent to \u201c" + pn.getName() + ",\u201d but the node is backed off, so receipt may be significantly delayed."));
 				  usm.send(pn, n2ntm, null);
 				  Logger.normal(this, "Sent N2NTM to '"+pn.getName()+"': "+message);
-				  
-				  buf.append("Message should be on it's way:<hr /><br /><br />"+messageTextBuf2+"<br /><br />\n");
-				  buf.append("</div>");
-				  buf.append("</div>");
 			  } else {
-				  ctx.getPageMaker().makeHead(buf, "Node To Node Text Message Succeeded");
-				  
-				  buf.append("<div class=\"infobox infobox-success\">");
-				  buf.append("<div class=\"infobox-header\">");
-				  buf.append("Message Sent");
-				  buf.append("</div>");
-				  buf.append("<div class=\"infobox-content\">");
-				  buf.append("Sending N2NTM to peer '"+HTMLEncoder.encode(pn.getName())+"'.<br /><br />\n");  
-				  
+				  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message succeeded");
+				  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				  contentNode.addChild(createPeerInfobox("infobox-success", "Node to Node Text Message sent", "The message was successfully sent to \u201c" + pn.getName() + ".\u201d"));
 				  usm.send(pn, n2ntm, null);
 				  Logger.normal(this, "Sent N2NTM to '"+pn.getName()+"': "+message);
-				  
-				  buf.append("Message should be on it's way:<hr /><br /><br />"+messageTextBuf2+"<br /><br />\n");
-				  buf.append("</div>");
-				  buf.append("</div>");
 			  }
 		  } catch (NotConnectedException e) {
-			  buf.append("Got NotConnectedException sending message to Peer '"+HTMLEncoder.encode(pn.getName())+"'.  Can't send N2NTM.<br /><br />\n");
+			  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message failed");
+			  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not connected", "Could not send the Node to Node Text Message to \u201c" + pn.getName() + ".\u201d"));
 			  Logger.error(this, "Caught NotConnectedException while trying to send n2ntm: "+e);
 		  }
-		  buf.append("<a href=\"/\" title=\"Node Homepage\">Back to Homepage</a>\n");
-		  buf.append("<a href=\"/darknet/\">Back to Darknet page</a>\n");
-		  ctx.getPageMaker().makeTail(buf);
-		  this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		  StringBuffer pageBuffer = new StringBuffer();
+		  pageNode.generate(pageBuffer);
+		  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 		  return;
 	  }
 	  MultiValueTable headers = new MultiValueTable();

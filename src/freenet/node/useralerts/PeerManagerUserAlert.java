@@ -1,6 +1,7 @@
 package freenet.node.useralerts;
 
 import freenet.node.Node;
+import freenet.support.HTMLNode;
 
 public class PeerManagerUserAlert implements UserAlert {
 
@@ -107,6 +108,45 @@ public class PeerManagerUserAlert implements UserAlert {
 			s = "One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are marginally affecting performance.";
 		} else throw new IllegalArgumentException("Not valid");
 		return s;
+	}
+
+	public HTMLNode getHTMLText() {
+		HTMLNode alertNode = new HTMLNode("div");
+
+		if (peers == 0) {
+			alertNode.addChild("#", "This node has no peers to connect to, therefore it will not be able to function normally. Ideally you should connect to peers run by people you know (if you are paranoid, then people you trust; if not, then at least people you have talked to)");
+			if (n.isTestnetEnabled()) {
+				alertNode.addChild("#", ", but since this is a testnet node, we suggest that you log on to irc.freenode.net, channel #freenet-refs and ask around for somebody to connect to.");
+			} else {
+				alertNode.addChild("#", ". You could log on to irc.freenode.net, channel #freenet-refs and ask around for somebody to connect to, but remember that you are vulnerable to those you are directly connected to. (This is especially true in this early alpha of Freenet 0.7\u2026)");
+				alertNode.addChild("br");
+				alertNode.addChild("#", "BE SURE THAT THE OTHER PERSON HAS ADDED YOUR REFERENCE, TOO, AS ONE-WAY CONNECTION WILL NOT WORK!");
+			}
+		} else if (conns == 0) {
+			alertNode.addChild("#", "This node has not been able to connect to any other nodes so far; it will not be able to function normally. Hopefully some of your peers will connect soon; if not, try to get some more peers.");
+		} else if (conns == 1) {
+			alertNode.addChild("#", "This node only has one connection. Performance will be impaired, and you have no anonymity nor even plausible deniability if that one person is malicious. Your node is attached to the network like a \u201cleaf\u201d and does not contribute to the network\u2019s health. Try to get at least 3 connected peers at any given time.");
+		} else if (conns == 2) {
+			alertNode.addChild("#", "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. Your node is embedded like a \u201cchain\u201d in the network and does not contribute to the network\u2019s health. Try to get at least 3 connected peers at any given time.");
+		} else if (neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
+			alertNode.addChild("#", neverConn + " of your node\u2019s peers have never connected even once. You should not add peers unless you know that they have also added ");
+			alertNode.addChild("a", "href", "/darknet/myref.txt", "your reference");
+			alertNode.addChild("#", ".");
+		} else if ((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
+			alertNode.addChild("#", (peers - conns) + " of your node\u2019s peers are disconnected. This will have a slight impact on your performance as disconnected peers also consume a small amount of bandwidth and CPU. Consider \u201ccleaning up\u201d your peer list. Note that ideally you should connect to nodes run by people you know.");
+		} else if (conns > MAX_CONN_ALERT_THRESHOLD) {
+			alertNode.addChild("#", "Your node has too many connections (" + conns + " > " + MAX_CONN_ALERT_THRESHOLD + "). We do not encourage such a behaviour; Ubernodes are hurting the network.");
+		} else if (peers > MAX_PEER_ALERT_THRESHOLD) {
+			alertNode.addChild("#", "Your node has too many peers (" + peers + " > " + MAX_PEER_ALERT_THRESHOLD + "). This will impact your performance as all peers (connected or not) consume bandwidth and CPU. Consider \u201ccleaning up\u201d your peer list.");
+		} else if (n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
+			alertNode.addChild("#", "Your node has to wait too long for available bandwidth (" + bwlimitDelayTime + " > " + Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD + "). Increase your output bandwidth limit and/or remove some peers to improve the situation.");
+		} else if (n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
+			alertNode.addChild("#", "Your node is having trouble talking with its peers quickly enough (" + nodeAveragePingTime + " > " + Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD + "). Decrease your output bandwidth limit and/or remove some peers to improve the situation.");
+		} else if (oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
+			alertNode.addChild("#", "One or more of your node\u2019s peers have never connected in the two weeks since they were added. Consider removing them since they are marginally affecting performance.");
+		} else throw new IllegalArgumentException("not valid");
+
+		return alertNode;
 	}
 
 	public short getPriorityClass() {

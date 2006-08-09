@@ -13,7 +13,7 @@ import freenet.node.Node;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginInfoWrapper;
 import freenet.pluginmanager.PluginManager;
-import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
@@ -52,7 +52,6 @@ public class PproxyToadlet extends Toadlet {
 			return;
 		}
 		
-		StringBuffer buf = new StringBuffer();
 		MultiValueTable headers = new MultiValueTable();
 		
 		String pass = request.getParam("formPassword");
@@ -76,37 +75,29 @@ public class PproxyToadlet extends Toadlet {
 			return;
 		}if (request.getParam("unloadconfirm").length() > 0) {
 			pm.killPlugin(request.getParam("unloadconfirm"));
-			ctx.getPageMaker().makeHead(buf, "Plugins");
-			buf.append("<div class=\"infobox infobox-success\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Plugin Unloaded\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("The plugin " + HTMLEncoder.encode(request.getParam("remove")) + " has been unloaded.<br /><a href=\"/plugins/\">Return to Plugins Page</a>\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-				
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-success");
+			infobox.addChild("div", "class", "infobox-header", "Plugin unloaded");
+			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+			infoboxContent.addChild("#", "The plugin " + request.getParam("remove") + " has been unloaded.");
+			infoboxContent.addChild("br");
+			infoboxContent.addChild("a", "href", "/plugins/", "Return to Plugin page.");
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}if (request.getParam("unload").length() > 0) {
-			ctx.getPageMaker().makeHead(buf, "Plugins");
-			buf.append("<div class=\"infobox infobox-query\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Unload Plugin?\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("Are you sure you wish to unload " + HTMLEncoder.encode(request.getParam("unload")) + "?\n");
-			buf.append("<form action=\"/plugins/\" method=\"post\">\n");
-			buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
-			buf.append("<input type=\"submit\" name=\"cancel\" value=\"Cancel\" />\n");
-			buf.append("<input type=\"hidden\" name=\"unloadconfirm\" value=\"" + HTMLEncoder.encode(request.getParam("unload")) + "\">\n");
-			buf.append("<input type=\"submit\" name=\"confirm\" value=\"Unload\" />\n");
-			buf.append("</form>\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			ctx.getPageMaker().makeTail(buf);
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
+			infobox.addChild("div", "class", "infobox-header", "Unload plugin?");
+			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+			infoboxContent.addChild("#", "Are you sure you wish to unload " + request.getParam("unload") + "?");
+			HTMLNode unloadForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
+			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unloadconfirm", request.getParam("unload") });
+			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", "Unload" });
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if (request.getParam("reload").length() > 0) {
 			String fn = null;
@@ -194,64 +185,54 @@ public class PproxyToadlet extends Toadlet {
 
 	private void showPluginList(ToadletContext ctx, HTTPRequest request) throws ToadletContextClosedException, IOException {
 		if (!request.hasParameters()) {
-			StringBuffer out = new StringBuffer();
-			ctx.getPageMaker().makeHead(out, "Plugins of "+node.getMyName());
-			//
-			out.append("<div class=\"infobox infobox-normal\">\n");
-			out.append("<div class=\"infobox-header\">\n");
-			out.append("Plugin List\n");
-			out.append("</div>\n");
-			out.append("<div class=\"infobox-content\">\n");
-			//
-			out.append("<table class=\"plugins\">");
-			out.append("<tr><th>Classname</th><th>Internal ID</th><th>Started at</th><th></th></tr>\n");
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins of " + node.getMyName());
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			infobox.addChild("div", "class", "infobox-header", "Plugin list");
+			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+			HTMLNode pluginTable = infoboxContent.addChild("table", "class", "plugins");
+			HTMLNode headerRow = pluginTable.addChild("tr");
+			headerRow.addChild("th", "Classname");
+			headerRow.addChild("th", "Internal ID");
+			headerRow.addChild("th", "Started at");
+			headerRow.addChild("th");
+			
 			if (pm.getPlugins().isEmpty()) {
-				out.append("<tr><td colspan=\"4\">No plugins loaded</td></tr>\n");
+				pluginTable.addChild("tr").addChild("td", "colspan", "4", "No plugins loaded");
 			}
 			else {
 				Iterator it = pm.getPlugins().iterator();
 				while (it.hasNext()) {
 					PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
-					out.append("<tr>");
-					out.append("<td>" + pi.getPluginClassName() + "</td>");
-					out.append("<td>" + pi.getThreadName() + "</td>");
-					out.append("<td>" + (new Date(pi.getStarted())) + "</td>");
-					out.append("<td>");
+					HTMLNode pluginRow = pluginTable.addChild("tr");
+					pluginRow.addChild("td", pi.getPluginClassName());
+					pluginRow.addChild("td", pi.getThreadName());
+					pluginRow.addChild("td", new Date(pi.getStarted()).toString());
+					HTMLNode actionCell = pluginRow.addChild("td");
 					if (pi.isPproxyPlugin()) {
-						out.append("<form method=\"get\" action=\"" + pi.getPluginClassName() + "\">" +
-								"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
-								"<input type=\"submit\" value=\"Visit\"></form>");
+						HTMLNode visitForm = actionCell.addChild("form", new String[] { "method", "action" }, new String[] { "get", pi.getPluginClassName() });
+						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Visit" });
 					}
-					out.append("<form method=\"post\" action=\".\">" +
-							"<input type=\"hidden\" name=\"unload\" value=\"" + pi.getThreadName() + "\" />"+
-							"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
-							"<input type=\"submit\" value=\"Unload\"></form>");
-					out.append("<form method=\"post\" action=\".\">" +
-							"<input type=\"hidden\" name=\"reload\" value=\"" + pi.getThreadName() + "\" />"+
-							"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
-							"<input type=\"submit\" value=\"Reload\"></form>");
-					out.append("</td></tr>\n");
+					HTMLNode unloadForm = actionCell.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+					unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+					unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unload", pi.getThreadName() });
+					unloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Unload" });
+					HTMLNode reloadForm = actionCell.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+					reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "reload", pi.getThreadName() });
+					reloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Reload" });
 				}
 			}
-			out.append("</table>");
-			//String ret = "<hr/>" + out.toString();
-			//ret = pm.dumpPlugins().replaceAll(",", "\n&nbsp; &nbsp; ").replaceAll("\"", " \" ");
-			/*if (ret.length() < 6)
-				ret += "<i>No plugins loaded</i>\n";
-			ret += "<hr/>";*/
 			
-			
-			// Obsolete
-			//out.append("<form method=\"get\"><div>Remove plugin: (enter ID) <input type=\"text\" name=\"remove\" size=40/><input type=\"submit\" value=\"Remove\"/></div></form>\n");
-			out.append("<form method=\"post\" action=\".\">" +
-					"<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">"+
-					"<div>Load plugin: <input type=\"text\" name=\"load\" size=\"40\"/><input type=\"submit\" value=\"Load\" /></div></form>\n");
-			//
-			out.append("</div>\n");
-			out.append("</div>\n");
-			//
-			ctx.getPageMaker().makeTail(out);
-			writeReply(ctx, 200, "text/html", "OK", out.toString());
+			HTMLNode addForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+			HTMLNode loadDiv = addForm.addChild("div");
+			loadDiv.addChild("#", "Load plugin: ");
+			loadDiv.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "load", "40" });
+			loadDiv.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Load" });
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 		} 
 	}
 }

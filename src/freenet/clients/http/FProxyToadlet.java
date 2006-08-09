@@ -25,7 +25,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
-import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -123,28 +123,26 @@ public class FProxyToadlet extends Toadlet {
 		
 		long maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
 		
-		StringBuffer buf = new StringBuffer();
 		FreenetURI key;
 		try {
 			key = new FreenetURI(ks);
 		} catch (MalformedURLException e) {
-			ctx.getPageMaker().makeHead(buf, "Invalid key");
-			
-			buf.append("<div class=\"infobox infobox-error\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Invalid key\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			
-			buf.append("Expected a freenet key, but got "+HTMLEncoder.encode(ks)+"\n");		
-			ctx.getPageMaker().makeBackLink(buf,ctx);
-			buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			
-			ctx.getPageMaker().makeTail(buf);
-			
-			this.writeReply(ctx, 400, "text/html", "Invalid key", buf.toString());
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Invalid key");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+
+			HTMLNode errorInfobox = contentNode.addChild("div", "class", "infobox infobox-error");
+			errorInfobox.addChild("div", "class", "infobox-header", "Invalid key");
+			HTMLNode errorContent = errorInfobox.addChild("div", "class", "infobox-content");
+			errorContent.addChild("#", "Expected a freenet key, but got ");
+			errorContent.addChild("code", ks);
+			errorContent.addChild("br");
+			errorContent.addChild(ctx.getPageMaker().createBackLink(ctx));
+			errorContent.addChild("br");
+			errorContent.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node homepage" }, "Homepage");
+
+			StringBuffer pageBuffer = new StringBuffer();
+			pageNode.generate(pageBuffer);
+			this.writeReply(ctx, 400, "text/html", "Invalid key", pageBuffer.toString());
 			return;
 		}
 		try {
@@ -199,21 +197,32 @@ public class FProxyToadlet extends Toadlet {
 					writeReply(ctx, 200, typeName, "OK", data);
 				}
 			} catch (UnsafeContentTypeException e) {
-				ctx.getPageMaker().makeHead(buf, "Potentially Dangerous Content");
-				buf.append("<div class=\"infobox infobox-alert\">");
-				buf.append("<div class=\"infobox-header\">").append(e.getHTMLEncodedTitle()).append("</div>");
-				buf.append("<div class=\"infobox-content\">");
-				buf.append(e.getExplanation());
-				buf.append("<p>Your options are:</p><ul>\n");
-				buf.append("<li><a href=\"/"+key.toString(false)+"?type=text/plain\">Click here</a> to open the file as plain text (this should not be dangerous, but it may be garbled).</li>\n");
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Potentially dangerous content");
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				
+				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
+				infobox.addChild("div", "class", "infobox-header", e.getRawTitle());
+				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				infoboxContent.addChild(e.getHTMLExplanation());
+				infoboxContent.addChild("p", "Your options are:");
+				HTMLNode optionList = infoboxContent.addChild("ul");
+				HTMLNode option = optionList.addChild("li");
+				option.addChild("a", "href", "/" + key.toString(false) + "?type=text/plain", "Click here");
+				option.addChild("#", " to open the file as plain text (this should not be dangerous but it may be garbled).");
 				// FIXME: is this safe? See bug #131
-				buf.append("<li><a href=\"/"+key.toString(false)+"?forcedownload\">Click here</a> to force your browser to download the file to disk.</li>\n");
-				buf.append("<li><a href=\"/"+key.toString(false)+"?force="+getForceValue(key, now)+"\">Click here</a> to open the file as "+HTMLEncoder.encode(typeName)+".</li>\n");
-				buf.append("<li><a href=\"/\">Click here</a> to go to the FProxy home page.</li>\n");
-				buf.append("</ul></div>");
-				buf.append("</div>\n");
-				ctx.getPageMaker().makeTail(buf);
-				writeReply(ctx, 200, "text/html", "OK", buf.toString());
+				option = optionList.addChild("li");
+				option.addChild("a", "href", "/" + key.toString(false) + "?forcedownload", "Click here");
+				option.addChild("#", " to force your browser to download the file to disk.");
+				option = optionList.addChild("li");
+				option.addChild("a", "href", "/" + key.toString(false) + "?force=" + getForceValue(key, now), "Click here");
+				option.addChild("#", " to open the file as " + typeName + ".");
+				option = optionList.addChild("li");
+				option.addChild("a", "href", "/", "Click here");
+				option.addChild("#", " to go to the FProxy home page.");
+
+				StringBuffer pageBuffer = new StringBuffer();
+				pageNode.generate(pageBuffer);
+				writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 			}
 		} catch (FetchException e) {
 			String msg = e.getMessage();
@@ -223,82 +232,81 @@ public class FProxyToadlet extends Toadlet {
 			} else if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, "/"+e.newURI.toString());
 			} else if(e.mode == FetchException.TOO_BIG) {
-				ctx.getPageMaker().makeHead(buf, "Large File");
-				buf.append("<table style=\"border: none; \">\n");
-				String fnam = getFilename(e, key, e.getExpectedMimeType());
-				buf.append("<tr><td><b>Filename</b></td><td>");
-				buf.append("<a href=\"/"+URLEncoder.encode(key.toString(false))+"\">");
-				buf.append(fnam);
-				buf.append("</a>");
-				buf.append("</td></tr>\n");
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("File information");
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				
+				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-information");
+				infobox.addChild("div", "class", "infobox-header", "Large file");
+				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				HTMLNode fileInformationList = infoboxContent.addChild("ul");
+				HTMLNode option = fileInformationList.addChild("li");
+				option.addChild("#", "Filename: ");
+				option.addChild("a", "href", "/" + key.toString(false), getFilename(e, key, e.getExpectedMimeType()));
+
 				boolean finalized = e.finalizedSize();
 				if(e.expectedSize > 0) {
-					buf.append("<tr><td><b>");
-					if(!finalized)
-						buf.append("Expected size (may change)");
-					else
-						buf.append("Size");
-					buf.append("</b></td><td>");
-					buf.append(SizeUtil.formatSize(e.expectedSize));
-					buf.append("</td></tr>\n");
+					if (finalized) {
+						fileInformationList.addChild("li", "Size: " + SizeUtil.formatSize(e.expectedSize));
+					} else {
+						fileInformationList.addChild("li", "Size: " + SizeUtil.formatSize(e.expectedSize) + " (may change)");
+					}
+				} else {
+					fileInformationList.addChild("li", "Size: unknown");
 				}
 				String mime = e.getExpectedMimeType();
 				if(mime != null) {
-					buf.append("<tr><td><b>");
-					if(!finalized)
-						buf.append("Expected MIME type");
-					else
-						buf.append("MIME type");
-					buf.append("</b></td><td>");
-					buf.append(mime);
-					buf.append(" bytes </td></tr>\n");
+					if (finalized) {
+						fileInformationList.addChild("li", "MIME type: " + mime);
+					} else {
+						fileInformationList.addChild("li", "Expected MIME type: " + mime);
+					}
+				} else {
+					fileInformationList.addChild("li", "MIME type: unknown");
 				}
-				// FIXME filename
-				buf.append("</table>\n");
-				buf.append("<br />The Freenet key you requested refers to a large file. Files of this size cannot generally be sent directly to your browser since they take too long for your Freenet node to retrieve. The following options are available: ");
-				buf.append("<ul>");
-				buf.append("<li><form method=\"get\" action=\"/"+key.toString(false)+"\">");
-				buf.append("<input type=\"hidden\" name=\"max-size\" value=\""+e.expectedSize+"\">");
-				buf.append("<input type=\"submit\" name=\"fetch\" value=\"Fetch anyway and display file in browser\">");
-				buf.append("</form></li>\n");
-				buf.append("<li><form method=\"post\" action=\"/queue/\">");
-				buf.append("<input type=\"hidden\" name=\"key\" value=\""+key.toString(false)+"\">");
-				buf.append("<input type=\"hidden\" name=\"return-type\" value=\"disk\">");
-				buf.append("<input type=\"hidden\" name=\"persistence\" value=\"forever\">");
-				buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
-				if(mime != null)
-					buf.append("<input type=\"hidden\" name=\"type\" value=\""+URLEncoder.encode(mime)+"\">");
-				buf.append("<input type=\"submit\" name=\"download\" value=\"Download in background and store in downloads directory\">");
-				buf.append("</form></li>\n");
-//				buf.append("<li>Save it to disk at </li>");
-				// FIXME add return-to-referring-page
-				//buf.append("<li>Return to the referring page: ");
-				buf.append("<li><a href=\"/\" title=\"FProxy Home Page\" >Abort and return to the FProxy home page</a></li>");
-				buf.append("</ul>");
-				ctx.getPageMaker().makeTail(buf);
-				writeReply(ctx, 200, "text/html", "OK", buf.toString());
-				// FIXME provide option to queue write to disk.
+				
+				infobox = contentNode.addChild("div", "class", "infobox infobox-information");
+				infobox.addChild("div", "class", "infobox-header", "Explanation");
+				infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				infoboxContent.addChild("#", "The Freenet key you requested refers to a large file. Files of this size cannot generally be sent directly to your browser since they take too long for your Freenet node to retrieve. The following options are available:");
+				HTMLNode optionList = infoboxContent.addChild("ul");
+				option = optionList.addChild("li");
+				HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] { "/" + key.toString(false), "get" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize) });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", "Fetch anyway and display file in browser" });
+				option = optionList.addChild("li");
+				optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString(false) });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+				if (mime != null) {
+					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
+				}
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", "Download in background and store in downloads directory" });
+				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, "Abort and return to the FProxy home page");
+
+				StringBuffer pageBuffer = new StringBuffer();
+				pageNode.generate(pageBuffer);
+				writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 			} else {
 				if(e.errorCodes != null)
 					extra = "<pre>"+e.errorCodes.toVerboseString()+"</pre>";
-				ctx.getPageMaker().makeHead(buf,FetchException.getShortMessage(e.mode));
-				
-				buf.append("<div class=\"infobox infobox-error\">\n");
-				buf.append("<div class=\"infobox-header\">\n");
-				buf.append(FetchException.getShortMessage(e.mode)+"\n");
-				buf.append("</div>\n");
-				buf.append("<div class=\"infobox-content\">\n");
-				
-				buf.append("Error: "+HTMLEncoder.encode(msg)+extra+"\n");		
-				ctx.getPageMaker().makeBackLink(buf,ctx);
-				buf.append("<br><a href=\"/\" title=\"Node Homepage\">Homepage</a>\n");
-				buf.append("</div>\n");
-				buf.append("</div>\n");
-				
-				ctx.getPageMaker().makeTail(buf);
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode));
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
+				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
+				infobox.addChild("div", "class", "infobox-header", FetchException.getShortMessage(e.mode));
+				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+				infoboxContent.addChild("#", "Error: " + msg + extra);
+				infoboxContent.addChild("br");
+				infoboxContent.addChild(ctx.getPageMaker().createBackLink(ctx));
+				infoboxContent.addChild("br");
+				infoboxContent.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node homepage" }, "Homepage");
+				
+				StringBuffer pageBuffer = new StringBuffer();
+				pageNode.generate(pageBuffer);
 				this.writeReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
-						"text/html", FetchException.getShortMessage(e.mode), buf.toString());
+						"text/html", FetchException.getShortMessage(e.mode), pageBuffer.toString());
 			}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
@@ -336,10 +344,10 @@ public class FProxyToadlet extends Toadlet {
 			node.random.nextBytes(random);
 			FProxyToadlet fproxy = new FProxyToadlet(client, random, node);
 			node.setFProxy(fproxy);
-			server.register(fproxy, "/", false);
+			server.register(fproxy, "/", false, "Home", "homepage");
 			
 			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, node);
-			server.register(pproxy, "/plugins/", true);
+			server.register(pproxy, "/plugins/", true, "Plugins", "configure and manage plugins");
 			
 			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node, fproxyConfig);
 			server.register(welcometoadlet, "/welcome/", true);
@@ -348,7 +356,7 @@ public class FProxyToadlet extends Toadlet {
 			server.register(pluginToadlet, "/plugin/", true);
 			
 			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node);
-			server.register(configtoadlet, "/config/", true);
+			server.register(configtoadlet, "/config/", true, "Configuration", "configure your node");
 			
 			StaticToadlet statictoadlet = new StaticToadlet(client);
 			server.register(statictoadlet, "/static/", true);
@@ -357,16 +365,16 @@ public class FProxyToadlet extends Toadlet {
 			server.register(symlinkToadlet, "/sl/", true);
 			
 			DarknetConnectionsToadlet darknetToadlet = new DarknetConnectionsToadlet(node, client);
-			server.register(darknetToadlet, "/darknet/", true);
+			server.register(darknetToadlet, "/darknet/", true, "Darknet", "manage darknet connections");
 			
 			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, client);
 			server.register(n2ntmToadlet, "/send_n2ntm/", true);
 			
 			QueueToadlet queueToadlet = new QueueToadlet(node, node.getFCPServer(), client);
-			server.register(queueToadlet, "/queue/", true);
+			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests");
 			
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(node, client);
-			server.register(localFileInsertToadlet, "/files/", true);
+			server.register(localFileInsertToadlet, "/files/", true, "Insert Files", "insert files from the local disk");
 
 			// Now start the server.
 			server.start();

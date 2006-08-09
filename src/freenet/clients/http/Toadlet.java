@@ -11,10 +11,9 @@ import freenet.client.InsertBlock;
 import freenet.client.InserterException;
 import freenet.keys.FreenetURI;
 import freenet.support.HTMLEncoder;
-import freenet.support.Logger;
+import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
-import freenet.support.io.BucketTools;
 
 /**
  * Replacement for servlets. Just an easy to use HTTP interface, which is
@@ -50,50 +49,35 @@ public abstract class Toadlet {
 	 * @throws ToadletContextClosedException 
 	 */
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		StringBuffer buf = new StringBuffer();
-		
-		ctx.getPageMaker().makeHead(buf, "Not supported");
-		
-		buf.append("Operation not supported");
-		ctx.getPageMaker().makeTail(buf);
-		
-		MultiValueTable hdrtbl = new MultiValueTable();
-		hdrtbl.put("Allow", this.supportedMethods());
-		ctx.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html", buf.length());
-		ctx.writeData(buf.toString().getBytes(), 0, buf.length());
+		handleUnhandledRequest(uri, null, ctx);
 	}
 	
-
 	/**
 	 * Likewise for a PUT request.
 	 */
 	public void handlePut(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		StringBuffer buf = new StringBuffer();
-		
-		ctx.getPageMaker().makeHead(buf, "Not supported");
-		
-		buf.append("Operation not supported");
-		ctx.getPageMaker().makeTail(buf);
-		
-		MultiValueTable hdrtbl = new MultiValueTable();
-		hdrtbl.put("Allow", this.supportedMethods());
-		ctx.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html", buf.length());
-		ctx.writeData(buf.toString().getBytes(), 0, buf.length());
+		handleUnhandledRequest(uri, null, ctx);
 	}
 	
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		StringBuffer buf = new StringBuffer();
-		
-		ctx.getPageMaker().makeHead(buf, "Not supported");
-		
-		buf.append("Operation not supported");
-		ctx.getPageMaker().makeTail(buf);
-		
+		handleUnhandledRequest(uri, null, ctx);
+	}
+	
+	private void handleUnhandledRequest(URI uri, Bucket data, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
+		HTMLNode pageNode = toadletContext.getPageMaker().getPageNode("Not supported");
+		HTMLNode contentNode = toadletContext.getPageMaker().getContentNode(pageNode);
+
+		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-error");
+		infobox.addChild("div", "class", "infobox-header", "Not supported");
+		infobox.addChild("div", "class", "infobox-content", "Your browser sent a request that Freenet could not understand.");
+
 		MultiValueTable hdrtbl = new MultiValueTable();
 		hdrtbl.put("Allow", this.supportedMethods());
-		ctx.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html", buf.length());
-		ctx.writeData(buf.toString().getBytes(), 0, buf.length());
-		Logger.minor(this, "POSTed data to "+uri+":\n"+BucketTools.toByteArray(data));
+
+		StringBuffer pageBuffer = new StringBuffer();
+		pageNode.generate(pageBuffer);
+		toadletContext.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html; charset=utf-8", pageBuffer.length());
+		toadletContext.writeData(pageBuffer.toString().getBytes());
 	}
 	
 	/**
@@ -176,21 +160,16 @@ public abstract class Toadlet {
 	 * Send a simple error page.
 	 */
 	protected void sendErrorPage(ToadletContext ctx, int code, String desc, String message) throws ToadletContextClosedException, IOException {
-		StringBuffer buf = new StringBuffer();
-			
-		ctx.getPageMaker().makeHead(buf, desc);
-		//
-		buf.append("<div class=\"infobox infobox-error\">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append(desc);
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-		buf.append(message);
-		//
-		buf.append("</div>\n");
-		buf.append("</div>\n");
-		ctx.getPageMaker().makeTail(buf);
-		writeReply(ctx, code, "text/html; charset=UTF-8", desc, buf.toString());
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(desc);
+		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		
+		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
+		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+		infoboxContent.addChild("#", message);
+		infoboxContent.addChild("br");
+		infoboxContent.addChild("a", "href", ".", "Return to Peers page.");
+		
+		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
 	
 	/**

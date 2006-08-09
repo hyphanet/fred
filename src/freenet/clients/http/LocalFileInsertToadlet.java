@@ -51,11 +51,11 @@ public class LocalFileInsertToadlet extends Toadlet {
 		StringBuffer pageBuffer = new StringBuffer(16384);
 		PageMaker pageMaker = toadletContext.getPageMaker();
 
-		pageMaker.makeHead(pageBuffer, "Listing of " + HTMLEncoder.encode(currentPath.getAbsolutePath()));
-		node.alerts.toSummaryHtml(pageBuffer);
-
-		HTMLNode pageDiv = new HTMLNode("div", "class", "page");
-		HTMLNode infoboxDiv = pageDiv.addChild("div", "class", "infobox");
+		HTMLNode pageNode = pageMaker.getPageNode("Listing of " + currentPath.getAbsolutePath());
+		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+		contentNode.addChild(node.alerts.createSummary());
+		
+		HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
 		infoboxDiv.addChild("div", "class", "infobox-header", "Directory Listing: " + currentPath.getAbsolutePath());
 		HTMLNode listingDiv = infoboxDiv.addChild("div", "class", "infobox-content");
 
@@ -134,9 +134,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			ulNode.addChild("li", "Check that the specified path is readable by the user running the node.");
 		}
 
-		pageDiv.generate(pageBuffer);
-		pageMaker.makeTail(pageBuffer);
-
+		pageNode.generate(pageBuffer);
 		writeReply(toadletContext, 200, "text/html; charset=utf-8", "OK", pageBuffer.toString());
 	}
 

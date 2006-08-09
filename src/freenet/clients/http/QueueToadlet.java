@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
@@ -25,6 +26,7 @@ import freenet.node.fcp.IdentifierCollisionException;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.support.HTMLDecoder;
 import freenet.support.HTMLEncoder;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
@@ -37,6 +39,19 @@ public class QueueToadlet extends Toadlet {
 
 	private static final String[] priorityClasses = new String[] { "emergency", "very high", "high", "medium", "low", "very low", "will never finish" };
 
+	private static final int LIST_IDENTIFIER = 1;
+	private static final int LIST_SIZE = 2;
+	private static final int LIST_MIME_TYPE = 3;
+	private static final int LIST_DOWNLOAD = 4;
+	private static final int LIST_PERSISTENCE = 5;
+	private static final int LIST_KEY = 6;
+	private static final int LIST_FILENAME = 7;
+	private static final int LIST_PRIORITY = 8;
+	private static final int LIST_FILES = 9;
+	private static final int LIST_TOTAL_SIZE = 10;
+	private static final int LIST_PROGRESS = 11;
+	private static final int LIST_REASON = 12;
+	
 	private Node node;
 	final FCPServer fcp;
 	
@@ -186,14 +201,15 @@ public class QueueToadlet extends Toadlet {
 		this.handleGet(uri, ctx);
 	}
 	
-	private void writeError(String string, String string2, ToadletContext context) throws ToadletContextClosedException, IOException {
-		StringBuffer buffer = new StringBuffer();
-		context.getPageMaker().makeHead(buffer, "Error processing request");
-		writeBigHeading(string, buffer, null);
-		buffer.append(string2);
-		writeBigEnding(buffer);
-		context.getPageMaker().makeTail(buffer);
-		writeReply(context, 400, "text/html; charset=utf-8", "Error", buffer.toString());
+	private void writeError(String header, String message, ToadletContext context) throws ToadletContextClosedException, IOException {
+		PageMaker pageMaker = context.getPageMaker();
+		HTMLNode pageNode = pageMaker.getPageNode("Error process request");
+		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+		contentNode.addChild(node.alerts.createSummary());
+		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", "Error process request"));
+		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
+		infoboxContent.addChild("#", message);
+		writeReply(context, 400, "text/html; charset=utf-8", "Error", pageNode.generate());
 	}
 
 	public void handleGet(URI uri, ToadletContext ctx) 
@@ -205,8 +221,7 @@ public class QueueToadlet extends Toadlet {
 			return;
 		}
 		
-		StringBuffer buf = new StringBuffer(2048);
-		
+		PageMaker pageMaker = ctx.getPageMaker();
 		// First, get the queued requests, and separate them into different types.
 		
 		LinkedList completedDownloadToDisk = new LinkedList();
@@ -226,19 +241,13 @@ public class QueueToadlet extends Toadlet {
 		Logger.minor(this, "Request count: "+reqs.length);
 		
 		if(reqs.length < 1){
-			ctx.getPageMaker().makeHead(buf, "Global Queue of "+node.getMyName());
-			buf.append("<div class=\"infobox infobox-information\">\n");
-			buf.append("<div class=\"infobox-header\">\n");
-			buf.append("Global queue is empty!\n");
-			buf.append("</div>\n");
-			buf.append("<div class=\"infobox-content\">\n");
-			buf.append("There is no task queued on the global queue at the moment.\n");
-			buf.append("</form>\n");
-			buf.append("</div>\n");
-			buf.append("</div>\n");
-			writeInsertBox(buf);
-			ctx.getPageMaker().makeTail(buf);
-			writeReply(ctx, 200, "text/html", "OK", buf.toString());
+			HTMLNode pageNode = pageMaker.getPageNode("Global queue of " + node.getMyName());
+			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", "Global queue is empty"));
+			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
+			infoboxContent.addChild("#", "There is no task queued on the global queue at the moment.");
+			contentNode.addChild(createInsertBox(pageMaker));
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}
 
@@ -299,549 +308,402 @@ public class QueueToadlet extends Toadlet {
 		Collections.sort(uncompletedUpload, identifierComparator);
 		Collections.sort(uncompletedDirUpload, identifierComparator);
 		
-		ctx.getPageMaker().makeHead(buf, "("+(uncompletedDirUpload.size()+uncompletedDownload.size()+uncompletedUpload.size())+
-				"/"+(failedDirUpload.size()+failedDownload.size()+failedUpload.size())+
-				"/"+(completedDirUpload.size()+completedDownloadToDisk.size()+completedDownloadToTemp.size()+completedUpload.size())+
-				") Queued Requests");
+		HTMLNode pageNode = pageMaker.getPageNode("(" + (uncompletedDirUpload.size() + uncompletedDownload.size()
+				+ uncompletedUpload.size()) + "/" + (failedDirUpload.size() + failedDownload.size() + failedUpload.size()) + "/"
+				+ (completedDirUpload.size() + completedDownloadToDisk.size() + completedDownloadToTemp.size()
+				+ completedUpload.size()) + ") Queued Requests of " + node.getMyName());
+		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+
+		/* add alert summary box */
+		contentNode.addChild(node.alerts.createSummary());
+		/* add file insert box */
+		contentNode.addChild(createInsertBox(pageMaker));
 		
-		node.alerts.toSummaryHtml(buf);
-		
-		writeInsertBox(buf);
-		
-		writeBigHeading("Legend", buf, "legend");
-		buf.append("<table class=\"queue\">\n");
-		buf.append("<tr>");
+		HTMLNode legendBox = contentNode.addChild(pageMaker.getInfobox("legend", "Legend"));
+		HTMLNode legendContent = pageMaker.getContentNode(legendBox);
+		HTMLNode legendTable = legendContent.addChild("table", "class", "queue");
+		HTMLNode legendRow = legendTable.addChild("tr");
 		for(int i=0; i<7; i++){
-			buf.append("<td class=\"priority"+i+"\">priority "+i+"</td>");
+			legendRow.addChild("td", "class", "priority" + i, "Priority " + i);
 		}
-		buf.append("</tr>\n");
-		writeTableEnd(buf);
-		if(reqs.length > 1)
-			writeDeleteAll(buf);
-		writeBigEnding(buf);
-		
-		if(!(completedDownloadToTemp.isEmpty() && completedDownloadToDisk.isEmpty() &&
-				completedUpload.isEmpty() && completedDirUpload.isEmpty())) {
-			writeBigHeading("Completed requests (" + (completedDownloadToTemp.size() + completedDownloadToDisk.size() + completedUpload.size() + completedDirUpload.size()) + ")", buf, "completed_requests");
-			
-			if(!completedDownloadToTemp.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Completed downloads to temporary space", new String[] { "", "Identifier", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf );
-				else
-					writeTableHead("Completed downloads to temporary space", new String[] { "", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf );
-				for(Iterator i = completedDownloadToTemp.iterator();i.hasNext();) {
-					ClientGet p = (ClientGet) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getURI(), buf);
-					writeSizeCell(p.getDataSize(), buf);
-					writeTypeCell(p.getMIMEType(), buf);
-					writeDownloadCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
-			}
-			
-			if(!completedDownloadToDisk.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Completed downloads to disk", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf);
-				else
-					writeTableHead("Completed downloads to disk", new String[] { "", "Filename", "Size", "MIME-Type", "Download", "Persistence", "Key" }, buf);
-				for(Iterator i=completedDownloadToDisk.iterator();i.hasNext();) {
-					ClientGet p = (ClientGet) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getURI(), buf);
-					writeFilenameCell(p.getDestFilename(), buf);
-					writeSizeCell(p.getDataSize(), buf);
-					writeTypeCell(p.getMIMEType(), buf);
-					writeDownloadCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
-			}
 
-			if(!completedUpload.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Completed uploads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Persistence", "Key" }, buf);
-				else
-					writeTableHead("Completed uploads", new String[] { "", "Filename", "Size", "MIME-Type", "Persistence", "Key" }, buf);
-				for(Iterator i=completedUpload.iterator();i.hasNext();) {
-					ClientPut p = (ClientPut) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getFinalURI(), buf);
-					if(p.isDirect())
-						writeDirectCell(buf);
-					else
-						writeFilenameCell(p.getOrigFilename(), buf);
-					writeSizeCell(p.getDataSize(), buf);
-					writeTypeCell(p.getMIMEType(), buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getFinalURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
+		if (reqs.length > 1) {
+			contentNode.addChild(createPanicBox(pageMaker));
+		}
+
+		boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
+		
+		if (!completedDownloadToTemp.isEmpty()) {
+			HTMLNode completedDownloadsTempInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Downloads to temporary directory (" + completedDownloadToTemp.size() + ")"));
+			HTMLNode completedDownloadsToTempContent = pageMaker.getContentNode(completedDownloadsTempInfobox);
+			if (advancedEnabled) {
+				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, completedDownloadToTemp, new int[] { LIST_IDENTIFIER, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }));
+			} else {
+				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, completedDownloadToTemp, new int[] { LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }));
 			}
-			
-			if(!completedDirUpload.isEmpty()) {
-				// FIXME include filename??
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Completed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Persistence", "Key" }, buf);
-				else
-					writeTableHead("Completed directory uploads", new String[] { "", "Files", "Total Size", "Persistence", "Key" }, buf);
-				for(Iterator i=completedDirUpload.iterator();i.hasNext();) {
-					ClientPutDir p = (ClientPutDir) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getFinalURI(), buf);
-					writeNumberCell(p.getNumberOfFiles(), buf);
-					writeSizeCell(p.getTotalDataSize(), buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getFinalURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
-			}
-			writeBigEnding(buf);
 		}
 		
-		if(!(failedDownload.isEmpty() && failedUpload.isEmpty() && failedDirUpload.isEmpty())) {
-			writeBigHeading("Failed requests (" + (failedDownload.size() + failedUpload.size() + failedDirUpload.size()) + ")", buf, "failed_requests");
-			if(!failedDownload.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Failed downloads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
-				else
-					writeTableHead("Failed downloads", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
-				for(Iterator i=failedDownload.iterator();i.hasNext();) {
-					ClientGet p = (ClientGet) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getURI(), buf);
-					if(p.isDirect())
-						writeDirectCell(buf);
-					else
-						writeFilenameCell(p.getDestFilename(), buf);
-					writeSizeCell(p.getDataSize(), buf);
-					writeTypeCell(p.getMIMEType(), buf);
-					writeProgressFractionCell(p, buf);
-					writeFailureReasonCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
+		if (!completedDownloadToDisk.isEmpty()) {
+			HTMLNode completedToDiskInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Downloads to download directory (" + completedDownloadToDisk.size() + ")"));
+			HTMLNode completedToDiskInfoboxContent = pageMaker.getContentNode(completedToDiskInfobox);
+			if (advancedEnabled) {
+				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, completedDownloadToDisk, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }));
+			} else {
+				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, completedDownloadToDisk, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }));
 			}
-			
-			if(!failedUpload.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Failed uploads", new String[] { "", "Identifier", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
-				else
-					writeTableHead("Failed uploads", new String[] { "", "Filename", "Size", "MIME-Type", "Progress", "Reason", "Persistence", "Key" }, buf);
-				for(Iterator i=failedUpload.iterator();i.hasNext();) {
-					ClientPut p = (ClientPut) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getFinalURI(), buf);
-					if(p.isDirect())
-						writeDirectCell(buf);
-					else
-						writeFilenameCell(p.getOrigFilename(), buf);
-					writeSizeCell(p.getDataSize(), buf);
-					writeTypeCell(p.getMIMEType(), buf);
-					writeProgressFractionCell(p, buf);
-					writeFailureReasonCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getFinalURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
+		}
+
+		if (!completedUpload.isEmpty()) {
+			HTMLNode completedUploadInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Uploads (" + completedUpload.size() + ")"));
+			HTMLNode completedUploadInfoboxContent = pageMaker.getContentNode(completedUploadInfobox);
+			if (advancedEnabled) {
+				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, completedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }));
+			} else  {
+				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, completedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }));
 			}
-			
-			if(!failedDirUpload.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Failed directory uploads", new String[] { "", "Identifier", "Files", "Total Size", "Progress", "Reason", "Persistence", "Key" }, buf);
-				else
-					writeTableHead("Failed directory uploads", new String[] { "", "Files", "Total Size", "Progress", "Reason", "Persistence", "Key" }, buf);
-				for(Iterator i=failedDirUpload.iterator();i.hasNext();) {
-					ClientPutDir p = (ClientPutDir) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getFinalURI(), buf);
-					writeNumberCell(p.getNumberOfFiles(), buf);
-					writeSizeCell(p.getTotalDataSize(), buf);
-					writeProgressFractionCell(p, buf);
-					writeFailureReasonCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getFinalURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
-			}
-			writeBigEnding(buf);
 		}
 		
-		if(!(uncompletedDownload.isEmpty() && uncompletedUpload.isEmpty() && 
-				uncompletedDirUpload.isEmpty())) {
-			writeBigHeading("Requests in progress (" + (uncompletedDownload.size() + uncompletedUpload.size() + uncompletedDirUpload.size()) + ")", buf, "requests_in_progress");
-			if(!uncompletedDownload.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Downloads in progress", new String[] {
-							"", "Identifier", "Filename", "Priority", "Size", "MIME-Type", "Progress", "Persistence", "Key" 
-					}, buf);
-				else
-					writeTableHead("Downloads in progress", new String[] {
-							"", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" 
-					}, buf);
-				for(Iterator i = uncompletedDownload.iterator();i.hasNext();) {
-					ClientGet p = (ClientGet) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getURI(), buf);
-					if(p.isDirect())
-						writeDirectCell(buf);
-					else
-						writeFilenameCell(p.getDestFilename(), buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled()) 
-						writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
-					writeSizeCell(p.getDataSize(), buf);
-					writeTypeCell(p.getMIMEType(), buf);
-					writeProgressFractionCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
+		if (!completedDirUpload.isEmpty()) {
+			HTMLNode completedUploadDirInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Directory Uploads (" + completedDirUpload.size() + ")"));
+			HTMLNode completedUploadDirContent = pageMaker.getContentNode(completedUploadDirInfobox);
+			if (advancedEnabled) {
+				completedUploadDirContent.addChild(createRequestTable(pageMaker, completedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }));
+			} else {
+				completedUploadDirContent.addChild(createRequestTable(pageMaker, completedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }));
 			}
-
-			if(!uncompletedUpload.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Uploads in progress", new String[] { 
-							"", "Identifier", "Filename", "Priority",  "Size", "MIME-Type", "Progress", "Persistence", "Key" 
-					}, buf);
-				else
-					writeTableHead("Uploads in progress", new String[] {
-							"", "Filename", "Size", "MIME-Type", "Progress", "Persistence", "Key" 
-					}, buf);
-				for(Iterator i = uncompletedUpload.iterator();i.hasNext();) {
-					ClientPut p = (ClientPut) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writeIdentifierCell(p, p.getFinalURI(), buf);
-					if(p.isDirect())
-						writeDirectCell(buf);
-					else
-						writeFilenameCell(p.getOrigFilename(), buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled())
-						writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
-					writeSizeCell(p.getDataSize(), buf);
-					writeTypeCell(p.getMIMEType(), buf);
-					writeProgressFractionCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getFinalURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
+		}
+				
+		if (!failedDownload.isEmpty()) {
+			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", "Failed: Downloads (" + failedDownload.size() + ")"));
+			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
+			if (advancedEnabled) {
+				failedContent.addChild(createRequestTable(pageMaker, failedDownload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
+			} else {
+				failedContent.addChild(createRequestTable(pageMaker, failedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
 			}
-
-			if(!uncompletedDirUpload.isEmpty()) {
-				if (node.getToadletContainer().isAdvancedDarknetEnabled())
-					writeTableHead("Directory uploads in progress", new String[] {
-							"", "Identifier", "Priority", "Files", "Total Size", "Progress", "Persistence", "Key"
-					}, buf);
-				else
-					writeTableHead("Directory uploads in progress", new String[] {
-							"", "Files", "Total Size", "Progress", "Persistence", "Key"
-					}, buf);
-				for(Iterator i=uncompletedDirUpload.iterator();i.hasNext();) {
-					ClientPutDir p = (ClientPutDir) i.next();
-					writeRowStart(buf,p);
-					writeDeleteCell(p, buf);
-					if (node.getToadletContainer().isAdvancedDarknetEnabled()){
-						writeIdentifierCell(p, p.getFinalURI(), buf);
-						writePriorityCell(p.getIdentifier(), p.getPriority(), buf);
-					}
-					writeNumberCell(p.getNumberOfFiles(), buf);
-					writeSizeCell(p.getTotalDataSize(), buf);
-					writeProgressFractionCell(p, buf);
-					writePersistenceCell(p, buf);
-					writeKeyCell(p.getFinalURI(), buf);
-					writeRowEnd(buf);
-				}
-				writeTableEnd(buf);
-			}
-			writeBigEnding(buf);
 		}
 		
-		ctx.getPageMaker().makeTail(buf);
-
-		this.writeReply(ctx, 200, "text/html", "OK", buf.toString());
+		if (!failedUpload.isEmpty()) {
+			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", "Failed: Uploads (" + failedUpload.size() + ")"));
+			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
+			if (advancedEnabled) {
+				failedContent.addChild(createRequestTable(pageMaker, failedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
+			} else {
+				failedContent.addChild(createRequestTable(pageMaker, failedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
+			}
+		}
+		
+		if (!failedDirUpload.isEmpty()) {
+			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", "Failed: Directory Uploads (" + failedDirUpload.size() + ")"));
+			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
+			if (advancedEnabled) {
+				failedContent.addChild(createRequestTable(pageMaker, failedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
+			} else {
+				failedContent.addChild(createRequestTable(pageMaker, failedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }));
+			}
+		}
+		
+		if (!uncompletedDownload.isEmpty()) {
+			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Downloads (" + uncompletedDownload.size() + ")"));
+			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
+			if (advancedEnabled) {
+				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedDownload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
+			} else {
+				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
+			}
+		}
+		
+		if (!uncompletedUpload.isEmpty()) {
+			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Uploads (" + uncompletedUpload.size() + ")"));
+			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
+			if (advancedEnabled) {
+				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
+			} else {
+				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
+			}
+		}
+		
+		if (!uncompletedDirUpload.isEmpty()) {
+			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Downloads (" + uncompletedDownload.size() + ")"));
+			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
+			if (advancedEnabled) {
+				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_PRIORITY, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
+			} else {
+				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
+			}
+		}
+		
+		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 
 	
-	private void writeFailureReasonCell(ClientRequest p, StringBuffer buf) {
-		buf.append("<td>");
-		String s = p.getFailureReason();
-		if(s == null)
-			buf.append("<span class=\"failure_reason_unknown\">unknown</span>");
-		else
-			buf.append("<span class=\"failure_reason_is\">" + s + "</span>");
-		buf.append("</td>\n");
+	private HTMLNode createReasonCell(String failureReason) {
+		HTMLNode reasonCell = new HTMLNode("td", "class", "request-reason");
+		if (failureReason == null) {
+			reasonCell.addChild("span", "class", "failure_reason_unknown", "unknown");
+		} else {
+			reasonCell.addChild("span", "class", "failure_reason_is", failureReason);
+		}
+		return reasonCell;
 	}
 
-	private void writeProgressFractionCell(ClientRequest p, StringBuffer buf) {
-		buf.append("<td>");
-		
-		if(!p.isStarted()) {
-			buf.append("STARTING</td>");
-			return;
+	private HTMLNode createProgressCell(boolean started, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized) {
+		HTMLNode progressCell = new HTMLNode("td", "class", "request-progress");
+		if (!started) {
+			progressCell.addChild("#", "STARTING");
+			return progressCell;
 		}
 		
 		//double frac = p.getSuccessFraction();
-		double total;
-		if(node.getToadletContainer().isAdvancedDarknetEnabled())
-			total = p.getTotalBlocks();
-		else
-			total = p.getMinBlocks();
-		// All are fractions
-		double fetched = p.getFetchedBlocks()/total;
-		double failed = p.getFailedBlocks()/total;
-		double failed2 = p.getFatalyFailedBlocks()/total;
-		double min = p.getMinBlocks()/total;
-
-		if (Double.isNaN(fetched)) fetched = 0.0;
-		if (Double.isNaN(failed)) failed = 0.0;
-		if (Double.isNaN(failed2)) failed2 = 0.0;
-		if (Double.isNaN(min)) min = 0.0;
-		if(min == 0.0) min = 1.0;
+		if (!node.getToadletContainer().isAdvancedDarknetEnabled()) {
+			total = min;
+		}
 		
-		boolean b = p.isTotalFinalized();
-		if(fetched < 0) {
-			buf.append("<span class=\"progress_fraction_unknown\">unknown</span>");
+		if ((fetched < 0) || (total <= 0)) {
+			progressCell.addChild("span", "class", "progress_fraction_unknown", "unknown");
 		} else {
-			NumberFormat nf = NumberFormat.getInstance();
-			nf.setMaximumFractionDigits(0);
-			buf.append("<div class=\"progressbar\">"+
-					"<div class=\"progressbar-done\" style=\"width: "+nf.format(fetched*100)+"px\"></div>");
-			if(node.getToadletContainer().isAdvancedDarknetEnabled())
-			{
-				if(failed > 0)
-					buf.append("<div class=\"progressbar-failed\" style=\"width: "+nf.format(failed*100)+"px\"></div>");
-				if(failed2 > 0)
-					buf.append("<div class=\"progressbar-failed2\" style=\"width: "+nf.format(failed2*100)+"px\"></div>");
-				if(fetched < min)
-					buf.append("<div class=\"progressbar-min\" style=\"width: "+nf.format((min-fetched)*100)+"px\"></div>");
-			}
-			buf.append("</div>");
+			int fetchedPercent = (int) (fetched / (double) total * 100);
+			int failedPercent = (int) (failed / (double) total * 100);
+			int fatallyFailedPercent = (int) (fatallyFailed / (double) total * 100);
+			int minPercent = (int) (min / (double) total * 100);
+			HTMLNode progressBar = progressCell.addChild("div", "class", "progressbar");
+			progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-done", "width: " + fetchedPercent + "%;" });
+
+			if (failed > 0)
+				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed", "width: " + failedPercent + "%;" });
+			if (fatallyFailed > 0)
+				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-failed2", "width: " + fatallyFailedPercent + "%;" });
+			if ((fetched + failed + fatallyFailed) < min)
+				progressBar.addChild("div", new String[] { "class", "style" }, new String[] { "progressbar-min", "width: " + (minPercent - fetchedPercent) + "%;" });
 			
+			NumberFormat nf = NumberFormat.getInstance();
 			nf.setMaximumFractionDigits(1);
-			if(b)
-				buf.append("<span class=\"progress_fraction_finalized\">");
-			else
-				buf.append("<span class=\"progress_fraction_not_finalized\">");
-			buf.append(nf.format(fetched*100));
-			buf.append("%</span>");
-		}
-		buf.append("</td>\n");
-	}
-
-	private void writeNumberCell(int numberOfFiles, StringBuffer buf) {
-		buf.append("<td>");
-		buf.append("<span class=\"number_of_files\">" + numberOfFiles + "</span>");
-		buf.append("</td>\n");
-	}
-
-	private void writeDirectCell(StringBuffer buf) {
-		buf.append("<td>");
-		buf.append("<span class=\"filename_direct\">direct</span>");
-		buf.append("</td>\n");
-	}
-
-	private void writeFilenameCell(File destFilename, StringBuffer buf) {
-		buf.append("<td>");
-		if(destFilename == null)
-			buf.append("<span class=\"filename_none\">none</span>");
-		else
-			buf.append("<span class=\"filename_is\">" + HTMLEncoder.encode(destFilename.toString()) + "</span>");
-		buf.append("</td>\n");
-	}
-
-	private void writePriorityCell(String identifier, short priorityClass, StringBuffer buf) {
-		buf.append("<td class=\"nowrap\">");
-		buf.append("<form action=\"/queue/\" method=\"post\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
-		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"").append(HTMLEncoder.encode(identifier)).append("\" />");
-		buf.append("<select name=\"priority\">");
-		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
-			buf.append("<option value=\"").append(p);
-			if (p == priorityClass) {
-				buf.append("\" selected=\"selected");
+			if (finalized) {
+				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", "finalized" }, (int) ((fetched / (double) min) * 100) + "%");
+			} else {
+				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", "not finalized" }, (int) ((fetched / (double) min) * 100) + "%");
 			}
-			buf.append("\">");
-			buf.append(priorityClasses[p]);
-			buf.append("</option>");
 		}
-		buf.append("</select>");
-		buf.append("<input type=\"submit\" name=\"change_priority\" value=\"Change\" />");
-		buf.append("</form>");
-		buf.append("</td>");
+		return progressCell;
 	}
 
-	private void writeDeleteCell(ClientRequest p, StringBuffer buf) {
-		buf.append("<td>");
-		buf.append("<form action=\"/queue/\" method=\"post\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\" />");
-		buf.append("<input type=\"hidden\" name=\"identifier\" value=\"");
-		buf.append(HTMLEncoder.encode(p.getIdentifier()));
-		buf.append("\" /><input type=\"submit\" name=\"remove_request\" value=\"Delete\" />");
-		buf.append("</form>\n");
-		buf.append("</td>\n");
-	}
-	
-	private void writeDeleteAll(StringBuffer buf) {
-		buf.append("<td>");
-		buf.append("<form action=\"/queue/\" method=\"post\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\" />");
-		buf.append("<input type=\"submit\" name=\"remove_AllRequests\" value=\"Delete Everything\" />");
-		buf.append("</form>\n");
-		buf.append("</td>\n");
-	}
-	
-	private void writeIdentifierCell(ClientRequest p, FreenetURI uri, StringBuffer buf) {
-		buf.append("<td>");
-		if(uri != null) {
-			buf.append("<span class=\"identifier_with_uri\"><a href=\"/");
-			buf.append(HTMLEncoder.encode(uri.toString(false)));
-			buf.append("\">");
-			buf.append(HTMLEncoder.encode(p.getIdentifier()));
-			buf.append("</a></span>");
-		}
-		else {
-			buf.append("<span class=\"identifier_without_uri\">");
-			buf.append(HTMLEncoder.encode(p.getIdentifier()));
-			buf.append("</span>");
-		}
-		buf.append("</td>\n");
+	private HTMLNode createNumberCell(int numberOfFiles) {
+		HTMLNode numberCell = new HTMLNode("td", "class", "request-files");
+		numberCell.addChild("span", "class", "number_of_files", String.valueOf(numberOfFiles));
+		return numberCell;
 	}
 
-	private void writePersistenceCell(ClientRequest p, StringBuffer buf) {
-		buf.append("<td>");
-		if(!p.isPersistent())
-			buf.append("<span class=\"persistence_none\">none</span>");
-		else if(!p.isPersistentForever())
-			buf.append("<span class=\"persistence_reboot\">reboot</span>");
-		else
-			buf.append("<span class=\"persistence_forever\">forever</span>");
-		buf.append("</td>\n");
-	}
-
-	private void writeDownloadCell(ClientGet p, StringBuffer buf) {
-		buf.append("<td>");
-		buf.append("FIXME");
-		buf.append("</td>");
-	}
-
-	private void writeTypeCell(String type, StringBuffer buf) {
-		buf.append("<td>");
-		if(type != null)
-			buf.append("<span class=\"mimetype_is\">" + type + "</span>");
-		else
-			buf.append("<span class=\"mimetype_unknown\">unknown</span>");
-		buf.append("</td>\n");
-	}
-
-	private void writeSizeCell(long dataSize, StringBuffer buf) {
-		buf.append("<td>");
-		if(dataSize >= 0)
-			buf.append("<span class=\"filesize_is\">" + SizeUtil.formatSize(dataSize) + "</span>");
-		else
-			buf.append("<span class=\"filesize_unknown\">unknown</span>");
-		buf.append("</td>\n");
-	}
-
-	private void writeKeyCell(FreenetURI uri, StringBuffer buf) {
-		buf.append("<td>");
-		if(uri != null) {
-			buf.append("<span class=\"key_is\"><a href=\"/");
-			String u = uri.toString(false);
-			buf.append(URLEncoder.encode(u));
-			buf.append("\">");
-			u = uri.toShortString();
-			buf.append(HTMLEncoder.encode(u));
-			buf.append("</a></span>");
+	private HTMLNode createFilenameCell(File filename) {
+		HTMLNode filenameCell = new HTMLNode("td", "class", "request-filename");
+		if (filename != null) {
+			filenameCell.addChild("span", "class", "filename_is", filename.toString());
 		} else {
-			buf.append("<span class=\"key_unknown\">unknown</span>");
+			filenameCell.addChild("span", "class", "filename_none", "none");
 		}
-		buf.append("</td>\n");
+		return filenameCell;
 	}
 
-	private void writeRowStart(StringBuffer buf, ClientRequest p) {
-		buf.append("<tr class=\"priority"+p.getPriority()+"\">");
-	}
-
-	private void writeRowEnd(StringBuffer buf) {
-		buf.append("</tr>\n");
-	}
-
-	private void writeTableHead(String tabletitle, String[] strings, StringBuffer buf) {
-		buf.append("<div class=\"queue_tabletitle\">" + tabletitle + "</div>");
-		buf.append("<table class=\"queue\">\n");
-		buf.append("<tr>");
-		for(int i=0;i<strings.length;i++) {
-			buf.append("<th>");
-			buf.append(strings[i]);
-			buf.append("</th>");
+	private HTMLNode createPriorityCell(PageMaker pageMaker, String identifier, short priorityClass) {
+		HTMLNode priorityCell = new HTMLNode("td", "class", "request-priority nowrap");
+		HTMLNode priorityForm = priorityCell.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+		priorityForm.addChild(pageMaker.createFormPasswordInput(node.formPassword));
+		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
+		HTMLNode prioritySelect = priorityForm.addChild("select", "name", "priority");
+		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
+			if (p == priorityClass) {
+				prioritySelect.addChild("option", new String[] { "value", "selected" }, new String[] { String.valueOf(p), "selected" }, priorityClasses[p]);
+			} else {
+				prioritySelect.addChild("option", "value", String.valueOf(p), priorityClasses[p]);
+			}
 		}
-		buf.append("</tr>\n");
+		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "change_priority", "Change" });
+		return priorityCell;
 	}
 
-	private void writeTableEnd(StringBuffer buf) {
-		buf.append("</table>");
-	}
-
-	private void writeBigHeading(String header, StringBuffer buf, String id) {
-		buf.append("<div class=\"infobox infobox-normal\"" + ((id != null) ? " id=\"" + id + "\"" : "") + ">\n");
-		buf.append("<div class=\"infobox-header\">\n");
-		buf.append(header);
-		buf.append("</div>\n");
-		buf.append("<div class=\"infobox-content\">\n");
-	}
-
-	private void writeBigEnding(StringBuffer buf) {
-		buf.append("</div>\n");
-		buf.append("</div>\n");
+	private HTMLNode createDeleteCell(PageMaker pageMaker, String identifier) {
+		HTMLNode deleteNode = new HTMLNode("td", "class", "request-delete");
+		HTMLNode deleteForm = deleteNode.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+		deleteForm.addChild(pageMaker.createFormPasswordInput(node.formPassword));
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
+		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", "Delete" });
+		return deleteNode;
 	}
 	
-	private void writeInsertBox(StringBuffer buf) {
+	private HTMLNode createPanicBox(PageMaker pageMaker) {
+		HTMLNode panicBox = pageMaker.getInfobox("infobox-alert", "Panic Button");
+		HTMLNode panicForm = pageMaker.getContentNode(panicBox).addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+		panicForm.addChild(pageMaker.createFormPasswordInput(node.formPassword));
+		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_AllRequests", "Delete everything without confirmation!" });
+		return panicBox;
+	}
+	
+	private HTMLNode createIdentifierCell(FreenetURI uri, String identifier) {
+		HTMLNode identifierCell = new HTMLNode("td", "class", "request-identifier");
+		if (uri != null) {
+			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", "/" + uri, identifier);
+		} else {
+			identifierCell.addChild("span", "class", "identifier_without_uri", identifier);
+		}
+		return identifierCell;
+	}
+
+	private HTMLNode createPersistenceCell(boolean persistent, boolean persistentForever) {
+		HTMLNode persistenceCell = new HTMLNode("td", "class", "request-persistence");
+		if (persistentForever) {
+			persistenceCell.addChild("span", "class", "persistence_forever", "forever");
+		} else if (persistent) {
+			persistenceCell.addChild("span", "class", "persistence_reboot", "reboot");
+		} else {
+			persistenceCell.addChild("span", "class", "persistence_none", "none");
+		}
+		return persistenceCell;
+	}
+
+	private HTMLNode createDownloadCell(ClientGet p) {
+		return new HTMLNode("td", "class", "request-download", "FIXME"); /* TODO */
+	}
+
+	private HTMLNode createTypeCell(String type) {
+		HTMLNode typeCell = new HTMLNode("td", "class", "request-type");
+		if (type != null) {
+			typeCell.addChild("span", "class", "mimetype_is", type);
+		} else {
+			typeCell.addChild("span", "class", "mimetype_unknown", "unknown");
+		}
+		return typeCell;
+	}
+
+	private HTMLNode createSizeCell(long dataSize) {
+		HTMLNode sizeCell = new HTMLNode("td", "class", "request-size");
+		if (dataSize >= 0) {
+			sizeCell.addChild("span", "class", "filesize_is", SizeUtil.formatSize(dataSize));
+		} else {
+			sizeCell.addChild("span", "class", "filesize_unknown", "unknown");
+		}
+		return sizeCell;
+	}
+
+	private HTMLNode createKeyCell(FreenetURI uri) {
+		HTMLNode keyCell = new HTMLNode("td", "class", "request-key");
+		if (uri != null) {
+			keyCell.addChild("span", "class", "key_is").addChild("a", "href", "/" + uri.toString(false), uri.toShortString());
+		} else {
+			keyCell.addChild("span", "class", "key_unknown", "unknown");
+		}
+		return keyCell;
+	}
+	
+	private HTMLNode createInsertBox(PageMaker pageMaker) {
 		/* the insert file box */
-		buf.append("<div class=\"infobox\">");
-		buf.append("<div class=\"infobox-header\">Insert File</div>");
-		buf.append("<div class=\"infobox-content\">");
-		buf.append("<form action=\".\" method=\"post\" enctype=\"multipart/form-data\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\"").append(node.formPassword).append("\" />");
-		buf.append("Insert as: <input type=\"radio\" name=\"keytype\" value=\"chk\" checked /> CHK &nbsp; ");
-		buf.append("<input type=\"radio\" name=\"keytype\" value=\"ksk\" /> KSK &nbsp; ");
-		buf.append("<input type=\"text\" name=\"key\" value=\"KSK@\" /> &nbsp; ");
-		buf.append("File: <input type=\"file\" name=\"filename\" value=\"\" /> &nbsp; ");
-		buf.append("<input type=\"checkbox\" name=\"dontCompress\" /> Don&rsquo;t Compress &nbsp; ");
-		buf.append("<input type=\"submit\" name=\"insert\" value=\"Insert File\" /> &nbsp; ");
-		buf.append("<input type=\"reset\" value=\"Reset Form\" />");
-		buf.append("</form>");
-		buf.append("</div>");
-		buf.append("</div>\n");
+		HTMLNode insertBox = pageMaker.getInfobox("Insert File");
+		HTMLNode insertForm = pageMaker.getContentNode(insertBox).addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
+		insertForm.addChild(pageMaker.createFormPasswordInput(node.formPassword));
+		insertForm.addChild("#", "Insert as: ");
+		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
+		insertForm.addChild("#", " CHK \u00a0 ");
+		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "ksk" });
+		insertForm.addChild("#", " KSK \u00a0 ");
+		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", "KSK@" });
+		insertForm.addChild("#", " \u00a0 File: ");
+		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
+		insertForm.addChild("#", " \u00a0 ");
+		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "dontCompress" });
+		insertForm.addChild("#", " Don\u2019t compress \u00a0 ");
+		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", "Insert file" });
+		insertForm.addChild("#", " \u00a0 ");
+		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "reset", "Reset form" });
+		return insertBox;
+	}
+	
+	private HTMLNode createRequestTable(PageMaker pageMaker, List requests, int[] columns) {
+		HTMLNode table = new HTMLNode("table");
+		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
+		headerRow.addChild("th");
+		for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
+			int column = columns[columnIndex];
+			if (column == LIST_IDENTIFIER) {
+				headerRow.addChild("th", "Identifier");
+			} else if (column == LIST_SIZE) {
+				headerRow.addChild("th", "Size");
+			} else if (column == LIST_DOWNLOAD) {
+				headerRow.addChild("th", "Download");
+			} else if (column == LIST_MIME_TYPE) {
+				headerRow.addChild("th", "MIME Type");
+			} else if (column == LIST_PERSISTENCE) {
+				headerRow.addChild("th", "Persistence");
+			} else if (column == LIST_KEY) {
+				headerRow.addChild("th", "Key");
+			} else if (column == LIST_FILENAME) {
+				headerRow.addChild("th", "Filename");
+			} else if (column == LIST_PRIORITY) {
+				headerRow.addChild("th", "Priority");
+			} else if (column == LIST_FILES) {
+				headerRow.addChild("th", "Files");
+			} else if (column == LIST_TOTAL_SIZE) {
+				headerRow.addChild("th", "Total Size");
+			} else if (column == LIST_PROGRESS) {
+				headerRow.addChild("th", "Progress");
+			} else if (column == LIST_REASON) {
+				headerRow.addChild("th", "Reason");
+			}
+		}
+		for (Iterator requestItems = requests.iterator(); requestItems.hasNext(); ) {
+			ClientRequest clientRequest = (ClientRequest) requestItems.next();
+			HTMLNode requestRow = table.addChild("tr", "class", "priority" + clientRequest.getPriority());
+			
+			requestRow.addChild(createDeleteCell(pageMaker, clientRequest.getIdentifier()));
+			for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
+				int column = columns[columnIndex];
+				if (column == LIST_IDENTIFIER) {
+					if (clientRequest instanceof ClientGet) {
+						requestRow.addChild(createIdentifierCell(((ClientGet) clientRequest).getURI(), clientRequest.getIdentifier()));
+					} else if (clientRequest instanceof ClientPutDir) {
+						requestRow.addChild(createIdentifierCell(((ClientPutDir) clientRequest).getFinalURI(), clientRequest.getIdentifier()));
+					} else if (clientRequest instanceof ClientPut) {
+						requestRow.addChild(createIdentifierCell(((ClientPut) clientRequest).getFinalURI(), clientRequest.getIdentifier()));
+					}
+				} else if (column == LIST_SIZE) {
+					if (clientRequest instanceof ClientGet) {
+						requestRow.addChild(createSizeCell(((ClientGet) clientRequest).getDataSize()));
+					} else if (clientRequest instanceof ClientPut) {
+						requestRow.addChild(createSizeCell(((ClientPut) clientRequest).getDataSize()));
+					}
+				} else if (column == LIST_DOWNLOAD) {
+					requestRow.addChild(createDownloadCell((ClientGet) clientRequest));
+				} else if (column == LIST_MIME_TYPE) {
+					if (clientRequest instanceof ClientGet) {
+						requestRow.addChild(createTypeCell(((ClientGet) clientRequest).getMIMEType()));
+					} else if (clientRequest instanceof ClientPut) {
+						requestRow.addChild(createTypeCell(((ClientPut) clientRequest).getMIMEType()));
+					}
+				} else if (column == LIST_PERSISTENCE) {
+					requestRow.addChild(createPersistenceCell(clientRequest.isPersistent(), clientRequest.isPersistentForever()));
+				} else if (column == LIST_KEY) {
+					if (clientRequest instanceof ClientGet) {
+						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI()));
+					} else {
+						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI()));
+					}
+				} else if (column == LIST_FILENAME) {
+					if (clientRequest instanceof ClientGet) {
+						requestRow.addChild(createFilenameCell(((ClientGet) clientRequest).getDestFilename()));
+					} else if (clientRequest instanceof ClientPut) {
+						requestRow.addChild(createFilenameCell(((ClientPut) clientRequest).getOrigFilename()));
+					}
+				} else if (column == LIST_PRIORITY) {
+					requestRow.addChild(createPriorityCell(pageMaker, clientRequest.getIdentifier(), clientRequest.getPriority()));
+				} else if (column == LIST_FILES) {
+					requestRow.addChild(createNumberCell(((ClientPutDir) clientRequest).getNumberOfFiles()));
+				} else if (column == LIST_TOTAL_SIZE) {
+					requestRow.addChild(createSizeCell(((ClientPutDir) clientRequest).getTotalDataSize()));
+				} else if (column == LIST_PROGRESS) {
+					requestRow.addChild(createProgressCell(clientRequest.isStarted(), (int) clientRequest.getFetchedBlocks(), (int) clientRequest.getFailedBlocks(), (int) clientRequest.getFatalyFailedBlocks(), (int) clientRequest.getMinBlocks(), (int) clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized()));
+				} else if (column == LIST_REASON) {
+					requestRow.addChild(createReasonCell(clientRequest.getFailureReason()));
+				}
+			}
+		}
+		return table;
 	}
 
 	public String supportedMethods() {

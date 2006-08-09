@@ -53,6 +53,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private String cssName;
 	private Thread myThread;
 	private boolean advancedDarknetEnabled;
+	private final PageMaker pageMaker;
 	
 	static final int DEFAULT_FPROXY_PORT = 8888;
 	
@@ -228,6 +229,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 		this.advancedDarknetEnabled = fproxyConfig.getBoolean("advancedDarknetEnabled");
+		pageMaker = new PageMaker(cssName);
 		
 		toadlets = new LinkedList();
 		node.setToadletContainer(this); // even if not enabled, because of config
@@ -250,6 +252,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
 		toadlets = new LinkedList();
 		this.cssName = cssName;
+		pageMaker = new PageMaker(cssName);
 	}
 
 	public void start() {
@@ -261,10 +264,17 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public void register(Toadlet t, String urlPrefix, boolean atFront) {
+		register(t, urlPrefix, atFront, null, null);
+	}
+	
+	public void register(Toadlet t, String urlPrefix, boolean atFront, String name, String title) {
 		ToadletElement te = new ToadletElement(t, urlPrefix);
 		if(atFront) toadlets.addFirst(te);
 		else toadlets.addLast(te);
 		t.container = this;
+		if (name != null) {
+			pageMaker.addNavigationLink(urlPrefix, name, title);
+		}
 	}
 
 	public Toadlet findToadlet(URI uri) {
@@ -339,7 +349,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		public void run() {
 			Logger.minor(this, "Handling connection");
-			ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf);
+			ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf, pageMaker);
 			Logger.minor(this, "Handled connection");
 		}
 
