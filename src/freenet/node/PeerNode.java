@@ -1560,13 +1560,14 @@ public class PeerNode implements PeerContext {
 				    }
 	    		}
         	}
-        	this.lastAttemptedHandshakeIPUpdateTime = 0;
         } catch (Exception e1) {
                 throw new FSParseException(e1);
         }
         
-        if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()])))
+        if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
         	changedAnything = true;
+        	lastAttemptedHandshakeIPUpdateTime = 0;
+        }
         
         // DO NOT change detectedPeer !!!
         // The given physical.udp may be WRONG!!!
