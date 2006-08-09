@@ -60,46 +60,74 @@ public class PeerManager {
         myPeers = new PeerNode[0];
         connectedPeers = new PeerNode[0];
         this.node = node;
-        try {
-            // Try to read the node list from disk
-            FileInputStream fis = new FileInputStream(filename);
-            InputStreamReader ris = new InputStreamReader(fis);
-            BufferedReader br = new BufferedReader(ris);
-            try { // FIXME: no better way?
-                while(true) {
-                    // Read a single NodePeer
-                    SimpleFieldSet fs;
-                    fs = new SimpleFieldSet(br);
-                    PeerNode pn;
-                    try {
-                        pn = new PeerNode(fs, node, true);
-                    } catch (FSParseException e2) {
-                        Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
-                        continue;
-                    } catch (PeerParseException e2) {
-                        Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
-                        continue;
-                    }
-                    addPeer(pn);
-                }
-            } catch (EOFException e) {
-                // End of file, fine
-            } catch (IOException e1) {
-                Logger.error(this, "Could not read peers file: "+e1, e1);
-                return;
-            } finally {
-                try {
-                    br.close();
-                } catch (IOException e3) {
-                    Logger.error(this, "Ignoring "+e3+" caught reading "+filename, e3);
-                }
-            }
-        } catch (FileNotFoundException e) {
-            Logger.error(this, "Peers file not found: "+filename);
-        }
+        File peersFile = new File(filename);
+        File backupFile = new File(filename+".bak");
+        // Try to read the node list from disk
+     	if(peersFile.exists()) {
+      		if(readPeers(peersFile)) {
+      			String msg = "Read "+myPeers.length+" peers from "+peersFile;
+      			Logger.normal(this, msg);
+      			System.out.println(msg);
+      			return;
+      		}
+       	}
+     	// Try the backup
+     	if(backupFile.exists()) {
+        	if(readPeers(backupFile)) {
+      			String msg = "Read "+myPeers.length+" peers from "+backupFile;
+      			Logger.normal(this, msg);
+      			System.out.println(msg);
+        	} else {
+        		Logger.error(this, "No (readable) peers file with peers in it found");
+        		System.err.println("No (readable) peers file with peers in it found");
+        	}
+     	}     		
     }
 
-    public boolean addPeer(PeerNode pn) {
+    private boolean readPeers(File peersFile) {
+    	boolean gotSome = false;
+    	FileInputStream fis;
+		try {
+			fis = new FileInputStream(peersFile);
+		} catch (FileNotFoundException e4) {
+			Logger.normal(this, "Peers file not found: "+peersFile);
+			return false;
+		}
+        InputStreamReader ris = new InputStreamReader(fis);
+        BufferedReader br = new BufferedReader(ris);
+        try { // FIXME: no better way?
+            while(true) {
+                // Read a single NodePeer
+                SimpleFieldSet fs;
+                fs = new SimpleFieldSet(br);
+                PeerNode pn;
+                try {
+                    pn = new PeerNode(fs, node, true);
+                } catch (FSParseException e2) {
+                    Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
+                    continue;
+                } catch (PeerParseException e2) {
+                    Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
+                    continue;
+                }
+                addPeer(pn);
+                gotSome = true;
+            }
+        } catch (EOFException e) {
+            // End of file, fine
+        } catch (IOException e1) {
+            Logger.error(this, "Could not read peers file: "+e1, e1);
+        } finally {
+            try {
+                br.close();
+            } catch (IOException e3) {
+                Logger.error(this, "Ignoring "+e3+" caught reading "+filename, e3);
+            }
+            return gotSome;
+        }
+	}
+
+	public boolean addPeer(PeerNode pn) {
     	synchronized(this) {
         for(int i=0;i<myPeers.length;i++) {
             if(myPeers[i].equals(pn)) {
