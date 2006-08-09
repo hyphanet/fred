@@ -228,7 +228,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				chkDB_blockNum.get(null, blockNumEntry, found, LockMode.DEFAULT);
 			
 			if(success.equals(OperationStatus.NOTFOUND)) {
-				addFreeBlock(i);
+				addFreeBlock(i, true, "hole found");
 				holes++;
 			}
 			if(i % 1024 == 0)
@@ -422,10 +422,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     			t.abort();
     	}
 		freeBlocks.clear();
-		for(int i=wantedMoveNums.length;i<unwantedMoveNums.length;i++)
-			addFreeBlock(unwantedMoveNums[i].longValue());
+		for(int i=wantedMoveNums.length;i<unwantedMoveNums.length;i++) {
+			long l = unwantedMoveNums[i].longValue();
+			if(l > newSize) break;
+			addFreeBlock(l, false, "found empty while shrinking");
+		}
     	maybeQuickShrink(false);
-    	
 	}
 	
 	private void maybeQuickShrink(boolean dontCheck) throws DatabaseException, IOException {
@@ -639,7 +641,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							Logger.error(this, err, e);
 							System.err.println(err);
 							e.printStackTrace();
-							addFreeBlock(l);
+							addFreeBlock(l, true, "bogus key ("+type+")");
 							routingkey = null;
 							continue;
 						}
@@ -827,7 +829,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		chkDB.delete(t, routingkeyDBE);
 	    		t.commit();
 	    		t = null;
-	    		addFreeBlock(storeBlock.offset);
+	    		addFreeBlock(storeBlock.offset, true, "CHK does not verify");
 	    		synchronized(this) {
 	    			misses++;
 	    		}
@@ -924,7 +926,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    		chkDB.delete(t, routingkeyDBE);
 	    		t.commit();
 	    		t = null;
-	    		addFreeBlock(storeBlock.offset);
+	    		addFreeBlock(storeBlock.offset, true, "SSK does not verify");
 	    		synchronized(this) {
 	    			misses++;
 	    		}
@@ -1064,7 +1066,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			chkDB.delete(t, routingkeyDBE);
 			t.commit();
 			t = null;
-			addFreeBlock(storeBlock.offset);
+			addFreeBlock(storeBlock.offset, true, "pubkey does not verify");
 			synchronized(this) {
 				misses++;
 			}
@@ -1072,12 +1074,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
-	private void addFreeBlock(long offset) {
+	private void addFreeBlock(long offset, boolean loud, String reason) {
    		if(freeBlocks.push(offset)) {
-   			System.err.println("Freed block "+offset);
-   			Logger.normal(this, "Freed block "+offset);
+   			if(loud) {
+   				System.err.println("Freed block "+offset+" ("+reason+")");
+   				Logger.normal(this, "Freed block "+offset+" ("+reason+")");
+   			} else {
+   				Logger.minor(this, "Freed block "+offset+" ("+reason+")");
+   			}
    		} else {
-   			Logger.minor(this, "Already freed block "+offset);
+   			Logger.minor(this, "Already freed block "+offset+" ("+reason+")");
    		}
 	}
 
