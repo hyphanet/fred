@@ -1,5 +1,8 @@
 package freenet.support;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
 /*
   This code is part of the Java Adaptive Network Client by Ian Clarke. 
   It is distributed under the GNU Public Licence (GPL) version 2.  See
@@ -47,51 +50,55 @@ public class URLDecoder
     private static final String safeCharList = "$-_.+!*'(),";
 
     /**
-     * Translates a string out of x-www-form-urlencoded format.
-     *
-     * @param s String to be translated.
-     * @return the translated String.
-     *
-     **/
-    public static String decode(String s) throws URLEncodedFormatException {
-	if (s.length()==0) return "";
-	int len = s.length();
-	StringBuffer buf = new StringBuffer();
+	 * Translates a string out of x-www-form-urlencoded format.
+	 *
+	 * @param s String to be translated.
+	 * @return the translated String.
+	 *
+	 **/
+	public static String decode(String s) throws URLEncodedFormatException {
+		if (s.length() == 0)
+			return "";
+		int len = s.length();
+		ByteArrayOutputStream decodedBytes = new ByteArrayOutputStream();
 
-	for (int i = 0; i < len; i++) {
-	    char c = s.charAt(i);
-	    if (Character.isLetterOrDigit(c))
-		buf.append(c);
-	    else if (c == '+')
-		buf.append(' ');
-	    else if (safeCharList.indexOf(c) != -1)
-		buf.append(c);
-	    else if (c == '%') {
-		if (i >= len - 2) {
-    		    throw new URLEncodedFormatException(s);
-		} else {
-		    char[] hexChars = new char[2];
+		for (int i = 0; i < len; i++) {
+			char c = s.charAt(i);
+			if (Character.isLetterOrDigit(c))
+				decodedBytes.write(c);
+			else if (c == '+')
+				decodedBytes.write(' ');
+			else if (safeCharList.indexOf(c) != -1)
+				decodedBytes.write(c);
+			else if (c == '%') {
+				if (i >= len - 2) {
+					throw new URLEncodedFormatException(s);
+				}
+				char[] hexChars = new char[2];
 
-		    hexChars[0] = s.charAt(++i);
-		    hexChars[1] = s.charAt(++i);
+				hexChars[0] = s.charAt(++i);
+				hexChars[1] = s.charAt(++i);
 
-		    String hexval = new String(hexChars);
-		    try {
-                        long read = Fields.hexToLong(hexval);
-                        if (read == 0)
-                            throw new URLEncodedFormatException("Can't encode"
-                                                                + " 00");
-			buf.append(new Character((char) read));
-		    }
-		    catch (NumberFormatException nfe) {
-			throw new URLEncodedFormatException(s);
-		    }
+				String hexval = new String(hexChars);
+				try {
+					long read = Fields.hexToLong(hexval);
+					if (read == 0)
+						throw new URLEncodedFormatException("Can't encode" + " 00");
+					decodedBytes.write((int) read);
+				} catch (NumberFormatException nfe) {
+					throw new URLEncodedFormatException(s);
+				}
+			} else
+				decodedBytes.write(c);
+			// throw new URLEncodedFormatException(s);
 		}
-	    }
-	    else
-		buf.append(c);
-		// throw new URLEncodedFormatException(s);
+		try {
+			decodedBytes.close();
+			return new String(decodedBytes.toByteArray(), "utf-8");
+		} catch (IOException ioe1) {
+			/* if this throws something's wrong */
+		}
+		throw new URLEncodedFormatException(s);
 	}
-	return buf.toString();
-    }
+
 }

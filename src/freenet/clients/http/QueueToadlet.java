@@ -24,8 +24,6 @@ import freenet.node.fcp.ClientRequest;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.IdentifierCollisionException;
 import freenet.node.fcp.MessageInvalidException;
-import freenet.support.HTMLDecoder;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -82,12 +80,12 @@ public class QueueToadlet extends Toadlet {
 			}
 
 			if(request.isParameterSet("remove_request") && (request.getParam("remove_request").length() > 0)) {
-				String identifier = HTMLDecoder.decode(request.getParam("identifier"));
+				String identifier = request.getParam("identifier");
 				Logger.minor(this, "Removing "+identifier);
 				try {
 					fcp.removeGlobalRequest(identifier);
 				} catch (MessageInvalidException e) {
-					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
+					this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove " + identifier + ": " + e.getMessage());
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
@@ -97,12 +95,12 @@ public class QueueToadlet extends Toadlet {
 				Logger.minor(this, "Request count: "+reqs.length);
 				
 				for(int i=0; i<reqs.length ; i++){
-					String identifier = HTMLDecoder.decode(reqs[i].getIdentifier());
+					String identifier = reqs[i].getIdentifier();
 					Logger.minor(this, "Removing "+identifier);
 					try {
 						fcp.removeGlobalRequest(identifier);
 					} catch (MessageInvalidException e) {
-						this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove "+HTMLEncoder.encode(identifier)+" : "+HTMLEncoder.encode(e.getMessage()));
+						this.sendErrorPage(ctx, 200, "Failed to remove request", "Failed to remove " + identifier + ": " + e.getMessage());
 					}
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
@@ -119,7 +117,7 @@ public class QueueToadlet extends Toadlet {
 				}
 				FreenetURI fetchURI;
 				try {
-					fetchURI = new FreenetURI(HTMLDecoder.decode(request.getParam("key")));
+					fetchURI = new FreenetURI(request.getParam("key"));
 				} catch (MalformedURLException e) {
 					writeError("Invalid URI to download", "The URI is invalid and can not be downloaded.", ctx);
 					return;
@@ -130,7 +128,7 @@ public class QueueToadlet extends Toadlet {
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isParameterSet("change_priority")) {
-				String identifier = HTMLDecoder.decode(request.getParam("identifier"));
+				String identifier = request.getParam("identifier");
 				short newPriority = Short.parseShort(request.getParam("priority"));
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();
 				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
@@ -148,7 +146,7 @@ public class QueueToadlet extends Toadlet {
 					insertURI = new FreenetURI("CHK@");
 				} else if ("ksk".equals(keyType)) {
 					try {
-						insertURI = new FreenetURI(HTMLDecoder.decode(request.getPartAsString("key", 128)));
+						insertURI = new FreenetURI(request.getPartAsString("key", 128));
 					} catch (MalformedURLException mue1) {
 						writeError("Invalid URI to insert", "You did not specify a valid URI to insert the file to.", ctx);
 						return;
@@ -178,10 +176,6 @@ public class QueueToadlet extends Toadlet {
 				return;
 			} else if (request.isParameterSet("insert-local")) {
 				String filename = request.getParam("filename");
-				try {
-					filename = new String(filename.getBytes("ISO-8859-1"), "UTF-8");
-				} catch (Throwable t) {
-				}
 				File file = new File(filename);
 				String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
 				String contentType = DefaultMIMETypes.guessMIMEType(filename);
