@@ -64,6 +64,8 @@ public class PeerNodeStatus {
 	private Map localMessagesReceived;
 
 	private Map localMessagesSent;
+	
+	private final int hashCode;
 
 	public PeerNodeStatus(PeerNode peerNode) {
 		this.name = peerNode.getName();
@@ -91,6 +93,7 @@ public class PeerNodeStatus {
 		this.peerAddedTime = peerNode.getPeerAddedTime();
 		this.localMessagesReceived = new Hashtable(peerNode.getLocalNodeReceivedMessagesFromStatistic());
 		this.localMessagesSent = new Hashtable(peerNode.getLocalNodeSentMessagesToStatistic());
+		this.hashCode = peerNode.hashCode;
 	}
 
 	/**
@@ -272,4 +275,7 @@ public class PeerNodeStatus {
 		return statusName + " " + peerAddress + ":" + peerPort + " " + name + " " + location + " " + version + " backoff: " + routingBackoffLength + " (" + (Math.max(routingBackedOffUntil - System.currentTimeMillis(), 0)) + ")";
 	}
 
+	public int hashCode() {
+		return hashCode;
+	}
 }

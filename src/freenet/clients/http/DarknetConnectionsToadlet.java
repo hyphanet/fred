@@ -24,6 +24,7 @@ import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.node.PeerNodeStatus;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Bucket;
@@ -451,6 +452,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			Logger.minor(this, "No password");
 			return;
 		}
 		
@@ -610,10 +612,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		} else if (request.isPartSet("remove") || (request.isPartSet("submit") && request.getPartAsString("action",25).equals("remove"))) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
+			Logger.minor(this, "Remove node");
+			
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
 					this.node.removeDarknetConnection(peerNodes[i]);
+					Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
+				} else {
+					Logger.minor(this, "Part not set: node_"+peerNodes[i].hashCode());
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
