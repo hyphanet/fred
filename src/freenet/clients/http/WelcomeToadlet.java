@@ -46,12 +46,14 @@ public class WelcomeToadlet extends Toadlet {
 		if(request==null) return;
 		
 		if (request.getParam("shutdownconfirm").length() > 0) {
+			// Do the actual shutdown
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", ".?shutdownconfirm="+node.formPassword.hashCode());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			this.node.exit();
 			return;
 		}else if(request.getParam("restartconfirm").length() > 0){
+			// Do the actual restart
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", ".?restartconfirm="+node.formPassword.hashCode());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -253,6 +255,7 @@ public class WelcomeToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if (request.getParam("shutdownconfirm").length() > 0) {
+			// Tell the user that the node is shutting down
 			if(request.getIntParam("shutdownconfirm") != node.formPassword.hashCode()){
 				MultiValueTable headers = new MultiValueTable();
 				headers.put("Location", "/");
@@ -267,6 +270,7 @@ public class WelcomeToadlet extends Toadlet {
 			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			return;
 		}else if(request.getParam("restartconfirm").length() > 0){
+			// Tell the user that the node is restarting
 			if(request.getIntParam("restartconfirm") != node.formPassword.hashCode()){
 				MultiValueTable headers = new MultiValueTable();
 				headers.put("Location", "/");
