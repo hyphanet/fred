@@ -145,7 +145,7 @@ public class HTMLNode {
 			tagBuffer.append(" ").append(HTMLEncoder.encode(attributeName)).append("=\"").append(HTMLEncoder.encode(attributeValue)).append("\"");
 		}
 		if (children.size() == 0) {
-			if (name.equals("textarea") || name.equals("div")) {
+			if (name.equals("textarea") || name.equals("div") || name.equals("a")) {
 				tagBuffer.append("></" + name + ">");
 			} else {
 				tagBuffer.append(" />");

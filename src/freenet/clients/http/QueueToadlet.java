@@ -318,6 +318,56 @@ public class QueueToadlet extends Toadlet {
 		contentNode.addChild(node.alerts.createSummary());
 		/* add file insert box */
 		contentNode.addChild(createInsertBox(pageMaker));
+
+		/* navigation bar */
+		HTMLNode navigationBar = pageMaker.getInfobox("navbar", "Request Navigation");
+		HTMLNode navigationContent = pageMaker.getContentNode(navigationBar).addChild("ul");
+		boolean includeNavigationBar = false;
+		if (!completedDownloadToTemp.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#completedDownloads", "Completed downloads to temp");
+			includeNavigationBar = true;
+		}
+		if (!completedDownloadToDisk.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#completedDownloadToDisk", "Completed downloads to disk");
+			includeNavigationBar = true;
+		}
+		if (!completedUpload.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#completedUpload", "Completed uploads");
+			includeNavigationBar = true;
+		}
+		if (!completedDirUpload.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#completeDirUpload", "Completed directory uploads");
+			includeNavigationBar = true;
+		}
+		if (!failedDownload.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#failedDownload", "Failed downloads");
+			includeNavigationBar = true;
+		}
+		if (!failedUpload.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#failedUpload", "Failed uploads");
+			includeNavigationBar = true;
+		}
+		if (!failedDirUpload.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#failedDirUpload", "Failed directory uploads");
+			includeNavigationBar = true;
+		}
+		if (!uncompletedDownload.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#uncompletedDownload", "Downloads in progress");
+			includeNavigationBar = true;
+		}
+		if (!uncompletedUpload.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#uncompletedUpload", "Uploads in progress");
+			includeNavigationBar = true;
+		}
+		if (!uncompletedDirUpload.isEmpty()) {
+			navigationContent.addChild("li").addChild("a", "href", "#uncompletedDirUpload", "Directory uploads in progress");
+			includeNavigationBar = true;
+		}
+
+		if (includeNavigationBar) {
+			contentNode.addChild(navigationBar);
+		}
+
 		
 		HTMLNode legendBox = contentNode.addChild(pageMaker.getInfobox("legend", "Legend"));
 		HTMLNode legendContent = pageMaker.getContentNode(legendBox);
@@ -334,6 +384,7 @@ public class QueueToadlet extends Toadlet {
 		boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
 		if (!completedDownloadToTemp.isEmpty()) {
+			contentNode.addChild("a", "name", "completedDownloadToTemp");
 			HTMLNode completedDownloadsTempInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Downloads to temporary directory (" + completedDownloadToTemp.size() + ")"));
 			HTMLNode completedDownloadsToTempContent = pageMaker.getContentNode(completedDownloadsTempInfobox);
 			if (advancedEnabled) {
@@ -344,6 +395,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		if (!completedDownloadToDisk.isEmpty()) {
+			contentNode.addChild("a", "name", "completedDownloadToDisk");
 			HTMLNode completedToDiskInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Downloads to download directory (" + completedDownloadToDisk.size() + ")"));
 			HTMLNode completedToDiskInfoboxContent = pageMaker.getContentNode(completedToDiskInfobox);
 			if (advancedEnabled) {
@@ -354,6 +406,7 @@ public class QueueToadlet extends Toadlet {
 		}
 
 		if (!completedUpload.isEmpty()) {
+			contentNode.addChild("a", "name", "completedUpload");
 			HTMLNode completedUploadInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Uploads (" + completedUpload.size() + ")"));
 			HTMLNode completedUploadInfoboxContent = pageMaker.getContentNode(completedUploadInfobox);
 			if (advancedEnabled) {
@@ -364,6 +417,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		if (!completedDirUpload.isEmpty()) {
+			contentNode.addChild("a", "name", "completedDirUpload");
 			HTMLNode completedUploadDirInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", "Completed: Directory Uploads (" + completedDirUpload.size() + ")"));
 			HTMLNode completedUploadDirContent = pageMaker.getContentNode(completedUploadDirInfobox);
 			if (advancedEnabled) {
@@ -374,6 +428,7 @@ public class QueueToadlet extends Toadlet {
 		}
 				
 		if (!failedDownload.isEmpty()) {
+			contentNode.addChild("a", "name", "failedDownload");
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", "Failed: Downloads (" + failedDownload.size() + ")"));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
 			if (advancedEnabled) {
@@ -384,6 +439,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		if (!failedUpload.isEmpty()) {
+			contentNode.addChild("a", "name", "failedUpload");
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", "Failed: Uploads (" + failedUpload.size() + ")"));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
 			if (advancedEnabled) {
@@ -394,6 +450,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		if (!failedDirUpload.isEmpty()) {
+			contentNode.addChild("a", "name", "failedDirUpload");
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", "Failed: Directory Uploads (" + failedDirUpload.size() + ")"));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
 			if (advancedEnabled) {
@@ -404,6 +461,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		if (!uncompletedDownload.isEmpty()) {
+			contentNode.addChild("a", "name", "uncompletedDownload");
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Downloads (" + uncompletedDownload.size() + ")"));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedEnabled) {
@@ -414,6 +472,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		if (!uncompletedUpload.isEmpty()) {
+			contentNode.addChild("a", "name", "uncompletedUpload");
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Uploads (" + uncompletedUpload.size() + ")"));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedEnabled) {
@@ -424,6 +483,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		if (!uncompletedDirUpload.isEmpty()) {
+			contentNode.addChild("a", "name", "uncompletedDirUpload");
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Downloads (" + uncompletedDownload.size() + ")"));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedEnabled) {
@@ -434,7 +494,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		MultiValueTable pageHeaders = new MultiValueTable();
-		pageHeaders.put("Refresh", "30; URL=.");
+		pageHeaders.put("Refresh", "30; URL=");
 		this.writeReply(ctx, 200, "text/html", "OK", pageHeaders, pageNode.generate());
 	}
 
