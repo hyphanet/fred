@@ -433,7 +433,9 @@ public class QueueToadlet extends Toadlet {
 			}
 		}
 		
-		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+		MultiValueTable pageHeaders = new MultiValueTable();
+		pageHeaders.put("Refresh", "30; URL=.");
+		this.writeReply(ctx, 200, "text/html", "OK", pageHeaders, pageNode.generate());
 	}
 
 	
