@@ -3783,6 +3783,14 @@ public class Node {
 		PeerManager pm = peers;
 		return pm.myPeers;
 	}
+	
+	public PeerNodeStatus[] getPeerNodeStatuses() {
+		PeerNodeStatus[] peerNodeStatuses = new PeerNodeStatus[peers.myPeers.length];
+		for (int peerIndex = 0, peerCount = peers.myPeers.length; peerIndex < peerCount; peerIndex++) {
+			peerNodeStatuses[peerIndex] = peers.myPeers[peerIndex].getStatus();
+		}
+		return peerNodeStatuses;
+	}
 
 	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {
 		ipDetectorManager.register(detector);

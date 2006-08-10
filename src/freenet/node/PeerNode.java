@@ -1628,10 +1628,11 @@ public class PeerNode implements PeerContext {
         }
     }
 
-    public String getStatus() {
-        return getPeerNodeStatusString() + " " + getPeer()+" "+getName()+" "+getLocation().getValue()+" "+getVersion()+" backoff: "+getRoutingBackoffLength()+" ("+(Math.max(getRoutingBackedOffUntil() - System.currentTimeMillis(),0))+")";
+    public synchronized PeerNodeStatus getStatus() {
+    	PeerNodeStatus peerNodeStatus = new PeerNodeStatus(this);
+        return peerNodeStatus;
     }
-
+    
     public String getTMCIPeerInfo() {
 		long now = System.currentTimeMillis();
         int idle = -1;
@@ -1644,7 +1645,7 @@ public class PeerNode implements PeerContext {
     }
     
     public String getFreevizOutput() {
-    	return getStatus()+"|"+ Base64.encode(identity);
+    	return getStatus().toString()+"|"+ Base64.encode(identity);
     }
 	
 	public synchronized String getVersion(){

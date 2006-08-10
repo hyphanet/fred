@@ -22,6 +22,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
+import freenet.node.PeerNodeStatus;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
@@ -63,10 +64,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 	 * @param status The status to count
 	 * @return The number of peers that have the specified status.
 	 */
-	private int getPeerStatusCount(int[] peerNodeStatuses, int status) {
+	private int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
 		int count = 0;
 		for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
-			if (peerNodeStatuses[peerIndex] == status) {
+			if (peerNodeStatuses[peerIndex].getStatusValue() == status) {
 				count++;
 			}
 		}
@@ -87,25 +88,19 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		final boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
 		
 		/* gather connection statistics */
-		PeerNode[] peerNodes = node.getDarknetConnections();
+		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
 
-		Arrays.sort(peerNodes, new Comparator() {
+		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
-				PeerNode firstNode = (PeerNode) first;
-				PeerNode secondNode = (PeerNode) second;
-				int statusDifference = firstNode.getPeerNodeStatus() - secondNode.getPeerNodeStatus();
+				PeerNodeStatus firstNode = (PeerNodeStatus) first;
+				PeerNodeStatus secondNode = (PeerNodeStatus) second;
+				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
 				if (statusDifference != 0) {
 					return statusDifference;
 				}
 				return firstNode.getName().compareTo(secondNode.getName());
 			}
 		});
-		
-		/* copy peer node statuses for consistent display. */
-		int[] peerNodeStatuses = new int[peerNodes.length];
-		for (int peerIndex = 0, peerCount = peerNodes.length; peerIndex < peerCount; peerIndex++) {
-			peerNodeStatuses[peerIndex] = peerNodes[peerIndex].getPeerNodeStatus();
-		}
 		
 		int numberOfConnected = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
@@ -265,7 +260,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
 		
-		if (peerNodes.length == 0) {
+		if (peerNodeStatuses.length == 0) {
 			peerTableInfoboxContent.addChild("#", "Freenet can not work as you have not added any peers so far. Please go to the ");
 			peerTableInfoboxContent.addChild("a", "href", "/", "node homepage");
 			peerTableInfoboxContent.addChild("#", " and read the top infobox to see how it is done.");
@@ -287,67 +282,67 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node connected or was last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
 			
-			for (int peerIndex = 0, peerCount = peerNodes.length; peerIndex < peerCount; peerIndex++) {
-				PeerNode peerNode = peerNodes[peerIndex];
+			for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
+				PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
 				HTMLNode peerRow = peerTable.addChild("tr");
 				
 				// check box column
-				peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peerNode.hashCode() });
+				peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peerNodeStatus.hashCode() });
 				
 				// status column
-				String statusString = peerNode.getPeerNodeStatusString();
-				if (!advancedEnabled && (peerNode.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
+				String statusString = peerNodeStatus.getStatusName();
+				if (!advancedEnabled && (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
 					statusString = "BUSY";
 				}
-				peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNode.getPeerNodeStatusCSSClassName(), statusString + (peerNode.isFetchingARK() ? "*" : ""));
+				peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), statusString + (peerNodeStatus.isFetchingARK() ? "*" : ""));
 				
 				// name column
-				if (peerNode.isConnected() && (Integer.parseInt(peerNode.getSimpleVersion()) > 476)) {
-					peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNode.hashCode(), peerNode.getName());
+				if ((peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_CONNECTED) && (Integer.parseInt(peerNodeStatus.getSimpleVersion()) > 476)) {
+					peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), peerNodeStatus.getName());
 				} else {
-					peerRow.addChild("td", "class", "peer-name").addChild("#", peerNode.getName());
+					peerRow.addChild("td", "class", "peer-name").addChild("#", peerNodeStatus.getName());
 				}
 				
 				// address column
 				if (advancedEnabled) {
 					String pingTime = "";
-					if (peerNode.isConnected()) {
-						pingTime = " (" + String.valueOf((int) peerNode.averagePingTime()) + "ms)";
+					if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_CONNECTED) {
+						pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
 					}
-					peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNode.getDetectedPeer() != null) ? (peerNode.getDetectedPeer().toString()) : ("(unknown address)")) + pingTime);
+					peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + peerNodeStatus.getPeerPort()) : ("(unknown address)")) + pingTime);
 				}
 				
 				// version column
-				if (peerNode.publicReverseInvalidVersion()) {
-					peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_too_new", advancedEnabled ? peerNode.getVersion() : peerNode.getSimpleVersion());
+				if (peerNodeStatus.isPublicReverseInvalidVersion()) {
+					peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_too_new", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
 				} else {
-					peerRow.addChild("td", "class", "peer-version").addChild("#", advancedEnabled ? peerNode.getVersion() : peerNode.getSimpleVersion());
+					peerRow.addChild("td", "class", "peer-version").addChild("#", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
 				}
 				
 				// location column
 				if (advancedEnabled) {
-					peerRow.addChild("td", "class", "peer-location", String.valueOf(peerNode.getLocation().getValue()));
+					peerRow.addChild("td", "class", "peer-location", String.valueOf(peerNodeStatus.getLocation()));
 				}
 				
 				// backoff column
 				if (advancedEnabled) {
 					HTMLNode backoffCell = peerRow.addChild("td", "class", "peer-backoff");
-					backoffCell.addChild("#", fix1.format(peerNode.backedOffPercent.currentValue()));
-					int backoff = (int) (Math.max(peerNode.getRoutingBackedOffUntil() - now, 0));
+					backoffCell.addChild("#", fix1.format(peerNodeStatus.getBackedOffPercent()));
+					int backoff = (int) (Math.max(peerNodeStatus.getRoutingBackedOffUntil() - now, 0));
 					// Don't list the backoff as zero before it's actually zero
 					if ((backoff > 0) && (backoff < 1000)) {
 						backoff = 1000;
 					}
-					backoffCell.addChild("#", " " + String.valueOf(backoff / 1000) + "/" + String.valueOf(peerNode.getRoutingBackoffLength() / 1000));
-					backoffCell.addChild("#", (peerNode.getLastBackoffReason() == null) ? "" : ("/" + (peerNode.getLastBackoffReason())));
+					backoffCell.addChild("#", " " + String.valueOf(backoff / 1000) + "/" + String.valueOf(peerNodeStatus.getRoutingBackoffLength() / 1000));
+					backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason() == null) ? "" : ("/" + (peerNodeStatus.getLastBackoffReason())));
 				}
 				
 				// idle column
-				long idle = peerNode.timeLastRoutable();
-				if(peerNode.isRoutable()) {
-					idle = peerNode.timeLastConnectionCompleted();
-				} else if(peerNodeStatuses[peerIndex] == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
-					idle = peerNode.getPeerAddedTime();
+				long idle = peerNodeStatus.getTimeLastRoutable();
+				if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_CONNECTED) {
+					idle = peerNodeStatus.getTimeLastConnectionCompleted();
+				} else if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
+					idle = peerNodeStatus.getPeerAddedTime();
 				}
 				peerRow.addChild("td", "class", "peer-idle", idleToString(now, idle));
 				
@@ -362,18 +357,18 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					countHeaderRow.addChild("th", "Outgoing");
 					List messageNames = new ArrayList();
 					Map messageCounts = new HashMap();
-					for (Iterator incomingMessages = peerNode.getLocalNodeReceivedMessagesFromStatistic().keySet().iterator(); incomingMessages.hasNext(); ) {
+					for (Iterator incomingMessages = peerNodeStatus.getLocalMessagesReceived().keySet().iterator(); incomingMessages.hasNext(); ) {
 						String messageName = (String) incomingMessages.next();
 						messageNames.add(messageName);
-						Long messageCount = (Long) peerNode.getLocalNodeReceivedMessagesFromStatistic().get(messageName);
+						Long messageCount = (Long) peerNodeStatus.getLocalMessagesReceived().get(messageName);
 						messageCounts.put(messageName, new Long[] { messageCount, new Long(0) });
 					}
-					for (Iterator outgoingMessages = peerNode.getLocalNodeSentMessagesToStatistic().keySet().iterator(); outgoingMessages.hasNext(); ) {
+					for (Iterator outgoingMessages = peerNodeStatus.getLocalMessagesSent().keySet().iterator(); outgoingMessages.hasNext(); ) {
 						String messageName = (String) outgoingMessages.next();
 						if (!messageNames.contains(messageName)) {
 							messageNames.add(messageName);
 						}
-						Long messageCount = (Long) peerNode.getLocalNodeSentMessagesToStatistic().get(messageName);
+						Long messageCount = (Long) peerNodeStatus.getLocalMessagesSent().get(messageName);
 						Long[] existingCounts = (Long[]) messageCounts.get(messageName);
 						if (existingCounts == null) {
 							messageCounts.put(messageName, new Long[] { new Long(0), messageCount });
