@@ -2511,7 +2511,6 @@ public class Node {
 	public SimpleFieldSet exportPublicFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		Peer[] ips = getPrimaryIPAddress();
-		fs.put("base64", "true");
 		if(ips != null) {
 			for(int i=0;i<ips.length;i++)
 				fs.put("physical.udp", ips[i].toString());
