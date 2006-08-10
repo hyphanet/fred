@@ -21,6 +21,9 @@ import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
 import freenet.node.Node;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
 public class PluginManager {
@@ -119,6 +122,18 @@ public class PluginManager {
 			Logger.normal(this, "Plugin loaded: " + filename);
 		} catch (PluginNotFoundException e) {
 			Logger.normal(this, "Loading plugin failed (" + filename + ")", e);
+		} catch (UnsupportedClassVersionError e) {
+			Logger.error(this, "Could not load plugin "+filename+" : "+e, e);
+			System.err.println("Could not load plugin "+filename+" : "+e);
+			e.printStackTrace();
+			String jvmVersion = System.getProperty("java.vm.version");
+			if(jvmVersion.startsWith("1.4.") || jvmVersion.equals("1.4")) {
+				System.err.println("Plugin "+filename+" appears to require a later JVM");
+				Logger.error(this, "Plugin "+filename+" appears to require a later JVM");
+				node.alerts.register(new SimpleUserAlert(true, "Later JVM required by plugin "+filename,
+						"The plugin "+filename+" seems to require a later JVM. Please install at least Sun java 1.5, or remove the plugin.",
+						UserAlert.ERROR));
+			}
 		}
 		saveConfig();
 	}
