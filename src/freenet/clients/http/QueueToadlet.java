@@ -616,7 +616,7 @@ public class QueueToadlet extends Toadlet {
 	}
 	
 	private HTMLNode createRequestTable(PageMaker pageMaker, List requests, int[] columns) {
-		HTMLNode table = new HTMLNode("table");
+		HTMLNode table = new HTMLNode("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
 		headerRow.addChild("th");
 		for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
