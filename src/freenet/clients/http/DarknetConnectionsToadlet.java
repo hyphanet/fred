@@ -22,7 +22,6 @@ import freenet.io.comm.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;

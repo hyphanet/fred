@@ -35,7 +35,6 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.PluginManager;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
