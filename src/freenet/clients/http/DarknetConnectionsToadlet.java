@@ -309,7 +309,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_CONNECTED) {
 						pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
 					}
-					peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + peerNodeStatus.getPeerPort()) : ("(unknown address)")) + pingTime);
+					peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ":" + peerNodeStatus.getPeerPort()) : ("(unknown address)")) + pingTime);
 				}
 				
 				// version column
