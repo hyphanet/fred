@@ -160,13 +160,13 @@ public class QueueToadlet extends Toadlet {
 					writeError("No file selected", "You did not select a file to upload.", ctx);
 					return;
 				}
-				boolean dontCompress = request.getPartAsString("dontCompress", 128).length() > 0;
+				boolean compress = request.getPartAsString("compress", 128).length() > 0;
 				String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				/* copy bucket data */
 				Bucket copiedBucket = node.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
 				try {
-					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, dontCompress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, new File(file.getFilename()), file.getContentType(), copiedBucket, null);
+					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, new File(file.getFilename()), file.getContentType(), copiedBucket, null);
 					clientPut.start();
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
@@ -663,8 +663,8 @@ public class QueueToadlet extends Toadlet {
 		insertForm.addChild("#", " \u00a0 File: ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
 		insertForm.addChild("#", " \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "dontCompress", "checked" });
-		insertForm.addChild("#", " Don\u2019t compress \u00a0 ");
+		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "compress" });
+		insertForm.addChild("#", " Compress \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", "Insert file" });
 		insertForm.addChild("#", " \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "reset", "Reset form" });
