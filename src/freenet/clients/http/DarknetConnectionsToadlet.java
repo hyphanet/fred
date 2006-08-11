@@ -280,6 +280,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			if (advancedEnabled) {
 				peerTableHeaderRow.addChild("th", "Location");
 				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Temporarily disconnected. Other node busy? Wait time(s) remaining/total", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
+				
+				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
 			}
 			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node connected or was last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
 			
@@ -336,6 +338,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 					backoffCell.addChild("#", " " + String.valueOf(backoff / 1000) + "/" + String.valueOf(peerNodeStatus.getRoutingBackoffLength() / 1000));
 					backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason() == null) ? "" : ("/" + (peerNodeStatus.getLastBackoffReason())));
+					
+					HTMLNode pRejectCell = peerRow.addChild("td", "class", "peer-backoff"); // FIXME
+					pRejectCell.addChild("#", fix1.format(peerNodeStatus.getPReject()));
 				}
 				
 				// idle column

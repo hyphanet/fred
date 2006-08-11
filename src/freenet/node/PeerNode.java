@@ -42,6 +42,7 @@ import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.WouldBlockException;
+import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -259,6 +260,9 @@ public class PeerNode implements PeerContext {
     /** True if we want to allow LAN/localhost addresses. */
     private boolean allowLocalAddresses;
 
+    /** Average proportion of requests which are rejected or timed out */
+    private TimeDecayingRunningAverage pRejected;
+    
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following
@@ -400,7 +404,9 @@ public class PeerNode implements PeerContext {
         pingAverage = 
         	new TimeDecayingRunningAverage(1, 60000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
 
-        
+        // TDRA for probability of rejection
+        pRejected =
+        	new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
         
         // ARK stuff.
 
@@ -1875,7 +1881,8 @@ public class PeerNode implements PeerContext {
 	 * Back off this node for a while.
 	 */
 	public void localRejectedOverload(String reason) {
-		Logger.minor(this, "Local rejected overload on "+this);
+		pRejected.report(1.0);
+		Logger.minor(this, "Local rejected overload on "+this+" : pRejected="+pRejected.currentValue());
 		long now = System.currentTimeMillis();
 		Peer peer = getPeer();
 		reportBackoffStatus(now);
@@ -1906,7 +1913,8 @@ public class PeerNode implements PeerContext {
 	 * Reset routing backoff.
 	 */
 	public void successNotOverload() {
-		Logger.minor(this, "Success not overload on "+this);
+		pRejected.report(0.0);
+		Logger.minor(this, "Success not overload on "+this+" : pRejected="+pRejected.currentValue());
 		Peer peer = getPeer();
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
@@ -1929,6 +1937,14 @@ public class PeerNode implements PeerContext {
 	final LRUHashtable pingsSentTimes = new LRUHashtable();
 	long pingNumber;
 	final RunningAverage pingAverage;
+
+	/**
+	 * @return The probability of a request sent to this peer being rejected (locally)
+	 * due to overload, or timing out after being accepted.
+	 */
+	public double getPRejected() {
+		return pRejected.currentValue();
+	}
 	
 	public void sendPing() {
 		long pingNo;

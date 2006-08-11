@@ -66,6 +66,8 @@ public class PeerNodeStatus {
 	private Map localMessagesSent;
 	
 	private final int hashCode;
+	
+	private final double pReject;
 
 	public PeerNodeStatus(PeerNode peerNode) {
 		this.name = peerNode.getName();
@@ -94,6 +96,7 @@ public class PeerNodeStatus {
 		this.localMessagesReceived = new Hashtable(peerNode.getLocalNodeReceivedMessagesFromStatistic());
 		this.localMessagesSent = new Hashtable(peerNode.getLocalNodeSentMessagesToStatistic());
 		this.hashCode = peerNode.hashCode;
+		this.pReject = peerNode.getPRejected();
 	}
 
 	/**
@@ -277,5 +280,9 @@ public class PeerNodeStatus {
 
 	public int hashCode() {
 		return hashCode;
+	}
+
+	public double getPReject() {
+		return pReject;
 	}
 }
