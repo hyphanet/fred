@@ -476,10 +476,10 @@ public class Node {
 	// If we don't receive any packets at all in this period, from any node, tell the user
 	public static final long ALARM_TIME = 60*1000;
 	/** Sub-max ping time. If ping is greater than this, we reject some requests. */
-	public static final long SUB_MAX_PING_TIME = 500;
+	public static final long SUB_MAX_PING_TIME = 700;
 	/** Maximum overall average ping time. If ping is greater than this,
 	 * we reject all requests. */
-	public static final long MAX_PING_TIME = 1000;
+	public static final long MAX_PING_TIME = 1500;
 	/** Maximum throttled packet delay. If the throttled packet delay is greater
 	 * than this, reject all packets. */
 	public static final long MAX_THROTTLE_DELAY = 2000;
