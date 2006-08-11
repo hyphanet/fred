@@ -325,7 +325,7 @@ public class TextModeClientInterface implements Runnable {
 		sb.append("Shutting node down.\r\n");
 		out.write(sb.toString().getBytes());
 		out.flush();
-		n.exit();
+		n.exit("Shutdown from console");
 	} else if(uline.startsWith("RESTART")) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("Restarting the node.\r\n");

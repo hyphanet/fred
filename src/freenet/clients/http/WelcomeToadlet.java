@@ -50,7 +50,7 @@ public class WelcomeToadlet extends Toadlet {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", ".?shutdownconfirm="+node.formPassword.hashCode());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			this.node.exit();
+			this.node.exit("Shutdown from fproxy");
 			return;
 		}else if(request.getParam("restartconfirm").length() > 0){
 			// Do the actual restart

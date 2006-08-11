@@ -158,6 +158,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
 			overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix4.format(missRoutingDistance));
 			overviewList.addChild("li", "backedoffPercent:\u00a0" + fix1.format(backedoffPercent));
+			overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(node.pRejectIncomingInstantly()));
 			nextTableCell = overviewTableRow.addChild("td");
 		}
 		

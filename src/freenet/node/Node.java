@@ -601,6 +601,8 @@ public class Node {
 	public boolean nodeAveragePingAlertRelevant;
 	/** If true, include local addresses on noderefs */
 	public boolean includeLocalAddressesInNoderefs;
+	/** Average proportion of requests rejected immediately due to overload */
+	public final TimeDecayingRunningAverage pInstantRejectIncoming;
 	
 	private final HashSet runningUIDs;
 	
@@ -986,6 +988,7 @@ public class Node {
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
+		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
 	  	nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
@@ -2433,13 +2436,16 @@ public class Node {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 					Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 					lastAcceptedRequest = now;
+					pInstantRejectIncoming.report(0.0);
 					return null;
 				}
+				pInstantRejectIncoming.report(1.0);
 				return ">MAX_PING_TIME ("+pingTime+")";
 			}
 			if(pingTime > SUB_MAX_PING_TIME) {
 				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
 				if(random.nextDouble() < x) {
+					pInstantRejectIncoming.report(1.0);
 					return ">SUB_MAX_PING_TIME ("+pingTime+")";
 				}
 			}
@@ -2449,18 +2455,21 @@ public class Node {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 					Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 					lastAcceptedRequest = now;
+					pInstantRejectIncoming.report(0.0);
 					return null;
 				}
+				pInstantRejectIncoming.report(1.0);
 				return ">MAX_THROTTLE_DELAY ("+bwlimitDelayTime+")";
 			}
 			if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 				if(random.nextDouble() < x) {
+					pInstantRejectIncoming.report(1.0);
 					return ">SUB_MAX_THROTTLE_DELAY ("+bwlimitDelayTime+")";
 				}
 			}
 			
-			Logger.minor(this, "Accepting request");
+			Logger.minor(this, "Accepting request?");
 			
 			lastAcceptedRequest = now;
 		}
@@ -2470,16 +2479,22 @@ public class Node {
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
 					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
 		int expectedSent = (int)Math.max(expected, 0);
-		if(!requestOutputThrottle.instantGrab(expectedSent)) return "Insufficient output bandwidth";
+		if(!requestOutputThrottle.instantGrab(expectedSent)) {
+			pInstantRejectIncoming.report(1.0);
+			return "Insufficient output bandwidth";
+		}
 		expected = 
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesReceivedAverage : this.remoteChkInsertBytesReceivedAverage)
 					: (isSSK ? this.remoteSskFetchBytesReceivedAverage : this.remoteChkFetchBytesReceivedAverage)).currentValue();
 		int expectedReceived = (int)Math.max(expected, 0);
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
 			requestOutputThrottle.recycle(expectedSent);
+			pInstantRejectIncoming.report(1.0);
 			return "Insufficient input bandwidth";
 		}
-		
+
+		pInstantRejectIncoming.report(0.0);
+
 		// Accept
 		return null;
 	}
@@ -3385,10 +3400,23 @@ public class Node {
 		this.fcpServer = fcp;
 	}
 	
-	public void exit(){
-		this.park();
-		System.out.println("Goodbye. from "+this);
-		System.exit(0);
+	public void exit(int reason) {
+		try {
+			this.park();
+			System.out.println("Goodbye.");
+			System.out.println(reason);
+		} finally {
+			System.exit(reason);
+		}
+	}
+	
+	public void exit(String reason){
+		try {
+			this.park();
+			System.out.println("Goodbye. from "+this+" ("+reason+")");
+		} finally {
+			System.exit(0);
+		}
 	}
 	
 	/**
@@ -3849,5 +3877,9 @@ public class Node {
 			sskPutScheduler.register(ssi);
 		else
 			Logger.error(this, "Don't know what to do with "+block+" should be queued for reinsert");
+	}
+
+	public double pRejectIncomingInstantly() {
+		return pInstantRejectIncoming.currentValue();
 	}
 }

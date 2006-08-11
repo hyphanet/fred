@@ -378,7 +378,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 						String err = "CATASTROPHIC ERROR: Deleted "+oldConfig+" but cannot rename "+newConfig+" to "+oldConfig+" THEREFORE THE NODE WILL NOT START! Please resolve the problem by renaming "+newConfig+" to "+oldConfig;
 						System.err.println(err);
 						Logger.error(this, err);
-						node.exit();
+						node.exit("Updater error");
 						return;
 					}
 				}
@@ -396,7 +396,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			node.getNodeStarter().restart();
 		} else{
 			System.out.println("New version has been downloaded: please restart your node!");
-			node.exit();
+			node.exit("New version ready but cannot auto-restart");
 		}
 		System.err.println("WTF? Restart returned!?");
 	}

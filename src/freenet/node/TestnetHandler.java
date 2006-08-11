@@ -78,7 +78,7 @@ public class TestnetHandler implements Runnable {
 				Logger.normal(this,"Starting testnet server on port"+testnetPort);
 			} catch (IOException e) {
 				Logger.error(this, "Could not bind to testnet port: "+testnetPort);
-				System.exit(Node.EXIT_TESTNET_FAILED);
+				node.exit(Node.EXIT_TESTNET_FAILED);
 				return;
 			}
 			while(!server.isClosed()) {
@@ -101,7 +101,7 @@ public class TestnetHandler implements Runnable {
 				this.testnetPort=port;
 			}catch( IOException e){
 				Logger.error(this, "Error while stopping the testnet handler.");
-				System.exit(Node.EXIT_TESTNET_FAILED);
+				node.exit(Node.EXIT_TESTNET_FAILED);
 				return;
 			}
 		}

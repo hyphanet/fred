@@ -80,14 +80,14 @@ public class PacketSender implements Runnable {
 								System.err.println("Exiting on deadlock, but not running in the wrapper! Please restart the node manually.");
 							
 							// No wrapper : we don't want to let it harm the network!
-							node.exit();
+							node.exit("PacketSender deadlock");
 						}
 					} catch (Throwable t) {
 						if(!Node.logConfigHandler.getFileLoggerHook().hasRedirectedStdOutErrNoLock()) {
 							System.err.println("Error : can't restart the node : consider installing the wrapper. PLEASE REPORT THAT ERROR TO devl@freenetproject.org");
 							t.printStackTrace();
 						}
-						node.exit();
+						node.exit("PacketSender deadlock and error");
 					}
 					
 				}
