@@ -45,12 +45,19 @@ public final class BootstrappingDecayingRunningAverage implements
     }
     
     public BootstrappingDecayingRunningAverage(double defaultValue, double min,
-            double max, int maxReports) {
+            double max, int maxReports, SimpleFieldSet fs) {
         this.min = min;
         this.max = max;
         reports = 0;
         currentValue = defaultValue;
         this.maxReports = maxReports;
+        if(fs != null) {
+        	currentValue = fs.getDouble("CurrentValue", currentValue);
+        	reports = fs.getLong("Reports", reports);
+        	zeros = fs.getLong("Zeros", zeros);
+        	ones = fs.getLong("Ones", ones);
+        	if(reports == 0) zeros = ones = 0;
+        }
     }
     
     public synchronized double currentValue() {

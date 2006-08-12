@@ -1,10 +1,16 @@
 package freenet.support;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -410,6 +416,63 @@ public class SimpleFieldSet {
 
 	public String[] namesOfDirectSubsets() {
 		return (String[]) subsets.keySet().toArray(new String[subsets.size()]);
+	}
+
+	public static SimpleFieldSet readFrom(File f) throws IOException {
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(f);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			InputStreamReader isr;
+			try {
+				isr = new InputStreamReader(bis, "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				Logger.error(SimpleFieldSet.class, "Impossible: "+e, e);
+				fis.close();
+				return null;
+			}
+			BufferedReader br = new BufferedReader(isr);
+			SimpleFieldSet fs = new SimpleFieldSet(br);
+			br.close();
+			fis = null;
+			return fs;
+		} finally {
+			try {
+				if(fis != null) fis.close();
+			} catch (IOException e) {
+				// Ignore
+			}
+		}
+	}
+
+	public long getInt(String key, int def) {
+		String s = get(key);
+		if(s == null) return def;
+		try {
+			return Integer.parseInt(s);
+		} catch (NumberFormatException e) {
+			return def;
+		}
+	}
+
+	public double getDouble(String key, double def) {
+		String s = get(key);
+		if(s == null) return def;
+		try {
+			return Double.parseDouble(s);
+		} catch (NumberFormatException e) {
+			return def;
+		}
+	}
+
+	public long getLong(String key, long def) {
+		String s = get(key);
+		if(s == null) return def;
+		try {
+			return Long.parseLong(s);
+		} catch (NumberFormatException e) {
+			return def;
+		}
 	}
 
 }

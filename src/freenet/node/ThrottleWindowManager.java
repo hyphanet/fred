@@ -11,8 +11,14 @@ public class ThrottleWindowManager {
 	private long _totalPackets = 0, _droppedPackets = 0;
 	private double _simulatedWindowSize = 2;
 	
-	public ThrottleWindowManager(double d) {
-		_simulatedWindowSize = d;
+	public ThrottleWindowManager(double def, SimpleFieldSet fs) {
+		if(fs != null) {
+			_totalPackets = fs.getInt("TotalPackets", 0);
+			_droppedPackets = fs.getInt("DroppedPackets", 0);
+			_simulatedWindowSize = fs.getDouble("SimulatedWindowSize", def);
+		} else {
+			_simulatedWindowSize = def;
+		}
 	}
 
 	public synchronized double currentValue() {
