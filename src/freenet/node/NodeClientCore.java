@@ -39,6 +39,7 @@ import freenet.node.useralerts.UserAlertManager;
 import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 import freenet.support.io.BucketFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
@@ -85,14 +86,15 @@ public class NodeClientCore {
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
 	static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet throttleFS) throws NodeInitException {
 		this.node = node;
 		this.random = node.random;
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager();
-		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config);
+		Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
+		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS);
 		
 		// Temp files
 		
@@ -186,8 +188,6 @@ public class NodeClientCore {
 	
 
 	public void start(Config config) throws NodeInitException {
-		
-		requestStarters.start();
 		
 		// TMCI
 		try{
@@ -290,10 +290,11 @@ public class NodeClientCore {
 					rejectedOverload = true;
 				}
 			} else {
-				if((status == RequestSender.DATA_NOT_FOUND) ||
+				if(rs.hasForwarded() &&
+						((status == RequestSender.DATA_NOT_FOUND) ||
 						(status == RequestSender.SUCCESS) ||
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
-						(status == RequestSender.VERIFY_FAILURE)) {
+						(status == RequestSender.VERIFY_FAILURE))) {
 					long rtt = System.currentTimeMillis() - startTime;
 					if(!rejectedOverload)
 						requestStarters.throttleWindow.requestCompleted();
@@ -384,10 +385,11 @@ public class NodeClientCore {
 					rejectedOverload = true;
 				}
 			} else {
-				if((status == RequestSender.DATA_NOT_FOUND) ||
+				if(rs.hasForwarded() &&
+						((status == RequestSender.DATA_NOT_FOUND) ||
 						(status == RequestSender.SUCCESS) ||
 						(status == RequestSender.ROUTE_NOT_FOUND) ||
-						(status == RequestSender.VERIFY_FAILURE)) {
+						(status == RequestSender.VERIFY_FAILURE))) {
 					long rtt = System.currentTimeMillis() - startTime;
 					
 					if(!rejectedOverload)

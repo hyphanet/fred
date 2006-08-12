@@ -6,6 +6,7 @@
  */
 package freenet.node;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -15,6 +16,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -415,6 +417,8 @@ public class Node {
 	final TimeDecayingRunningAverage localSskFetchBytesReceivedAverage;
 	final TimeDecayingRunningAverage localChkInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage localSskInsertBytesReceivedAverage;
+	final File persistTarget; 
+	final File persistTemp;
 	
 	// The version we were before we restarted.
 	public int lastVersion;
@@ -1192,6 +1196,22 @@ public class Node {
 			throw new NodeInitException(EXIT_STORE_OTHER, msg);
 		}
 		
+		persistTarget = new File(nodeDir, "throttle.dat");
+		persistTemp = new File(nodeDir, "throttle.dat.tmp");
+		
+		SimpleFieldSet throttleFS = null;
+		try {
+			throttleFS = SimpleFieldSet.readFrom(persistTarget);
+		} catch (IOException e) {
+			try {
+				throttleFS = SimpleFieldSet.readFrom(persistTemp);
+			} catch (FileNotFoundException e1) {
+				// Ignore
+			} catch (IOException e1) {
+				Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+")");
+			}
+		}
+		Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		// Guesstimates. Hopefully well over the reality.
 		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE);
@@ -1212,7 +1232,7 @@ public class Node {
 		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Long.MAX_VALUE);
 		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Long.MAX_VALUE);
 		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder);
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, throttleFS == null ? null : throttleFS.subset("RequestStarters"));
 		
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
@@ -1313,6 +1333,11 @@ public class Node {
 		
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
+		
+		ThrottlePersister persister = new ThrottlePersister();
+		Thread t = new Thread(persister, "Throttle data persister thread");
+		t.setDaemon(true);
+		t.start();
 		
 		hasStarted = true;
 	}
@@ -2723,4 +2748,80 @@ public class Node {
 	public boolean isAdvancedDarknetEnabled() {
 		return clientCore.isAdvancedDarknetEnabled();
 	}
+	
+	// FIXME convert these kind of threads to Checkpointed's and implement a handler
+	// using the PacketSender/Ticker. Would save a few threads.
+	
+	class ThrottlePersister implements Runnable {
+
+		public void run() {
+			while(true) {
+				try {
+					persistThrottle();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+				}
+				try {
+					Thread.sleep(60*1000);
+				} catch (InterruptedException e) {
+					// Maybe it's time to wake up?
+				}
+			}
+		}
+		
+	}
+
+	public void persistThrottle() {
+		SimpleFieldSet fs = persistThrottlesToFieldSet();
+		try {
+			FileOutputStream fos = new FileOutputStream(persistTemp);
+			// FIXME common pattern, reuse it.
+			BufferedOutputStream bos = new BufferedOutputStream(fos);
+			OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF-8");
+			try {
+				fs.writeTo(osw);
+			} catch (IOException e) {
+				try {
+					fos.close();
+					persistTemp.delete();
+					return;
+				} catch (IOException e1) {
+					// Ignore
+				}
+			}
+			try {
+				osw.close();
+			} catch (IOException e) {
+				// Huh?
+				Logger.error(this, "Caught while closing: "+e, e);
+				return;
+			}
+			// Try an atomic rename
+			if(!persistTemp.renameTo(persistTarget)) {
+				// Not supported on some systems (Windows)
+				if(!persistTarget.delete()) {
+					if(persistTarget.exists()) {
+						Logger.error(this, "Could not delete "+persistTarget+" - check permissions");
+					}
+				}
+				if(!persistTemp.renameTo(persistTarget)) {
+					Logger.error(this, "Could not rename "+persistTemp+" to "+persistTarget+" - check permissions");
+				}
+			}
+		} catch (FileNotFoundException e) {
+			Logger.error(this, "Could not store throttle data to disk: "+e, e);
+			return;
+		} catch (UnsupportedEncodingException e) {
+			Logger.error(this, "Unsupported encoding: UTF-8 !!!!: "+e, e);
+		}
+		
+	}
+
+	private SimpleFieldSet persistThrottlesToFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet();
+		fs.put("RequestStarters", clientCore.requestStarters.persistToFieldSet());
+		// FIXME persist the rest
+		return fs;
+	}
+
 }

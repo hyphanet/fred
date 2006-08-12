@@ -58,6 +58,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     private byte[] headers;
     private byte[] sskData;
     private SSKBlock block;
+    private boolean hasForwarded;
     
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -149,6 +150,10 @@ public final class RequestSender implements Runnable, ByteCounter {
             
             
             next.send(req, this);
+            
+            synchronized(this) {
+            	hasForwarded = true;
+            }
             
             Message msg = null;
             
@@ -568,5 +573,9 @@ public final class RequestSender implements Runnable, ByteCounter {
 		synchronized(totalBytesSync) {
 			return totalBytesReceived;
 		}
+	}
+	
+	synchronized boolean hasForwarded() {
+		return hasForwarded;
 	}
 }

@@ -1,13 +1,5 @@
 package freenet.node;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-
 import freenet.client.async.ClientRequestScheduler;
 import freenet.config.Config;
 import freenet.config.SubConfig;
@@ -27,34 +19,14 @@ public class RequestStarterGroup {
 	final RequestStarter sskRequestStarter;
 	final MyRequestThrottle sskInsertThrottle;
 	final RequestStarter sskInsertStarter;
-	final File nodeDir;
-	final File persistTarget; 
-	final File persistTemp;
 
 	public final ClientRequestScheduler chkFetchScheduler;
 	public final ClientRequestScheduler chkPutScheduler;
 	public final ClientRequestScheduler sskFetchScheduler;
 	public final ClientRequestScheduler sskPutScheduler;
 
-	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config) {
+	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config, SimpleFieldSet fs) {
 		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
-		
-		this.nodeDir = node.nodeDir;
-		persistTarget = new File(nodeDir, "throttle.dat");
-		persistTemp = new File(nodeDir, "throttle.dat.tmp");
-		
-		SimpleFieldSet fs = null;
-		try {
-			fs = SimpleFieldSet.readFrom(persistTarget);
-		} catch (IOException e) {
-			try {
-				fs = SimpleFieldSet.readFrom(persistTemp);
-			} catch (FileNotFoundException e1) {
-				// Ignore
-			} catch (IOException e1) {
-				Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+")");
-			}
-		}
 		
 		throttleWindow = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindow"));
 		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request", fs == null ? null : fs.subset("CHKRequestThrottle"));
@@ -87,13 +59,6 @@ public class RequestStarterGroup {
 		
 	}
 
-	public void start() {
-		ThrottlePersister persister = new ThrottlePersister();
-		Thread t = new Thread(persister, "Throttle data persister thread");
-		t.setDaemon(true);
-		t.start();
-	}
-	
 	public class MyRequestThrottle implements BaseRequestThrottle {
 
 		private final BootstrappingDecayingRunningAverage roundTripTime; 
@@ -148,78 +113,10 @@ public class RequestStarterGroup {
 		return sskInsertThrottle;
 	}
 
-	// FIXME convert these kind of threads to Checkpointed's and implement a handler
-	// using the PacketSender/Ticker. Would save a few threads.
-	
-	class ThrottlePersister implements Runnable {
-
-		public void run() {
-			while(true) {
-				try {
-					persistThrottle();
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-				}
-				try {
-					Thread.sleep(60*1000);
-				} catch (InterruptedException e) {
-					// Maybe it's time to wake up?
-				}
-			}
-		}
-		
-	}
-
-	public void persistThrottle() {
-		SimpleFieldSet fs = persistToFieldSet();
-		try {
-			FileOutputStream fos = new FileOutputStream(persistTemp);
-			// FIXME common pattern, reuse it.
-			BufferedOutputStream bos = new BufferedOutputStream(fos);
-			OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF-8");
-			try {
-				fs.writeTo(osw);
-			} catch (IOException e) {
-				try {
-					fos.close();
-					persistTemp.delete();
-					return;
-				} catch (IOException e1) {
-					// Ignore
-				}
-			}
-			try {
-				osw.close();
-			} catch (IOException e) {
-				// Huh?
-				Logger.error(this, "Caught while closing: "+e, e);
-				return;
-			}
-			// Try an atomic rename
-			if(!persistTemp.renameTo(persistTarget)) {
-				// Not supported on some systems (Windows)
-				if(!persistTarget.delete()) {
-					if(persistTarget.exists()) {
-						Logger.error(this, "Could not delete "+persistTarget+" - check permissions");
-					}
-				}
-				if(!persistTemp.renameTo(persistTarget)) {
-					Logger.error(this, "Could not rename "+persistTemp+" to "+persistTarget+" - check permissions");
-				}
-			}
-		} catch (FileNotFoundException e) {
-			Logger.error(this, "Could not store throttle data to disk: "+e, e);
-			return;
-		} catch (UnsupportedEncodingException e) {
-			Logger.error(this, "Unsupported encoding: UTF-8 !!!!: "+e, e);
-		}
-		
-	}
-
 	/**
 	 * Persist the throttle data to a SimpleFieldSet.
 	 */
-	private SimpleFieldSet persistToFieldSet() {
+	SimpleFieldSet persistToFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("ThrottleWindow", throttleWindow.exportFieldSet());
 		fs.put("CHKRequestThrottle", chkRequestThrottle.exportFieldSet());
