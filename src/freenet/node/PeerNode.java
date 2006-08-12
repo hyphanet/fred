@@ -2,8 +2,14 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.MalformedURLException;
@@ -259,6 +265,9 @@ public class PeerNode implements PeerContext {
     
     /** True if we want to allow LAN/localhost addresses. */
     private boolean allowLocalAddresses;
+    
+    /** Extra peer data file numbers */
+    private Vector extraPeerDataFileNumbers;
 
     /** Average proportion of requests which are rejected or timed out */
     private TimeDecayingRunningAverage pRejected;
@@ -500,6 +509,10 @@ public class PeerNode implements PeerContext {
 
         // status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
         setPeerNodeStatus(now);
+
+		// Setup the extraPeerDataFileNumbers
+		extraPeerDataFileNumbers = new Vector();
+		extraPeerDataFileNumbers.removeAllElements();
     }
 
     private boolean parseARK(SimpleFieldSet fs, boolean onStartup) {
@@ -2326,4 +2339,184 @@ public class PeerNode implements PeerContext {
 	public synchronized boolean allowLocalAddresses() {
 		return allowLocalAddresses;
 	}
+
+	public boolean readExtraPeerData() {
+		String extraPeerDataDirPath = node.getExtraPeerDataDir();
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+	 	if(!extraPeerDataPeerDir.exists()) {
+	 		return false;
+	 	}
+	 	if(!extraPeerDataPeerDir.isDirectory()) {
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	 		return false;
+	 	}
+	 	File[] extraPeerDataFiles = extraPeerDataPeerDir.listFiles();
+	 	if(extraPeerDataFiles == null) {
+	 		return false;
+	 	}
+		boolean gotError = false;
+		boolean readResult = false;
+		for (int i = 0; i < extraPeerDataFiles.length; i++) {
+			Integer fileNumber = new Integer(-1);
+			try {
+				fileNumber = new Integer(extraPeerDataFiles[i].getName());
+			} catch (NumberFormatException e) {
+				gotError = true;
+				continue;
+			}
+			synchronized(extraPeerDataFileNumbers) {
+				if(!extraPeerDataFileNumbers.contains(fileNumber)) {
+					extraPeerDataFileNumbers.addElement(fileNumber);
+				}
+			}
+			readResult = readExtraPeerDataFile(extraPeerDataFiles[i], fileNumber.intValue());
+			if(!readResult) {
+				gotError = true;
+			}
+		}
+		return !gotError;
+	}
+
+	public boolean readExtraPeerDataFile(File extraPeerDataFile, int fileNumber) {
+		boolean gotError = false;
+	 	if(!extraPeerDataFile.exists()) {
+	 		return false;
+	 	}
+		Logger.normal(this, "extraPeerDataFile: "+extraPeerDataFile.getPath());
+		FileInputStream fis;
+		try {
+			fis = new FileInputStream(extraPeerDataFile);
+		} catch (FileNotFoundException e1) {
+			Logger.normal(this, "Extra peer data file not found: "+extraPeerDataFile.getPath());
+			return false;
+		}
+		InputStreamReader isr = new InputStreamReader(fis);
+		BufferedReader br = new BufferedReader(isr);
+		try {
+			// Read in the single SimpleFieldSet
+			SimpleFieldSet fs;
+			fs = new SimpleFieldSet(br);
+			boolean parseResult = false;
+			try {
+				parseResult = parseExtraPeerData(fs, extraPeerDataFile, fileNumber);
+				if(!parseResult) {
+					gotError = true;
+				}
+			} catch (FSParseException e2) {
+				Logger.error(this, "Could not parse extra peer data: "+e2+"\n"+fs.toString(),e2);
+				gotError = true;
+			}
+		} catch (EOFException e3) {
+			// End of file, fine
+		} catch (IOException e4) {
+			Logger.error(this, "Could not read extra peer data file: "+e4, e4);
+		} finally {
+			try {
+				br.close();
+			} catch (IOException e5) {
+				Logger.error(this, "Ignoring "+e5+" caught reading "+extraPeerDataFile.getPath(), e5);
+			}
+		}
+		return !gotError;
+	}
+
+	private boolean parseExtraPeerData(SimpleFieldSet fs, File extraPeerDataFile, int fileNumber) throws FSParseException {
+		String extraPeerDataTypeString = fs.get("extraPeerDataType");
+		int extraPeerDataType = -1;
+		try {
+			extraPeerDataType = Integer.parseInt(extraPeerDataTypeString);
+		} catch (NumberFormatException e) {
+			Logger.error(this, "NumberFormatException parsing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath());
+			return false;
+		}
+		if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_N2NTM) {
+			node.handleNodeToNodeTextMessageSimpleFieldSet(fs, this, fileNumber);
+			return true;
+		}
+		Logger.error(this, "Read unknown extra peer data type '"+extraPeerDataType+"' from file "+extraPeerDataFile.getPath());
+		return false;
+	}
+
+	public int writeNewExtraPeerDataFile(SimpleFieldSet fs, int extraPeerDataType) {
+		String extraPeerDataDirPath = node.getExtraPeerDataDir();
+		if(extraPeerDataType > 0)
+			fs.put("extraPeerDataType", Integer.toString(extraPeerDataType));
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+	 	if(!extraPeerDataPeerDir.exists()) {
+	 		if(!extraPeerDataPeerDir.mkdir()) {
+		   		Logger.error(this, "Extra peer data directory for peer could not be created: "+extraPeerDataPeerDir.getPath());
+		 		return -1;
+		 	}
+	 	}
+	 	if(!extraPeerDataPeerDir.isDirectory()) {
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	 		return -1;
+	 	}
+		Integer[] localFileNumbers = null;
+		int nextFileNumber = 0;
+		synchronized(extraPeerDataFileNumbers) {
+			localFileNumbers = (Integer[]) extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
+			Arrays.sort(localFileNumbers);
+			for (int i = 0; i < localFileNumbers.length; i++) {
+				if(localFileNumbers[i].intValue() > nextFileNumber) {
+					break;
+				}
+				nextFileNumber = localFileNumbers[i].intValue() + 1;
+			}
+			extraPeerDataFileNumbers.addElement(new Integer(nextFileNumber));
+		}
+		FileOutputStream fos;
+		File extraPeerDataPeerDataFile = new File(extraPeerDataPeerDir.getPath()+File.separator+nextFileNumber);
+	 	if(extraPeerDataPeerDataFile.exists()) {
+   			Logger.error(this, "Extra peer data file already exists: "+extraPeerDataPeerDataFile.getPath());
+		 	return -1;
+	 	}
+		String f = extraPeerDataPeerDataFile.getPath();
+		try {
+			fos = new FileOutputStream(f);
+		} catch (FileNotFoundException e2) {
+			Logger.error(this, "Cannot write extra peer data file to disk: Cannot create "
+					+ f + " - " + e2, e2);
+			return -1;
+		}
+		OutputStreamWriter w = new OutputStreamWriter(fos);
+		try {
+			fs.writeTo(w);
+			w.close();
+		} catch (IOException e) {
+			try {
+				w.close();
+			} catch (IOException e1) {
+				Logger.error(this, "Cannot close extra peer data file: "+e, e);
+			}
+			Logger.error(this, "Cannot write file: " + e, e);
+			return -1;
+		}
+		return nextFileNumber;
+	}
+
+	public void deleteExtraPeerDataFile(int fileNumber) {
+		String extraPeerDataDirPath = node.getExtraPeerDataDir();
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+	 	if(!extraPeerDataPeerDir.exists()) {
+	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
+	 		return;
+	 	}
+	 	if(!extraPeerDataPeerDir.isDirectory()) {
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	 		return;
+	 	}
+		File extraPeerDataFile = new File(extraPeerDataDirPath+File.separator+getIdentityString()+File.separator+fileNumber);
+	 	if(!extraPeerDataFile.exists()) {
+	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataFile.getPath());
+	 		return;
+	 	}
+		synchronized(extraPeerDataFileNumbers) {
+			if(extraPeerDataFileNumbers.contains(new Integer(fileNumber))) {
+				extraPeerDataFileNumbers.removeElement(new Integer(fileNumber));
+			}
+		}
+		extraPeerDataFile.delete();
+	}
 }
+	

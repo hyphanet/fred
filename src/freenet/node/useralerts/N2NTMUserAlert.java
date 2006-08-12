@@ -11,12 +11,14 @@ public class N2NTMUserAlert implements UserAlert {
 	private String sourceNodename;
 	private String targetNodename;
 	private String messageText;
+	private int fileNumber;
 
-	public N2NTMUserAlert(PeerNode sourcePeerNode, String source, String target, String message) {
+	public N2NTMUserAlert(PeerNode sourcePeerNode, String source, String target, String message, int fileNumber) {
 	  this.sourcePeerNode = sourcePeerNode;
 		this.sourceNodename = source;
 		this.targetNodename = target;
 		this.messageText = message;
+		this.fileNumber = fileNumber;
 		isValid=true;
 	}
 	
@@ -39,7 +41,7 @@ public class N2NTMUserAlert implements UserAlert {
 		  else
 		    messageTextBuf2.append(ch);
 		}
-    String replyString = "<a href=\"/send_n2ntm/?peernode_hashcode="+sourcePeerNode.hashCode()+"\">Reply</a><br /><br />";
+		String replyString = "<a href=\"/send_n2ntm/?peernode_hashcode="+sourcePeerNode.hashCode()+"\">Reply</a><br /><br />";
 		String s;
 		s = "From: &lt;"+HTMLEncoder.encode(sourceNodename)+"&gt;<br />To: &lt;"+HTMLEncoder.encode(targetNodename)+"&gt;<hr /><br /><br />"+messageTextBuf2+"<br /><br />"+replyString;
 		return s;
@@ -74,5 +76,9 @@ public class N2NTMUserAlert implements UserAlert {
 	
 	public boolean shouldUnregisterOnDismiss() {
 		return true;
+	}
+	
+	public void onDismiss() {
+		sourcePeerNode.deleteExtraPeerDataFile(fileNumber);
 	}
 }

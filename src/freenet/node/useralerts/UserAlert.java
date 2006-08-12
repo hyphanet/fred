@@ -42,6 +42,11 @@ public interface UserAlert {
 	
 	public boolean shouldUnregisterOnDismiss();
 	
+	/**
+	 * Method to be called upon alert dismissal
+	 */
+	public void onDismiss();
+	
 	/** An error which prevents normal operation */
 	public final static short CRITICAL_ERROR = 0;
 	/** An error which prevents normal operation but might be temporary */

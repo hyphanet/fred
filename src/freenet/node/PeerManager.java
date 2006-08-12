@@ -667,4 +667,23 @@ public class PeerManager {
 		return false;
 	}
 
+	/**
+	 * Ask each PeerNode to read in it's extra peer data
+	 */
+	public void readExtraPeerData() {
+		PeerNode[] peers;
+		synchronized (this) {
+			peers = myPeers;
+		}
+		for (int i = 0; i < peers.length; i++) {
+			try {
+				peers[i].readExtraPeerData();
+			} catch (Exception e) {
+				Logger.error(this, "Got exception while reading extra peer data", e);
+			}
+		}
+		String msg = "Extra peer data reading and processing completed";
+		Logger.normal(this, msg);
+		System.out.println(msg);
+	}
 }

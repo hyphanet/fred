@@ -617,6 +617,8 @@ public class Node {
 	final ARKFetchManager arkFetchManager; // ready ARK Fetchers
 	/** Directory to put node, peers, etc into */
 	final File nodeDir;
+	/** Directory to put extra peer data into */
+	final File extraPeerDataDir;
 	final File tempDir;
 	public final RandomSource random; // strong RNG
 	final UdpSocketManager usm;
@@ -657,6 +659,7 @@ public class Node {
 	static final int EXIT_COULD_NOT_START_TMCI = 19;
 	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
 	public static final int EXIT_COULD_NOT_START_UPDATER = 21;
+	static final int EXIT_EXTRA_PEER_DATA_DIR = 22;
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
@@ -668,6 +671,7 @@ public class Node {
 	public static final int PEER_NODE_STATUS_LISTENING = 9;
 	public static final int PEER_NODE_STATUS_LISTEN_ONLY = 10;
 	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
+	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
 	
 	public final long bootID;
 	public final long startupTime;
@@ -1439,6 +1443,24 @@ public class Node {
 			String msg = "Could not find or create persistent temporary directory";
 			throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
 		}
+
+		// Extra Peer Data Directory
+		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, "Extra peer data directory", "Name of directory to put extra peer data in",
+				new StringCallback() {
+					public String get() {
+						return extraPeerDataDir.getPath();
+					}
+					public void set(String val) throws InvalidConfigValueException {
+						if(extraPeerDataDir.equals(new File(val))) return;
+						// FIXME
+						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
+					}
+		});
+		extraPeerDataDir = new File(nodeConfig.getString("extraPeerDataDir"));
+		if(!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
+			String msg = "Could not find or create extra peer data directory";
+			throw new NodeInitException(EXIT_EXTRA_PEER_DATA_DIR, msg);
+		}
 		
         // Name 	 
         nodeConfig.register("name", myName, sortOrder++, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node", 	 
@@ -1922,7 +1944,10 @@ public class Node {
 						// Not dismissable.
 						return false;
 					}
-					
+
+					public void onDismiss() {
+						// Not dismissable.
+					}
 				});
 			}
 		}
@@ -1953,6 +1978,9 @@ public class Node {
 				arkPutter.start();
 			}
 		}, 60*1000);
+		
+		// Process any data in the extra peer data directory
+		peers.readExtraPeerData();
 	}
 	
 	private void shouldInsertARK() {
@@ -3662,7 +3690,40 @@ public class Node {
 		String target_nodename = (String) m.getObject(DMT.TARGET_NODENAME);
 		String text = (String) m.getObject(DMT.NODE_TO_NODE_MESSAGE_TEXT);
 		Logger.normal(this, "Received N2NTM from '"+source_nodename+"' to '"+target_nodename+"': "+text);
-		N2NTMUserAlert userAlert = new N2NTMUserAlert(source, source_nodename, target_nodename, text);
+		SimpleFieldSet fs = new SimpleFieldSet();
+		fs.put("type", Integer.toString(type));
+		fs.put("source_nodename", Base64.encode(source_nodename.getBytes()));
+		fs.put("target_nodename", Base64.encode(target_nodename.getBytes()));
+		fs.put("text", Base64.encode(text.getBytes()));
+		int fileNumber = source.writeNewExtraPeerDataFile( fs, EXTRA_PEER_DATA_TYPE_N2NTM);
+		if( fileNumber == -1 ) {
+			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());
+		}
+		// Keep track of the fileNumber so we can potentially delete the extra peer data file later, the file is authoritative
+		handleNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
+	  } else {
+		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
+	  }
+	}
+
+	/**
+	 * Handle a node to node text message SimpleFieldSet
+	 */
+	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) {
+	  int type = new Integer(fs.get("type")).intValue();
+	  if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
+		String source_nodename = null;
+		String target_nodename = null;
+		String text = null;
+	  	try {
+			source_nodename = new String(Base64.decode(fs.get("source_nodename")));
+			target_nodename = new String(Base64.decode(fs.get("target_nodename")));
+			text = new String(Base64.decode(fs.get("text")));
+		} catch (IllegalBase64Exception e) {
+			Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
+			return;
+		}
+		N2NTMUserAlert userAlert = new N2NTMUserAlert(source, source_nodename, target_nodename, text, fileNumber);
 			alerts.register(userAlert);
 	  } else {
 		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
@@ -3881,5 +3942,9 @@ public class Node {
 
 	public double pRejectIncomingInstantly() {
 		return pInstantRejectIncoming.currentValue();
+	}
+	
+	public String getExtraPeerDataDir() {
+		return extraPeerDataDir.getPath();
 	}
 }

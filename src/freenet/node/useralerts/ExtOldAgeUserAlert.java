@@ -42,4 +42,8 @@ public class ExtOldAgeUserAlert implements UserAlert {
 	public boolean shouldUnregisterOnDismiss() {
 		return true;
 	}
+	
+	public void onDismiss() {
+		// do nothing on alert dismissal
+	}
 }

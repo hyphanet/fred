@@ -156,7 +156,8 @@ public class WelcomeToadlet extends Toadlet {
 				if(request.getIntParam("disable")==alerts[i].hashCode()){
 					UserAlert alert = alerts[i];
 					// Won't be dismissed if it's not allowed anyway
-					if(alert.userCanDismiss()  && alert.shouldUnregisterOnDismiss()) {
+					if(alert.userCanDismiss() && alert.shouldUnregisterOnDismiss()) {
+						alert.onDismiss();
 						Logger.normal(this,"Unregistering the userAlert "+alert.hashCode());
 						node.alerts.unregister(alert);
 					} else {

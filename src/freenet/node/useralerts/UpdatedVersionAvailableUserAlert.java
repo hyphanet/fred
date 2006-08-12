@@ -83,4 +83,8 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	public boolean shouldUnregisterOnDismiss() {
 		return false;
 	}
+	
+	public void onDismiss() {
+		// do nothing on alert dismissal
+	}
 }
