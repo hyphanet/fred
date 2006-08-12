@@ -668,7 +668,7 @@ public class PeerNode implements PeerContext {
 
     	// Hack for two nodes on the same IP that can't talk over inet for routing reasons
     	FreenetInetAddress localhost = node.fLocalhostAddress;
-    	Peer[] nodePeers = node.getPrimaryIPAddress();
+    	Peer[] nodePeers = node.ipDetector.getPrimaryIPAddress();
 //    	FreenetInetAddress nodeAddr = node.getPrimaryIPAddress();
     	
     	Vector peers = null;

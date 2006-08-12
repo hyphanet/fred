@@ -113,7 +113,7 @@ public class PluginManager {
 				registerToadlet(plug);
 
 			if(pi.isIPDetectorPlugin()) {
-				node.registerIPDetectorPlugin((FredPluginIPDetector) plug);
+				node.ipDetector.registerIPDetectorPlugin((FredPluginIPDetector) plug);
 			}
 			
 			synchronized (pluginInfo) {

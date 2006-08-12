@@ -15,7 +15,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -25,7 +24,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Vector;
 import java.util.zip.DeflaterOutputStream;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -33,18 +31,10 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.sleepycat.je.DatabaseException;
 
 import freenet.client.ArchiveManager;
-import freenet.client.ClientMetadata;
-import freenet.client.FetchException;
-import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InserterContext;
-import freenet.client.InserterException;
-import freenet.client.async.BaseClientPutter;
-import freenet.client.async.ClientCallback;
-import freenet.client.async.ClientGetter;
-import freenet.client.async.ClientPutter;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleHealingQueue;
@@ -53,7 +43,6 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.clients.http.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
@@ -96,13 +85,10 @@ import freenet.node.fcp.FCPServer;
 import freenet.node.updater.NodeUpdater;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
-import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.node.useralerts.UserAlertManager;
-import freenet.pluginmanager.DetectedIP;
-import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
@@ -111,17 +97,15 @@ import freenet.support.Base64;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
-import freenet.support.HexUtil;
 import freenet.support.HTMLNode;
+import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.TokenBucket;
-import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
@@ -131,8 +115,6 @@ import freenet.support.io.TempBucketFactory;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
-import freenet.transport.IPAddressDetector;
-import freenet.transport.IPUtil;
 
 /**
  * @author amphibian
@@ -160,211 +142,6 @@ public class Node {
 		}
 	}
 	
-	public class MyARKInserter implements ClientCallback {
-
-		private ClientPutter inserter;
-		private boolean shouldInsert;
-		private Peer[] lastInsertedPeers;
-		private boolean canStart;
-		
-		void start() {
-			canStart = true;
-			update();
-		}
-		
-		public void update() {
-			Logger.minor(this, "update()");
-			if(!checkIPUpdated()) return;
-			Logger.minor(this, "Inserting ARK because peers list changed");
-			
-			if(inserter != null) {
-				// Already inserting.
-				// Re-insert after finished.
-				synchronized(this) {
-					shouldInsert = true;
-				}
-
-				return;
-			}
-			// Otherwise need to start an insert
-			if(!peers.anyConnectedPeers()) {
-				// Can't start an insert yet
-				synchronized (this) {
-					shouldInsert = true;
-				}
-				return;
-			}	
-
-			startInserter();
-		}
-
-		private boolean checkIPUpdated() {
-			if(lastIPAddress == null) {
-				Logger.minor(this, "Not inserting because no IP address");
-				return false; // no point inserting
-			}
-			Peer[] p = getPrimaryIPAddress();
-			synchronized (this) {
-				if(lastInsertedPeers != null) {
-					if(p.length != lastInsertedPeers.length) return true;
-					for(int i=0;i<p.length;i++)
-						if(!p[i].strictEquals(lastInsertedPeers[i]))
-							return true;
-				} else {
-					// we've not inserted an ARK that we know about (ie since startup)
-					return true;
-				}
-			}
-			return false;
-		}
-
-		private void startInserter() {
-
-			if(!canStart) {
-				Logger.minor(this, "ARK inserter can't start yet");
-				return;
-			}
-			
-			Logger.minor(this, "starting inserter");
-			
-			SimpleFieldSet fs = exportPublicFieldSet();
-			
-			// Remove some unnecessary fields that only cause collisions.
-			
-			// Delete entire ark.* field for now. Changing this and automatically moving to the new may be supported in future.
-			fs.removeSubset("ark");
-			fs.removeValue("location");
-			//fs.remove("version"); - keep version because of its significance in reconnection
-			
-			String s = fs.toString();
-			
-			byte[] buf;
-			try {
-				buf = s.getBytes("UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				throw new Error("UTF-8 not supported");
-			}
-			
-			Bucket b = new SimpleReadOnlyArrayBucket(buf);
-			
-			FreenetURI uri = myARK.getInsertURI().setKeyType("USK").setSuggestedEdition(Node.this.myARKNumber);
-			
-			Logger.minor(this, "Inserting ARK: "+uri);
-			
-
-			inserter = new ClientPutter(this, b, uri,
-						new ClientMetadata("text/plain") /* it won't quite fit in an SSK anyway */, 
-						Node.this.makeClient((short)0).getInserterContext(true),
-						chkPutScheduler, sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null);
-			
-			try {
-				
-				inserter.start();
-				
-				synchronized (this) {
-					if(fs.get("physical.udp") == null)
-						lastInsertedPeers = null;
-					else {
-						try {
-							String[] all = fs.getAll("physical.udp");
-							Peer[] peers = new Peer[all.length];
-							for(int i=0;i<all.length;i++)
-								peers[i] = new Peer(all[i], false);
-							lastInsertedPeers = peers;
-						} catch (PeerParseException e1) {
-							Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
-						} catch (UnknownHostException e1) {
-							Logger.error(this, "Error parsing own ref: "+e1+" : "+fs.get("physical.udp"), e1);
-						}
-					}
-				}
-			} catch (InserterException e) {
-				onFailure(e, inserter);	
-			}
-		}
-
-		public void onSuccess(FetchResult result, ClientGetter state) {
-			// Impossible
-		}
-
-		public void onFailure(FetchException e, ClientGetter state) {
-			// Impossible
-		}
-
-		public void onSuccess(BaseClientPutter state) {
-			Logger.minor(this, "ARK insert succeeded");
-				inserter = null;
-				boolean myShouldInsert;
-				synchronized (this) {
-					myShouldInsert = shouldInsert;
-				}
-				if(myShouldInsert) {
-					myShouldInsert = false;
-					startInserter();
-				}
-				synchronized (this){
-					shouldInsert = myShouldInsert;
-				}
-		}
-
-		public void onFailure(InserterException e, BaseClientPutter state) {
-			Logger.minor(this, "ARK insert failed: "+e);
-			synchronized(this) {
-				lastInsertedPeers = null;
-			}
-			// :(
-			// Better try again
-			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e1) {
-				// Ignore
-			}
-			
-			startInserter();
-		}
-
-		public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
-			Logger.minor(this, "Generated URI for ARK: "+uri);
-			long l = uri.getSuggestedEdition();
-			if(l < myARKNumber) {
-				Logger.error(this, "Inserted edition # lower than attempted: "+l+" expected "+myARKNumber);
-			} else if(l > myARKNumber) {
-				Logger.minor(this, "ARK number moving from "+myARKNumber+" to "+l);
-				myARKNumber = l;
-				writeNodeFile();
-			}
-		}
-
-		public void onConnectedPeer() {
-			if(!checkIPUpdated()) return;
-			synchronized (this) {
-				if(!shouldInsert) return;
-			}
-			// Already inserting.
-			if(inserter != null) return; 	
-
-			// Otherwise need to start an insert
-			if(!peers.anyConnectedPeers()) {
-				// Can't start an insert yet
-				synchronized (this) {
-					shouldInsert = true;	
-				}
-				return;
-			}
-			synchronized (this) {
-				shouldInsert = false;	
-			}
-
-			startInserter();
-		}
-
-		public void onMajorProgress() {
-			// Ignore
-		}
-	
-	}
-
-	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
 	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
 	private static BuildOldAgeUserAlert buildOldAgeUserAlert;
 	
@@ -549,10 +326,6 @@ public class Node {
 	private final HashMap transferringRequestSenders;
 	/** CHKInsertSender's currently running, by KeyHTLPair */
 	private final HashMap insertSenders;
-	/** IP address detector */
-	private final IPAddressDetector ipDetector;
-	/** Plugin manager for plugin IP address detectors e.g. STUN */
-	private final IPDetectorPluginManager ipDetectorManager;
 	/** My crypto group */
 	private DSAGroup myCryptoGroup;
 	/** My private key */
@@ -562,9 +335,9 @@ public class Node {
 	/** Memory Checker thread */
 	private final Thread myMemoryChecker;
 	/** My ARK SSK private key */
-	private InsertableClientSSK myARK;
+	InsertableClientSSK myARK;
 	/** My ARK sequence number */
-	private long myARKNumber;
+	long myARKNumber;
 	/** FetcherContext for ARKs */
 	public final FetcherContext arkFetcherContext;
 	/** ARKFetcher's currently running, by identity */
@@ -599,10 +372,10 @@ public class Node {
 	public boolean bwlimitDelayAlertRelevant;
 	/** nodeAveragePing PeerManagerUserAlert should happen if true */
 	public boolean nodeAveragePingAlertRelevant;
-	/** If true, include local addresses on noderefs */
-	public boolean includeLocalAddressesInNoderefs;
 	/** Average proportion of requests rejected immediately due to overload */
 	public final TimeDecayingRunningAverage pInstantRejectIncoming;
+	/** IP detector */
+	public final NodeIPDetector ipDetector;
 	
 	private final HashSet runningUIDs;
 	
@@ -750,9 +523,6 @@ public class Node {
 
 	private boolean wasTestnet;
 
-	// USK inserter.
-	private final MyARKInserter arkPutter;
-	
 	// The node starter
 	private static NodeStarter nodeStarter;
 	
@@ -792,7 +562,7 @@ public class Node {
 				}
 				if(p.getPort() == portNumber) {
 					// DNSRequester doesn't deal with our own node
-					oldIPAddress = p.getFreenetAddress();
+					ipDetector.setOldIPAddress(p.getFreenetAddress());
 					break;
 				}
 			}
@@ -996,11 +766,9 @@ public class Node {
 	  	nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
-		arkPutter = new MyARKInserter();
 		startupTime = System.currentTimeMillis();
 		throttleWindow = new ThrottleWindowManager(2.0);
 		alerts = new UserAlertManager();
-		ipDetectorManager = new IPDetectorPluginManager(this);
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
@@ -1014,7 +782,6 @@ public class Node {
 			throw new Error(e3);
 		}
 		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
-		ipDetector = new IPAddressDetector(10*1000, this);
 		requestSenders = new HashMap();
 		transferringRequestSenders = new HashMap();
 		insertSenders = new HashMap();
@@ -1032,8 +799,6 @@ public class Node {
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
 		
 		buildOldAgeUserAlert = new BuildOldAgeUserAlert();
-
-		primaryIPUndetectedAlert = new IPUndetectedUserAlert();
 
 		int sortOrder = 0;
 		// Setup node-specific configuration
@@ -1058,104 +823,10 @@ public class Node {
     	this.myMemoryChecker.setPriority(Thread.MAX_PRIORITY);
     	this.myMemoryChecker.setDaemon(true);
 
-		// IP address override
-		nodeConfig.register("ipAddressOverride", "", sortOrder++, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
-
-			public String get() {
-				if(overrideIPAddress == null) return "";
-				else return overrideIPAddress.toString();
-			}
-			
-			public void set(String val) throws InvalidConfigValueException {
-				// FIXME do we need to tell anyone?
-				if(val.length() == 0) {
-					// Set to null
-					overrideIPAddress = null;
-					lastIPAddress = null;
-					redetectAddress();
-					return;
-				}
-				FreenetInetAddress addr;
-				try {
-					addr = new FreenetInetAddress(val, false);
-				} catch (UnknownHostException e) {
-					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
-				}
-				overrideIPAddress = addr;
-				lastIPAddress = null;
-				redetectAddress();
-				shouldInsertARK();
-			}
-			
-		});
-		
-		String ipOverrideString = nodeConfig.getString("ipAddressOverride");
-		if(ipOverrideString.length() == 0)
-			overrideIPAddress = null;
-		else {
-			try {
-				overrideIPAddress = new FreenetInetAddress(ipOverrideString, false);
-			} catch (UnknownHostException e) {
-				String msg = "Unknown host: "+ipOverrideString+" in config: "+e.getMessage();
-				Logger.error(this, msg);
-				System.err.println(msg+" but starting up anyway with no IP override");
-				overrideIPAddress = null;
-			}
-		}
-		
-		// Temporary IP address hint
-		
-		nodeConfig.register("tempIPAddressHint", "", sortOrder++, false, "Temporary IP address hint", "Temporary hint to what our IP might be; deleted after use", new StringCallback() {
-
-			public String get() {
-				return "";
-			}
-			
-			public void set(String val) throws InvalidConfigValueException {
-				if(val.length() == 0) {
-					return;
-				}
-				if(overrideIPAddress != null) return;
-				try {
-					oldIPAddress = new FreenetInetAddress(val, false);
-				} catch (UnknownHostException e) {
-					throw new InvalidConfigValueException("Unknown host: "+e.getMessage());
-				}
-				redetectAddress();
-			}
-			
-		});
-		
-		String ipHintString = nodeConfig.getString("tempIPAddressHint");
-		if(ipOverrideString.length() > 0) {
-			try {
-				oldIPAddress = new FreenetInetAddress(ipHintString, false);
-			} catch (UnknownHostException e) {
-				String msg = "Unknown host: "+ipOverrideString+" in config: "+e.getMessage();
-				Logger.error(this, msg);
-				System.err.println(msg+"");
-				overrideIPAddress = null;
-			}
-		}
-		
-		// Include local IPs in noderef file
-		
-		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, "Include local addresses in noderef", "Whether to include local addresses (LAN and localhost) in node references. This will not be useful unless the other side sets metadata.allowLocalAddresses=true for this reference.", new BooleanCallback() {
-
-			public boolean get() {
-				return includeLocalAddressesInNoderefs;
-			}
-
-			public void set(boolean val) throws InvalidConfigValueException {
-				includeLocalAddressesInNoderefs = val;
-				lastIPAddress = null;
-				ipDetector.clearCached();
-			}
-			
-		});
-		
-		includeLocalAddressesInNoderefs = nodeConfig.getBoolean("includeLocalAddressesInNoderefs");
-		
+    	// FIXME maybe these configs should actually be under a node.ip subconfig?
+    	ipDetector = new NodeIPDetector(this);
+    	sortOrder = ipDetector.registerConfigs(nodeConfig, sortOrder);
+    	
 		// Determine where to bind to
 		
 
@@ -1796,7 +1467,6 @@ public class Node {
 		ps.start();
 		usm.start();
 		myMemoryChecker.start();
-		ipDetectorManager.start();
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
@@ -1867,13 +1537,11 @@ public class Node {
 		config.finishedInit();
 		config.store();
 		
+		ipDetector.start();
+		
 		// Start testnet handler
 		if(testnetHandler != null)
 			testnetHandler.start();
-		
-		Thread t = new Thread(ipDetector, "IP address re-detector");
-		t.setDaemon(true);
-		t.start();
 		
 		// Now check whether we are likely to get the EvilJVMBug.
 		// If we are running a Sun or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
@@ -1970,23 +1638,10 @@ public class Node {
 		completer.setDaemon(true);
 		completer.start();
 		
-		redetectAddress();
-		
-		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
-		ps.queueTimedJob(new FastRunnable() {
-			public void run() {
-				arkPutter.start();
-			}
-		}, 60*1000);
-		
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
 	}
 	
-	private void shouldInsertARK() {
-		if(arkPutter!=null) arkPutter.update();
-	}
-
 	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
 		if(key instanceof ClientCHK)
 			return realGetCHK((ClientCHK)key, localOnly, cache, ignoreStore);
@@ -2553,7 +2208,7 @@ public class Node {
 	 */
 	public SimpleFieldSet exportPublicFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
-		Peer[] ips = getPrimaryIPAddress();
+		Peer[] ips = ipDetector.getPrimaryIPAddress();
 		if(ips != null) {
 			for(int i=0;i<ips.length;i++)
 				fs.put("physical.udp", ips[i].toString());
@@ -2574,111 +2229,6 @@ public class Node {
 		return fs;
 	}
 
-	/** Explicit forced IP address */
-	FreenetInetAddress overrideIPAddress;
-	/** IP address from last time */
-	FreenetInetAddress oldIPAddress;
-	/** Detected IP's and their NAT status from plugins */
-	DetectedIP[] pluginDetectedIPs;
-	/** Last detected IP address */
-	Peer[] lastIPAddress;
-	
-	/**
-	 * @return Our current main IP address.
-	 * FIXME - we should support more than 1, and we should do the
-	 * detection properly with NetworkInterface, and we should use
-	 * third parties if available and UP&P if available.
-	 */
-	Peer[] detectPrimaryIPAddress() {
-		Vector addresses = new Vector();
-		if(overrideIPAddress != null) {
-			// If the IP is overridden, the override has to be the first element.
-			addresses.add(new Peer(overrideIPAddress, portNumber));
-		}
-	   	InetAddress[] detectedAddrs = ipDetector.getAddress();
-	   	if(detectedAddrs != null) {
-	   		for(int i=0;i<detectedAddrs.length;i++) {
-	   			Peer p = new Peer(detectedAddrs[i], portNumber);
-	   			if(!addresses.contains(p)) addresses.add(p);
-	   		}
-	   	}
-	   	if((pluginDetectedIPs != null) && (pluginDetectedIPs.length > 0)) {
-	   		for(int i=0;i<pluginDetectedIPs.length;i++) {
-	   			InetAddress addr = pluginDetectedIPs[i].publicAddress;
-	   			if(addr == null) continue;
-	   			Peer a = new Peer(new FreenetInetAddress(addr), portNumber);
-	   			if(!addresses.contains(a))
-	   				addresses.add(a);
-	   		}
-	   	}
-	   	if((detectedAddrs.length == 0) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
-	   		addresses.add(new Peer(oldIPAddress, portNumber));
-   		// Try to pick it up from our connections
-	   	if(peers != null) {
-	   		PeerNode[] peerList = peers.connectedPeers;
-	   		HashMap countsByPeer = new HashMap();
-	   		// FIXME use a standard mutable int object, we have one somewhere
-	   		for(int i=0;i<peerList.length;i++) {
-	   			Peer p = peerList[i].getRemoteDetectedPeer();
-	   			if((p == null) || p.isNull()) continue;
-	   			// DNSRequester doesn't deal with our own node
-	   			InetAddress ip = p.getAddress(true);
-	   			if(!IPUtil.checkAddress(ip)) continue;
-	   			if(countsByPeer.containsKey(ip)) {
-	   				Integer count = (Integer) countsByPeer.get(p);
-	   				Integer newCount = new Integer(count.intValue()+1);
-	   				countsByPeer.put(p, newCount);
-	   			} else {
-	   				countsByPeer.put(p, new Integer(1));
-	   			}
-	   		}
-	   		if(countsByPeer.size() == 1) {
-		   		Iterator it = countsByPeer.keySet().iterator();
-		   		Peer p = (Peer) (it.next());
-		   		if(!addresses.contains(p)) addresses.add(p);
-	   		} else if(countsByPeer.size() > 1) {
-	   			Iterator it = countsByPeer.keySet().iterator();
-	   			// Take two most popular addresses.
-		   		Peer best = null;
-		   		Peer secondBest = null;
-		   		int bestPopularity = 0;
-		   		int secondBestPopularity = 0;
-		   		while(it.hasNext()) {
-		   			Peer cur = (Peer) (it.next());
-		   			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
-		   			if(curPop >= bestPopularity) {
-		   				secondBestPopularity = bestPopularity;
-		   				bestPopularity = curPop;
-		   				secondBest = best;
-		   				best = cur;
-		   			}
-		   		}
-		   		if(best != null) {
-		   			if((bestPopularity > 2) || (detectedAddrs.length == 0)) {
-		   				if(!addresses.contains(best))
-		   					addresses.add(best);
-		   				if((secondBest != null) && (secondBestPopularity > 2)) {
-		   					if(!addresses.contains(secondBest))
-		   						addresses.add(secondBest);
-		   				}
-		   			}
-		   		}
-	   		}
-	   	}
-	   	if (addresses.isEmpty()) {
-	   		this.alerts.register(primaryIPUndetectedAlert);
-	   	} else {
-	   		this.alerts.unregister(primaryIPUndetectedAlert);
-	   	}
-	   	lastIPAddress = (Peer[]) addresses.toArray(new Peer[addresses.size()]);
-	   	return lastIPAddress;
-	}
-
-	Peer[] getPrimaryIPAddress() {
-		if(lastIPAddress == null) return detectPrimaryIPAddress();
-		return lastIPAddress;
-	}
-	
 	/**
 	 * Do a routed ping of another node on the network by its location.
 	 * @param loc2 The location of the other node to ping. It must match
@@ -3272,17 +2822,8 @@ public class Node {
 		return sskInsertThrottle;
 	}
 
-	Peer[] lastIP;
 	public BookmarkManager bookmarkManager;
 
-	public void redetectAddress() {
-		Peer[] newIP = detectPrimaryIPAddress();
-		if(Arrays.equals(newIP, lastIP)) return;
-		shouldInsertARK();
-		lastIP = newIP;
-		writeNodeFile();
-	}
-	
 	/**
 	 * Look up a cached public key by its hash.
 	 */
@@ -3492,9 +3033,7 @@ public class Node {
 
 	public void onConnectedPeer() {
 		Logger.minor(this, "onConnectedPeer()");
-		if(arkPutter != null)
-			arkPutter.onConnectedPeer();
-		ipDetectorManager.maybeRun();
+		ipDetector.onConnectedPeer();
 	}
 	
 	public String getBindTo(){
@@ -3880,10 +3419,6 @@ public class Node {
 		return peerNodeStatuses;
 	}
 
-	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {
-		ipDetectorManager.register(detector);
-	} // FIXME what about unloading?
-	
 	/**
 	 * Return a peer of the node given its ip and port, name or identity, as a String
 	 */
@@ -3910,21 +3445,6 @@ public class Node {
 		return hasStarted;
 	}
 
-	public boolean hasDirectlyDetectedIP() {
-		return (ipDetector.getAddress() != null);
-	}
-
-	/**
-	 * Process a list of DetectedIP's from the IP detector plugin manager.
-	 * DetectedIP's can tell us what kind of NAT we are behind as well as our public
-	 * IP address.
-	 */
-	public void processDetectedIPs(DetectedIP[] list) {
-		pluginDetectedIPs = list;
-		redetectAddress();
-		shouldInsertARK();
-	}
-
 	public HealingQueue getHealingQueue() {
 		return healingQueue;
 	}
@@ -3946,5 +3466,9 @@ public class Node {
 	
 	public String getExtraPeerDataDir() {
 		return extraPeerDataDir.getPath();
+	}
+
+	public boolean noConnectedPeers() {
+		return !peers.anyConnectedPeers();
 	}
 }

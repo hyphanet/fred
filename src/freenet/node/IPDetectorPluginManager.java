@@ -17,12 +17,16 @@ import freenet.transport.IPUtil;
  */
 public class IPDetectorPluginManager {
 	
+	private final NodeIPDetector detector;
+	private final Ticker ticker;
 	private final Node node;
 	FredPluginIPDetector[] plugins;
 	
 	IPDetectorPluginManager(Node node) {
 		plugins = new FredPluginIPDetector[0];
 		this.node = node;
+		this.ticker = node.ps;
+		this.detector = node.ipDetector;
 	}
 
 	void start() {
@@ -31,7 +35,7 @@ public class IPDetectorPluginManager {
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 		}
-		node.ps.queueTimedJob(new Runnable() {
+		ticker.queueTimedJob(new Runnable() {
 			public void run() {
 				start();
 			}
@@ -118,7 +122,7 @@ public class IPDetectorPluginManager {
 		Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getDarknetConnections();
-		Peer[] nodeAddrs = node.getPrimaryIPAddress();
+		Peer[] nodeAddrs = detector.getPrimaryIPAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(runner != null) {
@@ -135,7 +139,7 @@ public class IPDetectorPluginManager {
 					startDetect();
 				}
 			}
-			if(node.hasDirectlyDetectedIP()) {
+			if(detector.hasDirectlyDetectedIP()) {
 				// We might still be firewalled?
 				// First, check only once per day or startup
 				if(now - lastDetectAttemptEndedTime < 24*60*60*1000) {
@@ -146,6 +150,7 @@ public class IPDetectorPluginManager {
 				// Now, if we have two nodes with unique IPs which aren't ours
 				// connected, we don't need to detect.
 				HashSet addressesConnected = null;
+				boolean hasOldPeers = false;
 				for(int i=0;i<peers.length;i++) {
 					PeerNode p = peers[i];
 					if(p.isConnected() || (now - p.lastReceivedPacketTime() < 24*60*60*1000)) {
@@ -164,7 +169,7 @@ public class IPDetectorPluginManager {
 									break;
 								}
 							}
-							if(internal) {
+							if(!internal) {
 								// Real IP address
 								if(addressesConnected == null)
 									addressesConnected = new HashSet();
@@ -176,15 +181,16 @@ public class IPDetectorPluginManager {
 								}
 							}
 						}
+						long l = p.getPeerAddedTime();
+						if((l <= 0) || (now - l > 30*60*1000)) {
+							hasOldPeers = true;
+						}
 					}
-					long l = p.getPeerAddedTime();
-					if((l <= 0) || (now - l < 30*60*1000)) {
-						// Less than 30 minutes old, don't run a detection yet as
-						// it is likely we are simply directly connected. (But we do
-						// want it to work out of the box if we are not!).
-						Logger.minor(this, "Not detecting as less than 30 minutes old");
-						return;
-					}
+				}
+				if(!hasOldPeers) {
+					// No peers older than 30 minutes
+					Logger.minor(this, "Not detecting as less than 30 minutes old");
+					return;
 				}
 			}
 			
@@ -240,7 +246,7 @@ public class IPDetectorPluginManager {
 				
 				boolean maybeFake = false;
 			
-				if(!node.hasDirectlyDetectedIP()) {
+				if(!detector.hasDirectlyDetectedIP()) {
 					
 					if((conns.length > 0) && (conns.length < 3)) {
 						// No locally detected IP, only one or two connections.
@@ -371,7 +377,7 @@ public class IPDetectorPluginManager {
 			DetectedIP[] list = (DetectedIP[]) map.values().toArray(new DetectedIP[map.size()]);
 			for(int i=0;i<list.length;i++)
 				Logger.minor(this, "Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
-			node.processDetectedIPs(list);
+			detector.processDetectedIPs(list);
 			} finally {
 				runner = null;
 			}

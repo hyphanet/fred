@@ -20,7 +20,7 @@ import freenet.support.WouldBlockException;
  * - A packet needs to be resent immediately
  * - Acknowledgements or resend requests need to be sent urgently.
  */
-public class PacketSender implements Runnable {
+public class PacketSender implements Runnable, Ticker {
     
     final LinkedList resendPackets;
     /** ~= Ticker :) */

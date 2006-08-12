@@ -9,6 +9,7 @@ import java.util.Enumeration;
 import java.util.Vector;
 
 import freenet.node.Node;
+import freenet.node.NodeIPDetector;
 import freenet.support.Logger;
 
 /**
@@ -19,10 +20,10 @@ public class IPAddressDetector implements Runnable {
 	
 	//private String preferedAddressString = null;
 	private final int interval;
-	private final Node node;
-	public IPAddressDetector(int interval, Node node) {
+	private final NodeIPDetector detector;
+	public IPAddressDetector(int interval, NodeIPDetector detector) {
 		this.interval = interval;
-		this.node = node;
+		this.detector = detector;
 	}
 
 	/**
@@ -130,7 +131,7 @@ public class IPAddressDetector implements Runnable {
 					+ oldAddress.getHostAddress()
 					+ " to "
 					+ lastInetAddress.getHostAddress());
-			node.redetectAddress();
+			detector.redetectAddress();
 			// We know it changed
 		}
 	}
@@ -193,7 +194,7 @@ public class IPAddressDetector implements Runnable {
 						// Wildcard address, 0.0.0.0, ignore.
 					} else if(i.isLinkLocalAddress() || i.isLoopbackAddress() ||
 							i.isSiteLocalAddress()) {
-						if(node.includeLocalAddressesInNoderefs) {
+						if(detector.includeLocalAddressesInNoderefs()) {
 							output.add(i);
 						}
 					} else if(i.isMulticastAddress()) {
@@ -208,7 +209,7 @@ public class IPAddressDetector implements Runnable {
 	}
 
 	protected boolean isInternetAddress(InetAddress addr) {
-		return node.includeLocalAddressesInNoderefs || IPUtil.checkAddress(addr);
+		return detector.includeLocalAddressesInNoderefs() || IPUtil.checkAddress(addr);
 	}
 
 	public void run() {
