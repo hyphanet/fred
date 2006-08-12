@@ -149,7 +149,7 @@ public final class BootstrappingDecayingRunningAverage implements
         return reports;
     }
 
-	public SimpleFieldSet exportFieldSet() {
+	public synchronized SimpleFieldSet exportFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Type", "BootstrappingDecayingRunningAverage");
 		fs.put("CurrentValue", currentValue);

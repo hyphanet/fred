@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 /**
  * Time decaying running average.
@@ -62,6 +63,31 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         if(logDEBUG)
         	Logger.debug(this, "Created "+this,
         			new Exception("debug"));
+    }
+    
+    public TimeDecayingRunningAverage(double defaultValue, long halfLife,
+            double min, double max, SimpleFieldSet fs) {
+    	curValue = defaultValue;
+        this.defaultValue = defaultValue;
+        started = false;
+        this.halfLife = halfLife;
+        createdTime = lastReportTime = System.currentTimeMillis();
+        this.minReport = min;
+        this.maxReport = max;
+        totalReports = 0;
+        logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+        if(logDEBUG)
+        	Logger.debug(this, "Created "+this,
+        			new Exception("debug"));
+        if(fs != null) {
+        	started = fs.getBoolean("Started", false);
+        	if(started) {
+        		curValue = fs.getDouble("CurrentValue", curValue);
+        		totalReports = fs.getLong("TotalReports", 0);
+        		long uptime = fs.getLong("Uptime", 0);
+        		createdTime = System.currentTimeMillis() - uptime;
+        	}
+        }
     }
     
     public TimeDecayingRunningAverage(double defaultValue, double halfLife, double min, double max, DataInputStream dis) throws IOException {
@@ -167,5 +193,15 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 
 	public synchronized long lastReportTime() {
 		return lastReportTime;
+	}
+
+	public synchronized SimpleFieldSet exportFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet();
+		fs.put("Type", "TimeDecayingRunningAverage");
+		fs.put("CurrentValue", curValue);
+		fs.put("Started", started);
+		fs.put("TotalReports", totalReports);
+		fs.put("Uptime", System.currentTimeMillis() - createdTime);
+		return fs;
 	}
 }

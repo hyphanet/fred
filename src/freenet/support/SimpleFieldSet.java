@@ -475,4 +475,8 @@ public class SimpleFieldSet {
 		}
 	}
 
+	public boolean getBoolean(String key, boolean def) {
+		return Fields.stringToBool(get(key), def);
+	}
+
 }
