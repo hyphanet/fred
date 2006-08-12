@@ -28,7 +28,6 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
-import freenet.support.URLEncoder;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
@@ -287,6 +286,10 @@ public class QueueToadlet extends Toadlet {
 			public int compare(Object first, Object second) {
 				ClientRequest firstRequest = (ClientRequest) first;
 				ClientRequest secondRequest = (ClientRequest) second;
+				short firstPrio = firstRequest.getPriority();
+				short secondPrio = secondRequest.getPriority();
+				if(firstPrio > secondPrio) return 1;
+				if(secondPrio > firstPrio) return -1;
 				return firstRequest.getIdentifier().compareTo(secondRequest.getIdentifier());
 			}
 		};
