@@ -104,7 +104,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(uri == null) throw new NullPointerException();
 		FetcherContext context = getFetcherContext();
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, core.chkFetchScheduler, core.sskFetchScheduler, uri, context, priorityClass, this, null);
+		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, this, null);
 		get.start();
 		return fw.waitForCompletion();
 	}
@@ -113,7 +113,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(uri == null) throw new NullPointerException();
 		FetcherContext context = getFetcherContext(overrideMaxSize);
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, core.chkFetchScheduler, core.sskFetchScheduler, uri, context, priorityClass, this, null);
+		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, this, null);
 		get.start();
 		return fw.waitForCompletion();
 	}
@@ -126,7 +126,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		InserterContext context = getInserterContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.data, insert.desiredURI, insert.clientMetadata, 
-				context, core.chkPutScheduler, core.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null);
+				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null);
 		put.start();
 		return pw.waitForCompletion();
 	}
@@ -151,7 +151,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, core.chkPutScheduler, core.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(true), false, this);
+			new SimpleManifestPutter(pw, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(true), false, this);
 		putter.start();
 		return pw.waitForCompletion();
 	}

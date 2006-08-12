@@ -181,7 +181,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	}
 
 	private ClientGetter makeGetter(FreenetURI uri) {
-		ClientGetter g = new ClientGetter(this, core.chkFetchScheduler, core.sskFetchScheduler, uri, ctx, PRIORITY_CLASS, this, null);
+		ClientGetter g = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, ctx, PRIORITY_CLASS, this, null);
 		return g;
 	}
 

@@ -131,7 +131,7 @@ public class NodeARKInserter implements ClientCallback {
 		inserter = new ClientPutter(this, b, uri,
 					new ClientMetadata("text/plain") /* it won't quite fit in an SSK anyway */, 
 					node.clientCore.makeClient((short)0).getInserterContext(true),
-					node.clientCore.chkPutScheduler, node.clientCore.sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null);
+					node.clientCore.requestStarters.chkPutScheduler, node.clientCore.requestStarters.sskPutScheduler, RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null);
 		
 		try {
 			

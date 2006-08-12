@@ -7,7 +7,6 @@ import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InserterContext;
-import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
@@ -46,31 +45,20 @@ import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.io.PersistentEncryptedTempBucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
-import freenet.support.math.BootstrappingDecayingRunningAverage;
-import freenet.support.math.TimeDecayingRunningAverage;
 
+/**
+ * The connection between the node and the client layer.
+ */
 public class NodeClientCore {
 
 	public final USKManager uskManager;
 	final ArchiveManager archiveManager;
-	final ThrottleWindowManager throttleWindow;
-	final MyRequestThrottle chkRequestThrottle;
-	final RequestStarter chkRequestStarter;
-	final MyRequestThrottle chkInsertThrottle;
-	final RequestStarter chkInsertStarter;
-	final MyRequestThrottle sskRequestThrottle;
-	final RequestStarter sskRequestStarter;
-	final MyRequestThrottle sskInsertThrottle;
-	final RequestStarter sskInsertStarter;
+	public final RequestStarterGroup requestStarters;
 	private final HealingQueue healingQueue;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
 	public final String formPassword;
 
 	File downloadDir;
-	public final ClientRequestScheduler chkFetchScheduler;
-	public final ClientRequestScheduler chkPutScheduler;
-	public final ClientRequestScheduler sskFetchScheduler;
-	public final ClientRequestScheduler sskPutScheduler;
 	final FilenameGenerator tempFilenameGenerator;
 	public final BucketFactory tempBucketFactory;
 	final Node node;
@@ -104,7 +92,7 @@ public class NodeClientCore {
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager();
-		throttleWindow = new ThrottleWindowManager(2.0);
+		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config);
 		
 		// Temp files
 		
@@ -183,80 +171,19 @@ public class NodeClientCore {
 		}
 
 
-		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
-		
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
-		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request");
-		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "CHK Request starter ("+portNumber+")", node.requestOutputThrottle, node.requestInputThrottle, node.localChkFetchBytesSentAverage, node.localChkFetchBytesReceivedAverage);
-		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, node, schedulerConfig, "CHKrequester");
-		chkRequestStarter.setScheduler(chkFetchScheduler);
-		chkRequestStarter.start();
-		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
-		// FIXME reenable the above
-		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "CHK Insert");
-		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "CHK Insert starter ("+portNumber+")", node.requestOutputThrottle, node.requestInputThrottle, node.localChkInsertBytesSentAverage, node.localChkInsertBytesReceivedAverage);
-		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, node, schedulerConfig, "CHKinserter");
-		chkInsertStarter.setScheduler(chkPutScheduler);
-		chkInsertStarter.start();
-
-		sskRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "SSK Request");
-		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "SSK Request starter ("+portNumber+")", node.requestOutputThrottle, node.requestInputThrottle, node.localSskFetchBytesSentAverage, node.localSskFetchBytesReceivedAverage);
-		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, node, schedulerConfig, "SSKrequester");
-		sskRequestStarter.setScheduler(sskFetchScheduler);
-		sskRequestStarter.start();
-		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
-		// FIXME reenable the above
-		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "SSK Insert");
-		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "SSK Insert starter ("+portNumber+")", node.requestOutputThrottle, node.requestInputThrottle, node.localSskInsertBytesSentAverage, node.localSskFetchBytesReceivedAverage);
-		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, node, schedulerConfig, "SSKinserter");
-		sskInsertStarter.setScheduler(sskPutScheduler);
-		sskInsertStarter.start();
-		
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);
 		
-		healingQueue = new SimpleHealingQueue(chkPutScheduler,
+		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InserterContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
 						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
 						false, uskManager), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
-		schedulerConfig.finishedInitialization();
 	}
 	
 	
-	public class MyRequestThrottle implements BaseRequestThrottle {
-
-		private final BootstrappingDecayingRunningAverage roundTripTime; 
-		
-		public MyRequestThrottle(ThrottleWindowManager throttleWindow, int rtt, String string) {
-			roundTripTime = new BootstrappingDecayingRunningAverage(rtt, 10, 5*60*1000, 10);
-		}
-
-		public synchronized long getDelay() {
-			double rtt = roundTripTime.currentValue();
-			double winSizeForMinPacketDelay = rtt / MIN_DELAY;
-			double _simulatedWindowSize = throttleWindow.currentValue();
-			if (_simulatedWindowSize > winSizeForMinPacketDelay) {
-				_simulatedWindowSize = winSizeForMinPacketDelay;
-			}
-			if (_simulatedWindowSize < 1.0) {
-				_simulatedWindowSize = 1.0F;
-			}
-			// return (long) (_roundTripTime / _simulatedWindowSize);
-			return Math.max(MIN_DELAY, Math.min((long) (rtt / _simulatedWindowSize), MAX_DELAY));
-		}
-
-		public synchronized void successfulCompletion(long rtt) {
-			roundTripTime.report(Math.max(rtt, 10));
-			Logger.minor(this, "Reported successful completion: "+rtt+" on "+this+" avg "+roundTripTime.currentValue());
-		}
-		
-		public String toString() {
-			return "rtt: "+roundTripTime.currentValue()+" _s="+throttleWindow.currentValue();
-		}
-	}
-
 
 	public void start(Config config) throws NodeInitException {
 		// TMCI
@@ -337,7 +264,7 @@ public class NodeClientCore {
 		while(true) {
 			if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
 				// See below; inserts count both
-				throttleWindow.rejectedOverload();
+				requestStarters.throttleWindow.rejectedOverload();
 				rejectedOverload = true;
 			}
 
@@ -356,7 +283,7 @@ public class NodeClientCore {
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 				if(!rejectedOverload) {
 					// See below
-					throttleWindow.rejectedOverload();
+					requestStarters.throttleWindow.rejectedOverload();
 					rejectedOverload = true;
 				}
 			} else {
@@ -366,8 +293,8 @@ public class NodeClientCore {
 						(status == RequestSender.VERIFY_FAILURE)) {
 					long rtt = System.currentTimeMillis() - startTime;
 					if(!rejectedOverload)
-						throttleWindow.requestCompleted();
-					chkRequestThrottle.successfulCompletion(rtt);
+						requestStarters.throttleWindow.requestCompleted();
+					requestStarters.chkRequestThrottle.successfulCompletion(rtt);
 				}
 			}
 			
@@ -432,7 +359,7 @@ public class NodeClientCore {
 		boolean rejectedOverload = false;
 		while(true) {
 			if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
-				throttleWindow.rejectedOverload();
+				requestStarters.throttleWindow.rejectedOverload();
 				rejectedOverload = true;
 			}
 
@@ -450,7 +377,7 @@ public class NodeClientCore {
 			if((status == RequestSender.TIMED_OUT) ||
 					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
 				if(!rejectedOverload) {
-					throttleWindow.rejectedOverload();
+					requestStarters.throttleWindow.rejectedOverload();
 					rejectedOverload = true;
 				}
 			} else {
@@ -461,8 +388,8 @@ public class NodeClientCore {
 					long rtt = System.currentTimeMillis() - startTime;
 					
 					if(!rejectedOverload)
-						throttleWindow.requestCompleted();
-					sskRequestThrottle.successfulCompletion(rtt);
+						requestStarters.throttleWindow.requestCompleted();
+					requestStarters.sskRequestThrottle.successfulCompletion(rtt);
 				}
 			}
 			
@@ -541,7 +468,7 @@ public class NodeClientCore {
 			}
 			if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
 				hasReceivedRejectedOverload = true;
-				throttleWindow.rejectedOverload();
+				requestStarters.throttleWindow.rejectedOverload();
 			}
 		}
 		
@@ -557,7 +484,7 @@ public class NodeClientCore {
 			}
 			if(is.anyTransfersFailed() && (!hasReceivedRejectedOverload)) {
 				hasReceivedRejectedOverload = true; // not strictly true but same effect
-				throttleWindow.rejectedOverload();
+				requestStarters.throttleWindow.rejectedOverload();
 			}
 		}
 		
@@ -572,9 +499,9 @@ public class NodeClientCore {
 				long endTime = System.currentTimeMillis();
 				long len = endTime - startTime;
 				
-				chkInsertThrottle.successfulCompletion(len);
+				requestStarters.chkInsertThrottle.successfulCompletion(len);
 				if(!hasReceivedRejectedOverload)
-					throttleWindow.requestCompleted();
+					requestStarters.throttleWindow.requestCompleted();
 			}
 		}
 		
@@ -652,7 +579,7 @@ public class NodeClientCore {
 			}
 			if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
 				hasReceivedRejectedOverload = true;
-				throttleWindow.rejectedOverload();
+				requestStarters.throttleWindow.rejectedOverload();
 			}
 		}
 		
@@ -678,8 +605,8 @@ public class NodeClientCore {
 				// It worked!
 				long endTime = System.currentTimeMillis();
 				long rtt = endTime - startTime;
-				throttleWindow.requestCompleted();
-				sskInsertThrottle.successfulCompletion(rtt);
+				requestStarters.throttleWindow.requestCompleted();
+				requestStarters.sskInsertThrottle.successfulCompletion(rtt);
 			}
 		}
 
@@ -739,22 +666,6 @@ public class NodeClientCore {
 		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass);
 	}
 	
-	public BaseRequestThrottle getCHKRequestThrottle() {
-		return chkRequestThrottle;
-	}
-
-	public BaseRequestThrottle getCHKInsertThrottle() {
-		return chkInsertThrottle;
-	}
-	
-	public BaseRequestThrottle getSSKRequestThrottle() {
-		return sskRequestThrottle;
-	}
-	
-	public BaseRequestThrottle getSSKInsertThrottle() {
-		return sskInsertThrottle;
-	}
-
 	public FCPServer getFCPServer() {
 		return fcpServer;
 	}
@@ -807,9 +718,9 @@ public class NodeClientCore {
 		SimpleSendableInsert ssi = new SimpleSendableInsert(this, block, RequestStarter.MAXIMUM_PRIORITY_CLASS);
 		Logger.minor(this, "Queueing random reinsert for "+block+" : "+ssi);
 		if(block instanceof CHKBlock)
-			chkPutScheduler.register(ssi);
+			requestStarters.chkPutScheduler.register(ssi);
 		else if(block instanceof SSKBlock)
-			sskPutScheduler.register(ssi);
+			requestStarters.sskPutScheduler.register(ssi);
 		else
 			Logger.error(this, "Don't know what to do with "+block+" should be queued for reinsert");
 	}

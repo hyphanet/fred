@@ -91,7 +91,7 @@ public class ARKFetcher implements ClientCallback {
 				startedEdition = uri.getSuggestedEdition();
 				fetchingURI = uri;
 				Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
-				cg = new ClientGetter(this, node.clientCore.chkFetchScheduler, node.clientCore.sskFetchScheduler, 
+				cg = new ClientGetter(this, node.clientCore.requestStarters.chkFetchScheduler, node.clientCore.requestStarters.sskFetchScheduler, 
 						uri, node.arkFetcherContext, RequestStarter.UPDATE_PRIORITY_CLASS, 
 						this, new ArrayBucket());
 				getter = cg;

@@ -37,7 +37,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		this.defaultName = message.defaultName;
 		SimpleManifestPutter p;
 		try {
-			p = new SimpleManifestPutter(this, client.core.chkPutScheduler, client.core.sskPutScheduler,
+			p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
 					manifestElements, priorityClass, uri, defaultName, ctx, message.getCHKOnly, client);
 		} catch (InserterException e) {
 			onFailure(e, null);
@@ -123,7 +123,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		SimpleManifestPutter p = null;
 		try {
 			if(!finished)
-				p = new SimpleManifestPutter(this, client.core.chkPutScheduler, client.core.sskPutScheduler,
+				p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
 						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client);
 		} catch (InserterException e) {
 			onFailure(e, null);

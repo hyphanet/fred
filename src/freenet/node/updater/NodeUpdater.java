@@ -159,7 +159,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			try{
 				if((cg==null)||cg.isCancelled()){
 					Logger.minor(this, "Scheduling request for "+URI.setSuggestedEdition(availableVersion));
-					cg = new ClientGetter(this, core.chkFetchScheduler, core.sskFetchScheduler, 
+					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
 							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
 							this, new ArrayBucket());
 					toStart = cg;
@@ -509,7 +509,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 							Logger.minor(this, "fetcher="+revocationGetter);
 							if(revocationGetter != null)
 								Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
-							cg = revocationGetter = new ClientGetter(NodeUpdater.this, core.chkFetchScheduler, core.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.MAXIMUM_PRIORITY_CLASS, NodeUpdater.this, null);
+							cg = revocationGetter = new ClientGetter(NodeUpdater.this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.MAXIMUM_PRIORITY_CLASS, NodeUpdater.this, null);
 							Logger.minor(this, "Queued another revocation fetcher");
 						}
 					}

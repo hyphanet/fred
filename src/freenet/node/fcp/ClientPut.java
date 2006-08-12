@@ -110,7 +110,7 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		inserter = new ClientPutter(this, data, uri, cm, 
-				ctx, client.core.chkPutScheduler, client.core.sskPutScheduler, priorityClass, 
+				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client, null);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
@@ -157,7 +157,7 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		inserter = new ClientPutter(this, data, uri, cm, 
-				ctx, client.core.chkPutScheduler, client.core.sskPutScheduler, priorityClass, 
+				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client, null);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
@@ -245,8 +245,8 @@ public class ClientPut extends ClientPutBase {
 			throw new PersistenceParseException("shouldn't happen");
 		}
 		this.clientMetadata = cm;
-		inserter = new ClientPutter(this, data, uri, cm, ctx, client.core.chkPutScheduler, 
-				client.core.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client, fs.subset("progress"));
+		inserter = new ClientPutter(this, data, uri, cm, ctx, client.core.requestStarters.chkPutScheduler, 
+				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client, fs.subset("progress"));
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);

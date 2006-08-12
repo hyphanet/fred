@@ -56,8 +56,8 @@ public class USKManager {
 		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetcherContext();
 		backgroundFetchContext.followRedirects = false;
 		backgroundFetchContext.uskManager = this;
-		this.chkRequestScheduler = core.chkFetchScheduler;
-		this.sskRequestScheduler = core.sskFetchScheduler;
+		this.chkRequestScheduler = core.requestStarters.chkFetchScheduler;
+		this.sskRequestScheduler = core.requestStarters.sskFetchScheduler;
 		latestVersionByClearUSK = new HashMap();
 		subscribersByClearUSK = new HashMap();
 		fetchersByUSK = new HashMap();
