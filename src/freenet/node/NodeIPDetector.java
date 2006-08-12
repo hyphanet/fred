@@ -50,10 +50,10 @@ public class NodeIPDetector {
 	public NodeIPDetector(Node node) {
 		this.node = node;
 		this.ticker = node.ps;
-		ipDetectorManager = new IPDetectorPluginManager(node);
+		ipDetectorManager = new IPDetectorPluginManager(node, this);
 		ipDetector = new IPAddressDetector(10*1000, this);
 		primaryIPUndetectedAlert = new IPUndetectedUserAlert();
-		arkPutter = new NodeARKInserter(node);
+		arkPutter = new NodeARKInserter(node, this);
 	}
 	
 	/**
@@ -138,10 +138,12 @@ public class NodeIPDetector {
 		   		}
 	   		}
 	   	}
-	   	if (addresses.isEmpty()) {
-	   		node.alerts.register(primaryIPUndetectedAlert);
-	   	} else {
-	   		node.alerts.unregister(primaryIPUndetectedAlert);
+	   	if(node.clientCore != null) {
+	   		if (addresses.isEmpty()) {
+	   			node.clientCore.alerts.register(primaryIPUndetectedAlert);
+	   		} else {
+	   			node.clientCore.alerts.unregister(primaryIPUndetectedAlert);
+	   		}
 	   	}
 	   	lastIPAddress = (Peer[]) addresses.toArray(new Peer[addresses.size()]);
 	   	return lastIPAddress;

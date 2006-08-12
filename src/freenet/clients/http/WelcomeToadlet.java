@@ -13,6 +13,7 @@ import freenet.client.InserterException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.NodeStarter;
 import freenet.node.Version;
 import freenet.node.useralerts.UserAlert;
@@ -24,15 +25,17 @@ import freenet.support.io.Bucket;
 public class WelcomeToadlet extends Toadlet {
 	private final static int MODE_ADD = 1;
 	private final static int MODE_EDIT = 2;
+	NodeClientCore core;
 	Node node;
 	SubConfig config;
 	BookmarkManager bookmarks;
 	
-	WelcomeToadlet(HighLevelSimpleClient client, Node n, SubConfig sc) {
+	WelcomeToadlet(HighLevelSimpleClient client, NodeClientCore core, Node node, SubConfig sc) {
 		super(client);
-		this.node = n;
+		this.core = core;
+		this.node = node;
 		this.config = sc;
-		this.bookmarks = node.bookmarkManager;
+		this.bookmarks = core.bookmarkManager;
 	}
 
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -48,14 +51,14 @@ public class WelcomeToadlet extends Toadlet {
 		if (request.getParam("shutdownconfirm").length() > 0) {
 			// Do the actual shutdown
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", ".?shutdownconfirm="+node.formPassword.hashCode());
+			headers.put("Location", ".?shutdownconfirm="+core.formPassword.hashCode());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			this.node.exit("Shutdown from fproxy");
 			return;
 		}else if(request.getParam("restartconfirm").length() > 0){
 			// Do the actual restart
 			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", ".?restartconfirm="+node.formPassword.hashCode());
+			headers.put("Location", ".?restartconfirm="+core.formPassword.hashCode());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			node.getNodeStarter().restart();
 			return;
@@ -151,7 +154,7 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 		}else if(request.isParameterSet("disable")){
-			UserAlert[] alerts=node.alerts.getAlerts();
+			UserAlert[] alerts=core.alerts.getAlerts();
 			for(int i=0;i<alerts.length;i++){
 				if(request.getIntParam("disable")==alerts[i].hashCode()){
 					UserAlert alert = alerts[i];
@@ -159,7 +162,7 @@ public class WelcomeToadlet extends Toadlet {
 					if(alert.userCanDismiss() && alert.shouldUnregisterOnDismiss()) {
 						alert.onDismiss();
 						Logger.normal(this,"Unregistering the userAlert "+alert.hashCode());
-						node.alerts.unregister(alert);
+						core.alerts.unregister(alert);
 					} else {
 						Logger.normal(this,"Disabling the userAlert "+alert.hashCode());
 						alert.isValid(false);
@@ -215,7 +218,7 @@ public class WelcomeToadlet extends Toadlet {
 	}
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		boolean advancedDarknetOutputEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
+		boolean advancedDarknetOutputEnabled = core.getToadletContainer().isAdvancedDarknetEnabled();
 		
 		HTTPRequest request = new HTTPRequest(uri);
 		if (request.getParam("newbookmark").length() > 0) {
@@ -257,7 +260,7 @@ public class WelcomeToadlet extends Toadlet {
 			return;
 		}else if (request.getParam("shutdownconfirm").length() > 0) {
 			// Tell the user that the node is shutting down
-			if(request.getIntParam("shutdownconfirm") != node.formPassword.hashCode()){
+			if(request.getIntParam("shutdownconfirm") != core.formPassword.hashCode()){
 				MultiValueTable headers = new MultiValueTable();
 				headers.put("Location", "/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -272,7 +275,7 @@ public class WelcomeToadlet extends Toadlet {
 			return;
 		}else if(request.getParam("restartconfirm").length() > 0){
 			// Tell the user that the node is restarting
-			if(request.getIntParam("restartconfirm") != node.formPassword.hashCode()){
+			if(request.getIntParam("restartconfirm") != core.formPassword.hashCode()){
 				MultiValueTable headers = new MultiValueTable();
 				headers.put("Location", "/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -310,7 +313,7 @@ public class WelcomeToadlet extends Toadlet {
 		}
 
 		// Alerts
-		contentNode.addChild(node.alerts.createAlerts());
+		contentNode.addChild(core.alerts.createAlerts());
 		
 		// Fetch-a-key box
 		HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", "Fetch a Key"));

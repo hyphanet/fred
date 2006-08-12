@@ -34,7 +34,7 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 		"Putting your e-mail address or IRC nickname there is generally speaking " +
 		"a good idea and helps your friends to identify your node.");
 		buf.append("<form method=\"post\" action=\"/config/\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.formPassword+"\">");
+		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.clientCore.formPassword+"\">");
 		//buf.append("<ul class=\"config\"><span class=\"configprefix\">"+sc.getPrefix()+"</span>\n");
 		buf.append("<ul class=\"config\">\n");
 		buf.append("<li>");
@@ -66,7 +66,7 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 		textNode.addChild("a", "href", "/config/", "Configuration Page");
 		textNode.addChild("#", ". Putting your e-mail address or IRC nickname there is generally speaking a good idea and helps your friends to identify your node.");
 		HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
 		itemNode.addChild("span", "class", "configshortdesc", o.getShortDesc()).addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", sc.getPrefix() + ".name", o.getValueString() });

@@ -10,7 +10,7 @@ public class PluginRespirator {
 	
 	public PluginRespirator(Node node, PluginManager pm) {
 		this.node = node;
-		this.hlsc = node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+		this.hlsc = node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 	}
 	
 	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {

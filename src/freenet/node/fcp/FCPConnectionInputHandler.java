@@ -52,7 +52,7 @@ public class FCPConnectionInputHandler implements Runnable {
 			fs = new SimpleFieldSet(lis, 4096, 128, true, true);
 			FCPMessage msg;
 			try {
-				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.node.persistentTempBucketFactory);
+				msg = FCPMessage.create(messageType, fs, handler.bf, handler.server.core.persistentTempBucketFactory);
 				if(msg == null) continue;
 			} catch (MessageInvalidException e) {
 				FCPMessage err = new ProtocolErrorMessage(e.protocolCode, false, e.getMessage(), e.ident);

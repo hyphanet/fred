@@ -12,12 +12,12 @@ import freenet.support.Logger;
  */
 public class SimpleSendableInsert implements SendableInsert {
 
-	public final Node node;
+	public final NodeClientCore node;
 	public final KeyBlock block;
 	public final short prioClass;
 	private boolean finished;
 	
-	public SimpleSendableInsert(Node node, KeyBlock block, short prioClass) {
+	public SimpleSendableInsert(NodeClientCore node, KeyBlock block, short prioClass) {
 		this.node = node;
 		this.block = block;
 		this.prioClass = prioClass;
@@ -41,10 +41,10 @@ public class SimpleSendableInsert implements SendableInsert {
 		return 0;
 	}
 
-	public void send(Node node) {
+	public void send(NodeClientCore core) {
 		try {
 			Logger.minor(this, "Starting request: "+this);
-			node.realPut(block, false);
+			core.realPut(block, false);
 		} catch (LowLevelPutException e) {
 			onFailure(e);
 			Logger.minor(this, "Request failed: "+this+" for "+e);

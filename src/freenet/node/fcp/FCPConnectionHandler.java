@@ -25,7 +25,7 @@ public class FCPConnectionHandler {
 		this.sock = s;
 		this.server = server;
 		isClosed = false;
-		this.bf = server.node.tempBucketFactory;
+		this.bf = server.core.tempBucketFactory;
 		requestsByIdentifier = new HashMap();
 		this.inputHandler = new FCPConnectionInputHandler(this);
 		this.outputHandler = new FCPConnectionOutputHandler(this);
@@ -91,7 +91,7 @@ public class FCPConnectionHandler {
 
 	public void setClientName(String name) {
 		this.clientName = name;
-		client = server.registerClient(name, server.node, this);
+		client = server.registerClient(name, server.core, this);
 	}
 	
 	public String getClientName() {

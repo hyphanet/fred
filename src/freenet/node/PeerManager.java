@@ -43,7 +43,7 @@ public class PeerManager {
     
     final String filename;
 
-    private final PeerManagerUserAlert ua;
+    final PeerManagerUserAlert ua;
     
     /**
      * Create a PeerManager by reading a list of peers from
@@ -56,7 +56,6 @@ public class PeerManager {
         System.out.println("Creating PeerManager");
         this.filename = filename;
         ua = new PeerManagerUserAlert(node);
-        node.alerts.register(ua);
         myPeers = new PeerNode[0];
         connectedPeers = new PeerNode[0];
         this.node = node;
@@ -117,14 +116,13 @@ public class PeerManager {
             // End of file, fine
         } catch (IOException e1) {
             Logger.error(this, "Could not read peers file: "+e1, e1);
-        } finally {
-            try {
-                br.close();
-            } catch (IOException e3) {
-                Logger.error(this, "Ignoring "+e3+" caught reading "+filename, e3);
-            }
-            return gotSome;
         }
+        try {
+        	br.close();
+        } catch (IOException e3) {
+        	Logger.error(this, "Ignoring "+e3+" caught reading "+filename, e3);
+        }
+        return gotSome;
 	}
 
 	public boolean addPeer(PeerNode pn) {
@@ -445,10 +443,9 @@ public class PeerManager {
      * This scans the same array 4 times.  It would be better to scan once and execute 4 callbacks...
      * For this reason the metrics are only updated if advanced mode is enabled
      */
-    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf) {
+    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting) {
 	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false);
-	if ((best != null) && (node.getToadletContainer() != null) &&
-			node.getToadletContainer().isAdvancedDarknetEnabled()) {
+	if ((best != null) && calculateMisrouting) {
 		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
 		if(nbo != null) {
 			node.missRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
@@ -685,5 +682,9 @@ public class PeerManager {
 		String msg = "Extra peer data reading and processing completed";
 		Logger.normal(this, msg);
 		System.out.println(msg);
+	}
+
+	public void start() {
+		node.clientCore.alerts.register(ua);
 	}
 }

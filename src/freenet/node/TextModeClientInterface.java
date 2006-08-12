@@ -51,6 +51,7 @@ public class TextModeClientInterface implements Runnable {
 
     final RandomSource r;
     final Node n;
+    final NodeClientCore core;
     final HighLevelSimpleClient client;
     final Hashtable streams;
     final File downloadsDir;
@@ -59,8 +60,9 @@ public class TextModeClientInterface implements Runnable {
     
     public TextModeClientInterface(TextModeClientInterfaceServer server, InputStream in, OutputStream out) {
     	this.n = server.n;
+    	this.core = server.n.clientCore;
     	this.r = server.r;
-        client = server.n.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+        client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
     	this.streams = new Hashtable();
     	this.downloadsDir = server.downloadsDir;
     	this.in = in;
@@ -71,6 +73,7 @@ public class TextModeClientInterface implements Runnable {
     public TextModeClientInterface(Node n, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
     	this.n = n;
     	this.r = n.random;
+    	this.core = n.clientCore;
     	this.client = c;
     	this.streams = new Hashtable();
     	this.downloadsDir = downloadDir;
@@ -168,7 +171,7 @@ public class TextModeClientInterface implements Runnable {
         sb.append("SHUTDOWN - exit the program\r\n");
         if(n.isUsingWrapper())
         	sb.append("RESTART - restart the program\r\n");
-        if(n.directTMCI != this) {
+        if(core.directTMCI != this) {
           sb.append("QUIT - close the socket\r\n");
         }
         if(n.testnetEnabled) {
@@ -332,7 +335,7 @@ public class TextModeClientInterface implements Runnable {
 		out.write(sb.toString().getBytes());
 		out.flush();
 		n.getNodeStarter().restart();
-	} else if(uline.startsWith("QUIT") && (n.directTMCI == this)) {
+	} else if(uline.startsWith("QUIT") && (core.directTMCI == this)) {
 		StringBuffer sb = new StringBuffer();
 		sb.append("QUIT command not available in console mode.\r\n");
 		out.write(sb.toString().getBytes());

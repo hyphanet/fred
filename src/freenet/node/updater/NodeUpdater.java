@@ -28,7 +28,9 @@ import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
+import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.node.useralerts.RevocationKeyFoundUserAlert;
 import freenet.node.useralerts.UpdatedVersionAvailableUserAlert;
@@ -48,6 +50,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private boolean finalCheck;
 	private final FreenetURI URI;
 	private final FreenetURI revocationURI;
+	private final Ticker ticker;
+	private final NodeClientCore core;
 	private final Node node;
 	
 	private final int currentVersion;
@@ -73,8 +77,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.revocationURI = revocationURI;
 		this.revocationAlert = null;
 		this.revocationDNFCounter = 0;
+		this.ticker = n.ps;
+		this.core = n.clientCore;
 		this.node = n;
-		node.nodeUpdater = this;
+		n.nodeUpdater = this;
 		this.currentVersion = Version.buildNumber();
 		this.availableVersion = currentVersion;
 		this.hasBeenBlown = false;
@@ -85,14 +91,14 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		
 		this.alert= new UpdatedVersionAvailableUserAlert(currentVersion, this);
 		alert.isValid(false);
-		node.alerts.register(alert);
+		core.alerts.register(alert);
 		
-		FetcherContext tempContext = n.makeClient((short)0).getFetcherContext();		
+		FetcherContext tempContext = core.makeClient((short)0).getFetcherContext();		
 		tempContext.allowSplitfiles = true;
 		tempContext.dontEnterImplicitArchives = false;
 		this.ctx = tempContext;
 		
-		ctxRevocation = n.makeClient((short)0).getFetcherContext();
+		ctxRevocation = core.makeClient((short)0).getFetcherContext();
 		ctxRevocation.allowSplitfiles = false;
 		ctxRevocation.cacheLocalRequests = false;
 		ctxRevocation.maxArchiveLevels = 1;
@@ -123,7 +129,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		if(found > availableVersion){
 			Logger.minor(this, "Updating availableVersion from "+availableVersion+" to "+found+" and queueing an update");
 			this.availableVersion = found;
-			node.ps.queueTimedJob(new Runnable() {
+			ticker.queueTimedJob(new Runnable() {
 				public void run() {
 					maybeUpdate();
 				}
@@ -153,7 +159,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			try{
 				if((cg==null)||cg.isCancelled()){
 					Logger.minor(this, "Scheduling request for "+URI.setSuggestedEdition(availableVersion));
-					cg = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, 
+					cg = new ClientGetter(this, core.chkFetchScheduler, core.sskFetchScheduler, 
 							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
 							this, new ArrayBucket());
 					toStart = cg;
@@ -503,7 +509,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 							Logger.minor(this, "fetcher="+revocationGetter);
 							if(revocationGetter != null)
 								Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
-							cg = revocationGetter = new ClientGetter(NodeUpdater.this, node.chkFetchScheduler, node.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.MAXIMUM_PRIORITY_CLASS, NodeUpdater.this, null);
+							cg = revocationGetter = new ClientGetter(NodeUpdater.this, core.chkFetchScheduler, core.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.MAXIMUM_PRIORITY_CLASS, NodeUpdater.this, null);
 							Logger.minor(this, "Queued another revocation fetcher");
 						}
 					}
@@ -575,9 +581,9 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			this.hasBeenBlown = true;
 			if(revocationAlert==null){
 				revocationAlert = new RevocationKeyFoundUserAlert(msg);
-				node.alerts.register(revocationAlert);
+				core.alerts.register(revocationAlert);
 				// we don't need to advertize updates : we are not going to do them
-				node.alerts.unregister(alert);
+				core.alerts.unregister(alert);
 			}
 			Logger.error(this, "The updater has acknoledged that it knows the private key has been blown");
 		}

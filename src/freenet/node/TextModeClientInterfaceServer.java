@@ -24,6 +24,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 
     final RandomSource r;
     final Node n;
+    final NodeClientCore core;
 //    final HighLevelSimpleClient client;
     final Hashtable streams;
     final File downloadsDir;
@@ -33,16 +34,17 @@ public class TextModeClientInterfaceServer implements Runnable {
     boolean isEnabled;
     NetworkInterface networkInterface;
 
-    TextModeClientInterfaceServer(Node n, int port, String bindTo, String allowedHosts) {
-        this.n = n;
+    TextModeClientInterfaceServer(Node node, int port, String bindTo, String allowedHosts) {
+    	this.n = node;
+    	this.core = n.clientCore;
         this.r = n.random;
         streams = new Hashtable();
-        this.downloadsDir = n.downloadDir;
+        this.downloadsDir = core.downloadDir;
         this.port=port;
         this.bindTo=bindTo;
         this.allowedHosts = allowedHosts;
         this.isEnabled=true;
-        n.setTMCI(this);
+        core.setTMCI(this);
     }
     
     void start() {
@@ -54,16 +56,18 @@ public class TextModeClientInterfaceServer implements Runnable {
 	public static void maybeCreate(Node node, Config config) throws IOException {
 		SubConfig TMCIConfig = new SubConfig("console", config);
 		
+		NodeClientCore core = node.clientCore;
+		
 		TMCIConfig.register("enabled", true, 1, true, "Enable TMCI", "Whether to enable the TMCI",
-				new TMCIEnabledCallback(node));
+				new TMCIEnabledCallback(core));
 		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
-				new TMCIBindtoCallback(node));
+				new TMCIBindtoCallback(core));
 		TMCIConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
-				new TMCIAllowedHostsCallback(node));
+				new TMCIAllowedHostsCallback(core));
 		TMCIConfig.register("port", 2323, 1, true, "Telnet port", "Telnet port number",
-        		new TCMIPortNumberCallback(node));
+        		new TCMIPortNumberCallback(core));
 		TMCIConfig.register("directEnabled", false, 1, true, "Enable on stdout/stdin?", "Enable text mode client interface on standard input/output? (.enabled refers to providing a telnet-style server, this runs it over a socket)",
-				new TMCIDirectEnabledCallback(node));
+				new TMCIDirectEnabledCallback(core));
 		
 		boolean TMCIEnabled = TMCIConfig.getBoolean("enabled");
 		int port =  TMCIConfig.getInt("port");
@@ -73,22 +77,22 @@ public class TextModeClientInterfaceServer implements Runnable {
 
 		if(TMCIEnabled){
 			new TextModeClientInterfaceServer(node, port, bind_ip, allowedHosts).start();
-			Logger.normal(node, "TMCI started on "+bind_ip+":"+port);
+			Logger.normal(core, "TMCI started on "+bind_ip+":"+port);
 			System.out.println("TMCI started on "+bind_ip+":"+port);
 		}
 		else{
-			Logger.normal(node, "Not starting TMCI as it's disabled");
+			Logger.normal(core, "Not starting TMCI as it's disabled");
 			System.out.println("Not starting TMCI as it's disabled");
 		}
 		
 		if(direct) {
-	        HighLevelSimpleClient client = node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+	        HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			TextModeClientInterface directTMCI =
-				new TextModeClientInterface(node, client, node.downloadDir, System.in, System.out);
+				new TextModeClientInterface(node, client, core.downloadDir, System.in, System.out);
 			Thread t = new Thread(directTMCI, "Direct text mode interface");
 			t.setDaemon(true);
 			t.start();
-			node.setDirectTMCI(directTMCI);
+			core.setDirectTMCI(directTMCI);
 		}
 		
 		TMCIConfig.finishedInitialization();
@@ -97,14 +101,14 @@ public class TextModeClientInterfaceServer implements Runnable {
     
     static class TMCIEnabledCallback implements BooleanCallback {
     	
-    	final Node node;
+    	final NodeClientCore core;
     	
-    	TMCIEnabledCallback(Node n) {
-    		this.node = n;
+    	TMCIEnabledCallback(NodeClientCore core) {
+    		this.core = core;
     	}
     	
     	public boolean get() {
-    		return node.getTextModeClientInterface() != null;
+    		return core.getTextModeClientInterface() != null;
     	}
     	
     	public void set(boolean val) throws InvalidConfigValueException {
@@ -116,14 +120,14 @@ public class TextModeClientInterfaceServer implements Runnable {
 
     static class TMCIDirectEnabledCallback implements BooleanCallback {
     	
-    	final Node node;
+    	final NodeClientCore core;
     	
-    	TMCIDirectEnabledCallback(Node n) {
-    		this.node = n;
+    	TMCIDirectEnabledCallback(NodeClientCore core) {
+    		this.core = core;
     	}
     	
     	public boolean get() {
-    		return node.getDirectTMCI() != null;
+    		return core.getDirectTMCI() != null;
     	}
     	
     	public void set(boolean val) throws InvalidConfigValueException {
@@ -135,15 +139,15 @@ public class TextModeClientInterfaceServer implements Runnable {
     
     static class TMCIBindtoCallback implements StringCallback {
     	
-    	final Node node;
+    	final NodeClientCore core;
     	
-    	TMCIBindtoCallback(Node n) {
-    		this.node = n;
+    	TMCIBindtoCallback(NodeClientCore core) {
+    		this.core = core;
     	}
     	
     	public String get() {
-    		if(node.getTextModeClientInterface()!=null)
-    			return node.getTextModeClientInterface().bindTo;
+    		if(core.getTextModeClientInterface()!=null)
+    			return core.getTextModeClientInterface().bindTo;
     		else
     			return "127.0.0.1";
     	}
@@ -151,8 +155,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     	public void set(String val) throws InvalidConfigValueException {
     		if(val.equals(get())) return;
     		try {
-				node.getTextModeClientInterface().networkInterface.setBindTo(val);
-				node.getTextModeClientInterface().bindTo = val;
+				core.getTextModeClientInterface().networkInterface.setBindTo(val);
+				core.getTextModeClientInterface().bindTo = val;
 			} catch (IOException e) {
 				throw new InvalidConfigValueException("could not change bind to!");
 			}
@@ -161,23 +165,23 @@ public class TextModeClientInterfaceServer implements Runnable {
     
     static class TMCIAllowedHostsCallback implements StringCallback {
 
-    	private final Node node;
+    	private final NodeClientCore core;
     	
-    	public TMCIAllowedHostsCallback(Node node) {
-    		this.node = node;
+    	public TMCIAllowedHostsCallback(NodeClientCore core) {
+    		this.core = core;
     	}
     	
 		public String get() {
-			if (node.getTextModeClientInterface() != null) {
-				return node.getTextModeClientInterface().allowedHosts;
+			if (core.getTextModeClientInterface() != null) {
+				return core.getTextModeClientInterface().allowedHosts;
 			}
 			return "127.0.0.1";
 		}
 
 		public void set(String val) {
 			if (!val.equals(get())) {
-				node.getTextModeClientInterface().networkInterface.setAllowedHosts(val);
-				node.getTextModeClientInterface().allowedHosts = val;
+				core.getTextModeClientInterface().networkInterface.setAllowedHosts(val);
+				core.getTextModeClientInterface().allowedHosts = val;
 			}
 		}
     	
@@ -185,15 +189,15 @@ public class TextModeClientInterfaceServer implements Runnable {
 
     static class TCMIPortNumberCallback implements IntCallback{
     	
-    	final Node node;
+    	final NodeClientCore core;
     	
-    	TCMIPortNumberCallback(Node n) {
-    		this.node = n;
+    	TCMIPortNumberCallback(NodeClientCore core) {
+    		this.core = core;
     	}
     	
     	public int get() {
-    		if(node.getTextModeClientInterface()!=null)
-    			return node.getTextModeClientInterface().port;
+    		if(core.getTextModeClientInterface()!=null)
+    			return core.getTextModeClientInterface().port;
     		else
     			return 2323;
     	}
@@ -201,7 +205,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     	// TODO: implement it
     	public void set(int val) throws InvalidConfigValueException {
     		if(val == get()) return;
-    		node.getTextModeClientInterface().setPort(val);
+    		core.getTextModeClientInterface().setPort(val);
     	}
     }
 

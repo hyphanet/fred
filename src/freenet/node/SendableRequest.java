@@ -14,7 +14,7 @@ public interface SendableRequest extends RandomGrabArrayItem {
 	public int getRetryCount();
 	
 	/** ONLY called by RequestStarter */
-	public void send(Node node);
+	public void send(NodeClientCore node);
 	
 	/** Get client context object */
 	public Object getClient();

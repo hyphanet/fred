@@ -14,6 +14,7 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
@@ -28,7 +29,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private final BucketFactory bucketFactory;
 	private final BucketFactory persistentBucketFactory;
 	private final PersistentFileTracker persistentFileTracker;
-	private final Node node;
+	private final NodeClientCore core;
 	/** One CEP for all requests and inserts */
 	private final ClientEventProducer globalEventProducer;
 	private long curMaxLength;
@@ -71,8 +72,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 64;
 	
 	
-	public HighLevelSimpleClientImpl(Node node, ArchiveManager mgr, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass) {
-		this.node = node;
+	public HighLevelSimpleClientImpl(NodeClientCore node, ArchiveManager mgr, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass) {
+		this.core = node;
 		archiveManager = mgr;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
@@ -103,7 +104,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(uri == null) throw new NullPointerException();
 		FetcherContext context = getFetcherContext();
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, node.chkFetchScheduler, node.sskFetchScheduler, uri, context, priorityClass, this, null);
+		ClientGetter get = new ClientGetter(fw, core.chkFetchScheduler, core.sskFetchScheduler, uri, context, priorityClass, this, null);
 		get.start();
 		return fw.waitForCompletion();
 	}
@@ -112,7 +113,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(uri == null) throw new NullPointerException();
 		FetcherContext context = getFetcherContext(overrideMaxSize);
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, node.chkFetchScheduler, node.sskFetchScheduler, uri, context, priorityClass, this, null);
+		ClientGetter get = new ClientGetter(fw, core.chkFetchScheduler, core.sskFetchScheduler, uri, context, priorityClass, this, null);
 		get.start();
 		return fw.waitForCompletion();
 	}
@@ -125,7 +126,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		InserterContext context = getInserterContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.data, insert.desiredURI, insert.clientMetadata, 
-				context, node.chkPutScheduler, node.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null);
+				context, core.chkPutScheduler, core.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null);
 		put.start();
 		return pw.waitForCompletion();
 	}
@@ -150,7 +151,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, node.chkPutScheduler, node.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(true), false, this);
+			new SimpleManifestPutter(pw, core.chkPutScheduler, core.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(true), false, this);
 		putter.start();
 		return pw.waitForCompletion();
 	}
@@ -177,7 +178,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				random, archiveManager, bucketFactory, globalEventProducer, 
-				cacheLocalRequests, node.uskManager, healingQueue);
+				cacheLocalRequests, core.uskManager, healingQueue);
 	}
 
 	public InserterContext getInserterContext(boolean forceNonPersistent) {
@@ -185,6 +186,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				forceNonPersistent ? new NullPersistentFileTracker() : persistentFileTracker,
 				random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				globalEventProducer, cacheLocalRequests, node.uskManager);
+				globalEventProducer, cacheLocalRequests, core.uskManager);
 	}
 }

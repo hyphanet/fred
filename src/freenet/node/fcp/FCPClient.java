@@ -9,7 +9,7 @@ import java.util.Vector;
 import freenet.client.FetcherContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InserterContext;
-import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 
@@ -29,8 +29,8 @@ public class FCPClient {
 		this.completedUnackedRequests = new LRUQueue();
 		this.clientRequestsByIdentifier = new HashMap();
 		this.server = server;
-		this.node = server.node;
-		this.client = node.makeClient((short)0);
+		this.core = server.core;
+		this.client = core.makeClient((short)0);
 		this.isGlobalQueue = isGlobalQueue;
 		defaultFetchContext = client.getFetcherContext();
 		defaultInsertContext = client.getInserterContext(false);
@@ -55,7 +55,7 @@ public class FCPClient {
 	private final HighLevelSimpleClient client;
 	public final FetcherContext defaultFetchContext;
 	public final InserterContext defaultInsertContext;
-	public final Node node;
+	public final NodeClientCore core;
 	/** Are we the global queue? */
 	public final boolean isGlobalQueue;
 	/** Are we watching the global queue? */

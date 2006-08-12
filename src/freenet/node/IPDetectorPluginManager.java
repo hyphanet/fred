@@ -22,11 +22,11 @@ public class IPDetectorPluginManager {
 	private final Node node;
 	FredPluginIPDetector[] plugins;
 	
-	IPDetectorPluginManager(Node node) {
+	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
 		plugins = new FredPluginIPDetector[0];
 		this.node = node;
 		this.ticker = node.ps;
-		this.detector = node.ipDetector;
+		this.detector = detector;
 	}
 
 	void start() {

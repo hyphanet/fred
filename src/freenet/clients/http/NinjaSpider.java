@@ -1,5 +1,6 @@
 package freenet.clients.http;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -14,21 +15,19 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.io.File;
 
-
-/* XML */
-import org.w3c.dom.Document;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
-import org.w3c.dom.DOMImplementation;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.OutputKeys;
 
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
@@ -42,11 +41,10 @@ import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.PluginManager;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -90,7 +88,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	private static final int maxParallelRequests = 20;
 	private int maxShownURIs = 50;
 
-	private Node node;
+	private NodeClientCore core;
 	private FetcherContext ctx;
 	private final short PRIORITY_CLASS = RequestStarter.PREFETCH_PRIORITY_CLASS;
 	private boolean stopped = true;
@@ -183,7 +181,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	}
 
 	private ClientGetter makeGetter(FreenetURI uri) {
-		ClientGetter g = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, uri, ctx, PRIORITY_CLASS, this, null);
+		ClientGetter g = new ClientGetter(this, core.chkFetchScheduler, core.sskFetchScheduler, uri, ctx, PRIORITY_CLASS, this, null);
 		return g;
 	}
 
@@ -696,8 +694,8 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	 * @see freenet.plugin.Plugin#setPluginManager(freenet.plugin.PluginManager)
 	 */
 	public void setPluginManager(PluginManager pluginManager) {
-		this.node = pluginManager.getNode();
-		this.ctx = node.makeClient((short) 0).getFetcherContext();
+		this.core = pluginManager.getClientCore();
+		this.ctx = core.makeClient((short) 0).getFetcherContext();
 		ctx.maxSplitfileBlockRetries = 10;
 		ctx.maxNonSplitfileRetries = 10;
 		ctx.maxTempLength = 2 * 1024 * 1024;
@@ -710,7 +708,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 	 * @see freenet.plugin.Plugin#startPlugin()
 	 */
 	public void startPlugin() {
-		FreenetURI[] initialURIs = node.bookmarkManager.getBookmarkURIs();
+		FreenetURI[] initialURIs = core.bookmarkManager.getBookmarkURIs();
 		for (int i = 0; i < initialURIs.length; i++)
 			queueURI(initialURIs[i]);
 		stopped = false;

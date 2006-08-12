@@ -26,6 +26,7 @@ import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.NetworkInterface;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.FileLoggerHook.IntervalParseException;
@@ -163,7 +164,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
 	 */
-	public SimpleToadletServer(SubConfig fproxyConfig, Node node) throws IOException, InvalidConfigValueException {
+	public SimpleToadletServer(SubConfig fproxyConfig, NodeClientCore core) throws IOException, InvalidConfigValueException {
 		
 		fproxyConfig.register("enabled", true, 1, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
 				new FProxyEnabledCallback());
@@ -222,7 +223,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyConfig.register("advancedDarknetEnabled", false, 1, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
 				new FProxyAdvancedDarknetEnabledCallback(this));
 
-		this.bf = node.tempBucketFactory;
+		this.bf = core.tempBucketFactory;
 		port = fproxyConfig.getInt("port");
 		bindTo = fproxyConfig.getString("bindTo");
 		allowedHosts = fproxyConfig.getString("allowedHosts");
@@ -233,11 +234,11 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		pageMaker = new PageMaker(cssName);
 		
 		toadlets = new LinkedList();
-		node.setToadletContainer(this); // even if not enabled, because of config
+		core.setToadletContainer(this); // even if not enabled, because of config
 		
 		this.networkInterface = new NetworkInterface(port, this.bindTo, this.allowedHosts);
 		if(!enabled) {
-			Logger.normal(node, "Not starting FProxy as it's disabled");
+			Logger.normal(core, "Not starting FProxy as it's disabled");
 			System.out.println("Not starting FProxy as it's disabled");
 		} else {
 			myThread = new Thread(this, "SimpleToadletServer");

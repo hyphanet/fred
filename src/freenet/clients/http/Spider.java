@@ -32,6 +32,7 @@ import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.PluginManager;
@@ -63,7 +64,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	private static final int maxParallelRequests = 20;
 	private int maxShownURIs = 50;
 
-	private Node node;
+	private NodeClientCore core;
 	private FetcherContext ctx;
 	private final short PRIORITY_CLASS = RequestStarter.PREFETCH_PRIORITY_CLASS;
 	private boolean stopped = true;
@@ -127,7 +128,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	private ClientGetter makeGetter(FreenetURI uri) {
-		ClientGetter g = new ClientGetter(this, node.chkFetchScheduler, node.sskFetchScheduler, uri, ctx, PRIORITY_CLASS, this, null);
+		ClientGetter g = new ClientGetter(this, core.chkFetchScheduler, core.sskFetchScheduler, uri, ctx, PRIORITY_CLASS, this, null);
 		return g;
 	}
 
@@ -425,8 +426,8 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	 * @see freenet.plugin.Plugin#setPluginManager(freenet.plugin.PluginManager)
 	 */
 	public void setPluginManager(PluginManager pluginManager) {
-		this.node = pluginManager.getNode();
-		this.ctx = node.makeClient((short) 0).getFetcherContext();
+		this.core = pluginManager.getClientCore();
+		this.ctx = core.makeClient((short) 0).getFetcherContext();
 		ctx.maxSplitfileBlockRetries = 10;
 		ctx.maxNonSplitfileRetries = 10;
 		ctx.maxTempLength = 2 * 1024 * 1024;
@@ -439,7 +440,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	 * @see freenet.plugin.Plugin#startPlugin()
 	 */
 	public void startPlugin() {
-		FreenetURI[] initialURIs = node.bookmarkManager.getBookmarkURIs();
+		FreenetURI[] initialURIs = core.bookmarkManager.getBookmarkURIs();
 		for (int i = 0; i < initialURIs.length; i++)
 			queueURI(initialURIs[i]);
 		stopped = false;

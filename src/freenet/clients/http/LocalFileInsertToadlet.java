@@ -8,6 +8,7 @@ import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.URLEncoder;
@@ -18,16 +19,16 @@ import freenet.support.URLEncoder;
  */
 public class LocalFileInsertToadlet extends Toadlet {
 
-	private final Node node;
+	private final NodeClientCore core;
 
 	private File currentPath;
 
 	/**
 	 * 
 	 */
-	public LocalFileInsertToadlet(Node node, HighLevelSimpleClient highLevelSimpleClient) {
+	public LocalFileInsertToadlet(NodeClientCore core, HighLevelSimpleClient highLevelSimpleClient) {
 		super(highLevelSimpleClient);
-		this.node = node;
+		this.core = core;
 	}
 
 	/**
@@ -53,7 +54,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 
 		HTMLNode pageNode = pageMaker.getPageNode("Listing of " + currentPath.getAbsolutePath());
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
-		contentNode.addChild(node.alerts.createSummary());
+		contentNode.addChild(core.alerts.createSummary());
 		
 		HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
 		infoboxDiv.addChild("div", "class", "infobox-header", "Directory Listing: " + currentPath.getAbsolutePath());
@@ -114,7 +115,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 					if (currentFile.canRead()) {
 						HTMLNode cellNode = fileRow.addChild("td");
 						HTMLNode formNode = cellNode.addChild("form", new String[] { "action", "method", "accept-charset" }, new String[] { "/queue/", "post", "utf-8" });
-						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", "Insert" });
 						fileRow.addChild("td", currentFile.getName());

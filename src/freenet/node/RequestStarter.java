@@ -42,12 +42,12 @@ public class RequestStarter implements Runnable {
 	final RunningAverage averageInputBytesPerRequest;
 	final RunningAverage averageOutputBytesPerRequest;
 	RequestScheduler sched;
-	final Node node;
+	final NodeClientCore core;
 	private long sentRequestTime;
 	
-	public RequestStarter(Node node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
+	public RequestStarter(NodeClientCore node, BaseRequestThrottle throttle, String name, TokenBucket outputBucket, TokenBucket inputBucket,
 			RunningAverage averageOutputBytesPerRequest, RunningAverage averageInputBytesPerRequest) {
-		this.node = node;
+		this.core = node;
 		this.throttle = throttle;
 		this.name = name;
 		this.outputBucket = outputBucket;
@@ -153,7 +153,7 @@ public class RequestStarter implements Runnable {
 		}
 
 		public void run() {
-			req.send(node);
+			req.send(core);
 		}
 		
 	}

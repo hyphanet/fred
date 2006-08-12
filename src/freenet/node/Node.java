@@ -30,19 +30,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.sleepycat.je.DatabaseException;
 
-import freenet.client.ArchiveManager;
 import freenet.client.FetcherContext;
-import freenet.client.HighLevelSimpleClient;
-import freenet.client.HighLevelSimpleClientImpl;
-import freenet.client.InserterContext;
-import freenet.client.async.ClientRequestScheduler;
-import freenet.client.async.HealingQueue;
-import freenet.client.async.SimpleHealingQueue;
-import freenet.client.async.USKManager;
-import freenet.client.events.SimpleEventProducer;
-import freenet.clients.http.BookmarkManager;
-import freenet.clients.http.FProxyToadlet;
-import freenet.clients.http.SimpleToadletServer;
 import freenet.config.Config;
 import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
@@ -62,7 +50,6 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.UdpSocketManager;
-import freenet.io.xfer.AbortedException;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -81,14 +68,12 @@ import freenet.keys.NodeCHK;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
-import freenet.node.fcp.FCPServer;
 import freenet.node.updater.NodeUpdater;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.N2NTMUserAlert;
 import freenet.node.useralerts.UserAlert;
-import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.FreenetStore;
@@ -106,13 +91,6 @@ import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TokenBucket;
-import freenet.support.io.BucketFactory;
-import freenet.support.io.FilenameGenerator;
-import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
-import freenet.support.io.PersistentEncryptedTempBucketFactory;
-import freenet.support.io.PersistentTempBucketFactory;
-import freenet.support.io.TempBucketFactory;
-import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 
@@ -153,9 +131,9 @@ public class Node {
 			}
 			public String get() {
 				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
-					node.alerts.register(nodeNameUserAlert);
+					clientCore.alerts.register(nodeNameUserAlert);
 				}else{
-					node.alerts.unregister(nodeNameUserAlert);
+					clientCore.alerts.unregister(nodeNameUserAlert);
 				}
 				return myName;
 			}
@@ -163,43 +141,11 @@ public class Node {
 			public void set(String val) throws InvalidConfigValueException {
 				myName = val;
 				if(myName.startsWith("Node created around")|| myName.equals("MyFirstFreenetNode")){
-					node.alerts.register(nodeNameUserAlert);
+					clientCore.alerts.register(nodeNameUserAlert);
 				}else{
-					node.alerts.unregister(nodeNameUserAlert);
+					clientCore.alerts.unregister(nodeNameUserAlert);
 				}
 			}
-	}
-	
-	public class MyRequestThrottle implements BaseRequestThrottle {
-
-		private final BootstrappingDecayingRunningAverage roundTripTime; 
-		
-		public MyRequestThrottle(ThrottleWindowManager throttleWindow, int rtt, String string) {
-			roundTripTime = new BootstrappingDecayingRunningAverage(rtt, 10, 5*60*1000, 10);
-		}
-
-		public synchronized long getDelay() {
-			double rtt = roundTripTime.currentValue();
-			double winSizeForMinPacketDelay = rtt / MIN_DELAY;
-			double _simulatedWindowSize = throttleWindow.currentValue();
-			if (_simulatedWindowSize > winSizeForMinPacketDelay) {
-				_simulatedWindowSize = winSizeForMinPacketDelay;
-			}
-			if (_simulatedWindowSize < 1.0) {
-				_simulatedWindowSize = 1.0F;
-			}
-			// return (long) (_roundTripTime / _simulatedWindowSize);
-			return Math.max(MIN_DELAY, Math.min((long) (rtt / _simulatedWindowSize), MAX_DELAY));
-		}
-
-		public synchronized void successfulCompletion(long rtt) {
-			roundTripTime.report(Math.max(rtt, 10));
-			Logger.minor(this, "Reported successful completion: "+rtt+" on "+this+" avg "+roundTripTime.currentValue());
-		}
-		
-		public String toString() {
-			return "rtt: "+roundTripTime.currentValue()+" _s="+throttleWindow.currentValue();
-		}
 	}
 	
 	/** Config object for the whole node. */
@@ -392,7 +338,6 @@ public class Node {
 	final File nodeDir;
 	/** Directory to put extra peer data into */
 	final File extraPeerDataDir;
-	final File tempDir;
 	public final RandomSource random; // strong RNG
 	final UdpSocketManager usm;
 	final FNPPacketMangler packetMangler;
@@ -400,7 +345,6 @@ public class Node {
 	public final PacketSender ps;
 	final NodeDispatcher dispatcher;
 	final NodePinger nodePinger;
-	final FilenameGenerator tempFilenameGenerator;
 	static final int MAX_CACHED_KEYS = 1000;
 	final LRUHashtable cachedPubKeys;
 	final boolean testnetEnabled;
@@ -449,24 +393,12 @@ public class Node {
 	public final long bootID;
 	public final long startupTime;
 	
-	// Client stuff
-	public final USKManager uskManager;
-	final ArchiveManager archiveManager;
-	public final BucketFactory tempBucketFactory;
-	final ThrottleWindowManager throttleWindow;
-	final MyRequestThrottle chkRequestThrottle;
-	final RequestStarter chkRequestStarter;
-	final MyRequestThrottle chkInsertThrottle;
-	final RequestStarter chkInsertStarter;
-	final MyRequestThrottle sskRequestThrottle;
-	final RequestStarter sskRequestStarter;
-	final MyRequestThrottle sskInsertThrottle;
-	final RequestStarter sskInsertStarter;
-	public final UserAlertManager alerts;
+	public final NodeClientCore clientCore;
+	final String bindto;
+	/** Average delay caused by throttling for sending a packet */
 	final TimeDecayingRunningAverage throttledPacketSendAverage;
-	private final HealingQueue healingQueue;
-	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
-	public final String formPassword;
+	
+	// Stats
 	final TimeDecayingRunningAverage remoteChkFetchBytesSentAverage;
 	final TimeDecayingRunningAverage remoteSskFetchBytesSentAverage;
 	final TimeDecayingRunningAverage remoteChkInsertBytesSentAverage;
@@ -483,18 +415,6 @@ public class Node {
 	final TimeDecayingRunningAverage localSskFetchBytesReceivedAverage;
 	final TimeDecayingRunningAverage localChkInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage localSskInsertBytesReceivedAverage;
-
-	File downloadDir;
-	public final ClientRequestScheduler chkFetchScheduler;
-	public final ClientRequestScheduler chkPutScheduler;
-	public final ClientRequestScheduler sskFetchScheduler;
-	public final ClientRequestScheduler sskPutScheduler;
-	final String bindto;
-	TextModeClientInterfaceServer tmci;
-	TextModeClientInterface directTMCI;
-	FCPServer fcpServer;
-	FProxyToadlet fproxyServlet;
-	SimpleToadletServer toadletContainer;
 	
 	// The version we were before we restarted.
 	public int lastVersion;
@@ -502,21 +422,10 @@ public class Node {
 	/** NodeUpdater **/
 	public NodeUpdater nodeUpdater;
 	
-	// Persistent temporary buckets
-	public final PersistentTempBucketFactory persistentTempBucketFactory;
-	public final PersistentEncryptedTempBucketFactory persistentEncryptedTempBucketFactory;
-	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
 	public freenet.plugin.PluginManager pluginManager2;
 	
-	// Client stuff that needs to be configged - FIXME
-	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
-	static final long MAX_CACHED_ARCHIVE_DATA = 32*1024*1024; // make a fixed fraction of the store by default? FIXME
-	static final long MAX_ARCHIVE_SIZE = 2*1024*1024; // ??? FIXME
-	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
-	static final int MAX_CACHED_ELEMENTS = 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
-
 	// Helpers
 	public final InetAddress localhostAddress;
 	public final FreenetInetAddress fLocalhostAddress;
@@ -759,16 +668,11 @@ public class Node {
 		// Easy stuff
 		Logger.normal(this, "Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
 		System.out.println("Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
-	  	byte[] pwdBuf = new byte[16];
-		random.nextBytes(pwdBuf);
-		this.formPassword = Base64.encode(pwdBuf);
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
 	  	nodeStarter=ns;
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
 		startupTime = System.currentTimeMillis();
-		throttleWindow = new ThrottleWindowManager(2.0);
-		alerts = new UserAlertManager();
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
@@ -1066,55 +970,6 @@ public class Node {
 		usm.setDispatcher(dispatcher=new NodeDispatcher(this));
 		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
 		
-		// Temp files
-		
-		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, "Temp files directory", "Name of directory to put temporary files in", 
-				new StringCallback() {
-					public String get() {
-						return tempDir.getPath();
-					}
-					public void set(String val) throws InvalidConfigValueException {
-						if(tempDir.equals(new File(val))) return;
-						// FIXME
-						throw new InvalidConfigValueException("Moving temp directory on the fly not supported at present");
-					}
-		});
-		
-		tempDir = new File(nodeConfig.getString("tempDir"));
-		if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
-			String msg = "Could not find or create temporary directory";
-			throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
-		}
-		
-		try {
-			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
-		} catch (IOException e) {
-			String msg = "Could not find or create temporary directory (filename generator)";
-			throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
-		}
-		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, 1024);
-
-		// Persistent temp files
-		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), sortOrder++, true, "Persistent temp files directory", "Name of directory to put persistent temp files in",
-				new StringCallback() {
-					public String get() {
-						return persistentTempBucketFactory.getDir().toString();
-					}
-					public void set(String val) throws InvalidConfigValueException {
-						if(!get().equals(val))
-							return;
-						// FIXME
-						throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
-					}
-		});
-		try {
-			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random);
-			persistentEncryptedTempBucketFactory = new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
-		} catch (IOException e2) {
-			String msg = "Could not find or create persistent temporary directory";
-			throw new NodeInitException(EXIT_BAD_TEMP_DIR, msg);
-		}
-
 		// Extra Peer Data Directory
 		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, "Extra peer data directory", "Name of directory to put extra peer data in",
 				new StringCallback() {
@@ -1337,32 +1192,6 @@ public class Node {
 			throw new NodeInitException(EXIT_STORE_OTHER, msg);
 		}
 		
-		// Downloads directory
-		
-		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
-
-			public String get() {
-				return downloadDir.getPath();
-			}
-
-			public void set(String val) throws InvalidConfigValueException {
-				if(downloadDir.equals(new File(val)))
-					return;
-				File f = new File(val);
-				if(!((f.exists() && f.isDirectory()) || (f.mkdir()))) {
-					throw new InvalidConfigValueException("Could not find or create directory");
-				}
-				downloadDir = new File(val);
-			}
-			
-		});
-		
-		String val = nodeConfig.getString("downloadsDir");
-		downloadDir = new File(val);
-		if(!((downloadDir.exists() && downloadDir.isDirectory()) || (downloadDir.mkdir()))) {
-			throw new NodeInitException(EXIT_BAD_DOWNLOADS_DIR, "Could not find or create default downloads directory");
-		}
-
 		
 		// Guesstimates. Hopefully well over the reality.
 		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE);
@@ -1382,58 +1211,18 @@ public class Node {
 		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, Long.MAX_VALUE);
 		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Long.MAX_VALUE);
 		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Long.MAX_VALUE);
-
-		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
 		
-		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, tempFilenameGenerator);
-		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request");
-		chkRequestStarter = new RequestStarter(this, chkRequestThrottle, "CHK Request starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localChkFetchBytesSentAverage, localChkFetchBytesReceivedAverage);
-		chkFetchScheduler = new ClientRequestScheduler(false, false, random, chkRequestStarter, this, schedulerConfig, "CHKrequester");
-		chkRequestStarter.setScheduler(chkFetchScheduler);
-		chkRequestStarter.start();
-		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
-		// FIXME reenable the above
-		chkInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "CHK Insert");
-		chkInsertStarter = new RequestStarter(this, chkInsertThrottle, "CHK Insert starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localChkInsertBytesSentAverage, localChkInsertBytesReceivedAverage);
-		chkPutScheduler = new ClientRequestScheduler(true, false, random, chkInsertStarter, this, schedulerConfig, "CHKinserter");
-		chkInsertStarter.setScheduler(chkPutScheduler);
-		chkInsertStarter.start();
-
-		sskRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "SSK Request");
-		sskRequestStarter = new RequestStarter(this, sskRequestThrottle, "SSK Request starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localSskFetchBytesSentAverage, localSskFetchBytesReceivedAverage);
-		sskFetchScheduler = new ClientRequestScheduler(false, true, random, sskRequestStarter, this, schedulerConfig, "SSKrequester");
-		sskRequestStarter.setScheduler(sskFetchScheduler);
-		sskRequestStarter.start();
-		//insertThrottle = new ChainedRequestThrottle(10000, 2.0F, requestThrottle);
-		// FIXME reenable the above
-		sskInsertThrottle = new MyRequestThrottle(throttleWindow, 20000, "SSK Insert");
-		sskInsertStarter = new RequestStarter(this, sskInsertThrottle, "SSK Insert starter ("+portNumber+")", requestOutputThrottle, requestInputThrottle, localSskInsertBytesSentAverage, localSskFetchBytesReceivedAverage);
-		sskPutScheduler = new ClientRequestScheduler(true, true, random, sskInsertStarter, this, schedulerConfig, "SSKinserter");
-		sskInsertStarter.setScheduler(sskPutScheduler);
-		sskInsertStarter.start();
-		
-		schedulerConfig.finishedInitialization();
-
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder);
 		
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
-		
-		
-		Logger.normal(this, "Initializing USK Manager");
-		System.out.println("Initializing USK Manager");
-		uskManager = new USKManager(this);
 		
 		// And finally, Initialize the plugin manager
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
 		
-		healingQueue = new SimpleHealingQueue(chkPutScheduler,
-				new InserterContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
-						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
-						false, uskManager), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
-		
-		FetcherContext ctx = makeClient((short)0).getFetcherContext();
+		FetcherContext ctx = clientCore.makeClient((short)0).getFetcherContext();
 		
 		ctx.allowSplitfiles = false;
 		ctx.dontEnterImplicitArchives = true;
@@ -1467,6 +1256,7 @@ public class Node {
 		ps.start();
 		usm.start();
 		myMemoryChecker.start();
+		peers.start();
 		
 		if(isUsingWrapper()) {
 			Logger.normal(this, "Using wrapper correctly: "+nodeStarter);
@@ -1481,41 +1271,11 @@ public class Node {
 		System.out.println("FNP port is on "+bindto+":"+portNumber);
 		// Start services
 		
-		// TMCI
-		try{
-			TextModeClientInterfaceServer.maybeCreate(this, config);
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new NodeInitException(EXIT_COULD_NOT_START_TMCI, "Could not start TMCI: "+e);
-		}
-		
-		// FCP (including persistent requests so needs to start before FProxy)
-		try {
-			fcpServer = FCPServer.maybeCreate(this, config);
-		} catch (IOException e) {
-			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
-		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
-		}
-		
-		SubConfig fproxyConfig = new SubConfig("fproxy", config);
-		bookmarkManager = new BookmarkManager(this, fproxyConfig);
 		pluginManager2 = new freenet.plugin.PluginManager(this);
 		
 //		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
 //		pluginManager3 = new freenet.plugin_new.PluginManager(pluginManagerConfig);
 		
-		// FProxy
-		// FIXME this is a hack, the real way to do this is plugins
-		try {
-			FProxyToadlet.maybeCreateFProxyEtc(this, config, fproxyConfig);
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
-		} catch (InvalidConfigValueException e) {
-			throw new NodeInitException(EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e);
-		}
-
 		// Node Updater
 		try{
 			nodeUpdater = NodeUpdater.maybeCreate(this, config);
@@ -1533,16 +1293,31 @@ public class Node {
 		server.register(pproxy, "/plugins/", true);
 		 * */
 		
-		// After everything has been created, write the config file back to disk.
-		config.finishedInit();
-		config.store();
-		
 		ipDetector.start();
 		
 		// Start testnet handler
 		if(testnetHandler != null)
 			testnetHandler.start();
 		
+		checkForEvilJVMBug();
+		
+		// TODO: implement a "required" version if needed
+		if(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber)
+			clientCore.alerts.register(new ExtOldAgeUserAlert());
+
+		this.clientCore.start(config);
+		
+		// After everything has been created, write the config file back to disk.
+		config.finishedInit();
+		config.store();
+		
+		// Process any data in the extra peer data directory
+		peers.readExtraPeerData();
+		
+		hasStarted = true;
+	}
+	
+	private void checkForEvilJVMBug() {
 		// Now check whether we are likely to get the EvilJVMBug.
 		// If we are running a Sun or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
 		
@@ -1573,7 +1348,7 @@ public class Node {
 			if((assumeKernel == null) || (assumeKernel.length() == 0) || (!(assumeKernel.startsWith("2.2") || assumeKernel.startsWith("2.4")))) {
 				System.err.println(ERROR_SUN_NPTL);
 				Logger.error(this, ERROR_SUN_NPTL);
-				this.alerts.register(new UserAlert() {
+				clientCore.alerts.register(new UserAlert() {
 
 					public boolean userCanDismiss() {
 						return false;
@@ -1617,460 +1392,6 @@ public class Node {
 						// Not dismissable.
 					}
 				});
-			}
-		}
-		
-		// TODO: implement a "required" version if needed
-		if(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber)
-			this.alerts.register(new ExtOldAgeUserAlert());
-		
-		Thread completer = new Thread(new Runnable() {
-			public void run() {
-				System.out.println("Resuming persistent requests");
-				Logger.normal(this, "Resuming persistent requests");
-				fcpServer.finishStart();
-				persistentTempBucketFactory.completedInit();
-				hasStarted = true;
-				System.out.println("Completed startup: All persistent requests resumed or restarted");
-				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
-			}
-		}, "Startup completion thread");
-		completer.setDaemon(true);
-		completer.start();
-		
-		// Process any data in the extra peer data directory
-		peers.readExtraPeerData();
-	}
-	
-	public ClientKeyBlock realGetKey(ClientKey key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
-		if(key instanceof ClientCHK)
-			return realGetCHK((ClientCHK)key, localOnly, cache, ignoreStore);
-		else if(key instanceof ClientSSK)
-			return realGetSSK((ClientSSK)key, localOnly, cache, ignoreStore);
-		else
-			throw new IllegalArgumentException("Not a CHK or SSK: "+key);
-	}
-	
-	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
-		long startTime = System.currentTimeMillis();
-		long uid = random.nextLong();
-		if(!lockUID(uid)) {
-			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
-			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-		}
-		Object o = makeRequestSender(key.getNodeCHK(), MAX_HTL, uid, null, lm.loc.getValue(), false, localOnly, cache, ignoreStore);
-		if(o instanceof CHKBlock) {
-			try {
-				return new ClientCHKBlock((CHKBlock)o, key);
-			} catch (CHKVerifyException e) {
-				Logger.error(this, "Does not verify: "+e, e);
-				throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
-			}
-		}
-		if(o == null) {
-			throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
-		}
-		RequestSender rs = (RequestSender)o;
-		boolean rejectedOverload = false;
-		while(true) {
-			if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
-				// See below; inserts count both
-				throttleWindow.rejectedOverload();
-				rejectedOverload = true;
-			}
-
-			int status = rs.getStatus();
-			
-			if(status == RequestSender.NOT_FINISHED) 
-				continue;
-			
-	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
-            	Logger.minor(this, "CHK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
-            	localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
-            	localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
-	        }
-			
-			if((status == RequestSender.TIMED_OUT) ||
-					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
-				if(!rejectedOverload) {
-					// See below
-					throttleWindow.rejectedOverload();
-					rejectedOverload = true;
-				}
-			} else {
-				if((status == RequestSender.DATA_NOT_FOUND) ||
-						(status == RequestSender.SUCCESS) ||
-						(status == RequestSender.ROUTE_NOT_FOUND) ||
-						(status == RequestSender.VERIFY_FAILURE)) {
-					long rtt = System.currentTimeMillis() - startTime;
-					if(!rejectedOverload)
-						throttleWindow.requestCompleted();
-					chkRequestThrottle.successfulCompletion(rtt);
-				}
-			}
-			
-			if(rs.getStatus() == RequestSender.SUCCESS) {
-				try {
-					return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
-				} catch (CHKVerifyException e) {
-					Logger.error(this, "Does not verify: "+e, e);
-					throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
-				} catch (AbortedException e) {
-					Logger.error(this, "Impossible: "+e, e);
-					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-				}
-			} else {
-				switch(rs.getStatus()) {
-				case RequestSender.NOT_FINISHED:
-					Logger.error(this, "RS still running in getCHK!: "+rs);
-					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-				case RequestSender.DATA_NOT_FOUND:
-					throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
-				case RequestSender.ROUTE_NOT_FOUND:
-					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
-				case RequestSender.TRANSFER_FAILED:
-					throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
-				case RequestSender.VERIFY_FAILURE:
-					throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
-				case RequestSender.GENERATED_REJECTED_OVERLOAD:
-				case RequestSender.TIMED_OUT:
-					throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
-				case RequestSender.INTERNAL_ERROR:
-					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-				default:
-					Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
-					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-				}
-			}
-		}
-	}
-
-	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
-		long startTime = System.currentTimeMillis();
-		long uid = random.nextLong();
-		if(!lockUID(uid)) {
-			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
-			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-		}
-		Object o = makeRequestSender(key.getNodeKey(), MAX_HTL, uid, null, lm.loc.getValue(), false, localOnly, cache, ignoreStore);
-		if(o instanceof SSKBlock) {
-			try {
-				SSKBlock block = (SSKBlock)o;
-				key.setPublicKey(block.getPubKey());
-				return new ClientSSKBlock(block, key);
-			} catch (SSKVerifyException e) {
-				Logger.error(this, "Does not verify: "+e, e);
-				throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
-			}
-		}
-		if(o == null) {
-			throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND_IN_STORE);
-		}
-		RequestSender rs = (RequestSender)o;
-		boolean rejectedOverload = false;
-		while(true) {
-			if(rs.waitUntilStatusChange() && (!rejectedOverload)) {
-				throttleWindow.rejectedOverload();
-				rejectedOverload = true;
-			}
-
-			int status = rs.getStatus();
-			
-			if(status == RequestSender.NOT_FINISHED) 
-				continue;
-
-	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
-            	Logger.minor(this, "SSK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
-            	localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
-            	localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
-	        }
-			
-			if((status == RequestSender.TIMED_OUT) ||
-					(status == RequestSender.GENERATED_REJECTED_OVERLOAD)) {
-				if(!rejectedOverload) {
-					throttleWindow.rejectedOverload();
-					rejectedOverload = true;
-				}
-			} else {
-				if((status == RequestSender.DATA_NOT_FOUND) ||
-						(status == RequestSender.SUCCESS) ||
-						(status == RequestSender.ROUTE_NOT_FOUND) ||
-						(status == RequestSender.VERIFY_FAILURE)) {
-					long rtt = System.currentTimeMillis() - startTime;
-					
-					if(!rejectedOverload)
-						throttleWindow.requestCompleted();
-					sskRequestThrottle.successfulCompletion(rtt);
-				}
-			}
-			
-			if(rs.getStatus() == RequestSender.SUCCESS) {
-				try {
-					SSKBlock block = rs.getSSKBlock();
-					key.setPublicKey(block.getPubKey());
-					return new ClientSSKBlock(block, key);
-				} catch (SSKVerifyException e) {
-					Logger.error(this, "Does not verify: "+e, e);
-					throw new LowLevelGetException(LowLevelGetException.DECODE_FAILED);
-				}
-			} else {
-				switch(rs.getStatus()) {
-				case RequestSender.NOT_FINISHED:
-					Logger.error(this, "RS still running in getCHK!: "+rs);
-					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-				case RequestSender.DATA_NOT_FOUND:
-					throw new LowLevelGetException(LowLevelGetException.DATA_NOT_FOUND);
-				case RequestSender.ROUTE_NOT_FOUND:
-					throw new LowLevelGetException(LowLevelGetException.ROUTE_NOT_FOUND);
-				case RequestSender.TRANSFER_FAILED:
-					Logger.error(this, "WTF? Transfer failed on an SSK? on "+uid);
-					throw new LowLevelGetException(LowLevelGetException.TRANSFER_FAILED);
-				case RequestSender.VERIFY_FAILURE:
-					throw new LowLevelGetException(LowLevelGetException.VERIFY_FAILED);
-				case RequestSender.GENERATED_REJECTED_OVERLOAD:
-				case RequestSender.TIMED_OUT:
-					throw new LowLevelGetException(LowLevelGetException.REJECTED_OVERLOAD);
-				case RequestSender.INTERNAL_ERROR:
-				default:
-					Logger.error(this, "Unknown RequestSender code in getCHK: "+rs.getStatus()+" on "+rs);
-					throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
-				}
-			}
-		}
-	}
-
-	public void realPut(KeyBlock block, boolean cache) throws LowLevelPutException {
-		if(block instanceof CHKBlock)
-			realPutCHK((CHKBlock)block, cache);
-		else if(block instanceof SSKBlock)
-			realPutSSK((SSKBlock)block, cache);
-		else
-			throw new IllegalArgumentException("Unknown put type "+block.getClass());
-	}
-	
-	public void realPutCHK(CHKBlock block, boolean cache) throws LowLevelPutException {
-		byte[] data = block.getData();
-		byte[] headers = block.getHeaders();
-		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(PACKETS_IN_BLOCK, PACKET_SIZE, data);
-		CHKInsertSender is;
-		long uid = random.nextLong();
-		if(!lockUID(uid)) {
-			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
-			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-		}
-		long startTime = System.currentTimeMillis();
-		if(cache) {
-			store(block);
-		}
-		is = makeInsertSender((NodeCHK)block.getKey(), 
-				MAX_HTL, uid, null, headers, prb, false, lm.getLocation().getValue(), cache);
-		boolean hasReceivedRejectedOverload = false;
-		// Wait for status
-		while(true) {
-			synchronized(is) {
-				if(is.getStatus() == CHKInsertSender.NOT_FINISHED) {
-					try {
-						is.wait(5*1000);
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-				}
-				if(is.getStatus() != CHKInsertSender.NOT_FINISHED) break;
-			}
-			if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
-				hasReceivedRejectedOverload = true;
-				throttleWindow.rejectedOverload();
-			}
-		}
-		
-		// Wait for completion
-		while(true) {
-			synchronized(is) {
-				if(is.completed()) break;
-				try {
-					is.wait(10*1000);
-				} catch (InterruptedException e) {
-					// Go around again
-				}
-			}
-			if(is.anyTransfersFailed() && (!hasReceivedRejectedOverload)) {
-				hasReceivedRejectedOverload = true; // not strictly true but same effect
-				throttleWindow.rejectedOverload();
-			}
-		}
-		
-		Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
-		
-		// Finished?
-		if(!hasReceivedRejectedOverload) {
-			// Is it ours? Did we send a request?
-			if(is.sentRequest() && (is.uid == uid) && ((is.getStatus() == CHKInsertSender.ROUTE_NOT_FOUND) 
-					|| (is.getStatus() == CHKInsertSender.SUCCESS))) {
-				// It worked!
-				long endTime = System.currentTimeMillis();
-				long len = endTime - startTime;
-				
-				chkInsertThrottle.successfulCompletion(len);
-				if(!hasReceivedRejectedOverload)
-					throttleWindow.requestCompleted();
-			}
-		}
-		
-		int status = is.getStatus();
-        if(status != CHKInsertSender.TIMED_OUT && status != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && status != CHKInsertSender.INTERNAL_ERROR
-        		&& status != CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
-        	int sent = is.getTotalSentBytes();
-        	int received = is.getTotalReceivedBytes();
-        	Logger.minor(this, "Local CHK insert cost "+sent+"/"+received+" bytes ("+status+")");
-        	localChkInsertBytesSentAverage.report(sent);
-        	localChkInsertBytesReceivedAverage.report(received);
-        }
-        
-		if(status == CHKInsertSender.SUCCESS) {
-			Logger.normal(this, "Succeeded inserting "+block);
-			return;
-		} else {
-			String msg = "Failed inserting "+block+" : "+is.getStatusString();
-			if(status == CHKInsertSender.ROUTE_NOT_FOUND)
-				msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
-			if(is.getStatus() != CHKInsertSender.ROUTE_NOT_FOUND)
-				Logger.error(this, msg);
-			else
-				Logger.normal(this, msg);
-			switch(is.getStatus()) {
-			case CHKInsertSender.NOT_FINISHED:
-				Logger.error(this, "IS still running in putCHK!: "+is);
-				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-			case CHKInsertSender.GENERATED_REJECTED_OVERLOAD:
-			case CHKInsertSender.TIMED_OUT:
-				throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
-			case CHKInsertSender.ROUTE_NOT_FOUND:
-				throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
-			case CHKInsertSender.ROUTE_REALLY_NOT_FOUND:
-				throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
-			case CHKInsertSender.INTERNAL_ERROR:
-				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-			default:
-				Logger.error(this, "Unknown CHKInsertSender code in putCHK: "+is.getStatus()+" on "+is);
-				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-			}
-		}
-	}
-
-	public void realPutSSK(SSKBlock block, boolean cache) throws LowLevelPutException {
-		SSKInsertSender is;
-		long uid = random.nextLong();
-		if(!lockUID(uid)) {
-			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
-			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-		}
-		long startTime = System.currentTimeMillis();
-		if(cache) {
-			try {
-				if(cache)
-					storeInsert(block);
-			} catch (KeyCollisionException e) {
-				throw new LowLevelPutException(LowLevelPutException.COLLISION);
-			}
-		}
-		is = makeInsertSender(block, 
-				MAX_HTL, uid, null, false, lm.getLocation().getValue(), false, cache);
-		boolean hasReceivedRejectedOverload = false;
-		// Wait for status
-		while(true) {
-			synchronized(is) {
-				if(is.getStatus() == SSKInsertSender.NOT_FINISHED) {
-					try {
-						is.wait(5*1000);
-					} catch (InterruptedException e) {
-						// Ignore
-					}
-				}
-				if(is.getStatus() != SSKInsertSender.NOT_FINISHED) break;
-			}
-			if((!hasReceivedRejectedOverload) && is.receivedRejectedOverload()) {
-				hasReceivedRejectedOverload = true;
-				throttleWindow.rejectedOverload();
-			}
-		}
-		
-		// Wait for completion
-		while(true) {
-			synchronized(is) {
-				if(is.getStatus() != SSKInsertSender.NOT_FINISHED) break;
-				try {
-					is.wait(10*1000);
-				} catch (InterruptedException e) {
-					// Go around again
-				}
-			}
-		}
-		
-		Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
-		
-		// Finished?
-		if(!hasReceivedRejectedOverload) {
-			// Is it ours? Did we send a request?
-			if(is.sentRequest() && (is.uid == uid) && ((is.getStatus() == SSKInsertSender.ROUTE_NOT_FOUND) 
-					|| (is.getStatus() == SSKInsertSender.SUCCESS))) {
-				// It worked!
-				long endTime = System.currentTimeMillis();
-				long rtt = endTime - startTime;
-				throttleWindow.requestCompleted();
-				sskInsertThrottle.successfulCompletion(rtt);
-			}
-		}
-
-		int status = is.getStatus();
-		
-        if(status != CHKInsertSender.TIMED_OUT && status != CHKInsertSender.GENERATED_REJECTED_OVERLOAD && status != CHKInsertSender.INTERNAL_ERROR
-        		&& status != CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
-        	int sent = is.getTotalSentBytes();
-        	int received = is.getTotalReceivedBytes();
-        	Logger.minor(this, "Local SSK insert cost "+sent+"/"+received+" bytes ("+status+")");
-        	localSskInsertBytesSentAverage.report(sent);
-        	localSskInsertBytesReceivedAverage.report(received);
-        }
-        
-		if(is.hasCollided()) {
-			// Store it locally so it can be fetched immediately, and overwrites any locally inserted.
-			try {
-				sskDatacache.put(is.getBlock(), true);
-			} catch (KeyCollisionException e) {
-				// Impossible
-			} catch (IOException e) {
-				Logger.error(this, "Datastore failure: "+e, e);
-			}
-			throw new LowLevelPutException(LowLevelPutException.COLLISION);
-		}
-		
-		if(status == SSKInsertSender.SUCCESS) {
-			Logger.normal(this, "Succeeded inserting "+block);
-			return;
-		} else {
-			String msg = "Failed inserting "+block+" : "+is.getStatusString();
-			if(status == CHKInsertSender.ROUTE_NOT_FOUND)
-				msg += " - this is normal on small networks; the data will still be propagated, but it can't find the 20+ nodes needed for full success";
-			if(is.getStatus() != SSKInsertSender.ROUTE_NOT_FOUND)
-				Logger.error(this, msg);
-			else
-				Logger.normal(this, msg);
-			switch(is.getStatus()) {
-			case SSKInsertSender.NOT_FINISHED:
-				Logger.error(this, "IS still running in putCHK!: "+is);
-				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-			case SSKInsertSender.GENERATED_REJECTED_OVERLOAD:
-			case SSKInsertSender.TIMED_OUT:
-				throw new LowLevelPutException(LowLevelPutException.REJECTED_OVERLOAD);
-			case SSKInsertSender.ROUTE_NOT_FOUND:
-				throw new LowLevelPutException(LowLevelPutException.ROUTE_NOT_FOUND);
-			case SSKInsertSender.ROUTE_REALLY_NOT_FOUND:
-				throw new LowLevelPutException(LowLevelPutException.ROUTE_REALLY_NOT_FOUND);
-			case SSKInsertSender.INTERNAL_ERROR:
-				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
-			default:
-				Logger.error(this, "Unknown CHKInsertSender code in putSSK: "+is.getStatus()+" on "+is);
-				throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 			}
 		}
 	}
@@ -2158,7 +1479,7 @@ public class Node {
 		}
 		
 		// Do we have the bandwidth?
-		double expected = 
+		double expected =
 			(isInsert ? (isSSK ? this.remoteSskInsertBytesSentAverage : this.remoteChkInsertBytesSentAverage)
 					: (isSSK ? this.remoteSskFetchBytesSentAverage : this.remoteChkFetchBytesSentAverage)).currentValue();
 		int expectedSent = (int)Math.max(expected, 0);
@@ -2802,28 +2123,6 @@ public class Node {
 			recentlyCompletedIDs.pop();
 	}
 
-	public HighLevelSimpleClient makeClient(short prioClass) {
-		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, !DONT_CACHE_LOCAL_REQUESTS, prioClass);
-	}
-	
-	public BaseRequestThrottle getCHKRequestThrottle() {
-		return chkRequestThrottle;
-	}
-
-	public BaseRequestThrottle getCHKInsertThrottle() {
-		return chkInsertThrottle;
-	}
-	
-	public BaseRequestThrottle getSSKRequestThrottle() {
-		return sskRequestThrottle;
-	}
-	
-	public BaseRequestThrottle getSSKInsertThrottle() {
-		return sskInsertThrottle;
-	}
-
-	public BookmarkManager bookmarkManager;
-
 	/**
 	 * Look up a cached public key by its hash.
 	 */
@@ -2941,34 +2240,6 @@ public class Node {
 		return new ClientCHKBlock(block, clientCHK);
 	}
 	
-	public FCPServer getFCPServer() {
-		return fcpServer;
-	}
-
-	public void setToadletContainer(SimpleToadletServer server) {
-		toadletContainer = server;
-	}
-
-	public FProxyToadlet getFProxy() {
-		return fproxyServlet;
-	}
-
-	public SimpleToadletServer getToadletContainer() {
-		return toadletContainer;
-	}
-	
-	public TextModeClientInterfaceServer getTextModeClientInterface(){
-		return tmci;
-	}
-
-	public void setFProxy(FProxyToadlet fproxy) {
-		this.fproxyServlet = fproxy;
-	}
-
-	public void setFCPServer(FCPServer fcp) {
-		this.fcpServer = fcp;
-	}
-	
 	public void exit(int reason) {
 		try {
 			this.park();
@@ -3001,18 +2272,6 @@ public class Node {
 		return nodeUpdater;
 	}
 	
-	public void setTMCI(TextModeClientInterfaceServer server) {
-		this.tmci = server;
-	}
-
-	public TextModeClientInterface getDirectTMCI() {
-		return directTMCI;
-	}
-	
-	public void setDirectTMCI(TextModeClientInterface i) {
-		this.directTMCI = i;
-	}
-
 	public PeerNode[] getDarknetConnections() {
 		return peers.myPeers;
 	}
@@ -3025,10 +2284,6 @@ public class Node {
 	
 	public void removeDarknetConnection(PeerNode pn) {
 		peers.disconnect(pn);
-	}
-
-	public File getDownloadDir() {
-		return downloadDir;
 	}
 
 	public void onConnectedPeer() {
@@ -3047,7 +2302,7 @@ public class Node {
 	public synchronized boolean setNewestPeerLastGoodVersion( int version ) {
 		if( version > buildOldAgeUserAlert.lastGoodVersion ) {
 			if( buildOldAgeUserAlert.lastGoodVersion == 0 ) {
-				alerts.register(buildOldAgeUserAlert);
+				clientCore.alerts.register(buildOldAgeUserAlert);
 			}
 			buildOldAgeUserAlert.lastGoodVersion = version;
 			return true;
@@ -3263,7 +2518,7 @@ public class Node {
 			return;
 		}
 		N2NTMUserAlert userAlert = new N2NTMUserAlert(source, source_nodename, target_nodename, text, fileNumber);
-			alerts.register(userAlert);
+			clientCore.alerts.register(userAlert);
 	  } else {
 		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
 	  }
@@ -3445,19 +2700,8 @@ public class Node {
 		return hasStarted;
 	}
 
-	public HealingQueue getHealingQueue() {
-		return healingQueue;
-	}
-
 	public void queueRandomReinsert(KeyBlock block) {
-		SimpleSendableInsert ssi = new SimpleSendableInsert(this, block, RequestStarter.MAXIMUM_PRIORITY_CLASS);
-		Logger.minor(this, "Queueing random reinsert for "+block+" : "+ssi);
-		if(block instanceof CHKBlock)
-			chkPutScheduler.register(ssi);
-		else if(block instanceof SSKBlock)
-			sskPutScheduler.register(ssi);
-		else
-			Logger.error(this, "Don't know what to do with "+block+" should be queued for reinsert");
+		clientCore.queueRandomReinsert(block);
 	}
 
 	public double pRejectIncomingInstantly() {
@@ -3470,5 +2714,13 @@ public class Node {
 
 	public boolean noConnectedPeers() {
 		return !peers.anyConnectedPeers();
+	}
+
+	public double getLocation() {
+		return lm.loc.getValue();
+	}
+
+	public boolean isAdvancedDarknetEnabled() {
+		return clientCore.isAdvancedDarknetEnabled();
 	}
 }

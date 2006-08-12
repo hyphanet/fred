@@ -21,6 +21,7 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.io.comm.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.PeerNode;
 import freenet.node.PeerNodeStatus;
 import freenet.support.HTMLNode;
@@ -47,11 +48,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 	}
 
-	private Node node;
+	private final Node node;
+	private final NodeClientCore core;
 	
-	protected DarknetConnectionsToadlet(Node n, HighLevelSimpleClient client) {
+	protected DarknetConnectionsToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
 		super(client);
 		this.node = n;
+		this.core = core;
 	}
 
 	public String supportedMethods() {
@@ -86,7 +89,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			return;
 		}
 		
-		final boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
+		final boolean advancedEnabled = node.isAdvancedDarknetEnabled();
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
@@ -129,7 +132,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
 		
-		contentNode.addChild(node.alerts.createSummary());
+		contentNode.addChild(core.alerts.createSummary());
 	
 		/* node status values */
 		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
@@ -268,7 +271,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			peerTableInfoboxContent.addChild("#", " and read the top infobox to see how it is done.");
 		} else {
 			HTMLNode peerForm = peerTableInfoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
-			peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+			peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connections");
 			HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 			peerTableHeaderRow.addChild("th");
@@ -423,7 +426,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		peerAdditionInfobox.addChild("div", "class", "infobox-header", "Add another peer");
 		HTMLNode peerAdditionContent = peerAdditionInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode peerAdditionForm = peerAdditionContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
-		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 		peerAdditionForm.addChild("#", "Paste the reference here:");
 		peerAdditionForm.addChild("br");
 		peerAdditionForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "reftext", "ref", "8", "74" });
@@ -455,7 +458,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
 		String pass = request.getPartAsString("formPassword", 32);
-		if((pass == null) || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);

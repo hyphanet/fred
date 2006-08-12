@@ -33,6 +33,7 @@ import freenet.config.SubConfig;
 import freenet.io.NetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
 import freenet.support.Logger;
@@ -44,6 +45,7 @@ import freenet.support.io.Bucket;
 public class FCPServer implements Runnable {
 
 	NetworkInterface networkInterface;
+	final NodeClientCore core;
 	final Node node;
 	final int port;
 	public final boolean enabled;
@@ -78,7 +80,7 @@ public class FCPServer implements Runnable {
 		persister = null;
 	}
 
-	public FCPServer(String ipToBindTo, String allowedHosts, int port, Node node, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval, boolean isEnabled) throws IOException, InvalidConfigValueException {
+	public FCPServer(String ipToBindTo, String allowedHosts, int port, Node node, NodeClientCore core, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval, boolean isEnabled) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
 		this.allowedHosts = allowedHosts;
 		this.persistenceInterval = persistenceInterval;
@@ -87,12 +89,13 @@ public class FCPServer implements Runnable {
 		this.enablePersistentDownloads = persistentDownloadsEnabled;
 		setPersistentDownloadsFile(new File(persistentDownloadsDir));
 		this.node = node;
+		this.core = core;
 		clientsByName = new WeakHashMap();
 		
 		
 		// This one is only used to get the default settings. Individual FCP conns
 		// will make their own.
-		HighLevelSimpleClient client = node.makeClient((short)0);
+		HighLevelSimpleClient client = core.makeClient((short)0);
 		defaultFetchContext = client.getFetcherContext();
 		defaultInsertContext = client.getInserterContext(false);
 		
@@ -154,9 +157,9 @@ public class FCPServer implements Runnable {
 
 	static class FCPPortNumberCallback implements IntCallback {
 
-		private final Node node;
+		private final NodeClientCore node;
 		
-		FCPPortNumberCallback(Node node) {
+		FCPPortNumberCallback(NodeClientCore node) {
 			this.node = node;
 		}
 		
@@ -173,9 +176,9 @@ public class FCPServer implements Runnable {
 	
 	static class FCPEnabledCallback implements BooleanCallback{
 
-		final Node node;
+		final NodeClientCore node;
 		
-		FCPEnabledCallback(Node node) {
+		FCPEnabledCallback(NodeClientCore node) {
 			this.node = node;
 		}
 		
@@ -195,9 +198,9 @@ public class FCPServer implements Runnable {
 	
 	static class FCPBindtoCallback implements StringCallback{
 
-		final Node node;
+		final NodeClientCore node;
 		
-		FCPBindtoCallback(Node node) {
+		FCPBindtoCallback(NodeClientCore node) {
 			this.node = node;
 		}
 		
@@ -219,9 +222,9 @@ public class FCPServer implements Runnable {
 	
 	static class FCPAllowedHostsCallback implements StringCallback {
 
-		private final Node node;
+		private final NodeClientCore node;
 		
-		public FCPAllowedHostsCallback(Node node) {
+		public FCPAllowedHostsCallback(NodeClientCore node) {
 			this.node = node;
 		}
 		
@@ -287,13 +290,13 @@ public class FCPServer implements Runnable {
 		}
 	}
 	
-	public static FCPServer maybeCreate(Node node, Config config) throws IOException, InvalidConfigValueException {
+	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException, InvalidConfigValueException {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
-		fcpConfig.register("enabled", true, 2, true, "Is FCP server enabled ?", "Is FCP server enabled ?", new FCPEnabledCallback(node));
+		fcpConfig.register("enabled", true, 2, true, "Is FCP server enabled ?", "Is FCP server enabled ?", new FCPEnabledCallback(core));
 		fcpConfig.register("port", 9481 /* anagram of 1984, and 1000 up from old number */,
-				2, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(node));
-		fcpConfig.register("bindTo", "127.0.0.1", 2, true, "Ip address to bind to", "Ip address to bind the FCP server to", new FCPBindtoCallback(node));
-		fcpConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the FCP server. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24", new FCPAllowedHostsCallback(node));
+				2, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(core));
+		fcpConfig.register("bindTo", "127.0.0.1", 2, true, "Ip address to bind to", "Ip address to bind the FCP server to", new FCPBindtoCallback(core));
+		fcpConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the FCP server. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24", new FCPAllowedHostsCallback(core));
 		PersistentDownloadsEnabledCallback cb1;
 		PersistentDownloadsFileCallback cb2;
 		PersistentDownloadsIntervalCallback cb3;
@@ -312,8 +315,8 @@ public class FCPServer implements Runnable {
 		
 		FCPServer fcp;
 		
-		fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getInt("port"), node, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"));
-		node.setFCPServer(fcp);	
+		fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"));
+		core.setFCPServer(fcp);	
 		
 		if(fcp != null) {
 			cb1.server = fcp;
@@ -379,7 +382,7 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	public FCPClient registerClient(String name, Node node, FCPConnectionHandler handler) {
+	public FCPClient registerClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
 		FCPClient oldClient;
 		synchronized(this) {
 			oldClient = (FCPClient) clientsByName.get(name);
@@ -484,7 +487,7 @@ public class FCPServer implements Runnable {
 		Bucket[] toFree = null;
 		try {
 			synchronized(persistenceSync) {
-				toFree = node.persistentTempBucketFactory.grabBucketsToFree();
+				toFree = core.persistentTempBucketFactory.grabBucketsToFree();
 				try {
 					File compressedTemp = new File(persistentDownloadsTempFile+".gz");
 					File compressedFinal = new File(persistentDownloadsFile.toString()+".gz");
@@ -634,7 +637,7 @@ public class FCPServer implements Runnable {
 						while(true) {
 							byte[] buf = new byte[8];
 							try {
-								node.random.nextBytes(buf);
+								core.random.nextBytes(buf);
 								String id = "FProxy:"+Base64.encode(buf);
 								innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, id, returnFilename, returnTempFilename);
 								return;
@@ -659,12 +662,12 @@ public class FCPServer implements Runnable {
 		} else ext = null;
 		String extAdd = (ext == null ? "" : "." + ext);
 		String preferred = uri.getPreferredFilename();
-		File f = new File(node.getDownloadDir(), preferred + extAdd);
-		File f1 = new File(node.getDownloadDir(), preferred + ".freenet-tmp");
+		File f = new File(core.getDownloadDir(), preferred + extAdd);
+		File f1 = new File(core.getDownloadDir(), preferred + ".freenet-tmp");
 		int x = 0;
 		while(f.exists() || f1.exists()) {
-			f = new File(node.getDownloadDir(), preferred + "-" + x + extAdd);
-			f1 = new File(node.getDownloadDir(), preferred + "-" + x + extAdd + ".freenet-tmp");
+			f = new File(core.getDownloadDir(), preferred + "-" + x + extAdd);
+			f1 = new File(core.getDownloadDir(), preferred + "-" + x + extAdd + ".freenet-tmp");
 		}
 		return f;
 	}

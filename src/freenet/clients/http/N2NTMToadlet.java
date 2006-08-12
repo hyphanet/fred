@@ -9,8 +9,8 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.UdpSocketManager;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.PeerNode;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -19,11 +19,13 @@ import freenet.support.io.Bucket;
 public class N2NTMToadlet extends Toadlet {
 
   private Node node;
+  private NodeClientCore core;
   private UdpSocketManager usm;
   
-  protected N2NTMToadlet(Node n, HighLevelSimpleClient client) {
+  protected N2NTMToadlet(Node n, NodeClientCore core, HighLevelSimpleClient client) {
     super(client);
     this.node = n;
+    this.core = core;
     this.usm = n.getUSM();
   }
 
@@ -68,7 +70,7 @@ public class N2NTMToadlet extends Toadlet {
 		  infobox.addChild("div", "class", "infobox-header", "Send Node to Node Text Message");
 		  HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 		  HTMLNode messageForm = infoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
-		  messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+		  messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 		  messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "hashcode", input_hashcode_string });
 		  messageForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
 		  messageForm.addChild("br");
@@ -103,7 +105,7 @@ public class N2NTMToadlet extends Toadlet {
 	  HTTPRequest request = new HTTPRequest(uri, data, ctx);
 	  
 	  String pass = request.getPartAsString("formPassword", 32);
-	  if((pass == null) || !pass.equals(node.formPassword)) {
+	  if((pass == null) || !pass.equals(core.formPassword)) {
 		  MultiValueTable headers = new MultiValueTable();
 		  headers.put("Location", "/send_n2ntm/");
 		  ctx.sendReplyHeaders(302, "Found", headers, null, 0);

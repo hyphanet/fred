@@ -9,6 +9,7 @@ import freenet.config.Config;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -19,11 +20,13 @@ import freenet.support.io.BucketTools;
 // FIXME: add logging, comments
 public class ConfigToadlet extends Toadlet {
 	private Config config;
+	private final NodeClientCore core;
 	private final Node node;
 	
-	ConfigToadlet(HighLevelSimpleClient client, Config conf, Node node) {
+	ConfigToadlet(HighLevelSimpleClient client, Config conf, Node node, NodeClientCore core) {
 		super(client);
 		config=conf;
+		this.core = core;
 		this.node = node;
 	}
 
@@ -48,7 +51,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 		
 		String pass = request.getParam("formPassword");
-		if((pass == null) || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/config/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -106,7 +109,7 @@ public class ConfigToadlet extends Toadlet {
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		SubConfig[] sc = config.getConfigs();
-		boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
+		boolean advancedEnabled = core.isAdvancedDarknetEnabled();
 		
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet Node Configuration of " + node.getMyName());
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -115,7 +118,7 @@ public class ConfigToadlet extends Toadlet {
 		infobox.addChild("div", "class", "infobox-header", "Freenet node configuration");
 		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
 		HTMLNode formNode = configNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 		
 		for(int i=0; i<sc.length;i++){
 			short displayedConfigElements = 0;

@@ -12,6 +12,7 @@ import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 
 /**
@@ -216,6 +217,10 @@ public class PluginManager {
 			Logger.normal(this, "could not instantiate plugin class: " + pluginName+" : "+e, e);
 		}
 		return null;
+	}
+
+	public NodeClientCore getClientCore() {
+		return node.clientCore;
 	}
 
 }

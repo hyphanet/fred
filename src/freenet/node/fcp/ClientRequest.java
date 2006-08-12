@@ -143,7 +143,7 @@ public abstract class ClientRequest {
 		boolean isGlobal = Fields.stringToBool(fs.get("Global"), false);
 		FCPClient client;
 		if(!isGlobal)
-			client = server.registerClient(clientName, server.node, null);
+			client = server.registerClient(clientName, server.core, null);
 		else
 			client = server.globalClient;
 		try {

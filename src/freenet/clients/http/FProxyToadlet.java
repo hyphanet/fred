@@ -23,6 +23,7 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
 import freenet.support.HTMLNode;
@@ -36,19 +37,19 @@ import freenet.support.io.Bucket;
 public class FProxyToadlet extends Toadlet {
 	
 	final byte[] random;
-	final Node node;
+	final NodeClientCore core;
 	
 	// ?force= links become invalid after 2 hours.
 	long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
 	static final long MAX_LENGTH = 2*1024*1024; // 2MB
 	
-	public FProxyToadlet(HighLevelSimpleClient client, byte[] random, Node node) {
+	public FProxyToadlet(HighLevelSimpleClient client, byte[] random, NodeClientCore core) {
 		super(client);
 		this.random = random;
 		client.setMaxLength(MAX_LENGTH);
 		client.setMaxIntermediateLength(MAX_LENGTH);
-		this.node = node;
+		this.core = core;
 	}
 	
 	public String supportedMethods() {
@@ -278,7 +279,7 @@ public class FProxyToadlet extends Toadlet {
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString(false) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "return-type", "disk" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "persistence", "forever" });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 				if (mime != null) {
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "type", mime });
 				}
@@ -332,30 +333,31 @@ public class FProxyToadlet extends Toadlet {
 		}
 	}
 
-	public static void maybeCreateFProxyEtc(Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {
+	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {
 		
 		try {
-			SimpleToadletServer server = new SimpleToadletServer(fproxyConfig, node);
 			
-			HighLevelSimpleClient client = node.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			SimpleToadletServer server = new SimpleToadletServer(fproxyConfig, core);
 			
-			node.setToadletContainer(server);
+			HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			
+			core.setToadletContainer(server);
 			byte[] random = new byte[32];
-			node.random.nextBytes(random);
-			FProxyToadlet fproxy = new FProxyToadlet(client, random, node);
-			node.setFProxy(fproxy);
+			core.random.nextBytes(random);
+			FProxyToadlet fproxy = new FProxyToadlet(client, random, core);
+			core.setFProxy(fproxy);
 			server.register(fproxy, "/", false, "Home", "homepage");
 			
-			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, node);
+			PproxyToadlet pproxy = new PproxyToadlet(client, node.pluginManager, core);
 			server.register(pproxy, "/plugins/", true, "Plugins", "configure and manage plugins");
 			
-			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, node, fproxyConfig);
+			WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, fproxyConfig);
 			server.register(welcometoadlet, "/welcome/", true);
 			
-			PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2, node);
+			PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2, core);
 			server.register(pluginToadlet, "/plugin/", true);
 			
-			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node);
+			ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
 			server.register(configtoadlet, "/config/", true, "Configuration", "configure your node");
 			
 			StaticToadlet statictoadlet = new StaticToadlet(client);
@@ -364,27 +366,27 @@ public class FProxyToadlet extends Toadlet {
 			SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
 			server.register(symlinkToadlet, "/sl/", true);
 			
-			DarknetConnectionsToadlet darknetToadlet = new DarknetConnectionsToadlet(node, client);
+			DarknetConnectionsToadlet darknetToadlet = new DarknetConnectionsToadlet(node, core, client);
 			server.register(darknetToadlet, "/darknet/", true, "Darknet", "manage darknet connections");
 			
-			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, client);
+			N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 			server.register(n2ntmToadlet, "/send_n2ntm/", true);
 			
-			QueueToadlet queueToadlet = new QueueToadlet(node, node.getFCPServer(), client);
+			QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
 			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests");
 			
-			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(node, client);
+			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 			server.register(localFileInsertToadlet, "/files/", true, "Insert Files", "insert files from the local disk");
 
 			// Now start the server.
 			server.start();
 			
 		}catch (BindException e){
-			Logger.error(node,"Failed to start FProxy port already bound: isn't freenet already running ?");
+			Logger.error(core,"Failed to start FProxy port already bound: isn't freenet already running ?");
 			System.err.println("Failed to start FProxy port already bound: isn't freenet already running ?");
 			throw new InvalidConfigValueException("Can't bind fproxy on that port!");
 		}catch (IOException ioe) {
-			Logger.error(node,"Failed to start FProxy: "+ioe, ioe);
+			Logger.error(core,"Failed to start FProxy: "+ioe, ioe);
 		}
 		
 		fproxyConfig.finishedInitialization();

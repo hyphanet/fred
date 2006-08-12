@@ -126,7 +126,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             // Route it
             PeerNode next;
             double nextValue;
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true);
+            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedDarknetEnabled());
             if(next != null)
                 nextValue = next.getLocation().getValue();
             else

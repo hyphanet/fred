@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import freenet.keys.USK;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.InvalidConfigValueException;
@@ -21,7 +22,7 @@ public class BookmarkManager {
 		"USK@PFeLTa1si2Ml5sDeUy7eDhPso6TPdmw-2gWfQ4Jg02w,3ocfrqgUMVWA2PeorZx40TW0c-FiIOL-TWKQHoDbVdE,AQABAAE/Index/-1/=Darknet Index"
 	};
 	Vector bookmarks;
-	Node node;
+	NodeClientCore node;
 	USKUpdatedCallback uskcb;
 	
 	public class BookmarkCallback implements StringArrCallback {
@@ -74,11 +75,11 @@ public class BookmarkManager {
 				}
 			}
 			
-			node.config.store();
+			node.storeConfig();
 		}
 	}
 	
-	public BookmarkManager(Node n, SubConfig sc) {
+	public BookmarkManager(NodeClientCore n, SubConfig sc) {
 		this.bookmarks = new Vector();
 		this.node = n;
 		this.uskcb = new USKUpdatedCallback();
@@ -134,7 +135,7 @@ public class BookmarkManager {
 			try {
 				USK u = USK.create(b.key);
 				this.node.uskManager.subscribe(u, this.uskcb, true);
-				node.config.store();
+				node.storeConfig();
 			} catch (MalformedURLException mue) {
 				
 			}
@@ -151,6 +152,6 @@ public class BookmarkManager {
 			}
 		}
 		this.bookmarks.remove(b);
-		node.config.store();
+		node.storeConfig();
 	}
 }

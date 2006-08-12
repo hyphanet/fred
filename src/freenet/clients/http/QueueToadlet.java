@@ -15,6 +15,7 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
@@ -49,12 +50,12 @@ public class QueueToadlet extends Toadlet {
 	private static final int LIST_PROGRESS = 11;
 	private static final int LIST_REASON = 12;
 	
-	private Node node;
+	private NodeClientCore core;
 	final FCPServer fcp;
 	
-	public QueueToadlet(Node n, FCPServer fcp, HighLevelSimpleClient client) {
+	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client) {
 		super(client);
-		this.node = n;
+		this.core = core;
 		this.fcp = fcp;
 		if(fcp == null) throw new NullPointerException();
 	}
@@ -71,7 +72,7 @@ public class QueueToadlet extends Toadlet {
 			if (pass.length() == 0) {
 				pass = request.getPartAsString("formPassword", 128);
 			}
-			if ((pass.length() == 0) || !pass.equals(node.formPassword)) {
+			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 				MultiValueTable headers = new MultiValueTable();
 				headers.put("Location", "/queue/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -162,7 +163,7 @@ public class QueueToadlet extends Toadlet {
 				boolean compress = request.getPartAsString("compress", 128).length() > 0;
 				String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
 				/* copy bucket data */
-				Bucket copiedBucket = node.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
+				Bucket copiedBucket = core.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
 				try {
 					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, new File(file.getFilename()), file.getContentType(), copiedBucket, null);
@@ -198,7 +199,7 @@ public class QueueToadlet extends Toadlet {
 		PageMaker pageMaker = context.getPageMaker();
 		HTMLNode pageNode = pageMaker.getPageNode("Error process request");
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
-		contentNode.addChild(node.alerts.createSummary());
+		contentNode.addChild(core.alerts.createSummary());
 		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", "Error process request"));
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 		infoboxContent.addChild("#", message);
@@ -234,7 +235,7 @@ public class QueueToadlet extends Toadlet {
 		Logger.minor(this, "Request count: "+reqs.length);
 		
 		if(reqs.length < 1){
-			HTMLNode pageNode = pageMaker.getPageNode("Global queue of " + node.getMyName());
+			HTMLNode pageNode = pageMaker.getPageNode("Global queue of " + core.getMyName());
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", "Global queue is empty"));
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
@@ -308,11 +309,11 @@ public class QueueToadlet extends Toadlet {
 		HTMLNode pageNode = pageMaker.getPageNode("(" + (uncompletedDirUpload.size() + uncompletedDownload.size()
 				+ uncompletedUpload.size()) + "/" + (failedDirUpload.size() + failedDownload.size() + failedUpload.size()) + "/"
 				+ (completedDirUpload.size() + completedDownloadToDisk.size() + completedDownloadToTemp.size()
-				+ completedUpload.size()) + ") Queued Requests of " + node.getMyName());
+				+ completedUpload.size()) + ") Queued Requests of " + core.getMyName());
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
 		/* add alert summary box */
-		contentNode.addChild(node.alerts.createSummary());
+		contentNode.addChild(core.alerts.createSummary());
 		/* add file insert box */
 		contentNode.addChild(createInsertBox(pageMaker));
 
@@ -378,7 +379,7 @@ public class QueueToadlet extends Toadlet {
 			contentNode.addChild(createPanicBox(pageMaker));
 		}
 
-		boolean advancedEnabled = node.getToadletContainer().isAdvancedDarknetEnabled();
+		boolean advancedEnabled = core.isAdvancedDarknetEnabled();
 		
 		if (!completedDownloadToTemp.isEmpty()) {
 			contentNode.addChild("a", "name", "completedDownloadToTemp");
@@ -514,7 +515,7 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		//double frac = p.getSuccessFraction();
-		if (!node.getToadletContainer().isAdvancedDarknetEnabled()) {
+		if (!core.isAdvancedDarknetEnabled()) {
 			total = min;
 		}
 		
@@ -565,7 +566,7 @@ public class QueueToadlet extends Toadlet {
 	private HTMLNode createPriorityCell(PageMaker pageMaker, String identifier, short priorityClass) {
 		HTMLNode priorityCell = new HTMLNode("td", "class", "request-priority nowrap");
 		HTMLNode priorityForm = priorityCell.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
-		priorityForm.addChild(pageMaker.createFormPasswordInput(node.formPassword));
+		priorityForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		HTMLNode prioritySelect = priorityForm.addChild("select", "name", "priority");
 		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
@@ -582,7 +583,7 @@ public class QueueToadlet extends Toadlet {
 	private HTMLNode createDeleteCell(PageMaker pageMaker, String identifier) {
 		HTMLNode deleteNode = new HTMLNode("td", "class", "request-delete");
 		HTMLNode deleteForm = deleteNode.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
-		deleteForm.addChild(pageMaker.createFormPasswordInput(node.formPassword));
+		deleteForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", "Delete" });
 		return deleteNode;
@@ -591,7 +592,7 @@ public class QueueToadlet extends Toadlet {
 	private HTMLNode createPanicBox(PageMaker pageMaker) {
 		HTMLNode panicBox = pageMaker.getInfobox("infobox-alert", "Panic Button");
 		HTMLNode panicForm = pageMaker.getContentNode(panicBox).addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
-		panicForm.addChild(pageMaker.createFormPasswordInput(node.formPassword));
+		panicForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 		panicForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_AllRequests", "Delete everything without confirmation!" });
 		return panicBox;
 	}
@@ -656,7 +657,7 @@ public class QueueToadlet extends Toadlet {
 		/* the insert file box */
 		HTMLNode insertBox = pageMaker.getInfobox("Insert File");
 		HTMLNode insertForm = pageMaker.getContentNode(insertBox).addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
-		insertForm.addChild(pageMaker.createFormPasswordInput(node.formPassword));
+		insertForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 		insertForm.addChild("#", "Insert as: ");
 		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
 		insertForm.addChild("#", " CHK \u00a0 ");

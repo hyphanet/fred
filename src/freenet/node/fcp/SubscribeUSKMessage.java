@@ -56,7 +56,7 @@ public class SubscribeUSKMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		new SubscribeUSK(this, node, handler);
+		new SubscribeUSK(this, node.clientCore, handler);
 	}
 
 }

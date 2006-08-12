@@ -8,6 +8,7 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.Plugin;
 import freenet.plugin.PluginManager;
@@ -26,7 +27,7 @@ public class PluginToadlet extends Toadlet {
 
 	/** The plugin manager backing this toadlet. */
 	private final PluginManager pluginManager;
-	private final Node node;
+	private final NodeClientCore core;
 
 	/**
 	 * Creates a new toadlet.
@@ -36,10 +37,10 @@ public class PluginToadlet extends Toadlet {
 	 * @param pluginManager
 	 *            The plugin manager to use
 	 */
-	protected PluginToadlet(HighLevelSimpleClient client, PluginManager pluginManager, Node n) {
+	protected PluginToadlet(HighLevelSimpleClient client, PluginManager pluginManager, NodeClientCore core) {
 		super(client);
 		this.pluginManager = pluginManager;
-		this.node = n;
+		this.core = core;
 	}
 
 	/**
@@ -122,7 +123,7 @@ public class PluginToadlet extends Toadlet {
 		}
 		
 		String pass = httpRequest.getParam("formPassword");
-		if((pass == null) || !pass.equals(node.formPassword)) {
+		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/plugin/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -222,12 +223,12 @@ public class PluginToadlet extends Toadlet {
 			reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "reload" });
 			reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginName", internalName });
 			reloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Reload" });
-			reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+			reloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			HTMLNode unloadForm = tableRow.addChild("td").addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "unload" });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "pluginName", internalName });
 			unloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Unload" });
-			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 		}
 
 		contentNode.addChild(createAddPluginBox());
@@ -278,7 +279,7 @@ public class PluginToadlet extends Toadlet {
 		addPluginBox.addChild("div", "class", "infobox-header", "Add a plugin");
 		HTMLNode addForm = addPluginBox.addChild("div", "class", "infobox-content").addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
 		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "add" });
-		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.formPassword });
+		addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 		addForm.addChild("input", new String[] { "type", "name", "value", "size" }, new String[] { "text", "pluginName", "", "40" });
 		addForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Load plugin" });
 		return addPluginBox;

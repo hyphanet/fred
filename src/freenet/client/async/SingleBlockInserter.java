@@ -16,6 +16,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.keys.SSKEncodeException;
 import freenet.node.LowLevelPutException;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.SendableInsert;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -269,12 +270,12 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		return finished;
 	}
 
-	public void send(Node node) {
+	public void send(NodeClientCore core) {
 		try {
 			Logger.minor(this, "Starting request: "+this);
 			ClientKeyBlock b = getBlock();
 			if(b != null)
-				node.realPut(b, ctx.cacheLocalRequests);
+				core.realPut(b, ctx.cacheLocalRequests);
 			else
 				fail(new InserterException(InserterException.CANCELLED));
 		} catch (LowLevelPutException e) {

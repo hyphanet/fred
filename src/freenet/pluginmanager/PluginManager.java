@@ -21,9 +21,9 @@ import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;
 import freenet.config.SubConfig;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
-import freenet.support.HTMLNode;
 import freenet.support.Logger;
 
 public class PluginManager {
@@ -41,7 +41,8 @@ public class PluginManager {
 	private HashMap toadletList;
 	private HashMap pluginInfo;
 	private PluginRespirator pluginRespirator = null;
-	private Node node;
+	private final Node node;
+	private final NodeClientCore core;
 	SubConfig pmconfig;
 	
 	
@@ -49,6 +50,7 @@ public class PluginManager {
 		pluginInfo = new HashMap();
 		toadletList = new HashMap();
 		this.node = node;
+		this.core = node.clientCore;
 		pluginRespirator = new PluginRespirator(node, this);
 		
 		pmconfig = new SubConfig("pluginmanager", node.config);
@@ -130,7 +132,7 @@ public class PluginManager {
 			if(jvmVersion.startsWith("1.4.") || jvmVersion.equals("1.4")) {
 				System.err.println("Plugin "+filename+" appears to require a later JVM");
 				Logger.error(this, "Plugin "+filename+" appears to require a later JVM");
-				node.alerts.register(new SimpleUserAlert(true, "Later JVM required by plugin "+filename,
+				core.alerts.register(new SimpleUserAlert(true, "Later JVM required by plugin "+filename,
 						"The plugin "+filename+" seems to require a later JVM. Please install at least Sun java 1.5, or remove the plugin.",
 						UserAlert.ERROR));
 			}

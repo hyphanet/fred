@@ -326,7 +326,7 @@ public class NodeDispatcher implements Dispatcher {
         // Forward
         m = preForward(m, htl);
         while(true) {
-            PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, ctx.notIgnored, target, true);
+            PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, ctx.notIgnored, target, true, node.isAdvancedDarknetEnabled());
             Logger.minor(this, "Next: "+next+" message: "+m);
             if(next != null) {
             	// next is connected, or at least has been => next.getPeer() CANNOT be null.

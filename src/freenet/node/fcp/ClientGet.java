@@ -96,7 +96,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
-					ret = client.server.node.persistentTempBucketFactory.makeEncryptedBucket();
+					ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
@@ -114,7 +114,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		getter = new ClientGetter(this, client.core.chkFetchScheduler, client.core.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -153,7 +153,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
-					ret = client.server.node.persistentTempBucketFactory.makeEncryptedBucket();
+					ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
@@ -171,7 +171,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		getter = new ClientGetter(this, client.core.chkFetchScheduler, client.core.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -229,13 +229,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 			byte[] key = HexUtil.hexToBytes(fs.get("ReturnBucket.DecryptKey"));
 			String fnam = fs.get("ReturnBucket.Filename");
-			ret = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, succeeded ? foundDataLength : 0);
+			ret = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, succeeded ? foundDataLength : 0);
 		} else {
 			throw new IllegalArgumentException();
 		}
 		returnBucket = ret;
 		
-		getter = new ClientGetter(this, client.node.chkFetchScheduler, client.node.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		getter = new ClientGetter(this, client.core.chkFetchScheduler, client.core.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);

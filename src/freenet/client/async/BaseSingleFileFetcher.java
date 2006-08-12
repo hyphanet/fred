@@ -7,6 +7,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
 
@@ -32,7 +33,7 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 	}
 
 	/** Do the request, blocking. Called by RequestStarter. */
-	public void send(Node node) {
+	public void send(NodeClientCore core) {
 		synchronized (this) {
 			if(cancelled) {
 				onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED));
@@ -42,7 +43,7 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 		// Do we need to support the last 3?
 		ClientKeyBlock block;
 		try {
-			block = node.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
+			block = core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
 		} catch (LowLevelGetException e) {
 			onFailure(e);
 			return;

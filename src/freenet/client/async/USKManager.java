@@ -5,6 +5,7 @@ import java.util.HashMap;
 import freenet.client.FetcherContext;
 import freenet.keys.USK;
 import freenet.node.Node;
+import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
@@ -51,12 +52,12 @@ public class USKManager {
 		this.sskRequestScheduler = sskRequestScheduler;
 	}
 	
-	public USKManager(Node node) {
-		backgroundFetchContext = node.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetcherContext();
+	public USKManager(NodeClientCore core) {
+		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetcherContext();
 		backgroundFetchContext.followRedirects = false;
 		backgroundFetchContext.uskManager = this;
-		this.chkRequestScheduler = node.chkFetchScheduler;
-		this.sskRequestScheduler = node.sskFetchScheduler;
+		this.chkRequestScheduler = core.chkFetchScheduler;
+		this.sskRequestScheduler = core.sskFetchScheduler;
 		latestVersionByClearUSK = new HashMap();
 		subscribersByClearUSK = new HashMap();
 		fetchersByUSK = new HashMap();

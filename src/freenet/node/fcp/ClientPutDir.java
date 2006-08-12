@@ -37,7 +37,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		this.defaultName = message.defaultName;
 		SimpleManifestPutter p;
 		try {
-			p = new SimpleManifestPutter(this, client.node.chkPutScheduler, client.node.sskPutScheduler,
+			p = new SimpleManifestPutter(this, client.core.chkPutScheduler, client.core.sskPutScheduler,
 					manifestElements, priorityClass, uri, defaultName, ctx, message.getCHKOnly, client);
 		} catch (InserterException e) {
 			onFailure(e, null);
@@ -88,7 +88,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 					// Direct (persistent temp bucket)
 					byte[] key = HexUtil.hexToBytes(subset.get("TempBucket.DecryptKey"));
 					String fnam = subset.get("TempBucket.Filename");
-					data = client.server.node.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
+					data = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, sz);
 					if(data.size() != sz)
 						throw new PersistenceParseException("Size of bucket is wrong: "+data.size()+" should be "+sz);
 				} else {
@@ -123,7 +123,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		SimpleManifestPutter p = null;
 		try {
 			if(!finished)
-				p = new SimpleManifestPutter(this, client.node.chkPutScheduler, client.node.sskPutScheduler,
+				p = new SimpleManifestPutter(this, client.core.chkPutScheduler, client.core.sskPutScheduler,
 						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client);
 		} catch (InserterException e) {
 			onFailure(e, null);
