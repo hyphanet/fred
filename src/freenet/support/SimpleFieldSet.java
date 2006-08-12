@@ -208,6 +208,10 @@ public class SimpleFieldSet {
 		put(key, Boolean.toString(b));
 	}
 	
+	public void put(String key, double windowSize) {
+		put(key, Double.toString(windowSize));
+	}
+
     /**
      * Write the contents of the SimpleFieldSet to a Writer.
      * @param osr

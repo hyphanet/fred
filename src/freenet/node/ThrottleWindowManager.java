@@ -1,6 +1,7 @@
 package freenet.node;
 
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 public class ThrottleWindowManager {
 
@@ -38,5 +39,14 @@ public class ThrottleWindowManager {
 		return  super.toString()+" w: "
 				+ _simulatedWindowSize + ", d:"
 				+ (((float) _droppedPackets / (float) _totalPackets)) + "="+_droppedPackets+"/"+_totalPackets;
+	}
+
+	public SimpleFieldSet exportFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet();
+		fs.put("Type", "ThrottleWindowManager");
+		fs.put("TotalPackets", _totalPackets);
+		fs.put("DroppedPackets", _droppedPackets);
+		fs.put("SimulatedWindowSize", _simulatedWindowSize);
+		return fs;
 	}
 }

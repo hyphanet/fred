@@ -186,6 +186,9 @@ public class NodeClientCore {
 	
 
 	public void start(Config config) throws NodeInitException {
+		
+		requestStarters.start();
+		
 		// TMCI
 		try{
 			TextModeClientInterfaceServer.maybeCreate(node, config);

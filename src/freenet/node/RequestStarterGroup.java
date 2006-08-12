@@ -1,10 +1,19 @@
 package freenet.node;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+
 import freenet.client.async.ClientRequestScheduler;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 public class RequestStarterGroup {
@@ -18,6 +27,7 @@ public class RequestStarterGroup {
 	final RequestStarter sskRequestStarter;
 	final MyRequestThrottle sskInsertThrottle;
 	final RequestStarter sskInsertStarter;
+	final File nodeDir;
 
 	public final ClientRequestScheduler chkFetchScheduler;
 	public final ClientRequestScheduler chkPutScheduler;
@@ -26,6 +36,8 @@ public class RequestStarterGroup {
 
 	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config) {
 		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
+		
+		this.nodeDir = node.nodeDir;
 		
 		throttleWindow = new ThrottleWindowManager(2.0);
 		chkRequestThrottle = new MyRequestThrottle(throttleWindow, 5000, "CHK Request");
@@ -55,6 +67,14 @@ public class RequestStarterGroup {
 		sskInsertStarter.start();
 		
 		schedulerConfig.finishedInitialization();
+		
+	}
+
+	public void start() {
+		ThrottlePersister persister = new ThrottlePersister();
+		Thread t = new Thread(persister, "Throttle data persister thread");
+		t.setDaemon(true);
+		t.start();
 	}
 	
 	public class MyRequestThrottle implements BaseRequestThrottle {
@@ -87,6 +107,12 @@ public class RequestStarterGroup {
 		public String toString() {
 			return "rtt: "+roundTripTime.currentValue()+" _s="+throttleWindow.currentValue();
 		}
+
+		public SimpleFieldSet exportFieldSet() {
+			SimpleFieldSet fs = new SimpleFieldSet();
+			fs.put("RoundTripTime", roundTripTime.exportFieldSet());
+			return fs;
+		}
 	}
 
 	public BaseRequestThrottle getCHKRequestThrottle() {
@@ -105,5 +131,87 @@ public class RequestStarterGroup {
 		return sskInsertThrottle;
 	}
 
+	// FIXME convert these kind of threads to Checkpointed's and implement a handler
+	// using the PacketSender/Ticker. Would save a few threads.
+	
+	class ThrottlePersister implements Runnable {
+
+		public void run() {
+			while(true) {
+				try {
+					persistThrottle();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+				}
+				try {
+					Thread.sleep(60*1000);
+				} catch (InterruptedException e) {
+					// Maybe it's time to wake up?
+				}
+			}
+		}
+		
+	}
+
+	public void persistThrottle() {
+		SimpleFieldSet fs = persistToFieldSet();
+		File target = new File(nodeDir, "throttle.dat");
+		File tmp = new File(nodeDir, "throttle.dat.tmp");
+		try {
+			FileOutputStream fos = new FileOutputStream(tmp);
+			// FIXME common pattern, reuse it.
+			BufferedOutputStream bos = new BufferedOutputStream(fos);
+			OutputStreamWriter osw = new OutputStreamWriter(bos, "UTF-8");
+			try {
+				fs.writeTo(osw);
+			} catch (IOException e) {
+				try {
+					fos.close();
+					tmp.delete();
+					return;
+				} catch (IOException e1) {
+					// Ignore
+				}
+			}
+			try {
+				osw.close();
+			} catch (IOException e) {
+				// Huh?
+				Logger.error(this, "Caught while closing: "+e, e);
+				return;
+			}
+			// Try an atomic rename
+			if(!tmp.renameTo(target)) {
+				// Not supported on some systems (Windows)
+				if(!target.delete()) {
+					if(target.exists()) {
+						Logger.error(this, "Could not delete "+target+" - check permissions");
+					}
+				}
+				if(!tmp.renameTo(target)) {
+					Logger.error(this, "Could not rename "+tmp+" to "+target+" - check permissions");
+				}
+			}
+		} catch (FileNotFoundException e) {
+			Logger.error(this, "Could not store throttle data to disk: "+e, e);
+			return;
+		} catch (UnsupportedEncodingException e) {
+			Logger.error(this, "Unsupported encoding: UTF-8 !!!!: "+e, e);
+		}
+		
+	}
+
+	/**
+	 * Persist the throttle data to a SimpleFieldSet.
+	 */
+	private SimpleFieldSet persistToFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet();
+		fs.put("ThrottleWindow", throttleWindow.exportFieldSet());
+		fs.put("CHKRequestThrottle", chkRequestThrottle.exportFieldSet());
+		fs.put("SSKRequestThrottle", sskRequestThrottle.exportFieldSet());
+		fs.put("CHKInsertThrottle", chkInsertThrottle.exportFieldSet());
+		fs.put("SSKInsertThrottle", sskInsertThrottle.exportFieldSet());
+		return fs;
+	}
 	
 }

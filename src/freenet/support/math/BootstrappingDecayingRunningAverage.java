@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
 
 
 /**
@@ -140,4 +141,14 @@ public final class BootstrappingDecayingRunningAverage implements
     public synchronized  long countReports() {
         return reports;
     }
+
+	public SimpleFieldSet exportFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet();
+		fs.put("Type", "BootstrappingDecayingRunningAverage");
+		fs.put("CurrentValue", currentValue);
+		fs.put("Reports", reports);
+		fs.put("Zeros", zeros);
+		fs.put("Ones", ones);
+		return fs;
+	}
 }
