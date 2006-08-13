@@ -236,7 +236,7 @@ ul.config li {
 	border-bottom: 1px solid #d0d0d0;
 }
 
-ul.config span.configprefix {
+ul.config{
 	margin: 0;
 	padding: 10px 35px 10px 10px;
 	display: block;
@@ -245,6 +245,12 @@ ul.config span.configprefix {
 	font-size: 16pt;
 	font-variant: small-caps;
 	background-color: #e8e8e8;
+}
+
+div.configprefix {
+	font-weight: bold;
+	font-size: 16pt;
+	font-variant: small-caps;
 }
 
 ul.config span.configshortdesc {
