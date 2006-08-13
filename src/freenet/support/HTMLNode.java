@@ -152,11 +152,17 @@ public class HTMLNode {
 			}
 		} else {
 			tagBuffer.append(">");
+			if(name.equals("div") || name.equals("table") || name.equals("tr") || name.equals("td")) {
+				tagBuffer.append("\n");
+			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
 				HTMLNode childNode = (HTMLNode) children.get(childIndex);
 				childNode.generate(tagBuffer);
 			}
 			tagBuffer.append("</").append(name).append(">");
+			if(name.equals("div") || name.equals("li") || name.equals("table") || name.equals("tr") || name.equals("td")) {
+				tagBuffer.append("\n");
+			}
 		}
 		return tagBuffer;
 	}
