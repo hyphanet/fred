@@ -7,9 +7,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.URLEncoder;
 

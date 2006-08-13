@@ -1,7 +1,6 @@
 package freenet.node;
 
 import freenet.client.async.ClientRequester;
-import freenet.keys.ClientKeyBlock;
 import freenet.keys.KeyBlock;
 import freenet.support.Logger;
 

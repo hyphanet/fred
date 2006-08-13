@@ -8,7 +8,6 @@ import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import freenet.node.Node;
 import freenet.node.NodeIPDetector;
 import freenet.support.Logger;
 

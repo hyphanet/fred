@@ -15,7 +15,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.keys.SSKEncodeException;
 import freenet.node.LowLevelPutException;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SendableInsert;
 import freenet.support.Logger;

@@ -14,7 +14,6 @@ import java.util.List;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientGet;

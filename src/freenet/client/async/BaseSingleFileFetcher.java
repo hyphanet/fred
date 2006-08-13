@@ -6,7 +6,6 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.node.LowLevelGetException;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SendableGet;
 import freenet.support.Logger;

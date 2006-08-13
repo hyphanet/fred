@@ -6,7 +6,6 @@ import java.net.MalformedURLException;
 
 import freenet.keys.USK;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.config.StringArrCallback;
 import freenet.config.StringArrOption;

@@ -1,7 +1,5 @@
 package freenet.node;
 
-import freenet.keys.ClientKeyBlock;
-
 /**
  * Callback interface for a low level insert, which is immediately sendable. These
  * should be registered on the ClientRequestScheduler when we want to send them. It will

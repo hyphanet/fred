@@ -7,12 +7,10 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.plugin.HttpPlugin;
 import freenet.plugin.Plugin;
 import freenet.plugin.PluginManager;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;

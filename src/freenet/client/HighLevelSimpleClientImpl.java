@@ -13,7 +13,6 @@ import freenet.client.events.EventLogger;
 import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.Logger;
 import freenet.support.io.Bucket;

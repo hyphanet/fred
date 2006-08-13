@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginInfoWrapper;

@@ -25,7 +25,6 @@ import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.crypt.DummyRandomSource;
 import freenet.io.NetworkInterface;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;

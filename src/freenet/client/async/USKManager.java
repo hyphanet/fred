@@ -4,7 +4,6 @@ import java.util.HashMap;
 
 import freenet.client.FetcherContext;
 import freenet.keys.USK;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.LRUQueue;

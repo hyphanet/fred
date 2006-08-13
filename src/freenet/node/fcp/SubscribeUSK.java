@@ -2,7 +2,6 @@ package freenet.node.fcp;
 
 import freenet.client.async.USKCallback;
 import freenet.keys.USK;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
 
 public class SubscribeUSK implements USKCallback {
