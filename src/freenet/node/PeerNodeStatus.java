@@ -45,9 +45,13 @@ public class PeerNodeStatus {
 
 	private final boolean connected;
 
+	private final boolean routable;
+
 	private final boolean isFetchingARK;
 
 	private final double averagePingTime;
+
+	private final boolean publicInvalidVersion;
 
 	private final boolean publicReverseInvalidVersion;
 
@@ -85,8 +89,10 @@ public class PeerNodeStatus {
 		this.listening = peerNode.isListenOnly();
 		this.disabled = peerNode.isDisabled();
 		this.connected = peerNode.isConnected();
+		this.routable = peerNode.isRoutable();
 		this.isFetchingARK = peerNode.isFetchingARK();
 		this.averagePingTime = peerNode.averagePingTime();
+		this.publicInvalidVersion = peerNode.publicInvalidVersion();
 		this.publicReverseInvalidVersion = peerNode.publicReverseInvalidVersion();
 		this.backedOffPercent = peerNode.backedOffPercent.currentValue();
 		this.lastBackoffReason = peerNode.getLastBackoffReason();
@@ -146,6 +152,13 @@ public class PeerNodeStatus {
 	 */
 	public long getTimeLastRoutable() {
 		return timeLastRoutable;
+	}
+
+	/**
+	 * @return the publicInvalidVersion
+	 */
+	public boolean isPublicInvalidVersion() {
+		return publicInvalidVersion;
 	}
 
 	/**
@@ -244,6 +257,13 @@ public class PeerNodeStatus {
 	 */
 	public boolean isConnected() {
 		return connected;
+	}
+
+	/**
+	 * @return the routable
+	 */
+	public boolean isRoutable() {
+		return routable;
 	}
 
 	/**

@@ -2325,6 +2325,7 @@ public class PeerNode implements PeerContext {
 	 */
 	public synchronized boolean shouldDisconnectNow() {
 		// TODO: We should disconnect here if "protocol version mismatch", maybe throwing an exception
+		// TODO: shouldDisconnectNow() is hopefully only called when we're connected, otherwise we're breaking the meaning of verifiedIncompable[Older|Newer]Version
 		verifiedIncompatibleOlderVersion = invalidVersion();
 		verifiedIncompatibleNewerVersion = reverseInvalidVersion();
 		if(verifiedIncompatibleNewerVersion || verifiedIncompatibleOlderVersion) return true;

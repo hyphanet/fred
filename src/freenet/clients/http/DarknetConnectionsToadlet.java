@@ -102,7 +102,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if (statusDifference != 0) {
 					return statusDifference;
 				}
-				return firstNode.getName().compareTo(secondNode.getName());
+				return firstNode.getName().compareToIgnoreCase(secondNode.getName());
 			}
 		});
 		
@@ -307,22 +307,21 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if (peerNodeStatus.isConnected() && (Integer.parseInt(peerNodeStatus.getSimpleVersion()) > 476)) {
 					peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), peerNodeStatus.getName());
 				} else {
-					peerRow.addChild("td", "class", "peer-name").addChild("#", peerNodeStatus.getName());
+					peerRow.addChild("td", "class", "peer-name").addChild("#", peerNodeStatus.getName());  // TODO: This branch can probably be removed at some point
 				}
 				
 				// address column
 				if (advancedEnabled) {
 					String pingTime = "";
-					if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_CONNECTED ||
-							peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+					if (peerNodeStatus.isConnected()) {
 						pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
 					}
 					peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ":" + peerNodeStatus.getPeerPort()) : ("(unknown address)")) + pingTime);
 				}
 				
 				// version column
-				if (peerNodeStatus.isPublicReverseInvalidVersion()) {
-					peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_too_new", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
+				if (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion()) {
+					peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_version_problem", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
 				} else {
 					peerRow.addChild("td", "class", "peer-version").addChild("#", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
 				}
@@ -332,8 +331,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					peerRow.addChild("td", "class", "peer-location", String.valueOf(peerNodeStatus.getLocation()));
 				}
 				
-				// backoff column
 				if (advancedEnabled) {
+					// backoff column
 					HTMLNode backoffCell = peerRow.addChild("td", "class", "peer-backoff");
 					backoffCell.addChild("#", fix1.format(peerNodeStatus.getBackedOffPercent()));
 					int backoff = (int) (Math.max(peerNodeStatus.getRoutingBackedOffUntil() - now, 0));
@@ -344,13 +343,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					backoffCell.addChild("#", " " + String.valueOf(backoff / 1000) + "/" + String.valueOf(peerNodeStatus.getRoutingBackoffLength() / 1000));
 					backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason() == null) ? "" : ("/" + (peerNodeStatus.getLastBackoffReason())));
 					
+					// overload probability column
 					HTMLNode pRejectCell = peerRow.addChild("td", "class", "peer-backoff"); // FIXME
 					pRejectCell.addChild("#", fix1.format(peerNodeStatus.getPReject()));
 				}
 				
 				// idle column
 				long idle = peerNodeStatus.getTimeLastRoutable();
-				if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_CONNECTED) {
+				if (peerNodeStatus.isRoutable()) {
 					idle = peerNodeStatus.getTimeLastConnectionCompleted();
 				} else if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
 					idle = peerNodeStatus.getPeerAddedTime();
