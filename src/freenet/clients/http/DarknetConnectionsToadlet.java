@@ -202,34 +202,64 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		HTMLNode peerStatsContent = peerStatsInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode peerStatsList = peerStatsContent.addChild("ul");
 		if (numberOfConnected > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_connected", "Connected:\u00a0" + numberOfConnected);
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_connected", "Connected:\u00a0" + numberOfConnected);
+			HTMLNode peerStatsConnectedListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_connected", "Connected:", "border-bottom: 1px dotted; cursor: help;" }, "Connected");
+			peerStatsConnectedListItem.addChild("span", ":\u00a0" + numberOfConnected);
 		}
 		if (numberOfRoutingBackedOff > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_backedoff", (advancedEnabled ? "Backed off" : "Busy") + ":\u00a0" + numberOfRoutingBackedOff);
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_backedoff", (advancedEnabled ? "Backed off" : "Busy") + ":\u00a0" + numberOfRoutingBackedOff);
+			HTMLNode peerStatsRoutingBackedOffListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backedoff", "Connected: but" + (advancedEnabled ? "we're backed off of them" : "they're busy") + "so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedEnabled ? "Backed off" : "Busy");
+			peerStatsRoutingBackedOffListItem.addChild("span", ":\u00a0" + numberOfRoutingBackedOff);
 		}
 		if (numberOfTooNew > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_too_new", "Too new:\u00a0" + numberOfTooNew);
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_too_new", "Too new:\u00a0" + numberOfTooNew);
+			HTMLNode peerStatsTooNewListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsTooNewListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_new", "Connected: their minimum mandatory build is higher than the node's build so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, "Too New");
+			peerStatsTooNewListItem.addChild("span", ":\u00a0" + numberOfTooNew);
 		}
 		if (numberOfTooOld > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_too_old", "Too old:\u00a0" + numberOfTooOld);
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_too_old", "Too old:\u00a0" + numberOfTooOld);
+			HTMLNode peerStatsTooOldListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsTooOldListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_old", "Connected: the node's minimum mandatory build is higher than their build so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, "Too Old");
+			peerStatsTooOldListItem.addChild("span", ":\u00a0" + numberOfTooOld);
 		}
 		if (numberOfDisconnected > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_disconnected", "Disconnected:\u00a0" + numberOfDisconnected);
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_disconnected", "Disconnected:\u00a0" + numberOfDisconnected);
+			HTMLNode peerStatsDisconnectedListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsDisconnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnected", "Not connected: is continuously trying to connect to them", "border-bottom: 1px dotted; cursor: help;" }, "Disconnected");
+			peerStatsDisconnectedListItem.addChild("span", ":\u00a0" + numberOfDisconnected);
 		}
 		if (numberOfNeverConnected > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Never Connected:\u00a0" + numberOfNeverConnected);
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Never Connected:\u00a0" + numberOfNeverConnected);
+			HTMLNode peerStatsNeverConnectedListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsNeverConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_never_connected", "The node has never connected with these peers", "border-bottom: 1px dotted; cursor: help;" }, "Never Connected");
+			peerStatsNeverConnectedListItem.addChild("span", ":\u00a0" + numberOfNeverConnected);
 		}
 		if (numberOfDisabled > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Disabled:\u00a0" + numberOfDisabled); /* TODO */
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Disabled:\u00a0" + numberOfDisabled); /* TODO */
+			HTMLNode peerStatsDisabledListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_never_connected", "Not connected: because the user has instructed the node to not connect to them", "border-bottom: 1px dotted; cursor: help;" }, "Disabled");  // **FIXME**
+			peerStatsDisabledListItem.addChild("span", ":\u00a0" + numberOfDisabled);
 		}
 		if (numberOfBursting > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Bursting:\u00a0" + numberOfBursting); /* TODO */
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Bursting:\u00a0" + numberOfBursting); /* TODO */
+			HTMLNode peerStatsBurstingListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsBurstingListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_never_connected", "Not connected: node is, for a short period, trying to connect to them because they have BurstOnly set on them", "border-bottom: 1px dotted; cursor: help;" }, "Bursting");  // **FIXME**
+			peerStatsBurstingListItem.addChild("span", ":\u00a0" + numberOfBursting);
 		}
 		if (numberOfListening > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Listening:\u00a0" + numberOfListening); /* TODO */
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Listening:\u00a0" + numberOfListening); /* TODO */
+			HTMLNode peerStatsListeningListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsListeningListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_never_connected", "Not connected: won't try to connect to them very often because they have BurstOnly set on them", "border-bottom: 1px dotted; cursor: help;" }, "Listening");  // **FIXME**
+			peerStatsListeningListItem.addChild("span", ":\u00a0" + numberOfListening);
 		}
 		if (numberOfListenOnly > 0) {
-			peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Listen Only:\u00a0" + numberOfListenOnly); /* TODO */
+			//peerStatsList.addChild("li").addChild("span", "class", "peer_never_connected", "Listen Only:\u00a0" + numberOfListenOnly); /* TODO */
+			HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
+			peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_never_connected", "Not connected: won't try to connect to them at all because they have ListenOnly set on them", "border-bottom: 1px dotted; cursor: help;" }, "Listen Only");  // **FIXME**
+			peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
 		}
 		
 		// Peer routing backoff reason box
