@@ -304,7 +304,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), statusString + (peerNodeStatus.isFetchingARK() ? "*" : ""));
 				
 				// name column
-				if ((peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_CONNECTED) && (Integer.parseInt(peerNodeStatus.getSimpleVersion()) > 476)) {
+				if (peerNodeStatus.isConnected() && (Integer.parseInt(peerNodeStatus.getSimpleVersion()) > 476)) {
 					peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), peerNodeStatus.getName());
 				} else {
 					peerRow.addChild("td", "class", "peer-name").addChild("#", peerNodeStatus.getName());
