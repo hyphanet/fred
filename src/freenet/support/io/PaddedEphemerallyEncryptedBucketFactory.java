@@ -25,7 +25,6 @@ public class PaddedEphemerallyEncryptedBucketFactory implements BucketFactory {
 	}
 
 	public void freeBucket(Bucket b) throws IOException {
-		baseFactory.freeBucket(((PaddedEphemerallyEncryptedBucket)b).getUnderlying());
+		baseFactory.freeBucket(b);
 	}
-
 }
