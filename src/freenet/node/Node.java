@@ -1324,7 +1324,9 @@ public class Node {
 		// TODO: implement a "required" version if needed
 		if(NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER > NodeStarter.extBuildNumber)
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
-
+		else if(NodeStarter.extBuildNumber == -1)
+			clientCore.alerts.register(new ExtOldAgeUserAlert());
+		
 		this.clientCore.start(config);
 		
 		// After everything has been created, write the config file back to disk.
