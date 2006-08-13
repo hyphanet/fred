@@ -320,7 +320,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 				
 				// version column
-				if (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion()) {
+				if (peerNodeStatus.getStatusValue() != Node.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED
 					peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_version_problem", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
 				} else {
 					peerRow.addChild("td", "class", "peer-version").addChild("#", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
