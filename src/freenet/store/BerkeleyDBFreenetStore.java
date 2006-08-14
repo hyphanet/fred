@@ -575,9 +575,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							(null, "CHK_accessTime", chkDB, secDbConfig);
 		
 		// Initialize other secondary database sorted on block number
-//		try {
-//			environment.removeDatabase(null, "CHK_blockNum");
-//		} catch (DatabaseNotFoundException e) { };
+		try {
+			environment.removeDatabase(null, "CHK_blockNum");
+		} catch (DatabaseNotFoundException e) { };
 		SecondaryConfig blockNoDbConfig = new SecondaryConfig();
 		blockNoDbConfig.setAllowCreate(true);
 		blockNoDbConfig.setSortedDuplicates(false);
