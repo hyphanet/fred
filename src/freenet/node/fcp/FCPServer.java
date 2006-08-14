@@ -44,6 +44,7 @@ import freenet.support.io.Bucket;
  */
 public class FCPServer implements Runnable {
 
+	public final static int DEFAULT_FCP_PORT = 9481;
 	NetworkInterface networkInterface;
 	final NodeClientCore core;
 	final Node node;
@@ -293,7 +294,7 @@ public class FCPServer implements Runnable {
 	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException, InvalidConfigValueException {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
 		fcpConfig.register("enabled", true, 2, true, "Is FCP server enabled ?", "Is FCP server enabled ?", new FCPEnabledCallback(core));
-		fcpConfig.register("port", 9481 /* anagram of 1984, and 1000 up from old number */,
+		fcpConfig.register("port", FCPServer.DEFAULT_FCP_PORT /* anagram of 1984, and 1000 up from old number */,
 				2, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(core));
 		fcpConfig.register("bindTo", "127.0.0.1", 2, true, "Ip address to bind to", "Ip address to bind the FCP server to", new FCPBindtoCallback(core));
 		fcpConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the FCP server. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24", new FCPAllowedHostsCallback(core));
