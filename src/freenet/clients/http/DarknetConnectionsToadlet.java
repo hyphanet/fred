@@ -385,7 +385,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				} else if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
 					idle = peerNodeStatus.getPeerAddedTime();
 				}
-				peerRow.addChild("td", "class", "peer-idle", idleToString(now, idle));
+				if(!peerNodeStatus.isConnected() && (now - idle) > (2 * 7 * 24 * 60 * 60 * (long) 1000)) { // 2 weeks
+					peerRow.addChild("td", "class", "peer-idle").addChild("span", "class", "peer_version_problem", idleToString(now, idle));  // **FIXME**
+				} else {
+					peerRow.addChild("td", "class", "peer-idle", idleToString(now, idle));
+				}
 				
 				if (path.endsWith("displaymessagetypes.html")) {
 					HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");
