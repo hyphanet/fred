@@ -2187,13 +2187,13 @@ public class PeerNode implements PeerContext {
   	if(status == Node.PEER_NODE_STATUS_NEVER_CONNECTED)
   		return "peer_never_connected";
   	if(status == Node.PEER_NODE_STATUS_DISABLED)
-  		return "peer_disconnected";  // **FIXME**
-  	if(status == Node.PEER_NODE_STATUS_LISTEN_ONLY)
-  		return "peer_disconnected";  // **FIXME**
-  	if(status == Node.PEER_NODE_STATUS_LISTENING)
-  		return "peer_disconnected";  // **FIXME**
+  		return "peer_disabled";
   	if(status == Node.PEER_NODE_STATUS_BURSTING)
-  		return "peer_disconnected";  // **FIXME**
+  		return "peer_bursting";
+  	if(status == Node.PEER_NODE_STATUS_LISTENING)
+  		return "peer_listening";
+  	if(status == Node.PEER_NODE_STATUS_LISTEN_ONLY)
+  		return "peer_listen_only";
   	return "peer_unknown_status";
   }
 

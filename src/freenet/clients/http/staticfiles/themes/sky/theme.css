@@ -326,7 +326,27 @@ table.darknet_connections span.peer_never_connected {
 	color: #a0a0a0;
 }
 
+table.darknet_connections span.peer_disabled {
+	color: #a0a0a0;
+}
+
+table.darknet_connections span.peer_bursting {
+	color: #a0a0a0;
+}
+
+table.darknet_connections span.peer_listening {
+	color: #a0a0a0;
+}
+
+table.darknet_connections span.peer_listen_only {
+	color: #a0a0a0;
+}
+
 table.darknet_connections span.peer_version_problem {
+	color: #d07070;
+}
+
+table.darknet_connections span.peer_idle_old {
 	color: #d07070;
 }
 

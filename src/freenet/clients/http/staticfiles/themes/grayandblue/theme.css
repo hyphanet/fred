@@ -328,7 +328,31 @@ table.darknet_connections span.peer_disconnected {
 	color: #7F7F7F;
 }
 
+table.darknet_connections span.peer_never_connected {
+	color: #7F7F7F;
+}
+
+table.darknet_connections span.peer_disabled {
+	color: #7F7F7F;
+}
+
+table.darknet_connections span.peer_bursting {
+	color: #7F7F7F;
+}
+
+table.darknet_connections span.peer_listening {
+	color: #7F7F7F;
+}
+
+table.darknet_connections span.peer_listen_only {
+	color: #7F7F7F;
+}
+
 table.darknet_connections span.peer_version_problem {
+	color: #0089e1;
+}
+
+table.darknet_connections span.peer_idle_old {
 	color: #0089e1;
 }
 

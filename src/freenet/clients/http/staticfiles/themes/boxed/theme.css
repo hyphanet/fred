@@ -158,6 +158,34 @@ li .configlongdesc {
 	color: #f00;
 }
 
+.peer_never_connected {
+	color: #444;
+}
+
+.peer_disabled {
+	color: #444;
+}
+
+.peer_bursting {
+	color: #444;
+}
+
+.peer_listening {
+	color: #444;
+}
+
+.peer_listen_only {
+	color: #444;
+}
+
+.peer_version_problem {
+	color: #840;
+}
+
+.peer_idle_old {
+	color: #840;
+}
+
 th {
 	text-align: center;
 	background-color: #aaa;
