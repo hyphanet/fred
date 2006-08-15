@@ -246,7 +246,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 //			 Add shutdownhook
 			Runtime.getRuntime().addShutdownHook(new ShutdownHook());
-		} catch (Throwable t) {
+		} catch (DatabaseException t) {
 			Logger.error(this, "Caught "+t, t);
 			try {
 				chkDB_accessTime.close();
@@ -263,6 +263,25 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			} catch (DatabaseException e2) {
 				Logger.normal(this, "Ignoring "+e2, e2);
 			}
+			throw t;
+		} catch (IOException t) {
+			Logger.error(this, "Caught "+t, t);
+			try {
+				chkDB_accessTime.close();
+			} catch (DatabaseException e2) {
+				Logger.normal(this, "Ignoring "+e2, e2);
+			}
+			try {
+				chkDB_blockNum.close();
+			} catch (DatabaseException e2) {
+				Logger.normal(this, "Ignoring "+e2, e2);
+			}
+			try {
+				chkDB.close();
+			} catch (DatabaseException e2) {
+				Logger.normal(this, "Ignoring "+e2, e2);
+			}
+			throw t;
 		}
 	}
 
