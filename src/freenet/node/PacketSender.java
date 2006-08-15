@@ -21,7 +21,9 @@ import freenet.support.WouldBlockException;
  * - Acknowledgements or resend requests need to be sent urgently.
  */
 public class PacketSender implements Runnable, Ticker {
-    
+
+	static final int MAX_COALESCING_DELAY = 100;
+	
     final LinkedList resendPackets;
     /** ~= Ticker :) */
     private final TreeMap timedJobsByTime;
@@ -233,10 +235,10 @@ public class PacketSender implements Runnable, Ticker {
                 		if(l > messages[j].submitted) l = messages[j].submitted;
                 		sz += 2 + /* FIXME only 2? */ messages[j].getData(pn).length;
                 	}
-                	if((l + 100 > now) && (sz < 1024 /* sensible size */)) {
+                	if((l + MAX_COALESCING_DELAY > now) && (sz < 1024 /* sensible size */)) {
                 		// Don't send immediately
-                		if(nextActionTime > (l+100))
-                			nextActionTime = l+100;
+                		if(nextActionTime > (l+MAX_COALESCING_DELAY))
+                			nextActionTime = l+MAX_COALESCING_DELAY;
                 		pn.requeueMessageItems(messages, 0, messages.length, true, "TrafficCoalescing");
                 	} else {
                 		for(int j=0;j<messages.length;j++) {
@@ -333,8 +335,8 @@ public class PacketSender implements Runnable, Ticker {
         }
         
         long sleepTime = nextActionTime - now;
-        // 100ms maximum sleep time - same as the maximum coalescing delay
-        sleepTime = Math.min(sleepTime, 100);
+        // MAX_COALESCING_DELAYms maximum sleep time - same as the maximum coalescing delay
+        sleepTime = Math.min(sleepTime, MAX_COALESCING_DELAY);
         
         if(now - node.startupTime > 60*1000*5) {
             if(now - lastReceivedPacketFromAnyNode > Node.ALARM_TIME) {

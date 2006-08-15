@@ -215,7 +215,7 @@ public class KeyTracker {
         void sent() throws UpdatableSortedLinkedListKilledException {
             long now = System.currentTimeMillis();
             activeTime = now + 500;
-            urgentTime = activeTime + 200;
+            urgentTime = activeTime + urgentDelay();
             // This is only removed when we actually receive the packet
             // But for now it will sleep
         }
@@ -224,9 +224,11 @@ public class KeyTracker {
             this.packetNumber = packetNumber;
             packetNumberAsInteger = new Integer(packetNumber);
             long now = System.currentTimeMillis();
-            activeTime = initialActiveTime(now); // active immediately
-            urgentTime = activeTime + 200; // urgent in 200ms
+            activeTime = initialActiveTime(now);
+            urgentTime = activeTime + urgentDelay();
         }
+
+        abstract long urgentDelay();
         
         abstract long initialActiveTime(long now);
 
@@ -281,8 +283,7 @@ public class KeyTracker {
     
     private class QueuedResendRequest extends BaseQueuedResend {
         long initialActiveTime(long now) {
-            // Active in 200ms - might have been sent out of order
-            return now + 200;
+            return now; // Active immediately; reordering is rare
         }
         
         QueuedResendRequest(int packetNumber) {
@@ -295,6 +296,10 @@ public class KeyTracker {
                 resendRequestQueue.update(this);
             }
         }
+
+		long urgentDelay() {
+			return PacketSender.MAX_COALESCING_DELAY; // Urgent pretty soon
+		}
     }
     
     private class QueuedAckRequest extends BaseQueuedResend {
@@ -329,6 +334,10 @@ public class KeyTracker {
 			long t = Math.max(0, System.currentTimeMillis() - createdTime);
 			pn.pingAverage.report(t);
 			Logger.minor(this, "Reported round-trip time of "+t+"ms on "+pn.getPeer()+" (avg "+pn.pingAverage.currentValue()+"ms, #"+packetNumber+")");
+		}
+
+		long urgentDelay() {
+			return PacketSender.MAX_COALESCING_DELAY;
 		}
     }
     
