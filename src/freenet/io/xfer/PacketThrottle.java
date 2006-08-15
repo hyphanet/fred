@@ -26,8 +26,9 @@ import freenet.support.Logger;
 
 public class PacketThrottle {
 
-	protected static final float PACKET_DROP_DECREASE_MULTIPLE = 0.875f;
-	protected static final float PACKET_TRANSMIT_INCREMENT = (4 * (1 - (PACKET_DROP_DECREASE_MULTIPLE * PACKET_DROP_DECREASE_MULTIPLE))) / 3;
+	protected static final double PACKET_DROP_DECREASE_MULTIPLE = 0.875;
+	protected static final double PACKET_TRANSMIT_INCREMENT = (4 * (1 - (PACKET_DROP_DECREASE_MULTIPLE * PACKET_DROP_DECREASE_MULTIPLE))) / 3;
+	protected static final double SLOW_START_DIVISOR = 3.0;
 	protected static final long MAX_DELAY = 1000;
 	protected static final long MIN_DELAY = 25;
 	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
@@ -37,6 +38,9 @@ public class PacketThrottle {
 	private long _roundTripTime = 500, _totalPackets, _droppedPackets;
 	private float _simulatedWindowSize = 2;
 	private final int PACKET_SIZE;
+	/** Last return of scheduleDelay(); time before which no packet may be sent */
+	private long lastScheduledDelay;
+	private boolean slowStart = true;
 
 	/**
 	 * Create a PacketThrottle for a given peer.
@@ -67,12 +71,17 @@ public class PacketThrottle {
 		_droppedPackets++;
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
+		slowStart = false;
     	Logger.minor(this, "notifyOfPacketLost(): "+this);
     }
 
     public synchronized void notifyOfPacketAcknowledged() {
         _totalPackets++;
-        _simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
+    	if(slowStart) {
+    		_simulatedWindowSize += _simulatedWindowSize / SLOW_START_DIVISOR;
+    	} else {
+    		_simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
+    	}
     	Logger.minor(this, "notifyOfPacketAcked(): "+this);
     }
     
@@ -92,5 +101,17 @@ public class PacketThrottle {
 		return Double.toString((((PACKET_SIZE * 1000.0 / getDelay())) / 1024)) + " k/sec, (w: "
 				+ _simulatedWindowSize + ", r:" + _roundTripTime + ", d:"
 				+ (((float) _droppedPackets / (float) _totalPackets)) + ") for "+_peer;
+	}
+
+	/**
+	 * Schedule a delay. This method implements the global congestion window for a given
+	 * peer.
+	 * @param now The current time, in millis.
+	 * @return The time, in millis, after which a packet may be sent.
+	 */
+	public synchronized long scheduleDelay(long now) {
+		if(now > lastScheduledDelay) lastScheduledDelay = now;
+		lastScheduledDelay += getDelay();
+		return lastScheduledDelay;
 	}
 }

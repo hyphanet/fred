@@ -143,11 +143,11 @@ public class BlockTransmitter {
 			/** @return True if _sendComplete */
 			private void delay(long startCycleTime) {
 				
-				// Get the current inter-packet delay
-				long delay = throttle.getDelay();
-				Logger.minor(this, "Throttle delay: "+delay);
-				
 				long startThrottle = System.currentTimeMillis();
+
+				// Get the current inter-packet delay
+				long end = throttle.scheduleDelay(startThrottle);
+
 				_masterThrottle.blockingGrab(PACKET_SIZE);
 				
 				long now = System.currentTimeMillis();
@@ -155,8 +155,6 @@ public class BlockTransmitter {
 				long delayTime = now - startThrottle;
 				
 				((PeerNode)_destination).reportThrottledPacketSendTime(delayTime);
-				
-				long end = startCycleTime + delay;
 				
 				if(now > end) return;
 				while(now < end) {
