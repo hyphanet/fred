@@ -68,7 +68,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "Node updating"));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-			content.addChild("p").addChild("#", "The Freenet node is being updated will self-restart. The restart process might take up to 10 minutes, because the node will try to fetch a revocation key before updating.");
+			content.addChild("p").addChild("#", "The Freenet node is being updated and will self-restart. The restart process may take up to 10 minutes, because the node will try to fetch a revocation key before updating.");
 			content.addChild("p").addChild("#", "Thank you for using Freenet.");
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			Logger.normal(this, "Node is updating/restarting");
