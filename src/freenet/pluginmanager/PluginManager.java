@@ -86,13 +86,17 @@ public class PluginManager {
 	
 	private String getConfigLoadString() {
 		StringBuffer out = new StringBuffer();
-		Iterator it = getPlugins().iterator();
-		
-		if (it.hasNext())
-			out.append(StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
-		while (it.hasNext())
-			out.append(StringArrOption.delimiter + StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
-		
+		try{
+			Iterator it = getPlugins().iterator();
+
+			if (it.hasNext())
+				out.append(StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
+			while (it.hasNext())
+				out.append(StringArrOption.delimiter + StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
+		}catch (NullPointerException e){
+			Logger.error(this, "error while loading plugins: disabling them:"+e);
+			return "";
+		}
 		return out.toString();
 	}
 	

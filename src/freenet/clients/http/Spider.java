@@ -93,6 +93,14 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	}
 
 	private void startSomeRequests() {
+		try{
+			Thread.sleep(30 * 1000); // Let the node start up
+		} catch (InterruptedException e){}
+		
+		FreenetURI[] initialURIs = core.bookmarkManager.getBookmarkURIs();
+		for (int i = 0; i < initialURIs.length; i++)
+			queueURI(initialURIs[i]);
+		
 		ArrayList toStart = null;
 		synchronized (this) {
 			if (stopped) {
@@ -439,9 +447,6 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	 * @see freenet.plugin.Plugin#startPlugin()
 	 */
 	public void startPlugin() {
-		FreenetURI[] initialURIs = core.bookmarkManager.getBookmarkURIs();
-		for (int i = 0; i < initialURIs.length; i++)
-			queueURI(initialURIs[i]);
 		stopped = false;
 		Thread starterThread = new Thread("Spider Plugin Starter") {
 			public void run() {
