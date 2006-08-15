@@ -18,7 +18,7 @@ import freenet.support.SimpleFieldSet;
 
 public class AddPeer extends FCPMessage {
 
-	static final String name = "AddPeer";
+	public static final String name = "AddPeer";
 	
 	SimpleFieldSet fs;
 	

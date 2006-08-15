@@ -66,10 +66,20 @@ public abstract class FCPMessage {
 			return new WatchGlobal(fs);
 		if(name.equals("Void"))
 			return null;
+		if(name.equals(NodeHelloMessage.name))
+			return new NodeHelloMessage(fs);
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Unknown message name "+name, null);
 //		if(name.equals("ClientPut"))
 //			return new ClientPutFCPMessage(fs);
 		// TODO Auto-generated method stub
+	}
+	
+	/**
+	 * Create a message from a SimpleFieldSet, and the message's name, if possible. 
+	 * Usefull for FCPClients
+	 */
+	public static FCPMessage create(String name, SimpleFieldSet fs) throws MessageInvalidException {
+		return FCPMessage.create(name, fs, null, null);
 	}
 
 	/** Do whatever it is that we do with this type of message. 

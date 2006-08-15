@@ -2,6 +2,7 @@ package freenet.node.fcp;
 
 import freenet.node.Node;
 import freenet.node.Version;
+import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
 import freenet.support.compress.Compressor;
 
@@ -15,10 +16,40 @@ import freenet.support.compress.Compressor;
  * EndMessage
  */
 public class NodeHelloMessage extends FCPMessage {
-
-	private final Node node;
+	public static final String name = "NodeHello";
+	String nodeVersion;
+	String nodeFCPVersion;
+	String nodeNode;
+	String nodeCompressionCodecs;
+	boolean isTestnet;
 	
-	public NodeHelloMessage(Node node) {
+	private Node node;
+	
+	public NodeHelloMessage(SimpleFieldSet fs) throws MessageInvalidException {	
+		this.nodeNode = fs.get("Node");
+		if(nodeNode == null)
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Node!", null);
+		else if(!nodeNode.equals("Fred"))
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Not talking to Fred!", null);
+		
+		this.nodeFCPVersion = fs.get("FCPVersion");
+		if(nodeFCPVersion == null)
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No FCPVersion!", null);
+		else if(!nodeFCPVersion.equals("2.0"))
+			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "FCPVersion is incompatible!", null);
+		
+		this.nodeVersion = fs.get("Version");
+		if(nodeVersion == null)
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Version!", null);
+		
+		this.nodeCompressionCodecs = fs.get("CompressionCodecs");
+		if(nodeCompressionCodecs == null)
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No CompressionCodecs!", null);	
+		
+		this.isTestnet = Fields.stringToBool(fs.get("Testnet"), false);
+	}
+	
+	public NodeHelloMessage(final Node node) {
 		this.node = node;
 	}
 	
@@ -34,7 +65,7 @@ public class NodeHelloMessage extends FCPMessage {
 	}
 
 	public String getName() {
-		return "NodeHello";
+		return NodeHelloMessage.name;
 	}
 
 	public void run(FCPConnectionHandler handler, Node node) {
