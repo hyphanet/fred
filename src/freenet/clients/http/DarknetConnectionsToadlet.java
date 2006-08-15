@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.io.comm.IOStatisticCollector;
 import freenet.io.comm.PeerParseException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
@@ -28,6 +29,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
+import freenet.support.SizeUtil;
 import freenet.support.io.Bucket;
 
 public class DarknetConnectionsToadlet extends Toadlet {
@@ -191,6 +193,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				if (numARKFetchers > 0) {
 					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 				}
+				long[] total = IOStatisticCollector.getTotalIO();
+				activityList.addChild("li", "Output\u00a0:\u00a0" + SizeUtil.formatSize(total[0]));
+				activityList.addChild("li", "Input\u00a0:\u00a0" + SizeUtil.formatSize(total[1]));
 			}
 		}
 		
