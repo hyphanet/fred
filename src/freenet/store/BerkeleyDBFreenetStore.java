@@ -246,7 +246,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			
 //			 Add shutdownhook
 			Runtime.getRuntime().addShutdownHook(new ShutdownHook());
-		} finally {
+		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
 			try {
 				chkDB_accessTime.close();
 			} catch (DatabaseException e2) {
