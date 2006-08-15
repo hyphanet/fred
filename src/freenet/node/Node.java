@@ -379,6 +379,7 @@ public class Node {
 	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
 	public static final int EXIT_COULD_NOT_START_UPDATER = 21;
 	static final int EXIT_EXTRA_PEER_DATA_DIR = 22;
+	static final int EXIT_THROTTLE_FILE_ERROR = 23;
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
@@ -417,8 +418,8 @@ public class Node {
 	final TimeDecayingRunningAverage localSskFetchBytesReceivedAverage;
 	final TimeDecayingRunningAverage localChkInsertBytesReceivedAverage;
 	final TimeDecayingRunningAverage localSskInsertBytesReceivedAverage;
-	final File persistTarget; 
-	final File persistTemp;
+	File persistTarget; 
+	File persistTemp;
 	
 	// The version we were before we restarted.
 	public int lastVersion;
@@ -448,6 +449,7 @@ public class Node {
 	// various metrics
 	public RunningAverage missRoutingDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
 	public RunningAverage backedoffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	protected final ThrottlePersister throttlePersister;
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -1196,8 +1198,26 @@ public class Node {
 			throw new NodeInitException(EXIT_STORE_OTHER, msg);
 		}
 		
-		persistTarget = new File(nodeDir, "throttle.dat");
-		persistTemp = new File(nodeDir, "throttle.dat.tmp");
+		nodeConfig.register("throttleFile", "throttle.dat", sortOrder++, true, "File to store the persistent throttle data to", "File to store the persistent throttle data to", new StringCallback() {
+
+			public String get() {
+				return persistTarget.toString();
+			}
+
+			public void set(String val) throws InvalidConfigValueException {
+				setThrottles(val);
+			}
+			
+		});
+		
+		String throttleFile = nodeConfig.getString("throttleFile");
+		try {
+			setThrottles(throttleFile);
+		} catch (InvalidConfigValueException e2) {
+			throw new NodeInitException(EXIT_THROTTLE_FILE_ERROR, e2.getMessage());
+		}
+		
+		throttlePersister = new ThrottlePersister();
 		
 		SimpleFieldSet throttleFS = null;
 		try {
@@ -1211,6 +1231,7 @@ public class Node {
 				Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+")");
 			}
 		}
+
 		Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		// Guesstimates. Hopefully well over the reality.
@@ -1258,6 +1279,46 @@ public class Node {
 		System.out.println("Node constructor completed");
 	}
 	
+	private void setThrottles(String val) throws InvalidConfigValueException {
+		File f = new File(val);
+		File tmp = new File(val+".tmp");
+		while(true) {
+			if(f.exists()) {
+				if(!(f.canRead() && f.canWrite()))
+					throw new InvalidConfigValueException("File exists and cannot read/write it");
+				break;
+			} else {
+				try {
+					f.createNewFile();
+				} catch (IOException e) {
+					throw new InvalidConfigValueException("File does not exist and cannot be created");
+				}
+			}
+		}
+		while(true) {
+			if(tmp.exists()) {
+				if(!(tmp.canRead() && tmp.canWrite()))
+					throw new InvalidConfigValueException("File exists and cannot read/write it");
+				break;
+			} else {
+				try {
+					tmp.createNewFile();
+				} catch (IOException e) {
+					throw new InvalidConfigValueException("File does not exist and cannot be created");
+				}
+			}
+		}
+		
+		ThrottlePersister tp;
+		synchronized(Node.this) {
+			persistTarget = f;
+			persistTemp = tmp;
+			tp = throttlePersister;
+		}
+		if(tp != null)
+			tp.interrupt();
+	}
+
 	static final String ERROR_SUN_NPTL = 
 		"WARNING: Your system appears to be running a Sun JVM with NPTL. " +
 		"This has been known to cause the node to freeze up due to the JVM losing a lock. " +
@@ -1336,8 +1397,7 @@ public class Node {
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
 		
-		ThrottlePersister persister = new ThrottlePersister();
-		Thread t = new Thread(persister, "Throttle data persister thread");
+		Thread t = new Thread(throttlePersister, "Throttle data persister thread");
 		t.setDaemon(true);
 		t.start();
 		
@@ -2756,6 +2816,12 @@ public class Node {
 	
 	class ThrottlePersister implements Runnable {
 
+		void interrupt() {
+			synchronized(this) {
+				notify();
+			}
+		}
+		
 		public void run() {
 			while(true) {
 				try {
@@ -2764,7 +2830,9 @@ public class Node {
 					Logger.error(this, "Caught "+t, t);
 				}
 				try {
-					Thread.sleep(60*1000);
+					synchronized(this) {
+						wait(60*1000);
+					}
 				} catch (InterruptedException e) {
 					// Maybe it's time to wake up?
 				}
