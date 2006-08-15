@@ -620,12 +620,6 @@ public class FNPPacketMangler implements LowLevelFilter {
         // Verify
         tracker.pn.verified(tracker);
         
-        if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
-            tracker.queueAck(seqNumber);
-            Logger.normal(this, "Received packet twice from "+tracker.pn.getPeer()+": "+seqNumber);
-            return true;
-        }
-        
         for(int i=0;i<md.getDigestLength();i++) {
             packetHash[i] ^= buf[offset+i];
         }
@@ -716,8 +710,6 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         Logger.minor(this, "Reference sequence number: "+referenceSeqNumber);
 
-        tracker.receivedPacket(seqNumber);
-        
         int ackCount = decrypted[ptr++] & 0xff;
         Logger.minor(this, "Acks: "+ackCount);
 
@@ -778,6 +770,14 @@ public class FNPPacketMangler implements LowLevelFilter {
         	return;
         }
         // No sequence number == no messages
+
+        if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
+            tracker.queueAck(seqNumber);
+            Logger.error(this, "Received packet twice ("+seqNumber+") from "+tracker.pn.getPeer()+": "+seqNumber);
+            return;
+        }
+        
+        tracker.receivedPacket(seqNumber);
         
         int messages = decrypted[ptr++] & 0xff;
         

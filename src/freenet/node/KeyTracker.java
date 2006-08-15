@@ -328,7 +328,7 @@ public class KeyTracker {
 		public void onAcked() {
 			long t = Math.max(0, System.currentTimeMillis() - createdTime);
 			pn.pingAverage.report(t);
-			Logger.minor(this, "Reported round-trip time of "+t+"ms on "+pn.getPeer());
+			Logger.minor(this, "Reported round-trip time of "+t+"ms on "+pn.getPeer()+" (avg "+pn.pingAverage.currentValue()+"ms, #"+packetNumber+")");
 		}
     }
     
