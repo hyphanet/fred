@@ -84,9 +84,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	/**
      * Initializes database
      * @param the directory where the store is located
+	 * @throws IOException 
+	 * @throws DatabaseException 
      * @throws FileNotFoundException if the dir does not exist and could not be created
      */
-	public BerkeleyDBFreenetStore(String storeDir, long maxChkBlocks, int blockSize, int headerSize, boolean throwOnTooFewKeys) throws Exception {
+	public BerkeleyDBFreenetStore(String storeDir, long maxChkBlocks, int blockSize, int headerSize, boolean throwOnTooFewKeys) throws IOException, DatabaseException {
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
 		this.freeBlocks = new SortedLongSet();
@@ -130,7 +132,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Logger.error(this, "This may take some time...");
 			System.err.println("Recreating secondary database for "+storeDir);
 			System.err.println("This may take some time...");
-			environment.truncateDatabase(null, "CHK_accessTime", false);
+			try {
+				environment.truncateDatabase(null, "CHK_accessTime", false);
+			} catch (DatabaseException e) {
+				try {
+					chkDB.close();
+				} catch (DatabaseException e1) {
+					Logger.normal(this, "Ignoring "+e1, e1);
+				}
+				throw e;
+			}
 		}
 		
 		// Initialize secondary CHK database sorted on accesstime
@@ -144,8 +155,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		AccessTimeKeyCreator accessTimeKeyCreator = 
 			new AccessTimeKeyCreator(storeBlockTupleBinding);
 		secDbConfig.setKeyCreator(accessTimeKeyCreator);
-		chkDB_accessTime = environment.openSecondaryDatabase
-							(null, "CHK_accessTime", chkDB, secDbConfig);
+		try {
+			chkDB_accessTime = environment.openSecondaryDatabase
+								(null, "CHK_accessTime", chkDB, secDbConfig);
+		} catch (DatabaseException e1) {
+			try {
+				chkDB.close();
+			} catch (DatabaseException e2) {
+				Logger.normal(this, "Ignoring "+e2, e2);
+			}
+			throw e1;
+		}
 		
 		// Initialize other secondary database sorted on block number
 //		try {
@@ -175,44 +195,74 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			blockNoDbConfig.setAllowPopulate(true);
 			blockNums = environment.openSecondaryDatabase
 				(null, "CHK_blockNum", chkDB, blockNoDbConfig);
+		} catch (DatabaseException e) {
+			try {
+				chkDB_accessTime.close();
+			} catch (DatabaseException e2) {
+				Logger.normal(this, "Ignoring "+e2, e2);
+			}
+			try {
+				chkDB.close();
+			} catch (DatabaseException e2) {
+				Logger.normal(this, "Ignoring "+e2, e2);
+			}
+			throw e;
 		}
 		
 		chkDB_blockNum = blockNums;
 		
 		// Initialize the store file
 		File storeFile = new File(dir,"store");
-		if(!storeFile.exists())
-			storeFile.createNewFile();
-		chkStore = new RandomAccessFile(storeFile,"rw");
+		try {
+			if(!storeFile.exists())
+				storeFile.createNewFile();
+			chkStore = new RandomAccessFile(storeFile,"rw");
+			
+			long chkBlocksInDatabase = countCHKBlocksFromDatabase();
+			chkBlocksInStore = chkBlocksInDatabase;
+			long chkBlocksFromFile = countCHKBlocksFromFile();
+			lastRecentlyUsed = getMaxRecentlyUsed();
+			
+			if(((chkBlocksInStore == 0) && (chkBlocksFromFile != 0)) ||
+					(((chkBlocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
+				if(throwOnTooFewKeys) {
+					try {
+						close();
+					} catch (Throwable t) {
+						Logger.error(this, "Failed to close: "+t, t);
+						System.err.println("Failed to close: "+t);
+						t.printStackTrace();
+					}
+					throw new DatabaseException("Keys in database: "+chkBlocksInStore+" but keys in file: "+chkBlocksFromFile);
+				} else
+					checkForHoles(chkBlocksFromFile);
+			}
+			
+			chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
+			Logger.minor(this, "Keys in store: "+chkBlocksInStore);
+			System.out.println("Keys in store: "+chkBlocksInStore+" / "+maxChkBlocks+" (db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+")");
 
-		long chkBlocksInDatabase = countCHKBlocksFromDatabase();
-		chkBlocksInStore = chkBlocksInDatabase;
-		long chkBlocksFromFile = countCHKBlocksFromFile();
-		lastRecentlyUsed = getMaxRecentlyUsed();
-		
-		if(((chkBlocksInStore == 0) && (chkBlocksFromFile != 0)) ||
-				(((chkBlocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
-			if(throwOnTooFewKeys) {
-				try {
-					close();
-				} catch (Throwable t) {
-					Logger.error(this, "Failed to close: "+t, t);
-					System.err.println("Failed to close: "+t);
-					t.printStackTrace();
-				}
-				throw new DatabaseException("Keys in database: "+chkBlocksInStore+" but keys in file: "+chkBlocksFromFile);
-			} else
-				checkForHoles(chkBlocksFromFile);
+			maybeShrink(true, true);
+			
+//			 Add shutdownhook
+			Runtime.getRuntime().addShutdownHook(new ShutdownHook());
+		} finally {
+			try {
+				chkDB_accessTime.close();
+			} catch (DatabaseException e2) {
+				Logger.normal(this, "Ignoring "+e2, e2);
+			}
+			try {
+				chkDB_blockNum.close();
+			} catch (DatabaseException e2) {
+				Logger.normal(this, "Ignoring "+e2, e2);
+			}
+			try {
+				chkDB.close();
+			} catch (DatabaseException e2) {
+				Logger.normal(this, "Ignoring "+e2, e2);
+			}
 		}
-		
-		chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
-		Logger.minor(this, "Keys in store: "+chkBlocksInStore);
-		System.out.println("Keys in store: "+chkBlocksInStore+" / "+maxChkBlocks+" (db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+")");
-
-		maybeShrink(true, true);
-		
-//		 Add shutdownhook
-		Runtime.getRuntime().addShutdownHook(new ShutdownHook());
 	}
 
 	private void checkForHoles(long blocksInFile) throws DatabaseException {
