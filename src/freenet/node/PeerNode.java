@@ -410,11 +410,11 @@ public class PeerNode implements PeerContext {
         // A SimpleRunningAverage would be a bad choice because it would cause oscillations.
         // So go for a filter.
         pingAverage = 
-        	new TimeDecayingRunningAverage(1, 60000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
+        	new TimeDecayingRunningAverage(1, 600*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE);
 
         // TDRA for probability of rejection
         pRejected =
-        	new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
+        	new TimeDecayingRunningAverage(0, 600*1000, 0.0, 1.0);
         
         // ARK stuff.
 
