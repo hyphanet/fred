@@ -667,7 +667,7 @@ public class QueueToadlet extends Toadlet {
 		insertForm.addChild("#", " \u00a0 File: ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
 		insertForm.addChild("#", " \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "compress" });
+		insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "compress", "checked" });
 		insertForm.addChild("#", " Compress \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", "Insert file" });
 		insertForm.addChild("#", " \u00a0 ");
