@@ -68,6 +68,9 @@ public class IPUtil {
 	}
 
 	public static boolean checkAddress(byte[] b) {
+		if(b.length != 4) {
+			return false;
+		}
 		int[] i = new int[4];
 		for(int x=0;x<4;x++) i[x] = b[x] & 0xff;
 		return checkAddress(i);
