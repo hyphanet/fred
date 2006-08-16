@@ -55,6 +55,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean advancedDarknetEnabled;
 	private final PageMaker pageMaker;
 	
+	static boolean isPanicButtonToBeShown;
 	static final int DEFAULT_FPROXY_PORT = 8888;
 	
 	class FProxyPortCallback implements IntCallback {
@@ -221,7 +222,19 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("advancedDarknetEnabled", false, 1, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
 				new FProxyAdvancedDarknetEnabledCallback(this));
-
+		fproxyConfig.register("showPanicButton", false, 1, true, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
+				new BooleanCallback(){
+				public boolean get(){
+					return SimpleToadletServer.isPanicButtonToBeShown;
+				}
+			
+				public void set(boolean value){
+					if(value == SimpleToadletServer.isPanicButtonToBeShown) return;
+					else	SimpleToadletServer.isPanicButtonToBeShown = value;
+				}
+		});
+		
+		SimpleToadletServer.isPanicButtonToBeShown = fproxyConfig.getBoolean("showPanicButton");
 		this.bf = core.tempBucketFactory;
 		port = fproxyConfig.getInt("port");
 		bindTo = fproxyConfig.getString("bindTo");

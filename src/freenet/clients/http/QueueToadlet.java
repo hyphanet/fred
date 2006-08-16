@@ -18,7 +18,6 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
-import freenet.node.fcp.ClientPutBase;
 import freenet.node.fcp.ClientPutDir;
 import freenet.node.fcp.ClientPutMessage;
 import freenet.node.fcp.ClientRequest;
@@ -375,7 +374,7 @@ public class QueueToadlet extends Toadlet {
 			legendRow.addChild("td", "class", "priority" + i, "Priority " + i);
 		}
 
-		if (reqs.length > 1) {
+		if (reqs.length > 1 && SimpleToadletServer.isPanicButtonToBeShown) {
 			contentNode.addChild(createPanicBox(pageMaker));
 		}
 
