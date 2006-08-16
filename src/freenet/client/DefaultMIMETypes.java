@@ -735,16 +735,18 @@ public class DefaultMIMETypes {
 		addMIMEType((short)612, "x-world/x-vrml", "vrm vrml wrl", "vrml");
 	}
 	
-	/** Guess a MIME type from a filename */
-	public synchronized static String guessMIMEType(String arg) {
+	/** Guess a MIME type from a filename.
+	 * @param noDefault If true, no default MIME type; return null if not recognized.
+	 * Otherwise if we don't recognize the extension we return DEFAULT_MIME_TYPE. */
+	public synchronized static String guessMIMEType(String arg, boolean noDefault) {
 		int x = arg.lastIndexOf('.');
 		if((x == -1) || (x == arg.length()-1))
-			return DEFAULT_MIME_TYPE;
+			return noDefault ? null : DEFAULT_MIME_TYPE;
 		String ext = arg.substring(x+1).toLowerCase();
 		Short mimeIndexOb = (Short) mimeTypesByExtension.get(ext);
 		if(mimeIndexOb != null) {
 			return (String) mimeTypesByNumber.get(mimeIndexOb.intValue());
-		} else return DEFAULT_MIME_TYPE;
+		} else return noDefault ? null : DEFAULT_MIME_TYPE;
 	}
 
 	public synchronized static String getExtension(String type) {

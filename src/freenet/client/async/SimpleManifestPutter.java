@@ -253,9 +253,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
 				if(mimeType == null)
-					mimeType = DefaultMIMETypes.guessMIMEType(name);
+					mimeType = DefaultMIMETypes.guessMIMEType(name, true);
 				ClientMetadata cm;
-				if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
+				if(mimeType == null || mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
 					cm = null;
 				else
 					cm = new ClientMetadata(mimeType);

@@ -458,7 +458,7 @@ public class Metadata implements Cloneable {
 			Metadata target;
 			if(o instanceof String) {
 				// Zip internal redirect
-				target = new Metadata(ZIP_INTERNAL_REDIRECT, key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key)));
+				target = new Metadata(ZIP_INTERNAL_REDIRECT, key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
 				target = new Metadata((HashMap)o);
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
@@ -488,7 +488,7 @@ public class Metadata implements Cloneable {
 			Metadata target;
 			if(o instanceof String) {
 				// Zip internal redirect
-				target = new Metadata(ZIP_INTERNAL_REDIRECT, key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key)));
+				target = new Metadata(ZIP_INTERNAL_REDIRECT, key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
 				target = new Metadata((HashMap)o);
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);

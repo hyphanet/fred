@@ -475,7 +475,7 @@ public class TextModeClientInterface implements Runnable {
                 line = line.substring(1);
             while((line.length() > 0) && (line.charAt(line.length()-1) == ' '))
                 line = line.substring(0, line.length()-2);
-            String mimeType = DefaultMIMETypes.guessMIMEType(line);
+            String mimeType = DefaultMIMETypes.guessMIMEType(line, false);
             if (line.indexOf('#') > -1) {
             	String[] splittedLine = line.split("#");
             	line = splittedLine[0];

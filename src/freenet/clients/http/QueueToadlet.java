@@ -178,7 +178,7 @@ public class QueueToadlet extends Toadlet {
 				String filename = request.getParam("filename");
 				File file = new File(filename);
 				String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
-				String contentType = DefaultMIMETypes.guessMIMEType(filename);
+				String contentType = DefaultMIMETypes.guessMIMEType(filename, false);
 				try {
 					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), new FreenetURI("CHK@"), identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false), null);
 					clientPut.start();

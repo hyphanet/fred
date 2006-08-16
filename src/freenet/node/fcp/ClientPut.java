@@ -128,7 +128,10 @@ public class ClientPut extends ClientPutBase {
 		// Now go through the fields one at a time
 		String mimeType = message.contentType;
 		if(mimeType == null && origFilename != null) {
-			mimeType = DefaultMIMETypes.guessMIMEType(origFilename.getName());
+			mimeType = DefaultMIMETypes.guessMIMEType(origFilename.getName(), true);
+		}
+		if(mimeType == null) {
+			mimeType = DefaultMIMETypes.guessMIMEType(identifier, true);
 		}
 		clientToken = message.clientToken;
 		if(persistenceType != PERSIST_CONNECTION)

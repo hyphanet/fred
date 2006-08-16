@@ -22,7 +22,7 @@ public class DiskDirPutFile extends DirPutFile {
 	protected String guessMIME() {
 		String mime = super.guessMIME();
 		if(mime == null) {
-			mime = DefaultMIMETypes.guessMIMEType(file.getName());
+			mime = DefaultMIMETypes.guessMIMEType(file.getName(), false /* fixme? */);
 		}
 		return mime;
 	}
