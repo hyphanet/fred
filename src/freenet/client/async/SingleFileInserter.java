@@ -284,6 +284,8 @@ class SingleFileInserter implements ClientPutState {
 
 		/**
 		 * Create a SplitHandler from a stored progress SimpleFieldSet.
+		 * @param forceMetadata If true, the insert is metadata, regardless of what the
+		 * encompassing SplitFileInserter says (i.e. it's multi-level metadata).
 		 * @throws ResumeException Thrown if the resume fails.
 		 * @throws InserterException Thrown if some other error prevents the insert
 		 * from starting.
@@ -298,7 +300,7 @@ class SingleFileInserter implements ClientPutState {
 			if(sfiFS == null)
 				throw new ResumeException("No SplitFileInserter");
 			ClientPutState newSFI, newMetaPutter = null;
-			newSFI = new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, meta, token, insertAsArchiveManifest, sfiFS);
+			newSFI = new SplitFileInserter(parent, this, forceMetadata ? null : block.clientMetadata, ctx, getCHKOnly, meta, token, insertAsArchiveManifest, sfiFS);
 			fs.removeSubset("SplitFileInserter");
 			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
 			if(metaFS != null) {
@@ -307,7 +309,7 @@ class SingleFileInserter implements ClientPutState {
 					if(type.equals("SplitFileInserter")) {
 						// FIXME insertAsArchiveManifest ?!?!?!
 						newMetaPutter = 
-							new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, true, token, insertAsArchiveManifest, metaFS);
+							new SplitFileInserter(parent, this, null, ctx, getCHKOnly, true, token, insertAsArchiveManifest, metaFS);
 					} else if(type.equals("SplitHandler")) {
 						newMetaPutter = new SplitHandler();
 						((SplitHandler)newMetaPutter).start(metaFS, true);
