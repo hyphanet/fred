@@ -83,7 +83,7 @@ class SingleFileInserter implements ClientPutState {
 				// If we succeed, we bypass both compression and FEC encoding!
 				try {
 					SplitHandler sh = new SplitHandler();
-					sh.start(fs);
+					sh.start(fs, false);
 					cb.onTransition(this, sh);
 					return;
 				} catch (ResumeException e) {
@@ -288,7 +288,9 @@ class SingleFileInserter implements ClientPutState {
 		 * @throws InserterException Thrown if some other error prevents the insert
 		 * from starting.
 		 */
-		void start(SimpleFieldSet fs) throws ResumeException, InserterException {
+		void start(SimpleFieldSet fs, boolean forceMetadata) throws ResumeException, InserterException {
+			
+			boolean meta = metadata || forceMetadata;
 			
 			// Don't include the booleans; wait for the callback.
 			
@@ -296,18 +298,19 @@ class SingleFileInserter implements ClientPutState {
 			if(sfiFS == null)
 				throw new ResumeException("No SplitFileInserter");
 			ClientPutState newSFI, newMetaPutter = null;
-			newSFI = new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, sfiFS);
+			newSFI = new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, meta, token, insertAsArchiveManifest, sfiFS);
 			fs.removeSubset("SplitFileInserter");
 			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
 			if(metaFS != null) {
 				try {
 					String type = metaFS.get("Type");
 					if(type.equals("SplitFileInserter")) {
+						// FIXME insertAsArchiveManifest ?!?!?!
 						newMetaPutter = 
 							new SplitFileInserter(parent, this, block.clientMetadata, ctx, getCHKOnly, true, token, insertAsArchiveManifest, metaFS);
 					} else if(type.equals("SplitHandler")) {
 						newMetaPutter = new SplitHandler();
-						((SplitHandler)newMetaPutter).start(metaFS);
+						((SplitHandler)newMetaPutter).start(metaFS, true);
 					}
 				} catch (ResumeException e) {
 					// Ignore, it will be reconstructed later
