@@ -47,6 +47,7 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
+import freenet.io.comm.IOStatisticCollector;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
@@ -420,6 +421,17 @@ public class Node {
 	final TimeDecayingRunningAverage localSskInsertBytesReceivedAverage;
 	File persistTarget; 
 	File persistTemp;
+	private long previous_input_stat;
+	private long previous_output_stat;
+	private long previous_io_stat_time;
+	private long last_input_stat;
+	private long last_output_stat;
+	private long last_io_stat_time;
+	private final Object ioStatSync = new Object();
+	/** Next time to update the node I/O stats */
+	private long nextNodeIOStatsUpdateTime = -1;
+	/** Node I/O stats update interval (milliseconds) */
+	private static final long nodeIOStatsUpdateInterval = 2000;
 	
 	// The version we were before we restarted.
 	public int lastVersion;
@@ -807,6 +819,13 @@ public class Node {
 		portNumber = port;
 		
 		Logger.normal(Node.class, "Creating node...");
+
+		previous_input_stat = 0;
+		previous_output_stat = 0;
+		previous_io_stat_time = 1;
+		last_input_stat = 0;
+		last_output_stat = 0;
+		last_io_stat_time = 3;
 
 		// Bandwidth limit
 
@@ -2530,7 +2549,7 @@ public class Node {
 		int numberOfBursting = getPeerNodeStatusSize(PEER_NODE_STATUS_BURSTING);
 		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly);
 		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
-	  }
+		}
 	}
 
 	/**
@@ -2911,4 +2930,34 @@ public class Node {
 		return fs;
 	}
 
+	/**
+	 * Update the node-wide bandwidth I/O stats if the timer has expired
+	 */
+	public void maybeUpdateNodeIOStats(long now) {
+		if(now > nextNodeIOStatsUpdateTime) {
+			long[] io_stats = IOStatisticCollector.getTotalIO();
+			synchronized(ioStatSync) {
+				previous_output_stat = last_output_stat;
+				previous_input_stat = last_input_stat;
+				previous_io_stat_time = last_io_stat_time;
+				last_output_stat = io_stats[ 0 ];
+				last_input_stat = io_stats[ 1 ];
+				last_io_stat_time = now;
+			}
+			nextNodeIOStatsUpdateTime = now + nodeIOStatsUpdateInterval;
+		}
+	}
+
+	public long[] getNodeIOStats() {
+		long[] result = new long[6];
+		synchronized(ioStatSync) {
+			result[ 0 ] = previous_output_stat;
+			result[ 1 ] = previous_input_stat;
+			result[ 2 ] = previous_io_stat_time;
+			result[ 3 ] = last_output_stat;
+			result[ 4 ] = last_input_stat;
+			result[ 5 ] = last_io_stat_time;
+		}
+		return result;
+	}
 }

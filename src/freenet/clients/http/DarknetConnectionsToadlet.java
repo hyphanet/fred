@@ -194,8 +194,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 				}
 				long[] total = IOStatisticCollector.getTotalIO();
-				activityList.addChild("li", "Output:\u00a0" + SizeUtil.formatSize(total[0]));
-				activityList.addChild("li", "Input:\u00a0" + SizeUtil.formatSize(total[1]));
+				activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]));
+				activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]));
+				long[] rate = node.getNodeIOStats();
+				long delta = (rate[5] - rate[2]) / 1000;
+				long output_rate = (rate[3] - rate[0]) / delta;
+				long input_rate = (rate[4] - rate[1]) / delta;
+				activityList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate) + "ps");
+				activityList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate) + "ps");
 			}
 		}
 		
