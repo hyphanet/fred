@@ -251,6 +251,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 					queueHeal(dataBuckets[i].getData());
 				} else {
 					dataBuckets[i].data.free();
+					dataBuckets[i].data = null;
 				}
 				dataBuckets[i] = null;
 				dataBlockStatus[i] = null;
@@ -321,28 +322,32 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			if(finished) return;
 			finished = true;
 			this.failureException = e;
-		}
-		for(int i=0;i<dataBlockStatus.length;i++) {
-			SingleFileFetcher f = dataBlockStatus[i];
-			if(f != null)
-				f.cancel();
-			MinimalSplitfileBlock b = dataBuckets[i];
-			if(b != null) {
-				Bucket d = b.getData();
-				if(d != null) d.free();
+			if(startedDecode) {
+				Logger.error(this, "Failing with "+e+" but already started decode", e);
+				return;
 			}
-			dataBuckets[i] = null;
-		}
-		for(int i=0;i<checkBlockStatus.length;i++) {
-			SingleFileFetcher f = checkBlockStatus[i];
-			if(f != null)
-				f.cancel();
-			MinimalSplitfileBlock b = checkBuckets[i];
-			if(b != null) {
-				Bucket d = b.getData();
-				if(d != null) d.free();
+			for(int i=0;i<dataBlockStatus.length;i++) {
+				SingleFileFetcher f = dataBlockStatus[i];
+				if(f != null)
+					f.cancel();
+				MinimalSplitfileBlock b = dataBuckets[i];
+				if(b != null) {
+					Bucket d = b.getData();
+					if(d != null) d.free();
+				}
+				dataBuckets[i] = null;
 			}
-			checkBuckets[i] = null;
+			for(int i=0;i<checkBlockStatus.length;i++) {
+				SingleFileFetcher f = checkBlockStatus[i];
+				if(f != null)
+					f.cancel();
+				MinimalSplitfileBlock b = checkBuckets[i];
+				if(b != null) {
+					Bucket d = b.getData();
+					if(d != null) d.free();
+				}
+				checkBuckets[i] = null;
+			}
 		}
 		parentFetcher.segmentFinished(this);
 	}
