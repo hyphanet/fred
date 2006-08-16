@@ -11,8 +11,6 @@ public class URIGeneratedMessage extends FCPMessage {
 	private final String identifier;
 	
 	public URIGeneratedMessage(FreenetURI uri, String identifier) {
-		// FIXME remove when debugged the constant-stream-of-URIGenerated's bug.
-		Logger.minor(this, "URIGenerated created for "+uri+" on "+identifier+" ("+this+")", new Exception("debug"));
 		this.uri = uri;
 		this.identifier = identifier;
 	}

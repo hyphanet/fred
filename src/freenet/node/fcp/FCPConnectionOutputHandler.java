@@ -53,7 +53,6 @@ public class FCPConnectionOutputHandler implements Runnable {
 					break;
 				}
 			}
-			Logger.minor(this, "Sending "+msg);
 			msg.send(os);
 			if(handler.isClosed()) return;
 		}
