@@ -101,6 +101,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
 	protected ClientKeyBlock encode() throws InserterException {
 		ClientKeyBlock block;
+		boolean shouldSend;
 		synchronized(this) {
 			if(refToClientKeyBlock != null) {
 				block = (ClientKeyBlock) refToClientKeyBlock.get();
@@ -109,9 +110,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			block = innerEncode();
 			refToClientKeyBlock = 
 				new WeakReference(block);
+			shouldSend = (resultingURI == null);
 			resultingURI = block.getClientKey().getURI();
 		}
-		if(!dontSendEncoded)
+		if(shouldSend && !dontSendEncoded)
 			cb.onEncode(block.getClientKey(), this);
 		return block;
 	}
