@@ -116,6 +116,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			currentState = null;
 			oldProgress = null;
 		}
+		if(super.failedBlocks > 0 || super.fatallyFailedBlocks > 0 || super.successfulBlocks < super.totalBlocks) {
+			Logger.error(this, "Failed blocks: "+failedBlocks+", Fatally failed blocks: "+fatallyFailedBlocks+
+					", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
+					new Exception("debug"));
+		}
 		client.onSuccess(this);
 	}
 

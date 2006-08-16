@@ -313,7 +313,9 @@ class SingleFileInserter implements ClientPutState {
 						((SplitHandler)newMetaPutter).start(metaFS, true);
 					}
 				} catch (ResumeException e) {
-					// Ignore, it will be reconstructed later
+					newMetaPutter = null;
+					Logger.error(this, "Caught "+e, e);
+					// Will be reconstructed later
 				}
 			}
 			fs.removeSubset("MetadataPutter");
