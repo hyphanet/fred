@@ -41,6 +41,8 @@ public class NodeHelloMessage extends FCPMessage {
 		this.nodeVersion = fs.get("Version");
 		if(nodeVersion == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Version!", null);
+		else if(!nodeVersion.startsWith("Fred,0.7,1.0,"))
+			throw new MessageInvalidException(ProtocolErrorMessage.NOT_SUPPORTED, "Fred Version is incompatible!", null);
 		
 		this.nodeCompressionCodecs = fs.get("CompressionCodecs");
 		if(nodeCompressionCodecs == null)
