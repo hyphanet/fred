@@ -27,7 +27,7 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		return "A new stable version of Freenet is available";
+		return "A new stable version of Freenet is available ("+version+")";
 	}
 
 	public String getText() {
