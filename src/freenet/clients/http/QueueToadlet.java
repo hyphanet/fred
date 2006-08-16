@@ -18,6 +18,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.node.fcp.ClientGet;
 import freenet.node.fcp.ClientPut;
+import freenet.node.fcp.ClientPutBase;
 import freenet.node.fcp.ClientPutDir;
 import freenet.node.fcp.ClientPutMessage;
 import freenet.node.fcp.ClientRequest;
@@ -740,8 +741,10 @@ public class QueueToadlet extends Toadlet {
 				} else if (column == LIST_KEY) {
 					if (clientRequest instanceof ClientGet) {
 						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI()));
-					} else {
+					} else if (clientRequest instanceof ClientPut) {
 						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI()));
+					}else {
+						requestRow.addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI()));
 					}
 				} else if (column == LIST_FILENAME) {
 					if (clientRequest instanceof ClientGet) {
