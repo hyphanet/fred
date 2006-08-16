@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import freenet.client.ClientMetadata;
+import freenet.client.DefaultMIMETypes;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
@@ -126,6 +127,9 @@ public class ClientPut extends ClientPutBase {
 		this.origFilename = message.origFilename;
 		// Now go through the fields one at a time
 		String mimeType = message.contentType;
+		if(mimeType == null && origFilename != null) {
+			mimeType = DefaultMIMETypes.guessMIMEType(origFilename.getName());
+		}
 		clientToken = message.clientToken;
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this, false);
