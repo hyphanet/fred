@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,6 +14,9 @@ import java.util.List;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.filter.ContentFilter;
+import freenet.clients.http.filter.UnsafeContentTypeException;
+import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -187,6 +191,51 @@ public class QueueToadlet extends Toadlet {
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
+			} else if (request.isParameterSet("get")) {
+				String identifier = request.getParam("identifier");
+				ClientRequest[] clientRequests = fcp.getGlobalRequests();
+				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
+					ClientRequest clientRequest = clientRequests[requestIndex];
+					if (clientRequest.getIdentifier().equals(identifier)) {
+						if (clientRequest instanceof ClientGet) {
+							ClientGet clientGet = (ClientGet) clientRequest;
+							if (clientGet.hasSucceeded()) {
+								Bucket dataBucket = clientGet.getBucket();
+								if (dataBucket != null) {
+									String forceDownload = request.getParam("forceDownload");
+									if (forceDownload.length() > 0) {
+										long forceDownloadTime = Long.parseLong(forceDownload);
+										if ((System.currentTimeMillis() - forceDownloadTime) > 60 * 1000) {
+											break;
+										}
+										MultiValueTable responseHeaders = new MultiValueTable();
+										responseHeaders.put("Content-Disposition", "attachment; filename=\"" + clientGet.getURI().getMetaString() + "\"");
+										writeReply(ctx, 200, clientGet.getMIMEType(), "OK", responseHeaders, dataBucket);
+										return;
+									}
+									HTMLNode pageNode = ctx.getPageMaker().getPageNode("Potentially Unsafe Content");
+									HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+									HTMLNode alertNode = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-alert", "Potentially Unsafe Content"));
+									HTMLNode alertContent = ctx.getPageMaker().getContentNode(alertNode);
+									alertContent.addChild("#", "The file you want to download is currently not filtered by Freenet\u2019s content filter! That means that your anonymity can be compromised by opening the file!");
+									HTMLNode optionListNode = alertContent.addChild("ul");
+									HTMLNode optionForm = optionListNode.addChild("li").addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+									optionForm.addChild(ctx.getPageMaker().createFormPasswordInput(core.formPassword));
+									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
+									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceDownload", String.valueOf(System.currentTimeMillis()) });
+									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "get", "Download anyway" });
+									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "return", "Return to queue page" });
+									writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+									return;
+								}
+							}
+							writeError("Download Not Completed", "The download has not yet completed.", ctx);
+							return;
+						}
+					}
+				}
+				writeError("Download Not Found", "The download could not be found. Maybe it was already deleted?", ctx);
+				return;
 			}
 		} finally {
 			request.freeParts();
@@ -216,33 +265,6 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		PageMaker pageMaker = ctx.getPageMaker();
-		HTTPRequest request = new HTTPRequest(uri, null, ctx);
-		
-		if (request.isParameterSet("get")) {
-			String identifier = request.getParam("get");
-			ClientRequest[] clientRequests = fcp.getGlobalRequests();
-			for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
-				ClientRequest clientRequest = clientRequests[requestIndex];
-				if (clientRequest.getIdentifier().equals(identifier)) {
-					if (clientRequest instanceof ClientGet) {
-						ClientGet clientGet = (ClientGet) clientRequest;
-						if (clientGet.hasSucceeded()) {
-							Bucket dataBucket = clientGet.getBucket();
-							if (dataBucket != null) {
-								MultiValueTable responseHeaders = new MultiValueTable();
-								responseHeaders.put("Content-Disposition", "attachment; filename=\"" + clientGet.getURI().getMetaString() + "\"");
-								writeReply(ctx, 200, clientGet.getMIMEType(), "OK", responseHeaders, dataBucket);
-								return;
-							}
-						}
-						writeError("Download Not Completed", "The download has not yet completed.", ctx);
-						return;
-					}
-				}
-			}
-			writeError("Download Not Found", "The download could not be found. Maybe it was already deleted?", ctx);
-			return;
-		}
 		
 		// First, get the queued requests, and separate them into different types.
 		LinkedList completedDownloadToDisk = new LinkedList();
@@ -646,9 +668,12 @@ public class QueueToadlet extends Toadlet {
 		return persistenceCell;
 	}
 
-	private HTMLNode createDownloadCell(ClientGet p) {
+	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p) {
 		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
-		downloadCell.addChild("a", "href", "?get=" + p.getIdentifier(), "Download");
+		HTMLNode downloadForm = downloadCell.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+		downloadForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
+		downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", p.getIdentifier() });
+		downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "get", "Download" });
 		return downloadCell;
 	}
 
@@ -758,7 +783,7 @@ public class QueueToadlet extends Toadlet {
 						requestRow.addChild(createSizeCell(((ClientPut) clientRequest).getDataSize()));
 					}
 				} else if (column == LIST_DOWNLOAD) {
-					requestRow.addChild(createDownloadCell((ClientGet) clientRequest));
+					requestRow.addChild(createDownloadCell(pageMaker, (ClientGet) clientRequest));
 				} else if (column == LIST_MIME_TYPE) {
 					if (clientRequest instanceof ClientGet) {
 						requestRow.addChild(createTypeCell(((ClientGet) clientRequest).getMIMEType()));
