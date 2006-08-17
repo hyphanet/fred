@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Comparator;
@@ -14,9 +13,6 @@ import java.util.List;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.filter.ContentFilter;
-import freenet.clients.http.filter.UnsafeContentTypeException;
-import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -295,6 +291,8 @@ public class QueueToadlet extends Toadlet {
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", "Global queue is empty"));
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
+			/* add alert summary box */
+			contentNode.addChild(core.alerts.createSummary());
 			infoboxContent.addChild("#", "There is no task queued on the global queue at the moment.");
 			contentNode.addChild(createInsertBox(pageMaker));
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
