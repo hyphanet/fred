@@ -155,7 +155,8 @@ public class NodeIPDetector {
 	}
 	
 	public boolean hasDirectlyDetectedIP() {
-		return (ipDetector.getAddress() != null);
+		InetAddress[] addrs = ipDetector.getAddress();
+		return (addrs != null && addrs.length > 0);
 	}
 
 	/**
