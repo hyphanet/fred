@@ -66,6 +66,13 @@ public class QueueToadlet extends Toadlet {
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		try {
+			if (request.getPartAsString("insert-local", 128).length() > 0) {
+				MultiValueTable responseHeaders = new MultiValueTable();
+				responseHeaders.put("Location", "/files/");
+				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
+				return;
+			}
+				
 			if ((data.size() > 1024 * 1024) && (request.getPartAsString("insert", 128).length() == 0)) {
 				this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
 				return;
@@ -710,7 +717,8 @@ public class QueueToadlet extends Toadlet {
 	private HTMLNode createInsertBox(PageMaker pageMaker) {
 		/* the insert file box */
 		HTMLNode insertBox = pageMaker.getInfobox("Insert File");
-		HTMLNode insertForm = pageMaker.getContentNode(insertBox).addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
+		HTMLNode insertContent = pageMaker.getContentNode(insertBox);
+		HTMLNode insertForm = insertContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
 		insertForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 		insertForm.addChild("#", "Insert as: ");
 		insertForm.addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "keytype", "chk", "checked" });
@@ -724,6 +732,8 @@ public class QueueToadlet extends Toadlet {
 		insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "compress", "checked" });
 		insertForm.addChild("#", " Compress \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", "Insert file" });
+		insertForm.addChild("#", " \u00a0 ");
+		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", "Insert local file" });
 		insertForm.addChild("#", " \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "reset", "Reset form" });
 		return insertBox;

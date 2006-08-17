@@ -376,7 +376,7 @@ public class FProxyToadlet extends Toadlet {
 			server.register(queueToadlet, "/queue/", true, "Queue", "manage queued requests");
 			
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
-			server.register(localFileInsertToadlet, "/files/", true, "Insert Files", "insert files from the local disk");
+			server.register(localFileInsertToadlet, "/files/", true);
 
 			// Now start the server.
 			server.start();
