@@ -412,6 +412,12 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			if(result == null || result.asBucket() == null || result.asBucket().size() == 0) {
 				Logger.error(this, "Cannot update: result either null or empty for "+availableVersion);
 				System.err.println("Cannot update: result either null or empty for "+availableVersion);
+				// Try again
+				if(result == null || result.asBucket() == null || availableVersion > fetchingVersion) {
+					node.ps.queueTimedJob(new Runnable() {
+						public void run() { maybeUpdate(); }
+					}, 0);
+				}
 				return;
 			}
 			System.out.println("Found "+fetchingVersion);
