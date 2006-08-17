@@ -196,12 +196,13 @@ public class QueueToadlet extends Toadlet {
 	
 	private void writeError(String header, String message, ToadletContext context) throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = context.getPageMaker();
-		HTMLNode pageNode = pageMaker.getPageNode("Error process request");
+		HTMLNode pageNode = pageMaker.getPageNode(header);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		contentNode.addChild(core.alerts.createSummary());
-		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", "Error process request"));
+		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", header));
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 		infoboxContent.addChild("#", message);
+		infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", "/queue/", "queue page"), new HTMLNode("#", ".") });
 		writeReply(context, 400, "text/html; charset=utf-8", "Error", pageNode.generate());
 	}
 
@@ -215,8 +216,35 @@ public class QueueToadlet extends Toadlet {
 		}
 		
 		PageMaker pageMaker = ctx.getPageMaker();
-		// First, get the queued requests, and separate them into different types.
+		HTTPRequest request = new HTTPRequest(uri, null, ctx);
 		
+		if (request.isParameterSet("get")) {
+			String identifier = request.getParam("get");
+			ClientRequest[] clientRequests = fcp.getGlobalRequests();
+			for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
+				ClientRequest clientRequest = clientRequests[requestIndex];
+				if (clientRequest.getIdentifier().equals(identifier)) {
+					if (clientRequest instanceof ClientGet) {
+						ClientGet clientGet = (ClientGet) clientRequest;
+						if (clientGet.hasSucceeded()) {
+							Bucket dataBucket = clientGet.getBucket();
+							if (dataBucket != null) {
+								MultiValueTable responseHeaders = new MultiValueTable();
+								responseHeaders.put("Content-Disposition", "attachment; filename=\"" + clientGet.getURI().getMetaString() + "\"");
+								writeReply(ctx, 200, clientGet.getMIMEType(), "OK", responseHeaders, dataBucket);
+								return;
+							}
+						}
+						writeError("Download Not Completed", "The download has not yet completed.", ctx);
+						return;
+					}
+				}
+			}
+			writeError("Download Not Found", "The download could not be found. Maybe it was already deleted?", ctx);
+			return;
+		}
+		
+		// First, get the queued requests, and separate them into different types.
 		LinkedList completedDownloadToDisk = new LinkedList();
 		LinkedList completedDownloadToTemp = new LinkedList();
 		LinkedList completedUpload = new LinkedList();
@@ -619,7 +647,9 @@ public class QueueToadlet extends Toadlet {
 	}
 
 	private HTMLNode createDownloadCell(ClientGet p) {
-		return new HTMLNode("td", "class", "request-download", "FIXME"); /* TODO */
+		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
+		downloadCell.addChild("a", "href", "?get=" + p.getIdentifier(), "Download");
+		return downloadCell;
 	}
 
 	private HTMLNode createTypeCell(String type) {
