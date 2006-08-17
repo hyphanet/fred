@@ -319,6 +319,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
 			}
 			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node connected or was last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
+			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "A private note concerning this peer", "border-bottom: 1px dotted; cursor: help;" }, "Private Note");
 			
 			for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
 				PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
@@ -392,6 +393,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					peerRow.addChild("td", "class", "peer-idle", idleToString(now, idle));
 				}
 				
+				// private darknet node comment note column
+				peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", peerNodeStatus.getPrivateDarknetCommentNote() });
+				
 				if (path.endsWith("displaymessagetypes.html")) {
 					HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");
 					messageCountRow.addChild("td", "colspan", "2");
@@ -443,6 +447,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			} else {
 				HTMLNode actionSelect = peerForm.addChild("select", "name", "action");
 				actionSelect.addChild("option", "value", "", "-- Select action --");
+				actionSelect.addChild("option", "value", "update_notes", "Update changed private notes");
 				actionSelect.addChild("option", "value", "enable", "Enable selected peers");
 				actionSelect.addChild("option", "value", "disable", "Disable selected peers");
 				actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly");
@@ -572,6 +577,21 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				return;
 			}
 			
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("submit") && request.getPartAsString("action",25).equals("update_notes")) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("peerPrivateNote_"+peerNodes[i].hashCode())) {
+					if(!request.getPartAsString("peerPrivateNote_"+peerNodes[i].hashCode(),250).equals(peerNodes[i].getPrivateDarknetCommentNote())) {
+						peerNodes[i].setPrivateDarknetCommentNote(request.getPartAsString("peerPrivateNote_"+peerNodes[i].hashCode(),250));
+					}
+				}
+			}
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);

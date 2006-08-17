@@ -393,6 +393,8 @@ public class Node {
 	public static final int PEER_NODE_STATUS_LISTEN_ONLY = 10;
 	public static final int N2N_TEXT_MESSAGE_TYPE_USERALERT = 1;
 	public static final int EXTRA_PEER_DATA_TYPE_N2NTM = 1;
+	public static final int EXTRA_PEER_DATA_TYPE_PEER_NOTE = 2;
+	public static final int PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT = 1;
 	
 	public final long bootID;
 	public final long startupTime;

@@ -73,6 +73,8 @@ public class PeerNodeStatus {
 	
 	private final double pReject;
 
+	private final String privateDarknetCommentNote;
+
 	public PeerNodeStatus(PeerNode peerNode) {
 		this.name = peerNode.getName();
 		this.peerAddress = (peerNode.getDetectedPeer() != null) ? peerNode.getDetectedPeer().getFreenetAddress().toString() : null;
@@ -103,6 +105,7 @@ public class PeerNodeStatus {
 		this.localMessagesSent = new Hashtable(peerNode.getLocalNodeSentMessagesToStatistic());
 		this.hashCode = peerNode.hashCode;
 		this.pReject = peerNode.getPRejected();
+		this.privateDarknetCommentNote = peerNode.getPrivateDarknetCommentNote();
 	}
 
 	/**
@@ -304,5 +307,12 @@ public class PeerNodeStatus {
 
 	public double getPReject() {
 		return pReject;
+	}
+
+	/**
+	 * @return the privateDarknetCommentNote
+	 */
+	public String getPrivateDarknetCommentNote() {
+		return privateDarknetCommentNote;
 	}
 }

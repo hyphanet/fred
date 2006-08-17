@@ -271,6 +271,12 @@ public class PeerNode implements PeerContext {
     /** Average proportion of requests which are rejected or timed out */
     private TimeDecayingRunningAverage pRejected;
     
+    /** Private comment on the peer for /darknet/ page */
+    private String privateDarknetComment;
+    
+    /** Private comment on the peer for /darknet/ page's extra peer data file number */
+    private int privateDarknetCommentFileNumber;
+    
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following
@@ -508,6 +514,9 @@ public class PeerNode implements PeerContext {
 
         // status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
         setPeerNodeStatus(now);
+        
+        privateDarknetComment = new String();
+        privateDarknetCommentFileNumber = -1;
 
 		// Setup the extraPeerDataFileNumbers
 		extraPeerDataFileNumbers = new Vector();
@@ -2432,6 +2441,29 @@ public class PeerNode implements PeerContext {
 		if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_N2NTM) {
 			node.handleNodeToNodeTextMessageSimpleFieldSet(fs, this, fileNumber);
 			return true;
+		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE) {
+			String peerNoteTypeString = fs.get("peerNoteType");
+			int peerNoteType = -1;
+			try {
+				peerNoteType = Integer.parseInt(peerNoteTypeString);
+			} catch (NumberFormatException e) {
+				Logger.error(this, "NumberFormatException parsing peerNoteType ("+peerNoteTypeString+") in file "+extraPeerDataFile.getPath());
+				return false;
+			}
+			if(peerNoteType == Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT) {
+				synchronized(privateDarknetComment) {
+				  	try {
+						privateDarknetComment = new String(Base64.decode(fs.get("privateDarknetComment")));
+					} catch (IllegalBase64Exception e) {
+						Logger.error(this, "Bad Base64 encoding when decoding a private darknet comment SimpleFieldSet", e);
+						return false;
+					}
+					privateDarknetCommentFileNumber = fileNumber;
+				}
+				return true;
+			}
+			Logger.error(this, "Read unknown peer note type '"+peerNoteType+"' from file "+extraPeerDataFile.getPath());
+			return false;
 		}
 		Logger.error(this, "Read unknown extra peer data type '"+extraPeerDataType+"' from file "+extraPeerDataFile.getPath());
 		return false;
@@ -2466,12 +2498,12 @@ public class PeerNode implements PeerContext {
 			extraPeerDataFileNumbers.addElement(new Integer(nextFileNumber));
 		}
 		FileOutputStream fos;
-		File extraPeerDataPeerDataFile = new File(extraPeerDataPeerDir.getPath()+File.separator+nextFileNumber);
-	 	if(extraPeerDataPeerDataFile.exists()) {
-   			Logger.error(this, "Extra peer data file already exists: "+extraPeerDataPeerDataFile.getPath());
+		File extraPeerDataFile = new File(extraPeerDataPeerDir.getPath()+File.separator+nextFileNumber);
+	 	if(extraPeerDataFile.exists()) {
+   			Logger.error(this, "Extra peer data file already exists: "+extraPeerDataFile.getPath());
 		 	return -1;
 	 	}
-		String f = extraPeerDataPeerDataFile.getPath();
+		String f = extraPeerDataFile.getPath();
 		try {
 			fos = new FileOutputStream(f);
 		} catch (FileNotFoundException e2) {
@@ -2508,7 +2540,7 @@ public class PeerNode implements PeerContext {
 	 	}
 		File extraPeerDataFile = new File(extraPeerDataDirPath+File.separator+getIdentityString()+File.separator+fileNumber);
 	 	if(!extraPeerDataFile.exists()) {
-	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataFile.getPath());
+	   		Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
 	 		return;
 	 	}
 		synchronized(extraPeerDataFileNumbers) {
@@ -2518,5 +2550,70 @@ public class PeerNode implements PeerContext {
 		}
 		extraPeerDataFile.delete();
 	}
-}
+
+	public boolean rewriteExtraPeerDataFile(SimpleFieldSet fs, int extraPeerDataType, int fileNumber) {
+		String extraPeerDataDirPath = node.getExtraPeerDataDir();
+		if(extraPeerDataType > 0)
+			fs.put("extraPeerDataType", Integer.toString(extraPeerDataType));
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+	 	if(!extraPeerDataPeerDir.exists()) {
+	   		Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
+	 		return false;
+	 	}
+	 	if(!extraPeerDataPeerDir.isDirectory()) {
+	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+	 		return false;
+	 	}
+		File extraPeerDataFile = new File(extraPeerDataDirPath+File.separator+getIdentityString()+File.separator+fileNumber);
+	 	if(!extraPeerDataFile.exists()) {
+	   		Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
+	 		return false;
+	 	}
+		String f = extraPeerDataFile.getPath();
+		FileOutputStream fos;
+		try {
+			fos = new FileOutputStream(f);
+		} catch (FileNotFoundException e2) {
+			Logger.error(this, "Cannot write extra peer data file to disk: Cannot open "
+					+ f + " - " + e2, e2);
+			return false;
+		}
+		OutputStreamWriter w = new OutputStreamWriter(fos);
+		try {
+			fs.writeTo(w);
+			w.close();
+		} catch (IOException e) {
+			try {
+				w.close();
+			} catch (IOException e1) {
+				Logger.error(this, "Cannot close extra peer data file: "+e, e);
+			}
+			Logger.error(this, "Cannot write file: " + e, e);
+			return false;
+		}
+		return true;
+	}
 	
+	public synchronized String getPrivateDarknetCommentNote() {
+		return privateDarknetComment;
+	}
+	
+	public synchronized void setPrivateDarknetCommentNote(String comment) {
+		int localFileNumber;
+		synchronized(privateDarknetComment) {
+			privateDarknetComment = comment;
+			localFileNumber = privateDarknetCommentFileNumber;
+		}
+		SimpleFieldSet fs = new SimpleFieldSet();
+		fs.put("peerNoteType", Integer.toString(Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT));
+		fs.put("privateDarknetComment", Base64.encode(comment.getBytes()));
+		if(localFileNumber == -1) {
+			localFileNumber = writeNewExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE);
+			synchronized(privateDarknetComment) {
+				privateDarknetCommentFileNumber = localFileNumber;
+			}
+		} else {
+			rewriteExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE, localFileNumber);
+		}
+	}
+}
