@@ -562,4 +562,14 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		else return progressPending.isTotalFinalized();
 	}
 
+	/**
+	 * Returns the {@link Bucket} that contains the downloaded data.
+	 * 
+	 * @return The data in a {@link Bucket}, or <code>null</code> if this
+	 *         isn&rsquo;t applicable
+	 */
+	public Bucket getBucket() {
+		return returnBucket;
+	}
+
 }
