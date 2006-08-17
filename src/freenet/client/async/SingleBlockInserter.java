@@ -172,11 +172,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 				fail(new InserterException(InserterException.TOO_MANY_RETRIES_IN_BLOCKS, errors, getURI()));
 			return;
 		}
-		try {
-			getScheduler(encode()).register(this);
-		} catch (InserterException e1) {
-			fail(e1, true);
-		}
+		getScheduler().register(this);
 	}
 
 	private void fail(InserterException e) {
@@ -222,14 +218,15 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			parent.completedBlock(false);
 			finished = true;
 		} else {
-			getScheduler(encode()).register(this);
+			getScheduler().register(this);
 		}
 	}
 
-	private ClientRequestScheduler getScheduler(ClientKeyBlock block) {
-		if(block instanceof ClientCHKBlock)
+	private ClientRequestScheduler getScheduler() {
+		String uriType = uri.getKeyType().toUpperCase();
+		if(uriType.equals("CHK"))
 			return parent.chkScheduler;
-		else if(block instanceof ClientSSKBlock)
+		else if(uriType.equals("SSK") || uriType.equals("KSK"))
 			return parent.sskScheduler;
 		else throw new IllegalArgumentException();
 	}
