@@ -223,7 +223,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		Bucket ret = null;
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
-			ret = new FileBucket(tempFile, false, false, false, false);
+			if (succeeded) {
+				ret = new FileBucket(targetFile, false, false, false, false);
+			} else {
+				ret = new FileBucket(tempFile, false, false, false, false);
+			}
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 			ret = new NullBucket();
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
