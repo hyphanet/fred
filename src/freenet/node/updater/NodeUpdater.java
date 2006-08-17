@@ -151,7 +151,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			
 			
 			fetchingVersion = availableVersion;
-			alert.set(availableVersion,fetchingVersion,false);
+			alert.set(availableVersion,fetchingVersion,result != null && result.asBucket() != null && result.asBucket().size() > 0);
 			alert.isValid(true);
 			Logger.normal(this,"Starting the update process ("+availableVersion+")");
 			System.err.println("Starting the update process: found the update ("+availableVersion+"), now fetching it.");
@@ -409,6 +409,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
 		if(!state.getURI().equals(revocationURI)){
+			if(result == null || result.asBucket() == null || result.asBucket().size() == 0) {
+				Logger.error(this, "Cannot update: result either null or empty for "+availableVersion);
+				System.err.println("Cannot update: result either null or empty for "+availableVersion);
+				return;
+			}
 			System.out.println("Found "+fetchingVersion);
 			Logger.normal(this, "Found a new version! (" + fetchingVersion + ", setting up a new UpdatedVersionAviableUserAlert");
 			alert.set(availableVersion,fetchingVersion,true);

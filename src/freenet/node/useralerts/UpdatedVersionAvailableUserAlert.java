@@ -38,10 +38,10 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 			". ("+updater.getRevocationDNFCounter()+"/"+NodeUpdater.REVOCATION_DNF_MIN+")";
 		} else {
 			s+="Updating to "+version+" is advised. ";
-			if(isReady) return s+
-				" <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update to "+readyVersion+" Now\" /></form>";
-			else return s+
-				"Your node is currently fetching the update and will ask you whether you want to update or not when it's ready.";
+			if(isReady) s += " <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update to "+readyVersion+" Now\" /></form>";
+			if(readyVersion < version || !isReady)
+			s += "Your node is currently fetching the update and will ask you whether you want to update or not when it's ready.";
+			return s;
 		}
 	}
 
