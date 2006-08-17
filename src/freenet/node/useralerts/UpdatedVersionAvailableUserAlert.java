@@ -54,8 +54,13 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 			if (isReady) {
 				alertNode.addChild("#", " Updating to " + version + " is advised.");
 				alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", "Update to " + readyVersion + " now" });
+				if(readyVersion < version)
+					alertNode.addChild("#", "The node is currently fetching version "+version+" but you can update to "+readyVersion+" now, or wait for the node to fetch "+version+".");
 			} else {
-				alertNode.addChild("#", " Your node is currently fetching the update and will ask you whether you want to update or not when it's ready.");
+				if(updater.isAutoUpdateAllowed)
+					alertNode.addChild("#", " Your node is currently fetching the update and will automatically restart when it's ready (as configured).");
+				else
+					alertNode.addChild("#", " Your node is currently fetching the update and will ask you whether you want to update or not when it's ready.");
 			}
 		}
 		return alertNode;

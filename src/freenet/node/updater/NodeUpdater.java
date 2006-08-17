@@ -57,6 +57,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private final int currentVersion;
 	private int availableVersion;
 	private int fetchingVersion;
+	private int fetchedVersion;
 	
 	private String revocationMessage;
 	private boolean hasBeenBlown;
@@ -143,6 +144,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			try{
 				Logger.minor(this, "maybeUpdate: isFetching="+isFetching+", isRunning="+isRunning+", isUpdatable="+isUpdatable()+", availableVersion="+availableVersion);
 				if(isFetching || (!isRunning) || (!isUpdatable())) return;
+				if(availableVersion == fetchedVersion) return;
+				fetchingVersion = availableVersion;
 			}catch (PrivkeyHasBeenBlownException e){
 				// Handled in blow().
 				isRunning=false;
@@ -150,8 +153,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 			
 			
-			fetchingVersion = availableVersion;
-			alert.set(availableVersion,fetchingVersion,result != null && result.asBucket() != null && result.asBucket().size() > 0);
+			alert.set(availableVersion,fetchedVersion,result != null && result.asBucket() != null && result.asBucket().size() > 0);
 			alert.isValid(true);
 			Logger.normal(this,"Starting the update process ("+availableVersion+")");
 			System.err.println("Starting the update process: found the update ("+availableVersion+"), now fetching it.");
@@ -420,6 +422,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				}
 				return;
 			}
+			this.fetchedVersion = fetchingVersion;
 			System.out.println("Found "+fetchingVersion);
 			Logger.normal(this, "Found a new version! (" + fetchingVersion + ", setting up a new UpdatedVersionAviableUserAlert");
 			alert.set(availableVersion,fetchingVersion,true);

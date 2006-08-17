@@ -76,6 +76,9 @@ public class USKFetcher implements ClientGetState {
 	
 	/** Cancelled? */
 	private boolean cancelled;
+
+	/** Kill a background poll fetcher when it has lost its last subscriber? */
+	private boolean killOnLoseSubscribers;
 	
 	final ClientRequester parent;
 
@@ -151,9 +154,13 @@ public class USKFetcher implements ClientGetState {
 		}
 		
 		public short getPriority() {
-			if(backgroundPoll)
+			if(backgroundPoll) {
+				if(minFailures == origMinFailures && minFailures != maxMinFailures) {
+					// Either just started, or just advanced, either way boost the priority.
+					return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+				}
 				return RequestStarter.UPDATE_PRIORITY_CLASS;
-			else
+			} else
 				return parent.getPriorityClass();
 		}
 	}
@@ -312,10 +319,11 @@ public class USKFetcher implements ClientGetState {
 			Logger.minor(this, "Latest: "+curLatest);
 			long addTo = curLatest + minFailures;
 			long addFrom = Math.max(lastAddedEdition + 1, curLatest + 1);
+			Logger.minor(this, "Adding from "+addFrom+" to "+addTo+" for "+origUSK);
 			if(addTo >= addFrom) {
 				l = new LinkedList();
 				for(long i=addFrom;i<=addTo;i++) {
-					Logger.minor(this, "Adding checker for edition "+i);
+					Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
 					l.add(add(i));
 				}
 			}
@@ -383,12 +391,15 @@ public class USKFetcher implements ClientGetState {
 		Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
 		if(!runningAttempts.isEmpty()) {
 			USKAttempt last = (USKAttempt) runningAttempts.lastElement();
-			if(last.number >= i)
+			if(last.number >= i) {
+				Logger.minor(this, "Returning because last.number="+i+" for "+origUSK.getURI());
 				return null;
+			}
 		}
 		USKAttempt a = new USKAttempt(i);
 		runningAttempts.add(a);
 		lastAddedEdition = i;
+		Logger.minor(this, "Added "+a+" for "+origUSK);
 		return a;
 	}
 
@@ -448,8 +459,12 @@ public class USKFetcher implements ClientGetState {
 		return !subscribers.isEmpty();
 	}
 	
-	public synchronized void removeSubscriber(USKCallback cb) {
-		subscribers.remove(cb);
+	public void removeSubscriber(USKCallback cb) {
+		synchronized(this) {
+			subscribers.remove(cb);
+			if(!(subscribers.isEmpty() && killOnLoseSubscribers)) return;
+		}
+		cancel();
 	}
 
 	public synchronized boolean hasLastData() {
@@ -474,4 +489,8 @@ public class USKFetcher implements ClientGetState {
 		lastRequestData = null;
 	}
 
+	public synchronized void killOnLoseSubscribers() {
+		this.killOnLoseSubscribers = true;
+	}
+	
 }
