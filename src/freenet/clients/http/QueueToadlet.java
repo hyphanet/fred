@@ -216,7 +216,7 @@ public class QueueToadlet extends Toadlet {
 											break;
 										}
 										MultiValueTable responseHeaders = new MultiValueTable();
-										responseHeaders.put("Content-Disposition", "attachment; filename=\"" + clientGet.getURI().getMetaString() + "\"");
+										responseHeaders.put("Content-Disposition", "attachment; filename=\"" + clientGet.getURI().getPreferredFilename() + "\"");
 										writeReply(ctx, 200, "application/x-msdownload", "OK", responseHeaders, dataBucket);
 										return;
 									}
