@@ -315,7 +315,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			if(splitfileAlgo != null) {
 				Logger.minor(this, "Encoding segment "+segNo+" of "+parent+" ("+parent.dataLength+")");
 				// Encode blocks
-				Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder");
+				Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder for "+this);
 				t.setDaemon(true);
 				t.start();
 				fin = false;
