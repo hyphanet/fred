@@ -375,8 +375,10 @@ public class IPDetectorPluginManager {
 				}
 			}
 			DetectedIP[] list = (DetectedIP[]) map.values().toArray(new DetectedIP[map.size()]);
-			for(int i=0;i<list.length;i++)
+			for(int i=0;i<list.length;i++) {
 				Logger.minor(this, "Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
+				System.out.println("Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
+			}
 			detector.processDetectedIPs(list);
 			} finally {
 				runner = null;
