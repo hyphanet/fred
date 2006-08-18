@@ -44,7 +44,7 @@ public class AddRef {
 		SimpleFieldSet sfs = new SimpleFieldSet();
 
 		try{
-			fcpSocket = new Socket("127.0.0.1", 9482);
+			fcpSocket = new Socket("127.0.0.1", FCPServer.DEFAULT_FCP_PORT);
 			fcpSocket.setSoTimeout(2000);
 
 			InputStream is = fcpSocket.getInputStream();
