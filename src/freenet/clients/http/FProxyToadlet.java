@@ -33,20 +33,20 @@ import freenet.support.MultiValueTable;
 import freenet.support.SizeUtil;
 import freenet.support.URLEncoder;
 import freenet.support.io.Bucket;
+import freenet.support.io.BucketFactory;
 
 public class FProxyToadlet extends Toadlet {
 	
-	final byte[] random;
+	private static byte[] random;
 	final NodeClientCore core;
 	
 	// ?force= links become invalid after 2 hours.
-	long FORCE_GRAIN_INTERVAL = 60*60*1000;
+	private static final long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
 	static final long MAX_LENGTH = 2*1024*1024; // 2MB
 	
-	public FProxyToadlet(HighLevelSimpleClient client, byte[] random, NodeClientCore core) {
+	public FProxyToadlet(HighLevelSimpleClient client, NodeClientCore core) {
 		super(client);
-		this.random = random;
 		client.setMaxLength(MAX_LENGTH);
 		client.setMaxIntermediateLength(MAX_LENGTH);
 		this.core = core;
@@ -69,6 +69,70 @@ public class FProxyToadlet extends Toadlet {
 			throw re;
 		}
 		
+	}
+	
+	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key) throws ToadletContextClosedException, IOException {
+		System.out.println("mimetype: " + mimeType + ", reqmt: " + requestedMimeType + ", force: " + forceString + ", forceDownload: " + forceDownload + ", key: " + key);
+		if(requestedMimeType != null)
+			mimeType = requestedMimeType;
+		
+		long now = System.currentTimeMillis();
+		boolean force = false;
+		if(forceString != null) {
+			if(forceString.equals(getForceValue(key, now)) || 
+					forceString.equals(getForceValue(key, now-FORCE_GRAIN_INTERVAL)))
+				force = true;
+		}
+
+		try {
+			if(!force && !forceDownload) {
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, new URI(basePath + URLEncoder.encode(key.toString(false))), null);
+				data = fo.data;
+				mimeType = fo.type;
+			}
+			
+			if (forceDownload) {
+				MultiValueTable headers = new MultiValueTable();
+				headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + "\"");
+				context.sendReplyHeaders(200, "OK", headers, "application/x-msdownload", data.size());
+				context.writeData(data);
+			} else {
+				// Send the data, intact
+				context.sendReplyHeaders(200, "OK", new MultiValueTable(), mimeType, data.size());
+				context.writeData(data);
+			}
+		} catch (URISyntaxException use1) {
+			/* shouldn't happen */
+			use1.printStackTrace();
+			Logger.error(FProxyToadlet.class, "could not create URI", use1);
+		} catch (UnsafeContentTypeException e) {
+			HTMLNode pageNode = context.getPageMaker().getPageNode("Potentially Dangerous Content");
+			HTMLNode contentNode = context.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
+			infobox.addChild("div", "class", "infobox-header", e.getRawTitle());
+			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+			infoboxContent.addChild(e.getHTMLExplanation());
+			infoboxContent.addChild("p", "Your options are:");
+			HTMLNode optionList = infoboxContent.addChild("ul");
+			HTMLNode option = optionList.addChild("li");
+			option.addChild("a", "href", basePath + key.toString(false) + "?type=text/plain", "Click here");
+			option.addChild("#", " to open the file as plain text (this should not be dangerous but it may be garbled).");
+			// FIXME: is this safe? See bug #131
+			option = optionList.addChild("li");
+			option.addChild("a", "href", basePath + key.toString(false) + "?forcedownload", "Click here");
+			option.addChild("#", " to force your browser to download the file to disk.");
+			option = optionList.addChild("li");
+			option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now), "Click here");
+			option.addChild("#", " to open the file as " + mimeType + ".");
+			option = optionList.addChild("li");
+			option.addChild("a", "href", "/", "Click here");
+			option.addChild("#", " to go to the FProxy home page.");
+
+			byte[] pageBytes = pageNode.generate().getBytes();
+			context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
+			context.writeData(pageBytes);
+		}
 	}
 	
 	public void handleGet(URI uri, ToadletContext ctx) 
@@ -153,78 +217,11 @@ public class FProxyToadlet extends Toadlet {
 			// Now, is it safe?
 			
 			Bucket data = result.asBucket();
+			String mimeType = result.getMimeType();
+			String requestedMimeType = httprequest.getParam("type", null);
 			
-			String typeName = result.getMimeType();
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key);
 			
-			String reqParam = httprequest.getParam("type", null);
-			
-			if(reqParam != null)
-				typeName = reqParam;
-			
-			Logger.minor(this, "Type: "+typeName+" ("+result.getMimeType()+" "+reqParam+")");
-			
-			long now = System.currentTimeMillis();
-			
-			String forceString = httprequest.getParam("force");
-			boolean force = false;
-			boolean forcedownload = false;
-			if(forceString != null) {
-				if(forceString.equals(getForceValue(key, now)) || 
-						forceString.equals(getForceValue(key, now-FORCE_GRAIN_INTERVAL)))
-					force = true;
-			}
-
-			if(httprequest.isParameterSet("forcedownload")) {
-				// Download to disk, this should be safe, and is set when we do "force download to disk" from a dangerous-content-warning page.
-				typeName = "application/x-msdownload";
-				forcedownload = true;
-			}
-			
-			try {
-				if(!force && !forcedownload) {
-					FilterOutput fo = ContentFilter.filter(data, ctx.getBucketFactory(), typeName, uri, null);
-					data = fo.data;
-					typeName = fo.type;
-				}
-				
-				if (forcedownload) {
-					MultiValueTable headers = new MultiValueTable();
-					
-					headers.put("Content-Disposition", "attachment");
-					ctx.sendReplyHeaders(200, "OK", headers, typeName, data.size());
-					ctx.writeData(data);
-				} else {
-					// Send the data, intact
-					writeReply(ctx, 200, typeName, "OK", data);
-				}
-			} catch (UnsafeContentTypeException e) {
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Potentially dangerous content");
-				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				
-				HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-alert");
-				infobox.addChild("div", "class", "infobox-header", e.getRawTitle());
-				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-				infoboxContent.addChild(e.getHTMLExplanation());
-				infoboxContent.addChild("p", "Your options are:");
-				HTMLNode optionList = infoboxContent.addChild("ul");
-				HTMLNode option = optionList.addChild("li");
-				option.addChild("a", "href", "/" + key.toString(false) + "?type=text/plain", "Click here");
-				option.addChild("#", " to open the file as plain text (this should not be dangerous but it may be garbled).");
-				// FIXME: is this safe? See bug #131
-				option = optionList.addChild("li");
-				option.addChild("a", "href", "/" + key.toString(false) + "?forcedownload", "Click here");
-				option.addChild("#", " to force your browser to download the file to disk.");
-				option = optionList.addChild("li");
-				option.addChild("a", "href", "/" + key.toString(false) + "?force=" + getForceValue(key, now), "Click here");
-				option.addChild("#", " to open the file as " + typeName + ".");
-				option = optionList.addChild("li");
-				option.addChild("a", "href", "/", "Click here");
-				option.addChild("#", " to go to the FProxy home page.");
-
-				StringBuffer pageBuffer = new StringBuffer();
-				pageNode.generate(pageBuffer);
-				writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
-			}
 		} catch (FetchException e) {
 			String msg = e.getMessage();
 			String extra = "";
@@ -321,7 +318,7 @@ public class FProxyToadlet extends Toadlet {
 		}
 	}
 
-	private String getForceValue(FreenetURI key, long time) {
+	private static String getForceValue(FreenetURI key, long time) {
 		try {
 			MessageDigest md5 = MessageDigest.getInstance("SHA-256");
 			md5.update(random);
@@ -342,9 +339,9 @@ public class FProxyToadlet extends Toadlet {
 			HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
 			
 			core.setToadletContainer(server);
-			byte[] random = new byte[32];
+			random = new byte[32];
 			core.random.nextBytes(random);
-			FProxyToadlet fproxy = new FProxyToadlet(client, random, core);
+			FProxyToadlet fproxy = new FProxyToadlet(client, core);
 			core.setFProxy(fproxy);
 			server.register(fproxy, "/", false, "Home", "homepage");
 			

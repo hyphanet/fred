@@ -39,7 +39,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private final File targetFile;
 	private final File tempFile;
 	/** Bucket passed in to the ClientGetter to return data in. Null unless returntype=disk */
-	private final Bucket returnBucket;
+	private Bucket returnBucket;
 	
 	// Verbosity bitmasks
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
@@ -300,6 +300,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 						postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_RENAME_FILE, false, null, identifier);
 						// Don't delete temp file, user might want it.
 					}
+					returnBucket = new FileBucket(targetFile, false, false, false, false);
 				} catch (FileNotFoundException e) {
 					postFetchProtocolErrorMessage = new ProtocolErrorMessage(ProtocolErrorMessage.COULD_NOT_WRITE_FILE, false, null, identifier);
 				} catch (IOException e) {

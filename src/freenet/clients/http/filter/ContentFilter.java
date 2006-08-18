@@ -154,7 +154,6 @@ public class ContentFilter {
 		if(handler == null)
 			throw new UnknownContentTypeException(typeName);
 		else {
-			
 			if(handler.safeToRead) {
 				return new FilterOutput(data, typeName);
 			}

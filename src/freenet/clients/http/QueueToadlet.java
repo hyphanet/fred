@@ -267,6 +267,34 @@ public class QueueToadlet extends Toadlet {
 			return;
 		}
 		
+		HTTPRequest request = new HTTPRequest(uri, null, ctx);
+		String requestPath = request.getPath().substring("/queue/".length());
+		
+		if (requestPath.length() > 0) {
+			/* okay, there is something in the path, check it. */
+			try {
+				FreenetURI key = new FreenetURI(requestPath);
+				
+				/* locate request */
+				ClientRequest[] clientRequests = fcp.getGlobalRequests();
+				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
+					ClientRequest clientRequest = clientRequests[requestIndex];
+					if (clientRequest.hasFinished() && (clientRequest instanceof ClientGet)) {
+						ClientGet clientGet = (ClientGet) clientRequest;
+						if (clientGet.getURI().toString(false).equals(key.toString(false))) {
+							Bucket data = clientGet.getBucket();
+							String mimeType = clientGet.getMIMEType();
+							String requestedMimeType = request.getParam("type", null);
+							String forceString = request.getParam("force");
+							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key);
+							return;
+						}
+					}
+				}
+			} catch (MalformedURLException mue1) {
+			}
+		}
+		
 		PageMaker pageMaker = ctx.getPageMaker();
 		
 		// First, get the queued requests, and separate them into different types.
@@ -675,10 +703,7 @@ public class QueueToadlet extends Toadlet {
 
 	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p) {
 		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
-		HTMLNode downloadForm = downloadCell.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
-		downloadForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
-		downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", p.getIdentifier() });
-		downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "get", "Download" });
+		downloadCell.addChild("a", "href", p.getURI().toString(false), "Download");
 		return downloadCell;
 	}
 
