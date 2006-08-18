@@ -30,7 +30,7 @@ public class Version {
 	
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-		_cal.set( 2006, 7, 22, 0, 0, 0 );
+		_cal.set( 2006, 7, 22, 0, 0, 0 ); // year, month - 1, day, jour, minute, second
 		transitionTime = _cal.getTimeInMillis();
 	}
 	
