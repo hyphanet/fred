@@ -11,7 +11,7 @@ import freenet.support.SimpleFieldSet;
 /**
  * A specific configuration block.
  */
-public class SubConfig {
+public class SubConfig implements Comparable {
 	
 	private final HashMap map;
 	public final Config config;
@@ -207,5 +207,15 @@ public class SubConfig {
 	public String getPrefix(){
 		return prefix;
 	}
-
+	
+	public int compareTo(Object o){
+		if((o == null) || !(o instanceof SubConfig)) return 0;
+		else{
+			SubConfig second = (SubConfig) o;
+			if(this.getPrefix().compareTo(second.getPrefix())>0)
+				return 1;
+			else
+				return -1;
+		}
+	}
 }

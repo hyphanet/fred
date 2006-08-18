@@ -3,6 +3,7 @@ package freenet.clients.http;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
@@ -109,10 +110,19 @@ public class ConfigToadlet extends Toadlet {
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		SubConfig[] sc = config.getConfigs();
+		Arrays.sort(sc);
 		boolean advancedEnabled = core.isAdvancedDarknetEnabled();
 		
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet Node Configuration of " + node.getMyName());
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		
+		HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", "Configuration Navigation");
+		HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
+		for(int i=0; i<sc.length;i++){
+			navigationContent.addChild("li").addChild("a", "href", "#"+sc[i].getPrefix(), sc[i].getPrefix());
+		}
+		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(navigationBar);
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", "Freenet node configuration");
@@ -153,6 +163,7 @@ public class ConfigToadlet extends Toadlet {
 			
 			if(displayedConfigElements>0) {
 				formNode.addChild("div", "class", "configprefix", sc[i].getPrefix());
+				formNode.addChild("a", "name", sc[i].getPrefix());
 				formNode.addChild(configGroupUlNode);
 			}
 		}
