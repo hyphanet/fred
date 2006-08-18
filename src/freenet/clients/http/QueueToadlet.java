@@ -289,10 +289,10 @@ public class QueueToadlet extends Toadlet {
 		if(reqs.length < 1){
 			HTMLNode pageNode = pageMaker.getPageNode("Global queue of " + core.getMyName());
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", "Global queue is empty"));
-			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			/* add alert summary box */
 			contentNode.addChild(core.alerts.createSummary());
+			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", "Global queue is empty"));
+			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			infoboxContent.addChild("#", "There is no task queued on the global queue at the moment.");
 			contentNode.addChild(createInsertBox(pageMaker));
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());

@@ -130,7 +130,7 @@ public class PeerManagerUserAlert implements UserAlert {
 			alertNode.addChild("#", "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. Your node is embedded like a \u201cchain\u201d in the network and does not contribute to the network\u2019s health. Try to get at least 3 connected peers at any given time.");
 		} else if (neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
 			alertNode.addChild("#", neverConn + " of your node\u2019s peers have never connected even once. You should not add peers unless you know that they have also added ");
-			alertNode.addChild("a", "href", "/darknet/myref.txt", "your reference");
+			alertNode.addChild("a", "href", "/darknet/myref.fref", "your reference");
 			alertNode.addChild("#", ".");
 		} else if ((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
 			alertNode.addChild("#", (peers - conns) + " of your node\u2019s peers are disconnected. This will have a slight impact on your performance as disconnected peers also consume a small amount of bandwidth and CPU. Consider \u201ccleaning up\u201d your peer list. Note that ideally you should connect to nodes run by people you know.");

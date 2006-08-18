@@ -3,7 +3,6 @@ package freenet.node.useralerts;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.node.Node;
-import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 
 public class MeaningfulNodeNameUserAlert implements UserAlert {
@@ -23,8 +22,6 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 	}
 
 	public String getText() {
-		SubConfig sc = node.config.get("node");
-		Option o = sc.getOption("name");
 		StringBuffer buf = new StringBuffer();
 		
 		buf.append("It seems that your node's name isn't defined. Setting " +
@@ -33,26 +30,6 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 		"to reach you. You can change the node's name at the Configuration page. " +
 		"Putting your e-mail address or IRC nickname there is generally speaking " +
 		"a good idea and helps your friends to identify your node.");
-		buf.append("<form method=\"post\" action=\"/config/\">");
-		buf.append("<input type=\"hidden\" name=\"formPassword\" value=\""+node.clientCore.formPassword+"\">");
-		//buf.append("<ul class=\"config\"><span class=\"configprefix\">"+sc.getPrefix()+"</span>\n");
-		buf.append("<ul class=\"config\">\n");
-		buf.append("<li>");
-		buf.append("<span class=\"configshortdesc\">");
-		buf.append(o.getShortDesc());
-		buf.append("</span>");	
-		buf.append("<span class=\"config\">");
-		buf.append("<input alt=\""+o.getShortDesc()+"\" class=\"config\"" +
-				" type=\"text\" name=\""+sc.getPrefix()+".name\" value=\""+HTMLEncoder.encode(o.getValueString())+"\" />");				
-		buf.append("</span>");
-		buf.append("<span class=\"configlongdesc\">");
-		buf.append(o.getLongDesc());
-		buf.append("</span>");
-		buf.append("</li>\n");
-		buf.append("</ul>\n");
-		buf.append("<input type=\"submit\" value=\"Apply\" />");
-		buf.append("<input type=\"reset\" value=\"Reset\" />");
-		buf.append("</form>");
 		
 		return buf.toString();
 	}

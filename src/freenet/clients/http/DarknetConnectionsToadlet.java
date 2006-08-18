@@ -83,7 +83,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
 		String path = uri.getPath();
-		if(path.endsWith("myref.txt")) {
+		if(path.endsWith("myref.fref")) {
 			SimpleFieldSet fs = node.exportPublicFieldSet();
 			StringWriter sw = new StringWriter();
 			fs.writeTo(sw);
@@ -484,7 +484,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		// our reference
 		HTMLNode referenceInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		referenceInfobox.addChild("div", "class", "infobox-header").addChild("a", "href", "myref.txt", "My reference");
+		referenceInfobox.addChild("div", "class", "infobox-header").addChild("a", "href", "myref.fref", "My reference");
 		referenceInfobox.addChild("div", "class", "infobox-content").addChild("pre", "id", "reference", node.exportPublicFieldSet().toString());
 		
 		StringBuffer pageBuffer = new StringBuffer();
