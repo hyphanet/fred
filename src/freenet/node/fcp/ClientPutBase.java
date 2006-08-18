@@ -98,7 +98,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	
 	public void onSuccess(BaseClientPutter state) {
 		synchronized(this) {
-			progressMessage = null;
+			// Including this helps with certain bugs...
+			//progressMessage = null;
 			succeeded = true;
 			finished = true;
 		}
