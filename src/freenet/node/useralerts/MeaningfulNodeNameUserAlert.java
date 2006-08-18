@@ -18,7 +18,7 @@ public class MeaningfulNodeNameUserAlert implements UserAlert {
 	}
 
 	public String getTitle() {
-		return "Your node name isn\u2019t defined";
+		return "Your node name isn't defined";
 	}
 
 	public String getText() {
