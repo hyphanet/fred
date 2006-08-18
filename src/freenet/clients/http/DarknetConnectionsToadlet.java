@@ -144,7 +144,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		double missRoutingDistance =  node.missRoutingDistance.currentValue();
 		DecimalFormat fix1 = new DecimalFormat("##0.0%");
 		double backedoffPercent =  node.backedoffPercent.currentValue();
-		String nodeUptimeString = timeIntervalToString(( now - node.startupTime ) / 1000);
+		long nodeUptimeSeconds = ( now - node.startupTime ) / 1000;
+		String nodeUptimeString = timeIntervalToString(nodeUptimeSeconds);
 		
 		// BEGIN OVERVIEW TABLE
 		HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
@@ -194,8 +195,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 				}
 				long[] total = IOStatisticCollector.getTotalIO();
-				activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]));
-				activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]));
+				long total_output_rate = (total[0]) / nodeUptimeSeconds;
+				long total_input_rate = (total[1]) / nodeUptimeSeconds;
+				activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + "\u00a0(" + SizeUtil.formatSize(total_output_rate) + "ps)");
+				activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + "\u00a0(" + SizeUtil.formatSize(total_input_rate) + "ps)");
 				long[] rate = node.getNodeIOStats();
 				long delta = (rate[5] - rate[2]) / 1000;
 				long output_rate = (rate[3] - rate[0]) / delta;
