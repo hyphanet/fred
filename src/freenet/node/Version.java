@@ -1,5 +1,8 @@
 package freenet.node;
 
+import java.util.Calendar;
+import java.util.TimeZone;
+
 import freenet.support.Fields;
 import freenet.support.Logger;
 
@@ -23,8 +26,14 @@ public class Version {
 	/** Oldest build of Fred we will talk to */
 	private static final int oldLastGoodBuild = 944;
 	private static final int newLastGoodBuild = 950;
-	private static final long transitionTime = 1156204800L*1000L; // 0:00 Tuesday 22/08/06
-
+	private static final long transitionTime;
+	
+	static {
+		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+		_cal.set( 2006, 7, 22, 0, 0, 0 );
+		transitionTime = _cal.getTimeInMillis();
+	}
+	
 	public static final int buildNumber() {
 		return buildNumber;
 	}
