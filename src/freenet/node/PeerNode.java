@@ -754,7 +754,8 @@ public class PeerNode implements PeerContext {
     }
     
     /**
-     * Is this peer currently connected?
+     * Is this peer currently connected? (And routing-compatible, i.e. can we route
+     * requests to it, ignoring backoff)
      * 
      * Note possible deadlocks! PeerManager calls this, we call
      * PeerManager in e.g. verified.

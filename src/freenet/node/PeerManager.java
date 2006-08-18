@@ -378,6 +378,7 @@ public class PeerManager {
 		}
         double bestDiff = 1.0;
         double bestLoc = Double.MAX_VALUE;
+        boolean foundOne = false;
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
             if(!p.isRoutable()) continue;
@@ -386,8 +387,24 @@ public class PeerManager {
             	continue;
             double diff = distance(peerloc, loc);
             if(diff < bestDiff) {
+            	foundOne = true;
                 bestDiff = diff;
                 bestLoc = peerloc;
+            }
+        }
+        if(!foundOne) {
+            for(int i=0;i<peers.length;i++) {
+                PeerNode p = peers[i];
+                // Ignore backoff state
+                double peerloc = p.getLocation().getValue();
+                if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
+                	continue;
+                double diff = distance(peerloc, loc);
+                if(diff < bestDiff) {
+                	foundOne = true;
+                    bestDiff = diff;
+                    bestLoc = peerloc;
+                }
             }
         }
         return bestLoc;
@@ -420,6 +437,17 @@ public class PeerManager {
                 bestDiff = diff;
             }
         }
+        if(best == null) {
+        	// Ignore backoff; backoff is an advisory mechanism for load BALANCING, not for load LIMITING
+            for(int i=0;i<peers.length;i++) {
+                PeerNode p = peers[i];
+                double diff = distance(p, loc);
+                if(diff < bestDiff) {
+                    best = p;
+                    bestDiff = diff;
+                }
+            }
+        }
         return best;
     }
     
@@ -438,25 +466,30 @@ public class PeerManager {
     	else return Math.min (b - a, 1.0 - b + a);
     }
 
-    /**
+    /*
      * FIXME
      * This scans the same array 4 times.  It would be better to scan once and execute 4 callbacks...
      * For this reason the metrics are only updated if advanced mode is enabled
      */
     public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting) {
-	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false);
-	if ((best != null) && calculateMisrouting) {
-		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
-		if(nbo != null) {
-			node.missRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
-			int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
-			int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
-				node.backedoffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
-			}
-		}
-	}
-	return best;
+    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false);
+    	if(best == null) {
+    		// Backoff is an advisory mechanism for balancing rather than limiting load.
+    		// So send a request even though everything is backed off.
+    		return _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
+    	}
+    	if (calculateMisrouting) {
+    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
+    		if(nbo != null) {
+    			node.missRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
+    			int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
+    			int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+    			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
+    				node.backedoffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+    			}
+    		}
+    	}
+    	return best;
     }
 	    
     /**
