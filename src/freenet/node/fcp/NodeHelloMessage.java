@@ -61,7 +61,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.put("FCPVersion", "2.0");
 		sfs.put("Node", "Fred");
 		sfs.put("Version", Version.getVersionString());
-		sfs.put("Testnet", Boolean.toString(node.isTestnetEnabled()));
+		sfs.put("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
 		sfs.put("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
 		return sfs;
 	}

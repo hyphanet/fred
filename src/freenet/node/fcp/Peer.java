@@ -5,7 +5,6 @@ import freenet.node.PeerNode;
 import freenet.support.SimpleFieldSet;
 
 public class Peer extends FCPMessage {
-
 	static final String name = "Peer";
 	
 	final PeerNode pn;
@@ -17,7 +16,7 @@ public class Peer extends FCPMessage {
 		this.withMetadata = withMetadata;
 		this.withVolatile = withVolatile;
 	}
-
+	
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = pn.exportFieldSet();
 		if(withMetadata) {

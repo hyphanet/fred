@@ -12,6 +12,7 @@ import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.node.fcp.NodeHelloMessage;
+import freenet.node.fcp.Peer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.LineReadingInputStream;
 
@@ -43,7 +44,7 @@ public class AddRef {
 		SimpleFieldSet sfs = new SimpleFieldSet();
 
 		try{
-			fcpSocket = new Socket("127.0.0.1", FCPServer.DEFAULT_FCP_PORT);
+			fcpSocket = new Socket("127.0.0.1", 9482);
 			fcpSocket.setSoTimeout(2000);
 
 			InputStream is = fcpSocket.getInputStream();
@@ -61,11 +62,10 @@ public class AddRef {
 				sfs = getMessage(lis);
 				fcpm = FCPMessage.create(messageName, sfs);
 				if((fcpm == null) || !(fcpm instanceof NodeHelloMessage)){
-					System.err.println("Not a valid node!");
+					System.err.println("Not a valid FRED node!");
 					System.exit(1);
 				}else{
 					fcpm = (NodeHelloMessage) fcpm;
-					System.out.println(fcpm.getFieldSet());
 				}
 			} catch(MessageInvalidException me){
 				me.printStackTrace();
@@ -77,12 +77,16 @@ public class AddRef {
 				fcpm.send(os);
 				os.flush();
 
-				//ACK ?
+				// TODO: We ought to do stricter checking!
+				// FIXME: some checks even
 			} catch(MessageInvalidException me){
 				System.err.println("Invalid reference file!"+me);
 				me.printStackTrace();
 			}
 
+			lis.close();
+			is.close();
+			os.close();
 			fcpSocket.close();
 			System.out.println("That reference has been added");
 		}catch (SocketException se){
