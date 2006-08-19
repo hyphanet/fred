@@ -123,6 +123,7 @@ public class ConfigToadlet extends Toadlet {
 			for(int i=0; i<sc.length;i++){
 				navigationContent.addChild("li").addChild("a", "href", "#"+sc[i].getPrefix(), sc[i].getPrefix());
 			}
+			contentNode.addChild(navigationBar);
 		}
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
