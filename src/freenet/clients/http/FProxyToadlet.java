@@ -84,7 +84,7 @@ public class FProxyToadlet extends Toadlet {
 		}
 
 		try {
-			if(!force && !forceDownload) {
+			if((!force) && (!forceDownload)) {
 				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, new URI(basePath + URLEncoder.encode(key.toString(false))), null);
 				data = fo.data;
 				mimeType = fo.type;
