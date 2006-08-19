@@ -545,7 +545,7 @@ public class QueueToadlet extends Toadlet {
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Downloads (" + uncompletedDownload.size() + ")"));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedEnabled) {
-				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedDownload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
+				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedDownload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }));
 			} else {
 				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
 			}
@@ -556,7 +556,7 @@ public class QueueToadlet extends Toadlet {
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: Uploads (" + uncompletedUpload.size() + ")"));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedEnabled) {
-				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
+				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedUpload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }));
 			} else {
 				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
 			}
