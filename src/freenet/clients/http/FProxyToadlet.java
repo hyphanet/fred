@@ -72,7 +72,6 @@ public class FProxyToadlet extends Toadlet {
 	}
 	
 	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key) throws ToadletContextClosedException, IOException {
-		System.out.println("mimetype: " + mimeType + ", reqmt: " + requestedMimeType + ", force: " + forceString + ", forceDownload: " + forceDownload + ", key: " + key);
 		if(requestedMimeType != null)
 			mimeType = requestedMimeType;
 		
