@@ -116,16 +116,14 @@ public class ConfigToadlet extends Toadlet {
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet Node Configuration of " + node.getMyName());
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
+		contentNode.addChild(core.alerts.createSummary());
 		if(advancedEnabled){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", "Configuration Navigation");
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
 			for(int i=0; i<sc.length;i++){
 				navigationContent.addChild("li").addChild("a", "href", "#"+sc[i].getPrefix(), sc[i].getPrefix());
 			}
-			contentNode.addChild(core.alerts.createSummary());
-			contentNode.addChild(navigationBar);
-		}else
-			contentNode.addChild(core.alerts.createSummary());
+		}
 
 		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		infobox.addChild("div", "class", "infobox-header", "Freenet node configuration");
