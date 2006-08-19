@@ -298,6 +298,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	public void start() throws InserterException {
 		Logger.minor(this, "Starting segment "+segNo+" of "+parent+" ("+parent.dataLength+"): "+this+" ( finished="+finished+" encoded="+encoded+" hasURIs="+hasURIs+")");
 		boolean fin = true;
+		
 		for(int i=0;i<dataBlockInserters.length;i++) {
 			if(dataBlocks[i] != null) { // else already finished on creation
 				dataBlockInserters[i] = 
@@ -336,6 +337,12 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		if(hasURIs) {
 			parent.segmentHasURIs(this);
 		}
+		boolean fetchable;
+		synchronized(this) {
+			fetchable = (blocksCompleted > dataBlocks.length);
+		}
+		if(fetchable)
+			parent.segmentFetchable(this);
 		if(fin) finish();
 		if(finished) {
 			parent.segmentFinished(this);
@@ -454,27 +461,41 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	public void onSuccess(ClientPutState state) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		int x = sbi.token;
-		if(completed(x)) return;
-		finish();
+		completed(x);
 	}
 
 	public void onFailure(InserterException e, ClientPutState state) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		int x = sbi.token;
 		errors.merge(e);
-		if(completed(x)) return;
-		finish();
+		completed(x);
 	}
 
-	private synchronized boolean completed(int x) {
+	private void completed(int x) {
+		int total = innerCompleted(x);
+		if(total == -1) return;
+		if(total == dataBlockInserters.length) {
+			parent.segmentFetchable(this);
+		}
+		if(total != dataBlockInserters.length + checkBlockInserters.length) return;
+		finish();
+	}
+	
+	/**
+	 * Called when a block has completed.
+	 * @param x The block number.
+	 * @return -1 if the segment has already finished, otherwise the number of completed
+	 * blocks.
+	 */
+	private synchronized int innerCompleted(int x) {
 		Logger.minor(this, "Completed: "+x+" on "+this+" ( completed="+blocksCompleted+", total="+(dataBlockInserters.length+checkBlockInserters.length));
 
-		if(finished) return true;
+		if(finished) return -1;
 		if(x >= dataBlocks.length) {
 			x -= dataBlocks.length;
 			if(checkBlockInserters[x] == null) {
 				Logger.error(this, "Completed twice: check block "+x+" on "+this);
-				return true;
+				return blocksCompleted;
 			}
 			checkBlockInserters[x] = null;
 			try {
@@ -486,7 +507,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		} else {
 			if(dataBlockInserters[x] == null) {
 				Logger.error(this, "Completed twice: data block "+x+" on "+this);
-				return true;
+				return blocksCompleted;
 			}
 			dataBlockInserters[x] = null;
 			if(encoded) {
@@ -499,8 +520,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			}
 		}
 		blocksCompleted++;
-		if(blocksCompleted != dataBlockInserters.length + checkBlockInserters.length) return true;
-		return false;
+		return blocksCompleted;
 	}
 
 	public synchronized boolean isFinished() {
@@ -579,5 +599,13 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	public synchronized boolean hasURIs() {
 		return hasURIs;
+	}
+
+	public synchronized boolean isFetchable() {
+		return blocksCompleted > dataBlocks.length;
+	}
+
+	public void onFetchable(ClientPutState state) {
+		// Ignore
 	}
 }

@@ -58,6 +58,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			if(handler != null && (!handler.isGlobalSubscribed()))
 				handler.outputHandler.queue(msg);
 		}
+		Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
 	public ClientPutDir(SimpleFieldSet fs, FCPClient client) throws PersistenceParseException, IOException {

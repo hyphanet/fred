@@ -1904,7 +1904,7 @@ public class PeerNode implements PeerContext {
 	 */
 	public void localRejectedOverload(String reason) {
 		pRejected.report(1.0);
-		Logger.minor(this, "Local rejected overload on "+this+" : pRejected="+pRejected.currentValue());
+		Logger.minor(this, "Local rejected overload ("+reason+") on "+this+" : pRejected="+pRejected.currentValue());
 		long now = System.currentTimeMillis();
 		Peer peer = getPeer();
 		reportBackoffStatus(now);

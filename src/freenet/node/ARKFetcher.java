@@ -259,4 +259,8 @@ public class ARKFetcher implements ClientCallback {
 	public void onMajorProgress() {
 		// Ignore
 	}
+
+	public void onFetchable(BaseClientPutter state) {
+		// Ignore, we don't insert
+	}
 }

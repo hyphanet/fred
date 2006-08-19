@@ -110,4 +110,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		// Ignore
 	}
 
+	public void onFetchable(ClientPutState state) {
+		// Ignore
+	}
+
 }

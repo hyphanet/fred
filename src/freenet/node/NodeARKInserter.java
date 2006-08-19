@@ -230,4 +230,8 @@ public class NodeARKInserter implements ClientCallback {
 		// Ignore
 	}
 
+	public void onFetchable(BaseClientPutter state) {
+		// Ignore, we don't care
+	}
+
 }

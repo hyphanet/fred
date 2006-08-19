@@ -70,9 +70,8 @@ public class NodeHelloMessage extends FCPMessage {
 		return NodeHelloMessage.name;
 	}
 
-	public void run(FCPConnectionHandler handler, Node node) {
-		throw new UnsupportedOperationException();
-		// Client should not be sending this!
+	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "NodeHello goes from server to client not the other way around", null);
 	}
 
 }

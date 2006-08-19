@@ -127,6 +127,7 @@ public class TokenBucket {
 		// will therefore go negative. We have paid off the initial debt, and we have
 		// paid off the tokens, any more debt is a problem for future blockingGrab's!
 		current -= tokens;
+		Logger.minor(this, "Blocking grab removed tokens: current="+current);
 	}
 
 	public synchronized void recycle(long tokens) {
@@ -188,7 +189,6 @@ public class TokenBucket {
 			return 0;
 		}
 		if(nextTick + nanosPerTick > nowNS) {
-			timeLastTick = nextTick;
 			return 1;
 		}
 		return (nowNS - nextTick) / nanosPerTick;

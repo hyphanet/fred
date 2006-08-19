@@ -83,6 +83,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		public void onSuccess(ClientPutState state) {
 			Logger.minor(this, "Completed "+this);
+			SimpleManifestPutter.this.onFetchable(this);
 			synchronized(SimpleManifestPutter.this) {
 				runningPutHandlers.remove(this);
 				if(!runningPutHandlers.isEmpty()) {
@@ -164,12 +165,18 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		public void onMajorProgress() {
 			SimpleManifestPutter.this.onMajorProgress();
 		}
+
+		public void onFetchable(ClientPutState state) {
+			SimpleManifestPutter.this.onFetchable(this);
+		}
+
 	}
 
 	private final HashMap putHandlersByName;
 	private final HashSet runningPutHandlers;
 	private final HashSet putHandlersWaitingForMetadata;
 	private final HashSet waitingForBlockSets;
+	private final HashSet putHandlersWaitingForFetchable;
 	private FreenetURI finalURI;
 	private FreenetURI targetURI;
 	private boolean finished;
@@ -179,6 +186,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private boolean insertedAllFiles;
 	private boolean insertedManifest;
 	private final HashMap metadataPuttersByMetadata;
+	private final HashMap metadataPuttersUnfetchable;
 	private final String defaultName;
 	private int numberOfFiles;
 	private long totalSize;
@@ -189,6 +197,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	private int bytesOnZip;
 	private LinkedList elementsToPutInZip;
+	private boolean fetchable;
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
 			ClientRequestScheduler sskSched, HashMap manifestElements, short prioClass, FreenetURI target, 
@@ -202,8 +211,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		putHandlersByName = new HashMap();
 		runningPutHandlers = new HashSet();
 		putHandlersWaitingForMetadata = new HashSet();
+		putHandlersWaitingForFetchable = new HashSet();
 		waitingForBlockSets = new HashSet();
 		metadataPuttersByMetadata = new HashMap();
+		metadataPuttersUnfetchable = new HashMap();
 		elementsToPutInZip = new LinkedList();
 		makePutHandlers(manifestElements, putHandlersByName);
 		checkZips();
@@ -286,6 +297,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						}
 						runningPutHandlers.add(ph);
 						putHandlersWaitingForMetadata.add(ph);
+						putHandlersWaitingForFetchable.add(ph);
 						numberOfFiles++;
 						totalSize += data.size();
 					}
@@ -417,6 +429,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, insertAsArchiveManifest, true);
 			Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
+			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
 			metadataInserter.start(null);
 		} catch (InserterException e) {
 			fail(e);
@@ -673,4 +686,29 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public void onMajorProgress() {
 		cb.onMajorProgress();
 	}
+
+	protected void onFetchable(PutHandler handler) {
+		synchronized(this) {
+			putHandlersWaitingForFetchable.remove(handler);
+			if(fetchable) return;
+			if(!putHandlersWaitingForFetchable.isEmpty()) return;
+			if(!hasResolvedBase) return;
+			if(!metadataPuttersUnfetchable.isEmpty()) return;
+			fetchable = true;
+		}
+		cb.onFetchable(this);
+	}
+
+	public void onFetchable(ClientPutState state) {
+		Metadata m = (Metadata) state.getToken();
+		synchronized(this) {
+			metadataPuttersUnfetchable.remove(m);
+			if(!metadataPuttersUnfetchable.isEmpty()) return;
+			if(fetchable) return;
+			if(!putHandlersWaitingForFetchable.isEmpty()) return;
+			fetchable = true;
+		}
+		cb.onFetchable(this);
+	}
+
 }

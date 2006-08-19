@@ -735,6 +735,10 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 		// Ignore
 	}
 
+	public void onFetchable(BaseClientPutter state) {
+		// Ignore
+	}
+
 
 
 }

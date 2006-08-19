@@ -23,6 +23,12 @@ public interface PutCompletionCallback {
 	 */
 	public void onMetadata(Metadata m, ClientPutState state);
 	
+	/** Called when enough data has been inserted that the file can be
+	 * retrieved, even if not all data has been inserted yet. Note that this
+	 * is only supported for splitfiles; if you get onSuccess() first, assume
+	 * that onFetchable() isn't coming. */
+	public void onFetchable(ClientPutState state);
+	
 	/** Called when the ClientPutState knows that it knows about
 	 * all the blocks it will need to put.
 	 */

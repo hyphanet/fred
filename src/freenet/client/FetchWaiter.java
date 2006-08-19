@@ -53,4 +53,8 @@ public class FetchWaiter implements ClientCallback {
 	public void onMajorProgress() {
 		// Ignore
 	}
+
+	public void onFetchable(BaseClientPutter state) {
+		// Ignore
+	}
 }

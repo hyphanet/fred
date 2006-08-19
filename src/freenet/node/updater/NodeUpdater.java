@@ -669,4 +669,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public int getRevocationDNFCounter() {
 		return revocationDNFCounter;
 	}
+
+	public void onFetchable(BaseClientPutter state) {
+		// Ignore, we don't insert
+	}
 }

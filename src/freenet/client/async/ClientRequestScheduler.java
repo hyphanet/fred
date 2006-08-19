@@ -275,7 +275,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					continue;
 				}
 				
-				Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+")");
+				Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+", prio "+req.getPriorityClass()+", retries "+req.getRetryCount()+")");
 				ClientRequester cr = req.getClientRequest();
 				HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
 				v.remove(req);

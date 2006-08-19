@@ -577,4 +577,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return returnBucket;
 	}
 
+
+	public void onFetchable(BaseClientPutter state) {
+		// Ignore, we don't insert
+	}
+
 }

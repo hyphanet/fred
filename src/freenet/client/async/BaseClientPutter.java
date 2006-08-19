@@ -7,5 +7,5 @@ public abstract class BaseClientPutter extends ClientRequester {
 	}
 
 	public abstract void onMajorProgress();
-	
+
 }

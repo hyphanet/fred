@@ -1581,9 +1581,6 @@ public class Node {
 				}
 			}
 			
-			Logger.minor(this, "Accepting request?");
-			
-			lastAcceptedRequest = now;
 		}
 		
 		// Do we have the bandwidth?
@@ -1605,6 +1602,11 @@ public class Node {
 			return "Insufficient input bandwidth";
 		}
 
+		synchronized(this) {
+			Logger.minor(this, "Accepting request?");
+			lastAcceptedRequest = now;
+		}
+		
 		pInstantRejectIncoming.report(0.0);
 
 		// Accept

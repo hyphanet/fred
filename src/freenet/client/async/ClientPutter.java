@@ -187,5 +187,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(currentState == null) return null;
 		return currentState.getProgressFieldset();
 	}
+
+	public void onFetchable(ClientPutState state) {
+		client.onFetchable(this);
+	}
 	
 }

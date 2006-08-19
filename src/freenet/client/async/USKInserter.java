@@ -216,4 +216,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		return null;
 	}
 
+	public void onFetchable(ClientPutState state) {
+		// Ignore
+	}
+
 }

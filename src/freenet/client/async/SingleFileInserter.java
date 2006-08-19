@@ -281,6 +281,8 @@ class SingleFileInserter implements ClientPutState {
 		boolean metaInsertSuccess;
 		boolean splitInsertSetBlocks;
 		boolean metaInsertSetBlocks;
+		boolean metaInsertStarted;
+		boolean metaFetchable;
 
 		/**
 		 * Create a SplitHandler from a stored progress SimpleFieldSet.
@@ -327,9 +329,6 @@ class SingleFileInserter implements ClientPutState {
 			}
 			
 			newSFI.schedule();
-			if(newMetaPutter != null) {
-				newMetaPutter.schedule();
-			}
 		}
 
 		public SplitHandler() {
@@ -345,11 +344,16 @@ class SingleFileInserter implements ClientPutState {
 		
 		public void onSuccess(ClientPutState state) {
 			Logger.minor(this, "onSuccess("+state+")");
+			boolean lateStart = false;
 			synchronized(this) {
 				if(finished) return;
 				if(state == sfi) {
 					Logger.minor(this, "Splitfile insert succeeded");
 					splitInsertSuccess = true;
+					if(!metaInsertSuccess && !metaInsertStarted) {
+						Logger.error(this, "Splitfile insert succeeded but metadata not started, starting anyway...");
+						lateStart = true;
+					}
 				} else if(state == metadataPutter) {
 					Logger.minor(this, "Metadata insert succeeded");
 					metaInsertSuccess = true;
@@ -362,7 +366,10 @@ class SingleFileInserter implements ClientPutState {
 				}
 				else return;
 			}
-			cb.onSuccess(this);
+			if(lateStart)
+				startMetadata();
+			else if(finished)
+				cb.onSuccess(this);
 		}
 
 		public void onFailure(InserterException e, ClientPutState state) {
@@ -423,13 +430,6 @@ class SingleFileInserter implements ClientPutState {
 				Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength());
 			} catch (InserterException e1) {
 				cb.onFailure(e1, this);
-				return;
-			}
-
-			try {
-				((SingleFileInserter)metadataPutter).start(null);
-			} catch (InserterException e1) {
-				fail(e1);
 				return;
 			}
 		}
@@ -510,6 +510,43 @@ class SingleFileInserter implements ClientPutState {
 			if(curMetadataPutter != null)
 				fs.put("MetadataPutter", metadataPutter.getProgressFieldset());
 			return fs;
+		}
+
+		public void onFetchable(ClientPutState state) {
+			
+			boolean meta;
+			
+			synchronized(this) {
+				meta = (state == metadataPutter);
+				if(meta) {
+					if(!metaInsertStarted) {
+						Logger.error(this, "Metadata insert not started yet got onFetchable for it: "+state+" on "+this);
+					}
+					if(metaFetchable) return;
+					metaFetchable = true;
+				} else {
+					if(state != sfi) {
+						Logger.error(this, "onFetchable for unknown state "+state);
+						return;
+					}
+					if(metaInsertStarted) return;
+					metaInsertStarted = true;
+				}
+			}
+			
+			if(meta)
+				cb.onFetchable(this);
+			else
+				startMetadata();
+		}
+		
+		private void startMetadata() {
+			try {
+				((SingleFileInserter)metadataPutter).start(null);
+			} catch (InserterException e1) {
+				fail(e1);
+				return;
+			}
 		}
 		
 	}

@@ -35,6 +35,7 @@ public class SplitFileInserter implements ClientPutState {
 	final ClientMetadata cm;
 	final boolean isMetadata;
 	private boolean finished;
+	private boolean fetchable;
 	public final Object token;
 	final boolean insertAsArchiveManifest;
 
@@ -248,6 +249,10 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		
 		Logger.minor(this, "Have URIs from all segments");
+		encodeMetadata();
+	}
+	
+	private void encodeMetadata() {
 		boolean missingURIs;
 		Metadata m = null;
 		synchronized(this) {
@@ -358,6 +363,22 @@ public class SplitFileInserter implements ClientPutState {
 		onAllFinished();
 	}
 	
+	public void segmentFetchable(SplitFileInserterSegment segment) {
+		Logger.minor(this, "Segment fetchable: "+segment);
+		synchronized(this) {
+			if(finished) return;
+			if(fetchable) return;
+			for(int i=0;i<segments.length;i++) {
+				if(!segments[i].isFetchable()) {
+					Logger.minor(this, "Segment not fetchable: "+i+": "+segments[i]);
+					return;
+				}
+			}
+			fetchable = true;
+		}
+		cb.onFetchable(this);
+	}
+
 	private void onAllFinished() {
 		Logger.minor(this, "All finished");
 		try {

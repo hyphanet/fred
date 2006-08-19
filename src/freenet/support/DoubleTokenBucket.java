@@ -76,6 +76,7 @@ public class DoubleTokenBucket extends TokenBucket {
 	}
 
 	public synchronized void addTokens() {
+		Logger.minor(this, "current="+current+" forced="+curForced);
 		addTokensNoClip();
 		if(curForced > maxForced) curForced = maxForced;
 		if(current > max) current = max;

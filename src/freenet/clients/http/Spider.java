@@ -471,4 +471,8 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		// Ignore
 	}
 
+	public void onFetchable(BaseClientPutter state) {
+		// Ignore
+	}
+
 }

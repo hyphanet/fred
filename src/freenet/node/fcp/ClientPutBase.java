@@ -31,6 +31,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	// Verbosity bitmasks
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
+	private int VERBOSITY_PUT_FETCHABLE = 256;
 	private int VERBOSITY_COMPRESSION_START_END = 512;
 	
 	// Stuff waiting for reconnection
@@ -155,6 +156,15 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 					new FinishedCompressionMessage(identifier, (FinishedCompressionEvent)ce);
 				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null);
 			}
+		}
+	}
+
+	public void onFetchable(BaseClientPutter putter) {
+		if(finished) return;
+		if((verbosity & VERBOSITY_PUT_FETCHABLE) == VERBOSITY_PUT_FETCHABLE) {
+			PutFetchableMessage msg =
+				new PutFetchableMessage(identifier, generatedURI);
+			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null);
 		}
 	}
 	
