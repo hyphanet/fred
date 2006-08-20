@@ -118,7 +118,7 @@ public class SubConfig implements Comparable {
 		synchronized(this) {
 			o = (StringOption) map.get(optionName);
 		}
-		return o.getValue();
+		return o.getValue().trim();
 	}
 	
 	public String[] getStringArr(String optionName) {
