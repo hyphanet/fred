@@ -445,22 +445,20 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				}
 			}
 			
-			if(!advancedEnabled) {
-				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", "Remove selected peers" });
-			} else {
-				HTMLNode actionSelect = peerForm.addChild("select", "name", "action");
-				actionSelect.addChild("option", "value", "", "-- Select action --");
-				actionSelect.addChild("option", "value", "update_notes", "Update changed private notes");
+			HTMLNode actionSelect = peerForm.addChild("select", "name", "action");
+			actionSelect.addChild("option", "value", "", "-- Select action --");
+			actionSelect.addChild("option", "value", "update_notes", "Update changed private notes");
+			if(advancedEnabled) {
 				actionSelect.addChild("option", "value", "enable", "Enable selected peers");
 				actionSelect.addChild("option", "value", "disable", "Disable selected peers");
 				actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly");
 				actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
 				actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly");
 				actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
-				actionSelect.addChild("option", "value", "", "-- -- --");
-				actionSelect.addChild("option", "value", "remove", "Remove selected peers");
-				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Go" });
 			}
+			actionSelect.addChild("option", "value", "", "-- -- --");
+			actionSelect.addChild("option", "value", "remove", "Remove selected peers");
+			peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Go" });
 		}
 		// END PEER TABLE
 		
