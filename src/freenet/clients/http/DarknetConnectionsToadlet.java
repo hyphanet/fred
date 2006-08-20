@@ -339,7 +339,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), statusString + (peerNodeStatus.isFetchingARK() ? "*" : ""));
 				
 				// name column
-				if (peerNodeStatus.isConnected() && (Integer.parseInt(peerNodeStatus.getSimpleVersion()) > 476)) {
+				if (Integer.parseInt(peerNodeStatus.getSimpleVersion()) > 476) {
 					peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), peerNodeStatus.getName());
 				} else {
 					peerRow.addChild("td", "class", "peer-name").addChild("#", peerNodeStatus.getName());  // TODO: This branch can probably be removed at some point
@@ -447,7 +447,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			
 			HTMLNode actionSelect = peerForm.addChild("select", "name", "action");
 			actionSelect.addChild("option", "value", "", "-- Select action --");
-			//actionSelect.addChild("option", "value", "send_n2ntm", "Send N2NTM to selected peers");  // Disabled until we have queue-for-send-on-connect
+			actionSelect.addChild("option", "value", "send_n2ntm", "Send N2NTM to selected peers");
 			actionSelect.addChild("option", "value", "update_notes", "Update changed private notes");
 			if(advancedEnabled) {
 				actionSelect.addChild("option", "value", "enable", "Enable selected peers");

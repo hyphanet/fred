@@ -13,9 +13,11 @@ import freenet.io.comm.UdpSocketManager;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.PeerNode;
+import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.SimpleFieldSet;
 import freenet.support.io.Bucket;
 
 public class N2NTMToadlet extends Toadlet {
@@ -130,9 +132,16 @@ public class N2NTMToadlet extends Toadlet {
 					try {
 						Message n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), pn.getName(), message);
 						if(!pn.isConnected()) {
-							sendStatusShort = "Failed";
-							sendStatusLong = "Not connected: Message not sent to peer";
-							sendStatusClass = "n2ntm-send-failed";
+							sendStatusShort = "Queued";
+							sendStatusLong = "Queued: Peer not connected, so message queued for when it connects";
+							sendStatusClass = "n2ntm-send-queued";
+							SimpleFieldSet fs = new SimpleFieldSet();
+							fs.put("type", Integer.toString(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT));
+							fs.put("source_nodename", Base64.encode(node.getMyName().getBytes()));
+							fs.put("target_nodename", Base64.encode(pn.getName().getBytes()));
+							fs.put("text", Base64.encode(message.getBytes()));
+							pn.queueN2NTM(fs);
+							Logger.normal(this, "Queued N2NTM to '"+pn.getName()+"': "+message);
 						} else if(pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
 							sendStatusShort = "Delayed";
 							sendStatusLong = "Backed off: Sending of message possibly delayed to peer";

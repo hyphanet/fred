@@ -127,6 +127,10 @@ public class PeerNode implements PeerContext {
      */
     private boolean isConnected;
     private boolean isRoutable;
+
+    /** Used by maybeOnConnect */
+    private boolean wasDisconnected;
+    
     /**
      * ARK fetcher.
      */
@@ -276,6 +280,9 @@ public class PeerNode implements PeerContext {
     
     /** Private comment on the peer for /darknet/ page's extra peer data file number */
     private int privateDarknetCommentFileNumber;
+    
+    /** Queued-to-send N2NTM extra peer data file numbers */
+    private Vector queuedToSendN2NTMExtraPeerDataFileNumbers;
     
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
@@ -515,12 +522,17 @@ public class PeerNode implements PeerContext {
         // status may have changed from PEER_NODE_STATUS_DISCONNECTED to PEER_NODE_STATUS_NEVER_CONNECTED
         setPeerNodeStatus(now);
         
+		// Setup the private darknet comment note
         privateDarknetComment = new String();
         privateDarknetCommentFileNumber = -1;
 
 		// Setup the extraPeerDataFileNumbers
 		extraPeerDataFileNumbers = new Vector();
 		extraPeerDataFileNumbers.removeAllElements();
+		
+		// Setup the queuedToSendN2NTMExtraPeerDataFileNumbers
+		queuedToSendN2NTMExtraPeerDataFileNumbers = new Vector();
+		queuedToSendN2NTMExtraPeerDataFileNumbers.removeAllElements();
     }
 
     private boolean parseARK(SimpleFieldSet fs, boolean onStartup) {
@@ -1377,6 +1389,9 @@ public class PeerNode implements PeerContext {
 		setPeerNodeStatus(now);
 		synchronized(this) {
 			sentInitialMessages = false;
+		}
+		if(isConnected()) {
+			onConnect();
 		}
 		return true;
     }
@@ -2387,6 +2402,25 @@ public class PeerNode implements PeerContext {
 		return !gotError;
 	}
 
+	public boolean rereadExtraPeerDataFile(int fileNumber) {
+		String extraPeerDataDirPath = node.getExtraPeerDataDir();
+		File extraPeerDataPeerDir = new File(extraPeerDataDirPath+File.separator+getIdentityString());
+		if(!extraPeerDataPeerDir.exists()) {
+			Logger.error(this, "Extra peer data directory for peer does not exist: "+extraPeerDataPeerDir.getPath());
+			return false;
+		}
+		if(!extraPeerDataPeerDir.isDirectory()) {
+			Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
+			return false;
+		}
+		File extraPeerDataFile = new File(extraPeerDataDirPath+File.separator+getIdentityString()+File.separator+fileNumber);
+		if(!extraPeerDataFile.exists()) {
+			Logger.error(this, "Extra peer data file for peer does not exist: "+extraPeerDataFile.getPath());
+			return false;
+		}
+		return readExtraPeerDataFile(extraPeerDataFile, fileNumber);
+	}
+
 	public boolean readExtraPeerDataFile(File extraPeerDataFile, int fileNumber) {
 		boolean gotError = false;
 	 	if(!extraPeerDataFile.exists()) {
@@ -2465,6 +2499,41 @@ public class PeerNode implements PeerContext {
 			}
 			Logger.error(this, "Read unknown peer note type '"+peerNoteType+"' from file "+extraPeerDataFile.getPath());
 			return false;
+		} else if(extraPeerDataType == Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM) {
+			boolean sendSuccess = false;
+			if(isConnected()) {
+				String source_nodename = null;
+				String target_nodename = null;
+				String text = null;
+				try {
+					source_nodename = new String(Base64.decode(fs.get("source_nodename")));
+					target_nodename = new String(Base64.decode(fs.get("target_nodename")));
+					text = new String(Base64.decode(fs.get("text")));
+				} catch (IllegalBase64Exception e) {
+					Logger.error(this, "Bad Base64 encoding when decoding a N2NTM SimpleFieldSet", e);
+					return false;
+				}
+				Message n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, source_nodename, target_nodename, text);
+				try {
+					node.usm.send(this, n2ntm, null);
+					Logger.normal(this, "Sent N2NTM to '"+getName()+"': "+text);
+					sendSuccess = true;
+					synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
+						if(queuedToSendN2NTMExtraPeerDataFileNumbers.contains(new Integer(fileNumber))) {
+							queuedToSendN2NTMExtraPeerDataFileNumbers.addElement(new Integer(fileNumber));
+						}
+					}
+					deleteExtraPeerDataFile(fileNumber);
+				} catch (NotConnectedException e) {
+					sendSuccess = false;  // redundant, but clear
+				}
+			}
+			if(!sendSuccess) {
+				synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
+					queuedToSendN2NTMExtraPeerDataFileNumbers.addElement(new Integer(fileNumber));
+				}
+			}
+			return true;
 		}
 		Logger.error(this, "Read unknown extra peer data type '"+extraPeerDataType+"' from file "+extraPeerDataFile.getPath());
 		return false;
@@ -2616,5 +2685,43 @@ public class PeerNode implements PeerContext {
 		} else {
 			rewriteExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE, localFileNumber);
 		}
+	}
+
+	public void queueN2NTM(SimpleFieldSet fs) {
+		int fileNumber = writeNewExtraPeerDataFile( fs, Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NTM);
+		synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
+			queuedToSendN2NTMExtraPeerDataFileNumbers.addElement(new Integer(fileNumber));
+		}
+	}
+
+	public void sendQueuedN2NTMs() {
+		Integer[] localFileNumbers = null;
+		synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
+			localFileNumbers = (Integer[]) queuedToSendN2NTMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NTMExtraPeerDataFileNumbers.size()]);
+		}
+		Arrays.sort(localFileNumbers);
+		for (int i = 0; i < localFileNumbers.length; i++) {
+			rereadExtraPeerDataFile(localFileNumbers[i].intValue());
+		}
+	}
+
+	public void maybeOnConnect() {
+		if(wasDisconnected && isConnected()) {
+			synchronized(this) {
+				wasDisconnected = false;
+			}
+			onConnect();
+		} else if(!isConnected()) {
+			synchronized(this) {
+				wasDisconnected = true;
+			}
+		}
+	}
+
+	/**
+	 * A method to be called once at the beginning of every time isConnected() is true
+	 */
+	private void onConnect() {
+		sendQueuedN2NTMs();
 	}
 }

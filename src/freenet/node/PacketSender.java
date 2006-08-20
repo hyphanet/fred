@@ -158,6 +158,7 @@ public class PacketSender implements Runnable, Ticker {
             PeerNode pn = nodes[i];
             lastReceivedPacketFromAnyNode =
                 Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
+			pn.maybeOnConnect();
             if(pn.isConnected()) {
             	
             	if(pn.isRoutable() && pn.shouldDisconnectNow()) {
