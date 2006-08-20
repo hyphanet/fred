@@ -328,3 +328,25 @@ table.requests {
 
 /* vim: set ts=4: sw=4: */
 
+
+div.n2ntm-message-text {
+	margin: 10px;
+	padding: 10px;
+	background-color: #ffffff;
+}
+
+td.n2ntm-send-sent {
+	background-color: #a7ffbc;
+}
+
+td.n2ntm-send-delayed {
+	background-color: #ffeba7;
+}
+
+td.n2ntm-send-queued {
+	background-color: #ffa7a7;
+}
+
+td.n2ntm-send-failed {
+	background-color: #ffb7b7;
+}

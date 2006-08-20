@@ -447,6 +447,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			
 			HTMLNode actionSelect = peerForm.addChild("select", "name", "action");
 			actionSelect.addChild("option", "value", "", "-- Select action --");
+			//actionSelect.addChild("option", "value", "send_n2ntm", "Send N2NTM to selected peers");  // Disabled until we have queue-for-send-on-connect
 			actionSelect.addChild("option", "value", "update_notes", "Update changed private notes");
 			if(advancedEnabled) {
 				actionSelect.addChild("option", "value", "enable", "Enable selected peers");
@@ -581,6 +582,30 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("submit") && request.getPartAsString("action",25).equals("send_n2ntm")) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			HashMap peers = new HashMap();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					PeerNode pn = peerNodes[i];
+					String peer_name = pn.getName();
+					String peer_hash = "" + pn.hashCode();
+					if(!peers.containsKey(peer_hash)) {
+						peers.put(peer_hash, peer_name);
+					}
+				}
+			}
+			String resultString = N2NTMToadlet.createN2NTMSendForm( pageNode, contentNode, ctx, peers, core.formPassword);
+			if(resultString != null) {  // was there an error in createN2NTMSendForm()?
+				this.writeReply(ctx, 200, "text/html", "OK", resultString);
+				return;
+			}
+			StringBuffer pageBuffer = new StringBuffer();
+			pageNode.generate(pageBuffer);
+			this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 			return;
 		} else if (request.isPartSet("submit") && request.getPartAsString("action",25).equals("update_notes")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();

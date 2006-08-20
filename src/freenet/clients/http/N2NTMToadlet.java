@@ -2,6 +2,8 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Iterator;
+import java.util.HashMap;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.comm.DMT;
@@ -34,7 +36,6 @@ public class N2NTMToadlet extends Toadlet {
   }
 
   public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-	  
 	  HTTPRequest request = new HTTPRequest(uri, null, ctx);
 	  if (request.isParameterSet("peernode_hashcode")) {
 		  HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message");
@@ -65,16 +66,13 @@ public class N2NTMToadlet extends Toadlet {
 			  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
 			  return;
 		  }
-		  
-		  HTMLNode infobox = contentNode.addChild("div", new String[] { "class", "id" }, new String[] { "infobox", "n2nbox" });
-		  infobox.addChild("div", "class", "infobox-header", "Send Node to Node Text Message");
-		  HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-		  HTMLNode messageForm = infoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
-		  messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-		  messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "hashcode", input_hashcode_string });
-		  messageForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
-		  messageForm.addChild("br");
-		  messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "send", "Send message to " + peernode_name });
+			HashMap peers = new HashMap();
+			peers.put( input_hashcode_string, peernode_name );
+			String resultString = createN2NTMSendForm( pageNode, contentNode, ctx, peers, core.formPassword);
+			if(resultString != null) {  // was there an error in createN2NTMSendForm()?
+				this.writeReply(ctx, 200, "text/html", "OK", resultString);
+				return;
+			}
 		  StringBuffer pageBuffer = new StringBuffer();
 		  pageNode.generate(pageBuffer);
 		  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
@@ -85,7 +83,7 @@ public class N2NTMToadlet extends Toadlet {
 	  ctx.sendReplyHeaders(302, "Found", headers, null, 0);
   }
   
-  private HTMLNode createPeerInfobox(String infoboxType, String header, String message) {
+  private static HTMLNode createPeerInfobox(String infoboxType, String header, String message) {
 	  HTMLNode infobox = new HTMLNode("div", "class", "infobox " + infoboxType);
 	  infobox.addChild("div", "class", "infobox-header", header);
 	  HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
@@ -115,65 +113,54 @@ public class N2NTMToadlet extends Toadlet {
 	  if (request.isPartSet("send")) {
 		  String message = request.getPartAsString("message", 2000);
 		  message = message.trim();
-		  PeerNode pn = null;
-		  String input_hashcode_string = request.getPartAsString("hashcode", 2000);
-		  request.freeParts();
-		  input_hashcode_string = input_hashcode_string.trim();
-		  int input_hashcode = -1;
-		  try {
-			  input_hashcode = (new Integer(input_hashcode_string)).intValue();
-		  } catch (NumberFormatException e) {
-			  // ignore here, handle below
-		  }
-		  if(input_hashcode != -1) {
-			  PeerNode[] peerNodes = node.getDarknetConnections();
-			  for(int i = 0; i < peerNodes.length; i++) {
-				  int peer_hashcode = peerNodes[i].hashCode();
-				  if(peer_hashcode == input_hashcode) {
-					  pn = peerNodes[i];
-					  break;
-				  }
-			  }
-		  }
-		  if(pn == null) {
-			  HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message failed");
-			  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not found", "The peer with the hash code \u201c" + input_hashcode_string + "\u201d could not be found."));
-			  StringBuffer pageBuffer = new StringBuffer();
-			  pageNode.generate(pageBuffer);
-			  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
-			  return;
-		  }
-		  HTMLNode pageNode = null;
-		  try {
-			  Message n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), pn.getName(), message);
-			  if(pn == null) {
-				  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message failed");
-				  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not found", "The peer with the hash code \u201c" + request.getParam("hashcode") + "\u201d could not be found."));
-			  } else if(!pn.isConnected()) {
-				  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message failed");
-				  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not connected", "The peer \u201c" + pn.getName() + " is not connected."));
-			  } else if(pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
-				  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message succeeded");
-				  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				  contentNode.addChild(createPeerInfobox("infobox-warning", "Node to Node Text Message sent", "The message was successfully sent to \u201c" + pn.getName() + ",\u201d but the node is backed off, so receipt may be significantly delayed."));
-				  usm.send(pn, n2ntm, null);
-				  Logger.normal(this, "Sent N2NTM to '"+pn.getName()+"': "+message);
-			  } else {
-				  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message succeeded");
-				  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				  contentNode.addChild(createPeerInfobox("infobox-success", "Node to Node Text Message sent", "The message was successfully sent to \u201c" + pn.getName() + ".\u201d"));
-				  usm.send(pn, n2ntm, null);
-				  Logger.normal(this, "Sent N2NTM to '"+pn.getName()+"': "+message);
-			  }
-		  } catch (NotConnectedException e) {
-			  pageNode = ctx.getPageMaker().getPageNode("Node to Node Text Message failed");
-			  HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			  contentNode.addChild(createPeerInfobox("infobox-error", "Peer not connected", "Could not send the Node to Node Text Message to \u201c" + pn.getName() + ".\u201d"));
-			  Logger.error(this, "Caught NotConnectedException while trying to send n2ntm: "+e);
-		  }
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message Processing");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode peerTable = peerTableInfobox.addChild("table", "class", "n2ntm-send-statuses");
+			HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
+			peerTableHeaderRow.addChild("th", "Peer Name");
+			peerTableHeaderRow.addChild("th", "N2NTM Send Status");
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					PeerNode pn = peerNodes[i];
+					String sendStatusShort;
+					String sendStatusLong;
+					String sendStatusClass;
+					try {
+						Message n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, node.getMyName(), pn.getName(), message);
+						if(!pn.isConnected()) {
+							sendStatusShort = "Failed";
+							sendStatusLong = "Not connected: Message not sent to peer";
+							sendStatusClass = "n2ntm-send-failed";
+						} else if(pn.getPeerNodeStatus() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF) {
+							sendStatusShort = "Delayed";
+							sendStatusLong = "Backed off: Sending of message possibly delayed to peer";
+							sendStatusClass = "n2ntm-send-delayed";
+							usm.send(pn, n2ntm, null);
+							Logger.normal(this, "Sent N2NTM to '"+pn.getName()+"': "+message);
+						} else {
+							sendStatusShort = "Sent";
+							sendStatusLong = "Message sent to peer";
+							sendStatusClass = "n2ntm-send-sent";
+							usm.send(pn, n2ntm, null);
+							Logger.normal(this, "Sent N2NTM to '"+pn.getName()+"': "+message);
+						}
+					} catch (NotConnectedException e) {
+						sendStatusShort = "Failed";
+						sendStatusLong = "Message not sent to peer: peer not connected";
+						sendStatusClass = "n2ntm-send-failed";
+					}
+					HTMLNode peerRow = peerTable.addChild("tr");
+					peerRow.addChild("td", "class", "peer-name").addChild("#", pn.getName());
+					peerRow.addChild("td", "class", sendStatusClass).addChild("span", new String[] { "title", "style" }, new String[] { sendStatusLong, "border-bottom: 1px dotted; cursor: help;" }, sendStatusShort);
+				}
+			}
+			HTMLNode infoboxContent = peerTableInfobox.addChild("div", "class", "n2ntm-message-text");
+			infoboxContent.addChild("#", message);
+			HTMLNode list = peerTableInfobox.addChild("ul");
+			list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "Back to node homepage" }, "Homepage");
+			list.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/darknet/", "Back to darknet connections" }, "Darknet connections");
 		  StringBuffer pageBuffer = new StringBuffer();
 		  pageNode.generate(pageBuffer);
 		  this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
@@ -182,5 +169,36 @@ public class N2NTMToadlet extends Toadlet {
 	  MultiValueTable headers = new MultiValueTable();
 	  headers.put("Location", "/darknet/");
 	  ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-  }
+	}
+	    
+	public static String createN2NTMSendForm(HTMLNode pageNode, HTMLNode contentNode, ToadletContext ctx, HashMap peers, String formPassword) throws ToadletContextClosedException, IOException {
+		if(contentNode == null) {
+			contentNode.addChild(createPeerInfobox("infobox-error", "Internal error", "Internal error: N2NTMToadlet.createN2NTMSendForm() not passed a valid contentNode."));
+			StringBuffer pageBuffer = new StringBuffer();
+			pageNode.generate(pageBuffer);
+			return pageBuffer.toString();
+		}
+		HTMLNode infobox = contentNode.addChild("div", new String[] { "class", "id" }, new String[] { "infobox", "n2nbox" });
+		infobox.addChild("div", "class", "infobox-header", "Send Node to Node Text Message");
+		HTMLNode messageTargets = infobox.addChild("div", "class", "infobox-content");
+		messageTargets.addChild("p", "Composing N2NTM to send to the following peers:");
+		HTMLNode messageTargetList = messageTargets.addChild("ul");
+		// Iterate peers
+		for (Iterator it = peers.values().iterator(); it.hasNext(); ) {
+			String peer_name = (String) it.next();
+			messageTargetList.addChild("li", peer_name);
+		}
+		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+		HTMLNode messageForm = infoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { "/send_n2ntm/", "post", "multipart/form-data" });
+		messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", formPassword });
+		// Iterate peers
+		for (Iterator it = peers.keySet().iterator(); it.hasNext(); ) {
+			String peerNodeHash = (String) it.next();
+			messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodeHash, "1" });
+		}
+		messageForm.addChild("textarea", new String[] { "id", "name", "rows", "cols" }, new String[] { "n2ntmtext", "message", "8", "74" });
+		messageForm.addChild("br");
+		messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "send", "Send message" });
+		return null;
+	}
 }
