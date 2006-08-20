@@ -72,7 +72,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private RevocationKeyFoundUserAlert revocationAlert;
 	
 	public NodeUpdater(Node n, boolean isAutoUpdateAllowed, FreenetURI URI, FreenetURI revocationURI) {
-		super();
 		this.URI = URI;
 		URI.setSuggestedEdition(Version.buildNumber()+1);
 		this.revocationURI = revocationURI;

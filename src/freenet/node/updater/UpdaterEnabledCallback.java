@@ -7,6 +7,7 @@ import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.NodeStarter;
 import freenet.support.Logger;
 
 public class UpdaterEnabledCallback implements BooleanCallback {
@@ -20,14 +21,14 @@ public class UpdaterEnabledCallback implements BooleanCallback {
 	}
 	
 	public boolean get() {
-		if((node.nodeUpdater==null) || (!WrapperManager.isControlledByNativeWrapper()))
+		if((node.nodeUpdater==null) || (!WrapperManager.isControlledByNativeWrapper()) || (NodeStarter.extBuildNumber == -1))
 			return false;
 		else 
 			return node.nodeUpdater.isRunning();
 	}
 	
 	public void set(boolean val) throws InvalidConfigValueException {
-		if((val == true) && (!WrapperManager.isControlledByNativeWrapper())) {
+		if((val == true) && (!WrapperManager.isControlledByNativeWrapper()) && (NodeStarter.extBuildNumber == -1)) {
 			Logger.error(this, "Cannot update because not running under wrapper");
 			throw new InvalidConfigValueException("Cannot update because not running under wrapper");
 		}
