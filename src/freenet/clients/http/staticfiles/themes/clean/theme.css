@@ -243,7 +243,6 @@ ul.config{
 	border-bottom: 1px dotted #a0a0a0;
 	font-weight: bold;
 	font-size: 16pt;
-	font-variant: small-caps;
 	background-color: #e8e8e8;
 }
 
@@ -263,6 +262,7 @@ ul.config span.configshortdesc {
 ul.config span.configlongdesc {
 	display: block;
 	text-align: left;
+	padding-top: 15px;
 }
 
 ul.config input[type=text] {
