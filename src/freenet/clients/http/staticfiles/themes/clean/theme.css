@@ -288,6 +288,12 @@ table.column span {
 	text-transform: uppercase;
 }
 
+div.infobox-content ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
 span.peer_connected {
 	color: #008000;
 }
@@ -379,13 +385,6 @@ table.queue span.progress_fraction_unknown {
 	color: #d0d0d0;
 }
 
-table.queue span.progress_fraction_not_finalized {
-}
-
-table.queue span.progress_fraction_finalized {
-	color: #008000;
-}
-
 table.queue span.number_of_files {
 }
 
@@ -435,37 +434,46 @@ table.queue span.key_unknown {
 table.queue span.key_is {
 }
 
-div.progressbar {
-	float: left;
-	margin: none;
-	background: blue;
-	border: solid blue 1px;
-	width: 100px;
-	height:15px;	
+.progressbar {
+	position: relative;
+	height: 18px;
+	width: 120px;
+	border: solid 1px #000;
 }
 
-div.progressbar-done {
+.progressbar-done {
 	float: left;
-	background: green;
-	height:15px;
+	height: 18px;
+	background-color: #44cc44;
 }
 
-div.progressbar-min {
+.progressbar-min {
 	float: left;
-	background: yellow;
-	height:15px;
+	height: 18px;
+	background-color: #cccccc;
 }
 
-div.progressbar-failed {
+.progressbar-failed {
 	float: left;
-	background: red;
-	height:15px;
+	height: 18px;
+	background-color: #ffcccc;
 }
 
-div.progressbar-failed2 {
+.progressbar-failed2 {
 	float: left;
-	background: black;
-	height:15px;
+	height: 18px;
+	background-color: #ff4444;
+}
+
+.progress_fraction_finalized {
+	position: absolute;
+	left: 5px;
+}
+
+.progress_fraction_not_finalized {
+	position: absolute;
+	left: 5px;
+	color: #333333;
 }
 
 tr.priority0, td.priority0 {

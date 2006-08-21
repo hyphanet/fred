@@ -180,7 +180,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) && (numARKFetchers == 0)) {
 			activityInfoboxContent.addChild("#", "Your node is not processing any requests right now.");
 		} else {
-			HTMLNode activityList = activityInfoboxContent.addChild("ul", "id", "activity");
+			HTMLNode activityList = activityInfoboxContent.addChild("ul");
 			if (numInserts > 0) {
 				activityList.addChild("li", "Inserts:\u00a0" + numInserts);
 			}
