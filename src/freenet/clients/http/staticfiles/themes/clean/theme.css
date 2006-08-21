@@ -437,8 +437,9 @@ table.queue span.key_is {
 .progressbar {
 	position: relative;
 	height: 18px;
-	width: 120px;
-	border: solid 1px #000;
+	width: 130px;
+	border: solid 1px #444444;
+	background-color: #e8e8e8;
 }
 
 .progressbar-done {
@@ -450,7 +451,7 @@ table.queue span.key_is {
 .progressbar-min {
 	float: left;
 	height: 18px;
-	background-color: #cccccc;
+	background-color: #cce8cc;
 }
 
 .progressbar-failed {
@@ -468,12 +469,13 @@ table.queue span.key_is {
 .progress_fraction_finalized {
 	position: absolute;
 	left: 5px;
+	font-weight: bold;
 }
 
 .progress_fraction_not_finalized {
 	position: absolute;
 	left: 5px;
-	color: #333333;
+	font-style: italic;
 }
 
 tr.priority0, td.priority0 {
