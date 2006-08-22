@@ -163,7 +163,9 @@ public class Node {
 	/** Log config handler */
 	public static LoggingConfigHandler logConfigHandler;
 	
-	static int aggressiveGCModificator = 250;
+	// Enable this if you run into hard to debug OOMs.
+	// Disabled to prevent long pauses every 30 seconds.
+	static int aggressiveGCModificator = -1 /*250*/;
 	
 	/** If true, local requests and inserts aren't cached.
 	 * This opens up a glaring vulnerability; connected nodes
