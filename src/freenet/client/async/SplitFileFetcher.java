@@ -11,6 +11,7 @@ import freenet.client.FetchResult;
 import freenet.client.FetcherContext;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
+import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -77,6 +78,13 @@ public class SplitFileFetcher implements ClientGetState {
 		this.splitfileType = metadata.getSplitfileType();
 		splitfileDataBlocks = metadata.getSplitfileDataKeys();
 		splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
+		long finalLength = splitfileDataBlocks.length * CHKBlock.DATA_LENGTH;
+		if(finalLength > overrideLength) {
+			if(finalLength - overrideLength > CHKBlock.DATA_LENGTH)
+				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+finalLength+" but length is "+finalLength);
+			finalLength = overrideLength;
+		}
+		
 		splitUseLengths = metadata.splitUseLengths();
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
 			// Don't need to do much - just fetch everything and piece it together.
@@ -136,8 +144,11 @@ public class SplitFileFetcher implements ClientGetState {
 			finalLength += s.decodedLength();
 			// Healing is done by Segment
 		}
-		if(finalLength > overrideLength)
+		if(finalLength > overrideLength) {
+			if(finalLength - overrideLength > CHKBlock.DATA_LENGTH)
+				throw new FetchException(FetchException.INVALID_METADATA, "Splitfile is "+finalLength+" but length is "+finalLength);
 			finalLength = overrideLength;
+		}
 		
 		long bytesWritten = 0;
 		OutputStream os = null;
@@ -204,15 +215,16 @@ public class SplitFileFetcher implements ClientGetState {
 			// Decompress
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.removeLast();
+				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
 				try {
 					Bucket out = returnBucket;
 					if(!decompressors.isEmpty()) out = null;
-					data = c.decompress(data, fetchContext.bucketFactory, Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength), out);
+					data = c.decompress(data, fetchContext.bucketFactory, maxLen, maxLen * 4, out);
 				} catch (IOException e) {
 					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this);
 					return;
 				} catch (CompressionOutputSizeException e) {
-					cb.onFailure(new FetchException(FetchException.TOO_BIG, e), this);
+					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this);
 					return;
 				}
 			}

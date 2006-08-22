@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import freenet.support.Logger;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
 
@@ -44,7 +45,7 @@ public class GzipCompressor extends Compressor {
 		return output;
 	}
 
-	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
+	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		if(preferred != null)
 			output = preferred;
@@ -52,13 +53,13 @@ public class GzipCompressor extends Compressor {
 			output = bf.makeBucket(-1);
 		InputStream is = data.getInputStream();
 		OutputStream os = output.getOutputStream();
-		decompress(is, os, maxLength);
+		decompress(is, os, maxLength, maxCheckSizeLength);
 		os.close();
 		is.close();
 		return output;
 	}
 
-	private long decompress(InputStream is, OutputStream os, long maxLength) throws IOException, CompressionOutputSizeException {
+	private long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
 		GZIPInputStream gis = new GZIPInputStream(is);
 		long written = 0;
 		byte[] buffer = new byte[4096];
@@ -66,6 +67,17 @@ public class GzipCompressor extends Compressor {
 			int l = (int) Math.min(buffer.length, maxLength - written);
 			int x = gis.read(buffer, 0, 4096);
 			if(l < x) {
+				Logger.error(this, "l="+l+", x="+x+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
+				if(maxCheckSizeBytes > 0) {
+					written += x;
+					while(true) {
+						l = (int) Math.min(buffer.length, maxLength + maxCheckSizeBytes - written);
+						x = gis.read(buffer, 0, 4096);
+						if(x <= -1) throw new CompressionOutputSizeException(written);
+						if(x == 0) throw new IOException("Returned zero from read()");
+						written += x;
+					}
+				}
 				throw new CompressionOutputSizeException();
 			}
 			if(x <= -1) return written;
@@ -82,7 +94,7 @@ public class GzipCompressor extends Compressor {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream(output.length);
 		int bytes = 0;
 		try {
-			bytes = (int)decompress(bais, baos, output.length);
+			bytes = (int)decompress(bais, baos, output.length, -1);
 		} catch (IOException e) {
 			throw new Error("Got IOException: "+e.getMessage());
 		}

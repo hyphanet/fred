@@ -169,7 +169,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		if(overrideMaxSize >= 0) {
 			maxLength = overrideMaxSize;
 			maxTempLength = overrideMaxSize;
-		}
+		} 
 		return 			
 			new FetcherContext(maxLength, maxTempLength, curMaxMetadataLength, 
 				MAX_RECURSION, MAX_ARCHIVE_RESTARTS, MAX_ARCHIVE_LEVELS, DONT_ENTER_IMPLICIT_ARCHIVES, 

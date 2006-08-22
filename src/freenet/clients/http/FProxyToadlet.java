@@ -70,8 +70,8 @@ public class FProxyToadlet extends Toadlet {
 		}
 		
 	}
-	
-	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key) throws ToadletContextClosedException, IOException {
+
+	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras) throws ToadletContextClosedException, IOException {
 		if(requestedMimeType != null)
 			mimeType = requestedMimeType;
 		
@@ -115,14 +115,14 @@ public class FProxyToadlet extends Toadlet {
 			infoboxContent.addChild("p", "Your options are:");
 			HTMLNode optionList = infoboxContent.addChild("ul");
 			HTMLNode option = optionList.addChild("li");
-			option.addChild("a", "href", basePath + key.toString(false) + "?type=text/plain", "Click here");
+			option.addChild("a", "href", basePath + key.toString(false) + "?type=text/plain"+extras, "Click here");
 			option.addChild("#", " to open the file as plain text (this should not be dangerous but it may be garbled).");
 			// FIXME: is this safe? See bug #131
 			option = optionList.addChild("li");
-			option.addChild("a", "href", basePath + key.toString(false) + "?forcedownload", "Click here");
+			option.addChild("a", "href", basePath + key.toString(false) + "?forcedownload"+extras, "Click here");
 			option.addChild("#", " to force your browser to download the file to disk.");
 			option = optionList.addChild("li");
-			option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now), "Click here");
+			option.addChild("a", "href", basePath + key.toString(false) + "?force=" + getForceValue(key, now)+extras, "Click here");
 			option.addChild("#", " to open the file as " + mimeType + ".");
 			option = optionList.addChild("li");
 			option.addChild("a", "href", "/", "Click here");
@@ -210,7 +210,7 @@ public class FProxyToadlet extends Toadlet {
 			return;
 		}
 		try {
-			Logger.minor(this, "FProxy fetching "+key);
+			Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+")");
 			FetchResult result = fetch(key, maxSize);
 			
 			// Now, is it safe?
@@ -219,7 +219,7 @@ public class FProxyToadlet extends Toadlet {
 			String mimeType = result.getMimeType();
 			String requestedMimeType = httprequest.getParam("type", null);
 			
-			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key);
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "");
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();
@@ -268,7 +268,7 @@ public class FProxyToadlet extends Toadlet {
 				HTMLNode optionList = infoboxContent.addChild("ul");
 				option = optionList.addChild("li");
 				HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] { "/" + key.toString(false), "get" });
-				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize) });
+				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", "Fetch anyway and display file in browser" });
 				option = optionList.addChild("li");
 				optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });

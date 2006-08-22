@@ -166,12 +166,13 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.removeLast();
 				try {
-					data = c.decompress(data, ctx.bucketFactory, Math.max(ctx.maxTempLength, ctx.maxOutputLength), decompressors.isEmpty() ? returnBucket : null);
+					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
+					data = c.decompress(data, ctx.bucketFactory, maxLen, maxLen * 4, decompressors.isEmpty() ? returnBucket : null);
 				} catch (IOException e) {
 					onFailure(new FetchException(FetchException.BUCKET_ERROR, e));
 					return;
 				} catch (CompressionOutputSizeException e) {
-					onFailure(new FetchException(FetchException.TOO_BIG, e));
+					onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, (rcb == parent), result.getMimeType()));
 					return;
 				}
 			}
