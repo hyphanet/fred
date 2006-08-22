@@ -45,6 +45,8 @@ public class FileBucket implements Bucket, SerializableToFieldSetBucket {
 		this.file = file;
 		this.deleteOnFinalize = deleteOnFinalize;
 		this.deleteOnFree = deleteOnFree;
+		if(file == null)
+			throw new NullPointerException();
 		if(deleteOnExit)
 			file.deleteOnExit();
 		// Useful for finding temp file leaks.
