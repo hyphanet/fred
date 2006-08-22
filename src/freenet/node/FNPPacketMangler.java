@@ -1091,6 +1091,8 @@ public class FNPPacketMangler implements LowLevelFilter {
     void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks, int alreadyReportedBytes) throws NotConnectedException, WouldBlockException, PacketSequenceException {
         while(true) {
             try {
+            	if(!peer.isConnected())
+            		throw new NotConnectedException();
                 KeyTracker tracker = peer.getCurrentKeyTracker();
                 if(tracker == null) {
                     Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(2)");
