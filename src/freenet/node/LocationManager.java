@@ -557,7 +557,7 @@ class LocationManager {
      * 
      * If A > B then they switch.
      * 
-     * If A <= B, then calculate p = A^2 / B^2. They then switch with
+     * If A <= B, then calculate p = A / B. They then switch with
      * probability p (that is, switch if rand.nextFloat() < p).
      * 
      * @param myLoc My location as a double.
@@ -618,7 +618,7 @@ class LocationManager {
         
         if(A>B) return true;
         
-        double p = (A*A) / (B*B);
+        double p = A / B;
         
         // Take last 63 bits, then turn into a double
         double randProb = ((double)(rand & Long.MAX_VALUE)) 
