@@ -130,6 +130,7 @@ public class FCPClient {
 	}
 	
 	public void register(ClientRequest cg, boolean startLater) throws IdentifierCollisionException {
+		Logger.minor(this, "Registering "+cg.getIdentifier()+(startLater ? " to start later" : ""));
 		synchronized(this) {
 			String ident = cg.getIdentifier();
 			ClientRequest old = (ClientRequest) clientRequestsByIdentifier.get(ident);
