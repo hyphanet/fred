@@ -274,6 +274,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// FIXME I don't think this is a problem in this case...? (Disk write while locked..)
 		AllDataMessage adm = null;
 		synchronized(this) {
+			if(succeeded) {
+				Logger.error(this, "onSuccess called twice for "+this+" ("+identifier+")");
+				return; // We might be called twice; ignore it if so.
+			}
 			if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 				// Send all the data at once
 				// FIXME there should be other options
@@ -574,9 +578,15 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 *         isn&rsquo;t applicable
 	 */
 	public Bucket getBucket() {
-		return returnBucket;
+		synchronized(this) {
+			if(targetFile != null) {
+				if(succeeded || tempFile == null)
+					return new FileBucket(targetFile, false, false, false, false);
+				else
+					return new FileBucket(tempFile, false, false, false, false);
+			} else return returnBucket;
+		}
 	}
-
 
 	public void onFetchable(BaseClientPutter state) {
 		// Ignore, we don't insert
