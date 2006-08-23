@@ -135,6 +135,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 					hasURIs = false;
 				}
 				boolean blockFinished = Fields.stringToBool(blockFS.get("Finished"), false) && checkURIs[i] != null;
+				if(blockFinished && checkURIs[i] == null) {
+					Logger.error(this, "No URI for check block "+i+" of "+segNo+" yet apparently finished?");
+					encoded = false;
+				}
 				// Read data; only necessary if the block isn't finished.
 				if(!blockFinished) {
 					SimpleFieldSet bucketFS = blockFS.subset("Data");
