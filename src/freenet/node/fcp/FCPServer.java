@@ -694,10 +694,13 @@ public class FCPServer implements Runnable {
 	public void finishStart() {
 		this.globalClient.finishStart();
 		
-		Iterator i = clientsByName.values().iterator();
-		for(;i.hasNext();) {
-			FCPClient client = (FCPClient) i.next();
-			client.finishStart();
+		FCPClient[] clients;
+		synchronized(this) {
+			clients = (FCPClient[]) clientsByName.values().toArray(new FCPClient[clientsByName.size()]);
+		}
+		
+		for(int i=0;i<clients.length;i++) {
+			clients[i].finishStart();
 		}
 		
 		if(enablePersistentDownloads)

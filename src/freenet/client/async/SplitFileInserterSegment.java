@@ -120,6 +120,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				if(blockFS == null) {
 					hasURIs = false;
 					encoded = false;
+					Logger.normal(this, "Clearing encoded because block "+i+" of "+segNo+" missing");
 					continue;
 				}
 				tmp = blockFS.get("URI");
@@ -132,7 +133,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 					}
 				} else {
 					hasURIs = false;
-					encoded = false;
 				}
 				boolean blockFinished = Fields.stringToBool(blockFS.get("Finished"), false) && checkURIs[i] != null;
 				// Read data; only necessary if the block isn't finished.
@@ -153,12 +153,14 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 				// Don't create fetcher yet; that happens in start()
 				} else blocksCompleted++;
 				if(checkBlocks[i] == null && checkURIs[i] == null) {
+					Logger.normal(this, "Clearing encoded because block "+i+" of "+segNo+" missing");
 					encoded = false;
 				}
 				checkFS.removeSubset(index);
 			}
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount, checkBlocks.length);
 		} else {
+			Logger.normal(this, "Not encoded because no check blocks");
 			encoded = false;
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm, dataBlockCount);
 			int checkBlocksCount = splitfileAlgo.countCheckBlocks();
