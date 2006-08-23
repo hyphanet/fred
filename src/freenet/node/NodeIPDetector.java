@@ -72,7 +72,10 @@ public class NodeIPDetector {
 	   	if(detectedAddrs != null) {
 	   		for(int i=0;i<detectedAddrs.length;i++) {
 	   			Peer p = new Peer(detectedAddrs[i], node.portNumber);
-	   			if(!addresses.contains(p)) addresses.add(p);
+	   			if(!addresses.contains(p)) {
+	   				Logger.normal(this, "Detected IP address: "+p);
+	   				addresses.add(p);
+	   			}
 	   		}
 	   	}
 	   	if((pluginDetectedIPs != null) && (pluginDetectedIPs.length > 0)) {
@@ -80,8 +83,10 @@ public class NodeIPDetector {
 	   			InetAddress addr = pluginDetectedIPs[i].publicAddress;
 	   			if(addr == null) continue;
 	   			Peer a = new Peer(new FreenetInetAddress(addr), node.portNumber);
-	   			if(!addresses.contains(a))
+	   			if(!addresses.contains(a)) {
+	   				Logger.normal(this, "Plugin detected IP address: "+a);
 	   				addresses.add(a);
+	   			}
 	   		}
 	   	}
 	   	if((detectedAddrs.length == 0) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
@@ -119,6 +124,7 @@ public class NodeIPDetector {
 		   		while(it.hasNext()) {
 		   			Peer cur = (Peer) (it.next());
 		   			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
+		   			Logger.normal(this, "Detected peer: "+cur+" popularity "+curPop);
 		   			if(curPop >= bestPopularity) {
 		   				secondBestPopularity = bestPopularity;
 		   				bestPopularity = curPop;
@@ -128,11 +134,15 @@ public class NodeIPDetector {
 		   		}
 		   		if(best != null) {
 		   			if((bestPopularity > 2) || (detectedAddrs.length == 0)) {
-		   				if(!addresses.contains(best))
+		   				if(!addresses.contains(best)) {
+		   					Logger.normal(this, "Adding best peer "+best+" ("+bestPopularity+")");
 		   					addresses.add(best);
+		   				}
 		   				if((secondBest != null) && (secondBestPopularity > 2)) {
-		   					if(!addresses.contains(secondBest))
+		   					if(!addresses.contains(secondBest)) {
+		   						Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+")");
 		   						addresses.add(secondBest);
+		   					}
 		   				}
 		   			}
 		   		}
