@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Vector;
 
 import freenet.io.comm.Peer;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.support.Logger;
@@ -21,12 +23,34 @@ public class IPDetectorPluginManager {
 	private final Ticker ticker;
 	private final Node node;
 	FredPluginIPDetector[] plugins;
+	private SimpleUserAlert noConnectionAlert;
+	private SimpleUserAlert symmetricAlert;
+	private SimpleUserAlert portRestrictedAlert;
+	private SimpleUserAlert restrictedAlert;
+	private SimpleUserAlert connectedAlert;
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
 		plugins = new FredPluginIPDetector[0];
 		this.node = node;
 		this.ticker = node.ps;
 		this.detector = detector;
+		noConnectionAlert = new SimpleUserAlert(false, "No UDP connectivity", 
+				"Your internet connection does not appear to support UDP. " +
+				"Unless this detection is wrong, it is unlikely that Freenet will work on your computer at present.",
+				UserAlert.CRITICAL_ERROR);
+		symmetricAlert = new SimpleUserAlert(false, "Symmetric firewall detected",
+				"Your internet connection appears to be behind a symmetric NAT or firewall. " +
+				"You will probably only be able to connect to users directly connected to the internet or behind " +
+				"restricted cone NATs.", UserAlert.ERROR);
+		portRestrictedAlert = new SimpleUserAlert(true, "Port restricted cone NAT detected",
+				"Your internet connection appears to be behind a port-restricted NAT (router). "+
+				"You will be able to connect to most other users, but not those behind symmetric NATs.", UserAlert.MINOR);
+		restrictedAlert = new SimpleUserAlert(true, "Restricted cone NAT detected",
+				"Your internet connection appears to be behind a \"restricted cone\" NAT (router). "+
+				"You should be able to connect to most other users.", UserAlert.WARNING);
+		connectedAlert = new SimpleUserAlert(true, "Direct internet connection detected",
+				"You appear to be directly connected to the internet. Congratulations, you should be able to connect "+
+				"to any other freenet node.", UserAlert.WARNING);
 	}
 
 	void start() {
@@ -121,7 +145,7 @@ public class IPDetectorPluginManager {
 	public void maybeRun() {
 		Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
-		PeerNode[] conns = node.getDarknetConnections();
+		PeerNode[] conns = node.getConnectedPeers();
 		Peer[] nodeAddrs = detector.getPrimaryIPAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -226,6 +250,9 @@ public class IPDetectorPluginManager {
 					}
 				}
 				
+				if(detector.maybeSymmetric && lastDetectAttemptEndedTime <= 0) // If it appears to be an SNAT, do a detection at least once
+					maybeUrgent = true;
+				
 				if(maybeUrgent) {
 					if(firstTimeUrgent <= 0)
 						firstTimeUrgent = now;
@@ -260,6 +287,7 @@ public class IPDetectorPluginManager {
 							}
 						}
 						if(count > 2) {
+							Logger.minor(this, "Recently connected peers count: "+count);
 							maybeFake = true;
 						}
 					}
@@ -375,9 +403,48 @@ public class IPDetectorPluginManager {
 				}
 			}
 			DetectedIP[] list = (DetectedIP[]) map.values().toArray(new DetectedIP[map.size()]);
+			int countOpen = 0;
+			int countRestricted = 0;
+			int countPortRestricted = 0;
+			int countSymmetric = 0;
+			int countClosed = 0;
 			for(int i=0;i<list.length;i++) {
 				Logger.minor(this, "Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
 				System.out.println("Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
+				switch(list[i].natType) {
+				case DetectedIP.FULL_CONE_NAT:
+				case DetectedIP.FULL_INTERNET:
+					countOpen++;
+					break;
+				case DetectedIP.NO_UDP:
+					countClosed++;
+					break;
+				case DetectedIP.NOT_SUPPORTED:
+					// Ignore
+					break;
+				case DetectedIP.RESTRICTED_CONE_NAT:
+					countRestricted++;
+					break;
+				case DetectedIP.PORT_RESTRICTED_NAT:
+					countPortRestricted++;
+					break;
+				case DetectedIP.SYMMETRIC_NAT:
+				case DetectedIP.SYMMETRIC_UDP_FIREWALL:
+					countSymmetric++;
+					break;
+				}
+			}
+			
+			if(countClosed > 0 && (countOpen + countRestricted + countPortRestricted + countSymmetric) == 0) {
+				node.clientCore.alerts.register(noConnectionAlert);
+			} else if(countSymmetric > 0 && (countOpen + countRestricted + countPortRestricted == 0)) {
+				node.clientCore.alerts.register(symmetricAlert);
+			} else if(countPortRestricted > 0 && (countOpen + countRestricted == 0)) {
+				node.clientCore.alerts.register(portRestrictedAlert);
+			} else if(countRestricted > 0 && (countOpen == 0)) {
+				node.clientCore.alerts.register(restrictedAlert);
+			} else if(countOpen > 0) {
+				node.clientCore.alerts.register(connectedAlert);
 			}
 			detector.processDetectedIPs(list);
 			} finally {
@@ -385,6 +452,10 @@ public class IPDetectorPluginManager {
 			}
 		}
 
+	}
+
+	public boolean isEmpty() {
+		return plugins.length == 0;
 	}
 
 }

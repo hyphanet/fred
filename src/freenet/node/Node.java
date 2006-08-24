@@ -2775,8 +2775,11 @@ public class Node {
 	}
 
 	public PeerNode[] getPeerNodes() {
-		PeerManager pm = peers;
-		return pm.myPeers;
+		return peers.myPeers;
+	}
+	
+	public PeerNode[] getConnectedPeers() {
+		return peers.connectedPeers;
 	}
 	
 	public PeerNodeStatus[] getPeerNodeStatuses() {

@@ -14,6 +14,9 @@ import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.node.useralerts.IPUndetectedUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.support.Logger;
@@ -46,6 +49,10 @@ public class NodeIPDetector {
 	public boolean includeLocalAddressesInNoderefs;
 	/** ARK inserter. */
 	private final NodeARKInserter arkPutter;
+	/** Set when we have grounds to believe that we may be behind a symmetric NAT. */
+	boolean maybeSymmetric;
+	
+	SimpleUserAlert maybeSymmetricAlert;
 	
 	public NodeIPDetector(Node node) {
 		this.node = node;
@@ -63,6 +70,7 @@ public class NodeIPDetector {
 	 * third parties if available and UP&P if available.
 	 */
 	Peer[] detectPrimaryIPAddress() {
+		boolean setMaybeSymmetric = false;
 		Vector addresses = new Vector();
 		if(overrideIPAddress != null) {
 			// If the IP is overridden, the override has to be the first element.
@@ -102,6 +110,7 @@ public class NodeIPDetector {
 	   			// DNSRequester doesn't deal with our own node
 	   			InetAddress ip = p.getAddress(true);
 	   			if(!IPUtil.checkAddress(ip)) continue;
+	   			Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
 	   			if(countsByPeer.containsKey(ip)) {
 	   				Integer count = (Integer) countsByPeer.get(p);
 	   				Integer newCount = new Integer(count.intValue()+1);
@@ -143,6 +152,27 @@ public class NodeIPDetector {
 		   						Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+")");
 		   						addresses.add(secondBest);
 		   					}
+			   				if(best.getAddress().equals(secondBest.getAddress()) && bestPopularity == 1) {
+			   					Logger.error(this, "Hrrrm, maybe this is a symmetric NAT? Expect trouble connecting!");
+			   					System.err.println("Hrrrm, maybe this is a symmetric NAT? Expect trouble connecting!");
+			   					setMaybeSymmetric = true;
+			   					
+			   					if(ipDetectorManager != null && ipDetectorManager.isEmpty()) {
+			   						if(maybeSymmetricAlert == null) {
+			   							maybeSymmetricAlert = new SimpleUserAlert(true, "Connection problems", 
+			   									"It looks like your node may be behind a symmetric NAT. You may have connection " +
+			   									"problems; if you are behind a symmetric NAT you will probably only be able to " +
+			   									"connect to peers which are open to the internet.", UserAlert.ERROR);
+			   						}
+			   						if(node.clientCore != null && node.clientCore.alerts != null)
+			   							node.clientCore.alerts.register(maybeSymmetricAlert);
+			   					} else {
+			   						if(maybeSymmetricAlert != null)
+			   							node.clientCore.alerts.unregister(maybeSymmetricAlert);
+			   					}
+			   					
+			   					addresses.add(new Peer(best.getFreenetAddress(), node.portNumber));
+			   				}
 		   				}
 		   			}
 		   		}
@@ -156,6 +186,7 @@ public class NodeIPDetector {
 	   		}
 	   	}
 	   	lastIPAddress = (Peer[]) addresses.toArray(new Peer[addresses.size()]);
+	   	this.maybeSymmetric = setMaybeSymmetric;
 	   	return lastIPAddress;
 	}
 
@@ -166,7 +197,14 @@ public class NodeIPDetector {
 	
 	public boolean hasDirectlyDetectedIP() {
 		InetAddress[] addrs = ipDetector.getAddress();
-		return (addrs != null && addrs.length > 0);
+		if(addrs == null || addrs.length == 0) return false;
+		for(int i=0;i<addrs.length;i++) {
+			if(IPAddressDetector.isValidAddress(addrs[i], false)) {
+				Logger.minor(this, "Has a directly detected IP: "+addrs[i]);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
