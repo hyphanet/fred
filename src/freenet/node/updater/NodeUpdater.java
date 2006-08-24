@@ -624,7 +624,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
         SubConfig updaterConfig = new SubConfig("node.updater", config);
          
         updaterConfig.register("enabled", WrapperManager.isControlledByNativeWrapper(), 1, true, "Check for, and download new versions",
-        		"Should your node automatically check for new versions of Freenet. If yes, new versions will be automatically detected and downloaded, but not necessarily installed.",
+        		"Should your node automatically check for new versions of Freenet. If yes, new versions will be automatically detected and downloaded, but not necessarily installed. This setting resets itself always back to false unless the node runs within the wrapper.",
         		new UpdaterEnabledCallback(node, config));
         
         boolean enabled = updaterConfig.getBoolean("enabled");
