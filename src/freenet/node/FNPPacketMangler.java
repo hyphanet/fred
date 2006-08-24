@@ -1091,11 +1091,13 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws PacketSequenceException 
      */
     void processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks, int alreadyReportedBytes) throws NotConnectedException, WouldBlockException, PacketSequenceException {
+    	KeyTracker last = null;
         while(true) {
             try {
             	if(!peer.isConnected())
             		throw new NotConnectedException();
                 KeyTracker tracker = peer.getCurrentKeyTracker();
+                last = tracker;
                 if(tracker == null) {
                     Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(2)");
                     throw new NotConnectedException();
@@ -1106,6 +1108,11 @@ public class FNPPacketMangler implements LowLevelFilter {
                 return;
             } catch (KeyChangedException e) {
             	Logger.normal(this, "Key changed(2) for "+peer.getPeer());
+            	if(last == peer.getCurrentKeyTracker()) {
+            		if(peer.isConnected()) {
+            			Logger.error(this, "Peer is connected, yet current tracker is deprecated !!: "+e, e);
+            		}
+            	}
                 // Go around again
             }
         }

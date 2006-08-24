@@ -1351,7 +1351,8 @@ public class PeerNode implements PeerContext {
 			synchronized(this) {
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
-				previousTracker = currentTracker = null;
+				previousTracker = null;
+				currentTracker = null;
 			}
 			if(oldPrev != null) {
 				oldPrev.completelyDeprecated(newTracker);
