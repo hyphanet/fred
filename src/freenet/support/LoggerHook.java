@@ -134,6 +134,19 @@ public abstract class LoggerHook extends Logger {
 		stuff.toArray(newThresholds);
 		detailedThresholds = newThresholds;
 	}
+
+	public String getDetailedThresholds() {
+		DetailedThreshold[] thresh = detailedThresholds;
+		StringBuffer sb = new StringBuffer();
+		for(int i=0;i<thresh.length;i++) {
+			if(i != 0)
+				sb.append(',');
+			sb.append(thresh[i].section);
+			sb.append(':');
+			sb.append(LoggerHook.priorityOf(thresh[i].dThreshold));
+		}
+		return sb.toString();
+	}
 	
     /**
      * Returns the priority level matching the string. If no priority

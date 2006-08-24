@@ -103,9 +103,10 @@ public class LoggerHookChain extends LoggerHook {
 
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		super.setDetailedThresholds(details);
-		LoggerHook[] h = getHooks();
-		for (int i = 0; i < h.length; i++)
-			h[i].setDetailedThresholds(details);
+		// No need to tell subordinates, we will do the filtering.
+//		LoggerHook[] h = getHooks();
+//		for (int i = 0; i < h.length; i++)
+//			h[i].setDetailedThresholds(details);
 	}
 	public void setThreshold(int thresh) {
 		super.setThreshold(thresh);

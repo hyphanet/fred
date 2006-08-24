@@ -15,6 +15,7 @@ import freenet.support.Logger;
 import freenet.support.LoggerHook;
 import freenet.support.LoggerHookChain;
 import freenet.support.FileLoggerHook.IntervalParseException;
+import freenet.support.LoggerHook.InvalidThresholdException;
 
 public class LoggingConfigHandler {
 
@@ -92,6 +93,8 @@ public class LoggingConfigHandler {
     	
     	maxZippedLogsSize = config.getLong("maxZippedLogsSize");
     	
+    	// These two are forced below so we don't need to check them now
+    	
     	// priority
     	
     	// Node must override this to minor on testnet.
@@ -110,6 +113,28 @@ public class LoggingConfigHandler {
 						}
 					}
     	});
+    	
+    	// detailed priority
+    	
+    	config.register("priorityDetail", "", 5, true, "Detailed priority thresholds", "Detailed priority thresholds, example freenet:normal,freenet.node:minor",
+    			new StringCallback() {
+
+					public String get() {
+						LoggerHookChain chain = Logger.getChain();
+						return chain.getDetailedThresholds();
+					}
+
+					public void set(String val) throws InvalidConfigValueException {
+						LoggerHookChain chain = Logger.getChain();
+						try {
+							chain.setDetailedThresholds(val);
+						} catch (InvalidThresholdException e) {
+							throw new InvalidConfigValueException(e.getMessage());
+						}
+					}
+    		
+    	});
+    	
     	
     	// interval
     	
@@ -191,6 +216,7 @@ public class LoggingConfigHandler {
 			Logger.setupChain();
 			try {
 				config.forceUpdate("priority");
+				config.forceUpdate("priorityDetail");
 			} catch (InvalidConfigValueException e2) {
 				System.err.println("Invalid config value for logger.priority in config file: "+config.getString("priority"));
 				// Leave it at the default.
