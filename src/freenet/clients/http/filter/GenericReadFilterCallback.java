@@ -46,17 +46,18 @@ public class GenericReadFilterCallback implements FilterCallback {
 	public String processURI(String u, String overrideType, boolean noRelative) {
 		URI uri;
 		URI resolved;
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
-			Logger.minor(this, "Processing "+u);
+			if(logMINOR) Logger.minor(this, "Processing "+u);
 			uri = URIPreEncoder.encodeURI(u).normalize();
-			Logger.minor(this, "Processing "+uri);
+			if(logMINOR) Logger.minor(this, "Processing "+uri);
 			if(!noRelative)
 				resolved = baseURI.resolve(uri);
 			else
 				resolved = uri;
-			Logger.minor(this, "Resolved: "+resolved);
+			if(logMINOR) Logger.minor(this, "Resolved: "+resolved);
 		} catch (URISyntaxException e1) {
-			Logger.minor(this, "Failed to parse URI: "+e1);
+			if(logMINOR) Logger.minor(this, "Failed to parse URI: "+e1);
 			return null;
 		}
 		String path = uri.getPath();
@@ -80,14 +81,14 @@ public class GenericReadFilterCallback implements FilterCallback {
 		
 		String rpath = uri.getPath();
 		if(rpath != null) {
-			Logger.minor(this, "Resolved URI: "+rpath);
+			if(logMINOR) Logger.minor(this, "Resolved URI: "+rpath);
 			
 			// Valid FreenetURI?
 			try {
 				String p = rpath;
 				while(p.startsWith("/")) p = p.substring(1);
 				FreenetURI furi = new FreenetURI(p);
-				Logger.minor(this, "Parsed: "+furi);
+				if(logMINOR) Logger.minor(this, "Parsed: "+furi);
 				return processURI(furi, uri, overrideType, noRelative);
 			} catch (MalformedURLException e) {
 				// Not a FreenetURI
@@ -98,14 +99,14 @@ public class GenericReadFilterCallback implements FilterCallback {
 		
 		rpath = resolved.getPath();
 		if(rpath == null) return null;
-		Logger.minor(this, "Resolved URI: "+rpath);
+		if(logMINOR) Logger.minor(this, "Resolved URI: "+rpath);
 		
 		// Valid FreenetURI?
 		try {
 			String p = rpath;
 			while(p.startsWith("/")) p = p.substring(1);
 			FreenetURI furi = new FreenetURI(p);
-			Logger.minor(this, "Parsed: "+furi);
+			if(logMINOR) Logger.minor(this, "Parsed: "+furi);
 			return processURI(furi, uri, overrideType, noRelative);
 		} catch (MalformedURLException e) {
 			// Not a FreenetURI

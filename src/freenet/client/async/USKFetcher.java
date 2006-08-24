@@ -59,6 +59,8 @@ import freenet.support.io.Bucket;
  */
 public class USKFetcher implements ClientGetState {
 
+	private static boolean logMINOR;
+	
 	/** USK manager */
 	private final USKManager uskManager;
 	
@@ -212,10 +214,12 @@ public class USKFetcher implements ClientGetState {
 		this.ctx = ctx;
 		this.backgroundPoll = pollForever;
 		this.keepLastData = keepLastData;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	void onDNF(USKAttempt att) {
-		Logger.minor(this, "DNF: "+att);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "DNF: "+att);
 		boolean finished = false;
 		long curLatest = uskManager.lookup(origUSK);
 		synchronized(this) {
@@ -223,12 +227,11 @@ public class USKFetcher implements ClientGetState {
 			lastFetchedEdition = Math.max(lastFetchedEdition, att.number);
 			runningAttempts.remove(att);
 			if(runningAttempts.isEmpty()) {
-				Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+minFailures));
+				if(logMINOR) Logger.minor(this, "latest: "+curLatest+", last fetched: "+lastFetchedEdition+", curLatest+MIN_FAILURES: "+(curLatest+minFailures));
 				if(started) {
 					finished = true;
 				}
-			} else 
-				Logger.minor(this, "Remaining: "+runningAttempts.size());
+			} else if(logMINOR) Logger.minor(this, "Remaining: "+runningAttempts.size());
 		}
 		if(finished) {
 			finishSuccess();
@@ -292,6 +295,7 @@ public class USKFetcher implements ClientGetState {
 	}
 
 	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		LinkedList l = null;
 		long lastEd = uskManager.lookup(origUSK);
 		synchronized(this) {
@@ -316,14 +320,14 @@ public class USKFetcher implements ClientGetState {
 				}
 			}
 			curLatest = Math.max(lastEd, curLatest);
-			Logger.minor(this, "Latest: "+curLatest);
+			if(logMINOR) Logger.minor(this, "Latest: "+curLatest);
 			long addTo = curLatest + minFailures;
 			long addFrom = Math.max(lastAddedEdition + 1, curLatest + 1);
-			Logger.minor(this, "Adding from "+addFrom+" to "+addTo+" for "+origUSK);
+			if(logMINOR) Logger.minor(this, "Adding from "+addFrom+" to "+addTo+" for "+origUSK);
 			if(addTo >= addFrom) {
 				l = new LinkedList();
 				for(long i=addFrom;i<=addTo;i++) {
-					Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
+					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
 					l.add(add(i));
 				}
 			}
@@ -388,18 +392,18 @@ public class USKFetcher implements ClientGetState {
 	 */
 	private synchronized USKAttempt add(long i) {
 		if(cancelled) return null;
-		Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
+		if(logMINOR) Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
 		if(!runningAttempts.isEmpty()) {
 			USKAttempt last = (USKAttempt) runningAttempts.lastElement();
 			if(last.number >= i) {
-				Logger.minor(this, "Returning because last.number="+i+" for "+origUSK.getURI());
+				if(logMINOR) Logger.minor(this, "Returning because last.number="+i+" for "+origUSK.getURI());
 				return null;
 			}
 		}
 		USKAttempt a = new USKAttempt(i);
 		runningAttempts.add(a);
 		lastAddedEdition = i;
-		Logger.minor(this, "Added "+a+" for "+origUSK);
+		if(logMINOR) Logger.minor(this, "Added "+a+" for "+origUSK);
 		return a;
 	}
 

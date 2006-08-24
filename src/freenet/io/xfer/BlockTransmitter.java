@@ -87,7 +87,8 @@ public class BlockTransmitter {
 									if(_unsent.size() != 0) break;
 									// No unsent packets
 									if(getNumSent() == _prb.getNumPackets()) {
-										Logger.minor(this, "Sent all blocks, none unsent");
+										if(Logger.shouldLog(Logger.MINOR, this))
+											Logger.minor(this, "Sent all blocks, none unsent");
 										if(timeAllSent <= 0)
 											timeAllSent = System.currentTimeMillis();
 									}
@@ -198,7 +199,8 @@ public class BlockTransmitter {
 				try {
 					((PeerNode)_destination).sendAsync(DMT.createSendAborted(_uid, reason, description), null, 0, _ctr);
                 } catch (NotConnectedException e) {
-                    Logger.minor(this, "Receive aborted and receiver is not connected");
+                    if(Logger.shouldLog(Logger.MINOR, this))
+                    	Logger.minor(this, "Receive aborted and receiver is not connected");
                 }
 			} });
 			}
@@ -213,17 +215,18 @@ public class BlockTransmitter {
 				return false;
 			}
 			Message msg;
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			try {
 				MessageFilter mfMissingPacketNotification = MessageFilter.create().setType(DMT.missingPacketNotification).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 				MessageFilter mfAllReceived = MessageFilter.create().setType(DMT.allReceived).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
 				MessageFilter mfSendAborted = MessageFilter.create().setType(DMT.sendAborted).setField(DMT.UID, _uid).setTimeout(SEND_TIMEOUT).setSource(_destination);
                 msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)), _ctr);
-                Logger.minor(this, "Got "+msg);
+                if(logMINOR) Logger.minor(this, "Got "+msg);
             } catch (DisconnectedException e) {
             	// Ignore, see below
             	msg = null;
             }
-            Logger.minor(this, "Got "+msg);
+            if(logMINOR) Logger.minor(this, "Got "+msg);
             if(!_destination.isConnected()) {
                 Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" because node disconnected while waiting");
                 synchronized(_senderThread) {
@@ -244,7 +247,7 @@ public class BlockTransmitter {
 					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+SEND_TIMEOUT+"ms.");
 					return false;
 				} else {
-					Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+"/"+_prb.getNumPackets());
+					if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+"/"+_prb.getNumPackets());
 					continue;
 				}
 			} else if (msg.getSpec().equals(DMT.missingPacketNotification)) {

@@ -126,7 +126,8 @@ public class IPUtil {
 		} catch (NumberFormatException e) {
 			// dns address
 			if (n < 2) {
-				Logger.minor(IPUtil.class, a+": Not a DNS address, too short!");
+				if(Logger.shouldLog(Logger.MINOR, IPUtil.class))
+					Logger.minor(IPUtil.class, a+": Not a DNS address, too short!");
 				return false;
 			}
 

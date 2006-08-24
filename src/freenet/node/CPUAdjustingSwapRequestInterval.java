@@ -59,7 +59,8 @@ public final class CPUAdjustingSwapRequestInterval implements SwapRequestInterva
                     }
                     if(currentValue < min) currentValue = min;
                     if(currentValue > max) currentValue = max;
-                    Logger.minor(this, "CPU usage: "+cpuUsage+" target "+targetCPUUsage+" current value: "+currentValue);
+                    if(Logger.shouldLog(Logger.MINOR, this))
+                    	Logger.minor(this, "CPU usage: "+cpuUsage+" target "+targetCPUUsage+" current value: "+currentValue);
                 }
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t+" in "+this, t);

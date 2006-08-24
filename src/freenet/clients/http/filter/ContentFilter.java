@@ -187,7 +187,8 @@ public class ContentFilter {
 			if(handler.defaultCharset != null) {
 				try {
 					if((charset = handler.charsetExtractor.getCharset(data, handler.defaultCharset)) != null) {
-						Logger.minor(ContentFilter.class, "Returning charset: "+charset);
+				        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+				        	Logger.minor(ContentFilter.class, "Returning charset: "+charset);
 						return charset;
 					}
 				} catch (DataFilterException e) {
@@ -217,7 +218,8 @@ public class ContentFilter {
 					return charset;
 			} catch (UnsupportedEncodingException e) {
 				// Doesn't seem to be supported by prior to 1.6.
-				Logger.minor(ContentFilter.class, "UTF-32 not supported");
+		        if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+		        	Logger.minor(ContentFilter.class, "UTF-32 not supported");
 			} catch (DataFilterException e) {
 				// Ignore
 			}

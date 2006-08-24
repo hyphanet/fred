@@ -538,8 +538,8 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 			return;
 		}
 
-
-		Logger.minor(this, "Spider: indexes regenerated.");
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Spider: indexes regenerated.");
 	}
 
 	/**

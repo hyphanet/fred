@@ -6,6 +6,7 @@ package freenet.support;
  */
 public class TokenBucket {
 
+	private static boolean logMINOR;
 	protected long current;
 	protected long max;
 	protected long timeLastTick;
@@ -24,6 +25,7 @@ public class TokenBucket {
 		long now = System.currentTimeMillis();
 		this.timeLastTick = now * (1000 * 1000);
 		nextWake = now;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	/**
@@ -65,7 +67,8 @@ public class TokenBucket {
 	}
 	
 	public synchronized void blockingGrab(long tokens) {
-		Logger.minor(this, "Blocking grab: "+tokens);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Blocking grab: "+tokens);
 		if(tokens < max)
 			innerBlockingGrab(tokens);
 		else {
@@ -80,13 +83,13 @@ public class TokenBucket {
 	 * @param tokens The number of tokens to grab.
 	 */
 	public synchronized void innerBlockingGrab(long tokens) {
-		Logger.minor(this, "Inner blocking grab: "+tokens);
+		if(logMINOR) Logger.minor(this, "Inner blocking grab: "+tokens);
 		addTokens();
 		if(current > max) current = max;
-		Logger.minor(this, "current="+current);
+		if(logMINOR) Logger.minor(this, "current="+current);
 		if(current > tokens) {
 			current -= tokens;
-			Logger.minor(this, "Got tokens instantly, current="+current);
+			if(logMINOR) Logger.minor(this, "Got tokens instantly, current="+current);
 			return;
 		}
 		long extra = 0;
@@ -95,7 +98,7 @@ public class TokenBucket {
 			current = 0;
 		} else if(current < 0) {
 			extra = -current;
-			Logger.minor(this, "Neutralizing debt: "+extra);
+			if(logMINOR) Logger.minor(this, "Neutralizing debt: "+extra);
 			current = 0;
 		}
 		long minDelayNS = nanosPerTick * (tokens + extra);
@@ -105,18 +108,18 @@ public class TokenBucket {
 		// Schedule between the blockingGrab's.
 		
 		if(nextWake < now) {
-			Logger.minor(this, "Resetting nextWake to now");
+			if(logMINOR) Logger.minor(this, "Resetting nextWake to now");
 			nextWake = now;
 		}
-		Logger.minor(this, "nextWake: "+(nextWake - now)+"ms");
+		if(logMINOR) Logger.minor(this, "nextWake: "+(nextWake - now)+"ms");
 		long wakeAt = nextWake + minDelayMS;
 		nextWake = wakeAt;
-		Logger.minor(this, "nextWake now: "+(nextWake - now)+"ms");
+		if(logMINOR) Logger.minor(this, "nextWake now: "+(nextWake - now)+"ms");
 		while(true) {
 			now = System.currentTimeMillis();
 			int delay = (int) Math.min(Integer.MAX_VALUE, wakeAt - now);
 			if(delay <= 0) break;
-			Logger.minor(this, "Waiting "+delay+"ms");
+			if(logMINOR) Logger.minor(this, "Waiting "+delay+"ms");
 			try {
 				wait(delay);
 			} catch (InterruptedException e) {
@@ -127,7 +130,7 @@ public class TokenBucket {
 		// will therefore go negative. We have paid off the initial debt, and we have
 		// paid off the tokens, any more debt is a problem for future blockingGrab's!
 		current -= tokens;
-		Logger.minor(this, "Blocking grab removed tokens: current="+current);
+		if(logMINOR) Logger.minor(this, "Blocking grab removed tokens: current="+current);
 	}
 
 	public synchronized void recycle(long tokens) {

@@ -26,6 +26,7 @@ import freenet.support.io.Bucket;
  */
 public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
+	private static boolean logMINOR;
 	final Bucket sourceData;
 	final short compressionCodec;
 	final FreenetURI uri; // uses essentially no RAM in the common case of a CHK because we use FreenetURI.EMPTY_CHK_URI
@@ -67,6 +68,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 			parent.addMustSucceedBlocks(1);
 			parent.notifyClients();
 		}
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	protected ClientKeyBlock innerEncode() throws InserterException {
@@ -157,13 +159,13 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND) {
 			consecutiveRNFs++;
 			if(consecutiveRNFs == ctx.consecutiveRNFsCountAsSuccess) {
-				Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
+				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
 				onSuccess();
 				return;
 			}
 		} else
 			consecutiveRNFs = 0;
-		Logger.minor(this, "Failed: "+e);
+		if(logMINOR) Logger.minor(this, "Failed: "+e);
 		retries++;
 		if((retries > ctx.maxInsertRetries) && (ctx.maxInsertRetries != -1)) {
 			if(errors.isOneCodeOnly())
@@ -244,7 +246,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 	}
 
 	public void onSuccess() {
-		Logger.minor(this, "Succeeded ("+this+"): "+token);
+		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		synchronized(this) {
 			finished = true;
 		}
@@ -270,7 +272,7 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 
 	public void send(NodeClientCore core) {
 		try {
-			Logger.minor(this, "Starting request: "+this);
+			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			ClientKeyBlock b = getBlock();
 			if(b != null)
 				core.realPut(b, ctx.cacheLocalRequests);
@@ -278,10 +280,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 				fail(new InserterException(InserterException.CANCELLED));
 		} catch (LowLevelPutException e) {
 			onFailure(e);
-			Logger.minor(this, "Request failed: "+this+" for "+e);
+			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return;
 		}
-		Logger.minor(this, "Request succeeded: "+this);
+		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
 		onSuccess();
 	}
 

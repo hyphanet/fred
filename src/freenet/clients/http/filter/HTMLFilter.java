@@ -33,11 +33,14 @@ import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
+	private static boolean logMINOR;
+	
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
 
 	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap otherParams, FilterCallback cb) throws DataFilterException, IOException {
-		Logger.minor(this, "readFilter(): charset="+charset);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
 		InputStream strm = bucket.getInputStream();
 		Bucket temp = bf.makeBucket(bucket.size());
 		OutputStream os = temp.getOutputStream();
@@ -68,7 +71,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	public String getCharset(Bucket bucket, String parseCharset) throws DataFilterException, IOException {
-		Logger.minor(this, "getCharset(): default="+parseCharset);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);		
+		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
 		InputStream strm = bucket.getInputStream();
 		Writer w = new NullWriter();
 		Reader r;
@@ -78,9 +82,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			pc.run(null);
 		} catch (Throwable t) {
 			// Ignore ALL errors
-			Logger.minor(this, "Caught "+t+" trying to detect MIME type with "+parseCharset);
+			if(logMINOR) Logger.minor(this, "Caught "+t+" trying to detect MIME type with "+parseCharset);
 		}
-		Logger.minor(this, "Returning charset "+pc.detectedCharset);
+		if(logMINOR) Logger.minor(this, "Returning charset "+pc.detectedCharset);
 		return pc.detectedCharset;
 	}
 
@@ -347,7 +351,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	void saveText(StringBuffer s, String tagName, Writer w, HTMLParseContext pc)
 		throws IOException {
 
-		Logger.minor(this, "Saving text: "+s.toString());
+		if(logMINOR) Logger.minor(this, "Saving text: "+s.toString());
 		if (pc.killText) {
 			return;
 		}
@@ -386,8 +390,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	void processTag(Vector splitTag, Writer w, HTMLParseContext pc)
 		throws IOException, DataFilterException {
 		// First, check that it is a recognized tag
-		for(int i=0;i<splitTag.size();i++)
-			Logger.minor(this, "Tag["+i+"]="+splitTag.get(i));
+		if(logMINOR) {
+			for(int i=0;i<splitTag.size();i++)
+				Logger.minor(this, "Tag["+i+"]="+splitTag.get(i));
+		}
 		ParsedTag t = new ParsedTag(splitTag);
 		if (!pc.killTag) {
 			t = t.sanitize(pc);
@@ -423,7 +429,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			if(s.charAt(s.length()-1) == '-')
 				s.setLength(s.length()-1);
 		}
-		Logger.minor(this, "Saving comment: "+s.toString());
+		if(logMINOR) Logger.minor(this, "Saving comment: "+s.toString());
 		if (pc.expectingBadComment)
 			return; // ignore it
 
@@ -506,13 +512,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					unparsedAttrs[x - 1] = (String) v.elementAt(x);
 			} else
 				unparsedAttrs = new String[0];
-			Logger.minor(this, "Element = "+element);
+			if(logMINOR) Logger.minor(this, "Element = "+element);
 		}
 
 		public ParsedTag sanitize(HTMLParseContext pc) throws DataFilterException {
 			TagVerifier tv =
 				(TagVerifier) allowedTagsVerifiers.get(element.toLowerCase());
-			Logger.minor(this, "Got verifier: "+tv+" for "+element);
+			if(logMINOR) Logger.minor(this, "Got verifier: "+tv+" for "+element);
 			if (tv == null) {
 				if (deleteWierdStuff) {
 					return null;
@@ -1264,7 +1270,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			Hashtable h,
 			Hashtable hn,
 			HTMLParseContext pc) throws DataFilterException {
-			Logger.minor(this, "Finishing script/style");
+			if(logMINOR) Logger.minor(this, "Finishing script/style");
 			// Finishing
 			setStyle(false, pc);
 			pc.styleScriptRecurseCount--;
@@ -1289,7 +1295,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		Hashtable start(Hashtable h, Hashtable hn, HTMLParseContext pc) throws DataFilterException {
-			Logger.minor(this, "Starting script/style");
+			if(logMINOR) Logger.minor(this, "Starting script/style");
 			pc.styleScriptRecurseCount++;
 			if (pc.styleScriptRecurseCount > 1) {
 				if (deleteErrors)
@@ -1522,12 +1528,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				type = typesplit[0];
 				if ((typesplit[1] != null) && (typesplit[1].length() > 0))
 					charset = typesplit[1];
-				Logger.debug(
-					this,
-					"Processing link tag, type="
-						+ type
-						+ ", charset="
-						+ charset);
+				if(logMINOR)
+					Logger.debug(
+							this,
+							"Processing link tag, type="
+							+ type
+							+ ", charset="
+							+ charset);
 			}
 			String c = getHashString(h, "charset");
 			if (c != null)
@@ -1662,7 +1669,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String name = getHashString(h, "name");
 			String content = getHashString(h, "content");
 			String scheme = getHashString(h, "scheme");
-			Logger.minor(this, "meta: name="+name+", content="+content+", http-equiv="+http_equiv+", scheme="+scheme);
+			if(logMINOR) Logger.minor(this, "meta: name="+name+", content="+content+", http-equiv="+http_equiv+", scheme="+scheme);
 			if (content != null) {
 				if ((name != null) && (http_equiv == null)) {
 					if (name.equalsIgnoreCase("Author")) {
@@ -1698,10 +1705,12 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						}
 						// FIXME: add some more headers - Dublin Core?
 					} else if (http_equiv.equalsIgnoreCase("Content-Type")) {
-						Logger.minor(this, "Found http-equiv content-type="+content);
+						if(logMINOR) Logger.minor(this, "Found http-equiv content-type="+content);
 						String[] typesplit = splitType(content);
-						for(int i=0;i<typesplit.length;i++)
-							Logger.minor(this, "["+i+"] = "+typesplit[i]);
+						if(logMINOR) {
+							for(int i=0;i<typesplit.length;i++)
+								Logger.minor(this, "["+i+"] = "+typesplit[i]);
+						}
 						if (typesplit[0].equalsIgnoreCase("text/html")
 							&& ((typesplit[1] == null)
 								|| typesplit[1].equalsIgnoreCase(pc.charset))) {
@@ -1844,9 +1853,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		Reader r = new StringReader(style);
 		Writer w = new StringWriter();
 		style = style.trim();
-		Logger.minor(
-				HTMLFilter.class,
-				"Sanitizing style: " + style);
+		if(logMINOR) Logger.minor(HTMLFilter.class, "Sanitizing style: " + style);
 		CSSParser pc = new CSSParser(r, w, false, cb);
 		try {
 			pc.parse();
@@ -1869,7 +1876,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if ((s == null) || (s.length() == 0))
 			return null;
 		//		Core.logger.log(SaferFilter.class, "Style now: " + s, Logger.DEBUG);
-		Logger.debug(HTMLFilter.class, "Style finally: " + s);
+		if(logMINOR) Logger.debug(HTMLFilter.class, "Style finally: " + s);
 		return s;
 	}
 
@@ -1961,7 +1968,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		String overrideType,
 		String overrideCharset,
 		FilterCallback cb) {
-		Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" )");
+		if(logMINOR)
+			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" )");
 		if((overrideCharset != null) && (overrideCharset.length() > 0))
 			overrideType += ";charset="+overrideCharset;
 		return cb.processURI(suri, overrideType);

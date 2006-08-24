@@ -87,10 +87,11 @@ public class SortedVectorByNumber {
 	}
 
 	private synchronized void push(IntNumberedItem grabber, int x) {
-		Logger.minor(this, "Insertion point: "+x);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Insertion point: "+x);
 		// Move the data
 		if(length == data.length) {
-			Logger.minor(this, "Expanding from "+length+" to "+length*2);
+			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+length*2);
 			IntNumberedItem[] newData = new IntNumberedItem[length*2];
 			System.arraycopy(data, 0, newData, 0, data.length);
 		}

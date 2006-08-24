@@ -86,7 +86,8 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 			Bucket from = result.asBucket();
 			Bucket to = returnBucket;
 			try {
-				Logger.minor(this, "Copying - returnBucket not respected by client.async");
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Copying - returnBucket not respected by client.async");
 				BucketTools.copy(from, to);
 				from.free();
 			} catch (IOException e) {
@@ -95,7 +96,7 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 			}
 			result = new FetchResult(result, to);
 		} else {
-			if(returnBucket != null)
+			if(returnBucket != null && Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
 		client.onSuccess(result, this);
@@ -124,14 +125,15 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 	}
 	
 	public void cancel() {
-		Logger.minor(this, "Cancelling "+this);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Cancelling "+this);
 		super.cancel();
 		ClientGetState s;
 		synchronized(this) {
 			s = currentState;
 		}
 		if(s != null) {
-			Logger.minor(this, "Cancelling "+currentState);
+			if(logMINOR) Logger.minor(this, "Cancelling "+currentState);
 			s.cancel();
 		}
 	}
@@ -149,7 +151,8 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 	}
 
 	public void onBlockSetFinished(ClientGetState state) {
-		Logger.minor(this, "Set finished", new Exception("debug"));
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Set finished", new Exception("debug"));
 		blockSetFinalized();
 	}
 

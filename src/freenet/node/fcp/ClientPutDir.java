@@ -27,12 +27,14 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 	private final String defaultName;
 	private final long totalSize;
 	private final int numberOfFiles;
+	private static boolean logMINOR;
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
 			HashMap manifestElements) throws IdentifierCollisionException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manifestElements = manifestElements;
 		this.defaultName = message.defaultName;
 		SimpleManifestPutter p;
@@ -58,11 +60,12 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			if(handler != null && (!handler.isGlobalSubscribed()))
 				handler.outputHandler.queue(msg);
 		}
-		Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
+		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
 	public ClientPutDir(SimpleFieldSet fs, FCPClient client) throws PersistenceParseException, IOException {
 		super(fs, client);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SimpleFieldSet files = fs.subset("Files");
 		defaultName = fs.get("DefaultName");
 		// Flattened for disk, sort out afterwards
@@ -80,8 +83,8 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			String contentTypeOverride = subset.get("Metadata.ContentType");
 			String uploadFrom = subset.get("UploadFrom");
 			Bucket data = null;
-			Logger.minor(this, "Parsing "+i);
-			Logger.minor(this, "UploadFrom="+uploadFrom);
+			if(logMINOR) Logger.minor(this, "Parsing "+i);
+			if(logMINOR) Logger.minor(this, "UploadFrom="+uploadFrom);
 			ManifestElement me;
 			if((uploadFrom == null) || uploadFrom.equalsIgnoreCase("direct")) {
 				long sz = Long.parseLong(subset.get("DataLength"));
@@ -146,7 +149,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			if(putter != null)
 				putter.start();
 			started = true;
-			Logger.minor(this, "Started "+putter);
+			if(logMINOR) Logger.minor(this, "Started "+putter);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);

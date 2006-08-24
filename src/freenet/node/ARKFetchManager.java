@@ -57,13 +57,14 @@ public class ARKFetchManager {
 	}
 	
 	public void maybeStartNextReadyARKFetcher() {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(readyARKFetchers) {
 			if(node.getNumARKFetchers() >= 30) {
-				Logger.minor(this, "Not starting ARKFetcher in maybeStartNextReadyARKFetcher() because there are already 30 or more ARK Fetchers running");
+				if(logMINOR) Logger.minor(this, "Not starting ARKFetcher in maybeStartNextReadyARKFetcher() because there are already 30 or more ARK Fetchers running");
 				return;
 			}
 			if(!hasReadyARKFetchers()) {
-				Logger.minor(this, "maybeStartNextReadyARKFetcher() called with no ARKFetchers ready");
+				if(logMINOR) Logger.minor(this, "maybeStartNextReadyARKFetcher() called with no ARKFetchers ready");
 				return;
 			}
 			while( true ) {

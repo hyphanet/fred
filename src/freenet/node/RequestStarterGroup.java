@@ -83,7 +83,8 @@ public class RequestStarterGroup {
 
 		public synchronized void successfulCompletion(long rtt) {
 			roundTripTime.report(Math.max(rtt, 10));
-			Logger.minor(this, "Reported successful completion: "+rtt+" on "+this+" avg "+roundTripTime.currentValue());
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Reported successful completion: "+rtt+" on "+this+" avg "+roundTripTime.currentValue());
 		}
 		
 		public String toString() {

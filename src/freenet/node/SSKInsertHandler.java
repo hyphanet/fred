@@ -21,6 +21,8 @@ import freenet.support.ShortBuffer;
  */
 public class SSKInsertHandler implements Runnable, ByteCounter {
 
+	private static boolean logMINOR;
+	
     static final int PUBKEY_TIMEOUT = 10000;
     
     final Message req;
@@ -59,6 +61,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         data = ((ShortBuffer) req.getObject(DMT.DATA)).getData();
         headers = ((ShortBuffer) req.getObject(DMT.BLOCK_HEADERS)).getData();
         canCommit = false;
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
     
     public String toString() {
@@ -71,7 +74,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
-            Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
+            if(logMINOR) Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
             node.unlockUID(uid);
         }
     }
@@ -83,13 +86,13 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         try {
 			source.send(accepted, this);
 		} catch (NotConnectedException e1) {
-			Logger.minor(this, "Lost connection to source");
+			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
 		}
 
 		if(pubKey == null) {
 			// Wait for pub key
-			Logger.minor(this, "Waiting for pubkey on "+uid);
+			if(logMINOR) Logger.minor(this, "Waiting for pubkey on "+uid);
 			
 			MessageFilter mfPK = MessageFilter.create().setType(DMT.FNPSSKPubKey).setField(DMT.UID, uid).setSource(source).setTimeout(PUBKEY_TIMEOUT);
 			
@@ -102,12 +105,12 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 				byte[] pubkeyAsBytes = ((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData();
 				try {
 					pubKey = new DSAPublicKey(pubkeyAsBytes);
-					Logger.minor(this, "Got pubkey on "+uid+" : "+pubKey);
+					if(logMINOR) Logger.minor(this, "Got pubkey on "+uid+" : "+pubKey);
 					Message confirm = DMT.createFNPSSKPubKeyAccepted(uid);
 					try {
 						source.sendAsync(confirm, null, 0, this);
 					} catch (NotConnectedException e) {
-						Logger.minor(this, "Lost connection to source on "+uid);
+						if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 						return;
 					}
 				} catch (IOException e) {
@@ -121,7 +124,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 					return;
 				}
 			} catch (DisconnectedException e) {
-				Logger.minor(this, "Lost connection to source on "+uid);
+				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 				return;
 			}
 		}
@@ -147,12 +150,12 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 			try {
 				source.send(msg, this);
 			} catch (NotConnectedException e) {
-				Logger.minor(this, "Lost connection to source on "+uid);
+				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 			}
 			block = storedBlock;
 		}
 		
-		Logger.minor(this, "Got block for "+key+" for "+uid);
+		if(logMINOR) Logger.minor(this, "Got block for "+key+" for "+uid);
 		
         if(htl == 0) {
         	Message msg = DMT.createFNPInsertReply(uid);
@@ -188,7 +191,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             	try {
 					source.send(m, this);
 				} catch (NotConnectedException e) {
-					Logger.minor(this, "Lost connection to source");
+					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
 				}
             }
@@ -207,7 +210,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             	try {
             		source.send(msg, this);
             	} catch (NotConnectedException e) {
-            		Logger.minor(this, "Lost connection to source");
+            		if(logMINOR) Logger.minor(this, "Lost connection to source");
             		return;
             	}
             }
@@ -228,7 +231,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
                 try {
 					source.send(msg, this);
 				} catch (NotConnectedException e) {
-					Logger.minor(this, "Lost connection to source");
+					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
 				}
                 // Might as well store it anyway.
@@ -244,7 +247,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
                 try {
 					source.send(msg, null);
 				} catch (NotConnectedException e) {
-					Logger.minor(this, "Lost connection to source");
+					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
 				}
                 canCommit = true;
@@ -257,7 +260,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             	try {
 					source.send(msg, null);
 				} catch (NotConnectedException e) {
-					Logger.minor(this, "Lost connection to source");
+					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
 				}
                 canCommit = true;
@@ -283,7 +286,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
      * verifies, then commit it.
      */
     private void finish(int code) {
-    	Logger.minor(this, "Finishing");
+    	if(logMINOR) Logger.minor(this, "Finishing");
     	
     	if(canCommit) {
     		try {
@@ -301,7 +304,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
         		totalSent += sender.getTotalSentBytes();
         		totalReceived += sender.getTotalReceivedBytes();
         	}
-        	Logger.minor(this, "Remote SSK insert cost "+totalSent+"/"+totalReceived+" bytes ("+code+")");
+        	if(logMINOR) Logger.minor(this, "Remote SSK insert cost "+totalSent+"/"+totalReceived+" bytes ("+code+")");
         	node.remoteSskInsertBytesSentAverage.report(totalSent);
         	node.remoteSskInsertBytesReceivedAverage.report(totalReceived);
         }

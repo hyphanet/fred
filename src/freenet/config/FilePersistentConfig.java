@@ -123,7 +123,8 @@ public class FilePersistentConfig extends Config {
 	
 	public void innerStore() throws IOException {
 		SimpleFieldSet fs = exportFieldSet();
-		Logger.minor(this, "fs = "+fs);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "fs = "+fs);
 		FileOutputStream fos = new FileOutputStream(tempFilename);
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos, "UTF-8"));
 		synchronized(this) {

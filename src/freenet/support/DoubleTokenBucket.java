@@ -19,6 +19,7 @@ public class DoubleTokenBucket extends TokenBucket {
 	
 	private long maxForced;
 	private long curForced;
+	private static boolean logMINOR;
 	
 	/**
 	 * Create a DoubleTokenBucket.
@@ -28,7 +29,9 @@ public class DoubleTokenBucket extends TokenBucket {
 	 */
 	public DoubleTokenBucket(long max, long nanosPerTick, long initialValue, long maxForced) {
 		super(max, nanosPerTick, initialValue);
-		Logger.minor(this, "Max: "+max+" nanosPerTick: "+nanosPerTick+" initialValue: "+initialValue+" maxForced: "+maxForced);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
+			Logger.minor(this, "Max: "+max+" nanosPerTick: "+nanosPerTick+" initialValue: "+initialValue+" maxForced: "+maxForced);
 		this.maxForced = maxForced;
 		this.curForced = 0;
 	}
@@ -41,7 +44,7 @@ public class DoubleTokenBucket extends TokenBucket {
 		addTokens();
 		long thisMax = maxForced - curForced;
 		if(tokens > thisMax) {
-			Logger.minor(this, "Limiting force-grab to "+thisMax+" tokens was "+tokens);
+			if(logMINOR) Logger.minor(this, "Limiting force-grab to "+thisMax+" tokens was "+tokens);
 			tokens = thisMax;
 		}
 		curForced += tokens;
@@ -49,7 +52,7 @@ public class DoubleTokenBucket extends TokenBucket {
 		if(curForced > maxForced) {
 			curForced = maxForced;
 		}
-		Logger.minor(this, "Force-Grabbed "+tokens+" current="+current+" forced="+curForced);
+		if(logMINOR) Logger.minor(this, "Force-Grabbed "+tokens+" current="+current+" forced="+curForced);
 	}
 	
 	// blockingGrab is unchanged
@@ -72,11 +75,11 @@ public class DoubleTokenBucket extends TokenBucket {
 		curForced -= add;
 		if(curForced < 0) curForced = 0;
 		timeLastTick += add * nanosPerTick;
-		Logger.minor(this, "Added "+add+" tokens current="+current+" forced="+curForced);
+		if(logMINOR) Logger.minor(this, "Added "+add+" tokens current="+current+" forced="+curForced);
 	}
 
 	public synchronized void addTokens() {
-		Logger.minor(this, "current="+current+" forced="+curForced);
+		if(logMINOR) Logger.minor(this, "current="+current+" forced="+curForced);
 		addTokensNoClip();
 		if(curForced > maxForced) curForced = maxForced;
 		if(current > max) current = max;

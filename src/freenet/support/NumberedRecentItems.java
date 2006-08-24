@@ -43,7 +43,8 @@ public class NumberedRecentItems {
     public synchronized boolean add(NumberedItem item) {
         long num = item.getNumber();
         int x = Arrays.binarySearch(items, new Long(num), myComparator);
-        Logger.minor(this, "Search pos: "+x);
+        if(Logger.shouldLog(Logger.MINOR, this))
+        	Logger.minor(this, "Search pos: "+x);
         if(x >= 0) return false; // already present
         count++;
         if(x == -1) {

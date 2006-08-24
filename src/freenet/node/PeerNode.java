@@ -284,6 +284,8 @@ public class PeerNode implements PeerContext {
     /** Queued-to-send N2NTM extra peer data file numbers */
     private Vector queuedToSendN2NTMExtraPeerDataFileNumbers;
     
+    private static boolean logMINOR;
+    
     /**
      * Create a PeerNode from a SimpleFieldSet containing a
      * node reference for one. This must contain the following
@@ -298,6 +300,7 @@ public class PeerNode implements PeerContext {
      * @param node2 The running Node we are part of.
      */
     public PeerNode(SimpleFieldSet fs, Node node2, boolean fromLocal) throws FSParseException, PeerParseException {
+    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
         this.node = node2;
         String identityString = fs.get("identity");
     	if(identityString == null)
@@ -378,13 +381,14 @@ public class PeerNode implements PeerContext {
         outgoingSetupKey = new byte[digestLength];
         for(int i=0;i<outgoingSetupKey.length;i++)
             outgoingSetupKey[i] = (byte) (nodeKeyHash[i] ^ identityHash[i]);
-        Logger.minor(this, "Keys:\nIdentity:  "+HexUtil.bytesToHex(node.myIdentity)+
-                                "\nThisIdent: "+HexUtil.bytesToHex(identity)+
-        		                "\nNode:      "+HexUtil.bytesToHex(nodeKey)+
-                                "\nNode hash: "+HexUtil.bytesToHex(nodeKeyHash)+
-                                "\nThis:      "+HexUtil.bytesToHex(identityHash)+
-                                "\nThis hash: "+HexUtil.bytesToHex(setupKeyHash)+
-                                "\nFor:       "+getDetectedPeer());
+        if(logMINOR)
+        	Logger.minor(this, "Keys:\nIdentity:  "+HexUtil.bytesToHex(node.myIdentity)+
+        			"\nThisIdent: "+HexUtil.bytesToHex(identity)+
+        			"\nNode:      "+HexUtil.bytesToHex(nodeKey)+
+        			"\nNode hash: "+HexUtil.bytesToHex(nodeKeyHash)+
+        			"\nThis:      "+HexUtil.bytesToHex(identityHash)+
+        			"\nThis hash: "+HexUtil.bytesToHex(setupKeyHash)+
+        			"\nFor:       "+getDetectedPeer());
         
         try {
             incomingSetupCipher = new Rijndael(256,256);
@@ -630,11 +634,13 @@ public class PeerNode implements PeerContext {
           if(ignoreHostnames) {
             // Don't do a DNS request on the first cycle through PeerNodes by DNSRequest
             // upon startup (I suspect the following won't do anything, but just in case)
-            Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
+        	if(logMINOR)
+        		Logger.debug(this, "updateHandshakeIPs: calling getAddress(false) on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
             localHandshakeIPs[i].getAddress(false);
           } else {
             // Actually do the DNS request for the member Peer of localHandshakeIPs
-            Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
+        	if(logMINOR)
+        		Logger.debug(this, "updateHandshakeIPs: calling getHandshakeAddress() on Peer '"+localHandshakeIPs[i]+"' for PeerNode '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
             localHandshakeIPs[i].getHandshakeAddress();
           }
         }
@@ -659,7 +665,7 @@ public class PeerNode implements PeerContext {
 				lastAttemptedHandshakeIPUpdateTime = now;
 			}
 	    }
-    	Logger.minor(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
+    	if(logMINOR) Logger.minor(this, "Updating handshake IPs for peer '"+getPeer()+"' named '"+getName()+"' ("+ignoreHostnames+")");
     	Peer[] localHandshakeIPs;
     	Peer[] myNominalPeer;
     	
@@ -674,7 +680,7 @@ public class PeerNode implements PeerContext {
         		synchronized(this) {
     				handshakeIPs = localHandshakeIPs;
     			}
-    			Logger.minor(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
+        		if(logMINOR) Logger.minor(this, "1: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     			return;
     		}
     		localHandshakeIPs = new Peer[] { localDetectedPeer };
@@ -682,7 +688,7 @@ public class PeerNode implements PeerContext {
         	synchronized(this) {
     			handshakeIPs = localHandshakeIPs;
     		}
-    		Logger.minor(this, "2: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
+        	if(logMINOR) Logger.minor(this, "2: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
     		return;
     	}
 
@@ -731,8 +737,10 @@ public class PeerNode implements PeerContext {
         		localDetectedPeer = detectedPeer = detectedDuplicate;
         	}
     	}
-    	Logger.minor(this, "3: detectedPeer = "+localDetectedPeer+" ("+localDetectedPeer.getAddress(false)+")");
-    	Logger.minor(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
+    	if(logMINOR) {
+    		Logger.minor(this, "3: detectedPeer = "+localDetectedPeer+" ("+localDetectedPeer.getAddress(false)+")");
+    		Logger.minor(this, "3: maybeUpdateHandshakeIPs got a result of: "+handshakeIPsToString());
+    	}
     }
     
     /**
@@ -806,7 +814,7 @@ public class PeerNode implements PeerContext {
      * throttle it).
      */
     public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
-        Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
+    	if(logMINOR) Logger.minor(this, "Sending async: "+msg+" : "+cb+" on "+this);
         if(!isConnected()) throw new NotConnectedException();
         MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[] {cb}, alreadyReportedBytes, ctr);
         item.getData(this);
@@ -996,7 +1004,7 @@ public class PeerNode implements PeerContext {
         synchronized(this) {
 	        c = ctx;
 		}
-        if(c != null)
+        if(c != null && logMINOR)
             Logger.minor(this, "Last used: "+(now - c.lastUsedTime()));
         return !((c == null) || (now - c.lastUsedTime() > Node.HANDSHAKE_TIMEOUT));
     }
@@ -1049,7 +1057,7 @@ public class PeerNode implements PeerContext {
 				if(!successfulHandshakeSend) {
 					handshakeIPs = null;
 				}
-				Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+")", new Exception("double-called debug"));
+				if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+")", new Exception("double-called debug"));
 			}
         }
 		setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
@@ -1069,7 +1077,7 @@ public class PeerNode implements PeerContext {
      * sent.
      */
     public void sentHandshake() {
-        Logger.minor(this, "sentHandshake(): "+this);
+    	if(logMINOR) Logger.minor(this, "sentHandshake(): "+this);
         calcNextHandshake(true);
     }
     
@@ -1078,7 +1086,7 @@ public class PeerNode implements PeerContext {
      * sent.
      */
     public void couldNotSendHandshake() {
-        Logger.minor(this, "couldNotSendHandshake(): "+this);
+    	if(logMINOR) Logger.minor(this, "couldNotSendHandshake(): "+this);
         calcNextHandshake(false);
     }
 
@@ -1144,7 +1152,8 @@ public class PeerNode implements PeerContext {
      * Update the Location to a new value.
      */
     public void updateLocation(double newLoc) {
-		synchronized(this) {
+    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    	synchronized(this) {
 			currentLocation.setValue(newLoc);
 		}
         node.peers.writePeers();
@@ -1240,7 +1249,7 @@ public class PeerNode implements PeerContext {
 					Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
 					throw new NotConnectedException();
 				} else {
-					Logger.minor(this, "Received packet while disconnected on "+this+" - recently disconnected() ?");
+					if(logMINOR) Logger.minor(this, "Received packet while disconnected on "+this+" - recently disconnected() ?");
 				}
 			}
 		}
@@ -1264,7 +1273,7 @@ public class PeerNode implements PeerContext {
 
     public synchronized void setDHContext(DiffieHellmanContext ctx2) {
         this.ctx = ctx2;
-        Logger.minor(this, "setDHContext("+ctx2+") on "+this);
+        if(logMINOR) Logger.minor(this, "setDHContext("+ctx2+") on "+this);
     }
 
     /**
@@ -1280,6 +1289,7 @@ public class PeerNode implements PeerContext {
      * @return True unless we rejected the handshake, or it failed to parse.
      */
     public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
+    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	long now = System.currentTimeMillis();
     	arkFetcher.stop();
     	synchronized(this) {
@@ -1330,7 +1340,7 @@ public class PeerNode implements PeerContext {
 		boolean bootIDChanged = false;
     	synchronized(this) {
 			bootIDChanged = (thisBootID != this.bootID);
-			if(bootIDChanged)
+			if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
 			this.bootID = thisBootID;
 			connectedTime = now;
@@ -1356,7 +1366,7 @@ public class PeerNode implements PeerContext {
 				unverifiedTracker = newTracker;
 				ctx = null;
 			}
-			Logger.minor(this, "sentHandshake() being called for unverifiedTracker: "+getPeer());
+			if(logMINOR) Logger.minor(this, "sentHandshake() being called for unverifiedTracker: "+getPeer());
 			sentHandshake();
 		} else {
 			KeyTracker prev;
@@ -1435,7 +1445,7 @@ public class PeerNode implements PeerContext {
       long now = System.currentTimeMillis();
     	synchronized(this) {
         if(tracker == unverifiedTracker) {
-            Logger.minor(this, "Promoting unverified tracker "+tracker+" for "+getPeer());
+            if(logMINOR) Logger.minor(this, "Promoting unverified tracker "+tracker+" for "+getPeer());
             if(previousTracker != null) {
                 previousTracker.completelyDeprecated(tracker);
             }
@@ -1504,7 +1514,7 @@ public class PeerNode implements PeerContext {
                 }
             }
         }
-        Logger.minor(this, "Reference: "+new String(data, offset, length)+"("+length+")");
+        if(logMINOR) Logger.minor(this, "Reference: "+new String(data, offset, length)+"("+length+")");
         // Now decode it
         ByteArrayInputStream bais = new ByteArrayInputStream(data, offset+1, length-1);
         InputStreamReader isr;
@@ -1528,7 +1538,7 @@ public class PeerNode implements PeerContext {
      * Process a new nodereference, as a SimpleFieldSet.
      */
     private void processNewNoderef(SimpleFieldSet fs, boolean forARK) throws FSParseException {
-        Logger.minor(this, "Parsing: \n"+fs);
+        if(logMINOR) Logger.minor(this, "Parsing: \n"+fs);
         boolean changedAnything = innerProcessNewNoderef(fs, forARK);
         if(changedAnything) node.peers.writePeers();
     }
@@ -1614,7 +1624,7 @@ public class PeerNode implements PeerContext {
         // In future, ARKs may support automatic transition when the ARK key is changed.
         // So parse it anyway. If it fails, no big loss; it won't even log an error.
         
-        Logger.minor(this, "Parsed successfully; changedAnything = "+changedAnything);
+        if(logMINOR) Logger.minor(this, "Parsed successfully; changedAnything = "+changedAnything);
         
         if(parseARK(fs, false))
         	changedAnything = true;
@@ -1630,7 +1640,7 @@ public class PeerNode implements PeerContext {
      * caused by a sequence inconsistency. 
      */
     public void sendAnyUrgentNotifications() throws PacketSequenceException {
-        Logger.minor(this, "sendAnyUrgentNotifications");
+        if(logMINOR) Logger.minor(this, "sendAnyUrgentNotifications");
         long now = System.currentTimeMillis();
         KeyTracker cur, prev;
         synchronized(this) {
@@ -1857,7 +1867,7 @@ public class PeerNode implements PeerContext {
 		long now = System.currentTimeMillis();
 		synchronized(routingBackoffSync) {
 			if(now < routingBackedOffUntil) {
-				Logger.minor(this, "Routing is backed off");
+				if(logMINOR) Logger.minor(this, "Routing is backed off");
 				return true;
 			} else return false;
 		}
@@ -1919,7 +1929,7 @@ public class PeerNode implements PeerContext {
 	 */
 	public void localRejectedOverload(String reason) {
 		pRejected.report(1.0);
-		Logger.minor(this, "Local rejected overload ("+reason+") on "+this+" : pRejected="+pRejected.currentValue());
+		if(logMINOR) Logger.minor(this, "Local rejected overload ("+reason+") on "+this+" : pRejected="+pRejected.currentValue());
 		long now = System.currentTimeMillis();
 		Peer peer = getPeer();
 		reportBackoffStatus(now);
@@ -1938,9 +1948,9 @@ public class PeerNode implements PeerContext {
 					reasonWrapper = " because of '"+reason+"'";
 				}
 
-				Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+peer);
+				if(logMINOR) Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+peer);
 			} else {
-				Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
+				if(logMINOR) Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
 			}
 		}
 	}
@@ -1951,7 +1961,7 @@ public class PeerNode implements PeerContext {
 	 */
 	public void successNotOverload() {
 		pRejected.report(0.0);
-		Logger.minor(this, "Success not overload on "+this+" : pRejected="+pRejected.currentValue());
+		if(logMINOR) Logger.minor(this, "Success not overload on "+this+" : pRejected="+pRejected.currentValue());
 		Peer peer = getPeer();
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
@@ -1959,10 +1969,10 @@ public class PeerNode implements PeerContext {
 			// Don't un-backoff if still backed off
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
-				Logger.minor(this, "Resetting routing backoff on "+peer);
+				if(logMINOR) Logger.minor(this, "Resetting routing backoff on "+peer);
 				setPeerNodeStatus(now);
 			} else {
-				Logger.minor(this, "Ignoring successNotOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
+				if(logMINOR) Logger.minor(this, "Ignoring successNotOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
 			}
 		}
 	}
@@ -1992,13 +2002,13 @@ public class PeerNode implements PeerContext {
 			lPingNo = new Long(pingNo);
 			Long lnow = new Long(now);
 			pingsSentTimes.push(lPingNo, lnow);
-			Logger.minor(this, "Pushed "+lPingNo+" "+lnow);
+			if(logMINOR) Logger.minor(this, "Pushed "+lPingNo+" "+lnow);
 			while(pingsSentTimes.size() > MAX_PINGS) {
 				Long l = (Long) pingsSentTimes.popValue();
-				Logger.minor(this, "pingsSentTimes.size()="+pingsSentTimes.size()+", l="+l);
+				if(logMINOR) Logger.minor(this, "pingsSentTimes.size()="+pingsSentTimes.size()+", l="+l);
 				long tStarted = l.longValue();
 				pingAverage.report(now - tStarted);
-				Logger.minor(this, "Reporting dumped ping time to "+this+" : "+(now - tStarted));
+				if(logMINOR) Logger.minor(this, "Reporting dumped ping time to "+this+" : "+(now - tStarted));
 			}
 		}
 		Message msg = DMT.createFNPLinkPing(pingNo);
@@ -2024,7 +2034,7 @@ public class PeerNode implements PeerContext {
 			startTime = s.longValue();
 			pingsSentTimes.removeKey(lid);
 			pingAverage.report(now - startTime);
-			Logger.minor(this, "Reporting ping time to "+this+" : "+(now - startTime));
+			if(logMINOR) Logger.minor(this, "Reporting ping time to "+this+" : "+(now - startTime));
 		}
 		
 		if(shouldDisconnectNow()){
@@ -2039,7 +2049,7 @@ public class PeerNode implements PeerContext {
 
 	public void reportThrottledPacketSendTime(long timeDiff) {
 		node.throttledPacketSendAverage.report(timeDiff);
-		Logger.minor(this, "Reporting throttled packet send time: "+timeDiff+" to "+getPeer());
+		if(logMINOR) Logger.minor(this, "Reporting throttled packet send time: "+timeDiff+" to "+getPeer());
 	}
 	
 	public void setRemoteDetectedPeer(Peer p) {
@@ -2138,10 +2148,10 @@ public class PeerNode implements PeerContext {
 			} else if(myARK.suggestedEdition > usk.suggestedEdition) {
 				Logger.minor(this, "Ignoring ARK edition decrease: "+myARK.suggestedEdition+" to "+usk.suggestedEdition+" for "+this);
 			} else if(myARK.suggestedEdition < usk.suggestedEdition) {
-				Logger.minor(this, "New ARK edition found");
+				if(logMINOR) Logger.minor(this, "New ARK edition found");
 				myARK = usk;
 			} else if(myARK == null) {
-				Logger.minor(this, "Setting ARK to "+usk+" was null on "+this);
+				if(logMINOR) Logger.minor(this, "Setting ARK to "+usk+" was null on "+this);
 				myARK = usk;
 			}
 		} catch (MalformedURLException e) {

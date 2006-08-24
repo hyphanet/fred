@@ -17,6 +17,7 @@ import freenet.node.AsyncMessageCallback;
  */
 public class LimitedRangeIntByteArrayMap {
 
+	private static boolean logMINOR;
     private final HashMap contents;
     private int minValue;
     private int maxValue;
@@ -30,6 +31,7 @@ public class LimitedRangeIntByteArrayMap {
         minValue = -1;
         maxValue = -1;
         flag = false;
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
     
     public synchronized int minValue() {
@@ -70,7 +72,8 @@ public class LimitedRangeIntByteArrayMap {
      * of range.
      */
     public synchronized boolean add(int index, byte[] data, AsyncMessageCallback[] callbacks) {
-        Logger.minor(this, toString()+" add "+index);
+    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    	if(logMINOR) Logger.minor(this, toString()+" add "+index);
         if(maxValue == -1) {
             minValue = index;
             maxValue = index;
@@ -109,15 +112,15 @@ public class LimitedRangeIntByteArrayMap {
         boolean oldFlag = flag;
         if(minValue == -1) return;
         if(index - minValue < maxRange) return;
-        Logger.minor(this, toString()+" lock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
+        if(logMINOR) Logger.minor(this, toString()+" lock("+index+") - minValue = "+minValue+", maxValue = "+maxValue+", maxRange="+maxRange);
         while(true) {
             wait();
             if(flag != oldFlag) {
-            	Logger.minor(this, "Interrupted");
+            	if(logMINOR) Logger.minor(this, "Interrupted");
             	throw new InterruptedException();
             }
             if((index - minValue < maxRange) || (minValue == -1)) {
-            	Logger.minor(this, "index="+index+", minValue="+minValue+", maxRange="+maxRange+" - returning");
+            	if(logMINOR) Logger.minor(this, "index="+index+", minValue="+minValue+", maxRange="+maxRange+" - returning");
             	return;
             }
         }
@@ -138,7 +141,7 @@ public class LimitedRangeIntByteArrayMap {
      * @return true if we removed something.
      */
     public synchronized boolean remove(int index) {
-        Logger.minor(this, "Removing "+index+" - min="+minValue+" max="+maxValue);
+    	if(logMINOR) Logger.minor(this, "Removing "+index+" - min="+minValue+" max="+maxValue);
         if(contents.remove(new Integer(index)) != null) {
             if((index > minValue) && (index < maxValue)) return true;
             if(contents.size() == 0) {

@@ -12,16 +12,19 @@ import java.util.Enumeration;
 public class UpdatableSortedLinkedList {
 
 	private boolean killed = false;
+	private static boolean logMINOR;
 	
     public UpdatableSortedLinkedList() {
         list = new DoublyLinkedListImpl();
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
     
     private final DoublyLinkedList list;
     
     public synchronized void add(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
-        Logger.minor(this, "Add("+i+") on "+this);
+        if(logMINOR) Logger.minor(this, "Add("+i+") on "+this);
         if(list.isEmpty()) {
             list.push(i);
             checkList();
@@ -48,7 +51,7 @@ public class UpdatableSortedLinkedList {
                 checkList();
                 return;
             }
-            Logger.minor(this, "Not matching "+cur+" "+prev);
+            if(logMINOR) Logger.minor(this, "Not matching "+cur+" "+prev);
             prev = cur;
         }
         throw new IllegalStateException("impossible");
@@ -79,12 +82,13 @@ public class UpdatableSortedLinkedList {
 	}
 
 	public synchronized UpdatableSortedLinkedListItem remove(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
-        Logger.minor(this, "Remove("+i+") on "+this);
+    	if(logMINOR) Logger.minor(this, "Remove("+i+") on "+this);
         checkList();
         UpdatableSortedLinkedListItem item = 
         	(UpdatableSortedLinkedListItem) list.remove(i);
-        Logger.minor(this, "Returning "+item);
+        if(logMINOR) Logger.minor(this, "Returning "+item);
         checkList();
         return item;
     }
@@ -98,8 +102,9 @@ public class UpdatableSortedLinkedList {
 	}
 	
     public synchronized void update(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
+    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
-        Logger.minor(this, "Update("+i+") on "+this);
+    	if(logMINOR) Logger.minor(this, "Update("+i+") on "+this);
         checkList();
         if(i.compareTo(list.tail()) > 0) {
             list.remove(i);
@@ -165,7 +170,7 @@ public class UpdatableSortedLinkedList {
             }
         }
         Logger.error(this, "Could not update "+i, new Exception("error"));
-        dump();
+        if(logMINOR) dump();
         remove(i);
         add(i);
         checkList();
@@ -179,7 +184,7 @@ public class UpdatableSortedLinkedList {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         for(Enumeration e=list.elements();e.hasMoreElements();) {
             UpdatableSortedLinkedListItem item = (UpdatableSortedLinkedListItem) e.nextElement();
-            Logger.minor(this, item.toString());
+            if(logMINOR) Logger.minor(this, item.toString());
         }
     }
 

@@ -305,10 +305,12 @@ public class NetworkInterface {
 		 */
 		public void run() {
 			while (!closed) {
+				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				try {
 					Socket clientSocket = serverSocket.accept();
 					InetAddress clientAddress = clientSocket.getInetAddress();
-					Logger.minor(Acceptor.class, "Connection from " + clientAddress);
+					if(logMINOR)
+						Logger.minor(Acceptor.class, "Connection from " + clientAddress);
 
 					/* check if the ip address is allowed */
 					boolean addressMatched = false;
@@ -338,9 +340,11 @@ public class NetworkInterface {
 						Logger.normal(Acceptor.class, "Denied connection to " + clientAddress);
 					}
 				} catch (SocketTimeoutException ste1) {
-					Logger.minor(this, "Timeout");
+					if(logMINOR)
+						Logger.minor(this, "Timeout");
 				} catch (IOException ioe1) {
-					Logger.minor(this, "Caught " + ioe1);
+					if(logMINOR)
+						Logger.minor(this, "Caught " + ioe1);
 				}
 			}
 			NetworkInterface.this.acceptorStopped();

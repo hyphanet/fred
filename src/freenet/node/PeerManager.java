@@ -32,6 +32,8 @@ import freenet.support.SimpleFieldSet;
  */
 public class PeerManager {
     
+	private static boolean logMINOR;
+	
     /** Our Node */
     final Node node;
     
@@ -53,6 +55,7 @@ public class PeerManager {
      */
     public PeerManager(Node node, String filename) {
         Logger.normal(this, "Creating PeerManager");
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
         System.out.println("Creating PeerManager");
         this.filename = filename;
         ua = new PeerManagerUserAlert(node);
@@ -206,14 +209,15 @@ public class PeerManager {
 	}
 	
     public void addConnectedPeer(PeerNode pn) {
+    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(!pn.isRoutable()) {
-    		Logger.minor(this, "Not ReallyConnected: "+pn);
+    		if(logMINOR) Logger.minor(this, "Not ReallyConnected: "+pn);
     		return;
     	}
     	synchronized(this) {
         for(int i=0;i<connectedPeers.length;i++) {
             if(connectedPeers[i] == pn) {
-                Logger.minor(this, "Already connected: "+pn);
+            	if(logMINOR) Logger.minor(this, "Already connected: "+pn);
                 return;
             }
         }
@@ -228,12 +232,12 @@ public class PeerManager {
             Logger.error(this, "Connecting to "+pn+" but not in peers!");
             addPeer(pn);
         }
-        Logger.minor(this, "Connecting: "+pn);
+        if(logMINOR) Logger.minor(this, "Connecting: "+pn);
         PeerNode[] newConnectedPeers = new PeerNode[connectedPeers.length+1];
         System.arraycopy(connectedPeers, 0, newConnectedPeers, 0, connectedPeers.length);
         newConnectedPeers[connectedPeers.length] = pn;
         connectedPeers = newConnectedPeers;
-        Logger.minor(this, "Connected peers: "+connectedPeers.length);
+        if(logMINOR) Logger.minor(this, "Connected peers: "+connectedPeers.length);
     	}
         updatePMUserAlert();
     }
@@ -330,13 +334,14 @@ public class PeerManager {
         // This is safe as they will add themselves when they
         // reconnect, and they can't do it yet as we are synchronized.
         Vector v = new Vector(connectedPeers.length);
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
         for(int i=0;i<myPeers.length;i++) {
             PeerNode pn = myPeers[i];
             if(pn == exclude) continue;
             if(pn.isRoutable()) {
                 v.add(pn);
             } else {
-            	Logger.minor(this, "Excluding "+pn+" because is disconnected");
+            	if(logMINOR) Logger.minor(this, "Excluding "+pn+" because is disconnected");
             }
         }
         int lengthWithoutExcluded = v.size();
@@ -344,7 +349,7 @@ public class PeerManager {
             v.add(exclude);
         PeerNode[] newConnectedPeers = new PeerNode[v.size()];
         newConnectedPeers = (PeerNode[]) v.toArray(newConnectedPeers);
-        Logger.minor(this, "Connected peers (in getRandomPeer): "+newConnectedPeers.length+" was "+connectedPeers.length);
+        if(logMINOR) Logger.minor(this, "Connected peers (in getRandomPeer): "+newConnectedPeers.length+" was "+connectedPeers.length);
         connectedPeers = newConnectedPeers;
         if(lengthWithoutExcluded == 0) return null;
         return connectedPeers[node.random.nextInt(lengthWithoutExcluded)];
@@ -501,7 +506,7 @@ public class PeerManager {
         synchronized (this) {
 			peers = connectedPeers;
 		}
-        Logger.minor(this, "Choosing closest peer: connectedPeers="+peers.length);
+        if(logMINOR) Logger.minor(this, "Choosing closest peer: connectedPeers="+peers.length);
         double bestDiff = Double.MAX_VALUE;
         double maxDiff = 0.0;
         if(!ignoreSelf)
@@ -512,25 +517,25 @@ public class PeerManager {
         for(int i=0;i<peers.length;i++) {
             PeerNode p = peers[i];
             if(routedTo.contains(p)) {
-            	Logger.minor(this, "Skipping (already routed to): "+p.getPeer());
+            	if(logMINOR) Logger.minor(this, "Skipping (already routed to): "+p.getPeer());
             	continue;
             }
             if(p == pn) {
-            	Logger.minor(this, "Skipping (req came from): "+p.getPeer());
+            	if(logMINOR) Logger.minor(this, "Skipping (req came from): "+p.getPeer());
             	continue;
             }
             if(!p.isRoutable()) {
-            	Logger.minor(this, "Skipping (not connected): "+p.getPeer());
+            	if(logMINOR) Logger.minor(this, "Skipping (not connected): "+p.getPeer());
             	continue;
             }
             if((!ignoreBackedOff) && p.isRoutingBackedOff()) {
-            	Logger.minor(this, "Skipping (routing backed off): "+p.getPeer());
+            	if(logMINOR) Logger.minor(this, "Skipping (routing backed off): "+p.getPeer());
             	continue;
             }
             count++;
             any = p;
             double diff = distance(p, loc);
-            Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+" for "+p.getPeer());
+            if(logMINOR) Logger.minor(this, "p.loc="+p.getLocation().getValue()+", loc="+loc+", d="+distance(p.getLocation().getValue(), loc)+" usedD="+diff+" for "+p.getPeer());
             if((!ignoreSelf) && (diff > maxDiff)) continue;
             if(diff < bestDiff) {
                 best = p;

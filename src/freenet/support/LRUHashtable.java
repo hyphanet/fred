@@ -30,7 +30,8 @@ public class LRUHashtable {
         	insert.value = value;
             list.remove(insert);
         }
-        Logger.minor(this, "Pushed "+insert+" ( "+key+" "+value+" )");
+        if(Logger.shouldLog(Logger.MINOR, this))
+        	Logger.minor(this, "Pushed "+insert+" ( "+key+" "+value+" )");
 
         list.unshift(insert);
     } 

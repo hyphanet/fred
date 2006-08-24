@@ -75,16 +75,17 @@ public class RequestStarter implements Runnable {
 	void realRun() {
 		SendableRequest req = null;
 		while(true) {
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) req = sched.removeFirst();
 			if(req != null) {
-				Logger.minor(this, "Running "+req);
+				if(logMINOR) Logger.minor(this, "Running "+req);
 				// Create a thread to handle starting the request, and the resulting feedback
 				while(true) {
 					try {
 						Thread t = new Thread(new SenderThread(req), "RequestStarter$SenderThread for "+req);
 						t.setDaemon(true);
 						t.start();
-						Logger.minor(this, "Started "+req+" on "+t);
+						if(logMINOR) Logger.minor(this, "Started "+req+" on "+t);
 						break;
 					} catch (OutOfMemoryError e) {
 						// Probably out of threads
@@ -99,7 +100,7 @@ public class RequestStarter implements Runnable {
 				sentRequestTime = System.currentTimeMillis();
 				// Wait
 				long delay = throttle.getDelay();
-				Logger.minor(this, "Delay="+delay+" from "+throttle);
+				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
 				long sleepUntil = sentRequestTime + delay;
 				inputBucket.blockingGrab((int)(Math.max(0, averageInputBytesPerRequest.currentValue())));
 				outputBucket.blockingGrab((int)(Math.max(0, averageOutputBytesPerRequest.currentValue())));
@@ -109,14 +110,14 @@ public class RequestStarter implements Runnable {
 					if(now < sleepUntil)
 						try {
 							Thread.sleep(sleepUntil - now);
-							Logger.minor(this, "Slept: "+(sleepUntil-now)+"ms");
+							if(logMINOR) Logger.minor(this, "Slept: "+(sleepUntil-now)+"ms");
 						} catch (InterruptedException e) {
 							// Ignore
 						}
 				} while(now < sleepUntil);
 				return;
 			} else {
-				Logger.minor(this, "Waiting...");				
+				if(logMINOR) Logger.minor(this, "Waiting...");				
 					req = sched.removeFirst();
 					if(req != null) {
 						continue;

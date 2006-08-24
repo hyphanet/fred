@@ -41,6 +41,7 @@ public class InsertHandler implements Runnable, ByteCounter {
     private Thread runThread;
     private final boolean resetNearestLoc;
     PartiallyReceivedBlock prb;
+    private static boolean logMINOR;
     
     InsertHandler(Message req, long id, Node node, long startTime) {
         this.req = req;
@@ -58,6 +59,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             htl = Node.MAX_HTL;
             resetNearestLoc = true;
         } else resetNearestLoc = false;
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
     
     public String toString() {
@@ -70,7 +72,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         } catch (Throwable t) {
             Logger.error(this, "Caught "+t, t);
         } finally {
-            Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
+        	if(logMINOR) Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
             node.unlockUID(uid);
         }
     }
@@ -84,7 +86,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         try {
 			source.send(accepted, this);
 		} catch (NotConnectedException e1) {
-			Logger.minor(this, "Lost connection to source");
+			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
 		}
         
@@ -101,7 +103,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             return;
         }
         
-        Logger.minor(this, "Received "+msg);
+        if(logMINOR) Logger.minor(this, "Received "+msg);
         
         if(msg == null) {
         	try {
@@ -117,7 +119,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         		br.sendAborted(RetrievalException.NO_DATAINSERT, "No DataInsert");
         		return;
         	} catch (NotConnectedException e) {
-    			Logger.minor(this, "Lost connection to source");
+        		if(logMINOR) Logger.minor(this, "Lost connection to source");
     			return;
         	}
         }
@@ -198,7 +200,7 @@ public class InsertHandler implements Runnable, ByteCounter {
             	try {
 					source.send(m, this);
 				} catch (NotConnectedException e) {
-					Logger.minor(this, "Lost connection to source");
+					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
 				}
             }
@@ -228,7 +230,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 try {
 					source.send(msg, this);
 				} catch (NotConnectedException e) {
-					Logger.minor(this, "Lost connection to source");
+					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
 				}
                 // Might as well store it anyway.
@@ -244,7 +246,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 try {
 					source.send(msg, this);
 				} catch (NotConnectedException e) {
-					Logger.minor(this, "Lost connection to source");
+					if(logMINOR) Logger.minor(this, "Lost connection to source");
 					return;
 				}
                 canCommit = true;
@@ -287,10 +289,10 @@ public class InsertHandler implements Runnable, ByteCounter {
      * verifies, then commit it.
      */
     private void finish(int code) {
-    	Logger.minor(this, "Finishing");
+    	if(logMINOR) Logger.minor(this, "Finishing");
         maybeCommit();
         
-        Logger.minor(this, "Waiting for completion");
+        if(logMINOR) Logger.minor(this, "Waiting for completion");
         // Wait for completion
         boolean sentCompletionWasSet;
         synchronized(sentCompletionLock) {
@@ -315,9 +317,9 @@ public class InsertHandler implements Runnable, ByteCounter {
         	Message m = DMT.createFNPInsertTransfersCompleted(uid, failed);
         	try {
         		source.send(m, this);
-        		Logger.minor(this, "Sent completion: "+failed+" for "+this);
+        		if(logMINOR) Logger.minor(this, "Sent completion: "+failed+" for "+this);
         	} catch (NotConnectedException e1) {
-        		Logger.minor(this, "Not connected: "+source+" for "+this);
+        		if(logMINOR) Logger.minor(this, "Not connected: "+source+" for "+this);
         		// May need to commit anyway...
         	}
         }
@@ -331,7 +333,7 @@ public class InsertHandler implements Runnable, ByteCounter {
         		totalSent += sender.getTotalSentBytes();
         		totalReceived += sender.getTotalReceivedBytes();
         	}
-        	Logger.minor(this, "Remote CHK insert cost "+totalSent+"/"+totalReceived+" bytes ("+code+")");
+        	if(logMINOR) Logger.minor(this, "Remote CHK insert cost "+totalSent+"/"+totalReceived+" bytes ("+code+")");
         	node.remoteChkInsertBytesSentAverage.report(totalSent);
         	node.remoteChkInsertBytesReceivedAverage.report(totalReceived);
         }
@@ -350,9 +352,9 @@ public class InsertHandler implements Runnable, ByteCounter {
                 if(!prb.allReceived()) return;
                 CHKBlock block = new CHKBlock(prb.getBlock(), headers, key);
                 node.store(block);
-                Logger.minor(this, "Committed");
+                if(logMINOR) Logger.minor(this, "Committed");
             } catch (CHKVerifyException e) {
-                Logger.error(this, "Verify failed in InsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
+            	Logger.error(this, "Verify failed in InsertHandler: "+e+" - headers: "+HexUtil.bytesToHex(headers), e);
                 toSend = DMT.createFNPDataInsertRejected(uid, DMT.DATA_INSERT_REJECTED_VERIFY_FAILED);
             } catch (AbortedException e) {
             	Logger.error(this, "Receive failed: "+e);
@@ -364,7 +366,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 source.sendAsync(toSend, null, 0, this);
             } catch (NotConnectedException e) {
                 // :(
-                Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");
+            	if(logMINOR) Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");
             }
         }
 	}
@@ -375,10 +377,10 @@ public class InsertHandler implements Runnable, ByteCounter {
     public class DataReceiver implements Runnable {
 
         public void run() {
-            Logger.minor(this, "Receiving data for "+InsertHandler.this);
+        	if(logMINOR) Logger.minor(this, "Receiving data for "+InsertHandler.this);
             try {
                 br.receive();
-                Logger.minor(this, "Received data for "+InsertHandler.this);
+                if(logMINOR) Logger.minor(this, "Received data for "+InsertHandler.this);
                 maybeCommit();
             } catch (RetrievalException e) {
                 receiveFailed = true;
@@ -389,7 +391,7 @@ public class InsertHandler implements Runnable, ByteCounter {
                 } catch (NotConnectedException ex) {
                     Logger.error(this, "Can't send "+msg+" to "+source+": "+ex);
                 }
-                Logger.minor(this, "Failed to retrieve: "+e, e);
+                if(logMINOR) Logger.minor(this, "Failed to retrieve: "+e, e);
                 return;
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);

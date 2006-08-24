@@ -23,7 +23,8 @@ public class RedirectDirPutFile extends DirPutFile {
 		} catch (MalformedURLException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "Invalid TargetURI: "+e, identifier);
 		}
-		Logger.minor(this, "targetURI = "+targetURI);
+        if(Logger.shouldLog(Logger.MINOR, this))
+        	Logger.minor(this, "targetURI = "+targetURI);
 		super.meta = new ClientMetadata();
 	}
 

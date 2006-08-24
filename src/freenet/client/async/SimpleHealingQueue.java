@@ -43,7 +43,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		}
 		try {
 			sbi.schedule();
-			Logger.minor(this, "Started healing insert "+ctr+" for "+data);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Started healing insert "+ctr+" for "+data);
 			return true;
 		} catch (Throwable e) {
 			Logger.error(this, "Caught trying to insert healing block: "+e, e);
@@ -78,7 +79,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		synchronized(this) {
 			runningInserters.remove(data);
 		}
-		Logger.minor(this, "Successfully inserted healing block: "+sbi.getURI()+" for "+data+" ("+sbi.token+")");
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Successfully inserted healing block: "+sbi.getURI()+" for "+data+" ("+sbi.token+")");
 		data.free();
 	}
 
@@ -88,7 +90,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		synchronized(this) {
 			runningInserters.remove(data);
 		}
-		Logger.minor(this, "Failed to insert healing block: "+sbi.getURI()+" : "+e+" for "+data+" ("+sbi.token+")", e);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Failed to insert healing block: "+sbi.getURI()+" : "+e+" for "+data+" ("+sbi.token+")", e);
 		data.free();
 	}
 

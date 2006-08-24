@@ -23,7 +23,8 @@ public class InserterException extends Exception {
 		super(getMessage(m)+": "+msg);
 		extra = msg;
 		mode = m;
-		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+msg, this);
+		if(Logger.shouldLog(Logger.MINOR, getClass()))
+			Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+msg, this);
 		errorCodes = null;
 		this.uri = expectedURI;
 	}
@@ -32,7 +33,8 @@ public class InserterException extends Exception {
 		super(getMessage(m));
 		extra = null;
 		mode = m;
-		Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
+		if(Logger.shouldLog(Logger.MINOR, getClass()))
+			Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
 		errorCodes = null;
 		this.uri = expectedURI;
 	}
@@ -40,7 +42,8 @@ public class InserterException extends Exception {
 	public InserterException(int mode, Throwable e, FreenetURI expectedURI) {
 		super(getMessage(mode)+": "+e.getMessage());
 		extra = e.getMessage();
-		Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+e, e);
+		if(Logger.shouldLog(Logger.MINOR, getClass()))
+			Logger.minor(this, "Creating InserterException: "+getMessage(mode)+": "+e, e);
 		this.mode = mode;
 		errorCodes = null;
 		initCause(e);
@@ -51,7 +54,8 @@ public class InserterException extends Exception {
 		super(getMessage(mode));
 		extra = null;
 		this.mode = mode;
-		Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
+		if(Logger.shouldLog(Logger.MINOR, getClass()))
+			Logger.minor(this, "Creating InserterException: "+getMessage(mode), this);
 		this.errorCodes = errorCodes;
 		this.uri = expectedURI;
 	}

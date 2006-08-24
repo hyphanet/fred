@@ -23,7 +23,8 @@ import freenet.support.io.BucketTools;
  * This in turn controls a large number of SingleFileFetcher's.
  */
 public class SplitFileFetcherSegment implements GetCompletionCallback {
-	
+
+	private static boolean logMINOR;
 	final short splitfileType;
 	final FreenetURI[] dataBlocks;
 	final FreenetURI[] checkBlocks;
@@ -54,6 +55,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	private boolean createdFetchers;
 	
 	public SplitFileFetcherSegment(short splitfileType, FreenetURI[] splitfileDataBlocks, FreenetURI[] splitfileCheckBlocks, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetcherContext fetchContext, long maxTempLength, boolean splitUseLengths, int recursionLevel) throws MetadataParseException, FetchException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parentFetcher = fetcher;
 		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
@@ -86,7 +88,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			blockFetchContext = new FetcherContext(fetcherContext, FetcherContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
 			this.recursionLevel = 0;
 		}
-		Logger.minor(this, "Created "+this+" for "+parentFetcher);
+		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher);
 	}
 
 	public synchronized boolean isFinished() {
@@ -135,6 +137,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	}
 
 	public synchronized void onSuccess(FetchResult result, ClientGetState state) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(finished) return;
 		Integer token = (Integer) ((SingleFileFetcher)state).getToken();
 		int blockNo = token.intValue();
@@ -184,7 +187,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		public void run() {
 			
 			// Now decode
-			Logger.minor(this, "Decoding "+this);
+			if(logMINOR) Logger.minor(this, "Decoding "+this);
 			
 			boolean[] dataBlocksSucceeded = new boolean[dataBuckets.length];
 			boolean[] checkBlocksSucceeded = new boolean[checkBuckets.length];
@@ -202,21 +205,21 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 				}
 				
 				decodedData = fetcherContext.bucketFactory.makeBucket(-1);
-				Logger.minor(this, "Copying data from data blocks");
+				if(logMINOR) Logger.minor(this, "Copying data from data blocks");
 				OutputStream os = decodedData.getOutputStream();
 				for(int i=0;i<dataBlockStatus.length;i++) {
 					SplitfileBlock status = dataBuckets[i];
 					Bucket data = status.getData();
 					BucketTools.copyTo(data, os, Long.MAX_VALUE);
 				}
-				Logger.minor(this, "Copied data");
+				if(logMINOR) Logger.minor(this, "Copied data");
 				os.close();
 				// Must set finished BEFORE calling parentFetcher.
 				// Otherwise a race is possible that might result in it not seeing our finishing.
 				finished = true;
 				parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
 			} catch (IOException e) {
-				Logger.minor(this, "Caught bucket error?: "+e, e);
+				Logger.normal(this, "Caught bucket error?: "+e, e);
 				finished = true;
 				failureException = new FetchException(FetchException.BUCKET_ERROR);
 				parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
@@ -278,12 +281,13 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	}
 
 	private void queueHeal(Bucket data) {
-		Logger.minor(this, "Queueing healing insert");
+		if(logMINOR) Logger.minor(this, "Queueing healing insert");
 		fetcherContext.healingQueue.queue(data);
 	}
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal */
 	public synchronized void onFailure(FetchException e, ClientGetState state) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Integer token = (Integer) ((SingleFileFetcher)state).getToken();
 		int blockNo = token.intValue();
 		if(blockNo < dataBlocks.length) {
@@ -302,7 +306,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		} else
 			Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 		// :(
-		Logger.minor(this, "Permanently failed block: "+state+" on "+this);
+		if(logMINOR) Logger.minor(this, "Permanently failed block: "+state+" on "+this);
 		if(e.isFatal())
 			fatallyFailedBlocks++;
 		else

@@ -57,16 +57,17 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		SimpleFieldSet files = fs.subset("Files");
 		if(files == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing Files section", identifier);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		for(int i=0;;i++) {
 			SimpleFieldSet subset = files.subset(Integer.toString(i));
 			if(subset == null) break;
 			DirPutFile f = DirPutFile.create(subset, identifier, (persistenceType == ClientRequest.PERSIST_FOREVER) ? bfPersistent : bfTemp);
 			addFile(f);
-			Logger.minor(this, "Adding "+f);
+			if(logMINOR) Logger.minor(this, "Adding "+f);
 			if(f instanceof DirectDirPutFile) {
 				totalBytes += ((DirectDirPutFile)f).bytesToRead();
 				filesToRead.addLast(f);
-				Logger.minor(this, "totalBytes now "+totalBytes);
+				if(logMINOR) Logger.minor(this, "totalBytes now "+totalBytes);
 			}
 		}
 		attachedBytes = totalBytes;

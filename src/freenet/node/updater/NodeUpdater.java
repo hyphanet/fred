@@ -42,6 +42,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public final static String REVOCATION_URI = "freenet:SSK@VOfCZVTYPaatJ~eB~4lu2cPrWEmGyt4bfbB1v15Z6qQ,B6EynLhm7QE0se~rMgWWhl7wh3rFWjxJsEUcyohAm8A,AQABAAE/revoked/";
 	public final static int REVOCATION_DNF_MIN = 3;
 	
+	static private boolean logMINOR;
 	private FetcherContext ctx;
 	private FetcherContext ctxRevocation;
 	private FetchResult result;
@@ -72,6 +73,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private RevocationKeyFoundUserAlert revocationAlert;
 	
 	public NodeUpdater(Node n, boolean isAutoUpdateAllowed, FreenetURI URI, FreenetURI revocationURI) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.URI = URI;
 		URI.setSuggestedEdition(Version.buildNumber()+1);
 		this.revocationURI = revocationURI;
@@ -121,7 +123,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 	
 	public synchronized void onFoundEdition(long l, USK key){
-		Logger.minor(this, "Found edition "+l);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Found edition "+l);
 		System.err.println("Found new update edition "+l);
 		if(!isRunning) return;
 		int found = (int)key.suggestedEdition;
@@ -141,7 +144,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		ClientGetter toStart = null;
 		synchronized(this) {
 			try{
-				Logger.minor(this, "maybeUpdate: isFetching="+isFetching+", isRunning="+isRunning+", isUpdatable="+isUpdatable()+", availableVersion="+availableVersion);
+				if(logMINOR)
+					Logger.minor(this, "maybeUpdate: isFetching="+isFetching+", isRunning="+isRunning+", isUpdatable="+isUpdatable()+", availableVersion="+availableVersion);
 				if(isFetching || (!isRunning) || (!isUpdatable())) return;
 				if(availableVersion == fetchedVersion) return;
 				fetchingVersion = availableVersion;
@@ -159,7 +163,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			// We fetch it
 			try{
 				if((cg==null)||cg.isCancelled()){
-					Logger.minor(this, "Scheduling request for "+URI.setSuggestedEdition(availableVersion));
+					if(logMINOR) Logger.minor(this, "Scheduling request for "+URI.setSuggestedEdition(availableVersion));
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
 							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
 							this, new ArrayBucket());
@@ -209,10 +213,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	 * Must run on its own thread.
 	 */
 	private void innerUpdate(){
-		Logger.minor(this, "Update() called");
+		if(logMINOR) Logger.minor(this, "Update() called");
 		synchronized(this) {
 			if((result == null) || hasBeenBlown) {
-				Logger.minor(this, "Returning: result="+result+", isAutoUpdateAllowed="+isAutoUpdateAllowed+", hasBeenBlown="+hasBeenBlown);
+				if(logMINOR) Logger.minor(this, "Returning: result="+result+", isAutoUpdateAllowed="+isAutoUpdateAllowed+", hasBeenBlown="+hasBeenBlown);
 				return;
 			}
 			
@@ -409,6 +413,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 
 	public synchronized void onSuccess(FetchResult result, ClientGetter state) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(!state.getURI().equals(revocationURI)){
 			if(result == null || result.asBucket() == null || result.asBucket().size() == 0) {
 				Logger.error(this, "Cannot update: result either null or empty for "+availableVersion);
@@ -461,10 +466,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 
 	public void onFailure(FetchException e, ClientGetter state) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		int errorCode = e.getMode();
 		
 		if(!state.getURI().equals(revocationURI)){
-			Logger.minor(this, "onFailure("+e+","+state+")");
+			if(logMINOR) Logger.minor(this, "onFailure("+e+","+state+")");
 			synchronized(this) {
 				this.cg = state;
 				isFetching=false;
@@ -506,7 +512,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 
 	private void queueFetchRevocation(long delay) {
-		Logger.minor(this, "Queueing fetch of revocation key in "+delay+"ms", new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Queueing fetch of revocation key in "+delay+"ms", new Exception("debug"));
 		node.ps.queueTimedJob(new Runnable() { // maybe a FastRunnable? FIXME
 
 			public void run() {
@@ -516,18 +522,18 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					synchronized(this) {
 						if(revocationGetter != null && 
 								!(revocationGetter.isCancelled() || revocationGetter.isFinished()))  {
-							Logger.minor(this, "Not queueing another revocation fetcher yet");
+							if(logMINOR) Logger.minor(this, "Not queueing another revocation fetcher yet");
 							return;
 						} else {
-							Logger.minor(this, "fetcher="+revocationGetter);
+							if(logMINOR) Logger.minor(this, "fetcher="+revocationGetter);
 							if(revocationGetter != null)
 								Logger.minor(this, "revocation fetcher: cancelled="+revocationGetter.isCancelled()+", finished="+revocationGetter.isFinished());
 							cg = revocationGetter = new ClientGetter(NodeUpdater.this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, revocationURI, ctxRevocation, RequestStarter.MAXIMUM_PRIORITY_CLASS, NodeUpdater.this, null);
-							Logger.minor(this, "Queued another revocation fetcher");
+							if(logMINOR) Logger.minor(this, "Queued another revocation fetcher");
 						}
 					}
 					cg.start();
-					Logger.minor(this, "Started revocation fetcher");
+					if(logMINOR) Logger.minor(this, "Started revocation fetcher");
 				} catch (FetchException e) {
 					Logger.error(this, "Not able to start the revocation fetcher.");
 					blow("Cannot fetch the auto-update URI");

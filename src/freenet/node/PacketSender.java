@@ -22,6 +22,8 @@ import freenet.support.WouldBlockException;
  */
 public class PacketSender implements Runnable, Ticker {
 
+	private static boolean logMINOR;
+	
 	static final int MAX_COALESCING_DELAY = 100;
 	
     final LinkedList resendPackets;
@@ -42,6 +44,7 @@ public class PacketSender implements Runnable, Ticker {
         myThread = new Thread(this, "PacketSender thread for "+node.portNumber);
         myThread.setDaemon(true);
         myThread.setPriority(Thread.MAX_PRIORITY);
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
     
@@ -113,6 +116,7 @@ public class PacketSender implements Runnable, Ticker {
         while(true) {
             lastReceivedPacketFromAnyNode = lastReportedNoPackets;
             try {
+            	logMINOR = Logger.shouldLog(Logger.MINOR, this);
                 realRun();
             } catch (OutOfMemoryError e) {
             	Runtime r = Runtime.getRuntime();
@@ -179,7 +183,7 @@ public class PacketSender implements Runnable, Ticker {
                 // Any urgent notifications to send?
                 long urgentTime = pn.getNextUrgentTime();
                 // Should spam the logs, unless there is a deadlock
-                if(urgentTime < Long.MAX_VALUE)
+                if(urgentTime < Long.MAX_VALUE && logMINOR)
                 	Logger.minor(this, "Next urgent time: "+urgentTime+" for "+pn.getDetectedPeer());
                 if(urgentTime <= now) {
                     // Send them
@@ -206,7 +210,7 @@ public class PacketSender implements Runnable, Ticker {
                         ResendPacketItem item = resendItems[k];
                         if(item == null) continue;
                         try {
-                            Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
+                            if(logMINOR) Logger.minor(this, "Resending "+item.packetNumber+" to "+item.kt);
                             node.packetMangler.processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks, 0);
                         } catch (KeyChangedException e) {
                             Logger.error(this, "Caught "+e+" resending packets to "+kt);
@@ -244,7 +248,7 @@ public class PacketSender implements Runnable, Ticker {
                 		pn.requeueMessageItems(messages, 0, messages.length, true, "TrafficCoalescing");
                 	} else {
                 		for(int j=0;j<messages.length;j++) {
-                			Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
+                			if(logMINOR) Logger.minor(this, "PS Sending: "+(messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName()));
                 			if (messages[j].msg != null) {
                 				pn.addToLocalNodeSentMessagesToStatistic(messages[j].msg);
                 			}
@@ -257,7 +261,7 @@ public class PacketSender implements Runnable, Ticker {
                 
                 // Need to send a keepalive packet?
                 if(now - pn.lastSentPacketTime() > Node.KEEPALIVE_INTERVAL) {
-                    Logger.minor(this, "Sending keepalive");
+                	if(logMINOR) Logger.minor(this, "Sending keepalive");
                    	// Force packet to have a sequence number.
                    	Message m = DMT.createFNPVoid();
                    	pn.addToLocalNodeSentMessagesToStatistic(m);
@@ -320,7 +324,7 @@ public class PacketSender implements Runnable, Ticker {
         if(jobsToRun != null) {
         	for(int i=0;i<jobsToRun.size();i++) {
         		Runnable r = (Runnable) jobsToRun.get(i);
-        		Logger.minor(this, "Running "+r);
+        		if(logMINOR) Logger.minor(this, "Running "+r);
         		if(r instanceof FastRunnable) {
         			// Run in-line
         			try {
@@ -350,7 +354,7 @@ public class PacketSender implements Runnable, Ticker {
         if(sleepTime > 0) {
             try {
                 synchronized(this) {
-                	Logger.minor(this, "Sleeping for "+sleepTime);
+                	if(logMINOR) Logger.minor(this, "Sleeping for "+sleepTime);
                     wait(sleepTime);
                 }
             } catch (InterruptedException e) {

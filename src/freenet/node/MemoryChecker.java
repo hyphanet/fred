@@ -11,13 +11,17 @@ public class MemoryChecker implements Runnable {
 			if(sleeptime <= 0)
 				sleeptime = 250;
 			
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			
 			for(int i=0;i<120;i++) {
 				try {
 					Thread.sleep(sleeptime);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
-				Logger.minor(this, "Memory in use: "+(r.totalMemory()-r.freeMemory()));
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				if(logMINOR)
+					Logger.minor(this, "Memory in use: "+(r.totalMemory()-r.freeMemory()));
 			}
 			try {
 				Thread.sleep(sleeptime);
@@ -33,14 +37,16 @@ public class MemoryChecker implements Runnable {
 			// we are getting much easier. 
 			if(Node.aggressiveGCModificator > 0) {
 				long beforeGCUsedMemory = (r.totalMemory()-r.freeMemory());
-				Logger.minor(this, "Memory in use before GC: "+beforeGCUsedMemory);
+				if(logMINOR) Logger.minor(this, "Memory in use before GC: "+beforeGCUsedMemory);
 				long beforeGCTime = System.currentTimeMillis();
 				System.gc();
 				System.runFinalization();
 				long afterGCTime = System.currentTimeMillis();
 				long afterGCUsedMemory = (r.totalMemory()-r.freeMemory());
-				Logger.minor(this, "Memory in use after GC: "+afterGCUsedMemory);
-				Logger.minor(this, "GC completed after "+(afterGCTime - beforeGCTime)+"ms and \"recovered\" "+(beforeGCUsedMemory - afterGCUsedMemory)+" bytes, leaving "+afterGCUsedMemory+" bytes used");
+				if(logMINOR) {
+					Logger.minor(this, "Memory in use after GC: "+afterGCUsedMemory);
+					Logger.minor(this, "GC completed after "+(afterGCTime - beforeGCTime)+"ms and \"recovered\" "+(beforeGCUsedMemory - afterGCUsedMemory)+" bytes, leaving "+afterGCUsedMemory+" bytes used");
+				}
 			}
 		}
 	}

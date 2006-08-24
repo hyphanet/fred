@@ -58,7 +58,8 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
      */
     private HashMap makeBucketsByName(File thisdir, String prefix) throws MessageInvalidException {
     	
-    	Logger.minor(this, "Listing directory: "+thisdir);
+    	if(Logger.shouldLog(Logger.MINOR, this))
+    		Logger.minor(this, "Listing directory: "+thisdir);
     	
     	HashMap ret = new HashMap();
     	

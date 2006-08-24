@@ -46,7 +46,8 @@ public class NodePinger implements Runnable {
 		double d = calculateMedianPing(peers);
 		tdra.report(d);
 		meanPing = tdra.currentValue();
-		Logger.minor(this, "Reporting ping to temporal averager: "+d+" result "+meanPing);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Reporting ping to temporal averager: "+d+" result "+meanPing);
 	}
 	
 	double calculateMedianPing(PeerNode[] peers) {

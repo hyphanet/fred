@@ -200,7 +200,8 @@ public class NodeIPDetector {
 		if(addrs == null || addrs.length == 0) return false;
 		for(int i=0;i<addrs.length;i++) {
 			if(IPAddressDetector.isValidAddress(addrs[i], false)) {
-				Logger.minor(this, "Has a directly detected IP: "+addrs[i]);
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Has a directly detected IP: "+addrs[i]);
 				return true;
 			}
 		}

@@ -171,7 +171,8 @@ public class Metadata implements Cloneable {
 		documentType = dis.readByte();
 		if((documentType < 0) || (documentType > 5))
 			throw new MetadataParseException("Unsupported document type: "+documentType);
-		Logger.minor(this, "Document type: "+documentType);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Document type: "+documentType);
 		
 		boolean compressed = false;
 		if((documentType == SIMPLE_REDIRECT) || (documentType == MULTI_LEVEL_METADATA)
@@ -188,14 +189,14 @@ public class Metadata implements Cloneable {
 		}
 		
 		if(documentType == ZIP_MANIFEST) {
-			Logger.minor(this, "Zip manifest");
+			if(logMINOR) Logger.minor(this, "Zip manifest");
 			archiveType = dis.readShort();
 			if(archiveType != ARCHIVE_ZIP)
 				throw new MetadataParseException("Unrecognized archive type "+archiveType);
 		}
 
 		if(splitfile) {
-			Logger.minor(this, "Splitfile");
+			if(logMINOR) Logger.minor(this, "Splitfile");
 			dataLength = dis.readLong();
 			if(dataLength < -1)
 				throw new MetadataParseException("Invalid real content length "+dataLength);
@@ -216,10 +217,10 @@ public class Metadata implements Cloneable {
 		
 		if(noMIME) {
 			mimeType = null;
-			Logger.minor(this, "noMIME enabled");
+			if(logMINOR) Logger.minor(this, "noMIME enabled");
 		} else {
 			if(compressedMIME) {
-				Logger.minor(this, "Compressed MIME");
+				if(logMINOR) Logger.minor(this, "Compressed MIME");
 				short x = dis.readShort();
 				compressedMIMEValue = (short) (x & 32767); // chop off last bit
 				hasCompressedMIMEParams = (compressedMIMEValue & 32768) == 32768;
@@ -238,9 +239,9 @@ public class Metadata implements Cloneable {
 				dis.readFully(toRead);
 				// Use UTF-8 for everything, for simplicity
 				mimeType = new String(toRead, "UTF-8");
-				Logger.minor(this, "Raw MIME");
+				if(logMINOR) Logger.minor(this, "Raw MIME");
 			}
-			Logger.minor(this, "MIME = "+mimeType);
+			if(logMINOR) Logger.minor(this, "MIME = "+mimeType);
 		}
 		
 		if(dbr) {
@@ -317,7 +318,7 @@ public class Metadata implements Cloneable {
 				byte[] buf = new byte[nameLength];
 				dis.readFully(buf);
 				String name = new String(buf, "UTF-8");
-				Logger.minor(this, "Entry "+i+" name "+name);
+				if(logMINOR) Logger.minor(this, "Entry "+i+" name "+name);
 				short len = dis.readShort();
 				if(len < 0)
 					throw new MetadataParseException("Invalid manifest entry size: "+len);
@@ -336,11 +337,11 @@ public class Metadata implements Cloneable {
 		
 		if(documentType == ZIP_INTERNAL_REDIRECT) {
 			int len = dis.readShort();
-			Logger.minor(this, "Reading zip internal redirect length "+len);
+			if(logMINOR) Logger.minor(this, "Reading zip internal redirect length "+len);
 			byte[] buf = new byte[len];
 			dis.readFully(buf);
 			nameInArchive = new String(buf, "UTF-8");
-			Logger.minor(this, "Zip internal redirect: "+nameInArchive+" ("+len+")");
+			if(logMINOR) Logger.minor(this, "Zip internal redirect: "+nameInArchive+" ("+len+")");
 		}
 	}
 	

@@ -180,7 +180,8 @@ public class ToadletContextImpl implements ToadletContext {
 					continue;
 				}
 				
-				Logger.minor(ToadletContextImpl.class, "first line: "+firstLine);
+				if(Logger.shouldLog(Logger.MINOR, ToadletContextImpl.class))
+					Logger.minor(ToadletContextImpl.class, "first line: "+firstLine);
 				
 				String[] split = firstLine.split(" ");
 				

@@ -55,7 +55,8 @@ public class FilenameGenerator {
 			String filename = prefix + HexUtil.bytesToHex(randomFilename);
 			File ret = new File(tmpDir, filename);
 			if(!ret.exists()) {
-				Logger.minor(this, "Made random filename: "+ret, new Exception("debug"));
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Made random filename: "+ret, new Exception("debug"));
 				return ret;
 			}
 		}

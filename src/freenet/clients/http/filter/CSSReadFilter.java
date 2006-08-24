@@ -74,7 +74,8 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 			parser.parse();
 		} catch (Throwable t) {
 			// Ignore ALL errors!
-			Logger.minor(this, "Caught "+t+" trying to detect MIME type with "+parseCharset);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Caught "+t+" trying to detect MIME type with "+parseCharset);
 		}
 		r.close();
 		return parser.detectedCharset;

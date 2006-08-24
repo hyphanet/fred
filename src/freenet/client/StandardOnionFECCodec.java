@@ -21,6 +21,8 @@ import freenet.support.io.BucketTools;
  */
 public class StandardOnionFECCodec extends FECCodec {
 
+	private static boolean logMINOR;
+	
 	public class Encoder implements Runnable {
 
 		private final Bucket[] dataBlockStatus, checkBlockStatus;
@@ -50,7 +52,8 @@ public class StandardOnionFECCodec extends FECCodec {
 				thrownError = e;
 			}
 			long endTime = System.currentTimeMillis();
-			Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
+			if(logMINOR)
+				Logger.minor(this, "Splitfile encode: k="+k+", n="+n+" encode took "+(endTime-startTime)+"ms");
 			finished = true;
 			synchronized(this) {
 				notify();
@@ -131,13 +134,16 @@ public class StandardOnionFECCodec extends FECCodec {
 		//decoder = new PureCode(k,n);
 		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
 		decoder = encoder;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	private static Object runningDecodesSync = new Object();
 	private static int runningDecodes;
 
 	public void decode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
-		Logger.minor(this, "Queueing decode: " + dataBlockStatus.length
+		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
+		if(logMINOR) 
+			Logger.minor(this, "Queueing decode: " + dataBlockStatus.length
 				+ " data blocks, " + checkBlockStatus.length
 				+ " check blocks, block length " + blockLength + " with "
 				+ this, new Exception("debug"));
@@ -163,10 +169,11 @@ public class StandardOnionFECCodec extends FECCodec {
 	}
 	
 	public void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
-		Logger.minor(this, "Doing decode: " + dataBlockStatus.length
-				+ " data blocks, " + checkBlockStatus.length
-				+ " check blocks, block length " + blockLength + " with "
-				+ this, new Exception("debug"));
+		if(logMINOR)
+			Logger.minor(this, "Doing decode: " + dataBlockStatus.length
+					+ " data blocks, " + checkBlockStatus.length
+					+ " check blocks, block length " + blockLength + " with "
+					+ this, new Exception("debug"));
 		if (dataBlockStatus.length + checkBlockStatus.length != n)
 			throw new IllegalArgumentException();
 		if (dataBlockStatus.length != k)
@@ -196,7 +203,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				if (buckets[i] == null) {
 					buckets[i] = bf.makeBucket(blockLength);
 					writers[i] = buckets[i].getOutputStream();
-					Logger.minor(this, "writers[" + i + "] != null");
+					if(logMINOR) Logger.minor(this, "writers[" + i + "] != null");
 					readers[i] = null;
 					numberToDecode++;
 				} else {
@@ -216,8 +223,7 @@ public class StandardOnionFECCodec extends FECCodec {
 							throw new IllegalArgumentException("Too big: " + sz
 									+ " bigger than " + blockLength);
 					}
-					Logger.minor(this, "writers[" + i
-							+ "] = null (already filled)");
+					if(logMINOR) Logger.minor(this, "writers[" + i + "] = null (already filled)");
 					writers[i] = null;
 					readers[i] = new DataInputStream(buckets[i]
 							.getInputStream());
@@ -240,7 +246,7 @@ public class StandardOnionFECCodec extends FECCodec {
 				throw new IllegalArgumentException(
 						"Must have at least k packets (k="+k+",idx="+idx+")");
 
-			for (int i = 0; i < packetIndexes.length; i++)
+			if(logMINOR) for (int i = 0; i < packetIndexes.length; i++)
 				Logger.minor(this, "[" + i + "] = " + packetIndexes[i]);
 
 			if (numberToDecode > 0) {
@@ -292,10 +298,12 @@ public class StandardOnionFECCodec extends FECCodec {
 	}
 
 	public void encode(Bucket[] dataBlockStatus, Bucket[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
-		Logger.minor(this, "Queueing encode: " + dataBlockStatus.length
-				+ " data blocks, " + checkBlockStatus.length
-				+ " check blocks, block length " + blockLength + " with "
-				+ this, new Exception("debug"));
+		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
+		if(logMINOR)
+			Logger.minor(this, "Queueing encode: " + dataBlockStatus.length
+					+ " data blocks, " + checkBlockStatus.length
+					+ " check blocks, block length " + blockLength + " with "
+					+ this, new Exception("debug"));
 		// Encodes count as decodes.
 		synchronized(runningDecodesSync) {
 			while(runningDecodes >= PARALLEL_DECODES) {
@@ -357,11 +365,13 @@ public class StandardOnionFECCodec extends FECCodec {
 //		Runtime.getRuntime().gc();
 //		Runtime.getRuntime().runFinalization();
 		long memUsedAtStart = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-		Logger.minor(this, "Memory in use at start: "+memUsedAtStart+" max="+Runtime.getRuntime().maxMemory());
-		Logger.minor(this, "Doing encode: " + dataBlockStatus.length
-				+ " data blocks, " + checkBlockStatus.length
-				+ " check blocks, block length " + blockLength + " with "
-				+ this);
+		if(logMINOR) {
+			Logger.minor(this, "Memory in use at start: "+memUsedAtStart+" max="+Runtime.getRuntime().maxMemory());
+			Logger.minor(this, "Doing encode: " + dataBlockStatus.length
+					+ " data blocks, " + checkBlockStatus.length
+					+ " check blocks, block length " + blockLength + " with "
+					+ this);
+		}
 		if ((dataBlockStatus.length + checkBlockStatus.length != n) ||
 				(dataBlockStatus.length != k))
 			throw new IllegalArgumentException("Data blocks: "+dataBlockStatus.length+", Check blocks: "+checkBlockStatus.length+", n: "+n+", k: "+k);
@@ -417,13 +427,13 @@ public class StandardOnionFECCodec extends FECCodec {
 //			Runtime.getRuntime().gc();
 //			Runtime.getRuntime().runFinalization();
 			long memUsedBeforeEncodes = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-			Logger.minor(this, "Memory in use before encodes: "+memUsedBeforeEncodes);
+			if(logMINOR) Logger.minor(this, "Memory in use before encodes: "+memUsedBeforeEncodes);
 			
 			if (numberToEncode > 0) {
 				// Do the (striped) encode
 				for (int offset = 0; offset < blockLength; offset += STRIPE_SIZE) {
 					long memUsedBeforeRead = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-					Logger.minor(this, "Memory in use before read: "+memUsedBeforeRead);
+					if(logMINOR) Logger.minor(this, "Memory in use before read: "+memUsedBeforeRead);
 					// Read the data in first
 					for (int i = 0; i < k; i++) {
 						readers[i].readFully(realBuffer, i * STRIPE_SIZE,
@@ -437,16 +447,16 @@ public class StandardOnionFECCodec extends FECCodec {
 //					Runtime.getRuntime().gc();
 //					Runtime.getRuntime().runFinalization();
 					long memUsedBeforeStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-					Logger.minor(this, "Memory in use before stripe: "+memUsedBeforeStripe);
+					if(logMINOR) Logger.minor(this, "Memory in use before stripe: "+memUsedBeforeStripe);
 					encoder.encode(dataPackets, checkPackets, toEncode);
 //					Runtime.getRuntime().gc();
 //					Runtime.getRuntime().runFinalization();
 //					Runtime.getRuntime().gc();
 //					Runtime.getRuntime().runFinalization();
 					long memUsedAfterStripe = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-					Logger.minor(this, "Memory in use after stripe: "+memUsedAfterStripe);
+					if(logMINOR) Logger.minor(this, "Memory in use after stripe: "+memUsedAfterStripe);
 					long endTime = System.currentTimeMillis();
-					Logger.minor(this, "Stripe encode took "
+					if(logMINOR) Logger.minor(this, "Stripe encode took "
 							+ (endTime - startTime) + "ms for k=" + k + ", n="
 							+ n + ", stripeSize=" + STRIPE_SIZE);
 					// Try to limit CPU usage!!

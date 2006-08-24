@@ -34,6 +34,7 @@ class SingleFileInserter implements ClientPutState {
 	// Config option???
 	private static final long COMPRESS_OFF_THREAD_LIMIT = 65536;
 	
+	private static boolean logMINOR;
 	final BaseClientPutter parent;
 	final InsertBlock block;
 	final InserterContext ctx;
@@ -73,6 +74,7 @@ class SingleFileInserter implements ClientPutState {
 		this.getCHKOnly = getCHKOnly;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
 		this.freeData = freeData;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	public void start(SimpleFieldSet fs) throws InserterException {
@@ -96,7 +98,7 @@ class SingleFileInserter implements ClientPutState {
 			// Run off thread
 			OffThreadCompressor otc = new OffThreadCompressor();
 			Thread t = new Thread(otc, "Compressor for "+this);
-			Logger.minor(this, "Compressing off-thread: "+t);
+			if(logMINOR) Logger.minor(this, "Compressing off-thread: "+t);
 			t.setDaemon(true);
 			t.start();
 		} else {
@@ -176,7 +178,7 @@ class SingleFileInserter implements ClientPutState {
 		
 		if(parent == cb) {
 			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()));
-			Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
+			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
 		}
 		
 		// Compressed data
@@ -310,7 +312,7 @@ class SingleFileInserter implements ClientPutState {
 				throw new ResumeException("No SplitFileInserter");
 			ClientPutState newSFI, newMetaPutter = null;
 			newSFI = new SplitFileInserter(parent, this, forceMetadata ? null : block.clientMetadata, ctx, getCHKOnly, meta, token, insertAsArchiveManifest, sfiFS);
-			Logger.minor(this, "Starting "+newSFI+" for "+this);
+			if(logMINOR) Logger.minor(this, "Starting "+newSFI+" for "+this);
 			fs.removeSubset("SplitFileInserter");
 			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
 			if(metaFS != null) {
@@ -330,7 +332,7 @@ class SingleFileInserter implements ClientPutState {
 					// Will be reconstructed later
 				}
 			}
-			Logger.minor(this, "Metadata putter "+metadataPutter+" for "+this);
+			if(logMINOR) Logger.minor(this, "Metadata putter "+metadataPutter+" for "+this);
 			fs.removeSubset("MetadataPutter");
 			synchronized(this) {
 				sfi = newSFI;
@@ -350,28 +352,29 @@ class SingleFileInserter implements ClientPutState {
 		}
 		
 		public void onSuccess(ClientPutState state) {
-			Logger.minor(this, "onSuccess("+state+") for "+this);
+			logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			if(logMINOR) Logger.minor(this, "onSuccess("+state+") for "+this);
 			boolean lateStart = false;
 			synchronized(this) {
 				if(finished) return;
 				if(state == sfi) {
-					Logger.minor(this, "Splitfile insert succeeded for "+this+" : "+state);
+					if(logMINOR) Logger.minor(this, "Splitfile insert succeeded for "+this+" : "+state);
 					splitInsertSuccess = true;
 					if(!metaInsertSuccess && !metaInsertStarted) {
 						Logger.error(this, "Splitfile insert succeeded but metadata not started, starting anyway... "+metadataPutter+" for "+this+" ( "+sfi+" )");
 						metaInsertStarted = true;
 						lateStart = true;
 					} else {
-						Logger.minor(this, "Metadata already started for "+this+" : success="+metaInsertSuccess+" started="+metaInsertStarted);
+						if(logMINOR) Logger.minor(this, "Metadata already started for "+this+" : success="+metaInsertSuccess+" started="+metaInsertStarted);
 					}
 				} else if(state == metadataPutter) {
-					Logger.minor(this, "Metadata insert succeeded for "+this+" : "+state);
+					if(logMINOR) Logger.minor(this, "Metadata insert succeeded for "+this+" : "+state);
 					metaInsertSuccess = true;
 				} else {
 					Logger.error(this, "Unknown: "+state+" for "+this, new Exception("debug"));
 				}
 				if(splitInsertSuccess && metaInsertSuccess) {
-					Logger.minor(this, "Both succeeded for "+this);
+					if(logMINOR) Logger.minor(this, "Both succeeded for "+this);
 					finished = true;
 				}
 			}
@@ -437,7 +440,7 @@ class SingleFileInserter implements ClientPutState {
 					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true);
 					if(!dataFetchable) return;
 				}
-				Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+")");
+				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+")");
 			} catch (InserterException e1) {
 				cb.onFailure(e1, this);
 				return;
@@ -446,7 +449,7 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		private void fail(InserterException e) {
-			Logger.minor(this, "Failing: "+e, e);
+			if(logMINOR) Logger.minor(this, "Failing: "+e, e);
 			ClientPutState oldSFI = null;
 			ClientPutState oldMetadataPutter = null;
 			synchronized(this) {
@@ -524,7 +527,9 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void onFetchable(ClientPutState state) {
-			
+
+			logMINOR = Logger.shouldLog(Logger.MINOR, this);
+
 			boolean meta;
 			
 			synchronized(this) {
@@ -557,14 +562,14 @@ class SingleFileInserter implements ClientPutState {
 				ClientPutState putter;
 				synchronized(this) {
 					if(metadataPutter == null) {
-						Logger.minor(this, "Cannot start metadata yet: no metadataPutter");
+						if(logMINOR) Logger.minor(this, "Cannot start metadata yet: no metadataPutter");
 						return;
 					}
 					putter = metadataPutter;
 				}
-				Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
+				if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
 				putter.schedule();
-				Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
+				if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
 			} catch (InserterException e1) {
 				Logger.error(this, "Failing "+this+" : "+e1, e1);
 				fail(e1);

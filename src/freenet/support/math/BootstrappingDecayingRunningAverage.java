@@ -66,11 +66,13 @@ public final class BootstrappingDecayingRunningAverage implements
 
     public synchronized void report(double d) {
         if(d < min) {
-            Logger.debug(this, "Too low: "+d, new Exception("debug"));
+        	if(Logger.shouldLog(Logger.DEBUG, this))
+        		Logger.debug(this, "Too low: "+d, new Exception("debug"));
             d = min;
         }
         if(d > max) {
-            Logger.debug(this, "Too high: "+d, new Exception("debug"));
+        	if(Logger.shouldLog(Logger.DEBUG, this))
+        		Logger.debug(this, "Too high: "+d, new Exception("debug"));
             d = max;
         }
         reports++;

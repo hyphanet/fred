@@ -56,6 +56,8 @@ import freenet.support.SortedLongSet;
  */
 public class BerkeleyDBFreenetStore implements FreenetStore {
 
+	private static boolean logMINOR;
+	
     final int dataBlockSize;
     final int headerBlockSize;
 	
@@ -89,6 +91,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
      * @throws FileNotFoundException if the dir does not exist and could not be created
      */
 	public BerkeleyDBFreenetStore(String storeDir, long maxChkBlocks, int blockSize, int headerSize, boolean throwOnTooFewKeys) throws IOException, DatabaseException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
 		this.freeBlocks = new SortedLongSet();
@@ -222,7 +225,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			}
 			
 			chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
-			Logger.minor(this, "Keys in store: "+chkBlocksInStore);
+			if(logMINOR) Logger.minor(this, "Keys in store: "+chkBlocksInStore);
 			System.out.println("Keys in store: "+chkBlocksInStore+" / "+maxChkBlocks+" (db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+")");
 
 			maybeShrink(true, true);
@@ -538,6 +541,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
      * @throws FileNotFoundException if the dir does not exist and could not be created
      */
 	public BerkeleyDBFreenetStore(String storeDir, long maxChkBlocks, int blockSize, int headerSize, short type) throws Exception {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
 		this.freeBlocks = new SortedLongSet();
@@ -732,14 +736,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				t = null;
 				return;
 			}
-			Logger.minor(this, "Found first key");
+			if(logMINOR) Logger.minor(this, "Found first key");
 			int x = 0;
 			while(true) {
 		    	StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
-				Logger.minor(this, "Found another key ("+(x++)+") ("+storeBlock.offset+")");
+		    	if(logMINOR) Logger.minor(this, "Found another key ("+(x++)+") ("+storeBlock.offset+")");
 				Long l = new Long(storeBlock.offset);
 				if(s.contains(l)) {
-					Logger.minor(this, "Deleting (block number conflict).");
+					if(logMINOR) Logger.minor(this, "Deleting (block number conflict).");
 					chkDB.delete(t, keyDBE);
 				}
 				s.add(l);
@@ -842,9 +846,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    			t = null;
 	    		}
 	    		
-	    		Logger.minor(this, "Get key: "+chk);
-	            Logger.minor(this, "Headers: "+header.length+" bytes, hash "+header);
-	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    		if(logMINOR) {
+	    			Logger.minor(this, "Get key: "+chk);
+	    			Logger.minor(this, "Headers: "+header.length+" bytes, hash "+header);
+	    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    		}
 	    		
 	    	}catch(CHKVerifyException ex){
 	    		Logger.error(this, "CHKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk);
@@ -940,9 +946,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    			t = null;
 	    		}
 	    		
-	    		Logger.minor(this, "Get key: "+chk);
-	            Logger.minor(this, "Headers: "+header.length+" bytes, hash "+header);
-	            Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    		if(logMINOR) {
+	    			Logger.minor(this, "Get key: "+chk);
+	    			Logger.minor(this, "Headers: "+header.length+" bytes, hash "+header);
+	    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    		}
 	    		
 	    	}catch(SSKVerifyException ex){
 	    		Logger.normal(this, "SSKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+chk, ex);
@@ -1029,12 +1037,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	DSAPublicKey block = null;
 	    	
     		byte[] data = new byte[dataBlockSize];
-    		Logger.minor(this, "Reading from store... "+storeBlock.offset+" ("+storeBlock.recentlyUsed+")");
+    		if(logMINOR) Logger.minor(this, "Reading from store... "+storeBlock.offset+" ("+storeBlock.recentlyUsed+")");
     		synchronized(chkStore) {
 	    		chkStore.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
 	    		chkStore.readFully(data);
     		}
-    		Logger.minor(this, "Read");
+    		if(logMINOR) Logger.minor(this, "Read");
     		
     		try {
     			block = new DSAPublicKey(data);
@@ -1052,8 +1060,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	    	t.commit();
 	    	t = null;
 	    	
-	    	Logger.minor(this, "Get key: "+HexUtil.bytesToHex(hash));
-	        Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    	if(logMINOR) {
+	    		Logger.minor(this, "Get key: "+HexUtil.bytesToHex(hash));
+	    		Logger.minor(this, "Data: "+data.length+" bytes, hash "+data);
+	    	}
 	    	
 	        synchronized(this) {
 	        	hits++;
@@ -1105,10 +1115,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
    				System.err.println("Freed block "+offset+" ("+reason+")");
    				Logger.normal(this, "Freed block "+offset+" ("+reason+")");
    			} else {
-   				Logger.minor(this, "Freed block "+offset+" ("+reason+")");
+   				if(logMINOR) Logger.minor(this, "Freed block "+offset+" ("+reason+")");
    			}
    		} else {
-   			Logger.minor(this, "Already freed block "+offset+" ("+reason+")");
+   			if(logMINOR) Logger.minor(this, "Already freed block "+offset+" ("+reason+")");
    		}
 	}
 
@@ -1236,9 +1246,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		t.commit();
     		t = null;
         	
-	    	Logger.minor(this, "Put key: "+block.getKey());
-	        Logger.minor(this, "Headers: "+header.length+" bytes, hash "+Fields.hashCode(header));
-	        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+    		if(logMINOR) {
+    			Logger.minor(this, "Put key: "+block.getKey());
+    			Logger.minor(this, "Headers: "+header.length+" bytes, hash "+Fields.hashCode(header));
+    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+    		}
                 
         }catch(Throwable ex) {  // FIXME: ugly  
         	if(t!=null){
@@ -1364,8 +1376,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     		t.commit();
     		t = null;
         	
-	    	Logger.minor(this, "Put key: "+HexUtil.bytesToHex(hash));
-	        Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+    		if(logMINOR) {
+    			Logger.minor(this, "Put key: "+HexUtil.bytesToHex(hash));
+    			Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data));
+    		}
                 
         } catch(Throwable ex) {  // FIXME: ugly  
         	Logger.error(this, "Caught "+ex, ex);
@@ -1497,7 +1511,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			//			before we try to close it. Currently we just guess
     		//			This is nothing too problematic however since the worst thing that should
     		//			happen is that we miss the last few store()'s and get an exception.
-			Logger.minor(this, "Closing database.");
+    		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    		if(logMINOR) Logger.minor(this, "Closing database.");
 			closed=true;
 			// Give all threads some time to complete
 			if(sleep)
@@ -1537,7 +1552,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Caught closing database: "+t);
 				t.printStackTrace();
 			}
-    		Logger.minor(this, "Closing database finished.");
+    		if(logMINOR) Logger.minor(this, "Closing database finished.");
     		System.err.println("Closed database");
 		}catch(Exception ex){
 			Logger.error(this,"Error while closing database.",ex);

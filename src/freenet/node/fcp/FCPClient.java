@@ -130,7 +130,8 @@ public class FCPClient {
 	}
 	
 	public void register(ClientRequest cg, boolean startLater) throws IdentifierCollisionException {
-		Logger.minor(this, "Registering "+cg.getIdentifier()+(startLater ? " to start later" : ""));
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Registering "+cg.getIdentifier()+(startLater ? " to start later" : ""));
 		synchronized(this) {
 			String ident = cg.getIdentifier();
 			ClientRequest old = (ClientRequest) clientRequestsByIdentifier.get(ident);
@@ -148,7 +149,8 @@ public class FCPClient {
 
 	public void removeByIdentifier(String identifier, boolean kill) throws MessageInvalidException {
 		ClientRequest req;
-		Logger.minor(this, "removeByIdentifier("+identifier+","+kill+")");
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+","+kill+")");
 		synchronized(this) {
 			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
 			if(req == null)
@@ -158,7 +160,7 @@ public class FCPClient {
 			clientRequestsByIdentifier.remove(identifier);
 		}
 		if(kill) {
-			Logger.minor(this, "Killing request "+req);
+			if(logMINOR) Logger.minor(this, "Killing request "+req);
 			req.cancel();
 		}
 		server.forceStorePersistentRequests();

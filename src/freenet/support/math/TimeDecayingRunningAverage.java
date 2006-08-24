@@ -137,8 +137,8 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 			if(!started) {
 				curValue = d;
 				started = true;
-				//if(logDEBUG)
-					Logger.minor(this, "Reported "+d+" on "+this+" when just started");
+				if(logDEBUG)
+					Logger.debug(this, "Reported "+d+" on "+this+" when just started");
 			} else if(lastReportTime != -1) { // might be just serialized in
 				long thisInterval =
 					 now - lastReportTime;
@@ -151,8 +151,8 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 				double oldCurValue = curValue;
 				curValue = curValue * changeFactor /* close to 1.0 if short interval, close to 0.0 if long interval */ 
 					+ (1.0 - changeFactor) * d;
-				//if(logDEBUG)
-					Logger.minor(this, "Reported "+d+" on "+this+": thisInterval="+thisInterval+
+				if(logDEBUG)
+					Logger.debug(this, "Reported "+d+" on "+this+": thisInterval="+thisInterval+
 							", halfLife="+halfLife+", uptime="+uptime+", thisHalfLife="+thisHalfLife+
 							", changeFactor="+changeFactor+", oldCurValue="+oldCurValue+
 							", currentValue="+currentValue()+

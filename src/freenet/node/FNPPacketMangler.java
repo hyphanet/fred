@@ -29,6 +29,7 @@ import freenet.support.WouldBlockException;
  */
 public class FNPPacketMangler implements LowLevelFilter {
 
+	private static boolean logMINOR;
     final Node node;
     final PeerManager pm;
     final UdpSocketManager usm;
@@ -73,7 +74,8 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     public void process(byte[] buf, int offset, int length, Peer peer) {
         node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
-        Logger.minor(this, "Packet length "+length+" from "+peer);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 
         /**
          * Look up the Peer.
@@ -85,7 +87,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         PeerNode pn;
         
         if(opn != null) {
-            Logger.minor(this, "Trying exact match");
+            if(logMINOR) Logger.minor(this, "Trying exact match");
             if(length > HEADERS_LENGTH_MINIMUM) {
                 if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker())) return;
                 // Try with old key
@@ -126,9 +128,9 @@ public class FNPPacketMangler implements LowLevelFilter {
                 if(tryProcessAuth(buf, offset, length, pn, peer)) return;
             }
         }
-        if((opn != null) && !opn.isConnected())
-            Logger.minor(this,"Unmatchable packet from "+peer);
-        else
+        if((opn != null) && !opn.isConnected()) {
+            if(logMINOR) Logger.minor(this,"Unmatchable packet from "+peer);
+        } else
             Logger.error(this,"Unmatchable packet from "+peer);
     }
 
@@ -143,14 +145,14 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode opn, Peer peer) {
         BlockCipher authKey = opn.incomingSetupCipher;
-        Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey)+" for "+peer+" : "+opn);
+        if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(opn.incomingSetupKey)+" for "+peer+" : "+opn);
         // Does the packet match IV E( H(data) data ) ?
         PCFBMode pcfb = new PCFBMode(authKey);
         int ivLength = pcfb.lengthIV();
         MessageDigest md = getDigest();
         int digestLength = md.getDigestLength();
         if(length < digestLength + ivLength + 4) {
-            Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+            if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
             return false;
         }
         // IV at the beginning
@@ -167,9 +169,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         int byte1 = ((pcfb.decipher(buf[dataStart-2])) & 0xff);
         int byte2 = ((pcfb.decipher(buf[dataStart-1])) & 0xff);
         int dataLength = (byte1 << 8) + byte2;
-        Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+")");
+        if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+")");
         if(dataLength > length - (ivLength+hash.length+2)) {
-            Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
+            if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
             return false;
         }
         // Decrypt the data
@@ -185,7 +187,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             processDecryptedAuth(payload, opn, peer);
             return true;
         } else {
-            Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
+            if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
             return false;
         }
     }
@@ -195,7 +197,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param payload The packet payload, after it has been decrypted.
      */
     private void processDecryptedAuth(byte[] payload, PeerNode pn, Peer replyTo) {
-        Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn);
+        if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn);
         /* Format:
          * 1 byte - version number (0)
          * 1 byte - negotiation type (0 = simple DH, will not be supported when implement JFKi)
@@ -221,7 +223,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
         long now = System.currentTimeMillis();
         int delta = (int) (now - pn.lastSentPacketTime());
-        Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (pt="+packetType+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) from "+replyTo+"");
+        if(logMINOR) Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (pt="+packetType+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) from "+replyTo+"");
         // We keep one DiffieHellmanContext per node ONLY
         /*
          * Now, to the real meat
@@ -315,7 +317,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private void sendFirstHalfDHPacket(int phase, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
         long time1 = System.currentTimeMillis();
-        Logger.minor(this, "Sending ("+phase+") "+integer.toHexString()+" to "+pn.getPeer());
+        if(logMINOR) Logger.minor(this, "Sending ("+phase+") "+integer.toHexString()+" to "+pn.getPeer());
         byte[] data = integer.toByteArray();
         int targetLength = DiffieHellman.modulusLengthInBytes();
         if(data.length != targetLength) {
@@ -330,7 +332,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             }
             data = newData;
         }
-        Logger.minor(this, "Processed: "+HexUtil.bytesToHex(data));
+        if(logMINOR) Logger.minor(this, "Processed: "+HexUtil.bytesToHex(data));
         long time2 = System.currentTimeMillis();
         if((time2 - time1) > 200) {
           Logger.error(this, "sendFirstHalfDHPacket: time2 is more than 200ms after time1 ("+(time2 - time1)+") working on "+replyTo+" of "+pn.getName());
@@ -356,7 +358,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         output[1] = (byte) negType;
         output[2] = (byte) phase;
         System.arraycopy(data, 0, output, 3, data.length);
-        Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (ph="+phase+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) to "+replyTo+" data.length="+data.length);
+        if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (ph="+phase+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) to "+replyTo+" data.length="+data.length);
         sendAuthPacket(output, pn, replyTo);
     }
 
@@ -369,19 +371,19 @@ public class FNPPacketMangler implements LowLevelFilter {
             throw new IllegalStateException("Cannot send auth packet: too long: "+length);
         }
         BlockCipher cipher = pn.outgoingSetupCipher;
-        Logger.minor(this, "Outgoing cipher: "+HexUtil.bytesToHex(pn.outgoingSetupKey));
+        if(logMINOR) Logger.minor(this, "Outgoing cipher: "+HexUtil.bytesToHex(pn.outgoingSetupKey));
         PCFBMode pcfb = new PCFBMode(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
         node.random.nextBytes(iv);
         MessageDigest md = getDigest();
         byte[] hash = md.digest(output);
-        Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
+        if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
         byte[] data = new byte[iv.length + hash.length + 2 /* length */ + output.length];
         pcfb.reset(iv);
         System.arraycopy(iv, 0, data, 0, iv.length);
         pcfb.blockEncipher(hash, 0, hash.length);
         System.arraycopy(hash, 0, data, iv.length, hash.length);
-        Logger.minor(this, "Payload length: "+length);
+        if(logMINOR) Logger.minor(this, "Payload length: "+length);
         data[hash.length+iv.length] = (byte) pcfb.encipher((byte)(length>>8));
         data[hash.length+iv.length+1] = (byte) pcfb.encipher((byte)length);
         pcfb.blockEncipher(output, 0, output.length);
@@ -391,7 +393,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Tried to send auth packet to local address: "+replyTo+" for "+pn);
 		}
-        Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
+		if(logMINOR) Logger.minor(this, "Sending auth packet (long) to "+replyTo+" - size "+data.length+" data length: "+output.length);
      }
 
     private void sendPacket(byte[] data, Peer replyTo, PeerNode pn, int alreadyReportedBytes) throws LocalAddressException {
@@ -476,7 +478,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     private DiffieHellmanContext processDHZeroOrOne(int phase, byte[] payload, PeerNode pn) {
         
         if((phase == 0) && pn.hasLiveHandshake(System.currentTimeMillis())) {
-            Logger.minor(this, "Rejecting phase "+phase+" handshake on "+pn+" - already running one");
+            if(logMINOR) Logger.minor(this, "Rejecting phase "+phase+" handshake on "+pn+" - already running one");
             return null;
         }
         
@@ -503,7 +505,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             pn.setDHContext(ctx);
         }
         ctx.setOtherSideExponential(a);
-        Logger.minor(this, "His exponential: "+a.toHexString());
+        if(logMINOR) Logger.minor(this, "His exponential: "+a.toHexString());
         // REDFLAG: This is of course easily DoS'ed if you know the node.
         // We will fix this by means of JFKi.
         return ctx;
@@ -528,10 +530,10 @@ public class FNPPacketMangler implements LowLevelFilter {
     private boolean tryProcess(byte[] buf, int offset, int length, KeyTracker tracker) {
         // Need to be able to call with tracker == null to simplify code above
         if(tracker == null) {
-            Logger.minor(this, "Tracker == null");
+            if(logMINOR) Logger.minor(this, "Tracker == null");
             return false;
         }
-        Logger.minor(this,"Entering tryProcess: "+Fields.hashCode(buf)+","+offset+","+length+","+tracker);
+        if(logMINOR) Logger.minor(this,"Entering tryProcess: "+Fields.hashCode(buf)+","+offset+","+length+","+tracker);
         /**
          * E_pcbc_session(H(seq+random+data)) E_pcfb_session(seq+random+data)
          * 
@@ -541,10 +543,10 @@ public class FNPPacketMangler implements LowLevelFilter {
          */
         BlockCipher sessionCipher = tracker.sessionCipher;
         if(sessionCipher == null) {
-            Logger.minor(this, "No cipher");
+        	if(logMINOR) Logger.minor(this, "No cipher");
             return false;
         }
-        Logger.minor(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
+        if(logMINOR) Logger.minor(this, "Decrypting with "+HexUtil.bytesToHex(tracker.sessionKey));
         int blockSize = sessionCipher.getBlockSize() >> 3;
         if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
             throw new IllegalStateException("Block size must be equal to key size");
@@ -576,8 +578,8 @@ public class FNPPacketMangler implements LowLevelFilter {
                 (seqBuf[3] & 0xff);
 
         int targetSeqNumber = tracker.highestReceivedIncomingSeqNumber();
-        Logger.minor(this, "Target seq: "+targetSeqNumber);
-        Logger.minor(this, "Sequence number: "+seqNumber+"="+Integer.toHexString(seqNumber));
+        if(logMINOR) Logger.minor(this, "Target seq: "+targetSeqNumber);
+        if(logMINOR) Logger.minor(this, "Sequence number: "+seqNumber+"="+Integer.toHexString(seqNumber));
 
         if(seqNumber == -1) {
             // Ack/resendreq-only packet
@@ -587,7 +589,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             if((targetSeqNumber != -1) && (Math.abs(targetSeqNumber - seqNumber) > MAX_PACKETS_IN_FLIGHT))
                 return false;
         }
-        Logger.minor(this, "Sequence number received: "+seqNumber);
+        if(logMINOR) Logger.minor(this, "Sequence number received: "+seqNumber);
         
         // Plausible, so lets decrypt the rest of the data
         
@@ -612,7 +614,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         // Check the hash
         if(!java.util.Arrays.equals(packetHash, realHash)) {
-            Logger.minor(this, "Packet possibly from "+tracker+" hash does not match:\npacketHash="+
+            if(logMINOR) Logger.minor(this, "Packet possibly from "+tracker+" hash does not match:\npacketHash="+
                     HexUtil.bytesToHex(packetHash)+"\n  realHash="+HexUtil.bytesToHex(realHash)+" ("+(length-HASH_LENGTH)+" bytes payload)");
             return false;
         }
@@ -623,9 +625,9 @@ public class FNPPacketMangler implements LowLevelFilter {
         for(int i=0;i<md.getDigestLength();i++) {
             packetHash[i] ^= buf[offset+i];
         }
-        Logger.minor(this, "Contributing entropy");
+        if(logMINOR) Logger.minor(this, "Contributing entropy");
         node.random.acceptEntropyBytes(myPacketDataSource, packetHash, 0, md.getDigestLength(), 0.5);
-        Logger.minor(this, "Contributed entropy");
+        if(logMINOR) Logger.minor(this, "Contributed entropy");
         
         // Lots more to do yet!
         processDecryptedData(plaintext, seqNumber, tracker, length - plaintext.length);
@@ -708,10 +710,10 @@ public class FNPPacketMangler implements LowLevelFilter {
                     (decrypted[ptr+2] & 0xff)) << 8) + (decrypted[ptr+3] & 0xff);
         ptr+=4;
         
-        Logger.minor(this, "Reference sequence number: "+referenceSeqNumber);
+        if(logMINOR) Logger.minor(this, "Reference sequence number: "+referenceSeqNumber);
 
         int ackCount = decrypted[ptr++] & 0xff;
-        Logger.minor(this, "Acks: "+ackCount);
+        if(logMINOR) Logger.minor(this, "Acks: "+ackCount);
 
         int[] acks = new int[ackCount];
         for(int i=0;i<ackCount;i++) {
@@ -726,7 +728,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         tracker.acknowledgedPackets(acks);
         
         int retransmitCount = decrypted[ptr++] & 0xff;
-        Logger.minor(this, "Retransmit requests: "+retransmitCount);
+        if(logMINOR) Logger.minor(this, "Retransmit requests: "+retransmitCount);
         
         for(int i=0;i<retransmitCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
@@ -734,12 +736,12 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             }
             int realSeqNo = referenceSeqNumber - offset;
-            Logger.minor(this, "RetransmitRequest: "+realSeqNo);
+            if(logMINOR) Logger.minor(this, "RetransmitRequest: "+realSeqNo);
             tracker.resendPacket(realSeqNo);
         }
 
         int ackRequestsCount = decrypted[ptr++] & 0xff;
-        Logger.minor(this, "Ack requests: "+ackRequestsCount);
+        if(logMINOR) Logger.minor(this, "Ack requests: "+ackRequestsCount);
         
         // These two are relative to our outgoing packet number
         // Because they relate to packets we have sent.
@@ -749,12 +751,12 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             }
             int realSeqNo = realSeqNumber - offset;
-            Logger.minor(this, "AckRequest: "+realSeqNo);
+            if(logMINOR) Logger.minor(this, "AckRequest: "+realSeqNo);
             tracker.receivedAckRequest(realSeqNo);
         }
         
         int forgottenCount = decrypted[ptr++] & 0xff;
-        Logger.minor(this, "Forgotten packets: "+forgottenCount);
+        if(logMINOR) Logger.minor(this, "Forgotten packets: "+forgottenCount);
         
         for(int i=0;i<forgottenCount;i++) {
             int offset = decrypted[ptr++] & 0xff;
@@ -793,7 +795,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Message longer than remaining space: "+length);
                 return;
             }
-            Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
+            if(logMINOR) Logger.minor(this, "Message "+i+" length "+length+", hash code: "+Fields.hashCode(decrypted, ptr, length));
             Message m = usm.decodePacket(decrypted, ptr, length, tracker.pn, 1 + (overhead / messages));
             ptr+=length;
             if(m != null) {
@@ -801,7 +803,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 usm.checkFilters(m);
             }
         }
-        Logger.minor(this, "Done");
+        if(logMINOR) Logger.minor(this, "Done");
     }
 
     /**
@@ -812,7 +814,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     	if(!dontRequeue) {
     		requeueLogString = ", requeueing";
     	}
-        Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn+" ("+neverWaitForPacketNumber+")");
+        if(logMINOR) Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn+" ("+neverWaitForPacketNumber+")");
         byte[][] messageData = new byte[messages.length][];
         int[] alreadyReported = new int[messages.length];
         MessageItem[] newMsgs = new MessageItem[messages.length];
@@ -828,7 +830,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                     byte[] buf = mi.getData(pn);
                     KeyTracker kt = pn.getCurrentKeyTracker();
                     if(kt == null) {
-                        Logger.minor(this, "kt = null");
+                        if(logMINOR) Logger.minor(this, "kt = null");
                         pn.requeueMessageItems(messages, i, messages.length-i, false, "kt = null");
                         return;
                     }
@@ -845,7 +847,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                     }
                     return;
                 } catch (WouldBlockException e) {
-                    Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
+                    if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                     // Requeue
                     if(!dontRequeue) {
                     	pn.requeueMessageItems(messages, 0, x, false, "WouldBlockException(1a)");
@@ -853,7 +855,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                     }
                     return;
                 } catch (KeyChangedException e) {
-                    Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
+                	if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                     // Requeue
                     if(!dontRequeue) {
                     	pn.requeueMessageItems(messages, 0, x, false, "KeyChangedException(1a)");
@@ -876,7 +878,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 alreadyReported[x] = mi.alreadyReportedBytes;
                 x++;
                 if(mi.cb != null) callbacksCount += mi.cb.length;
-                Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+mi.cb);
+                if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+mi.cb);
                 length += (data.length + 2);
             }
         }
@@ -919,7 +921,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 	pn.requeueMessageItems(messages, 0, messages.length, false, "NotConnectedException(2)");
                 return;
             } catch (WouldBlockException e) {
-                Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
+            	if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                 // Requeue
                 if(!dontRequeue)
                 	pn.requeueMessageItems(messages, 0, messages.length, false, "WouldBlockException(2)");
@@ -973,7 +975,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                             	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "NotConnectedException(3)");
                             return;
                         } catch (WouldBlockException e) {
-                            Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
+                        	if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
                             // Requeue
                             if(!dontRequeue)
                             	pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "WouldBlockException(3)");
@@ -1009,7 +1011,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private void innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, 
     		PeerNode pn, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks, int alreadyReportedBytes) throws NotConnectedException, WouldBlockException, PacketSequenceException {
-        Logger.minor(this, "innerProcessOutgoing(...,"+start+","+length+","+bufferLength+")");
+    	if(logMINOR) Logger.minor(this, "innerProcessOutgoing(...,"+start+","+length+","+bufferLength+")");
         byte[] buf = new byte[bufferLength];
         buf[0] = (byte)length;
         int loc = 1;
@@ -1031,7 +1033,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws WouldBlockException 
      */
     public void processOutgoing(byte[] buf, int offset, int length, PeerContext peer, int alreadyReportedBytes) throws NotConnectedException, PacketSequenceException, WouldBlockException {
-    	Logger.minor(this, "processOutgoing(buf, "+offset+", "+length+", "+peer.getPeer());
+    	if(logMINOR) Logger.minor(this, "processOutgoing(buf, "+offset+", "+length+", "+peer.getPeer());
         if(!(peer instanceof PeerNode))
             throw new IllegalArgumentException();
         PeerNode pn = (PeerNode)peer;
@@ -1068,7 +1070,7 @@ public class FNPPacketMangler implements LowLevelFilter {
     		int alreadyReportedBytes) throws NotConnectedException, PacketSequenceException, WouldBlockException {
         while(true) {
             try {
-            	Logger.minor(this, "At beginning of processOutgoingPreformatted loop for "+peer.getPeer());
+            	if(logMINOR) Logger.minor(this, "At beginning of processOutgoingPreformatted loop for "+peer.getPeer());
                 KeyTracker tracker = peer.getCurrentKeyTracker();
                 if(tracker == null) {
                     Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(1)");
@@ -1146,7 +1148,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @throws WouldBlockException If we cannot allocate a packet number because it would block.
      */
     public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks, int alreadyReportedBytes) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
-        if(Logger.shouldLog(Logger.MINOR, this)) {
+        if(logMINOR) {
             String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+","+length+","+tracker+","+packetNumber+",";
             if(callbacks == null) log += "null";
             else log += (""+callbacks.length+(callbacks.length >= 1 ? String.valueOf(callbacks[0]) : ""));
@@ -1182,7 +1184,7 @@ public class FNPPacketMangler implements LowLevelFilter {
        			seqNumber = tracker.allocateOutgoingPacketNumberNeverBlock();
        	}
         
-       	Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());
+       	if(logMINOR) Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());
         
         /** The last sent sequence number, so that we can refer to packets
          * sent after this packet was originally sent (it may be a resend) */
@@ -1196,7 +1198,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         	ackRequests = tracker.grabAckRequests();
             realSeqNumber = tracker.getLastOutgoingSeqNumber();
             otherSideSeqNumber = tracker.highestReceivedIncomingSeqNumber();
-            Logger.minor(this, "otherSideSeqNumber: "+otherSideSeqNumber);
+            if(logMINOR) Logger.minor(this, "otherSideSeqNumber: "+otherSideSeqNumber);
         }
         
         int packetLength = acks.length + resendRequests.length + ackRequests.length + 4 + 1 + length + 4 + 4 + RANDOM_BYTES_LENGTH;
@@ -1214,7 +1216,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         plaintext[ptr++] = (byte)(seqNumber >> 8);
         plaintext[ptr++] = (byte)seqNumber;
         
-        Logger.minor(this, "Getting random junk");
+        if(logMINOR) Logger.minor(this, "Getting random junk");
         node.random.nextBytes(randomJunk);
         System.arraycopy(randomJunk, 0, plaintext, ptr, RANDOM_BYTES_LENGTH);
         ptr += RANDOM_BYTES_LENGTH;
@@ -1238,7 +1240,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         plaintext[ptr++] = (byte) acks.length;
         for(int i=0;i<acks.length;i++) {
             int ackSeq = acks[i];
-            Logger.minor(this, "Acking "+ackSeq);
+            if(logMINOR) Logger.minor(this, "Acking "+ackSeq);
             int offsetSeq = otherSideSeqNumber - ackSeq;
             if((offsetSeq > 255) || (offsetSeq < 0))
                 throw new PacketSequenceException("bad ack offset "+offsetSeq+
@@ -1249,7 +1251,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         plaintext[ptr++] = (byte) resendRequests.length;
         for(int i=0;i<resendRequests.length;i++) {
             int reqSeq = resendRequests[i];
-            Logger.minor(this, "Resend req: "+reqSeq);
+            if(logMINOR) Logger.minor(this, "Resend req: "+reqSeq);
             int offsetSeq = otherSideSeqNumber - reqSeq;
             if((offsetSeq > 255) || (offsetSeq < 0))
                 throw new PacketSequenceException("bad resend request offset "+offsetSeq+
@@ -1258,10 +1260,10 @@ public class FNPPacketMangler implements LowLevelFilter {
         }
 
         plaintext[ptr++] = (byte) ackRequests.length;
-        Logger.minor(this, "Ackrequests: "+ackRequests.length);
+        if(logMINOR) Logger.minor(this, "Ackrequests: "+ackRequests.length);
         for(int i=0;i<ackRequests.length;i++) {
             int ackReqSeq = ackRequests[i];
-            Logger.minor(this, "Ack request "+i+": "+ackReqSeq);
+            if(logMINOR) Logger.minor(this, "Ack request "+i+": "+ackReqSeq);
             // Relative to packetNumber - we are asking them to ack
             // a packet we sent to them.
             int offsetSeq = realSeqNumber - ackReqSeq;
@@ -1286,10 +1288,10 @@ public class FNPPacketMangler implements LowLevelFilter {
             tracker.sentPacket(saveable, seqNumber, callbacks);
         }
         
-        Logger.minor(this, "Sending...");
+        if(logMINOR) Logger.minor(this, "Sending...");
 
         processOutgoingFullyFormatted(plaintext, tracker, callbacks, alreadyReportedBytes);
-        Logger.minor(this, "Sent packet");
+        if(logMINOR) Logger.minor(this, "Sent packet");
     }
 
     /**
@@ -1299,7 +1301,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private void processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt, AsyncMessageCallback[] callbacks, int alreadyReportedBytes) {
         BlockCipher sessionCipher = kt.sessionCipher;
-        Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
+        if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
         if(sessionCipher == null) {
             Logger.error(this, "Dropping packet send - have not handshaked yet");
             return;
@@ -1332,7 +1334,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         digestTemp = md.digest();
 
-        Logger.minor(this, "\nHash:      "+HexUtil.bytesToHex(digestTemp));
+        if(logMINOR) Logger.minor(this, "\nHash:      "+HexUtil.bytesToHex(digestTemp));
                 
         // Put plaintext in output
         System.arraycopy(digestTemp, 0, output, 0, digestLength);
@@ -1343,7 +1345,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         System.arraycopy(digestTemp, 0, output, 0, digestLength);
         // Yay, we have an encrypted hash
 
-        Logger.minor(this, "\nEncrypted: "+HexUtil.bytesToHex(digestTemp)+" ("+plaintext.length+" bytes plaintext)");
+        if(logMINOR) Logger.minor(this, "\nEncrypted: "+HexUtil.bytesToHex(digestTemp)+" ("+plaintext.length+" bytes plaintext)");
         
         PCFBMode pcfb = new PCFBMode(sessionCipher, digestTemp);
         pcfb.blockEncipher(output, digestLength, plaintext.length);
@@ -1353,7 +1355,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         // We have a packet
         // Send it
         
-        Logger.minor(this,"Sending packet of length "+output.length+" (" + Fields.hashCode(output) + " to "+kt.pn);
+        if(logMINOR) Logger.minor(this,"Sending packet of length "+output.length+" (" + Fields.hashCode(output) + " to "+kt.pn);
         
         // pn.getPeer() cannot be null
         try {
@@ -1369,11 +1371,11 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @param pn
      */
     public void sendHandshake(PeerNode pn) {
-        Logger.minor(this, "Possibly sending handshake to "+pn);
+    	if(logMINOR) Logger.minor(this, "Possibly sending handshake to "+pn);
         DiffieHellmanContext ctx;
         Peer[] handshakeIPs;
         if(!pn.shouldSendHandshake()) {
-	        Logger.debug(this, "Not sending handshake to "+pn.getPeer()+" because pn.shouldSendHandshake() returned false");
+        	if(logMINOR) Logger.minor(this, "Not sending handshake to "+pn.getPeer()+" because pn.shouldSendHandshake() returned false");
         	return;
         }
         long firstTime = System.currentTimeMillis();
@@ -1403,11 +1405,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         for(int i=0;i<handshakeIPs.length;i++){
         	long innerLoopTime1 = System.currentTimeMillis();
         	if(handshakeIPs[i].getAddress(false) == null) {
-	        	Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
+        		if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
         		continue;
         	}
         	if(!pn.allowLocalAddresses() && !handshakeIPs[i].isRealInternetAddress(false, false)) {
-	        	Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
+        		if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+pn.getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
         		continue;
         	}
         	long innerLoopTime2 = System.currentTimeMillis();

@@ -87,7 +87,8 @@ public class ClientPut extends ClientPutBase {
 		Bucket tempData = data;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
-		Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
@@ -110,7 +111,7 @@ public class ClientPut extends ClientPutBase {
 			targetURI = null;
 		this.data = tempData;
 		this.clientMetadata = cm;
-		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		inserter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client, null);
@@ -124,6 +125,7 @@ public class ClientPut extends ClientPutBase {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.uploadFrom = message.uploadFromType;
 		this.origFilename = message.origFilename;
 		// Now go through the fields one at a time
@@ -140,7 +142,7 @@ public class ClientPut extends ClientPutBase {
 		Bucket tempData = message.bucket;
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
-		Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = message.redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
@@ -163,7 +165,7 @@ public class ClientPut extends ClientPutBase {
 			targetURI = null;
 		this.data = tempData;
 		this.clientMetadata = cm;
-		Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
+		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		inserter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client, null);
@@ -262,7 +264,8 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	public void start() {
-		Logger.minor(this, "Starting "+this+" : "+identifier);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Starting "+this+" : "+identifier);
 		if(finished) return;
 		try {
 			inserter.start();

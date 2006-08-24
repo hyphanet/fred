@@ -136,9 +136,9 @@ public class Version {
 					return false;
 				}
 			} catch (NumberFormatException e) {
-				Logger.minor(
-					Version.class,
-					"Not accepting (" + e + ") from " + version);
+				if(Logger.shouldLog(Logger.MINOR, Version.class))
+					Logger.minor(Version.class,
+							"Not accepting (" + e + ") from " + version);
 				return false;
 			}
 		}
@@ -207,9 +207,9 @@ public class Version {
 					return false;
 				}
 			} catch (NumberFormatException e) {
-				Logger.minor(
-					Version.class,
-					"Not accepting (" + e + ") from " + version + " and/or " + lastGoodVersion);
+				if(Logger.shouldLog(Logger.MINOR, Version.class))
+					Logger.minor(Version.class,
+							"Not accepting (" + e + ") from " + version + " and/or " + lastGoodVersion);
 				return false;
 			}
 		}

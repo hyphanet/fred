@@ -137,7 +137,8 @@ public class FCPConnectionHandler {
 	}
 
 	public void startClientPut(ClientPutMessage message) {
-		Logger.minor(this, "Starting insert ID=\""+message.identifier+"\"");
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Starting insert ID=\""+message.identifier+"\"");
 		String id = message.identifier;
 		ClientPut cp = null;
 		boolean success;
@@ -177,7 +178,8 @@ public class FCPConnectionHandler {
 	}
 
 	public void startClientPutDir(ClientPutDirMessage message, HashMap buckets) {
-		Logger.minor(this, "Start ClientPutDir");
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Start ClientPutDir");
 		String id = message.identifier;
 		ClientPutDir cp = null;
 		boolean success;
@@ -211,7 +213,8 @@ public class FCPConnectionHandler {
 				if(cp.isPersistentForever())
 					server.forceStorePersistentRequests();
 			}
-			Logger.minor(this, "Starting "+cp);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Starting "+cp);
 			cp.start();
 		}
 	}

@@ -52,6 +52,7 @@ import freenet.support.io.TempBucketFactory;
  */
 public class NodeClientCore {
 
+	private static boolean logMINOR;
 	public final USKManager uskManager;
 	final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
@@ -93,7 +94,8 @@ public class NodeClientCore {
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager();
-		Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS);
 		
 		// Temp files
@@ -244,6 +246,7 @@ public class NodeClientCore {
 	}
 	
 	ClientCHKBlock realGetCHK(ClientCHK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
 		if(!node.lockUID(uid)) {
@@ -277,7 +280,7 @@ public class NodeClientCore {
 				continue;
 			
 	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
-            	Logger.minor(this, "CHK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
+	        	if(logMINOR) Logger.minor(this, "CHK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
             	node.localChkFetchBytesSentAverage.report(rs.getTotalSentBytes());
             	node.localChkFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 	        }
@@ -339,6 +342,7 @@ public class NodeClientCore {
 	}
 
 	ClientSSKBlock realGetSSK(ClientSSK key, boolean localOnly, boolean cache, boolean ignoreStore) throws LowLevelGetException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
 		if(!node.lockUID(uid)) {
@@ -373,7 +377,7 @@ public class NodeClientCore {
 				continue;
 
 	        if(status != RequestSender.TIMED_OUT && status != RequestSender.GENERATED_REJECTED_OVERLOAD && status != RequestSender.INTERNAL_ERROR) {
-            	Logger.minor(this, "SSK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
+            	if(logMINOR) Logger.minor(this, "SSK fetch cost "+rs.getTotalSentBytes()+"/"+rs.getTotalReceivedBytes()+" bytes ("+status+")");
             	node.localSskFetchBytesSentAverage.report(rs.getTotalSentBytes());
             	node.localSskFetchBytesReceivedAverage.report(rs.getTotalReceivedBytes());
 	        }
@@ -443,6 +447,7 @@ public class NodeClientCore {
 	}
 	
 	public void realPutCHK(CHKBlock block, boolean cache) throws LowLevelPutException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		byte[] data = block.getData();
 		byte[] headers = block.getHeaders();
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
@@ -493,7 +498,7 @@ public class NodeClientCore {
 			}
 		}
 		
-		Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
+		if(logMINOR) Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
 		
 		// Finished?
 		if(!hasReceivedRejectedOverload) {
@@ -515,7 +520,7 @@ public class NodeClientCore {
         		&& status != CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
         	int sent = is.getTotalSentBytes();
         	int received = is.getTotalReceivedBytes();
-        	Logger.minor(this, "Local CHK insert cost "+sent+"/"+received+" bytes ("+status+")");
+        	if(logMINOR) Logger.minor(this, "Local CHK insert cost "+sent+"/"+received+" bytes ("+status+")");
         	node.localChkInsertBytesSentAverage.report(sent);
         	node.localChkInsertBytesReceivedAverage.report(received);
         }
@@ -552,6 +557,7 @@ public class NodeClientCore {
 	}
 
 	public void realPutSSK(SSKBlock block, boolean cache) throws LowLevelPutException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SSKInsertSender is;
 		long uid = random.nextLong();
 		if(!node.lockUID(uid)) {
@@ -600,7 +606,7 @@ public class NodeClientCore {
 			}
 		}
 		
-		Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
+		if(logMINOR) Logger.minor(this, "Completed "+uid+" overload="+hasReceivedRejectedOverload+" "+is.getStatusString());
 		
 		// Finished?
 		if(!hasReceivedRejectedOverload) {
@@ -621,7 +627,7 @@ public class NodeClientCore {
         		&& status != CHKInsertSender.ROUTE_REALLY_NOT_FOUND) {
         	int sent = is.getTotalSentBytes();
         	int received = is.getTotalReceivedBytes();
-        	Logger.minor(this, "Local SSK insert cost "+sent+"/"+received+" bytes ("+status+")");
+        	if(logMINOR) Logger.minor(this, "Local SSK insert cost "+sent+"/"+received+" bytes ("+status+")");
         	node.localSskInsertBytesSentAverage.report(sent);
         	node.localSskInsertBytesReceivedAverage.report(received);
         }
@@ -721,7 +727,7 @@ public class NodeClientCore {
 
 	public void queueRandomReinsert(KeyBlock block) {
 		SimpleSendableInsert ssi = new SimpleSendableInsert(this, block, RequestStarter.MAXIMUM_PRIORITY_CLASS);
-		Logger.minor(this, "Queueing random reinsert for "+block+" : "+ssi);
+		if(logMINOR) Logger.minor(this, "Queueing random reinsert for "+block+" : "+ssi);
 		if(block instanceof CHKBlock)
 			requestStarters.chkPutScheduler.register(ssi);
 		else if(block instanceof SSKBlock)

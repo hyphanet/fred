@@ -473,9 +473,10 @@ public class Yarrow extends RandomSource {
 		if (performedPoolReseed && (seedfile != null)) {
 			//Dont do this while synchronized on 'this' since
 			//opening a file seems to be suprisingly slow on windows
-			Logger.minor(this, "Writing seedfile");
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			if(logMINOR) Logger.minor(this, "Writing seedfile");
 			write_seed(seedfile); 
-			Logger.minor(this, "Written seedfile");
+			if(logMINOR) Logger.minor(this, "Written seedfile");
 		}
 
 		return actualEntropy;

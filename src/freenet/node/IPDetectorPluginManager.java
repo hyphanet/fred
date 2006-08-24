@@ -19,6 +19,7 @@ import freenet.transport.IPUtil;
  */
 public class IPDetectorPluginManager {
 	
+	static boolean logMINOR;
 	private final NodeIPDetector detector;
 	private final Ticker ticker;
 	private final Node node;
@@ -30,6 +31,7 @@ public class IPDetectorPluginManager {
 	private SimpleUserAlert connectedAlert;
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
 		plugins = new FredPluginIPDetector[0];
 		this.node = node;
 		this.ticker = node.ps;
@@ -143,21 +145,22 @@ public class IPDetectorPluginManager {
 	 * Do we need to run a plugin?
 	 */
 	public void maybeRun() {
-		Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
+		logMINOR = Logger.shouldLog(Logger.MINOR, getClass());
+		if(logMINOR) Logger.minor(this, "Maybe running IP detection plugins", new Exception("debug"));
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();
 		Peer[] nodeAddrs = detector.getPrimaryIPAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(runner != null) {
-				Logger.minor(this, "Already running IP detection plugins");
+				if(logMINOR) Logger.minor(this, "Already running IP detection plugins");
 				return;
 			}
 			// If detect attempt failed to produce an IP in the last 5 minutes, don't
 			// try again yet.
 			if(lastDetectAttemptFailed) {
 				if(now - lastDetectAttemptEndedTime < 5*60*1000) {
-					Logger.minor(this, "Last detect failed and more than 5 minutes ago");
+					if(logMINOR) Logger.minor(this, "Last detect failed and more than 5 minutes ago");
 					return;
 				} else {
 					startDetect();
@@ -167,7 +170,7 @@ public class IPDetectorPluginManager {
 				// We might still be firewalled?
 				// First, check only once per day or startup
 				if(now - lastDetectAttemptEndedTime < 24*60*60*1000) {
-					Logger.minor(this, "Node has directly detected IP and we have checked less than 24 hours ago");
+					if(logMINOR) Logger.minor(this, "Node has directly detected IP and we have checked less than 24 hours ago");
 					return;
 				}
 				
@@ -200,7 +203,7 @@ public class IPDetectorPluginManager {
 								addressesConnected.add(addr);
 								if(addressesConnected.size() > 2) {
 									// 3 connected addresses, lets assume we have connectivity.
-									Logger.minor(this, "Node has directly detected IP and has connected to 3 real IPs");
+									if(logMINOR) Logger.minor(this, "Node has directly detected IP and has connected to 3 real IPs");
 									return;
 								}
 							}
@@ -213,7 +216,7 @@ public class IPDetectorPluginManager {
 				}
 				if(!hasOldPeers) {
 					// No peers older than 30 minutes
-					Logger.minor(this, "Not detecting as less than 30 minutes old");
+					if(logMINOR) Logger.minor(this, "Not detecting as less than 30 minutes old");
 					return;
 				}
 			}
@@ -221,7 +224,7 @@ public class IPDetectorPluginManager {
 			if(peers.length == 0) {
 				if(now - lastDetectAttemptEndedTime < 6*60*60*1000) {
 					// No peers, only try every 6 hours.
-					Logger.minor(this, "No peers but detected less than 6 hours ago");
+					if(logMINOR) Logger.minor(this, "No peers but detected less than 6 hours ago");
 					return;
 				} else {
 					// Must try once!
@@ -244,7 +247,7 @@ public class IPDetectorPluginManager {
 						PeerNode p = peers[i];
 						if(!p.isDisabled()) {
 							maybeUrgent = true;
-							Logger.minor(this, "No connections, but have peers, may detect...");
+							if(logMINOR) Logger.minor(this, "No connections, but have peers, may detect...");
 							break;
 						}
 					}
@@ -261,7 +264,7 @@ public class IPDetectorPluginManager {
 						detect = true;
 					
 				} else {
-					Logger.minor(this, "Not urgent; conns="+conns.length);
+					if(logMINOR) Logger.minor(this, "Not urgent; conns="+conns.length);
 					firstTimeUrgent = 0;
 				}
 				
@@ -287,14 +290,14 @@ public class IPDetectorPluginManager {
 							}
 						}
 						if(count > 2) {
-							Logger.minor(this, "Recently connected peers count: "+count);
+							if(logMINOR) Logger.minor(this, "Recently connected peers count: "+count);
 							maybeFake = true;
 						}
 					}
 				}
 				
 				if(maybeFake) {
-					Logger.minor(this, "Possible fake IPs being fed to us, may detect...");
+					if(logMINOR) Logger.minor(this, "Possible fake IPs being fed to us, may detect...");
 					if(firstTimeMaybeFakePeers <= 0)
 						firstTimeMaybeFakePeers = now;
 					
@@ -304,14 +307,14 @@ public class IPDetectorPluginManager {
 					}
 				
 				} else {
-					Logger.minor(this, "Not fake");
+					if(logMINOR) Logger.minor(this, "Not fake");
 					firstTimeMaybeFakePeers = 0;
 				}
 			
 				if(detect) {
 					if(now - lastDetectAttemptEndedTime < 60*60*1000) {
 						// Only try every hour
-						Logger.minor(this, "Only trying once per hour");
+						if(logMINOR) Logger.minor(this, "Only trying once per hour");
 						return;
 					}
 					
@@ -324,7 +327,7 @@ public class IPDetectorPluginManager {
 	}
 
 	private void startDetect() {
-		Logger.minor(this, "Detecting...");
+		if(logMINOR) Logger.minor(this, "Detecting...");
 		synchronized(this) {
 			runner = new DetectorRunner();
 			Thread t = new Thread(runner);
@@ -344,109 +347,109 @@ public class IPDetectorPluginManager {
 		}
 		
 		public void realRun() {
-			Logger.minor(this, "Running STUN detection");
+			if(logMINOR) Logger.minor(this, "Running STUN detection");
 			try {
-			FredPluginIPDetector[] run = plugins;
-			Vector v = new Vector();
-			for(int i=0;i<run.length;i++) {
-				DetectedIP[] detected = null;
-				try {
-					detected = run[i].getAddress();
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-				}
-				if(detected != null) {
-					for(int j=0;j<detected.length;j++)
-						v.add(detected[j]);
-				}
-			}
-			synchronized(IPDetectorPluginManager.this) {
-				lastDetectAttemptEndedTime = System.currentTimeMillis();
-				boolean failed = false;
-				if(v.isEmpty()) {
-					Logger.minor(this, "No IPs found");
-					failed = true;
-				} else {
-					failed = true;
-					for(int i=0;i<v.size();i++) {
-						DetectedIP ip = (DetectedIP) v.get(i);
-						if(!((ip.publicAddress == null) || !IPUtil.checkAddress(ip.publicAddress))) {
-							Logger.minor(this, "Address checked out");
-							failed = false;
-						}
+				FredPluginIPDetector[] run = plugins;
+				Vector v = new Vector();
+				for(int i=0;i<run.length;i++) {
+					DetectedIP[] detected = null;
+					try {
+						detected = run[i].getAddress();
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t, t);
+					}
+					if(detected != null) {
+						for(int j=0;j<detected.length;j++)
+							v.add(detected[j]);
 					}
 				}
-				if(failed) {
-					Logger.minor(this, "Failed");
-					lastDetectAttemptFailed = true;
-					return;
+				synchronized(IPDetectorPluginManager.this) {
+					lastDetectAttemptEndedTime = System.currentTimeMillis();
+					boolean failed = false;
+					if(v.isEmpty()) {
+						if(logMINOR) Logger.minor(this, "No IPs found");
+						failed = true;
+					} else {
+						failed = true;
+						for(int i=0;i<v.size();i++) {
+							DetectedIP ip = (DetectedIP) v.get(i);
+							if(!((ip.publicAddress == null) || !IPUtil.checkAddress(ip.publicAddress))) {
+								if(logMINOR) Logger.minor(this, "Address checked out");
+								failed = false;
+							}
+						}
+					}
+					if(failed) {
+						if(logMINOR) Logger.minor(this, "Failed");
+						lastDetectAttemptFailed = true;
+						return;
+					}
 				}
-			}
-			// Now tell the node
-			HashMap map = new HashMap();
-			for(int i=0;i<v.size();i++) {
-				DetectedIP d = (DetectedIP) v.get(i);
-				InetAddress addr = d.publicAddress;
-				if(!map.containsKey(addr)) {
-					map.put(addr, d);
-				} else {
-					DetectedIP oldD = (DetectedIP) map.get(addr);
-					if(!oldD.equals(d)) {
-						if(d.natType != DetectedIP.NOT_SUPPORTED) {
-							if(oldD.natType < d.natType) {
-								// Higher value = more restrictive.
-								// Assume the worst.
-								map.put(addr, d);
+				// Now tell the node
+				HashMap map = new HashMap();
+				for(int i=0;i<v.size();i++) {
+					DetectedIP d = (DetectedIP) v.get(i);
+					InetAddress addr = d.publicAddress;
+					if(!map.containsKey(addr)) {
+						map.put(addr, d);
+					} else {
+						DetectedIP oldD = (DetectedIP) map.get(addr);
+						if(!oldD.equals(d)) {
+							if(d.natType != DetectedIP.NOT_SUPPORTED) {
+								if(oldD.natType < d.natType) {
+									// Higher value = more restrictive.
+									// Assume the worst.
+									map.put(addr, d);
+								}
 							}
 						}
 					}
 				}
-			}
-			DetectedIP[] list = (DetectedIP[]) map.values().toArray(new DetectedIP[map.size()]);
-			int countOpen = 0;
-			int countRestricted = 0;
-			int countPortRestricted = 0;
-			int countSymmetric = 0;
-			int countClosed = 0;
-			for(int i=0;i<list.length;i++) {
-				Logger.minor(this, "Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
-				System.out.println("Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
-				switch(list[i].natType) {
-				case DetectedIP.FULL_CONE_NAT:
-				case DetectedIP.FULL_INTERNET:
-					countOpen++;
-					break;
-				case DetectedIP.NO_UDP:
-					countClosed++;
-					break;
-				case DetectedIP.NOT_SUPPORTED:
-					// Ignore
-					break;
-				case DetectedIP.RESTRICTED_CONE_NAT:
-					countRestricted++;
-					break;
-				case DetectedIP.PORT_RESTRICTED_NAT:
-					countPortRestricted++;
-					break;
-				case DetectedIP.SYMMETRIC_NAT:
-				case DetectedIP.SYMMETRIC_UDP_FIREWALL:
-					countSymmetric++;
-					break;
+				DetectedIP[] list = (DetectedIP[]) map.values().toArray(new DetectedIP[map.size()]);
+				int countOpen = 0;
+				int countRestricted = 0;
+				int countPortRestricted = 0;
+				int countSymmetric = 0;
+				int countClosed = 0;
+				for(int i=0;i<list.length;i++) {
+					Logger.normal(this, "Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
+					System.out.println("Detected IP: "+list[i].publicAddress+ " : type "+list[i].natType);
+					switch(list[i].natType) {
+					case DetectedIP.FULL_CONE_NAT:
+					case DetectedIP.FULL_INTERNET:
+						countOpen++;
+						break;
+					case DetectedIP.NO_UDP:
+						countClosed++;
+						break;
+					case DetectedIP.NOT_SUPPORTED:
+						// Ignore
+						break;
+					case DetectedIP.RESTRICTED_CONE_NAT:
+						countRestricted++;
+						break;
+					case DetectedIP.PORT_RESTRICTED_NAT:
+						countPortRestricted++;
+						break;
+					case DetectedIP.SYMMETRIC_NAT:
+					case DetectedIP.SYMMETRIC_UDP_FIREWALL:
+						countSymmetric++;
+						break;
+					}
 				}
-			}
-			
-			if(countClosed > 0 && (countOpen + countRestricted + countPortRestricted + countSymmetric) == 0) {
-				node.clientCore.alerts.register(noConnectionAlert);
-			} else if(countSymmetric > 0 && (countOpen + countRestricted + countPortRestricted == 0)) {
-				node.clientCore.alerts.register(symmetricAlert);
-			} else if(countPortRestricted > 0 && (countOpen + countRestricted == 0)) {
-				node.clientCore.alerts.register(portRestrictedAlert);
-			} else if(countRestricted > 0 && (countOpen == 0)) {
-				node.clientCore.alerts.register(restrictedAlert);
-			} else if(countOpen > 0) {
-				node.clientCore.alerts.register(connectedAlert);
-			}
-			detector.processDetectedIPs(list);
+				
+				if(countClosed > 0 && (countOpen + countRestricted + countPortRestricted + countSymmetric) == 0) {
+					node.clientCore.alerts.register(noConnectionAlert);
+				} else if(countSymmetric > 0 && (countOpen + countRestricted + countPortRestricted == 0)) {
+					node.clientCore.alerts.register(symmetricAlert);
+				} else if(countPortRestricted > 0 && (countOpen + countRestricted == 0)) {
+					node.clientCore.alerts.register(portRestrictedAlert);
+				} else if(countRestricted > 0 && (countOpen == 0)) {
+					node.clientCore.alerts.register(restrictedAlert);
+				} else if(countOpen > 0) {
+					node.clientCore.alerts.register(connectedAlert);
+				}
+				detector.processDetectedIPs(list);
 			} finally {
 				runner = null;
 			}

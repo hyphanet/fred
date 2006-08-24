@@ -89,10 +89,11 @@ public class SortedLongSet {
 	}
 
 	private synchronized void push(long num, int x) {
-		Logger.minor(this, "Insertion point: "+x+" length "+length+" data.length "+data.length);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Insertion point: "+x+" length "+length+" data.length "+data.length);
 		// Move the data
 		if(length == data.length) {
-			Logger.minor(this, "Expanding from "+length+" to "+length*2);
+			if(logMINOR) Logger.minor(this, "Expanding from "+length+" to "+length*2);
 			long[] newData = new long[length*2];
 			System.arraycopy(data, 0, newData, 0, data.length);
 			for(int i=length;i<newData.length;i++)

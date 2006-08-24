@@ -148,7 +148,8 @@ public class ClientGetMessage extends FCPMessage {
 				throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing MaxSize field: "+e.getMessage(), identifier);
 			}
 		}
-		Logger.minor(this, "max retries="+maxRetries);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "max retries="+maxRetries);
 		String priorityString = fs.get("PriorityClass");
 		if(priorityString == null) {
 			// defaults to the one just below FProxy

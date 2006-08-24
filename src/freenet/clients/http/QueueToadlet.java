@@ -85,9 +85,11 @@ public class QueueToadlet extends Toadlet {
 				return;
 			}
 
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			
 			if(request.isParameterSet("remove_request") && (request.getParam("remove_request").length() > 0)) {
 				String identifier = request.getParam("identifier");
-				Logger.minor(this, "Removing "+identifier);
+				if(logMINOR) Logger.minor(this, "Removing "+identifier);
 				try {
 					fcp.removeGlobalRequest(identifier);
 				} catch (MessageInvalidException e) {
@@ -98,11 +100,11 @@ public class QueueToadlet extends Toadlet {
 			}else if(request.isParameterSet("remove_AllRequests") && (request.getParam("remove_AllRequests").length() > 0)) {
 				
 				ClientRequest[] reqs = fcp.getGlobalRequests();
-				Logger.minor(this, "Request count: "+reqs.length);
+				if(logMINOR) Logger.minor(this, "Request count: "+reqs.length);
 				
 				for(int i=0; i<reqs.length ; i++){
 					String identifier = reqs[i].getIdentifier();
-					Logger.minor(this, "Removing "+identifier);
+					if(logMINOR) Logger.minor(this, "Removing "+identifier);
 					try {
 						fcp.removeGlobalRequest(identifier);
 					} catch (MessageInvalidException e) {
@@ -312,7 +314,8 @@ public class QueueToadlet extends Toadlet {
 		LinkedList uncompletedDirUpload = new LinkedList();
 		
 		ClientRequest[] reqs = fcp.getGlobalRequests();
-		Logger.minor(this, "Request count: "+reqs.length);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Request count: "+reqs.length);
 		
 		if(reqs.length < 1){
 			HTMLNode pageNode = pageMaker.getPageNode("Global queue of " + core.getMyName());

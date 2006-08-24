@@ -32,7 +32,8 @@ public class RandomGrabArray {
 	public synchronized void add(RandomGrabArrayItem req) {
 		if(contents.contains(req)) return;
 		if(req.isFinished()) {
-			Logger.minor(this, "Is finished already: "+req);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Is finished already: "+req);
 			return;
 		}
 		contents.add(req);

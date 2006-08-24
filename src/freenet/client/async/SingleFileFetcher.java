@@ -31,6 +31,7 @@ import freenet.support.io.BucketTools;
 
 public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
 
+	private static boolean logMINOR;
 	//final FreenetURI uri;
 	final LinkedList metaStrings;
 	final GetCompletionCallback rcb;
@@ -59,7 +60,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			boolean dontTellClientGet, Object token, boolean isEssential, 
 			Bucket returnBucket) throws FetchException {
 		super(key, maxRetries, ctx, get);
-		Logger.minor(this, "Creating SingleFileFetcher for "+key);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key);
 		this.cancelled = false;
 		this.returnBucket = returnBucket;
 		this.dontTellClientGet = dontTellClientGet;
@@ -85,7 +87,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket. */
 	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetcherContext ctx2) throws FetchException {
 		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent);
-		Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key);
 		this.token = fetcher.token;
 		this.returnBucket = null;
 		this.dontTellClientGet = fetcher.dontTellClientGet;
@@ -188,14 +191,14 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	private void handleMetadata() throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
 		while(true) {
 			if(metadata.isSimpleManifest()) {
-				Logger.minor(this, "Is simple manifest");
+				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;
 				if(metaStrings.isEmpty())
 					throw new FetchException(FetchException.NOT_ENOUGH_METASTRINGS);
 				else
 					name = (String) metaStrings.removeFirst();
 				// Since metadata is a document, we just replace metadata here
-				Logger.minor(this, "Next meta-string: "+name);
+				if(logMINOR) Logger.minor(this, "Next meta-string: "+name);
 				if(name == null) {
 					metadata = metadata.getDefaultDocument();
 					if(metadata == null)
@@ -208,7 +211,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				}
 				continue; // loop
 			} else if(metadata.isArchiveManifest()) {
-				Logger.minor(this, "Is archive manifest");
+				if(logMINOR) Logger.minor(this, "Is archive manifest");
 				if(metaStrings.isEmpty() && ctx.returnZIPManifests) {
 					// Just return the archive, whole.
 					metadata.setSimpleRedirect();
@@ -235,16 +238,16 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				}
 				continue;
 			} else if(metadata.isArchiveInternalRedirect()) {
-				Logger.minor(this, "Is archive-internal redirect");
+				if(logMINOR) Logger.minor(this, "Is archive-internal redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
 				// Fetch it from the archive
 				if(ah == null)
 					throw new FetchException(FetchException.UNKNOWN_METADATA, "Archive redirect not in an archive manifest");
 				String filename = metadata.getZIPInternalName();
-				Logger.minor(this, "Fetching "+filename);
+				if(logMINOR) Logger.minor(this, "Fetching "+filename);
 				Bucket dataBucket = ah.get(filename, actx, null, recursionLevel+1, true);
 				if(dataBucket != null) {
-					Logger.minor(this, "Returning data");
+					if(logMINOR) Logger.minor(this, "Returning data");
 					// The client may free it, which is bad, or it may hang on to it for so long that it gets
 					// freed by us, which is also bad.
 					// So copy it.
@@ -264,7 +267,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					onSuccess(new FetchResult(this.clientMetadata, out));
 					return;
 				} else {
-					Logger.minor(this, "Fetching archive");
+					if(logMINOR) Logger.minor(this, "Fetching archive");
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
@@ -273,7 +276,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					return;
 				}
 			} else if(metadata.isMultiLevelMetadata()) {
-				Logger.minor(this, "Is multi-level metadata");
+				if(logMINOR) Logger.minor(this, "Is multi-level metadata");
 				// Fetch on a second SingleFileFetcher, like with archives.
 				Metadata newMeta = (Metadata) metadata.clone();
 				newMeta.setSimpleRedirect();
@@ -281,7 +284,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				f.handleMetadata();
 				return;
 			} else if(metadata.isSingleFileRedirect()) {
-				Logger.minor(this, "Is single-file redirect");
+				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
 				// FIXME implement implicit archive support
 				
@@ -290,7 +293,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				// Which will then fetch the target URI, and call the rcd.success
 				// Hopefully!
 				FreenetURI uri = metadata.getSingleTarget();
-				Logger.minor(this, "Redirecting to "+uri);
+				if(logMINOR) Logger.minor(this, "Redirecting to "+uri);
 				ClientKey key;
 				try {
 					BaseClientKey k = BaseClientKey.getBaseKey(uri);
@@ -324,7 +327,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				// All done! No longer our problem!
 				return;
 			} else if(metadata.isSplitfile()) {
-				Logger.minor(this, "Fetching splitfile");
+				if(logMINOR) Logger.minor(this, "Fetching splitfile");
 				// FIXME implicit archive support
 				
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
@@ -471,7 +474,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	// Real onFailure
 	protected void onFailure(FetchException e, boolean forceFatal) {
 		if(parent.isCancelled() || cancelled) {
-			Logger.minor(this, "Failing: cancelled");
+			if(logMINOR) Logger.minor(this, "Failing: cancelled");
 			e = new FetchException(FetchException.CANCELLED);
 			forceFatal = true;
 		}

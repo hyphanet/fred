@@ -139,7 +139,8 @@ public class PproxyToadlet extends Toadlet {
 		if(path.startsWith("/"))
 			path = path.substring(1);
 		path = path.substring("plugins/".length());
-		Logger.minor(this, "Pproxy fetching "+path);
+    	if(Logger.shouldLog(Logger.MINOR, this))
+    		Logger.minor(this, "Pproxy fetching "+path);
 		try {
 			if (path.equals("")) {
 				this.showPluginList(ctx, request);

@@ -52,6 +52,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
     private boolean hasCollided;
     private boolean hasRecentlyCollided;
     private SSKBlock block;
+    private static boolean logMINOR;
     
     private int status = -1;
     /** Still running */
@@ -70,6 +71,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
     SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, double closestLoc) {
+    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	this.fromStore = fromStore;
     	this.closestLocation = closestLoc;
     	this.node = node;
@@ -145,11 +147,11 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }
-            Logger.minor(this, "Routing insert to "+next);
+            if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
             if(PeerManager.distance(target, nextValue) > PeerManager.distance(target, closestLocation)) {
-                Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
+            	if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
                 htl = node.decrementHTL(source, htl);
             }
             
@@ -171,7 +173,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             try {
 				next.sendAsync(req, null, 0, this);
 			} catch (NotConnectedException e1) {
-				Logger.minor(this, "Not connected to "+next);
+				if(logMINOR) Logger.minor(this, "Not connected to "+next);
 				continue;
 			}
             sentRequest = true;
@@ -197,7 +199,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 				if (msg == null) {
 					// Terminal overload
 					// Try to propagate back to source
-					Logger.minor(this, "Timeout");
+					if(logMINOR) Logger.minor(this, "Timeout");
 					next.localRejectedOverload("Timeout");
 					forwardRejectedOverload();
 					break;
@@ -207,8 +209,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 					// Non-fatal - probably still have time left
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						next.localRejectedOverload("ForwardRejectedOverload3");
-						Logger.minor(this,
-										"Local RejectedOverload, moving on to next peer");
+						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;
 					} else {
@@ -235,7 +236,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             
             if((msg == null) || (msg.getSpec() != DMT.FNPSSKAccepted)) continue;
             
-            Logger.minor(this, "Got Accepted on "+this);
+            if(logMINOR) Logger.minor(this, "Got Accepted on "+this);
             
             // Firstly, do we need to send them the pubkey?
             
@@ -244,7 +245,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             	try {
             		next.sendAsync(pkMsg, null, 0, this);
             	} catch (NotConnectedException e) {
-            		Logger.minor(this, "Node disconnected while sending pubkey: "+next);
+            		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: "+next);
             		continue;
             	}
             	
@@ -256,14 +257,14 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 				try {
 					newAck = node.usm.waitFor(mf1, null);
 				} catch (DisconnectedException e) {
-					Logger.minor(this, "Disconnected from "+next);
+					if(logMINOR) Logger.minor(this, "Disconnected from "+next);
 					htl--;
 					break;
 				}
             	
             	if(newAck == null) {
 					// Try to propagate back to source
-					Logger.minor(this, "Timeout");
+            		if(logMINOR) Logger.minor(this, "Timeout");
 					next.localRejectedOverload("Timeout2");
 					forwardRejectedOverload();
 					// Try another peer
@@ -319,7 +320,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 					// Probably non-fatal, if so, we have time left, can try next one
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						next.localRejectedOverload("ForwardRejectedOverload4");
-						Logger.minor(this,
+						if(logMINOR) Logger.minor(this,
 								"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;
@@ -330,7 +331,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 				}
 
 				if (msg.getSpec() == DMT.FNPRouteNotFound) {
-					Logger.minor(this, "Rejected: RNF");
+					if(logMINOR) Logger.minor(this, "Rejected: RNF");
 					short newHtl = msg.getShort(DMT.HTL);
 					if (htl > newHtl)
 						htl = newHtl;
@@ -342,7 +343,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 				if (msg.getSpec() == DMT.FNPDataInsertRejected) {
 					next.successNotOverload();
 					short reason = msg.getShort(DMT.DATA_INSERT_REJECTED_REASON);
-					Logger.minor(this, "DataInsertRejected: " + reason);
+					if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
 					if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
 						if (fromStore) {
 							// That's odd...
@@ -438,7 +439,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 	}
     
     private void finish(int code, PeerNode next) {
-        Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+    	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         
@@ -451,7 +452,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             notifyAll();
         }
 
-        Logger.minor(this, "Set status code: "+getStatusString());
+        if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString());
         // Nothing to wait for, no downstream transfers, just exit.
     }
 

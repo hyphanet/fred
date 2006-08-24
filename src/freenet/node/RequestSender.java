@@ -74,7 +74,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     static final int GENERATED_REJECTED_OVERLOAD = 7;
     static final int INTERNAL_ERROR = 8;
     
-    
+    private static boolean logMINOR;
     
     public String toString() {
         return super.toString()+" for "+uid;
@@ -97,6 +97,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         this.resetNearestLoc = resetNearestLoc;
         target = key.toNormalizedDouble();
         node.addRequestSender(key, htl, this);
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
     public void start() {
@@ -115,7 +116,7 @@ public final class RequestSender implements Runnable, ByteCounter {
         HashSet nodesNotIgnored = new HashSet();
         try {
         while(true) {
-            Logger.minor(this, "htl="+htl);
+            if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
                 // RNF
                 // Would be DNF if arrived with no HTL
@@ -138,12 +139,12 @@ public final class RequestSender implements Runnable, ByteCounter {
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }
-            Logger.minor(this, "Routing request to "+next);
+            if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
             if(PeerManager.distance(target, nextValue) > PeerManager.distance(target, nearestLoc)) {
                 htl = node.decrementHTL(source, htl);
-                Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl);
+                if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl);
             }
             
             Message req = createDataRequest();
@@ -178,14 +179,14 @@ public final class RequestSender implements Runnable, ByteCounter {
                 
                 try {
                     msg = node.usm.waitFor(mf, this);
-                    Logger.minor(this, "first part got "+msg);
+                    if(logMINOR) Logger.minor(this, "first part got "+msg);
                 } catch (DisconnectedException e) {
                     Logger.normal(this, "Disconnected from "+next+" while waiting for Accepted on "+uid);
                     break;
                 }
                 
             	if(msg == null) {
-            		Logger.minor(this, "Timeout waiting for Accepted");
+            		if(logMINOR) Logger.minor(this, "Timeout waiting for Accepted");
             		// Timeout waiting for Accepted
             		next.localRejectedOverload("AcceptedTimeout");
             		forwardRejectedOverload();
@@ -194,20 +195,20 @@ public final class RequestSender implements Runnable, ByteCounter {
             	}
             	
             	if(msg.getSpec() == DMT.FNPRejectedLoop) {
-            		Logger.minor(this, "Rejected loop");
+            		if(logMINOR) Logger.minor(this, "Rejected loop");
             		next.successNotOverload();
             		// Find another node to route to
             		break;
             	}
             	
             	if(msg.getSpec() == DMT.FNPRejectedOverload) {
-            		Logger.minor(this, "Rejected: overload");
+            		if(logMINOR) Logger.minor(this, "Rejected: overload");
 					// Non-fatal - probably still have time left
 					forwardRejectedOverload();
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
-						Logger.minor(this, "Is local");
+						if(logMINOR) Logger.minor(this, "Is local");
 						next.localRejectedOverload("ForwardRejectedOverload");
-						Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;
 					}
@@ -227,7 +228,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	continue;
             }
 
-            Logger.minor(this, "Got Accepted");
+            if(logMINOR) Logger.minor(this, "Got Accepted");
             
             // Otherwise, must be Accepted
             
@@ -252,7 +253,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             		break;
             	}
             	
-                Logger.minor(this, "second part got "+msg);
+            	if(logMINOR) Logger.minor(this, "second part got "+msg);
                 
             	if(msg == null) {
             		// Fatal timeout
@@ -281,7 +282,7 @@ public final class RequestSender implements Runnable, ByteCounter {
 					forwardRejectedOverload();
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						next.localRejectedOverload("ForwardRejectedOverload2");
-						Logger.minor(this, "Local RejectedOverload, moving on to next peer");
+						if(logMINOR) Logger.minor(this, "Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;
 					}
@@ -316,9 +317,9 @@ public final class RequestSender implements Runnable, ByteCounter {
                 		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this);
                 		
                 		try {
-                			Logger.minor(this, "Receiving data");
+                			if(logMINOR) Logger.minor(this, "Receiving data");
                 			byte[] data = br.receive();
-                			Logger.minor(this, "Received data");
+                			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
                 			try {
                 				verifyAndCommit(data);
@@ -341,7 +342,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	
             	if(msg.getSpec() == DMT.FNPSSKPubKey) {
             		
-            		Logger.minor(this, "Got pubkey on "+uid);
+            		if(logMINOR) Logger.minor(this, "Got pubkey on "+uid);
             		
             		if(!(key instanceof NodeSSK)) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
@@ -369,7 +370,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             	
             	if(msg.getSpec() == DMT.FNPSSKDataFound) {
 
-            		Logger.minor(this, "Got data on "+uid);
+            		if(logMINOR) Logger.minor(this, "Got data on "+uid);
             		
             		if(!(key instanceof NodeSSK)) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
@@ -395,7 +396,7 @@ public final class RequestSender implements Runnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
             finish(INTERNAL_ERROR, null);
         } finally {
-        	Logger.minor(this, "Leaving RequestSender.run() for "+uid);
+        	if(logMINOR) Logger.minor(this, "Leaving RequestSender.run() for "+uid);
             node.completed(uid);
             node.removeRequestSender(key, origHTL, this);
         }
@@ -516,7 +517,7 @@ public final class RequestSender implements Runnable, ByteCounter {
     }
     
     private void finish(int code, PeerNode next) {
-        Logger.minor(this, "finish("+code+")");
+    	if(logMINOR) Logger.minor(this, "finish("+code+")");
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         status = code;

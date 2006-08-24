@@ -20,7 +20,8 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
     public SendMessageOnErrorCallback(Message message, PeerNode pn) {
         this.msg = message;
         this.dest = pn;
-        Logger.minor(this, "Created "+this);
+        if(Logger.shouldLog(Logger.MINOR, this))
+        	Logger.minor(this, "Created "+this);
     }
 
     public void sent() {
@@ -32,11 +33,13 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
     }
 
     public void disconnected() {
-        Logger.minor(this, "Disconnect trigger: "+this);
+    	if(Logger.shouldLog(Logger.MINOR, this))
+    		Logger.minor(this, "Disconnect trigger: "+this);
         try {
             dest.sendAsync(msg, null, 0, null);
         } catch (NotConnectedException e) {
-            Logger.minor(this, "Both source and destination disconnected: "+msg+" for "+this);
+        	if(Logger.shouldLog(Logger.MINOR, this))
+        		Logger.minor(this, "Both source and destination disconnected: "+msg+" for "+this);
         }
     }
 

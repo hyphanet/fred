@@ -25,7 +25,8 @@ public class GetFailedMessage extends FCPMessage {
 	final FreenetURI redirectURI;
 	
 	public GetFailedMessage(FetchException e, String identifier) {
-		Logger.minor(this, "Creating get failed from "+e+" for "+identifier, e);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Creating get failed from "+e+" for "+identifier, e);
 		this.tracker = e.errorCodes;
 		this.code = e.mode;
 		this.codeDescription = FetchException.getMessage(code);

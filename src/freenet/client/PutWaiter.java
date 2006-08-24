@@ -34,7 +34,8 @@ public class PutWaiter implements ClientCallback {
 	}
 
 	public synchronized void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
-		Logger.minor(this, "URI: "+uri);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "URI: "+uri);
 		if(this.uri == null)
 			this.uri = uri;
 		if(uri.equals(this.uri)) return;

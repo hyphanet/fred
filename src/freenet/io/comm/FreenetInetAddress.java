@@ -56,7 +56,8 @@ public class FreenetInetAddress {
         // if we were created with an explicit IP address, use it as such
         // debugging log messages because AddressIdentifier doesn't appear to handle all IPv6 literals correctly, such as "fe80::204:1234:dead:beef"
         AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
-        Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+"'");
+        boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+        if(logDEBUG) Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+"'");
         if(!addressType.toString().equals("Other")) {
             try {
                 addr = InetAddress.getByName(host);
@@ -64,16 +65,16 @@ public class FreenetInetAddress {
             	if(!allowUnknown) throw e;
                 addr = null;
             }
-            Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+addr.getHostAddress()+"'");
+            if(logDEBUG) Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+addr.getHostAddress()+"'");
             if(addr != null && addr.getHostAddress().equals(host)) {
-                Logger.debug(this, "'"+host+"' looks like an IP address");
+            	if(logDEBUG) Logger.debug(this, "'"+host+"' looks like an IP address");
                 host = null;
             } else {
                 addr = null;
             }
         }
         if( addr == null ) {
-            Logger.debug(this, "'"+host+"' does not look like an IP address");
+        	if(logDEBUG) Logger.debug(this, "'"+host+"' does not look like an IP address");
         }
         this._address = addr;
         this.hostname = host;
@@ -176,11 +177,12 @@ public class FreenetInetAddress {
 	 */
 	public InetAddress getHandshakeAddress() {
 	    // Since we're handshaking, hostname-to-IP may have changed
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	    if ((_address != null) && (hostname == null)) {
-	    	Logger.minor(this, "hostname is null, returning "+_address);
+	    	if(logMINOR) Logger.minor(this, "hostname is null, returning "+_address);
 	        return _address;
 	    } else {
-	    	Logger.minor(this, "Looking up '"+hostname+"' in DNS");
+	    	if(logMINOR) Logger.minor(this, "Looking up '"+hostname+"' in DNS");
 	        /* 
 	         * Peers are constructed from an address once a
 	         * handshake has been completed, so this lookup
@@ -193,7 +195,7 @@ public class FreenetInetAddress {
 	         */
 	        try {
 	        	InetAddress addr = InetAddress.getByName(hostname);
-	        	Logger.minor(this, "Look up got '"+addr+"'");
+	        	if(logMINOR) Logger.minor(this, "Look up got '"+addr+"'");
 	        	if( addr != null ) {
 	        		/*
 	        		 * cache the answer since getHandshakeAddress()
@@ -202,11 +204,11 @@ public class FreenetInetAddress {
 	        		 * latest value from DNS (minus Java's caching)
 	        		 */
 	        		this._address = InetAddress.getByAddress(addr.getAddress());
-	        		Logger.minor(this, "Setting address to "+_address);
+	        		if(logMINOR) Logger.minor(this, "Setting address to "+_address);
 	        	}
 	        	return addr;
 	        } catch (UnknownHostException e) {
-	    	    Logger.minor(this, "DNS said hostname '"+hostname+"' is an unknown host, returning null");
+	        	if(logMINOR) Logger.minor(this, "DNS said hostname '"+hostname+"' is an unknown host, returning null");
 	            return null;
 	        }
 	    }

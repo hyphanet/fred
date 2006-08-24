@@ -499,12 +499,14 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			Logger.minor(this, "No password");
+			if(logMINOR) Logger.minor(this, "No password");
 			return;
 		}
 		
@@ -703,15 +705,15 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		} else if (request.isPartSet("remove") || (request.isPartSet("submit") && request.getPartAsString("action",25).equals("remove"))) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
 			
-			Logger.minor(this, "Remove node");
+			if(logMINOR) Logger.minor(this, "Remove node");
 			
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
 					this.node.removeDarknetConnection(peerNodes[i]);
-					Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
+					if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 				} else {
-					Logger.minor(this, "Part not set: node_"+peerNodes[i].hashCode());
+					if(logMINOR) Logger.minor(this, "Part not set: node_"+peerNodes[i].hashCode());
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();

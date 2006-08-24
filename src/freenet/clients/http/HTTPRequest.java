@@ -155,7 +155,8 @@ public class HTTPRequest {
 	 */
 	private void parseRequestParameters(String queryString, boolean doUrlDecoding) {
 
-		Logger.minor(this, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
 		
 		// nothing to do if there was no query string in the URI
 		if ((queryString == null) || (queryString.length() == 0)) {
@@ -167,7 +168,7 @@ public class HTTPRequest {
 		while (tokenizer.hasMoreTokens()) {
 			String nameValueToken = tokenizer.nextToken();
 			
-			Logger.minor(this, "Token: "+nameValueToken);
+			if(logMINOR) Logger.minor(this, "Token: "+nameValueToken);
 
 			// a token can be either a name, or a name value pair...
 			String name = null;
@@ -176,17 +177,17 @@ public class HTTPRequest {
 			if (indexOfEqualsChar < 0) {
 				// ...it's only a name, so the value stays emptys
 				name = nameValueToken;
-				Logger.minor(this, "Name: "+name);
+				if(logMINOR) Logger.minor(this, "Name: "+name);
 			} else if (indexOfEqualsChar == nameValueToken.length() - 1) {
 				// ...it's a name with an empty value, so remove the '='
 				// character
 				name = nameValueToken.substring(0, indexOfEqualsChar);
-				Logger.minor(this, "Name: "+name);
+				if(logMINOR) Logger.minor(this, "Name: "+name);
 			} else {
 				// ...it's a name value pair, split into name and value
 				name = nameValueToken.substring(0, indexOfEqualsChar);
 				value = nameValueToken.substring(indexOfEqualsChar + 1);
-				Logger.minor(this, "Name: "+name+" Value: "+value);
+				if(logMINOR) Logger.minor(this, "Name: "+name+" Value: "+value);
 			}
 
 			// url-decode the name and value
@@ -194,8 +195,10 @@ public class HTTPRequest {
 				if (doUrlDecoding) {
 					name = URLDecoder.decode(name);
 					value = URLDecoder.decode(value);
-					Logger.minor(this, "Decoded name: "+name);
-					Logger.minor(this, "Decoded value: "+value);
+					if(logMINOR) {
+						Logger.minor(this, "Decoded name: "+name);
+						Logger.minor(this, "Decoded value: "+value);
+					}
 				}
 
 				// get the list of values for this parameter that were parsed so

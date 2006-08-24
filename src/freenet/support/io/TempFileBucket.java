@@ -142,7 +142,8 @@ public class TempFileBucket extends FileBucket {
 	 * @return    Success
 	 */
 	public synchronized boolean release() {
-		Logger.minor(this, "Releasing bucket: "+file, new Exception("debug"));
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Releasing bucket: "+file, new Exception("debug"));
 		//System.err.println("FProxyServlet.TempFileBucket -- release: " +                      // file.getAbsolutePath());
 
 		//System.err.println("CALL STACK: ");
@@ -197,9 +198,9 @@ public class TempFileBucket extends FileBucket {
 		if (logDebug)
 			Logger.debug(this, "Closed streams for " + file);
 		if (released) {
-			Logger.minor(
-				this,
-				"Already released file: " + file.getName());
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this,
+						"Already released file: " + file.getName());
 			if (file.exists())
 				throw new IllegalStateException(
 					"already released file "

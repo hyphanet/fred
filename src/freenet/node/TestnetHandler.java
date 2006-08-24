@@ -126,6 +126,7 @@ public class TestnetHandler implements Runnable {
 		}
 		
 		public void run() {
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			InputStream is = null;
 			OutputStream os = null;
 			try {
@@ -136,7 +137,7 @@ public class TestnetHandler implements Runnable {
 				BufferedReader br = new BufferedReader(isr);
 				String command = br.readLine();
 				if(command == null) return;
-				Logger.minor(this, "Command: "+command);
+				if(logMINOR) Logger.minor(this, "Command: "+command);
 				FileLoggerHook loggerHook;
 				loggerHook = Node.logConfigHandler.getFileLoggerHook();
 				if(loggerHook == null) {
@@ -146,12 +147,12 @@ public class TestnetHandler implements Runnable {
 					return;
 				}
 				if(command.equalsIgnoreCase("LIST")) {
-					Logger.minor(this, "Listing available logs");
+					if(logMINOR) Logger.minor(this, "Listing available logs");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					loggerHook.listAvailableLogs(osw);
 					osw.close();
 				} else if(command.startsWith("GET:")) {
-					Logger.minor(this, "Sending log: "+command);
+					if(logMINOR) Logger.minor(this, "Sending log: "+command);
 					String date = command.substring("GET:".length());
 					DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.ENGLISH);
 					df.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -159,17 +160,17 @@ public class TestnetHandler implements Runnable {
 					try {
 						d = df.parse(date);
 					} catch (ParseException e) {
-						Logger.minor(this, "Cannot parse: "+e+" for "+date);
+						if(logMINOR) Logger.minor(this, "Cannot parse: "+e+" for "+date);
 						return;
 					}
 					loggerHook.sendLogByContainedDate(d.getTime(), os);
 				} else if(command.equalsIgnoreCase("STATUS")) {
-					Logger.minor(this, "Sending status");
+					if(logMINOR) Logger.minor(this, "Sending status");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					osw.write(node.getStatus());
 					osw.close();
 				} else if(command.equalsIgnoreCase("PEERS")) {
-					Logger.minor(this, "Sending references");
+					if(logMINOR) Logger.minor(this, "Sending references");
 					OutputStreamWriter osw = new OutputStreamWriter(os, "ISO-8859-1");
 					osw.write("My ref:\n\n");
 					SimpleFieldSet fs = node.exportPublicFieldSet();

@@ -106,7 +106,8 @@ public class SplitFileFetcher implements ClientGetState {
 			// Will be segmented.
 		} else throw new MetadataParseException("Unknown splitfile format: "+splitfileType);
 		this.maxTempLength = fetchContext.maxTempLength;
-		Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount);
 		segments = new SplitFileFetcherSegment[segmentCount]; // initially null on all entries
 		if(segmentCount == 1) {
 			segments[0] = new SplitFileFetcherSegment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, fetchContext, maxTempLength, splitUseLengths, recursionLevel);
@@ -180,13 +181,14 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void segmentFinished(SplitFileFetcherSegment segment) {
-		Logger.minor(this, "Finished segment: "+segment);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Finished segment: "+segment);
 		boolean finish = false;
 		synchronized(this) {
 			boolean allDone = true;
 			for(int i=0;i<segments.length;i++)
 				if(!segments[i].isFinished()) {
-					Logger.minor(this, "Segment "+segments[i]+" is not finished");
+					if(logMINOR) Logger.minor(this, "Segment "+segments[i]+" is not finished");
 					allDone = false;
 				}
 			if(allDone) {

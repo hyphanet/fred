@@ -26,7 +26,8 @@ public class FCPConnectionOutputHandler implements Runnable {
 		try {
 			realRun();
 		} catch (IOException e) {
-			Logger.minor(this, "Caught "+e, e);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Caught "+e, e);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 		}

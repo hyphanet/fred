@@ -139,13 +139,15 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
                 if (streams.elementAt(i) instanceof InputStream) {
                     ((InputStream)streams.elementAt(i)).close();
 
-                    Logger.debug(this, "closed open InputStream !: " + 
-                               file.getAbsolutePath());
+                    if(Logger.shouldLog(Logger.DEBUG, this))
+                    	Logger.debug(this, "closed open InputStream !: " + 
+                    			file.getAbsolutePath());
                 }
                 else if (streams.elementAt(i) instanceof OutputStream) {
                     ((OutputStream)streams.elementAt(i)).close();
-                    Logger.debug(this, "closed open OutputStream !: " + 
-                               file.getAbsolutePath());
+                    if(Logger.shouldLog(Logger.DEBUG, this))
+                    	Logger.debug(this, "closed open OutputStream !: " + 
+                    			file.getAbsolutePath());
                 }
             }
             catch (IOException ioe) {
@@ -327,7 +329,8 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
 
         private final void println(String text) {
             if (vociferous) {
-                Logger.debug(this, text);
+                if(Logger.shouldLog(Logger.DEBUG, this))
+                	Logger.debug(this, text);
             }
         }
         
@@ -420,7 +423,8 @@ public class RandomAccessFileBucket implements Bucket, SerializableToFieldSetBuc
         ////////////////////////////////////////////////////////////
         private void println(String text) {
             if (vociferous) {
-                Logger.debug(this, text);
+                if(Logger.shouldLog(Logger.DEBUG, this))
+                	Logger.debug(this, text);
             }
         }
 

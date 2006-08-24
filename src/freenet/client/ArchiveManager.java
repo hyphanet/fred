@@ -31,6 +31,8 @@ import freenet.support.io.PaddedEphemerallyEncryptedBucket;
  */
 public class ArchiveManager {
 
+	private static boolean logMINOR;
+	
 	/**
 	 * Create an ArchiveManager.
 	 * @param maxHandlers The maximum number of cached ArchiveHandler's.
@@ -55,6 +57,7 @@ public class ArchiveManager {
 		this.maxArchivedFileSize = maxArchivedFileSize;
 		this.random = random;
 		this.filenameGenerator = filenameGenerator;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	final RandomSource random;
@@ -69,7 +72,7 @@ public class ArchiveManager {
 	
 	/** Add an ArchiveHandler by key */
 	private synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
-		Logger.minor(this, "Put cached AH for "+key+" : "+zip);
+		if(logMINOR) Logger.minor(this, "Put cached AH for "+key+" : "+zip);
 		archiveHandlers.push(key, zip);
 		while(archiveHandlers.size() > maxArchiveHandlers)
 			archiveHandlers.popKey(); // dump it
@@ -77,7 +80,7 @@ public class ArchiveManager {
 
 	/** Get an ArchiveHandler by key */
 	public ArchiveHandler getCached(FreenetURI key) {
-		Logger.minor(this, "Get cached AH for "+key);
+		if(logMINOR) Logger.minor(this, "Get cached AH for "+key);
 		ArchiveHandler handler = (ArchiveHandler) archiveHandlers.get(key);
 		if(handler == null) return null;
 		archiveHandlers.push(key, handler);
@@ -128,7 +131,7 @@ public class ArchiveManager {
 	 * @throws ArchiveFailureException 
 	 */
 	public synchronized Bucket getCached(FreenetURI key, String filename) throws ArchiveFailureException {
-		Logger.minor(this, "Fetch cached: "+key+" "+filename);
+		if(logMINOR) Logger.minor(this, "Fetch cached: "+key+" "+filename);
 		ArchiveKey k = new ArchiveKey(key, filename);
 		ArchiveStoreItem asi = (ArchiveStoreItem) storedData.get(k);
 		if(asi == null) return null;
@@ -159,7 +162,9 @@ public class ArchiveManager {
 	 */
 	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx) throws ArchiveFailureException, ArchiveRestartException {
 		
-		Logger.minor(this, "Extracting "+key);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
+		if(logMINOR) Logger.minor(this, "Extracting "+key);
 		
 		ctx.removeAllCachedItems(); // flush cache anyway
 		long expectedSize = ctx.getLastSize();
@@ -359,7 +364,7 @@ outer:		while(true) {
 	 */
 	private void addErrorElement(ArchiveStoreContext ctx, FreenetURI key, String name, String error) {
 		ErrorArchiveStoreItem element = new ErrorArchiveStoreItem(ctx, key, name, error);
-		Logger.minor(this, "Adding error element: "+element+" for "+key+" "+name);
+		if(logMINOR) Logger.minor(this, "Adding error element: "+element+" for "+key+" "+name);
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 		}
@@ -370,7 +375,7 @@ outer:		while(true) {
 	 */
 	private void addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp) {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(this, ctx, key, name, temp);
-		Logger.minor(this, "Adding store element: "+element+" ( "+key+" "+name+" )");
+		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+" "+name+" )");
 		synchronized(storedData) {
 			storedData.push(element.key, element);
 			trimStoredData();

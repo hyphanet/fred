@@ -24,11 +24,13 @@ public class SimpleSendableInsert implements SendableInsert {
 	
 	public void onSuccess() {
 		// Yay!
-		Logger.minor(this, "Finished insert of "+block);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Finished insert of "+block);
 	}
 
 	public void onFailure(LowLevelPutException e) {
-		Logger.minor(this, "Failed insert of "+block+": "+e);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
 
 	public short getPriorityClass() {
@@ -41,17 +43,18 @@ public class SimpleSendableInsert implements SendableInsert {
 	}
 
 	public void send(NodeClientCore core) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
-			Logger.minor(this, "Starting request: "+this);
+			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			core.realPut(block, false);
 		} catch (LowLevelPutException e) {
 			onFailure(e);
-			Logger.minor(this, "Request failed: "+this+" for "+e);
+			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return;
 		} finally {
 			finished = true;
 		}
-		Logger.minor(this, "Request succeeded: "+this);
+		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
 		onSuccess();
 	}
 

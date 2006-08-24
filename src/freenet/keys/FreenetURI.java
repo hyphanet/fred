@@ -544,7 +544,8 @@ public class FreenetURI implements Cloneable{
 		int len = dis.readShort();
 		byte[] buf = new byte[len];
 		dis.readFully(buf);
-		Logger.minor(FreenetURI.class, "Read "+len+" bytes for key");
+		if(Logger.shouldLog(Logger.MINOR, FreenetURI.class))
+			Logger.minor(FreenetURI.class, "Read "+len+" bytes for key");
 		return fromFullBinaryKey(buf);
 	}
 	
@@ -609,7 +610,8 @@ public class FreenetURI implements Cloneable{
 		if(data.length > Short.MAX_VALUE)
 			throw new MalformedURLException("Full key too long: "+data.length+" - "+this);
 		dos.writeShort((short)data.length);
-		Logger.minor(this, "Written "+data.length+" bytes");
+		if(Logger.shouldLog(Logger.MINOR, FreenetURI.class))
+			Logger.minor(this, "Written "+data.length+" bytes");
 		dos.write(data);
 	}
 
@@ -662,33 +664,34 @@ public class FreenetURI implements Cloneable{
 	}
 
 	public String getPreferredFilename() {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Logger.minor(this, "Getting preferred filename for "+this);
 		Vector names = new Vector();
 		if(keyType.equals("KSK") || keyType.equals("SSK")) {
-			Logger.minor(this, "Adding docName: "+docName);
+			if(logMINOR) Logger.minor(this, "Adding docName: "+docName);
 			names.add(docName);
 		}
 		if(metaStr != null)
 			for(int i=0;i<metaStr.length;i++) {
-				Logger.minor(this, "Adding metaString "+i+": "+metaStr[i]);
+				if(logMINOR) Logger.minor(this, "Adding metaString "+i+": "+metaStr[i]);
 				names.add(metaStr[i]);
 			}
 		StringBuffer out = new StringBuffer();
 		for(int i=0;i<names.size();i++) {
 			String s = (String) names.get(i);
-			Logger.minor(this, "name "+i+" = "+s);
+			if(logMINOR) Logger.minor(this, "name "+i+" = "+s);
 			s = sanitize(s);
-			Logger.minor(this, "Sanitized name "+i+" = "+s);
+			if(logMINOR) Logger.minor(this, "Sanitized name "+i+" = "+s);
 			if(s.length() > 0) {
 				if(out.length() > 0)
 					out.append("-");
 				out.append(s);
 			}
 		}
-		Logger.minor(this, "out = "+out.toString());
+		if(logMINOR) Logger.minor(this, "out = "+out.toString());
 		if(out.length() == 0) {
 			if(routingKey != null) {
-				Logger.minor(this, "Returning base64 encoded routing key");
+				if(logMINOR) Logger.minor(this, "Returning base64 encoded routing key");
 				return Base64.encode(routingKey);
 			}
 			return "unknown";

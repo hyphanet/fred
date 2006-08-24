@@ -21,6 +21,7 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class SplitFileInserterSegment implements PutCompletionCallback {
 
+	private static boolean logMINOR;
 	final SplitFileInserter parent;
 	final FECCodec splitfileAlgo;
 	final Bucket[] dataBlocks;
@@ -42,6 +43,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	private boolean started;
 	
 	public SplitFileInserterSegment(SplitFileInserter parent, FECCodec splitfileAlgo, Bucket[] origDataBlocks, InserterContext blockInsertContext, boolean getCHKOnly, int segNo) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
 		this.errors = new FailureCodeTracker(true);
@@ -251,16 +253,16 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 			Bucket data = dataBlocks[i];
 			if(data == null && finished) {
 				// Ignore
-				Logger.minor(this, "Could not save to disk: null");
+				if(logMINOR) Logger.minor(this, "Could not save to disk: null");
 			} else if(data instanceof SerializableToFieldSetBucket) {
 				SimpleFieldSet tmp = ((SerializableToFieldSetBucket)data).toFieldSet();
 				if(tmp == null) {
-					Logger.minor(this, "Could not save to disk: "+data);
+					if(logMINOR) Logger.minor(this, "Could not save to disk: "+data);
 					return null;
 				}
 				block.put("Data", tmp);
 			} else {
-				Logger.minor(this, "Could not save to disk (not serializable to fieldset): "+data);
+				if(logMINOR) Logger.minor(this, "Could not save to disk (not serializable to fieldset): "+data);
 				return null;
 			}
 			if(!block.isEmpty())
@@ -302,7 +304,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 	
 	public void start() throws InserterException {
-		Logger.minor(this, "Starting segment "+segNo+" of "+parent+" ("+parent.dataLength+"): "+this+" ( finished="+finished+" encoded="+encoded+" hasURIs="+hasURIs+")");
+		if(logMINOR) Logger.minor(this, "Starting segment "+segNo+" of "+parent+" ("+parent.dataLength+"): "+this+" ( finished="+finished+" encoded="+encoded+" hasURIs="+hasURIs+")");
 		boolean fin = true;
 		
 		for(int i=0;i<dataBlockInserters.length;i++) {
@@ -318,9 +320,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 		//parent.parent.notifyClients();
 		started = true;
 		if(!encoded) {
-			Logger.minor(this, "Segment "+segNo+" of "+parent+" ("+parent.dataLength+") is not encoded");
+			if(logMINOR) Logger.minor(this, "Segment "+segNo+" of "+parent+" ("+parent.dataLength+") is not encoded");
 			if(splitfileAlgo != null) {
-				Logger.minor(this, "Encoding segment "+segNo+" of "+parent+" ("+parent.dataLength+")");
+				if(logMINOR) Logger.minor(this, "Encoding segment "+segNo+" of "+parent+" ("+parent.dataLength+")");
 				// Encode blocks
 				Thread t = new Thread(new EncodeBlocksRunnable(), "Blocks encoder for "+this);
 				t.setDaemon(true);
@@ -409,7 +411,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 
 	private void finish(InserterException ex) {
-		Logger.minor(this, "Finishing "+this+" with "+ex, ex);
+		if(logMINOR) Logger.minor(this, "Finishing "+this+" with "+ex, ex);
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -494,7 +496,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	 * blocks.
 	 */
 	private synchronized int innerCompleted(int x) {
-		Logger.minor(this, "Completed: "+x+" on "+this+" ( completed="+blocksCompleted+", total="+(dataBlockInserters.length+checkBlockInserters.length));
+		if(logMINOR) Logger.minor(this, "Completed: "+x+" on "+this+" ( completed="+blocksCompleted+", total="+(dataBlockInserters.length+checkBlockInserters.length));
 
 		if(finished) return -1;
 		if(x >= dataBlocks.length) {

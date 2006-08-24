@@ -86,7 +86,7 @@ public class TextModeClientInterface implements Runnable {
     	try {
     		realRun();
     	} catch (IOException e) {
-    		Logger.minor(this, "Caught "+e, e);
+    		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Caught "+e, e);
     	} catch (Throwable t) {
     		Logger.error(this, "Caught "+t, t);
     	}
@@ -197,7 +197,8 @@ public class TextModeClientInterface implements Runnable {
         boolean getCHKOnly = false;
         if(line == null) return true;
         String uline = line.toUpperCase();
-        Logger.minor(this, "Command: "+line);
+        if(Logger.shouldLog(Logger.MINOR, this))
+        	Logger.minor(this, "Command: "+line);
         if(uline.startsWith("GET:")) {
             // Should have a key next
             String key = line.substring("GET:".length());
@@ -617,7 +618,8 @@ public class TextModeClientInterface implements Runnable {
             
             try{
             	n.config.get("node").getOption("name").setValue(key);
-            	Logger.minor(this, "Setting node.name to "+key);
+                if(Logger.shouldLog(Logger.MINOR, this))
+                	Logger.minor(this, "Setting node.name to "+key);
             }catch(Exception e){
             	Logger.error(this, "Error setting node's name");
     		}

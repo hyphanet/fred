@@ -44,6 +44,7 @@ import freenet.support.io.Bucket;
  */
 public class FCPServer implements Runnable {
 
+	private static boolean logMINOR;
 	public final static int DEFAULT_FCP_PORT = 9481;
 	NetworkInterface networkInterface;
 	final NodeClientCore core;
@@ -103,7 +104,7 @@ public class FCPServer implements Runnable {
 		
 		globalClient = new FCPClient("Global Queue", this, null, true);
 		
-		
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	public void maybeStart() throws IOException, InvalidConfigValueException {
@@ -142,7 +143,7 @@ public class FCPServer implements Runnable {
 			try {
 				realRun();
 			} catch (IOException e) {
-				Logger.minor(this, "Caught "+e, e);
+				if(logMINOR) Logger.minor(this, "Caught "+e, e);
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 			}
@@ -470,7 +471,7 @@ public class FCPServer implements Runnable {
 	}
 
 	public void forceStorePersistentRequests() {
-		Logger.minor(this, "Forcing store persistent requests");
+		if(logMINOR) Logger.minor(this, "Forcing store persistent requests");
 		if(!enablePersistentDownloads) return;
 		if(persister != null) {
 			persister.force();
@@ -482,9 +483,10 @@ public class FCPServer implements Runnable {
 	
 	/** Store all persistent requests to disk */
 	private void storePersistentRequests() {
-		Logger.minor(this, "Storing persistent requests");
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Storing persistent requests");
 		ClientRequest[] persistentRequests = getPersistentRequests();
-		Logger.minor(this, "Persistent requests count: "+persistentRequests.length);
+		if(logMINOR) Logger.minor(this, "Persistent requests count: "+persistentRequests.length);
 		Bucket[] toFree = null;
 		try {
 			synchronized(persistenceSync) {
@@ -502,7 +504,7 @@ public class FCPServer implements Runnable {
 						persistentRequests[i].write(w);
 					w.close();
 					if(!compressedTemp.renameTo(compressedFinal)) {
-						Logger.minor(this, "Rename failed");
+						if(logMINOR) Logger.minor(this, "Rename failed");
 						compressedFinal.delete();
 						if(!compressedTemp.renameTo(compressedFinal)) {
 							Logger.error(this, "Could not rename persisted requests temp file "+persistentDownloadsTempFile+".gz to "+persistentDownloadsFile);
@@ -512,7 +514,7 @@ public class FCPServer implements Runnable {
 					Logger.error(this, "Cannot write persistent requests to disk: "+e);
 				}
 			}
-			Logger.minor(this, "Stored persistent requests");
+			if(logMINOR) Logger.minor(this, "Stored persistent requests");
 		} finally {
 			if(toFree != null) {
 				for(int i=0;i<toFree.length;i++)

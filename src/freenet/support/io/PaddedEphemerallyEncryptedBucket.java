@@ -292,7 +292,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			if(size < min)
 				throw new IllegalStateException("???");
 			if((size >= min) && (size <= max)) {
-				Logger.minor(this, "Padded: "+max+" was: "+dataLength+" for "+getName());
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Padded: "+max+" was: "+dataLength+" for "+getName());
 				return max;
 			}
 			min = max;

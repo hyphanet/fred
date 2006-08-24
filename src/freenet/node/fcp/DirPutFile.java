@@ -64,7 +64,8 @@ abstract class DirPutFile {
 		String n = name;
 		int idx = n.lastIndexOf('/');
 		if(idx != -1) n = n.substring(idx+1);
-		Logger.minor(this, "Element name: "+name+" -> "+n);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Element name: "+name+" -> "+n);
 		return new ManifestElement(n, getData(), getMIMEType(), getData().size());
 	}
 

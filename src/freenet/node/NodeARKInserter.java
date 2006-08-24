@@ -29,6 +29,7 @@ public class NodeARKInserter implements ClientCallback {
 	 */
 	private final Node node;
 	private final NodeIPDetector detector;
+	private static boolean logMINOR;
 
 	/**
 	 * @param node
@@ -36,6 +37,7 @@ public class NodeARKInserter implements ClientCallback {
 	NodeARKInserter(Node node, NodeIPDetector detector) {
 		this.node = node;
 		this.detector = detector;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	private ClientPutter inserter;
@@ -49,9 +51,10 @@ public class NodeARKInserter implements ClientCallback {
 	}
 	
 	public void update() {
-		Logger.minor(this, "update()");
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "update()");
 		if(!checkIPUpdated()) return;
-		Logger.minor(this, "Inserting ARK because peers list changed");
+		if(logMINOR) Logger.minor(this, "Inserting ARK because peers list changed");
 		
 		if(inserter != null) {
 			// Already inserting.
@@ -77,7 +80,7 @@ public class NodeARKInserter implements ClientCallback {
 	private boolean checkIPUpdated() {
 		Peer[] p = detector.getPrimaryIPAddress();
 		if(p == null) {
-			Logger.minor(this, "Not inserting because no IP address");
+			if(logMINOR) Logger.minor(this, "Not inserting because no IP address");
 			return false; // no point inserting
 		}
 		synchronized (this) {
@@ -95,13 +98,12 @@ public class NodeARKInserter implements ClientCallback {
 	}
 
 	private void startInserter() {
-
 		if(!canStart) {
-			Logger.minor(this, "ARK inserter can't start yet");
+			if(logMINOR) Logger.minor(this, "ARK inserter can't start yet");
 			return;
 		}
 		
-		Logger.minor(this, "starting inserter");
+		if(logMINOR) Logger.minor(this, "starting inserter");
 		
 		SimpleFieldSet fs = this.node.exportPublicFieldSet();
 		
@@ -125,7 +127,7 @@ public class NodeARKInserter implements ClientCallback {
 		
 		FreenetURI uri = this.node.myARK.getInsertURI().setKeyType("USK").setSuggestedEdition(this.node.myARKNumber);
 		
-		Logger.minor(this, "Inserting ARK: "+uri);
+		if(logMINOR) Logger.minor(this, "Inserting ARK: "+uri);
 		
 
 		inserter = new ClientPutter(this, b, uri,
@@ -168,7 +170,7 @@ public class NodeARKInserter implements ClientCallback {
 	}
 
 	public void onSuccess(BaseClientPutter state) {
-		Logger.minor(this, "ARK insert succeeded");
+		if(logMINOR) Logger.minor(this, "ARK insert succeeded");
 			inserter = null;
 			boolean myShouldInsert;
 			synchronized (this) {
@@ -184,7 +186,7 @@ public class NodeARKInserter implements ClientCallback {
 	}
 
 	public void onFailure(InserterException e, BaseClientPutter state) {
-		Logger.minor(this, "ARK insert failed: "+e);
+		if(logMINOR) Logger.minor(this, "ARK insert failed: "+e);
 		synchronized(this) {
 			lastInsertedPeers = null;
 		}
@@ -200,12 +202,12 @@ public class NodeARKInserter implements ClientCallback {
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
-		Logger.minor(this, "Generated URI for ARK: "+uri);
+		if(logMINOR) Logger.minor(this, "Generated URI for ARK: "+uri);
 		long l = uri.getSuggestedEdition();
 		if(l < this.node.myARKNumber) {
 			Logger.error(this, "Inserted edition # lower than attempted: "+l+" expected "+this.node.myARKNumber);
 		} else if(l > this.node.myARKNumber) {
-			Logger.minor(this, "ARK number moving from "+this.node.myARKNumber+" to "+l);
+			if(logMINOR) Logger.minor(this, "ARK number moving from "+this.node.myARKNumber+" to "+l);
 			this.node.myARKNumber = l;
 			this.node.writeNodeFile();
 		}

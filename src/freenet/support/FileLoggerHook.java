@@ -249,7 +249,8 @@ public class FileLoggerHook extends LoggerHook {
 				}
 				System.err.println("Created log files");
 				startTime = gc.getTimeInMillis();
-				Logger.minor(this, "Start time: "+gc+" -> "+startTime);
+		    	if(Logger.shouldLog(Logger.MINOR, this))
+		    		Logger.minor(this, "Start time: "+gc+" -> "+startTime);
 				lastTime = startTime;
 				gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 				nextHour = gc.getTimeInMillis();
@@ -471,7 +472,8 @@ public class FileLoggerHook extends LoggerHook {
 				}
 				olf.filename.delete();
 				oldLogFilesDiskSpaceUsage -= olf.size;
-				Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
+		    	if(Logger.shouldLog(Logger.MINOR, this))
+		    		Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
 						" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
 			}
 		}
@@ -496,6 +498,7 @@ public class FileLoggerHook extends LoggerHook {
 		File oldFile = null;
 		previousFile.delete();
 		latestFile.renameTo(previousFile);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		for(int i=0;i<files.length;i++) {
 			File f = files[i];
 			String name = f.getName();
@@ -504,7 +507,7 @@ public class FileLoggerHook extends LoggerHook {
 					continue;
 				}
 				if(!name.endsWith(".log.gz")) {
-					Logger.minor(this, "Does not end in .log.gz: "+name);
+					if(logMINOR) Logger.minor(this, "Does not end in .log.gz: "+name);
 					f.delete();
 					continue;
 				} else {
@@ -512,7 +515,7 @@ public class FileLoggerHook extends LoggerHook {
 				}
 				name = name.substring(prefix.length());
 				if((name.length() == 0) || (name.charAt(0) != '-')) {
-					Logger.minor(this, "Deleting unrecognized: "+name+" ("+f.getPath()+")");
+					if(logMINOR) Logger.minor(this, "Deleting unrecognized: "+name+" ("+f.getPath()+")");
 					f.delete();
 					continue;
 				} else
@@ -531,7 +534,7 @@ public class FileLoggerHook extends LoggerHook {
 				}
 				// First field: version
 				if(nums[0] != Version.buildNumber()) {
-					Logger.minor(this, "Deleting old log from build "+nums[0]+", current="+Version.buildNumber());
+					if(logMINOR) Logger.minor(this, "Deleting old log from build "+nums[0]+", current="+Version.buildNumber());
 					// Logs that old are useless
 					f.delete();
 					continue;
@@ -916,10 +919,12 @@ public class FileLoggerHook extends LoggerHook {
 			Iterator i = logFiles.iterator();
 			while(i.hasNext()) {
 				OldLogFile olf = (OldLogFile) i.next();
-				Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
+		    	boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		    	if(logMINOR)
+		    		Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
 				if((time >= olf.start) && (time < olf.end)) {
 					toReturn = olf;
-					Logger.minor(this, "Found "+olf);
+					if(logMINOR) Logger.minor(this, "Found "+olf);
 					break;
 				}
 			}
@@ -997,8 +1002,9 @@ public class FileLoggerHook extends LoggerHook {
 				}
 				olf.filename.delete();
 				oldLogFilesDiskSpaceUsage -= olf.size;
-				Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
-						" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Deleting "+olf.filename+" - saving "+olf.size+
+							" bytes, disk usage now: "+oldLogFilesDiskSpaceUsage+" of "+maxOldLogfilesDiskUsage);
 			}
 		}
 	}

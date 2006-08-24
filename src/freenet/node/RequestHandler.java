@@ -20,6 +20,7 @@ import freenet.support.Logger;
  */
 public class RequestHandler implements Runnable, ByteCounter {
 
+	private static boolean logMINOR;
     final Message req;
     final Node node;
     final long uid;
@@ -59,7 +60,7 @@ public class RequestHandler implements Runnable, ByteCounter {
     	int status = RequestSender.NOT_FINISHED;
     	RequestSender rs = null;
         try {
-        Logger.minor(this, "Handling a request: "+uid);
+        if(logMINOR) Logger.minor(this, "Handling a request: "+uid);
         htl = source.decrementHTL(htl);
         
         Message accepted = DMT.createFNPAccepted(uid);
@@ -74,7 +75,7 @@ public class RequestHandler implements Runnable, ByteCounter {
                 if(needsPubKey) {
                 	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
                 	Message pk = DMT.createFNPSSKPubKey(uid, key.asBytes());
-                	Logger.minor(this, "Sending PK: "+key+" "+key.writeAsField());
+                	if(logMINOR) Logger.minor(this, "Sending PK: "+key+" "+key.writeAsField());
                 	source.send(pk, null);
                 }
                 status = RequestSender.SUCCESS; // for byte logging
@@ -187,11 +188,11 @@ public class RequestHandler implements Runnable, ByteCounter {
             	int sent = rs.getTotalSentBytes() + sentBytes;
             	int rcvd = rs.getTotalReceivedBytes() + receivedBytes;
             	if(key instanceof NodeSSK) {
-                	Logger.minor(this, "Remote SSK fetch cost "+sent+"/"+rcvd+" bytes ("+status+")");
+            		if(logMINOR) Logger.minor(this, "Remote SSK fetch cost "+sent+"/"+rcvd+" bytes ("+status+")");
                 	node.remoteSskFetchBytesSentAverage.report(sent);
                 	node.remoteSskFetchBytesReceivedAverage.report(rcvd);
             	} else {
-                	Logger.minor(this, "Remote CHK fetch cost "+sent+"/"+rcvd+" bytes ("+status+")");
+            		if(logMINOR) Logger.minor(this, "Remote CHK fetch cost "+sent+"/"+rcvd+" bytes ("+status+")");
                 	node.remoteChkFetchBytesSentAverage.report(sent);
                 	node.remoteChkFetchBytesReceivedAverage.report(rcvd);
             	}

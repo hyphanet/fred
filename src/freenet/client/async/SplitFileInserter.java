@@ -18,7 +18,8 @@ import freenet.support.io.Bucket;
 import freenet.support.io.BucketTools;
 
 public class SplitFileInserter implements ClientPutState {
-	
+
+	private static boolean logMINOR;
 	final BaseClientPutter parent;
 	final InserterContext ctx;
 	final PutCompletionCallback cb;
@@ -60,6 +61,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData) throws InserterException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = put;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
 		this.token = token;
@@ -96,6 +98,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InserterContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs) throws ResumeException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = parent;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
 		this.token = token;
@@ -221,7 +224,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public void encodedSegment(SplitFileInserterSegment segment) {
-		Logger.minor(this, "Encoded segment "+segment.segNo+" of "+this);
+		if(logMINOR) Logger.minor(this, "Encoded segment "+segment.segNo+" of "+this);
 		synchronized(this) {
 			for(int i=0;i<segments.length;i++) {
 				if((segments[i] == null) || !segments[i].isEncoded())
@@ -234,7 +237,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	public void segmentHasURIs(SplitFileInserterSegment segment) {
-		Logger.minor(this, "Segment has URIs: "+segment);
+		if(logMINOR) Logger.minor(this, "Segment has URIs: "+segment);
 		synchronized(this) {
 			if(haveSentMetadata) {
 				return;
@@ -242,13 +245,13 @@ public class SplitFileInserter implements ClientPutState {
 			
 			for(int i=0;i<segments.length;i++) {
 				if(!segments[i].hasURIs()) {
-					Logger.minor(this, "Segment does not have URIs: "+segments[i]);
+					if(logMINOR) Logger.minor(this, "Segment does not have URIs: "+segments[i]);
 					return;
 				}
 			}
 		}
 		
-		Logger.minor(this, "Have URIs from all segments");
+		if(logMINOR) Logger.minor(this, "Have URIs from all segments");
 		encodeMetadata();
 	}
 	
@@ -260,7 +263,7 @@ public class SplitFileInserter implements ClientPutState {
 			FreenetURI[] dataURIs = getDataURIs();
 			FreenetURI[] checkURIs = getCheckURIs();
 			
-			Logger.minor(this, "Data URIs: "+dataURIs.length+", check URIs: "+checkURIs.length);
+			if(logMINOR) Logger.minor(this, "Data URIs: "+dataURIs.length+", check URIs: "+checkURIs.length);
 			
 			missingURIs = anyNulls(dataURIs) || anyNulls(checkURIs);
 			
@@ -271,7 +274,7 @@ public class SplitFileInserter implements ClientPutState {
 			haveSentMetadata = true;
 		}
 		if(missingURIs) {
-			Logger.minor(this, "Missing URIs");
+			if(logMINOR) Logger.minor(this, "Missing URIs");
 			// Error
 			fail(new InserterException(InserterException.INTERNAL_ERROR, "Missing URIs after encoding", null));
 			return;
@@ -335,18 +338,18 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public void segmentFinished(SplitFileInserterSegment segment) {
-		Logger.minor(this, "Segment finished: "+segment, new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Segment finished: "+segment, new Exception("debug"));
 		boolean allGone = true;
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
 		synchronized(this) {
 			if(finished) {
-				Logger.minor(this, "Finished already");
+				if(logMINOR) Logger.minor(this, "Finished already");
 				return;
 			}
 			for(int i=0;i<segments.length;i++) {
 				if(!segments[i].isFinished()) {
-					Logger.minor(this, "Segment not finished: "+i+": "+segments[i]);
+					if(logMINOR) Logger.minor(this, "Segment not finished: "+i+": "+segments[i]);
 					allGone = false;
 					break;
 				}
@@ -364,13 +367,13 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	public void segmentFetchable(SplitFileInserterSegment segment) {
-		Logger.minor(this, "Segment fetchable: "+segment);
+		if(logMINOR) Logger.minor(this, "Segment fetchable: "+segment);
 		synchronized(this) {
 			if(finished) return;
 			if(fetchable) return;
 			for(int i=0;i<segments.length;i++) {
 				if(!segments[i].isFetchable()) {
-					Logger.minor(this, "Segment not fetchable: "+i+": "+segments[i]);
+					if(logMINOR) Logger.minor(this, "Segment not fetchable: "+i+": "+segments[i]);
 					return;
 				}
 			}
@@ -380,7 +383,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	private void onAllFinished() {
-		Logger.minor(this, "All finished");
+		if(logMINOR) Logger.minor(this, "All finished");
 		try {
 			// Finished !!
 			FailureCodeTracker tracker = new FailureCodeTracker(true);
@@ -388,7 +391,7 @@ public class SplitFileInserter implements ClientPutState {
 			for(int i=0;i<segments.length;i++) {
 				InserterException e = segments[i].getException();
 				if(e == null) continue;
-				Logger.minor(this, "Failure on segment "+i+" : "+segments[i]+" : "+e, e);
+				if(logMINOR) Logger.minor(this, "Failure on segment "+i+" : "+segments[i]+" : "+e, e);
 				allSucceeded = false;
 				if(e.errorCodes != null)
 					tracker.merge(e.errorCodes);

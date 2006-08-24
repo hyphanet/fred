@@ -67,7 +67,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	 * including author errors and so on.
 	 */
 	private synchronized void scheduleFetcher() {
-		Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 		if(finished) return;
 		fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this);
 
@@ -103,7 +104,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		long edNo = Math.max(edition, ctx.uskManager.lookup(pubUSK))+1;
 		if(finished) return;
 		edition = edNo;
-		Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+" "+edition);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+" "+edition);
 		sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
 				ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject);
 		try {
@@ -123,7 +125,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(!targetURI.equals(realURI))
 			Logger.error(this, "URI should be "+targetURI+" actually is "+realURI);
 		else {
-			Logger.minor(this, "URI should be "+targetURI+" actually is "+realURI);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "URI should be "+targetURI+" actually is "+realURI);
 			ctx.uskManager.update(pubUSK, edition);
 		}
 		// FINISHED!!!! Yay!!!

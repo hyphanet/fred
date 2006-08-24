@@ -59,6 +59,8 @@ public class ConfigToadlet extends Toadlet {
 			return;
 		}
 		
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
 		for(int i=0; i<sc.length ; i++){
 			Option[] o = sc[i].getOptions();
 			String prefix = new String(sc[i].getPrefix());
@@ -66,12 +68,12 @@ public class ConfigToadlet extends Toadlet {
 			
 			for(int j=0; j<o.length; j++){
 				configName=o[j].getName();
-				Logger.minor(this, "Setting "+prefix+"."+configName);
+				if(logMINOR) Logger.minor(this, "Setting "+prefix+"."+configName);
 				
 				// we ignore unreconized parameters 
 				if(request.isParameterSet(prefix+"."+configName)) {
 					if(!(o[j].getValueString().equals(request.getParam(prefix+"."+configName)))){
-						Logger.minor(this, "Setting "+prefix+"."+configName+" to "+request.getParam(prefix+"."+configName));
+						if(logMINOR) Logger.minor(this, "Setting "+prefix+"."+configName+" to "+request.getParam(prefix+"."+configName));
 						try{
 							o[j].setValue(request.getParam(prefix+"."+configName));
 						}catch(Exception e){

@@ -338,7 +338,8 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 			try {
 				Socket conn = networkInterface.accept();
-				Logger.minor(this, "Accepted connection");
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Accepted connection");
 				SocketHandler sh = new SocketHandler(conn);
 				sh.start();
 			} catch (SocketTimeoutException e) {
@@ -362,9 +363,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public void run() {
-			Logger.minor(this, "Handling connection");
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			if(logMINOR) Logger.minor(this, "Handling connection");
 			ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf, pageMaker);
-			Logger.minor(this, "Handled connection");
+			if(logMINOR) Logger.minor(this, "Handled connection");
 		}
 
 	}

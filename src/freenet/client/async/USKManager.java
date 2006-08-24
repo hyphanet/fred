@@ -116,7 +116,8 @@ public class USKManager {
 					fetcher.cancel();
 					backgroundFetchersByClearUSK.remove(fetcher);
 				} else {
-					Logger.minor(this, "Allowing temporary background fetcher to continue as it has subscribers... "+fetcher);
+					if(Logger.shouldLog(Logger.MINOR, this))
+						Logger.minor(this, "Allowing temporary background fetcher to continue as it has subscribers... "+fetcher);
 					// It will burn itself out anyway as it's a temp fetcher, so no big harm here.
 					fetcher.killOnLoseSubscribers();
 				}
@@ -131,16 +132,17 @@ public class USKManager {
 	}
 	
 	void update(USK origUSK, long number) {
-		Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
 		USKCallback[] callbacks;
 		synchronized(this) {
 			Long l = (Long) latestVersionByClearUSK.get(clear);
-			Logger.minor(this, "Old value: "+l);
+			if(logMINOR) Logger.minor(this, "Old value: "+l);
 			if((l == null) || (number > l.longValue())) {
 				l = new Long(number);
 				latestVersionByClearUSK.put(clear, l);
-				Logger.minor(this, "Put "+number);
+				if(logMINOR) Logger.minor(this, "Put "+number);
 			} else return;
 			callbacks = (USKCallback[]) subscribersByClearUSK.get(clear);
 		}

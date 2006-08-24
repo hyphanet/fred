@@ -35,6 +35,7 @@ import freenet.support.Logger;
 public class UdpSocketManager extends Thread {
 
 	public static final String VERSION = "$Id: UdpSocketManager.java,v 1.22 2005/08/25 17:28:19 amphibian Exp $";
+	private static boolean logMINOR; 
 	private Dispatcher _dispatcher;
 	private DatagramSocket _sock;
 	/** _filters serves as lock for both */
@@ -68,13 +69,14 @@ public class UdpSocketManager extends Thread {
 	public class USMChecker implements Runnable {
 		public void run() {
 			while(true) {
+				logMINOR = Logger.shouldLog(Logger.MINOR, UdpSocketManager.this);
 				try {
 					Thread.sleep(10*1000);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
 				if(UdpSocketManager.this.isAlive()) {
-					Logger.minor(this, "PING on "+UdpSocketManager.this);
+					if(logMINOR) Logger.minor(this, "PING on "+UdpSocketManager.this);
 					long time = System.currentTimeMillis();
 					int timeSecs = (int) (time / 1000);
 					if(timeSecs - lastTimeInSeconds > 3*60) {
@@ -130,6 +132,7 @@ public class UdpSocketManager extends Thread {
 //			}
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = new Random();
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	public void run() { // Listen for packets
@@ -205,7 +208,7 @@ public class UdpSocketManager extends Thread {
 			int length = packet.getLength();
 			if (lowLevelFilter != null) {
 				try {
-					Logger.minor(this, "Processing packet of length "+length+" from "+peer);
+					if(logMINOR) Logger.minor(this, "Processing packet of length "+length+" from "+peer);
 					startTime = System.currentTimeMillis();
 					lowLevelFilter.process(data, offset, length, peer);
 					endTime = System.currentTimeMillis();
@@ -215,7 +218,7 @@ public class UdpSocketManager extends Thread {
 						else
 							Logger.normal(this, "processing packet took "+(endTime-startTime)+"ms");
 					}
-					Logger.minor(this,
+					if(logMINOR) Logger.minor(this,
 							"Successfully handled packet length " + length);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught " + t + " from "
@@ -229,8 +232,7 @@ public class UdpSocketManager extends Thread {
 					checkFilters(m);
 				}
 			}
-		} else
-			Logger.minor(this, "Null packet");
+		} else if(logMINOR) Logger.minor(this, "Null packet");
 	}
 	
 	/**
@@ -274,7 +276,7 @@ public class UdpSocketManager extends Thread {
 		} catch (IOException e2) {
 			throw new RuntimeException(e2);
 		}
-		Logger.minor(this, "Received packet");
+		if(logMINOR) Logger.minor(this, "Received packet");
 		return packet;
 	}
 
@@ -316,8 +318,8 @@ public class UdpSocketManager extends Thread {
 			((PeerNode)m.getSource()).addToLocalNodeReceivedMessagesFromStatistic(m);
 		}
 		boolean matched = false;
-		if (!(m.getSpec().equals(DMT.packetTransmit))) {
-			if (m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) {
+		if ((!(m.getSpec().equals(DMT.packetTransmit))) && logMINOR) {
+			if ((m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) && Logger.shouldLog(Logger.DEBUG, this)) {
 				Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getLocalPort() + " <- "
 						+ m.getSource() + " : " + m);
 			} else {
@@ -335,7 +337,7 @@ public class UdpSocketManager extends Thread {
 						i.remove();
 						f.notify();
 					}
-					Logger.minor(this, "Matched: "+f);
+					if(logMINOR) Logger.minor(this, "Matched: "+f);
 					break; // Only one match permitted per message
 				}
 			}
@@ -343,7 +345,7 @@ public class UdpSocketManager extends Thread {
 		// Feed unmatched messages to the dispatcher
 		if ((!matched) && (_dispatcher != null)) {
 		    try {
-		        Logger.minor(this, "Feeding to dispatcher: "+m);
+		    	if(logMINOR) Logger.minor(this, "Feeding to dispatcher: "+m);
 		        matched = _dispatcher.handleMessage(m);
 		    } catch (Throwable t) {
 		        Logger.error(this, "Dispatcher threw "+t, t);
@@ -351,7 +353,7 @@ public class UdpSocketManager extends Thread {
 		}
 		// Keep the last few _unclaimed messages around in case the intended receiver isn't receiving yet
 		if (!matched) {
-		    Logger.minor(this, "Unclaimed: "+m);
+			if(logMINOR) Logger.minor(this, "Unclaimed: "+m);
 		    /** Check filters and then add to _unmatched is ATOMIC
 		     * It has to be atomic, because otherwise we can get a
 		     * race condition that results in timeouts on MFs.
@@ -374,7 +376,7 @@ public class UdpSocketManager extends Thread {
 		     * filters after we return from dispatcher, for example.
 		     */
 			synchronized (_filters) {
-				Logger.minor(this, "Rechecking filters and adding message");
+				if(logMINOR) Logger.minor(this, "Rechecking filters and adding message");
 				for (ListIterator i = _filters.listIterator(); i.hasNext();) {
 					MessageFilter f = (MessageFilter) i.next();
 					if (f.match(m)) {
@@ -384,7 +386,7 @@ public class UdpSocketManager extends Thread {
 							i.remove();
 							f.notify();
 						}
-						Logger.minor(this, "Matched: "+f);
+						if(logMINOR) Logger.minor(this, "Matched: "+f);
 						break; // Only one match permitted per message
 					}
 				}
@@ -399,7 +401,7 @@ public class UdpSocketManager extends Thread {
 				        }
 				    }
 				    _unclaimed.addLast(m);
-					Logger.minor(this, "Done");
+				    if(logMINOR) Logger.minor(this, "Done");
 				}
 			}
 		}
@@ -424,7 +426,8 @@ public class UdpSocketManager extends Thread {
 	}
 	
 	public Message waitFor(MessageFilter filter, ByteCounter ctr) throws DisconnectedException {
-		Logger.debug(this, "Waiting for "+filter);
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
 		long startTime = System.currentTimeMillis();
 		Message ret = null;
 		if((lowLevelFilter != null) && (filter._source != null) && 
@@ -433,31 +436,31 @@ public class UdpSocketManager extends Thread {
 		    throw new DisconnectedException();
 		// Check to see whether the filter matches any of the recently _unclaimed messages
 		synchronized (_filters) {
-			Logger.minor(this, "Checking _unclaimed");
+			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
 			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
 				Message m = (Message) i.next();
 				if (filter.match(m)) {
 					i.remove();
 					ret = m;
-					Logger.debug(this, "Matching from _unclaimed");
+					if(logMINOR) Logger.debug(this, "Matching from _unclaimed");
 					break;
 				}
 			}
 			if (ret == null) {
-				Logger.minor(this, "Not in _unclaimed");
+				if(logMINOR) Logger.minor(this, "Not in _unclaimed");
 			    // Insert filter into filter list in order of timeout
 				ListIterator i = _filters.listIterator();
 				while (true) {
 					if (!i.hasNext()) {
 						i.add(filter);
-						Logger.minor(this, "Added at end");
+						if(logMINOR) Logger.minor(this, "Added at end");
 						break;
 					}
 					MessageFilter mf = (MessageFilter) i.next();
 					if (mf.getTimeout() > filter.getTimeout()) {
 						i.previous();
 						i.add(filter);
-						Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
+						if(logMINOR) Logger.minor(this, "Added in middle - mf timeout="+mf.getTimeout()+" - my timeout="+filter.getTimeout());
 						break;
 					}
 				}
@@ -467,7 +470,7 @@ public class UdpSocketManager extends Thread {
 		// Waiting on the filter won't release the outer lock
 		// So we have to release it here
 		if(ret == null) {	
-			Logger.minor(this, "Waiting...");
+			if(logMINOR) Logger.minor(this, "Waiting...");
 			synchronized (filter) {
 				try {
 					// Precaution against filter getting matched between being added to _filters and
@@ -481,13 +484,13 @@ public class UdpSocketManager extends Thread {
 					}
 				    if(filter.droppedConnection() != null)
 				        throw new DisconnectedException();
-				    Logger.minor(this, "Matched: "+fmatched);
+				    if(logMINOR) Logger.minor(this, "Matched: "+fmatched);
 				} catch (InterruptedException e) {
 				}
 				ret = filter.getMessage();
 				filter.clearMatched();
 			}
-			Logger.debug(this, "Returning "+ret+" from "+filter);
+			if(logDEBUG) Logger.debug(this, "Returning "+ret+" from "+filter);
 		}
 		// Probably get rid...
 //		if (Dijjer.getDijjer().getDumpMessageWaitTimes() != null) {
@@ -496,7 +499,7 @@ public class UdpSocketManager extends Thread {
 //			Dijjer.getDijjer().getDumpMessageWaitTimes().flush();
 //		}
 		long endTime = System.currentTimeMillis();
-		Logger.debug(this, "Returning in "+(endTime-startTime)+"ms");
+		if(logDEBUG) Logger.debug(this, "Returning in "+(endTime-startTime)+"ms");
 		if((ctr != null) && (ret != null))
 			ctr.receivedBytes(ret._receivedByteCount);
 		return ret;
@@ -511,11 +514,12 @@ public class UdpSocketManager extends Thread {
 	        Logger.error(this, "Trying to send internal-only message "+m+" of spec "+m.getSpec(), new Exception("debug"));
 	        return;
 	    }
-		if (m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) {
-			Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
-					+ " : " + m);
+		if ((m.getSpec().equals(DMT.ping) || m.getSpec().equals(DMT.pong)) && logMINOR) {
+			if(Logger.shouldLog(Logger.DEBUG, this))
+				Logger.debug(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
+						+ " : " + m);
 		} else {
-			Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
+			if(logMINOR) Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + " " + _sock.getPort() + " -> " + destination
 					+ " : " + m);
 		}
 //		byte[] blockToSend = m.encodeToPacket(lowLevelFilter, destination);
@@ -551,7 +555,7 @@ public class UdpSocketManager extends Thread {
   		}
 		if (_dropProbability > 0) {
 			if (dropRandom.nextInt() % _dropProbability == 0) {
-				Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPort());
+				if(logMINOR) Logger.minor(this, "DROPPED: " + _sock.getLocalPort() + " -> " + destination.getPort());
 				return;
 			}
 		}

@@ -72,7 +72,8 @@ public class PacketThrottle {
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
 		slowStart = false;
-    	Logger.minor(this, "notifyOfPacketLost(): "+this);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "notifyOfPacketLost(): "+this);
     }
 
     public synchronized void notifyOfPacketAcknowledged() {
@@ -82,7 +83,8 @@ public class PacketThrottle {
     	} else {
     		_simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
     	}
-    	Logger.minor(this, "notifyOfPacketAcked(): "+this);
+    	if(Logger.shouldLog(Logger.MINOR, this))
+    		Logger.minor(this, "notifyOfPacketAcked(): "+this);
     }
     
 	public synchronized long getDelay() {

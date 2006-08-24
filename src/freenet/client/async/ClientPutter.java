@@ -60,7 +60,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public void start() throws InserterException {
-		Logger.minor(this, "Starting "+this);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Starting "+this);
 		try {
 			boolean cancel = false;
 			synchronized(this) {
@@ -107,7 +108,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				this.client.onFailure(e, this);
 			}
 		}
-		Logger.minor(this, "Started "+this);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Started "+this);
 	}
 
 	public void onSuccess(ClientPutState state) {
@@ -179,7 +181,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	public void onBlockSetFinished(ClientPutState state) {
-		Logger.minor(this, "Set finished", new Exception("debug"));
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Set finished", new Exception("debug"));
 		blockSetFinalized();
 	}
 

@@ -102,6 +102,8 @@ import freenet.support.math.TimeDecayingRunningAverage;
  */
 public class Node {
 
+	private static boolean logMINOR;
+	
 	static class NodeBindtoCallback implements StringCallback {
 		
 		final Node node;
@@ -544,12 +546,12 @@ public class Node {
 			this.myPrivKey = DSAPrivateKey.create(fs.subset("dsaPrivKey"), myCryptoGroup);
 			this.myPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), myCryptoGroup);
 		} catch (NullPointerException e) {
-			Logger.minor(this, "Caught "+e, e);
+			if(logMINOR) Logger.minor(this, "Caught "+e, e);
 			this.myCryptoGroup = Global.DSAgroupBigA;
 			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
 			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
 		} catch (IllegalBase64Exception e) {
-			Logger.minor(this, "Caught "+e, e);
+			if(logMINOR) Logger.minor(this, "Caught "+e, e);
 			this.myCryptoGroup = Global.DSAgroupBigA;
 			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, r);
 			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
@@ -655,7 +657,7 @@ public class Node {
 	static class NodeInitException extends Exception {
 		// One of the exit codes from above
 		public final int exitCode;
-	private static final long serialVersionUID = -1;
+		private static final long serialVersionUID = -1;
 		
 		NodeInitException(int exitCode, String msg) {
 			super(msg+" ("+exitCode+")");
@@ -689,6 +691,7 @@ public class Node {
 	 */
 	 Node(Config config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
 		// Easy stuff
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Logger.normal(this, "Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
 		System.out.println("Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
 		pInstantRejectIncoming = new TimeDecayingRunningAverage(0, 60000, 0.0, 1.0);
@@ -1256,7 +1259,7 @@ public class Node {
 			}
 		}
 
-		Logger.minor(this, "Read throttleFS:\n"+throttleFS);
+		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		// Guesstimates. Hopefully well over the reality.
 		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesSentAverage"));
@@ -1437,7 +1440,7 @@ public class Node {
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 		
-		Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
+		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
 		// If we are using the wrapper, we ignore:
 		// Any problem should be detected by the watchdog and the node will be restarted
@@ -1517,7 +1520,7 @@ public class Node {
 	
     /* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
-		dumpByteCostAverages();
+		if(logMINOR) dumpByteCostAverages();
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
@@ -1549,7 +1552,7 @@ public class Node {
 			// Round trip time
 			if(pingTime > MAX_PING_TIME) {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
-					Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
+					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 					lastAcceptedRequest = now;
 					pInstantRejectIncoming.report(0.0);
 					return null;
@@ -1568,7 +1571,7 @@ public class Node {
 			// Bandwidth limited packets
 			if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
-					Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
+					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 					lastAcceptedRequest = now;
 					pInstantRejectIncoming.report(0.0);
 					return null;
@@ -1606,7 +1609,7 @@ public class Node {
 		}
 
 		synchronized(this) {
-			Logger.minor(this, "Accepting request?");
+			if(logMINOR) Logger.minor(this, "Accepting request?");
 			lastAcceptedRequest = now;
 		}
 		
@@ -1659,7 +1662,7 @@ public class Node {
 		fs.put("dsaPubKey", myPubKey.asFieldSet());
 		fs.put("ark.number", Long.toString(this.myARKNumber));
 		fs.put("ark.pubURI", this.myARK.getURI().toString(false));
-		Logger.minor(this, "My reference: "+fs);
+		if(logMINOR) Logger.minor(this, "My reference: "+fs);
 		return fs;
 	}
 
@@ -1704,7 +1707,8 @@ public class Node {
 	 * RequestSender.
 	 */
 	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean resetClosestLocation, boolean localOnly, boolean cache, boolean ignoreStore) {
-		Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+","+htl+","+uid+","+source+") on "+portNumber);
 		// In store?
 		KeyBlock chk = null;
 		if(!ignoreStore) {
@@ -1715,7 +1719,7 @@ public class Node {
 				DSAPublicKey pubKey = k.getPubKey();
 				if(pubKey == null) {
 					pubKey = getKey(k.getPubKeyHash());
-					Logger.minor(this, "Fetched pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
+					if(logMINOR) Logger.minor(this, "Fetched pubkey: "+pubKey+" "+(pubKey == null ? "" : pubKey.writeAsField()));
 					try {
 						k.setPubKey(pubKey);
 					} catch (SSKVerifyException e) {
@@ -1723,17 +1727,17 @@ public class Node {
 					}
 				}
 				if(pubKey != null) {
-					Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
+					if(logMINOR) Logger.minor(this, "Got pubkey: "+pubKey+" "+pubKey.writeAsField());
 					chk = fetch((NodeSSK)key, !cache);
 				} else {
-					Logger.minor(this, "Not found because no pubkey: "+uid);
+					if(logMINOR) Logger.minor(this, "Not found because no pubkey: "+uid);
 				}
 			} else
 				throw new IllegalStateException("Unknown key type: "+key.getClass());
 			if(chk != null) return chk;
 		}
 		if(localOnly) return null;
-		Logger.minor(this, "Not in store locally");
+		if(logMINOR) Logger.minor(this, "Not in store locally");
 		
 		// Transfer coalescing - match key only as HTL irrelevant
 		RequestSender sender = null;
@@ -1741,13 +1745,13 @@ public class Node {
 			sender = (RequestSender) transferringRequestSenders.get(key);
 		}
 		if(sender != null) {
-			Logger.minor(this, "Data already being transferred: "+sender);
+			if(logMINOR) Logger.minor(this, "Data already being transferred: "+sender);
 			return sender;
 		}
 
 		// HTL == 0 => Don't search further
 		if(htl == 0) {
-			Logger.minor(this, "No HTL");
+			if(logMINOR) Logger.minor(this, "No HTL");
 			return null;
 		}
 		
@@ -1756,7 +1760,7 @@ public class Node {
 			KeyHTLPair kh = new KeyHTLPair(key, htl);
 			sender = (RequestSender) requestSenders.get(kh);
 			if(sender != null) {
-				Logger.minor(this, "Found sender: "+sender+" for "+uid);
+				if(logMINOR) Logger.minor(this, "Found sender: "+sender+" for "+uid);
 				return sender;
 			}
 			
@@ -1764,7 +1768,7 @@ public class Node {
 			// RequestSender adds itself to requestSenders
 		}
 		sender.start();
-		Logger.minor(this, "Created new sender: "+sender);
+		if(logMINOR) Logger.minor(this, "Created new sender: "+sender);
 		return sender;
 	}
 	
@@ -1832,7 +1836,7 @@ public class Node {
 	}
 
 	public SSKBlock fetch(NodeSSK key, boolean dontPromote) {
-		dumpStoreHits();
+		if(logMINOR) dumpStoreHits();
 		try {
 			SSKBlock block = sskDatastore.fetch(key, dontPromote);
 			if(block != null) {
@@ -1846,7 +1850,7 @@ public class Node {
 	}
 
 	public CHKBlock fetch(NodeCHK key, boolean dontPromote) {
-		dumpStoreHits();
+		if(logMINOR) dumpStoreHits();
 		try {
 			CHKBlock block = chkDatastore.fetch(key, dontPromote);
 			if(block != null) return block;
@@ -2025,21 +2029,22 @@ public class Node {
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
-		Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+","+htl+","+uid+","+source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl);
 		CHKInsertSender is = null;
 		synchronized(insertSenders) {
 			is = (CHKInsertSender) insertSenders.get(kh);
 		}
 		if(is != null) {
-			Logger.minor(this, "Found "+is+" for "+kh);
+			if(logMINOR) Logger.minor(this, "Found "+is+" for "+kh);
 			return is;
 		}
   		if(fromStore && !cache)
 			throw new IllegalArgumentException("From store = true but cache = false !!!");
 		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
 		is.start();
-		Logger.minor(this, is.toString()+" for "+kh.toString());
+		if(logMINOR) Logger.minor(this, is.toString()+" for "+kh.toString());
 		// CHKInsertSender adds itself to insertSenders
 		return is;
 	}
@@ -2083,7 +2088,7 @@ public class Node {
 	}
 	
 	public boolean lockUID(long uid) {
-		Logger.minor(this, "Locking "+uid);
+		if(logMINOR) Logger.minor(this, "Locking "+uid);
 		Long l = new Long(uid);
 		synchronized(runningUIDs) {
 			if(runningUIDs.contains(l)) return false;
@@ -2093,7 +2098,7 @@ public class Node {
 	}
 	
 	public void unlockUID(long uid) {
-		Logger.minor(this, "Unlocking "+uid);
+		if(logMINOR) Logger.minor(this, "Unlocking "+uid);
 		Long l = new Long(uid);
 		completed(uid);
 		synchronized(runningUIDs) {
@@ -2241,13 +2246,13 @@ public class Node {
 	 */
 	public DSAPublicKey getKey(byte[] hash) {
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
-		Logger.minor(this, "Getting pubkey: "+HexUtil.bytesToHex(hash));
+		if(logMINOR) Logger.minor(this, "Getting pubkey: "+HexUtil.bytesToHex(hash));
 		if(USE_RAM_PUBKEYS_CACHE) {
 			synchronized(cachedPubKeys) {
 				DSAPublicKey key = (DSAPublicKey) cachedPubKeys.get(w);
 				if(key != null) {
 					cachedPubKeys.push(w, key);
-					Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
+					if(logMINOR) Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
 					return key;
 				}
 			}
@@ -2259,7 +2264,7 @@ public class Node {
 				key = pubKeyDatacache.fetchPubKey(hash, false);
 			if(key != null) {
 				cacheKey(hash, key, false);
-				Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
+				if(logMINOR) Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from store");
 			}
 			return key;
 		} catch (IOException e) {
@@ -2273,7 +2278,7 @@ public class Node {
 	 * Cache a public key
 	 */
 	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep) {
-		Logger.minor(this, "Cache key: "+HexUtil.bytesToHex(hash)+" : "+key);
+		if(logMINOR) Logger.minor(this, "Cache key: "+HexUtil.bytesToHex(hash)+" : "+key);
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
@@ -2400,7 +2405,7 @@ public class Node {
 	}
 
 	public void onConnectedPeer() {
-		Logger.minor(this, "onConnectedPeer()");
+		if(logMINOR) Logger.minor(this, "onConnectedPeer()");
 		ipDetector.onConnectedPeer();
 	}
 	
@@ -2440,11 +2445,10 @@ public class Node {
 				ARKFetcher af = (ARKFetcher) arkFetchers.get(identity);
 				if(af != fetcher)
 					Logger.error(this, "addARKFetcher(): identity '"+identity+"' already in arkFetcher as "+af+" and you want to add"+fetcher);
-				else
-					Logger.minor(this, "Re-adding "+identity+" : "+fetcher);
+				else if(logMINOR) Logger.minor(this, "Re-adding "+identity+" : "+fetcher);
 				return;
 			}
-			Logger.minor(this, "addARKFetcher(): adding ARK Fetcher for "+identity);
+			if(logMINOR) Logger.minor(this, "addARKFetcher(): adding ARK Fetcher for "+identity);
 			arkFetchers.put(identity, fetcher);
 		}
 	}
@@ -2465,7 +2469,7 @@ public class Node {
 				Logger.error(this, "removeARKFetcher(): identity '"+identity+"' not in arkFetcher to remove");
 				return;
 			}
-			Logger.minor(this, "removeARKFetcher(): removing ARK Fetcher for "+identity);
+			if(logMINOR) Logger.minor(this, "removeARKFetcher(): removing ARK Fetcher for "+identity);
 			ARKFetcher af = (ARKFetcher) arkFetchers.remove(identity);
 			if(af != fetcher) {
 				Logger.error(this, "Removed "+af+" should be "+fetcher+" for "+identity+" in removeARKFetcher");
@@ -2490,7 +2494,7 @@ public class Node {
 			} else {
 				statusSet = new HashSet();
 			}
-			Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			if(logMINOR) Logger.minor(this, "addPeerNodeStatus(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
 			statusSet.add(peerNode);
 			peerNodeStatuses.put(peerNodeStatus, statusSet);
 		}
@@ -2529,7 +2533,7 @@ public class Node {
 			} else {
 				statusSet = new HashSet();
 			}
-			Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
+			if(logMINOR) Logger.minor(this, "removePeerNodeStatus(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeStatus);
 			if(statusSet.contains(peerNode)) {
 				statusSet.remove(peerNode);
 			}
@@ -2576,7 +2580,7 @@ public class Node {
 			}
 		  }
 	   	}
-	   	if(oldestNeverConnectedPeerAge > 0)
+	   	if(oldestNeverConnectedPeerAge > 0 && logMINOR)
 		  Logger.minor(this, "Oldest never connected peer is "+oldestNeverConnectedPeerAge+"ms old");
 		nextOldestNeverConnectedPeerAgeUpdateTime = now + oldestNeverConnectedPeerAgeUpdateInterval;
 	  }
@@ -2665,7 +2669,7 @@ public class Node {
 			} else {
 				reasonSet = new HashSet();
 			}
-			Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
+			if(logMINOR) Logger.minor(this, "addPeerNodeRoutingBackoffReason(): adding PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
 			reasonSet.add(peerNode);
 			peerNodeRoutingBackoffReasons.put(peerNodeRoutingBackoffReason, reasonSet);
 		}
@@ -2714,7 +2718,7 @@ public class Node {
 			} else {
 				reasonSet = new HashSet();
 			}
-			Logger.minor(this, "removePeerNodeRoutingBackoffReason(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
+			if(logMINOR) Logger.minor(this, "removePeerNodeRoutingBackoffReason(): removing PeerNode for '"+peerNode.getIdentityString()+"' with status code "+peerNodeRoutingBackoffReason);
 			if(reasonSet.contains(peerNode)) {
 				reasonSet.remove(peerNode);
 			}
@@ -2769,7 +2773,7 @@ public class Node {
 			} else {
 				nodeAveragePingAlertRelevant = false;
 			}
-			Logger.debug(this, "mUPMUAS: "+now+": "+getBwlimitDelayTime()+" >? "+MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+" since "+firstBwlimitDelayTimeThresholdBreak+" ("+bwlimitDelayAlertRelevant+") "+getNodeAveragePingTime()+" >? "+MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+" since "+firstNodeAveragePingTimeThresholdBreak+" ("+nodeAveragePingAlertRelevant+")");
+			if(logMINOR && Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "mUPMUAS: "+now+": "+getBwlimitDelayTime()+" >? "+MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+" since "+firstBwlimitDelayTimeThresholdBreak+" ("+bwlimitDelayAlertRelevant+") "+getNodeAveragePingTime()+" >? "+MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+" since "+firstNodeAveragePingTimeThresholdBreak+" ("+nodeAveragePingAlertRelevant+")");
 			nextPeerManagerUserAlertStatsUpdateTime = now + peerManagerUserAlertStatsUpdateInterval;
 		}
 	}

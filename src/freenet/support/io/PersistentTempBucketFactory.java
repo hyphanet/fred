@@ -56,7 +56,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 				if(f.isDirectory()) continue;
 				if(!f.exists()) continue;
 				if(!name.startsWith(prefix)) {
-					Logger.minor(this, "Ignoring "+name);
+			        if(Logger.shouldLog(Logger.MINOR, this))
+			        	Logger.minor(this, "Ignoring "+name);
 					continue;
 				}
 				originalFiles.add(f);

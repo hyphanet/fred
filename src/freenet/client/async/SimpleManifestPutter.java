@@ -82,7 +82,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		public void onSuccess(ClientPutState state) {
-			Logger.minor(this, "Completed "+this);
+			logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			if(logMINOR) Logger.minor(this, "Completed "+this);
 			SimpleManifestPutter.this.onFetchable(this);
 			synchronized(SimpleManifestPutter.this) {
 				runningPutHandlers.remove(this);
@@ -94,12 +95,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		public void onFailure(InserterException e, ClientPutState state) {
-			Logger.minor(this, "Failed: "+this+" - "+e, e);
+			logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
 			fail(e);
 		}
 
 		public void onEncode(BaseClientKey key, ClientPutState state) {
-			Logger.minor(this, "onEncode("+key+") for "+this);
+			if(logMINOR) Logger.minor(this, "onEncode("+key+") for "+this);
 			if(metadata == null) {
 				// The file was too small to have its own metadata, we get this instead.
 				// So we make the key into metadata.
@@ -112,7 +114,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		public void onTransition(ClientPutState oldState, ClientPutState newState) {}
 
 		public void onMetadata(Metadata m, ClientPutState state) {
-			Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state,
+			logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state,
 					new Exception("debug"));
 			if(metadata != null) {
 				Logger.error(this, "Reassigning metadata", new Exception("debug"));
@@ -172,6 +175,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	}
 
+	static boolean logMINOR;
 	private final HashMap putHandlersByName;
 	private final HashSet runningPutHandlers;
 	private final HashSet putHandlersWaitingForMetadata;
@@ -203,6 +207,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			ClientRequestScheduler sskSched, HashMap manifestElements, short prioClass, FreenetURI target, 
 			String defaultName, InserterContext ctx, boolean getCHKOnly, Object clientContext) throws InserterException {
 		super(prioClass, chkSched, sskSched, clientContext);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.defaultName = defaultName;
 		this.targetURI = target;
 		this.cb = cb;
@@ -226,7 +231,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	public synchronized void start() throws InserterException {
-		Logger.minor(this, "Starting "+this);
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Starting "+this);
 		PutHandler[] running;
 		running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 
@@ -235,7 +241,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			for(int i=0;i<running.length;i++) {
 				running[i].start();
 			}
-			Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
+			if(logMINOR) Logger.minor(this, "Started "+running.length+" PutHandler's for "+this);
 			if(cancelled) cancel();
 			if(running.length == 0) {
 				insertedAllFiles = true;
@@ -316,7 +322,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	private void gotAllMetadata() {
-		Logger.minor(this, "Got all metadata");
+		if(logMINOR) Logger.minor(this, "Got all metadata");
 		HashMap namesToByteArrays = new HashMap();
 		namesToByteArrays(putHandlersByName, namesToByteArrays);
 		if(defaultName != null) {
@@ -427,7 +433,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		try {
 			SingleFileInserter metadataInserter = 
 				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, insertAsArchiveManifest, true);
-			Logger.minor(this, "Inserting main metadata: "+metadataInserter);
+			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
 			metadataInserter.start(null);
@@ -452,7 +458,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				InsertBlock ib = new InsertBlock(b, null, FreenetURI.EMPTY_CHK_URI);
 				SingleFileInserter metadataInserter = 
 					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, false, true);
-				Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
+				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
 				}
@@ -483,15 +489,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	private void insertedAllFiles() {
-		Logger.minor(this, "Inserted all files");
+		if(logMINOR) Logger.minor(this, "Inserted all files");
 		synchronized(this) {
 			insertedAllFiles = true;
 			if(finished || cancelled) {
-				Logger.minor(this, "Already "+(finished?"finished":"cancelled"));
+				if(logMINOR) Logger.minor(this, "Already "+(finished?"finished":"cancelled"));
 				return;
 			}
 			if(!insertedManifest) {
-				Logger.minor(this, "Haven't inserted manifest");
+				if(logMINOR) Logger.minor(this, "Haven't inserted manifest");
 				return;
 			}
 			finished = true;
@@ -528,20 +534,21 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void onSuccess(ClientPutState state) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
 			metadataPuttersByMetadata.remove(state.getToken());
 			if(!metadataPuttersByMetadata.isEmpty()) {
-				Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
+				if(logMINOR) Logger.minor(this, "Still running metadata putters: "+metadataPuttersByMetadata.size());
 				return;
 			}
 			Logger.minor(this, "Inserted manifest successfully on "+this);
 			insertedManifest = true;
 			if(finished) {
-				Logger.minor(this, "Already finished");
+				if(logMINOR) Logger.minor(this, "Already finished");
 				return;
 			}
 			if(!insertedAllFiles) {
-				Logger.minor(this, "Not inserted all files");
+				if(logMINOR) Logger.minor(this, "Not inserted all files");
 				return;
 			}
 			finished = true;
@@ -550,26 +557,27 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	public void onFailure(InserterException e, ClientPutState state) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		fail(e);
 	}
 	
 	public void onEncode(BaseClientKey key, ClientPutState state) {
 		if(state.getToken() == baseMetadata) {
 			this.finalURI = key.getURI();
-			Logger.minor(this, "Got metadata key: "+finalURI);
+			if(logMINOR) Logger.minor(this, "Got metadata key: "+finalURI);
 			cb.onGeneratedURI(finalURI, this);
 		} else {
 			// It's a sub-Metadata
 			Metadata m = (Metadata) state.getToken();
 			m.resolve(key.getURI());
-			Logger.minor(this, "Resolved "+m+" : "+key.getURI());
+			if(logMINOR) Logger.minor(this, "Resolved "+m+" : "+key.getURI());
 			resolveAndStartBase();
 		}
 	}
 	
 	public void onTransition(ClientPutState oldState, ClientPutState newState) {
 		synchronized(this) {
-			Logger.minor(this, "Transition: "+oldState+" -> "+newState);
+			if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
 		}
 	}
 	

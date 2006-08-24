@@ -28,6 +28,8 @@ import freenet.support.SortedVectorByNumber;
  */
 public class ClientRequestScheduler implements RequestScheduler {
 	
+	private static boolean logMINOR;
+	
 	public class PrioritySchedulerCallback implements StringCallback{
 		final ClientRequestScheduler cs;
 		
@@ -138,6 +140,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, "Priority policy of the "+name+"scheduler", "Set the priority policy scheme used by the scheduler. Could be one of ["+PRIORITY_HARD+", "+PRIORITY_SOFT+"]",
 				new PrioritySchedulerCallback(this));
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	/** Called by the  config. Callback
@@ -149,7 +152,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void register(SendableRequest req) {
-		Logger.minor(this, "Registering "+req, new Exception("debug"));
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		if((!isInsertScheduler) && (req instanceof ClientPutter))
 			throw new IllegalArgumentException("Expected a ClientPut: "+req);
 		if(req instanceof SendableGet) {
@@ -165,7 +169,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					return;
 				}
 				if(block != null) {
-					Logger.minor(this, "Can fulfill "+req+" immediately from store");
+					if(logMINOR) Logger.minor(this, "Can fulfill "+req+" immediately from store");
 					getter.onSuccess(block, true);
 					return;
 				}
@@ -178,7 +182,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	private synchronized void innerRegister(SendableRequest req) {
-		Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount());
+		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount());
 		addToGrabArray(req.getPriorityClass(), req.getRetryCount(), req.getClient(), req.getClientRequest(), req);
 		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
@@ -186,7 +190,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			allRequestsByClientRequest.put(req.getClientRequest(), v);
 		}
 		v.add(req);
-		Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount());
+		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount());
 	}
 	
 	private synchronized void addToGrabArray(short priorityClass, int retryCount, Object client, ClientRequester cr, SendableRequest req) {
@@ -203,7 +207,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(clientGrabber == null) {
 			clientGrabber = new SectoredRandomGrabArrayWithInt(random, retryCount);
 			prio.add(clientGrabber);
-			Logger.minor(this, "Registering retry count "+retryCount+" with prioclass "+priorityClass);
+			if(logMINOR) Logger.minor(this, "Registering retry count "+retryCount+" with prioclass "+priorityClass);
 		}
 		// Request
 		SectoredRandomGrabArrayWithClient requestGrabber = (SectoredRandomGrabArrayWithClient) clientGrabber.getGrabber(client);
@@ -232,11 +236,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
 			if((result != null) && !result.isEmpty()) {
-				Logger.minor(this, "using priority : "+priority);
+				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return result;
 			}
 			
-			Logger.debug(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
+			if(logMINOR) Logger.debug(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
 			fuzz++;
 		}
 		
@@ -246,36 +250,36 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public SendableRequest removeFirst() {
 		// Priorities start at 0
-		Logger.minor(this, "removeFirst()");
+		if(logMINOR) Logger.minor(this, "removeFirst()");
 		int choosenPriorityClass = Integer.MAX_VALUE;
 		SortedVectorByNumber s = removeFirstAccordingToPriorities(choosenPriorityClass);
 		if(s != null){
 			while(true) {
 				SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst();
 				if(rga == null) {
-					Logger.minor(this, "No retrycount's left");
+					if(logMINOR) Logger.minor(this, "No retrycount's left");
 					break;
 				}
 				SendableRequest req = (SendableRequest) rga.removeRandom();
 				if(rga.isEmpty()) {
-					Logger.minor(this, "Removing retrycount "+rga.getNumber());
+					if(logMINOR) Logger.minor(this, "Removing retrycount "+rga.getNumber());
 					s.remove(rga.getNumber());
 					if(s.isEmpty()) {
-						Logger.minor(this, "Should remove priority ");
+						if(logMINOR) Logger.minor(this, "Should remove priority ");
 					}
 				}
 				if(req == null) {
-					Logger.minor(this, "No requests, retrycount "+rga.getNumber()+" ("+rga+")");
+					if(logMINOR) Logger.minor(this, "No requests, retrycount "+rga.getNumber()+" ("+rga+")");
 					break;
 				}else if(req.getPriorityClass() > choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
 					// maybe we should ask people to report that error if seen
-					Logger.minor(this, "In wrong priority class: "+req);
+					if(logMINOR) Logger.minor(this, "In wrong priority class: "+req);
 					innerRegister(req);
 					continue;
 				}
 				
-				Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+", prio "+req.getPriorityClass()+", retries "+req.getRetryCount()+")");
+				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+rga.getNumber()+", prio "+req.getPriorityClass()+", retries "+req.getRetryCount()+")");
 				ClientRequester cr = req.getClientRequest();
 				HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
 				v.remove(req);
@@ -284,7 +288,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				return req;
 			}
 		}
-		Logger.minor(this, "No requests to run");
+		if(logMINOR) Logger.minor(this, "No requests to run");
 		return null;
 	}
 	

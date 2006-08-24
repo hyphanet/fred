@@ -128,6 +128,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
         this.nodesWaitingForCompletion = new Vector();
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
 	void start() {
@@ -135,6 +136,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         t.setDaemon(true);
         t.start();
 	}
+
+	static boolean logMINOR;
 	
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
@@ -247,13 +250,13 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
                 finish(ROUTE_NOT_FOUND, null);
                 return;
             }
-            Logger.minor(this, "Routing insert to "+next);
+            if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
             Message req;
             synchronized (this) {
             	if(PeerManager.distance(target, nextValue) > PeerManager.distance(target, closestLocation)) {
-            		Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
+            		if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
             		htl = node.decrementHTL(source, htl);
             	}
 
@@ -276,7 +279,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             try {
 				next.send(req, this);
 			} catch (NotConnectedException e1) {
-				Logger.minor(this, "Not connected to "+next);
+				if(logMINOR) Logger.minor(this, "Not connected to "+next);
 				continue;
 			}
 			synchronized (this) {
@@ -308,7 +311,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				if (msg == null) {
 					// Terminal overload
 					// Try to propagate back to source
-					Logger.minor(this, "Timeout");
+					if(logMINOR) Logger.minor(this, "Timeout");
 					next.localRejectedOverload("Timeout3");
 					// Try another node.
 					forwardRejectedOverload();
@@ -319,7 +322,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					// Non-fatal - probably still have time left
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						next.localRejectedOverload("ForwardRejectedOverload5");
-						Logger.minor(this,
+						if(logMINOR) Logger.minor(this,
 										"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;
@@ -346,7 +349,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             
             if((msg == null) || (msg.getSpec() != DMT.FNPAccepted)) continue;
             
-            Logger.minor(this, "Got Accepted on "+this);
+            if(logMINOR) Logger.minor(this, "Got Accepted on "+this);
             
             // Send them the data.
             // Which might be the new data resulting from a collision...
@@ -373,16 +376,16 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
             
             mf = mfInsertReply.or(mfRouteNotFound.or(mfDataInsertRejected.or(mfTimeout.or(mfRejectedOverload))));
 
-            Logger.minor(this, "Sending DataInsert");
+            if(logMINOR) Logger.minor(this, "Sending DataInsert");
             if(receiveFailed) return;
             try {
 				next.send(dataInsert, this);
 			} catch (NotConnectedException e1) {
-				Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
+				if(logMINOR) Logger.minor(this, "Not connected sending DataInsert: "+next+" for "+uid);
 				continue;
 			}
 
-            Logger.minor(this, "Sending data");
+			if(logMINOR) Logger.minor(this, "Sending data");
             if(receiveFailed) return;
             AwaitingCompletion ac = new AwaitingCompletion(next, prbNow);
             synchronized(nodesWaitingForCompletion) {
@@ -423,7 +426,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					// Probably non-fatal, if so, we have time left, can try next one
 					if (msg.getBoolean(DMT.IS_LOCAL)) {
 						next.localRejectedOverload("ForwardRejectedOverload6");
-						Logger.minor(this,
+						if(logMINOR) Logger.minor(this,
 								"Local RejectedOverload, moving on to next peer");
 						// Give up on this one, try another
 						break;
@@ -434,7 +437,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				}
 
 				if (msg.getSpec() == DMT.FNPRouteNotFound) {
-					Logger.minor(this, "Rejected: RNF");
+					if(logMINOR) Logger.minor(this, "Rejected: RNF");
 					short newHtl = msg.getShort(DMT.HTL);
 					synchronized (this) {
 						if (htl > newHtl)
@@ -449,7 +452,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 					next.successNotOverload();
 					short reason = msg
 							.getShort(DMT.DATA_INSERT_REJECTED_REASON);
-					Logger.minor(this, "DataInsertRejected: " + reason);
+					if(logMINOR) Logger.minor(this, "DataInsertRejected: " + reason);
 						if (reason == DMT.DATA_INSERT_REJECTED_VERIFY_FAILED) {
 						if (fromStore) {
 							// That's odd...
@@ -469,8 +472,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 											+ " but data was valid!");
 								}
 							} catch (CHKVerifyException e) {
-								Logger
-										.normal(this,
+								Logger.normal(this,
 												"Verify failed because data was invalid");
 							} catch (AbortedException e) {
 								receiveFailed = true;
@@ -479,7 +481,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 						break; // What else can we do?
 					} else if (reason == DMT.DATA_INSERT_REJECTED_RECEIVE_FAILED) {
 						if (receiveFailed) {
-							Logger.minor(this, "Failed to receive data, so failed to send data");
+							if(logMINOR) Logger.minor(this, "Failed to receive data, so failed to send data");
 						} else {
 							try {
 								if (prb.allReceived()) {
@@ -530,7 +532,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	}
     
     private void finish(int code, PeerNode next) {
-        Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+    	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
         setStatusTime = System.currentTimeMillis();
      
         synchronized(this) {   
@@ -542,7 +544,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 
             status = code;
         	notifyAll();
-        	Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
+        	if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString()+" on "+uid);
         }
         // Now wait for transfers, or for downstream transfer notifications.
         if(cw != null) {
@@ -556,14 +558,14 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
         		}
         	}
         } else {
-        	Logger.minor(this, "No completion waiter");
+        	if(logMINOR) Logger.minor(this, "No completion waiter");
         	// There weren't any transfers
         	allTransfersCompleted = true;
         }
         synchronized (this) {
             notifyAll();	
 		}
-        Logger.minor(this, "Returning from finish()");
+        if(logMINOR) Logger.minor(this, "Returning from finish()");
     }
 
     public synchronized int getStatus() {
@@ -623,7 +625,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 	private class CompletionWaiter implements Runnable {
 		
 		public void run() {
-			Logger.minor(this, "Starting "+this);
+			if(logMINOR) Logger.minor(this, "Starting "+this);
 			while(true) {
 			AwaitingCompletion[] waiters;
 			synchronized(nodesWaitingForCompletion) {
@@ -664,7 +666,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 						mf = m;
 					else
 						mf = m.or(mf);
-					Logger.minor(this, "Waiting for "+awc.pn.getPeer());
+					if(logMINOR) Logger.minor(this, "Waiting for "+awc.pn.getPeer());
 				}
 			}
 			
@@ -672,12 +674,12 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				if(status != NOT_FINISHED) {
 					if(nodesWaitingForCompletion.size() != waiters.length) {
 						// Added another one
-						Logger.minor(this, "Looping (mf==null): waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
+						if(logMINOR) Logger.minor(this, "Looping (mf==null): waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
 						continue;
 					}
 					if(waitForCompletedTransfers(waiters, timeout, noTimeLeft)) {
 						synchronized(CHKInsertSender.this) {
-							Logger.minor(this, "All transfers completed (1) on "+uid);
+							if(logMINOR) Logger.minor(this, "All transfers completed (1) on "+uid);
 							allTransfersCompleted = true;
 							CHKInsertSender.this.notifyAll();
 						}
@@ -691,7 +693,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 							}
 						}
 						synchronized(CHKInsertSender.this) {
-							Logger.minor(this, "All transfers completed (2) on "+uid);
+							if(logMINOR) Logger.minor(this, "All transfers completed (2) on "+uid);
 							allTransfersCompleted = true;
 							CHKInsertSender.this.notifyAll();
 						}
@@ -746,11 +748,11 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				} else {
 					if(nodesWaitingForCompletion.size() > waiters.length) {
 						// Added another one
-						Logger.minor(this, "Looping: waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
+						if(logMINOR) Logger.minor(this, "Looping: waiters="+waiters.length+" but waiting="+nodesWaitingForCompletion.size());
 						continue;
 					}
 					if(noTimeLeft) {
-						Logger.minor(this, "Overall timeout on "+CHKInsertSender.this);
+						if(logMINOR) Logger.minor(this, "Overall timeout on "+CHKInsertSender.this);
 						for(int i=0;i<waiters.length;i++) {
 							if(!waiters[i].pn.isRoutable()) continue;
 							if(!waiters[i].receivedCompletionNotice)
@@ -759,7 +761,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 								waiters[i].completedTransfer(false);
 						}
 						synchronized(CHKInsertSender.this) {
-							Logger.minor(this, "All transfers completed (2) on "+uid);
+							if(logMINOR) Logger.minor(this, "All transfers completed (2) on "+uid);
 							transferTimedOut = true;
 							allTransfersCompleted = true;
 							CHKInsertSender.this.notifyAll();
@@ -786,7 +788,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 				if(!completedTransfers) {
 					try {
 						if(!noTimeLeft) {
-							Logger.minor(this, "Waiting for completion ("+timeout+"ms)");
+							if(logMINOR) Logger.minor(this, "Waiting for completion ("+timeout+"ms)");
 							nodesWaitingForCompletion.wait(timeout);
 						} else {
 							// Timed out
@@ -806,7 +808,7 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			}
 			if(completedTransfers) {
 				// All done!
-				Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for for "+uid+" .");
+				if(logMINOR) Logger.minor(this, "Completed, status="+getStatusString()+", nothing left to wait for for "+uid+" .");
 				synchronized(CHKInsertSender.this) {
 					allTransfersCompleted = true;
 					CHKInsertSender.this.notifyAll();

@@ -49,7 +49,8 @@ public class Message {
         try {
             mspec = MessageType.getSpec(new Integer(dis.readInt()));
         } catch (IOException e1) {
-            Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
+        	if(Logger.shouldLog(Logger.DEBUG, Message.class))
+        		Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
             return null;
         }
         if (mspec == null) {
@@ -159,7 +160,8 @@ public class Message {
 //		if (this.getSpec() != MessageTypes.ping && this.getSpec() != MessageTypes.pong)
 //		Logger.logMinor("<<<<< Send message : " + this);
 
-	    Logger.minor(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
+    	if(Logger.shouldLog(Logger.DEBUG, Message.class))
+    		Logger.minor(this, "My spec code: "+_spec.getName().hashCode()+" for "+_spec.getName());
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
@@ -173,7 +175,8 @@ public class Message {
 			e.printStackTrace();
 		}
 		byte[] buf = baos.toByteArray();
-		Logger.minor(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
+    	if(Logger.shouldLog(Logger.DEBUG, Message.class))
+    		Logger.minor(this, "Length: "+buf.length+", hash: "+Fields.hashCode(buf));
 		return buf;
 	}
 

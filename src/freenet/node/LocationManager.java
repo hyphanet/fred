@@ -46,6 +46,7 @@ class LocationManager {
     }
     
     static final int TIMEOUT = 60*1000;
+    private static boolean logMINOR;
     final RandomSource r;
     final SwapRequestSender sender;
     SwapRequestInterval interval;
@@ -57,6 +58,7 @@ class LocationManager {
         sender = new SwapRequestSender();
         this.r = r;
         recentlyForwardedIDs = new Hashtable();
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
     Location loc;
@@ -239,7 +241,7 @@ class LocationManager {
             try {
                 commit = node.usm.waitFor(filter, null);
             } catch (DisconnectedException e) {
-                Logger.minor(this, "Disconnected from "+pn+" while waiting for SwapCommit");
+            	if(logMINOR) Logger.minor(this, "Disconnected from "+pn+" while waiting for SwapCommit");
                 return;
             }
             
@@ -301,12 +303,12 @@ class LocationManager {
                 timeLastSuccessfullySwapped = System.currentTimeMillis();
                 // Swap
                 loc.setValue(hisLoc);
-                Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
+                if(logMINOR) Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 swaps++;
                 announceLocChange();
                 node.writeNodeFile();
             } else {
-                Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
+            	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 noSwaps++;
             }
         } catch (Throwable t) {
@@ -364,7 +366,7 @@ class LocationManager {
                 // Only 1 ID because we are sending; we won't receive
                 item = addForwardedItem(uid, uid, null, pn);
 
-                Logger.minor(this, "Sending SwapRequest "+uid+" to "+pn);
+                if(logMINOR) Logger.minor(this, "Sending SwapRequest "+uid+" to "+pn);
                 
                 MessageFilter filter1 =
                     MessageFilter.create().setType(DMT.FNPSwapRejected).setField(DMT.UID, uid).setSource(pn);
@@ -376,12 +378,12 @@ class LocationManager {
                 
                 node.usm.send(pn, m, null);
                 
-                Logger.minor(this, "Waiting for SwapReply/SwapRejected on "+uid);
+                if(logMINOR) Logger.minor(this, "Waiting for SwapReply/SwapRejected on "+uid);
                 Message reply;
                 try {
                     reply = node.usm.waitFor(filter, null);
                 } catch (DisconnectedException e) {
-                    Logger.minor(this, "Disconnected while waiting for SwapReply/SwapRejected for "+uid);
+                	if(logMINOR) Logger.minor(this, "Disconnected while waiting for SwapReply/SwapRejected for "+uid);
                     return;
                 }
 
@@ -395,7 +397,7 @@ class LocationManager {
                 
                 if(reply.getSpec() == DMT.FNPSwapRejected) {
                     // Failed. Abort.
-                    Logger.minor(this, "Swap rejected on "+uid);
+                	if(logMINOR) Logger.minor(this, "Swap rejected on "+uid);
                     return;
                 }
                 
@@ -411,12 +413,12 @@ class LocationManager {
                 
                 node.usm.send(pn, confirm, null);
                 
-                Logger.minor(this, "Waiting for SwapComplete: uid = "+uid);
+                if(logMINOR) Logger.minor(this, "Waiting for SwapComplete: uid = "+uid);
 
                 try {
                     reply = node.usm.waitFor(filter, null);
                 } catch (DisconnectedException e) {
-                    Logger.minor(this, "Disconnected waiting for SwapComplete on "+uid);
+                	if(logMINOR) Logger.minor(this, "Disconnected waiting for SwapComplete on "+uid);
                     return;
                 }
                 
@@ -477,12 +479,12 @@ class LocationManager {
                     timeLastSuccessfullySwapped = System.currentTimeMillis();
                     // Swap
                     loc.setValue(hisLoc);
-                    Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
+                    if(logMINOR) Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                     swaps++;
                     announceLocChange();
                     node.writeNodeFile();
                 } else {
-                    Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
+                	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
                     noSwaps++;
                 }
             } catch (Throwable t) {
@@ -524,10 +526,10 @@ class LocationManager {
      */
     synchronized boolean lock() {
         if(locked) {
-        	Logger.minor(this, "Already locked");
+        	if(logMINOR) Logger.minor(this, "Already locked");
         	return false;
         }
-        Logger.minor(this, "Locking on port "+node.portNumber);
+        if(logMINOR) Logger.minor(this, "Locking on port "+node.portNumber);
         locked = true;
         lockedTime = System.currentTimeMillis();
         return true;
@@ -538,8 +540,10 @@ class LocationManager {
             throw new IllegalStateException("Unlocking when not locked!");
         locked = false;
         long lockTime = System.currentTimeMillis() - lockedTime;
-        Logger.minor(this, "Unlocking on port "+node.portNumber);
-        Logger.minor(this, "lockTime: "+lockTime);
+        if(logMINOR) {
+        	Logger.minor(this, "Unlocking on port "+node.portNumber);
+        	Logger.minor(this, "lockTime: "+lockTime);
+        }
     }
 
     /**
@@ -591,7 +595,7 @@ class LocationManager {
             sb.append(" ");
         }
 
-        Logger.minor(this, sb.toString());
+        if(logMINOR) Logger.minor(this, sb.toString());
         
         double A = 1.0;
         for(int i=0;i<friendLocs.length;i++) {
@@ -671,43 +675,43 @@ class LocationManager {
         // sent twice.
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
         if(item != null) {
-            Logger.minor(this, "Rejecting - same ID as previous request");
+        	if(logMINOR) Logger.minor(this, "Rejecting - same ID as previous request");
             // Reject
             Message reject = DMT.createFNPSwapRejected(uid);
             try {
                 pn.sendAsync(reject, null, 0, null);
             } catch (NotConnectedException e) {
-                Logger.minor(this, "Lost connection to "+pn+" rejecting SwapRequest");
+            	if(logMINOR) Logger.minor(this, "Lost connection to "+pn+" rejecting SwapRequest");
             }
             swapsRejectedRecognizedID++;
             return true;
         }
         if(pn.shouldRejectSwapRequest()) {
-            Logger.minor(this, "Advised to reject SwapRequest by PeerNode - rate limit");
+        	if(logMINOR) Logger.minor(this, "Advised to reject SwapRequest by PeerNode - rate limit");
             // Reject
             Message reject = DMT.createFNPSwapRejected(uid);
             try {
                 pn.sendAsync(reject, null, 0, null);
             } catch (NotConnectedException e) {
-                Logger.minor(this, "Lost connection rejecting SwapRequest from "+pn);
+            	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest from "+pn);
             }
             swapsRejectedRateLimit++;
             return true;
         }
-        Logger.minor(this, "SwapRequest from "+pn+" - uid="+uid);
+        if(logMINOR) Logger.minor(this, "SwapRequest from "+pn+" - uid="+uid);
         int htl = m.getInt(DMT.HTL)-1;
         // Either forward it or handle it
         if(htl == 0) {
-            Logger.minor(this, "Accepting?... "+uid);
+        	if(logMINOR) Logger.minor(this, "Accepting?... "+uid);
             // Accept - handle locally
             if(!lock()) {
-                Logger.minor(this, "Can't obtain lock on "+uid+" - rejecting to "+pn);
+            	if(logMINOR) Logger.minor(this, "Can't obtain lock on "+uid+" - rejecting to "+pn);
                 // Reject
                 Message reject = DMT.createFNPSwapRejected(uid);
                 try {
                     pn.sendAsync(reject, null, 0, null);
                 } catch (NotConnectedException e1) {
-                    Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
+                	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
                 }
                 swapsRejectedAlreadyLocked++;
                 return true;
@@ -717,7 +721,7 @@ class LocationManager {
                 // Locked, do it
                 IncomingSwapRequestHandler isrh =
                     new IncomingSwapRequestHandler(m, pn, item);
-                Logger.minor(this, "Handling... "+uid);
+                if(logMINOR) Logger.minor(this, "Handling... "+uid);
                 Thread t = new Thread(isrh, "Incoming swap request handler for port "+node.portNumber);
                 t.setDaemon(true);
                 t.start();
@@ -732,12 +736,12 @@ class LocationManager {
         } else {
             m.set(DMT.HTL, htl);
             m.set(DMT.UID, oid);
-            Logger.minor(this, "Forwarding... "+uid);
+            if(logMINOR) Logger.minor(this, "Forwarding... "+uid);
             while(true) {
                 // Forward
                 PeerNode randomPeer = node.peers.getRandomPeer(pn);
                 if(randomPeer == null) {
-                    Logger.minor(this, "Late reject "+uid);
+                	if(logMINOR) Logger.minor(this, "Late reject "+uid);
                     Message reject = DMT.createFNPSwapRejected(uid);
                     try {
                         pn.sendAsync(reject, null, 0, null);
@@ -747,7 +751,7 @@ class LocationManager {
                     swapsRejectedNowhereToGo++;
                     return true;
                 }
-                Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
+                if(logMINOR) Logger.minor(this, "Forwarding "+uid+" to "+randomPeer);
                 item = addForwardedItem(uid, oid, pn, randomPeer);
                 item.successfullyForwarded = false;
                 try {
@@ -784,7 +788,7 @@ class LocationManager {
             return false;
         }
         if(item.requestSender == null) {
-            Logger.minor(this, "SwapReply from "+m.getSource()+" on chain originated locally "+uid);
+        	if(logMINOR) Logger.minor(this, "SwapReply from "+m.getSource()+" on chain originated locally "+uid);
             return false;
         }
         if(item.routedTo == null) {
@@ -799,11 +803,11 @@ class LocationManager {
         item.lastMessageTime = System.currentTimeMillis();
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
-        Logger.minor(this, "Forwarding SwapReply "+uid+" from "+m.getSource()+" to "+item.requestSender);
+        if(logMINOR) Logger.minor(this, "Forwarding SwapReply "+uid+" from "+m.getSource()+" to "+item.requestSender);
         try {
             item.requestSender.sendAsync(m, null, 0, null);
         } catch (NotConnectedException e) {
-            Logger.minor(this, "Lost connection forwarding SwapReply "+uid+" to "+item.requestSender);
+        	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapReply "+uid+" to "+item.requestSender);
         }
         return true;
     }
@@ -829,13 +833,13 @@ class LocationManager {
         }
         removeRecentlyForwardedItem(item);
         item.lastMessageTime = System.currentTimeMillis();
-        Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+m.getSource()+" to "+item.requestSender);
+        if(logMINOR) Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+m.getSource()+" to "+item.requestSender);
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
             item.requestSender.sendAsync(m, null, 0, null);
         } catch (NotConnectedException e) {
-            Logger.minor(this, "Lost connection forwarding SwapRejected "+uid+" to "+item.requestSender);
+        	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapRejected "+uid+" to "+item.requestSender);
         }
         return true;
     }
@@ -856,13 +860,13 @@ class LocationManager {
             return true;
         }
         item.lastMessageTime = System.currentTimeMillis();
-        Logger.minor(this, "Forwarding SwapCommit "+uid+","+item.outgoingID+" from "+m.getSource()+" to "+item.routedTo);
+        if(logMINOR) Logger.minor(this, "Forwarding SwapCommit "+uid+","+item.outgoingID+" from "+m.getSource()+" to "+item.routedTo);
         // Sending onwards - use outgoing ID
         m.set(DMT.UID, item.outgoingID);
         try {
             item.routedTo.sendAsync(m, new SendMessageOnErrorCallback(DMT.createFNPSwapRejected(item.incomingID), item.requestSender), 0, null);
         } catch (NotConnectedException e) {
-            Logger.minor(this, "Lost connection forwarding SwapCommit "+uid+" to "+item.routedTo);
+        	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapCommit "+uid+" to "+item.routedTo);
         }
         return true;
     }
@@ -873,15 +877,15 @@ class LocationManager {
      */
     public boolean handleSwapComplete(Message m) {
         long uid = m.getLong(DMT.UID);
-        Logger.minor(this, "handleSwapComplete("+uid+")");
+        if(logMINOR) Logger.minor(this, "handleSwapComplete("+uid+")");
         Long luid = new Long(uid);
         RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
         if(item == null) {
-            Logger.minor(this, "Item not found: "+uid+": "+m);
+        	if(logMINOR) Logger.minor(this, "Item not found: "+uid+": "+m);
             return false;
         }
         if(item.requestSender == null) {
-            Logger.minor(this, "Not matched "+uid+": "+m);
+        	if(logMINOR) Logger.minor(this, "Not matched "+uid+": "+m);
             return false;
         }
         if(item.routedTo == null) {
@@ -893,7 +897,7 @@ class LocationManager {
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
         }
-        Logger.minor(this, "Forwarding SwapComplete "+uid+" from "+m.getSource()+" to "+item.requestSender);
+        if(logMINOR) Logger.minor(this, "Forwarding SwapComplete "+uid+" from "+m.getSource()+" to "+item.requestSender);
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
@@ -941,7 +945,7 @@ class LocationManager {
             RecentlyForwardedItem item = (RecentlyForwardedItem) v.get(i);
             // Just reject it to avoid locking problems etc
             Message msg = DMT.createFNPSwapRejected(item.incomingID);
-            Logger.minor(this, "Rejecting in lostOrRestartedNode: "+item.incomingID+ " from "+item.requestSender);
+            if(logMINOR) Logger.minor(this, "Rejecting in lostOrRestartedNode: "+item.incomingID+ " from "+item.requestSender);
             try {
                 item.requestSender.sendAsync(msg, null, 0, null);
             } catch (NotConnectedException e1) {
@@ -951,7 +955,7 @@ class LocationManager {
     }
     
     private void removeRecentlyForwardedItem(RecentlyForwardedItem item) {
-        Logger.minor(this, "Removing: "+item);
+    	if(logMINOR) Logger.minor(this, "Removing: "+item);
         if(item == null) {
             Logger.error(this, "removeRecentlyForwardedItem(null)", new Exception("error"));
         }
@@ -962,11 +966,11 @@ class LocationManager {
     private final HashMap knownLocs = new HashMap();
     
     void registerLocationLink(double d, double t) {
-    	Logger.minor(this, "Known Link: "+d+" "+t);
+    	if(logMINOR) Logger.minor(this, "Known Link: "+d+" "+t);
     }
     
     void registerKnownLocation(double d) {
-        Logger.minor(this, "Known Location: "+d);
+    	if(logMINOR) Logger.minor(this, "Known Location: "+d);
         Double dd = new Double(d);
         synchronized(knownLocs) {
             Date timestamp = new Date();
@@ -976,7 +980,7 @@ class LocationManager {
         		}
         		//Add the location to the map with the current timestamp as value
         		knownLocs.put(dd,timestamp);
-        		Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
+        		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
         }
     }
     

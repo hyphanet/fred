@@ -400,7 +400,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			getFailedMessage = new GetFailedMessage(e, identifier);
 			finished = true;
 		}
-		Logger.minor(this, "Caught "+e, e);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null);
 		finish();
 		if(persistenceType != PERSIST_CONNECTION)

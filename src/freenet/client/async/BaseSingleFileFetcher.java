@@ -57,7 +57,8 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 	/** Try again - returns true if we can retry */
 	protected boolean retry() {
 		retryCount++;
-		Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+")");
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+")");
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once)
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
 			schedule();
@@ -67,7 +68,8 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 	}
 
 	public void schedule() {
-		Logger.minor(this, "Scheduling "+this+" for "+key);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Scheduling "+this+" for "+key);
 		if(key instanceof ClientCHK)
 			parent.chkScheduler.register(this);
 		else if(key instanceof ClientSSK)

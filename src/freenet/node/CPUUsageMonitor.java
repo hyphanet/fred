@@ -139,7 +139,8 @@ public class CPUUsageMonitor {
                     tsNew = new TickStat();
                 } else {
                     if (!tsNew.read(proc)) {
-                        Logger.minor(this, "Failed to parse /proc");
+                    	if(Logger.shouldLog(Logger.MINOR, this))
+                    		Logger.minor(this, "Failed to parse /proc");
                         return -1;
                     }
                     lastCPULoadEstimate = tsNew.calculate(tsOld);

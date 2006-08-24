@@ -29,6 +29,8 @@ import freenet.support.DoublyLinkedList.Item;
  */
 public class KeyTracker {
 
+	private static boolean logMINOR;
+	
     /** Parent PeerNode */
     public final PeerNode pn;
     
@@ -95,6 +97,7 @@ public class KeyTracker {
         packetNumbersReceived = new ReceivedPacketNumbers(512);
         isDeprecated = false;
         nextPacketNumber = pn.node.random.nextInt(100*1000);
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
     /**
@@ -103,6 +106,7 @@ public class KeyTracker {
      * a packet number; they can be sent with the new KT.
      */
     public void deprecated() {
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
         isDeprecated = true;
         sentPacketsContents.interrupt();
     }
@@ -131,7 +135,7 @@ public class KeyTracker {
      * @param seqNumber The number of the packet to be acked.
      */
     public void queueAck(int seqNumber) {
-        Logger.minor(this, "Queueing ack for "+seqNumber);
+        if(logMINOR) Logger.minor(this, "Queueing ack for "+seqNumber);
         QueuedAck qa = new QueuedAck(seqNumber);
         synchronized(ackQueue) {
             ackQueue.push(qa);
@@ -333,7 +337,7 @@ public class KeyTracker {
 		public void onAcked() {
 			long t = Math.max(0, System.currentTimeMillis() - createdTime);
 			pn.pingAverage.report(t);
-			Logger.minor(this, "Reported round-trip time of "+t+"ms on "+pn.getPeer()+" (avg "+pn.pingAverage.currentValue()+"ms, #"+packetNumber+")");
+			if(logMINOR) Logger.minor(this, "Reported round-trip time of "+t+"ms on "+pn.getPeer()+" (avg "+pn.pingAverage.currentValue()+"ms, #"+packetNumber+")");
 		}
 
 		long urgentDelay() {
@@ -348,16 +352,17 @@ public class KeyTracker {
      * the reason for the locking.
      */
     public synchronized void receivedPacket(int seqNumber) {
-    	Logger.minor(this, "Received packet "+seqNumber);
+        logMINOR = Logger.shouldLog(Logger.MINOR, this);
+    	if(logMINOR) Logger.minor(this, "Received packet "+seqNumber);
         try {
 			pn.receivedPacket(false);
 		} catch (NotConnectedException e) {
-			Logger.minor(this, "Ignoring, because disconnected");
+			if(logMINOR) Logger.minor(this, "Ignoring, because disconnected");
 			return;
 		}
         if(seqNumber == -1) return;
         // FIXME delete this log statement
-        Logger.minor(this, "Still received packet: "+seqNumber);
+        if(logMINOR) Logger.minor(this, "Still received packet: "+seqNumber);
         // Received packet
         receivedPacketNumber(seqNumber);
         // Ack it even if it is a resend
@@ -365,7 +370,7 @@ public class KeyTracker {
     }
 
     protected void receivedPacketNumber(int seqNumber) {
-    	Logger.minor(this, "Handling received packet number "+seqNumber);
+    	if(logMINOR) Logger.minor(this, "Handling received packet number "+seqNumber);
         queueResendRequests(seqNumber);
         packetNumbersReceived.got(seqNumber);
         try {
@@ -376,7 +381,7 @@ public class KeyTracker {
         synchronized(this) {
         	highestSeenIncomingSerialNumber = Math.max(highestSeenIncomingSerialNumber, seqNumber);
         }
-        Logger.minor(this, "Handled received packet number "+seqNumber);
+        if(logMINOR) Logger.minor(this, "Handled received packet number "+seqNumber);
     }
     
     /**
@@ -400,7 +405,7 @@ public class KeyTracker {
         if(seqNumber > max) {
         	try {
             if((max != -1) && (seqNumber - max > 1)) {
-                Logger.minor(this, "Queueing resends from "+max+" to "+seqNumber);
+            	if(logMINOR) Logger.minor(this, "Queueing resends from "+max+" to "+seqNumber);
                 // Missed some packets out
                 for(int i=max+1;i<seqNumber;i++) {
                     queueResendRequest(i);
@@ -421,10 +426,10 @@ public class KeyTracker {
     private void queueResendRequest(int packetNumber) throws UpdatableSortedLinkedListKilledException {
     	synchronized(resendRequestQueue) {
     		if(queuedResendRequest(packetNumber)) {
-    			Logger.minor(this, "Not queueing resend request for "+packetNumber+" - already queued");
+    			if(logMINOR) Logger.minor(this, "Not queueing resend request for "+packetNumber+" - already queued");
     			return;
     		}
-    		Logger.minor(this, "Queueing resend request for "+packetNumber);
+    		if(logMINOR) Logger.minor(this, "Queueing resend request for "+packetNumber);
     		QueuedResendRequest qrr = new QueuedResendRequest(packetNumber);
     		resendRequestQueue.add(qrr);
     	}
@@ -439,10 +444,10 @@ public class KeyTracker {
     private void queueAckRequest(int packetNumber) throws UpdatableSortedLinkedListKilledException {
         synchronized(ackRequestQueue) {
             if(queuedAckRequest(packetNumber)) {
-                Logger.minor(this, "Not queueing ack request for "+packetNumber+" - already queued");
+            	if(logMINOR) Logger.minor(this, "Not queueing ack request for "+packetNumber+" - already queued");
                 return;
             }
-            Logger.minor(this, "Queueing ack request for "+packetNumber+" on "+this);
+            if(logMINOR) Logger.minor(this, "Queueing ack request for "+packetNumber+" on "+this);
             QueuedAckRequest qrr = new QueuedAckRequest(packetNumber, false);
             ackRequestQueue.add(qrr);
         }
@@ -473,13 +478,13 @@ public class KeyTracker {
     	AsyncMessageCallback[][] callbacks = new AsyncMessageCallback[seqNos.length][];
    		for(int i=0;i<seqNos.length;i++) {
    			int realSeqNo = seqNos[i];
-           	Logger.minor(this, "Acknowledged packet: "+realSeqNo);
+   			if(logMINOR) Logger.minor(this, "Acknowledged packet: "+realSeqNo);
             try {
 				removeAckRequest(realSeqNo);
 			} catch (UpdatableSortedLinkedListKilledException e) {
 				// Ignore, we are processing an incoming packet
 			}
-            Logger.minor(this, "Removed ack request");
+			if(logMINOR) Logger.minor(this, "Removed ack request");
             callbacks[i] = sentPacketsContents.getCallbacks(realSeqNo);
             byte[] buf = sentPacketsContents.get(realSeqNo);
             long timeAdded = sentPacketsContents.getTime(realSeqNo);
@@ -501,7 +506,7 @@ public class KeyTracker {
     			}
     		}
     	}
-    	if(cbCount > 0)
+    	if(cbCount > 0 && logMINOR)
     		Logger.minor(this, "Executed "+cbCount+" callbacks");
     }
     
@@ -515,14 +520,15 @@ public class KeyTracker {
      * @param realSeqNo
      */
     public void acknowledgedPacket(int realSeqNo) {
+    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
         AsyncMessageCallback[] callbacks;
-       	Logger.minor(this, "Acknowledged packet: "+realSeqNo);
+        if(logMINOR) Logger.minor(this, "Acknowledged packet: "+realSeqNo);
         try {
 			removeAckRequest(realSeqNo);
 		} catch (UpdatableSortedLinkedListKilledException e) {
 			// Ignore, we are processing an incoming packet
 		}
-        Logger.minor(this, "Removed ack request");
+		if(logMINOR) Logger.minor(this, "Removed ack request");
         callbacks = sentPacketsContents.getCallbacks(realSeqNo);
         byte[] buf = sentPacketsContents.get(realSeqNo);
         long timeAdded = sentPacketsContents.getTime(realSeqNo);
@@ -536,7 +542,7 @@ public class KeyTracker {
         if(callbacks != null) {
             for(int i=0;i<callbacks.length;i++)
                 callbacks[i].acknowledged();
-            Logger.minor(this, "Executed "+callbacks.length+" callbacks");
+            if(logMINOR) Logger.minor(this, "Executed "+callbacks.length+" callbacks");
         }
     }
 
@@ -570,7 +576,7 @@ public class KeyTracker {
         		String msg = "Asking me to resend packet "+seqNumber+
         			" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+")";
         		// Probably just a bit late - caused by overload etc
-        		Logger.minor(this, msg);
+        		if(logMINOR) Logger.minor(this, msg);
         	}
         }
     }
@@ -647,7 +653,7 @@ public class KeyTracker {
         synchronized(this) {
             if(isDeprecated) throw new KeyChangedException();
             packetNumber = nextPacketNumber++;
-            Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumber for "+this);
+            if(logMINOR) Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumber for "+this);
         }
         while(true) {
             try {
@@ -673,7 +679,7 @@ public class KeyTracker {
             if(isDeprecated) throw new KeyChangedException();
             sentPacketsContents.lockNeverBlock(packetNumber);
             nextPacketNumber = packetNumber+1;
-            Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumberNeverBlock for "+this);
+            if(logMINOR) Logger.minor(this, "Allocated "+packetNumber+" in allocateOutgoingPacketNumberNeverBlock for "+this);
             return packetNumber;
         }
     }
@@ -683,7 +689,7 @@ public class KeyTracker {
      * @return An array of packet numbers that we need to acknowledge.
      */
     public int[] grabAcks() {
-    	Logger.minor(this, "Grabbing acks");
+    	if(logMINOR) Logger.minor(this, "Grabbing acks");
         int[] acks;
         synchronized(ackQueue) {
             // Grab the acks and tell them they are sent
@@ -693,7 +699,7 @@ public class KeyTracker {
             for(Enumeration e=ackQueue.elements();e.hasMoreElements();) {
                 QueuedAck ack = (QueuedAck)e.nextElement();
                 acks[i++] = ack.packetNumber;
-                Logger.minor(this, "Grabbing ack "+ack.packetNumber+" from "+this);
+                if(logMINOR) Logger.minor(this, "Grabbing ack "+ack.packetNumber+" from "+this);
                 ack.sent();
             }
         }
@@ -719,16 +725,16 @@ public class KeyTracker {
             for(int i=0;i<length;i++) {
                 QueuedResendRequest qrr = (QueuedResendRequest)items[i];
                 if(packetNumbersReceived.contains(qrr.packetNumber)) {
-                	Logger.minor(this, "Have already seen "+qrr.packetNumber+", removing from resend list");
+                	if(logMINOR) Logger.minor(this, "Have already seen "+qrr.packetNumber+", removing from resend list");
                 	resendRequestQueue.remove(qrr);
                 	continue;
                 }
                 if(qrr.activeTime <= now) {
                     packetNumbers[realLength++] = qrr.packetNumber;
-                    Logger.minor(this, "Grabbing resend request: "+qrr.packetNumber+" from "+this);
+                    if(logMINOR) Logger.minor(this, "Grabbing resend request: "+qrr.packetNumber+" from "+this);
                     qrr.sent();
                 } else {
-                    Logger.minor(this, "Rejecting resend request: "+qrr.packetNumber+" - in future by "+(qrr.activeTime-now)+"ms for "+this);
+                	if(logMINOR) Logger.minor(this, "Rejecting resend request: "+qrr.packetNumber+" - in future by "+(qrr.activeTime-now)+"ms for "+this);
                 }
             }
         }
@@ -744,7 +750,7 @@ public class KeyTracker {
         UpdatableSortedLinkedListItem[] items;
         int[] packetNumbers;
         int realLength;
-        Logger.minor(this, "Grabbing ack requests");
+        if(logMINOR) Logger.minor(this, "Grabbing ack requests");
         try {
         synchronized(ackRequestQueue) {
             long now = System.currentTimeMillis();
@@ -757,25 +763,25 @@ public class KeyTracker {
                 int packetNumber = qr.packetNumber;
                 if(qr.activeTime <= now) {
                     if(sentPacketsContents.get(packetNumber) == null) {
-                        Logger.minor(this, "Asking to ack packet which has already been acked: "+packetNumber+" on "+this+".grabAckRequests");
+                    	if(logMINOR) Logger.minor(this, "Asking to ack packet which has already been acked: "+packetNumber+" on "+this+".grabAckRequests");
                         ackRequestQueue.remove(qr);
                         continue;
                     }
                     packetNumbers[realLength++] = packetNumber;
-                    Logger.minor(this, "Grabbing ack request "+packetNumber+" ("+realLength+") from "+this);
+                    if(logMINOR) Logger.minor(this, "Grabbing ack request "+packetNumber+" ("+realLength+") from "+this);
                     qr.sent();
                 } else {
-                    Logger.minor(this, "Ignoring ack request "+packetNumber+" ("+realLength+") - will become active in "+(qr.activeTime-now)+"ms on "+this+" - "+qr);
+                	if(logMINOR) Logger.minor(this, "Ignoring ack request "+packetNumber+" ("+realLength+") - will become active in "+(qr.activeTime-now)+"ms on "+this+" - "+qr);
                 }
             }
         }
         } catch (UpdatableSortedLinkedListKilledException e) {
         	throw new NotConnectedException();
         }
-        Logger.minor(this, "realLength now "+realLength);
+        if(logMINOR) Logger.minor(this, "realLength now "+realLength);
         int[] trimmedPacketNumbers = new int[realLength];
         System.arraycopy(packetNumbers, 0, trimmedPacketNumbers, 0, realLength);
-        Logger.minor(this, "Returning "+trimmedPacketNumbers.length+" ackRequests");
+        if(logMINOR) Logger.minor(this, "Returning "+trimmedPacketNumbers.length+" ackRequests");
         return trimmedPacketNumbers;
     }
 
@@ -837,7 +843,7 @@ public class KeyTracker {
     }
 
     public void completelyDeprecated(KeyTracker newTracker) {
-        Logger.minor(this, "Completely deprecated: "+this+" in favour of "+newTracker);
+    	if(logMINOR) Logger.minor(this, "Completely deprecated: "+this+" in favour of "+newTracker);
         isDeprecated = true;
         LimitedRangeIntByteArrayMapElement[] elements;
         synchronized(sentPacketsContents) {
@@ -850,7 +856,7 @@ public class KeyTracker {
             byte[] buf = element.data;
             AsyncMessageCallback[] callbacks = element.callbacks;
             // Ignore packet#
-            Logger.minor(this, "Queueing resend of what was once "+element.packetNumber);
+            if(logMINOR) Logger.minor(this, "Queueing resend of what was once "+element.packetNumber);
             messages[i] = new MessageItem(buf, callbacks, true, 0, null);
         }
         pn.requeueMessageItems(messages, 0, messages.length, true);
@@ -908,7 +914,7 @@ public class KeyTracker {
             int packetNo = numbers[i];
             byte[] buf = sentPacketsContents.get(packetNo);
             if(buf == null) {
-                Logger.minor(this, "Contents null for "+packetNo+" in grabResendPackets on "+this);
+            	if(logMINOR) Logger.minor(this, "Contents null for "+packetNo+" in grabResendPackets on "+this);
                 continue; // acked already?
             }
             AsyncMessageCallback[] callbacks = sentPacketsContents.getCallbacks(packetNo);

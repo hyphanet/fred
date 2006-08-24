@@ -20,6 +20,7 @@ import freenet.support.io.ArrayBucket;
  */
 public class ARKFetcher implements ClientCallback {
 
+	static boolean logMINOR;
 	final PeerNode peer;
 	final Node node;
 	private ClientGetter getter;
@@ -37,6 +38,7 @@ public class ARKFetcher implements ClientCallback {
 		this.peer = peer;
 		this.node = node;
 		this.identity = peer.getIdentityString();
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	/**
@@ -63,6 +65,7 @@ public class ARKFetcher implements ClientCallback {
 	 * Called when the ARKFetchManager says it's our turn to start fetching.
 	 */
 	public void start() {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(node.arkFetchManager.hasReadyARKFetcher(this)) {
 			node.arkFetchManager.removeReadyARKFetcher(this);
 		}
@@ -77,8 +80,7 @@ public class ARKFetcher implements ClientCallback {
 			if(started) {  // We only need one ARKFetcher per PeerNode
 				return;
 			}
-			Logger.minor(this, "Starting ... for "+peer+" on "+this);
-			Logger.normal( this, "Starting ARK Fetcher after "+peer.getHandshakeCount()+" failed handshakes for "+peer.getPeer()+" with identity '"+peer.getIdentityString()+"'");
+			Logger.normal( this, "Starting ARK Fetcher after "+peer.getHandshakeCount()+" failed handshakes for "+peer.getPeer()+" with identity '"+peer.getIdentityString()+"' on "+this);
 			started = true;
 			// Start fetch
 			shouldRun = true;
@@ -90,7 +92,7 @@ public class ARKFetcher implements ClientCallback {
 				FreenetURI uri = ark.getURI();
 				startedEdition = uri.getSuggestedEdition();
 				fetchingURI = uri;
-				Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
+				if(logMINOR) Logger.minor(this, "Fetching ARK: "+uri+" for "+peer);
 				cg = new ClientGetter(this, node.clientCore.requestStarters.chkFetchScheduler, node.clientCore.requestStarters.sskFetchScheduler, 
 						uri, node.arkFetcherContext, RequestStarter.UPDATE_PRIORITY_CLASS, 
 						this, new ArrayBucket());
@@ -123,23 +125,23 @@ public class ARKFetcher implements ClientCallback {
 	public synchronized void stop() {
 		// Stop fetch
 		backoff = MIN_BACKOFF;
-		Logger.minor(this, "Cancelling ARK fetch for "+peer);
+		if(logMINOR) Logger.minor(this, "Cancelling ARK fetch for "+peer);
 		shouldRun = false;
-			started = false;
-			if(node.arkFetchManager.hasReadyARKFetcher(this)) {
-				node.arkFetchManager.removeReadyARKFetcher(this);
-			}
-			if(isFetching) {
-				node.removeARKFetcher(identity,this);
-				isFetching = false;
-			}
+		started = false;
+		if(node.arkFetchManager.hasReadyARKFetcher(this)) {
+			node.arkFetchManager.removeReadyARKFetcher(this);
+		}
+		if(isFetching) {
+			node.removeARKFetcher(identity,this);
+			isFetching = false;
+		}
 		
 		if(getter != null)
 			getter.cancel();
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
-		Logger.minor(this, "Fetched ARK for "+peer, new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Fetched ARK for "+peer, new Exception("debug"));
 		synchronized(this) {
 			started = false;
 			// Fetcher context specifies an upper bound on size.
@@ -168,7 +170,7 @@ public class ARKFetcher implements ClientCallback {
 		SimpleFieldSet fs;
 		try {
 			fs = new SimpleFieldSet(ref, true);
-			Logger.minor(this, "Got ARK for "+peer.getPeer());
+			if(logMINOR) Logger.minor(this, "Got ARK for "+peer.getPeer());
 			peer.gotARK(fs, getStartedEdition());
 		} catch (IOException e) {
 			// Corrupt ref.
@@ -179,7 +181,7 @@ public class ARKFetcher implements ClientCallback {
 	public void onFailure(FetchException e, ClientGetter state) {
 		synchronized(this) {
 			started = false;
-			Logger.minor(this, "Failed to fetch ARK for "+peer+" : "+e, e);
+			if(logMINOR) Logger.minor(this, "Failed to fetch ARK for "+peer+" : "+e, e);
 			
 			if(isFetching) {
 				node.removeARKFetcher(identity,this);
@@ -199,12 +201,14 @@ public class ARKFetcher implements ClientCallback {
 			}
 		}
 		if(e.newURI != null) {
-			Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", "+getFetchingURI()+" gave redirect to "+e.newURI);
+			if(logMINOR)
+				Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", "+getFetchingURI()+" gave redirect to "+e.newURI);
 			peer.updateARK(e.newURI);
 			queueWithBackoff();
 			return;
 		}
-		Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", now backing off ARK fetches for "+(getBackoff() / 1000)+" seconds");
+		if(logMINOR)
+			Logger.minor(this, "Failed to fetch ARK for "+peer.getPeer()+", now backing off ARK fetches for "+(getBackoff() / 1000)+" seconds");
 		// We may be on the PacketSender thread.
 		// FIXME should this be exponential backoff?
 		queueWithBackoff();
