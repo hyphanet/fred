@@ -12,7 +12,6 @@ import freenet.node.fcp.FCPMessage;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.node.fcp.NodeHelloMessage;
-import freenet.node.fcp.Peer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.LineReadingInputStream;
 
@@ -97,7 +96,11 @@ public class AddRef {
 			System.err.println(ioe);
 			ioe.printStackTrace();
 			System.exit(2);
-		}		
+		}finally {
+			try{
+				Thread.sleep(3000);
+			}catch (InterruptedException e) {}
+		}
 	}
 
 	protected SimpleFieldSet getMessage(LineReadingInputStream lis){
