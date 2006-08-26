@@ -95,7 +95,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
-
 		Arrays.sort(peerNodeStatuses, new Comparator() {
 			public int compare(Object first, Object second) {
 				PeerNodeStatus firstNode = (PeerNodeStatus) first;
@@ -125,7 +124,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if(advancedEnabled) {
 			titleCountString = "(" + numberOfConnected + "/" + numberOfRoutingBackedOff + "/" + numberOfTooNew + "/" + numberOfTooOld + "/" + numberOfNotConnected + ")";
 		} else {
-			titleCountString = String.valueOf(numberOfSimpleConnected);
+			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
 		}
 		
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode(titleCountString + " Darknet Peers of " + node.getMyName());
@@ -133,9 +132,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
-		
-		contentNode.addChild(core.alerts.createSummary());
 	
+		contentNode.addChild(core.alerts.createSummary());
+		
+		if(peerNodeStatuses.length>0){
+
 		/* node status values */
 		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
 		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
@@ -463,6 +464,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		// END PEER TABLE
 		
+		}
+		
 		// BEGIN PEER ADDITION BOX
 		HTMLNode peerAdditionInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		peerAdditionInfobox.addChild("div", "class", "infobox-header", "Add another peer");
@@ -478,6 +481,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		peerAdditionForm.addChild("br");
 		peerAdditionForm.addChild("#", "Choose the file containing the reference here: ");
 		peerAdditionForm.addChild("input", new String[] { "id", "type", "name" }, new String[] { "reffile", "file", "reffile" });
+		peerAdditionForm.addChild("br");
+		peerAdditionForm.addChild("#", "Enter a node description: ");
+		peerAdditionForm.addChild("input", new String[] { "id", "type", "name", "size", "maxlength", "value" }, new String[] { "peerPrivateNote", "text", "peerPrivateNote", "16", "250", "" });
 		peerAdditionForm.addChild("br");
 		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", "Add" });
 		
@@ -520,6 +526,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				reftext = request.getPartAsString("reffile", 2000);
 				reftext = reftext.trim();
 			}
+			String privateComment = request.getPartAsString("peerPrivateNote", 250).trim();
 			
 			StringBuffer ref = new StringBuffer(1024);
 			if (urltext.length() > 0) {
@@ -565,6 +572,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			PeerNode pn;
 			try {
 				pn = new PeerNode(fs, this.node, false);
+				pn.setPrivateDarknetCommentNote(privateComment);
 			} catch (FSParseException e1) {
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference. Please try again.");
 				return;
