@@ -20,9 +20,9 @@ public class BookmarkManager {
 	private static final String[] DEFAULT_DARKNET_BOOKMARKS = {
 		"USK@PFeLTa1si2Ml5sDeUy7eDhPso6TPdmw-2gWfQ4Jg02w,3ocfrqgUMVWA2PeorZx40TW0c-FiIOL-TWKQHoDbVdE,AQABAAE/Index/-1/=Darknet Index (Lots of freesites - web sites hosted on freenet)"
 	};
-	Vector bookmarks;
-	NodeClientCore node;
-	USKUpdatedCallback uskcb;
+	private Vector bookmarks;
+	private final NodeClientCore node;
+	private USKUpdatedCallback uskcb;
 	
 	public class BookmarkCallback implements StringArrCallback {
 		public String get() {
@@ -134,6 +134,7 @@ public class BookmarkManager {
 			try {
 				USK u = USK.create(b.key);
 				this.node.uskManager.subscribe(u, this.uskcb, true);
+				this.node.uskManager.startTemporaryBackgroundFetcher(u);
 				node.storeConfig();
 			} catch (MalformedURLException mue) {
 				
