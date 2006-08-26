@@ -13,8 +13,9 @@ public class ArchiveKey {
 	}
 
 	public boolean equals(Object o) {
+		if((o == null) || !(o instanceof ArchiveKey)) return false;
 		if(this == o) return true;
-		if(!(o instanceof ArchiveKey)) return false;
+		
 		ArchiveKey cmp = ((ArchiveKey)o);
 		return (cmp.key.equals(key) && cmp.filename.equals(filename));
 	}

@@ -95,7 +95,7 @@ public abstract class Key implements WritableToDataOutputStream {
     }
     
     public boolean equals(Object o){
-    	if(o == null) return false;
+    	if(o == null || !(o instanceof Key)) return false;
     	return this.hash == o.hashCode();
     }
     

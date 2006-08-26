@@ -94,6 +94,7 @@ public class USK extends BaseClientKey {
 	}
 	
 	public boolean equals(Object o) {
+		if(o == null || !(o instanceof USK)) return false;
 		return equals(o, true);
 	}
 	
