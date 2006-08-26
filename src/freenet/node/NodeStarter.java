@@ -149,6 +149,7 @@ public class NodeStarter
     	try {
     		node = new Node(cfg, random, logConfigHandler,this);
     		node.start(false);
+    		System.out.println("Node initialization completed.");
     	} catch (NodeInitException e) {
     		System.err.println("Failed to load node: "+e.getMessage());
     		e.printStackTrace();
