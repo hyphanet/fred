@@ -137,333 +137,333 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		
 		if(peerNodeStatuses.length>0){
 
-		/* node status values */
-		int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
-		int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
-		int networkSizeEstimate = node.getNetworkSizeEstimate(0);
-		DecimalFormat fix4 = new DecimalFormat("0.0000");
-		double missRoutingDistance =  node.missRoutingDistance.currentValue();
-		DecimalFormat fix1 = new DecimalFormat("##0.0%");
-		double backedoffPercent =  node.backedoffPercent.currentValue();
-		long nodeUptimeSeconds = ( now - node.startupTime ) / 1000;
-		String nodeUptimeString = timeIntervalToString(nodeUptimeSeconds);
-		
-		// BEGIN OVERVIEW TABLE
-		HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
-		HTMLNode overviewTableRow = overviewTable.addChild("tr");
-		HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
-		
-		/* node status overview box */
-		if(advancedEnabled) {
-			HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
-			overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
-			HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
-			HTMLNode overviewList = overviewInfoboxContent.addChild("ul");
-			overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
-			overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
-			overviewList.addChild("li", "networkSizeEstimate:\u00a0" + networkSizeEstimate + "\u00a0nodes");
-			overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
-			overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix4.format(missRoutingDistance));
-			overviewList.addChild("li", "backedoffPercent:\u00a0" + fix1.format(backedoffPercent));
-			overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(node.pRejectIncomingInstantly()));
-			nextTableCell = overviewTableRow.addChild("td");
-		}
-		
-		// Activity box
-		int numInserts = node.getNumInserts();
-		int numRequests = node.getNumRequests();
-		int numTransferringRequests = node.getNumTransferringRequests();
-		int numARKFetchers = node.getNumARKFetchers();
-		
-		HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
-		activityInfobox.addChild("div", "class", "infobox-header", "Current activity");
-		HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
-		if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) && (numARKFetchers == 0)) {
-			activityInfoboxContent.addChild("#", "Your node is not processing any requests right now.");
-		} else {
-			HTMLNode activityList = activityInfoboxContent.addChild("ul");
-			if (numInserts > 0) {
-				activityList.addChild("li", "Inserts:\u00a0" + numInserts);
-			}
-			if (numRequests > 0) {
-				activityList.addChild("li", "Requests:\u00a0" + numRequests);
-			}
-			if (numTransferringRequests > 0) {
-				activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);
-			}
-			if (advancedEnabled) {
-				if (numARKFetchers > 0) {
-					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
-				}
-				long[] total = IOStatisticCollector.getTotalIO();
-				long total_output_rate = (total[0]) / nodeUptimeSeconds;
-				long total_input_rate = (total[1]) / nodeUptimeSeconds;
-				activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + "\u00a0(" + SizeUtil.formatSize(total_output_rate) + "ps)");
-				activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + "\u00a0(" + SizeUtil.formatSize(total_input_rate) + "ps)");
-				long[] rate = node.getNodeIOStats();
-				long delta = (rate[5] - rate[2]) / 1000;
-				long output_rate = (rate[3] - rate[0]) / delta;
-				long input_rate = (rate[4] - rate[1]) / delta;
-				activityList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate) + "ps");
-				activityList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate) + "ps");
-			}
-		}
-		
-		nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
-		
-		// Peer statistics box
-		HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-		peerStatsInfobox.addChild("div", "class", "infobox-header", "Peer statistics");
-		HTMLNode peerStatsContent = peerStatsInfobox.addChild("div", "class", "infobox-content");
-		HTMLNode peerStatsList = peerStatsContent.addChild("ul");
-		if (numberOfConnected > 0) {
-			HTMLNode peerStatsConnectedListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_connected", "Connected: We're successfully connected to these nodes", "border-bottom: 1px dotted; cursor: help;" }, "Connected");
-			peerStatsConnectedListItem.addChild("span", ":\u00a0" + numberOfConnected);
-		}
-		if (numberOfRoutingBackedOff > 0) {
-			HTMLNode peerStatsRoutingBackedOffListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backedoff", (advancedEnabled ? "Connected but backed off: These peers are connected but we're backed off of them" : "Busy: These peers are connected but they're busy") + ", so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedEnabled ? "Backed off" : "Busy");
-			peerStatsRoutingBackedOffListItem.addChild("span", ":\u00a0" + numberOfRoutingBackedOff);
-		}
-		if (numberOfTooNew > 0) {
-			HTMLNode peerStatsTooNewListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsTooNewListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_new", "Connected but too new: These peers' minimum mandatory build is higher than this node's build. This node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, "Too New");
-			peerStatsTooNewListItem.addChild("span", ":\u00a0" + numberOfTooNew);
-		}
-		if (numberOfTooOld > 0) {
-			HTMLNode peerStatsTooOldListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsTooOldListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_old", "Connected but too old: This node's minimum mandatory build is higher than these peers' build. This node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, "Too Old");
-			peerStatsTooOldListItem.addChild("span", ":\u00a0" + numberOfTooOld);
-		}
-		if (numberOfDisconnected > 0) {
-			HTMLNode peerStatsDisconnectedListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsDisconnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnected", "Not connected: No connection so far but this node is continuously trying to connect", "border-bottom: 1px dotted; cursor: help;" }, "Disconnected");
-			peerStatsDisconnectedListItem.addChild("span", ":\u00a0" + numberOfDisconnected);
-		}
-		if (numberOfNeverConnected > 0) {
-			HTMLNode peerStatsNeverConnectedListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsNeverConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_never_connected", "Never Connected: The node has never connected with these peers", "border-bottom: 1px dotted; cursor: help;" }, "Never Connected");
-			peerStatsNeverConnectedListItem.addChild("span", ":\u00a0" + numberOfNeverConnected);
-		}
-		if (numberOfDisabled > 0) {
-			HTMLNode peerStatsDisabledListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disabled", "Not connected and disabled: because the user has instructed to not connect to peers ", "border-bottom: 1px dotted; cursor: help;" }, "Disabled");
-			peerStatsDisabledListItem.addChild("span", ":\u00a0" + numberOfDisabled);
-		}
-		if (numberOfBursting > 0) {
-			HTMLNode peerStatsBurstingListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsBurstingListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_bursting", "Not connected and bursting: this node is, for a short period, trying to connect to these peers because the user has set BurstOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Bursting");
-			peerStatsBurstingListItem.addChild("span", ":\u00a0" + numberOfBursting);
-		}
-		if (numberOfListening > 0) {
-			HTMLNode peerStatsListeningListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsListeningListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listening", "Not connected but listening: this node won't try to connect to these peers very often because the user has set BurstOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Listening");
-			peerStatsListeningListItem.addChild("span", ":\u00a0" + numberOfListening);
-		}
-		if (numberOfListenOnly > 0) {
-			HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listen_only", "Not connected and listen only: this node won't try to connect to these peers at all because the user has set ListenOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Listen Only");
-			peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
-		}
-		
-		// Peer routing backoff reason box
-		if(advancedEnabled) {
-			nextTableCell = overviewTableRow.addChild("td", "class", "last");
-			HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
-			backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
-			HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
-			String [] routingBackoffReasons = node.getPeerNodeRoutingBackoffReasons();
-			if(routingBackoffReasons.length == 0) {
-				backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
-			} else {
-				HTMLNode reasonList = backoffReasonContent.addChild("ul");
-				for(int i=0;i<routingBackoffReasons.length;i++) {
-					int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
-					if(reasonCount > 0) {
-						reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
-					}
-				}
-			}
-		}
-		// END OVERVIEW TABLE
-		
-		// BEGIN PEER TABLE
-		HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-		HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
-		peerTableInfoboxHeader.addChild("#", "My peers");
-		if (advancedEnabled) {
-			if (!path.endsWith("displaymessagetypes.html")) {
-				peerTableInfoboxHeader.addChild("#", " ");
-				peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", "(more detailed)");
-			}
-		}
-		HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
-		
-		if (peerNodeStatuses.length == 0) {
-			peerTableInfoboxContent.addChild("#", "Freenet can not work as you have not added any peers so far. Please go to the ");
-			peerTableInfoboxContent.addChild("a", "href", "/", "node homepage");
-			peerTableInfoboxContent.addChild("#", " and read the top infobox to see how it is done.");
-		} else {
-			HTMLNode peerForm = peerTableInfoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
-			peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-			HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connections");
-			HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
-			peerTableHeaderRow.addChild("th");
-			peerTableHeaderRow.addChild("th", "Status");
-			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "The node's name. Click on the name link to send the node a N2NTM (Node To Node Text Message)", "border-bottom: 1px dotted; cursor: help;" }, "Name");
-			if (advancedEnabled) {
-				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "The node's network address as IP:Port", "border-bottom: 1px dotted; cursor: help;" }, "Address");
-			}
-			peerTableHeaderRow.addChild("th", "Version");
-			if (advancedEnabled) {
-				peerTableHeaderRow.addChild("th", "Location");
-				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
-				
-				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
-			}
-			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node was connected or last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
-			peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "A private note concerning this peer", "border-bottom: 1px dotted; cursor: help;" }, "Private Note");
-			
-			for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
-				PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
-				HTMLNode peerRow = peerTable.addChild("tr");
-				
-				// check box column
-				peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peerNodeStatus.hashCode() });
-				
-				// status column
-				String statusString = peerNodeStatus.getStatusName();
-				if (!advancedEnabled && (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
-					statusString = "BUSY";
-				}
-				peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), statusString + (peerNodeStatus.isFetchingARK() ? "*" : ""));
-				
-				// name column
-				if (Integer.parseInt(peerNodeStatus.getSimpleVersion()) > 476) {
-					peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), peerNodeStatus.getName());
-				} else {
-					peerRow.addChild("td", "class", "peer-name").addChild("#", peerNodeStatus.getName());  // TODO: This branch can probably be removed at some point
-				}
-				
-				// address column
-				if (advancedEnabled) {
-					String pingTime = "";
-					if (peerNodeStatus.isConnected()) {
-						pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
-					}
-					peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ":" + peerNodeStatus.getPeerPort()) : ("(unknown address)")) + pingTime);
-				}
-				
-				// version column
-				if (peerNodeStatus.getStatusValue() != Node.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED
-					peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_version_problem", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
-				} else {
-					peerRow.addChild("td", "class", "peer-version").addChild("#", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
-				}
-				
-				// location column
-				if (advancedEnabled) {
-					peerRow.addChild("td", "class", "peer-location", String.valueOf(peerNodeStatus.getLocation()));
-				}
-				
-				if (advancedEnabled) {
-					// backoff column
-					HTMLNode backoffCell = peerRow.addChild("td", "class", "peer-backoff");
-					backoffCell.addChild("#", fix1.format(peerNodeStatus.getBackedOffPercent()));
-					int backoff = (int) (Math.max(peerNodeStatus.getRoutingBackedOffUntil() - now, 0));
-					// Don't list the backoff as zero before it's actually zero
-					if ((backoff > 0) && (backoff < 1000)) {
-						backoff = 1000;
-					}
-					backoffCell.addChild("#", " " + String.valueOf(backoff / 1000) + "/" + String.valueOf(peerNodeStatus.getRoutingBackoffLength() / 1000));
-					backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason() == null) ? "" : ("/" + (peerNodeStatus.getLastBackoffReason())));
-					
-					// overload probability column
-					HTMLNode pRejectCell = peerRow.addChild("td", "class", "peer-backoff"); // FIXME
-					pRejectCell.addChild("#", fix1.format(peerNodeStatus.getPReject()));
-				}
-				
-				// idle column
-				long idle = peerNodeStatus.getTimeLastRoutable();
-				if (peerNodeStatus.isRoutable()) {
-					idle = peerNodeStatus.getTimeLastConnectionCompleted();
-				} else if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
-					idle = peerNodeStatus.getPeerAddedTime();
-				}
-				if(!peerNodeStatus.isConnected() && (now - idle) > (2 * 7 * 24 * 60 * 60 * (long) 1000)) { // 2 weeks
-					peerRow.addChild("td", "class", "peer-idle").addChild("span", "class", "peer_idle_old", idleToString(now, idle));
-				} else {
-					peerRow.addChild("td", "class", "peer-idle", idleToString(now, idle));
-				}
-				
-				// private darknet node comment note column
-				peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", peerNodeStatus.getPrivateDarknetCommentNote() });
-				
-				if (path.endsWith("displaymessagetypes.html")) {
-					HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");
-					messageCountRow.addChild("td", "colspan", "2");
-					HTMLNode messageCountCell = messageCountRow.addChild("td", "colspan", String.valueOf(advancedEnabled ? 8 : 4));  // = total table row width - 2 from above colspan
-					HTMLNode messageCountTable = messageCountCell.addChild("table", "class", "message-count");
-					HTMLNode countHeaderRow = messageCountTable.addChild("tr");
-					countHeaderRow.addChild("th", "Message");
-					countHeaderRow.addChild("th", "Incoming");
-					countHeaderRow.addChild("th", "Outgoing");
-					List messageNames = new ArrayList();
-					Map messageCounts = new HashMap();
-					for (Iterator incomingMessages = peerNodeStatus.getLocalMessagesReceived().keySet().iterator(); incomingMessages.hasNext(); ) {
-						String messageName = (String) incomingMessages.next();
-						messageNames.add(messageName);
-						Long messageCount = (Long) peerNodeStatus.getLocalMessagesReceived().get(messageName);
-						messageCounts.put(messageName, new Long[] { messageCount, new Long(0) });
-					}
-					for (Iterator outgoingMessages = peerNodeStatus.getLocalMessagesSent().keySet().iterator(); outgoingMessages.hasNext(); ) {
-						String messageName = (String) outgoingMessages.next();
-						if (!messageNames.contains(messageName)) {
-							messageNames.add(messageName);
-						}
-						Long messageCount = (Long) peerNodeStatus.getLocalMessagesSent().get(messageName);
-						Long[] existingCounts = (Long[]) messageCounts.get(messageName);
-						if (existingCounts == null) {
-							messageCounts.put(messageName, new Long[] { new Long(0), messageCount });
-						} else {
-							existingCounts[1] = messageCount;
-						}
-					}
-					Collections.sort(messageNames, new Comparator() {
-						public int compare(Object first, Object second) {
-							return ((String) first).compareToIgnoreCase((String) second);
-						}
-					});
-					for (Iterator messageNamesIterator = messageNames.iterator(); messageNamesIterator.hasNext(); ) {
-						String messageName = (String) messageNamesIterator.next();
-						Long[] messageCount = (Long[]) messageCounts.get(messageName);
-						HTMLNode messageRow = messageCountTable.addChild("tr");
-						messageRow.addChild("td", messageName);
-						messageRow.addChild("td", "class", "right-align", String.valueOf(messageCount[0]));
-						messageRow.addChild("td", "class", "right-align", String.valueOf(messageCount[1]));
-					}
-				}
-			}
-			
-			HTMLNode actionSelect = peerForm.addChild("select", "name", "action");
-			actionSelect.addChild("option", "value", "", "-- Select action --");
-			actionSelect.addChild("option", "value", "send_n2ntm", "Send N2NTM to selected peers");
-			actionSelect.addChild("option", "value", "update_notes", "Update changed private notes");
+			/* node status values */
+			int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
+			int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
+			int networkSizeEstimate = node.getNetworkSizeEstimate(0);
+			DecimalFormat fix4 = new DecimalFormat("0.0000");
+			double missRoutingDistance =  node.missRoutingDistance.currentValue();
+			DecimalFormat fix1 = new DecimalFormat("##0.0%");
+			double backedoffPercent =  node.backedoffPercent.currentValue();
+			long nodeUptimeSeconds = ( now - node.startupTime ) / 1000;
+			String nodeUptimeString = timeIntervalToString(nodeUptimeSeconds);
+
+			// BEGIN OVERVIEW TABLE
+			HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
+			HTMLNode overviewTableRow = overviewTable.addChild("tr");
+			HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
+
+			/* node status overview box */
 			if(advancedEnabled) {
-				actionSelect.addChild("option", "value", "enable", "Enable selected peers");
-				actionSelect.addChild("option", "value", "disable", "Disable selected peers");
-				actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly");
-				actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
-				actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly");
-				actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
+				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
+				overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
+				HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode overviewList = overviewInfoboxContent.addChild("ul");
+				overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
+				overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
+				overviewList.addChild("li", "networkSizeEstimate:\u00a0" + networkSizeEstimate + "\u00a0nodes");
+				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
+				overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix4.format(missRoutingDistance));
+				overviewList.addChild("li", "backedoffPercent:\u00a0" + fix1.format(backedoffPercent));
+				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(node.pRejectIncomingInstantly()));
+				nextTableCell = overviewTableRow.addChild("td");
 			}
-			actionSelect.addChild("option", "value", "", "-- -- --");
-			actionSelect.addChild("option", "value", "remove", "Remove selected peers");
-			peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Go" });
-		}
-		// END PEER TABLE
-		
+
+			// Activity box
+			int numInserts = node.getNumInserts();
+			int numRequests = node.getNumRequests();
+			int numTransferringRequests = node.getNumTransferringRequests();
+			int numARKFetchers = node.getNumARKFetchers();
+
+			HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
+			activityInfobox.addChild("div", "class", "infobox-header", "Current activity");
+			HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
+			if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) && (numARKFetchers == 0)) {
+				activityInfoboxContent.addChild("#", "Your node is not processing any requests right now.");
+			} else {
+				HTMLNode activityList = activityInfoboxContent.addChild("ul");
+				if (numInserts > 0) {
+					activityList.addChild("li", "Inserts:\u00a0" + numInserts);
+				}
+				if (numRequests > 0) {
+					activityList.addChild("li", "Requests:\u00a0" + numRequests);
+				}
+				if (numTransferringRequests > 0) {
+					activityList.addChild("li", "Transferring\u00a0Requests:\u00a0" + numTransferringRequests);
+				}
+				if (advancedEnabled) {
+					if (numARKFetchers > 0) {
+						activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
+					}
+					long[] total = IOStatisticCollector.getTotalIO();
+					long total_output_rate = (total[0]) / nodeUptimeSeconds;
+					long total_input_rate = (total[1]) / nodeUptimeSeconds;
+					activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + "\u00a0(" + SizeUtil.formatSize(total_output_rate) + "ps)");
+					activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + "\u00a0(" + SizeUtil.formatSize(total_input_rate) + "ps)");
+					long[] rate = node.getNodeIOStats();
+					long delta = (rate[5] - rate[2]) / 1000;
+					long output_rate = (rate[3] - rate[0]) / delta;
+					long input_rate = (rate[4] - rate[1]) / delta;
+					activityList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate) + "ps");
+					activityList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate) + "ps");
+				}
+			}
+
+			nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+
+			// Peer statistics box
+			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+			peerStatsInfobox.addChild("div", "class", "infobox-header", "Peer statistics");
+			HTMLNode peerStatsContent = peerStatsInfobox.addChild("div", "class", "infobox-content");
+			HTMLNode peerStatsList = peerStatsContent.addChild("ul");
+			if (numberOfConnected > 0) {
+				HTMLNode peerStatsConnectedListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_connected", "Connected: We're successfully connected to these nodes", "border-bottom: 1px dotted; cursor: help;" }, "Connected");
+				peerStatsConnectedListItem.addChild("span", ":\u00a0" + numberOfConnected);
+			}
+			if (numberOfRoutingBackedOff > 0) {
+				HTMLNode peerStatsRoutingBackedOffListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backedoff", (advancedEnabled ? "Connected but backed off: These peers are connected but we're backed off of them" : "Busy: These peers are connected but they're busy") + ", so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedEnabled ? "Backed off" : "Busy");
+				peerStatsRoutingBackedOffListItem.addChild("span", ":\u00a0" + numberOfRoutingBackedOff);
+			}
+			if (numberOfTooNew > 0) {
+				HTMLNode peerStatsTooNewListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsTooNewListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_new", "Connected but too new: These peers' minimum mandatory build is higher than this node's build. This node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, "Too New");
+				peerStatsTooNewListItem.addChild("span", ":\u00a0" + numberOfTooNew);
+			}
+			if (numberOfTooOld > 0) {
+				HTMLNode peerStatsTooOldListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsTooOldListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_too_old", "Connected but too old: This node's minimum mandatory build is higher than these peers' build. This node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, "Too Old");
+				peerStatsTooOldListItem.addChild("span", ":\u00a0" + numberOfTooOld);
+			}
+			if (numberOfDisconnected > 0) {
+				HTMLNode peerStatsDisconnectedListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsDisconnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnected", "Not connected: No connection so far but this node is continuously trying to connect", "border-bottom: 1px dotted; cursor: help;" }, "Disconnected");
+				peerStatsDisconnectedListItem.addChild("span", ":\u00a0" + numberOfDisconnected);
+			}
+			if (numberOfNeverConnected > 0) {
+				HTMLNode peerStatsNeverConnectedListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsNeverConnectedListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_never_connected", "Never Connected: The node has never connected with these peers", "border-bottom: 1px dotted; cursor: help;" }, "Never Connected");
+				peerStatsNeverConnectedListItem.addChild("span", ":\u00a0" + numberOfNeverConnected);
+			}
+			if (numberOfDisabled > 0) {
+				HTMLNode peerStatsDisabledListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disabled", "Not connected and disabled: because the user has instructed to not connect to peers ", "border-bottom: 1px dotted; cursor: help;" }, "Disabled");
+				peerStatsDisabledListItem.addChild("span", ":\u00a0" + numberOfDisabled);
+			}
+			if (numberOfBursting > 0) {
+				HTMLNode peerStatsBurstingListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsBurstingListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_bursting", "Not connected and bursting: this node is, for a short period, trying to connect to these peers because the user has set BurstOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Bursting");
+				peerStatsBurstingListItem.addChild("span", ":\u00a0" + numberOfBursting);
+			}
+			if (numberOfListening > 0) {
+				HTMLNode peerStatsListeningListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsListeningListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listening", "Not connected but listening: this node won't try to connect to these peers very often because the user has set BurstOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Listening");
+				peerStatsListeningListItem.addChild("span", ":\u00a0" + numberOfListening);
+			}
+			if (numberOfListenOnly > 0) {
+				HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
+				peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_listen_only", "Not connected and listen only: this node won't try to connect to these peers at all because the user has set ListenOnly on them", "border-bottom: 1px dotted; cursor: help;" }, "Listen Only");
+				peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfListenOnly);
+			}
+
+			// Peer routing backoff reason box
+			if(advancedEnabled) {
+				nextTableCell = overviewTableRow.addChild("td", "class", "last");
+				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
+				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
+				HTMLNode backoffReasonContent = backoffReasonInfobox.addChild("div", "class", "infobox-content");
+				String [] routingBackoffReasons = node.getPeerNodeRoutingBackoffReasons();
+				if(routingBackoffReasons.length == 0) {
+					backoffReasonContent.addChild("#", "Good, your node is not backed off from any peers!");
+				} else {
+					HTMLNode reasonList = backoffReasonContent.addChild("ul");
+					for(int i=0;i<routingBackoffReasons.length;i++) {
+						int reasonCount = node.getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]);
+						if(reasonCount > 0) {
+							reasonList.addChild("li", routingBackoffReasons[i] + '\u00a0' + reasonCount);
+						}
+					}
+				}
+			}
+			// END OVERVIEW TABLE
+
+			// BEGIN PEER TABLE
+			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
+			peerTableInfoboxHeader.addChild("#", "My peers");
+			if (advancedEnabled) {
+				if (!path.endsWith("displaymessagetypes.html")) {
+					peerTableInfoboxHeader.addChild("#", " ");
+					peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", "(more detailed)");
+				}
+			}
+			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
+
+			if (peerNodeStatuses.length == 0) {
+				peerTableInfoboxContent.addChild("#", "Freenet can not work as you have not added any peers so far. Please go to the ");
+				peerTableInfoboxContent.addChild("a", "href", "/", "node homepage");
+				peerTableInfoboxContent.addChild("#", " and read the top infobox to see how it is done.");
+			} else {
+				HTMLNode peerForm = peerTableInfoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { ".", "post", "multipart/form-data" });
+				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+				HTMLNode peerTable = peerForm.addChild("table", "class", "darknet_connections");
+				HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
+				peerTableHeaderRow.addChild("th");
+				peerTableHeaderRow.addChild("th", "Status");
+				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "The node's name. Click on the name link to send the node a N2NTM (Node To Node Text Message)", "border-bottom: 1px dotted; cursor: help;" }, "Name");
+				if (advancedEnabled) {
+					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "The node's network address as IP:Port", "border-bottom: 1px dotted; cursor: help;" }, "Address");
+				}
+				peerTableHeaderRow.addChild("th", "Version");
+				if (advancedEnabled) {
+					peerTableHeaderRow.addChild("th", "Location");
+					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
+
+					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
+				}
+				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node was connected or last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
+				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "A private note concerning this peer", "border-bottom: 1px dotted; cursor: help;" }, "Private Note");
+
+				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
+					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
+					HTMLNode peerRow = peerTable.addChild("tr");
+
+					// check box column
+					peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peerNodeStatus.hashCode() });
+
+					// status column
+					String statusString = peerNodeStatus.getStatusName();
+					if (!advancedEnabled && (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)) {
+						statusString = "BUSY";
+					}
+					peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), statusString + (peerNodeStatus.isFetchingARK() ? "*" : ""));
+
+					// name column
+					if (Integer.parseInt(peerNodeStatus.getSimpleVersion()) > 476) {
+						peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), peerNodeStatus.getName());
+					} else {
+						peerRow.addChild("td", "class", "peer-name").addChild("#", peerNodeStatus.getName());  // TODO: This branch can probably be removed at some point
+					}
+
+					// address column
+					if (advancedEnabled) {
+						String pingTime = "";
+						if (peerNodeStatus.isConnected()) {
+							pingTime = " (" + (int) peerNodeStatus.getAveragePingTime() + "ms)";
+						}
+						peerRow.addChild("td", "class", "peer-address").addChild("#", ((peerNodeStatus.getPeerAddress() != null) ? (peerNodeStatus.getPeerAddress() + ":" + peerNodeStatus.getPeerPort()) : ("(unknown address)")) + pingTime);
+					}
+
+					// version column
+					if (peerNodeStatus.getStatusValue() != Node.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED
+						peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_version_problem", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
+					} else {
+						peerRow.addChild("td", "class", "peer-version").addChild("#", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
+					}
+
+					// location column
+					if (advancedEnabled) {
+						peerRow.addChild("td", "class", "peer-location", String.valueOf(peerNodeStatus.getLocation()));
+					}
+
+					if (advancedEnabled) {
+						// backoff column
+						HTMLNode backoffCell = peerRow.addChild("td", "class", "peer-backoff");
+						backoffCell.addChild("#", fix1.format(peerNodeStatus.getBackedOffPercent()));
+						int backoff = (int) (Math.max(peerNodeStatus.getRoutingBackedOffUntil() - now, 0));
+						// Don't list the backoff as zero before it's actually zero
+						if ((backoff > 0) && (backoff < 1000)) {
+							backoff = 1000;
+						}
+						backoffCell.addChild("#", " " + String.valueOf(backoff / 1000) + "/" + String.valueOf(peerNodeStatus.getRoutingBackoffLength() / 1000));
+						backoffCell.addChild("#", (peerNodeStatus.getLastBackoffReason() == null) ? "" : ("/" + (peerNodeStatus.getLastBackoffReason())));
+
+						// overload probability column
+						HTMLNode pRejectCell = peerRow.addChild("td", "class", "peer-backoff"); // FIXME
+						pRejectCell.addChild("#", fix1.format(peerNodeStatus.getPReject()));
+					}
+
+					// idle column
+					long idle = peerNodeStatus.getTimeLastRoutable();
+					if (peerNodeStatus.isRoutable()) {
+						idle = peerNodeStatus.getTimeLastConnectionCompleted();
+					} else if (peerNodeStatus.getStatusValue() == Node.PEER_NODE_STATUS_NEVER_CONNECTED) {
+						idle = peerNodeStatus.getPeerAddedTime();
+					}
+					if(!peerNodeStatus.isConnected() && (now - idle) > (2 * 7 * 24 * 60 * 60 * (long) 1000)) { // 2 weeks
+						peerRow.addChild("td", "class", "peer-idle").addChild("span", "class", "peer_idle_old", idleToString(now, idle));
+					} else {
+						peerRow.addChild("td", "class", "peer-idle", idleToString(now, idle));
+					}
+
+					// private darknet node comment note column
+					peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", peerNodeStatus.getPrivateDarknetCommentNote() });
+
+					if (path.endsWith("displaymessagetypes.html")) {
+						HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");
+						messageCountRow.addChild("td", "colspan", "2");
+						HTMLNode messageCountCell = messageCountRow.addChild("td", "colspan", String.valueOf(advancedEnabled ? 8 : 4));  // = total table row width - 2 from above colspan
+						HTMLNode messageCountTable = messageCountCell.addChild("table", "class", "message-count");
+						HTMLNode countHeaderRow = messageCountTable.addChild("tr");
+						countHeaderRow.addChild("th", "Message");
+						countHeaderRow.addChild("th", "Incoming");
+						countHeaderRow.addChild("th", "Outgoing");
+						List messageNames = new ArrayList();
+						Map messageCounts = new HashMap();
+						for (Iterator incomingMessages = peerNodeStatus.getLocalMessagesReceived().keySet().iterator(); incomingMessages.hasNext(); ) {
+							String messageName = (String) incomingMessages.next();
+							messageNames.add(messageName);
+							Long messageCount = (Long) peerNodeStatus.getLocalMessagesReceived().get(messageName);
+							messageCounts.put(messageName, new Long[] { messageCount, new Long(0) });
+						}
+						for (Iterator outgoingMessages = peerNodeStatus.getLocalMessagesSent().keySet().iterator(); outgoingMessages.hasNext(); ) {
+							String messageName = (String) outgoingMessages.next();
+							if (!messageNames.contains(messageName)) {
+								messageNames.add(messageName);
+							}
+							Long messageCount = (Long) peerNodeStatus.getLocalMessagesSent().get(messageName);
+							Long[] existingCounts = (Long[]) messageCounts.get(messageName);
+							if (existingCounts == null) {
+								messageCounts.put(messageName, new Long[] { new Long(0), messageCount });
+							} else {
+								existingCounts[1] = messageCount;
+							}
+						}
+						Collections.sort(messageNames, new Comparator() {
+							public int compare(Object first, Object second) {
+								return ((String) first).compareToIgnoreCase((String) second);
+							}
+						});
+						for (Iterator messageNamesIterator = messageNames.iterator(); messageNamesIterator.hasNext(); ) {
+							String messageName = (String) messageNamesIterator.next();
+							Long[] messageCount = (Long[]) messageCounts.get(messageName);
+							HTMLNode messageRow = messageCountTable.addChild("tr");
+							messageRow.addChild("td", messageName);
+							messageRow.addChild("td", "class", "right-align", String.valueOf(messageCount[0]));
+							messageRow.addChild("td", "class", "right-align", String.valueOf(messageCount[1]));
+						}
+					}
+				}
+
+				HTMLNode actionSelect = peerForm.addChild("select", "name", "action");
+				actionSelect.addChild("option", "value", "", "-- Select action --");
+				actionSelect.addChild("option", "value", "send_n2ntm", "Send N2NTM to selected peers");
+				actionSelect.addChild("option", "value", "update_notes", "Update changed private notes");
+				if(advancedEnabled) {
+					actionSelect.addChild("option", "value", "enable", "Enable selected peers");
+					actionSelect.addChild("option", "value", "disable", "Disable selected peers");
+					actionSelect.addChild("option", "value", "set_burst_only", "On selected peers, set BurstOnly");
+					actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
+					actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly");
+					actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
+				}
+				actionSelect.addChild("option", "value", "", "-- -- --");
+				actionSelect.addChild("option", "value", "remove", "Remove selected peers");
+				peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit", "Go" });
+			}
+			// END PEER TABLE
+
 		}
 		
 		// BEGIN PEER ADDITION BOX
