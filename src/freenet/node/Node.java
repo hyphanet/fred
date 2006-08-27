@@ -298,7 +298,7 @@ public class Node {
 	/** Next time to log the PeerNode status summary */
 	private long nextPeerNodeStatusLogTime = -1;
 	/** PeerNode status summary log interval (milliseconds) */
-	private static final long peerNodeStatusLogInterval = 1000;
+	private static final long peerNodeStatusLogInterval = 5000;
 	/** PeerNode statuses, by status */
 	private final HashMap peerNodeStatuses;
 	/** PeerNode routing backoff reasons, by reason */
@@ -2542,8 +2542,8 @@ public class Node {
 	 */
 	public void maybeLogPeerNodeStatusSummary(long now) {
 	  if(now > nextPeerNodeStatusLogTime) {
-		if((now - nextPeerNodeStatusLogTime) > (3*1000) && nextPeerNodeStatusLogTime > 0)
-		  Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 3 seconds ("+(now - nextPeerNodeStatusLogTime)+").  PacketSender getting bogged down or something?");
+		if((now - nextPeerNodeStatusLogTime) > (10*1000) && nextPeerNodeStatusLogTime > 0)
+		  Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 10 seconds ("+(now - nextPeerNodeStatusLogTime)+").  PacketSender getting bogged down or something?");
 		int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
 		int numberOfTooNew = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW);
