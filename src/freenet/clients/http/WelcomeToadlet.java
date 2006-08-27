@@ -90,7 +90,7 @@ public class WelcomeToadlet extends Toadlet {
 			String pass = request.getParam("formPassword");
 			MultiValueTable headers = new MultiValueTable();
 			String url = null;
-			if(((pass != null) || pass.equals(core.formPassword)) && request.getParam("Go").length() > 0)
+			if(((pass != null) && pass.equals(core.formPassword)) && request.getParam("Go").length() > 0)
 				url = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
 			headers.put("Location", url==null ? "/" : url);
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
