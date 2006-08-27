@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.util.HashSet;
 
 import freenet.clients.http.HTTPRequest;
 import freenet.keys.FreenetURI;
@@ -14,6 +15,21 @@ import freenet.support.URIPreEncoder;
 
 public class GenericReadFilterCallback implements FilterCallback {
 	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
+	public static final HashSet allowedProtocols;
+	
+	static {
+		allowedProtocols = new HashSet();
+		allowedProtocols.add("http");
+		allowedProtocols.add("https");
+		allowedProtocols.add("ftp");
+		allowedProtocols.add("mailto");
+		allowedProtocols.add("nntp");
+		allowedProtocols.add("news");
+		allowedProtocols.add("snews");
+		allowedProtocols.add("about");
+		allowedProtocols.add("irc");
+		// file:// ?
+	}
 
 	private URI baseURI;
 	private final FoundURICallback cb;
@@ -112,11 +128,11 @@ public class GenericReadFilterCallback implements FilterCallback {
 		} catch (MalformedURLException e) {
 			// Not a FreenetURI
 		}
-
-		// REDFLAG:	FIXME: check if it's an authorized protocol
-		return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+"="+uri;	
 		
-		//return null;
+		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
+			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+"="+uri;	
+		else
+			return null;
 	}
 
 	private String finishProcess(HTTPRequest req, String overrideType, String path, URI u, boolean noRelative) {
