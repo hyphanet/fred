@@ -250,7 +250,7 @@ public class WelcomeToadlet extends Toadlet {
 
 			// FIXME: has request.getParam(GenericReadFilterCallback.magicHTTPEscapeString) been sanityzed ?
 			final String target = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
-			externalLinkForm.addChild("#", "Please confirm that you want to go to " + target + ". WARNING: You are leaving FREENET! Clicking on this link may and WILL comrpomise your anonymity. It is strongly recommended not to do so!");
+			externalLinkForm.addChild("#", "Please confirm that you want to go to " + target + ". WARNING: You are leaving FREENET! Clicking on this link WILL seriously jeopardize your anonymity!. It is strongly recommended not to do so!");
 			externalLinkForm.addChild("br");
 			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", GenericReadFilterCallback.magicHTTPEscapeString, target });
 			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
