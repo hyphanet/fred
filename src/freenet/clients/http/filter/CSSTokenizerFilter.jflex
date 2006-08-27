@@ -292,9 +292,7 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 	w.write(s);
 	if(debug) log("Matched whitespace: "+s);
 }
-\/\*[^*]*\*+([^/][^*]*\*+)*\/	{
-	// Comment
-	// CSS comments are harmless? - FIXME check
+"/*" ~"*/" {
 	String s = yytext();
 	w.write(s);
 	if(debug) log("Matched comment: "+s);
