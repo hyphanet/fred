@@ -2544,16 +2544,57 @@ public class Node {
 	  if(now > nextPeerNodeStatusLogTime) {
 		if((now - nextPeerNodeStatusLogTime) > (10*1000) && nextPeerNodeStatusLogTime > 0)
 		  Logger.error(this,"maybeLogPeerNodeStatusSummary() not called for more than 10 seconds ("+(now - nextPeerNodeStatusLogTime)+").  PacketSender getting bogged down or something?");
-		int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED);
-		int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF);
-		int numberOfTooNew = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_NEW);
-		int numberOfTooOld = getPeerNodeStatusSize(PEER_NODE_STATUS_TOO_OLD);
-		int numberOfDisconnected = getPeerNodeStatusSize(PEER_NODE_STATUS_DISCONNECTED);
-		int numberOfNeverConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_NEVER_CONNECTED);
-		int numberOfDisabled = getPeerNodeStatusSize(PEER_NODE_STATUS_DISABLED);
-		int numberOfListenOnly = getPeerNodeStatusSize(PEER_NODE_STATUS_LISTEN_ONLY);
-		int numberOfListening = getPeerNodeStatusSize(PEER_NODE_STATUS_LISTENING);
-		int numberOfBursting = getPeerNodeStatusSize(PEER_NODE_STATUS_BURSTING);
+		
+		int numberOfConnected = 0;
+		int numberOfRoutingBackedOff = 0;
+		int numberOfTooNew = 0;
+		int numberOfTooOld = 0;
+		int numberOfDisconnected = 0;
+		int numberOfNeverConnected = 0;
+		int numberOfDisabled = 0;
+		int numberOfListenOnly = 0;
+		int numberOfListening = 0;
+		int numberOfBursting = 0;
+		
+		PeerNodeStatus[] pns = getPeerNodeStatuses();
+		
+		for(int i=0; i<pns.length; i++){
+			switch (pns[i].getStatusValue()) {
+			case PEER_NODE_STATUS_CONNECTED:
+				numberOfConnected++;
+				break;
+			case PEER_NODE_STATUS_ROUTING_BACKED_OFF:
+				numberOfRoutingBackedOff++;
+				break;
+			case PEER_NODE_STATUS_TOO_NEW:
+				numberOfTooNew++;
+				break;
+			case PEER_NODE_STATUS_TOO_OLD:
+				numberOfTooOld++;
+				break;
+			case PEER_NODE_STATUS_DISCONNECTED:
+				numberOfDisconnected++;
+				break;
+			case PEER_NODE_STATUS_NEVER_CONNECTED:
+				numberOfNeverConnected++;
+				break;
+			case PEER_NODE_STATUS_DISABLED:
+				numberOfDisabled++;
+				break;
+			case PEER_NODE_STATUS_LISTEN_ONLY:
+				numberOfListenOnly++;
+				break;
+			case PEER_NODE_STATUS_LISTENING:
+				numberOfListening++;
+				break;
+			case PEER_NODE_STATUS_BURSTING:
+				numberOfBursting++;
+				break;
+			default:
+				Logger.error(this, "Unkown peer status value : "+pns[i].getStatusValue());
+				break;
+			}
+		}
 		Logger.normal(this, "Connected: "+numberOfConnected+"  Routing Backed Off: "+numberOfRoutingBackedOff+"  Too New: "+numberOfTooNew+"  Too Old: "+numberOfTooOld+"  Disconnected: "+numberOfDisconnected+"  Never Connected: "+numberOfNeverConnected+"  Disabled: "+numberOfDisabled+"  Bursting: "+numberOfBursting+"  Listening: "+numberOfListening+"  Listen Only: "+numberOfListenOnly);
 		nextPeerNodeStatusLogTime = now + peerNodeStatusLogInterval;
 		}
