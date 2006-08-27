@@ -49,8 +49,7 @@ public class DNSRequester implements Runnable {
     }
 
     private void realRun() {
-        PeerManager pm = node.peers;
-        PeerNode[] nodes = pm.myPeers;
+        PeerNode[] nodes = node.peers.myPeers;
         long now = System.currentTimeMillis();
         if((now - lastLogTime) > 1000) {
         	if(Logger.shouldLog(Logger.MINOR, this))
@@ -58,18 +57,17 @@ public class DNSRequester implements Runnable {
             lastLogTime = now;
         }
         for(int i=0;i<nodes.length;i++) {
-            PeerNode pn = nodes[i];
             //Logger.minor(this, "Node: "+pn);
-            if(!pn.isConnected()) {
+            if(!nodes[i].isConnected()) {
                 // Not connected
                 // Try new DNS lookup
             	//Logger.minor(this, "Doing lookup on "+pn);
-                pn.maybeUpdateHandshakeIPs(false);
+                nodes[i].maybeUpdateHandshakeIPs(false);
             }
         }
         try {
             synchronized(this) {
-                wait(200);  // sleep 200ms
+                wait(10000);  // sleep 10s ...
             }
         } catch (InterruptedException e) {
             // Ignore, just wake up. Just sleeping to not busy wait anyway

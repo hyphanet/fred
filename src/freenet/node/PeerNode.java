@@ -512,6 +512,7 @@ public class PeerNode implements PeerContext {
             peerAddedTime = now;
         }
         // populate handshakeIPs so handshakes can start ASAP
+        lastAttemptedHandshakeIPUpdateTime=0;
         maybeUpdateHandshakeIPs(true);
         
         sendHandshakeTime = now;  // Be sure we're ready to handshake right away
