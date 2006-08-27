@@ -13,6 +13,7 @@ import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
 
 public class GenericReadFilterCallback implements FilterCallback {
+	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
 
 	private URI baseURI;
 	private final FoundURICallback cb;
@@ -111,8 +112,11 @@ public class GenericReadFilterCallback implements FilterCallback {
 		} catch (MalformedURLException e) {
 			// Not a FreenetURI
 		}
+
+		// REDFLAG:	FIXME: check if it's an authorized protocol
+		return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+"="+uri;	
 		
-		return null;
+		//return null;
 	}
 
 	private String finishProcess(HTTPRequest req, String overrideType, String path, URI u, boolean noRelative) {

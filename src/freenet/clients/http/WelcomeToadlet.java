@@ -5,11 +5,11 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
-
 import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InserterException;
+import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
@@ -85,6 +85,15 @@ public class WelcomeToadlet extends Toadlet {
 			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restartconfirm", "Restart" });
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			return;
+		}else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length()>0){
+			String pass = request.getParam("formPassword");
+			MultiValueTable headers = new MultiValueTable();
+			String url = null;
+			if(((pass != null) || pass.equals(core.formPassword)) && request.getParam("Go").length() > 0)
+				url = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
+			headers.put("Location", url==null ? "/" : url);
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}else if (request.getParam("update").length() > 0) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Update");
@@ -225,12 +234,28 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Add a Bookmark");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Confirm Bookmark Addition"));
-			HTMLNode addForm = ctx.getPageMaker().getContentNode(infobox).addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
+			HTMLNode addForm = ctx.getPageMaker().getContentNode(infobox).addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
 			addForm.addChild("#", "Please confirm that you want to add the key " + request.getParam("newbookmark") + " to your bookmarks and enter the description that you would prefer:");
 			addForm.addChild("br");
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", request.getParam("newbookmark") });
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", "Add bookmark" });
+			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			return;
+		} else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Link to external resources");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode warnbox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "External link"));
+			HTMLNode externalLinkForm = ctx.getPageMaker().getContentNode(warnbox).addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
+
+			// FIXME: has request.getParam(GenericReadFilterCallback.magicHTTPEscapeString) been sanityzed ?
+			final String target = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
+			externalLinkForm.addChild("#", "Please confirm that you want to go to " + target + ". WARNING: You are leaving FREENET! Clicking on this link may and WILL comrpomise your anonymity. It is strongly recommended not to do so!");
+			externalLinkForm.addChild("br");
+			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", GenericReadFilterCallback.magicHTTPEscapeString, target });
+			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			externalLinkForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "Go", "Go to the specified link" });
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		} else if (request.isParameterSet("managebookmarks")) {
