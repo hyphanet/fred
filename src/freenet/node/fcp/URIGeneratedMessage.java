@@ -2,7 +2,6 @@ package freenet.node.fcp;
 
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class URIGeneratedMessage extends FCPMessage {

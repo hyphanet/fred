@@ -8,7 +8,6 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
-import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.support.HexUtil;

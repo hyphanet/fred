@@ -665,10 +665,6 @@ public class Node {
 		}
 	}
 	
-	Node(Config config, RandomSource random, LoggingConfigHandler lc) throws NodeInitException{
-		this(config, random, lc, null);
-	}
-	
 	public boolean isUsingWrapper(){
 		if(nodeStarter!=null && WrapperManager.isControlledByNativeWrapper())
 			return true;

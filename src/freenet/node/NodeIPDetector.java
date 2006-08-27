@@ -16,7 +16,6 @@ import freenet.io.comm.Peer;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
-import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.support.Logger;

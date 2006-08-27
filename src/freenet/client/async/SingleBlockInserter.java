@@ -10,7 +10,6 @@ import freenet.client.InserterException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKeyBlock;
-import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.keys.SSKEncodeException;
