@@ -340,11 +340,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					peerRow.addChild("td", "class", "peer-status").addChild("span", "class", peerNodeStatus.getStatusCSSName(), statusString + (peerNodeStatus.isFetchingARK() ? "*" : ""));
 
 					// name column
-					if (Integer.parseInt(peerNodeStatus.getSimpleVersion()) > 476) {
-						peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), peerNodeStatus.getName());
-					} else {
-						peerRow.addChild("td", "class", "peer-name").addChild("#", peerNodeStatus.getName());  // TODO: This branch can probably be removed at some point
-					}
+					peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), peerNodeStatus.getName());
 
 					// address column
 					if (advancedEnabled) {
@@ -357,9 +353,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 
 					// version column
 					if (peerNodeStatus.getStatusValue() != Node.PEER_NODE_STATUS_NEVER_CONNECTED && (peerNodeStatus.isPublicInvalidVersion() || peerNodeStatus.isPublicReverseInvalidVersion())) {  // Don't draw attention to a version problem if NEVER CONNECTED
-						peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_version_problem", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
+						peerRow.addChild("td", "class", "peer-version").addChild("span", "class", "peer_version_problem", peerNodeStatus.getSimpleVersion());
 					} else {
-						peerRow.addChild("td", "class", "peer-version").addChild("#", advancedEnabled ? peerNodeStatus.getVersion() : peerNodeStatus.getSimpleVersion());
+						peerRow.addChild("td", "class", "peer-version").addChild("#", peerNodeStatus.getSimpleVersion());
 					}
 
 					// location column
