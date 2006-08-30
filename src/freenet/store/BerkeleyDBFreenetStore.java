@@ -220,8 +220,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						t.printStackTrace();
 					}
 					throw new DatabaseException("Keys in database: "+chkBlocksInStore+" but keys in file: "+chkBlocksFromFile);
-				} else
-					checkForHoles(chkBlocksFromFile);
+				} else {
+					long len = checkForHoles(chkBlocksFromFile);
+					if(len < chkBlocksFromFile) {
+						System.err.println("Truncating to "+len+" as no non-holes after that point");
+						chkStore.setLength(len * (dataBlockSize + headerBlockSize));
+						chkBlocksInStore = len;
+					}
+				}
 			}
 			
 			chkBlocksInStore = Math.max(chkBlocksInStore, chkBlocksFromFile);
@@ -243,9 +249,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
-	private void checkForHoles(long blocksInFile) throws DatabaseException {
+	private long checkForHoles(long blocksInFile) throws DatabaseException {
 		System.err.println("Checking for holes in database...");
 		long holes = 0;
+		long maxPresent = 0;
 		for(long i=0;i<blocksInFile;i++) {
 			Long blockNo = new Long(i);
 			DatabaseEntry blockNumEntry = new DatabaseEntry();
@@ -258,11 +265,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			if(success.equals(OperationStatus.NOTFOUND)) {
 				addFreeBlock(i, true, "hole found");
 				holes++;
-			}
+			} else
+				maxPresent = i;
 			if(i % 1024 == 0)
 			System.err.println("Checked "+i+" blocks, found "+holes+" holes");
 		}
 		System.err.println("Checked database, found "+holes+" holes");
+		return maxPresent+1;
 	}
 
 	private void maybeShrink(boolean dontCheck, boolean offline) throws DatabaseException, IOException {
