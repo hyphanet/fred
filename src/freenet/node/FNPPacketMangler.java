@@ -1111,6 +1111,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             	if(last == peer.getCurrentKeyTracker()) {
             		if(peer.isConnected()) {
             			Logger.error(this, "Peer is connected, yet current tracker is deprecated !!: "+e, e);
+            			throw new NotConnectedException("Peer is connected, yet current tracker is deprecated !!: "+e);
             		}
             	}
                 // Go around again
