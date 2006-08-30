@@ -30,6 +30,11 @@ public class UpdaterEnabledCallback implements BooleanCallback {
 	public void set(boolean val) throws InvalidConfigValueException {
 		if((val == true) && (!WrapperManager.isControlledByNativeWrapper()) && (NodeStarter.extBuildNumber == -1)) {
 			Logger.error(this, "Cannot update because not running under wrapper");
+			if(node.nodeUpdater != null){
+				node.nodeUpdater.kill();
+				Logger.normal(this, "Shutting down the node updater");
+			}
+			set(false);
 			throw new InvalidConfigValueException("Cannot update because not running under wrapper");
 		}
 		synchronized (node) {

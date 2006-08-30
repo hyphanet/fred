@@ -14,7 +14,7 @@ public class AutoUpdateAllowedCallback implements BooleanCallback {
 	}
 	
 	public boolean get() {
-		if(node.getNodeUpdater()==null)
+		if((node.getNodeUpdater()==null) || !(node.getNodeUpdater().isRunning()))
 			return false;
 		else 
 			return node.getNodeUpdater().isAutoUpdateAllowed;
