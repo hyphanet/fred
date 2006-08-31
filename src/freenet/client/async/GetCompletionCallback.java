@@ -18,4 +18,6 @@ public interface GetCompletionCallback {
 	 */
 	public void onBlockSetFinished(ClientGetState state);
 
+	public void onTransition(ClientGetState oldState, ClientGetState newState);
+
 }

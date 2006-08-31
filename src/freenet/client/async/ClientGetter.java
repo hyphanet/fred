@@ -17,13 +17,13 @@ import freenet.support.io.BucketTools;
 /**
  * A high level data request.
  */
-public class ClientGetter extends ClientRequester implements GetCompletionCallback {
+public class ClientGetter extends BaseClientGetter {
 
 	final ClientCallback client;
 	final FreenetURI uri;
 	final FetcherContext ctx;
 	final ArchiveContext actx;
-	ClientGetState currentState;
+	private ClientGetState currentState;
 	private boolean finished;
 	private int archiveRestarts;
 	/** If not null, Bucket to return the data in */
@@ -154,6 +154,18 @@ public class ClientGetter extends ClientRequester implements GetCompletionCallba
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Set finished", new Exception("debug"));
 		blockSetFinalized();
+	}
+
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		synchronized(this) {
+			if(currentState == oldState) {
+				currentState = newState;
+				Logger.minor(this, "Transition: "+oldState+" -> "+newState);
+			} else
+				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState);
+		}
+		// TODO Auto-generated method stub
+		
 	}
 
 }

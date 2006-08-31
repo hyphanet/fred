@@ -77,7 +77,7 @@ public class USKManager {
 	}
 
 	public synchronized USKFetcher getFetcher(USK usk, FetcherContext ctx,
-			ClientRequester parent, boolean keepLastData) {
+			BaseClientGetter parent, boolean keepLastData) {
 		USKFetcher f = (USKFetcher) fetchersByUSK.get(usk);
 		USK clear = usk.clearCopy();
 		if(temporaryBackgroundFetchersLRU.contains(clear))

@@ -29,4 +29,8 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		cb.onBlockSetFinished(state);
 	}
 
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		// Ignore
+	}
+
 }

@@ -395,4 +395,8 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		// Ignore; irrelevant
 	}
 
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		// Ignore
+	}
+
 }

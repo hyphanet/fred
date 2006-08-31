@@ -118,4 +118,7 @@ public class USK extends BaseClientKey {
 		return new FreenetURI("SSK", siteName, pubKeyHash, cryptoKey, ClientSSK.getExtraBytes());
 	}
 	
+	public String toString() {
+		return super.toString()+":"+getURI();
+	}
 }

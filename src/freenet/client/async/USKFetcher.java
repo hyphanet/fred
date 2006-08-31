@@ -82,7 +82,7 @@ public class USKFetcher implements ClientGetState {
 	/** Kill a background poll fetcher when it has lost its last subscriber? */
 	private boolean killOnLoseSubscribers;
 	
-	final ClientRequester parent;
+	final BaseClientGetter parent;
 
 	// We keep the data from the last (highest number) request.
 	private Bucket lastRequestData;
@@ -197,12 +197,12 @@ public class USKFetcher implements ClientGetState {
 
 	private Object token;
 	
-	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever, boolean keepLastData, Object token) {
+	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, BaseClientGetter parent, int minFailures, boolean pollForever, boolean keepLastData, Object token) {
 		this(origUSK, manager, ctx, parent, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData, token);
 	}
 	
 	// FIXME use this!
-	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, ClientRequester parent, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, Object token) {
+	USKFetcher(USK origUSK, USKManager manager, FetcherContext ctx, BaseClientGetter parent, int minFailures, boolean pollForever, long maxProbeEditions, boolean keepLastData, Object token) {
 		this.parent = parent;
 		this.maxMinFailures = maxProbeEditions;
 		this.origUSK = origUSK;

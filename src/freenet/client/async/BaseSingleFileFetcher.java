@@ -17,9 +17,9 @@ public abstract class BaseSingleFileFetcher implements SendableGet {
 	final int maxRetries;
 	private int retryCount;
 	final FetcherContext ctx;
-	final ClientRequester parent;
+	final BaseClientGetter parent;
 
-	BaseSingleFileFetcher(ClientKey key, int maxRetries, FetcherContext ctx, ClientRequester parent) {
+	BaseSingleFileFetcher(ClientKey key, int maxRetries, FetcherContext ctx, BaseClientGetter parent) {
 		retryCount = 0;
 		this.maxRetries = maxRetries;
 		this.key = key;

@@ -1,12 +1,14 @@
 package freenet.client.async;
 
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 
 /**
  * Wrapper for a backgrounded USKFetcher.
  */
-public class USKFetcherWrapper extends ClientRequester {
+public class USKFetcherWrapper extends BaseClientGetter {
 
 	USK usk;
 	
@@ -25,6 +27,22 @@ public class USKFetcherWrapper extends ClientRequester {
 
 	public void notifyClients() {
 		// Do nothing
+	}
+
+	public void onSuccess(FetchResult result, ClientGetState state) {
+		// Ignore; we don't do anything with it because we are running in the background.
+	}
+
+	public void onFailure(FetchException e, ClientGetState state) {
+		// Ignore
+	}
+
+	public void onBlockSetFinished(ClientGetState state) {
+		// Ignore
+	}
+
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		// Ignore
 	}
 
 }

@@ -295,8 +295,6 @@ public class Node {
 	long myARKNumber;
 	/** FetcherContext for ARKs */
 	public final FetcherContext arkFetcherContext;
-	/** ARKFetcher's currently running, by identity */
-	private final HashMap arkFetchers;
 	/** Next time to log the PeerNode status summary */
 	private long nextPeerNodeStatusLogTime = -1;
 	/** PeerNode status summary log interval (milliseconds) */
@@ -342,7 +340,6 @@ public class Node {
 	String myName;
 	final LocationManager lm;
 	final PeerManager peers; // my peers
-	final ARKFetchManager arkFetchManager; // ready ARK Fetchers
 	/** Directory to put node, peers, etc into */
 	final File nodeDir;
 	/** Directory to put extra peer data into */
@@ -713,7 +710,6 @@ public class Node {
 		requestSenders = new HashMap();
 		transferringRequestSenders = new HashMap();
 		insertSenders = new HashMap();
-		arkFetchers = new HashMap();
 		peerNodeStatuses = new HashMap();
 		peerNodeRoutingBackoffReasons = new HashMap();
 		runningUIDs = new HashSet();
@@ -988,9 +984,6 @@ public class Node {
 				initNodeFileSettings(random);
 			}
 		}
-
-		// Prepare the ARKFetchManager
-		arkFetchManager = new ARKFetchManager(this);
 
 		// Then read the peers
 		peers = new PeerManager(this, new File(nodeDir, "peers-"+portNumber).getPath());
@@ -2437,44 +2430,6 @@ public class Node {
 	/**
 	 * Add a ARKFetcher to the map
 	 */
-	public void addARKFetcher(String identity, ARKFetcher fetcher) {
-		synchronized(arkFetchers) {
-			if(arkFetchers.containsKey(identity)) {
-				ARKFetcher af = (ARKFetcher) arkFetchers.get(identity);
-				if(af != fetcher)
-					Logger.error(this, "addARKFetcher(): identity '"+identity+"' already in arkFetcher as "+af+" and you want to add"+fetcher);
-				else if(logMINOR) Logger.minor(this, "Re-adding "+identity+" : "+fetcher);
-				return;
-			}
-			if(logMINOR) Logger.minor(this, "addARKFetcher(): adding ARK Fetcher for "+identity);
-			arkFetchers.put(identity, fetcher);
-		}
-	}
-	
-	/**
-	 * How many ARKFetchers are currently requesting ARKs?
-	 */
-	public int getNumARKFetchers() {
-		return arkFetchers.size();
-	}
-
-	/**
-	 * Remove a ARKFetcher from the map
-	 */
-	public void removeARKFetcher(String identity, ARKFetcher fetcher) {
-		synchronized(arkFetchers) {
-			if(!arkFetchers.containsKey(identity)) {
-				Logger.error(this, "removeARKFetcher(): identity '"+identity+"' not in arkFetcher to remove");
-				return;
-			}
-			if(logMINOR) Logger.minor(this, "removeARKFetcher(): removing ARK Fetcher for "+identity);
-			ARKFetcher af = (ARKFetcher) arkFetchers.remove(identity);
-			if(af != fetcher) {
-				Logger.error(this, "Removed "+af+" should be "+fetcher+" for "+identity+" in removeARKFetcher");
-			}
-		}
-	}
-
 	/**
 	 * Add a PeerNode status to the map
 	 */
@@ -2768,22 +2723,6 @@ public class Node {
 	}
 
 	/**
-	 * Start a ready ARKFetcher if the timer has expired
-	 */
-	public void maybeStartAReadyARKFetcher(long now) {
-	  if(now > nextReadyARKFetcherStartTime) {
-	  	if(arkFetchManager.hasReadyARKFetchers()) {
-			if(getNumARKFetchers() >= 30) {
-				Logger.error(this, "Not starting ARKFetcher in maybeStartAReadyARKFetcher() because there are already 30 or more ARK Fetchers running");
-			} else {
-				arkFetchManager.maybeStartNextReadyARKFetcher();
-			}
-		}
-		nextReadyARKFetcherStartTime = now + readyARKFetcherStartInterval;
-	  }
-	}
-
-	/**
 	 * Update peerManagerUserAlertStats if the timer has expired
 	 */
 	public void maybeUpdatePeerManagerUserAlertStats(long now) {
@@ -3012,5 +2951,14 @@ public class Node {
 			result[ 5 ] = last_io_stat_time;
 		}
 		return result;
+	}
+
+	public int getNumARKFetchers() {
+		PeerNode[] p = peers.myPeers;
+		int x = 0;
+		for(int i=0;i<p.length;i++) {
+			if(p[i].isFetchingARK()) x++;
+		}
+		return x;
 	}
 }

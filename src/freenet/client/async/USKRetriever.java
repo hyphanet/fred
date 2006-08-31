@@ -14,7 +14,7 @@ import freenet.support.Logger;
 /**
  * Poll a USK, and when a new slot is found, fetch it. 
  */
-public class USKRetriever extends ClientRequester implements USKCallback, GetCompletionCallback {
+public class USKRetriever extends BaseClientGetter implements USKCallback {
 
 	/** Context for fetching data */
 	final FetcherContext ctx;
@@ -35,7 +35,7 @@ public class USKRetriever extends ClientRequester implements USKCallback, GetCom
 		try {
 			SingleFileFetcher getter =
 				(SingleFileFetcher) SingleFileFetcher.create(this, this, new ClientMetadata(), uri, ctx, new ArchiveContext(ctx.maxArchiveLevels), 
-						ctx.maxNonSplitfileRetries, 0, false, key.copy(l), true, null);
+						ctx.maxNonSplitfileRetries, 0, true, key.copy(l), true, null);
 			getter.schedule();
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Impossible: "+e, e);
@@ -46,8 +46,8 @@ public class USKRetriever extends ClientRequester implements USKCallback, GetCom
 
 	public void onSuccess(FetchResult result, ClientGetState state) {
 		Object token = state.getToken();
-		FreenetURI uri = (FreenetURI) token;
-		cb.onFound(uri.getSuggestedEdition(), result);
+		USK key = (USK) token;
+		cb.onFound(key.suggestedEdition, result);
 	}
 
 	public void onFailure(FetchException e, ClientGetState state) {
@@ -69,6 +69,10 @@ public class USKRetriever extends ClientRequester implements USKCallback, GetCom
 
 	public void notifyClients() {
 		// Ignore for now
+	}
+
+	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		// Ignore
 	}
 
 }

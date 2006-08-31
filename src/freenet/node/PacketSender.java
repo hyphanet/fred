@@ -153,7 +153,6 @@ public class PacketSender implements Runnable, Ticker {
         }
         node.maybeLogPeerNodeStatusSummary(now);
         node.maybeUpdateOldestNeverConnectedPeerAge(now);
-        node.maybeStartAReadyARKFetcher(now);
         node.maybeUpdatePeerManagerUserAlertStats(now);
         node.maybeUpdateNodeIOStats(now);
         long nextActionTime = Long.MAX_VALUE;
@@ -273,6 +272,8 @@ public class PacketSender implements Runnable, Ticker {
                 long beforeHandshakeTime = System.currentTimeMillis();
                 if(pn.shouldSendHandshake())
                     node.packetMangler.sendHandshake(pn);
+                if(pn.noContactDetails())
+                	pn.startARKFetcher();
                 long afterHandshakeTime = System.currentTimeMillis();
                 if((afterHandshakeTime - beforeHandshakeTime) > (2*1000))
                     Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime ("+(afterHandshakeTime - beforeHandshakeTime)+") in PacketSender working with "+pn.getPeer()+" named "+pn.getName());

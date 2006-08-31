@@ -612,10 +612,18 @@ public class PeerManager {
 
     final Object writePeersSync = new Object();
     
+    void writePeers() {
+    	node.ps.queueTimedJob(new Runnable() {
+			public void run() {
+				writePeersInner();
+			}
+    	}, 0);
+    }
+    
     /**
      * Write the peers file to disk
      */
-    void writePeers() {
+    private void writePeersInner() {
         synchronized (writePeersSync) {
             FileOutputStream fos;
             String f = filename + ".bak";

@@ -54,7 +54,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	 * @param token 
 	 * @param dontTellClientGet 
 	 */
-	public SingleFileFetcher(ClientRequester get, GetCompletionCallback cb, ClientMetadata metadata, 
+	public SingleFileFetcher(BaseClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, 
 			ClientKey key, LinkedList metaStrings, FetcherContext ctx, 
 			ArchiveContext actx, int maxRetries, int recursionLevel, 
 			boolean dontTellClientGet, Object token, boolean isEssential, 
@@ -316,13 +316,14 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				}
 
 				// **FIXME** Is key in the call to SingleFileFetcher here supposed to be this.key or the same key used in the try block above?  MultiLevelMetadataCallback.onSuccess() below uses this.key, thus the question
-				SingleFileFetcher f = new SingleFileFetcher((ClientGetter)parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, null, true, returnBucket);
+				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, token, true, returnBucket);
 				if((key instanceof ClientCHK) && !((ClientCHK)key).isMetadata())
 					rcb.onBlockSetFinished(this);
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
 					f.addDecompressor(codec);
 				}
+				parent.onTransition(this, f);
 				f.schedule();
 				// All done! No longer our problem!
 				return;
@@ -352,8 +353,9 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					return;
 				}
 				
-				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, (ClientGetter)parent, ctx, 
+				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, false, token);
+				parent.onTransition(this, sf);
 				sf.schedule();
 				rcb.onBlockSetFinished(this);
 				// SplitFile will now run.
@@ -397,7 +399,6 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		}
 		
 		public void onSuccess(FetchResult result, ClientGetState state) {
-			((ClientGetter)parent).currentState = SingleFileFetcher.this;
 			try {
 				ctx.archiveManager.extractToCache(thisKey, ah.getArchiveType(), result.asBucket(), actx, ah);
 			} catch (ArchiveFailureException e) {
@@ -428,16 +429,19 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				rcb.onBlockSetFinished(SingleFileFetcher.this);
 			}
 		}
+
+		public void onTransition(ClientGetState oldState, ClientGetState newState) {
+			// Ignore
+		}
 		
 	}
 
 	class MultiLevelMetadataCallback implements GetCompletionCallback {
 		
 		public void onSuccess(FetchResult result, ClientGetState state) {
-			((ClientGetter)parent).currentState = SingleFileFetcher.this;
 			try {
 				metadata = Metadata.construct(result.asBucket());
-				SingleFileFetcher f = new SingleFileFetcher((ClientGetter)parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, null, true, returnBucket);
+				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, true, returnBucket);
 				f.metadata = metadata;
 				f.handleMetadata();
 			} catch (MetadataParseException e) {
@@ -463,6 +467,10 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 
 		public void onBlockSetFinished(ClientGetState state) {
 			// Ignore as we are fetching metadata here
+		}
+
+		public void onTransition(ClientGetState oldState, ClientGetState newState) {
+			// Ignore
 		}
 		
 	}
@@ -527,8 +535,6 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	}
 
 	public void schedule() {
-		if(!dontTellClientGet)
-			((ClientGetter)parent).currentState = this;
 		super.schedule();
 	}
 	
@@ -540,11 +546,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		return ctx.ignoreStore;
 	}
 
-	public ClientGetter getParent() {
-		return (ClientGetter) parent;
-	}
-
-	public static ClientGetState create(ClientRequester parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
+	public static ClientGetState create(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
 		BaseClientKey key = BaseClientKey.getBaseKey(uri);
 		if(key instanceof ClientKey)
 			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
@@ -553,7 +555,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		}
 	}
 
-	private static ClientGetState uskCreate(ClientRequester parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws FetchException {
+	private static ClientGetState uskCreate(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws FetchException {
 		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = ctx.uskManager.lookup(usk);
@@ -586,7 +588,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 
 	public static class MyUSKFetcherCallback implements USKFetcherCallback {
 
-		final ClientRequester parent;
+		final BaseClientGetter parent;
 		final GetCompletionCallback cb;
 		final ClientMetadata clientMetadata;
 		final USK usk;
@@ -599,7 +601,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		final Object token;
 		final Bucket returnBucket;
 		
-		public MyUSKFetcherCallback(ClientRequester parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, Bucket returnBucket) {
+		public MyUSKFetcherCallback(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, Bucket returnBucket) {
 			this.parent = parent;
 			this.cb = cb;
 			this.clientMetadata = clientMetadata;

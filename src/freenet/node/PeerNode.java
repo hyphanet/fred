@@ -24,6 +24,9 @@ import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+import freenet.client.FetchResult;
+import freenet.client.async.USKRetriever;
+import freenet.client.async.USKRetrieverCallback;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.UnsupportedCipherException;
@@ -62,7 +65,7 @@ import freenet.support.math.TimeDecayingRunningAverage;
  * code into KeyTracker, which handles all communications to and
  * from this peer over the duration of a single key.
  */
-public class PeerNode implements PeerContext {
+public class PeerNode implements PeerContext, USKRetrieverCallback {
 
     /** Set to true when we complete a handshake. */
     private boolean completedHandshake;
@@ -134,7 +137,7 @@ public class PeerNode implements PeerContext {
     /**
      * ARK fetcher.
      */
-    private final ARKFetcher arkFetcher;
+    private USKRetriever arkFetcher;
     
     /** My ARK SSK public key; edition is the next one, not the current one, 
      * so this is what we want to fetch. */
@@ -436,8 +439,6 @@ public class PeerNode implements PeerContext {
         // ARK stuff.
 
         parseARK(fs, true);
-        
-        arkFetcher = new ARKFetcher(this, node);
         
         // Now for the metadata.
         // The metadata sub-fieldset contains data about the node which is not part of the node reference.
@@ -1030,8 +1031,6 @@ public class PeerNode implements PeerContext {
 				}
 				if(successfulHandshakeSend) {
 					firstHandshake = false;
-				} else {
-					handshakeIPs = null;
 				}
 				handshakeCount++;
 				fetchARKFlag = ((handshakeCount == MAX_HANDSHAKE_COUNT) && !(verifiedIncompatibleOlderVersion || verifiedIncompatibleNewerVersion));
@@ -1055,9 +1054,6 @@ public class PeerNode implements PeerContext {
 					sendHandshakeTime = now + Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS
 						+ node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 				}
-				if(!successfulHandshakeSend) {
-					handshakeIPs = null;
-				}
 				if(logMINOR) Logger.minor(this, "Next BurstOnly mode handshake in "+(sendHandshakeTime - now)+"ms for "+getName()+" (count: "+listeningHandshakeBurstCount+", size: "+listeningHandshakeBurstSize+")", new Exception("double-called debug"));
 			}
         }
@@ -1065,7 +1061,7 @@ public class PeerNode implements PeerContext {
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
         if(fetchARKFlag) {
 			long arkFetcherStartTime1 = System.currentTimeMillis();
-			arkFetcher.queue();
+			startARKFetcher();
 			long arkFetcherStartTime2 = System.currentTimeMillis();
 			if((arkFetcherStartTime2 - arkFetcherStartTime1) > 500) {
 				Logger.normal(this, "arkFetcherStartTime2 is more than half a second after arkFetcherStartTime1 ("+(arkFetcherStartTime2 - arkFetcherStartTime1)+") working on "+getName());
@@ -1296,12 +1292,13 @@ public class PeerNode implements PeerContext {
     public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	long now = System.currentTimeMillis();
-    	arkFetcher.stop();
+    	
     	synchronized(this) {
     		completedHandshake = true;
     		handshakeCount = 0;
         	bogusNoderef = false;
 			isConnected = true;
+			stopARKFetcher();
         }
 		try {
 			// First, the new noderef
@@ -1411,8 +1408,33 @@ public class PeerNode implements PeerContext {
 		}
 		return true;
     }
+    
+    private final Object arkFetcherSync = new Object();
+    
+    void startARKFetcher() {
+    	// FIXME any way to reduce locking here?
+		synchronized(arkFetcherSync) {
+			if(myARK == null) {
+				Logger.minor(this, "No ARK for "+this+" !!!!");
+				return;
+			}
+	    	Logger.minor(this, "Starting ARK fetcher for "+this+" : "+myARK);
+			if(arkFetcher == null)
+				arkFetcher = node.clientCore.uskManager.subscribeContent(myARK, this, true, node.arkFetcherContext, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, node);
+		}
+    }
 
-    boolean sentInitialMessages;
+    private void stopARKFetcher() {
+    	Logger.minor(this, "Stopping ARK fetcher for "+this+" : "+myARK);
+    	// FIXME any way to reduce locking here?
+    	synchronized(arkFetcherSync) {
+    		if(arkFetcher == null) return;
+    		node.clientCore.uskManager.unsubscribeContent(myARK, this.arkFetcher, true);
+    		arkFetcher = null;
+    	}
+	}
+
+	boolean sentInitialMessages;
     
     void maybeSendInitialMessages() {
         synchronized(this) {
@@ -2301,7 +2323,7 @@ public class PeerNode implements PeerContext {
     }
 
 	public boolean isFetchingARK() {
-		return arkFetcher.isFetching();
+		return arkFetcher != null;
 	}
 
 	public synchronized int getHandshakeCount() {
@@ -2323,7 +2345,7 @@ public class PeerNode implements PeerContext {
 		if(isConnected()) {
 			forceDisconnect();
 		}
-    	arkFetcher.stop();
+		stopARKFetcher();
 		setPeerNodeStatus(System.currentTimeMillis());
         node.peers.writePeers();
 	}
@@ -2748,5 +2770,43 @@ public class PeerNode implements PeerContext {
 	 */
 	private void onConnect() {
 		sendQueuedN2NTMs();
+	}
+
+	public void onFound(long edition, FetchResult result) {
+		if(isConnected() || myARK.suggestedEdition > edition) {
+			result.asBucket().free();
+			return;
+		}
+		
+		byte[] data;
+		try {
+			data = result.asByteArray();
+		} catch (IOException e) {
+			Logger.error(this, "I/O error reading fetched ARK: "+e, e);
+			return;
+		}
+		
+		String ref;
+		try {
+			ref = new String(data, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// Yeah, right.
+			throw new Error(e);
+		}
+		
+		SimpleFieldSet fs;
+		try {
+			fs = new SimpleFieldSet(ref, true);
+			if(logMINOR) Logger.minor(this, "Got ARK for "+this);
+			gotARK(fs, edition);
+		} catch (IOException e) {
+			// Corrupt ref.
+			Logger.error(this, "Corrupt ARK reference? Fetched "+myARK.copy(edition)+" got while parsing: "+e+" from:\n"+ref, e);
+		}
+
+	}
+
+	public synchronized boolean noContactDetails() {
+		return handshakeIPs == null || handshakeIPs.length == 0;
 	}
 }
