@@ -79,19 +79,21 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 		String path = uri.getPath();
 		
-		// Normal protocols should go to /__CHECKED_HTTP_ for POST-form verification.
-		// mailto: not supported yet - FIXME what to do with it? what queries are allowed? can it possibly hurt us? how to construct safely? etc
-		
 		HTTPRequest req = new HTTPRequest(uri);
-		if ((path != null) && path.equals("/") && req.isParameterSet("newbookmark")) {
-			// allow links to the root to add bookmarks
-			String bookmark_key = req.getParam("newbookmark");
-			String bookmark_desc = req.getParam("desc");
-			
-			bookmark_key = HTMLEncoder.encode(bookmark_key);
-			bookmark_desc = HTMLEncoder.encode(bookmark_desc);
-			
-			return "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
+		if (path != null){
+			if(path.equals("/") && req.isParameterSet("newbookmark")){
+				// allow links to the root to add bookmarks
+				String bookmark_key = req.getParam("newbookmark");
+				String bookmark_desc = req.getParam("desc");
+
+				bookmark_key = HTMLEncoder.encode(bookmark_key);
+				bookmark_desc = HTMLEncoder.encode(bookmark_desc);
+
+				return "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
+			}else if(path.equals("") && uri.toString().matches("^#[a-zA-Z0-9-_]+$")){
+				// Hack for anchors, see #710
+				return uri.toString();
+			}
 		}
 		
 		// Try as an absolute URI
