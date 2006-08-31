@@ -57,10 +57,11 @@ public class SplitFileFetcher implements ClientGetState {
 	/** Preferred bucket to return data in */
 	private final Bucket returnBucket;
 	private boolean finished;
+	private Object token;
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientGetter parent,
 			FetcherContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
-			ArchiveContext actx, int recursionLevel, Bucket returnBucket, boolean dontTellParent) throws FetchException, MetadataParseException {
+			ArchiveContext actx, int recursionLevel, Bucket returnBucket, boolean dontTellParent, Object token) throws FetchException, MetadataParseException {
 		this.finished = false;
 		this.returnBucket = returnBucket;
 		this.fetchContext = newCtx;
@@ -129,6 +130,7 @@ public class SplitFileFetcher implements ClientGetState {
 				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, fetchContext, maxTempLength, splitUseLengths, recursionLevel+1);
 			}
 		}
+		this.token = token;
 	}
 
 	/** Return the final status of the fetch. Throws an exception, or returns a 
@@ -252,6 +254,10 @@ public class SplitFileFetcher implements ClientGetState {
 	public void cancel() {
 		for(int i=0;i<segments.length;i++)
 			segments[i].cancel();
+	}
+
+	public Object getToken() {
+		return token;
 	}
 
 }

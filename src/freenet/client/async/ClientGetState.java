@@ -10,4 +10,5 @@ public abstract interface ClientGetState {
 
 	public void cancel();
 
+	public Object getToken();
 }

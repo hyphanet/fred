@@ -77,7 +77,7 @@ public class USKManager {
 	}
 
 	public synchronized USKFetcher getFetcher(USK usk, FetcherContext ctx,
-			ClientGetter parent, boolean keepLastData) {
+			ClientRequester parent, boolean keepLastData) {
 		USKFetcher f = (USKFetcher) fetchersByUSK.get(usk);
 		USK clear = usk.clearCopy();
 		if(temporaryBackgroundFetchersLRU.contains(clear))
@@ -86,14 +86,14 @@ public class USKManager {
 			if((f.parent.priorityClass == parent.priorityClass) && f.ctx.equals(ctx) && f.keepLastData == keepLastData)
 				return f;
 		}
-		f = new USKFetcher(usk, this, ctx, parent, 3, false, keepLastData);
+		f = new USKFetcher(usk, this, ctx, parent, 3, false, keepLastData, null);
 		fetchersByUSK.put(usk, f);
 		return f;
 	}
 
 	public USKFetcher getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb) {
 		USKFetcher f = new USKFetcher(usk, this, backgroundFetchContext, 
-				new USKFetcherWrapper(usk, prioClass, chkRequestScheduler, sskRequestScheduler), 3, false, true);
+				new USKFetcherWrapper(usk, prioClass, chkRequestScheduler, sskRequestScheduler), 3, false, true, null);
 		f.addCallback(cb);
 		return f;
 	}
@@ -104,7 +104,7 @@ public class USKManager {
 		synchronized(this) {
 			USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler), 10, true, false);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler), 10, true, false, null);
 				sched = f;
 				backgroundFetchersByClearUSK.put(clear, f);
 			}
@@ -178,7 +178,7 @@ public class USKManager {
 			if(runBackgroundFetch) {
 				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler), 10, true, false);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler), 10, true, false, null);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
@@ -219,5 +219,25 @@ public class USKManager {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Subscribe to a USK. When it is updated, the content will be fetched (subject to the limits in fctx),
+	 * and returned to the callback.
+	 * @param origUSK The USK to poll.
+	 * @param cb Callback, called when we have downloaded a new key.
+	 * @param runBackgroundFetch If true, start a background fetcher for the key, which will run
+	 * forever until we unsubscribe.
+	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
+	 * @return
+	 */
+	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetcherContext fctx, short prio, Object client) {
+		USKRetriever ret = new USKRetriever(fctx, prio, chkRequestScheduler, sskRequestScheduler, client, cb);
+		subscribe(origUSK, ret, runBackgroundFetch);
+		return ret;
+	}
+	
+	public void unsubscribeContent(USK origUSK, USKRetriever ret, boolean runBackgroundFetch) {
+		unsubscribe(origUSK, ret, runBackgroundFetch);
 	}
 }

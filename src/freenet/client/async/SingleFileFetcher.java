@@ -54,7 +54,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	 * @param token 
 	 * @param dontTellClientGet 
 	 */
-	public SingleFileFetcher(ClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, 
+	public SingleFileFetcher(ClientRequester get, GetCompletionCallback cb, ClientMetadata metadata, 
 			ClientKey key, LinkedList metaStrings, FetcherContext ctx, 
 			ArchiveContext actx, int maxRetries, int recursionLevel, 
 			boolean dontTellClientGet, Object token, boolean isEssential, 
@@ -353,7 +353,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, (ClientGetter)parent, ctx, 
-						decompressors, clientMetadata, actx, recursionLevel, returnBucket, false);
+						decompressors, clientMetadata, actx, recursionLevel, returnBucket, false, token);
 				sf.schedule();
 				rcb.onBlockSetFinished(this);
 				// SplitFile will now run.
@@ -544,7 +544,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		return (ClientGetter) parent;
 	}
 
-	public static ClientGetState create(ClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
+	public static ClientGetState create(ClientRequester parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
 		BaseClientKey key = BaseClientKey.getBaseKey(uri);
 		if(key instanceof ClientKey)
 			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
@@ -553,7 +553,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		}
 	}
 
-	private static ClientGetState uskCreate(ClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws FetchException {
+	private static ClientGetState uskCreate(ClientRequester parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws FetchException {
 		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = ctx.uskManager.lookup(usk);
@@ -586,7 +586,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 
 	public static class MyUSKFetcherCallback implements USKFetcherCallback {
 
-		final ClientGetter parent;
+		final ClientRequester parent;
 		final GetCompletionCallback cb;
 		final ClientMetadata clientMetadata;
 		final USK usk;
@@ -599,7 +599,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		final Object token;
 		final Bucket returnBucket;
 		
-		public MyUSKFetcherCallback(ClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, Bucket returnBucket) {
+		public MyUSKFetcherCallback(ClientRequester parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, Bucket returnBucket) {
 			this.parent = parent;
 			this.cb = cb;
 			this.clientMetadata = clientMetadata;
