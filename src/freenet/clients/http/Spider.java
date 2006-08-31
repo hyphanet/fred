@@ -384,7 +384,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 	
 	private HTMLNode createAddBox(PageMaker pageMaker) {
 		HTMLNode addBox = pageMaker.getInfobox("Add a URI");
-		HTMLNode formNode = pageMaker.getContentNode(addBox);
+		HTMLNode formNode = pageMaker.getContentNode(addBox).addChild("form", new String[] { "action", "method" }, new String[] { "", "get" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "action", "add" });
 		formNode.addChild("input", new String[] { "type", "size", "name", "value" }, new String[] { "text", "40", "key", "" });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Add URI" });
