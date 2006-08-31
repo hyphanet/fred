@@ -175,13 +175,15 @@ public class Node {
 	 * content, they know for sure that it was a local request.
 	 * HOWEVER, if we don't do this, then a non-full seized 
 	 * datastore will contain everything requested by the user...
-	 * Also, remote probing is possible.
+	 * Also, remote probing is possible by peers, although it is
+	 * more difficult, and leaves more plausible deniability,
+	 * than the first attack.
 	 * 
 	 * So it may be useful on some darknets, and is useful for 
 	 * debugging, but in general should be off on opennet and 
 	 * most darknets.
 	 */
-	public static final boolean DONT_CACHE_LOCAL_REQUESTS = true;
+	public static final boolean DONT_CACHE_LOCAL_REQUESTS = false;
 	public static final int PACKETS_IN_BLOCK = 32;
 	public static final int PACKET_SIZE = 1024;
 	public static final double DECREMENT_AT_MIN_PROB = 0.25;

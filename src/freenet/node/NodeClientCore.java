@@ -183,7 +183,7 @@ public class NodeClientCore {
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InserterContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
 						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
-						false, uskManager), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 	}
 	
