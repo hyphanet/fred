@@ -33,7 +33,7 @@ public class FilePersistentConfig extends Config {
 	public FilePersistentConfig(File f) throws IOException {
 		this.filename = f;
 		this.tempFilename = new File(f.getPath()+".tmp");
-		boolean filenameExists = f.exists();
+		boolean filenameExists = filename.exists();
 		boolean tempFilenameExists = tempFilename.exists();
 		if(filenameExists && !filename.canWrite()) {
 			Logger.error(this, "Warning: Cannot write to config file: "+filename);
@@ -49,12 +49,14 @@ public class FilePersistentConfig extends Config {
 					initialLoad(filename);
 					return;
 				} catch (FileNotFoundException e) {
-					System.err.println("No config file found, creating new: "+f);
+					System.err.println("Cannot open config file "+filename+" : "+e+" - checking for temp file "+tempFilename);
 				} catch (EOFException e) {
-					System.err.println("Empty config file "+f);
+					System.err.println("Empty config file "+filename+" (end of file)");
 				}
 				// Other IOE's indicate a more serious problem.
 			} else {
+				// We probably won't be able to write it either.
+				System.err.println("Cannot read config file "+filename);
 				throw new IOException("Cannot read config file");
 			}
 		}
@@ -63,14 +65,14 @@ public class FilePersistentConfig extends Config {
 				try {
 					initialLoad(tempFilename);
 				} catch (FileNotFoundException e) {
-					System.err.println("No config file found, creating new: "+f);
+					System.err.println("Cannot open temp config file either: "+tempFilename+" : "+e);
 				} // Other IOE's indicate a more serious problem.
 			} else {
-				throw new IOException("Cannot read config file");
+				System.err.println("Cannot read (temp) config file "+tempFilename);
+				throw new IOException("Cannot read (temp) config file "+tempFilename);
 			}
-		} else {
-			System.err.println("No config file found, creating new: "+f);
 		}
+		System.err.println("No config file found, creating new: "+f);
 	}
 
 	/** Load the config file into a SimpleFieldSet. 
@@ -126,14 +128,26 @@ public class FilePersistentConfig extends Config {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "fs = "+fs);
 		FileOutputStream fos = new FileOutputStream(tempFilename);
-		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos, "UTF-8"));
-		synchronized(this) {
-			fs.writeTo(bw);
+		try {
+			BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos, "UTF-8"));
+			synchronized(this) {
+				fs.writeTo(bw);
+			}
+			bw.close();
+		} catch (IOException e) {
+			fos.close();
+			throw e;
 		}
-		bw.close();
 		if(!tempFilename.renameTo(filename)) {
-			filename.delete();
-			tempFilename.renameTo(filename);
+			if(!filename.delete()) {
+				Logger.error(this, "Could not delete old config file "+filename);
+			}
+			if(!tempFilename.renameTo(filename)) {
+				Logger.error(this, "Could not move new config file "+tempFilename+" over old "+filename);
+				System.err.println("Written and moved "+filename);
+			}
+		} else {
+			System.err.println("Written "+filename);
 		}
 	}
 
