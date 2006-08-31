@@ -169,8 +169,8 @@ public class IPDetectorPluginManager {
 			if(detector.hasDirectlyDetectedIP()) {
 				// We might still be firewalled?
 				// First, check only once per day or startup
-				if(now - lastDetectAttemptEndedTime < 24*60*60*1000) {
-					if(logMINOR) Logger.minor(this, "Node has directly detected IP and we have checked less than 24 hours ago");
+				if(now - lastDetectAttemptEndedTime < 12*60*60*1000) {
+					if(logMINOR) Logger.minor(this, "Node has directly detected IP and we have checked less than 12 hours ago");
 					return;
 				}
 				

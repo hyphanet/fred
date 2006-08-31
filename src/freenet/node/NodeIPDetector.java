@@ -69,6 +69,7 @@ public class NodeIPDetector {
 	 * third parties if available and UP&P if available.
 	 */
 	Peer[] detectPrimaryIPAddress() {
+		Logger.minor(this, "Redetecting IPs...");
 		boolean setMaybeSymmetric = false;
 		Vector addresses = new Vector();
 		if(overrideIPAddress != null) {
@@ -121,6 +122,7 @@ public class NodeIPDetector {
 	   		if(countsByPeer.size() == 1) {
 		   		Iterator it = countsByPeer.keySet().iterator();
 		   		Peer p = (Peer) (it.next());
+		   		Logger.minor(this, "Everyone agrees we are "+p);
 		   		if(!addresses.contains(p)) addresses.add(p);
 	   		} else if(countsByPeer.size() > 1) {
 	   			Iterator it = countsByPeer.keySet().iterator();
@@ -220,9 +222,11 @@ public class NodeIPDetector {
 
 	public void redetectAddress() {
 		Peer[] newIP = detectPrimaryIPAddress();
-		if(Arrays.equals(newIP, lastIP)) return;
+		synchronized(this) {
+			if(Arrays.equals(newIP, lastIP)) return;
+			lastIP = newIP;
+		}
 		arkPutter.update();
-		lastIP = newIP;
 		node.writeNodeFile();
 	}
 

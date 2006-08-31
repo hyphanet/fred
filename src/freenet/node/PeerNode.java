@@ -493,7 +493,7 @@ public class PeerNode implements PeerContext {
             		long tempPeerAddedTime = Long.parseLong(tempPeerAddedTimeString);
             		peerAddedTime = tempPeerAddedTime;
             	} else {
-            		peerAddedTime = 1;
+            		peerAddedTime = 0;
             	}
             	neverConnected = Fields.stringToBool(metadata.get("neverConnected"), false);
             	if((now - peerAddedTime) > (((long) 30)*24*60*60*1000)) {  // 30 days
@@ -1191,13 +1191,17 @@ public class PeerNode implements PeerContext {
     	setDetectedPeer(newPeer);
     }
 
-    private synchronized void setDetectedPeer(Peer newPeer) {
+    private void setDetectedPeer(Peer newPeer) {
     	// Only clear lastAttemptedHandshakeIPUpdateTime if we have a new IP.
     	// Also, we need to call .equals() to propagate any DNS lookups that have been done if the two have the same domain.
-    	if((newPeer != null) && ((detectedPeer == null) || !detectedPeer.equals(newPeer))) {
-    		this.detectedPeer=newPeer;
-    		this.lastAttemptedHandshakeIPUpdateTime = 0;
+    	synchronized(this) {
+    		if((newPeer != null) && ((detectedPeer == null) || !detectedPeer.equals(newPeer))) {
+    			this.detectedPeer=newPeer;
+    			this.lastAttemptedHandshakeIPUpdateTime = 0;
+    			if(!isConnected) return;
+    		} else return;
     	}
+    	sendIPAddressMessage();
 	}
 
 	/**
@@ -1435,6 +1439,15 @@ public class PeerNode implements PeerContext {
             sendAsync(ipMsg, null, 0, null);
         } catch (NotConnectedException e) {
             Logger.error(this, "Completed handshake with "+getPeer()+" but disconnected ("+isConnected+":"+currentTracker+"!!!: "+e, e);
+        }
+    }
+    
+    private void sendIPAddressMessage() {
+        Message ipMsg = DMT.createFNPDetectedIPAddress(getDetectedPeer());
+        try {
+            sendAsync(ipMsg, null, 0, null);
+        } catch (NotConnectedException e) {
+        	Logger.normal(this, "Sending IP change message to "+this+" but disconnected: "+e, e);
         }
     }
 
