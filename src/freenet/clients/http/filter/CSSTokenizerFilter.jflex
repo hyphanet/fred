@@ -296,7 +296,7 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 "/*" ~"*/" {
 	String s = yytext();
 	StringBuffer sb = new StringBuffer(s.length());
-	sb.append("/* comment: ");
+	sb.append("/* ");
 	boolean inPrefix = true;
 	for(int i=2;i<s.length()-2;i++) {
 		char c = s.charAt(i);
