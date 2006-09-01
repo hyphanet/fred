@@ -116,6 +116,12 @@ public class FilePersistentConfig extends Config {
 	}
 	
 	public void store() {
+		synchronized(this) {
+			if(!finishedInit) {
+				Logger.error(this, "Initialization not finished, refusing to write config", new Exception("error"));
+				return;
+			}
+		}
 		try {
 			innerStore();
 		} catch (IOException e) {
