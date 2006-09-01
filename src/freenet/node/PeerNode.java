@@ -1298,8 +1298,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     		handshakeCount = 0;
         	bogusNoderef = false;
 			isConnected = true;
-			stopARKFetcher();
         }
+    	stopARKFetcher();
 		try {
 			// First, the new noderef
 			processNewNoderef(data, offset, length);
