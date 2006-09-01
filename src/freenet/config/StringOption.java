@@ -39,4 +39,8 @@ public class StringOption extends Option {
 		return currentValue.equals(defaultValue);
 	}
 	
+	public void setDefault() {
+		currentValue = defaultValue;
+	}
+	
 }

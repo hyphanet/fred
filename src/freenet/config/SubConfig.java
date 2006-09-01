@@ -204,6 +204,12 @@ public class SubConfig implements Comparable {
 		Option o = (Option) map.get(name);
 		o.setValue(value);
 	}
+
+	public void fixOldDefault(String name, String value) {
+		Option o = (Option) map.get(name);
+		if(o.getValueString().equals(value))
+			o.setDefault();
+	}
 	
 	public String getPrefix(){
 		return prefix;

@@ -43,4 +43,8 @@ public class ShortOption extends Option {
 		return currentValue == defaultValue;
 	}
 	
+	public void setDefault() {
+		currentValue = defaultValue;
+	}
+	
 }

@@ -75,4 +75,7 @@ public abstract class Option {
 	 * Is this option set to the default?
 	 */
 	public abstract boolean isDefault();
+
+	/** Set to the default */
+	public abstract void setDefault();
 }

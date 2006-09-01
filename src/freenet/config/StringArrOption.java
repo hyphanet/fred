@@ -76,4 +76,8 @@ public class StringArrOption extends Option {
 		return currentValue.equals(defaultValue);
 	}
 	
+	public void setDefault() {
+		currentValue = defaultValue;
+	}
+	
 }

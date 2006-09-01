@@ -64,4 +64,8 @@ public class LongOption extends Option {
 		return currentValue == defaultValue;
 	}
 
+	public void setDefault() {
+		currentValue = defaultValue;
+	}
+	
 }

@@ -52,5 +52,9 @@ public class BooleanOption extends Option {
 	public boolean isDefault() {
 		return currentValue == defaultValue;
 	}
+
+	public void setDefault() {
+		currentValue = defaultValue;
+	}
 	
 }

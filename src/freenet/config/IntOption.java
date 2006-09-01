@@ -64,4 +64,8 @@ public class IntOption extends Option {
 		return currentValue == defaultValue;
 	}
 	
+	public void setDefault() {
+		currentValue = defaultValue;
+	}
+	
 }
