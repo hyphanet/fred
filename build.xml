@@ -14,7 +14,8 @@
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 	<property name="javadoc" location="javadoc"/>
 	<property name="svn.revision" value="@custom@"/>
-	<property name="CSSTokenizerFilter.jflex" location="${src}/freenet/clients/http/filter/CSSTokenizerFilter"/>
+	<property name="CSSTokenizerFilter.jflex" location="${src}/freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
+	<property name="CSSTokenizerFilter.java" location="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
 
 
 	<target name="mkdir">
@@ -24,12 +25,12 @@
 
 	<target name="env" depends="mkdir"   description="Learn about the environment">
 		<available file="${lib}/freenet-ext.jar" property="freenet-ext.present"/>
-		<available file="${CSSTokenizerFilter.jflex}.java" property="CSSTokenizerFilter.present"/>
+		<available file="${CSSTokenizerFilter.java}" property="CSSTokenizerFilter.present"/>
 	</target>
 
 	<target name="generate-CSSTokenizerFilter" depends="env" unless="CSSTokenizerFilter.present">
 		<exec dir="${src}" executable="jflex" failonerror="true">
-			<arg line="--nobak ${CSSTokenizerFilter.jflex}.jflex"/>
+			<arg line="--nobak &quot;${CSSTokenizerFilter.jflex}&quot;"/>
 		</exec>
 	</target>
 
@@ -105,10 +106,10 @@
 		<delete dir="${build}"/>
 	</target>
 	<target name="distclean" description="Delete class files, lib dir and docs dir.">
+		<delete dir="${CSSTokenizerFilter.java}"/>
 		<delete dir="${build}"/>
 		<delete dir="${lib}"/>
 		<delete dir="${javadoc}"/>
-		<delete dir="${CSSTokenizerFilter.jflex}.java"/>
 	</target>
 
 
