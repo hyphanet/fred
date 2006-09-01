@@ -139,7 +139,6 @@ public class PluginManager {
 		synchronized (syncObject) {
 			plugins.add(newPlugin);
 		}
-		saveConfig();
 	}
 
 	/**
@@ -154,14 +153,6 @@ public class PluginManager {
 		synchronized (syncObject) {
 			plugins.remove(plugin);
 		}
-		saveConfig();
-	}
-
-	/**
-	 * Saves the configuration.
-	 */
-	private void saveConfig() {
-		config.config.store();
 	}
 
 	/**

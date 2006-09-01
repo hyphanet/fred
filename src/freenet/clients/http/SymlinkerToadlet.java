@@ -17,12 +17,10 @@ import freenet.support.Logger;
 public class SymlinkerToadlet extends Toadlet {
 	
 	private final HashMap linkMap = new HashMap();
-	private final Node node;
 	SubConfig tslconfig;
 	
-	public SymlinkerToadlet(HighLevelSimpleClient client, Node node) {
+	public SymlinkerToadlet(HighLevelSimpleClient client,final Node node) {
 		super(client);
-		this.node = node;
 		tslconfig = new SubConfig("toadletsymlinker", node.config);
 		tslconfig.register("symlinks", null, 9, true, false, "Symlinks in ToadletServer", 
 				"A list of \"alias#target\"'s that forms a bunch of symlinks", 
@@ -69,7 +67,6 @@ public class SymlinkerToadlet extends Toadlet {
 		synchronized (linkMap) {
 			if (linkMap.put(alias, target) == alias) {
 				Logger.normal(this, "Adding link: " + alias + " => " + target);
-				node.config.store();
 				return true;
 			} else {
 				Logger.error(this, "Adding link: " + alias + " => " + target);
@@ -83,7 +80,6 @@ public class SymlinkerToadlet extends Toadlet {
 			Object o;
 			if ((o = linkMap.remove(alias))!= null) {
 				Logger.normal(this, "Removing link: " + alias + " => " + o);
-				node.config.store();
 				return true;
 			} else {
 				Logger.error(this, "Adding link: " + alias + " => " + o);

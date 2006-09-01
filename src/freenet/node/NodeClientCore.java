@@ -736,10 +736,6 @@ public class NodeClientCore {
 			Logger.error(this, "Don't know what to do with "+block+" should be queued for reinsert");
 	}
 
-	public void storeConfig() {
-		node.config.store();
-	}
-
 	public boolean isTestnetEnabled() {
 		return node.isTestnetEnabled();
 	}

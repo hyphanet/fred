@@ -100,11 +100,6 @@ public class PluginManager {
 		return out.toString();
 	}
 	
-	private void saveConfig() {
-		node.config.store();
-	}
-	
-	
 	public void startPlugin(String filename) {
 		if (filename.trim().length() == 0)
 			return;
@@ -141,7 +136,6 @@ public class PluginManager {
 						UserAlert.ERROR));
 			}
 		}
-		saveConfig();
 	}
 	
 	private void registerToadlet(FredPlugin pl){
@@ -176,7 +170,6 @@ public class PluginManager {
 			if (removeKey != null)
 				pluginInfo.remove(removeKey);
 		}
-		saveConfig();
 	}
 	
 	public void addToadletSymlinks(PluginInfoWrapper pi) {
@@ -195,7 +188,6 @@ public class PluginManager {
 				Logger.error(this, "removing Toadlet-link", ex);
 			}
 		}
-		saveConfig();
 	}
 	
 	public void removeToadletSymlinks(PluginInfoWrapper pi) {
@@ -217,7 +209,6 @@ public class PluginManager {
 				Logger.error(this, "removing Toadlet-link: " + rm, ex);
 			}
 		}
-		saveConfig();
 	}
 
 	public String dumpPlugins() {

@@ -623,7 +623,6 @@ public class TextModeClientInterface implements Runnable {
             }catch(Exception e){
             	Logger.error(this, "Error setting node's name");
     		}
-    		n.config.store();
         } else if(uline.startsWith("DISABLEPEER:")) {
         	String nodeIdentifier = (line.substring("DISABLEPEER:".length())).trim();
         	if(!havePeer(nodeIdentifier)) {

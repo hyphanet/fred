@@ -73,8 +73,6 @@ public class BookmarkManager {
 				} catch (MalformedURLException mue) {
 				}
 			}
-			
-			node.storeConfig();
 		}
 	}
 	
@@ -134,7 +132,6 @@ public class BookmarkManager {
 			try {
 				USK u = USK.create(b.key);
 				this.node.uskManager.subscribe(u, this.uskcb, true);
-				node.storeConfig();
 			} catch (MalformedURLException mue) {
 				
 			}
@@ -151,6 +148,5 @@ public class BookmarkManager {
 			}
 		}
 		this.bookmarks.remove(b);
-		node.storeConfig();
 	}
 }

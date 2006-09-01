@@ -84,7 +84,6 @@ public class ConfigToadlet extends Toadlet {
 				}
 			}
 		}
-		config.store();
 		
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Configuration Applied");
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);

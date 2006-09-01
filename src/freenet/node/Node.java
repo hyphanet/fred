@@ -309,10 +309,6 @@ public class Node {
 	private static final long oldestNeverConnectedPeerAgeUpdateInterval = 5000;
 	/** age of oldest never connected peer (milliseconds) */
 	private long oldestNeverConnectedPeerAge;
-	/** Next time to start a ready ARKFetcher */
-	private long nextReadyARKFetcherStartTime = -1;
-	/** Ready ARKFetcher start interval (milliseconds) */
-	private static final long readyARKFetcherStartInterval = 1000;
 	/** Next time to update PeerManagerUserAlert stats */
 	private long nextPeerManagerUserAlertStatsUpdateTime = -1;
 	/** PeerManagerUserAlert stats update interval (milliseconds) */
@@ -460,6 +456,7 @@ public class Node {
 	
 	// The watchdog will be silenced until it's true
 	private boolean hasStarted;
+	private boolean isStopping = false;
 	
 	// Debugging stuff
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
@@ -2374,7 +2371,10 @@ public class Node {
 	 * May be called twice - once in exit (above) and then again
 	 * from the wrapper triggered by calling System.exit(). Beware!
 	 */
-	public void park() {
+	public synchronized void park() {
+		if(isStopping) return;
+		isStopping = true;
+		
 		config.store();
 	}
 
