@@ -623,6 +623,7 @@ public class TextModeClientInterface implements Runnable {
             }catch(Exception e){
             	Logger.error(this, "Error setting node's name");
     		}
+            core.storeConfig();
         } else if(uline.startsWith("DISABLEPEER:")) {
         	String nodeIdentifier = (line.substring("DISABLEPEER:".length())).trim();
         	if(!havePeer(nodeIdentifier)) {
@@ -753,7 +754,7 @@ public class TextModeClientInterface implements Runnable {
         		outsb.append("");
         		
         	} else
-        		n.pluginManager.startPlugin(line.substring("PLUGLOAD:".length()).trim());
+        		n.pluginManager.startPlugin(line.substring("PLUGLOAD:".length()).trim(), true);
             //outsb.append("PLUGLOAD: <pkg.classname>[(@<URI to jarfile.jar>|<<URI to file containing real URI>|* (will load from freenets pluginpool))] - Load plugin.");
         } else if(uline.startsWith("PLUGLIST")) {
         	outsb.append(n.pluginManager.dumpPlugins());

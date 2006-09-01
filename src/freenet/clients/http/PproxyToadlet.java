@@ -63,7 +63,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 		
 		if (request.isParameterSet("load")) {
-			pm.startPlugin(request.getParam("load"));
+			pm.startPlugin(request.getParam("load"), true);
 			//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Loading plugin", "Loading plugin...", ".", 5));
 	
 			headers.put("Location", ".");
@@ -115,7 +115,7 @@ public class PproxyToadlet extends Toadlet {
 				//writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx,"Error", "Plugin not found...", ".", 5));
 			} else {
 				pm.killPlugin(request.getParam("reload"));
-				pm.startPlugin(fn);
+				pm.startPlugin(fn, true);
 				
 				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);

@@ -88,7 +88,7 @@ public class PluginManager {
 			for (int pluginIndex = 0, pluginCount = loadedPluginNames.length; pluginIndex < pluginCount; pluginIndex++) {
 				String pluginName = StringArrOption.decode(loadedPluginNames[pluginIndex]);
 				try {
-					addPlugin(pluginName);
+					addPlugin(pluginName, false);
 				} catch (IllegalArgumentException iae1) {
 				}
 			}
@@ -129,7 +129,7 @@ public class PluginManager {
 	 * @param pluginName
 	 *            The name of the plugin
 	 */
-	public void addPlugin(String pluginName) throws IllegalArgumentException {
+	public void addPlugin(String pluginName, boolean store) throws IllegalArgumentException {
 		Plugin newPlugin = createPlugin(pluginName);
 		if (newPlugin == null) {
 			throw new IllegalArgumentException();
@@ -139,6 +139,8 @@ public class PluginManager {
 		synchronized (syncObject) {
 			plugins.add(newPlugin);
 		}
+		if(store)
+			node.clientCore.storeConfig();
 	}
 
 	/**
@@ -148,11 +150,13 @@ public class PluginManager {
 	 * @param plugin
 	 *            The plugin to remove
 	 */
-	public void removePlugin(Plugin plugin) {
+	public void removePlugin(Plugin plugin, boolean store) {
 		plugin.stopPlugin();
 		synchronized (syncObject) {
 			plugins.remove(plugin);
 		}
+		if(store)
+			node.clientCore.storeConfig();
 	}
 
 	/**

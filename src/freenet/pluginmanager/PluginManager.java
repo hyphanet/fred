@@ -71,7 +71,7 @@ public class PluginManager {
 		if (fns != null)
 			for (int i = 0 ; i < fns.length ; i++) {
 				//System.err.println("Load: " + StringArrOption.decode(fns[i]));
-				startPlugin(StringArrOption.decode(fns[i]));
+				startPlugin(StringArrOption.decode(fns[i]), false);
 			}
 			
 			pmconfig.finishedInitialization();
@@ -100,7 +100,7 @@ public class PluginManager {
 		return out.toString();
 	}
 	
-	public void startPlugin(String filename) {
+	public void startPlugin(String filename, boolean store) {
 		if (filename.trim().length() == 0)
 			return;
 		Logger.normal(this, "Loading plugin: " + filename);
@@ -136,6 +136,7 @@ public class PluginManager {
 						UserAlert.ERROR));
 			}
 		}
+		if(store) core.storeConfig();
 	}
 	
 	private void registerToadlet(FredPlugin pl){
@@ -170,6 +171,8 @@ public class PluginManager {
 			if (removeKey != null)
 				pluginInfo.remove(removeKey);
 		}
+		if(removeKey != null)
+			core.storeConfig();
 	}
 	
 	public void addToadletSymlinks(PluginInfoWrapper pi) {

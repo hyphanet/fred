@@ -17,10 +17,12 @@ import freenet.support.Logger;
 public class SymlinkerToadlet extends Toadlet {
 	
 	private final HashMap linkMap = new HashMap();
+	private final Node node;
 	SubConfig tslconfig;
 	
 	public SymlinkerToadlet(HighLevelSimpleClient client,final Node node) {
 		super(client);
+		this.node = node;
 		tslconfig = new SubConfig("toadletsymlinker", node.config);
 		tslconfig.register("symlinks", null, 9, true, false, "Symlinks in ToadletServer", 
 				"A list of \"alias#target\"'s that forms a bunch of symlinks", 
@@ -48,7 +50,7 @@ public class SymlinkerToadlet extends Toadlet {
 				//System.err.println("Load: " + StringArrOption.decode(fns[i]));
 				String tuple[] = StringArrOption.decode(fns[i]).split("#");
 				if (tuple.length == 2)
-					addLink(tuple[0], tuple[1]);
+					addLink(tuple[0], tuple[1], false);
 			}
 		tslconfig.finishedInitialization();
 		
@@ -59,33 +61,39 @@ public class SymlinkerToadlet extends Toadlet {
 				if (tuple.length == 2)
 					Logger.normal(this, "Added link: " + tuple[0] + " => " + tuple[1]);
 			}
-		addLink("/sl/search/", "/plugins/plugins.Librarian/");
-		addLink("/sl/gallery/", "/plugins/plugins.TestGallery/");
+		addLink("/sl/search/", "/plugins/plugins.Librarian/", false);
+		addLink("/sl/gallery/", "/plugins/plugins.TestGallery/", false);
 	}
 	
-	public boolean addLink(String alias, String target) {
+	public boolean addLink(String alias, String target, boolean store) {
+		boolean ret;
 		synchronized (linkMap) {
 			if (linkMap.put(alias, target) == alias) {
 				Logger.normal(this, "Adding link: " + alias + " => " + target);
-				return true;
+				ret = true;
 			} else {
 				Logger.error(this, "Adding link: " + alias + " => " + target);
-				return false;
+				ret = false;
 			}
 		}
+		if(store) node.clientCore.storeConfig();
+		return ret;
 	}
 	
-	public boolean removeLink(String alias) {
+	public boolean removeLink(String alias, boolean store) {
+		boolean ret;
 		synchronized (linkMap) {
 			Object o;
 			if ((o = linkMap.remove(alias))!= null) {
 				Logger.normal(this, "Removing link: " + alias + " => " + o);
-				return true;
+				ret = true;
 			} else {
 				Logger.error(this, "Adding link: " + alias + " => " + o);
-				return false;
+				ret = false;
 			}
 		}
+		if(store) node.clientCore.storeConfig();
+		return ret;
 	}
 	
 	private String getConfigLoadString() {

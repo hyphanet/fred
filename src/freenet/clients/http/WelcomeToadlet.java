@@ -119,7 +119,7 @@ public class WelcomeToadlet extends Toadlet {
 			return;
 		} else if (request.isParameterSet("addbookmark")) {
 			try {
-				bookmarks.addBookmark(new Bookmark(request.getParam("key"), request.getParam("name")));
+				bookmarks.addBookmark(new Bookmark(request.getParam("key"), request.getParam("name")), true);
 			} catch (MalformedURLException mue) {
 				this.sendBookmarkEditPage(ctx, MODE_ADD, null, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid Freenet key.");
 				return;
@@ -136,7 +136,7 @@ public class WelcomeToadlet extends Toadlet {
 				Bookmark b = (Bookmark)e.nextElement();
 			
 				if (request.isParameterSet("delete_"+b.hashCode())) {
-					bookmarks.removeBookmark(b);
+					bookmarks.removeBookmark(b, true);
 				} else if (request.isParameterSet("edit_"+b.hashCode())) {
 					this.sendBookmarkEditPage(ctx, b);
 					return;
@@ -144,8 +144,8 @@ public class WelcomeToadlet extends Toadlet {
 					// removing it and adding means that any USK subscriptions are updated properly
 					try {
 						Bookmark newbkmk = new Bookmark(request.getParam("key"), request.getParam("name"));
-						bookmarks.removeBookmark(b);
-						bookmarks.addBookmark(newbkmk);
+						bookmarks.removeBookmark(b, false);
+						bookmarks.addBookmark(newbkmk, true);
 					} catch (MalformedURLException mue) {
 						this.sendBookmarkEditPage(ctx, MODE_EDIT, b, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid freenet key.");
 						return;

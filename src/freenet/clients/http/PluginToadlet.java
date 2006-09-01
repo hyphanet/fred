@@ -139,7 +139,7 @@ public class PluginToadlet extends Toadlet {
 			pluginName = httpRequest.getParam("pluginName");
 			boolean added = false;
 			try {
-				pluginManager.addPlugin(pluginName);
+				pluginManager.addPlugin(pluginName, true);
 				added = true;
 			} catch (IllegalArgumentException iae1) {
 			}
@@ -151,14 +151,14 @@ public class PluginToadlet extends Toadlet {
 		} else if ("reload".equals(action)) {
 			pluginName = httpRequest.getParam("pluginName");
 			Plugin plugin = findPlugin(pluginName);
-			pluginManager.removePlugin(plugin);
-			pluginManager.addPlugin(plugin.getClass().getName());
+			pluginManager.removePlugin(plugin, false);
+			pluginManager.addPlugin(plugin.getClass().getName(), false);
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
 			return;
 		} else if ("unload".equals(action)) {
 			pluginName = httpRequest.getParam("pluginName");
 			Plugin plugin = findPlugin(pluginName);
-			pluginManager.removePlugin(plugin);
+			pluginManager.removePlugin(plugin, true);
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
 			return;
 		}

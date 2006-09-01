@@ -736,6 +736,14 @@ public class NodeClientCore {
 			Logger.error(this, "Don't know what to do with "+block+" should be queued for reinsert");
 	}
 
+	public void storeConfig() {
+		node.ps.queueTimedJob(new Runnable() {
+			public void run() {
+				node.config.store();
+			}
+		}, 0);
+	}
+	
 	public boolean isTestnetEnabled() {
 		return node.isTestnetEnabled();
 	}

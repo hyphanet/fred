@@ -73,6 +73,7 @@ public class BookmarkManager {
 				} catch (MalformedURLException mue) {
 				}
 			}
+			node.storeConfig();
 		}
 	}
 	
@@ -85,7 +86,7 @@ public class BookmarkManager {
 		String[] initialbookmarks = sc.getStringArr("bookmarks");
 		for (int i = 0; i < initialbookmarks.length; i++) {
 			try {
-				addBookmark(new Bookmark(initialbookmarks[i]));
+				addBookmark(new Bookmark(initialbookmarks[i]), false);
 			} catch (MalformedURLException mue) {
 				// just ignore that one
 			}
@@ -126,7 +127,7 @@ public class BookmarkManager {
 		this.bookmarks.clear();
 	}
 	
-	public void addBookmark(Bookmark b) {
+	public void addBookmark(Bookmark b, boolean store) {
 		this.bookmarks.add(b);
 		if (b.getKeyType().equals("USK")) {
 			try {
@@ -136,9 +137,10 @@ public class BookmarkManager {
 				
 			}
 		}
+		if(store) node.storeConfig();
 	}
 	
-	public void removeBookmark(Bookmark b) {
+	public void removeBookmark(Bookmark b, boolean store) {
 		if (b.getKeyType().equals("USK")) {
 			try {
 				USK u = USK.create(b.key);
@@ -148,5 +150,6 @@ public class BookmarkManager {
 			}
 		}
 		this.bookmarks.remove(b);
+		if(store) node.storeConfig();
 	}
 }
