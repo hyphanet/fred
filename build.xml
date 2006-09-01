@@ -14,9 +14,8 @@
 	<property name="freenet-ext.location" location="${lib}/freenet-ext.jar"/>
 	<property name="javadoc" location="javadoc"/>
 	<property name="svn.revision" value="@custom@"/>
-	<property name="CSSTokenizerFilter.jflex" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
-	<property name="CSSTokenizerFilter.java" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
 	<property name="CSSTokenizerFilter.relative.jflex" value="freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
+	<property name="CSSTokenizerFilter.java" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
 
 
 	<target name="mkdir">
