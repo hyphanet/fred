@@ -16,6 +16,7 @@
 	<property name="svn.revision" value="@custom@"/>
 	<property name="CSSTokenizerFilter.jflex" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
 	<property name="CSSTokenizerFilter.java" value="${src}/freenet/clients/http/filter/CSSTokenizerFilter.java"/>
+	<property name="CSSTokenizerFilter.relative.jflex" value="freenet/clients/http/filter/CSSTokenizerFilter.jflex"/>
 
 
 	<target name="mkdir">
@@ -31,7 +32,9 @@
 	<target name="generate-CSSTokenizerFilter" depends="env" unless="CSSTokenizerFilter.present">
 		<echo message="Generating CSSTokenizerFilter.java"/>
 		<exec dir="${src}" executable="jflex" failonerror="true" resolveexecutable="true">
-			<arg line="-q --nobak &quot;${CSSTokenizerFilter.jflex}&quot;"/>
+			<arg value="-q"/>
+			<arg value="--nobak"/>
+			<arg value="${CSSTokenizerFilter.relative.jflex}"/>
 		</exec>
 	</target>
 
