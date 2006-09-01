@@ -29,6 +29,7 @@ public class FilePersistentConfig extends Config {
 	final File filename;
 	final File tempFilename;
 	private SimpleFieldSet origConfigFileContents;
+	private boolean finishedInit;
 	
 	public FilePersistentConfig(File f) throws IOException {
 		this.filename = f;
@@ -84,7 +85,7 @@ public class FilePersistentConfig extends Config {
 			LineReadingInputStream lis = new LineReadingInputStream(bis);
 			// Config file is UTF-8 too!
 			synchronized (this) {
-				origConfigFileContents = new SimpleFieldSet(lis, 32768, 128, true, true);	
+				origConfigFileContents = new SimpleFieldSet(lis, 32768, 128, true, true);
 			}
 		} finally {
 			try {
@@ -104,12 +105,14 @@ public class FilePersistentConfig extends Config {
 	 * Finished initialization. So any remaining options must be invalid.
 	 */
 	public synchronized void finishedInit() {
+		finishedInit = true;
 		if(origConfigFileContents == null) return;
 		Iterator i = origConfigFileContents.keyIterator();
 		while(i.hasNext()) {
 			String key = (String) i.next();
 			Logger.error(this, "Unknown option: "+key+" (value="+origConfigFileContents.get(key)+")");
 		}
+		origConfigFileContents = null;
 	}
 	
 	public void store() {
@@ -167,6 +170,8 @@ public class FilePersistentConfig extends Config {
 	public void onRegister(SubConfig config, Option o) {
 		String val, name;
 		synchronized(this) {
+			if(finishedInit)
+				throw new IllegalStateException("onRegister("+config+":"+o+") called after finishedInit() !!");
 			if(origConfigFileContents == null) return;
 			name = config.prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+o.name;
 			val = origConfigFileContents.get(name);
