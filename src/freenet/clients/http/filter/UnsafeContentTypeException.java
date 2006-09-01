@@ -1,5 +1,7 @@
 package freenet.clients.http.filter;
 
+import java.io.IOException;
+
 import freenet.support.HTMLNode;
 
 /**
@@ -8,7 +10,7 @@ import freenet.support.HTMLNode;
  * 
  * Base class for UnknownContentTypeException and KnownUnsafeContentTypeException.
  */
-public abstract class UnsafeContentTypeException extends Exception {
+public abstract class UnsafeContentTypeException extends IOException {
 
 	/**
 	 * Get the contents of the error page.

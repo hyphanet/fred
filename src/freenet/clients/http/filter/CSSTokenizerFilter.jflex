@@ -294,8 +294,26 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 }
 "/*" ~"*/" {
 	String s = yytext();
-	w.write(s);
-	if(debug) log("Matched comment: "+s);
+	StringBuffer sb = new StringBuffer(s.length());
+	sb.append("/* ");
+	boolean inPrefix = true;
+	for(int i=2;i<sb.length()-2;i++) {
+		char c = sb.charAt(i);
+		if(inPrefix && Character.isWhitespace(c)) {
+			continue;
+		}
+		if(Character.isDigit(c) || Character.isWhitespace(c) ||
+			Character.isLetter(c) || c == '.' || c == '_' || c == '-') {
+			// No @, no !, etc; IE has been known to do things with comments
+			// in CSS, and other browsers may too
+			sb.append(c);
+		}
+	}
+	while(Character.isWhitespace(sb.charAt(sb.length()-1)))
+		sb.deleteCharAt(sb.length()-1);
+	sb.append(" */");
+	w.write(sb.toString());
+	if(debug) log("Matched comment: "+s+" -> "+sb.toString());
 }
 "<!--" { 
 	String s = yytext();
