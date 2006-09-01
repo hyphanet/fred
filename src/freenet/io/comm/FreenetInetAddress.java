@@ -260,12 +260,12 @@ public class FreenetInetAddress {
 
 	public boolean isRealInternetAddress(boolean lookup, boolean defaultVal) {
 		if(_address != null) {
-			return IPUtil.checkAddress(_address);
+			return IPUtil.isValidAddress(_address, false);
 		} else {
 			if(lookup) {
 				InetAddress a = getAddress();
 				if(a != null)
-					return IPUtil.checkAddress(a);
+					return IPUtil.isValidAddress(a, false);
 			}
 			return defaultVal;	
 		}

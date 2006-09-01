@@ -189,7 +189,7 @@ public class IPAddressDetector implements Runnable {
 						Logger.debug(
 							this,
 							"Address " + x + ": " + i);
-					if(isValidAddress(i, detector.includeLocalAddressesInNoderefs)) {
+					if(IPUtil.isValidAddress(i, detector.includeLocalAddressesInNoderefs)) {
 						output.add(i);
 					}
 					if(i.isAnyLocalAddress()) {
@@ -208,27 +208,6 @@ public class IPAddressDetector implements Runnable {
 			}
 		}
 		lastAddressList = (InetAddress[]) output.toArray(new InetAddress[output.size()]);
-	}
-
-	public static boolean isValidAddress(InetAddress i, boolean includeLocalAddressesInNoderefs) {
-		if(i.isAnyLocalAddress()) {
-			// Wildcard address, 0.0.0.0, ignore.
-			return false;
-		} else if(i.isLinkLocalAddress() || i.isLoopbackAddress() ||
-				i.isSiteLocalAddress()) {
-			if(includeLocalAddressesInNoderefs) {
-				return true;
-			} else return false;
-		} else if(i.isMulticastAddress()) {
-			// Ignore
-			return false;
-		} else {
-			return true;
-		}
-	}
-
-	protected boolean isInternetAddress(InetAddress addr) {
-		return detector.includeLocalAddressesInNoderefs() || IPUtil.checkAddress(addr);
 	}
 
 	public void run() {

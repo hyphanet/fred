@@ -189,7 +189,7 @@ public class IPDetectorPluginManager {
 						// Unique IP address?
 						Peer peer = p.getPeer();
 						InetAddress addr = peer.getAddress(false);
-						if(p.isConnected() && (peer != null) && (addr != null) && IPUtil.checkAddress(peer.getAddress())) {
+						if(p.isConnected() && (peer != null) && (addr != null) && IPUtil.isValidAddress(peer.getAddress(), false)) {
 							// Connected node, on a real internet IP address.
 							// Is it internal?
 							boolean internal = false;
@@ -380,7 +380,7 @@ public class IPDetectorPluginManager {
 						failed = true;
 						for(int i=0;i<v.size();i++) {
 							DetectedIP ip = (DetectedIP) v.get(i);
-							if(!((ip.publicAddress == null) || !IPUtil.checkAddress(ip.publicAddress))) {
+							if(!((ip.publicAddress == null) || !IPUtil.isValidAddress(ip.publicAddress, false))) {
 								if(logMINOR) Logger.minor(this, "Address checked out");
 								failed = false;
 							}

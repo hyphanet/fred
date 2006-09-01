@@ -155,7 +155,7 @@ public class Peer implements WritableToDataOutputStream {
 	public InetAddress getAddress(boolean doDNSRequest, boolean allowLocal) throws LocalAddressException {
 		InetAddress a = addr.getAddress(doDNSRequest);
 		if(a == null) return null;
-		if(allowLocal || IPUtil.checkAddress(a)) return a;
+		if(allowLocal || IPUtil.isValidAddress(a, false)) return a;
 		throw new LocalAddressException();
 	}
 	

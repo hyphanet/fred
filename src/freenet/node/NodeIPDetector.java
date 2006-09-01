@@ -121,7 +121,7 @@ public class NodeIPDetector {
 	   			if((p == null) || p.isNull()) continue;
 	   			// DNSRequester doesn't deal with our own node
 	   			InetAddress ip = p.getAddress(true);
-	   			if(!IPUtil.checkAddress(ip)) continue;
+	   			if(!IPUtil.isValidAddress(ip, false)) continue;
 	   			Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
 	   			if(countsByPeer.containsKey(ip)) {
 	   				Integer count = (Integer) countsByPeer.get(p);
@@ -220,7 +220,7 @@ public class NodeIPDetector {
 		InetAddress[] addrs = ipDetector.getAddress();
 		if(addrs == null || addrs.length == 0) return false;
 		for(int i=0;i<addrs.length;i++) {
-			if(IPAddressDetector.isValidAddress(addrs[i], false)) {
+			if(IPUtil.isValidAddress(addrs[i], false)) {
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Has a directly detected IP: "+addrs[i]);
 				return true;
