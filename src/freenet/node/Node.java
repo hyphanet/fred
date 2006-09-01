@@ -831,8 +831,6 @@ public class Node {
 
 		// Bandwidth limit
 
-		// FIXME These should not be static !!!! Need a context object for BT for bwlimiting.
-		// See bug 77
 		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, 
 				"Output bandwidth limit (bytes per second)", "Hard output bandwidth limit (bytes/sec); the node should almost never exceed this", 
 				new IntCallback() {
