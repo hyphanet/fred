@@ -152,6 +152,10 @@ public class IPDetectorPluginManager {
 		Peer[] nodeAddrs = detector.getPrimaryIPAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
+			if(plugins.length == 0) {
+				detector.hasDetectedPM();
+				return;
+			}
 			if(runner != null) {
 				if(logMINOR) Logger.minor(this, "Already running IP detection plugins");
 				return;
@@ -262,6 +266,9 @@ public class IPDetectorPluginManager {
 					
 					if(now - firstTimeUrgent > 2*60*1000)
 						detect = true;
+					
+					if(!(detector.oldIPAddress != null && detector.oldIPAddress.isRealInternetAddress(false, false)))
+						detect = true; // else wait 2 minutes
 					
 				} else {
 					if(logMINOR) Logger.minor(this, "Not urgent; conns="+conns.length);
@@ -452,6 +459,7 @@ public class IPDetectorPluginManager {
 				detector.processDetectedIPs(list);
 			} finally {
 				runner = null;
+				detector.hasDetectedPM();
 			}
 		}
 

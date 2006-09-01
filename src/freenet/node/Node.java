@@ -1348,6 +1348,7 @@ public class Node {
 		"but this will cause some disruption, and may not be 100% reliable.";
 	
 	void start(boolean noSwaps) throws NodeInitException {
+		
 		if(!noSwaps)
 			lm.startSender(this, this.swapInterval);
 		nodePinger.start();
@@ -1375,6 +1376,8 @@ public class Node {
 //		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
 //		pluginManager3 = new freenet.plugin_new.PluginManager(pluginManagerConfig);
 		
+		ipDetector.start();
+		
 		// Node Updater
 		try{
 			nodeUpdater = NodeUpdater.maybeCreate(this, config);
@@ -1391,8 +1394,6 @@ public class Node {
 		server.register(fproxy, "/", false);
 		server.register(pproxy, "/plugins/", true);
 		 * */
-		
-		ipDetector.start();
 		
 		// Start testnet handler
 		if(testnetHandler != null)

@@ -50,6 +50,8 @@ public class NodeIPDetector {
 	private final NodeARKInserter arkPutter;
 	/** Set when we have grounds to believe that we may be behind a symmetric NAT. */
 	boolean maybeSymmetric;
+	private boolean hasDetectedPM;
+	private boolean hasDetectedIAD;
 	
 	SimpleUserAlert maybeSymmetricAlert;
 	
@@ -58,7 +60,7 @@ public class NodeIPDetector {
 		this.ticker = node.ps;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
 		ipDetector = new IPAddressDetector(10*1000, this);
-		primaryIPUndetectedAlert = new IPUndetectedUserAlert();
+		primaryIPUndetectedAlert = new IPUndetectedUserAlert(this);
 		arkPutter = new NodeARKInserter(node, this);
 	}
 	
@@ -69,20 +71,29 @@ public class NodeIPDetector {
 	 * third parties if available and UP&P if available.
 	 */
 	Peer[] detectPrimaryIPAddress() {
+		boolean addedValidIP = false;
 		Logger.minor(this, "Redetecting IPs...");
 		boolean setMaybeSymmetric = false;
 		Vector addresses = new Vector();
 		if(overrideIPAddress != null) {
 			// If the IP is overridden, the override has to be the first element.
-			addresses.add(new Peer(overrideIPAddress, node.portNumber));
+			Peer p = new Peer(overrideIPAddress, node.portNumber);
+			addresses.add(p);
+			if(p.getFreenetAddress().isRealInternetAddress(false, true))
+				addedValidIP = true;
 		}
 	   	InetAddress[] detectedAddrs = ipDetector.getAddress();
+	   	synchronized(this) {
+	   		hasDetectedIAD = true;
+	   	}
 	   	if(detectedAddrs != null) {
 	   		for(int i=0;i<detectedAddrs.length;i++) {
 	   			Peer p = new Peer(detectedAddrs[i], node.portNumber);
 	   			if(!addresses.contains(p)) {
 	   				Logger.normal(this, "Detected IP address: "+p);
 	   				addresses.add(p);
+	   				if(p.getFreenetAddress().isRealInternetAddress(false, false))
+	   					addedValidIP = true;
 	   			}
 	   		}
 	   	}
@@ -94,6 +105,7 @@ public class NodeIPDetector {
 	   			if(!addresses.contains(a)) {
 	   				Logger.normal(this, "Plugin detected IP address: "+a);
 	   				addresses.add(a);
+	   				addedValidIP = true;
 	   			}
 	   		}
 	   	}
@@ -123,7 +135,11 @@ public class NodeIPDetector {
 		   		Iterator it = countsByPeer.keySet().iterator();
 		   		Peer p = (Peer) (it.next());
 		   		Logger.minor(this, "Everyone agrees we are "+p);
-		   		if(!addresses.contains(p)) addresses.add(p);
+		   		if(!addresses.contains(p)) {
+		   			if(p.getFreenetAddress().isRealInternetAddress(false, false))
+		   				addedValidIP = true;
+		   			addresses.add(p);
+		   		}
 	   		} else if(countsByPeer.size() > 1) {
 	   			Iterator it = countsByPeer.keySet().iterator();
 	   			// Take two most popular addresses.
@@ -147,11 +163,15 @@ public class NodeIPDetector {
 		   				if(!addresses.contains(best)) {
 		   					Logger.normal(this, "Adding best peer "+best+" ("+bestPopularity+")");
 		   					addresses.add(best);
+				   			if(best.getFreenetAddress().isRealInternetAddress(false, false))
+				   				addedValidIP = true;
 		   				}
 		   				if((secondBest != null) && (secondBestPopularity > 2)) {
 		   					if(!addresses.contains(secondBest)) {
 		   						Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+")");
 		   						addresses.add(secondBest);
+					   			if(secondBest.getFreenetAddress().isRealInternetAddress(false, false))
+					   				addedValidIP = true;
 		   					}
 			   				if(best.getAddress().equals(secondBest.getAddress()) && bestPopularity == 1) {
 			   					Logger.error(this, "Hrrrm, maybe this is a symmetric NAT? Expect trouble connecting!");
@@ -180,10 +200,10 @@ public class NodeIPDetector {
 	   		}
 	   	}
 	   	if(node.clientCore != null) {
-	   		if (addresses.isEmpty()) {
-	   			node.clientCore.alerts.register(primaryIPUndetectedAlert);
-	   		} else {
+	   		if (addedValidIP) {
 	   			node.clientCore.alerts.unregister(primaryIPUndetectedAlert);
+	   		} else {
+	   			node.clientCore.alerts.register(primaryIPUndetectedAlert);
 	   		}
 	   	}
 	   	lastIPAddress = (Peer[]) addresses.toArray(new Peer[addresses.size()]);
@@ -361,5 +381,15 @@ public class NodeIPDetector {
 	public void registerIPDetectorPlugin(FredPluginIPDetector detector) {
 		ipDetectorManager.register(detector);
 	} // FIXME what about unloading?
+
+	public synchronized boolean isDetecting() {
+		return !(hasDetectedPM && hasDetectedIAD);
+	}
+
+	void hasDetectedPM() {
+		synchronized(this) {
+			hasDetectedPM = true;
+		}
+	}
 	
 }
