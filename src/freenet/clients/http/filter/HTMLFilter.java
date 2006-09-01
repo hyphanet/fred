@@ -288,6 +288,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								saveComment(b, w, this);
 								b = new StringBuffer(100);
 								mode = INTEXT;
+							} else {
+								b.append(c);
+								if(c != '-')
+									mode = INTAGCOMMENT;
 							}
 							break;
 						case INTAGWHITESPACE :

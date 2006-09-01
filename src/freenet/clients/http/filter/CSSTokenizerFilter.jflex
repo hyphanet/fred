@@ -292,16 +292,18 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 	w.write(s);
 	if(debug) log("Matched whitespace: "+s);
 }
+//"/*"([^*]|[\r\n]|("*"+([^*/]|[\r\n])))*"*"*"/" {
 "/*" ~"*/" {
 	String s = yytext();
 	StringBuffer sb = new StringBuffer(s.length());
-	sb.append("/* ");
+	sb.append("/* comment: ");
 	boolean inPrefix = true;
-	for(int i=2;i<sb.length()-2;i++) {
-		char c = sb.charAt(i);
+	for(int i=2;i<s.length()-2;i++) {
+		char c = s.charAt(i);
 		if(inPrefix && Character.isWhitespace(c)) {
 			continue;
 		}
+		inPrefix = false;
 		if(Character.isDigit(c) || Character.isWhitespace(c) ||
 			Character.isLetter(c) || c == '.' || c == '_' || c == '-') {
 			// No @, no !, etc; IE has been known to do things with comments
