@@ -372,10 +372,6 @@ public class WelcomeToadlet extends Toadlet {
 		versionContent.addChild("br");
 		versionContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
 		versionContent.addChild("br");
-		if((Version.buildNumber() < Version.highestSeenBuild) && advancedDarknetOutputEnabled) {
-			versionContent.addChild("b", "A newer version is available! (Build #" + Version.highestSeenBuild + ")");
-			versionContent.addChild("br");
-		}
 		HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
 		shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "exit", "true" });
 		shutdownForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Shutdown the node" });
