@@ -7,8 +7,8 @@ public class BooleanOption extends Option {
 	private boolean currentValue;
 	
 	public BooleanOption(SubConfig conf, String optionName, boolean defaultValue, int sortOrder, 
-			boolean expert, String shortDesc, String longDesc, BooleanCallback cb) {
-		super(conf, optionName, sortOrder, expert, shortDesc, longDesc);
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, BooleanCallback cb) {
+		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -47,6 +47,10 @@ public class BooleanOption extends Option {
 			currentValue = false;
 		} else
 			throw new OptionFormatException("Unrecognized boolean: "+val);
+	}
+
+	public boolean isDefault() {
+		return currentValue == defaultValue;
 	}
 	
 }

@@ -137,7 +137,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		allRequestsByClientRequest = new HashMap();
 		
 		this.name = name;
-		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, "Priority policy of the "+name+"scheduler", "Set the priority policy scheme used by the scheduler. Could be one of ["+PRIORITY_HARD+", "+PRIORITY_SOFT+"]",
+		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false, "Priority policy of the "+name+"scheduler", "Set the priority policy scheme used by the scheduler. Could be one of ["+PRIORITY_HARD+", "+PRIORITY_SOFT+"]",
 				new PrioritySchedulerCallback(this));
 		this.choosenPriorityScheduler = sc.getString(name+"_priority_policy");
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);

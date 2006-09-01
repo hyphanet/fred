@@ -12,8 +12,8 @@ public class LongOption extends Option {
 	private String cachedStringValue;
 
 	public LongOption(SubConfig conf, String optionName, long defaultValue, String defaultValueString, 
-			int sortOrder, boolean expert, String shortDesc, String longDesc, LongCallback cb) {
-		super(conf, optionName, sortOrder, expert, shortDesc, longDesc);
+			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
+		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -21,8 +21,8 @@ public class LongOption extends Option {
 	}
 	
 	public LongOption(SubConfig conf, String optionName, String defaultValueString, 
-			int sortOrder, boolean expert, String shortDesc, String longDesc, LongCallback cb) {
-		super(conf, optionName, sortOrder, expert, shortDesc, longDesc);
+			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
+		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = Fields.parseLong(defaultValueString);
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -58,6 +58,10 @@ public class LongOption extends Option {
 		long x = Fields.parseLong(val);
 		cachedStringValue = val;
 		currentValue = x;
+	}
+
+	public boolean isDefault() {
+		return currentValue == defaultValue;
 	}
 
 }

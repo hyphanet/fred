@@ -100,7 +100,7 @@ public class NodeClientCore {
 		
 		// Temp files
 		
-		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, "Temp files directory", "Name of directory to put temporary files in", 
+		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, false, "Temp files directory", "Name of directory to put temporary files in", 
 				new StringCallback() {
 					public String get() {
 						return tempDir.getPath();
@@ -126,7 +126,7 @@ public class NodeClientCore {
 		}
 
 		// Persistent temp files
-		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), sortOrder++, true, "Persistent temp files directory", "Name of directory to put persistent temp files in",
+		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), sortOrder++, true, false, "Persistent temp files directory", "Name of directory to put persistent temp files in",
 				new StringCallback() {
 					public String get() {
 						return persistentTempBucketFactory.getDir().toString();
@@ -150,7 +150,7 @@ public class NodeClientCore {
 		
 		// Downloads directory
 		
-		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
+		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, true, "Default download directory", "The directory to save downloaded files into by default", new StringCallback() {
 
 			public String get() {
 				return downloadDir.getPath();

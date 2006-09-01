@@ -58,15 +58,15 @@ public class TextModeClientInterfaceServer implements Runnable {
 		
 		NodeClientCore core = node.clientCore;
 		
-		TMCIConfig.register("enabled", true, 1, true, "Enable TMCI", "Whether to enable the TMCI",
+		TMCIConfig.register("enabled", true, 1, true, false, "Enable TMCI", "Whether to enable the TMCI",
 				new TMCIEnabledCallback(core));
-		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
+		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, false, "IP address to bind to", "IP address to bind to",
 				new TMCIBindtoCallback(core));
-		TMCIConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
+		TMCIConfig.register("allowedHosts", "127.0.0.1", 2, true, false, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
 				new TMCIAllowedHostsCallback(core));
-		TMCIConfig.register("port", 2323, 1, true, "Telnet port", "Telnet port number",
+		TMCIConfig.register("port", 2323, 1, true, false, "Telnet port", "Telnet port number",
         		new TCMIPortNumberCallback(core));
-		TMCIConfig.register("directEnabled", false, 1, true, "Enable on stdout/stdin?", "Enable text mode client interface on standard input/output? (.enabled refers to providing a telnet-style server, this runs it over a socket)",
+		TMCIConfig.register("directEnabled", false, 1, true, false, "Enable on stdout/stdin?", "Enable text mode client interface on standard input/output? (.enabled refers to providing a telnet-style server, this runs it over a socket)",
 				new TMCIDirectEnabledCallback(core));
 		
 		boolean TMCIEnabled = TMCIConfig.getBoolean("enabled");

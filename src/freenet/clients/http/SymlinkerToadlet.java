@@ -24,7 +24,7 @@ public class SymlinkerToadlet extends Toadlet {
 		super(client);
 		this.node = node;
 		tslconfig = new SubConfig("toadletsymlinker", node.config);
-		tslconfig.register("symlinks", null, 9, true, "Symlinks in ToadletServer", 
+		tslconfig.register("symlinks", null, 9, true, false, "Symlinks in ToadletServer", 
 				"A list of \"alias#target\"'s that forms a bunch of symlinks", 
         		new StringArrCallback() {
 			public String get() {

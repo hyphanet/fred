@@ -12,8 +12,8 @@ public class IntOption extends Option {
 	private String cachedStringValue;
 	
 	public IntOption(SubConfig conf, String optionName, int defaultValue, String defaultValueString,
-			int sortOrder, boolean expert, String shortDesc, String longDesc, IntCallback cb) {
-		super(conf, optionName, sortOrder, expert, shortDesc, longDesc);
+			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -21,8 +21,8 @@ public class IntOption extends Option {
 	}
 
 	public IntOption(SubConfig conf, String optionName, String defaultValueString,
-			int sortOrder, boolean expert, String shortDesc, String longDesc, IntCallback cb) {
-		super(conf, optionName, sortOrder, expert, shortDesc, longDesc);
+			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = Fields.parseInt(defaultValueString);
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -58,6 +58,10 @@ public class IntOption extends Option {
 	public String getValueString() {
 		if(cachedStringValue != null) return cachedStringValue;
 		return Integer.toString(getValue());
+	}
+
+	public boolean isDefault() {
+		return currentValue == defaultValue;
 	}
 	
 }

@@ -240,7 +240,7 @@ public class NodeIPDetector {
 
 	public int registerConfigs(SubConfig nodeConfig, int sortOrder) {
 		// IP address override
-		nodeConfig.register("ipAddressOverride", "", sortOrder++, true, "IP address override", "IP address override (not usually needed)", new StringCallback() {
+		nodeConfig.register("ipAddressOverride", "", sortOrder++, true, false, "IP address override", "IP address override (not usually needed)", new StringCallback() {
 
 			public String get() {
 				if(overrideIPAddress == null) return "";
@@ -285,7 +285,7 @@ public class NodeIPDetector {
 		
 		// Temporary IP address hint
 		
-		nodeConfig.register("tempIPAddressHint", "", sortOrder++, false, "Temporary IP address hint", "Temporary hint to what our IP might be; deleted after use", new StringCallback() {
+		nodeConfig.register("tempIPAddressHint", "", sortOrder++, false, false, "Temporary IP address hint", "Temporary hint to what our IP might be; deleted after use", new StringCallback() {
 
 			public String get() {
 				return "";
@@ -320,7 +320,7 @@ public class NodeIPDetector {
 		
 		// Include local IPs in noderef file
 		
-		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, "Include local addresses in noderef", "Whether to include local addresses (LAN and localhost) in node references. This will not be useful unless the other side sets metadata.allowLocalAddresses=true for this reference.", new BooleanCallback() {
+		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "Include local addresses in noderef", "Whether to include local addresses (LAN and localhost) in node references. This will not be useful unless the other side sets metadata.allowLocalAddresses=true for this reference.", new BooleanCallback() {
 
 			public boolean get() {
 				return includeLocalAddressesInNoderefs;

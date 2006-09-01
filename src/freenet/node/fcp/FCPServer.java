@@ -294,23 +294,23 @@ public class FCPServer implements Runnable {
 	
 	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException, InvalidConfigValueException {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
-		fcpConfig.register("enabled", true, 2, true, "Is FCP server enabled ?", "Is FCP server enabled ?", new FCPEnabledCallback(core));
+		fcpConfig.register("enabled", true, 2, true, false, "Is FCP server enabled ?", "Is FCP server enabled ?", new FCPEnabledCallback(core));
 		fcpConfig.register("port", FCPServer.DEFAULT_FCP_PORT /* anagram of 1984, and 1000 up from old number */,
-				2, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(core));
-		fcpConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind the FCP server to", new FCPBindtoCallback(core));
-		fcpConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the FCP server. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24", new FCPAllowedHostsCallback(core));
+				2, true, true, "FCP port number", "FCP port number", new FCPPortNumberCallback(core));
+		fcpConfig.register("bindTo", "127.0.0.1", 2, true, false, "IP address to bind to", "IP address to bind the FCP server to", new FCPBindtoCallback(core));
+		fcpConfig.register("allowedHosts", "127.0.0.1", 2, true, false, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the FCP server. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24", new FCPAllowedHostsCallback(core));
 		PersistentDownloadsEnabledCallback cb1;
 		PersistentDownloadsFileCallback cb2;
 		PersistentDownloadsIntervalCallback cb3;
-		fcpConfig.register("persistentDownloadsEnabled", true, 3, true, "Enable persistent downloads?", "Whether to enable Persistence=forever for FCP requests. Meaning whether to support requests which persist over node restarts; they must be written to disk and this may constitute a security risk for some people.",
+		fcpConfig.register("persistentDownloadsEnabled", true, 3, true, true, "Enable persistent downloads?", "Whether to enable Persistence=forever for FCP requests. Meaning whether to support requests which persist over node restarts; they must be written to disk and this may constitute a security risk for some people.",
 				cb1 = new PersistentDownloadsEnabledCallback());
 		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");
-		fcpConfig.register("persistentDownloadsFile", "downloads.dat", 4, true, "Filename to store persistent downloads in", "Filename to store details of persistent downloads to",
+		fcpConfig.register("persistentDownloadsFile", "downloads.dat", 4, true, false, "Filename to store persistent downloads in", "Filename to store details of persistent downloads to",
 				cb2 = new PersistentDownloadsFileCallback());
 		String persistentDownloadsDir = 
 			fcpConfig.getString("persistentDownloadsFile");
 		
-		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), 5, true, "Interval between writing persistent downloads to disk", "Interval between writing persistent downloads to disk",
+		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), 5, true, false, "Interval between writing persistent downloads to disk", "Interval between writing persistent downloads to disk",
 				cb3 = new PersistentDownloadsIntervalCallback());
 		
 		long persistentDownloadsInterval = fcpConfig.getLong("persistentDownloadsInterval");

@@ -13,18 +13,21 @@ public abstract class Option {
 	final int sortOrder;
 	/** Is this config variable expert-only? */
 	final boolean expert;
+	/** Is this config variable to be written out even if it uses the default value? */
+	final boolean forceWrite;
 	/** Short description of value e.g. "FCP port" */
 	final String shortDesc;
 	/** Long description of value e.g. "The TCP port to listen for FCP connections on" */
 	final String longDesc;
 	
-	Option(SubConfig config, String name, int sortOrder, boolean expert, String shortDesc, String longDesc) {
+	Option(SubConfig config, String name, int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc) {
 		this.config = config;
 		this.name = name;
 		this.sortOrder = sortOrder;
 		this.expert = expert;
 		this.shortDesc = shortDesc;
 		this.longDesc = longDesc;
+		this.forceWrite = forceWrite;
 	}
 
 	/**
@@ -67,4 +70,9 @@ public abstract class Option {
 	public boolean isExpert(){
 		return expert;
 	}
+
+	/**
+	 * Is this option set to the default?
+	 */
+	public abstract boolean isDefault();
 }

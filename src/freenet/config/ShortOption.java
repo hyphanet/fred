@@ -9,8 +9,8 @@ public class ShortOption extends Option {
 	private short currentValue;
 	
 	public ShortOption(SubConfig conf, String optionName, short defaultValue, int sortOrder, 
-			boolean expert, String shortDesc, String longDesc, ShortCallback cb) {
-		super(conf, optionName, sortOrder, expert, shortDesc, longDesc);
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, ShortCallback cb) {
+		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -37,6 +37,10 @@ public class ShortOption extends Option {
 	public void setInitialValue(String val) throws InvalidConfigValueException {
 		short x = Fields.parseShort(val);
 		currentValue = x;
+	}
+
+	public boolean isDefault() {
+		return currentValue == defaultValue;
 	}
 	
 }

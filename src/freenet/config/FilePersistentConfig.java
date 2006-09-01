@@ -159,7 +159,7 @@ public class FilePersistentConfig extends Config {
 		}
 		for(int i=0;i<configs.length;i++) {
 			SimpleFieldSet scfs = configs[i].exportFieldSet();
-			fs.put(configs[i].prefix, scfs);
+			fs.tput(configs[i].prefix, scfs);
 		}
 		return fs;
 	}

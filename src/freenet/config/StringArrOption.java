@@ -13,16 +13,16 @@ public class StringArrOption extends Option {
     public static final String delimiter = ";";
 	
 	public StringArrOption(SubConfig conf, String optionName, String defaultValue, int sortOrder, 
-			boolean expert, String shortDesc, String longDesc, StringArrCallback cb) {
-		super(conf, optionName, sortOrder, expert, shortDesc, longDesc);
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringArrCallback cb) {
+		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = (defaultValue==null)?"":defaultValue;
 		this.cb = cb;
 		this.currentValue = (defaultValue==null)?"":defaultValue;
 	}
 	
 	public StringArrOption(SubConfig conf, String optionName, String defaultValue[], int sortOrder, 
-			boolean expert, String shortDesc, String longDesc, StringArrCallback cb) {
-		this(conf, optionName, arrayToString(defaultValue), sortOrder, expert, shortDesc, longDesc, cb);
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringArrCallback cb) {
+		this(conf, optionName, arrayToString(defaultValue), sortOrder, expert, forceWrite, shortDesc, longDesc, cb);
 	}
 	
 	/** Get the current value. This is the value in use if we have finished
@@ -70,6 +70,10 @@ public class StringArrOption extends Option {
 
 	public String getDefaultValue() {
 		return defaultValue;
+	}
+
+	public boolean isDefault() {
+		return currentValue.equals(defaultValue);
 	}
 	
 }

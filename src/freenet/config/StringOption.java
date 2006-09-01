@@ -7,8 +7,8 @@ public class StringOption extends Option {
 	private String currentValue;
 	
 	public StringOption(SubConfig conf, String optionName, String defaultValue, int sortOrder, 
-			boolean expert, String shortDesc, String longDesc, StringCallback cb) {
-		super(conf, optionName, sortOrder, expert, shortDesc, longDesc);
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringCallback cb) {
+		super(conf, optionName, sortOrder, expert, forceWrite, shortDesc, longDesc);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -33,6 +33,10 @@ public class StringOption extends Option {
 
 	public void setInitialValue(String val) throws InvalidConfigValueException {
 		this.currentValue = val;
+	}
+
+	public boolean isDefault() {
+		return currentValue.equals(defaultValue);
 	}
 	
 }

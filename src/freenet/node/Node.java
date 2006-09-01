@@ -729,7 +729,7 @@ public class Node {
 		SubConfig nodeConfig = new SubConfig("node", config);
 		
 		
-		nodeConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, "AggressiveGC modificator", "Enables the user to tweak the time in between GC and forced finalization. SHOULD NOT BE CHANGED unless you know what you're doing! -1 means : disable forced call to System.gc() and System.runFinalization()",
+		nodeConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "AggressiveGC modificator", "Enables the user to tweak the time in between GC and forced finalization. SHOULD NOT BE CHANGED unless you know what you're doing! -1 means : disable forced call to System.gc() and System.runFinalization()",
 				new IntCallback() {
 					public int get() {
 						return aggressiveGCModificator;
@@ -755,14 +755,14 @@ public class Node {
 		
 
 		
-		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, "IP address to bind to", "IP address to bind to",
+		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, false, "IP address to bind to", "IP address to bind to",
 				new NodeBindtoCallback(this));
 		
 		this.bindto = nodeConfig.getString("bindTo");
 		
 		// Determine the port number
 		
-		nodeConfig.register("listenPort", -1 /* means random */, sortOrder++, true, "FNP port number (UDP)", "UDP port for node-to-node communications (Freenet Node Protocol)",
+		nodeConfig.register("listenPort", -1 /* means random */, sortOrder++, true, true, "FNP port number (UDP)", "UDP port for node-to-node communications (Freenet Node Protocol)",
 				new IntCallback() {
 					public int get() {
 						return portNumber;
@@ -831,7 +831,7 @@ public class Node {
 
 		// Bandwidth limit
 
-		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, 
+		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, true,
 				"Output bandwidth limit (bytes per second)", "Hard output bandwidth limit (bytes/sec); the node should almost never exceed this", 
 				new IntCallback() {
 					public int get() {
@@ -856,7 +856,7 @@ public class Node {
 		requestOutputThrottle = 
 			new TokenBucket(Math.max(obwLimit*60, 32768*20), (1000L*1000L*1000L) /  obwLimit, 0);
 		
-		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false,
+		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true,
 				"Input bandwidth limit (bytes per second)", "Input bandwidth limit (bytes/sec); the node will try not to exceed this; -1 = 4x set outputBandwidthLimit",
 				new IntCallback() {
 					public int get() {
@@ -890,7 +890,7 @@ public class Node {
 		
 		// SwapRequestInterval
 		
-		nodeConfig.register("swapRequestSendInterval", 2000, sortOrder++, true,
+		nodeConfig.register("swapRequestSendInterval", 2000, sortOrder++, true, false,
 				"Swap request send interval (ms)", "Interval between swap attempting to send swap requests in milliseconds. Leave this alone!",
 				new IntCallback() {
 					public int get() {
@@ -953,7 +953,7 @@ public class Node {
 
 		// Directory for node-related files other than store
 		
-		nodeConfig.register("nodeDir", ".", sortOrder++, true, "Node directory", "Name of directory to put node-related files e.g. peers list in", 
+		nodeConfig.register("nodeDir", ".", sortOrder++, true, false, "Node directory", "Name of directory to put node-related files e.g. peers list in", 
 				new StringCallback() {
 					public String get() {
 						return nodeDir.getPath();
@@ -993,7 +993,7 @@ public class Node {
 		usm.setLowLevelFilter(packetMangler = new FNPPacketMangler(this));
 		
 		// Extra Peer Data Directory
-		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, "Extra peer data directory", "Name of directory to put extra peer data in",
+		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+portNumber).toString(), sortOrder++, true, false, "Extra peer data directory", "Name of directory to put extra peer data in",
 				new StringCallback() {
 					public String get() {
 						return extraPeerDataDir.getPath();
@@ -1011,13 +1011,13 @@ public class Node {
 		}
 		
         // Name 	 
-        nodeConfig.register("name", myName, sortOrder++, false, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node", 	 
+        nodeConfig.register("name", myName, sortOrder++, false, true, "Node name for darknet", "Node name; you may want to set this to something descriptive if running on darknet e.g. Fred Blogg's Node; it is visible to any connecting node", 	 
                         new NodeNameCallback(this)); 	 
         myName = nodeConfig.getString("name"); 	 
 
 		
 		// Datastore
-		nodeConfig.register("storeSize", "1G", sortOrder++, false, "Store size in bytes", "Store size in bytes", 
+		nodeConfig.register("storeSize", "1G", sortOrder++, false, true, "Store size in bytes", "Store size in bytes", 
 				new LongCallback() {
 
 					public long get() {
@@ -1067,7 +1067,7 @@ public class Node {
 
 		maxTotalKeys = storeSize / sizePerKey;
 		
-		nodeConfig.register("storeDir", ".", sortOrder++, true, "Store directory", "Name of directory to put store files in", 
+		nodeConfig.register("storeDir", ".", sortOrder++, true, false, "Store directory", "Name of directory to put store files in", 
 				new StringCallback() {
 					public String get() {
 						return storeDir.getPath();
@@ -1214,7 +1214,7 @@ public class Node {
 			throw new NodeInitException(EXIT_STORE_OTHER, msg);
 		}
 		
-		nodeConfig.register("throttleFile", "throttle.dat", sortOrder++, true, "File to store the persistent throttle data to", "File to store the persistent throttle data to", new StringCallback() {
+		nodeConfig.register("throttleFile", "throttle.dat", sortOrder++, true, false, "File to store the persistent throttle data to", "File to store the persistent throttle data to", new StringCallback() {
 
 			public String get() {
 				return persistTarget.toString();

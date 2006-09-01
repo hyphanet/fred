@@ -166,7 +166,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	 */
 	public SimpleToadletServer(SubConfig fproxyConfig, NodeClientCore core) throws IOException, InvalidConfigValueException {
 		
-		fproxyConfig.register("enabled", true, 1, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
+		fproxyConfig.register("enabled", true, 1, true, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
 				new FProxyEnabledCallback());
 		
 		boolean enabled = fproxyConfig.getBoolean("enabled");
@@ -212,17 +212,17 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 		}
 		
-		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, "FProxy port number", "FProxy port number",
+		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, false, "FProxy port number", "FProxy port number",
 				new FProxyPortCallback());
-		fproxyConfig.register("bindTo", "127.0.0.1", 2, true, "IP address to bind to", "IP address to bind to",
+		fproxyConfig.register("bindTo", "127.0.0.1", 2, true, false, "IP address to bind to", "IP address to bind to",
 				new FProxyBindtoCallback());
-		fproxyConfig.register("allowedHosts", "127.0.0.1", 2, true, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to FProxy. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
+		fproxyConfig.register("allowedHosts", "127.0.0.1", 2, true, false, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to FProxy. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
 				new FProxyAllowedHostsCallback());
-		fproxyConfig.register("css", "clean", 1, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
+		fproxyConfig.register("css", "clean", 1, false, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
 				new FProxyCSSNameCallback());
-		fproxyConfig.register("advancedDarknetEnabled", false, 1, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
+		fproxyConfig.register("advancedDarknetEnabled", false, 1, false, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
 				new FProxyAdvancedDarknetEnabledCallback(this));
-		fproxyConfig.register("showPanicButton", false, 1, true, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
+		fproxyConfig.register("showPanicButton", false, 1, true, false, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
 				new BooleanCallback(){
 				public boolean get(){
 					return SimpleToadletServer.isPanicButtonToBeShown;

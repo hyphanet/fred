@@ -621,19 +621,19 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public static NodeUpdater maybeCreate(Node node, Config config) throws Exception {
         SubConfig updaterConfig = new SubConfig("node.updater", config);
          
-        updaterConfig.register("enabled", WrapperManager.isControlledByNativeWrapper(), 1, true, "Check for, and download new versions",
+        updaterConfig.register("enabled", WrapperManager.isControlledByNativeWrapper(), 1, true, false, "Check for, and download new versions",
         		"Should your node automatically check for new versions of Freenet. If yes, new versions will be automatically detected and downloaded, but not necessarily installed. This setting resets itself always back to false unless the node runs within the wrapper.",
         		new UpdaterEnabledCallback(node, config));
         
         boolean enabled = updaterConfig.getBoolean("enabled");
 
         // is the auto-update allowed ?
-        updaterConfig.register("autoupdate", false, 2, false, "Automatically install new versions", "Should your node automatically update to the newest version of Freenet, without asking?",
+        updaterConfig.register("autoupdate", false, 2, false, true, "Automatically install new versions", "Should your node automatically update to the newest version of Freenet, without asking?",
         		new AutoUpdateAllowedCallback(node));
         boolean autoUpdateAllowed = updaterConfig.getBoolean("autoupdate");
 
         updaterConfig.register("URI", NodeUpdater.UPDATE_URI, 3,
-        		true, "Where should the node look for updates?",
+        		true, false, "Where should the node look for updates?",
         		"Where should the node look for updates?",
         		new UpdateURICallback(node));
 
@@ -641,7 +641,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 
         updaterConfig.register("revocationURI",	NodeUpdater.REVOCATION_URI,4,
-        		true, "Where should the node look for revocation ?",
+        		true, false, "Where should the node look for revocation ?",
         		"Where should the node look for revocation ?",
         		new UpdateRevocationURICallback(node));
 

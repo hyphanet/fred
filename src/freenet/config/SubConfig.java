@@ -50,43 +50,43 @@ public class SubConfig implements Comparable {
 	}
 	
 	public void register(String optionName, int defaultValue, int sortOrder,
-			boolean expert, String shortDesc, String longDesc, IntCallback cb) {
-		register(new IntOption(this, optionName, defaultValue, null, sortOrder, expert, shortDesc, longDesc, cb));
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		register(new IntOption(this, optionName, defaultValue, null, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, long defaultValue, int sortOrder,
-			boolean expert, String shortDesc, String longDesc, LongCallback cb) {
-		register(new LongOption(this, optionName, defaultValue, null, sortOrder, expert, shortDesc, longDesc, cb));
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
+		register(new LongOption(this, optionName, defaultValue, null, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, String defaultValueString, int sortOrder,
-			boolean expert, String shortDesc, String longDesc, IntCallback cb) {
-		register(new IntOption(this, optionName, defaultValueString, sortOrder, expert, shortDesc, longDesc, cb));
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		register(new IntOption(this, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, String defaultValueString, int sortOrder,
-			boolean expert, String shortDesc, String longDesc, LongCallback cb) {
-		register(new LongOption(this, optionName, defaultValueString, sortOrder, expert, shortDesc, longDesc, cb));
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
+		register(new LongOption(this, optionName, defaultValueString, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, boolean defaultValue, int sortOrder,
-			boolean expert, String shortDesc, String longDesc, BooleanCallback cb) {
-		register(new BooleanOption(this, optionName, defaultValue, sortOrder, expert, shortDesc, longDesc, cb));
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, BooleanCallback cb) {
+		register(new BooleanOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, String defaultValue, int sortOrder,
-			boolean expert, String shortDesc, String longDesc, StringCallback cb) {
-		register(new StringOption(this, optionName, defaultValue, sortOrder, expert, shortDesc, longDesc, cb));
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringCallback cb) {
+		register(new StringOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, short defaultValue, int sortOrder,
-			boolean expert, String shortDesc, String longDesc, ShortCallback cb) {
-		register(new ShortOption(this, optionName, defaultValue, sortOrder, expert, shortDesc, longDesc, cb));
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, ShortCallback cb) {
+		register(new ShortOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, String[] defaultValue, int sortOrder,
-			boolean expert, String shortDesc, String longDesc, StringArrCallback cb) {
-		register(new StringArrOption(this, optionName, defaultValue, sortOrder, expert, shortDesc, longDesc, cb));
+			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringArrCallback cb) {
+		register(new StringArrOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public int getInt(String optionName) {
@@ -185,6 +185,7 @@ public class SubConfig implements Comparable {
 			Map.Entry entry = (Map.Entry) i.next();
 			String key = (String) entry.getKey();
 			Option o = (Option) entry.getValue();
+			if(o.isDefault() && !o.forceWrite) continue;
 			fs.put(key, o.getValueString());
 		}
 		return fs;

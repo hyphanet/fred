@@ -55,7 +55,7 @@ public class PluginManager {
 		
 		pmconfig = new SubConfig("pluginmanager", node.config);
 		// Start plugins in the config
-		pmconfig.register("loadplugin", null, 9, true, "Plugins to load on startup ", "Classpath, name and location for plugins to load when node starts up", 
+		pmconfig.register("loadplugin", null, 9, true, false, "Plugins to load on startup ", "Classpath, name and location for plugins to load when node starts up", 
         		new StringArrCallback() {
 					public String get() {
 						return getConfigLoadString();

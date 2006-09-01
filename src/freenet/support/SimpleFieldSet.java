@@ -351,9 +351,15 @@ public class SimpleFieldSet {
 		}
 	}
 
+    /** Tolerant put(); does nothing if fs is empty */
+    public void tput(String key, SimpleFieldSet fs) {
+    	if(fs == null || fs.isEmpty()) return;
+    	put(key, fs);
+    }
+    
 	public void put(String key, SimpleFieldSet fs) {
 		if(fs == null) return; // legal no-op, because used everywhere
-		if(fs.isEmpty())
+		if(fs.isEmpty()) // can't just no-op, because caller might add the FS then populate it...
 			throw new IllegalArgumentException("Empty");
 		if(subsets == null)
 			subsets = new HashMap();
