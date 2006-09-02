@@ -1038,9 +1038,9 @@ public class FNPPacketMangler implements LowLevelFilter {
             throw new IllegalArgumentException();
         PeerNode pn = (PeerNode)peer;
         byte[] newBuf = preformat(buf, offset, length);
-        try{
-        processOutgoingPreformatted(newBuf, 0, newBuf.length, pn, -1, null, alreadyReportedBytes);
-        }catch (NotConnectedException e){
+        try {
+        	processOutgoingPreformatted(newBuf, 0, newBuf.length, pn, -1, null, alreadyReportedBytes);
+        } catch (NotConnectedException e){
         	pn.invalidate();
         	pn.setPeerNodeStatus(System.currentTimeMillis());
         	throw e;

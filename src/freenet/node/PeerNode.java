@@ -878,7 +878,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             isConnected = false;
             isRoutable = false;
             completedHandshake = false;
-            setPeerNodeStatus(now);
             // Prevent sending packets to the node until that happens.
             if(currentTracker != null)
             	currentTracker.disconnected();
@@ -887,11 +886,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             if(unverifiedTracker != null)
                 unverifiedTracker.disconnected();
             // DO NOT clear trackers, so can still receive.
+			sendHandshakeTime = now;
         }
         node.lm.lostOrRestartedNode(this);
-        synchronized(this) {
-			sendHandshakeTime = now;
-	    }
+        setPeerNodeStatus(now);
     }
 
     public void forceDisconnect() {
@@ -1384,7 +1382,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			if(prev != null)
 				prev.deprecated();
-			setPeerNodeStatus(now);
 		}
 		synchronized(this) {
 			Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
@@ -1479,7 +1476,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * if necessary.
      */
     public void verified(KeyTracker tracker) {
-      long now = System.currentTimeMillis();
+    	long now = System.currentTimeMillis();
     	synchronized(this) {
         if(tracker == unverifiedTracker) {
             if(logMINOR) Logger.minor(this, "Promoting unverified tracker "+tracker+" for "+getPeer());
@@ -1494,11 +1491,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             isConnected = true;
             neverConnected = false;
             peerAddedTime = 0;  // don't store anymore
-            setPeerNodeStatus(now);
             ctx = null;
             maybeSendInitialMessages();
         } else return;
     	}
+        setPeerNodeStatus(now);
         node.peers.addConnectedPeer(this);
     }
     
@@ -1979,7 +1976,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				int x = node.random.nextInt(routingBackoffLength);
 				routingBackedOffUntil = now + x;
 				setLastBackoffReason( reason );
-				setPeerNodeStatus(now);
 				String reasonWrapper = "";
 				if( 0 <= reason.length()) {
 					reasonWrapper = " because of '"+reason+"'";
@@ -1988,8 +1984,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(logMINOR) Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+peer);
 			} else {
 				if(logMINOR) Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
+				return;
 			}
 		}
+		setPeerNodeStatus(now);
 	}
 	
 	/**
@@ -2007,11 +2005,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
 				if(logMINOR) Logger.minor(this, "Resetting routing backoff on "+peer);
-				setPeerNodeStatus(now);
 			} else {
 				if(logMINOR) Logger.minor(this, "Ignoring successNotOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
+				return;
 			}
 		}
+		setPeerNodeStatus(now);
 	}
 
 	Object pingSync = new Object();
@@ -2075,8 +2074,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		
 		if(shouldDisconnectNow()){
-				invalidate();
-				setPeerNodeStatus(now);
+			invalidate();
+			setPeerNodeStatus(now);
 		}
 	}
 
@@ -2272,6 +2271,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void setPeerNodeStatus(long now) {
 		long localRoutingBackedOffUntil = getRoutingBackedOffUntil();
 		synchronized(this) {
+			if(isConnected && this.currentTracker.isDeprecated()) {
+				Logger.error(this, "Connected but primary tracker deprecated ?!?! on "+this+" : "+currentTracker, new Exception("debug"));
+			}
 			int oldPeerNodeStatus = peerNodeStatus;
 			if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 				peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
