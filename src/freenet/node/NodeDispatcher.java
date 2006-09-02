@@ -402,6 +402,7 @@ public class NodeDispatcher implements Dispatcher {
     long tLastReceivedProbeRequest;
     
     static final int MAX_PROBE_CONTEXTS = 1000;
+    static final int MAX_PROBE_IDS = 10000;
     
     class ProbeContext {
 
@@ -444,15 +445,20 @@ public class NodeDispatcher implements Dispatcher {
 		short counter = m.getShort(DMT.COUNTER);
 		if(logMINOR)
 			Logger.minor(this, "Probe request: "+id+" "+target+" "+best+" "+nearest+" "+htl+" "+counter);
-		if(recentProbeRequestIDs.contains(lid)) {
-			// Reject: Loop
-			Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, DMT.PROBE_REJECTED_LOOP);
-			try {
-				src.sendAsync(reject, null, 0, null);
-			} catch (NotConnectedException e) {
-				Logger.error(this, "Not connected rejecting a probe request from "+src);
+		synchronized(recentProbeContexts) {
+			if(recentProbeRequestIDs.contains(lid)) {
+				// Reject: Loop
+				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, DMT.PROBE_REJECTED_LOOP);
+				try {
+					src.sendAsync(reject, null, 0, null);
+				} catch (NotConnectedException e) {
+					Logger.error(this, "Not connected rejecting a probe request from "+src);
+				}
+				return true;
 			}
-			return true;
+			recentProbeRequestIDs.push(lid);
+			while(recentProbeRequestIDs.size() > MAX_PROBE_IDS)
+				recentProbeRequestIDs.pop();
 		}
 		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true);
 	}
@@ -635,5 +641,11 @@ public class NodeDispatcher implements Dispatcher {
 		
 		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false);
     }
+
+	public void startProbe(double d) {
+		
+		// TODO Auto-generated method stub
+		
+	}
 
 }

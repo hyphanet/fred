@@ -737,6 +737,11 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PEERS")) {
         	outsb.append(n.getTMCIPeerList());
         	outsb.append("PEERS done.\r\n");
+        } else if(uline.startsWith("PROBE:")) {
+        	String s = uline.substring("PROBE:".length()).trim();
+        	double d = Double.parseDouble(s);
+        	System.err.println("Starting probe request for location "+d);
+        	n.dispatcher.startProbe(d);
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
         		outsb.append("  PLUGLOAD: pkg.Class                  - Load plugin from current classpath");        		
