@@ -51,8 +51,10 @@ public class IOStatisticCollector {
 			targets.put(key, entry);
 		}
 		entry.addData((inbytes>0)?inbytes:0, (outbytes>0)?outbytes:0);
-		totalbytesout += (outbytes>0)?outbytes:0;
-		totalbytesin += (inbytes>0)?inbytes:0;
+		synchronized(this) {
+			totalbytesout += (outbytes>0)?outbytes:0;
+			totalbytesin += (inbytes>0)?inbytes:0;
+		}
 	}
 	
 	public static void dumpInfo() {
@@ -71,8 +73,10 @@ public class IOStatisticCollector {
 	
 	private long[] _getTotalIO() {
 		long ret[] = new long[2]; 
-		ret[0] = totalbytesout;
-		ret[1] = totalbytesin;
+		synchronized(this) {
+			ret[0] = totalbytesout;
+			ret[1] = totalbytesin;
+		}
 		return ret;
 	}
 	

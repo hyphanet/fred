@@ -325,6 +325,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "How long since the node was connected or last seen", "border-bottom: 1px dotted; cursor: help;" }, "Connected\u00a0/\u00a0Idle");
 				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "A private note concerning this peer", "border-bottom: 1px dotted; cursor: help;" }, "Private Note");
 
+				if(advancedEnabled) {
+					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out)");
+				}
+				
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
 					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
 					HTMLNode peerRow = peerTable.addChild("tr");
@@ -396,6 +400,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					// private darknet node comment note column
 					peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", peerNodeStatus.getPrivateDarknetCommentNote() });
 
+					peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+"/"+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes()));
+					
 					if (path.endsWith("displaymessagetypes.html")) {
 						HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");
 						messageCountRow.addChild("td", "colspan", "2");

@@ -74,6 +74,10 @@ public class PeerNodeStatus {
 	private final double pReject;
 
 	private final String privateDarknetCommentNote;
+	
+	private long totalBytesIn;
+	
+	private long totalBytesOut;
 
 	public PeerNodeStatus(PeerNode peerNode) {
 		this.name = peerNode.getName();
@@ -106,6 +110,8 @@ public class PeerNodeStatus {
 		this.hashCode = peerNode.hashCode;
 		this.pReject = peerNode.getPRejected();
 		this.privateDarknetCommentNote = peerNode.getPrivateDarknetCommentNote();
+		this.totalBytesIn = peerNode.getTotalInputBytes();
+		this.totalBytesOut = peerNode.getTotalOutputBytes();
 	}
 
 	/**
@@ -314,5 +320,13 @@ public class PeerNodeStatus {
 	 */
 	public String getPrivateDarknetCommentNote() {
 		return privateDarknetCommentNote;
+	}
+
+	public long getTotalInputBytes() {
+		return totalBytesIn;
+	}
+	
+	public long getTotalOutputBytes() {
+		return totalBytesOut;
 	}
 }

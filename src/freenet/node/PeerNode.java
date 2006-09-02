@@ -286,6 +286,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     
     /** Queued-to-send N2NTM extra peer data file numbers */
     private Vector queuedToSendN2NTMExtraPeerDataFileNumbers;
+
+    /** Total low-level input bytes */
+    private long totalBytesIn;
+    
+    /** Total low-level output bytes */
+    private long totalBytesOut;
     
     private static boolean logMINOR;
     
@@ -2825,5 +2831,21 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	public synchronized boolean noContactDetails() {
 		return handshakeIPs == null || handshakeIPs.length == 0;
+	}
+
+	public synchronized void reportIncomingBytes(int length) {
+		totalBytesIn += length;
+	}
+	
+	public synchronized void reportOutgoingBytes(int length) {
+		totalBytesOut += length;
+	}
+	
+	public synchronized long getTotalInputBytes() {
+		return totalBytesIn;
+	}
+	
+	public synchronized long getTotalOutputBytes() {
+		return totalBytesOut;
 	}
 }

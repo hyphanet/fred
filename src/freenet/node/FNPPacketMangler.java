@@ -185,6 +185,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(Arrays.equals(realHash, hash)) {
             // Got one
             processDecryptedAuth(payload, opn, peer);
+            opn.reportIncomingBytes(length);
             return true;
         } else {
             if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
@@ -398,6 +399,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 
     private void sendPacket(byte[] data, Peer replyTo, PeerNode pn, int alreadyReportedBytes) throws LocalAddressException {
     	usm.sendPacket(data, replyTo, pn.allowLocalAddresses());
+    	pn.reportOutgoingBytes(data.length);
     	node.outputThrottle.forceGrab(data.length - alreadyReportedBytes);
 	}
 
@@ -631,6 +633,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         // Lots more to do yet!
         processDecryptedData(plaintext, seqNumber, tracker, length - plaintext.length);
+        tracker.pn.reportIncomingBytes(length);
         return true;
     }
 

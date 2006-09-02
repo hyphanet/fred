@@ -192,7 +192,6 @@ public class UdpSocketManager extends Thread {
 		DatagramPacket packet = getPacket();
 		// Check for timedout _filters
 		removeTimedOutFilters();
-		// Check for matched _filters
 		if (packet != null) {
 			long startTime = System.currentTimeMillis();
 			Peer peer = new Peer(packet.getAddress(), packet.getPort());
@@ -566,6 +565,7 @@ public class UdpSocketManager extends Thread {
 		// TODO: keep?
 		IOStatisticCollector.addInfo(packet.getAddress() + ":" + packet.getPort(),
 				0, packet.getLength());
+		
 		try {
 			_sock.send(packet);
 		} catch (IOException e) {

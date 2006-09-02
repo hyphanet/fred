@@ -29,4 +29,8 @@ public class DummyPeerContext implements PeerContext {
 	public boolean isConnected() {
 		return false;
 	}
+
+	public void reportOutgoingBytes(int length) {
+		// Ignore
+	}
 }
