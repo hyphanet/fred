@@ -199,7 +199,10 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					long total_output_rate = (total[0]) / nodeUptimeSeconds;
 					long total_input_rate = (total[1]) / nodeUptimeSeconds;
 					long totalPayload = node.getTotalPayloadSent();
-					activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + "\u00a0(" + SizeUtil.formatSize(total_output_rate) + "ps) ("+(totalPayload*100 / total[0])+"% payload)");
+					long total_payload_rate = totalPayload / nodeUptimeSeconds;
+					int percent = (int) (100 * totalPayload / total[0]);
+					activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + "\u00a0(" + SizeUtil.formatSize(total_output_rate) + "ps)");
+					activityList.addChild("li", "Payload Output:\u00a0" + SizeUtil.formatSize(totalPayload) + "\u00a0(" + SizeUtil.formatSize(total_payload_rate) + "ps) ("+percent+"%)");
 					activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + "\u00a0(" + SizeUtil.formatSize(total_input_rate) + "ps)");
 					long[] rate = node.getNodeIOStats();
 					long delta = (rate[5] - rate[2]) / 1000;
