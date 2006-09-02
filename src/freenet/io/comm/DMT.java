@@ -721,12 +721,13 @@ public class DMT {
     }};
     
     public static final Message createFNPProbeRejected(long uid, double target, double nearest, 
-    		double best, short counter, short reason) {
+    		double best, short counter, short htl, short reason) {
     	Message msg = new Message(FNPProbeRejected);
     	msg.set(UID, uid);
     	msg.set(TARGET_LOCATION, target);
     	msg.set(NEAREST_LOCATION, nearest);
     	msg.set(BEST_LOCATION, best);
+    	msg.set(HTL, htl);
     	msg.set(COUNTER, counter);
     	msg.set(REASON, reason);
     	return msg;

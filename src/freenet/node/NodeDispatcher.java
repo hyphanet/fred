@@ -448,17 +448,20 @@ public class NodeDispatcher implements Dispatcher {
 		synchronized(recentProbeContexts) {
 			if(recentProbeRequestIDs.contains(lid)) {
 				// Reject: Loop
-				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, DMT.PROBE_REJECTED_LOOP);
+				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_LOOP);
 				try {
 					src.sendAsync(reject, null, 0, null);
 				} catch (NotConnectedException e) {
-					Logger.error(this, "Not connected rejecting a probe request from "+src);
+					Logger.error(this, "Not connected rejecting a Probe request from "+src);
 				}
 				return true;
-			}
+			} else
+				Logger.minor(this, "Probe request "+id+" not already present");
 			recentProbeRequestIDs.push(lid);
-			while(recentProbeRequestIDs.size() > MAX_PROBE_IDS)
-				recentProbeRequestIDs.pop();
+			while(recentProbeRequestIDs.size() > MAX_PROBE_IDS) {
+				Object o = recentProbeRequestIDs.pop();
+				Logger.minor(this, "Probe request popped "+o);
+			}
 		}
 		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true);
 	}
@@ -489,7 +492,7 @@ public class NodeDispatcher implements Dispatcher {
 		}
 		if(rejected) {
 			// Reject: rate limit
-			Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, DMT.PROBE_REJECTED_OVERLOAD);
+			Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_OVERLOAD);
 			try {
 				src.sendAsync(reject, null, 0, null);
 			} catch (NotConnectedException e) {
@@ -560,7 +563,7 @@ public class NodeDispatcher implements Dispatcher {
 			if(pn == null) {
 				// Can't complete, because some HTL left
 				// Reject: RNF
-				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, DMT.PROBE_REJECTED_RNF);
+				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_RNF);
 				try {
 					src.sendAsync(reject, null, 0, null);
 				} catch (NotConnectedException e) {
@@ -643,9 +646,12 @@ public class NodeDispatcher implements Dispatcher {
     }
 
 	public void startProbe(double d) {
-		
-		// TODO Auto-generated method stub
-		
+		long l = node.random.nextLong();
+		Long ll = new Long(l);
+		synchronized(recentProbeRequestIDs) {
+			recentProbeRequestIDs.push(ll);
+		}
+		innerHandleProbeRequest(null, l, ll, d, 2.0, 2.0, Node.MAX_HTL, (short)0, false);
 	}
 
 }
