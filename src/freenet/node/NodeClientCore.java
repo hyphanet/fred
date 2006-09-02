@@ -737,6 +737,7 @@ public class NodeClientCore {
 	}
 
 	public void storeConfig() {
+		Logger.normal(this, "Writing config", new Exception("debug"));
 		node.ps.queueTimedJob(new Runnable() {
 			public void run() {
 				node.config.store();
