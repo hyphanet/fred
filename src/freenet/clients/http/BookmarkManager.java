@@ -23,6 +23,7 @@ public class BookmarkManager {
 	private Vector bookmarks;
 	private final NodeClientCore node;
 	private USKUpdatedCallback uskcb;
+	private boolean started;
 	
 	public class BookmarkCallback implements StringArrCallback {
 		public String get() {
@@ -91,7 +92,9 @@ public class BookmarkManager {
 				// just ignore that one
 			}
 		}
-
+		synchronized(this) {
+			started = true;
+		}
 	}
 	
 	public BookmarkCallback makeCB() {
@@ -137,7 +140,7 @@ public class BookmarkManager {
 				
 			}
 		}
-		if(store) node.storeConfig();
+		if(store && started) node.storeConfig();
 	}
 	
 	public void removeBookmark(Bookmark b, boolean store) {
@@ -150,6 +153,6 @@ public class BookmarkManager {
 			}
 		}
 		this.bookmarks.remove(b);
-		if(store) node.storeConfig();
+		if(store && started) node.storeConfig();
 	}
 }
