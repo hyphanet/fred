@@ -569,7 +569,7 @@ public class NodeDispatcher implements Dispatcher {
 		
 		while(true) {
 			
-			PeerNode pn = node.peers.closerPeer(src, visited, null, target, true, false, 960);
+			PeerNode pn = node.peers.closerPeer(src, visited, null, target, true, false, 962);
 			
 			if(pn == null) {
 				// Can't complete, because some HTL left
