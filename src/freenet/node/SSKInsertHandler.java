@@ -149,6 +149,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 			Message msg = DMT.createFNPSSKDataFound(uid, storedBlock.getRawHeaders(), storedBlock.getRawData());
 			try {
 				source.send(msg, this);
+				node.sentPayload(storedBlock.getRawData().length);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 			}
@@ -209,6 +210,7 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
             	Message msg = DMT.createFNPSSKDataFound(uid, headers, data);
             	try {
             		source.send(msg, this);
+    				node.sentPayload(data.length);
             	} catch (NotConnectedException e) {
             		if(logMINOR) Logger.minor(this, "Lost connection to source");
             		return;
@@ -333,6 +335,10 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 	
 	public int getTotalReceivedBytes() {
 		return totalBytesReceived;
+	}
+
+	public void sentPayload(int x) {
+		node.sentPayload(x);
 	}
     
 }

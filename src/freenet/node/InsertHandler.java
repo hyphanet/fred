@@ -427,4 +427,8 @@ public class InsertHandler implements Runnable, ByteCounter {
 	public int getTotalReceivedBytes() {
 		return totalReceivedBytes;
 	}
+
+	public void sentPayload(int x) {
+		node.sentPayload(x);
+	}
 }

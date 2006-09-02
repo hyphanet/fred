@@ -2962,4 +2962,21 @@ public class Node {
 		}
 		return x;
 	}
+	
+	// FIXME put this somewhere else
+	private final Object statsSync = new Object();
+	/** The total number of bytes of real data i.e. payload sent by the node */
+	private long totalPayloadSent;
+	
+	public void sentPayload(int len) {
+		synchronized(statsSync) {
+			totalPayloadSent += len;
+		}
+	}
+	
+	public long getTotalPayloadSent() {
+		synchronized(statsSync) {
+			return totalPayloadSent;
+		}
+	}
 }

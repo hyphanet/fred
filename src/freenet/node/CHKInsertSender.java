@@ -870,4 +870,8 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 			return totalBytesReceived;
 		}
 	}
+
+	public void sentPayload(int x) {
+		node.sentPayload(x);
+	}
 }

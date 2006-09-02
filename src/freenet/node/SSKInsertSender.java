@@ -172,6 +172,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             
             try {
 				next.sendAsync(req, null, 0, this);
+				node.sentPayload(data.length);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
 				continue;
@@ -546,6 +547,10 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 		synchronized(totalBytesSync) {
 			return totalBytesReceived;
 		}
+	}
+
+	public void sentPayload(int x) {
+		node.sentPayload(x);
 	}
 
 }

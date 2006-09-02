@@ -84,7 +84,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             	PartiallyReceivedBlock prb =
             		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
             	BlockTransmitter bt =
-            		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, null);
+            		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
             	if(bt.send())
             		status = RequestSender.SUCCESS; // for byte logging
             }
@@ -115,7 +115,7 @@ public class RequestHandler implements Runnable, ByteCounter {
                 source.send(df, null);
                 PartiallyReceivedBlock prb = rs.getPRB();
             	BlockTransmitter bt =
-            	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, null);
+            	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
             	if(!bt.send());
             		finalTransferFailed = true;
         	    return;
@@ -148,6 +148,7 @@ public class RequestHandler implements Runnable, ByteCounter {
             		if(key instanceof NodeSSK) {
                         Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
                         source.send(df, this);
+                        node.sentPayload(rs.getSSKData().length);
                         if(needsPubKey) {
                         	Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey().asBytes());
                         	source.send(pk, this);
@@ -204,9 +205,10 @@ public class RequestHandler implements Runnable, ByteCounter {
 	private Message createDataFound(KeyBlock block) {
 		if(block instanceof CHKBlock)
 			return DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
-		else if(block instanceof SSKBlock)
+		else if(block instanceof SSKBlock) {
+			node.sentPayload(block.getRawData().length);
 			return DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
-		else
+		} else
 			throw new IllegalStateException("Unknown key block type: "+block.getClass());
 	}
 
@@ -224,6 +226,10 @@ public class RequestHandler implements Runnable, ByteCounter {
 		synchronized(bytesSync) {
 			receivedBytes += x;
 		}
+	}
+
+	public void sentPayload(int x) {
+		node.sentPayload(x);
 	}
 
 }

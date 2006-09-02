@@ -579,4 +579,8 @@ public final class RequestSender implements Runnable, ByteCounter {
 	synchronized boolean hasForwarded() {
 		return hasForwarded;
 	}
+
+	public void sentPayload(int x) {
+		node.sentPayload(x);
+	}
 }

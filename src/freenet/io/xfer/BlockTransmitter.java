@@ -118,6 +118,7 @@ public class BlockTransmitter {
 						_sentPackets.setBit(packetNo, true);
 						try {
 							((PeerNode)_destination).sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
+							_ctr.sentPayload(PACKET_SIZE);
 						// We accelerate the ping rate during the transfer to keep a closer eye on round-trip-time
 						sentSinceLastPing++;
 						if (sentSinceLastPing >= PING_EVERY) {
