@@ -150,10 +150,13 @@ public class FilePersistentConfig extends Config {
 		if(!tempFilename.renameTo(filename)) {
 			if(!filename.delete()) {
 				Logger.error(this, "Could not delete old config file "+filename);
+				System.err.println("Could not delete old config file "+filename+" - we need to delete it in order to replace it with the new config file "+tempFilename);
 			}
 			if(!tempFilename.renameTo(filename)) {
 				Logger.error(this, "Could not move new config file "+tempFilename+" over old "+filename);
-				System.err.println("Written and moved "+filename);
+				System.err.println("Could not move new config file "+tempFilename+" over old "+filename);
+			} else {
+				System.err.println("Written "+tempFilename+" and moved to "+filename);
 			}
 		} else {
 			System.err.println("Written "+filename);
