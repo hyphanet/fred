@@ -522,11 +522,22 @@ public class NodeDispatcher implements Dispatcher {
 		// Update best
 		
 		for(int i=0;i<peers.length;i++) {
-			if(!peers[i].isConnected()) continue;
+			if(!peers[i].isConnected()) {
+				if(logMINOR)
+					Logger.minor(this, "Not connected: "+peers[i]);
+				continue;
+			}
 			double loc = peers[i].getLocation().getValue();
+			if(logMINOR) Logger.minor(this, "Location: "+loc);
 			// We are only interested in locations greater than the target
-			if(loc <= (best + 2*Double.MIN_VALUE)) continue;
-			if(loc < best) best = loc;
+			if(loc <= (target + 2*Double.MIN_VALUE)) {
+				if(logMINOR) Logger.minor(this, "Location is under target");
+				continue;
+			}
+			if(loc < best) {
+				if(logMINOR) Logger.minor(this, "New best: "+loc+" was "+best);
+				best = loc;
+			}
 		}
 		
 		// Update nearest

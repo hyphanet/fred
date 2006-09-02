@@ -941,15 +941,6 @@ public class Node {
 			}
 		}
 		
-		if(wasTestnet != testnetEnabled) {
-			Logger.error(this, "Switched from testnet mode to non-testnet mode or vice versa! Regenerating pubkey, privkey, and deleting logs.");
-			this.myCryptoGroup = Global.DSAgroupBigA;
-			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, random);
-			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
-			
-			
-		}
-
 		// Directory for node-related files other than store
 		
 		nodeConfig.register("nodeDir", ".", sortOrder++, true, false, "Node directory", "Name of directory to put node-related files e.g. peers list in", 
@@ -980,6 +971,13 @@ public class Node {
 			} catch (IOException e1) {
 				initNodeFileSettings(random);
 			}
+		}
+
+		if(wasTestnet != testnetEnabled) {
+			Logger.error(this, "Switched from testnet mode to non-testnet mode or vice versa! Regenerating pubkey, privkey, and deleting logs.");
+			this.myCryptoGroup = Global.DSAgroupBigA;
+			this.myPrivKey = new DSAPrivateKey(myCryptoGroup, random);
+			this.myPubKey = new DSAPublicKey(myCryptoGroup, myPrivKey);
 		}
 
 		// Then read the peers
