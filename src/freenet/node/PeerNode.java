@@ -1478,22 +1478,22 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     public void verified(KeyTracker tracker) {
     	long now = System.currentTimeMillis();
     	synchronized(this) {
-        if(tracker == unverifiedTracker) {
-            if(logMINOR) Logger.minor(this, "Promoting unverified tracker "+tracker+" for "+getPeer());
-            if(previousTracker != null) {
-                previousTracker.completelyDeprecated(tracker);
-            }
-            previousTracker = currentTracker;
-            if(previousTracker != null)
-                previousTracker.deprecated();
-            currentTracker = unverifiedTracker;
-            unverifiedTracker = null;
-            isConnected = true;
-            neverConnected = false;
-            peerAddedTime = 0;  // don't store anymore
-            ctx = null;
-            maybeSendInitialMessages();
-        } else return;
+    		if(tracker == unverifiedTracker) {
+    			if(logMINOR) Logger.minor(this, "Promoting unverified tracker "+tracker+" for "+getPeer());
+    			if(previousTracker != null) {
+    				previousTracker.completelyDeprecated(tracker);
+    			}
+    			previousTracker = currentTracker;
+    			if(previousTracker != null)
+    				previousTracker.deprecated();
+    			currentTracker = unverifiedTracker;
+    			unverifiedTracker = null;
+    			isConnected = true;
+    			neverConnected = false;
+    			peerAddedTime = 0;  // don't store anymore
+    			ctx = null;
+    			maybeSendInitialMessages();
+    		} else return;
     	}
         setPeerNodeStatus(now);
         node.peers.addConnectedPeer(this);
