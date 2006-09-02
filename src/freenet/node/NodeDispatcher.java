@@ -519,7 +519,11 @@ public class NodeDispatcher implements Dispatcher {
 		
 		PeerNode[] peers = node.peers.myPeers;
 		
+		double myLoc = node.getLocation();
 		// Update best
+		
+		if(myLoc > target && myLoc < best)
+			best = myLoc;
 		
 		for(int i=0;i<peers.length;i++) {
 			if(!peers[i].isConnected()) {
@@ -542,7 +546,6 @@ public class NodeDispatcher implements Dispatcher {
 		
 		// Update nearest
 		
-		double myLoc = node.getLocation();
 		if(PeerManager.distance(myLoc, target) > PeerManager.distance(nearest, target)) {
 			nearest = myLoc;
 			htl = Node.MAX_HTL;
@@ -553,14 +556,18 @@ public class NodeDispatcher implements Dispatcher {
 		
 		// Complete ?
 		if(htl == 0) {
-			// Complete
-			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
-			try {
-				src.sendAsync(complete, null, 0, null);
-			} catch (NotConnectedException e) {
-				Logger.error(this, "Not connected completing a probe request from "+src);
+			if(src != null) {
+				// Complete
+				Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
+				try {
+					src.sendAsync(complete, null, 0, null);
+				} catch (NotConnectedException e) {
+					Logger.error(this, "Not connected completing a probe request from "+src);
+				}
+				return true;
+			} else {
+				complete("success", src, target, best, id);
 			}
-			return true;
 		}
 		
 		// Otherwise route it
@@ -582,7 +589,7 @@ public class NodeDispatcher implements Dispatcher {
 						Logger.error(this, "Not connected rejecting a probe request from "+src);
 					}
 				} else {
-					Logger.error(this, "Completed Probe request # "+id+" - RNF");
+					complete("RNF", src, target, best, id);
 				}
 				return true;
 			}
@@ -600,6 +607,12 @@ public class NodeDispatcher implements Dispatcher {
 			}
 		}
 		
+	}
+
+	private void complete(String msg, PeerNode src, double target, double best, long id) {
+		Logger.error(this, "Completed Probe request # "+id+" - RNF - "+msg+": "+best);
+		if(src == null)
+			System.out.println("Completed probe from "+target+": "+best+" ("+id+")");
 	}
 
 	private boolean handleProbeReply(Message m, PeerNode src) {
