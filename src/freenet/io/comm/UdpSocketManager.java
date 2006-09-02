@@ -569,7 +569,10 @@ public class UdpSocketManager extends Thread {
 		try {
 			_sock.send(packet);
 		} catch (IOException e) {
-			Logger.error(this, "Error while sending packet to " + destination+": "+e, e);
+			if(packet.getAddress() instanceof Inet6Address)
+				Logger.normal(this, "Error while sending packet to IPv6 address: "+destination+": "+e, e);
+			else
+				Logger.error(this, "Error while sending packet to " + destination+": "+e, e);
 		}
     }
 
