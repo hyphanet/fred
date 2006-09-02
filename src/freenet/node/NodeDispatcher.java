@@ -463,11 +463,11 @@ public class NodeDispatcher implements Dispatcher {
 				Logger.minor(this, "Probe request popped "+o);
 			}
 		}
-		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true);
+		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true);
 	}
 
     private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, double target, double best, 
-    		double nearest, short htl, short counter, boolean checkRecent) {
+    		double nearest, short htl, short counter, boolean checkRecent, boolean canReject) {
     	if(htl > Node.MAX_HTL) htl = Node.MAX_HTL;
     	if(htl <= 1) htl = 1;
 		ProbeContext ctx = null;
@@ -502,8 +502,8 @@ public class NodeDispatcher implements Dispatcher {
 		}
 		// FIXME Update any important values on ctx
 		if(ctx.counter < counter) ctx.counter = counter;
-		double oldDist = PeerManager.distance(ctx.nearest, target);
-		double newDist = PeerManager.distance(nearest, target);
+		double oldDist = Math.abs(PeerManager.distance(ctx.nearest, target));
+		double newDist = Math.abs(PeerManager.distance(nearest, target));
 		// FIXME use this elsewhere? Does it make sense?
 		if(oldDist > newDist) {
 			ctx.htl = htl;
@@ -574,11 +574,15 @@ public class NodeDispatcher implements Dispatcher {
 			if(pn == null) {
 				// Can't complete, because some HTL left
 				// Reject: RNF
-				Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_RNF);
-				try {
-					src.sendAsync(reject, null, 0, null);
-				} catch (NotConnectedException e) {
-					Logger.error(this, "Not connected rejecting a probe request from "+src);
+				if(canReject) {
+					Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_RNF);
+					try {
+						src.sendAsync(reject, null, 0, null);
+					} catch (NotConnectedException e) {
+						Logger.error(this, "Not connected rejecting a probe request from "+src);
+					}
+				} else {
+					Logger.error(this, "Completed Probe request # "+id+" - RNF");
 				}
 				return true;
 			}
@@ -653,7 +657,7 @@ public class NodeDispatcher implements Dispatcher {
 				recentProbeContexts.popValue();
 		}
 		
-		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false);
+		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false);
     }
 
 	public void startProbe(double d) {
@@ -662,7 +666,7 @@ public class NodeDispatcher implements Dispatcher {
 		synchronized(recentProbeRequestIDs) {
 			recentProbeRequestIDs.push(ll);
 		}
-		innerHandleProbeRequest(null, l, ll, d, 2.0, 2.0, Node.MAX_HTL, (short)0, false);
+		innerHandleProbeRequest(null, l, ll, d, 2.0, 2.0, Node.MAX_HTL, (short)0, false, false);
 	}
 
 }
