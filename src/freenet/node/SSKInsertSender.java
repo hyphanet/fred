@@ -135,7 +135,7 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
             // Can backtrack, so only route to nodes closer than we are to target.
             double nextValue;
             synchronized(node.peers) {
-                next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedDarknetEnabled());
+                next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedDarknetEnabled(), -1);
                 if(next != null)
                     nextValue = next.getLocation().getValue();
                 else

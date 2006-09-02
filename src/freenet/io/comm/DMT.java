@@ -71,6 +71,7 @@ public class DMT {
     public static final String PING_SEQNO = "pingSequenceNumber";
     public static final String LOCATION = "location";
     public static final String NEAREST_LOCATION = "nearestLocation";
+    public static final String BEST_LOCATION = "bestLocation";
     public static final String TARGET_LOCATION = "targetLocation";
     public static final String TYPE = "type";
     public static final String PAYLOAD = "payload";
@@ -668,6 +669,72 @@ public class DMT {
         msg.set(PING_SEQNO, seqNo);
         return msg;
     }
+    
+    public static final MessageType FNPProbeRequest = new MessageType("FNPProbeRequest") {{
+    	addField(UID, Long.class);
+    	addField(TARGET_LOCATION, Double.class);
+    	addField(NEAREST_LOCATION, Double.class);
+    	addField(BEST_LOCATION, Double.class);
+    	addField(HTL, Short.class);
+    	addField(COUNTER, Short.class);
+    }};
+    
+    public static final Message createFNPProbeRequest(long uid, double target, double nearest, 
+    		double best, short htl, short counter) {
+    	Message msg = new Message(FNPProbeRequest);
+    	msg.set(UID, uid);
+    	msg.set(TARGET_LOCATION, target);
+    	msg.set(NEAREST_LOCATION, nearest);
+    	msg.set(BEST_LOCATION, best);
+    	msg.set(HTL, htl);
+    	msg.set(COUNTER, counter);
+    	return msg;
+    }
+
+    public static final MessageType FNPProbeReply = new MessageType("FNPProbeReply") {{
+    	addField(UID, Long.class);
+    	addField(TARGET_LOCATION, Double.class);
+    	addField(NEAREST_LOCATION, Double.class);
+    	addField(BEST_LOCATION, Double.class);
+    	addField(COUNTER, Short.class);
+    }};
+    
+    public static final Message createFNPProbeReply(long uid, double target, double nearest, 
+    		double best, short counter) {
+    	Message msg = new Message(FNPProbeReply);
+    	msg.set(UID, uid);
+    	msg.set(TARGET_LOCATION, target);
+    	msg.set(NEAREST_LOCATION, nearest);
+    	msg.set(BEST_LOCATION, best);
+    	msg.set(COUNTER, counter);
+    	return msg;
+    }
+    
+    public static final MessageType FNPProbeRejected = new MessageType("FNPProbeRejected") {{
+    	addField(UID, Long.class);
+    	addField(TARGET_LOCATION, Double.class);
+    	addField(NEAREST_LOCATION, Double.class);
+    	addField(BEST_LOCATION, Double.class);
+    	addField(HTL, Short.class);
+    	addField(COUNTER, Short.class);
+    	addField(REASON, Short.class);
+    }};
+    
+    public static final Message createFNPProbeRejected(long uid, double target, double nearest, 
+    		double best, short counter, short reason) {
+    	Message msg = new Message(FNPProbeRejected);
+    	msg.set(UID, uid);
+    	msg.set(TARGET_LOCATION, target);
+    	msg.set(NEAREST_LOCATION, nearest);
+    	msg.set(BEST_LOCATION, best);
+    	msg.set(COUNTER, counter);
+    	msg.set(REASON, reason);
+    	return msg;
+    }
+
+    static public final short PROBE_REJECTED_LOOP = 1;
+    static public final short PROBE_REJECTED_RNF = 2;
+    static public final short PROBE_REJECTED_OVERLOAD = 3;
     
     public static final MessageType FNPSwapRequest = new MessageType("FNPSwapRequest") {{
         addField(UID, Long.class);

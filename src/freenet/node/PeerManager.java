@@ -476,15 +476,15 @@ public class PeerManager {
      * This scans the same array 4 times.  It would be better to scan once and execute 4 callbacks...
      * For this reason the metrics are only updated if advanced mode is enabled
      */
-    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting) {
-    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false);
+    public PeerNode closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion) {
+    	PeerNode best = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, false, minVersion);
     	if(best == null) {
     		// Backoff is an advisory mechanism for balancing rather than limiting load.
     		// So send a request even though everything is backed off.
-    		return _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
+    		return _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
     	}
     	if (calculateMisrouting) {
-    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true);
+    		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
     		if(nbo != null) {
     			node.missRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
     			int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
@@ -501,7 +501,7 @@ public class PeerManager {
      * Find the peer, if any, which is closer to the target location
      * than we are, and is not included in the provided set.
      */
-    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean ignoreBackedOff) {
+    private PeerNode _closerPeer(PeerNode pn, HashSet routedTo, HashSet notIgnored, double loc, boolean ignoreSelf, boolean ignoreBackedOff, int minVersion) {
         PeerNode[] peers;  
         synchronized (this) {
 			peers = connectedPeers;
@@ -530,6 +530,10 @@ public class PeerManager {
             }
             if((!ignoreBackedOff) && p.isRoutingBackedOff()) {
             	if(logMINOR) Logger.minor(this, "Skipping (routing backed off): "+p.getPeer());
+            	continue;
+            }
+            if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion()) < minVersion) {
+            	if(logMINOR) Logger.minor(this, "Skipping old version: "+p.getPeer());
             	continue;
             }
             count++;
