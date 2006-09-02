@@ -796,10 +796,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			return false;
     	}
     }
+    
     public boolean isConnected(){
     	long now = System.currentTimeMillis();
     	synchronized(this) {
-	    	if( isConnected && currentTracker != null ) {
+	    	if( isConnected && currentTracker != null && !currentTracker.isDeprecated() ) {
     			timeLastConnected = now;
     			return true;
     		}
@@ -1011,7 +1012,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 
     boolean firstHandshake = true;
 
-    private void calcNextHandshake(boolean successfulHandshakeSend) {
+    private void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK) {
         long now = System.currentTimeMillis();
         boolean fetchARKFlag = false;
         synchronized(this) {
@@ -1057,7 +1058,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
 		setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
         // Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
-        if(fetchARKFlag) {
+        if(fetchARKFlag && !dontFetchARK) {
 			long arkFetcherStartTime1 = System.currentTimeMillis();
 			startARKFetcher();
 			long arkFetcherStartTime2 = System.currentTimeMillis();
@@ -1073,7 +1074,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     public void sentHandshake() {
     	if(logMINOR) Logger.minor(this, "sentHandshake(): "+this);
-        calcNextHandshake(true);
+        calcNextHandshake(true, false);
     }
     
     /**
@@ -1082,7 +1083,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
     public void couldNotSendHandshake() {
     	if(logMINOR) Logger.minor(this, "couldNotSendHandshake(): "+this);
-        calcNextHandshake(false);
+        calcNextHandshake(false, false);
     }
 
     /**
@@ -1243,7 +1244,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      */
 	void receivedPacket(boolean dontLog) throws NotConnectedException {
 		synchronized(this) {
-			if(!isConnected() && !dontLog) {
+			if((!isConnected) && (!dontLog)) {
 				if((unverifiedTracker == null) && (currentTracker == null)) {
 					Logger.error(this, "Received packet while disconnected!: "+this, new Exception("error"));
 					throw new NotConnectedException();
@@ -1291,12 +1292,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	long now = System.currentTimeMillis();
     	
-    	synchronized(this) {
-    		completedHandshake = true;
-    		handshakeCount = 0;
-        	bogusNoderef = false;
-			isConnected = true;
-        }
+    	// Update sendHandshakeTime; don't send another handshake for a while.
+    	// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
+    	calcNextHandshake(true, true); 
     	stopARKFetcher();
 		try {
 			// First, the new noderef
@@ -1308,6 +1306,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				isConnected = false;
 			}
 			Logger.error(this, "Failed to parse new noderef for "+this+": "+e1, e1);
+			node.peers.disconnected(this);
+			return false;
 		}
 		boolean routable = true;
 		boolean newer = false;
@@ -1330,48 +1330,35 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else {
 			older = false;
 		}
-    	synchronized(this) {
-    		isRoutable = routable;
-    		verifiedIncompatibleNewerVersion = newer;
-    		verifiedIncompatibleOlderVersion = older;
-        }
 		KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
 		changedIP(replyTo);
 		boolean bootIDChanged = false;
+		KeyTracker oldPrev = null;
+		KeyTracker oldCur = null;
+		KeyTracker prev = null;
     	synchronized(this) {
+    		completedHandshake = true;
+    		handshakeCount = 0;
+        	bogusNoderef = false;
+			isConnected = true;
+    		isRoutable = routable;
+    		verifiedIncompatibleNewerVersion = newer;
+    		verifiedIncompatibleOlderVersion = older;
 			bootIDChanged = (thisBootID != this.bootID);
 			if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from "+bootID+" to "+thisBootID+" for "+getPeer());
 			this.bootID = thisBootID;
 			connectedTime = now;
-		}
-		if(bootIDChanged) {
-			KeyTracker oldPrev = null;
-			KeyTracker oldCur = null;
-			synchronized(this) {
+			if(bootIDChanged) {
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
 				previousTracker = null;
 				currentTracker = null;
-			}
-			if(oldPrev != null) {
-				oldPrev.completelyDeprecated(newTracker);
-			}
-			if(oldCur != null)
-				oldCur.completelyDeprecated(newTracker);
-			node.lm.lostOrRestartedNode(this);
-		} // else it's a rekey
-		
-		if(unverified) {
-			synchronized(this) {
+			} // else it's a rekey
+			if(unverified) {
 				unverifiedTracker = newTracker;
 				ctx = null;
-			}
-			if(logMINOR) Logger.minor(this, "sentHandshake() being called for unverifiedTracker: "+getPeer());
-			sentHandshake();
-		} else {
-			KeyTracker prev;
-			synchronized(this) {
+			} else {
 				prev = currentTracker;
 				previousTracker = prev;
 				currentTracker = newTracker;
@@ -1380,29 +1367,32 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				peerAddedTime = 0;  // don't store anymore
 				ctx = null;
 			}
-			if(prev != null)
-				prev.deprecated();
+			sentInitialMessages = false;
 		}
-		synchronized(this) {
-			Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
-		}
+
+    	if(bootIDChanged)
+			node.lm.lostOrRestartedNode(this);
+		if(oldPrev != null) oldPrev.completelyDeprecated(newTracker);
+		if(oldCur != null) oldCur.completelyDeprecated(newTracker);
+		if(prev != null) prev.deprecated();
+		Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
+		
+		// Received a packet
 		try {
 			receivedPacket(unverified);
 		} catch (NotConnectedException e) {
 			Logger.error(this, "Disconnected in completedHandshake with "+this);
 			return true; // i suppose
 		}
+		
     	if(newer || older || !isConnected())
     		node.peers.disconnected(this);
-    	else 
+    	else { 
     		node.peers.addConnectedPeer(this);
-		setPeerNodeStatus(now);
-		synchronized(this) {
-			sentInitialMessages = false;
-		}
-		if(isConnected()) {
 			onConnect();
-		}
+    	}
+    	
+		setPeerNodeStatus(now);
 		return true;
     }
     
@@ -2273,9 +2263,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void setPeerNodeStatus(long now) {
 		long localRoutingBackedOffUntil = getRoutingBackedOffUntil();
 		synchronized(this) {
-			if(isConnected && this.currentTracker.isDeprecated()) {
-				Logger.error(this, "Connected but primary tracker deprecated ?!?! on "+this+" : "+currentTracker, new Exception("debug"));
-			}
+			checkConnectionsAndTrackers();
 			int oldPeerNodeStatus = peerNodeStatus;
 			if(isRoutable()) {  // Function use also updates timeLastConnected and timeLastRoutable
 				peerNodeStatus = Node.PEER_NODE_STATUS_CONNECTED;
@@ -2318,6 +2306,31 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(peerNodeStatus != oldPeerNodeStatus) {
 			  node.removePeerNodeStatus( oldPeerNodeStatus, this );
 			  node.addPeerNodeStatus( peerNodeStatus, this );
+			}
+		}
+	}
+
+	private synchronized void checkConnectionsAndTrackers() {
+		if(isConnected) {
+			if(currentTracker == null) {
+				if(unverifiedTracker != null) {
+					if(unverifiedTracker.isDeprecated())
+						Logger.error(this, "Connected but primary tracker is null and unverified is deprecated ! "+unverifiedTracker+" for "+this);
+					else
+						Logger.minor(this, "Connected but primary tracker is null, but unverified = "+unverifiedTracker+" for "+this);
+				} else
+					Logger.error(this, "Connected but both primary and unverified are null on "+this);
+			} else if(currentTracker.isDeprecated()) {
+				if(unverifiedTracker != null) {
+					if(unverifiedTracker.isDeprecated()) {
+						Logger.error(this, "Connected but primary tracker is deprecated, unverified is deprecated: primary="+currentTracker+" unverified: "+unverifiedTracker+" for "+this);
+					} else
+						Logger.minor(this, "Connected, primary tracker deprecated, unverified is valid, "+unverifiedTracker+" for "+this);
+				} else {
+					// !!!!!!!
+					Logger.error(this, "Connected but primary tracker and unverified tracker are null on "+this);
+					isConnected = false;
+				}
 			}
 		}
 	}
