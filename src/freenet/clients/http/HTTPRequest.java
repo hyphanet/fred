@@ -456,7 +456,7 @@ public class HTTPRequest {
 				if (line.length() == 0) break;
 				
 				String[] lineparts = line.split(":");
-				if (lineparts == null) continue;
+				if (lineparts == null || lineparts.length == 0) continue;
 				String hdrname = lineparts[0].trim();
 				
 				if (hdrname.equalsIgnoreCase("Content-Disposition")) {
