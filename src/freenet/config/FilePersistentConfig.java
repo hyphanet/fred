@@ -30,6 +30,7 @@ public class FilePersistentConfig extends Config {
 	final File tempFilename;
 	private SimpleFieldSet origConfigFileContents;
 	private boolean finishedInit;
+	private final Object storeSync = new Object();
 	
 	public FilePersistentConfig(File f) throws IOException {
 		this.filename = f;
@@ -123,7 +124,9 @@ public class FilePersistentConfig extends Config {
 			}
 		}
 		try {
-			innerStore();
+			synchronized(storeSync) {
+				innerStore();
+			}
 		} catch (IOException e) {
 			String err = "Cannot store config: "+e;
 			Logger.error(this, err, e);
@@ -132,7 +135,8 @@ public class FilePersistentConfig extends Config {
 		}
 	}
 	
-	public void innerStore() throws IOException {
+	/** Don't call without taking storeSync first */
+	private void innerStore() throws IOException {
 		SimpleFieldSet fs = exportFieldSet();
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "fs = "+fs);
