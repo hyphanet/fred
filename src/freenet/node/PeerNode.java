@@ -1715,6 +1715,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
     }
 
+    // FIXME nested locking; helpful, but necessary ?
+    // In any case, if we have to do this, we must always take the lock on this before on routingBackoffSync
     public synchronized PeerNodeStatus getStatus() {
     	PeerNodeStatus peerNodeStatus = new PeerNodeStatus(this);
         return peerNodeStatus;
