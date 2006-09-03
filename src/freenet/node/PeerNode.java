@@ -1411,7 +1411,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.minor(this, "No ARK for "+this+" !!!!");
 				return;
 			}
-			if(isListenOnly()){
+			if(isListenOnly){
 				Logger.minor(this, "Not starting ark fetcher for "+this+" as it's in listen-only mode.");
 			}else{
 				Logger.minor(this, "Starting ARK fetcher for "+this+" : "+myARK);
