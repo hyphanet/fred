@@ -40,7 +40,7 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 			s+="Updating to "+version+" is advised. ";
 			if(isReady) s += " <form action=\"/\" method=\"post\"><input type=\"submit\" name=\"update\" value=\"Update to "+readyVersion+" Now\" /></form>";
 			if(readyVersion < version || !isReady)
-			s += "Your node is currently fetching the update and will ask you whether you want to update or not when it's ready.";
+				s += "Your node is currently fetching the update over Freenet. Once this is complete, you will be prompted to install the new version. Please be patient, this could take up to half an hour.";
 			return s;
 		}
 	}
@@ -58,9 +58,9 @@ public class UpdatedVersionAvailableUserAlert implements UserAlert {
 					alertNode.addChild("#", "The node is currently fetching version "+version+" but you can update to "+readyVersion+" now, or wait for the node to fetch "+version+".");
 			} else {
 				if(updater.isAutoUpdateAllowed)
-					alertNode.addChild("#", " Your node is currently fetching the update and will automatically restart when it's ready (as configured).");
+					alertNode.addChild("#", " Your node is currently fetching the update over Freenet and will automatically restart when it's ready (as configured).");
 				else
-					alertNode.addChild("#", " Your node is currently fetching the update and will ask you whether you want to update or not when it's ready.");
+					alertNode.addChild("#", " Your node is currently fetching the update over Freenet. Once this is complete, you will be prompted to install the new version. Please be patient, this could take up to half an hour.");
 			}
 		}
 		return alertNode;
