@@ -567,7 +567,7 @@ public class QueueToadlet extends Toadlet {
 		
 		if (!uncompletedDirUpload.isEmpty()) {
 			contentNode.addChild("a", "name", "uncompletedDirUpload");
-			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: DirUploads (" + uncompletedDownload.size() + ")"));
+			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", "In Progress: DirUploads (" + uncompletedDirUpload.size() + ")"));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, uncompletedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_PRIORITY, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }));
