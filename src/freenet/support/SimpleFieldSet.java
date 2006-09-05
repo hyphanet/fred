@@ -260,8 +260,8 @@ public class SimpleFieldSet {
 		writeToOrdered(w, "", false);
 	}
     
-    synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
-    	String[] keys = (String[]) values.keySet().toArray();
+    private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
+    	String[] keys = (String[]) values.keySet().toArray(new String[values.size()]);
     	int i=0;
     
     	// Sort
@@ -272,7 +272,7 @@ public class SimpleFieldSet {
     		w.write(prefix+keys[i]+'='+get(keys[i])+'\n');
     	
     	if(subsets != null) {
-    		String[] orderedPrefixes = (String[]) subsets.keySet().toArray();
+    		String[] orderedPrefixes = (String[]) subsets.keySet().toArray(new String[subsets.size()]);
     		// Sort
     		Arrays.sort(orderedPrefixes);
     		
