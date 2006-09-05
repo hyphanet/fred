@@ -8,7 +8,7 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
-public class DiffieHellmanContext {
+public class DiffieHellmanContext extends KeyAgreementSchemeContext {
 
     // Set on startup
     /** My exponent. We keep this and then raise our peer's exponential to this power. */
@@ -23,7 +23,7 @@ public class DiffieHellmanContext {
     byte[] key;
     BlockCipher cipher;
     
-    boolean logMINOR;
+
 
 	public String toString() {
 	    StringBuffer sb = new StringBuffer();
@@ -95,15 +95,6 @@ public class DiffieHellmanContext {
         }
         if(a == null) throw new NullPointerException();
         peerExponential = a;
-    }
-
-    long lastUsedTime;
-    
-    /**
-     * @return The time at which this object was last used.
-     */
-    public synchronized long lastUsedTime() {
-        return lastUsedTime;
     }
 
     /**

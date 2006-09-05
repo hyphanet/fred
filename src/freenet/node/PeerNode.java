@@ -34,6 +34,7 @@ import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellmanContext;
+import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
@@ -237,7 +238,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     final BlockCipher outgoingSetupCipher;
     
     /** The context object for the currently running negotiation. */
-    private DiffieHellmanContext ctx;
+    private KeyAgreementSchemeContext ctx;
     
     /** The other side's boot ID. This is a random number generated
      * at startup.
@@ -1043,7 +1044,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * @param now The current time.
      */
     public boolean hasLiveHandshake(long now) {
-        DiffieHellmanContext c = null;
+        KeyAgreementSchemeContext c = null;
         synchronized(this) {
 	        c = ctx;
 		}
@@ -1309,7 +1310,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         randomizeMaxTimeBetweenPacketSends();
     }
 
-    public synchronized DiffieHellmanContext getDHContext() {
+    public synchronized KeyAgreementSchemeContext getKeyAgreementSchemeContext() {
         return ctx;
     }
 

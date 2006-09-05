@@ -214,11 +214,11 @@ public class FNPPacketMangler implements LowLevelFilter {
         if(logMINOR) Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (pt="+packetType+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) from "+replyTo+"");
         
         /* Format:
-         * 1 byte - version number (0)
+         * 1 byte - version number (1)
          * 1 byte - negotiation type (0 = simple DH, will not be supported when implement JFKi || 1 = StS)
          * 1 byte - packet type (0-3)
          */
-        if(version == 1) {
+        if(version != 1) {
             Logger.error(this, "Decrypted auth packet but invalid version: "+version);
             return;
         }
@@ -451,7 +451,7 @@ public class FNPPacketMangler implements LowLevelFilter {
      * @return
      */
     private DiffieHellmanContext processDHTwoOrThree(int i, byte[] payload, PeerNode pn, Peer replyTo, boolean sendCompletion) {
-        DiffieHellmanContext ctx = pn.getDHContext();
+        DiffieHellmanContext ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
         if((ctx == null) || !ctx.canGetCipher()) {
             if(shouldLogErrorInHandshake()) {
                 Logger.error(this, "Cannot get cipher");
@@ -535,7 +535,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         NativeBigInteger a = new NativeBigInteger(1, aAsBytes);
         DiffieHellmanContext ctx;
         if(phase == 1) {
-            ctx = pn.getDHContext();
+            ctx = (DiffieHellmanContext) pn.getKeyAgreementSchemeContext();
             if(ctx == null) {
                 if(shouldLogErrorInHandshake())
                     Logger.error(this, "Could not get context for phase 1 handshake from "+pn);
