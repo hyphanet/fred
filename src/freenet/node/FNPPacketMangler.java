@@ -199,74 +199,114 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private void processDecryptedAuth(byte[] payload, PeerNode pn, Peer replyTo) {
         if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn);
+        if(pn.isDisabled()) {
+        	if(logMINOR) Logger.minor(this, "Won't connect to a disabled peer ("+pn+")");
+    		return;  // We don't connect to disabled peers
+    	}
+        
+        long now = System.currentTimeMillis();
+    	int delta = (int) (now - pn.lastSentPacketTime());
+    	
+        int negType = payload[1];
+        int packetType = payload[2];
+        int version = payload[0];
+    	
+        if(logMINOR) Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (pt="+packetType+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) from "+replyTo+"");
+        
         /* Format:
          * 1 byte - version number (0)
-         * 1 byte - negotiation type (0 = simple DH, will not be supported when implement JFKi)
+         * 1 byte - negotiation type (0 = simple DH, will not be supported when implement JFKi || 1 = StS)
          * 1 byte - packet type (0-3)
          */
-        int version = payload[0];
-        if(version != 1) {
+        if(version == 1) {
             Logger.error(this, "Decrypted auth packet but invalid version: "+version);
             return;
         }
-        int negType = payload[1];
-        if(negType != 0) {
+
+        if((negType < 0) || (negType > 1)) {
             Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
             return;
-        }
-        int packetType = payload[2];
-        if((packetType < 0) || (packetType > 3)) {
-            Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
-            return;
-        }
-        if(pn.isDisabled()) {
-        	return;  // We don't connect to disabled peers
-        }
-        long now = System.currentTimeMillis();
-        int delta = (int) (now - pn.lastSentPacketTime());
-        if(logMINOR) Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (pt="+packetType+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) from "+replyTo+"");
-        // We keep one DiffieHellmanContext per node ONLY
-        /*
-         * Now, to the real meat
-         * Alice, Bob share a base, g, and a modulus, p
-         * Alice generates a random number r, and: 1: Alice -> Bob: a=g^r
-         * Bob receives this and generates his own random number, s, and: 2: Bob -> Alice: b=g^s
-         * Alice receives this, calculates K = b^r, and: 3: Alice -> Bob: E_K ( H(data) data )
-         *    where data = [ Alice's startup number ]
-         * Bob does exactly the same as Alice for packet 4.
-         * 
-         * At this point we are done.
-         */
-        if(packetType == 0) {
-            // We are Bob
-            // We need to:
-            // - Record Alice's a
-            // - Generate our own s and b
-            // - Send a type 1 packet back to Alice containing this
-            
-            DiffieHellmanContext ctx = 
-                processDHZeroOrOne(0, payload, pn);
-            if(ctx == null) return;
-            // Send reply
-            sendFirstHalfDHPacket(1, ctx.getOurExponential(), pn, replyTo);
-            // Send a type 1, they will reply with a type 2
-        } else if(packetType == 1) {
-            // We are Alice
-            DiffieHellmanContext ctx = 
-                processDHZeroOrOne(1, payload, pn);
-            if(ctx == null) return;
-            sendDHCompletion(2, ctx.getCipher(), pn, replyTo);
-            // Send a type 2
-        } else if(packetType == 2) {
-            // We are Bob
-            // Receiving a completion packet
-            // Verify the packet, then complete
-            // Format: IV E_K ( H(data) data )
-            // Where data = [ long: bob's startup number ]
-            processDHTwoOrThree(2, payload, pn, replyTo, true);
-        } else if(packetType == 3) {
-            // We are Alice
-            processDHTwoOrThree(3, payload, pn, replyTo, false);
+        }else if (negType == 0){
+        	// We are gonna do unauthenticated DH FIXME: disable when StS is deployed.
+        
+        	if((packetType < 0) || (packetType > 3)) {
+        		Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
+        		return;
+        	}
+      	            
+        	// We keep one DiffieHellmanContext per node ONLY
+        	/*
+        	 * Now, to the real meat
+        	 * Alice, Bob share a base, g, and a modulus, p
+        	 * Alice generates a random number r, and: 1: Alice -> Bob: a=g^r
+        	 * Bob receives this and generates his own random number, s, and: 2: Bob -> Alice: b=g^s
+        	 * Alice receives this, calculates K = b^r, and: 3: Alice -> Bob: E_K ( H(data) data )
+        	 *    where data = [ Alice's startup number ]
+        	 * Bob does exactly the same as Alice for packet 4.
+        	 * 
+        	 * At this point we are done.
+        	 */
+        	if(packetType == 0) {
+        		// We are Bob
+        		// We need to:
+        		// - Record Alice's a
+        		// - Generate our own s and b
+        		// - Send a type 1 packet back to Alice containing this
+
+        		DiffieHellmanContext ctx = 
+        			processDHZeroOrOne(0, payload, pn);
+        		if(ctx == null) return;
+        		// Send reply
+        		sendFirstHalfDHPacket(1, ctx.getOurExponential(), pn, replyTo);
+        		// Send a type 1, they will reply with a type 2
+        	} else if(packetType == 1) {
+        		// We are Alice
+        		DiffieHellmanContext ctx = 
+        			processDHZeroOrOne(1, payload, pn);
+        		if(ctx == null) return;
+        		sendDHCompletion(2, ctx.getCipher(), pn, replyTo);
+        		// Send a type 2
+        	} else if(packetType == 2) {
+        		// We are Bob
+        		// Receiving a completion packet
+        		// Verify the packet, then complete
+        		// Format: IV E_K ( H(data) data )
+        		// Where data = [ long: bob's startup number ]
+        		processDHTwoOrThree(2, payload, pn, replyTo, true);
+        	} else if(packetType == 3) {
+        		// We are Alice
+        		processDHTwoOrThree(3, payload, pn, replyTo, false);
+        	}
+        }else if (negType == 1){
+        	// We are gonna do simple StS
+        
+        	if((packetType < 0) || (packetType > 3)) {
+        		Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
+        		return;
+        	}
+        	//  We keep one StationToStationContext per node ONLY
+        	/*
+        	 * Now, to the real meat
+        	 * 
+        	 *  1. Alice generates a random number x and computes and sends the exponential g^x to Bob.
+        	 *	2. Bob generates a random number y and computes the exponential g^y.    
+        	 *	3. Bob computes the shared secret key K = (g^x)^y.
+        	 *	4. Bob concatenates the exponentials (g^y, g^x) (order is important),
+        	 * 	  signs them using his asymmetric key B, and then encrypts them with K.
+        	 *    He sends the ciphertext along with his own exponential g^y to Alice.
+        	 *  5. Alice computes the shared secret key K = (gy)x.
+        	 *  6. Alice decrypts and verifies Bob's signature.
+        	 *  7. Alice concatenates the exponentials (g^x, g^y) (order is important),
+        	 *    signs them using her asymmetric key A, and then encrypts them with K.
+        	 *    She sends the ciphertext to Bob.
+        	 *  8. Bob decrypts and verifies Alice's signature.
+        	 * 
+        	 * 	Alice and Bob are now mutually authenticated and have a shared secret.
+        	 *  This secret, K, can then be used to encrypt further communication.
+        	 */
+        	
+        	// Not implemented yet... fail
+        	return;
         }
     }
 
