@@ -490,6 +490,8 @@ public class NodeDispatcher implements Dispatcher {
 					recentProbeContexts.popValue();
 			}
 		}
+		// Add source
+		if(src != null) ctx.visitedPeers.add(src);
 		if(rejected) {
 			// Reject: rate limit
 			Message reject = DMT.createFNPProbeRejected(id, target, nearest, best, counter, htl, DMT.PROBE_REJECTED_OVERLOAD);
@@ -576,7 +578,7 @@ public class NodeDispatcher implements Dispatcher {
 		
 		while(true) {
 			
-			PeerNode pn = node.peers.closerPeer(src, visited, null, target, true, false, 962);
+			PeerNode pn = node.peers.closerPeer(src, visited, null, target, true, false, 965);
 			
 			if(pn == null) {
 				// Can't complete, because some HTL left
