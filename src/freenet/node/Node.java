@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
@@ -39,9 +40,11 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.LongCallback;
 import freenet.config.StringCallback;
 import freenet.config.SubConfig;
+import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
+import freenet.crypt.DSASignature;
 import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.DMT;
@@ -332,8 +335,12 @@ public class Node {
 	/** Hash of identity. Used as setup key. */
 	byte[] identityHash;
 	/** Hash of hash of identity i.e. hash of setup key. */
-	byte[] identityHashHash; 
-	String myName;
+	byte[] identityHashHash; 	
+	/** The signature of the above fieldset */
+	private DSASignature myReferenceSignature = null;
+	/** An ordered version of the FieldSet, without the signature */
+	private String mySignedReference = null;
+	private String myName;
 	final LocationManager lm;
 	final PeerManager peers; // my peers
 	/** Directory to put node, peers, etc into */
@@ -1649,6 +1656,14 @@ public class Node {
 		fs.put("dsaPubKey", myPubKey.asFieldSet());
 		fs.put("ark.number", Long.toString(this.myARKNumber));
 		fs.put("ark.pubURI", this.myARK.getURI().toString(false));
+		
+		// TODO: maybe synchronize ?
+		if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
+			mySignedReference = fs.toOrderedString();
+			myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(mySignedReference.getBytes()), random);
+		}
+		fs.put("sig", myReferenceSignature.toString());
+		
 		if(logMINOR) Logger.minor(this, "My reference: "+fs);
 		return fs;
 	}

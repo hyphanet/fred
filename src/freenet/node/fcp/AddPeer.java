@@ -11,6 +11,7 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.PeerNode;
@@ -106,6 +107,9 @@ public class AddPeer extends FCPMessage {
 		} catch (FSParseException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null);
 		} catch (PeerParseException e) {
+			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null);
+		} catch (ReferenceSignatureVerificationException e) {
+			// TODO: maybe a special ProtocolErrorMessage ?
 			throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing retrieved ref: "+e.getMessage(), null);
 		}
 		// **FIXME** Handle duplicates somehow maybe?  What about when node.addDarknetConnection() fails for some reason?

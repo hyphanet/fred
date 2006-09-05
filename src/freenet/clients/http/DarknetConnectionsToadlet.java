@@ -20,6 +20,7 @@ import java.util.Map;
 import freenet.client.HighLevelSimpleClient;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -585,6 +586,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				return;
 			} catch (PeerParseException e1) {
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference. Please try again.");
+				return;
+			} catch (ReferenceSignatureVerificationException e1){
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to verify the signature of the given reference.");
 				return;
 			}
 			if(pn.getIdentityHash()==node.getIdentityHash()) {

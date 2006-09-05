@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -28,6 +29,10 @@ import freenet.client.FetchResult;
 import freenet.client.async.USKRetriever;
 import freenet.client.async.USKRetrieverCallback;
 import freenet.crypt.BlockCipher;
+import freenet.crypt.DSA;
+import freenet.crypt.DSAGroup;
+import freenet.crypt.DSAPublicKey;
+import freenet.crypt.DSASignature;
 import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
@@ -40,6 +45,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -206,6 +212,14 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Version of the node */
     private String version;
     
+    /** Peer node crypto group */
+    private DSAGroup peerCryptoGroup;
+
+    /** Peer node public key */
+    private DSAPublicKey peerPubKey;
+    
+    private boolean isSignatureVerificationSuccessfull;
+    
     /** Incoming setup key. Used to decrypt incoming auth packets.
      * Specifically: K_node XOR H(setupKey).
      */
@@ -308,7 +322,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
      * @param fs The SimpleFieldSet to parse
      * @param node2 The running Node we are part of.
      */
-    public PeerNode(SimpleFieldSet fs, Node node2, boolean fromLocal) throws FSParseException, PeerParseException {
+    public PeerNode(SimpleFieldSet fs, Node node2, boolean fromLocal) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
         this.node = node2;
         String identityString = fs.get("identity");
@@ -377,6 +391,28 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         } else {
         	detectedPeer = (Peer) nominalPeer.firstElement();
         }
+        
+        /* Read the DSA key material for the peer */
+        try {
+    		this.peerCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
+    		this.peerPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), peerCryptoGroup);
+    		String signature = fs.get("sig");
+    		fs.removeValue("sig");
+    		this.isSignatureVerificationSuccessfull = DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(fs.toOrderedString().getBytes()));
+    		if(!isSignatureVerificationSuccessfull){
+    			Logger.error(this, "The integrity of the reference has been compromized!");
+    			throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!");
+    		}
+        } catch (IllegalBase64Exception e) {
+        	Logger.error(this, "Caught "+e, e);
+        	throw new FSParseException(e);
+        } catch (NullPointerException npe){
+        	/* FIXME: REMOVE: backward compatibility hack */
+        	Logger.normal(this, "Probably trying to add an old reference : "+npe);
+        	this.isSignatureVerificationSuccessfull=false;
+        }
+
+        /* FIXME: All the following is useless once we have definitely switched to STS! */
         
         // Setup incoming and outgoing setup ciphers
         byte[] nodeKey = node.identityHash;
@@ -1829,6 +1865,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         fs.put("testnet", Boolean.toString(testnetEnabled));
         fs.put("version", version);
         fs.put("myName", getName());
+        fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
+        fs.put("dsaPubKey", peerPubKey.asFieldSet());
 		if(myARK != null) {
 			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
 			fs.put("ark.number", Long.toString(myARK.suggestedEdition - 1));
@@ -2851,5 +2889,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	public synchronized long getTotalOutputBytes() {
 		return totalBytesOut;
+	}
+
+	public boolean isSignatureVerificationSuccessfull() {
+		return isSignatureVerificationSuccessfull;
 	}
 }

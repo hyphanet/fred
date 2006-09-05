@@ -18,6 +18,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -111,7 +112,10 @@ public class PeerManager {
                 } catch (PeerParseException e2) {
                     Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
                     continue;
-                }
+                } catch (ReferenceSignatureVerificationException e2) {
+                	Logger.error(this, "Could not parse peer: "+e2+"\n"+fs.toString(),e2);
+                    continue;
+				}
                 addPeer(pn);
                 gotSome = true;
             }
@@ -276,7 +280,7 @@ public class PeerManager {
     /**
      * Connect to a node provided the fieldset representing it.
      */
-    public void connect(SimpleFieldSet noderef) throws FSParseException, PeerParseException {
+    public void connect(SimpleFieldSet noderef) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
         PeerNode pn = new PeerNode(noderef, node, false);
         for(int i=0;i<myPeers.length;i++) {
             if(Arrays.equals(myPeers[i].identity, pn.identity)) return;

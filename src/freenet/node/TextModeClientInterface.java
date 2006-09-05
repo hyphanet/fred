@@ -30,6 +30,7 @@ import freenet.client.events.EventDumper;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.HexUtil;
@@ -608,7 +609,7 @@ public class TextModeClientInterface implements Runnable {
             addPeer(content);
         
         } else if(uline.startsWith("NAME:")) {
-            outsb.append("Node name currently: "+n.myName);
+            outsb.append("Node name currently: "+n.config.get("node").getOption("name").getValueString());
             String key = line.substring("NAME:".length());
             while((key.length() > 0) && (key.charAt(0) == ' '))
                 key = key.substring(1);
@@ -905,7 +906,11 @@ public class TextModeClientInterface implements Runnable {
             System.err.println("Did not parse: "+e1);
             Logger.error(this, "Did not parse: "+e1, e1);
             return;
-        }
+        } catch (ReferenceSignatureVerificationException e1) {
+        	System.err.println("Did not parse: "+e1);
+            Logger.error(this, "Did not parse: "+e1, e1);
+            return;
+		}
         if(n.peers.addPeer(pn))
             System.out.println("Added peer: "+pn);
         n.peers.writePeers();
