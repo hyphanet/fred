@@ -11,6 +11,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,6 +35,12 @@ public class SimpleFieldSet {
         values = new HashMap();
        	subsets = null;
         read(br);
+    }
+    
+    public SimpleFieldSet(SimpleFieldSet sfs){
+    	values = new HashMap(sfs.values);
+    	subsets = new HashMap(sfs.subsets);
+    	endMarker = sfs.endMarker;
     }
 
     public SimpleFieldSet(LineReader lis, int maxLineLength, int lineBufferSize, boolean tolerant, boolean utf8OrIso88591) throws IOException {
@@ -249,10 +256,66 @@ public class SimpleFieldSet {
     	}
     }
     
+    public void writeToOrdered(Writer w) throws IOException {
+		writeToOrdered(w, "", false);
+	}
+    
+    synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
+    	Object[] objects = values.keySet().toArray();
+    	String[] orderedValues = new String[values.size()];
+    	int i=0;
+    
+    	// Stringify
+    	for(i=0; i < values.size(); i++)
+    		orderedValues[i] = objects[i].toString();
+    	
+    	// Sort
+    	Arrays.sort(orderedValues);
+    	
+    	// Output
+    	for(i=0; i < orderedValues.length; i++)
+    		w.write(prefix+orderedValues[i]+'='+get(orderedValues[i])+'\n');
+    	
+    	if(subsets != null) {
+    		objects = subsets.keySet().toArray();
+    		String[] orderedPrefixes = new String[subsets.size()];
+    		
+    		// Stringify
+        	for(i=0; i < subsets.size(); i++)
+        		orderedPrefixes[i] = objects[i].toString();
+        	
+        	// Sort
+        	Arrays.sort(orderedPrefixes);
+    		
+        	for(i=0; i < orderedPrefixes.length; i++) {
+    			SimpleFieldSet subset = subset(orderedPrefixes[i]);
+    			if(subset == null) throw new NullPointerException();
+    			subset.writeToOrdered(w, prefix+orderedPrefixes[i]+MULTI_LEVEL_CHAR, true);
+    		}
+    	}
+    
+    	if(!noEndMarker) {
+    		if(endMarker == null)
+    			w.write("End\n");
+    		else
+    			w.write(endMarker+"\n");
+    	}
+    }
+    
     public String toString() {
         StringWriter sw = new StringWriter();
         try {
             writeTo(sw);
+        } catch (IOException e) {
+            Logger.error(this, "WTF?!: "+e+" in toString()!", e);
+        }
+        return sw.toString();
+    }
+    
+    public String toOrderedString() {
+    	StringWriter sw = new StringWriter();
+        try {
+            writeToOrdered(sw);
         } catch (IOException e) {
             Logger.error(this, "WTF?!: "+e+" in toString()!", e);
         }
