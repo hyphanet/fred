@@ -58,6 +58,7 @@ public class TextModeClientInterface implements Runnable {
     final File downloadsDir;
     final InputStream in;
     final OutputStream out;
+    private boolean doneSomething;
     
     public TextModeClientInterface(TextModeClientInterfaceServer server, InputStream in, OutputStream out) {
     	this.n = server.n;
@@ -185,7 +186,7 @@ public class TextModeClientInterface implements Runnable {
      * Process a single command.
      * @throws IOException If we could not write the data to stdout.
      */
-    private boolean processLine(BufferedReader reader, OutputStream out) throws IOException {
+    private boolean processLine(BufferedReader reader, final OutputStream out) throws IOException {
         String line;
         StringBuffer outsb = new StringBuffer();
         try {
@@ -741,8 +742,32 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PROBE:")) {
         	String s = uline.substring("PROBE:".length()).trim();
         	double d = Double.parseDouble(s);
-        	System.err.println("Starting probe request for location "+d);
-        	n.dispatcher.startProbe(d);
+        	ProbeCallback cb = new ProbeCallback() {
+				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter) {
+					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" hops, id "+id+"\r\n";
+					try {
+						out.write(msg.getBytes());
+						out.flush();
+					} catch (IOException e) {
+						// Already closed. :(
+					}
+					synchronized(TextModeClientInterface.this) {
+						doneSomething = true;
+						TextModeClientInterface.this.notifyAll();
+					}
+				}
+        	};
+        	n.dispatcher.startProbe(d, cb);
+        	synchronized(this) {
+        		while(!doneSomething) {
+        			try {
+        				wait(5000);
+        			} catch (InterruptedException e) {
+        				// Ignore
+        			}
+        		}
+        		doneSomething = false;
+        	}
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
         		outsb.append("  PLUGLOAD: pkg.Class                  - Load plugin from current classpath");        		

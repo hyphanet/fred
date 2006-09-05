@@ -408,18 +408,20 @@ public class NodeDispatcher implements Dispatcher {
 
     	final PeerNode src; // FIXME make this a weak reference or something ? - Memory leak with high connection churn
     	final HashSet visitedPeers;
+    	final ProbeCallback cb;
     	short counter;
     	short htl;
     	double nearest;
     	double best;
     	
-		public ProbeContext(long id, double target, double best, double nearest, short htl, short counter, PeerNode src) {
+		public ProbeContext(long id, double target, double best, double nearest, short htl, short counter, PeerNode src, ProbeCallback cb) {
 			visitedPeers = new HashSet();
 			this.counter = counter;
 			this.htl = htl;
 			this.nearest = nearest;
 			this.best = best;
 			this.src = src;
+			this.cb = cb;
 		}
     	
     }
@@ -463,11 +465,11 @@ public class NodeDispatcher implements Dispatcher {
 				Logger.minor(this, "Probe request popped "+o);
 			}
 		}
-		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true);
+		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, true, true, null);
 	}
 
     private boolean innerHandleProbeRequest(PeerNode src, long id, Long lid, double target, double best, 
-    		double nearest, short htl, short counter, boolean checkRecent, boolean canReject) {
+    		double nearest, short htl, short counter, boolean checkRecent, boolean canReject, ProbeCallback cb) {
     	if(htl > Node.MAX_HTL) htl = Node.MAX_HTL;
     	if(htl <= 1) htl = 1;
 		ProbeContext ctx = null;
@@ -483,7 +485,7 @@ public class NodeDispatcher implements Dispatcher {
 			if(!rejected) {
 				ctx = (ProbeContext) recentProbeContexts.get(lid);
 				if(ctx == null) {
-					ctx = new ProbeContext(id, target, best, nearest, htl, counter, src);
+					ctx = new ProbeContext(id, target, best, nearest, htl, counter, src, cb);
 				}
 				recentProbeContexts.push(lid, ctx); // promote or add
 				while(recentProbeContexts.size() > MAX_PROBE_CONTEXTS)
@@ -568,7 +570,7 @@ public class NodeDispatcher implements Dispatcher {
 				}
 				return true;
 			} else {
-				complete("success", src, target, best, id);
+				complete("success", target, best, nearest, id, ctx, counter);
 			}
 		}
 		
@@ -591,7 +593,7 @@ public class NodeDispatcher implements Dispatcher {
 						Logger.error(this, "Not connected rejecting a probe request from "+src);
 					}
 				} else {
-					complete("RNF", src, target, best, id);
+					complete("RNF", target, best, nearest, id, ctx, counter);
 				}
 				return true;
 			}
@@ -611,10 +613,9 @@ public class NodeDispatcher implements Dispatcher {
 		
 	}
 
-	private void complete(String msg, PeerNode src, double target, double best, long id) {
-		Logger.error(this, "Completed Probe request # "+id+" - RNF - "+msg+": "+best);
-		if(src == null)
-			System.out.println("Completed probe from "+target+": "+best+" ("+id+")");
+	private void complete(String msg, double target, double best, double nearest, long id, ProbeContext ctx, short counter) {
+		Logger.normal(this, "Completed Probe request # "+id+" - RNF - "+msg+": "+best);
+		ctx.cb.onCompleted(msg, target, best, nearest, id, counter);
 	}
 
 	private boolean handleProbeReply(Message m, PeerNode src) {
@@ -639,11 +640,16 @@ public class NodeDispatcher implements Dispatcher {
 				recentProbeContexts.popValue();
 		}
 		
-		Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
-		try {
-			ctx.src.sendAsync(complete, null, 0, null);
-		} catch (NotConnectedException e) {
-			Logger.error(this, "Not connected completing a probe request from "+ctx.src+" (forwarding completion from "+src+")");
+		if(ctx.src != null) {
+			Message complete = DMT.createFNPProbeReply(id, target, nearest, best, counter++);
+			try {
+				ctx.src.sendAsync(complete, null, 0, null);
+			} catch (NotConnectedException e) {
+				Logger.error(this, "Not connected completing a probe request from "+ctx.src+" (forwarding completion from "+src+")");
+			}
+		} else {
+			if(ctx.cb != null)
+				complete("Completed", target, best, nearest, id, ctx, counter);
 		}
 		return true;
 	}
@@ -672,16 +678,16 @@ public class NodeDispatcher implements Dispatcher {
 				recentProbeContexts.popValue();
 		}
 		
-		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false);
+		return innerHandleProbeRequest(src, id, lid, target, best, nearest, htl, counter, false, false, null);
     }
 
-	public void startProbe(double d) {
+	public void startProbe(double d, ProbeCallback cb) {
 		long l = node.random.nextLong();
 		Long ll = new Long(l);
 		synchronized(recentProbeRequestIDs) {
 			recentProbeRequestIDs.push(ll);
 		}
-		innerHandleProbeRequest(null, l, ll, d, 2.0, 2.0, Node.MAX_HTL, (short)0, false, false);
+		innerHandleProbeRequest(null, l, ll, d, 2.0, 2.0, Node.MAX_HTL, (short)0, false, false, cb);
 	}
 
 }
