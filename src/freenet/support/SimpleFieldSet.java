@@ -261,31 +261,20 @@ public class SimpleFieldSet {
 	}
     
     synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
-    	Object[] objects = values.keySet().toArray();
-    	String[] orderedValues = new String[values.size()];
+    	String[] keys = (String[]) values.keySet().toArray();
     	int i=0;
     
-    	// Stringify
-    	for(i=0; i < values.size(); i++)
-    		orderedValues[i] = objects[i].toString();
-    	
     	// Sort
-    	Arrays.sort(orderedValues);
+    	Arrays.sort(keys);
     	
     	// Output
-    	for(i=0; i < orderedValues.length; i++)
-    		w.write(prefix+orderedValues[i]+'='+get(orderedValues[i])+'\n');
+    	for(i=0; i < keys.length; i++)
+    		w.write(prefix+keys[i]+'='+get(keys[i])+'\n');
     	
     	if(subsets != null) {
-    		objects = subsets.keySet().toArray();
-    		String[] orderedPrefixes = new String[subsets.size()];
-    		
-    		// Stringify
-        	for(i=0; i < subsets.size(); i++)
-        		orderedPrefixes[i] = objects[i].toString();
-        	
-        	// Sort
-        	Arrays.sort(orderedPrefixes);
+    		String[] orderedPrefixes = (String[]) subsets.keySet().toArray();
+    		// Sort
+    		Arrays.sort(orderedPrefixes);
     		
         	for(i=0; i < orderedPrefixes.length; i++) {
     			SimpleFieldSet subset = subset(orderedPrefixes[i]);
