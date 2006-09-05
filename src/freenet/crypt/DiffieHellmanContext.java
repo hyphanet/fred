@@ -4,7 +4,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import net.i2p.util.NativeBigInteger;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
@@ -20,10 +19,6 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
     
     // Generated or set later
     NativeBigInteger peerExponential;
-    byte[] key;
-    BlockCipher cipher;
-    
-
 
 	public String toString() {
 	    StringBuffer sb = new StringBuffer();
@@ -50,19 +45,6 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
     public synchronized NativeBigInteger getOurExponential() {
         lastUsedTime = System.currentTimeMillis();
         return myExponential;
-    }
-
-    public synchronized BlockCipher getCipher() {
-        lastUsedTime = System.currentTimeMillis();
-        if(cipher != null) return cipher;
-        getKey();
-        try {
-            cipher = new Rijndael(256, 256);
-        } catch (UnsupportedCipherException e1) {
-            throw new Error(e1);
-        }
-        cipher.initialize(key);
-        return cipher;
     }
 
     public synchronized byte[] getKey() {
