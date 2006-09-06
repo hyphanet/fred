@@ -610,7 +610,7 @@ public class TextModeClientInterface implements Runnable {
             addPeer(content);
         
         } else if(uline.startsWith("NAME:")) {
-            outsb.append("Node name currently: "+n.config.get("node").getOption("name").getValueString());
+            outsb.append("Node name currently: "+n.getName());
             String key = line.substring("NAME:".length());
             while((key.length() > 0) && (key.charAt(0) == ' '))
                 key = key.substring(1);
@@ -619,7 +619,7 @@ public class TextModeClientInterface implements Runnable {
             outsb.append("New name: "+key);
             
             try{
-            	n.config.get("node").getOption("name").setValue(key);
+            	n.setName(key);
                 if(Logger.shouldLog(Logger.MINOR, this))
                 	Logger.minor(this, "Setting node.name to "+key);
             }catch(Exception e){
