@@ -951,6 +951,9 @@ public class FNPPacketMangler implements LowLevelFilter {
             System.arraycopy(messageData, 0, newMessageData, 0, x);
             messageData = newMessageData;
             messages = newMsgs;
+            newMsgs = new MessageItem[x];
+            System.arraycopy(messages, 0, newMsgs, 0, x);
+            messages = newMsgs;
         }
         AsyncMessageCallback callbacks[] = new AsyncMessageCallback[callbacksCount];
         x=0;
