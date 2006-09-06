@@ -768,6 +768,8 @@ public class TextModeClientInterface implements Runnable {
         		}
         		doneSomething = false;
         	}
+        } else if(uline.startsWith("PROBEALL")) {
+        	probeAll();
         } else if(uline.startsWith("PLUGLOAD:")) {
         	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
         		outsb.append("  PLUGLOAD: pkg.Class                  - Load plugin from current classpath");        		
@@ -801,7 +803,14 @@ public class TextModeClientInterface implements Runnable {
         return false;
     }
 
-    /**
+    private void probeAll() {
+    	GlobalProbe p = new GlobalProbe(n);
+    	Thread t = new Thread(p);
+    	t.setDaemon(true);
+    	t.start();
+	}
+
+	/**
      * Create a map of String -> Bucket for every file in a directory
      * and its subdirs.
      */
