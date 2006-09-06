@@ -1662,14 +1662,20 @@ public class Node {
 		if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
 			mySignedReference = fs.toOrderedString();
 			try{
-				myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(mySignedReference.getBytes("UTF-8")), random);
+		        MessageDigest md = MessageDigest.getInstance("SHA-256");
+				myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(md.digest(mySignedReference.getBytes("UTF-8"))), random);
 			} catch(UnsupportedEncodingException e){
 				//duh ?
 				Logger.error(this, "Error while signing the node identity!"+e);
 				System.err.println("Error while signing the node identity!"+e);
 				e.printStackTrace();
 				exit(EXIT_CRAPPY_JVM);
-			}
+			} catch (NoSuchAlgorithmException e2) {
+				Logger.error(this, "Error while signing the node identity!"+e2);
+				System.err.println("Error while signing the node identity!"+e2);
+				e2.printStackTrace();
+				exit(EXIT_CRAPPY_JVM);
+	        }
 		}
 		fs.put("sig", myReferenceSignature.toString());
 		

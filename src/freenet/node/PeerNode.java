@@ -410,10 +410,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     		fs.removeValue("sig"); 
     		if(!fromLocal){
     			try{
-    				if(signature == null || !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(fs.toOrderedString().getBytes("UTF-8")))){
+    				if(signature == null || !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(md.digest(fs.toOrderedString().getBytes("UTF-8"))))){
     					Logger.error(this, "The integrity of the reference has been compromized!");
     					this.isSignatureVerificationSuccessfull = false;
-    					if(Version.getArbitraryBuildNumber(version)>969) // TODO: REMOVE: the backward compat. kludge : version checking
+    					if(Version.getArbitraryBuildNumber(version)>970) // TODO: REMOVE: the backward compat. kludge : version checking
     						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!");
     				}else
     					this.isSignatureVerificationSuccessfull = true;
@@ -2003,13 +2003,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			localRoutingBackedOffUntil = routingBackedOffUntil;
 		}
 		synchronized(this) {
-			if(now > lastSampleTime) { // don't report twice in the same millisecond
-				if (now > localRoutingBackedOffUntil) { // not backed off
-					if (lastSampleTime > localRoutingBackedOffUntil) { // last sample after last backoff
+			if(now > lastSampleTime) {
+				if (now > localRoutingBackedOffUntil) {
+					if (lastSampleTime > localRoutingBackedOffUntil) {
 						backedOffPercent.report(0.0);
 					} else {
-						if(localRoutingBackedOffUntil > 0)
-							backedOffPercent.report((double)(localRoutingBackedOffUntil - lastSampleTime)/(double)(now - lastSampleTime));
+						backedOffPercent.report((double)(localRoutingBackedOffUntil - lastSampleTime)/(double)(now - lastSampleTime));
 					}
 				} else {
 					backedOffPercent.report(1.0);
