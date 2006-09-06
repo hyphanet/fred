@@ -67,6 +67,17 @@ public class LimitedRangeIntByteArrayMap {
     }
     
     /**
+     * Get the time at which an index was re-added last.
+     */
+    public synchronized long getReaddedTime(int index) {
+        Integer i = new Integer(index);
+        LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        if(wrapper != null)
+        	return wrapper.reputTime;
+        else return -1;
+    }
+    
+    /**
      * Try to add an index/data mapping.
      * @return True if we succeeded, false if the index was out
      * of range.
@@ -89,7 +100,12 @@ public class LimitedRangeIntByteArrayMap {
             minValue = index;
         }
         if(data == null) throw new NullPointerException();
-        contents.put(new Integer(index), new LimitedRangeIntByteArrayMapElement(index, data, callbacks));
+        Integer i = new Integer(index);
+        LimitedRangeIntByteArrayMapElement le = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        if(le == null)
+        	contents.put(new Integer(index), new LimitedRangeIntByteArrayMapElement(index, data, callbacks));
+        else
+        	le.reput();
         notifyAll();
         return true;
     }

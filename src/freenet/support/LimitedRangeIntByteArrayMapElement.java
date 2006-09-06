@@ -16,4 +16,9 @@ public class LimitedRangeIntByteArrayMapElement {
     public final byte[] data;
     public final AsyncMessageCallback[] callbacks;
     public final long createdTime;
+    long reputTime;
+    
+	public void reput() {
+		this.reputTime = System.currentTimeMillis();
+	}
 }

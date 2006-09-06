@@ -796,7 +796,7 @@ public class FNPPacketMangler implements LowLevelFilter {
                 Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
             }
             int realSeqNo = referenceSeqNumber - offset;
-            if(logMINOR) Logger.minor(this, "RetransmitRequest: "+realSeqNo);
+            if(logMINOR) Logger.minor(this, "RetransmitRequest: "+realSeqNo+" for "+tracker.pn.getPeer());
             tracker.resendPacket(realSeqNo);
         }
 
