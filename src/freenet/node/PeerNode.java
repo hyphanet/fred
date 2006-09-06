@@ -2003,12 +2003,13 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			localRoutingBackedOffUntil = routingBackedOffUntil;
 		}
 		synchronized(this) {
-			if(now > lastSampleTime) {
-				if (now > localRoutingBackedOffUntil) {
-					if (lastSampleTime > localRoutingBackedOffUntil) {
+			if(now > lastSampleTime) { // don't report twice in the same millisecond
+				if (now > localRoutingBackedOffUntil) { // not backed off
+					if (lastSampleTime > localRoutingBackedOffUntil) { // last sample after last backoff
 						backedOffPercent.report(0.0);
 					} else {
-						backedOffPercent.report((double)(localRoutingBackedOffUntil - lastSampleTime)/(double)(now - lastSampleTime));
+						if(localRoutingBackedOffUntil > 0)
+							backedOffPercent.report((double)(localRoutingBackedOffUntil - lastSampleTime)/(double)(now - lastSampleTime));
 					}
 				} else {
 					backedOffPercent.report(1.0);
