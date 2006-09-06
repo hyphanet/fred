@@ -413,7 +413,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     				if(signature == null || !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(fs.toOrderedString().getBytes("UTF-8")))){
     					Logger.error(this, "The integrity of the reference has been compromized!");
     					this.isSignatureVerificationSuccessfull = false;
-    					if(Version.getArbitraryBuildNumber(version)>966) // TODO: REMOVE: the backward compat. kludge : version checking
+    					if(Version.getArbitraryBuildNumber(version)>969) // TODO: REMOVE: the backward compat. kludge : version checking
     						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!");
     				}else
     					this.isSignatureVerificationSuccessfull = true;
