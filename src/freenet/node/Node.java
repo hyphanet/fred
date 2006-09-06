@@ -2957,6 +2957,8 @@ public class Node {
 	public void maybeUpdateNodeIOStats(long now) {
 		if(now > nextNodeIOStatsUpdateTime) {
 			long[] io_stats = IOStatisticCollector.getTotalIO();
+			long outdiff;
+			long indiff;
 			synchronized(ioStatSync) {
 				previous_output_stat = last_output_stat;
 				previous_input_stat = last_input_stat;
@@ -2964,7 +2966,11 @@ public class Node {
 				last_output_stat = io_stats[ 0 ];
 				last_input_stat = io_stats[ 1 ];
 				last_io_stat_time = now;
+				outdiff = last_output_stat - previous_output_stat;
+				indiff = last_input_stat - previous_input_stat;
 			}
+			if(logMINOR)
+				Logger.minor(this, "Last 2 seconds: input: "+indiff+" output: "+outdiff);
 			nextNodeIOStatsUpdateTime = now + nodeIOStatsUpdateInterval;
 		}
 	}

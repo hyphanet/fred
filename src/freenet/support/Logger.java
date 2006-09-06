@@ -67,6 +67,10 @@ public abstract class Logger {
 	    logger.log(o, s, e, ERROR);
 	}
 	
+	public synchronized static void minor(Class c, String s) {
+		logger.log(c, s, MINOR);
+	}
+	
 	public synchronized static void minor(Object o, String s) {
 	    logger.log(o, s, MINOR);
 	}
