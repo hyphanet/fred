@@ -214,10 +214,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     private String version;
     
     /** Peer node crypto group */
-    private DSAGroup peerCryptoGroup;
+    DSAGroup peerCryptoGroup;
 
     /** Peer node public key */
-    private DSAPublicKey peerPubKey;
+    DSAPublicKey peerPubKey;
     
     private boolean isSignatureVerificationSuccessfull;
     
@@ -395,15 +395,26 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         /* Read the DSA key material for the peer */
         try {
-    		this.peerCryptoGroup = DSAGroup.create(fs.subset("dsaGroup"));
-    		this.peerPubKey = DSAPublicKey.create(fs.subset("dsaPubKey"), peerCryptoGroup);
+        	SimpleFieldSet sfs = fs.subset("dsaGroup");
+        	if(sfs == null)
+        		this.peerCryptoGroup = null;
+        	else
+        		this.peerCryptoGroup = DSAGroup.create(sfs);
+        	
+        	sfs = fs.subset("dsaPubKey");
+        	if(sfs == null)
+        		this.peerPubKey = null;
+        	else
+        		this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
+        	
     		String signature = fs.get("sig");
-    		fs.removeValue("sig");
-    		this.isSignatureVerificationSuccessfull = DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(fs.toOrderedString().getBytes()));
-    		if(!isSignatureVerificationSuccessfull){
+    		fs.removeValue("sig"); 
+    		if(signature == null || !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(fs.toOrderedString().getBytes()))){
     			Logger.error(this, "The integrity of the reference has been compromized!");
+    			this.isSignatureVerificationSuccessfull = false;
     			throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!");
-    		}
+    		}else
+    			this.isSignatureVerificationSuccessfull = true;
         } catch (IllegalBase64Exception e) {
         	Logger.error(this, "Caught "+e, e);
         	throw new FSParseException(e);
@@ -1866,8 +1877,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         fs.put("testnet", Boolean.toString(testnetEnabled));
         fs.put("version", version);
         fs.put("myName", getName());
-        fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
-        fs.put("dsaPubKey", peerPubKey.asFieldSet());
+        if(peerCryptoGroup != null)
+        	fs.put("dsaGroup", peerCryptoGroup.asFieldSet());
+        if(peerPubKey != null)
+        	fs.put("dsaPubKey", peerPubKey.asFieldSet());
 		if(myARK != null) {
 			// Decrement it because we keep the number we would like to fetch, not the last one fetched.
 			fs.put("ark.number", Long.toString(myARK.suggestedEdition - 1));
