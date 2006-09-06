@@ -64,6 +64,7 @@ public class GlobalProbe implements Runnable {
 	    		}
 	    		output(lastLocation);
 	    		prevLoc = lastLocation;
+	    		if(lastLocation > 1.5) break;
 	    		ctr++;
 	    		// Sleep 10 seconds so we don't flood
 	    		try {

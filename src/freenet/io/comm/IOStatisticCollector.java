@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import freenet.support.Logger;
+
 public class IOStatisticCollector {
 	public static final int STATISTICS_ENTRIES = 10;
 	public static final int STATISTICS_DURATION_S = 30;
@@ -54,6 +56,8 @@ public class IOStatisticCollector {
 		synchronized(this) {
 			totalbytesout += (outbytes>0)?outbytes:0;
 			totalbytesin += (inbytes>0)?inbytes:0;
+			if(Logger.shouldLog(Logger.MINOR, IOStatisticCollector.class))
+				Logger.minor(IOStatisticCollector.class, "Add("+key+","+inbytes+","+outbytes+" -> "+totalbytesin+" : "+totalbytesout);
 		}
 	}
 	
