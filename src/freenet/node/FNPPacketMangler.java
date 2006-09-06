@@ -934,6 +934,10 @@ public class FNPPacketMangler implements LowLevelFilter {
             } else {
                 byte[] data = mi.getData(pn);
                 messageData[x] = data;
+                if(data.length > node.usm.getMaxPacketSize()) {
+                    Logger.error(this, "Message exceeds packet size: "+messages[i]);
+                    // Will be handled later
+                }
                 newMsgs[x] = mi;
                 alreadyReported[x] = mi.alreadyReportedBytes;
                 x++;
@@ -946,6 +950,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             byte[][] newMessageData = new byte[x][];
             System.arraycopy(messageData, 0, newMessageData, 0, x);
             messageData = newMessageData;
+            messages = newMsgs;
         }
         AsyncMessageCallback callbacks[] = new AsyncMessageCallback[callbacksCount];
         x=0;
@@ -1002,15 +1007,11 @@ public class FNPPacketMangler implements LowLevelFilter {
             int count = 0;
             int lastIndex = 0;
             alreadyReportedBytes = 0;
-            for(int i=0;i<=messages.length;i++) {
+            for(int i=0;i<=messageData.length;i++) {
                 int thisLength;
                 if(i == messages.length) thisLength = 0;
                 else thisLength = (messageData[i].length + 2);
                 int newLength = length + thisLength;
-                if(thisLength > node.usm.getMaxPacketSize()) {
-                    Logger.error(this, "Message exceeds packet size: "+messages[i]);
-                    // Send the last lot, then send this
-                }
                 count++;
                 if((newLength > node.usm.getMaxPacketSize()) || (count > 255) || (i == messages.length)) {
                     // lastIndex up to the message right before this one
