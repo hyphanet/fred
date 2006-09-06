@@ -412,16 +412,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     		if(signature == null || !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(fs.toOrderedString().getBytes()))){
     			Logger.error(this, "The integrity of the reference has been compromized!");
     			this.isSignatureVerificationSuccessfull = false;
-    			throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!");
+    			//FIXME : REMOVE: throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!");
     		}else
     			this.isSignatureVerificationSuccessfull = true;
         } catch (IllegalBase64Exception e) {
         	Logger.error(this, "Caught "+e, e);
         	throw new FSParseException(e);
-        } catch (NullPointerException npe){
-        	/* FIXME: REMOVE: backward compatibility hack */
-        	Logger.normal(this, "Probably trying to add an old reference : "+npe);
-        	this.isSignatureVerificationSuccessfull=false;
         }
 
         /* FIXME: All the following is useless once we have definitely switched to STS! */
