@@ -618,12 +618,35 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         		FreenetURI uri = new FreenetURI(arkPubKey);
         		ClientSSK ssk = new ClientSSK(uri);
         		ark = new USK(ssk, arkNo);
+        		
+        		// Maybe synchronize ?
+        		if(peerCryptoGroup == null){
+        			SimpleFieldSet sfs = fs.subset("dsaGroup");
+        			Logger.normal(this, "Picking up peerCrypto group from ark for "+this.privateDarknetComment);
+        			if(sfs == null)
+        				this.peerCryptoGroup = null;
+        			else
+        				this.peerCryptoGroup = DSAGroup.create(sfs);
+        		}
+        		
+        		if(peerPubKey == null){
+        			SimpleFieldSet sfs = fs.subset("dsaGroup");
+        			Logger.normal(this, "Picking up dsaGroup from ark for "+this.privateDarknetComment);
+        			
+        			sfs = fs.subset("dsaPubKey");
+        			if(sfs == null)
+        				this.peerPubKey = null;
+        			else
+        				this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
+        		}
         	}
         } catch (MalformedURLException e) {
         	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
         } catch (NumberFormatException e) {
         	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
-        }
+        } catch (IllegalBase64Exception e) {
+        	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
+		}
 
 		synchronized(this) {
 			if(ark != null) {
