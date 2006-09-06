@@ -289,18 +289,21 @@ public class FNPPacketMangler implements LowLevelFilter {
         	/*
         	 * Now, to the real meat
         	 * 
-        	 *  1. Alice generates a random number x and computes and sends the exponential g^x to Bob.
-        	 *	2. Bob generates a random number y and computes the exponential g^y.    
-        	 *	3. Bob computes the shared secret key K = (g^x)^y.
-        	 *	4. Bob concatenates the exponentials (g^y, g^x) (order is important),
+        	 *  1a. Alice generates a random number x and computes and sends the exponential g^x to Bob.
+        	 *  
+        	 *	2a. Bob generates a random number y and computes the exponential g^y.    
+        	 *	2b. Bob computes the shared secret key K = (g^x)^y.
+        	 *	2c. Bob concatenates the exponentials (g^y, g^x) (order is important),
         	 * 	  signs them using his asymmetric key B, and then encrypts them with K.
-        	 *    He sends the ciphertext along with his own exponential g^y to Alice.
-        	 *  5. Alice computes the shared secret key K = (gy)x.
-        	 *  6. Alice decrypts and verifies Bob's signature.
-        	 *  7. Alice concatenates the exponentials (g^x, g^y) (order is important),
+        	 *  2d. He sends the ciphertext along with his own exponential g^y to Alice.
+        	 *  
+        	 *  3a. Alice computes the shared secret key K = (gy)x.
+        	 *  3b. Alice decrypts and verifies Bob's signature.
+        	 *  3c. Alice concatenates the exponentials (g^x, g^y) (order is important),
         	 *    signs them using her asymmetric key A, and then encrypts them with K.
-        	 *    She sends the ciphertext to Bob.
-        	 *  8. Bob decrypts and verifies Alice's signature.
+        	 *  3d. She sends the ciphertext to Bob.
+        	 *  
+        	 *  4. Bob decrypts and verifies Alice's signature.
         	 * 
         	 * 	Alice and Bob are now mutually authenticated and have a shared secret.
         	 *  This secret, K, can then be used to encrypt further communication.
