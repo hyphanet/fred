@@ -41,7 +41,7 @@ import freenet.support.Logger;
  */
 public class BlockTransmitter {
 
-	public static final int SEND_TIMEOUT = 30000;
+	public static final int SEND_TIMEOUT = 60000;
 	public static final int PING_EVERY = 8;
 	
 	UdpSocketManager _usm;
