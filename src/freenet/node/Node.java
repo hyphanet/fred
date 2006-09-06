@@ -383,6 +383,7 @@ public class Node {
 	static final int EXIT_COULD_NOT_START_FCP = 17;
 	static final int EXIT_COULD_NOT_START_FPROXY = 18;
 	static final int EXIT_COULD_NOT_START_TMCI = 19;
+	static final int EXIT_CRAPPY_JVM = 255;
 	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
 	public static final int EXIT_COULD_NOT_START_UPDATER = 21;
 	static final int EXIT_EXTRA_PEER_DATA_DIR = 22;
@@ -1660,7 +1661,15 @@ public class Node {
 		// TODO: maybe synchronize ?
 		if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
 			mySignedReference = fs.toOrderedString();
-			myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(mySignedReference.getBytes()), random);
+			try{
+				myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(mySignedReference.getBytes("UTF-8")), random);
+			} catch(UnsupportedEncodingException e){
+				//duh ?
+				Logger.error(this, "Error while signing the node identity!"+e);
+				System.err.println("Error while signing the node identity!"+e);
+				e.printStackTrace();
+				exit(EXIT_CRAPPY_JVM);
+			}
 		}
 		fs.put("sig", myReferenceSignature.toString());
 		
@@ -2991,5 +3000,13 @@ public class Node {
 		synchronized(statsSync) {
 			return totalPayloadSent;
 		}
+	}
+
+	protected DSAPrivateKey getMyPrivKey() {
+		return myPrivKey;
+	}
+
+	protected DSAPublicKey getMyPubKey() {
+		return myPubKey;
 	}
 }

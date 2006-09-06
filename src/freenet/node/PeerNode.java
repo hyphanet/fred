@@ -33,7 +33,6 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
-import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
@@ -409,12 +408,23 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         	
     		String signature = fs.get("sig");
     		fs.removeValue("sig"); 
-    		if(signature == null || !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(fs.toOrderedString().getBytes()))){
-    			Logger.error(this, "The integrity of the reference has been compromized!");
-    			this.isSignatureVerificationSuccessfull = false;
-    			if((Version.getArbitraryBuildNumber(version)>966) && (!fromLocal)) // TODO: REMOVE: the backward compat. kludge : version checking
-    				throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!");
-    		}else
+    		if(!fromLocal){
+    			try{
+    				if(signature == null || !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(fs.toOrderedString().getBytes("UTF-8")))){
+    					Logger.error(this, "The integrity of the reference has been compromized!");
+    					this.isSignatureVerificationSuccessfull = false;
+    					if(Version.getArbitraryBuildNumber(version)>966) // TODO: REMOVE: the backward compat. kludge : version checking
+    						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!");
+    				}else
+    					this.isSignatureVerificationSuccessfull = true;
+    			} catch (UnsupportedEncodingException e) {
+    				//   duh ?
+    				Logger.error(this, "Error while signing the node identity!"+e);
+    				System.err.println("Error while signing the node identity!"+e);
+    				e.printStackTrace();
+    				node.exit(Node.EXIT_CRAPPY_JVM);
+				}
+    		}else // Local is always good (assumed)
     			this.isSignatureVerificationSuccessfull = true;
         } catch (IllegalBase64Exception e) {
         	Logger.error(this, "Caught "+e, e);
@@ -1322,9 +1332,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         return ctx;
     }
 
-    public synchronized void setDHContext(DiffieHellmanContext ctx2) {
+    public synchronized void setKeyAgreementSchemeContext(KeyAgreementSchemeContext ctx2) {
         this.ctx = ctx2;
-        if(logMINOR) Logger.minor(this, "setDHContext("+ctx2+") on "+this);
+        if(logMINOR) Logger.minor(this, "setKeyAgreementSchemeContext("+ctx2+") on "+this);
     }
 
     /**

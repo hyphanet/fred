@@ -11,6 +11,7 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.EntropySource;
 import freenet.crypt.PCFBMode;
+import freenet.crypt.StationToStationContext;
 import freenet.io.comm.*;
 import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Fields;
@@ -280,7 +281,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         }else if (negType == 1){
         	// We are gonna do simple StS
         
-        	if((packetType < 0) || (packetType > 3)) {
+        	if((packetType < 0) || (packetType > 2)) {
         		Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
         		return;
         	}
@@ -305,6 +306,19 @@ public class FNPPacketMangler implements LowLevelFilter {
         	 *  This secret, K, can then be used to encrypt further communication.
         	 */
         	
+        	if(packetType == 0) {
+        		StationToStationContext ctx = new StationToStationContext(node.getMyPrivKey(), pn.peerCryptoGroup, pn.peerPubKey, node.random);
+        		if(ctx == null) return;
+        		// Send g^x%p
+        		sendFirstStSPacket(1, ctx.getOurExponential(), pn, replyTo);
+        	} else if(packetType == 1) {
+        		StationToStationContext ctx = new StationToStationContext(node.getMyPrivKey(), pn.peerCryptoGroup, pn.peerPubKey, node.random);
+        		if(ctx == null) return;
+        		sendSecondStSPacket(2, ctx, pn, replyTo, payload);
+        	} else if(packetType == 2) {
+
+        	}
+
         	// Not implemented yet... fail
         	return;
         }
@@ -544,7 +558,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         } else {
             ctx = DiffieHellman.generateContext();
             // Don't calculate the key until we need it
-            pn.setDHContext(ctx);
+            pn.setKeyAgreementSchemeContext(ctx);
         }
         ctx.setOtherSideExponential(a);
         if(logMINOR) Logger.minor(this, "His exponential: "+a.toHexString());
@@ -1446,7 +1460,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             long DHTime2 = System.currentTimeMillis();
             if((DHTime2 - DHTime1) > 1000)
                 Logger.error(this, "DHTime2 is more than a second after DHTime1 ("+(DHTime2 - DHTime1)+") working on "+pn.getName());
-            pn.setDHContext(ctx);
+            pn.setKeyAgreementSchemeContext(ctx);
             long DHTime3 = System.currentTimeMillis();
             if((DHTime3 - DHTime2) > 1000)
                 Logger.error(this, "DHTime3 is more than a second after DHTime2 ("+(DHTime3 - DHTime2)+") working on "+pn.getName());
@@ -1487,5 +1501,25 @@ public class FNPPacketMangler implements LowLevelFilter {
     public boolean isDisconnected(PeerContext context) {
         if(context == null) return false;
         return !((PeerNode)context).isConnected();
+    }
+    
+    /**
+     * Send a first-half (phase 0 or 1) StS negotiation packet to the node.
+     * @param phase The phase of the message to be sent (0 or 1).
+     * @param integer
+     * @param replyTo
+     */
+    private void sendFirstStSPacket(int phase, NativeBigInteger integer, PeerNode pn, Peer replyTo) {
+        if(logMINOR) Logger.minor(this, "Sending ("+phase+") "+integer.toHexString()+" to "+pn.getPeer());
+        byte[] data = integer.toByteArray();
+
+        sendAuthPacket(1, 1, phase, data, pn, replyTo);
+    }
+    
+    private void sendSecondStSPacket(int phase, StationToStationContext ctx, PeerNode pn, Peer replyTo, byte[] data) {
+    	NativeBigInteger hisExponent = new NativeBigInteger(data);
+    	ctx.setOtherSideExponential(hisExponent);
+    	
+        sendAuthPacket(1, 1, phase, ctx.concatAndSignAndCrypt(), pn, replyTo);
     }
 }
