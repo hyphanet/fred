@@ -16,7 +16,7 @@ public class LimitedRangeIntByteArrayMapElement {
     public final byte[] data;
     public final AsyncMessageCallback[] callbacks;
     public final long createdTime;
-    long reputTime;
+    long reputTime = -1; /* Do NOT get rid of the initialisation otherwise calling LimitedRangeIntByteArrayMap.getReaddedTime() might return bullshit */
     
 	public void reput() {
 		this.reputTime = System.currentTimeMillis();
