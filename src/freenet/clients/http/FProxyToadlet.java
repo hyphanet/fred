@@ -45,6 +45,15 @@ public class FProxyToadlet extends Toadlet {
 	/** Maximum size for transparent pass-through, should be a config option */
 	static final long MAX_LENGTH = 2*1024*1024; // 2MB
 	
+	static final URI welcome;
+	static {
+		try {
+			welcome = new URI("/welcome/");
+		} catch (URISyntaxException e) {
+			throw new Error("Broken URI constructor: "+e, e);
+		}
+	}
+	
 	public FProxyToadlet(HighLevelSimpleClient client, NodeClientCore core) {
 		super(client);
 		client.setMaxLength(MAX_LENGTH);
@@ -145,7 +154,16 @@ public class FProxyToadlet extends Toadlet {
 			if (httprequest.isParameterSet("key")) {
 				MultiValueTable headers = new MultiValueTable();
 				
-				headers.put("Location", "/"+httprequest.getParam("key"));
+				String k = httprequest.getParam("key");
+				FreenetURI newURI;
+				try {
+					newURI = new FreenetURI(k);
+				} catch (MalformedURLException e) {
+					sendErrorPage(ctx, 404, "Not found", "Invalid key");
+					return;
+				}
+				
+				headers.put("Location", "/"+newURI);
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
@@ -155,7 +173,7 @@ public class FProxyToadlet extends Toadlet {
 				String querystring = uri.getQuery();
 				
 				if (querystring == null) {
-					re.newuri = new URI("/welcome/");
+					re.newuri = welcome;
 				} else {
 					// TODP possibly a proper URLEncode method
 					querystring = querystring.replace(' ', '+');
