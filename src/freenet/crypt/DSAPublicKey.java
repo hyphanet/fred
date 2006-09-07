@@ -3,7 +3,6 @@ package freenet.crypt;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.io.*;
 
 import freenet.support.Base64;
@@ -140,12 +139,8 @@ public class DSAPublicKey extends CryptoKey {
     }
 
     public byte[] asBytesHash() {
-    	try {
-			MessageDigest md256 = MessageDigest.getInstance("SHA-256");
-			return md256.digest(asBytes());
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error(e);
-		}
+    	MessageDigest md256 = SHA256.getMessageDigest();
+    	return md256.digest(asBytes());
     }
     
     public byte[] asPaddedBytes() {

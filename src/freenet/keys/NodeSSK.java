@@ -5,10 +5,10 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import freenet.crypt.DSAPublicKey;
+import freenet.crypt.SHA256;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -47,12 +47,7 @@ public class NodeSSK extends Key {
 		this.pubKeyHash = pkHash;
 		this.pubKey = pubKey;
 		if(pubKey != null) {
-			MessageDigest md256;
-			try {
-				md256 = MessageDigest.getInstance("SHA-256");
-			} catch (NoSuchAlgorithmException e) {
-				throw new Error(e);
-			}
+			MessageDigest md256 = SHA256.getMessageDigest();
 			byte[] hash = md256.digest(pubKey.asBytes());
 			if(!Arrays.equals(hash, pkHash))
 				throw new SSKVerifyException("Invalid pubKey: wrong hash");
@@ -66,12 +61,7 @@ public class NodeSSK extends Key {
 	
 	// routingKey = H( E(H(docname)) + H(pubkey) )
 	private static byte[] makeRoutingKey(byte[] pkHash, byte[] ehDocname) {
-		MessageDigest md256;
-		try {
-			md256 = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error(e);
-		}
+		MessageDigest md256 = SHA256.getMessageDigest();
 		md256.update(ehDocname);
 		md256.update(pkHash);
 		return md256.digest();
@@ -132,12 +122,7 @@ public class NodeSSK extends Key {
 		if(pubKey2 == null) return;
 		if((pubKey == null) || !pubKey2.equals(pubKey)) {
 			if(pubKey2 != null) {
-				MessageDigest md256;
-				try {
-					md256 = MessageDigest.getInstance("SHA-256");
-				} catch (NoSuchAlgorithmException e) {
-					throw new Error(e);
-				}
+				MessageDigest md256 = SHA256.getMessageDigest();
 				byte[] newPubKeyHash = md256.digest(pubKey2.asBytes());
 				if(Arrays.equals(pubKeyHash, newPubKeyHash)) {
 					if(pubKey != null) {

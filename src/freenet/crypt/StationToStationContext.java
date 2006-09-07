@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.util.Random;
 
 import net.i2p.util.NativeBigInteger;
@@ -15,7 +16,7 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     // Set on startup
     
     /** Random number */
-    final int myRandom;
+    final NativeBigInteger myRandom;
     
     /** My exponential */
     final NativeBigInteger myExponential;
@@ -44,8 +45,9 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
         this.group = group;
         this.hisPubKey = hisKey;
         // How big is the random ? FIXME!
-        this.myRandom = random.nextInt();
-        this.myExponential = (NativeBigInteger) group.getG().pow(myRandom);
+        this.myRandom = new NativeBigInteger(2048, rand);
+        // Not sure of what I'm doing below.
+        this.myExponential = (NativeBigInteger) group.getG().modPow(myRandom, group.getQ());
         lastUsedTime = System.currentTimeMillis();
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
@@ -74,7 +76,8 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
         // Calculate key
         if(logMINOR)
             Logger.minor(this, "My exponent: "+myExponential.toHexString()+", my random: "+myRandom+", peer's exponential: "+hisExponential.toHexString());
-        key = (NativeBigInteger) hisExponential.pow(myRandom);
+        // Not sure of what I'm doing below
+        key = (NativeBigInteger) hisExponential.modPow(myRandom, group.getQ());
 
         if(logMINOR)
             Logger.minor(this, "Key="+HexUtil.bytesToHex(key.toByteArray()));
@@ -84,10 +87,12 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     public synchronized byte[] concatAndSignAndCrypt(){
     	lastUsedTime = System.currentTimeMillis();
     	if(hisExponential == null) throw new IllegalStateException("Can't call concatAndSignAndCrypt() until setOtherSideExponential() has been called!");
-    	if(key == null)  throw new IllegalStateException("Can't call concatAndSignAndCrypt() until getKey() has been called!");
+    	if(key == null)  getKey();
+    	
+    	MessageDigest md = SHA256.getMessageDigest();
     	
     	String message = new String("("+myExponential+","+hisExponential+")");
-    	DSASignature signature = DSA.sign(group, myPrivateKey, new BigInteger(message.getBytes()), random);
+    	DSASignature signature = DSA.sign(group, myPrivateKey, new BigInteger(md.digest(message.getBytes())), random);
     	
     	if(logMINOR)
             Logger.minor(this, "The concat result : "+message+". Its signature : "+signature);
@@ -113,19 +118,20 @@ public class StationToStationContext extends KeyAgreementSchemeContext {
     	lastUsedTime = System.currentTimeMillis();
     	if(data == null) return false;
     	if(hisExponential == null) throw new IllegalStateException("Can't call concatAndSignAndCrypt() until setOtherSideExponential() has been called!");
-    	if(key == null)  throw new IllegalStateException("Can't call concatAndSignAndCrypt() until getKey() has been called!");
+    	if(key == null)  getKey();
     	
     	ByteArrayInputStream is = new ByteArrayInputStream(data);
     	EncipherInputStream ei = new EncipherInputStream(is, getCipher());
     	final String message = new String("("+hisExponential+","+myExponential+")");
 
-    	try{
+    	MessageDigest md = SHA256.getMessageDigest();
+        try{
     		String signatureToCheck = ei.toString();
     		ei.close();
     		is.close();
 
-    		if(signatureToCheck != null && signatureToCheck.equals(message))
-    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(message.getBytes())))
+    		if(signatureToCheck != null)
+    			if(DSA.verify(hisPubKey, new DSASignature(signatureToCheck), new BigInteger(md.digest(message.getBytes()))))
     				return true;
 
     	} catch(IOException e){

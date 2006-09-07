@@ -3,13 +3,13 @@ package freenet.keys;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.Global;
+import freenet.crypt.SHA256;
 
 public class ClientKSK extends InsertableClientSSK {
 
@@ -31,12 +31,7 @@ public class ClientKSK extends InsertableClientSSK {
 	}
 	
 	public static ClientKSK create(String keyword) {
-		MessageDigest md256;
-		try {
-			md256 = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error(e);
-		}
+		MessageDigest md256 = SHA256.getMessageDigest();
 		byte[] keywordHash;
 		try {
 			keywordHash = md256.digest(keyword.getBytes("UTF-8"));

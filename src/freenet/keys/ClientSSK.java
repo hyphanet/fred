@@ -3,10 +3,10 @@ package freenet.keys;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import freenet.crypt.DSAPublicKey;
+import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Logger;
@@ -37,12 +37,7 @@ public class ClientSSK extends ClientKey {
 			throw new MalformedURLException("Pubkey hash wrong length: "+pubKeyHash.length+" should be "+NodeSSK.PUBKEY_HASH_SIZE);
 		if(cryptoKey.length != CRYPTO_KEY_LENGTH)
 			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+CRYPTO_KEY_LENGTH);
-		MessageDigest md;
-		try {
-			md = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error(e);
-		}
+		MessageDigest md = SHA256.getMessageDigest();
 		if(pubKey != null) {
 			byte[] pubKeyAsBytes = pubKey.asBytes();
 			md.update(pubKeyAsBytes);

@@ -1,7 +1,6 @@
 package freenet.node;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import net.i2p.util.NativeBigInteger;
@@ -11,6 +10,7 @@ import freenet.crypt.DiffieHellman;
 import freenet.crypt.DiffieHellmanContext;
 import freenet.crypt.EntropySource;
 import freenet.crypt.PCFBMode;
+import freenet.crypt.SHA256;
 import freenet.crypt.StationToStationContext;
 import freenet.io.comm.*;
 import freenet.io.comm.Peer.LocalAddressException;
@@ -150,7 +150,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         // Does the packet match IV E( H(data) data ) ?
         PCFBMode pcfb = new PCFBMode(authKey);
         int ivLength = pcfb.lengthIV();
-        MessageDigest md = getDigest();
+        MessageDigest md = SHA256.getMessageDigest();
         int digestLength = md.getDigestLength();
         if(length < digestLength + ivLength + 4) {
             if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
@@ -281,7 +281,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         }else if (negType == 1){
         	// We are gonna do simple StS
         
-        	if((packetType < 0) || (packetType > 2)) {
+        	if((packetType < 0) || (packetType > 3)) {
         		Logger.error(this, "Decrypted auth packet but unknown packet type "+packetType+" from "+replyTo+" possibly from "+pn);
         		return;
         	}
@@ -307,23 +307,45 @@ public class FNPPacketMangler implements LowLevelFilter {
         	 * 
         	 * 	Alice and Bob are now mutually authenticated and have a shared secret.
         	 *  This secret, K, can then be used to encrypt further communication.
+        	 *  
+        	 *  I suggest we add one more phase to simplify the code : 2d is splited up
+        	 *  into two packets so that both alice and bob send the same kind of packets. 
         	 */
         	
-        	if(packetType == 0) {
-        		StationToStationContext ctx = new StationToStationContext(node.getMyPrivKey(), pn.peerCryptoGroup, pn.peerPubKey, node.random);
+        	// be carefull with StationToStationContext constructors ; it will be expensive in terms of cpu and can be DoSed, on the other hand, when shall we reset the context ? maybe creating a new packetType ... with a time based restriction 
+        	if(packetType == 0) { // 0 won't be received, but we need to initialize the exchange
+        		StationToStationContext ctx = pn.getKeyAgreementSchemeContext()== null ? new StationToStationContext(node.getMyPrivKey(), pn.peerCryptoGroup, pn.peerPubKey, node.random) : (StationToStationContext)pn.getKeyAgreementSchemeContext();
         		if(ctx == null) return;
-        		// Send g^x%p
+        		pn.setKeyAgreementSchemeContext(ctx);
+        		// We send g^x
         		sendFirstStSPacket(1, ctx.getOurExponential(), pn, replyTo);
-        	} else if(packetType == 1) {
-        		StationToStationContext ctx = new StationToStationContext(node.getMyPrivKey(), pn.peerCryptoGroup, pn.peerPubKey, node.random);
-        		if(ctx == null) return;
-        		sendSecondStSPacket(2, ctx, pn, replyTo, payload);
         	} else if(packetType == 2) {
-
+        		StationToStationContext ctx = pn.getKeyAgreementSchemeContext()== null ? new StationToStationContext(node.getMyPrivKey(), pn.peerCryptoGroup, pn.peerPubKey, node.random) : (StationToStationContext)pn.getKeyAgreementSchemeContext();
+        		if(ctx == null) return;
+        		pn.setKeyAgreementSchemeContext(ctx);
+        		// We got g^y
+        		ctx.setOtherSideExponential(new NativeBigInteger(payload));
+        		// We send E(S(H( our exponential, his exponential)))
+        		sendSecondStSPacket(3, ctx, pn, replyTo, payload);
+        	} else if(packetType == 1) {
+        		StationToStationContext ctx = (StationToStationContext) pn.getKeyAgreementSchemeContext();
+        		if(ctx == null) return;
+        		// We got g^x
+        		ctx.setOtherSideExponential(new NativeBigInteger(payload));
+        		// We send g^y
+        		sendFirstStSPacket(2, ctx.getOurExponential(), pn, replyTo);
+        		// We send E(S(H( our exponential, his exponential)))
+        		sendSecondStSPacket(3, ctx, pn, replyTo, payload);
+        	} else if(packetType == 3) {
+        		StationToStationContext ctx = (StationToStationContext) pn.getKeyAgreementSchemeContext();
+        		if(ctx == null) return;
+        		if(!ctx.isAuthentificationSuccessfull(payload)) return;
+        		// we are done if the above test is sucessfull!
         	}
-
-        	// Not implemented yet... fail
-        	return;
+        	
+        	/*
+        	 * We need some kind of locking above... and maybe some DoS protection
+        	 */
         }
     }
 
@@ -352,7 +374,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
         System.arraycopy(myRef, 0, data, 8, myRef.length);
         
-        MessageDigest md = getDigest();
+        MessageDigest md = SHA256.getMessageDigest();
         
         byte[] hash = md.digest(data);
         
@@ -433,7 +455,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         PCFBMode pcfb = new PCFBMode(cipher);
         byte[] iv = new byte[pcfb.lengthIV()];
         node.random.nextBytes(iv);
-        MessageDigest md = getDigest();
+        MessageDigest md = SHA256.getMessageDigest();
         byte[] hash = md.digest(output);
         if(logMINOR) Logger.minor(this, "Data hash: "+HexUtil.bytesToHex(hash));
         byte[] data = new byte[iv.length + hash.length + 2 /* length */ + output.length];
@@ -496,7 +518,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         System.arraycopy(payload, 3+ivLength+HASH_LENGTH, data, 0, dataLength);
         pcfb.blockDecipher(data, 0, dataLength);
         // Check the hash
-        MessageDigest md = getDigest();
+        MessageDigest md = SHA256.getMessageDigest();
         byte[] realHash = md.digest(data);
         if(Arrays.equals(realHash, hash)) {
             // Success!
@@ -568,17 +590,6 @@ public class FNPPacketMangler implements LowLevelFilter {
         // REDFLAG: This is of course easily DoS'ed if you know the node.
         // We will fix this by means of JFKi.
         return ctx;
-    }
-
-    /**
-     * Create a new SHA-256 MessageDigest
-     */
-    private MessageDigest getDigest() {
-        try {
-            return MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
     }
 
     /**
@@ -659,7 +670,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         
         //Logger.minor(this, "Plaintext:\n"+HexUtil.bytesToHex(plaintext));
         
-        MessageDigest md = getDigest();
+        MessageDigest md = SHA256.getMessageDigest();
         md.update(seqBuf);
         md.update(plaintext);
         byte[] realHash = md.digest();
@@ -1383,12 +1394,7 @@ public class FNPPacketMangler implements LowLevelFilter {
             throw new IllegalStateException("Block size must be half key size: blockSize="+
                     sessionCipher.getBlockSize()+", keySize="+sessionCipher.getKeySize());
         
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
+        MessageDigest md = SHA256.getMessageDigest();
         
         int digestLength = md.getDigestLength();
         

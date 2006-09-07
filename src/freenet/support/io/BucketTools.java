@@ -11,11 +11,10 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
-import freenet.support.Logger;
+import freenet.crypt.SHA256;
 
 /**
  * Helper functions for working with Buckets.
@@ -349,7 +348,7 @@ public class BucketTools {
 	public static byte[] hash(Bucket data) throws IOException {
 		InputStream is = null;
 		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-256");
+			MessageDigest md = SHA256.getMessageDigest();
 			is = data.getInputStream();
 			long bucketLength = data.size();
 			long bytesRead = 0;
@@ -365,9 +364,6 @@ public class BucketTools {
 			if((bytesRead != bucketLength) && (bucketLength > 0))
 				throw new IOException("Read "+bytesRead+" but bucket length "+bucketLength+"!");
 			return md.digest();
-		} catch (NoSuchAlgorithmException e) {
-			Logger.error(BucketTools.class, "No such digest: SHA-256 !!");
-			throw new Error("No such digest: SHA-256 !!");
 		} finally {
 			if(is != null) is.close();
 		}

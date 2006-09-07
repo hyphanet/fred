@@ -31,7 +31,7 @@ public class DSAGroupGenerator {
 			throw new IllegalArgumentException("hashLength must not be greater than keyLength");
 		MessageDigest md;
 		if(hashLength == 256) {
-			md = MessageDigest.getInstance("SHA-256");
+			md = SHA256.getMessageDigest();
 		} else if(hashLength == 160) {
 			md = MessageDigest.getInstance("SHA-160");
 		} else {

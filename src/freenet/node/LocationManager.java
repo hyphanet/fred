@@ -1,7 +1,6 @@
 package freenet.node;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -9,6 +8,7 @@ import java.util.Vector;
 import java.util.Date;
 
 import freenet.crypt.RandomSource;
+import freenet.crypt.SHA256;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
@@ -199,12 +199,7 @@ class LocationManager {
             
             byte[] hisHash = ((ShortBuffer)origMessage.getObject(DMT.HASH)).getData();
             
-            MessageDigest md;
-            try {
-                md = MessageDigest.getInstance("SHA-256");
-            } catch (NoSuchAlgorithmException e) {
-                throw new Error(e);
-            }
+            MessageDigest md = SHA256.getMessageDigest();
             
             if(hisHash.length != md.getDigestLength()) {
                 Logger.error(this, "Invalid SwapRequest from peer: wrong length hash "+hisHash.length+" on "+uid);
@@ -347,12 +342,7 @@ class LocationManager {
                     myValueLong[i+2] = Double.doubleToLongBits(friendLocs[i]);
                 byte[] myValue = Fields.longsToBytes(myValueLong);
                 
-                MessageDigest md;
-                try {
-                    md = MessageDigest.getInstance("SHA-256");
-                } catch (NoSuchAlgorithmException e) {
-                    throw new Error(e);
-                }
+                MessageDigest md = SHA256.getMessageDigest();
                 
                 byte[] myHash = md.digest(myValue);
                 

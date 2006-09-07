@@ -2,7 +2,6 @@ package freenet.keys;
 
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import net.i2p.util.NativeBigInteger;
 
@@ -10,6 +9,7 @@ import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPrivateKey;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.Global;
+import freenet.crypt.SHA256;
 import freenet.support.Logger;
 
 /**
@@ -36,12 +36,7 @@ public class InsertableUSK extends USK {
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getKeyVal()));
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
-		MessageDigest md;
-		try {
-			md = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error(e);
-		}
+		MessageDigest md = SHA256.getMessageDigest();
 		md.update(pubKey.asBytes());
 		return new InsertableUSK(uri.getDocName(), md.digest(), uri.getCryptoKey(), privKey, g, uri.getSuggestedEdition());
 	}

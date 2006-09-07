@@ -1,7 +1,8 @@
 package freenet.keys;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+
+import freenet.crypt.SHA256;
 
 /**
  * @author amphibian
@@ -57,12 +58,7 @@ public class CHKBlock implements KeyBlock {
         // Check the hash
         if(hashIdentifier != HASH_SHA256)
             throw new CHKVerifyException("Hash not SHA-256");
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
+        MessageDigest md = SHA256.getMessageDigest();
         
         md.update(headers);
         md.update(data);

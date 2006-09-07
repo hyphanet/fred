@@ -3,7 +3,6 @@ package freenet.keys;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import net.i2p.util.NativeBigInteger;
 
@@ -17,6 +16,7 @@ import freenet.crypt.DSASignature;
 import freenet.crypt.Global;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
+import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
@@ -44,12 +44,7 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(new NativeBigInteger(1, uri.getKeyVal()));
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
-		MessageDigest md;
-		try {
-			md = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error(e);
-		}
+		MessageDigest md = SHA256.getMessageDigest();
 		md.update(pubKey.asBytes());
 		return new InsertableClientSSK(uri.getDocName(), md.digest(), pubKey, privKey, uri.getCryptoKey());
 	}
@@ -65,13 +60,7 @@ public class InsertableClientSSK extends ClientSSK {
 			throw new SSKEncodeException(e.getMessage(), e);
 		}
 		// Pad it
-        MessageDigest md256;
-        try {
-            md256 = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e1) {
-            // FIXME: log this properly?
-            throw new Error(e1);
-        }
+        MessageDigest md256 = SHA256.getMessageDigest();
         byte[] data;
         // First pad it
         if(compressedData.length != SSKBlock.DATA_LENGTH) {
@@ -191,12 +180,7 @@ public class InsertableClientSSK extends ClientSSK {
 		DSAGroup g = Global.DSAgroupBigA;
 		DSAPrivateKey privKey = new DSAPrivateKey(g, r);
 		DSAPublicKey pubKey = new DSAPublicKey(g, privKey);
-		MessageDigest md;
-		try {
-			md = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error(e);
-		}
+		MessageDigest md = SHA256.getMessageDigest();
 		try {
 			return new InsertableClientSSK(docName, md.digest(pubKey.asBytes()), pubKey, privKey, ckey);
 		} catch (MalformedURLException e) {

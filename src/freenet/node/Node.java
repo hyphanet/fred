@@ -22,7 +22,6 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,6 +46,7 @@ import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.Global;
 import freenet.crypt.RandomSource;
+import freenet.crypt.SHA256;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
@@ -338,6 +338,8 @@ public class Node {
 	byte[] identityHashHash; 	
 	/** The signature of the above fieldset */
 	private DSASignature myReferenceSignature = null;
+	/** A synchronization object used while signing the reference fiedlset */
+	private volatile Object referenceSync = new Object();
 	/** An ordered version of the FieldSet, without the signature */
 	private String mySignedReference = null;
 	private String myName;
@@ -363,31 +365,31 @@ public class Node {
 	final TokenBucket requestOutputThrottle;
 	final TokenBucket requestInputThrottle;
 	private boolean inputLimitDefault;
-	static short MAX_HTL = 10;
-	static final int EXIT_STORE_FILE_NOT_FOUND = 1;
-	static final int EXIT_STORE_IOEXCEPTION = 2;
-	static final int EXIT_STORE_OTHER = 3;
-	static final int EXIT_USM_DIED = 4;
+	public static short MAX_HTL = 10;
+	public static final int EXIT_STORE_FILE_NOT_FOUND = 1;
+	public static final int EXIT_STORE_IOEXCEPTION = 2;
+	public static final int EXIT_STORE_OTHER = 3;
+	public static final int EXIT_USM_DIED = 4;
 	public static final int EXIT_YARROW_INIT_FAILED = 5;
-	static final int EXIT_TEMP_INIT_ERROR = 6;
-	static final int EXIT_TESTNET_FAILED = 7;
+	public static final int EXIT_TEMP_INIT_ERROR = 6;
+	public static final int EXIT_TESTNET_FAILED = 7;
 	public static final int EXIT_MAIN_LOOP_LOST = 8;
 	public static final int EXIT_COULD_NOT_BIND_USM = 9;
-	static final int EXIT_IMPOSSIBLE_USM_PORT = 10;
-	static final int EXIT_NO_AVAILABLE_UDP_PORTS = 11;
+	public static final int EXIT_IMPOSSIBLE_USM_PORT = 10;
+	public static final int EXIT_NO_AVAILABLE_UDP_PORTS = 11;
 	public static final int EXIT_TESTNET_DISABLED_NOT_SUPPORTED = 12;
-	static final int EXIT_INVALID_STORE_SIZE = 13;
-	static final int EXIT_BAD_DOWNLOADS_DIR = 14;
-	static final int EXIT_BAD_NODE_DIR = 15;
-	static final int EXIT_BAD_TEMP_DIR = 16;
-	static final int EXIT_COULD_NOT_START_FCP = 17;
-	static final int EXIT_COULD_NOT_START_FPROXY = 18;
-	static final int EXIT_COULD_NOT_START_TMCI = 19;
-	static final int EXIT_CRAPPY_JVM = 255;
+	public static final int EXIT_INVALID_STORE_SIZE = 13;
+	public static final int EXIT_BAD_DOWNLOADS_DIR = 14;
+	public static final int EXIT_BAD_NODE_DIR = 15;
+	public static final int EXIT_BAD_TEMP_DIR = 16;
+	public static final int EXIT_COULD_NOT_START_FCP = 17;
+	public static final int EXIT_COULD_NOT_START_FPROXY = 18;
+	public static final int EXIT_COULD_NOT_START_TMCI = 19;
+	public static final int EXIT_CRAPPY_JVM = 255;
 	public static final int EXIT_DATABASE_REQUIRES_RESTART = 20;
 	public static final int EXIT_COULD_NOT_START_UPDATER = 21;
-	static final int EXIT_EXTRA_PEER_DATA_DIR = 22;
-	static final int EXIT_THROTTLE_FILE_ERROR = 23;
+	public static final int EXIT_EXTRA_PEER_DATA_DIR = 22;
+	public static final int EXIT_THROTTLE_FILE_ERROR = 23;
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
@@ -513,12 +515,7 @@ public class Node {
 		} catch (IllegalBase64Exception e2) {
 			throw new IOException();
 		}
-		MessageDigest md;
-		try {
-			md = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error(e);
-		}
+		MessageDigest md = SHA256.getMessageDigest();
 		identityHash = md.digest(myIdentity);
 		identityHashHash = md.digest(identityHash);
 		String loc = fs.get("location");
@@ -633,12 +630,7 @@ public class Node {
 		// FIXME use a real IP!
 		myIdentity = new byte[32];
 		r.nextBytes(myIdentity);
-		MessageDigest md;
-		try {
-			md = MessageDigest.getInstance("SHA-256");
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error(e);
-		}
+		MessageDigest md = SHA256.getMessageDigest();
 		identityHash = md.digest(myIdentity);
 		identityHashHash = md.digest(identityHash);
 		myName = newName();
@@ -1658,26 +1650,23 @@ public class Node {
 		fs.put("ark.number", Long.toString(this.myARKNumber));
 		fs.put("ark.pubURI", this.myARK.getURI().toString(false));
 		
-		// TODO: maybe synchronize ?
-		if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
-			mySignedReference = fs.toOrderedString();
-			try{
-		        MessageDigest md = MessageDigest.getInstance("SHA-256");
-				myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(md.digest(mySignedReference.getBytes("UTF-8"))), random);
-			} catch(UnsupportedEncodingException e){
-				//duh ?
-				Logger.error(this, "Error while signing the node identity!"+e);
-				System.err.println("Error while signing the node identity!"+e);
-				e.printStackTrace();
-				exit(EXIT_CRAPPY_JVM);
-			} catch (NoSuchAlgorithmException e2) {
-				Logger.error(this, "Error while signing the node identity!"+e2);
-				System.err.println("Error while signing the node identity!"+e2);
-				e2.printStackTrace();
-				exit(EXIT_CRAPPY_JVM);
-	        }
+		synchronized (referenceSync) {
+			if(myReferenceSignature == null || mySignedReference == null || !mySignedReference.equals(fs.toOrderedString())){
+				mySignedReference = fs.toOrderedString();	
+
+				try{
+					MessageDigest md = SHA256.getMessageDigest();
+					myReferenceSignature = DSA.sign(myCryptoGroup, myPrivKey, new BigInteger(md.digest(mySignedReference.getBytes("UTF-8"))), random);
+				} catch(UnsupportedEncodingException e){
+					//duh ?
+					Logger.error(this, "Error while signing the node identity!"+e);
+					System.err.println("Error while signing the node identity!"+e);
+					e.printStackTrace();
+					exit(EXIT_CRAPPY_JVM);
+				}
+			}
+			fs.put("sig", myReferenceSignature.toString());
 		}
-		fs.put("sig", myReferenceSignature.toString());
 		
 		if(logMINOR) Logger.minor(this, "My reference: "+fs);
 		return fs;
@@ -2300,13 +2289,7 @@ public class Node {
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
 			if((key2 != null) && !key2.equals(key)) {
-				MessageDigest md256;
-				// Check the hash.
-				try {
-					md256 = MessageDigest.getInstance("SHA-256");
-				} catch (NoSuchAlgorithmException e) {
-					throw new Error(e);
-				}
+				MessageDigest md256 = SHA256.getMessageDigest();
 				byte[] hashCheck = md256.digest(key.asBytes());
 				if(Arrays.equals(hashCheck, hash)) {
 					Logger.error(this, "Hash is correct!!!");

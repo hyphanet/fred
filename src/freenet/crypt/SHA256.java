@@ -39,7 +39,14 @@ THE POSSIBILITY OF SUCH DAMAGE.
 
 package freenet.crypt;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+import org.tanukisoftware.wrapper.WrapperManager;
+
+import freenet.node.Node;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 
 /**
  * @author  Jeroen C. van Gelderen (gelderen@cryptix.org)
@@ -316,7 +323,24 @@ public class SHA256 implements Digest {
 	return HexUtil.bytesToHex(d);
     }
 
-    public static void main(String[] args) {
+    /**
+	 * Create a new SHA-256 MessageDigest
+	 * Either succeed or stop the node.
+	 */
+	public  static MessageDigest getMessageDigest() {
+	    try {
+	        return MessageDigest.getInstance("SHA-256");
+	    } catch (NoSuchAlgorithmException e2) {
+	    	//TODO: maybe we should point to a HOWTO for freejvms
+			Logger.error(Node.class, "Check your JVM settings especially the JCE!"+e2);
+			System.err.println("Check your JVM settings especially the JCE!"+e2);
+			e2.printStackTrace();
+			WrapperManager.stop(Node.EXIT_CRAPPY_JVM);
+		}
+		return null;
+	}
+
+	public static void main(String[] args) {
 	byte[] buffer=new byte[1024];
 	SHA256 s=new SHA256();
 	try {

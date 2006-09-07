@@ -1,5 +1,6 @@
 package freenet.clients.http;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -9,7 +10,6 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
@@ -21,6 +21,7 @@ import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -337,15 +338,18 @@ public class FProxyToadlet extends Toadlet {
 	}
 
 	private static String getForceValue(FreenetURI key, long time) {
-		try {
-			MessageDigest md5 = MessageDigest.getInstance("SHA-256");
-			md5.update(random);
-			md5.update(key.toString(false).getBytes());
-			md5.update(Long.toString(time / FORCE_GRAIN_INTERVAL).getBytes());
-			return HexUtil.bytesToHex(md5.digest());
-		} catch (NoSuchAlgorithmException e) {
+		MessageDigest md = SHA256.getMessageDigest();
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		
+		try{
+			bos.write(random);
+			bos.write(key.toString(false).getBytes());
+			bos.write(Long.toString(time / FORCE_GRAIN_INTERVAL).getBytes());
+		} catch (IOException e) {
 			throw new Error(e);
 		}
+		
+		return HexUtil.bytesToHex(md.digest(bos.toByteArray()));
 	}
 
 	public static void maybeCreateFProxyEtc(NodeClientCore core, Node node, Config config, SubConfig fproxyConfig) throws IOException, InvalidConfigValueException {

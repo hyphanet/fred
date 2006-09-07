@@ -16,7 +16,6 @@ import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -34,6 +33,7 @@ import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
 import freenet.crypt.KeyAgreementSchemeContext;
+import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.io.comm.DMT;
@@ -336,12 +336,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             throw new FSParseException(e);
 		}
         
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e2) {
-            throw new Error(e2);
-        }
+        MessageDigest md = SHA256.getMessageDigest();
         
         if(identity == null) throw new FSParseException("No identity");
         identityHash = md.digest(identity);
@@ -618,35 +613,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         		FreenetURI uri = new FreenetURI(arkPubKey);
         		ClientSSK ssk = new ClientSSK(uri);
         		ark = new USK(ssk, arkNo);
-        		
-        		// Maybe synchronize ?
-        		if(peerCryptoGroup == null){
-        			SimpleFieldSet sfs = fs.subset("dsaGroup");
-        			Logger.normal(this, "Picking up peerCrypto group from ark for "+this.privateDarknetComment);
-        			if(sfs == null)
-        				this.peerCryptoGroup = null;
-        			else
-        				this.peerCryptoGroup = DSAGroup.create(sfs);
-        		}
-        		
-        		if(peerPubKey == null){
-        			SimpleFieldSet sfs = fs.subset("dsaGroup");
-        			Logger.normal(this, "Picking up dsaGroup from ark for "+this.privateDarknetComment);
-        			
-        			sfs = fs.subset("dsaPubKey");
-        			if(sfs == null)
-        				this.peerPubKey = null;
-        			else
-        				this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
-        		}
-        	}
+          	}
         } catch (MalformedURLException e) {
         	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
         } catch (NumberFormatException e) {
         	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
-        } catch (IllegalBase64Exception e) {
-        	Logger.error(this, "Couldn't parse ARK info for "+this+": "+e, e);
-		}
+        }
 
 		synchronized(this) {
 			if(ark != null) {
@@ -1480,7 +1452,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		return true;
     }
     
-    private final Object arkFetcherSync = new Object();
+    private volatile Object arkFetcherSync = new Object();
     
     void startARKFetcher() {
     	// FIXME any way to reduce locking here?
@@ -1664,6 +1636,27 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             byte[] newIdentity = Base64.decode(identityString);
             if(!Arrays.equals(newIdentity, identity))
                 throw new FSParseException("Identity changed!!");
+            
+            // FIXME: throw an exception if not present once everyone has updated but do NOT replace things
+            if(peerCryptoGroup == null){
+            	SimpleFieldSet sfs = fs.subset("dsaGroup");
+            	Logger.normal(this, "Picking up peerCrypto group from "+ (forARK ? "ark" : "DH") +" for "+Base64.encode(this.identity));
+            	if(sfs == null)
+            		this.peerCryptoGroup = null;
+            	else
+            		this.peerCryptoGroup = DSAGroup.create(fs);
+            }
+
+            if(peerPubKey == null){
+            	SimpleFieldSet sfs = fs.subset("dsaGroup");
+            	Logger.normal(this, "Picking up dsaGroup from "+ (forARK ? "ark" : "DH") +" for "+Base64.encode(this.identity));
+
+            	sfs = fs.subset("dsaPubKey");
+            	if(sfs == null)
+            		this.peerPubKey = null;
+            	else
+            		this.peerPubKey = DSAPublicKey.create(fs, peerCryptoGroup);
+            }
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
         } catch (IllegalBase64Exception e) {
@@ -1730,7 +1723,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         
         // DO NOT change detectedPeer !!!
         // The given physical.udp may be WRONG!!!
-        
+                
         String name = fs.get("myName");
         if(name == null) throw new FSParseException("No name");
         // In future, ARKs may support automatic transition when the ARK key is changed.

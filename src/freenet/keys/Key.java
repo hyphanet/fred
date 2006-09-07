@@ -4,8 +4,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
+import freenet.crypt.SHA256;
 import freenet.io.WritableToDataOutputStream;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -69,12 +69,7 @@ public abstract class Key implements WritableToDataOutputStream {
      */
     public synchronized double toNormalizedDouble() {
         if(cachedNormalizedDouble > 0) return cachedNormalizedDouble;
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
+        MessageDigest md = SHA256.getMessageDigest();
         md.update(routingKey);
         int TYPE = getType();
         md.update((byte)(TYPE >> 8));

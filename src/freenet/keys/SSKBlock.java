@@ -1,13 +1,13 @@
 package freenet.keys;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.SHA256;
 import freenet.support.HexUtil;
 
 /**
@@ -94,12 +94,7 @@ public class SSKBlock implements KeyBlock {
 		this.pubKey = nodeKey.getPubKey();
 		if(pubKey == null)
 			throw new SSKVerifyException("PubKey was null from "+nodeKey);
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
+        MessageDigest md = SHA256.getMessageDigest();
         // Now verify it
         hashIdentifier = (short)(((headers[0] & 0xff) << 8) + (headers[1] & 0xff));
         if(hashIdentifier != HASH_SHA256)

@@ -1,11 +1,11 @@
 package freenet.node;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashSet;
 
 import freenet.crypt.DSAPublicKey;
+import freenet.crypt.SHA256;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
@@ -87,12 +87,8 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
     		throw new IllegalArgumentException("Must have pubkey to insert data!!");
     	// pubKey.fingerprint() is not the same as hash(pubKey.asBytes())). FIXME it should be!
     	byte[] pubKeyAsBytes = pubKey.asBytes();
-    	try {
-			MessageDigest md256 = MessageDigest.getInstance("SHA-256");
-			pubKeyHash = md256.digest(pubKeyAsBytes);
-		} catch (NoSuchAlgorithmException e) {
-			throw new Error("SHA-256 not supported by system!: "+e);
-		}
+    	MessageDigest md256 = SHA256.getMessageDigest();
+    	pubKeyHash = md256.digest(pubKeyAsBytes);
     	this.block = block;
     	startTime = System.currentTimeMillis();
     }

@@ -1,7 +1,6 @@
 package freenet.crypt;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.support.HexUtil;
@@ -57,11 +56,8 @@ public class DiffieHellmanContext extends KeyAgreementSchemeContext {
         NativeBigInteger sharedSecret =
             (NativeBigInteger) peerExponential.modPow(myExponent, group.getP());
         MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
+        
+        md = SHA256.getMessageDigest();
         key = md.digest(sharedSecret.toByteArray());
         if(logMINOR)
             Logger.minor(this, "Key="+HexUtil.bytesToHex(key));

@@ -2,13 +2,13 @@ package freenet.keys;
 
 import java.io.IOException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
+import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.Key.Compressed;
@@ -95,13 +95,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         pcfb.blockDecipher(hbuf, 0, hbuf.length);
         pcfb.blockDecipher(dbuf, 0, dbuf.length);
         // Check: Decryption key == hash of data (not including header)
-        MessageDigest md256;
-        try {
-            md256 = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e1) {
-            // FIXME: log this properly?
-            throw new Error(e1);
-        }
+        MessageDigest md256 = SHA256.getMessageDigest();
         byte[] dkey = md256.digest(dbuf);
         if(!java.util.Arrays.equals(dkey, key.cryptoKey)) {
             throw new CHKDecodeException("Check failed: decrypt key == H(data)");
@@ -149,13 +143,7 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
         
         // Now do the actual encode
         
-        MessageDigest md256;
-        try {
-            md256 = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e1) {
-            // FIXME: log this properly?
-            throw new Error(e1);
-        }
+        MessageDigest md256 = SHA256.getMessageDigest();
         // First pad it
         if(finalData.length != 32768) {
             // Hash the data

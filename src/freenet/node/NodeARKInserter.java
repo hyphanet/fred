@@ -112,6 +112,7 @@ public class NodeARKInserter implements ClientCallback {
 		// Delete entire ark.* field for now. Changing this and automatically moving to the new may be supported in future.
 		fs.removeSubset("ark");
 		fs.removeValue("location");
+		fs.removeValue("sig");
 		//fs.remove("version"); - keep version because of its significance in reconnection
 		
 		String s = fs.toString();
