@@ -1644,7 +1644,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             	if(sfs == null)
             		this.peerCryptoGroup = null;
             	else
-            		this.peerCryptoGroup = DSAGroup.create(fs);
+            		this.peerCryptoGroup = DSAGroup.create(sfs);
             }
 
             if(peerPubKey == null){
@@ -1655,7 +1655,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             	if(sfs == null)
             		this.peerPubKey = null;
             	else
-            		this.peerPubKey = DSAPublicKey.create(fs, peerCryptoGroup);
+            		this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
             }
         } catch (NumberFormatException e) {
             throw new FSParseException(e);
