@@ -45,7 +45,7 @@ public class PluginManager {
 		this.node = node;
 
 		config = new SubConfig("pluginmanager2", node.config);
-		config.register("loadedPlugins", null, 9, true, false, "Plugins to load on start up", "A list of plugins that are started when the node starts", new StringArrCallback() {
+		config.register("loadedPlugins", new String[0], 9, true, true, "Plugins to load on start up", "A list of plugins that are started when the node starts", new StringArrCallback() {
 
 			/**
 			 * Returns the current value of this option.
@@ -54,6 +54,7 @@ public class PluginManager {
 			 * @return The current value of this option
 			 */
 			public String get() {
+				if(plugins.size() == 0) return null;
 				StringBuffer optionValue = new StringBuffer();
 				synchronized (syncObject) {
 					Iterator pluginIterator = plugins.iterator();
@@ -79,12 +80,13 @@ public class PluginManager {
 			 *             is not valid
 			 */
 			public void set(String val) throws InvalidConfigValueException {
-				throw new InvalidConfigValueException("Start or stop plugins to change this value.");
+				if(val == null || get().contains(val)) return;
+				addPlugin(val, true);
 			};
 		});
 
 		String[] loadedPluginNames = config.getStringArr("loadedPlugins");
-		if (loadedPluginNames != null) {
+		if (loadedPluginNames != null && loadedPluginNames.length > 0) {
 			for (int pluginIndex = 0, pluginCount = loadedPluginNames.length; pluginIndex < pluginCount; pluginIndex++) {
 				String pluginName = StringArrOption.decode(loadedPluginNames[pluginIndex]);
 				try {
@@ -130,12 +132,21 @@ public class PluginManager {
 	 *            The name of the plugin
 	 */
 	public void addPlugin(String pluginName, boolean store) throws IllegalArgumentException {
-		Plugin newPlugin = createPlugin(pluginName);
+		final Plugin newPlugin = createPlugin(pluginName);
 		if (newPlugin == null) {
 			throw new IllegalArgumentException();
 		}
 		newPlugin.setPluginManager(this);
-		newPlugin.startPlugin();
+		node.ps.queueTimedJob(new Runnable() {
+			public void run() {
+				try{
+					while(!node.isHasStarted())
+						Thread.sleep(1000);
+				}catch (InterruptedException e) {}
+				newPlugin.startPlugin();
+			}
+		}, 0);
+		
 		synchronized (syncObject) {
 			plugins.add(newPlugin);
 		}
@@ -178,7 +189,7 @@ public class PluginManager {
 	private Plugin createPlugin(String pluginName) {
 		int p = pluginName.indexOf('@');
 		String pluginSource = null;
-
+		
 		/* split up */
 		if (p > -1) {
 			pluginSource = pluginName.substring(p + 1);

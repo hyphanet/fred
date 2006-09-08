@@ -1275,6 +1275,7 @@ public class Node {
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
+		pluginManager2 = new freenet.plugin.PluginManager(this);
 		
 		FetcherContext ctx = clientCore.makeClient((short)0).getFetcherContext();
 		
@@ -1365,8 +1366,6 @@ public class Node {
 		Logger.normal(this, "FNP port is on "+bindto+":"+portNumber);
 		System.out.println("FNP port is on "+bindto+":"+portNumber);
 		// Start services
-		
-		pluginManager2 = new freenet.plugin.PluginManager(this);
 		
 //		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
 //		pluginManager3 = new freenet.plugin_new.PluginManager(pluginManagerConfig);

@@ -73,7 +73,7 @@ public class StringArrOption extends Option {
 	}
 
 	public boolean isDefault() {
-		return currentValue.equals(defaultValue);
+		return currentValue == null ? false : currentValue.equals(defaultValue);
 	}
 	
 	public void setDefault() {
