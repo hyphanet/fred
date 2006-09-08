@@ -239,13 +239,14 @@ public class BlockTransmitter {
             if(_sendComplete)
             	return false;
 			if (msg == null) {
-				if((timeAllSent > 0) && ((System.currentTimeMillis() - timeAllSent) > SEND_TIMEOUT) &&
+				long now = System.currentTimeMillis();
+				if((timeAllSent > 0) && ((now - timeAllSent) > SEND_TIMEOUT) &&
 						(getNumSent() == _prb.getNumPackets())) {
 					synchronized(_senderThread) {
 						_sendComplete = true;
 						_senderThread.notifyAll();
 					}
-					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+SEND_TIMEOUT+"ms.");
+					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+(now - timeAllSent)+"ms.");
 					return false;
 				} else {
 					if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+"/"+_prb.getNumPackets());
