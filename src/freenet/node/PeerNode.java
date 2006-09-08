@@ -2666,11 +2666,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				Message n2ntm = DMT.createNodeToNodeTextMessage(Node.N2N_TEXT_MESSAGE_TYPE_USERALERT, source_nodename, target_nodename, text);
 				try {
 					node.usm.send(this, n2ntm, null);
-					Logger.normal(this, "Sent N2NTM to '"+getName()+"': "+text);
+					Logger.normal(this, "Sent queued ("+fileNumber+") N2NTM to '"+getName()+"': "+text);
 					sendSuccess = true;
 					synchronized(queuedToSendN2NTMExtraPeerDataFileNumbers) {
 						if(queuedToSendN2NTMExtraPeerDataFileNumbers.contains(new Integer(fileNumber))) {
-							queuedToSendN2NTMExtraPeerDataFileNumbers.addElement(new Integer(fileNumber));
+							queuedToSendN2NTMExtraPeerDataFileNumbers.removeElement(new Integer(fileNumber));
 						}
 					}
 					deleteExtraPeerDataFile(fileNumber);
