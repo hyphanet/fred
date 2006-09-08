@@ -2045,24 +2045,27 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		long now = System.currentTimeMillis();
 		Peer peer = getPeer();
 		reportBackoffStatus(now);
-		synchronized(routingBackoffSync) {
-			// Don't back off any further if we are already backed off
-			if(now > routingBackedOffUntil) {
-				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
-				if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
-					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
-				int x = node.random.nextInt(routingBackoffLength);
-				routingBackedOffUntil = now + x;
-				setLastBackoffReason( reason );
-				String reasonWrapper = "";
-				if( 0 <= reason.length()) {
-					reasonWrapper = " because of '"+reason+"'";
-				}
+		// We need it because of nested locking on getStatus()
+		synchronized (this) {
+			synchronized(routingBackoffSync) {
+				// Don't back off any further if we are already backed off
+				if(now > routingBackedOffUntil) {
+					routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
+					if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
+						routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
+					int x = node.random.nextInt(routingBackoffLength);
+					routingBackedOffUntil = now + x;
+					setLastBackoffReason( reason );
+					String reasonWrapper = "";
+					if( 0 <= reason.length()) {
+						reasonWrapper = " because of '"+reason+"'";
+					}
 
-				if(logMINOR) Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+peer);
-			} else {
-				if(logMINOR) Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
-				return;
+					if(logMINOR) Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+peer);
+				} else {
+					if(logMINOR) Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
+					return;
+				}
 			}
 		}
 		setPeerNodeStatus(now);
