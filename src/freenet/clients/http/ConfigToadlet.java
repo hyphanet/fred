@@ -148,8 +148,11 @@ public class ConfigToadlet extends Toadlet {
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", "class", "configshortdesc", o[j].getShortDesc());
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
-
-					if(o[j].getValueString() != null && (o[j].getValueString().equals("true") || o[j].getValueString().equals("false"))){
+					if(o[j].getValueString() == null){
+						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
+						continue;
+					}
+					if(o[j].getValueString().equals("true") || o[j].getValueString().equals("false")){
 						HTMLNode selectNode = configItemValueNode.addChild("select", "name", sc[i].getPrefix() + "." + configName);
 						if(o[j].getValueString().equals("true")){
 							selectNode.addChild("option", new String[] { "value", "selected" }, new String[] { "true", "selected" }, "true");
