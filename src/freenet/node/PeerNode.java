@@ -2932,4 +2932,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isSignatureVerificationSuccessfull() {
 		return isSignatureVerificationSuccessfull;
 	}
+	
+	public void setAllowLocalAddresses(boolean setting) {
+		synchronized(this) {
+			allowLocalAddresses = setting;
+		}
+        node.peers.writePeers();
+	}
 }

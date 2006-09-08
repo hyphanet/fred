@@ -53,6 +53,12 @@ public class ModifyPeer extends FCPMessage {
 				pn.setBurstOnly(Fields.stringToBool(isBurstOnlyString, false));
 			}
 		}
+		String allowLocalAddressesString = fs.get("AllowLocalAddresses");
+		if(allowLocalAddressesString != null) {
+			if(!allowLocalAddressesString.equals("")) {
+				pn.setAllowLocalAddresses(Fields.stringToBool(allowLocalAddressesString, false));
+			}
+		}
 		handler.outputHandler.queue(new Peer(pn, true, true));
 	}
 

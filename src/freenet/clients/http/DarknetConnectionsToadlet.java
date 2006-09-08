@@ -465,6 +465,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					actionSelect.addChild("option", "value", "clear_burst_only", "On selected peers, clear BurstOnly");
 					actionSelect.addChild("option", "value", "set_listen_only", "On selected peers, set ListenOnly");
 					actionSelect.addChild("option", "value", "clear_listen_only", "On selected peers, clear ListenOnly");
+					actionSelect.addChild("option", "value", "set_allow_local", "On selected peers, set allowLocalAddresses");
+					actionSelect.addChild("option", "value", "clear_allow_local", "On selected peers, clear allowLocalAddresses");
 				}
 				actionSelect.addChild("option", "value", "", "-- -- --");
 				actionSelect.addChild("option", "value", "remove", "Remove selected peers");
@@ -715,6 +717,32 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
 					peerNodes[i].setListenOnly(false);
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("submit") && request.getPartAsString("action",25).equals("set_allow_local")) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					peerNodes[i].setAllowLocalAddresses(true);
+				}
+			}
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/darknet/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			return;
+		} else if (request.isPartSet("submit") && request.getPartAsString("action",25).equals("clear_allow_local")) {
+			//int hashcode = Integer.decode(request.getParam("node")).intValue();
+			
+			PeerNode[] peerNodes = node.getDarknetConnections();
+			for(int i = 0; i < peerNodes.length; i++) {
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
+					peerNodes[i].setAllowLocalAddresses(false);
 				}
 			}
 			MultiValueTable headers = new MultiValueTable();
