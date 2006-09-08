@@ -80,7 +80,8 @@ public class PluginManager {
 			 *             is not valid
 			 */
 			public void set(String val) throws InvalidConfigValueException {
-				if(val == null || get().contains(val)) return;
+				if(val == null || get().indexOf(val) >= 0) return;
+				// it's probably silly as it won't allow more than 1 plugin to be loaded
 				addPlugin(val, true);
 			};
 		});
