@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.Date;
+import java.util.Iterator;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -981,11 +982,12 @@ class LocationManager {
     			size = knownLocs.size();
     		}
     		else if (timestamp > -1) {
-    			Date tresshold = new Date(timestamp);
+    			Date threshold = new Date(timestamp);
     			int numberOfLocationsInPeriod = 0;
     			//TODO Optimize so it doesn't take forever..
-    			while (knownLocs.values().iterator().hasNext()) {
-    				if (tresshold.after((Date)knownLocs.values().iterator().next())) {
+			Iterator knownLocationsIterator = knownLocs.values().iterator();
+    			while (knownLocationsIterator.hasNext()) {
+    				if (threshold.after((Date) knownLocationsIterator.next())) {
     					numberOfLocationsInPeriod++;
     				}
     			}
