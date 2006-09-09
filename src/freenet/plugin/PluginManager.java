@@ -54,7 +54,7 @@ public class PluginManager {
 			 * @return The current value of this option
 			 */
 			public String get() {
-				if(plugins.size() == 0) return null;
+				if(plugins.size() == 0) return "";
 				StringBuffer optionValue = new StringBuffer();
 				synchronized (syncObject) {
 					Iterator pluginIterator = plugins.iterator();
