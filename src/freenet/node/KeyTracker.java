@@ -309,10 +309,12 @@ public class KeyTracker {
     private class QueuedAckRequest extends BaseQueuedResend {
     	
     	final long createdTime;
+    	long activeDelay;
     	
     	long initialActiveTime(long now) {
-            // 500ms after sending packet, send ackrequest
-            return now + 500;
+    		// Request an ack after four RTTs
+    		activeDelay = fourRTTs();
+    		return now + activeDelay;
         }
         
         QueuedAckRequest(int packetNumber, boolean sendSoon) {
@@ -369,6 +371,11 @@ public class KeyTracker {
         queueAck(seqNumber);
     }
 
+    public long fourRTTs() {
+    	// FIXME upper bound necessary ?
+    	return (long) Math.min(Math.max(500, pn.averagePingTime()*4), 5000);
+    }
+    
     protected void receivedPacketNumber(int seqNumber) {
     	if(logMINOR) Logger.minor(this, "Handling received packet number "+seqNumber);
         queueResendRequests(seqNumber);
@@ -899,18 +906,25 @@ public class KeyTracker {
      */
     public ResendPacketItem[] grabResendPackets() {
         int[] numbers;
+        long now = System.currentTimeMillis();
+        long fourRTTs = fourRTTs();
+        int count=0;
         synchronized(packetsToResend) {
             int len = packetsToResend.size();
             numbers = new int[len];
-            int i=0;
             for(Iterator it=packetsToResend.iterator();it.hasNext();) {
                 int packetNo = ((Integer)it.next()).intValue();
-                numbers[i++] = packetNo;
+                long resentTime = sentPacketsContents.getReaddedTime(packetNo);
+                if(now - resentTime > fourRTTs) {
+                	// Either never resent, or resent at least 4 RTTs ago
+                	numbers[count++] = packetNo;
+                	it.remove();
+                }
             }
             packetsToResend.clear();
         }
         ResendPacketItem[] items = new ResendPacketItem[numbers.length];
-        for(int i=0;i<numbers.length;i++) {
+        for(int i=0;i<count;i++) {
             int packetNo = numbers[i];
             byte[] buf = sentPacketsContents.get(packetNo);
             if(buf == null) {
