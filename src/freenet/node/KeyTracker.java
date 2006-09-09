@@ -923,7 +923,7 @@ public class KeyTracker {
             }
             packetsToResend.clear();
         }
-        ResendPacketItem[] items = new ResendPacketItem[numbers.length];
+        ResendPacketItem[] items = new ResendPacketItem[count];
         for(int i=0;i<count;i++) {
             int packetNo = numbers[i];
             byte[] buf = sentPacketsContents.get(packetNo);
