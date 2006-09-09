@@ -2654,8 +2654,8 @@ public class Node {
 	  return usm;
 	}
 
-	public int getNetworkSizeEstimate(int numberOfMinutes) {
-	  return lm.getNetworkSizeEstimate( numberOfMinutes );
+	public int getNetworkSizeEstimate(long timestamp) {
+	  return lm.getNetworkSizeEstimate( timestamp );
 	}
 
 	/**

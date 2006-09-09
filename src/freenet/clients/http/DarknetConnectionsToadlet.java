@@ -141,7 +141,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			/* node status values */
 			int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
 			int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
-			int networkSizeEstimate = node.getNetworkSizeEstimate(0);
+			int networkSizeEstimateSession = node.getNetworkSizeEstimate(-1);
 			DecimalFormat fix4 = new DecimalFormat("0.0000");
 			double missRoutingDistance =  node.missRoutingDistance.currentValue();
 			DecimalFormat fix1 = new DecimalFormat("##0.0%");
@@ -162,7 +162,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				HTMLNode overviewList = overviewInfoboxContent.addChild("ul");
 				overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
 				overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
-				overviewList.addChild("li", "networkSizeEstimate:\u00a0" + networkSizeEstimate + "\u00a0nodes");
+				overviewList.addChild("li", "networkSizeEstimateSession:\u00a0" + networkSizeEstimateSession + "\u00a0nodes");
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
 				overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix4.format(missRoutingDistance));
 				overviewList.addChild("li", "backedoffPercent:\u00a0" + fix1.format(backedoffPercent));

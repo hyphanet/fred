@@ -974,13 +974,23 @@ class LocationManager {
         }
     }
     
-    //Return the estimated network size for numberOfMinutes back or for the whole session if 0
-    public int getNetworkSizeEstimate(int numberOfMinutes) {
-    		//if (numberOfMinutes == 0) {
-    			return knownLocs.size();
-    		//}
-    		//else {
-    		//TODO: Add possibility to get an estimate based on the past numberOfMinutes minutes.
-    		//}
+    //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
+    public int getNetworkSizeEstimate(long timestamp) {
+    		int size = 0;
+    		if (timestamp == -1) {
+    			size = knownLocs.size();
+    		}
+    		else if (timestamp > -1) {
+    			Date tresshold = new Date(timestamp);
+    			int numberOfLocationsInPeriod = 0;
+    			//TODO Optimize so it doesn't take forever..
+    			while (knownLocs.values().iterator().hasNext()) {
+    				if (tresshold.after((Date)knownLocs.values().iterator().next())) {
+    					numberOfLocationsInPeriod++;
+    				}
+    			}
+    			size =  numberOfLocationsInPeriod;
+    		}
+    		return size;
     }
 }
