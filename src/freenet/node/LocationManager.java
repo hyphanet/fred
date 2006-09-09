@@ -984,10 +984,10 @@ class LocationManager {
     		else if (timestamp > -1) {
     			Date threshold = new Date(timestamp);
     			int numberOfLocationsInPeriod = 0;
-    			//TODO Optimize so it doesn't take forever..
 			Iterator knownLocationsIterator = knownLocs.values().iterator();
     			while (knownLocationsIterator.hasNext()) {
-    				if (threshold.after((Date) knownLocationsIterator.next())) {
+    				//FIXME: It's not counting :(
+    				if (threshold.after((Date)knownLocationsIterator.next())) {
     					numberOfLocationsInPeriod++;
     				}
     			}
