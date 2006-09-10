@@ -982,6 +982,7 @@ class LocationManager {
     			size = knownLocs.size();
     		}
     		else if (timestamp > -1) {
+    			//TODO optimize some more if it is to be called a lot.
     			Date threshold = new Date(timestamp);
     			Date locationTime;
     			int numberOfLocationsInPeriod = 0;
