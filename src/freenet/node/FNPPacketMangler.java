@@ -846,7 +846,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 
         if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
             tracker.queueAck(seqNumber);
-            Logger.error(this, "Received packet twice ("+seqNumber+") from "+tracker.pn.getPeer()+": "+seqNumber);
+            Logger.error(this, "Received packet twice ("+seqNumber+") from "+tracker.pn.getPeer()+": "+seqNumber+" ("+(int) tracker.pn.pingAverage.currentValue()+"ms ping avg)");
             return;
         }
         
