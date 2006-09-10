@@ -139,15 +139,17 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if(peerNodeStatuses.length>0){
 
 			/* node status values */
+			long nodeUptimeSeconds = ( now - node.startupTime ) / 1000;
 			int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
 			int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
 			int networkSizeEstimateSession = node.getNetworkSizeEstimate(-1);
-			int networkSizeEstimateRecent = node.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
+			if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
+				int networkSizeEstimateRecent = node.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
+			}
 			DecimalFormat fix4 = new DecimalFormat("0.0000");
 			double missRoutingDistance =  node.missRoutingDistance.currentValue();
 			DecimalFormat fix1 = new DecimalFormat("##0.0%");
 			double backedoffPercent =  node.backedoffPercent.currentValue();
-			long nodeUptimeSeconds = ( now - node.startupTime ) / 1000;
 			String nodeUptimeString = timeIntervalToString(nodeUptimeSeconds);
 
 			// BEGIN OVERVIEW TABLE
