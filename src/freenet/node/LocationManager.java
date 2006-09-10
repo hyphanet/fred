@@ -983,16 +983,17 @@ class LocationManager {
     		}
     		else if (timestamp > -1) {
     			Date threshold = new Date(timestamp);
+    			Date locationTime;
     			int numberOfLocationsInPeriod = 0;
-			Iterator knownLocationsIterator = knownLocs.values().iterator();
-    			while (knownLocationsIterator.hasNext()) {
-    				//FIXME: It's not counting :(
-    				if (threshold.after((Date)knownLocationsIterator.next())) {
-    					numberOfLocationsInPeriod++;
-    				}
-    			}
-    			size =  numberOfLocationsInPeriod;
-    		}
-    		return size;
-    }
+				Iterator knownLocationsIterator = knownLocs.values().iterator();
+				while (knownLocationsIterator.hasNext()) {
+					locationTime = (Date) knownLocationsIterator.next();
+					if (locationTime.after(threshold)) {
+						numberOfLocationsInPeriod++;
+					}
+				}
+				size = numberOfLocationsInPeriod;
+			}
+			return size;
+	}
 }
