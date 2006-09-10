@@ -16,7 +16,7 @@ public class LimitedRangeIntByteArrayMapElement {
     public final byte[] data;
     public final AsyncMessageCallback[] callbacks;
     public final long createdTime;
-    long reputTime = -1; /* Should only be set to a real time when we are re-added the first time */
+    long reputTime;
     
 	public void reput() {
 		this.reputTime = System.currentTimeMillis();
