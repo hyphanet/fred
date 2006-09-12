@@ -754,7 +754,7 @@ public class Node {
 		
 
 		
-		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, false, "IP address to bind to", "IP address to bind to",
+		nodeConfig.register("bindTo", "0.0.0.0", sortOrder++, true, true, "IP address to bind to", "IP address to bind to",
 				new NodeBindtoCallback(this));
 		
 		this.bindto = nodeConfig.getString("bindTo");
