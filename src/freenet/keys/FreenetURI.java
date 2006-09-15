@@ -1,3 +1,23 @@
+/*
+  FrostMessageObject.java / Frost
+  Copyright (C) The Free Network project
+  Public Domain 2006  VolodyA! V A <volodya@whengendarmesleeps.org>
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 2 of
+  the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
 package freenet.keys;
 
 import java.io.ByteArrayInputStream;
@@ -228,13 +248,17 @@ public class FreenetURI implements Cloneable{
 		URI = URI.substring(atchar + 1);
 
 		// decode metaString
+		Vector sv = null;
+		if(!"KSK".equals(keyType))
+		{
 		int slash2;
-		Vector sv = new Vector();
-		while ((slash2 = URI.lastIndexOf("/")) != -1) {
-			String s = URI.substring(slash2 + "/".length());
-			if (s != null)
-				sv.addElement(s);
-			URI = URI.substring(0, slash2);
+		sv = new Vector();
+			while ((slash2 = URI.lastIndexOf("/")) != -1) {
+				String s = URI.substring(slash2 + "/".length());
+				if (s != null)
+					sv.addElement(s);
+				URI = URI.substring(0, slash2);
+			}
 		}
 		boolean b = false;
 		if("SSK".equals(keyType) || (b="USK".equals(keyType))) {
