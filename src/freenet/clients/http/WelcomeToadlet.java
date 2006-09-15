@@ -1,6 +1,6 @@
 /*
   WelcomeToadlet.java / Freenet
-  Copyright (C)  The Free Network project
+  Copyright (C) 2005-2006 The Free Network project
   Public Domain 2006  VolodyA! V A <volodya@whengendarmesleeps.org>
 
   This program is free software; you can redistribute it and/or

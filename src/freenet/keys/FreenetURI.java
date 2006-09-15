@@ -1,7 +1,7 @@
 /*
-  FrostMessageObject.java / Frost
-  Copyright (C) The Free Network project
-  Public Domain 2006  VolodyA! V A <volodya@whengendarmesleeps.org>
+  FreenetURI.java / Freenet
+  Copyright (C) 2005-2006 The Free Network project
+  Public Domain 2006 VolodyA! V Anarhist <volodya@whengendarmesleeps.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
@@ -17,6 +17,7 @@
   along with this program; if not, write to the Free Software
   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
+
 
 package freenet.keys;
 
