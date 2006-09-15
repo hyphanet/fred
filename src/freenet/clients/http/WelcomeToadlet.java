@@ -1,3 +1,23 @@
+/*
+  WelcomeToadlet.java / Freenet
+  Copyright (C)  The Free Network project
+  Public Domain 2006  VolodyA! V A <volodya@whengendarmesleeps.org>
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License as
+  published by the Free Software Foundation; either version 2 of
+  the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
 package freenet.clients.http;
 
 import java.io.IOException;
@@ -21,6 +41,8 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
+
+import freenet.frost.message.*;
 
 public class WelcomeToadlet extends Toadlet {
 	private final static int MODE_ADD = 1;
@@ -180,6 +202,71 @@ public class WelcomeToadlet extends Toadlet {
 					writePermanentRedirect(ctx, "Configuration applied", "/");
 				}
 			}
+		}else if(request.isPartSet("boardname")&&request.isPartSet("filename")){
+			// Inserting into a frost board FIN
+			// boardname
+			// filename
+			// boardprivatekey (not needed)
+			// boardpublickey (not needed) (and maybe dump it all the way)
+			// innitialindex
+			// sender
+			// subject
+				FrostBoard board = null;
+				if(request.isPartSet("boardprivatekey")&&request.isPartSet("boardpublickey")) // keyed board
+				{
+					board = new FrostBoard(
+							request.getPartAsString("boardname",FrostBoard.MAX_NAME_LENGTH),
+							request.getPartAsString("boardprivatekey",78),
+							request.getPartAsString("boardpublickey",78));
+				}
+				else // unkeyed or public board
+				{
+					board = new FrostBoard(request.getPartAsString("boardname",FrostBoard.MAX_NAME_LENGTH));
+				}
+				FrostMessage fin = new FrostMessage("news", board, request.getPartAsString("sender",64), request.getPartAsString("subject",128), request.getPartAsString("filename",1024));
+				
+				int innitialIndex = 0;
+				if(request.isPartSet("innitialindex"))
+				{
+					try {
+						innitialIndex = Integer.parseInt(request.getPartAsString("innitialindex",3));
+					}
+					catch(NumberFormatException e)
+					{
+						innitialIndex = 0;
+					}
+				}
+				
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode content;
+				try {
+					FreenetURI finalKey = fin.insertMessage(this.getClientImpl(), innitialIndex);
+					HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
+					content = ctx.getPageMaker().getContentNode(infobox);
+					content.addChild("#", "The message ");
+					content.addChild("#", " has been inserted successfully into "+finalKey.toString());
+				}
+				catch(InserterException e)
+				{
+					HTMLNode infobox = ctx.getPageMaker().getInfobox("infobox-error", "Insert Failed");
+					content = ctx.getPageMaker().getContentNode(infobox);
+					content.addChild("#", "The insert failed with the message: " + e.getMessage());
+					content.addChild("br");
+					if (e.uri != null) {
+						content.addChild("#", "The URI would have been: " + e.uri);
+					}
+					int mode = e.getMode();
+					if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+						content.addChild("br"); /* TODO */
+						content.addChild("#", "Splitfile-specific error: " + e.errorCodes.toVerboseString());
+					}
+				}
+				content.addChild("br");
+				content.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node Homepage" }, "Homepage");
+				
+				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				request.freeParts();
 		}else if(request.isPartSet("key")&&request.isPartSet("filename")){
 
 				FreenetURI key = new FreenetURI(request.getPartAsString("key",128));
