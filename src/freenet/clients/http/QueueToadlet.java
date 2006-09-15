@@ -407,7 +407,7 @@ public class QueueToadlet extends Toadlet {
 		HTMLNode navigationContent = pageMaker.getContentNode(navigationBar).addChild("ul");
 		boolean includeNavigationBar = false;
 		if (!completedDownloadToTemp.isEmpty()) {
-			navigationContent.addChild("li").addChild("a", "href", "#completedDownloads", "Completed downloads to temp");
+			navigationContent.addChild("li").addChild("a", "href", "#completedDownloadToTemp", "Completed downloads to temp");
 			includeNavigationBar = true;
 		}
 		if (!completedDownloadToDisk.isEmpty()) {
