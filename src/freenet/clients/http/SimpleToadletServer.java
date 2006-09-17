@@ -241,7 +241,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("advancedDarknetEnabled", false, 1, false, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
 				new FProxyAdvancedDarknetEnabledCallback(this));
-		fproxyConfig.register("showPanicButton", false, 1, true, false, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
+		fproxyConfig.register("showPanicButton", false, 1, true, true, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
 				new BooleanCallback(){
 				public boolean get(){
 					return SimpleToadletServer.isPanicButtonToBeShown;
