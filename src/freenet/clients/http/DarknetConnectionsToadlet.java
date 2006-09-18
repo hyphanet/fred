@@ -437,7 +437,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					if (path.endsWith("displaymessagetypes.html")) {
 						HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");
 						messageCountRow.addChild("td", "colspan", "2");
-						HTMLNode messageCountCell = messageCountRow.addChild("td", "colspan", String.valueOf(advancedEnabled ? 8 : 4));  // = total table row width - 2 from above colspan
+						HTMLNode messageCountCell = messageCountRow.addChild("td", "colspan", String.valueOf(advancedEnabled ? 9 : 5));  // = total table row width - 2 from above colspan
 						HTMLNode messageCountTable = messageCountCell.addChild("table", "class", "message-count");
 						HTMLNode countHeaderRow = messageCountTable.addChild("tr");
 						countHeaderRow.addChild("th", "Message");
