@@ -50,6 +50,7 @@ import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
+import freenet.support.TimeUtil;
 import freenet.support.io.Bucket;
 
 public class DarknetConnectionsToadlet extends Toadlet {
@@ -158,7 +159,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if(peerNodeStatuses.length>0){
 
 			/* node status values */
-			long nodeUptimeSeconds = ( now - node.startupTime ) / 1000;
+			long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 			int bwlimitDelayTime = (int) node.getBwlimitDelayTime();
 			int nodeAveragePingTime = (int) node.getNodeAveragePingTime();
 			int networkSizeEstimateSession = node.getNetworkSizeEstimate(-1);
@@ -170,7 +171,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			double missRoutingDistance =  node.missRoutingDistance.currentValue();
 			DecimalFormat fix1 = new DecimalFormat("##0.0%");
 			double backedoffPercent =  node.backedoffPercent.currentValue();
-			String nodeUptimeString = timeIntervalToString(nodeUptimeSeconds);
+			String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 
 			// BEGIN OVERVIEW TABLE
 			HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
@@ -802,48 +803,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		if (idle == -1) {
 			return " ";
 		}
-		long idleSeconds = (now - idle) / 1000;
-		return timeIntervalToString( idleSeconds );
-	}
-	
-	private String timeIntervalToString(long timeInterval) {
-		StringBuffer sb = new StringBuffer(1024);
-		long l = timeInterval;
-		int termCount = 0;
-		int weeks = (int) l / (7*24*60*60);
-		if(weeks > 0) {
-		  sb.append(weeks + "w");
-		  termCount++;
-		  l = l - (weeks * (7*24*60*60));
-		}
-		int days = (int) l / (24*60*60);
-		if(days > 0) {
-		  sb.append(days + "d");
-		  termCount++;
-		  l = l - (days * (24*60*60));
-		}
-		if(termCount >= 2) {
-		  return sb.toString();
-		}
-		int hours = (int) l / (60*60);
-		if(hours > 0) {
-		  sb.append(hours + "h");
-		  termCount++;
-		  l = l - (hours * (60*60));
-		}
-		if(termCount >= 2) {
-		  return sb.toString();
-		}
-		int minutes = (int) l / 60;
-		if(minutes > 0) {
-		  sb.append(minutes + "m");
-		  termCount++;
-		  l = l - (minutes * 60);
-		}
-		if(termCount >= 2) {
-		  return sb.toString();
-		}
-		sb.append(l + "s");
-		return sb.toString();
+		long idleMilliseconds = now - idle;
+		return TimeUtil.formatTime(idleMilliseconds);
 	}
 }
