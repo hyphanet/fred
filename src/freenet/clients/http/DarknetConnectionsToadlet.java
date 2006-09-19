@@ -433,7 +433,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", peerNodeStatus.getPrivateDarknetCommentNote() });
 
 					if(advancedEnabled)
-						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+"/"+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes()));
+						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes()));
 					
 					if (path.endsWith("displaymessagetypes.html")) {
 						HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");
