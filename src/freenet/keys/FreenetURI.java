@@ -250,8 +250,6 @@ public class FreenetURI implements Cloneable{
 
 		// decode metaString
 		Vector sv = null;
-		if(!"KSK".equals(keyType))
-		{
 		int slash2;
 		sv = new Vector();
 			while ((slash2 = URI.lastIndexOf("/")) != -1) {
@@ -260,7 +258,6 @@ public class FreenetURI implements Cloneable{
 					sv.addElement(s);
 				URI = URI.substring(0, slash2);
 			}
-		}
 		boolean b = false;
 		if("SSK".equals(keyType) || (b="USK".equals(keyType))) {
 			
