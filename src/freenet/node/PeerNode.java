@@ -1787,11 +1787,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         }
     }
 
-    // FIXME nested locking; helpful, but necessary ?
-    // In any case, if we have to do this, we must always take the lock on this before on routingBackoffSync
     public synchronized PeerNodeStatus getStatus() {
-    	PeerNodeStatus peerNodeStatus = new PeerNodeStatus(this);
-        return peerNodeStatus;
+    	return new PeerNodeStatus(this);
     }
     
     public String getTMCIPeerInfo() {
@@ -1875,8 +1872,6 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(peerAddedTime > 1) {
 				fs.put("peerAddedTime", Long.toString(peerAddedTime));
 			}
-		}
-		synchronized(routingBackoffSync) {
 			fs.put("lastRoutingBackoffReason", lastRoutingBackoffReason);
 			fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
 			fs.put("routingBackoff", Long.toString((Math.max(routingBackedOffUntil - now, 0))));
@@ -1973,11 +1968,9 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         return hashCode;
     }
 
-	private final Object routingBackoffSync = new Object();
-	
 	public boolean isRoutingBackedOff() {
 		long now = System.currentTimeMillis();
-		synchronized(routingBackoffSync) {
+		synchronized(this) {
 			if(now < routingBackedOffUntil) {
 				if(logMINOR) Logger.minor(this, "Routing is backed off");
 				return true;
@@ -2015,18 +2008,14 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Track the percentage of time a peer spends backed off
 	 */
 	private void reportBackoffStatus(long now) {
-		long localRoutingBackedOffUntil = -1;
-		synchronized(routingBackoffSync) {
-			localRoutingBackedOffUntil = routingBackedOffUntil;
-		}
 		synchronized(this) {
 			if(now > lastSampleTime) { // don't report twice in the same millisecond
-				if (now > localRoutingBackedOffUntil) { // not backed off
-					if (lastSampleTime > localRoutingBackedOffUntil) { // last sample after last backoff
+				if (now > routingBackedOffUntil) { // not backed off
+					if (lastSampleTime > routingBackedOffUntil) { // last sample after last backoff
 						backedOffPercent.report(0.0);
 					} else {
-						if(localRoutingBackedOffUntil > 0)
-							backedOffPercent.report((double)(localRoutingBackedOffUntil - lastSampleTime)/(double)(now - lastSampleTime));
+						if(routingBackedOffUntil > 0)
+							backedOffPercent.report((double)(routingBackedOffUntil - lastSampleTime)/(double)(now - lastSampleTime));
 					}
 				} else {
 					backedOffPercent.report(1.0);
@@ -2048,26 +2037,23 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		reportBackoffStatus(now);
 		// We need it because of nested locking on getStatus()
 		synchronized (this) {
-			synchronized(routingBackoffSync) {
-				// Don't back off any further if we are already backed off
-				if(now > routingBackedOffUntil) {
-					routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
-					if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
-						routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
-					int x = node.random.nextInt(routingBackoffLength);
-					routingBackedOffUntil = now + x;
-					setLastBackoffReason( reason );
-					String reasonWrapper = "";
-					if( 0 <= reason.length()) {
-						reasonWrapper = " because of '"+reason+"'";
-					}
-
-					if(logMINOR) Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+peer);
-				} else {
-					if(logMINOR) Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
-					return;
+			// Don't back off any further if we are already backed off
+			if(now > routingBackedOffUntil) {
+				routingBackoffLength = routingBackoffLength * BACKOFF_MULTIPLIER;
+				if(routingBackoffLength > MAX_ROUTING_BACKOFF_LENGTH)
+					routingBackoffLength = MAX_ROUTING_BACKOFF_LENGTH;
+				int x = node.random.nextInt(routingBackoffLength);
+				routingBackedOffUntil = now + x;
+				String reasonWrapper = "";
+				if( 0 <= reason.length()) {
+					reasonWrapper = " because of '"+reason+"'";
 				}
+				if(logMINOR) Logger.minor(this, "Backing off"+reasonWrapper+": routingBackoffLength="+routingBackoffLength+", until "+x+"ms on "+peer);
+			} else {
+				if(logMINOR) Logger.minor(this, "Ignoring localRejectedOverload: "+(routingBackedOffUntil-now)+"ms remaining on routing backoff on "+peer);
+				return;
 			}
+			setLastBackoffReason( reason );
 		}
 		setPeerNodeStatus(now);
 	}
@@ -2082,7 +2068,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		Peer peer = getPeer();
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
-		synchronized(routingBackoffSync) {
+		synchronized(this) {
 			// Don't un-backoff if still backed off
 			if(now > routingBackedOffUntil) {
 				routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
@@ -2182,16 +2168,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		return myName;
 	}
 
-	public int getRoutingBackoffLength() {
-        synchronized(routingBackoffSync) {
-			return routingBackoffLength;
-		}
+	public synchronized int getRoutingBackoffLength() {
+		return routingBackoffLength;
 	}
 
-	public long getRoutingBackedOffUntil() {
-        synchronized(routingBackoffSync) {
-			return routingBackedOffUntil;
-		}
+	public synchronized long getRoutingBackedOffUntil() {
+		return routingBackedOffUntil;
 	}
 
 	public synchronized String getLastBackoffReason() {
