@@ -965,12 +965,13 @@ class LocationManager {
         Double dd = new Double(d);
         synchronized(knownLocs) {
             Date timestamp = new Date();
+            Long longTime = new Long(timestamp.getTime());
         		//If the location is already recorded, remove it from the hashmap
         		if (knownLocs.containsKey(dd)) {
         			knownLocs.remove(dd);
         		}
         		//Add the location to the map with the current timestamp as value
-        		knownLocs.put(dd,timestamp);
+        		knownLocs.put(dd,longTime);
         		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
         }
     }
@@ -983,17 +984,14 @@ class LocationManager {
     		}
     		else if (timestamp > -1) {
     			//TODO optimize some more if it is to be called a lot.
-    			Date threshold = new Date(timestamp);
-    			Date locationTime;
-    			int numberOfLocationsInPeriod = 0;
+    			Long locationTime;
 				Iterator knownLocationsIterator = knownLocs.values().iterator();
 				while (knownLocationsIterator.hasNext()) {
-					locationTime = (Date) knownLocationsIterator.next();
-					if (locationTime.after(threshold)) {
-						numberOfLocationsInPeriod++;
+					locationTime = (Long) knownLocationsIterator.next();
+					if (locationTime.longValue() > timestamp) {
+						size++;
 					}
 				}
-				size = numberOfLocationsInPeriod;
 			}
 			return size;
 	}
