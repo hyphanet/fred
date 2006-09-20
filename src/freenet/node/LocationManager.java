@@ -984,7 +984,7 @@ class LocationManager {
     		}
     		else if (timestamp > -1) {
     			//TODO optimize some more if it is to be called a lot.
-    			Long locationTime;
+    			Long locationTime = new Long(0);
 				Iterator knownLocationsIterator = knownLocs.values().iterator();
 				while (knownLocationsIterator.hasNext()) {
 					locationTime = (Long) knownLocationsIterator.next();
