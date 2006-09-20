@@ -29,6 +29,7 @@ public class DSAPublicKey extends CryptoKey {
 		this.y=y;
 		this.yAsHexString = HexUtil.biToHex(y);
 		this.group=g;
+		if(g == null) throw new NullPointerException();
     }
 	
     /**
@@ -39,6 +40,7 @@ public class DSAPublicKey extends CryptoKey {
 		this.y=new NativeBigInteger(yAsHexString,16);
 		this.yAsHexString = yAsHexString;
 		this.group=g;
+		if(g == null) throw new NullPointerException();
 	}
 
     public DSAPublicKey(DSAGroup g, DSAPrivateKey p) {

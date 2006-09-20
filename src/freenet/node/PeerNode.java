@@ -396,7 +396,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         		this.peerCryptoGroup = DSAGroup.create(sfs);
         	
         	sfs = fs.subset("dsaPubKey");
-        	if(sfs == null)
+        	if(sfs == null || peerCryptoGroup == null)
         		this.peerPubKey = null;
         	else
         		this.peerPubKey = DSAPublicKey.create(sfs, peerCryptoGroup);
@@ -405,7 +405,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     		fs.removeValue("sig"); 
     		if(!fromLocal){
     			try{
-    				if(signature == null || !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(md.digest(fs.toOrderedString().getBytes("UTF-8"))))){
+    				if(signature == null || peerCryptoGroup == null || peerPubKey == null || 
+    						!DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(md.digest(fs.toOrderedString().getBytes("UTF-8"))))){
     					Logger.error(this, "The integrity of the reference has been compromized!");
     					this.isSignatureVerificationSuccessfull = false;
     					if(Version.getArbitraryBuildNumber(version)>970) // TODO: REMOVE: the backward compat. kludge : version checking
