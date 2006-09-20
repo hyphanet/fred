@@ -1,8 +1,7 @@
 /*
-  FrostMessageObject.java / Frost, Freenet
+  FrostMessageObject.java / Frost
   Copyright (C) 2003-2006  Frost Project <jtcfrost.sourceforge.net>
-  Public Domain 2006 VolodyA! V Anarhist <volodya@whengendarmesleeps.org>
-  Copyright (C) 2006 Freenet Project
+  Public Domain 2006  VolodyA! V A <volodya@whengendarmesleeps.org>
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
