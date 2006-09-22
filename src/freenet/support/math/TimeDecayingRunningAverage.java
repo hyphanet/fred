@@ -83,9 +83,15 @@ public class TimeDecayingRunningAverage implements RunningAverage {
         	started = fs.getBoolean("Started", false);
         	if(started) {
         		curValue = fs.getDouble("CurrentValue", curValue);
-        		totalReports = fs.getLong("TotalReports", 0);
-        		long uptime = fs.getLong("Uptime", 0);
-        		createdTime = System.currentTimeMillis() - uptime;
+        		if(curValue > maxReport || curValue < minReport) {
+        			curValue = defaultValue;
+        			totalReports = 0;
+        			createdTime = System.currentTimeMillis();
+        		} else {
+        			totalReports = fs.getLong("TotalReports", 0);
+            		long uptime = fs.getLong("Uptime", 0);
+            		createdTime = System.currentTimeMillis() - uptime;
+        		}
         	}
         }
     }
@@ -146,6 +152,10 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 			} else if(lastReportTime != -1) { // might be just serialized in
 				long thisInterval =
 					 now - lastReportTime;
+				if(thisInterval < 0) {
+					Logger.error(this, "Clock went back in time, ignoring report: "+now+" was "+lastReportTime+" (back "+(-thisInterval)+"ms");
+					return;
+				}
 				double thisHalfLife = halfLife;
 				long uptime = now - createdTime;
 				if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);
