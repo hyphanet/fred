@@ -20,6 +20,8 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.StringTokenizer;
 
+import freenet.io.AddressIdentifier.AddressType;
+
 /**
  * Matcher for IPv4 network addresses. It works like the regex matcher in
  * {@link java.util.regex.Matcher}, i.e. you create a new Inet4AddressMatcher
@@ -36,6 +38,9 @@ import java.util.StringTokenizer;
  * @version $Id$
  */
 public class Inet4AddressMatcher implements AddressMatcher {
+	public AddressType getAddressType() {
+		return AddressType.IPv4;
+	}
 
 	/** The address of this matcher */
 	private int address;

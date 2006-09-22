@@ -62,7 +62,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 				new TMCIEnabledCallback(core));
 		TMCIConfig.register("bindTo", "127.0.0.1", 2, true, false, "IP address to bind to", "IP address to bind to",
 				new TMCIBindtoCallback(core));
-		TMCIConfig.register("allowedHosts", "127.0.0.1", 2, true, false, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
+		TMCIConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", 2, true, false, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to the TMCI. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
 				new TMCIAllowedHostsCallback(core));
 		TMCIConfig.register("port", 2323, 1, true, false, "Telnet port", "Telnet port number",
         		new TCMIPortNumberCallback(core));

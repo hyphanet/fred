@@ -21,11 +21,16 @@ import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
+import freenet.io.AddressIdentifier.AddressType;
+
 /**
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id$
  */
 public class Inet6AddressMatcher implements AddressMatcher {
+	public AddressType getAddressType() {
+		return AddressType.IPv6;
+	}
 
 	private byte[] address;
 	private byte[] netmask;

@@ -311,6 +311,8 @@ public class NetworkInterface {
 					InetAddress clientAddress = clientSocket.getInetAddress();
 					if(logMINOR)
 						Logger.minor(Acceptor.class, "Connection from " + clientAddress);
+					
+					AddressType clientAddressType = AddressIdentifier.getAddressType(clientAddress.getHostAddress());
 
 					/* check if the ip address is allowed */
 					boolean addressMatched = false;
@@ -319,7 +321,8 @@ public class NetworkInterface {
 						while (!addressMatched && hosts.hasNext()) {
 							String host = (String) hosts.next();
 							AddressMatcher matcher = (AddressMatcher) addressMatchers.get(host);
-							if (matcher != null) {
+							
+							if (matcher != null && clientAddressType == matcher.getAddressType()) {
 								addressMatched = matcher.matches(clientAddress);
 							} else {
 								addressMatched = "*".equals(host);
