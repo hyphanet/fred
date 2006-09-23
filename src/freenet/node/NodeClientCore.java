@@ -59,9 +59,6 @@ public class NodeClientCore {
 	private final HealingQueue healingQueue;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
 	public final String formPassword;
-	
-	private volatile Object writeSync = new Object();
-	private boolean isWritingConfig = false;
 
 	File downloadDir;
 	final FilenameGenerator tempFilenameGenerator;
@@ -740,24 +737,8 @@ public class NodeClientCore {
 	}
 
 	public void storeConfig() {
-		Logger.normal(this, "Writing config", new Exception("debug"));
-		synchronized (writeSync) {
-			if(isWritingConfig) return;
-			isWritingConfig = true;
-		
-			node.ps.queueTimedJob(new Runnable() {
-				public void run() {
-					try{
-						while(!node.isHasStarted())
-							Thread.sleep(1000);
-					}catch (InterruptedException e) {}
-					node.config.store();
-					synchronized (writeSync) {
-						isWritingConfig = false;
-					}
-				}
-			}, 0);
-		}
+		Logger.normal(this, "Trying to write config to disk", new Exception("debug"));
+		node.config.store();
 	}
 	
 	public boolean isTestnetEnabled() {

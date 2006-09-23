@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.Iterator;
 
+import freenet.node.Node;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.LineReadingInputStream;
@@ -31,6 +32,8 @@ public class FilePersistentConfig extends Config {
 	private SimpleFieldSet origConfigFileContents;
 	private boolean finishedInit;
 	private final Object storeSync = new Object();
+	private boolean isWritingConfig = false;
+	private Node node;
 	
 	public FilePersistentConfig(File f) throws IOException {
 		this.filename = f;
@@ -123,15 +126,32 @@ public class FilePersistentConfig extends Config {
 				return;
 			}
 		}
-		try {
-			synchronized(storeSync) {
-				innerStore();
+		synchronized(storeSync) {
+			if(isWritingConfig || node == null){
+				Logger.normal(this, "Already writing the config file to disk or the node object hasn't been set : refusing to proceed");
+				return;
 			}
-		} catch (IOException e) {
-			String err = "Cannot store config: "+e;
-			Logger.error(this, err, e);
-			System.err.println(err);
-			e.printStackTrace();
+			isWritingConfig = true;
+
+			node.ps.queueTimedJob(new Runnable() {
+				public void run() {
+					try{
+						while(!node.isHasStarted())
+							Thread.sleep(1000);
+					}catch (InterruptedException e) {}
+					try {
+						innerStore();
+					} catch (IOException e) {
+						String err = "Cannot store config: "+e;
+						Logger.error(this, err, e);
+						System.err.println(err);
+						e.printStackTrace();
+					}
+					synchronized (storeSync) {
+						isWritingConfig = false;
+					}
+				}
+			}, 0);
 		}
 	}
 	
@@ -196,5 +216,13 @@ public class FilePersistentConfig extends Config {
 		} catch (InvalidConfigValueException e) {
 			Logger.error(this, "Could not parse config option "+name+": "+e, e);
 		}
+	}
+	
+	public void setNode(Node n){
+		if(node != null){
+			Logger.error(this, "The node object has already been initialized! it's likely to be a bug.");
+			return;
+		}
+		this.node = n;
 	}
 }
