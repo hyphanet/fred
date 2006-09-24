@@ -88,6 +88,8 @@ public class InserterException extends Exception {
 	public static final int COLLISION = 9;
 	/** Cancelled by user */
 	public static final int CANCELLED = 10;
+	/** Meta string used in the key (most probably '/') */
+	public static final int META_STRINGS_NOT_SUPPORTED = 11;
 	
 	public static String getMessage(int mode) {
 		switch(mode) {
@@ -109,6 +111,8 @@ public class InserterException extends Exception {
 			return "Insert could not leave the node at all";
 		case COLLISION:
 			return "Insert collided with different, pre-existing data at the same key";
+		case META_STRINGS_NOT_SUPPORTED:
+			return "Meta string (most likely a '/') used in the URI";
 		case CANCELLED:
 			return "Cancelled by user";
 		default:
@@ -136,6 +140,8 @@ public class InserterException extends Exception {
 			return "Request could not leave the node";
 		case COLLISION:
 			return "Collided with existing data";
+		case META_STRINGS_NOT_SUPPORTED:
+			return "Meta string used in the key";
 		case CANCELLED:
 			return "Cancelled";
 		default:
@@ -156,6 +162,7 @@ public class InserterException extends Exception {
 		case FATAL_ERRORS_IN_BLOCKS:
 		case COLLISION:
 		case CANCELLED:
+		case META_STRINGS_NOT_SUPPORTED:
 			return true;
 		case BUCKET_ERROR: // maybe
 		case INTERNAL_ERROR: // maybe

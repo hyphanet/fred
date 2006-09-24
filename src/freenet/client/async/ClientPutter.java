@@ -63,6 +63,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this);
 		try {
+			this.targetURI.checkInsertURI();
+			
 			boolean cancel = false;
 			synchronized(this) {
 				if(startedStarting) return;

@@ -46,7 +46,7 @@ class SingleFileInserter implements ClientPutState {
 	 * update our parent to point to us as current put-stage. */
 	private final boolean reportMetadataOnly;
 	public final Object token;
-	private final boolean freeData;
+	private final boolean freeData; // this is being set, but never read ???
 
 	/**
 	 * @param parent
@@ -262,6 +262,9 @@ class SingleFileInserter implements ClientPutState {
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
 			boolean addToParent) throws InserterException {
+		
+		uri.checkInsertURI(); // will throw an exception if needed
+		
 		if(uri.getKeyType().equals("USK")) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 

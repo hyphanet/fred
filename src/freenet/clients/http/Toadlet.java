@@ -100,6 +100,7 @@ public abstract class Toadlet {
 
 	FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
 		// For now, just run it blocking.
+		insert.desiredURI.checkInsertURI();
 		return client.insert(insert, getCHKOnly);
 	}
 

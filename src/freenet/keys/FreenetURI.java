@@ -16,6 +16,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
+import freenet.client.InserterException;
 
 /**
  * Note that the metadata pairs below are not presently supported. They are supported
@@ -173,7 +174,6 @@ public class FreenetURI implements Cloneable{
 			routingKey,
 			cryptoKey,
 			null);
-
 	}
 
 	public FreenetURI(
@@ -226,6 +226,16 @@ public class FreenetURI implements Cloneable{
 			keyType = URI.substring(colon + 1, atchar).toUpperCase().trim();
 		}
 		URI = URI.substring(atchar + 1);
+		
+		if(keyType.equalsIgnoreCase("KSK")) {
+			docName = URI;
+			metaStr = null;
+			routingKey = null;
+			cryptoKey = null;
+			extra = null;
+			suggestedEdition = -1;
+			return;
+		}
 
 		// decode metaString
 		Vector sv = null;
@@ -254,14 +264,6 @@ public class FreenetURI implements Cloneable{
 				}
 			} else
 				suggestedEdition = -1;
-		} else if(keyType.equalsIgnoreCase("KSK")) {
-			docName = URI;
-			metaStr = null;
-			routingKey = null;
-			cryptoKey = null;
-			extra = null;
-			suggestedEdition = -1;
-			return;
 		} else {
 			// docName not necessary, nor is it supported, for CHKs.
 			docName = null;
@@ -739,5 +741,16 @@ public class FreenetURI implements Cloneable{
 				extra,
 				suggestedEdition);
 	}
+	
+	public void checkInsertURI() throws InserterException
+	{
+		if(this.keyType.equals("KSK"))
+		{
+			if((this.docName!=null && this.docName.indexOf('/')!=-1) ||
+			   (this.cryptoKey!=null || this.extra!=null || this.routingKey!=null))
+				throw new InserterException(InserterException.META_STRINGS_NOT_SUPPORTED,this);
+		}
+	}
+	public static void checkInsertURI(FreenetURI uri) throws InserterException { uri.checkInsertURI(); }
 
 }
