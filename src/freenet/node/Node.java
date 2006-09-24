@@ -1404,9 +1404,11 @@ public class Node {
 		this.clientCore.start(config);
 		
 		// After everything has been created, write the config file back to disk.
-		config.finishedInit();
-		config.setNode(this);
+		config.finishedInit(this.ps);
 		config.store();
+		synchronized (config.thread) {
+			config.thread.notify();	
+		}
 		
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
