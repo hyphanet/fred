@@ -6,7 +6,7 @@ import java.io.IOException;
 import org.tanukisoftware.wrapper.WrapperManager;
 import org.tanukisoftware.wrapper.WrapperListener;
 
-import freenet.config.FilePersistentConfig;
+import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.DiffieHellman;
@@ -34,7 +34,7 @@ public class NodeStarter
 		(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) ? 6 : 2;
 	public static int extBuildNumber;
 	public static String extRevisionNumber;
-	private FilePersistentConfig cfg;
+	private FreenetFilePersistentConfig cfg;
 
     /*---------------------------------------------------------------
      * Constructors
@@ -80,7 +80,7 @@ public class NodeStarter
     	java.security.Security.setProperty("networkaddress.cache.negative.ttl" , "0");
     	  	
     	try{
-    		cfg = new FilePersistentConfig(configFilename);	
+    		cfg = new FreenetFilePersistentConfig(configFilename);	
     	}catch(IOException e){
     		System.out.println("Error : "+e);
     		e.printStackTrace();

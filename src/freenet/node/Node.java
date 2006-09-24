@@ -33,7 +33,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.sleepycat.je.DatabaseException;
 
 import freenet.client.FetcherContext;
-import freenet.config.FilePersistentConfig;
+import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.IntCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.LongCallback;
@@ -157,7 +157,7 @@ public class Node {
 	}
 	
 	/** Config object for the whole node. */
-	public final FilePersistentConfig config;
+	public final FreenetFilePersistentConfig config;
 	
 	// Static stuff related to logger
 	
@@ -681,7 +681,7 @@ public class Node {
 	 * @param the loggingHandler
 	 * @throws NodeInitException If the node initialization fails.
 	 */
-	 Node(FilePersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
+	 Node(FreenetFilePersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Logger.normal(this, "Initializing Node using SVN r"+Version.cvsRevision+" and freenet-ext r"+NodeStarter.extRevisionNumber);
