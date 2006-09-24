@@ -21,6 +21,8 @@ import net.i2p.util.NativeBigInteger;
  */
 public class DSAGroup extends CryptoKey {
 	private static final long serialVersionUID = -1;
+	
+	public static final int Q_BIT_LENGTH = 160;
 
     private BigInteger p, q, g;
 
@@ -171,7 +173,7 @@ public class DSAGroup extends CryptoKey {
 
         public void run() {
             while (true) {
-                qs.addElement(makePrime(160, 80, r));
+                qs.addElement(makePrime(DSAGroup.Q_BIT_LENGTH, 80, r));
                 synchronized (this) {
                     notifyAll();
                 }
@@ -239,7 +241,7 @@ public class DSAGroup extends CryptoKey {
                     qg.notify();
                 }
             } else
-                q = makePrime(160, 80, r);
+                q = makePrime(DSAGroup.Q_BIT_LENGTH, 80, r);
 
             BigInteger X = new BigInteger(bits, r).setBit(bits - 1);
 
@@ -252,7 +254,7 @@ public class DSAGroup extends CryptoKey {
         BigInteger h;
         do {
             if ((cc++) % 5 == 0) System.err.print("+");
-            h = new NativeBigInteger(160, r);
+            h = new NativeBigInteger(bits, r);
             g = h.modPow(pmin1.divide(q), p);
         } while ((h.compareTo(p.subtract(BigInteger.ONE)) != -1)
                 || (h.compareTo(BigInteger.ONE) < 1)
@@ -267,8 +269,9 @@ public class DSAGroup extends CryptoKey {
         q = grp.getQ();
         g = grp.getG();
         BigInteger pmin1 = p.subtract(BigInteger.ONE);
+        // TODO: that's FIPS-186-1, we should consider implementing 3 insteed!
         boolean rv = !((p.bitLength() > 1024) || (p.bitLength() < 512))
-                && ((p.bitLength() % 64) == 0) && (q.bitLength() == 160)
+                && ((p.bitLength() % 64) == 0) && (q.bitLength() == DSAGroup.Q_BIT_LENGTH)
                 && (q.compareTo(p) == -1) && isPrime(p, 80) && isPrime(q, 80)
                 && pmin1.mod(q).equals(BigInteger.ZERO)
                 && (g.compareTo(BigInteger.ONE) == 1)

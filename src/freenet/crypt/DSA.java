@@ -14,23 +14,20 @@ public class DSA {
      * Returns a DSA signature given a group, private key (x), a random nonce
      * (k), and the hash of the message (m).
      */
-    public static DSASignature sign(DSAGroup g,
-				    DSAPrivateKey x,
-				    BigInteger k, 
-				    BigInteger m) {
+	public static DSASignature sign(DSAGroup g,
+			DSAPrivateKey x,
+			BigInteger k, 
+			BigInteger m) {
 		BigInteger r=g.getG().modPow(k, g.getP()).mod(g.getQ());
-		
+
 		BigInteger kInv=k.modInverse(g.getQ());
 		return sign(g, x, r, kInv, m);
-    } 
-	
-    public static DSASignature sign(DSAGroup g, DSAPrivateKey x, BigInteger m,
-				    Random r) {
-	BigInteger k;
-	do {
-	    k=new NativeBigInteger(256, r);
-	} while ((k.compareTo(g.getQ())>-1) || (k.compareTo(BigInteger.ZERO)==0));
-	return sign(g, x, k, m);
+	} 
+
+	public static DSASignature sign(DSAGroup g, DSAPrivateKey x, BigInteger m,
+			Random r) {
+		BigInteger k = DSA.generateK(g, r);
+		return sign(g, x, k, m);
     }
 
     /**
@@ -41,10 +38,7 @@ public class DSA {
 		BigInteger[][] result=new BigInteger[count][2];
 		
 		for (int i=0; i<count; i++) {
-			BigInteger k;
-			do {
-				k=new NativeBigInteger(160, r);
-			} while ((k.compareTo(g.getQ())>-1) || (k.compareTo(BigInteger.ZERO)==0));
+			BigInteger k = DSA.generateK(g, r);
 			
 			result[i][0] = g.getG().modPow(k, g.getP()); // r 
 			result[i][1] = k.modInverse(g.getQ()); // k^-1 
@@ -60,9 +54,19 @@ public class DSA {
     public static DSASignature sign(DSAGroup g, DSAPrivateKey x,
 				    BigInteger r, BigInteger kInv, 
 				    BigInteger m) {
-	BigInteger s1=m.add(x.getX().multiply(r)).mod(g.getQ());
-	BigInteger s=kInv.multiply(s1).mod(g.getQ());
-	return new DSASignature(r,s);
+    	BigInteger s1=m.add(x.getX().multiply(r)).mod(g.getQ());
+    	BigInteger s=kInv.multiply(s1).mod(g.getQ());
+    	// FIXME: the following case would involve recomputing the sig. with a different k 
+    	if((r.compareTo(BigInteger.ZERO) == 0) || (s.compareTo(BigInteger.ZERO) == 0)) throw new NullPointerException("Something is wrong there!");
+    	return new DSASignature(r,s);
+    }
+    
+    private static BigInteger generateK(DSAGroup g, Random r){
+		BigInteger k;
+		do {
+			k=new NativeBigInteger(DSAGroup.Q_BIT_LENGTH, r);
+		} while ((g.getQ().compareTo(k) < 1) || (k.compareTo(BigInteger.ZERO) == 0));
+		return k;
     }
 
     /**
@@ -73,14 +77,18 @@ public class DSA {
 				 DSASignature sig,
 				 BigInteger m) {
 	try {
-	    BigInteger w=sig.getS().modInverse(kp.getQ());
+		// 0<r<q has to be true
+		if((sig.getR().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getR()) < 1)) return false;
+		// 0<s<q has to be true as well
+		if((sig.getS().compareTo(BigInteger.ZERO) < 1) || (kp.getQ().compareTo(sig.getS()) < 1)) return false;
+		
+		BigInteger w=sig.getS().modInverse(kp.getQ());
 	    BigInteger u1=m.multiply(w).mod(kp.getQ());
 	    BigInteger u2=sig.getR().multiply(w).mod(kp.getQ());
 	    BigInteger v1=kp.getG().modPow(u1, kp.getP());
 	    BigInteger v2=kp.getY().modPow(u2, kp.getP());
 	    BigInteger v=v1.multiply(v2).mod(kp.getP()).mod(kp.getQ());
 	    return v.equals(sig.getR());
-
 
 	    //FIXME: is there a better way to handle this exception raised on the 'w=' line above?
 	} catch (ArithmeticException e) {  // catch error raised by invalid data
