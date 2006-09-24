@@ -14,12 +14,12 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 		public void run() {
 			while(!hasNodeStarted){
 				synchronized (this) {
-						hasNodeStarted = true;
-						try{
-							wait(100);
-						} catch (InterruptedException e) {
-							hasNodeStarted = false;	
-						}
+					hasNodeStarted = true;
+					try{
+						wait(100);
+					} catch (InterruptedException e) {
+						hasNodeStarted = false;	
+					}
 				}
 			}
 			

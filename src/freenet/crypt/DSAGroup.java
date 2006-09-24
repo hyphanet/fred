@@ -270,6 +270,7 @@ public class DSAGroup extends CryptoKey {
         g = grp.getG();
         BigInteger pmin1 = p.subtract(BigInteger.ONE);
         // TODO: that's FIPS-186-1, we should consider implementing 3 insteed!
+        // http://csrc.nist.gov/publications/drafts/fips_186-3/Draft-FIPS-186-3%20_March2006.pdf
         boolean rv = !((p.bitLength() > 1024) || (p.bitLength() < 512))
                 && ((p.bitLength() % 64) == 0) && (q.bitLength() == DSAGroup.Q_BIT_LENGTH)
                 && (q.compareTo(p) == -1) && isPrime(p, 80) && isPrime(q, 80)
