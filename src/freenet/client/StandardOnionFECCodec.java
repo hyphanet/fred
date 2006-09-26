@@ -8,6 +8,8 @@ import org.spaceroots.mantissa.random.MersenneTwister;
 
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.FECCodeFactory;
+import com.onionnetworks.fec.Native8Code;
+import com.onionnetworks.fec.PureCode;
 import com.onionnetworks.util.Buffer;
 
 import freenet.support.LRUHashtable;
@@ -124,11 +126,26 @@ public class StandardOnionFECCodec extends FECCodec {
 	private final int k;
 	private final int n;
 	
+	static boolean noNative;
+	
 	public StandardOnionFECCodec(int k, int n) {
 		this.k = k;
 		this.n = n;
 		// Best performance, doesn't crash
-		encoder = FECCodeFactory.getDefault().createFECCode(k,n);
+		//encoder = FECCodeFactory.getDefault().createFECCode(k,n);
+		FECCode fec;
+		try {
+			fec = new Native8Code(k,n);
+		} catch (Throwable t) {
+			if(!noNative) {
+				System.err.println("Failed to load native FEC: "+t);
+				t.printStackTrace();
+			}
+			Logger.error(this, "Failed to load native FEC: "+t, t);
+			fec = new PureCode(k,n);
+			noNative = true;
+		}
+		encoder = fec;
 		// revert to below if above causes JVM crashes
 		// Worst performance, but decode crashes
 		//decoder = new PureCode(k,n);
