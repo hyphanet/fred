@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import org.spaceroots.mantissa.random.MersenneTwister;
 
 import com.onionnetworks.fec.FECCode;
-import com.onionnetworks.fec.FECCodeFactory;
 import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.fec.PureCode;
 import com.onionnetworks.util.Buffer;
