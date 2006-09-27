@@ -477,10 +477,12 @@ public class NodeDispatcher implements Dispatcher {
 		synchronized(recentProbeContexts) {
 			if(checkRecent) {
 				long now = System.currentTimeMillis();
-				if(now - tLastReceivedProbeRequest < 1000) {
+				if(now - tLastReceivedProbeRequest < 500) {
 					rejected = true;
-				} else
+				} else {
 					tLastReceivedProbeRequest = now;
+					counter++; // Accepted it; another hop
+				}
 			}
 			if(!rejected) {
 				ctx = (ProbeContext) recentProbeContexts.get(lid);
@@ -529,6 +531,9 @@ public class NodeDispatcher implements Dispatcher {
 		if(myLoc > target && myLoc < best)
 			best = myLoc;
 		
+		if(ctx.best > target && ctx.best < best)
+			best = ctx.best;
+		
 		for(int i=0;i<peers.length;i++) {
 			if(!peers[i].isConnected()) {
 				if(logMINOR)
@@ -550,7 +555,7 @@ public class NodeDispatcher implements Dispatcher {
 		
 		// Update nearest
 		
-		if(PeerManager.distance(myLoc, target) > PeerManager.distance(nearest, target)) {
+		if(PeerManager.distance(myLoc, target) < PeerManager.distance(nearest, target)) {
 			nearest = myLoc;
 			htl = Node.MAX_HTL;
 		} else {
