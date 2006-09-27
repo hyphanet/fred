@@ -227,33 +227,30 @@ public class FreenetURI implements Cloneable{
 		}
 		URI = URI.substring(atchar + 1);
 		
-		if(keyType.equalsIgnoreCase("KSK")) {
-			docName = URI;
-			metaStr = null;
-			routingKey = null;
-			cryptoKey = null;
-			extra = null;
-			suggestedEdition = -1;
-			return;
-		}
-
 		// decode metaString
 		Vector sv = null;
 		int slash2;
 		sv = new Vector();
-			while ((slash2 = URI.lastIndexOf("/")) != -1) {
-				String s = URI.substring(slash2 + "/".length());
-				if (s != null)
-					sv.addElement(s);
-				URI = URI.substring(0, slash2);
-			}
-		boolean b = false;
-		if("SSK".equals(keyType) || (b="USK".equals(keyType))) {
+		while ((slash2 = URI.lastIndexOf("/")) != -1) {
+			String s = URI.substring(slash2 + "/".length());
+			if (s != null)
+				sv.addElement(s);
+			URI = URI.substring(0, slash2);
+		}
+		
+		// sv is *backwards*
+		// this makes for more efficient handling
+		
+		boolean isSSK = "SSK".equals(keyType);
+		boolean isUSK = "USK".equals(keyType);
+		boolean isKSK = "KSK".equals(keyType);
+		
+		if(isSSK || isUSK) {
 			
 			if(sv.isEmpty())
-				throw new MalformedURLException("No docname");
+				throw new MalformedURLException("No docname for "+keyType);
 			docName = (String) sv.remove(sv.size()-1);
-			if(b) {
+			if(isUSK) {
 				if(sv.isEmpty()) throw new MalformedURLException("No suggested edition number for USK");
 				try {
 					suggestedEdition = Long.parseLong((String)sv.remove(sv.size()-1));
@@ -264,6 +261,12 @@ public class FreenetURI implements Cloneable{
 				}
 			} else
 				suggestedEdition = -1;
+		} else if(isKSK) {
+			// Deal with KSKs
+			if(sv.isEmpty())
+				throw new MalformedURLException("No docname for KSK");
+			docName = (String) sv.remove(sv.size()-1);
+			suggestedEdition = -1;
 		} else {
 			// docName not necessary, nor is it supported, for CHKs.
 			docName = null;
@@ -278,6 +281,11 @@ public class FreenetURI implements Cloneable{
 			metaStr = null;
 		}
 
+		if(isKSK) {
+			routingKey = extra = cryptoKey = null;
+			return;
+		}
+		
         // strip 'file extensions' from CHKs
         // added by aum (david@rebirthing.co.nz)
         if ("CHK".equals(keyType)) {
