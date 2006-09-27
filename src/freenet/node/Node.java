@@ -1248,23 +1248,23 @@ public class Node {
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		// Guesstimates. Hopefully well over the reality.
-		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesSentAverage"));
-		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesSentAverage"));
-		localChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesSentAverage"));
-		localSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalSskInsertBytesSentAverage"));
-		localChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesReceivedAverage"));
-		localSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesReceivedAverage"));
-		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"));
-		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"));
+		localChkFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesSentAverage"));
+		localSskFetchBytesSentAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesSentAverage"));
+		localChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesSentAverage"));
+		localSskInsertBytesSentAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalSskInsertBytesSentAverage"));
+		localChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkFetchBytesReceivedAverage"));
+		localSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalSskFetchBytesReceivedAverage"));
+		localChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"));
+		localSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("LocalChkInsertBytesReceivedAverage"));
 
-		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesSentAverage"));
-		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesSentAverage"));
-		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesSentAverage"));
-		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesSentAverage"));
-		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesReceivedAverage"));
-		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesReceivedAverage"));
-		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesReceivedAverage"));
-		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Long.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesReceivedAverage"));
+		remoteChkFetchBytesSentAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesSentAverage"));
+		remoteSskFetchBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesSentAverage"));
+		remoteChkInsertBytesSentAverage = new TimeDecayingRunningAverage(32768+32768+1024, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesSentAverage"));
+		remoteSskInsertBytesSentAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesSentAverage"));
+		remoteChkFetchBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteChkFetchBytesReceivedAverage"));
+		remoteSskFetchBytesReceivedAverage = new TimeDecayingRunningAverage(2048+500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteSskFetchBytesReceivedAverage"));
+		remoteChkInsertBytesReceivedAverage = new TimeDecayingRunningAverage(32768+1024+500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteChkInsertBytesReceivedAverage"));
+		remoteSskInsertBytesReceivedAverage = new TimeDecayingRunningAverage(1024+1024+500, 180000, 0.0, Integer.MAX_VALUE, throttleFS == null ? null : throttleFS.subset("RemoteSskInsertBytesReceivedAverage"));
 		
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, portNumber, sortOrder, throttleFS == null ? null : throttleFS.subset("RequestStarters"));
 		
