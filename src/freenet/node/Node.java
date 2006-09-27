@@ -1542,14 +1542,11 @@ public class Node {
 			if(pingTime > MAX_PING_TIME) {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-					lastAcceptedRequest = now;
-					pInstantRejectIncoming.report(0.0);
-					return null;
+				} else {
+					pInstantRejectIncoming.report(1.0);
+					return ">MAX_PING_TIME ("+pingTime+")";
 				}
-				pInstantRejectIncoming.report(1.0);
-				return ">MAX_PING_TIME ("+pingTime+")";
-			}
-			if(pingTime > SUB_MAX_PING_TIME) {
+			} else if(pingTime > SUB_MAX_PING_TIME) {
 				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
 				if(random.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
@@ -1561,14 +1558,11 @@ public class Node {
 			if(bwlimitDelayTime > MAX_THROTTLE_DELAY) {
 				if((now - lastAcceptedRequest > MAX_INTERREQUEST_TIME) && canAcceptAnyway) {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
-					lastAcceptedRequest = now;
-					pInstantRejectIncoming.report(0.0);
-					return null;
+				} else {
+					pInstantRejectIncoming.report(1.0);
+					return ">MAX_THROTTLE_DELAY ("+bwlimitDelayTime+")";
 				}
-				pInstantRejectIncoming.report(1.0);
-				return ">MAX_THROTTLE_DELAY ("+bwlimitDelayTime+")";
-			}
-			if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
+			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 				if(random.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
