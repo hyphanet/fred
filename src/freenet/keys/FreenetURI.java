@@ -742,15 +742,11 @@ public class FreenetURI implements Cloneable{
 				suggestedEdition);
 	}
 	
-	public void checkInsertURI() throws InserterException
-	{
-		if(this.keyType.equals("KSK"))
-		{
-			if((this.docName!=null && this.docName.indexOf('/')!=-1) ||
-			   (this.cryptoKey!=null || this.extra!=null || this.routingKey!=null))
-				throw new InserterException(InserterException.META_STRINGS_NOT_SUPPORTED,this);
-		}
+	public void checkInsertURI() throws InserterException {
+		if(metaStr != null && metaStr.length > 0)
+			throw new InserterException(InserterException.META_STRINGS_NOT_SUPPORTED,this);
 	}
+	
 	public static void checkInsertURI(FreenetURI uri) throws InserterException { uri.checkInsertURI(); }
 
 }
