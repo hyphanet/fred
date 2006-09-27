@@ -22,7 +22,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		if(maxLength < bufferSize)
 			bufferSize = maxLength;
 		if(buf == null)
-			buf = new byte[Math.max(Math.min(128,maxLength), Math.min(1024, bufferSize))];
+			buf = new byte[bufferSize];
 		int ctr = 0;
 		while(true) {
 			int x = read();
