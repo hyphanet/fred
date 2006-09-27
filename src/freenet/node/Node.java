@@ -2654,6 +2654,38 @@ public class Node {
 	public int getNetworkSizeEstimate(long timestamp) {
 	  return lm.getNetworkSizeEstimate( timestamp );
 	}
+	
+	public int getSwaps() {
+		return lm.swaps;
+	}
+
+	public int getNoSwaps() {
+		return lm.noSwaps;
+	}
+
+	public int getStartedSwaps() {
+		return lm.startedSwaps;
+	}
+
+	public int getSwapsRejectedAlreadyLocked() {
+		return lm.swapsRejectedAlreadyLocked;
+	}
+
+	public int getSwapsRejectedLoop() {
+		return lm.swapsRejectedLoop;
+	}
+
+	public int getSwapsRejectedNowhereToGo() {
+		return lm.swapsRejectedNowhereToGo;
+	}
+
+	public int getSwapsRejectedRateLimit() {
+		return lm.swapsRejectedRateLimit;
+	}
+
+	public int getSwapsRejectedRecognizedID() {
+		return lm.swapsRejectedRecognizedID;
+	}
 
 	/**
 	 * Add a PeerNode routing backoff reason to the map
