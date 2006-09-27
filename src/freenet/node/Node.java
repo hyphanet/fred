@@ -229,6 +229,10 @@ public class Node {
 	public static final long MAX_BWLIMIT_DELAY_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
 	/** How long we're over the nodeAveragePingTime threshold before we alert (in milliseconds)*/
 	public static final long MAX_NODE_AVERAGE_PING_TIME_ALERT_DELAY = 10*60*1000;  // 10 minutes
+	/** If more than this many requests are running, reject any more. */
+	public static final int MAX_RUNNING_REQUESTS = 100;
+	/** If more than this many inserts are running, reject any more. */
+	public static final int MAX_RUNNING_INSERTS = 100;
 	
 	/** Accept one request every 10 seconds regardless, to ensure we update the
 	 * block send time.
@@ -1511,6 +1515,14 @@ public class Node {
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK) {
 		if(logMINOR) dumpByteCostAverages();
 		
+		if(isInsert) {
+			if(getNumInserts() > MAX_RUNNING_INSERTS)
+				return "Too many running inserts";
+		} else {
+			if(getNumRequests() > MAX_RUNNING_REQUESTS)
+				return "Too many running requests";
+		}
+		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
@@ -1977,6 +1989,7 @@ public class Node {
 			if(rs != sender) {
 				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+","+htl+" in removeRequestSender");
 			}
+			requestSenders.notifyAll();
 		}
 	}
 
@@ -1990,6 +2003,7 @@ public class Node {
 			if(is != sender) {
 				Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+","+htl+" in removeInsertSender");
 			}
+			insertSenders.notifyAll();
 		}
 	}
 
@@ -3039,5 +3053,27 @@ public class Node {
 
 	protected DSAPublicKey getMyPubKey() {
 		return myPubKey;
+	}
+
+	public void waitUntilNotOverloaded(boolean isInsert) {
+		if(isInsert) {
+			synchronized(insertSenders) {
+				while(insertSenders.size() > MAX_RUNNING_INSERTS)
+					try {
+						wait(100*1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+			}
+		} else {
+			synchronized(requestSenders) {
+				while(requestSenders.size() > MAX_RUNNING_REQUESTS)
+					try {
+						wait(100*1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+			}
+		}
 	}
 }
