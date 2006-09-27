@@ -173,21 +173,6 @@ public class StatisticsToadlet extends Toadlet {
 					if (numARKFetchers > 0) {
 						activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 					}
-					long[] total = IOStatisticCollector.getTotalIO();
-					long total_output_rate = (total[0]) / nodeUptimeSeconds;
-					long total_input_rate = (total[1]) / nodeUptimeSeconds;
-					long totalPayload = node.getTotalPayloadSent();
-					long total_payload_rate = totalPayload / nodeUptimeSeconds;
-					int percent = (int) (100 * totalPayload / total[0]);
-					activityList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + "\u00a0(" + SizeUtil.formatSize(total_output_rate) + "ps)");
-					activityList.addChild("li", "Payload Output:\u00a0" + SizeUtil.formatSize(totalPayload) + "\u00a0(" + SizeUtil.formatSize(total_payload_rate) + "ps) ("+percent+"%)");
-					activityList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + "\u00a0(" + SizeUtil.formatSize(total_input_rate) + "ps)");
-					long[] rate = node.getNodeIOStats();
-					long delta = (rate[5] - rate[2]) / 1000;
-					long output_rate = (rate[3] - rate[0]) / delta;
-					long input_rate = (rate[4] - rate[1]) / delta;
-					activityList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate) + "ps");
-					activityList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate) + "ps");
 				}
 			}
 
@@ -296,8 +281,33 @@ public class StatisticsToadlet extends Toadlet {
 				locationSwapList.addChild("li", "swapsRejectedRecognizedID:\u00a0" + swapsRejectedRecognizedID);
 				nextTableCell = overviewTableRow.addChild("td");
 			}
+			
+			// Bandwidth box
+			if (advancedEnabled) {
+				HTMLNode bandwidthInfobox = nextTableCell.addChild("div", "class", "infobox");
+				bandwidthInfobox.addChild("div", "class", "infobox-header", "Bandwidth");
+				HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
+				HTMLNode bandwidthList = bandwidthInfoboxContent.addChild("ul");
+				long[] total = IOStatisticCollector.getTotalIO();
+				long total_output_rate = (total[0]) / nodeUptimeSeconds;
+				long total_input_rate = (total[1]) / nodeUptimeSeconds;
+				long totalPayload = node.getTotalPayloadSent();
+				long total_payload_rate = totalPayload / nodeUptimeSeconds;
+				int percent = (int) (100 * totalPayload / total[0]);
+				bandwidthList.addChild("li", "Total Output:\u00a0" + SizeUtil.formatSize(total[0]) + "\u00a0(" + SizeUtil.formatSize(total_output_rate) + "ps)");
+				bandwidthList.addChild("li", "Payload Output:\u00a0" + SizeUtil.formatSize(totalPayload) + "\u00a0(" + SizeUtil.formatSize(total_payload_rate) + "ps) ("+percent+"%)");
+				bandwidthList.addChild("li", "Total Input:\u00a0" + SizeUtil.formatSize(total[1]) + "\u00a0(" + SizeUtil.formatSize(total_input_rate) + "ps)");
+				long[] rate = node.getNodeIOStats();
+				long delta = (rate[5] - rate[2]) / 1000;
+				long output_rate = (rate[3] - rate[0]) / delta;
+				long input_rate = (rate[4] - rate[1]) / delta;
+				bandwidthList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate) + "ps");
+				bandwidthList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate) + "ps");
+			}
+
+			nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 		}
-		
+
 		StringBuffer pageBuffer = new StringBuffer();
 		pageNode.generate(pageBuffer);
 		this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
