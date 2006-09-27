@@ -116,25 +116,12 @@ public class DiffieHellman {
 			//Ensure that we will have something to pop (at least pretty soon)
 			askRefill(); 
 
-			//Wait until we actually have something to pop
-			while (precalcBuffer.isEmpty()) {
-				try {
-					precalcBuffer.wait();
-				} catch (InterruptedException e) {
-					// Ignored.
-				}
+			if(!precalcBuffer.isEmpty()) {
+				return (NativeBigInteger[]) precalcBuffer.pop();
 			}
-
-			NativeBigInteger[] result = (NativeBigInteger[]) precalcBuffer.pop();
-
-			//Hint the precalcer that it might have something to do now
-			askRefill();
-
-			//Release possible other precalc value waiters
-			precalcBuffer.notify();
-
-			return result;
+			
 		}
+		return genParams();
 	}
 
 	private static NativeBigInteger[] genParams() {
