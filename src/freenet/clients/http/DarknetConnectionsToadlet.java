@@ -583,8 +583,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			
 			try {
 				fs = new SimpleFieldSet(ref.toString(), true);
+				fs.setEndMarker("End"); // It's always End ; the regex above doesn't always grok this
 			} catch (IOException e) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference. Please try again.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference ("+e+"). Please try again.");
 				return;
 			}
 			PeerNode pn;
@@ -592,13 +593,17 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				pn = new PeerNode(fs, this.node, false);
 				pn.setPrivateDarknetCommentNote(privateComment);
 			} catch (FSParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference. Please try again.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference ("+e1+"). Please try again.");
 				return;
 			} catch (PeerParseException e1) {
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference. Please try again.");
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to parse the given text as a node reference ("+e1+"). Please try again.");
 				return;
 			} catch (ReferenceSignatureVerificationException e1){
-				this.sendErrorPage(ctx, 200, "Failed To Add Node", "Unable to verify the signature of the given reference.");
+				HTMLNode node = new HTMLNode("div");
+				node.addChild("#", "Unable to verify the signature of the given reference ("+e1+").");
+				node.addChild("br");
+				HTMLNode pre = node.addChild("pre", fs.toOrderedString());
+				this.sendErrorPage(ctx, 200, "Failed To Add Node", node);
 				return;
 			}
 			if(pn.getIdentityHash()==node.getIdentityHash()) {
