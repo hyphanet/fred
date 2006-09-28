@@ -137,8 +137,14 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 	public void report(double d) {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			if(d < minReport) d = minReport;
-			if(d > maxReport) d = maxReport;
+			if(d < minReport) {
+				Logger.error(this, "Impossible: "+d+" on "+this, new Exception("error"));
+				return;
+			}
+			if(d > maxReport) {
+				Logger.error(this, "Impossible: "+d+" on "+this, new Exception("error"));
+				return;
+			}
 			if(Double.isInfinite(d) || Double.isNaN(d)) {
 				Logger.error(this, "Reported infinity or NaN to "+this+" : "+d, new Exception("error"));
 				return;
