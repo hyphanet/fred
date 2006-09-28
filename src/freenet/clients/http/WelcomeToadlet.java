@@ -263,7 +263,7 @@ public class WelcomeToadlet extends Toadlet {
 				if(key.getKeyType().equals("CHK")) {
 					String[] metas = key.getAllMetaStrings();
 					if(metas != null && metas.length > 1) {
-						filenameHint = metas.toString();
+						filenameHint = metas[0];
 					}
 				}
 				InsertBlock block = new InsertBlock(bucket, contentType, key);
