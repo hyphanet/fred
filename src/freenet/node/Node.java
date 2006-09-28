@@ -3060,7 +3060,7 @@ public class Node {
 			synchronized(insertSenders) {
 				while(insertSenders.size() > MAX_RUNNING_INSERTS)
 					try {
-						wait(100*1000);
+						insertSenders.wait(100*1000);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
@@ -3069,7 +3069,7 @@ public class Node {
 			synchronized(requestSenders) {
 				while(requestSenders.size() > MAX_RUNNING_REQUESTS)
 					try {
-						wait(100*1000);
+						requestSenders.wait(100*1000);
 					} catch (InterruptedException e) {
 						// Ignore
 					}
