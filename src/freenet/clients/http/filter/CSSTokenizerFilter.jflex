@@ -351,9 +351,10 @@ REALURL {
 	w.write(s);
 	if(debug) log("Matched @page: "+s);
 }
-"@media" {
+"@media"{W}{MEDIUMS} {
 	String s = yytext();
-	w.write(s);
+	s = s.substring("@media".length()).trim();
+	w.write("@media "+s);
 	if(debug) log("Matched @media: "+s);
 }
 "@font-face" {
@@ -361,21 +362,12 @@ REALURL {
 	w.write(s);
 	if(debug) log("Matched @font-face: "+s);
 }
-"@"{IDENT}[^;\}\"]*[;\}] {
-	if(!deleteErrors) {
-		throwError("Unknown @identifier "+yytext());
-	} else {
-		String s = yytext();
-		if(debug) log("Discarded identifier: "+s);
-		// Ignore
-	}
-}
 "#"{NAME} {
 	String s = yytext();
 	w.write(s);
 	if(debug) log("Matched #name: "+s);
 }
-"!{W}important" {
+"!"{W}"important" {
 	String s = yytext();
 	w.write(s);
 	if(debug) log("Matched important: "+s);
@@ -457,6 +449,17 @@ U\+{H}{1,6}-{H}{1,6} {
 	w.write(s);
 	if(debug) log("Matched single char: "+s);
 }
+// This would be the longest match...
+//("@"{IDENT}[^;\}\"]*[;\}]) {
+//	if(!deleteErrors) {
+//		throwError("Unknown @identifier "+yytext());
+//	} else {
+//		String s = yytext();
+//		if(debug) log("Discarded identifier: "+s);
+//		// Ignore
+//	}
+//}
+// Default rule matches only one character
 . {
 	String s = yytext();
 	char c = s.charAt(0);
