@@ -172,7 +172,23 @@ public abstract class Toadlet {
 		
 		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
-	
+
+	/**
+	 * Send a slightly more complex error page.
+	 */
+	protected void sendErrorPage(ToadletContext ctx, int code, String desc, HTMLNode message) throws ToadletContextClosedException, IOException {
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(desc);
+		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+		
+		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
+		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+		infoboxContent.addChild(message);
+		infoboxContent.addChild("br");
+		infoboxContent.addChild("a", "href", ".", "Return to Peers page.");
+		
+		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
+	}
+
 	/**
 	 * Get the client impl. DO NOT call the blocking methods on it!!
 	 * Just use it for configuration etc.
