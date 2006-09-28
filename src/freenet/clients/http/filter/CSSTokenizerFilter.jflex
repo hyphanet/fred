@@ -91,7 +91,7 @@ import java.util.*;
 			boolean justEscaping = false;
 			boolean stillEscaping = false;
 			StringBuffer hexEscape = new StringBuffer();
-			while(x < s.length()-1) {
+			while(x < s.length()) {
 				char c = s.charAt(x);
 				x++;
 				if(justEscaping) {
@@ -156,8 +156,8 @@ import java.util.*;
 				}
 			}
 			data = buffer.toString();
-			if(s.length() > (x+1))
-				suffix = s.substring(x+1);
+			if(s.length() > x)
+				suffix = s.substring(x);
 			else suffix = "";
 		}
 		
@@ -272,6 +272,7 @@ REALURL {
 	s = processImportURL(s);
 	dst.data = s;
 	if(debug) log("Processed URL: "+s);
+	if(dst.quote == ' ') dst.quote = '\"';
 	if (!(s == null || s.equals(""))) {
 		if(debug) log("URL now: "+s);
 		s = "@import "+dst.toString();
