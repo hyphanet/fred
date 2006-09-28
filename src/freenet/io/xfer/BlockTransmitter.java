@@ -156,19 +156,21 @@ public class BlockTransmitter {
 				
 				long delayTime = now - startThrottle;
 				
+				// Report the delay caused by bandwidth limiting, NOT the delay caused by congestion control.
 				((PeerNode)_destination).reportThrottledPacketSendTime(delayTime);
 				
 				if(now > end) return;
 				while(now < end) {
-					now = System.currentTimeMillis();
 					long l = end - now;
 					int x = (int) (Math.min(l, Integer.MAX_VALUE));
-					if(x > 0)
+					if(x > 0) {
 						try {
 							Thread.sleep(x);
 						} catch (InterruptedException e) {
 							// Ignore
 						}
+						now = System.currentTimeMillis();
+					}
 				}
 			}
 		};
