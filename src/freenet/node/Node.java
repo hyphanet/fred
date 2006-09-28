@@ -2876,6 +2876,10 @@ public class Node {
 		return lm.locChangeSession;
 	}
 	
+	public int getNumberOfLocationsSeenInSwaps() {
+		return lm.numberOfLocationsSeenInSwaps;
+	}
+	
 	public boolean isAdvancedDarknetEnabled() {
 		return clientCore.isAdvancedDarknetEnabled();
 	}

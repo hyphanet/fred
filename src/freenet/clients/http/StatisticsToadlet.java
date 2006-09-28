@@ -100,6 +100,9 @@ public class StatisticsToadlet extends Toadlet {
 	
 		contentNode.addChild(core.alerts.createSummary());
 		
+		int swaps = node.getSwaps();
+		int noSwaps = node.getNoSwaps();
+		
 		if(peerNodeStatuses.length>0){
 
 			/* node status values */
@@ -109,6 +112,8 @@ public class StatisticsToadlet extends Toadlet {
 			int networkSizeEstimateSession = node.getNetworkSizeEstimate(-1);
 			int networkSizeEstimate24h = 0;
 			int networkSizeEstimate48h = 0;
+			int numberOfLocationsSeenInSwaps = node.getNumberOfLocationsSeenInSwaps();
+			
 			if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours
 				networkSizeEstimate24h = node.getNetworkSizeEstimate(now - (24*60*60*1000));  // 48 hours
 			}
@@ -139,6 +144,12 @@ public class StatisticsToadlet extends Toadlet {
 				}
 				if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
 					overviewList.addChild("li", "networkSizeEstimate48h:\u00a0" + networkSizeEstimate48h + "\u00a0nodes");
+				}
+				if ((networkSizeEstimateSession > 0) && ((swaps > 0) || (noSwaps > 0))) {
+					overviewList.addChild("li", "avrPeersPerNodeU:\u00a0" + (double)((double)networkSizeEstimateSession/(double)(swaps+noSwaps)));
+				}
+				if ((numberOfLocationsSeenInSwaps > 0) && ((swaps > 0) || (noSwaps > 0))) {
+					overviewList.addChild("li", "avrPeersPerNodeT:\u00a0" + (double)((double)numberOfLocationsSeenInSwaps/(double)(swaps+noSwaps)));
 				}
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
 				overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix4.format(missRoutingDistance));
@@ -258,8 +269,6 @@ public class StatisticsToadlet extends Toadlet {
 			if(advancedEnabled) {
 				overviewTableRow = overviewTable.addChild("tr");
 				nextTableCell = overviewTableRow.addChild("td", "class", "first");
-				int swaps = node.getSwaps();
-				int noSwaps = node.getNoSwaps();
 				int startedSwaps = node.getStartedSwaps();
 				int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
 				int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();

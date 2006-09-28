@@ -64,6 +64,8 @@ class LocationManager {
 
     Location loc;
     double locChangeSession = 0.0;
+    
+    int numberOfLocationsSeenInSwaps = 0;
 
     /**
      * @return The current Location of this node.
@@ -287,6 +289,8 @@ class LocationManager {
             }
             registerKnownLocation(hisLoc);
             
+            numberOfLocationsSeenInSwaps++;
+            
             double[] hisFriendLocs = new double[hisBufLong.length-2];
             for(int i=0;i<hisFriendLocs.length;i++) {
                 hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
@@ -297,6 +301,8 @@ class LocationManager {
                 registerLocationLink(hisLoc, hisFriendLocs[i]);
                 registerKnownLocation(hisFriendLocs[i]);
             }
+            
+            numberOfLocationsSeenInSwaps += hisFriendLocs.length;
             
             // Send our SwapComplete
             
@@ -465,6 +471,8 @@ class LocationManager {
                 }
                 registerKnownLocation(hisLoc);
                 
+                numberOfLocationsSeenInSwaps++;
+                
                 double[] hisFriendLocs = new double[hisBufLong.length-2];
                 for(int i=0;i<hisFriendLocs.length;i++) {
                     hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
@@ -475,6 +483,8 @@ class LocationManager {
                     registerLocationLink(hisLoc, hisFriendLocs[i]);
                     registerKnownLocation(hisFriendLocs[i]);
                 }
+                
+                numberOfLocationsSeenInSwaps += hisFriendLocs.length;
                 
                 if(shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom)) {
                     timeLastSuccessfullySwapped = System.currentTimeMillis();
