@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashMap;
 
 import freenet.client.InsertBlock;
 import freenet.client.InserterContext;
@@ -47,6 +48,7 @@ class SingleFileInserter implements ClientPutState {
 	private final boolean reportMetadataOnly;
 	public final Object token;
 	private final boolean freeData; // this is being set, but never read ???
+	private final String targetFilename;
 
 	/**
 	 * @param parent
@@ -59,11 +61,13 @@ class SingleFileInserter implements ClientPutState {
 	 * @param reportMetadataOnly If true, don't insert the metadata, just report it.
 	 * @param insertAsArchiveManifest If true, insert the metadata as an archive manifest.
 	 * @param freeData If true, free the data when possible.
+	 * @param targetFilename 
 	 * @throws InserterException
 	 */
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InserterContext ctx, boolean dontCompress, 
-			boolean getCHKOnly, boolean reportMetadataOnly, Object token, boolean insertAsArchiveManifest, boolean freeData) throws InserterException {
+			boolean getCHKOnly, boolean reportMetadataOnly, Object token, boolean insertAsArchiveManifest, 
+			boolean freeData, String targetFilename) throws InserterException {
 		this.reportMetadataOnly = reportMetadataOnly;
 		this.token = token;
 		this.parent = parent;
@@ -74,6 +78,7 @@ class SingleFileInserter implements ClientPutState {
 		this.getCHKOnly = getCHKOnly;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
 		this.freeData = freeData;
+		this.targetFilename = targetFilename;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
@@ -189,7 +194,7 @@ class SingleFileInserter implements ClientPutState {
 		if(block.getData().size() > Integer.MAX_VALUE)
 			throw new InserterException(InserterException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 
-		boolean noMetadata = (block.clientMetadata == null) || block.clientMetadata.isTrivial();
+		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
 		if(metadata && !noMetadata) {
 			throw new InserterException(InserterException.INTERNAL_ERROR, "MIME type set for a metadata insert!", null);
 		}
@@ -208,7 +213,7 @@ class SingleFileInserter implements ClientPutState {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token);
-				Metadata meta = new Metadata(insertAsArchiveManifest ? Metadata.ZIP_MANIFEST : Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
+				Metadata meta = makeMetadata(dataPutter.getURI());
 				cb.onMetadata(meta, this);
 				cb.onTransition(this, dataPutter);
 				dataPutter.schedule();
@@ -217,7 +222,7 @@ class SingleFileInserter implements ClientPutState {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token);
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token);
-				Metadata meta = new Metadata(insertAsArchiveManifest ? Metadata.ZIP_MANIFEST : Metadata.SIMPLE_REDIRECT, dataPutter.getURI(), block.clientMetadata);
+				Metadata meta = makeMetadata(dataPutter.getURI());
 				Bucket metadataBucket;
 				try {
 					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
@@ -259,6 +264,16 @@ class SingleFileInserter implements ClientPutState {
 		}
 	}
 	
+	private Metadata makeMetadata(FreenetURI uri) {
+		Metadata meta = new Metadata(insertAsArchiveManifest ? Metadata.ZIP_MANIFEST : Metadata.SIMPLE_REDIRECT, uri, block.clientMetadata);
+		if(targetFilename != null) {
+			HashMap hm = new HashMap();
+			hm.put(targetFilename, meta);
+			meta = Metadata.mkRedirectionManifestWithMetadata(hm);
+		}
+		return meta;
+	}
+
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
 			boolean addToParent) throws InserterException {
@@ -423,6 +438,12 @@ class SingleFileInserter implements ClientPutState {
 				onFailure(e, state);
 				return;
 			}
+			if(targetFilename != null) {
+				HashMap hm = new HashMap();
+				hm.put(targetFilename, meta);
+				meta = Metadata.mkRedirectionManifestWithMetadata(hm);
+			}
+			
 			Bucket metadataBucket;
 			try {
 				metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
@@ -440,7 +461,7 @@ class SingleFileInserter implements ClientPutState {
 			InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
 			try {
 				synchronized(this) {
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true);
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true, null);
 					if(!dataFetchable) return;
 				}
 				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+")");

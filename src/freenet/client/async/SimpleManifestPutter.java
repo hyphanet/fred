@@ -37,7 +37,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block = 
 				new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, false, false);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, false, false, null);
 			metadata = null;
 		}
 
@@ -432,7 +432,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			block = new InsertBlock(bucket, null, targetURI);
 		try {
 			SingleFileInserter metadataInserter = 
-				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, insertAsArchiveManifest, true);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, insertAsArchiveManifest, true, null);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
@@ -457,7 +457,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				
 				InsertBlock ib = new InsertBlock(b, null, FreenetURI.EMPTY_CHK_URI);
 				SingleFileInserter metadataInserter = 
-					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, false, true);
+					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, false, true, null);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);

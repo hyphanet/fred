@@ -98,10 +98,10 @@ public abstract class Toadlet {
 		return client.fetch(uri, maxSize);
 	}
 
-	FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
+	FreenetURI insert(InsertBlock insert, String filenameHint, boolean getCHKOnly) throws InserterException {
 		// For now, just run it blocking.
 		insert.desiredURI.checkInsertURI();
-		return client.insert(insert, getCHKOnly);
+		return client.insert(insert, getCHKOnly, filenameHint);
 	}
 
 	/**

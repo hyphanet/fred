@@ -33,9 +33,10 @@ public interface HighLevelSimpleClient {
 	
 	/**
 	 * Blocking insert.
+	 * @param filenameHint If set, insert a single-file manifest containing only this file, under the given filename.
 	 * @throws InserterException If there is an error inserting the data
 	 */
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException;
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InserterException;
 
 	/**
 	 * Blocking insert of a redirect.

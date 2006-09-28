@@ -291,7 +291,7 @@ public final class FrostMessage {
 
     		// try inserting the message with the key
             try {
-            	returnKey = client.insert(block, false); // I don't know what that 'false' is
+            	returnKey = client.insert(block, false, null); // I don't know what that 'false' is
             }
             catch (InserterException e)
             {

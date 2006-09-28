@@ -27,11 +27,12 @@ public class PersistentPut extends FCPMessage {
 	final String token;
 	final boolean started;
 	final int maxRetries;
+	final String targetFilename;
 	
 	public PersistentPut(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short uploadFrom, FreenetURI targetURI, 
 			short persistenceType, File origFilename, String mimeType, 
-			boolean global, long size, String clientToken, boolean started, int maxRetries) {
+			boolean global, long size, String clientToken, boolean started, int maxRetries, String targetFilename) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -46,6 +47,7 @@ public class PersistentPut extends FCPMessage {
 		this.token = clientToken;
 		this.started = started;
 		this.maxRetries = maxRetries;
+		this.targetFilename = targetFilename;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -69,6 +71,8 @@ public class PersistentPut extends FCPMessage {
 			fs.put("ClientToken", token);
 		fs.put("Started", started);
 		fs.put("MaxRetries", maxRetries);
+		if(targetFilename != null)
+			fs.put("TargetFilename", targetFilename);
 		return fs;
 	}
 

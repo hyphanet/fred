@@ -120,15 +120,15 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return fw.waitForCompletion();
 	}
 
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly) throws InserterException {
-		return insert(insert, getCHKOnly, false);
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InserterException {
+		return insert(insert, getCHKOnly, filenameHint, false);
 	}
 	
-	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, boolean isMetadata) throws InserterException {
+	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata) throws InserterException {
 		InserterContext context = getInserterContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.data, insert.desiredURI, insert.clientMetadata, 
-				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null);
+				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null, filenameHint);
 		put.start();
 		return pw.waitForCompletion();
 	}
@@ -147,7 +147,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		}
 		
 		InsertBlock block = new InsertBlock(b, null, insertURI);
-		return insert(block, false, true);
+		return insert(block, false, null, true);
 	}
 
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException {

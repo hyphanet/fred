@@ -51,12 +51,15 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final File origFilename;
 	final boolean global;
 	final FreenetURI redirectTarget;
+	/** Filename (hint for the final filename) */
+	final String targetFilename;
 	
 	public static final short UPLOAD_FROM_DIRECT = 0;
 	public static final short UPLOAD_FROM_DISK = 1;
 	public static final short UPLOAD_FROM_REDIRECT = 2;
 	
 	public ClientPutMessage(SimpleFieldSet fs) throws MessageInvalidException {
+		String fnam = null;
 		identifier = fs.get("Identifier");
 		if(identifier == null)
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No Identifier", null);
@@ -64,7 +67,13 @@ public class ClientPutMessage extends DataCarryingMessage {
 			String u = fs.get("URI");
 			if(u == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier);
-			uri = new FreenetURI(fs.get("URI"));
+			FreenetURI uu = new FreenetURI(fs.get("URI"));
+			String[] metas = uu.getAllMetaStrings();
+			if(metas != null && metas.length == 1) {
+				fnam = metas[0];
+				uu = uu.setMetaString(null);
+			} // if >1, will fail later
+			uri = uu;
 		} catch (MalformedURLException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier);
 		}
@@ -131,6 +140,8 @@ public class ClientPutMessage extends DataCarryingMessage {
 			this.bucket = fileBucket;
 			this.origFilename = f;
 			redirectTarget = null;
+			if(fnam == null)
+				fnam = origFilename.getName();
 		} else if(uploadFrom.equalsIgnoreCase("redirect")) {
 			uploadFromType = UPLOAD_FROM_REDIRECT;
 			String target = fs.get("TargetURI");
@@ -162,6 +173,19 @@ public class ClientPutMessage extends DataCarryingMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.ERROR_PARSING_NUMBER, "Error parsing Persistence field: "+persistenceString, identifier);
 		}
 		clientToken = fs.get("ClientToken");
+		String f = fs.get("TargetFilename");
+		if(f != null)
+			fnam = f;
+		if(fnam != null && fnam.indexOf('/') > -1) {
+			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_FIELD, "TargetFilename must not contain slashes", identifier);
+		}
+		if(fnam != null && fnam.length() == 0) {
+			fnam = null; // Deliberate override to tell us not to create one.
+		}
+		if(uri.getKeyType().equals("CHK"))
+			targetFilename = fnam;
+		else
+			targetFilename = null;
 	}
 
 	public SimpleFieldSet getFieldSet() {

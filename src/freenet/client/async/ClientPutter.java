@@ -19,6 +19,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	final FreenetURI targetURI;
 	final ClientMetadata cm;
 	final InserterContext ctx;
+	final String targetFilename;
 	private ClientPutState currentState;
 	private boolean finished;
 	private final boolean getCHKOnly;
@@ -42,10 +43,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param clientContext The client object for purposs of round-robin client balancing.
 	 * @param stored The progress so far, stored as a SimpleFieldSet. Advisory; if there 
 	 * is an error reading this in, we will restart from scratch.
+	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InserterContext ctx,
 			ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
-			boolean isMetadata, Object clientContext, SimpleFieldSet stored) {
+			boolean isMetadata, Object clientContext, SimpleFieldSet stored, String targetFilename) {
 		super(priorityClass, chkScheduler, sskScheduler, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;
@@ -57,6 +59,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.finished = false;
 		this.cancelled = false;
 		this.oldProgress = stored;
+		this.targetFilename = targetFilename;
 	}
 
 	public void start() throws InserterException {
@@ -73,7 +76,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = this.cancelled;
 				if(!cancel) {
 					currentState =
-						new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false, false);
+						new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false, false, targetFilename);
 				}
 			}
 			if(cancel) {
@@ -142,7 +145,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	public void onEncode(BaseClientKey key, ClientPutState state) {
-		this.uri = key.getURI();
+		synchronized(this) {
+			this.uri = key.getURI();
+			if(targetFilename != null)
+				uri = uri.pushMetaString(targetFilename);
+		}
 		client.onGeneratedURI(uri, this);
 	}
 	

@@ -170,11 +170,16 @@ public class QueueToadlet extends Toadlet {
 				}
 				boolean compress = request.getPartAsString("compress", 128).length() > 0;
 				String identifier = file.getFilename() + "-fred-" + System.currentTimeMillis();
+				String fnam;
+				if(insertURI.getKeyType().equals("CHK"))
+					fnam = file.getFilename();
+				else
+					fnam = null;
 				/* copy bucket data */
 				Bucket copiedBucket = core.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
 				try {
-					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null);
+					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam);
 					clientPut.start();
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
@@ -188,7 +193,7 @@ public class QueueToadlet extends Toadlet {
 				String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
 				String contentType = DefaultMIMETypes.guessMIMEType(filename, false);
 				try {
-					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), new FreenetURI("CHK@"), identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false), null);
+					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), new FreenetURI("CHK@"), identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false), null, file.getName());
 					clientPut.start();
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {

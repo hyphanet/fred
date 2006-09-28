@@ -313,6 +313,8 @@ public class Metadata implements Cloneable {
 			
 			// Parse the sub-Manifest.
 			
+			Logger.minor(this, "Simple manifest, "+manifestEntryCount+" entries");
+			
 			for(int i=0;i<manifestEntryCount;i++) {
 				short nameLength = dis.readShort();
 				byte[] buf = new byte[nameLength];
@@ -400,7 +402,7 @@ public class Metadata implements Cloneable {
 
 	/**
 	 * Create a Metadata object and add manifest entries from the given map.
-	 * The map can contain either string -> byte[], or string -> map, the latter
+	 * The map can contain either string -> Metadata, or string -> map, the latter
 	 * indicating subdirs. 
 	 */
 	public static Metadata mkRedirectionManifestWithMetadata(HashMap dir) {

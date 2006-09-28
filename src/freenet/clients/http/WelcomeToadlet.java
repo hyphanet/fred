@@ -259,9 +259,16 @@ public class WelcomeToadlet extends Toadlet {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode content;
+				String filenameHint = null;
+				if(key.getKeyType().equals("CHK")) {
+					String[] metas = key.getAllMetaStrings();
+					if(metas != null && metas.length > 1) {
+						filenameHint = metas.toString();
+					}
+				}
 				InsertBlock block = new InsertBlock(bucket, contentType, key);
 				try {
-					key = this.insert(block, false);
+					key = this.insert(block, filenameHint, false);
 					HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
 					content = ctx.getPageMaker().getContentNode(infobox);
 					content.addChild("#", "The key ");

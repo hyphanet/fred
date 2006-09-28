@@ -33,6 +33,8 @@ public class ClientPut extends ClientPutBase {
 	private final ClientMetadata clientMetadata;
 	/** We store the size of inserted data before freeing it */
 	private long finishedSize;
+	/** Filename if the file has one */
+	private final String targetFilename;
 	
 	/**
 	 * Creates a new persistent insert.
@@ -77,8 +79,9 @@ public class ClientPut extends ClientPutBase {
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget) throws IdentifierCollisionException {
+			Bucket data, FreenetURI redirectTarget, String targetFilename) throws IdentifierCollisionException {
 		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries);
+		this.targetFilename = targetFilename;
 		this.uploadFrom = uploadFromType;
 		this.origFilename = origFilename;
 		// Now go through the fields one at a time
@@ -116,7 +119,7 @@ public class ClientPut extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		inserter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
-				getCHKOnly, isMetadata, client, null);
+				getCHKOnly, isMetadata, client, null, targetFilename);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -127,6 +130,7 @@ public class ClientPut extends ClientPutBase {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries);
+		this.targetFilename = message.targetFilename;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.uploadFrom = message.uploadFromType;
 		this.origFilename = message.origFilename;
@@ -170,7 +174,7 @@ public class ClientPut extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		inserter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
-				getCHKOnly, isMetadata, client, null);
+				getCHKOnly, isMetadata, client, null, targetFilename);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -212,6 +216,8 @@ public class ClientPut extends ClientPutBase {
 		ClientMetadata cm = new ClientMetadata(mimeType);
 		
 		boolean isMetadata = false;
+		
+		targetFilename = fs.get("TargetFilename");
 		
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_DISK) {
 			origFilename = new File(fs.get("Filename"));
@@ -258,11 +264,12 @@ public class ClientPut extends ClientPutBase {
 		}
 		this.clientMetadata = cm;
 		inserter = new ClientPutter(this, data, uri, cm, ctx, client.core.requestStarters.chkPutScheduler, 
-				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client, fs.subset("progress"));
+				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client, fs.subset("progress"), targetFilename);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
 		}
+		
 	}
 
 	public void start() {
@@ -310,6 +317,8 @@ public class ClientPut extends ClientPutBase {
 			SimpleFieldSet sfs = inserter.getProgressFieldset();
 			fs.put("progress", sfs);
 		}
+		if(targetFilename != null)
+			fs.put("TargetFilename", targetFilename);
 		return fs;
 	}
 
@@ -320,7 +329,7 @@ public class ClientPut extends ClientPutBase {
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPut(identifier, uri, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
-				getDataSize(), clientToken, started, ctx.maxInsertRetries);
+				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename);
 	}
 
 	protected String getTypeName() {

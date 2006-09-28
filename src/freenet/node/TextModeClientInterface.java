@@ -354,7 +354,6 @@ public class TextModeClientInterface implements Runnable {
 		printHeader(out);
 		return false;
         } else if(uline.startsWith("PUT:") || (getCHKOnly = uline.startsWith("GETCHK:"))) {
-            // Just insert to local store
         	if(getCHKOnly)
         		line = line.substring(("GETCHK:").length());
         	else
@@ -378,7 +377,7 @@ public class TextModeClientInterface implements Runnable {
 
             FreenetURI uri;
             try {
-            	uri = client.insert(block, getCHKOnly);
+            	uri = client.insert(block, getCHKOnly, null);
             } catch (InserterException e) {
             	outsb.append("Error: "+e.getMessage());
             	if(e.uri != null)
@@ -501,7 +500,7 @@ public class TextModeClientInterface implements Runnable {
             	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
 
             	startTime = System.currentTimeMillis();
-            	FreenetURI uri = client.insert(block, getCHKOnly);
+            	FreenetURI uri = client.insert(block, getCHKOnly, f.getName());
             	
             	// FIXME depends on CHK's still being renamable
                 //uri = uri.setDocName(f.getName());
