@@ -405,12 +405,19 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     		fs.removeValue("sig"); 
     		if(!fromLocal){
     			try{
+    				boolean failed = false;
     				if(signature == null || peerCryptoGroup == null || peerPubKey == null || 
-    						!DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(md.digest(fs.toOrderedString().getBytes("UTF-8"))))){
-    					Logger.error(this, "The integrity of the reference has been compromized!");
+    						(failed = !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(md.digest(fs.toOrderedString().getBytes("UTF-8")))))){
+    					String errCause = new String();
+    					if(signature == null) errCause += " (No signature)";
+    					if(peerCryptoGroup == null) errCause += " (No peer crypto group)";
+    					if(peerPubKey == null) errCause += " (No peer public key)";
+    					if(failed) errCause += " (VERIFICATION FAILED)";
+    					Logger.error(this, "The integrity of the reference has been compromized!"+errCause);
     					this.isSignatureVerificationSuccessfull = false;
+    					fs.put("sig", signature);
     					if(Version.getArbitraryBuildNumber(version)>970) // TODO: REMOVE: the backward compat. kludge : version checking
-    						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!");
+    						throw new ReferenceSignatureVerificationException("The integrity of the reference has been compromized!"+errCause);
     				}else
     					this.isSignatureVerificationSuccessfull = true;
     			} catch (UnsupportedEncodingException e) {
