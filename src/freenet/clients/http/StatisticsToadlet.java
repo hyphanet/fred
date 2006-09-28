@@ -286,7 +286,7 @@ public class StatisticsToadlet extends Toadlet {
 					locationSwapList.addChild("li", "noSwapsPerMinute:\u00a0" + (double)(noSwaps/(double)(nodeUptimeSeconds/60)));
 				}
 				if ((swaps > 0) && (noSwaps > 0)) {
-					locationSwapList.addChild("li", "swapsPerNoSwaps:\u00a0" + (double)(swaps/noSwaps));
+					locationSwapList.addChild("li", "swapsPerNoSwaps:\u00a0" + (double)((double)swaps/(double)noSwaps));
 				}
 				locationSwapList.addChild("li", "swaps:\u00a0" + swaps);
 				locationSwapList.addChild("li", "noSwaps:\u00a0" + noSwaps);
