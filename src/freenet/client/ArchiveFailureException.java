@@ -1,8 +1,12 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
 import java.io.IOException;
 
 /**
+ * @author amphibian (Matthew Toseland)
  * Thrown when an archive operation fails.
  */
 public class ArchiveFailureException extends Exception {

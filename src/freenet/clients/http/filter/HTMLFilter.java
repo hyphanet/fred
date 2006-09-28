@@ -28,7 +28,6 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
-import freenet.support.io.NullBucket;
 import freenet.support.io.NullWriter;
 
 public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
@@ -201,27 +200,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							if (c == '"') {
 								mode = INTAG;
 								b.append(c); // Part of the element
-							} else if ((c == '>') || (c == '<')) {
-								if (!deleteErrors) {
-									throwFilterException("Tags in markup");
-									b.append(c);
-									return new NullBucket();
-								} else {
-									if (c == '>') {
-										w.write(
-											"<!-- Tags in string attribute -->");
-										splitTag.clear();
-										b = new StringBuffer(100);
-										mode = INTEXT;
-										balt = new StringBuffer(4000);
-										// End tag now
-									} else {
-										killTag = true;
-										writeAfterTag.append(
-											"<!-- Tags in string attribute -->");
-										// Wait for end of tag then zap it
-									}
-								}
+							} else if (c == '>') {
+								b.append("&gt;");
+							} else if (c == '<') {
+								b.append("&lt;");
 							} else {
 								b.append(c);
 							}
@@ -230,30 +212,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							if (c == '\'') {
 								mode = INTAG;
 								b.append(c); // Part of the element
-							} else if ((c == '>') || (c == '<')) {
-								if (!deleteErrors) {
-									throwFilterException("Tags in markup");
-									b.append(c);
-									return new NullBucket();
-								} else {
-									if (c == '>') {
-										w.write(
-											"<!-- Tags in string attribute -->");
-										splitTag.clear();
-										b = new StringBuffer(100);
-										balt = new StringBuffer(4000);
-										mode = INTEXT;
-										// End tag now
-									} else {
-										killTag = true;
-										writeAfterTag.append(
-											"<!-- Tags in string attribute -->");
-										// Wait for end of tag then zap it
-									}
-									writeAfterTag.append(
-										"<!-- Tags in string attribute -->");
-									killTag = true;
-								}
+							} else if (c == '<') {
+								b.append("&lt;");
+							} else if (c == '>') {
+								b.append("&gt;");
 							} else {
 								b.append(c);
 							}

@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 /**<PRE>
  * SHA1.java - An implementation of the SHA-1 Algorithm
  * This version integrated into Freenet by Ian Clarke (02-02-2000) 

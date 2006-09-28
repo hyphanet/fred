@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
 import java.io.DataInputStream;
@@ -14,7 +17,7 @@ import freenet.transport.IPUtil;
  * Long-term InetAddress. If created with an IP address, then the IP address is primary.
  * If created with a name, then the name is primary, and the IP address can change.
  * Most code ripped from Peer.
- * @author root
+ * @author amphibian
  *
  */
 public class FreenetInetAddress {

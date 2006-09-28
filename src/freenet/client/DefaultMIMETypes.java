@@ -1,3 +1,8 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. 
+ * Note that the mime type list is from the debian mime-types package,
+ * which is public information and public domain software. */
 package freenet.client;
 
 import java.util.HashMap;

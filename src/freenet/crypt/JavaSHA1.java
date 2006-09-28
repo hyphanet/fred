@@ -1,10 +1,8 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.crypt;
 import java.security.*;
-/*
-  Copyright 2003 Matthew Toseland
-  Subject to Gnu General Public License version 2
-  Part of Freenet, http://freenetproject.org/
-*/
 /*
   Implements an SHA-1 digest using javax.crypto
 */
