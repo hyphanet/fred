@@ -63,6 +63,7 @@ class LocationManager {
     }
 
     Location loc;
+    double locChangeSession = 0.0;
 
     /**
      * @return The current Location of this node.
@@ -76,6 +77,14 @@ class LocationManager {
      */
     public void setLocation(Location l) {
         this.loc = l;
+    }
+    
+    public void updateLocationChangeSession(double l) {
+		if (l < this.loc.getValue()) {
+			this.locChangeSession -= (this.loc.getValue() - l);
+		} else {
+			this.locChangeSession += (l - this.loc.getValue());
+		}
     }
 
     /**
@@ -298,6 +307,7 @@ class LocationManager {
             if(shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom)) {
                 timeLastSuccessfullySwapped = System.currentTimeMillis();
                 // Swap
+                updateLocationChangeSession(hisLoc);
                 loc.setValue(hisLoc);
                 if(logMINOR) Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 swaps++;
@@ -469,6 +479,7 @@ class LocationManager {
                 if(shouldSwap(myLoc, friendLocs, hisLoc, hisFriendLocs, random ^ hisRandom)) {
                     timeLastSuccessfullySwapped = System.currentTimeMillis();
                     // Swap
+                    updateLocationChangeSession(hisLoc);
                     loc.setValue(hisLoc);
                     if(logMINOR) Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                     swaps++;

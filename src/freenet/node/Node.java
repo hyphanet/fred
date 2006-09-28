@@ -2872,6 +2872,10 @@ public class Node {
 		return lm.loc.getValue();
 	}
 
+	public double getLocationChangeSession() {
+		return lm.locChangeSession;
+	}
+	
 	public boolean isAdvancedDarknetEnabled() {
 		return clientCore.isAdvancedDarknetEnabled();
 	}
