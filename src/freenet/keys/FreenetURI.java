@@ -263,9 +263,7 @@ public class FreenetURI implements Cloneable{
 				suggestedEdition = -1;
 		} else if(isKSK) {
 			// Deal with KSKs
-			if(sv.isEmpty())
-				throw new MalformedURLException("No docname for KSK");
-			docName = (String) sv.remove(sv.size()-1);
+			docName = URI;
 			suggestedEdition = -1;
 		} else {
 			// docName not necessary, nor is it supported, for CHKs.
