@@ -146,10 +146,10 @@ public class StatisticsToadlet extends Toadlet {
 					overviewList.addChild("li", "networkSizeEstimate48h:\u00a0" + networkSizeEstimate48h + "\u00a0nodes");
 				}
 				if ((networkSizeEstimateSession > 0) && ((swaps > 0) || (noSwaps > 0))) {
-					overviewList.addChild("li", "avrPeersPerNodeU:\u00a0" + (double)((double)networkSizeEstimateSession/(double)(swaps+noSwaps)));
+					overviewList.addChild("li", "avrConnPeersPerNodeU:\u00a0" + (double)((double)networkSizeEstimateSession/(double)(swaps+noSwaps)));
 				}
 				if ((numberOfLocationsSeenInSwaps > 0) && ((swaps > 0) || (noSwaps > 0))) {
-					overviewList.addChild("li", "avrPeersPerNodeT:\u00a0" + (double)((double)numberOfLocationsSeenInSwaps/(double)(swaps+noSwaps)));
+					overviewList.addChild("li", "avrConnPeersPerNodeT:\u00a0" + (double)((double)numberOfLocationsSeenInSwaps/(double)(swaps+noSwaps)));
 				}
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
 				overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix4.format(missRoutingDistance));
