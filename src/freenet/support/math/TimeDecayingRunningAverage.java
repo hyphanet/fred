@@ -158,13 +158,20 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 			} else if(lastReportTime != -1) { // might be just serialized in
 				long thisInterval =
 					 now - lastReportTime;
+				long uptime = now - createdTime;
 				if(thisInterval < 0) {
-					Logger.error(this, "Clock went back in time, ignoring report: "+now+" was "+lastReportTime+" (back "+(-thisInterval)+"ms");
+					Logger.error(this, "Clock (reporting) went back in time, ignoring report: "+now+" was "+lastReportTime+" (back "+(-thisInterval)+"ms");
+					lastReportTime = now;
 					return;
 				}
 				double thisHalfLife = halfLife;
-				long uptime = now - createdTime;
-				if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);
+				if(uptime < 0) {
+					Logger.error(this, "Clock (uptime) went back in time, ignoring report: "+now+" was "+createdTime+" (back "+(-uptime)+"ms");
+					return;
+				} else {
+					if((uptime / 4) < thisHalfLife) thisHalfLife = (uptime / 4);
+				}
+				
 				if(thisHalfLife == 0) thisHalfLife = 1;
 				double changeFactor =
 					Math.pow(0.5, (thisInterval) / thisHalfLife);
