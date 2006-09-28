@@ -178,6 +178,11 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 				double oldCurValue = curValue;
 				curValue = curValue * changeFactor /* close to 1.0 if short interval, close to 0.0 if long interval */ 
 					+ (1.0 - changeFactor) * d;
+				// FIXME remove when stop getting reports of wierd output values
+				if(curValue < minReport || curValue > maxReport) {
+					Logger.error(this, "curValue="+curValue+" was "+oldCurValue+" - out of range");
+					curValue = oldCurValue;
+				}
 				if(logDEBUG)
 					Logger.debug(this, "Reported "+d+" on "+this+": thisInterval="+thisInterval+
 							", halfLife="+halfLife+", uptime="+uptime+", thisHalfLife="+thisHalfLife+
