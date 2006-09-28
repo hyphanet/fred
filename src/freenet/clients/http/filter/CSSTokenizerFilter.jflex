@@ -211,6 +211,7 @@ INBRACKET=([^\)]|"\\)"|STRING)*
 
 // See comments for STRING1/STRING2 :)
 URL=([^\(\)\"\']|{NONASCII}|{ESCAPE})*
+REALURL="url("{W}*({STRING}|{URL}){W}")"
 
 W=[ \t\r\n\f]*
 NL=\n|\r\n|\r|\f
@@ -232,7 +233,7 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 	if(debug) log("Got hexcolor: "+s);
 	w.write(s);
 }
-"url("{W}*({STRING}|{URL}){W}")" {
+REALURL {
 	// This is horrible. However it seems that there is no other way to do it with either jflex or CUP, as {URL} cannot be an unambiguous token :(
 	String s = yytext();
 	if(debug) log("Recognized URL: "+s);
@@ -260,7 +261,7 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 		w.write(s);
 	}
 }
-"@import"{W}{W}*({STRING}|{URL})({W}*{W}{MEDIUMS})?";" {
+"@import"{W}{W}*({STRING}|{URL}|{REALURL})({W}*{W}{MEDIUMS})?";" {
 	String s = yytext();
 	if(debug) log("Found @import: "+s);
 	s = s.substring("@import".length());
@@ -268,7 +269,9 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 	DecodedStringThingy dst = new DecodedStringThingy(s);
 	s = dst.data;
 	if(debug) log("URL: "+s);
-	s = processURL(s);
+	s = processImportURL(s);
+	dst.data = s;
+	if(debug) log("Processed URL: "+s);
 	if (!(s == null || s.equals(""))) {
 		if(debug) log("URL now: "+s);
 		s = "@import "+dst.toString();
