@@ -752,7 +752,7 @@ public class FreenetURI implements Cloneable{
 	}
 	
 	public void checkInsertURI() throws InserterException {
-		if(metaStr != null && metaStr.length > 0)
+		if(this.keyType.equalsIgnoreCase("KSK") && metaStr != null && metaStr.length > 0)
 			throw new InserterException(InserterException.META_STRINGS_NOT_SUPPORTED,this);
 	}
 	
