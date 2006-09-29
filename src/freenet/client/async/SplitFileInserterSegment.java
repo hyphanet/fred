@@ -610,7 +610,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	}
 
 	public synchronized boolean isFetchable() {
-		return blocksCompleted > dataBlocks.length;
+		return blocksCompleted >= dataBlocks.length;
 	}
 
 	public void onFetchable(ClientPutState state) {
@@ -619,7 +619,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 
 	/** Force the remaining blocks which haven't been encoded so far to be encoded ASAP. */
 	public void forceEncode() {
-		// TODO Auto-generated method stub
-		
+		blockInsertContext.backgroundBlockEncoder.queue(dataBlockInserters);
+		blockInsertContext.backgroundBlockEncoder.queue(checkBlockInserters);
 	}
 }

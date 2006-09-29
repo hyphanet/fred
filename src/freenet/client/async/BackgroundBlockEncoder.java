@@ -39,16 +39,17 @@ public class BackgroundBlockEncoder implements Runnable {
 	}
 	
 	public void run() {
-outer:	while(true) {
+		while(true) {
 			SingleBlockInserter sbi = null;
 			synchronized(this) {
-				try {
-					wait(100*1000);
-				} catch (InterruptedException e) {
-					// Ignore
+				while(queue.isEmpty()) {
+					try {
+						wait(100*1000);
+					} catch (InterruptedException e) {
+						// Ignore
+					}
 				}
-				while(true) {
-					if(queue.isEmpty()) continue outer;
+				while(!queue.isEmpty()) {
 					WeakReference ref = (WeakReference) queue.remove(queue.size()-1);
 					sbi = (SingleBlockInserter) ref.get();
 					if(sbi != null) break;

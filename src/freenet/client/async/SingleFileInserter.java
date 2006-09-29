@@ -554,6 +554,8 @@ class SingleFileInserter implements ClientPutState {
 
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 
+			if(logMINOR) Logger.minor(this, "onFetchable("+state+")");
+			
 			boolean meta;
 			
 			synchronized(this) {
@@ -562,6 +564,7 @@ class SingleFileInserter implements ClientPutState {
 					if(!metaInsertStarted) {
 						Logger.error(this, "Metadata insert not started yet got onFetchable for it: "+state+" on "+this);
 					}
+					if(logMINOR) Logger.minor(this, "Metadata fetchable"+(metaFetchable?"":" already"));
 					if(metaFetchable) return;
 					metaFetchable = true;
 				} else {
@@ -570,8 +573,8 @@ class SingleFileInserter implements ClientPutState {
 						return;
 					}
 					dataFetchable = true;
+					if(logMINOR) Logger.minor(this, "Data fetchable");
 					if(metaInsertStarted) return;
-					metaInsertStarted = true;
 				}
 			}
 			
@@ -586,9 +589,11 @@ class SingleFileInserter implements ClientPutState {
 				ClientPutState putter;
 				ClientPutState splitInserter;
 				synchronized(this) {
+					if(metaInsertStarted) return;
 					if(metadataPutter == null) {
 						if(logMINOR) Logger.minor(this, "Cannot start metadata yet: no metadataPutter");
-					}
+					} else
+						metaInsertStarted = true;
 					putter = metadataPutter;
 					splitInserter = sfi;
 				}
