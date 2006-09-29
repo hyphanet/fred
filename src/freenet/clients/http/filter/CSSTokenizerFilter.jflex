@@ -458,6 +458,8 @@ U\+{H}{1,6}-{H}{1,6} {
 // This would be the longest match...
 //("@"{IDENT}[^;\}\"]*[;\}]) {
 // So just drop the bogus identifier
+// FIXME match whole line so can cleanly discard? But if we do, we have to match a whole line with all the known
+// @-directives above (@page, @media). Since these can have sub-{}'s this probably isn't possible.
 "@"{IDENT} {
 	if(!deleteErrors) {
 		throwError("Unknown @identifier "+yytext());
