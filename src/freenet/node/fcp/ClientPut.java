@@ -23,7 +23,7 @@ import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 
 public class ClientPut extends ClientPutBase {
 
-	final ClientPutter inserter;
+	final ClientPutter putter;
 	private final short uploadFrom;
 	/** Original filename if from disk, otherwise null. Purely for PersistentPut. */
 	private final File origFilename;
@@ -107,7 +107,7 @@ public class ClientPut extends ClientPutBase {
 				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = null;
-				inserter = null;
+				putter = null;
 				return;
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
@@ -117,7 +117,7 @@ public class ClientPut extends ClientPutBase {
 		this.data = tempData;
 		this.clientMetadata = cm;
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
-		inserter = new ClientPutter(this, data, uri, cm, 
+		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client, null, targetFilename);
 		if(persistenceType != PERSIST_CONNECTION) {
@@ -162,7 +162,7 @@ public class ClientPut extends ClientPutBase {
 				onFailure(new InserterException(InserterException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = null;
-				inserter = null;
+				putter = null;
 				return;
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
@@ -172,7 +172,7 @@ public class ClientPut extends ClientPutBase {
 		this.data = tempData;
 		this.clientMetadata = cm;
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
-		inserter = new ClientPutter(this, data, uri, cm, 
+		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, client, null, targetFilename);
 		if(persistenceType != PERSIST_CONNECTION) {
@@ -253,7 +253,7 @@ public class ClientPut extends ClientPutBase {
 				this.data = null;
 				clientMetadata = null;
 				origFilename = null;
-				inserter = null;
+				putter = null;
 				return;
 			}
 			data = new SimpleReadOnlyArrayBucket(d);
@@ -263,7 +263,7 @@ public class ClientPut extends ClientPutBase {
 			throw new PersistenceParseException("shouldn't happen");
 		}
 		this.clientMetadata = cm;
-		inserter = new ClientPutter(this, data, uri, cm, ctx, client.core.requestStarters.chkPutScheduler, 
+		putter = new ClientPutter(this, data, uri, cm, ctx, client.core.requestStarters.chkPutScheduler, 
 				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, client, fs.subset("progress"), targetFilename);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
@@ -277,7 +277,7 @@ public class ClientPut extends ClientPutBase {
 			Logger.minor(this, "Starting "+this+" : "+identifier);
 		if(finished) return;
 		try {
-			inserter.start();
+			putter.start();
 			started = true;
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
@@ -313,8 +313,8 @@ public class ClientPut extends ClientPutBase {
 		} else if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			fs.put("TargetURI", targetURI.toString());
 		}
-		if(inserter != null)  {
-			SimpleFieldSet sfs = inserter.getProgressFieldset();
+		if(putter != null)  {
+			SimpleFieldSet sfs = putter.getProgressFieldset();
 			fs.put("progress", sfs);
 		}
 		if(targetFilename != null)
@@ -323,7 +323,7 @@ public class ClientPut extends ClientPutBase {
 	}
 
 	protected freenet.client.async.ClientRequester getClientRequest() {
-		return inserter;
+		return putter;
 	}
 
 	protected FCPMessage persistentTagMessage() {
@@ -374,14 +374,14 @@ public class ClientPut extends ClientPutBase {
 			Logger.minor(this, "Cannot restart because succeeded for "+identifier);
 			return false;
 		}
-		return inserter.canRestart();
+		return putter.canRestart();
 	}
 
 	public boolean restart() {
 		if(!canRestart()) return false;
 		setVarsRestart();
 		try {
-			if(inserter.restart()) {
+			if(putter.restart()) {
 				synchronized(this) {
 					generatedURI = null;
 					started = true;
