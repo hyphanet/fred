@@ -280,11 +280,11 @@ public class StatisticsToadlet extends Toadlet {
 				locationSwapInfobox.addChild("div", "class", "infobox-header", "Location swaps");
 				HTMLNode locationSwapInfoboxContent = locationSwapInfobox.addChild("div", "class", "infobox-content");
 				HTMLNode locationSwapList = locationSwapInfoboxContent.addChild("ul");
-				locationSwapList.addChild("li", "locChangeSession:\u00a0" + fix1p6sci.format(locChangeSession));
 				if (swaps > 0.0) {
+					locationSwapList.addChild("li", "locChangeSession:\u00a0" + fix1p6sci.format(locChangeSession));
 					locationSwapList.addChild("li", "locChangePerSwap:\u00a0" + fix1p6sci.format(locChangeSession/swaps));
 				}
-				if (nodeUptimeSeconds >= 60) {
+				if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
 					locationSwapList.addChild("li", "locChangePerMinute:\u00a0" + fix1p6sci.format(locChangeSession/(double)(nodeUptimeSeconds/60.0)));
 				}
 				if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
@@ -296,14 +296,30 @@ public class StatisticsToadlet extends Toadlet {
 				if ((swaps > 0.0) && (noSwaps > 0.0)) {
 					locationSwapList.addChild("li", "swapsPerNoSwaps:\u00a0" + fix1p6sci.format(swaps/noSwaps));
 				}
-				locationSwapList.addChild("li", "swaps:\u00a0" + (int)swaps);
-				locationSwapList.addChild("li", "noSwaps:\u00a0" + (int)noSwaps);
-				locationSwapList.addChild("li", "startedSwaps:\u00a0" + startedSwaps);
-				locationSwapList.addChild("li", "swapsRejectedAlreadyLocked:\u00a0" + swapsRejectedAlreadyLocked);
-				locationSwapList.addChild("li", "swapsRejectedNowhereToGo:\u00a0" + swapsRejectedNowhereToGo);
-				locationSwapList.addChild("li", "swapsRejectedRateLimit:\u00a0" + swapsRejectedRateLimit);
-				locationSwapList.addChild("li", "swapsRejectedLoop:\u00a0" + swapsRejectedLoop);
-				locationSwapList.addChild("li", "swapsRejectedRecognizedID:\u00a0" + swapsRejectedRecognizedID);
+				if ((swaps > 0.0) && (noSwaps > 0.0)) {
+					locationSwapList.addChild("li", "swaps:\u00a0" + (int)swaps);
+				}
+				if (noSwaps > 0.0) {
+					locationSwapList.addChild("li", "noSwaps:\u00a0" + (int)noSwaps);
+				}
+				if (startedSwaps > 0) {
+					locationSwapList.addChild("li", "startedSwaps:\u00a0" + startedSwaps);
+				}
+				if (swapsRejectedAlreadyLocked > 0) {
+					locationSwapList.addChild("li", "swapsRejectedAlreadyLocked:\u00a0" + swapsRejectedAlreadyLocked);
+				}
+				if (swapsRejectedNowhereToGo > 0) {
+					locationSwapList.addChild("li", "swapsRejectedNowhereToGo:\u00a0" + swapsRejectedNowhereToGo);
+				}
+				if (swapsRejectedRateLimit > 0) {
+					locationSwapList.addChild("li", "swapsRejectedRateLimit:\u00a0" + swapsRejectedRateLimit);
+				}
+				if (swapsRejectedLoop > 0) {
+					locationSwapList.addChild("li", "swapsRejectedLoop:\u00a0" + swapsRejectedLoop);
+				}
+				if (swapsRejectedRecognizedID > 0) {
+					locationSwapList.addChild("li", "swapsRejectedRecognizedID:\u00a0" + swapsRejectedRecognizedID);
+				}
 				nextTableCell = overviewTableRow.addChild("td");
 			}
 			
