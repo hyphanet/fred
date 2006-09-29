@@ -281,5 +281,11 @@ public abstract class ClientRequest {
 	public boolean isStarted() {
 		return started;
 	}
+
+	public abstract boolean hasSucceeded();
+
+	public abstract boolean canRestart();
+
+	public abstract boolean restart();
 	
 }

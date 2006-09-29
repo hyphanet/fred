@@ -26,7 +26,7 @@ import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 public class ClientPutDir extends ClientPutBase implements ClientEventListener, ClientCallback {
 
 	private final HashMap manifestElements;
-	private final SimpleManifestPutter putter;
+	private SimpleManifestPutter putter;
 	private final String defaultName;
 	private final long totalSize;
 	private final int numberOfFiles;
@@ -40,22 +40,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manifestElements = manifestElements;
 		this.defaultName = message.defaultName;
-		SimpleManifestPutter p;
-		try {
-			p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
-					manifestElements, priorityClass, uri, defaultName, ctx, message.getCHKOnly, client);
-		} catch (InserterException e) {
-			onFailure(e, null);
-			p = null;
-		}
-		if(p != null) {
-			numberOfFiles = p.countFiles();
-			totalSize = p.totalSize();
-		} else {
-			numberOfFiles = -1;
-			totalSize = -1;
-		}
-		putter = p;
+		makePutter();
 		if(persistenceType != PERSIST_CONNECTION) {
 			client.register(this, false);
 			FCPMessage msg = persistentTagMessage();
@@ -63,7 +48,26 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			if(handler != null && (!handler.isGlobalSubscribed()))
 				handler.outputHandler.queue(msg);
 		}
+		if(putter != null) {
+			numberOfFiles = putter.countFiles();
+			totalSize = putter.totalSize();
+		} else {
+			numberOfFiles = -1;
+			totalSize = -1;
+		}
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
+	}
+
+	private void makePutter() {
+		SimpleManifestPutter p;
+		try {
+			p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
+					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client);
+		} catch (InserterException e) {
+			onFailure(e, null);
+			p = null;
+		}
+		putter = p;
 	}
 
 	public ClientPutDir(SimpleFieldSet fs, FCPClient client) throws PersistenceParseException, IOException {
@@ -265,6 +269,26 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 
 	public long getTotalDataSize() {
 		return totalSize;
+	}
+
+	public boolean canRestart() {
+		if(!finished) {
+			Logger.minor(this, "Cannot restart because not finished for "+identifier);
+			return false;
+		}
+		if(succeeded) {
+			Logger.minor(this, "Cannot restart because succeeded for "+identifier);
+			return false;
+		}
+		return true;
+	}
+
+	public boolean restart() {
+		if(!canRestart()) return false;
+		setVarsRestart();
+		makePutter();
+		start();
+		return true;
 	}
 
 }

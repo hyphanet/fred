@@ -236,9 +236,22 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 			byte[] key = HexUtil.hexToBytes(fs.get("ReturnBucket.DecryptKey"));
 			String fnam = fs.get("ReturnBucket.Filename");
-			ret = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, succeeded ? foundDataLength : 0);
+			try {
+				ret = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, succeeded ? foundDataLength : 0);
+			} catch (IOException e) {
+				Logger.error(this, "Caught "+e, e);
+				succeeded = false;
+				getFailedMessage = new GetFailedMessage(new FetchException(FetchException.BUCKET_ERROR, e), identifier);
+				ret = client.server.core.persistentTempBucketFactory.registerEncryptedBucket(fnam, key, 0);
+			}
 		} else {
 			throw new IllegalArgumentException();
+		}
+		if(succeeded) {
+			if(foundDataLength < ret.size()) {
+				Logger.error(this, "Failing "+identifier+" because lost data");
+				succeeded = false;
+			}
 		}
 		returnBucket = ret;
 		
@@ -247,6 +260,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
 		}
+		if(finished && !succeeded)
+			started = true;
 	}
 
 	public void start() {
@@ -270,6 +285,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 	
 	public void onSuccess(FetchResult result, ClientGetter state) {
+		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
 		if(returnBucket != data)
 			Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data);
@@ -594,6 +610,41 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	public void onFetchable(BaseClientPutter state) {
 		// Ignore, we don't insert
+	}
+
+	public boolean canRestart() {
+		if(!finished) {
+			Logger.minor(this, "Cannot restart because not finished for "+identifier);
+			return false;
+		}
+		if(succeeded) {
+			Logger.minor(this, "Cannot restart because succeeded for "+identifier);
+			return false;
+		}
+		return getter.canRestart();
+	}
+
+	public boolean restart() {
+		if(!canRestart()) return false;
+		synchronized(this) {
+			finished = false;
+			this.getFailedMessage = null;
+			this.allDataPending = null;
+			this.postFetchProtocolErrorMessage = null;
+			this.progressPending = null;
+			started = false;
+		}
+		try {
+			if(getter.restart()) {
+				synchronized(this) {
+					started = true;
+				}
+			}
+			return true;
+		} catch (FetchException e) {
+			onFailure(e, null);
+			return false;
+		}
 	}
 
 }

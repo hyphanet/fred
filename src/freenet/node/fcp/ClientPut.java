@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
+import freenet.client.FetchException;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
@@ -363,6 +364,35 @@ public class ClientPut extends ClientPutBase {
 
 	public String getMIMEType() {
 		return clientMetadata.getMIMEType();
+	}
+
+	public boolean canRestart() {
+		if(!finished) {
+			Logger.minor(this, "Cannot restart because not finished for "+identifier);
+			return false;
+		}
+		if(succeeded) {
+			Logger.minor(this, "Cannot restart because succeeded for "+identifier);
+			return false;
+		}
+		return inserter.canRestart();
+	}
+
+	public boolean restart() {
+		if(!canRestart()) return false;
+		setVarsRestart();
+		try {
+			if(inserter.restart()) {
+				synchronized(this) {
+					generatedURI = null;
+					started = true;
+				}
+			}
+			return true;
+		} catch (InserterException e) {
+			onFailure(e, null);
+			return false;
+		}
 	}
 
 }

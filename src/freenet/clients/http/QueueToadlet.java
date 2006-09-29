@@ -97,7 +97,21 @@ public class QueueToadlet extends Toadlet {
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
-			}else if(request.isParameterSet("remove_AllRequests") && (request.getParam("remove_AllRequests").length() > 0)) {
+			} else if(request.isParameterSet("restart_request") && (request.getParam("restart_request").length() > 0)) {
+				String identifier = request.getParam("identifier");
+				if(logMINOR) Logger.minor(this, "Restarting "+identifier);
+				ClientRequest[] clientRequests = fcp.getGlobalRequests();
+				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
+					ClientRequest clientRequest = clientRequests[requestIndex];
+					if (clientRequest.getIdentifier().equals(identifier)) {
+						if(!clientRequest.restart()) {
+							sendErrorPage(ctx, 200, "FAiled to restart request", "Failed to restart "+identifier);
+						}
+					}
+				}
+				writePermanentRedirect(ctx, "Done", "/queue/");
+				return;
+			} else if(request.isParameterSet("remove_AllRequests") && (request.getParam("remove_AllRequests").length() > 0)) {
 				
 				ClientRequest[] reqs = fcp.getGlobalRequests();
 				if(logMINOR) Logger.minor(this, "Request count: "+reqs.length);
@@ -669,12 +683,22 @@ public class QueueToadlet extends Toadlet {
 		return priorityCell;
 	}
 
-	private HTMLNode createDeleteCell(PageMaker pageMaker, String identifier) {
+	private HTMLNode createDeleteCell(PageMaker pageMaker, String identifier, ClientRequest clientRequest) {
 		HTMLNode deleteNode = new HTMLNode("td", "class", "request-delete");
 		HTMLNode deleteForm = deleteNode.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
 		deleteForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove_request", "Delete" });
+		
+		// If it's failed, offer to restart it
+		
+		if(clientRequest.hasFinished() && !clientRequest.hasSucceeded() && clientRequest.canRestart()) {
+			HTMLNode retryForm = deleteNode.addChild("form", new String[] { "action", "method" }, new String[] { "/queue/", "post" });
+			retryForm.addChild(pageMaker.createFormPasswordInput(core.formPassword));
+			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
+			retryForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart_request", "Retry" });
+		}
+		
 		return deleteNode;
 	}
 	
@@ -805,7 +829,7 @@ public class QueueToadlet extends Toadlet {
 			ClientRequest clientRequest = (ClientRequest) requestItems.next();
 			HTMLNode requestRow = table.addChild("tr", "class", "priority" + clientRequest.getPriority());
 			
-			requestRow.addChild(createDeleteCell(pageMaker, clientRequest.getIdentifier()));
+			requestRow.addChild(createDeleteCell(pageMaker, clientRequest.getIdentifier(), clientRequest));
 			for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 				int column = columns[columnIndex];
 				if (column == LIST_IDENTIFIER) {

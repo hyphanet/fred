@@ -57,11 +57,20 @@ public class ClientGetter extends BaseClientGetter {
 	}
 	
 	public void start() throws FetchException {
+		start(false);
+	}
+	
+	public boolean start(boolean restart) throws FetchException {
 		try {
 			// FIXME synchronization is probably unnecessary.
 			// But we DEFINITELY do not want to synchronize while calling currentState.schedule(),
 			// which can call onSuccess and thereby almost anything.
 			synchronized(this) {
+				if(finished) {
+					if(!restart) return false;
+					currentState = null;
+					cancelled = false;
+				}
 				currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, null, true,
 						returnBucket);
@@ -73,6 +82,7 @@ public class ClientGetter extends BaseClientGetter {
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
 		}
+		return true;
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state) {
@@ -169,6 +179,18 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		// TODO Auto-generated method stub
 		
+	}
+
+	public boolean canRestart() {
+		if(currentState != null && !finished) {
+			Logger.minor(this, "Cannot restart because not finished for "+uri);
+			return false;
+		}
+		return true;
+	}
+
+	public boolean restart() throws FetchException {
+		return start(true);
 	}
 
 }

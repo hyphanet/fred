@@ -137,13 +137,13 @@ public class FCPClient {
 			ClientRequest old = (ClientRequest) clientRequestsByIdentifier.get(ident);
 			if((old != null) && (old != cg))
 				throw new IdentifierCollisionException();
-			if(cg.hasFinished())
+			if(cg.hasFinished()) {
 				completedUnackedRequests.push(cg);
-			else
+			} else {
 				runningPersistentRequests.add(cg);
-			clientRequestsByIdentifier.put(ident, cg);
-			if(startLater)
 				toStart.add(cg);
+			}
+			clientRequestsByIdentifier.put(ident, cg);
 		}
 	}
 

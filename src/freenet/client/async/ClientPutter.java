@@ -63,6 +63,10 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public void start() throws InserterException {
+		start(false);
+	}
+	
+	public boolean start(boolean restart) throws InserterException {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this);
 		try {
@@ -70,9 +74,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			
 			boolean cancel = false;
 			synchronized(this) {
-				if(startedStarting) return;
+				if(restart) {
+					if(currentState != null && !finished) return false;
+				}
+				if(startedStarting) return false;
 				startedStarting = true;
-				if(currentState != null) return;
+				if(currentState != null) return false;
 				cancel = this.cancelled;
 				if(!cancel) {
 					currentState =
@@ -82,7 +89,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(cancel) {
 				onFailure(new InserterException(InserterException.CANCELLED), null);
 				oldProgress = null;
-				return;
+				return false;
 			}
 			synchronized(this) {
 				cancel = cancelled;
@@ -90,7 +97,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(cancel) {
 				onFailure(new InserterException(InserterException.CANCELLED), null);
 				oldProgress = null;
-				return;
+				return false;
 			}
 			((SingleFileInserter)currentState).start(oldProgress);
 			synchronized(this) {
@@ -99,7 +106,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			if(cancel) {
 				onFailure(new InserterException(InserterException.CANCELLED), null);
-				return;
+				return false;
 			}
 		} catch (InserterException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -115,6 +122,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Started "+this);
+		return true;
 	}
 
 	public void onSuccess(ClientPutState state) {
@@ -202,6 +210,18 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 
 	public void onFetchable(ClientPutState state) {
 		client.onFetchable(this);
+	}
+
+	public boolean canRestart() {
+		if(currentState != null && !finished) {
+			Logger.minor(this, "Cannot restart because not finished for "+uri);
+			return false;
+		}
+		return true;
+	}
+
+	public boolean restart() throws InserterException {
+		return start(true);
 	}
 	
 }

@@ -72,9 +72,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/**
 	 * Called by a client to fetch the bucket denoted by a specific filename,
 	 * and to register this fact so that it is not deleted on startup completion.
+	 * @throws IOException 
 	 */
-	public Bucket register(String filename) {
+	public Bucket register(String filename, boolean mustExist) throws IOException {
 		File f = new File(dir, filename);
+		if(mustExist && !f.exists())
+			throw new IOException("File does not exist (deleted?): "+f);
 		Bucket b = new FileBucket(f, false, false, false, true);
 		originalFiles.remove(f);
 		return b;
@@ -110,8 +113,16 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		return new PaddedEphemerallyEncryptedBucket(b, 1024, rand, false);
 	}
 
+	/**
+	 * Restore an encrypted temp bucket from last time.
+	 * @param filename The filename. Must exist unless len=0.
+	 * @param key The encryption key for the bucket.
+	 * @param len The data length. The file must be of at least this length.
+	 * @return
+	 * @throws IOException If the file doesn't exist or if it is too short.
+	 */
 	public Bucket registerEncryptedBucket(String filename, byte[] key, long len) throws IOException {
-		Bucket fileBucket = register(filename);
+		Bucket fileBucket = register(filename, len > 0);
 		return new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, len, key, rand);
 	}
 	

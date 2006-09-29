@@ -94,7 +94,6 @@ public class FCPServer implements Runnable {
 		this.core = core;
 		clientsByName = new WeakHashMap();
 		
-		
 		// This one is only used to get the default settings. Individual FCP conns
 		// will make their own.
 		HighLevelSimpleClient client = core.makeClient((short)0);

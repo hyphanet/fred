@@ -334,4 +334,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		return s;
 	}
 	
+	public void setVarsRestart() {
+		synchronized(this) {
+			finished = false;
+			this.putFailedMessage = null;
+			this.progressMessage = null;
+			started = false;
+		}
+	}
 }
