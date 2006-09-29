@@ -8,7 +8,6 @@ import java.io.IOException;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
-import freenet.client.FetchException;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
