@@ -120,10 +120,11 @@ public class StatisticsToadlet extends Toadlet {
 			if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
 				networkSizeEstimate48h = node.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
 			}
-			DecimalFormat fix4 = new DecimalFormat("0.0000");
+			DecimalFormat fix1p4 = new DecimalFormat("0.0000");
 			DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
+			DecimalFormat fix1p6sci = new DecimalFormat("0.######E0");
+			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
 			double missRoutingDistance =  node.missRoutingDistance.currentValue();
-			DecimalFormat fix1 = new DecimalFormat("##0.0%");
 			double backedoffPercent =  node.backedoffPercent.currentValue();
 			String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 
@@ -150,9 +151,9 @@ public class StatisticsToadlet extends Toadlet {
 					overviewList.addChild("li", "avrConnPeersPerNode:\u00a0" + fix6p6.format(numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps)) + "\u00a0peers");
 				}
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
-				overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix4.format(missRoutingDistance));
-				overviewList.addChild("li", "backedoffPercent:\u00a0" + fix1.format(backedoffPercent));
-				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(node.pRejectIncomingInstantly()));
+				overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix1p4.format(missRoutingDistance));
+				overviewList.addChild("li", "backedoffPercent:\u00a0" + fix3p1pct.format(backedoffPercent));
+				overviewList.addChild("li", "pInstantReject:\u00a0" + fix3p1pct.format(node.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
 			}
 
@@ -279,21 +280,21 @@ public class StatisticsToadlet extends Toadlet {
 				locationSwapInfobox.addChild("div", "class", "infobox-header", "Location swaps");
 				HTMLNode locationSwapInfoboxContent = locationSwapInfobox.addChild("div", "class", "infobox-content");
 				HTMLNode locationSwapList = locationSwapInfoboxContent.addChild("ul");
-				locationSwapList.addChild("li", "locChangeSession:\u00a0" + fix6p6.format(locChangeSession));
+				locationSwapList.addChild("li", "locChangeSession:\u00a0" + fix1p6sci.format(locChangeSession));
 				if (swaps > 0.0) {
-					locationSwapList.addChild("li", "locChangePerSwap:\u00a0" + fix6p6.format(locChangeSession/swaps));
+					locationSwapList.addChild("li", "locChangePerSwap:\u00a0" + fix1p6sci.format(locChangeSession/swaps));
 				}
 				if (nodeUptimeSeconds >= 60) {
-					locationSwapList.addChild("li", "locChangePerMinute:\u00a0" + fix6p6.format(locChangeSession/(double)(nodeUptimeSeconds/60.0)));
+					locationSwapList.addChild("li", "locChangePerMinute:\u00a0" + fix1p6sci.format(locChangeSession/(double)(nodeUptimeSeconds/60.0)));
 				}
 				if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-					locationSwapList.addChild("li", "swapsPerMinute:\u00a0" + fix6p6.format(swaps/(double)(nodeUptimeSeconds/60.0)));
+					locationSwapList.addChild("li", "swapsPerMinute:\u00a0" + fix1p6sci.format(swaps/(double)(nodeUptimeSeconds/60.0)));
 				}
 				if ((noSwaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-					locationSwapList.addChild("li", "noSwapsPerMinute:\u00a0" + fix6p6.format(noSwaps/(double)(nodeUptimeSeconds/60.0)));
+					locationSwapList.addChild("li", "noSwapsPerMinute:\u00a0" + fix1p6sci.format(noSwaps/(double)(nodeUptimeSeconds/60.0)));
 				}
 				if ((swaps > 0.0) && (noSwaps > 0.0)) {
-					locationSwapList.addChild("li", "swapsPerNoSwaps:\u00a0" + fix6p6.format(swaps/noSwaps));
+					locationSwapList.addChild("li", "swapsPerNoSwaps:\u00a0" + fix1p6sci.format(swaps/noSwaps));
 				}
 				locationSwapList.addChild("li", "swaps:\u00a0" + (int)swaps);
 				locationSwapList.addChild("li", "noSwaps:\u00a0" + (int)noSwaps);
