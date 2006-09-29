@@ -95,6 +95,7 @@ public class NodeClientCore {
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
 		Thread t = new Thread(backgroundBlockEncoder, "Background block encoder");
 		t.setDaemon(true);
+		t.setPriority(Thread.MIN_PRIORITY);
 		t.start();
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
