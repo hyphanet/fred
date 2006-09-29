@@ -2876,8 +2876,8 @@ public class Node {
 		return lm.locChangeSession;
 	}
 	
-	public int getNumberOfLocationsSeenInSwaps() {
-		return lm.numberOfLocationsSeenInSwaps;
+	public int getNumberOfRemotePeerLocationsSeenInSwaps() {
+		return lm.numberOfRemotePeerLocationsSeenInSwaps;
 	}
 	
 	public boolean isAdvancedDarknetEnabled() {
