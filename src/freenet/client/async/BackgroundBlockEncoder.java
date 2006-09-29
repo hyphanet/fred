@@ -29,6 +29,7 @@ public class BackgroundBlockEncoder implements Runnable {
 	public void queue(SingleBlockInserter[] sbis) {
 		synchronized(this) {
 			for(int i=0;i<sbis.length;i++) {
+				if(sbis[i] == null) continue;
 				if(sbis[i].isFinished()) continue;
 				if(sbis[i].resultingURI != null) continue;
 				WeakReference ref = new WeakReference(sbis[i]);
