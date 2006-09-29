@@ -296,7 +296,7 @@ public class StatisticsToadlet extends Toadlet {
 				if ((swaps > 0.0) && (noSwaps > 0.0)) {
 					locationSwapList.addChild("li", "swapsPerNoSwaps:\u00a0" + fix1p6sci.format(swaps/noSwaps));
 				}
-				if ((swaps > 0.0) && (noSwaps > 0.0)) {
+				if (swaps > 0.0) {
 					locationSwapList.addChild("li", "swaps:\u00a0" + (int)swaps);
 				}
 				if (noSwaps > 0.0) {
