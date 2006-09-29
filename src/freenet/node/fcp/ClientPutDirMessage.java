@@ -49,7 +49,11 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 			String u = fs.get("URI");
 			if(u == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "No URI", identifier);
-			uri = new FreenetURI(fs.get("URI"));
+			FreenetURI uu = new FreenetURI(fs.get("URI"));
+			String[] meta = uu.getAllMetaStrings();
+			if(meta != null && meta.length == 1 && meta[0].length() == 0)
+				uu = uu.setMetaString(null);
+			uri = uu;
 		} catch (MalformedURLException e) {
 			throw new MessageInvalidException(ProtocolErrorMessage.URI_PARSE_ERROR, e.getMessage(), identifier);
 		}
