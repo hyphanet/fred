@@ -199,8 +199,12 @@ H=[0-9a-fA-F]
 NONASCII=[\200-\4177777]
 UNICODE=\\{H}{1,6}[ \t\r\n\f]?
 ESCAPE={UNICODE}|\\[ -~\200-\4177777]
+// Ident's can begin with - or _ but they are then vendor-specific extensions.
+// We DO NOT allow vendor-specific extensions because we don't know what they might do.
+// Precautionary principle.
+// If you want to allow some, then add them individually.
 NMSTART=[a-zA-Z]|{NONASCII}|{ESCAPE}
-NMCHAR=[a-zA-Z0-9-]|{NONASCII}|{ESCAPE}
+NMCHAR=[_a-zA-Z0-9-]|{NONASCII}|{ESCAPE}
 
 // The spec (http://www.w3.org/TR/REC-CSS2/grammar.html, mostly D.2 for this bit)
 // is on crack wrt string/url, so this is guesswork
@@ -211,7 +215,9 @@ IDENT={NMSTART}{NMCHAR}*
 NAME={NMCHAR}+
 NUM=[0-9]+|[0-9]*"."[0-9]+
 STRING={STRING1}|{STRING2}
-INBRACKET=([^\)]|"\\)"|STRING)*
+
+// Not used any more. Was used in url(). Keep for now. Matches up to the end of a bracket.
+//INBRACKET=([^\)]|"\\)"|STRING)*
 
 // See comments for STRING1/STRING2 :)
 URL=([^\(\)\"\']|{NONASCII}|{ESCAPE})*
@@ -451,14 +457,16 @@ U\+{H}{1,6}-{H}{1,6} {
 }
 // This would be the longest match...
 //("@"{IDENT}[^;\}\"]*[;\}]) {
-//	if(!deleteErrors) {
-//		throwError("Unknown @identifier "+yytext());
-//	} else {
-//		String s = yytext();
-//		if(debug) log("Discarded identifier: "+s);
-//		// Ignore
-//	}
-//}
+// So just drop the bogus identifier
+"@"{IDENT} {
+	if(!deleteErrors) {
+		throwError("Unknown @identifier "+yytext());
+	} else {
+		String s = yytext();
+		if(debug) log("Discarded identifier: "+s);
+		// Ignore
+	}
+}
 // Default rule matches only one character
 . {
 	String s = yytext();
