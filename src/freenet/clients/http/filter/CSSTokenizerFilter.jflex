@@ -158,10 +158,11 @@ import java.util.*;
 					}
 				}
 			}
+			x++;
 			data = buffer.toString();
-			if(s.length() > x)
-				suffix = s.substring(x);
-			else suffix = "";
+			if(url && s.length() > x+1 && s.charAt(x) == ')')
+				x++;
+			suffix = s.substring(x);
 		}
 		
 		public String toString() {
@@ -203,8 +204,8 @@ NMCHAR=[a-zA-Z0-9-]|{NONASCII}|{ESCAPE}
 
 // The spec (http://www.w3.org/TR/REC-CSS2/grammar.html, mostly D.2 for this bit)
 // is on crack wrt string/url, so this is guesswork
-STRING1=\"(\\{NL}|\'|\\\"|{NONASCII}|{ESCAPE}|[^\"])*\"
-STRING2=\'(\\{NL}|\"|\\\'|{NONASCII}|{ESCAPE}|[^\'])*\'
+STRING1=\"(\\{NL}|\'|(\\\")|{NONASCII}|{ESCAPE}|[^\"])*\"
+STRING2=\'(\\{NL}|\"|(\\\')|{NONASCII}|{ESCAPE}|[^\'])*\'
 
 IDENT={NMSTART}{NMCHAR}*
 NAME={NMCHAR}+
@@ -214,12 +215,13 @@ INBRACKET=([^\)]|"\\)"|STRING)*
 
 // See comments for STRING1/STRING2 :)
 URL=([^\(\)\"\']|{NONASCII}|{ESCAPE})*
-REALURL="url("{W}*({STRING}|{URL}){W}")"
 
 W=[ \t\r\n\f]*
 NL=\n|\r\n|\r|\f
 RANGE=\?{1,6}|{H}(\?{0,5}|{H}(\?{0,4}|{H}(\?{0,3}|{H}(\?{0,2}|{H}(\??|{H})))))
 HEXCOLOR="#"(({H}{H}{H})|({H}{H}{H}{H}{H}{H}))
+
+REALURL="url("{W}({STRING}|{URL}){W}")"
 
 // From grammer
 MEDIUM={IDENT}{W}*
@@ -236,7 +238,7 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 	if(debug) log("Got hexcolor: "+s);
 	w.write(s);
 }
-REALURL {
+{REALURL} {
 	// This is horrible. However it seems that there is no other way to do it with either jflex or CUP, as {URL} cannot be an unambiguous token :(
 	String s = yytext();
 	if(debug) log("Recognized URL: "+s);
@@ -414,11 +416,6 @@ U\+{H}{1,6}-{H}{1,6} {
 	detectedCharset = s;
 	if(debug) log("Matched and ignoring charset: "+s);
 	// Ignore
-}
-"url("{INBRACKET}")" {
-	String s = yytext();
-	if(debug) log("Ignoring unrecognizable url: "+s);
-	w.write("/* Ignoring unmatchable URL */url()");
 }
 {IDENT}"(" {
 	String s = yytext();
