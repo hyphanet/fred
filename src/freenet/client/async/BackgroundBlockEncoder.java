@@ -39,7 +39,7 @@ public class BackgroundBlockEncoder implements Runnable {
 	}
 	
 	public void run() {
-		while(true) {
+outer:	while(true) {
 			SingleBlockInserter sbi = null;
 			synchronized(this) {
 				try {
@@ -48,10 +48,10 @@ public class BackgroundBlockEncoder implements Runnable {
 					// Ignore
 				}
 				while(true) {
-					if(queue.isEmpty()) break;
+					if(queue.isEmpty()) continue outer;
 					WeakReference ref = (WeakReference) queue.remove(queue.size()-1);
 					sbi = (SingleBlockInserter) ref.get();
-					if(sbi == null) continue;
+					if(sbi != null) break;
 				}
 			}
 			if(sbi.isFinished()) continue;
