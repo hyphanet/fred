@@ -1,5 +1,6 @@
 package freenet.client;
 
+import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
@@ -27,10 +28,11 @@ public class InserterContext {
 	/** Interesting tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
 	public final USKManager uskManager;
+	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	
 	public InserterContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker, RandomSource random,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager) {
+			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager, BackgroundBlockEncoder blockEncoder) {
 		this.bf = bf;
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
@@ -45,6 +47,7 @@ public class InserterContext {
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = cacheLocalRequests;
+		this.backgroundBlockEncoder = blockEncoder;
 	}
 
 	public InserterContext(InserterContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {
@@ -62,6 +65,7 @@ public class InserterContext {
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
+		this.backgroundBlockEncoder = ctx.backgroundBlockEncoder;
 	}
 
 	public InserterContext(InserterContext ctx, SimpleEventProducer producer) {
@@ -79,6 +83,7 @@ public class InserterContext {
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
+		this.backgroundBlockEncoder = ctx.backgroundBlockEncoder;
 	}
 
 }

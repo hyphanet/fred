@@ -584,16 +584,22 @@ class SingleFileInserter implements ClientPutState {
 		private void startMetadata() {
 			try {
 				ClientPutState putter;
+				ClientPutState splitInserter;
 				synchronized(this) {
 					if(metadataPutter == null) {
 						if(logMINOR) Logger.minor(this, "Cannot start metadata yet: no metadataPutter");
-						return;
 					}
 					putter = metadataPutter;
+					splitInserter = sfi;
 				}
-				if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
-				putter.schedule();
-				if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
+				if(putter != null) {
+					if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
+					putter.schedule();
+					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
+				} else {
+					// Get all the URIs ASAP so we can start to insert the metadata.
+					((SplitFileInserter)splitInserter).forceEncode();
+				}
 			} catch (InserterException e1) {
 				Logger.error(this, "Failing "+this+" : "+e1, e1);
 				fail(e1);

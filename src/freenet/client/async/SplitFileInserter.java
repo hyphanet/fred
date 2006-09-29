@@ -436,4 +436,11 @@ public class SplitFileInserter implements ClientPutState {
 		return dataLength;
 	}
 
+	/** Force the remaining blocks which haven't been encoded so far to be encoded ASAP. */
+	public void forceEncode() {
+		for(int i=0;i<segments.length;i++) {
+			segments[i].forceEncode();
+		}
+	}
+
 }

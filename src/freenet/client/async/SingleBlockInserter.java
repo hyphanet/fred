@@ -306,4 +306,17 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		return null;
 	}
 
+	/** Attempt to encode the block, if necessary */
+	public void tryEncode() {
+		try {
+			encode();
+		} catch (InserterException e) {
+			fail(e);
+		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			// Don't requeue on BackgroundBlockEncoder.
+			// Not necessary to do so (we'll ask again when we need it), and it'll probably just break again.
+		}
+	}
+
 }

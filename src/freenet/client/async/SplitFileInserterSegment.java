@@ -616,4 +616,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback {
 	public void onFetchable(ClientPutState state) {
 		// Ignore
 	}
+
+	/** Force the remaining blocks which haven't been encoded so far to be encoded ASAP. */
+	public void forceEncode() {
+		// TODO Auto-generated method stub
+		
+	}
 }

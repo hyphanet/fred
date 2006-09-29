@@ -7,6 +7,7 @@ import freenet.client.ArchiveManager;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InserterContext;
+import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
@@ -79,6 +80,7 @@ public class NodeClientCore {
 	SimpleToadletServer toadletContainer;
 	// FIXME why isn't this just in fproxy?
 	public BookmarkManager bookmarkManager;
+	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	
 	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -90,6 +92,10 @@ public class NodeClientCore {
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet throttleFS) throws NodeInitException {
 		this.node = node;
 		this.random = node.random;
+		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
+		Thread t = new Thread(backgroundBlockEncoder, "Background block encoder");
+		t.setDaemon(true);
+		t.start();
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
@@ -183,7 +189,7 @@ public class NodeClientCore {
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InserterContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
 						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
-						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 	}
 	

@@ -6,6 +6,7 @@ package freenet.client;
 import java.io.IOException;
 import java.util.HashMap;
 
+import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.HealingQueue;
@@ -32,6 +33,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private final BucketFactory persistentBucketFactory;
 	private final PersistentFileTracker persistentFileTracker;
 	private final NodeClientCore core;
+	private final BackgroundBlockEncoder blockEncoder;
 	/** One CEP for all requests and inserts */
 	private final ClientEventProducer globalEventProducer;
 	private long curMaxLength;
@@ -89,6 +91,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.persistentBucketFactory = node.persistentEncryptedTempBucketFactory;
 		this.healingQueue = node.getHealingQueue();
+		this.blockEncoder = node.backgroundBlockEncoder;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -188,6 +191,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				forceNonPersistent ? new NullPersistentFileTracker() : persistentFileTracker,
 				random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				globalEventProducer, cacheLocalRequests, core.uskManager);
+				globalEventProducer, cacheLocalRequests, core.uskManager, blockEncoder);
 	}
 }
