@@ -105,7 +105,7 @@ public class QueueToadlet extends Toadlet {
 					ClientRequest clientRequest = clientRequests[requestIndex];
 					if (clientRequest.getIdentifier().equals(identifier)) {
 						if(!clientRequest.restart()) {
-							sendErrorPage(ctx, 200, "FAiled to restart request", "Failed to restart "+identifier);
+							sendErrorPage(ctx, 200, "Failed to restart request", "Failed to restart "+identifier);
 						}
 					}
 				}
