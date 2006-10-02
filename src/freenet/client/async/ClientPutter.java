@@ -72,6 +72,9 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		try {
 			this.targetURI.checkInsertURI();
 			
+			if(data == null)
+				throw new InserterException(InserterException.BUCKET_ERROR, "No data to insert", null);
+			
 			boolean cancel = false;
 			synchronized(this) {
 				if(restart) {
@@ -217,6 +220,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			Logger.minor(this, "Cannot restart because not finished for "+uri);
 			return false;
 		}
+		if(data == null) return false;
 		return true;
 	}
 
