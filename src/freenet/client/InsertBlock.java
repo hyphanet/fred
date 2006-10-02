@@ -13,6 +13,7 @@ public class InsertBlock {
 	public final ClientMetadata clientMetadata;
 	
 	public InsertBlock(Bucket data, ClientMetadata metadata, FreenetURI desiredURI) {
+		if(data == null) throw new NullPointerException();
 		this.data = data;
 		if(metadata == null)
 			clientMetadata = new ClientMetadata();
