@@ -99,7 +99,8 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 		}
-		if(block.getData().size() > COMPRESS_OFF_THREAD_LIMIT) {
+		Bucket data = block.getData();
+		if(data.size() > COMPRESS_OFF_THREAD_LIMIT) {
 			// Run off thread
 			OffThreadCompressor otc = new OffThreadCompressor();
 			Thread t = new Thread(otc, "Compressor for "+this);
