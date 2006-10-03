@@ -151,6 +151,8 @@ import java.util.*;
 				} else {
 					if(quote != ' ' && c == quote) {
 						break;
+					} else if (quote == ' ' && c == ')') {
+						break;
 					} else if (c == '\\') {
 						justEscaping = true;
 					} else {
@@ -160,7 +162,7 @@ import java.util.*;
 			}
 			x++;
 			data = buffer.toString();
-			if(url && s.length() > x+1 && s.charAt(x) == ')')
+			if(url && s.length() > x && s.charAt(x) == ')')
 				x++;
 			if(x < (s.length()-1))
 				suffix = s.substring(x);
