@@ -13,13 +13,9 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 	public final Runnable thread = new Runnable() {
 		public void run() {
 			while(!hasNodeStarted){
-				synchronized (this) {
-					hasNodeStarted = true;
-					try{
-						wait(100);
-					} catch (InterruptedException e) {
-						hasNodeStarted = false;	
-					}
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
 				}
 			}
 			
@@ -62,5 +58,10 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 	public void finishedInit(Ticker ticker) {
 		super.finishedInit();
 		this.ticker = ticker;
+	}
+
+	public void setHasNodeStarted() {
+		if(hasNodeStarted) Logger.error(this, "It has already been called! that shouldn't happen!");
+		this.hasNodeStarted = true;
 	}
 }

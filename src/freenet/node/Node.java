@@ -1409,10 +1409,8 @@ public class Node {
 		
 		// After everything has been created, write the config file back to disk.
 		config.finishedInit(this.ps);
+		config.setHasNodeStarted();
 		config.store();
-		synchronized (config.thread) {
-			config.thread.notify();	
-		}
 		
 		// Process any data in the extra peer data directory
 		peers.readExtraPeerData();
@@ -2670,35 +2668,35 @@ public class Node {
 	}
 	
 	public int getSwaps() {
-		return lm.swaps;
+		return LocationManager.swaps;
 	}
 
 	public int getNoSwaps() {
-		return lm.noSwaps;
+		return LocationManager.noSwaps;
 	}
 
 	public int getStartedSwaps() {
-		return lm.startedSwaps;
+		return LocationManager.startedSwaps;
 	}
 
 	public int getSwapsRejectedAlreadyLocked() {
-		return lm.swapsRejectedAlreadyLocked;
+		return LocationManager.swapsRejectedAlreadyLocked;
 	}
 
 	public int getSwapsRejectedLoop() {
-		return lm.swapsRejectedLoop;
+		return LocationManager.swapsRejectedLoop;
 	}
 
 	public int getSwapsRejectedNowhereToGo() {
-		return lm.swapsRejectedNowhereToGo;
+		return LocationManager.swapsRejectedNowhereToGo;
 	}
 
 	public int getSwapsRejectedRateLimit() {
-		return lm.swapsRejectedRateLimit;
+		return LocationManager.swapsRejectedRateLimit;
 	}
 
 	public int getSwapsRejectedRecognizedID() {
-		return lm.swapsRejectedRecognizedID;
+		return LocationManager.swapsRejectedRecognizedID;
 	}
 
 	/**
