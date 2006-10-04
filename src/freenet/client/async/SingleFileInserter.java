@@ -196,9 +196,6 @@ class SingleFileInserter implements ClientPutState {
 			throw new InserterException(InserterException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 
 		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
-		if(metadata && !noMetadata) {
-			throw new InserterException(InserterException.INTERNAL_ERROR, "MIME type set for a metadata insert!", null);
-		}
 		if(noMetadata && !insertAsArchiveManifest) {
 			if(data.size() < blockSize) {
 				// Just insert it
@@ -439,19 +436,10 @@ class SingleFileInserter implements ClientPutState {
 				onFailure(e, state);
 				return;
 			}
-			if(targetFilename != null) {
-				HashMap hm = new HashMap();
-				hm.put(targetFilename, meta);
-				meta = Metadata.mkRedirectionManifestWithMetadata(hm);
-			}
 			
-			Bucket metadataBucket;
+			byte[] metaBytes;
 			try {
-				metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
-			} catch (IOException e1) {
-				InserterException ex = new InserterException(InserterException.BUCKET_ERROR, e1, null);
-				fail(ex);
-				return;
+				metaBytes = meta.writeToByteArray();
 			} catch (MetadataUnresolvedException e1) {
 				Logger.error(this, "Impossible: "+e, e);
 				InserterException ex = new InserterException(InserterException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null);
@@ -459,10 +447,40 @@ class SingleFileInserter implements ClientPutState {
 				fail(ex);
 				return;
 			}
+			
+			String metaPutterTargetFilename = targetFilename;
+			
+			if(targetFilename != null) {
+				
+				if(metaBytes.length <= Short.MAX_VALUE) {
+					HashMap hm = new HashMap();
+					hm.put(targetFilename, meta);
+					meta = Metadata.mkRedirectionManifestWithMetadata(hm);
+					metaPutterTargetFilename = null;
+					try {
+						metaBytes = meta.writeToByteArray();
+					} catch (MetadataUnresolvedException e1) {
+						Logger.error(this, "Impossible (2): "+e, e);
+						InserterException ex = new InserterException(InserterException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null);
+						ex.initCause(e1);
+						fail(ex);
+						return;
+					}
+				}
+			}
+			
+			Bucket metadataBucket;
+			try {
+				metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, metaBytes);
+			} catch (IOException e1) {
+				InserterException ex = new InserterException(InserterException.BUCKET_ERROR, e1, null);
+				fail(ex);
+				return;
+			}
 			InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
 			try {
 				synchronized(this) {
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true, null);
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true, metaPutterTargetFilename);
 					if(!dataFetchable) return;
 				}
 				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+")");

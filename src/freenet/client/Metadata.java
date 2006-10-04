@@ -722,7 +722,7 @@ public class Metadata implements Cloneable {
 	public void setSimpleRedirect() {
 		documentType = SIMPLE_REDIRECT;
 	}
-	
+
 	/** Write the metadata as binary. 
 	 * @throws IOException If an I/O error occurred while writing the data. 
 	 * @throws MetadataUnresolvedException */
