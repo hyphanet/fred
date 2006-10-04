@@ -3,6 +3,8 @@ package freenet.client.async;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
+import freenet.support.Logger;
+
 /**
  * Keeps a queue of SingleBlockInserter's to encode.
  * Encodes them.
@@ -22,6 +24,7 @@ public class BackgroundBlockEncoder implements Runnable {
 		WeakReference ref = new WeakReference(sbi);
 		synchronized(this) {
 			queue.add(ref);
+			Logger.minor(this, "Queueing encode of "+sbi);
 			notifyAll();
 		}
 	}
@@ -32,6 +35,7 @@ public class BackgroundBlockEncoder implements Runnable {
 				if(sbis[i] == null) continue;
 				if(sbis[i].isFinished()) continue;
 				if(sbis[i].resultingURI != null) continue;
+				Logger.minor(this, "Queueing encode of "+sbis[i]);
 				WeakReference ref = new WeakReference(sbis[i]);
 				queue.add(ref);
 			}
@@ -56,6 +60,7 @@ public class BackgroundBlockEncoder implements Runnable {
 					if(sbi != null) break;
 				}
 			}
+			Logger.minor(this, "Encoding "+sbi);
 			if(sbi.isFinished()) continue;
 			if(sbi.resultingURI != null) continue;
 			sbi.tryEncode();

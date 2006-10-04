@@ -49,6 +49,7 @@ class SingleFileInserter implements ClientPutState {
 	public final Object token;
 	private final boolean freeData; // this is being set, but never read ???
 	private final String targetFilename;
+	private final boolean earlyEncode;
 
 	/**
 	 * @param parent
@@ -62,12 +63,14 @@ class SingleFileInserter implements ClientPutState {
 	 * @param insertAsArchiveManifest If true, insert the metadata as an archive manifest.
 	 * @param freeData If true, free the data when possible.
 	 * @param targetFilename 
+	 * @param earlyEncode If true, try to get a URI as quickly as possible.
 	 * @throws InserterException
 	 */
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InserterContext ctx, boolean dontCompress, 
 			boolean getCHKOnly, boolean reportMetadataOnly, Object token, boolean insertAsArchiveManifest, 
-			boolean freeData, String targetFilename) throws InserterException {
+			boolean freeData, String targetFilename, boolean earlyEncode) throws InserterException {
+		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
 		this.token = token;
 		this.parent = parent;
@@ -253,12 +256,14 @@ class SingleFileInserter implements ClientPutState {
 			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, false);
 			cb.onTransition(this, sfi);
 			sfi.start();
+			if(earlyEncode) sfi.forceEncode();
 		} else {
 			SplitHandler sh = new SplitHandler();
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, false);
 			sh.sfi = sfi;
 			cb.onTransition(this, sh);
 			sfi.start();
+			if(earlyEncode) sfi.forceEncode();
 		}
 	}
 	
@@ -286,11 +291,15 @@ class SingleFileInserter implements ClientPutState {
 				throw new InserterException(InserterException.INVALID_URI, e, null);
 			}
 		} else {
-			return new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-				getCHKOnly, addToParent, false, this.token);
+			SingleBlockInserter sbi = 
+				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
+						getCHKOnly, addToParent, false, this.token);
+			cb.onEncode(sbi.getBlock().getClientKey(), this);
+			return sbi;
 		}
+		
 	}
-
+	
 	/**
 	 * When we get the metadata, start inserting it to our target key.
 	 * When we have inserted both the metadata and the splitfile,
@@ -480,8 +489,10 @@ class SingleFileInserter implements ClientPutState {
 			InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
 			try {
 				synchronized(this) {
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true, metaPutterTargetFilename);
-					if(!dataFetchable) return;
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true, metaPutterTargetFilename, earlyEncode);
+					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
+					// Otherwise, wait until the data is fetchable (to improve persistence).
+					if(!(dataFetchable || earlyEncode)) return;
 				}
 				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+")");
 			} catch (InserterException e1) {

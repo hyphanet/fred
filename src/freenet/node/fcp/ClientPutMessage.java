@@ -8,6 +8,7 @@ import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
+import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Bucket;
 import freenet.support.io.BucketFactory;
@@ -53,6 +54,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 	final FreenetURI redirectTarget;
 	/** Filename (hint for the final filename) */
 	final String targetFilename;
+	final boolean earlyEncode;
 	
 	public static final short UPLOAD_FROM_DIRECT = 0;
 	public static final short UPLOAD_FROM_DISK = 1;
@@ -186,6 +188,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 			targetFilename = fnam;
 		else
 			targetFilename = null;
+		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
 	}
 
 	public SimpleFieldSet getFieldSet() {

@@ -62,11 +62,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		this.targetFilename = targetFilename;
 	}
 
-	public void start() throws InserterException {
-		start(false);
+	public void start(boolean earlyEncode) throws InserterException {
+		start(earlyEncode, false);
 	}
 	
-	public boolean start(boolean restart) throws InserterException {
+	public boolean start(boolean earlyEncode, boolean restart) throws InserterException {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this);
 		try {
@@ -86,7 +86,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = this.cancelled;
 				if(!cancel) {
 					currentState =
-						new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false, false, targetFilename);
+						new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, false, getCHKOnly, false, null, false, false, targetFilename, earlyEncode);
 				}
 			}
 			if(cancel) {
@@ -224,8 +224,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return true;
 	}
 
-	public boolean restart() throws InserterException {
-		return start(true);
+	public boolean restart(boolean earlyEncode) throws InserterException {
+		return start(earlyEncode, true);
 	}
-	
+
 }

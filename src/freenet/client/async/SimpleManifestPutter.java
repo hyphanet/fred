@@ -37,7 +37,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block = 
 				new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, false, false, null);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, false, false, null, earlyEncode);
 			metadata = null;
 		}
 
@@ -202,10 +202,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private int bytesOnZip;
 	private LinkedList elementsToPutInZip;
 	private boolean fetchable;
+	private final boolean earlyEncode;
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
 			ClientRequestScheduler sskSched, HashMap manifestElements, short prioClass, FreenetURI target, 
-			String defaultName, InserterContext ctx, boolean getCHKOnly, Object clientContext) throws InserterException {
+			String defaultName, InserterContext ctx, boolean getCHKOnly, Object clientContext, boolean earlyEncode) throws InserterException {
 		super(prioClass, chkSched, sskSched, clientContext);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.defaultName = defaultName;
@@ -213,6 +214,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		this.cb = cb;
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly;
+		this.earlyEncode = earlyEncode;
 		putHandlersByName = new HashMap();
 		runningPutHandlers = new HashSet();
 		putHandlersWaitingForMetadata = new HashSet();
@@ -432,7 +434,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			block = new InsertBlock(bucket, null, targetURI);
 		try {
 			SingleFileInserter metadataInserter = 
-				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, insertAsArchiveManifest, true, null);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, insertAsArchiveManifest, true, null, earlyEncode);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
@@ -457,7 +459,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				
 				InsertBlock ib = new InsertBlock(b, null, FreenetURI.EMPTY_CHK_URI);
 				SingleFileInserter metadataInserter = 
-					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, false, true, null);
+					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, false, true, null, earlyEncode);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);

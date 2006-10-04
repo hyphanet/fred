@@ -13,6 +13,7 @@ import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -79,8 +80,8 @@ public class ClientPut extends ClientPutBase {
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget, String targetFilename) throws IdentifierCollisionException {
-		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries);
+			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException {
+		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode);
 		this.targetFilename = targetFilename;
 		this.uploadFrom = uploadFromType;
 		this.origFilename = origFilename;
@@ -129,7 +130,7 @@ public class ClientPut extends ClientPutBase {
 	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
-				message.getCHKOnly, message.dontCompress, message.maxRetries);
+				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
 		this.targetFilename = message.targetFilename;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.uploadFrom = message.uploadFromType;
@@ -277,7 +278,7 @@ public class ClientPut extends ClientPutBase {
 			Logger.minor(this, "Starting "+this+" : "+identifier);
 		if(finished) return;
 		try {
-			putter.start();
+			putter.start(earlyEncode);
 			started = true;
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
@@ -319,6 +320,7 @@ public class ClientPut extends ClientPutBase {
 		}
 		if(targetFilename != null)
 			fs.put("TargetFilename", targetFilename);
+		fs.put("EarlyEncode", Boolean.toString(earlyEncode));
 		return fs;
 	}
 
@@ -381,7 +383,7 @@ public class ClientPut extends ClientPutBase {
 		if(!canRestart()) return false;
 		setVarsRestart();
 		try {
-			if(putter.restart()) {
+			if(putter.restart(earlyEncode)) {
 				synchronized(this) {
 					generatedURI = null;
 					started = true;

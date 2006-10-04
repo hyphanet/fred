@@ -48,27 +48,32 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	// Probably saving it would conflict with later changes (full persistence at
 	// ClientPutter level).
 	private FCPMessage progressMessage;
+
+	/** Whether to force an early generation of the CHK */
+	protected final boolean earlyEncode;
 	
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler, 
 			short priorityClass, short persistenceType, String clientToken, boolean global, boolean getCHKOnly,
-			boolean dontCompress, int maxRetries) {
+			boolean dontCompress, int maxRetries, boolean earlyEncode) {
 		super(uri, identifier, verbosity, handler, priorityClass, persistenceType, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
+		this.earlyEncode = earlyEncode;
 	}
 
 	public ClientPutBase(FreenetURI uri, String identifier, int verbosity, FCPConnectionHandler handler,
 			FCPClient client, short priorityClass, short persistenceType, String clientToken, boolean global,
-			boolean getCHKOnly, boolean dontCompress, int maxRetries) {
+			boolean getCHKOnly, boolean dontCompress, int maxRetries, boolean earlyEncode) {
 		super(uri, identifier, verbosity, handler, client, priorityClass, persistenceType, clientToken, global);
 		this.getCHKOnly = getCHKOnly;
 		ctx = new InserterContext(client.defaultInsertContext, new SimpleEventProducer(), persistenceType == ClientRequest.PERSIST_CONNECTION);
 		ctx.dontCompress = dontCompress;
 		ctx.eventProducer.addEventListener(this);
 		ctx.maxInsertRetries = maxRetries;
+		this.earlyEncode = earlyEncode;
 	}
 
 	public ClientPutBase(SimpleFieldSet fs, FCPClient client2) throws MalformedURLException {
@@ -89,6 +94,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			generatedURI = new FreenetURI(genURI);
 		if(finished && (!succeeded))
 			putFailedMessage = new PutFailedMessage(fs.subset("PutFailed"), false);
+		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
 	}
 
 	public void onLostConnection() {

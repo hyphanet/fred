@@ -36,7 +36,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 			HashMap manifestElements) throws IdentifierCollisionException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
-				message.getCHKOnly, message.dontCompress, message.maxRetries);
+				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manifestElements = manifestElements;
 		this.defaultName = message.defaultName;
@@ -62,7 +62,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		SimpleManifestPutter p;
 		try {
 			p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
-					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client);
+					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client, earlyEncode);
 		} catch (InserterException e) {
 			onFailure(e, null);
 			p = null;
@@ -135,7 +135,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		try {
 			if(!finished)
 				p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
-						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client);
+						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client, earlyEncode);
 		} catch (InserterException e) {
 			onFailure(e, null);
 			p = null;

@@ -138,7 +138,7 @@ public class NodeARKInserter implements ClientCallback {
 		
 		try {
 			
-			inserter.start();
+			inserter.start(false);
 			
 			synchronized (this) {
 				if(fs.get("physical.udp") == null)

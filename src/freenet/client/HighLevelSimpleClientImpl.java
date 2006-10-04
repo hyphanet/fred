@@ -132,7 +132,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata, 
 				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata, this, null, filenameHint);
-		put.start();
+		put.start(false);
 		return pw.waitForCompletion();
 	}
 
@@ -156,7 +156,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InserterException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(true), false, this);
+			new SimpleManifestPutter(pw, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInserterContext(true), false, this, false);
 		putter.start();
 		return pw.waitForCompletion();
 	}
