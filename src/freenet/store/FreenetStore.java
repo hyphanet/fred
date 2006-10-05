@@ -59,6 +59,8 @@ public interface FreenetStore {
      * @throws DatabaseException 
      */
 	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException;
+    
+    public long getMaxKeys();
 	
 	public long hits();
 	

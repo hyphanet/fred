@@ -1642,6 +1642,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		if(shrinkNow)
 			maybeShrink(false, false);
 	}
+    
+    public long getMaxKeys() {
+        return maxChkBlocks;
+    }
 
 	public long hits() {
 		return hits;
