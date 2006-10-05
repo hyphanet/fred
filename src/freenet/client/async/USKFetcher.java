@@ -152,7 +152,7 @@ public class USKFetcher implements ClientGetState {
 		}
 		
 		public String toString() {
-			return "USKAttempt for "+number+" for "+origUSK.getURI();
+			return "USKAttempt for "+number+" for "+origUSK.getURI()+" for "+USKFetcher.this;
 		}
 		
 		public short getPriority() {

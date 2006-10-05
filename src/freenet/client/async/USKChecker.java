@@ -77,7 +77,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 
 	public String toString() {
-		return "USKChecker for "+key.getURI();
+		return "USKChecker for "+key.getURI()+" for "+cb;
 	}
 
 	public short getPriorityClass() {
