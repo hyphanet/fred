@@ -20,7 +20,9 @@ public class PutSuccessfulMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		fs.put("Identifier", identifier);
-		fs.put("URI", uri.toString());
+		// FIXME debug and remove!
+		if(uri != null)
+			fs.put("URI", uri.toString());
 		return fs;
 	}
 
