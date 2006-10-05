@@ -82,6 +82,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
 	public static final String PRIORITY_HARD = "HARD";
+	/** Minimum number of retries at which we start to hold it against a request.
+	 * See the comments on fixRetryCount; we don't want many untried requests to prevent
+	 * us from trying requests which have only been tried once (e.g. USK checkers), from 
+	 * other clients (and we DO want retries to take precedence over client round robin IF 
+	 * the request has been tried many times already). */
+	private static final int MIN_RETRY_COUNT = 3;
 	private String choosenPriorityScheduler; 
 	
 	private int[] tweakedPrioritySelector = { 
@@ -206,11 +212,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 			priorities[priorityClass] = prio;
 		}
 		// Client
-		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(retryCount);
+		int rc = fixRetryCount(retryCount);
+		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc);
 		if(clientGrabber == null) {
-			clientGrabber = new SectoredRandomGrabArrayWithInt(random, retryCount);
+			clientGrabber = new SectoredRandomGrabArrayWithInt(random, rc);
 			prio.add(clientGrabber);
-			if(logMINOR) Logger.minor(this, "Registering retry count "+retryCount+" with prioclass "+priorityClass);
+			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass);
 		}
 		// Request
 		SectoredRandomGrabArrayWithClient requestGrabber = (SectoredRandomGrabArrayWithClient) clientGrabber.getGrabber(client);
@@ -218,9 +225,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 			requestGrabber = new SectoredRandomGrabArrayWithClient(client, random);
 			clientGrabber.addGrabber(client, requestGrabber);
 		}
-		clientGrabber.add(cr, req);
+		requestGrabber.add(cr, req);
 	}
-	
+
+	/**
+	 * Mangle the retry count.
+	 * Below a certain number of attempts, we don't prefer one request to another just because
+	 * it's been tried more times. The reason for this is to prevent floods of low-retry-count
+	 * requests from starving other clients' requests which need to be retried. The other
+	 * solution would be to sort by client before retry count, but that would be excessive 
+	 * IMHO; we DO want to avoid rerequesting keys we've tried many times before.
+	 */
+	private int fixRetryCount(int retryCount) {
+		return Math.max(0, retryCount-MIN_RETRY_COUNT);
+	}
+
 	private SortedVectorByNumber removeFirstAccordingToPriorities(int priority){
 		SortedVectorByNumber result = null;
 		
@@ -272,7 +291,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					}
 				}
 				if(req == null) {
-					if(logMINOR) Logger.minor(this, "No requests, retrycount "+rga.getNumber()+" ("+rga+")");
+					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+rga.getNumber()+" ("+rga+")");
 					break;
 				}else if(req.getPriorityClass() > choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
