@@ -17,7 +17,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	public SectoredRandomGrabArray(RandomSource rand) {
 		this.rand = rand;
 		this.grabArraysByClient = new HashMap();
-		grabArrays = new RandomGrabArrayWithClient[0];
+		grabArrays = new RemoveRandomWithClient[0];
 	}
 
 	/**
@@ -26,7 +26,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		RandomGrabArrayWithClient rga;
 		if(!grabArraysByClient.containsKey(client)) {
 			rga = new RandomGrabArrayWithClient(client, rand);
-			RandomGrabArrayWithClient[] newArrays = new RandomGrabArrayWithClient[grabArrays.length+1];
+			RemoveRandomWithClient[] newArrays = new RemoveRandomWithClient[grabArrays.length+1];
 			System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
 			newArrays[grabArrays.length] = rga;
 			grabArrays = newArrays;
@@ -51,6 +51,10 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	 */
 	public synchronized void addGrabber(Object client, RemoveRandomWithClient requestGrabber) {
 		grabArraysByClient.put(client, requestGrabber);
+		RemoveRandomWithClient[] newArrays = new RemoveRandomWithClient[grabArrays.length+1];
+		System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
+		newArrays[grabArrays.length] = requestGrabber;
+		grabArrays = newArrays;
 	}
 
 	public synchronized RandomGrabArrayItem removeRandom() {
@@ -58,12 +62,13 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			if(grabArrays.length == 0) return null;
 			int x = rand.nextInt(grabArrays.length);
 			RemoveRandomWithClient rga = grabArrays[x];
-			Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getClient());
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getClient());
 			RandomGrabArrayItem item = rga.removeRandom();
 			if(rga.isEmpty() || (item == null)) {
 				Object client = rga.getClient();
 				grabArraysByClient.remove(client);
-				RandomGrabArrayWithClient[] newArray = new RandomGrabArrayWithClient[grabArrays.length-1];
+				RemoveRandomWithClient[] newArray = new RemoveRandomWithClient[grabArrays.length-1];
 				if(x > 0)
 					System.arraycopy(grabArrays, 0, newArray, 0, x);
 				if(x < grabArrays.length-1)
