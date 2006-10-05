@@ -13,10 +13,10 @@ import freenet.keys.USK;
  */
 public class USKFetcherWrapper extends BaseClientGetter {
 
-	USK usk;
+	final USK usk;
 	
-	public USKFetcherWrapper(USK usk, short prio, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler) {
-		super(prio, chkScheduler, sskScheduler, usk);
+	public USKFetcherWrapper(USK usk, short prio, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, Object client) {
+		super(prio, chkScheduler, sskScheduler, client);
 		this.usk = usk;
 	}
 
@@ -48,4 +48,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Ignore
 	}
 
+	public String toString() {
+		return super.toString()+":"+usk;
+	}
 }

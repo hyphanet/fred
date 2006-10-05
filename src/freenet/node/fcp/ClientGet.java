@@ -117,7 +117,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -174,7 +174,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
@@ -255,7 +255,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		returnBucket = ret;
 		
-		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client, returnBucket);
+		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);

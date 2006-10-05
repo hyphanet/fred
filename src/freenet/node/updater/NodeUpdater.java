@@ -113,7 +113,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		try{
 			// start at next version, not interested in this version
 			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion+1));
-			ctx.uskManager.subscribe(myUsk, this, true);
+			ctx.uskManager.subscribe(myUsk, this, true, this);
 		}catch(MalformedURLException e){
 			Logger.error(this,"The auto-update URI isn't valid and can't be used");
 			blow("The auto-update URI isn't valid and can't be used");

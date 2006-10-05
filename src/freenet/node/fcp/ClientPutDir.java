@@ -62,7 +62,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		SimpleManifestPutter p;
 		try {
 			p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
-					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client, earlyEncode);
+					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, client.lowLevelClient, earlyEncode);
 		} catch (InserterException e) {
 			onFailure(e, null);
 			p = null;

@@ -94,9 +94,9 @@ public class USKManager {
 		return f;
 	}
 
-	public USKFetcher getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb) {
+	public USKFetcher getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, Object client) {
 		USKFetcher f = new USKFetcher(usk, this, backgroundFetchContext, 
-				new USKFetcherWrapper(usk, prioClass, chkRequestScheduler, sskRequestScheduler), 3, false, true, null);
+				new USKFetcherWrapper(usk, prioClass, chkRequestScheduler, sskRequestScheduler, client), 3, false, true, null);
 		f.addCallback(cb);
 		return f;
 	}
@@ -107,7 +107,7 @@ public class USKManager {
 		synchronized(this) {
 			USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler), 10, true, false, null);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, this), 10, true, false, null);
 				sched = f;
 				backgroundFetchersByClearUSK.put(clear, f);
 			}
@@ -161,7 +161,7 @@ public class USKManager {
 	 * updated. Note that this does not imply that the USK will be
 	 * checked on a regular basis, unless runBackgroundFetch=true.
 	 */
-	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch) {
+	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, Object client) {
 		USKFetcher sched = null;
 		long ed = origUSK.suggestedEdition;
 		long curEd;
@@ -181,7 +181,7 @@ public class USKManager {
 			if(runBackgroundFetch) {
 				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler), 10, true, false, null);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, client), 10, true, false, null);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
@@ -236,7 +236,7 @@ public class USKManager {
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetcherContext fctx, short prio, Object client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, chkRequestScheduler, sskRequestScheduler, client, cb);
-		subscribe(origUSK, ret, runBackgroundFetch);
+		subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;
 	}
 	

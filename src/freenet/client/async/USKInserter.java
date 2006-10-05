@@ -73,8 +73,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 		if(finished) return;
-		fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this);
-
+		fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient());
 		fetcher.schedule();
 	}
 
