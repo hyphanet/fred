@@ -19,6 +19,9 @@ import freenet.support.Logger;
  */
 public class FCPClient {
 
+	// FIXME frost-specific hack
+	private static final Object frostClient = new Object();
+	
 	/** Maximum number of unacknowledged completed requests */
 	private static final int MAX_UNACKED_REQUESTS = 256;
 	
@@ -37,6 +40,12 @@ public class FCPClient {
 		clientsWatching = new LinkedList();
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		toStart = new LinkedList();
+		// FIXME frost-specific hack
+		if(name.matches("hello-[0-9]*")) {
+			// Greedy frost
+			lowLevelClient = frostClient;
+		} else
+			lowLevelClient = this;
 	}
 	
 	/** The client's Name sent in the ClientHello message */
@@ -66,6 +75,8 @@ public class FCPClient {
 	// We obviously can't synchronize on it when it hasn't been constructed yet...
 	final LinkedList clientsWatching;
 	private final LinkedList toStart;
+	/** Low-level client object, for freenet.client.async. Normally == this. */
+	final Object lowLevelClient;
 	
 	public synchronized FCPConnectionHandler getConnection() {
 		return currentConnection;
@@ -257,4 +268,7 @@ public class FCPClient {
 			reqs[i].start();
 	}
 	
+	public String toString() {
+		return super.toString()+":"+name;
+	}
 }
