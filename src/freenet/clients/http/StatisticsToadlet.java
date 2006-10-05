@@ -340,22 +340,46 @@ public class StatisticsToadlet extends Toadlet {
 				long input_rate = (rate[4] - rate[1]) / delta;
 				bandwidthList.addChild("li", "Output Rate:\u00a0" + SizeUtil.formatSize(output_rate) + "ps");
 				bandwidthList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate) + "ps");
+                nextTableCell = overviewTableRow.addChild("td");
 			}
-
-            nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
             // store size box
             if (advancedEnabled) {
                 HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
                 storeSizeInfobox.addChild("div", "class", "infobox-header", "Store size");
-                HTMLNode bandwidthInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
-                HTMLNode bandwidthList = bandwidthInfoboxContent.addChild("ul");
+                HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
+                HTMLNode storeSizeList = storeSizeInfoboxContent.addChild("ul");
                 long cachedKeys = node.getChkDatacache().keyCount();
                 long cachedSize = cachedKeys * 32 * 1024;
                 long storeKeys = node.getChkDatastore().keyCount();
                 long storeSize = storeKeys * 32 * 1024;
-                bandwidthList.addChild("li", "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + "\u00a0(~"+SizeUtil.formatSize(cachedSize)+")");
-                bandwidthList.addChild("li", "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + "\u00a0(~"+SizeUtil.formatSize(storeSize)+")");
+                storeSizeList.addChild("li", "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + "\u00a0(~"+SizeUtil.formatSize(cachedSize)+")");
+                storeSizeList.addChild("li", "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + "\u00a0(~"+SizeUtil.formatSize(storeSize)+")");
+            }
+            
+            nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+
+            // jvm stats box
+            if (advancedEnabled) {
+                HTMLNode jvmStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
+                jvmStatsInfobox.addChild("div", "class", "infobox-header", "JVM info");
+                HTMLNode jvmStatsInfoboxContent = jvmStatsInfobox.addChild("div", "class", "infobox-content");
+                HTMLNode jvmStatsList = jvmStatsInfoboxContent.addChild("ul");
+
+                Runtime rt = Runtime.getRuntime();
+                float freeMemory = (float) rt.freeMemory();
+                float totalMemory = (float) rt.totalMemory();
+                float maxMemory = (float) rt.maxMemory();
+
+                long usedJavaMem = (long)(totalMemory - freeMemory);
+                long allocatedJavaMem = (long)totalMemory;
+                long maxJavaMem = (long)maxMemory;
+                int threadCount = Thread.activeCount();
+
+                jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem));
+                jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem));
+                jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem));
+                jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
             }
 		}
 
