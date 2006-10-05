@@ -80,7 +80,10 @@ public class SortedVectorByNumber {
 	
 	public synchronized void add(IntNumberedItem grabber) {
 		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
-		if(x >= 0) throw new IllegalArgumentException(); // already exists
+		if(x >= 0) {
+			if(grabber != data[x])
+				throw new IllegalArgumentException(); // already exists
+		}
 		// insertion point
 		x = -x-1;
 		push(grabber, x);
