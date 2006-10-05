@@ -58,6 +58,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			if(grabArrays.length == 0) return null;
 			int x = rand.nextInt(grabArrays.length);
 			RemoveRandomWithClient rga = grabArrays[x];
+			Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getClient());
 			RandomGrabArrayItem item = rga.removeRandom();
 			if(rga.isEmpty() || (item == null)) {
 				Object client = rga.getClient();
