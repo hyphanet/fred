@@ -92,6 +92,8 @@ public class FCPConnectionHandler {
 	public void setClientName(String name) {
 		this.clientName = name;
 		client = server.registerClient(name, server.core, this);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Set client name: "+name);
 	}
 	
 	public String getClientName() {
