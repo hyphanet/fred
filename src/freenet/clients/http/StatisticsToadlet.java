@@ -349,12 +349,30 @@ public class StatisticsToadlet extends Toadlet {
                 storeSizeInfobox.addChild("div", "class", "infobox-header", "Store size");
                 HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
                 HTMLNode storeSizeList = storeSizeInfoboxContent.addChild("ul");
+                
+                long fix32kb = 32 * 1024;
+                
                 long cachedKeys = node.getChkDatacache().keyCount();
-                long cachedSize = cachedKeys * 32 * 1024;
+                long cachedSize = cachedKeys * fix32kb;
                 long storeKeys = node.getChkDatastore().keyCount();
-                long storeSize = storeKeys * 32 * 1024;
-                storeSizeList.addChild("li", "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + "\u00a0(~"+SizeUtil.formatSize(cachedSize)+")");
-                storeSizeList.addChild("li", "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + "\u00a0(~"+SizeUtil.formatSize(storeSize)+")");
+                long storeSize = storeKeys * fix32kb;
+                long overallKeys = cachedKeys + storeKeys;
+                long overallSize = cachedSize + storeSize;
+                
+                long maxCachedKeys = node.getChkDatacache().getMaxKeys();
+                long maxStoreKeys = node.getChkDatastore().getMaxKeys();
+                long maxOverallKeys = maxCachedKeys+maxStoreKeys;
+                long maxOverallSize = maxOverallKeys * fix32kb;
+                
+                storeSizeList.addChild("li", 
+                        "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
+                        "\u00a0(~" + SizeUtil.formatSize(cachedSize) + ")");
+                storeSizeList.addChild("li", 
+                        "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
+                        "\u00a0(~" + SizeUtil.formatSize(storeSize) + ")");
+                storeSizeList.addChild("li", 
+                        "Overall:\u00a0" + thousendPoint.format(overallKeys) + "/" + thousendPoint.format(maxOverallKeys) +
+                        "\u00a0(~" + SizeUtil.formatSize(overallSize) + "/" + SizeUtil.formatSize(maxOverallSize) + ")");
             }
             
             nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
