@@ -1872,6 +1872,13 @@ public class Node {
 			return null;
 		}
 	}
+    
+    public FreenetStore getChkDatacache() {
+        return chkDatacache;
+    }
+    public FreenetStore getChkDatastore() {
+        return chkDatastore;
+    }
 
 	long timeLastDumpedHits;
 	

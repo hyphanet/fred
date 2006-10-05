@@ -1,19 +1,14 @@
 package freenet.clients.http;
 
-import java.io.IOException;
-import java.net.URI;
-import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.io.*;
+import java.net.*;
+import java.text.*;
+import java.util.*;
 
-import freenet.client.HighLevelSimpleClient;
-import freenet.io.comm.IOStatisticCollector;
-import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.PeerNodeStatus;
-import freenet.support.HTMLNode;
-import freenet.support.SizeUtil;
-import freenet.support.TimeUtil;
+import freenet.client.*;
+import freenet.io.comm.*;
+import freenet.node.*;
+import freenet.support.*;
 
 public class StatisticsToadlet extends Toadlet {
 
@@ -124,6 +119,7 @@ public class StatisticsToadlet extends Toadlet {
 			DecimalFormat fix6p6 = new DecimalFormat("#####0.0#####");
 			DecimalFormat fix1p6sci = new DecimalFormat("0.######E0");
 			DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
+            NumberFormat thousendPoint = NumberFormat.getInstance();
 			double missRoutingDistance =  node.missRoutingDistance.currentValue();
 			double backedoffPercent =  node.backedoffPercent.currentValue();
 			String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
@@ -346,7 +342,21 @@ public class StatisticsToadlet extends Toadlet {
 				bandwidthList.addChild("li", "Input Rate:\u00a0" + SizeUtil.formatSize(input_rate) + "ps");
 			}
 
-			nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+            nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+
+            // store size box
+            if (advancedEnabled) {
+                HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
+                storeSizeInfobox.addChild("div", "class", "infobox-header", "Store size");
+                HTMLNode bandwidthInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
+                HTMLNode bandwidthList = bandwidthInfoboxContent.addChild("ul");
+                long cachedKeys = node.getChkDatacache().keyCount();
+                long cachedSize = cachedKeys * 32 * 1024;
+                long storeKeys = node.getChkDatastore().keyCount();
+                long storeSize = storeKeys * 32 * 1024;
+                bandwidthList.addChild("li", "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + "\u00a0(~"+SizeUtil.formatSize(cachedSize)+")");
+                bandwidthList.addChild("li", "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + "\u00a0(~"+SizeUtil.formatSize(storeSize)+")");
+            }
 		}
 
 		StringBuffer pageBuffer = new StringBuffer();
