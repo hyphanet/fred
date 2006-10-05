@@ -83,6 +83,7 @@ public class SortedVectorByNumber {
 		if(x >= 0) {
 			if(grabber != data[x])
 				throw new IllegalArgumentException(); // already exists
+			else return;
 		}
 		// insertion point
 		x = -x-1;
