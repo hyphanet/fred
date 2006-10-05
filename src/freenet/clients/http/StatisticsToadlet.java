@@ -361,15 +361,32 @@ public class StatisticsToadlet extends Toadlet {
                 
                 long maxCachedKeys = node.getChkDatacache().getMaxKeys();
                 long maxStoreKeys = node.getChkDatastore().getMaxKeys();
-                long maxOverallKeys = maxCachedKeys+maxStoreKeys;
+                long maxOverallKeys = maxCachedKeys + maxStoreKeys;
                 long maxOverallSize = maxOverallKeys * fix32kb;
+                
+                long cachedStoreHits = node.getChkDatacache().hits();
+                long cachedStoreMisses = node.getChkDatacache().misses();
+                long storeHits = node.getChkDatastore().hits();
+                long storeMisses = node.getChkDatastore().misses();
                 
                 storeSizeList.addChild("li", 
                         "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
                         "\u00a0(~" + SizeUtil.formatSize(cachedSize) + ")");
+
+                storeSizeList.addChild("li", 
+                        "Cache hits:\u00a0" + thousendPoint.format(cachedStoreHits) + 
+                        "\u00a0/\u00a0"+thousendPoint.format(cachedStoreHits+cachedStoreMisses) +
+                        "\u00a0(" + ((cachedStoreHits*100) / (cachedStoreHits+cachedStoreMisses)) + "%)");
+                
                 storeSizeList.addChild("li", 
                         "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
                         "\u00a0(~" + SizeUtil.formatSize(storeSize) + ")");
+                
+                storeSizeList.addChild("li", 
+                        "Store hits:\u00a0" + thousendPoint.format(storeHits) + 
+                        "\u00a0/\u00a0"+thousendPoint.format(storeHits+storeMisses) +
+                        "\u00a0(" + ((storeHits*100) / (storeHits+storeMisses)) + "%)");
+
                 storeSizeList.addChild("li", 
                         "Overall:\u00a0" + thousendPoint.format(overallKeys) + "/" + thousendPoint.format(maxOverallKeys) +
                         "\u00a0(~" + SizeUtil.formatSize(overallSize) + "/" + SizeUtil.formatSize(maxOverallSize) + ")");

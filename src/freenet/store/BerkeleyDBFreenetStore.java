@@ -66,11 +66,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final TupleBinding longTupleBinding;
 	private final File fixSecondaryFile;
 	
-	private long chkBlocksInStore;
+	private long chkBlocksInStore = 0;
 	private final Object chkBlocksInStoreLock = new Object();
 	private long maxChkBlocks;
-	private long hits;
-	private long misses;
+	private long hits = 0;
+	private long misses = 0;
 	private final Database chkDB;
 	private final SecondaryDatabase chkDB_accessTime;
 	private final SecondaryDatabase chkDB_blockNum;
