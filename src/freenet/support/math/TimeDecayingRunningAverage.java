@@ -138,8 +138,9 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     }
 
 	public void report(double d) {
-		long now = System.currentTimeMillis();
 		synchronized(this) {
+			// Must synchronize first to achieve serialization.
+			long now = System.currentTimeMillis();
 			if(d < minReport) {
 				Logger.error(this, "Impossible: "+d+" on "+this, new Exception("error"));
 				return;
