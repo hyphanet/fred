@@ -160,7 +160,6 @@ import java.util.*;
 					}
 				}
 			}
-			x++;
 			data = buffer.toString();
 			if(url && s.length() > x && s.charAt(x) == ')')
 				x++;
