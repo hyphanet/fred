@@ -164,7 +164,7 @@ import java.util.*;
 			data = buffer.toString();
 			if(url && s.length() > x && s.charAt(x) == ')')
 				x++;
-			if(x < (s.length()-1))
+			if(x < (s.length()))
 				suffix = s.substring(x);
 			else
 				suffix = "";
