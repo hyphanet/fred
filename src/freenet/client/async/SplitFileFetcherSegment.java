@@ -387,7 +387,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 				if(checkBlocks[i].getKeyType().equals("USK"))
 					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
 				if(checkBlockStatus[i] != null) {
-					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+dataBlockStatus[i]);
+					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+checkBlockStatus[i]);
 				} else checkBlockStatus[i] =
 					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null);
 			}
