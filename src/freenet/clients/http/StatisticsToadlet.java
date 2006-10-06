@@ -350,7 +350,7 @@ public class StatisticsToadlet extends Toadlet {
                 HTMLNode storeSizeInfoboxContent = storeSizeInfobox.addChild("div", "class", "infobox-content");
                 HTMLNode storeSizeList = storeSizeInfoboxContent.addChild("ul");
                 
-                long fix32kb = 32 * 1024;
+                final long fix32kb = 32 * 1024;
                 
                 long cachedKeys = node.getChkDatacache().keyCount();
                 long cachedSize = cachedKeys * fix32kb;
@@ -366,8 +366,11 @@ public class StatisticsToadlet extends Toadlet {
                 
                 long cachedStoreHits = node.getChkDatacache().hits();
                 long cachedStoreMisses = node.getChkDatacache().misses();
+                long cacheAccesses = cachedStoreHits + cachedStoreMisses;
                 long storeHits = node.getChkDatastore().hits();
                 long storeMisses = node.getChkDatastore().misses();
+                long storeAccesses = storeHits + storeMisses;
+                long overallAccesses = storeAccesses + cacheAccesses;
                 
                 storeSizeList.addChild("li", 
                         "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
@@ -375,8 +378,8 @@ public class StatisticsToadlet extends Toadlet {
 
                 storeSizeList.addChild("li", 
                         "Cache hits:\u00a0" + thousendPoint.format(cachedStoreHits) + 
-                        "\u00a0/\u00a0"+thousendPoint.format(cachedStoreHits+cachedStoreMisses) +
-                        "\u00a0(" + ((cachedStoreHits*100) / (cachedStoreHits+cachedStoreMisses)) + "%)");
+                        "\u00a0/\u00a0"+thousendPoint.format(cacheAccesses) +
+                        "\u00a0(" + ((cachedStoreHits*100) / (cacheAccesses)) + "%)");
                 
                 storeSizeList.addChild("li", 
                         "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
@@ -384,12 +387,19 @@ public class StatisticsToadlet extends Toadlet {
                 
                 storeSizeList.addChild("li", 
                         "Store hits:\u00a0" + thousendPoint.format(storeHits) + 
-                        "\u00a0/\u00a0"+thousendPoint.format(storeHits+storeMisses) +
-                        "\u00a0(" + ((storeHits*100) / (storeHits+storeMisses)) + "%)");
+                        "\u00a0/\u00a0"+thousendPoint.format(storeAccesses) +
+                        "\u00a0(" + ((storeHits*100) / (storeAccesses)) + "%)");
 
                 storeSizeList.addChild("li", 
-                        "Overall:\u00a0" + thousendPoint.format(overallKeys) + "/" + thousendPoint.format(maxOverallKeys) +
+                        "Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/s");
+
+                storeSizeList.addChild("li", 
+                        "Overall size:\u00a0" + thousendPoint.format(overallKeys) + "/" + thousendPoint.format(maxOverallKeys) +
                         "\u00a0(~" + SizeUtil.formatSize(overallSize) + "/" + SizeUtil.formatSize(maxOverallSize) + ")");
+
+                // FIXME: DEBUG
+                storeSizeList.addChild("li", 
+                        "Debug(max_C/S):\u00a0" + thousendPoint.format(maxCachedKeys) + "/" + thousendPoint.format(maxStoreKeys));
             }
             
             nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
@@ -410,10 +420,12 @@ public class StatisticsToadlet extends Toadlet {
                 long allocatedJavaMem = (long)totalMemory;
                 long maxJavaMem = (long)maxMemory;
                 int threadCount = Thread.activeCount();
+                int availableCpus = rt.availableProcessors();
 
                 jvmStatsList.addChild("li", "Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem));
                 jvmStatsList.addChild("li", "Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem));
                 jvmStatsList.addChild("li", "Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem));
+                jvmStatsList.addChild("li", "Available CPUs:\u00a0" + availableCpus);
                 jvmStatsList.addChild("li", "Running threads:\u00a0" + thousendPoint.format(threadCount));
             }
 		}
