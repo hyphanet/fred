@@ -582,8 +582,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		File dbDir = new File(dir,"database");
 		if(dbDir.exists()) {
 			File[] files = dbDir.listFiles();
-			for(int i=0;i<files.length;i++)
-				files[i].delete();
+			for(int i=0;i<files.length;i++) {
+				if(!files[i].delete())
+					System.err.println("Failed to delete "+files[i]);
+			}
 		} else
 			dbDir.mkdir();
 		
