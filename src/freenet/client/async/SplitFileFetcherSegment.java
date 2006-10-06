@@ -405,6 +405,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			// Invalidates the whole splitfile
 			fail(new FetchException(FetchException.INVALID_URI, "Invalid URI in splitfile"));
 		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t+" scheduling "+this, t);
 			fail(new FetchException(FetchException.INVALID_URI, t));
 		}
 	}
