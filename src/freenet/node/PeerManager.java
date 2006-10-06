@@ -427,39 +427,6 @@ public class PeerManager {
     	return closestDist < nodeDist;
     }
     
-    /**
-     * Find the peer which is closest to the target location
-     */
-    public PeerNode closestPeer(double loc) {
-        PeerNode[] peers;
-        synchronized (this) {
-        	peers = connectedPeers;
-		}
-        double bestDiff = 1.0;
-        PeerNode best = null;
-        for(int i=0;i<peers.length;i++) {
-            PeerNode p = peers[i];
-            if(!p.isRoutable()) continue;
-            double diff = distance(p, loc);
-            if(diff < bestDiff) {
-                best = p;
-                bestDiff = diff;
-            }
-        }
-        if(best == null) {
-        	// Ignore backoff; backoff is an advisory mechanism for load BALANCING, not for load LIMITING
-            for(int i=0;i<peers.length;i++) {
-                PeerNode p = peers[i];
-                double diff = distance(p, loc);
-                if(diff < bestDiff) {
-                    best = p;
-                    bestDiff = diff;
-                }
-            }
-        }
-        return best;
-    }
-    
     static double distance(PeerNode p, double loc) {
     	double d = distance(p.getLocation().getValue(), loc);
     	return d;
