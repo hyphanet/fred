@@ -92,6 +92,10 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 			this.recursionLevel = 0;
 		}
 		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher);
+		for(int i=0;i<dataBlocks.length;i++)
+			if(dataBlocks[i] == null) throw new NullPointerException("Null: data block "+i);
+		for(int i=0;i<checkBlocks.length;i++)
+			if(checkBlocks[i] == null) throw new NullPointerException("Null: data block "+i);
 	}
 
 	public synchronized boolean isFinished() {
@@ -362,26 +366,41 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 	public void schedule() {
 		try {
 			for(int i=0;i<dataBlocks.length;i++) {
+				if(dataBlocks[i] == null) {
+					// Already fetched?
+					continue;
+				}
 				// FIXME maybe within a non-FECced splitfile at least?
 				if(dataBlocks[i].getKeyType().equals("USK"))
 					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
-				dataBlockStatus[i] =
+				if(dataBlockStatus[i] != null) {
+					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+dataBlockStatus[i]);
+				} else dataBlockStatus[i] =
 					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(i), true, null);
 			}
 			for(int i=0;i<checkBlocks.length;i++) {
+				if(checkBlocks[i] == null) {
+					// Already fetched?
+					continue;
+				}
 				// FIXME maybe within a non-FECced splitfile at least?
 				if(checkBlocks[i].getKeyType().equals("USK"))
 					fail(new FetchException(FetchException.INVALID_METADATA, "Cannot have USKs within a splitfile!"));
-				checkBlockStatus[i] =
-					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null);
+				if(checkBlockStatus[i] != null) {
+					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+dataBlockStatus[i]);
+				} else checkBlockStatus[i] =
+					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null);
 			}
 			synchronized(this) {
 				createdFetchers = true;
 			}
-			for(int i=0;i<dataBlocks.length;i++)
-				dataBlockStatus[i].schedule();
+			for(int i=0;i<dataBlocks.length;i++) {
+				if(dataBlockStatus[i] != null)
+					dataBlockStatus[i].schedule();
+			}
 			for(int i=0;i<checkBlocks.length;i++)
-				checkBlockStatus[i].schedule();
+				if(checkBlockStatus[i] != null)
+					checkBlockStatus[i].schedule();
 		} catch (MalformedURLException e) {
 			// Invalidates the whole splitfile
 			fail(new FetchException(FetchException.INVALID_URI, "Invalid URI in splitfile"));
