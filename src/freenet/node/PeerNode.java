@@ -2395,20 +2395,20 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(currentTracker == null) {
 				if(unverifiedTracker != null) {
 					if(unverifiedTracker.isDeprecated())
-						Logger.error(this, "Connected but primary tracker is null and unverified is deprecated ! "+unverifiedTracker+" for "+this);
-					else
-						Logger.minor(this, "Connected but primary tracker is null, but unverified = "+unverifiedTracker+" for "+this);
+						Logger.error(this, "Connected but primary tracker is null and unverified is deprecated ! "+unverifiedTracker+" for "+this, new Exception("debug"));
+					else if(logMINOR)
+						Logger.minor(this, "Connected but primary tracker is null, but unverified = "+unverifiedTracker+" for "+this, new Exception("debug"));
 				} else
-					Logger.error(this, "Connected but both primary and unverified are null on "+this);
+					Logger.error(this, "Connected but both primary and unverified are null on "+this, new Exception("debug"));
 			} else if(currentTracker.isDeprecated()) {
 				if(unverifiedTracker != null) {
 					if(unverifiedTracker.isDeprecated()) {
-						Logger.error(this, "Connected but primary tracker is deprecated, unverified is deprecated: primary="+currentTracker+" unverified: "+unverifiedTracker+" for "+this);
-					} else
-						Logger.minor(this, "Connected, primary tracker deprecated, unverified is valid, "+unverifiedTracker+" for "+this);
+						Logger.error(this, "Connected but primary tracker is deprecated, unverified is deprecated: primary="+currentTracker+" unverified: "+unverifiedTracker+" for "+this, new Exception("debug"));
+					} else if(logMINOR)
+						Logger.minor(this, "Connected, primary tracker deprecated, unverified is valid, "+unverifiedTracker+" for "+this, new Exception("debug"));
 				} else {
 					// !!!!!!!
-					Logger.error(this, "Connected but primary tracker and unverified tracker are null on "+this);
+					Logger.error(this, "Connected but primary tracker and unverified tracker are null on "+this, new Exception("debug"));
 					isConnected = false;
 				}
 			}
