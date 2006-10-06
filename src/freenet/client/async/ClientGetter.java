@@ -175,7 +175,7 @@ public class ClientGetter extends BaseClientGetter {
 				currentState = newState;
 				Logger.minor(this, "Transition: "+oldState+" -> "+newState);
 			} else
-				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState);
+				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState);
 		}
 		// TODO Auto-generated method stub
 		
