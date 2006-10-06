@@ -1420,6 +1420,11 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 				currentTracker = null;
 			} // else it's a rekey
 			if(unverified) {
+				if(unverifiedTracker != null) {
+					// Keep the old unverified tracker if possible.
+					if(previousTracker == null)
+						previousTracker = unverifiedTracker;
+				}
 				unverifiedTracker = newTracker;
 				ctx = null;
 			} else {
