@@ -359,9 +359,9 @@ public class StatisticsToadlet extends Toadlet {
                 long overallKeys = cachedKeys + storeKeys;
                 long overallSize = cachedSize + storeSize;
                 
-                long maxCachedKeys = node.getChkDatacache().getMaxKeys();
-                long maxStoreKeys = node.getChkDatastore().getMaxKeys();
-                long maxOverallKeys = maxCachedKeys + maxStoreKeys;
+//                long maxCachedKeys = node.getChkDatacache().getMaxKeys();
+//                long maxStoreKeys = node.getChkDatastore().getMaxKeys();
+                long maxOverallKeys = node.getMaxTotalKeys();
                 long maxOverallSize = maxOverallKeys * fix32kb;
                 
                 long cachedStoreHits = node.getChkDatacache().hits();
@@ -374,16 +374,20 @@ public class StatisticsToadlet extends Toadlet {
                 
                 storeSizeList.addChild("li", 
                         "Cached keys:\u00a0" + thousendPoint.format(cachedKeys) + 
-                        "\u00a0(~" + SizeUtil.formatSize(cachedSize) + ")");
+                        "\u00a0(" + SizeUtil.formatSize(cachedSize) + ")");
+
+                storeSizeList.addChild("li", 
+                        "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
+                        "\u00a0(" + SizeUtil.formatSize(storeSize) + ")");
+
+                storeSizeList.addChild("li", 
+                        "Overall size:\u00a0" + thousendPoint.format(overallKeys) + "/" + thousendPoint.format(maxOverallKeys) +
+                        "\u00a0(" + SizeUtil.formatSize(overallSize) + "/" + SizeUtil.formatSize(maxOverallSize) + ")");
 
                 storeSizeList.addChild("li", 
                         "Cache hits:\u00a0" + thousendPoint.format(cachedStoreHits) + 
                         "\u00a0/\u00a0"+thousendPoint.format(cacheAccesses) +
                         "\u00a0(" + ((cachedStoreHits*100) / (cacheAccesses)) + "%)");
-                
-                storeSizeList.addChild("li", 
-                        "Stored keys:\u00a0" + thousendPoint.format(storeKeys) + 
-                        "\u00a0(~" + SizeUtil.formatSize(storeSize) + ")");
                 
                 storeSizeList.addChild("li", 
                         "Store hits:\u00a0" + thousendPoint.format(storeHits) + 
@@ -392,14 +396,6 @@ public class StatisticsToadlet extends Toadlet {
 
                 storeSizeList.addChild("li", 
                         "Avg. access rate:\u00a0" + thousendPoint.format(overallAccesses/nodeUptimeSeconds) + "/s");
-
-                storeSizeList.addChild("li", 
-                        "Overall size:\u00a0" + thousendPoint.format(overallKeys) + "/" + thousendPoint.format(maxOverallKeys) +
-                        "\u00a0(~" + SizeUtil.formatSize(overallSize) + "/" + SizeUtil.formatSize(maxOverallSize) + ")");
-
-                // FIXME: DEBUG
-                storeSizeList.addChild("li", 
-                        "Debug(max_C/S):\u00a0" + thousendPoint.format(maxCachedKeys) + "/" + thousendPoint.format(maxStoreKeys));
             }
             
             nextTableCell = advancedEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");

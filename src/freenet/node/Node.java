@@ -1880,6 +1880,9 @@ public class Node {
     public FreenetStore getChkDatastore() {
         return chkDatastore;
     }
+    public long getMaxTotalKeys() {
+        return maxTotalKeys;
+    }
 
 	long timeLastDumpedHits;
 	
