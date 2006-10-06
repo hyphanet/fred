@@ -1439,7 +1439,8 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(oldPrev != null) oldPrev.completelyDeprecated(newTracker);
 		if(oldCur != null) oldCur.completelyDeprecated(newTracker);
 		if(prev != null) prev.deprecated();
-		Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
+		Logger.normal(this, "Completed handshake with "+this+" on "+replyTo+" - current: "+currentTracker+
+				" old: "+previousTracker+" unverified: "+unverifiedTracker+" bootID: "+thisBootID+" getName(): "+getName());
 		
 		// Received a packet
 		try {
