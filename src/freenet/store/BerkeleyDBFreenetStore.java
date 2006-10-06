@@ -107,19 +107,27 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		this.maxChkBlocks=maxChkBlocks;
 		
-		// Initialize environment
-		EnvironmentConfig envConfig = new EnvironmentConfig();
-		envConfig.setAllowCreate(true);
-		envConfig.setTransactional(true);
-		envConfig.setTxnWriteNoSync(true);
 		File dir = new File(storeDir);
 		if(!dir.exists())
 			dir.mkdir();
 		File dbDir = new File(dir,"database");
 		if(!dbDir.exists())
 			dbDir.mkdir();
-
-		environment = new Environment(dbDir, envConfig);
+		
+		Environment env = null;
+		// Initialize environment
+		try {
+			EnvironmentConfig envConfig = new EnvironmentConfig();
+			envConfig.setAllowCreate(true);
+			envConfig.setTransactional(true);
+			envConfig.setTxnWriteNoSync(true);
+			env = new Environment(dbDir, envConfig);
+		} catch (DatabaseException e) {
+			if(env != null)
+				env.close();
+			throw e;
+		}
+		environment = env;
 		
 		// Initialize CHK database
 		DatabaseConfig dbConfig = new DatabaseConfig();
