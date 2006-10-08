@@ -168,7 +168,8 @@ public abstract class Toadlet {
 		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
 		infoboxContent.addChild("#", message);
 		infoboxContent.addChild("br");
-		infoboxContent.addChild("a", "href", ".", "Return to Peers page.");
+		infoboxContent.addChild("a", "href", ".", "Return to the previous page.");
+		infoboxContent.addChild("a", "href", "/", "Return to the main page.");
 		
 		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
@@ -184,7 +185,8 @@ public abstract class Toadlet {
 		HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
 		infoboxContent.addChild(message);
 		infoboxContent.addChild("br");
-		infoboxContent.addChild("a", "href", ".", "Return to Peers page.");
+		infoboxContent.addChild("a", "href", ".", "Return to the previous page.");
+		infoboxContent.addChild("a", "href", "/", "Return to the main page.");
 		
 		writeReply(ctx, code, "text/html; charset=UTF-8", desc, pageNode.generate());
 	}
