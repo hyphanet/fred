@@ -203,7 +203,7 @@ class SingleFileInserter implements ClientPutState {
 			if(data.size() < blockSize) {
 				// Just insert it
 				ClientPutState bi =
-					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true);
+					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true);
 				cb.onTransition(this, bi);
 				bi.schedule();
 				cb.onBlockSetFinished(this);
@@ -235,13 +235,15 @@ class SingleFileInserter implements ClientPutState {
 					Logger.error(this, "Caught "+e, e);
 					throw new InserterException(InserterException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
 				}
-				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true);
+				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false);
 				mcb.addURIGenerator(metaPutter);
 				mcb.add(dataPutter);
 				cb.onTransition(this, mcb);
 				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
 				mcb.arm();
 				dataPutter.schedule();
+				if(metaPutter instanceof SingleBlockInserter)
+					((SingleBlockInserter)metaPutter).encode();
 				metaPutter.schedule();
 				cb.onBlockSetFinished(this);
 			}
@@ -279,7 +281,7 @@ class SingleFileInserter implements ClientPutState {
 
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InserterContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
-			boolean addToParent) throws InserterException {
+			boolean addToParent, boolean encodeCHK) throws InserterException {
 		
 		uri.checkInsertURI(); // will throw an exception if needed
 		
@@ -294,7 +296,8 @@ class SingleFileInserter implements ClientPutState {
 			SingleBlockInserter sbi = 
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 						getCHKOnly, addToParent, false, this.token);
-			cb.onEncode(sbi.getBlock().getClientKey(), this);
+			if(encodeCHK)
+				cb.onEncode(sbi.getBlock().getClientKey(), this);
 			return sbi;
 		}
 		
