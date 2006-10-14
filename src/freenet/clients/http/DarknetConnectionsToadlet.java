@@ -602,7 +602,6 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				HTMLNode node = new HTMLNode("div");
 				node.addChild("#", "Unable to verify the signature of the given reference ("+e1+").");
 				node.addChild("br");
-				HTMLNode pre = node.addChild("pre", fs.toOrderedString());
 				this.sendErrorPage(ctx, 200, "Failed To Add Node", node);
 				return;
 			}
@@ -762,16 +761,20 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
-		} else if (request.isPartSet("remove") || (request.isPartSet("submit") && request.getPartAsString("action",25).equals("remove"))) {
-			//int hashcode = Integer.decode(request.getParam("node")).intValue();
-			
+		} else if (request.isPartSet("remove") || (request.isPartSet("submit") && request.getPartAsString("action",25).equals("remove"))) {			
 			if(logMINOR) Logger.minor(this, "Remove node");
 			
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					this.node.removeDarknetConnection(peerNodes[i]);
-					if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
+				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {	
+					if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) || (peerNodes[i].peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED)){
+						this.node.removeDarknetConnection(peerNodes[i]);
+						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
+					}else{
+						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn)");
+						this.sendErrorPage(ctx, 401, "Error while removing the node", "Sorry, you can't remove nodes until they have reached one week of inactivity.");
+						return; // FIXME: maybe it breaks multi-node removing
+					}				
 				} else {
 					if(logMINOR) Logger.minor(this, "Part not set: node_"+peerNodes[i].hashCode());
 				}
