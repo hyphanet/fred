@@ -19,6 +19,8 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
+import freenet.support.URLDecoder;
+import freenet.support.URLEncodedFormatException;
 import freenet.client.InserterException;
 
 /**
@@ -214,6 +216,7 @@ public class FreenetURI implements Cloneable{
 		if (URI == null) {
 			throw new MalformedURLException("No URI specified");
 		}
+		
 		// check scheme
 		int colon = URI.indexOf(':');
 		if ((colon != -1)
@@ -239,6 +242,15 @@ public class FreenetURI implements Cloneable{
 			if (s != null)
 				sv.addElement(s);
 			URI = URI.substring(0, slash2);
+		}
+		
+		int percent = URI.indexOf('%');
+		int slash = URI.indexOf('/');
+		if((percent>-1) && ((percent<slash) || (slash<0))){ /* likely to be a copy/pasted url from a browser */
+			try{
+				URI=URLDecoder.decode(URI);
+			}catch(URLEncodedFormatException e){
+			}
 		}
 		
 		// sv is *backwards*
