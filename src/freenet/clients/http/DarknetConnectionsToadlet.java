@@ -767,12 +767,21 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {	
-					if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) || (peerNodes[i].peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED)){
+					if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) ||  (peerNodes[i].peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED)){
 						this.node.removeDarknetConnection(peerNodes[i]);
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{
-						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn)");
-						this.sendErrorPage(ctx, 401, "Error while removing the node", "Sorry, you can't remove nodes until they have reached one week of inactivity.");
+						if(logMINOR) Logger.minor(this, "Refusing to remove : node_"+peerNodes[i].hashCode()+" (trying to prevent network churn) : let's display the warning message.");
+						HTMLNode pageNode = ctx.getPageMaker().getPageNode("Please confirm");
+						HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Node removal"));
+						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+						content.addChild("p").addChild("#", "Are you sure you wish to remove "+peerNodes[i].getName()+" ? Before it has at least one week downtime, it's not recommended to do so.");
+						HTMLNode removeForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/darknet/", "post" });
+						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
+						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", "Remove it!" });
+						writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 						return; // FIXME: maybe it breaks multi-node removing
 					}				
 				} else {
