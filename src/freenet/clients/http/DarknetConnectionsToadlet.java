@@ -339,6 +339,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "A private note concerning this peer", "border-bottom: 1px dotted; cursor: help;" }, "Private Note");
 
 				if(advancedEnabled) {
+					peerTableHeaderRow.addChild("th", "%\u00a0Time Routable");
 					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out)");
 				}
 				
@@ -413,8 +414,12 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					// private darknet node comment note column
 					peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", peerNodeStatus.getPrivateDarknetCommentNote() });
 
-					if(advancedEnabled)
+					if(advancedEnabled) {
+						// percent of time connected column
+						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", fix1.format(peerNodeStatus.getPercentTimeRoutableConnection()));
+						// total traffic column
 						peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes()));
+					}
 					
 					if (path.endsWith("displaymessagetypes.html")) {
 						HTMLNode messageCountRow = peerTable.addChild("tr", "class", "message-status");

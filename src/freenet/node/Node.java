@@ -448,6 +448,10 @@ public class Node {
 	private long nextNodeIOStatsUpdateTime = -1;
 	/** Node I/O stats update interval (milliseconds) */
 	private static final long nodeIOStatsUpdateInterval = 2000;
+	/** Next time to update routableConnectionStats */
+	private long nextRoutableConnectionStatsUpdateTime = -1;
+	/** routableConnectionStats update interval (milliseconds) */
+	private static final long routableConnectionStatsUpdateInterval = 7 * 1000;  // 7 seconds
 	
 	// The version we were before we restarted.
 	public int lastVersion;
@@ -3091,6 +3095,22 @@ public class Node {
 						// Ignore
 					}
 			}
+		}
+	}
+
+	/**
+	 * Update hadRoutableConnectionCount/routableConnectionCheckCount on peers if the timer has expired
+	 */
+	public void maybeUpdatePeerNodeRoutableConnectionStats(long now) {
+		if(now > nextRoutableConnectionStatsUpdateTime) {
+		 	if(peers != null && -1 != nextRoutableConnectionStatsUpdateTime) {
+				PeerNode[] peerList = peers.myPeers;
+				for(int i=0;i<peerList.length;i++) {
+					PeerNode pn = peerList[i];
+					pn.checkRoutableConnectionStatus();
+				}
+		 	}
+			nextRoutableConnectionStatsUpdateTime = now + routableConnectionStatsUpdateInterval;
 		}
 	}
 }

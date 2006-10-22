@@ -307,6 +307,12 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     /** Total low-level output bytes */
     private long totalBytesOut;
     
+    /** Times had routable connection when checked */
+    private long hadRoutableConnectionCount;
+    
+    /** Times checked for routable connection */
+    private long routableConnectionCheckCount;
+    
     private static boolean logMINOR;
     
     /**
@@ -571,6 +577,20 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
             	isListenOnly = Fields.stringToBool(metadata.get("isListenOnly"), false);
             	isBurstOnly = Fields.stringToBool(metadata.get("isBurstOnly"), false);
             	allowLocalAddresses = Fields.stringToBool(metadata.get("allowLocalAddresses"), false);
+            	String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
+            	if(tempHadRoutableConnectionCountString != null) {
+            		long tempHadRoutableConnectionCount = Long.parseLong(tempHadRoutableConnectionCountString);
+            		hadRoutableConnectionCount = tempHadRoutableConnectionCount;
+            	} else {
+            		hadRoutableConnectionCount = 0;
+            	}
+            	String tempRoutableConnectionCheckCountString = metadata.get("routableConnectionCheckCount");
+            	if(tempRoutableConnectionCheckCountString != null) {
+            		long tempRoutableConnectionCheckCount = Long.parseLong(tempRoutableConnectionCheckCountString);
+            		routableConnectionCheckCount = tempRoutableConnectionCheckCount;
+            	} else {
+            		routableConnectionCheckCount = 0;
+            	}
         	}
         } else {
             neverConnected = true;
@@ -1867,6 +1887,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     		fs.put("isBurstOnly", "true");
     	if(allowLocalAddresses)
     		fs.put("allowLocalAddresses", "true");
+    	if(hadRoutableConnectionCount > 0)
+    		fs.put("hadRoutableConnectionCount", Long.toString(hadRoutableConnectionCount));
+    	if(routableConnectionCheckCount > 0)
+    		fs.put("routableConnectionCheckCount", Long.toString(routableConnectionCheckCount));
     	return fs;
 	}
 
@@ -1889,6 +1913,10 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.put("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
 			fs.put("routingBackoff", Long.toString((Math.max(routingBackedOffUntil - now, 0))));
 			fs.put("routingBackoffLength", Integer.toString(routingBackoffLength));
+			fs.put("overloadProbability", Double.toString(getPRejected() * 100));
+			fs.put("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
+			fs.put("totalBytesIn", Long.toString(totalBytesIn));
+			fs.put("totalBytesOut", Long.toString(totalBytesOut));
 		}
 		fs.put("status", getPeerNodeStatusString());
 		return fs;
@@ -2937,5 +2965,29 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 			allowLocalAddresses = setting;
 		}
         node.peers.writePeers();
+	}
+	
+	public void checkRoutableConnectionStatus() {
+		synchronized(this) {
+			if(isRoutable()) {
+				hadRoutableConnectionCount += 1;
+			}
+			routableConnectionCheckCount += 1;
+			// prevent the average from moving too slowly by capping the checkcount to 200000,
+			// which, at 7 seconds between counts, works out to about 2 weeks.  This also prevents
+			// knowing how long we've had a particular peer long term.
+			if(routableConnectionCheckCount >= 200000) {
+				// divide both sides by the same amount to keep the same ratio
+				hadRoutableConnectionCount = hadRoutableConnectionCount / 2;
+				routableConnectionCheckCount = routableConnectionCheckCount / 2;
+			}
+		}
+	}
+	
+	public synchronized double getPercentTimeRoutableConnection() {
+		if(hadRoutableConnectionCount == 0) {
+			return 0.0;
+		}
+		return ((double) hadRoutableConnectionCount) / routableConnectionCheckCount;
 	}
 }

@@ -81,6 +81,8 @@ public class PeerNodeStatus {
 	private long totalBytesIn;
 	
 	private long totalBytesOut;
+	
+	private double percentTimeRoutableConnection;
 
 	public PeerNodeStatus(PeerNode peerNode) {
 		this.name = peerNode.getName();
@@ -115,6 +117,7 @@ public class PeerNodeStatus {
 		this.privateDarknetCommentNote = peerNode.getPrivateDarknetCommentNote();
 		this.totalBytesIn = peerNode.getTotalInputBytes();
 		this.totalBytesOut = peerNode.getTotalOutputBytes();
+		this.percentTimeRoutableConnection = peerNode.getPercentTimeRoutableConnection();
 	}
 
 	/**
@@ -331,5 +334,9 @@ public class PeerNodeStatus {
 	
 	public long getTotalOutputBytes() {
 		return totalBytesOut;
+	}
+	
+	public double getPercentTimeRoutableConnection() {
+		return percentTimeRoutableConnection;
 	}
 }

@@ -155,6 +155,7 @@ public class PacketSender implements Runnable, Ticker {
         node.maybeUpdateOldestNeverConnectedPeerAge(now);
         node.maybeUpdatePeerManagerUserAlertStats(now);
         node.maybeUpdateNodeIOStats(now);
+        node.maybeUpdatePeerNodeRoutableConnectionStats(now);
         long nextActionTime = Long.MAX_VALUE;
         long oldTempNow = now;
         for(int i=0;i<nodes.length;i++) {
