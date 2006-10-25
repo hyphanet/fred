@@ -21,13 +21,13 @@ public class PeerManagerUserAlert implements UserAlert {
 	static final int MAX_CONN_ALERT_THRESHOLD = 30;
 	
 	/** How many disconnected peers we can have without getting alerted about too many */
-	static final int MAX_DISCONN_PEER_ALERT_THRESHOLD = 30;
+	static final int MAX_DISCONN_PEER_ALERT_THRESHOLD = 50;
 	
 	/** How many never-connected peers can we have without getting alerted about too many */
 	static final int MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD = 5;
 	
 	/** How many peers we can have without getting alerted about too many */
-	static final int MAX_PEER_ALERT_THRESHOLD = 50;
+	static final int MAX_PEER_ALERT_THRESHOLD = 100;
 	
 	/** How high can oldestNeverConnectedPeerAge be before we alert (in milliseconds)*/
 	static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
@@ -67,45 +67,100 @@ public class PeerManagerUserAlert implements UserAlert {
 		else throw new IllegalArgumentException("Not valid");
 	}
 	
+	static final String NO_PEERS_START = 
+		"This node has no peers to connect to, therefore it will not " +
+		"be able to function normally. Ideally you should connect to peers run by people you know " +
+		"(if you are paranoid, then people you trust; if not, then at least people you've talked to)";
+	static final String NO_PEERS_LOG_ONTO_IRC = 
+		" log on to irc.freenode.net channel #freenet-refs and ask around for somebody to connect to";
+	static final String NO_PEERS_TESTNET = NO_PEERS_START +
+		", but since this is a testnet node, we suggest that you " + NO_PEERS_LOG_ONTO_IRC + ".";
+	static final String NO_PEERS_DARKNET = NO_PEERS_START +
+		". You could " + NO_PEERS_LOG_ONTO_IRC + ", but remember that you are vulnerable to " +
+		"those you are directly connected to. (This is especially true in this early alpha of Freenet 0.7...)\n" +
+		"BE SURE THAT THE OTHER PERSON HAS ADDED YOUR REFERENCE, TOO, AS ONE-WAY CONNECTIONS WON'T WORK!";
+	
+	static final String NO_CONNS = 
+		"This node has not been able to connect to any other nodes so far; it will not be able to function normally. " +
+		"Hopefully some of your peers will connect soon; if not, try to get some more peers.";
+	
+	static final String ONE_CONN = 
+		"This node only has one connection. Performance will be impaired, and you have no anonymity nor even plausible deniability if that one person is malicious. " +
+		"Your node is attached to the network like a \u201cleaf\u201d and does not contribute to the network's health. " +
+		"Try to get at least 3 connected peers at any given time.";
+	
+	static final String TWO_CONNS =
+		"This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. " +
+		"Your node is embedded like a 'chain' in the network and does not contribute (much) to the network's health. " +
+		"Try to get at least 3 connected peers at any given time.";
+	
+	static final String NEVER_CONN_START = 
+		"Many of this node's peers have never connected even once: {NEVER_CONN}. You should not add peers unless you know that they have also added ";
+	static final String NEVER_CONN_END = ". Otherwise they will not connect. " +
+		"Also please note that adding large numbers of connections automatically is discouraged as it does not produce a small-world network, and therefore hurts routing.";
+	static final String NEVER_CONN_MIDDLE_TEXT = "your reference";
+	static final HTMLNode NEVER_CONN_MIDDLE_NODE() {
+		return new HTMLNode("a", "href", "/darknet/myref.fref", "your reference");
+	}
+	
+	static final String NEVER_CONN_TEXT =
+		NEVER_CONN_START + NEVER_CONN_MIDDLE_TEXT + NEVER_CONN_END;
+//	static final HTMLNode NEVER_CONN_MIDDLE_NODE =
+//		new HTMLNode()
+//		"<a href=\"/darknet/myref.txt\">your reference</a>
+	
+	static final String DISCONNECTED =
+		"This node has too many disconnected peers ({DISCONNECTED} > "+MAX_DISCONN_PEER_ALERT_THRESHOLD+
+		"). This will have a slight impact on your performance as disconnected peers also consume a small amount of bandwidth and CPU. Consider \"cleaning up\" your peer list. " +
+		"Note that ideally you should connect to nodes run by people you know. Even if not, adding lots of nodes automatically is bad as it does not produce an optimal topology.";
+	
+	static final String TOO_MANY_CONNECTIONS =
+		"This node has too many connections ({CONNS} > "+MAX_CONN_ALERT_THRESHOLD+"). Adding large numbers of nodes automatically does not produce a small-world topology, hurts routing, and risks producing single points of failure.";
+	
+	static final String TOO_MANY_PEERS =
+		"This node has too many peers ({PEERS} > "+MAX_PEER_ALERT_THRESHOLD+"). We do not recommend running ubernodes with automated addition of peers; this does not produce a small world network topology." +
+		"This will also marginally impact your performance as all peers (connected or not) consume a small amount of bandwidth and CPU. Consider \"cleaning up\" your peer list.";
+	
+	static final String TOO_HIGH_BWLIMITDELAYTIME =
+		"This node has to wait too long for available bandwidth ({BWLIMIT_DELAY_TIME} > "+Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
+	
+	static final String TOO_HIGH_PING =
+		"This node is having trouble talking with it's peers quickly enough ({PING_TIME} > "+
+		Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Decrease your output bandwidth limit and/or remove some peers to improve the situation.";
+
+	static final String NEVER_CONNECTED_TWO_WEEKS =
+		"One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are marginally affecting performance.";
+	
 	public String getText() {
 		String s;
+		int disconnected = peers - conns;
 		if(peers == 0) {
-			s = "This node has no peers to connect to, therefore it will not " +
-			"be able to function normally. Ideally you should connect to peers run by people you know " +
-			"(if you are paranoid, then people you trust; if not, then at least people you've talked to)";
-			String end = " log on to irc.freenode.net channel #freenet-refs and ask around for somebody to connect to";
 			if(n.isTestnetEnabled())
-				s += ", but since this is a testnet node, we suggest that you " + end + ".";
+				return NO_PEERS_TESTNET;
 			else
-				s += ". You could " + end + ", but remember that you are vulnerable to " +
-				"those you are directly connected to. (This is especially true in this early alpha of Freenet 0.7...)<br/>BE SURE THAT THE OTHER PERSON HAS ADDED YOUR REFERENCE, TOO, AS ONE-WAY CONNECTIONS WON'T WORK!";
-		}else if(conns == 0) {
-			s = "This node has not been able to connect to any other nodes so far; it will not be able to function normally. " +
-			"Hopefully some of your peers will connect soon; if not, try to get some more peers.";
+				return NO_PEERS_DARKNET; 
+		} else if(conns == 0) {
+			return NO_CONNS;
 		} else if(conns == 1) {
-			s = "This node only has one connection. Performance will be impaired, and you have no anonymity nor even plausible deniability if that one person is malicious. " +
-			"Your node is attached to the network like a 'leaf' and does not contribute to the network's health. " +
-			"Try to get at least 3 connected peers at any given time.";
+			return ONE_CONN;
 		} else if(conns == 2) {
-			s = "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. " +
-			"Your node is embedded like a 'chain' in the network and does not contribute to the network's health. " +
-			"Try to get at least 3 connected peers at any given time.";
+			return TWO_CONNS;
 		} else if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
-			s = "Many of this node's peers have never connected even once: "+neverConn+". You should not add peers unless you know that they have also added <a href=\"/darknet/myref.txt\">your reference</a>.";
-		} else if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD){ 
-			s = "This node has too many disconnected peers ("+(peers - conns)+" > "+MAX_DISCONN_PEER_ALERT_THRESHOLD+
-			"). This will have a slight impact on your performance as disconnected peers also consume a small amount of bandwidth and CPU. Consider \"cleaning up\" your peer list. " +
-			"Note that ideally you should connect to nodes run by people you know.";
+			s = NEVER_CONN_TEXT.replace("{NEVER_CONN}", Integer.toString(neverConn));
+		} else if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD){
+			s = DISCONNECTED.replace("{DISCONNECTED}", Integer.toString(disconnected));
 		} else if(conns > MAX_CONN_ALERT_THRESHOLD) {
-			s = "This node has too many connections ("+conns+" > "+MAX_CONN_ALERT_THRESHOLD+"). We don't encourage such a behaviour; Ubernodes are hurting the network.";
+			s = TOO_MANY_CONNECTIONS.replace("{CONNS}", Integer.toString(conns));
 		} else if(peers > MAX_PEER_ALERT_THRESHOLD) {
-			s = "This node has too many peers ("+peers+" > "+MAX_PEER_ALERT_THRESHOLD+"). This will impact your performance as all peers (connected or not) consume bandwidth and CPU. Consider \"cleaning up\" your peer list.";
+			s = TOO_MANY_PEERS.replace("{PEERS}", Integer.toString(peers));
 		} else if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
-			s = "This node has to wait too long for available bandwidth ("+bwlimitDelayTime+" > "+Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD+").  Increase your output bandwidth limit and/or remove some peers to improve the situation.";
+			s = TOO_HIGH_BWLIMITDELAYTIME.replace("{BWLIMIT_DELAY_TIME}", Integer.toString(bwlimitDelayTime));
+			
+			// FIXME I'm not convinced about the next one!
 		} else if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
-			s = "This node is having trouble talking with it's peers quickly enough ("+nodeAveragePingTime+" > "+Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD+").  Decrease your output bandwidth limit and/or remove some peers to improve the situation.";
+			s = TOO_HIGH_PING.replace("{PING_TIME}", Integer.toString(bwlimitDelayTime));
 		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
-			s = "One or more of your node's peers have never connected in the two weeks since they were added.  Consider removing them since they are marginally affecting performance.";
+			s = NEVER_CONNECTED_TWO_WEEKS;
 		} else throw new IllegalArgumentException("Not valid");
 		return s;
 	}
@@ -113,37 +168,34 @@ public class PeerManagerUserAlert implements UserAlert {
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 
+		int disconnected = peers - conns;
 		if (peers == 0) {
-			alertNode.addChild("#", "This node has no peers to connect to, therefore it will not be able to function normally. Ideally you should connect to peers run by people you know (if you are paranoid, then people you trust; if not, then at least people you have talked to)");
-			if (n.isTestnetEnabled()) {
-				alertNode.addChild("#", ", but since this is a testnet node, we suggest that you log on to irc.freenode.net, channel #freenet-refs and ask around for somebody to connect to.");
-			} else {
-				alertNode.addChild("#", ". You could log on to irc.freenode.net, channel #freenet-refs and ask around for somebody to connect to, but remember that you are vulnerable to those you are directly connected to. (This is especially true in this early alpha of Freenet 0.7\u2026)");
-				alertNode.addChild("br");
-				alertNode.addChild("#", "BE SURE THAT THE OTHER PERSON HAS ADDED YOUR REFERENCE, TOO, AS ONE-WAY CONNECTION WILL NOT WORK!");
-			}
+			if(n.isTestnetEnabled())
+				alertNode.addChild("#", NO_PEERS_TESTNET);
+			else
+				alertNode.addChild("#", NO_PEERS_DARKNET); 
 		} else if (conns == 0) {
-			alertNode.addChild("#", "This node has not been able to connect to any other nodes so far; it will not be able to function normally. Hopefully some of your peers will connect soon; if not, try to get some more peers.");
+			alertNode.addChild("#", NO_CONNS);
 		} else if (conns == 1) {
-			alertNode.addChild("#", "This node only has one connection. Performance will be impaired, and you have no anonymity nor even plausible deniability if that one person is malicious. Your node is attached to the network like a \u201cleaf\u201d and does not contribute to the network\u2019s health. Try to get at least 3 connected peers at any given time.");
+			alertNode.addChild("#", ONE_CONN);
 		} else if (conns == 2) {
-			alertNode.addChild("#", "This node has only two connections. Performance and security will not be very good, and your node is not doing any routing for other nodes. Your node is embedded like a \u201cchain\u201d in the network and does not contribute to the network\u2019s health. Try to get at least 3 connected peers at any given time.");
+			alertNode.addChild("#", TWO_CONNS);
 		} else if (neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
-			alertNode.addChild("#", neverConn + " of your node\u2019s peers have never connected even once. You should not add peers unless you know that they have also added ");
-			alertNode.addChild("a", "href", "/darknet/myref.fref", "your reference");
-			alertNode.addChild("#", ".");
+			alertNode.addChild("#", NEVER_CONN_START.replace("{NEVER_CONN}", Integer.toString(neverConn)));
+			alertNode.addChild(NEVER_CONN_MIDDLE_NODE());
+			alertNode.addChild("#", NEVER_CONN_END.replace("{NEVER_CONN}", Integer.toString(neverConn)));
 		} else if ((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
-			alertNode.addChild("#", (peers - conns) + " of your node\u2019s peers are disconnected. This will have a slight impact on your performance as disconnected peers also consume a small amount of bandwidth and CPU. Consider \u201ccleaning up\u201d your peer list. Note that ideally you should connect to nodes run by people you know.");
+			alertNode.addChild("#", DISCONNECTED.replace("{DISCONNECTED}", Integer.toString(disconnected)));
 		} else if (conns > MAX_CONN_ALERT_THRESHOLD) {
-			alertNode.addChild("#", "Your node has too many connections (" + conns + " > " + MAX_CONN_ALERT_THRESHOLD + "). We do not encourage such a behaviour; Ubernodes are hurting the network.");
+			alertNode.addChild("#", TOO_MANY_CONNECTIONS.replace("{CONNS}", Integer.toString(conns)));
 		} else if (peers > MAX_PEER_ALERT_THRESHOLD) {
-			alertNode.addChild("#", "Your node has too many peers (" + peers + " > " + MAX_PEER_ALERT_THRESHOLD + "). This will impact your performance as all peers (connected or not) consume bandwidth and CPU. Consider \u201ccleaning up\u201d your peer list.");
+			alertNode.addChild("#", TOO_MANY_PEERS.replace("{PEERS}", Integer.toString(peers)));
 		} else if (n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
-			alertNode.addChild("#", "Your node has to wait too long for available bandwidth (" + bwlimitDelayTime + " > " + Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD + "). Increase your output bandwidth limit and/or remove some peers to improve the situation.");
+			alertNode.addChild("#", TOO_HIGH_BWLIMITDELAYTIME.replace("{BWLIMIT_DELAY_TIME}", Integer.toString(bwlimitDelayTime)));
 		} else if (n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
-			alertNode.addChild("#", "Your node is having trouble talking with its peers quickly enough (" + nodeAveragePingTime + " > " + Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD + "). Decrease your output bandwidth limit and/or remove some peers to improve the situation.");
+			alertNode.addChild("#", TOO_HIGH_PING.replace("{PING_TIME}", Integer.toString(bwlimitDelayTime)));
 		} else if (oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
-			alertNode.addChild("#", "One or more of your node\u2019s peers have never connected in the two weeks since they were added. Consider removing them since they are marginally affecting performance.");
+			alertNode.addChild("#", NEVER_CONNECTED_TWO_WEEKS);
 		} else throw new IllegalArgumentException("not valid");
 
 		return alertNode;
