@@ -781,7 +781,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Node removal"));
 						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-						content.addChild("p").addChild("#", "Are you sure you wish to remove "+peerNodes[i].getName()+" ? Before it has at least one week downtime, it's not recommended to do so.");
+						content.addChild("p").addChild("#", "Are you sure you wish to remove "+peerNodes[i].getName()+" ? Before it has at least one week downtime, it's not recommended to do so, as it may be down only temporarily, and many users cannot run their nodes 24x7.");
 						HTMLNode removeForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/darknet/", "post" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
