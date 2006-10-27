@@ -786,7 +786,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", "Remove it!" });
-						removeForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "forceit", "Force" });
+						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", "Force" });
 						writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 						return; // FIXME: maybe it breaks multi-node removing
 					}				
