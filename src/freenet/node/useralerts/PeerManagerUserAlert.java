@@ -146,25 +146,48 @@ public class PeerManagerUserAlert implements UserAlert {
 		} else if(conns == 2) {
 			return TWO_CONNS;
 		} else if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
-			s = NEVER_CONN_TEXT.replace("{NEVER_CONN}", Integer.toString(neverConn));
+			s = replace(NEVER_CONN_TEXT, "{NEVER_CONN}", Integer.toString(neverConn));
 		} else if((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD){
-			s = DISCONNECTED.replace("{DISCONNECTED}", Integer.toString(disconnected));
+			s = replace(DISCONNECTED, "{DISCONNECTED}", Integer.toString(disconnected));
 		} else if(conns > MAX_CONN_ALERT_THRESHOLD) {
-			s = TOO_MANY_CONNECTIONS.replace("{CONNS}", Integer.toString(conns));
+			s = replace(TOO_MANY_CONNECTIONS, "{CONNS}", Integer.toString(conns));
 		} else if(peers > MAX_PEER_ALERT_THRESHOLD) {
-			s = TOO_MANY_PEERS.replace("{PEERS}", Integer.toString(peers));
+			s = replace(TOO_MANY_PEERS, "{PEERS}", Integer.toString(peers));
 		} else if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
-			s = TOO_HIGH_BWLIMITDELAYTIME.replace("{BWLIMIT_DELAY_TIME}", Integer.toString(bwlimitDelayTime));
+			s = replace(TOO_HIGH_BWLIMITDELAYTIME, "{BWLIMIT_DELAY_TIME}", Integer.toString(bwlimitDelayTime));
 			
 			// FIXME I'm not convinced about the next one!
 		} else if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
-			s = TOO_HIGH_PING.replace("{PING_TIME}", Integer.toString(bwlimitDelayTime));
+			s = replace(TOO_HIGH_PING, "{PING_TIME}", Integer.toString(bwlimitDelayTime));
 		} else if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
 			s = NEVER_CONNECTED_TWO_WEEKS;
 		} else throw new IllegalArgumentException("Not valid");
 		return s;
 	}
 
+	static final public String replace(String text, String find, String replace) {
+		return replaceCareful(text, find, replace);
+	}
+	
+	static public String replaceAll(String text, String find, String replace) {
+		int i;
+		while((i = text.indexOf(find)) >= 0) {
+			text = text.substring(0, i) + replace + text.substring(i + find.length());
+		}
+		return text;
+	}
+
+	static public String replaceCareful(String text, String find, String replace) {
+		String[] split = text.split(find, -1);
+		StringBuffer sb = new StringBuffer(); // FIXME calculate size
+		for(int i=0;i<split.length;i++) {
+			sb.append(split[i]);
+			if(i < split.length - 1)
+				sb.append(replace);
+		}
+		return sb.toString();
+	}
+	
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 
