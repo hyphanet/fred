@@ -56,11 +56,11 @@ public class GenericReadFilterCallback implements FilterCallback {
 		return false;
 	}
 
-	public String processURI(String u, String overrideType) {
+	public String processURI(String u, String overrideType) throws CommentException {
 		return processURI(u, overrideType, false);
 	}
 	
-	public String processURI(String u, String overrideType, boolean noRelative) {
+	public String processURI(String u, String overrideType, boolean noRelative) throws CommentException {
 		URI uri;
 		URI resolved;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -75,7 +75,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			if(logMINOR) Logger.minor(this, "Resolved: "+resolved);
 		} catch (URISyntaxException e1) {
 			if(logMINOR) Logger.minor(this, "Failed to parse URI: "+e1);
-			return null;
+			throw new CommentException("Filter could not parse URI: "+e1.getMessage());
 		}
 		String path = uri.getPath();
 		
@@ -96,11 +96,13 @@ public class GenericReadFilterCallback implements FilterCallback {
 			}
 		}
 		
+		String reason = "";
+		
 		// Try as an absolute URI
 		
 		String rpath = uri.getPath();
 		if(rpath != null) {
-			if(logMINOR) Logger.minor(this, "Resolved URI: "+rpath);
+			if(logMINOR) Logger.minor(this, "Resolved URI (rpath absolute): "+rpath);
 			
 			// Valid FreenetURI?
 			try {
@@ -111,14 +113,16 @@ public class GenericReadFilterCallback implements FilterCallback {
 				return processURI(furi, uri, overrideType, noRelative);
 			} catch (MalformedURLException e) {
 				// Not a FreenetURI
+				if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
+				reason = "Malformed URL (absolute): "+e.getMessage();
 			}
 		}
 		
 		// Probably a relative URI.
 		
 		rpath = resolved.getPath();
-		if(rpath == null) return null;
-		if(logMINOR) Logger.minor(this, "Resolved URI: "+rpath);
+		if(rpath == null) throw new CommentException("No URI");
+		if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
 		
 		// Valid FreenetURI?
 		try {
@@ -128,13 +132,21 @@ public class GenericReadFilterCallback implements FilterCallback {
 			if(logMINOR) Logger.minor(this, "Parsed: "+furi);
 			return processURI(furi, uri, overrideType, noRelative);
 		} catch (MalformedURLException e) {
+			if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
+			if(reason.length() > 0)
+				reason += " , ";
+			reason += "Malformed URL (relative): "+e.getMessage();
 			// Not a FreenetURI
 		}
 		
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
 			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+"="+uri;	
-		else
-			return null;
+		else {
+			if(uri.getScheme() == null) {
+				throw new CommentException("Invalid freenet URL: "+reason);
+			}
+			throw new CommentException("Not an escaped protocol: "+uri.getScheme());
+		}
 	}
 
 	private String finishProcess(HTTPRequest req, String overrideType, String path, URI u, boolean noRelative) {
@@ -163,7 +175,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 				}catch (UnsupportedEncodingException e1){
 				}
 			}
-			return null;
+			return p;
 		}
 	}
 
@@ -176,7 +188,13 @@ public class GenericReadFilterCallback implements FilterCallback {
 	}
 
 	public String onBaseHref(String baseHref) {
-		String ret = processURI(baseHref, null, true);
+		String ret;
+		try {
+			ret = processURI(baseHref, null, true);
+		} catch (CommentException e1) {
+			Logger.error(this, "Failed to parse base href: "+baseHref+" -> "+e1.getMessage());
+			ret = null;
+		}
 		if(ret == null) {
 			Logger.error(this, "onBaseHref() failed: cannot sanitize "+baseHref);
 			return null;

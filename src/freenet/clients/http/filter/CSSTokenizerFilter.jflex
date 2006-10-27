@@ -41,11 +41,11 @@ import java.util.*;
 		throw new IllegalStateException("You MUST override throwError!");
 	}
 
-	String processImportURL(String s) {
+	String processImportURL(String s) throws CommentException {
 		throw new IllegalStateException("You MUST override processImportURL!");
 	}
 
-	String processURL(String s) {
+	String processURL(String s) throws CommentException {
 		throw new IllegalStateException("You MUST override processURL!");
 	}
 	
@@ -192,6 +192,18 @@ import java.util.*;
 			return sb.toString();
 		}
 	}
+	
+	String commentEncode(String s) {
+		StringBuffer sb = new StringBuffer(s.length());
+		for(int i=0;i<s.length();i++) {
+			char c = sb.charAt(i);
+			if(c == '/')
+				sb.append("\\/");
+			else
+				sb.append(c);
+		}
+		return sb.toString();
+	}
 %}
 
 %class CSSTokenizerFilter
@@ -265,15 +277,19 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 	
 	s = dst.data;
 	if(debug) log("URL now: "+s);
-	s = processURL(s);
-	dst.data = s;
-	if(s == null || s.equals("")) {
-		if(debug) log("URL invalid");
-		w.write("url()");
-	} else {
-		s = dst.toString();
-		if(debug) log("Writing: "+s);
-		w.write(s);
+	try {
+		s = processURL(s);
+		dst.data = s;
+		if(s == null || s.equals("")) {
+			if(debug) log("URL invalid");
+			w.write("url()");
+		} else {
+			s = dst.toString();
+			if(debug) log("Writing: "+s);
+			w.write(s);
+		}
+	} catch (CommentException e) {
+		w.write("/* "+commentEncode(e.getMessage())+" */");
 	}
 }
 "@import"{W}{W}*({STRING}|{URL}|{REALURL})({W}*{W}{MEDIUMS})?";" {
@@ -284,17 +300,21 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 	DecodedStringThingy dst = new DecodedStringThingy(s);
 	s = dst.data;
 	if(debug) log("URL: "+s);
-	s = processImportURL(s);
-	dst.data = s;
-	if(debug) log("Processed URL: "+s);
-	if(dst.quote == ' ') dst.quote = '\"';
-	if (!(s == null || s.equals(""))) {
-		if(debug) log("URL now: "+s);
-		s = "@import "+dst.toString();
-		if(debug) log("Writing: "+s);
-		w.write(s);
-	} else
-		if(debug) log("Dropped @import");
+	try {
+		s = processImportURL(s);
+		dst.data = s;
+		if(debug) log("Processed URL: "+s);
+		if(dst.quote == ' ') dst.quote = '\"';
+		if (!(s == null || s.equals(""))) {
+			if(debug) log("URL now: "+s);
+			s = "@import "+dst.toString();
+			if(debug) log("Writing: "+s);
+			w.write(s);
+		} else
+			if(debug) log("Dropped @import");
+	} catch (CommentException e) {
+		w.write("/* " + commentEncode(e.getMessage()) + " */");
+	}
 }
 {W}"{"{W} {
 	String s = yytext();

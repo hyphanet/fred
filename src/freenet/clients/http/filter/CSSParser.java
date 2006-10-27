@@ -41,11 +41,11 @@ class CSSParser extends CSSTokenizerFilter {
 		HTMLFilter.throwFilterException(s);
 	}
 
-	String processImportURL(String s) {
+	String processImportURL(String s) throws CommentException {
 		return HTMLFilter.sanitizeURI(HTMLFilter.stripQuotes(s), "text/css", null, cb);
 	}
 
-	String processURL(String s) {
+	String processURL(String s) throws CommentException {
 		return HTMLFilter.sanitizeURI(HTMLFilter.stripQuotes(s), null, null, cb);
 	}
 

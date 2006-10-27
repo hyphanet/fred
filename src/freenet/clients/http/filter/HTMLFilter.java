@@ -1160,7 +1160,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 						// Java's URL handling doesn't seem suitable
 						String uri = (String) o;
 						uri = HTMLDecoder.decode(uri);
-						uri = sanitizeURI(uri, null, null, pc.cb);
+						uri = htmlSanitizeURI(uri, null, null, pc.cb, pc);
 						if (uri != null) {
 							uri = HTMLEncoder.encode(uri);
 							hn.put(x, uri);
@@ -1529,7 +1529,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				//					type+" and charset "+charset,
 				//					Logger.DEBUG);
 				href = HTMLDecoder.decode(href);
-				href = sanitizeURI(href, type, charset, pc.cb);
+				href = htmlSanitizeURI(href, type, charset, pc.cb, pc);
 				if (href != null) {
 					href = HTMLEncoder.encode(href);
 					hn.put("href", href);
@@ -1864,7 +1864,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return null;
 	}
 
-	static String sanitizeURI(String uri, FilterCallback cb) {
+	static String sanitizeURI(String uri, FilterCallback cb) throws CommentException {
 		return sanitizeURI(uri, null, null, cb);
 	}
 
@@ -1929,11 +1929,25 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
+	static String htmlSanitizeURI(
+			String suri,
+			String overrideType,
+			String overrideCharset,
+			FilterCallback cb,
+			HTMLParseContext pc) {
+		try {
+			return sanitizeURI(suri, overrideType, overrideCharset, cb);
+		} catch (CommentException e) {
+			pc.writeAfterTag.append("<!-- "+HTMLEncoder.encode(e.toString())+" -->");
+			return null;
+		}
+	}
+	
 	static String sanitizeURI(
 		String suri,
 		String overrideType,
 		String overrideCharset,
-		FilterCallback cb) {
+		FilterCallback cb) throws CommentException {
 		if(logMINOR)
 			Logger.minor(HTMLFilter.class, "Sanitizing URI: "+suri+" ( override type "+overrideType +" override charset "+overrideCharset+" )");
 		if((overrideCharset != null) && (overrideCharset.length() > 0))

@@ -1,5 +1,7 @@
 package freenet.clients.http.filter;
 
+import java.net.MalformedURLException;
+
 /**
  * Callback to be provided to a content filter.
  */
@@ -9,8 +11,9 @@ public interface FilterCallback {
 	 * Process a URI.
 	 * If it cannot be turned into something sufficiently safe, then return null.
 	 * @param overrideType Force the return type.
+	 * @throws CommentException If the URI is nvalid or unacceptable in some way.
 	 */
-	public String processURI(String uri, String overrideType);
+	public String processURI(String uri, String overrideType) throws CommentException;
 
 	/**
 	 * Should we allow GET forms?
