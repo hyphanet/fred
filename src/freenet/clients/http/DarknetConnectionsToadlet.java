@@ -772,7 +772,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			PeerNode[] peerNodes = node.getDarknetConnections();
 			for(int i = 0; i < peerNodes.length; i++) {
 				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {	
-					if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) ||  (peerNodes[i].peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED)){
+					if((peerNodes[i].timeLastConnectionCompleted() < (System.currentTimeMillis() - 1000*60*60*24*7) /* one week */) ||  (peerNodes[i].peerNodeStatus == Node.PEER_NODE_STATUS_NEVER_CONNECTED) || request.isPartSet("forceit")){
 						this.node.removeDarknetConnection(peerNodes[i]);
 						if(logMINOR) Logger.minor(this, "Removed node: node_"+peerNodes[i].hashCode());
 					}else{
@@ -786,6 +786,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", "Remove it!" });
+						removeForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "forceit", "Force" });
 						writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 						return; // FIXME: maybe it breaks multi-node removing
 					}				
