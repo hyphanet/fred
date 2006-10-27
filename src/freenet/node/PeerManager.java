@@ -435,6 +435,7 @@ public class PeerManager {
     
     /**
      * Distance between two locations.
+     * Both parameters must be in [0.0, 1.0].
      */
     public static double distance(double a, double b) {
         // Circular keyspace

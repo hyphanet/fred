@@ -477,6 +477,7 @@ public class NodeDispatcher implements Dispatcher {
     	if(htl <= 1) htl = 1;
 		ProbeContext ctx = null;
 		boolean rejected = false;
+		boolean isNew = false;
 		synchronized(recentProbeContexts) {
 			if(checkRecent) {
 				long now = System.currentTimeMillis();
@@ -491,6 +492,7 @@ public class NodeDispatcher implements Dispatcher {
 				ctx = (ProbeContext) recentProbeContexts.get(lid);
 				if(ctx == null) {
 					ctx = new ProbeContext(id, target, best, nearest, htl, counter, src, cb);
+					isNew = true;
 				}
 				recentProbeContexts.push(lid, ctx); // promote or add
 				while(recentProbeContexts.size() > MAX_PROBE_CONTEXTS)
@@ -514,17 +516,31 @@ public class NodeDispatcher implements Dispatcher {
 		double oldDist = Math.abs(PeerManager.distance(ctx.nearest, target));
 		double newDist = Math.abs(PeerManager.distance(nearest, target));
 		// FIXME use this elsewhere? Does it make sense?
+		if(logMINOR)
+			Logger.minor(this, "ctx.nearest="+ctx.nearest+", nearest="+nearest+", target="+target+", oldDist="+oldDist+", newDist="+newDist+", htl="+htl+", ctx.htl="+ctx.htl);
 		if(oldDist > newDist) {
 			ctx.htl = htl;
 			ctx.nearest = nearest;
+			if(logMINOR)
+				Logger.minor(this, "oldDist ("+oldDist+") > newDist ("+newDist+")");
 		} else if(Math.abs(oldDist - newDist) < Double.MIN_VALUE*2) {
-			if(htl > ctx.htl-1) htl = (short)Math.max(0,(ctx.htl-1));
-			else ctx.htl = htl;
+			// oldDist == newDist
+			if(!isNew) {
+				// Rejected. DO NOT DECREMENT: Will be decremented later.
+				// A rejector cannot increase the HTL unless it moves us closer to the target.
+				if(htl > ctx.htl)
+					htl = ctx.htl;
+				else
+					ctx.htl = htl;
+			}
+			if(logMINOR)
+				Logger.minor(this, "Rejected (or new): htl="+htl);
 		} else {
 			Logger.error(this, "Distance increased: "+oldDist+" -> "+newDist+" htl: "+ctx.htl+" -> "+htl+" , using old HTL and dist");
 			htl = ctx.htl;
 			nearest = ctx.nearest;
 		}
+		Logger.minor(this, "htl="+htl+", nearest="+nearest+", ctx.htl="+ctx.htl+", ctx.nearest="+ctx.nearest);
 		
 		PeerNode[] peers = node.peers.myPeers;
 		
@@ -556,14 +572,22 @@ public class NodeDispatcher implements Dispatcher {
 			}
 		}
 		
-		// Update nearest
+		// Update nearest, htl
 		
 		if(PeerManager.distance(myLoc, target) < PeerManager.distance(nearest, target)) {
+			if(logMINOR)
+				Logger.minor(this, "Updating nearest to "+myLoc+" from "+nearest+" for "+target+" and resetting htl from "+htl+" to "+Node.MAX_HTL);
 			nearest = myLoc;
 			htl = Node.MAX_HTL;
+			ctx.nearest = nearest;
+			ctx.htl = htl;
 		} else {
-			htl--;
-			if(htl > Node.MAX_HTL) htl = Node.MAX_HTL;
+			if(!isNew) {
+				htl = node.decrementHTL(src, htl);
+				ctx.htl = htl;
+			}
+			if(logMINOR)
+				Logger.minor(this, "Updated htl to "+htl+" - myLoc="+myLoc+", target="+target+", nearest="+nearest);
 		}
 		
 		// Complete ?
@@ -695,7 +719,8 @@ public class NodeDispatcher implements Dispatcher {
 		synchronized(recentProbeRequestIDs) {
 			recentProbeRequestIDs.push(ll);
 		}
-		innerHandleProbeRequest(null, l, ll, d, 2.0, 2.0, Node.MAX_HTL, (short)0, false, false, cb);
+		double nodeLoc = node.getLocation();
+		innerHandleProbeRequest(null, l, ll, d, (nodeLoc > d) ? nodeLoc : 1.0, nodeLoc, Node.MAX_HTL, (short)0, false, false, cb);
 	}
 
 }
