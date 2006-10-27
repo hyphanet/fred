@@ -204,19 +204,19 @@ public class PeerManagerUserAlert implements UserAlert {
 		} else if (conns == 2) {
 			alertNode.addChild("#", TWO_CONNS);
 		} else if (neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
-			alertNode.addChild("#", NEVER_CONN_START.replace("{NEVER_CONN}", Integer.toString(neverConn)));
+			alertNode.addChild("#", replace(NEVER_CONN_START, "{NEVER_CONN}", Integer.toString(neverConn)));
 			alertNode.addChild(NEVER_CONN_MIDDLE_NODE());
-			alertNode.addChild("#", NEVER_CONN_END.replace("{NEVER_CONN}", Integer.toString(neverConn)));
+			alertNode.addChild("#", replace(NEVER_CONN_END, "{NEVER_CONN}", Integer.toString(neverConn)));
 		} else if ((peers - conns) > MAX_DISCONN_PEER_ALERT_THRESHOLD) {
-			alertNode.addChild("#", DISCONNECTED.replace("{DISCONNECTED}", Integer.toString(disconnected)));
+			alertNode.addChild("#", replace(DISCONNECTED, "{DISCONNECTED}", Integer.toString(disconnected)));
 		} else if (conns > MAX_CONN_ALERT_THRESHOLD) {
-			alertNode.addChild("#", TOO_MANY_CONNECTIONS.replace("{CONNS}", Integer.toString(conns)));
+			alertNode.addChild("#", replace(TOO_MANY_CONNECTIONS, "{CONNS}", Integer.toString(conns)));
 		} else if (peers > MAX_PEER_ALERT_THRESHOLD) {
-			alertNode.addChild("#", TOO_MANY_PEERS.replace("{PEERS}", Integer.toString(peers)));
+			alertNode.addChild("#", replace(TOO_MANY_PEERS, "{PEERS}", Integer.toString(peers)));
 		} else if (n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > Node.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) {
-			alertNode.addChild("#", TOO_HIGH_BWLIMITDELAYTIME.replace("{BWLIMIT_DELAY_TIME}", Integer.toString(bwlimitDelayTime)));
+			alertNode.addChild("#", replace(TOO_HIGH_BWLIMITDELAYTIME, "{BWLIMIT_DELAY_TIME}", Integer.toString(bwlimitDelayTime)));
 		} else if (n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > Node.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)) {
-			alertNode.addChild("#", TOO_HIGH_PING.replace("{PING_TIME}", Integer.toString(bwlimitDelayTime)));
+			alertNode.addChild("#", replace(TOO_HIGH_PING, "{PING_TIME}", Integer.toString(bwlimitDelayTime)));
 		} else if (oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD) {
 			alertNode.addChild("#", NEVER_CONNECTED_TWO_WEEKS);
 		} else throw new IllegalArgumentException("not valid");
