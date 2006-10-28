@@ -51,6 +51,7 @@ public class UdpSocketManager extends Thread {
 	private static UdpSocketManager _usm;
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
 	private volatile int lastTimeInSeconds;
+	private final InetAddress _bindTo;
 
 	// Icky layer violation, but we need to know the Node to work around the EvilJVMBug.
 	private final Node node;
@@ -123,6 +124,7 @@ public class UdpSocketManager extends Thread {
 	public UdpSocketManager(int listenPort, InetAddress bindto, Node node) throws SocketException {
 		super("UdpSocketManager sender thread on port " + listenPort);
 		this.node = node;
+		_bindTo = bindto;
 		    // Keep the Updater code in, just commented out, for now
 		    // We may want to be able to do on-line updates.
 //			if (Updater.hasResource()) {
@@ -135,6 +137,10 @@ public class UdpSocketManager extends Thread {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
+	public InetAddress getBindTo() {
+		return _bindTo;
+	}
+	
 	public void run() { // Listen for packets
 		try {
 			runLoop();

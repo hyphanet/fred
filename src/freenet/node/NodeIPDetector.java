@@ -13,6 +13,7 @@ import freenet.config.StringCallback;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
+import freenet.io.comm.UdpSocketManager;
 import freenet.node.useralerts.IPUndetectedUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -73,7 +74,6 @@ public class NodeIPDetector {
 	Peer[] detectPrimaryIPAddress() {
 		boolean addedValidIP = false;
 		Logger.minor(this, "Redetecting IPs...");
-		boolean setMaybeSymmetric = false;
 		Vector addresses = new Vector();
 		if(overrideIPAddress != null) {
 			// If the IP is overridden, the override has to be the first element.
@@ -82,123 +82,20 @@ public class NodeIPDetector {
 			if(p.getFreenetAddress().isRealInternetAddress(false, true))
 				addedValidIP = true;
 		}
-	   	InetAddress[] detectedAddrs = ipDetector.getAddress();
-	   	synchronized(this) {
-	   		hasDetectedIAD = true;
-	   	}
-	   	if(detectedAddrs != null) {
-	   		for(int i=0;i<detectedAddrs.length;i++) {
-	   			Peer p = new Peer(detectedAddrs[i], node.portNumber);
-	   			if(!addresses.contains(p)) {
-	   				Logger.normal(this, "Detected IP address: "+p);
-	   				addresses.add(p);
-	   				if(p.getFreenetAddress().isRealInternetAddress(false, false))
-	   					addedValidIP = true;
-	   			}
-	   		}
-	   	}
-	   	if((pluginDetectedIPs != null) && (pluginDetectedIPs.length > 0)) {
-	   		for(int i=0;i<pluginDetectedIPs.length;i++) {
-	   			InetAddress addr = pluginDetectedIPs[i].publicAddress;
-	   			if(addr == null) continue;
-	   			Peer a = new Peer(new FreenetInetAddress(addr), node.portNumber);
-	   			if(!addresses.contains(a)) {
-	   				Logger.normal(this, "Plugin detected IP address: "+a);
-	   				addresses.add(a);
-	   				addedValidIP = true;
-	   			}
-	   		}
-	   	}
-	   	if((detectedAddrs.length == 0) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
-	   		addresses.add(new Peer(oldIPAddress, node.portNumber));
-   		// Try to pick it up from our connections
-	   	if(node.peers != null) {
-	   		PeerNode[] peerList = node.peers.connectedPeers;
-	   		HashMap countsByPeer = new HashMap();
-	   		// FIXME use a standard mutable int object, we have one somewhere
-	   		for(int i=0;i<peerList.length;i++) {
-	   			Peer p = peerList[i].getRemoteDetectedPeer();
-	   			if((p == null) || p.isNull()) continue;
-	   			// DNSRequester doesn't deal with our own node
-	   			InetAddress ip = p.getAddress(true);
-	   			if(!IPUtil.isValidAddress(ip, false)) continue;
-	   			Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
-	   			if(countsByPeer.containsKey(ip)) {
-	   				Integer count = (Integer) countsByPeer.get(p);
-	   				Integer newCount = new Integer(count.intValue()+1);
-	   				countsByPeer.put(p, newCount);
-	   			} else {
-	   				countsByPeer.put(p, new Integer(1));
-	   			}
-	   		}
-	   		if(countsByPeer.size() == 1) {
-		   		Iterator it = countsByPeer.keySet().iterator();
-		   		Peer p = (Peer) (it.next());
-		   		Logger.minor(this, "Everyone agrees we are "+p);
-		   		if(!addresses.contains(p)) {
-		   			if(p.getFreenetAddress().isRealInternetAddress(false, false))
-		   				addedValidIP = true;
-		   			addresses.add(p);
-		   		}
-	   		} else if(countsByPeer.size() > 1) {
-	   			Iterator it = countsByPeer.keySet().iterator();
-	   			// Take two most popular addresses.
-		   		Peer best = null;
-		   		Peer secondBest = null;
-		   		int bestPopularity = 0;
-		   		int secondBestPopularity = 0;
-		   		while(it.hasNext()) {
-		   			Peer cur = (Peer) (it.next());
-		   			int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
-		   			Logger.normal(this, "Detected peer: "+cur+" popularity "+curPop);
-		   			if(curPop >= bestPopularity) {
-		   				secondBestPopularity = bestPopularity;
-		   				bestPopularity = curPop;
-		   				secondBest = best;
-		   				best = cur;
-		   			}
-		   		}
-		   		if(best != null) {
-		   			if((bestPopularity > 2) || (detectedAddrs.length == 0)) {
-		   				if(!addresses.contains(best)) {
-		   					Logger.normal(this, "Adding best peer "+best+" ("+bestPopularity+")");
-		   					addresses.add(best);
-				   			if(best.getFreenetAddress().isRealInternetAddress(false, false))
-				   				addedValidIP = true;
-		   				}
-		   				if((secondBest != null) && (secondBestPopularity > 2)) {
-		   					if(!addresses.contains(secondBest)) {
-		   						Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+")");
-		   						addresses.add(secondBest);
-					   			if(secondBest.getFreenetAddress().isRealInternetAddress(false, false))
-					   				addedValidIP = true;
-		   					}
-			   				if(best.getAddress().equals(secondBest.getAddress()) && bestPopularity == 1) {
-			   					Logger.error(this, "Hrrrm, maybe this is a symmetric NAT? Expect trouble connecting!");
-			   					System.err.println("Hrrrm, maybe this is a symmetric NAT? Expect trouble connecting!");
-			   					setMaybeSymmetric = true;
-			   					
-			   					if(ipDetectorManager != null && ipDetectorManager.isEmpty()) {
-			   						if(maybeSymmetricAlert == null) {
-			   							maybeSymmetricAlert = new SimpleUserAlert(true, "Connection problems", 
-			   									"It looks like your node may be behind a symmetric NAT. You may have connection " +
-			   									"problems; if you are behind a symmetric NAT you will probably only be able to " +
-			   									"connect to peers which are open to the internet.", UserAlert.ERROR);
-			   						}
-			   						if(node.clientCore != null && node.clientCore.alerts != null)
-			   							node.clientCore.alerts.register(maybeSymmetricAlert);
-			   					} else {
-			   						if(maybeSymmetricAlert != null)
-			   							node.clientCore.alerts.unregister(maybeSymmetricAlert);
-			   					}
-			   					
-			   					addresses.add(new Peer(best.getFreenetAddress(), node.portNumber));
-			   				}
-		   				}
-		   			}
-		   		}
-	   		}
-	   	}
+		boolean dontDetect = false;
+		UdpSocketManager usm = node.usm;
+		if(usm != null) {
+			InetAddress addr = node.usm.getBindTo();
+			if(addr != null && !(freenet.transport.IPUtil.isValidAddress(addr, false))) {
+				dontDetect = true;
+				Peer p = new Peer(addr, node.portNumber);
+				addresses.add(p);
+				dontDetect = true;
+			}
+		}
+		if(!dontDetect) {
+			addedValidIP = innerDetect(addresses, addedValidIP);
+		}
 	   	if(node.clientCore != null) {
 	   		if (addedValidIP) {
 	   			node.clientCore.alerts.unregister(primaryIPUndetectedAlert);
@@ -207,8 +104,130 @@ public class NodeIPDetector {
 	   		}
 	   	}
 	   	lastIPAddress = (Peer[]) addresses.toArray(new Peer[addresses.size()]);
-	   	this.maybeSymmetric = setMaybeSymmetric;
 	   	return lastIPAddress;
+	}
+
+	private boolean innerDetect(Vector addresses, boolean addedValidIP) {
+		boolean setMaybeSymmetric = false;
+		InetAddress[] detectedAddrs = ipDetector.getAddress();
+		synchronized(this) {
+			hasDetectedIAD = true;
+		}
+		if(detectedAddrs != null) {
+			for(int i=0;i<detectedAddrs.length;i++) {
+				Peer p = new Peer(detectedAddrs[i], node.portNumber);
+				if(!addresses.contains(p)) {
+					Logger.normal(this, "Detected IP address: "+p);
+					addresses.add(p);
+					if(p.getFreenetAddress().isRealInternetAddress(false, false))
+						addedValidIP = true;
+				}
+			}
+		}
+		if((pluginDetectedIPs != null) && (pluginDetectedIPs.length > 0)) {
+			for(int i=0;i<pluginDetectedIPs.length;i++) {
+				InetAddress addr = pluginDetectedIPs[i].publicAddress;
+				if(addr == null) continue;
+				Peer a = new Peer(new FreenetInetAddress(addr), node.portNumber);
+				if(!addresses.contains(a)) {
+					Logger.normal(this, "Plugin detected IP address: "+a);
+					addresses.add(a);
+					addedValidIP = true;
+				}
+			}
+		}
+		if((detectedAddrs.length == 0) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress))
+			addresses.add(new Peer(oldIPAddress, node.portNumber));
+		// Try to pick it up from our connections
+		if(node.peers != null) {
+			PeerNode[] peerList = node.peers.connectedPeers;
+			HashMap countsByPeer = new HashMap();
+			// FIXME use a standard mutable int object, we have one somewhere
+			for(int i=0;i<peerList.length;i++) {
+				Peer p = peerList[i].getRemoteDetectedPeer();
+				if((p == null) || p.isNull()) continue;
+				// DNSRequester doesn't deal with our own node
+				InetAddress ip = p.getAddress(true);
+				if(!IPUtil.isValidAddress(ip, false)) continue;
+				Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
+				if(countsByPeer.containsKey(ip)) {
+					Integer count = (Integer) countsByPeer.get(p);
+					Integer newCount = new Integer(count.intValue()+1);
+					countsByPeer.put(p, newCount);
+				} else {
+					countsByPeer.put(p, new Integer(1));
+				}
+			}
+			if(countsByPeer.size() == 1) {
+				Iterator it = countsByPeer.keySet().iterator();
+				Peer p = (Peer) (it.next());
+				Logger.minor(this, "Everyone agrees we are "+p);
+				if(!addresses.contains(p)) {
+					if(p.getFreenetAddress().isRealInternetAddress(false, false))
+						addedValidIP = true;
+					addresses.add(p);
+				}
+			} else if(countsByPeer.size() > 1) {
+				Iterator it = countsByPeer.keySet().iterator();
+				// Take two most popular addresses.
+				Peer best = null;
+				Peer secondBest = null;
+				int bestPopularity = 0;
+				int secondBestPopularity = 0;
+				while(it.hasNext()) {
+					Peer cur = (Peer) (it.next());
+					int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
+					Logger.normal(this, "Detected peer: "+cur+" popularity "+curPop);
+					if(curPop >= bestPopularity) {
+						secondBestPopularity = bestPopularity;
+						bestPopularity = curPop;
+						secondBest = best;
+						best = cur;
+					}
+				}
+				if(best != null) {
+					if((bestPopularity > 2) || (detectedAddrs.length == 0)) {
+						if(!addresses.contains(best)) {
+							Logger.normal(this, "Adding best peer "+best+" ("+bestPopularity+")");
+							addresses.add(best);
+							if(best.getFreenetAddress().isRealInternetAddress(false, false))
+								addedValidIP = true;
+						}
+						if((secondBest != null) && (secondBestPopularity > 2)) {
+							if(!addresses.contains(secondBest)) {
+								Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+")");
+								addresses.add(secondBest);
+								if(secondBest.getFreenetAddress().isRealInternetAddress(false, false))
+									addedValidIP = true;
+							}
+							if(best.getAddress().equals(secondBest.getAddress()) && bestPopularity == 1) {
+								Logger.error(this, "Hrrrm, maybe this is a symmetric NAT? Expect trouble connecting!");
+								System.err.println("Hrrrm, maybe this is a symmetric NAT? Expect trouble connecting!");
+								setMaybeSymmetric = true;
+								
+								if(ipDetectorManager != null && ipDetectorManager.isEmpty()) {
+									if(maybeSymmetricAlert == null) {
+										maybeSymmetricAlert = new SimpleUserAlert(true, "Connection problems", 
+												"It looks like your node may be behind a symmetric NAT. You may have connection " +
+												"problems; if you are behind a symmetric NAT you will probably only be able to " +
+												"connect to peers which are open to the internet.", UserAlert.ERROR);
+									}
+									if(node.clientCore != null && node.clientCore.alerts != null)
+										node.clientCore.alerts.register(maybeSymmetricAlert);
+								} else {
+									if(maybeSymmetricAlert != null)
+										node.clientCore.alerts.unregister(maybeSymmetricAlert);
+								}
+								
+								addresses.add(new Peer(best.getFreenetAddress(), node.portNumber));
+							}
+						}
+					}
+				}
+			}
+		}
+	   	this.maybeSymmetric = setMaybeSymmetric;
+	   	return addedValidIP;
 	}
 
 	Peer[] getPrimaryIPAddress() {
