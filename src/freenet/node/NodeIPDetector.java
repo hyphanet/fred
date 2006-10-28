@@ -89,7 +89,7 @@ public class NodeIPDetector {
 			if(addr != null && (IPUtil.isValidAddress(addr, false))) {
 				dontDetect = true;
 				Peer p = new Peer(addr, node.portNumber);
-				if(addresses.contains(p)) addresses.add(p);
+				if(!addresses.contains(p)) addresses.add(p);
 				addresses.add(p);
 				dontDetect = true;
 			}
