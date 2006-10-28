@@ -381,9 +381,11 @@ public class StatisticsToadlet extends Toadlet {
                         "\u00a0(" + SizeUtil.formatSize(storeSize) + ")");
 
                 storeSizeList.addChild("li", 
-                        "Overall size:\u00a0" + thousendPoint.format(overallKeys) + "/" + thousendPoint.format(maxOverallKeys) +
-                        "\u00a0(" + SizeUtil.formatSize(overallSize) + "/" + SizeUtil.formatSize(maxOverallSize) + ") (" + 
-                        ((overallKeys*100)/maxOverallKeys) + "%)");
+                        "Overall size:\u00a0" + thousendPoint.format(overallKeys) + 
+                        "\u00a0/\u00a0" + thousendPoint.format(maxOverallKeys) +
+                        "\u00a0(" + SizeUtil.formatSize(overallSize) + 
+                        "\u00a0/\u00a0" + SizeUtil.formatSize(maxOverallSize) + 
+                        ")\u00a0(" + ((overallKeys*100)/maxOverallKeys) + "%)");
 
                 storeSizeList.addChild("li", 
                         "Cache hits:\u00a0" + thousendPoint.format(cachedStoreHits) + 
