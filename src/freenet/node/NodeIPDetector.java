@@ -86,7 +86,7 @@ public class NodeIPDetector {
 		UdpSocketManager usm = node.usm;
 		if(usm != null) {
 			InetAddress addr = node.usm.getBindTo();
-			if(addr != null && !(freenet.transport.IPUtil.isValidAddress(addr, false))) {
+			if(addr != null && (freenet.transport.IPUtil.isValidAddress(addr, false))) {
 				dontDetect = true;
 				Peer p = new Peer(addr, node.portNumber);
 				addresses.add(p);
