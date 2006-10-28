@@ -81,8 +81,9 @@ public class GlobalProbe implements Runnable {
 	}
 
 	private void output(double loc) {
-		Logger.error(this, "LOCATION "+ctr+": " + loc);
-		System.out.println("LOCATION "+ctr+": " + loc);
+		double estimatedNodes = ((double) (ctr+1)) / loc;
+		Logger.error(this, "LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes);
+		System.out.println("LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes);
 	}
 
 	private void error(String string) {
