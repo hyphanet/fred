@@ -51,16 +51,16 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	private final boolean dontTellClientGet;
 	private Object token;
 	private final Bucket returnBucket;
-	
+
 	/** Create a new SingleFileFetcher and register self.
 	 * Called when following a redirect, or direct from ClientGet.
-	 * @param token 
-	 * @param dontTellClientGet 
+	 * @param token
+	 * @param dontTellClientGet
 	 */
-	public SingleFileFetcher(BaseClientGetter get, GetCompletionCallback cb, ClientMetadata metadata, 
-			ClientKey key, LinkedList metaStrings, FetcherContext ctx, 
-			ArchiveContext actx, int maxRetries, int recursionLevel, 
-			boolean dontTellClientGet, Object token, boolean isEssential, 
+	public SingleFileFetcher(BaseClientGetter get, GetCompletionCallback cb, ClientMetadata metadata,
+			ClientKey key, LinkedList metaStrings, FetcherContext ctx,
+			ArchiveContext actx, int maxRetries, int recursionLevel,
+			boolean dontTellClientGet, Object token, boolean isEssential,
 			Bucket returnBucket) throws FetchException {
 		super(key, maxRetries, ctx, get);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);

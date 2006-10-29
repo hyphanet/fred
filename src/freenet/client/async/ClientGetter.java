@@ -44,8 +44,8 @@ public class ClientGetter extends BaseClientGetter {
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
 	 */
-	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched, 
-			FreenetURI uri, FetcherContext ctx, short priorityClass, Object clientContext, Bucket returnBucket) {
+	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched,
+			    FreenetURI uri, FetcherContext ctx, short priorityClass, Object clientContext, Bucket returnBucket) {
 		super(priorityClass, chkSched, sskSched, clientContext);
 		this.client = client;
 		this.returnBucket = returnBucket;
@@ -55,11 +55,11 @@ public class ClientGetter extends BaseClientGetter {
 		this.actx = new ArchiveContext(ctx.maxArchiveLevels);
 		archiveRestarts = 0;
 	}
-	
+
 	public void start() throws FetchException {
 		start(false);
 	}
-	
+
 	public boolean start(boolean restart) throws FetchException {
 		try {
 			// FIXME synchronization is probably unnecessary.
@@ -136,7 +136,7 @@ public class ClientGetter extends BaseClientGetter {
 			return;
 		}
 	}
-	
+
 	public void cancel() {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Cancelling "+this);
@@ -178,7 +178,7 @@ public class ClientGetter extends BaseClientGetter {
 				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState);
 		}
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public boolean canRestart() {

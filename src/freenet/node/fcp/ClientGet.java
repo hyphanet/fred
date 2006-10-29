@@ -43,10 +43,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private final File tempFile;
 	/** Bucket passed in to the ClientGetter to return data in. Null unless returntype=disk */
 	private Bucket returnBucket;
-	
+
 	// Verbosity bitmasks
 	private int VERBOSITY_SPLITFILE_PROGRESS = 1;
-	
+
 	// Stuff waiting for reconnection
 	/** Did the request succeed? Valid if finished. */
 	private boolean succeeded;
@@ -67,15 +67,16 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	/**
 	 * Create one for a global-queued request not made by FCP.
-	 * @throws IdentifierCollisionException 
+	 * @throws IdentifierCollisionException
 	 */
-	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS, 
-			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength, 
+	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
+			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
 			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
 			File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
-		super(uri, identifier, verbosity, null, globalClient, prioClass, 
+		super(uri, identifier, verbosity, null, globalClient, prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
 						null, true);
+
 		fctx = new FetcherContext(client.defaultFetchContext, FetcherContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		fctx.localRequestOnly = dsOnly;
@@ -123,8 +124,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			client.queueClientRequestMessage(msg, 0);
 		}
 	}
-	
-	
+
+
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
 				message.persistenceType, message.clientToken, message.global);
@@ -185,12 +186,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	/**
 	 * Create a ClientGet from a request serialized to a SimpleFieldSet.
-	 * Can throw, and does minimal verification, as is dealing with data 
+	 * Can throw, and does minimal verification, as is dealing with data
 	 * supposedly serialized out by the node.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public ClientGet(SimpleFieldSet fs, FCPClient client2) throws IOException {
 		super(fs, client2);
+
 		returnType = ClientGetMessage.parseValidReturnType(fs.get("ReturnType"));
 		String f = fs.get("Filename");
 		if(f != null)
@@ -254,14 +256,20 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 		}
 		returnBucket = ret;
-		
+
 		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket);
+
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
 		}
-		if(finished && !succeeded)
+		if(finished && !succeeded) {
 			started = true;
+		}
+
+		if (finished && succeeded) {
+			allDataPending = new AllDataMessage(returnBucket, identifier);
+		}
 	}
 
 	public void start() {
@@ -277,13 +285,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			onFailure(e, null);
 		}
 	}
-	
+
 	public void onLostConnection() {
 		if(persistenceType == PERSIST_CONNECTION)
 			cancel();
 		// Otherwise ignore
 	}
-	
+
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
@@ -343,6 +351,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			finished = true;
 		}
 		trySendDataFoundOrGetFailed(null);
+
 		if(adm != null)
 			trySendAllDataMessage(adm, null);
 		if(!dontFree)
@@ -351,9 +360,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
-		
+
 		FCPMessage msg;
-		
+
 		// Don't need to lock. succeeded is only ever set, never unset.
 		// and succeeded and getFailedMessage are both atomic.
 		if(succeeded) {
@@ -382,14 +391,14 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			client.queueClientRequestMessage(msg, 0);
 		}
 	}
-	
+
 	private void trySendProgress(SimpleProgressMessage msg, FCPConnectionOutputHandler handler) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			progressPending = msg;
 		}
 		client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS);
 	}
-	
+
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
@@ -405,6 +414,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(finished)
 				trySendDataFoundOrGetFailed(handler);
 		}
+
+		if (onlyData && allDataPending  == null) {
+			Logger.error(this, "No data pending !");
+		}
+
 		if(includeData && (allDataPending != null))
 			handler.queue(allDataPending);
 	}
@@ -445,7 +459,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(!(((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) &&
 				(ce instanceof SplitfileProgressEvent)))
 			return;
-		SimpleProgressMessage progress = 
+		SimpleProgressMessage progress =
 			new SimpleProgressMessage(identifier, (SplitfileProgressEvent)ce);
 		trySendProgress(progress, null);
 	}
@@ -540,35 +554,35 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else
 			return -1;
 	}
-	
+
 	public double getTotalBlocks() {
 		if(progressPending != null) {
 			return progressPending.getTotalBlocks();
 		} else
 			return 1;
 	}
-	
+
 	public double getMinBlocks() {
 		if(progressPending != null) {
 			return progressPending.getMinBlocks();
 		} else
 			return 1;
 	}
-	
+
 	public double getFailedBlocks() {
 		if(progressPending != null) {
 			return progressPending.getFailedBlocks();
 		} else
 			return 0;
 	}
-	
+
 	public double getFatalyFailedBlocks() {
 		if(progressPending != null) {
 			return progressPending.getFatalyFailedBlocks();
 		} else
 			return 0;
 	}
-	
+
 	public double getFetchedBlocks() {
 		if(progressPending != null) {
 			return progressPending.getFetchedBlocks();
@@ -593,7 +607,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	/**
 	 * Returns the {@link Bucket} that contains the downloaded data.
-	 * 
+	 *
 	 * @return The data in a {@link Bucket}, or <code>null</code> if this
 	 *         isn&rsquo;t applicable
 	 */

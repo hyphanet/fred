@@ -62,7 +62,7 @@ import freenet.support.io.Bucket;
  * This name comes from my flatmate, David Anderson. It originated in the following discussion over dinner:
  *   him> I've just thought of something weird...
  *   me> oO
- *   him> The term "spider" for indexing software comes from the analogy "a spider one the web", right ?
+ *   him> The term "spider" for indexing software comes from the analogy "a spider on the web", right ?
  *   me> Yeeess... ?
  *   him> So, if you're writing a spider for a darknet, isn't it a .... *Ninja Spider* ? :D
  *
@@ -448,7 +448,7 @@ public class NinjaSpider implements HttpPlugin, ClientCallback, FoundURICallback
 			
 			Element fileElement = xmlDoc.createElement("file");
 
-			fileElement.setAttribute("id", (new Integer(i)).toString());
+			fileElement.setAttribute("id", Integer.toString(i));
 			fileElement.setAttribute("key", uris[i].toString(false));
 			
 			Long size = (Long)sizeOfURIs.get(uris[i].toString(false));
