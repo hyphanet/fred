@@ -5,6 +5,9 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
+
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
@@ -314,6 +317,20 @@ public class WelcomeToadlet extends Toadlet {
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", request.getParam("newbookmark") });
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", "Add bookmark" });
+			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			return;
+		}else if(request.isParameterSet("getThreadDump")) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Get a Thread Dump");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			if(node.isUsingWrapper()){
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Thread Dump generation"));
+				ctx.getPageMaker().getContentNode(infobox).addChild("#", "A thread dump has been generated, it's aviable in "+ WrapperManager.getProperties().getProperty("wrapper.logfile"));
+				System.out.println("Thread Dump:");
+				WrapperManager.requestThreadDump();
+			}else{
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error","Thread Dump generation"));
+				ctx.getPageMaker().getContentNode(infobox).addChild("#", "It's not possible to make the node generate a thread dump if you aren't using the wrapper!");
+			}
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		} else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length() > 0) {
