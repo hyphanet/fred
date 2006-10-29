@@ -94,6 +94,14 @@ public class StatisticsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 	
 		contentNode.addChild(core.alerts.createSummary());
+
+		// Generate a Thread-Dump
+		if(node.isUsingWrapper()){
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("Request a Thread Dump to be generated"));
+			// Yes, we want it to be a GET so that we can use external tools to trigger it.
+			HTMLNode threadDumpForm = ctx.getPageMaker().getContentNode(infobox).addChild("form", new String[] { "action", "method" }, new String[] { "/", "GET" });
+			threadDumpForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "getThreadDump", "Generate a Thread Dump" });
+		}
 		
 		double swaps = (double)node.getSwaps();
 		double noSwaps = (double)node.getNoSwaps();
@@ -429,8 +437,6 @@ public class StatisticsToadlet extends Toadlet {
             }
 		}
 
-		StringBuffer pageBuffer = new StringBuffer();
-		pageNode.generate(pageBuffer);
-		this.writeReply(ctx, 200, "text/html", "OK", pageBuffer.toString());
+		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
 }
