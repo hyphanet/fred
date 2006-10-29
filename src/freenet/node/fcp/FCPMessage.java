@@ -44,6 +44,8 @@ public abstract class FCPMessage {
 			return new ClientPutMessage(fs);
 		if(name.equals(GenerateSSKMessage.name))
 			return new GenerateSSKMessage(fs);
+		if(name.equals(GetNode.name))
+			return new GetNode(fs);
 		if(name.equals(GetRequestStatusMessage.name))
 			return new GetRequestStatusMessage(fs);
 		if(name.equals(ListPeersMessage.name))

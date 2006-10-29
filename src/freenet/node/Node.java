@@ -1684,6 +1684,32 @@ public class Node {
 	}
 
 	/**
+	 * Export volatile data about the node as a SimpleFieldSet
+	 */
+	public SimpleFieldSet exportVolatileFieldSet() {
+		SimpleFieldSet fs = new SimpleFieldSet();
+		long now = System.currentTimeMillis();
+		long nodeUptimeSeconds = 0;
+		synchronized(this) {
+			fs.put("startupTime", Long.toString(startupTime));
+			nodeUptimeSeconds = (now - startupTime) / 1000;
+			fs.put("uptimeSeconds", Long.toString(nodeUptimeSeconds));
+		}
+		fs.put("averagePingTime", Double.toString(getNodeAveragePingTime()));
+		fs.put("bwlimitDelayTime", Double.toString(getBwlimitDelayTime()));
+		fs.put("networkSizeEstimateSession", Integer.toString(getNetworkSizeEstimate(-1)));
+		int networkSizeEstimateRecent = 0;
+		if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
+			networkSizeEstimateRecent = getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
+		}
+		fs.put("networkSizeEstimateRecent", Integer.toString(networkSizeEstimateRecent));
+		fs.put("missRoutingDistance", Double.toString(missRoutingDistance.currentValue()));
+		fs.put("backedoffPercent", Double.toString(backedoffPercent.currentValue()));
+		fs.put("pInstantReject", Double.toString(pRejectIncomingInstantly()));
+		return fs;
+	}
+
+	/**
 	 * Do a routed ping of another node on the network by its location.
 	 * @param loc2 The location of the other node to ping. It must match
 	 * exactly.
