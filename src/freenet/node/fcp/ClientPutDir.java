@@ -9,12 +9,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.InserterException;
-import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
-import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -23,7 +24,7 @@ import freenet.support.io.Bucket;
 import freenet.support.io.FileBucket;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 
-public class ClientPutDir extends ClientPutBase implements ClientEventListener, ClientCallback {
+public class ClientPutDir extends ClientPutBase {
 
 	private final HashMap manifestElements;
 	private SimpleManifestPutter putter;
@@ -291,4 +292,7 @@ public class ClientPutDir extends ClientPutBase implements ClientEventListener, 
 		return true;
 	}
 
+	public void onFailure(FetchException e, ClientGetter state) {}
+
+	public void onSuccess(FetchResult result, ClientGetter state) {}
 }

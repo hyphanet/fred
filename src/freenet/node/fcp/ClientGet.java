@@ -53,7 +53,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	/** Length of the found data */
 	private long foundDataLength = -1;
 	/** MIME type of the found data */
-	private String foundDataMimeType = null;
+	private String foundDataMimeType;
 	/** Details of request failure */
 	private GetFailedMessage getFailedMessage;
 	/** Succeeded but failed to return data e.g. couldn't write to file */
@@ -312,8 +312,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				if(persistenceType == PERSIST_CONNECTION)
 					adm.setFreeOnSent();
 				dontFree = true;
-			} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
+			/* 
+			 * } else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
 				// Do nothing
+			 */
 			} else if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 				// Write to temp file, then rename over filename
 				FileOutputStream fos = null;

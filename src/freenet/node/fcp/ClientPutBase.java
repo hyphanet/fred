@@ -2,13 +2,10 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
-import freenet.client.FetchException;
-import freenet.client.FetchResult;
 import freenet.client.InserterContext;
 import freenet.client.InserterException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
-import freenet.client.async.ClientGetter;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.FinishedCompressionEvent;
@@ -138,10 +135,6 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		trySendGeneratedURIMessage(null);
 	}
 
-	public void onSuccess(FetchResult result, ClientGetter state){}
-
-	public void onFailure(FetchException e, ClientGetter state){}
-
 	public void receive(ClientEvent ce) {
 		if(finished) return;
 		if(ce instanceof SplitfileProgressEvent) {
@@ -168,8 +161,12 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	public void onFetchable(BaseClientPutter putter) {
 		if(finished) return;
 		if((verbosity & VERBOSITY_PUT_FETCHABLE) == VERBOSITY_PUT_FETCHABLE) {
+			FreenetURI temp;
+			synchronized (this) {
+				temp = generatedURI;
+			}
 			PutFetchableMessage msg =
-				new PutFetchableMessage(identifier, generatedURI);
+				new PutFetchableMessage(identifier, temp);
 			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null);
 		}
 	}

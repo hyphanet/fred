@@ -8,9 +8,12 @@ import java.io.IOException;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
+import freenet.client.FetchException;
+import freenet.client.FetchResult;
 import freenet.client.InserterException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
+import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
 import freenet.support.HexUtil;
@@ -395,4 +398,7 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 
+	public void onFailure(FetchException e, ClientGetter state) {}
+
+	public void onSuccess(FetchResult result, ClientGetter state) {}
 }
