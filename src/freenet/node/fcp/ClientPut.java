@@ -13,7 +13,6 @@ import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientPutter;
 import freenet.keys.FreenetURI;
-import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
