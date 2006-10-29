@@ -49,7 +49,7 @@ public class HTMLNode {
 			}
 		}
 		if (content != null) {
-			if (!name.equals("#")) {
+			if (!name.equals("#") && !name.equals("%")) {
 				addChild(new HTMLNode("#", content));
 				this.content = null;
 			} else {
@@ -136,6 +136,12 @@ public class HTMLNode {
 			tagBuffer.append(HTMLEncoder.encode(content));
 			return tagBuffer;
 		}
+		// Perhaps this should be something else, but since I don't know if '#' was not just arbitrary chosen, I'll just pick '%'
+		// This allows non-encoded text to be appended to the tag buffer
+		if (name.equals("%")) {
+			tagBuffer.append(content);
+			return tagBuffer;
+		}
 		tagBuffer.append("<").append(name);
 		Set attributeSet = attributes.entrySet();
 		for (Iterator attributeIterator = attributeSet.iterator(); attributeIterator.hasNext();) {
@@ -152,7 +158,7 @@ public class HTMLNode {
 			}
 		} else {
 			tagBuffer.append(">");
-			if(name.equals("div") || name.equals("table") || name.equals("tr") || name.equals("td")) {
+			if(name.equals("div") || name.equals("form") || name.equals("input") || name.equals("script") || name.equals("table") || name.equals("tr") || name.equals("td")) {
 				tagBuffer.append("\n");
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
@@ -160,7 +166,7 @@ public class HTMLNode {
 				childNode.generate(tagBuffer);
 			}
 			tagBuffer.append("</").append(name).append(">");
-			if(name.equals("div") || name.equals("li") || name.equals("table") || name.equals("tr") || name.equals("td")) {
+			if(name.equals("div") || name.equals("form") || name.equals("input") || name.equals("li") || name.equals("option") || name.equals("script") || name.equals("table") || name.equals("tr") || name.equals("td")) {
 				tagBuffer.append("\n");
 			}
 		}
