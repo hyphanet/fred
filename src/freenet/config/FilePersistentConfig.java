@@ -170,14 +170,18 @@ public class FilePersistentConfig extends Config {
 		}
 	}
 
-	private synchronized SimpleFieldSet exportFieldSet() {
+	private SimpleFieldSet exportFieldSet() {
+		return exportFieldSet(false);
+	}
+
+	public synchronized SimpleFieldSet exportFieldSet(boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		SubConfig[] configs;
 		synchronized(this) {
 			configs = (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
 		}
 		for(int i=0;i<configs.length;i++) {
-			SimpleFieldSet scfs = configs[i].exportFieldSet();
+			SimpleFieldSet scfs = configs[i].exportFieldSet(withDefaults);
 			fs.tput(configs[i].prefix, scfs);
 		}
 		return fs;

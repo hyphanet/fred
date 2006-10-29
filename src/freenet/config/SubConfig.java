@@ -181,6 +181,10 @@ public class SubConfig implements Comparable {
 	}
 
 	public SimpleFieldSet exportFieldSet() {
+		return exportFieldSet(false);
+	}
+
+	public SimpleFieldSet exportFieldSet(boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		Set entrySet = map.entrySet();
 		Iterator i = entrySet.iterator();
@@ -188,7 +192,7 @@ public class SubConfig implements Comparable {
 			Map.Entry entry = (Map.Entry) i.next();
 			String key = (String) entry.getKey();
 			Option o = (Option) entry.getValue();
-			if(o.isDefault() && !o.forceWrite) continue;
+			if(!withDefaults && o.isDefault() && !o.forceWrite) continue;
 			fs.put(key, o.getValueString());
 		}
 		return fs;

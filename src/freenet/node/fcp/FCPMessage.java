@@ -44,6 +44,8 @@ public abstract class FCPMessage {
 			return new ClientPutMessage(fs);
 		if(name.equals(GenerateSSKMessage.name))
 			return new GenerateSSKMessage(fs);
+		if(name.equals(GetConfig.name))
+			return new GetConfig(fs);
 		if(name.equals(GetNode.name))
 			return new GetNode(fs);
 		if(name.equals(GetRequestStatusMessage.name))
@@ -52,6 +54,8 @@ public abstract class FCPMessage {
 			return new ListPeersMessage(fs);
 		if(name.equals(ListPersistentRequestsMessage.name))
 			return new ListPersistentRequestsMessage(fs);
+		if(name.equals(ModifyConfig.name))
+			return new ModifyConfig(fs);
 		if(name.equals(ModifyPeer.name))
 			return new ModifyPeer(fs);
 		if(name.equals(ModifyPersistentRequest.name))
