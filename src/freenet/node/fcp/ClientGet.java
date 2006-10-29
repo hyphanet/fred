@@ -263,12 +263,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			FCPMessage msg = persistentTagMessage();
 			client.queueClientRequestMessage(msg, 0);
 		}
-		if(finished && !succeeded) {
-			started = true;
-		}
-
-		if (finished && succeeded) {
-			allDataPending = new AllDataMessage(returnBucket, identifier);
+		
+		if(finished){
+			if(succeeded) 
+				allDataPending = new AllDataMessage(returnBucket, identifier);
+			else
+				started = true;
 		}
 	}
 
