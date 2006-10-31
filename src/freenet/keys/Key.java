@@ -200,7 +200,8 @@ public abstract class Key implements WritableToDataOutputStream {
         	}
         }
         if(finalData == null) {
-            if(sourceData.size() > maxCompressedDataLength) {
+        	// Not compressed or not compressible; no size bytes to be added.
+            if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH) {
                 throw new CHKEncodeException("Too big");
             }
         	finalData = BucketTools.toByteArray(sourceData);
