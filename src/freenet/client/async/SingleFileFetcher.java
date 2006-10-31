@@ -357,7 +357,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
-						decompressors, clientMetadata, actx, recursionLevel, returnBucket, false, token);
+						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token);
 				parent.onTransition(this, sf);
 				sf.schedule();
 				rcb.onBlockSetFinished(this);
