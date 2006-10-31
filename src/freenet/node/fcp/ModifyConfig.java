@@ -7,9 +7,6 @@ import freenet.config.Config;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.node.Node;
-import freenet.node.NodeClientCore;
-import freenet.node.PeerNode;
-import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
