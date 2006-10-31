@@ -61,7 +61,7 @@ public class NodeIPDetector {
 		this.ticker = node.ps;
 		ipDetectorManager = new IPDetectorPluginManager(node, this);
 		ipDetector = new IPAddressDetector(10*1000, this);
-		primaryIPUndetectedAlert = new IPUndetectedUserAlert(this);
+		primaryIPUndetectedAlert = new IPUndetectedUserAlert(node);
 		arkPutter = new NodeARKInserter(node, this);
 	}
 	
