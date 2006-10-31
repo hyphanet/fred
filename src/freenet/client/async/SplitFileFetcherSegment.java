@@ -95,7 +95,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 		for(int i=0;i<dataBlocks.length;i++)
 			if(dataBlocks[i] == null) throw new NullPointerException("Null: data block "+i);
 		for(int i=0;i<checkBlocks.length;i++)
-			if(checkBlocks[i] == null) throw new NullPointerException("Null: data block "+i);
+			if(checkBlocks[i] == null) throw new NullPointerException("Null: check block "+i);
 	}
 
 	public synchronized boolean isFinished() {
