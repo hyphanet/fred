@@ -130,14 +130,17 @@ class SingleFileInserter implements ClientPutState {
 		Bucket origData = block.getData();
 		Bucket data = origData;
 		int blockSize;
+		int oneBlockCompressedSize;
 		boolean dontCompress = ctx.dontCompress;
 		
 		long origSize = data.size();
 		String type = block.desiredURI.getKeyType().toUpperCase();
 		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
 			blockSize = SSKBlock.DATA_LENGTH;
+			oneBlockCompressedSize = SSKBlock.MAX_COMPRESSED_DATA_LENGTH;
 		} else if(type.equals("CHK")) {
 			blockSize = CHKBlock.DATA_LENGTH;
+			oneBlockCompressedSize = CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 		} else {
 			throw new InserterException(InserterException.INVALID_URI, "Unknown key type: "+type, null);
 		}
@@ -157,8 +160,8 @@ class SingleFileInserter implements ClientPutState {
 						ctx.eventProducer.produceEvent(new StartedCompressionEvent(i));
 					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
 					Bucket result;
-					result = comp.compress(origData, ctx.persistentBucketFactory, Long.MAX_VALUE);
-					if(result.size() < blockSize) {
+					result = comp.compress(origData, ctx.persistentBucketFactory, origData.size());
+					if(result.size() < oneBlockCompressedSize) {
 						bestCodec = comp;
 						data = result;
 						if(bestCompressedData != null)
@@ -194,13 +197,16 @@ class SingleFileInserter implements ClientPutState {
 		
 		// Insert it...
 		short codecNumber = bestCodec == null ? -1 : bestCodec.codecNumberForMetadata();
+		long compressedDataSize = data.size();
+		boolean fitsInOneBlockAsIs = bestCodec == null ? compressedDataSize < blockSize : compressedDataSize < oneBlockCompressedSize;
+		boolean fitsInOneCHK = bestCodec == null ? compressedDataSize < CHKBlock.DATA_LENGTH : compressedDataSize < CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
 
 		if(block.getData().size() > Integer.MAX_VALUE)
 			throw new InserterException(InserterException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 
 		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
 		if(noMetadata && !insertAsArchiveManifest) {
-			if(data.size() < blockSize) {
+			if(fitsInOneBlockAsIs) {
 				// Just insert it
 				ClientPutState bi =
 					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true);
@@ -210,7 +216,7 @@ class SingleFileInserter implements ClientPutState {
 				return;
 			}
 		}
-		if (data.size() < ClientCHKBlock.MAX_COMPRESSED_DATA_LENGTH) {
+		if (fitsInOneCHK) {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token);

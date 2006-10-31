@@ -51,6 +51,8 @@ public class SSKBlock implements KeyBlock {
     final short symCipherIdentifier;
     
     public static final short DATA_LENGTH = 1024;
+    /* Maximum length of compressed payload */
+	public static final int MAX_COMPRESSED_DATA_LENGTH = DATA_LENGTH - 2;
     
     static final short SIG_R_LENGTH = 32;
     static final short SIG_S_LENGTH = 32;

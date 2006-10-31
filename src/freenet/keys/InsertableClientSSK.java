@@ -73,6 +73,9 @@ public class InsertableClientSSK extends ClientSSK {
             byte[] digest = md256.digest();
             MersenneTwister mt = new MersenneTwister(digest);
             data = new byte[SSKBlock.DATA_LENGTH];
+            if(compressedData.length > data.length) {
+            	throw new RuntimeException("compressedData.length = "+compressedData.length+" but data.length="+data.length);
+            }
             System.arraycopy(compressedData, 0, data, 0, compressedData.length);
             byte[] randomBytes = new byte[SSKBlock.DATA_LENGTH-compressedData.length];
             mt.nextBytes(randomBytes);

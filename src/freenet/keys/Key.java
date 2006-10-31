@@ -133,22 +133,27 @@ public abstract class Key implements WritableToDataOutputStream {
     	short compressionAlgorithm;
     }
     
-    static Compressed compress(Bucket sourceData, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, long MAX_LENGTH_BEFORE_COMPRESSION, long MAX_COMPRESSED_DATA_LENGTH, boolean shortLength) throws KeyEncodeException, IOException {
+    static Compressed compress(Bucket sourceData, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, long MAX_LENGTH_BEFORE_COMPRESSION, int MAX_COMPRESSED_DATA_LENGTH, boolean shortLength) throws KeyEncodeException, IOException {
     	byte[] finalData = null;
         short compressionAlgorithm = -1;
+        int maxCompressedDataLength = MAX_COMPRESSED_DATA_LENGTH;
+        if(shortLength)
+        	maxCompressedDataLength -= 2;
+        else
+        	maxCompressedDataLength -= 4;
         if(sourceData.size() > MAX_LENGTH_BEFORE_COMPRESSION)
             throw new KeyEncodeException("Too big");
         if((!dontCompress) || (alreadyCompressedCodec >= 0)) {
         	byte[] cbuf = null;
         	if(alreadyCompressedCodec >= 0) {
-           		if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH)
+           		if(sourceData.size() > maxCompressedDataLength)
         			throw new KeyEncodeException("Too big (precompressed)");
         		compressionAlgorithm = alreadyCompressedCodec;
         		cbuf = BucketTools.toByteArray(sourceData);
         		if(sourceLength > MAX_LENGTH_BEFORE_COMPRESSION)
         			throw new CHKEncodeException("Too big");
         	} else {
-        		if (sourceData.size() > MAX_COMPRESSED_DATA_LENGTH) {
+        		if (sourceData.size() > maxCompressedDataLength) {
 					// Determine the best algorithm
 					for (int i = 0; i < Compressor.countCompressAlgorithms(); i++) {
 						Compressor comp = Compressor
@@ -156,13 +161,13 @@ public abstract class Key implements WritableToDataOutputStream {
 						ArrayBucket compressedData;
 						try {
 							compressedData = (ArrayBucket) comp.compress(
-									sourceData, new ArrayBucketFactory(), MAX_COMPRESSED_DATA_LENGTH);
+									sourceData, new ArrayBucketFactory(), maxCompressedDataLength);
 						} catch (IOException e) {
 							throw new Error(e);
 						} catch (CompressionOutputSizeException e) {
 							continue;
 						}
-						if (compressedData.size() <= MAX_COMPRESSED_DATA_LENGTH) {
+						if (compressedData.size() <= maxCompressedDataLength) {
 							compressionAlgorithm = comp
 									.codecNumberForMetadata();
 							sourceLength = sourceData.size();
@@ -195,7 +200,7 @@ public abstract class Key implements WritableToDataOutputStream {
         	}
         }
         if(finalData == null) {
-            if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH) {
+            if(sourceData.size() > maxCompressedDataLength) {
                 throw new CHKEncodeException("Too big");
             }
         	finalData = BucketTools.toByteArray(sourceData);

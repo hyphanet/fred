@@ -19,6 +19,8 @@ public class CHKBlock implements KeyBlock {
     public static final int MAX_LENGTH_BEFORE_COMPRESSION = Integer.MAX_VALUE;
     public static final int TOTAL_HEADERS_LENGTH = 36;
     public static final int DATA_LENGTH = 32768;
+    /* Maximum length of compressed payload */
+	public static final int MAX_COMPRESSED_DATA_LENGTH = DATA_LENGTH - 4;
     
     public String toString() {
         return super.toString()+": chk="+chk;
