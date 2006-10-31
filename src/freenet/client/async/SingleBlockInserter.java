@@ -248,6 +248,10 @@ public class SingleBlockInserter implements SendableInsert, ClientPutState {
 		}
 	}
 
+	public synchronized FreenetURI getURINoEncode() {
+		return resultingURI;
+	}
+
 	public void onSuccess() {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		synchronized(this) {
