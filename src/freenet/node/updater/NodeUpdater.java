@@ -426,7 +426,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 			this.fetchedVersion = fetchingVersion;
 			System.out.println("Found "+fetchingVersion);
-			Logger.normal(this, "Found a new version! (" + fetchingVersion + ", setting up a new UpdatedVersionAviableUserAlert");
+			Logger.normal(this, "Found a new version! (" + fetchingVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
 			alert.set(availableVersion,fetchingVersion,true);
 			alert.isValid(true);
 			this.cg = state;
