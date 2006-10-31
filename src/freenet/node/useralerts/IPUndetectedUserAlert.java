@@ -51,7 +51,7 @@ public class IPUndetectedUserAlert implements UserAlert {
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
-		itemNode.addChild("span", "class", "configshortdesc", o.getShortDesc()).addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", sc.getPrefix() + ".name", o.getValueString() });
+		itemNode.addChild("span", "class", "configshortdesc", o.getShortDesc()).addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", sc.getPrefix() + ".tempIPAddressHint", o.getValueString() });
 		itemNode.addChild("span", "class", "configlongdesc", o.getLongDesc());
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Apply" });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", "Reset" });
