@@ -136,8 +136,6 @@ public abstract class Key implements WritableToDataOutputStream {
     static Compressed compress(Bucket sourceData, boolean dontCompress, short alreadyCompressedCodec, long sourceLength, long MAX_LENGTH_BEFORE_COMPRESSION, long MAX_COMPRESSED_DATA_LENGTH, boolean shortLength) throws KeyEncodeException, IOException {
     	byte[] finalData = null;
         short compressionAlgorithm = -1;
-        // Try to compress it - even if it fits into the block,
-        // because compressing it improves its entropy.
         if(sourceData.size() > MAX_LENGTH_BEFORE_COMPRESSION)
             throw new KeyEncodeException("Too big");
         if((!dontCompress) || (alreadyCompressedCodec >= 0)) {
@@ -150,7 +148,7 @@ public abstract class Key implements WritableToDataOutputStream {
         		if(sourceLength > MAX_LENGTH_BEFORE_COMPRESSION)
         			throw new CHKEncodeException("Too big");
         	} else {
-        		if (sourceData.size() > NodeCHK.BLOCK_SIZE) {
+        		if (sourceData.size() > MAX_COMPRESSED_DATA_LENGTH) {
 					// Determine the best algorithm
 					for (int i = 0; i < Compressor.countCompressAlgorithms(); i++) {
 						Compressor comp = Compressor
@@ -158,7 +156,7 @@ public abstract class Key implements WritableToDataOutputStream {
 						ArrayBucket compressedData;
 						try {
 							compressedData = (ArrayBucket) comp.compress(
-									sourceData, new ArrayBucketFactory(), NodeCHK.BLOCK_SIZE);
+									sourceData, new ArrayBucketFactory(), MAX_COMPRESSED_DATA_LENGTH);
 						} catch (IOException e) {
 							throw new Error(e);
 						} catch (CompressionOutputSizeException e) {
@@ -197,7 +195,7 @@ public abstract class Key implements WritableToDataOutputStream {
         	}
         }
         if(finalData == null) {
-            if(sourceData.size() > NodeCHK.BLOCK_SIZE) {
+            if(sourceData.size() > MAX_COMPRESSED_DATA_LENGTH) {
                 throw new CHKEncodeException("Too big");
             }
         	finalData = BucketTools.toByteArray(sourceData);
