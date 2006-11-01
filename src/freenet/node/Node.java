@@ -1037,20 +1037,16 @@ public class Node {
 						// Update each datastore
 						synchronized(Node.this) {
 							maxTotalKeys = newMaxStoreKeys;
-							maxStoreKeys = (maxTotalKeys * 4) / 5;
+							maxStoreKeys = maxTotalKeys / 2;
 							maxCacheKeys = maxTotalKeys - maxStoreKeys;
 						}
 						try {
-							long sz;
 							chkDatastore.setMaxKeys(maxStoreKeys, false);
-							sz = Math.max(maxCacheKeys, maxTotalKeys - chkDatastore.keyCount());
-							chkDatacache.setMaxKeys(sz, false);
+							chkDatacache.setMaxKeys(maxCacheKeys, false);
 							pubKeyDatastore.setMaxKeys(maxStoreKeys, false);
-							sz = Math.max(maxCacheKeys, maxTotalKeys - pubKeyDatastore.keyCount());
-							pubKeyDatacache.setMaxKeys(sz, false);
+							pubKeyDatacache.setMaxKeys(maxCacheKeys, false);
 							sskDatastore.setMaxKeys(maxStoreKeys, false);
-							sz = Math.max(maxCacheKeys, maxTotalKeys - sskDatastore.keyCount());
-							sskDatacache.setMaxKeys(sz, false);
+							sskDatacache.setMaxKeys(maxCacheKeys, false);
 						} catch (IOException e) {
 							// FIXME we need to be able to tell the user.
 							Logger.error(this, "Caught "+e+" resizing the datastore", e);
@@ -1066,7 +1062,7 @@ public class Node {
 		
 		long storeSize = nodeConfig.getLong("storeSize");
 		
-		if(/*storeSize < 0 || */storeSize < (32 * 1024 * 1024)) { // totally arbitrary minimum!
+		if(storeSize < 0 || storeSize < (32 * 1024 * 1024)) { // totally arbitrary minimum!
 			throw new NodeInitException(EXIT_INVALID_STORE_SIZE, "Invalid store size");
 		}
 
@@ -1123,12 +1119,11 @@ public class Node {
 			}
 		}
 
-		maxStoreKeys = (maxTotalKeys * 4) / 5;
+		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
 		try {
 			BerkeleyDBFreenetStore tmp;
-			long sz;
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
 			try {
@@ -1145,19 +1140,18 @@ public class Node {
 			}
 			chkDatastore = tmp;
 			Logger.normal(this, "Initializing CHK Datacache");
-			sz = Math.max(maxCacheKeys, maxTotalKeys - tmp.keyCount());
-			System.out.println("Initializing CHK Datacache ("+sz+":"+maxCacheKeys+" keys)");
+			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+":"+maxCacheKeys+" keys)");
 			try {
 				if((lastVersion > 0) && (lastVersion < 852)) {
 					throw new DatabaseException("Reconstructing store because started from old version");
 				}
-				tmp = new BerkeleyDBFreenetStore(chkCachePath, sz, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
+				tmp = new BerkeleyDBFreenetStore(chkCachePath, maxCacheKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
 			} catch (DatabaseException e) {
 				System.err.println("Could not open store: "+e);
 				e.printStackTrace();
 				System.err.println("Attempting to reconstruct...");
 				WrapperManager.signalStarting(5*60*60*1000);
-				tmp = new BerkeleyDBFreenetStore(chkCachePath, sz, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
+				tmp = new BerkeleyDBFreenetStore(chkCachePath, maxCacheKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
 			}
 			chkDatacache = tmp;
 			chkDatacache.setMaxKeys(maxCacheKeys, false);
@@ -1197,9 +1191,8 @@ public class Node {
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new BerkeleyDBFreenetStore(sskStorePath, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
 			Logger.normal(this, "Initializing SSK Datacache");
-			sz = Math.max(maxCacheKeys, maxTotalKeys - sskDatastore.keyCount());
-			System.out.println("Initializing SSK Datacache ("+sz+":"+maxCacheKeys+" keys)");
-			sskDatacache = new BerkeleyDBFreenetStore(sskCachePath, sz, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
+			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
+			sskDatacache = new BerkeleyDBFreenetStore(sskCachePath, maxCacheKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
 			sskDatacache.setMaxKeys(maxCacheKeys, false);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
