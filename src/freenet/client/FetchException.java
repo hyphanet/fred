@@ -356,43 +356,43 @@ public class FetchException extends Exception {
 	public static boolean isFatal(int mode) {
 		switch(mode) {
 		// Problems with the data as inserted, or the URI given. No point retrying.
-		case FetchException.ARCHIVE_FAILURE:
-		case FetchException.BLOCK_DECODE_ERROR:
-		case FetchException.HAS_MORE_METASTRINGS:
-		case FetchException.NOT_ENOUGH_METASTRINGS:
-		case FetchException.INVALID_METADATA:
-		case FetchException.NOT_IN_ARCHIVE:
-		case FetchException.TOO_DEEP_ARCHIVE_RECURSION:
-		case FetchException.TOO_MANY_ARCHIVE_RESTARTS:
-		case FetchException.TOO_MANY_METADATA_LEVELS:
-		case FetchException.TOO_MANY_REDIRECTS:
-		case FetchException.TOO_MUCH_RECURSION:
-		case FetchException.UNKNOWN_METADATA:
-		case FetchException.UNKNOWN_SPLITFILE_METADATA:
-		case FetchException.INVALID_URI:
-		case FetchException.TOO_BIG:
-		case FetchException.TOO_MANY_META_STRINGS:
+		case ARCHIVE_FAILURE:
+		case BLOCK_DECODE_ERROR:
+		case HAS_MORE_METASTRINGS:
+		case NOT_ENOUGH_METASTRINGS:
+		case INVALID_METADATA:
+		case NOT_IN_ARCHIVE:
+		case TOO_DEEP_ARCHIVE_RECURSION:
+		case TOO_MANY_ARCHIVE_RESTARTS:
+		case TOO_MANY_METADATA_LEVELS:
+		case TOO_MANY_REDIRECTS:
+		case TOO_MUCH_RECURSION:
+		case UNKNOWN_METADATA:
+		case UNKNOWN_SPLITFILE_METADATA:
+		case INVALID_URI:
+		case TOO_BIG:
+		case TOO_MANY_META_STRINGS:
 			return true;
 
 		// Low level errors, can be retried
-		case FetchException.DATA_NOT_FOUND:
-		case FetchException.ROUTE_NOT_FOUND:
-		case FetchException.REJECTED_OVERLOAD:
-		case FetchException.TRANSFER_FAILED:
+		case DATA_NOT_FOUND:
+		case ROUTE_NOT_FOUND:
+		case REJECTED_OVERLOAD:
+		case TRANSFER_FAILED:
 			return false;
 			
-		case FetchException.BUCKET_ERROR:
-		case FetchException.INTERNAL_ERROR:
+		case BUCKET_ERROR:
+		case INTERNAL_ERROR:
 			// Maybe fatal
 			return false;
 			
-		case FetchException.SPLITFILE_ERROR:
+		case SPLITFILE_ERROR:
 			// Fatal, because there are internal retries
 			return true;
 			
 			// Wierd ones
-		case FetchException.CANCELLED:
-		case FetchException.ARCHIVE_RESTART:
+		case CANCELLED:
+		case ARCHIVE_RESTART:
 			// Fatal
 			return true;
 			
