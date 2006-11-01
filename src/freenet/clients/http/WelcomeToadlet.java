@@ -53,21 +53,7 @@ public class WelcomeToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri,data,ctx);
 		if(request==null) return;
 		
-		if (request.getParam("shutdownconfirm").length() > 0) {
-			// Do the actual shutdown
-			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", ".?shutdownconfirm="+core.formPassword.hashCode());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			this.node.exit("Shutdown from fproxy");
-			return;
-		}else if(request.getParam("restartconfirm").length() > 0){
-			// Do the actual restart
-			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", ".?restartconfirm="+core.formPassword.hashCode());
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			node.getNodeStarter().restart();
-			return;
-		}else if(request.getParam("updateconfirm").length() > 0){
+		if(request.getParam("updateconfirm").length() > 0){
 			// false for no navigation bars, because that would be very silly
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node updating");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -79,17 +65,6 @@ public class WelcomeToadlet extends Toadlet {
 			Logger.normal(this, "Node is updating/restarting");
 			node.ps.queueTimedJob(new Runnable() {
 				public void run() { node.getNodeUpdater().Update(); }}, 0);
-			return;
-		}else if (request.getParam("restart").length() > 0) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart");
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Restart"));
-			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-			content.addChild("p").addChild("#", "Are you sure you want to restart your Freenet node?");
-			HTMLNode restartForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
-			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
-			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restartconfirm", "Restart" });
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length()>0){
 			String pass = request.getParam("formPassword");
@@ -109,17 +84,6 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode updateForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "updateconfirm", "Update" });
-			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-			return;
-		} else if (request.getParam("exit").equalsIgnoreCase("true")) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown");
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Shutdown"));
-			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-			content.addChild("p").addChild("#", "Are you sure you wish to shut down your Freenet node?");
-			HTMLNode shutdownForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
-			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
-			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "shutdownconfirm", "Shut down" });
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if(request.isParameterSet("getThreadDump")) {
@@ -314,6 +278,39 @@ public class WelcomeToadlet extends Toadlet {
 				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 				request.freeParts();
 				bucket.free();
+		}else if (request.isParameterSet("shutdownconfirm")) {
+			// Tell the user that the node is shutting down
+			if(!(request.isParameterSet("formPassword")) || !(core.formPassword.equals(request.getParam("formPassword")))){
+				MultiValueTable headers = new MultiValueTable();
+				headers.put("Location", "/");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet node has been successfully shut down."));
+			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+			infoboxContent.addChild("#", "Thank you for using Freenet.");
+			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			this.node.exit("Shutdown from fproxy");
+			return;
+		}else if(request.isParameterSet("restartconfirm")){
+			// Tell the user that the node is restarting
+			if(!(request.isParameterSet("formPassword")) || !(core.formPassword.equals(request.getParam("formPassword")))){
+				MultiValueTable headers = new MultiValueTable();
+				headers.put("Location", "/");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", false);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet is being restarted."));
+			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
+			infoboxContent.addChild("#", "Please wait while the node is being restarted. This might take up to 3 minutes. Thank you for using Freenet.");
+			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			Logger.normal(this, "Node is restarting");
+			node.getNodeStarter().restart();
+			return;
 		}else {
 			this.handleGet(uri, ctx);
 		}
@@ -376,37 +373,29 @@ public class WelcomeToadlet extends Toadlet {
 			contentNode.addChild(createBookmarkEditForm(ctx.getPageMaker(), MODE_ADD, null, "", ""));
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
-		}else if (request.getParam("shutdownconfirm").length() > 0) {
-			// Tell the user that the node is shutting down
-			if(request.getIntParam("shutdownconfirm") != core.formPassword.hashCode()){
-				MultiValueTable headers = new MultiValueTable();
-				headers.put("Location", "/");
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				return;
-			}
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false);
+		}else if (request.isParameterSet("exit")) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet node has been successfully shut down."));
-			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
-			infoboxContent.addChild("#", "Thank you for using Freenet.");
-			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Shutdown"));
+			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			content.addChild("p").addChild("#", "Are you sure you wish to shut down your Freenet node?");
+			HTMLNode shutdownForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "POST" });
+			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "shutdownconfirm", "Shut down" });
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
-		}else if(request.getParam("restartconfirm").length() > 0){
-			// Tell the user that the node is restarting
-			if(request.getIntParam("restartconfirm") != core.formPassword.hashCode()){
-				MultiValueTable headers = new MultiValueTable();
-				headers.put("Location", "/");
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				return;
-			}
-			// false for no navigation bars, because that would be very silly
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", false);
+		}else if (request.isParameterSet("restart")) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet is being restarted."));
-			HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
-			infoboxContent.addChild("#", "Please wait while the node is being restarted. This might take up to 3 minutes. Thank you for using Freenet.");
-			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
-			Logger.normal(this, "Node is restarting");
+			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Restart"));
+			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			content.addChild("p").addChild("#", "Are you sure you want to restart your Freenet node?");
+			HTMLNode restartForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "POST" });
+			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restartconfirm", "Restart" });
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}
 		
@@ -465,12 +454,13 @@ public class WelcomeToadlet extends Toadlet {
 		versionContent.addChild("br");
 		versionContent.addChild("#", "Freenet-ext Build #" + NodeStarter.extBuildNumber + " r" + NodeStarter.extRevisionNumber);
 		versionContent.addChild("br");
-		HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
-		shutdownForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "exit", "true" });
+		HTMLNode shutdownForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "GET" });
+		shutdownForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "exit" });
 		shutdownForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", "Shutdown the node" });
 		if(node.isUsingWrapper()){
-			HTMLNode restartForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
-			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart", "Restart the node" });
+			HTMLNode restartForm = versionContent.addChild("form", new String[] { "action", "method" }, new String[] { ".", "GET" });
+			restartForm.addChild("input", new String[] { "type", "name" }, new String[] { "hidden", "restart" });
+			restartForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "restart2", "Restart the node" });
 		}
 		
 		// Activity
