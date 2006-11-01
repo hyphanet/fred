@@ -168,7 +168,7 @@ public class FetchException extends Exception {
 		case NOT_IN_ARCHIVE:
 			return "Not in archive";
 		case TOO_MANY_PATH_COMPONENTS:
-			return "Not a manifest";
+			return "Too many path components";
 		case BUCKET_ERROR:
 			return "Temporary files error";
 		case DATA_NOT_FOUND:
@@ -248,7 +248,7 @@ public class FetchException extends Exception {
 		case NOT_IN_ARCHIVE:
 			return "File not in archive";
 		case TOO_MANY_PATH_COMPONENTS:
-			return "Not a manifest";
+			return "Too many path components - not a manifest? Try removing one";
 		case BUCKET_ERROR:
 			return "Internal temp files error, maybe disk full or permissions problem?";
 		case DATA_NOT_FOUND:
