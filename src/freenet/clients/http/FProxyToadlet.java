@@ -244,7 +244,7 @@ public class FProxyToadlet extends Toadlet {
 		} catch (FetchException e) {
 			String msg = e.getMessage();
 			String extra = "";
-			if(e.mode == FetchException.NOT_ENOUGH_METASTRINGS) {
+			if(e.mode == FetchException.NOT_ENOUGH_PATH_COMPONENTS) {
 				this.writePermanentRedirect(ctx, "Not enough meta-strings", "/" + URLEncoder.encode(key.toString(false)) + "/");
 			} else if(e.newURI != null) {
 				this.writePermanentRedirect(ctx, msg, "/"+e.newURI.toString());

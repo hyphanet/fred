@@ -197,7 +197,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;
 				if(metaStrings.isEmpty())
-					throw new FetchException(FetchException.NOT_ENOUGH_METASTRINGS);
+					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS);
 				else
 					name = (String) metaStrings.removeFirst();
 				// Since metadata is a document, we just replace metadata here
@@ -205,7 +205,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				if(name == null) {
 					metadata = metadata.getDefaultDocument();
 					if(metadata == null)
-						throw new FetchException(FetchException.NOT_ENOUGH_METASTRINGS);
+						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS);
 				} else {
 					metadata = metadata.getDocument(name);
 					thisKey = thisKey.pushMetaString(name);

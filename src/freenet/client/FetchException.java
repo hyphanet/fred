@@ -167,7 +167,7 @@ public class FetchException extends Exception {
 			return "Too much recursion";
 		case NOT_IN_ARCHIVE:
 			return "Not in archive";
-		case HAS_MORE_METASTRINGS:
+		case TOO_MANY_PATH_COMPONENTS:
 			return "Not a manifest";
 		case BUCKET_ERROR:
 			return "Temporary files error";
@@ -191,7 +191,7 @@ public class FetchException extends Exception {
 			return "Metadata too big";
 		case TOO_MANY_BLOCKS_PER_SEGMENT:
 			return "Too many blocks per segment";
-		case NOT_ENOUGH_METASTRINGS:
+		case NOT_ENOUGH_PATH_COMPONENTS:
 			return "Not enough meta-strings"; // FIXME better description
 		case CANCELLED:
 			return "Cancelled";
@@ -199,8 +199,6 @@ public class FetchException extends Exception {
 			return "Archive restarted";
 		case PERMANENT_REDIRECT:
 			return "New URI";
-		case TOO_MANY_META_STRINGS:
-			return "Too many path elements";
 		default:
 			return "Unknown code "+mode;
 		}
@@ -249,7 +247,7 @@ public class FetchException extends Exception {
 			return "Too many redirects (too much recursion)"; // FIXME: ???
 		case NOT_IN_ARCHIVE:
 			return "File not in archive";
-		case HAS_MORE_METASTRINGS:
+		case TOO_MANY_PATH_COMPONENTS:
 			return "Not a manifest";
 		case BUCKET_ERROR:
 			return "Internal temp files error, maybe disk full or permissions problem?";
@@ -273,7 +271,7 @@ public class FetchException extends Exception {
 			return "Metadata too big";
 		case TOO_MANY_BLOCKS_PER_SEGMENT:
 			return "Too many blocks per segment";
-		case NOT_ENOUGH_METASTRINGS:
+		case NOT_ENOUGH_PATH_COMPONENTS:
 			return "Give more metastrings (path components) in URI";
 			// FIXME better description for above
 		case CANCELLED:
@@ -282,8 +280,6 @@ public class FetchException extends Exception {
 			return "Archive restarted";
 		case PERMANENT_REDIRECT:
 			return "Permanent redirect: use the new URI";
-		case TOO_MANY_META_STRINGS:
-			return "Too many path elements: try chopping one off";
 		default:
 			return "Unknown fetch error code: "+mode;
 		}
@@ -313,8 +309,8 @@ public class FetchException extends Exception {
 	public static final int TOO_MUCH_RECURSION = 9;
 	/** Tried to access an archive file but not in an archive */
 	public static final int NOT_IN_ARCHIVE = 10;
-	/** Has more metastrings, can't fulfill them */
-	public static final int HAS_MORE_METASTRINGS = 11;
+	/** Too many meta strings. E.g. requesting CHK@blah,blah,blah as CHK@blah,blah,blah/filename.ext */
+	public static final int TOO_MANY_PATH_COMPONENTS = 11;
 	/** Failed to read from or write to a bucket; a kind of internal error */
 	public static final int BUCKET_ERROR = 12;
 	/** Data not found */
@@ -338,15 +334,13 @@ public class FetchException extends Exception {
 	/** Splitfile has too big segments */
 	public static final int TOO_MANY_BLOCKS_PER_SEGMENT = 23;
 	/** Not enough meta strings in URI given and no default document */
-	public static final int NOT_ENOUGH_METASTRINGS = 24;
+	public static final int NOT_ENOUGH_PATH_COMPONENTS = 24;
 	/** Explicitly cancelled */
 	public static final int CANCELLED = 25;
 	/** Archive restart */
 	public static final int ARCHIVE_RESTART = 26;
 	/** There is a more recent version of the USK, ~= HTTP 301; FProxy will turn this into a 301 */
 	public static final int PERMANENT_REDIRECT = 27;
-	/** Too many meta strings. E.g. requesting CHK@blah,blah,blah as CHK@blah,blah,blah/filename.ext */
-	public static final int TOO_MANY_META_STRINGS = 28;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -358,8 +352,8 @@ public class FetchException extends Exception {
 		// Problems with the data as inserted, or the URI given. No point retrying.
 		case ARCHIVE_FAILURE:
 		case BLOCK_DECODE_ERROR:
-		case HAS_MORE_METASTRINGS:
-		case NOT_ENOUGH_METASTRINGS:
+		case TOO_MANY_PATH_COMPONENTS:
+		case NOT_ENOUGH_PATH_COMPONENTS:
 		case INVALID_METADATA:
 		case NOT_IN_ARCHIVE:
 		case TOO_DEEP_ARCHIVE_RECURSION:
@@ -371,7 +365,6 @@ public class FetchException extends Exception {
 		case UNKNOWN_SPLITFILE_METADATA:
 		case INVALID_URI:
 		case TOO_BIG:
-		case TOO_MANY_META_STRINGS:
 			return true;
 
 		// Low level errors, can be retried
