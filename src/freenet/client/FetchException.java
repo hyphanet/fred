@@ -199,6 +199,8 @@ public class FetchException extends Exception {
 			return "Archive restarted";
 		case PERMANENT_REDIRECT:
 			return "New URI";
+		case TOO_MANY_META_STRINGS:
+			return "Too many path elements";
 		default:
 			return "Unknown code "+mode;
 		}
@@ -280,6 +282,8 @@ public class FetchException extends Exception {
 			return "Archive restarted";
 		case PERMANENT_REDIRECT:
 			return "Permanent redirect: use the new URI";
+		case TOO_MANY_META_STRINGS:
+			return "Too many path elements: try chopping one off";
 		default:
 			return "Unknown fetch error code: "+mode;
 		}
@@ -341,6 +345,8 @@ public class FetchException extends Exception {
 	public static final int ARCHIVE_RESTART = 26;
 	/** There is a more recent version of the USK, ~= HTTP 301; FProxy will turn this into a 301 */
 	public static final int PERMANENT_REDIRECT = 27;
+	/** Too many meta strings. E.g. requesting CHK@blah,blah,blah as CHK@blah,blah,blah/filename.ext */
+	public static final int TOO_MANY_META_STRINGS = 28;
 
 	/** Is an error fatal i.e. is there no point retrying? */
 	public boolean isFatal() {
@@ -349,7 +355,7 @@ public class FetchException extends Exception {
 
 	public static boolean isFatal(int mode) {
 		switch(mode) {
-		// Problems with the data as inserted. No point retrying.
+		// Problems with the data as inserted, or the URI given. No point retrying.
 		case FetchException.ARCHIVE_FAILURE:
 		case FetchException.BLOCK_DECODE_ERROR:
 		case FetchException.HAS_MORE_METASTRINGS:
@@ -365,6 +371,7 @@ public class FetchException extends Exception {
 		case FetchException.UNKNOWN_SPLITFILE_METADATA:
 		case FetchException.INVALID_URI:
 		case FetchException.TOO_BIG:
+		case FetchException.TOO_MANY_META_STRINGS:
 			return true;
 
 		// Low level errors, can be retried
