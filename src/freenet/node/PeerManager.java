@@ -458,11 +458,11 @@ public class PeerManager {
     	if (calculateMisrouting) {
     		PeerNode nbo = _closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, true, minVersion);
     		if(nbo != null) {
-    			node.missRoutingDistance.report(distance(best, nbo.getLocation().getValue()));
+    			node.routingMissDistance.report(distance(best, nbo.getLocation().getValue()));
     			int numberOfConnected = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_CONNECTED);
     			int numberOfRoutingBackedOff = node.getPeerNodeStatusSize(Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
     			if (numberOfRoutingBackedOff + numberOfConnected > 0 ) {
-    				node.backedoffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
+    				node.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
     			}
     		}
     	}

@@ -132,9 +132,9 @@ public class DarknetConnectionsToadlet extends Toadlet {
 				networkSizeEstimateRecent = node.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
 			}
 			DecimalFormat fix4 = new DecimalFormat("0.0000");
-			double missRoutingDistance =  node.missRoutingDistance.currentValue();
+			double routingMissDistance =  node.routingMissDistance.currentValue();
 			DecimalFormat fix1 = new DecimalFormat("##0.0%");
-			double backedoffPercent =  node.backedoffPercent.currentValue();
+			double backedOffPercent =  node.backedOffPercent.currentValue();
 			String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 
 			// BEGIN OVERVIEW TABLE
@@ -155,8 +155,8 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					overviewList.addChild("li", "networkSizeEstimateRecent:\u00a0" + networkSizeEstimateRecent + "\u00a0nodes");
 				}
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
-				overviewList.addChild("li", "missRoutingDistance:\u00a0" + fix4.format(missRoutingDistance));
-				overviewList.addChild("li", "backedoffPercent:\u00a0" + fix1.format(backedoffPercent));
+				overviewList.addChild("li", "routingMissDistance:\u00a0" + fix4.format(routingMissDistance));
+				overviewList.addChild("li", "backedOffPercent:\u00a0" + fix1.format(backedOffPercent));
 				overviewList.addChild("li", "pInstantReject:\u00a0" + fix1.format(node.pRejectIncomingInstantly()));
 				nextTableCell = overviewTableRow.addChild("td");
 			}
@@ -219,7 +219,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			}
 			if (numberOfRoutingBackedOff > 0) {
 				HTMLNode peerStatsRoutingBackedOffListItem = peerStatsList.addChild("li").addChild("span");
-				peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backedoff", (advancedEnabled ? "Connected but backed off: These peers are connected but we're backed off of them" : "Busy: These peers are connected but they're busy") + ", so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedEnabled ? "Backed off" : "Busy");
+				peerStatsRoutingBackedOffListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_backed_off", (advancedEnabled ? "Connected but backed off: These peers are connected but we're backed off of them" : "Busy: These peers are connected but they're busy") + ", so the node is not routing requests to them", "border-bottom: 1px dotted; cursor: help;" }, advancedEnabled ? "Backed off" : "Busy");
 				peerStatsRoutingBackedOffListItem.addChild("span", ":\u00a0" + numberOfRoutingBackedOff);
 			}
 			if (numberOfTooNew > 0) {

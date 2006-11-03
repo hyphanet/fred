@@ -481,8 +481,8 @@ public class Node {
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
 	
 	// various metrics
-	public RunningAverage missRoutingDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
-	public RunningAverage backedoffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	public RunningAverage routingMissDistance = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
+	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
 	protected final ThrottlePersister throttlePersister;
 	
 	/**
@@ -1697,8 +1697,8 @@ public class Node {
 		fs.put("networkSizeEstimate24hourRecent", Integer.toString(networkSizeEstimate24hourRecent));
 		int networkSizeEstimate48hourRecent = getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
 		fs.put("networkSizeEstimate48hourRecent", Integer.toString(networkSizeEstimate48hourRecent));
-		fs.put("missRoutingDistance", Double.toString(missRoutingDistance.currentValue()));
-		fs.put("backedoffPercent", Double.toString(backedoffPercent.currentValue()));
+		fs.put("routingMissDistance", Double.toString(routingMissDistance.currentValue()));
+		fs.put("backedOffPercent", Double.toString(backedOffPercent.currentValue()));
 		fs.put("pInstantReject", Double.toString(pRejectIncomingInstantly()));
 		
 		/* gather connection statistics */

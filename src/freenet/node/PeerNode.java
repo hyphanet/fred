@@ -2032,7 +2032,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
 	String lastRoutingBackoffReason;
 	/** Previous backoff reason (used by setPeerNodeStatus)*/
 	String previousRoutingBackoffReason;
-	/* percent of time this peer is backedoff */
+	/* percent of time this peer is backed off */
 	public RunningAverage backedOffPercent = new TimeDecayingRunningAverage(0.0, 180000, 0.0, 1.0);
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
@@ -2353,7 +2353,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
   	if(status == Node.PEER_NODE_STATUS_CONNECTED)
   		return "peer_connected";
   	if(status == Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF)
-  		return "peer_backedoff";
+  		return "peer_backed_off";
   	if(status == Node.PEER_NODE_STATUS_TOO_NEW)
   		return "peer_too_new";
   	if(status == Node.PEER_NODE_STATUS_TOO_OLD)
