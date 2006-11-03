@@ -46,7 +46,8 @@ public class BrowserTestToadlet extends Toadlet {
 		HTMLNode jsTestBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Javascript"));
 		HTMLNode jsTestContent= ctx.getPageMaker().getContentNode(jsTestBox);
 		HTMLNode jsTest = jsTestContent.addChild("div");
-		jsTest.addChild("script", "language", "javascript", "document.write('Your browser has JavaScript support enabled: it's not necessary to run freenet and should be disabled.');");
+		jsTest.addChild("img", new String[]{"id", "src", "alt"}, new String[]{"JSTEST", "/static/themes/clean/success.gif", "fail!"});
+		jsTest.addChild("script", "language", "javascript", "document.getElementById('JSTEST').src = '/static/themes/clean/warning.gif'");
 		
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
