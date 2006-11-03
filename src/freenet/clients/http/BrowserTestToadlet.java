@@ -47,7 +47,7 @@ public class BrowserTestToadlet extends Toadlet {
 		HTMLNode jsTestContent= ctx.getPageMaker().getContentNode(jsTestBox);
 		HTMLNode jsTest = jsTestContent.addChild("div");
 		jsTest.addChild("img", new String[]{"id", "src", "alt"}, new String[]{"JSTEST", "/static/themes/clean/success.gif", "fail!"});
-		jsTest.addChild("script", "language", "javascript", "document.getElementById('JSTEST').src = '/static/themes/clean/warning.gif'");
+		jsTest.addChild("script", "language", "javascript").addChild("%", "document.getElementById('JSTEST').src = '/static/themes/clean/warning.gif';");
 		
 		this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 	}
