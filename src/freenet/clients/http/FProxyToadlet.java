@@ -400,6 +400,9 @@ public class FProxyToadlet extends Toadlet {
 			LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 			server.register(localFileInsertToadlet, "/files/", true);
 
+			BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);
+			server.register(browsertTestToadlet, "/test/", true);
+			
 			// Now start the server.
 			server.start();
 			
