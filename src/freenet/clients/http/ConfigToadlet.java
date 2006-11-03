@@ -2,7 +2,6 @@ package freenet.clients.http;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 
 import freenet.client.HighLevelSimpleClient;
@@ -15,11 +14,12 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.io.Bucket;
-import freenet.support.io.BucketTools;
 
 
 // FIXME: add logging, comments
 public class ConfigToadlet extends Toadlet {
+	// If a setting has to be more than a meg, something is seriously wrong!
+	private static final int MAX_PARAM_VALUE_SIZE = 1024*1024;
 	private Config config;
 	private final NodeClientCore core;
 	private final Node node;
@@ -35,23 +35,9 @@ public class ConfigToadlet extends Toadlet {
 		StringBuffer errbuf = new StringBuffer();
 		SubConfig[] sc = config.getConfigs();
 		
-		// FIXME this is stupid, use a direct constructor
+		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
-		if(data.size() > 1024*1024) {
-			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, config servlet limited to 1MB");
-			return;
-		}
-		byte[] d = BucketTools.toByteArray(data);
-		String s = new String(d, "us-ascii");
-		HTTPRequest request;
-		try {
-			request = new HTTPRequest("/", s);
-		} catch (URISyntaxException e) {
-			Logger.error(this, "Impossible: "+e, e);
-			return;
-		}
-		
-		String pass = request.getParam("formPassword");
+		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/config/");
@@ -71,11 +57,12 @@ public class ConfigToadlet extends Toadlet {
 				if(logMINOR) Logger.minor(this, "Setting "+prefix+"."+configName);
 				
 				// we ignore unreconized parameters 
-				if(request.isParameterSet(prefix+"."+configName)) {
-					if(!(o[j].getValueString().equals(request.getParam(prefix+"."+configName)))){
-						if(logMINOR) Logger.minor(this, "Setting "+prefix+"."+configName+" to "+request.getParam(prefix+"."+configName));
+				if(request.isPartSet(prefix+"."+configName)) {
+					String value = request.getPartAsString(prefix+"."+configName, MAX_PARAM_VALUE_SIZE);
+					if(!(o[j].getValueString().equals(value))){
+						if(logMINOR) Logger.minor(this, "Setting "+prefix+"."+configName+" to "+value);
 						try{
-							o[j].setValue(request.getParam(prefix+"."+configName));
+							o[j].setValue(value);
 						}catch(Exception e){
 							errbuf.append(o[j].getName()+" "+e+"\n");
 							Logger.error(this, "Caught "+e, e);

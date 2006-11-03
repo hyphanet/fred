@@ -104,8 +104,6 @@ public class HTTPRequest {
 	
 	/**
 	 * Creates a new HTTPRequest for the given URI and data.
-	 * multipart/form-data will be split into Part's, but
-	 * application/x-www-form-urlencoded will be split into Param's.
 	 * 
 	 * @param uri The URI being requested
 	 * @param h Client headers
@@ -213,6 +211,8 @@ public class HTTPRequest {
 					} // FIXME some other encoding?
 					Bucket b = new SimpleReadOnlyArrayBucket(buf);
 					parts.put(name, b);
+					if(logMINOR)
+						Logger.minor(this, "Added as part: name="+name+" value="+value);
 				} else {
 					// get the list of values for this parameter that were parsed so far
 					List valueList = this.getParameterValueList(name);
@@ -349,6 +349,18 @@ public class HTTPRequest {
 			return defaultValue;
 		}
 		String value = this.getParameterValue(name);
+		try {
+			return Integer.parseInt(value);
+		} catch (NumberFormatException e) {
+			return defaultValue;
+		}
+	}
+
+	public int getIntPart(String name, int defaultValue) {
+		if (!this.isPartSet(name)) {
+			return defaultValue;
+		}
+		String value = this.getPartAsString(name, 32);
 		try {
 			return Integer.parseInt(value);
 		} catch (NumberFormatException e) {

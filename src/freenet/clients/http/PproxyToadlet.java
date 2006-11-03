@@ -20,6 +20,7 @@ import freenet.support.io.Bucket;
 import freenet.support.io.BucketTools;
 
 public class PproxyToadlet extends Toadlet {
+	private static final int MAX_PLUGIN_NAME_LENGTH = 1024;
 	private final PluginManager pm;
 	private final NodeClientCore core;
 
@@ -36,25 +37,11 @@ public class PproxyToadlet extends Toadlet {
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
 		
-		// FIXME this is archaic! Make it use the direct bucket constructor!
-		
-		if(data.size() > 1024*1024) {
-			this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, plugin servlet limited to 1MB");
-			return;
-		}
-		byte[] d = BucketTools.toByteArray(data);
-		String s = new String(d, "us-ascii");
-		HTTPRequest request;
-		try {
-			request = new HTTPRequest("/", s);
-		} catch (URISyntaxException e) {
-			Logger.error(this, "Impossible: "+e, e);
-			return;
-		}
+		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		
 		MultiValueTable headers = new MultiValueTable();
 		
-		String pass = request.getParam("formPassword");
+		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable hdrs = new MultiValueTable();
 			headers.put("Location", "/queue/");
@@ -62,49 +49,50 @@ public class PproxyToadlet extends Toadlet {
 			return;
 		}
 		
-		if (request.isParameterSet("load")) {
-			pm.startPlugin(request.getParam("load"), true);
+		if (request.isPartSet("load")) {
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Loading "+request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH));
+			pm.startPlugin(request.getPartAsString("load", MAX_PLUGIN_NAME_LENGTH), true);
 			//writeReply(ctx, 200, "text/html", "OK", mkForwardPage("Loading plugin", "Loading plugin...", ".", 5));
 	
 			headers.put("Location", ".");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
-		}if (request.isParameterSet("cancel")){
+		}if (request.isPartSet("cancel")){
 			headers.put("Location", "/plugins/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
-		}if (request.getParam("unloadconfirm").length() > 0) {
-			pm.killPlugin(request.getParam("unloadconfirm"));
+		}if (request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
+			pm.killPlugin(request.getPartAsString("unloadconfirm", MAX_PLUGIN_NAME_LENGTH));
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-success");
 			infobox.addChild("div", "class", "infobox-header", "Plugin unloaded");
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-			infoboxContent.addChild("#", "The plugin " + request.getParam("remove") + " has been unloaded.");
+			infoboxContent.addChild("#", "The plugin " + request.getPartAsString("remove", MAX_PLUGIN_NAME_LENGTH) + " has been unloaded.");
 			infoboxContent.addChild("br");
 			infoboxContent.addChild("a", "href", "/plugins/", "Return to Plugin page.");
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
-		}if (request.getParam("unload").length() > 0) {
+		}if (request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Plugins");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-query");
 			infobox.addChild("div", "class", "infobox-header", "Unload plugin?");
 			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-			infoboxContent.addChild("#", "Are you sure you wish to unload " + request.getParam("unload") + "?");
+			infoboxContent.addChild("#", "Are you sure you wish to unload " + request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) + "?");
 			HTMLNode unloadForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { "/plugins/", "post" });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
-			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unloadconfirm", request.getParam("unload") });
+			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unloadconfirm", request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH) });
 			unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "confirm", "Unload" });
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
-		}else if (request.getParam("reload").length() > 0) {
+		}else if (request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
 			String fn = null;
 			Iterator it = pm.getPlugins().iterator();
 			while (it.hasNext()) {
 				PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
-				if (pi.getThreadName().equals(request.getParam("reload"))) {
+				if (pi.getThreadName().equals(request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH))) {
 					fn = pi.getFilename();
 					break;
 				}
@@ -114,7 +102,7 @@ public class PproxyToadlet extends Toadlet {
 				this.sendErrorPage(ctx, 404, "Plugin Not Found", "The specified plugin could not be located in order to reload it.");
 				//writeReply(ctx, 200, "text/html", "OK", mkForwardPage(ctx,"Error", "Plugin not found...", ".", 5));
 			} else {
-				pm.killPlugin(request.getParam("reload"));
+				pm.killPlugin(request.getPartAsString("reload", MAX_PLUGIN_NAME_LENGTH));
 				pm.startPlugin(fn, true);
 				
 				headers.put("Location", ".");

@@ -23,6 +23,7 @@ import freenet.support.io.Bucket;
  */
 public class PluginToadlet extends Toadlet {
 
+	private static final int MAX_PLUGIN_NAME_LENGTH = 1024;
 	/** The plugin manager backing this toadlet. */
 	private final PluginManager pluginManager;
 	private final NodeClientCore core;
@@ -81,7 +82,7 @@ public class PluginToadlet extends Toadlet {
 			return;
 		}
 
-		String action = httpRequest.getParam("action");
+		String action = httpRequest.getPartAsString("action", 32);
 		if (action.length() == 0) {
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
 			return;
@@ -120,7 +121,7 @@ public class PluginToadlet extends Toadlet {
 			return;
 		}
 		
-		String pass = httpRequest.getParam("formPassword");
+		String pass = httpRequest.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/plugin/");
@@ -128,7 +129,7 @@ public class PluginToadlet extends Toadlet {
 			return;
 		}
 		
-		String action = httpRequest.getParam("action");
+		String action = httpRequest.getPartAsString("action", 32);
 		if (action.length() == 0) {
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
 			return;
@@ -136,7 +137,7 @@ public class PluginToadlet extends Toadlet {
 
 		StringBuffer replyBuffer = new StringBuffer();
 		if ("add".equals(action)) {
-			pluginName = httpRequest.getParam("pluginName");
+			pluginName = httpRequest.getPartAsString("pluginName", MAX_PLUGIN_NAME_LENGTH);
 			boolean added = false;
 			try {
 				pluginManager.addPlugin(pluginName, true);
@@ -149,14 +150,14 @@ public class PluginToadlet extends Toadlet {
 			}
 			replyBuffer.append(createBox(ctx, "Plugin was not loaded", "The plugin you requested could not be loaded. Please verify the name of the plugin\u2019s class and the URL, if you gave one."));
 		} else if ("reload".equals(action)) {
-			pluginName = httpRequest.getParam("pluginName");
+			pluginName = httpRequest.getPartAsString("pluginName", MAX_PLUGIN_NAME_LENGTH);
 			Plugin plugin = findPlugin(pluginName);
 			pluginManager.removePlugin(plugin, false);
 			pluginManager.addPlugin(plugin.getClass().getName(), false);
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");
 			return;
 		} else if ("unload".equals(action)) {
-			pluginName = httpRequest.getParam("pluginName");
+			pluginName = httpRequest.getPartAsString("pluginName", MAX_PLUGIN_NAME_LENGTH);
 			Plugin plugin = findPlugin(pluginName);
 			pluginManager.removePlugin(plugin, true);
 			writePermanentRedirect(ctx, "Plugin list", "?action=list");

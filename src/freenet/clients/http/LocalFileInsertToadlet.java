@@ -115,7 +115,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 						HTMLNode formNode = cellNode.addChild("form", new String[] { "action", "method", "accept-charset" }, new String[] { "/queue/", "post", "utf-8" });
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "filename", currentFile.getAbsolutePath() });
-						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", "Insert" });
+						formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local-file", "Insert" });
 						fileRow.addChild("td", currentFile.getName());
 						fileRow.addChild("td", "class", "right-align", String.valueOf(currentFile.length()));
 					} else {

@@ -30,6 +30,9 @@ import freenet.frost.message.*;
 public class WelcomeToadlet extends Toadlet {
 	private final static int MODE_ADD = 1;
 	private final static int MODE_EDIT = 2;
+	private static final int MAX_URL_LENGTH = 1024 * 1024;
+	private static final int MAX_KEY_LENGTH = QueueToadlet.MAX_KEY_LENGTH;
+	private static final int MAX_NAME_LENGTH = 1024 * 1024;
 	NodeClientCore core;
 	Node node;
 	SubConfig config;
@@ -51,9 +54,17 @@ public class WelcomeToadlet extends Toadlet {
 		}
 		
 		HTTPRequest request = new HTTPRequest(uri,data,ctx);
-		if(request==null) return;
+
+		String passwd = request.getPartAsString("formPassword", 32);
+		if((passwd == null) || !passwd.equals(core.formPassword)) {
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/");
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+")");
+			return;
+		}
 		
-		if(request.getParam("updateconfirm").length() > 0){
+		if(request.getPartAsString("updateconfirm", 32).length() > 0){
 			// false for no navigation bars, because that would be very silly
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node updating");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -66,16 +77,15 @@ public class WelcomeToadlet extends Toadlet {
 			node.ps.queueTimedJob(new Runnable() {
 				public void run() { node.getNodeUpdater().Update(); }}, 0);
 			return;
-		}else if (request.getParam(GenericReadFilterCallback.magicHTTPEscapeString).length()>0){
-			String pass = request.getParam("formPassword");
+		}else if (request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH).length()>0){
 			MultiValueTable headers = new MultiValueTable();
 			String url = null;
-			if(((pass != null) && pass.equals(core.formPassword)) && request.getParam("Go").length() > 0)
-				url = request.getParam(GenericReadFilterCallback.magicHTTPEscapeString);
+			if((request.getPartAsString("Go", 32).length() > 0))
+				url = request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH);
 			headers.put("Location", url==null ? "/" : url);
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
-		}else if (request.getParam("update").length() > 0) {
+		}else if (request.getPartAsString("update", 32).length() > 0) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Update");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Update"));
@@ -84,11 +94,10 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode updateForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" });
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "updateconfirm", "Update" });
+			updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
-		}else if(request.isParameterSet("getThreadDump")) {
-			String pass = request.getParam("formPassword");
-			if(!pass.equals(core.formPassword)) return;
+		}else if(request.isPartSet("getThreadDump")) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Get a Thread Dump");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			if(node.isUsingWrapper()){
@@ -102,11 +111,13 @@ public class WelcomeToadlet extends Toadlet {
 			}
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
-		}else if (request.isParameterSet("addbookmark")) {
+		}else if (request.isPartSet("addbookmark")) {
+			String key = request.getPartAsString("key", MAX_KEY_LENGTH);
+			String name = request.getPartAsString("name", MAX_NAME_LENGTH);
 			try {
-				bookmarks.addBookmark(new Bookmark(request.getParam("key"), request.getParam("name")), true);
+				bookmarks.addBookmark(new Bookmark(key, name), true);
 			} catch (MalformedURLException mue) {
-				this.sendBookmarkEditPage(ctx, MODE_ADD, null, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid Freenet key.");
+				this.sendBookmarkEditPage(ctx, MODE_ADD, null, key, name, "Given key does not appear to be a valid Freenet key.");
 				return;
 			}
 			
@@ -115,24 +126,26 @@ public class WelcomeToadlet extends Toadlet {
 			} catch (URISyntaxException ex) {
 				
 			}
-		} else if (request.isParameterSet("managebookmarks")) {
+		} else if (request.isPartSet("managebookmarks")) {
 			Enumeration e = bookmarks.getBookmarks();
 			while (e.hasMoreElements()) {
 				Bookmark b = (Bookmark)e.nextElement();
 			
-				if (request.isParameterSet("delete_"+b.hashCode())) {
+				if (request.isPartSet("delete_"+b.hashCode())) {
 					bookmarks.removeBookmark(b, true);
-				} else if (request.isParameterSet("edit_"+b.hashCode())) {
+				} else if (request.isPartSet("edit_"+b.hashCode())) {
 					this.sendBookmarkEditPage(ctx, b);
 					return;
-				} else if (request.isParameterSet("update_"+b.hashCode())) {
+				} else if (request.isPartSet("update_"+b.hashCode())) {
 					// removing it and adding means that any USK subscriptions are updated properly
+					String key = request.getPartAsString("key", MAX_KEY_LENGTH);
+					String name = request.getPartAsString("name", MAX_NAME_LENGTH);
 					try {
-						Bookmark newbkmk = new Bookmark(request.getParam("key"), request.getParam("name"));
+						Bookmark newbkmk = new Bookmark(key, name);
 						bookmarks.removeBookmark(b, false);
 						bookmarks.addBookmark(newbkmk, true);
 					} catch (MalformedURLException mue) {
-						this.sendBookmarkEditPage(ctx, MODE_EDIT, b, request.getParam("key"), request.getParam("name"), "Given key does not appear to be a valid freenet key.");
+						this.sendBookmarkEditPage(ctx, MODE_EDIT, b, key, name, "Given key does not appear to be a valid freenet key.");
 						return;
 					}
 					try {
@@ -147,10 +160,10 @@ public class WelcomeToadlet extends Toadlet {
 			} catch (URISyntaxException ex) {
 				return;
 			}
-		}else if(request.isParameterSet("disable")){
+		}else if(request.isPartSet("disable")){
 			UserAlert[] alerts=core.alerts.getAlerts();
 			for(int i=0;i<alerts.length;i++){
-				if(request.getIntParam("disable")==alerts[i].hashCode()){
+				if(request.getIntPart("disable",-1)==alerts[i].hashCode()){
 					UserAlert alert = alerts[i];
 					// Won't be dismissed if it's not allowed anyway
 					if(alert.userCanDismiss() && alert.shouldUnregisterOnDismiss()) {
@@ -278,14 +291,8 @@ public class WelcomeToadlet extends Toadlet {
 				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 				request.freeParts();
 				bucket.free();
-		}else if (request.isParameterSet("shutdownconfirm")) {
+		}else if (request.isPartSet("shutdownconfirm")) {
 			// Tell the user that the node is shutting down
-			if(!(request.isParameterSet("formPassword")) || !(core.formPassword.equals(request.getParam("formPassword")))){
-				MultiValueTable headers = new MultiValueTable();
-				headers.put("Location", "/");
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				return;
-			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet node has been successfully shut down."));
@@ -294,14 +301,8 @@ public class WelcomeToadlet extends Toadlet {
 			writeReply(ctx, 200, "text/html; charset=utf-8", "OK", pageNode.generate());
 			this.node.exit("Shutdown from fproxy");
 			return;
-		}else if(request.isParameterSet("restartconfirm")){
+		}else if(request.isPartSet("restartconfirm")){
 			// Tell the user that the node is restarting
-			if(!(request.isParameterSet("formPassword")) || !(core.formPassword.equals(request.getParam("formPassword")))){
-				MultiValueTable headers = new MultiValueTable();
-				headers.put("Location", "/");
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-				return;
-			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", false);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-information", "The Freenet is being restarted."));
@@ -329,6 +330,7 @@ public class WelcomeToadlet extends Toadlet {
 			addForm.addChild("br");
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", request.getParam("newbookmark") });
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "name", request.getParam("desc") });
+			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			addForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "addbookmark", "Add bookmark" });
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;

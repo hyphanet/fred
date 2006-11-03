@@ -48,6 +48,11 @@ public class QueueToadlet extends Toadlet {
 	private static final int LIST_TOTAL_SIZE = 10;
 	private static final int LIST_PROGRESS = 11;
 	private static final int LIST_REASON = 12;
+
+	private static final int MAX_IDENTIFIER_LENGTH = 1024*1024;
+	private static final int MAX_FILENAME_LENGTH = 1024*1024;
+	private static final int MAX_TYPE_LENGTH = 1024;
+	static final int MAX_KEY_LENGTH = 1024*1024;
 	
 	private NodeClientCore core;
 	final FCPServer fcp;
@@ -62,22 +67,20 @@ public class QueueToadlet extends Toadlet {
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		try {
+			if ((data.size() > 1024 * 1024) && (request.getPartAsString("insert", 128).length() == 0)) {
+				this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
+				return;
+			}
+			
+			// Browse... button
 			if (request.getPartAsString("insert-local", 128).length() > 0) {
 				MultiValueTable responseHeaders = new MultiValueTable();
 				responseHeaders.put("Location", "/files/");
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
-			}
-				
-			if ((data.size() > 1024 * 1024) && (request.getPartAsString("insert", 128).length() == 0)) {
-				this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
-				return;
-			}
-	
-			String pass = request.getParam("formPassword");
-			if (pass.length() == 0) {
-				pass = request.getPartAsString("formPassword", 128);
-			}
+			}			
+			
+			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 				MultiValueTable headers = new MultiValueTable();
 				headers.put("Location", "/queue/");
@@ -87,8 +90,8 @@ public class QueueToadlet extends Toadlet {
 
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			
-			if(request.isParameterSet("remove_request") && (request.getParam("remove_request").length() > 0)) {
-				String identifier = request.getParam("identifier");
+			if(request.isPartSet("remove_request") && (request.getPartAsString("remove_request", 32).length() > 0)) {
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Removing "+identifier);
 				try {
 					fcp.removeGlobalRequest(identifier);
@@ -97,8 +100,8 @@ public class QueueToadlet extends Toadlet {
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
-			} else if(request.isParameterSet("restart_request") && (request.getParam("restart_request").length() > 0)) {
-				String identifier = request.getParam("identifier");
+			} else if(request.isPartSet("restart_request") && (request.getPartAsString("restart_request", 32).length() > 0)) {
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Restarting "+identifier);
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();
 				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
@@ -111,7 +114,7 @@ public class QueueToadlet extends Toadlet {
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
-			} else if(request.isParameterSet("remove_AllRequests") && (request.getParam("remove_AllRequests").length() > 0)) {
+			} else if(request.isPartSet("remove_AllRequests") && (request.getPartAsString("remove_AllRequests", 32).length() > 0)) {
 				
 				ClientRequest[] reqs = fcp.getGlobalRequests();
 				if(logMINOR) Logger.minor(this, "Request count: "+reqs.length);
@@ -127,31 +130,31 @@ public class QueueToadlet extends Toadlet {
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
-			}else if(request.isParameterSet("download")) {
+			}else if(request.isPartSet("download")) {
 				// Queue a download
-				if(!request.isParameterSet("key")) {
+				if(!request.isPartSet("key")) {
 					writeError("No key specified to download", "You did not specify a key to download.", ctx);
 					return;
 				}
 				String expectedMIMEType = null;
-				if(request.isParameterSet("type")) {
-					expectedMIMEType = request.getParam("type");
+				if(request.isPartSet("type")) {
+					expectedMIMEType = request.getPartAsString("type", MAX_TYPE_LENGTH);
 				}
 				FreenetURI fetchURI;
 				try {
-					fetchURI = new FreenetURI(request.getParam("key"));
+					fetchURI = new FreenetURI(request.getPartAsString("key", MAX_KEY_LENGTH));
 				} catch (MalformedURLException e) {
 					writeError("Invalid URI to download", "The URI is invalid and can not be downloaded.", ctx);
 					return;
 				}
-				String persistence = request.getParam("persistence");
-				String returnType = request.getParam("return-type");
+				String persistence = request.getPartAsString("persistence", 32);
+				String returnType = request.getPartAsString("return-type", 32);
 				fcp.makePersistentGlobalRequest(fetchURI, expectedMIMEType, persistence, returnType);
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
-			} else if (request.isParameterSet("change_priority")) {
-				String identifier = request.getParam("identifier");
-				short newPriority = Short.parseShort(request.getParam("priority"));
+			} else if (request.isPartSet("change_priority")) {
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
+				short newPriority = Short.parseShort(request.getPartAsString("priority", 32));
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();
 				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
 					ClientRequest clientRequest = clientRequests[requestIndex];
@@ -201,13 +204,15 @@ public class QueueToadlet extends Toadlet {
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
-			} else if (request.isParameterSet("insert-local")) {
-				String filename = request.getParam("filename");
+			} else if (request.isPartSet("insert-local-file")) {
+				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
+				if(logMINOR) Logger.minor(this, "Inserting local file: "+filename);
 				File file = new File(filename);
 				String identifier = file.getName() + "-fred-" + System.currentTimeMillis();
 				String contentType = DefaultMIMETypes.guessMIMEType(filename, false);
 				try {
 					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), new FreenetURI("CHK@"), identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false), null, file.getName(), false);
+					if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 					clientPut.start();
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
@@ -215,8 +220,8 @@ public class QueueToadlet extends Toadlet {
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
-			} else if (request.isParameterSet("get")) {
-				String identifier = request.getParam("identifier");
+			} else if (request.isPartSet("get")) {
+				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				ClientRequest[] clientRequests = fcp.getGlobalRequests();
 				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
 					ClientRequest clientRequest = clientRequests[requestIndex];
@@ -226,7 +231,7 @@ public class QueueToadlet extends Toadlet {
 							if (clientGet.hasSucceeded()) {
 								Bucket dataBucket = clientGet.getBucket();
 								if (dataBucket != null) {
-									String forceDownload = request.getParam("forceDownload");
+									String forceDownload = request.getPartAsString("forceDownload", 32);
 									if (forceDownload.length() > 0) {
 										long forceDownloadTime = Long.parseLong(forceDownload);
 										if ((System.currentTimeMillis() - forceDownloadTime) > 60 * 1000) {
