@@ -1771,9 +1771,123 @@ public class Node {
 		String [] routingBackoffReasons = getPeerNodeRoutingBackoffReasons();
 		if(routingBackoffReasons.length != 0) {
 			for(int i=0;i<routingBackoffReasons.length;i++) {
-				fs.put("numberWithBackoffOf" + routingBackoffReasons[i], getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]));
+				fs.put("numberWithRoutingBackoffReasons." + routingBackoffReasons[i], getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]));
 			}
 		}
+
+		double swaps = (double)getSwaps();
+		double noSwaps = (double)getNoSwaps();
+		double numberOfRemotePeerLocationsSeenInSwaps = (double)getNumberOfRemotePeerLocationsSeenInSwaps();
+		fs.put("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
+		double avgConnectedPeersPerNode = 0.0;
+		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
+			avgConnectedPeersPerNode = numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps);
+		}
+		fs.put("avgConnectedPeersPerNode", Double.toString(avgConnectedPeersPerNode));
+
+		int startedSwaps = getStartedSwaps();
+		int swapsRejectedAlreadyLocked = getSwapsRejectedAlreadyLocked();
+		int swapsRejectedNowhereToGo = getSwapsRejectedNowhereToGo();
+		int swapsRejectedRateLimit = getSwapsRejectedRateLimit();
+		int swapsRejectedLoop = getSwapsRejectedLoop();
+		int swapsRejectedRecognizedID = getSwapsRejectedRecognizedID();
+		double locationChangePerSession = getLocationChangeSession();
+		double locationChangePerSwap = 0.0;
+		double locationChangePerMinute = 0.0;
+		double swapsPerMinute = 0.0;
+		double noSwapsPerMinute = 0.0;
+		double swapsPerNoSwaps = 0.0;
+		if (swaps > 0) {
+			locationChangePerSwap = locationChangePerSession/swaps;
+		}
+		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
+			locationChangePerMinute = locationChangePerSession/(double)(nodeUptimeSeconds/60.0);
+		}
+		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
+			swapsPerMinute = swaps/(double)(nodeUptimeSeconds/60.0);
+		}
+		if ((noSwaps > 0.0) && (nodeUptimeSeconds >= 60)) {
+			noSwapsPerMinute = noSwaps/(double)(nodeUptimeSeconds/60.0);
+		}
+		if ((swaps > 0.0) && (noSwaps > 0.0)) {
+			swapsPerNoSwaps = swaps/noSwaps;
+		}
+		fs.put("locationChangePerSession", Double.toString(locationChangePerSession));
+		fs.put("locationChangePerSwap", Double.toString(locationChangePerSwap));
+		fs.put("locationChangePerMinute", Double.toString(locationChangePerMinute));
+		fs.put("swapsPerMinute", Double.toString(swapsPerMinute));
+		fs.put("noSwapsPerMinute", Double.toString(noSwapsPerMinute));
+		fs.put("swapsPerNoSwaps", Double.toString(swapsPerNoSwaps));
+		fs.put("swaps", Double.toString(swaps));
+		fs.put("noSwaps", Double.toString(noSwaps));
+		fs.put("startedSwaps", Integer.toString(startedSwaps));
+		fs.put("swapsRejectedAlreadyLocked", Integer.toString(swapsRejectedAlreadyLocked));
+		fs.put("swapsRejectedNowhereToGo", Integer.toString(swapsRejectedNowhereToGo));
+		fs.put("swapsRejectedRateLimit", Integer.toString(swapsRejectedRateLimit));
+		fs.put("swapsRejectedLoop", Integer.toString(swapsRejectedLoop));
+		fs.put("swapsRejectedRecognizedID", Integer.toString(swapsRejectedRecognizedID));
+
+		long fix32kb = 32 * 1024;
+		long cachedKeys = getChkDatacache().keyCount();
+		long cachedSize = cachedKeys * fix32kb;
+		long storeKeys = getChkDatastore().keyCount();
+		long storeSize = storeKeys * fix32kb;
+		long overallKeys = cachedKeys + storeKeys;
+		long overallSize = cachedSize + storeSize;
+		
+		long maxOverallKeys = getMaxTotalKeys();
+		long maxOverallSize = maxOverallKeys * fix32kb;
+		
+		double percentOverallKeysOfMax = (double)(overallKeys*100)/(double)maxOverallKeys;
+		
+		long cachedStoreHits = getChkDatacache().hits();
+		long cachedStoreMisses = getChkDatacache().misses();
+		long cacheAccesses = cachedStoreHits + cachedStoreMisses;
+		double percentCachedStoreHitsOfAccesses = (double)(cachedStoreHits*100) / (double)cacheAccesses;
+		long storeHits = getChkDatastore().hits();
+		long storeMisses = getChkDatastore().misses();
+		long storeAccesses = storeHits + storeMisses;
+		double percentStoreHitsOfAccesses = (double)(storeHits*100) / (double)storeAccesses;
+		long overallAccesses = storeAccesses + cacheAccesses;
+		double avgStoreAccessRate = (double)overallAccesses/(double)nodeUptimeSeconds;
+		
+		fs.put("cachedKeys", Long.toString(cachedKeys));
+		fs.put("cachedSize", Long.toString(cachedSize));
+		fs.put("storeKeys", Long.toString(storeKeys));
+		fs.put("storeSize", Long.toString(storeSize));
+		fs.put("overallKeys", Long.toString(overallKeys));
+		fs.put("overallSize", Long.toString(overallSize));
+		fs.put("maxOverallKeys", Long.toString(maxOverallKeys));
+		fs.put("maxOverallSize", Long.toString(maxOverallSize));
+		fs.put("percentOverallKeysOfMax", Double.toString(percentOverallKeysOfMax));
+		fs.put("cachedStoreHits", Long.toString(cachedStoreHits));
+		fs.put("cachedStoreMisses", Long.toString(cachedStoreMisses));
+		fs.put("cacheAccesses", Long.toString(cacheAccesses));
+		fs.put("percentCachedStoreHitsOfAccesses", Double.toString(percentCachedStoreHitsOfAccesses));
+		fs.put("storeHits", Long.toString(storeHits));
+		fs.put("storeMisses", Long.toString(storeMisses));
+		fs.put("storeAccesses", Long.toString(storeAccesses));
+		fs.put("percentCachedStoreHitsOfAccesses", Double.toString(percentCachedStoreHitsOfAccesses));
+		fs.put("overallAccesses", Long.toString(overallAccesses));
+		fs.put("avgStoreAccessRate", Double.toString(avgStoreAccessRate));
+
+		Runtime rt = Runtime.getRuntime();
+		float freeMemory = (float) rt.freeMemory();
+		float totalMemory = (float) rt.totalMemory();
+		float maxMemory = (float) rt.maxMemory();
+
+		long usedJavaMem = (long)(totalMemory - freeMemory);
+		long allocatedJavaMem = (long)totalMemory;
+		long maxJavaMem = (long)maxMemory;
+		int threadCount = Thread.activeCount();
+		int availableCpus = rt.availableProcessors();
+
+		fs.put("freeJavaMemory", Long.toString((long)freeMemory));
+		fs.put("usedJavaMemory", Long.toString(usedJavaMem));
+		fs.put("allocatedJavaMemory", Long.toString(allocatedJavaMem));
+		fs.put("maximumJavaMemory", Long.toString(maxJavaMem));
+		fs.put("availableCPUs", Integer.toString(availableCpus));
+		fs.put("runningThreadCount", Integer.toString(threadCount));
 		
 		return fs;
 	}
