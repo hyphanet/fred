@@ -547,7 +547,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			MultiValueTable headers = new MultiValueTable();
 			headers.put("Location", "/darknet/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			if(logMINOR) Logger.minor(this, "No password");
+			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+")");
 			return;
 		}
 		
@@ -794,11 +794,13 @@ public class DarknetConnectionsToadlet extends Toadlet {
 						HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Node removal"));
 						HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 						content.addChild("p").addChild("#", "Are you sure you wish to remove "+peerNodes[i].getName()+" ? Before it has at least one week downtime, it's not recommended to do so, as it may be down only temporarily, and many users cannot run their nodes 24x7.");
-						HTMLNode removeForm = content.addChild("p").addChild("form", new String[] { "action", "method" }, new String[] { "/darknet/", "post" });
+						HTMLNode removeForm = content.addChild("p").addChild("form", new String[] { "action", "enctype", "method" }, new String[] { "/darknet/", "multipart/form-data", "post" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "node_"+peerNodes[i].hashCode(), "remove" });
+						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "remove", "Remove it!" });
 						removeForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceit", "Force" });
+
 						writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 						return; // FIXME: maybe it breaks multi-node removing
 					}				
