@@ -23,6 +23,7 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1682,6 +1683,7 @@ public class Node {
 	public SimpleFieldSet exportVolatileFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet();
 		long now = System.currentTimeMillis();
+		fs.put("isUsingWrapper", Boolean.toString(isUsingWrapper()));
 		long nodeUptimeSeconds = 0;
 		synchronized(this) {
 			fs.put("startupTime", Long.toString(startupTime));
@@ -1691,14 +1693,88 @@ public class Node {
 		fs.put("averagePingTime", Double.toString(getNodeAveragePingTime()));
 		fs.put("bwlimitDelayTime", Double.toString(getBwlimitDelayTime()));
 		fs.put("networkSizeEstimateSession", Integer.toString(getNetworkSizeEstimate(-1)));
-		int networkSizeEstimateRecent = 0;
-		if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-			networkSizeEstimateRecent = getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
-		}
-		fs.put("networkSizeEstimateRecent", Integer.toString(networkSizeEstimateRecent));
+		int networkSizeEstimate24hourRecent = getNetworkSizeEstimate(now - (24*60*60*1000));  // 24 hours
+		fs.put("networkSizeEstimate24hourRecent", Integer.toString(networkSizeEstimate24hourRecent));
+		int networkSizeEstimate48hourRecent = getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
+		fs.put("networkSizeEstimate48hourRecent", Integer.toString(networkSizeEstimate48hourRecent));
 		fs.put("missRoutingDistance", Double.toString(missRoutingDistance.currentValue()));
 		fs.put("backedoffPercent", Double.toString(backedoffPercent.currentValue()));
 		fs.put("pInstantReject", Double.toString(pRejectIncomingInstantly()));
+		
+		/* gather connection statistics */
+		PeerNodeStatus[] peerNodeStatuses = getPeerNodeStatuses();
+		Arrays.sort(peerNodeStatuses, new Comparator() {
+			public int compare(Object first, Object second) {
+				PeerNodeStatus firstNode = (PeerNodeStatus) first;
+				PeerNodeStatus secondNode = (PeerNodeStatus) second;
+				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
+				if (statusDifference != 0) {
+					return statusDifference;
+				}
+				return firstNode.getName().compareToIgnoreCase(secondNode.getName());
+			}
+		});
+		
+		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_CONNECTED);
+		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
+		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_NEW);
+		int numberOfTooOld = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_TOO_OLD);
+		int numberOfDisconnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISCONNECTED);
+		int numberOfNeverConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_NEVER_CONNECTED);
+		int numberOfDisabled = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_DISABLED);
+		int numberOfBursting = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_BURSTING);
+		int numberOfListening = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTENING);
+		int numberOfListenOnly = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, Node.PEER_NODE_STATUS_LISTEN_ONLY);
+		
+		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
+		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
+
+		fs.put("numberOfConnected", Integer.toString(numberOfConnected));
+		fs.put("numberOfRoutingBackedOff", Integer.toString(numberOfRoutingBackedOff));
+		fs.put("numberOfTooNew", Integer.toString(numberOfTooNew));
+		fs.put("numberOfTooOld", Integer.toString(numberOfTooOld));
+		fs.put("numberOfDisconnected", Integer.toString(numberOfDisconnected));
+		fs.put("numberOfNeverConnected", Integer.toString(numberOfNeverConnected));
+		fs.put("numberOfDisabled", Integer.toString(numberOfDisabled));
+		fs.put("numberOfBursting", Integer.toString(numberOfBursting));
+		fs.put("numberOfListening", Integer.toString(numberOfListening));
+		fs.put("numberOfListenOnly", Integer.toString(numberOfListenOnly));
+		
+		fs.put("numberOfSimpleConnected", Integer.toString(numberOfSimpleConnected));
+		fs.put("numberOfNotConnected", Integer.toString(numberOfNotConnected));
+
+		fs.put("numberOfInserts", Integer.toString(getNumInserts()));
+		fs.put("numberOfRequests", Integer.toString(getNumRequests()));
+		fs.put("numberOfTransferringRequests", Integer.toString(getNumTransferringRequests()));
+		fs.put("numberOfARKFetchers", Integer.toString(getNumARKFetchers()));
+
+		long[] total = IOStatisticCollector.getTotalIO();
+		long total_output_rate = (total[0]) / nodeUptimeSeconds;
+		long total_input_rate = (total[1]) / nodeUptimeSeconds;
+		long totalPayloadOutput = getTotalPayloadSent();
+		long total_payload_output_rate = totalPayloadOutput / nodeUptimeSeconds;
+		int total_payload_output_percent = (int) (100 * totalPayloadOutput / total[0]);
+		fs.put("totalOutputBytes", Long.toString(total[0]));
+		fs.put("totalOutputRate", Long.toString(total_output_rate));
+		fs.put("totalPayloadOutputBytes", Long.toString(totalPayloadOutput));
+		fs.put("totalPayloadOutputRate", Long.toString(total_payload_output_rate));
+		fs.put("totalPayloadOutputPercent", Integer.toString(total_payload_output_percent));
+		fs.put("totalInputBytes", Long.toString(total[1]));
+		fs.put("totalInputRate", Long.toString(total_input_rate));
+		long[] rate = getNodeIOStats();
+		long delta = (rate[5] - rate[2]) / 1000;
+		long recent_output_rate = (rate[3] - rate[0]) / delta;
+		long recent_input_rate = (rate[4] - rate[1]) / delta;
+		fs.put("recentOutputRate", Long.toString(recent_output_rate));
+		fs.put("recentInputRate", Long.toString(recent_input_rate));
+
+		String [] routingBackoffReasons = getPeerNodeRoutingBackoffReasons();
+		if(routingBackoffReasons.length != 0) {
+			for(int i=0;i<routingBackoffReasons.length;i++) {
+				fs.put("numberWithBackoffOf" + routingBackoffReasons[i], getPeerNodeRoutingBackoffReasonSize(routingBackoffReasons[i]));
+			}
+		}
+		
 		return fs;
 	}
 

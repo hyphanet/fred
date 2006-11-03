@@ -142,6 +142,23 @@ public class PeerNodeStatus {
 	}
 
 	/**
+	 * Counts the peers in <code>peerNodes</code> that have the specified
+	 * status.
+	 * @param peerNodeStatuses The peer nodes' statuses
+	 * @param status The status to count
+	 * @return The number of peers that have the specified status.
+	 */
+	public static int getPeerStatusCount(PeerNodeStatus[] peerNodeStatuses, int status) {
+		int count = 0;
+		for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
+			if (peerNodeStatuses[peerIndex].getStatusValue() == status) {
+				count++;
+			}
+		}
+		return count;
+	}
+
+	/**
 	 * @return the timeLastConnectionCompleted
 	 */
 	public long getTimeLastConnectionCompleted() {
