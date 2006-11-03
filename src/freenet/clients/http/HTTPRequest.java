@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import java.util.StringTokenizer;
 
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
+import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.io.Bucket;
@@ -75,7 +77,7 @@ public class HTTPRequest {
 	 */
 	public HTTPRequest(URI uri) {
 		this.uri = uri;
-		this.parseRequestParameters(uri.getRawQuery(), true);
+		this.parseRequestParameters(uri.getRawQuery(), true, false);
 		this.data = null;
 		this.parts = null;
 		this.bucketfactory = null;
@@ -97,7 +99,7 @@ public class HTTPRequest {
 		} else {
 			this.uri = new URI(path);
 		}
-		this.parseRequestParameters(uri.getRawQuery(), true);
+		this.parseRequestParameters(uri.getRawQuery(), true, false);
 	}
 	
 	/**
@@ -114,7 +116,7 @@ public class HTTPRequest {
 	public HTTPRequest(URI uri, Bucket d, ToadletContext ctx) {
 		this.uri = uri;
 		this.headers = ctx.getHeaders();
-		this.parseRequestParameters(uri.getRawQuery(), true);
+		this.parseRequestParameters(uri.getRawQuery(), true, false);
 		this.data = d;
 		this.parts = new HashMap();
 		this.bucketfactory = ctx.getBucketFactory();
@@ -153,7 +155,7 @@ public class HTTPRequest {
 	 *            the query string in its raw form (not yet url-decoded)
 	 * @param doUrlDecoding TODO
 	 */
-	private void parseRequestParameters(String queryString, boolean doUrlDecoding) {
+	private void parseRequestParameters(String queryString, boolean doUrlDecoding, boolean asParts) {
 
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "queryString is "+queryString+", doUrlDecoding="+doUrlDecoding);
@@ -201,11 +203,22 @@ public class HTTPRequest {
 					}
 				}
 
-				// get the list of values for this parameter that were parsed so
-				// far
-				List valueList = this.getParameterValueList(name);
-				// add this value to the list
-				valueList.add(value);
+				if(asParts) {
+					// Store as a part
+					byte[] buf;
+					try {
+						buf = value.getBytes("UTF-8");
+					} catch (UnsupportedEncodingException e) {
+						throw new Error(e);
+					} // FIXME some other encoding?
+					Bucket b = new SimpleReadOnlyArrayBucket(buf);
+					parts.put(name, b);
+				} else {
+					// get the list of values for this parameter that were parsed so far
+					List valueList = this.getParameterValueList(name);
+					// add this value to the list
+					valueList.add(value);
+				}
 			} catch (URLEncodedFormatException e) {
 				// if we fail to decode the name or value we fail spectacularly
 				String msg = "Failed to decode request parameter " + name
@@ -410,7 +423,7 @@ public class HTTPRequest {
 				throw new IOException("Too big");
 			byte[] buf = BucketTools.toByteArray(data);
 			String s = new String(buf, "us-ascii");
-			parseRequestParameters(s, true);
+			parseRequestParameters(s, true, true);
 		}
 		if (!ctypeparts[0].trim().equalsIgnoreCase("multipart/form-data") || (ctypeparts.length < 2)) {
 			return;
@@ -495,18 +508,17 @@ public class HTTPRequest {
 			filedata = this.bucketfactory.makeBucket(is.available());
 			OutputStream bucketos = filedata.getOutputStream();
 			// buffer characters that match the boundary so far
-			byte[] buf = new byte[boundary.length()];
-			byte[] bbound = boundary.getBytes("UTF-8");
+			byte[] bbound = boundary.getBytes("UTF-8"); // ISO-8859-1? boundary should be in US-ASCII
 			int offset = 0;
-			while ((is.available() > 0) && (offset < buf.length)) {
+			while ((is.available() > 0) && (offset < bbound.length)) {
 				byte b = (byte)is.read();
 				
 				if (b == bbound[offset]) {
-					buf[offset] = b;
 					offset++;
 				} else if ((b != bbound[offset]) && (offset > 0)) {
-					// empty the buffer out
-					bucketos.write(buf, 0, offset);
+					// offset bytes matched, but no more
+					// write the bytes that matched, then the non-matching byte
+					bucketos.write(bbound, 0, offset);
 					bucketos.write((int) b & 0xff);
 					offset = 0;
 				} else {
