@@ -171,7 +171,7 @@ public class BrowserTestToadlet extends Toadlet {
 		"p6SyMBerNExCLLfkssv4oBTIycX6uWceedQhRx1dXqGlzZCoaccegeoDb/Of" +
 		"lLzEM0899+SzTz9pdCRQQQclNNBIInGEEUYSVURRRxVRJFFEC6VU0EH+xDRT" +
 		"TTfltFP4CgA1VFFFraqAAAIANUIAYJzwRFRHhRVWT2eltVZbb8U1V1135bVX" +
-		"X38FNlhhhyW2WGOPRTZZZbEMCAA7";
+		"X38FNlhhhyW2WGOPRTZZZbEMCAA7====";
 	
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		final boolean advancedEnabled = core.isAdvancedDarknetEnabled();
@@ -179,6 +179,10 @@ public class BrowserTestToadlet extends Toadlet {
 		
 		// Yes, we need that in order to test the browser (number of connections per server)
 		if (request.isParameterSet("wontload")) return;
+		else if (request.isParameterSet("mimeTest")){
+			this.writeReply(ctx, 200, "text/html", "OK", imgWarningMime);
+			return;		
+		}
 		
 		
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet browser testing tool");
@@ -190,7 +194,7 @@ public class BrowserTestToadlet extends Toadlet {
 		HTMLNode mimeAutodetectBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "MIME Inline"));
 		HTMLNode mimeAutodetectContent = ctx.getPageMaker().getContentNode(mimeAutodetectBox);
 		//mimeAutodetectContent.addChild("img", new String[]{"src", "alt"}, new String[]{"data:image/gif;base64,"+imgWarningMime, "Your browser is probably safe."});
-		mimeAutodetectContent.addChild("img", new String[]{"src", "alt"}, new String[]{"data:base64,"+imgWarningMime, "Your browser is probably safe."});
+		mimeAutodetectContent.addChild("img", new String[]{"src", "alt"}, new String[]{"?mimeTest", "Your browser is probably safe."});
 		
 		// #### Test whether we can have more than 10 simultaneous connections to fproxy
 		HTMLNode maxConnectionsPerServerBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Number of connections"));
