@@ -69,8 +69,8 @@ public class TimeUtil {
 		if(withSecondFractions && ((maxTerms - termCount) >= 2)) {
 			if (l > 0) {
 				double fractionalSeconds = ((double) l) / ((double) 1000.0);
-				DecimalFormat fix4 = new DecimalFormat("0.0000");
-				sb.append(fix4.format(fractionalSeconds) + "s");
+				DecimalFormat fix3 = new DecimalFormat("0.000");
+				sb.append(fix3.format(fractionalSeconds) + "s");
 				termCount++;
 				l = l - ((long)fractionalSeconds * (long)1000);
 			}
