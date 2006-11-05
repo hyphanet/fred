@@ -100,8 +100,8 @@ public class N2NTMToadlet extends Toadlet {
   }
   
   public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-	  if(data.size() > 1024*1024) {
-		  this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, N2NTM toadlet limited to 1MB");
+	  if(data.size() > 5*1024) {
+		  this.writeReply(ctx, 400, "text/plain", "Too big", "Too much data, N2NTM toadlet limited to 5KB");
 		  return;
 	  }
 	  
@@ -116,8 +116,12 @@ public class N2NTMToadlet extends Toadlet {
 	  }
 	  
 	  if (request.isPartSet("send")) {
-		  String message = request.getPartAsString("message", 2000);
+		  String message = request.getPartAsString("message", 5*1024);
 		  message = message.trim();
+			if(message.length() > 2000) {
+				this.writeReply(ctx, 400, "text/plain", "Too long", "N2NTMs are limited to 2000 characters");
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Send Node to Node Text Message Processing");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -201,7 +205,7 @@ public class N2NTMToadlet extends Toadlet {
 			messageTargetList.addChild("li", peer_name);
 		}
 		HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-		HTMLNode messageForm = infoboxContent.addChild("form", new String[] { "action", "method", "enctype" }, new String[] { "/send_n2ntm/", "post", "multipart/form-data" });
+		HTMLNode messageForm = infoboxContent.addChild("form", new String[] { "action", "method" }, new String[] { "/send_n2ntm/", "post" });
 		messageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", formPassword });
 		// Iterate peers
 		for (Iterator it = peers.keySet().iterator(); it.hasNext(); ) {

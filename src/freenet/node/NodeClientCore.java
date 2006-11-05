@@ -100,7 +100,7 @@ public class NodeClientCore {
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
-		alerts = new UserAlertManager();
+		alerts = new UserAlertManager(this);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS);

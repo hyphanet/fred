@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 
 import freenet.support.HTMLNode;
+import freenet.node.NodeClientCore;
 
 /**
  * Collection of UserAlert's.
@@ -12,8 +13,10 @@ import freenet.support.HTMLNode;
 public class UserAlertManager implements Comparator {
 
 	private final HashSet alerts;
+	private NodeClientCore core;
 
-	public UserAlertManager() {
+	public UserAlertManager(NodeClientCore core) {
+		this.core = core;
 		alerts = new HashSet();
 	}
 
@@ -73,6 +76,7 @@ public class UserAlertManager implements Comparator {
 			if (alert.userCanDismiss()) {
 				HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { ".", "post" });
 				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(alert.hashCode()) });
+				dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 				dismissFormNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", alert.dismissButtonText() });
 			}
 		}
