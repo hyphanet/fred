@@ -77,6 +77,7 @@ public class DarknetConnectionsToadlet extends Toadlet {
 		}
 		
 		final boolean advancedEnabled = node.isAdvancedDarknetEnabled();
+		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = node.getPeerNodeStatuses();
@@ -285,35 +286,37 @@ public class DarknetConnectionsToadlet extends Toadlet {
 			// END OVERVIEW TABLE
 
 			// BEGIN PEER TABLE
-			StringBuffer jsBuf = new StringBuffer();
-			// FIXME: There's probably some icky Javascript in here (this is the first thing that worked for me); feel free to fix up to Javascript guru standards
-			jsBuf.append( "  function peerNoteChange() {\n" );
-			jsBuf.append( "    var theobj = document.getElementById( \"action\" );\n" );
-			jsBuf.append( "    var length = theobj.options.length;\n" );
-			jsBuf.append( "    for (var i = 0; i < length; i++) {\n" );
-			jsBuf.append( "      if(theobj.options[i] == \"update_notes\") {\n" );
-			jsBuf.append( "        theobj.options[i].select = true;\n" );
-			jsBuf.append( "      } else {\n" );
-			jsBuf.append( "        theobj.options[i].select = false;\n" );
-			jsBuf.append( "      }\n" );
-			jsBuf.append( "    }\n" );
-			jsBuf.append( "    theobj.value=\"update_notes\";\n" );
-			//jsBuf.append( "    document.getElementById( \"peersForm\" ).submit();\n" );
-			jsBuf.append( "    document.getElementById( \"peersForm\" ).doAction.click();\n" );
-			jsBuf.append( "  }\n" );
-			jsBuf.append( "  function peerNoteBlur() {\n" );
-			jsBuf.append( "    var theobj = document.getElementById( \"action\" );\n" );
-			jsBuf.append( "    var length = theobj.options.length;\n" );
-			jsBuf.append( "    for (var i = 0; i < length; i++) {\n" );
-			jsBuf.append( "      if(theobj.options[i] == \"update_notes\") {\n" );
-			jsBuf.append( "        theobj.options[i].select = true;\n" );
-			jsBuf.append( "      } else {\n" );
-			jsBuf.append( "        theobj.options[i].select = false;\n" );
-			jsBuf.append( "      }\n" );
-			jsBuf.append( "    }\n" );
-			jsBuf.append( "    theobj.value=\"update_notes\";\n" );
-			jsBuf.append( "  }\n" );
-			contentNode.addChild("script", "type", "text/javascript").addChild("%", jsBuf.toString());
+			if(fProxyJavascriptEnabled) {
+				StringBuffer jsBuf = new StringBuffer();
+				// FIXME: There's probably some icky Javascript in here (this is the first thing that worked for me); feel free to fix up to Javascript guru standards
+				jsBuf.append( "  function peerNoteChange() {\n" );
+				jsBuf.append( "    var theobj = document.getElementById( \"action\" );\n" );
+				jsBuf.append( "    var length = theobj.options.length;\n" );
+				jsBuf.append( "    for (var i = 0; i < length; i++) {\n" );
+				jsBuf.append( "      if(theobj.options[i] == \"update_notes\") {\n" );
+				jsBuf.append( "        theobj.options[i].select = true;\n" );
+				jsBuf.append( "      } else {\n" );
+				jsBuf.append( "        theobj.options[i].select = false;\n" );
+				jsBuf.append( "      }\n" );
+				jsBuf.append( "    }\n" );
+				jsBuf.append( "    theobj.value=\"update_notes\";\n" );
+				//jsBuf.append( "    document.getElementById( \"peersForm\" ).submit();\n" );
+				jsBuf.append( "    document.getElementById( \"peersForm\" ).doAction.click();\n" );
+				jsBuf.append( "  }\n" );
+				jsBuf.append( "  function peerNoteBlur() {\n" );
+				jsBuf.append( "    var theobj = document.getElementById( \"action\" );\n" );
+				jsBuf.append( "    var length = theobj.options.length;\n" );
+				jsBuf.append( "    for (var i = 0; i < length; i++) {\n" );
+				jsBuf.append( "      if(theobj.options[i] == \"update_notes\") {\n" );
+				jsBuf.append( "        theobj.options[i].select = true;\n" );
+				jsBuf.append( "      } else {\n" );
+				jsBuf.append( "        theobj.options[i].select = false;\n" );
+				jsBuf.append( "      }\n" );
+				jsBuf.append( "    }\n" );
+				jsBuf.append( "    theobj.value=\"update_notes\";\n" );
+				jsBuf.append( "  }\n" );
+				contentNode.addChild("script", "type", "text/javascript").addChild("%", jsBuf.toString());
+			}
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
 			peerTableInfoboxHeader.addChild("#", "My peers");
@@ -424,7 +427,11 @@ public class DarknetConnectionsToadlet extends Toadlet {
 					}
 
 					// private darknet node comment note column
-					peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "onBlur", "onChange", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", "peerNoteBlur();", "peerNoteChange();", peerNodeStatus.getPrivateDarknetCommentNote() });
+					if(fProxyJavascriptEnabled) {
+						peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "onBlur", "onChange", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", "peerNoteBlur();", "peerNoteChange();", peerNodeStatus.getPrivateDarknetCommentNote() });
+					} else {
+						peerRow.addChild("td", "class", "peer-private-darknet-comment-note").addChild("input", new String[] { "type", "name", "size", "maxlength", "value" }, new String[] { "text", "peerPrivateNote_" + peerNodeStatus.hashCode(), "16", "250", peerNodeStatus.getPrivateDarknetCommentNote() });
+					}
 
 					if(advancedEnabled) {
 						// percent of time connected column

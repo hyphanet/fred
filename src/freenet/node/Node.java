@@ -3107,6 +3107,10 @@ public class Node {
 		return clientCore.isAdvancedDarknetEnabled();
 	}
 	
+	public boolean isFProxyJavascriptEnabled() {
+		return clientCore.isFProxyJavascriptEnabled();
+	}
+	
 	// FIXME convert these kind of threads to Checkpointed's and implement a handler
 	// using the PacketSender/Ticker. Would save a few threads.
 	

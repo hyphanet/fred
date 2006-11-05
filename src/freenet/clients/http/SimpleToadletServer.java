@@ -53,6 +53,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private String cssName;
 	private Thread myThread;
 	private boolean advancedDarknetEnabled;
+	private boolean fProxyJavascriptEnabled;
 	private final PageMaker pageMaker;
 	
 	static boolean isPanicButtonToBeShown;
@@ -160,13 +161,33 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
+	private static class FProxyJavascriptEnabledCallback implements BooleanCallback {
+		
+		private final SimpleToadletServer ts;
+		
+		FProxyJavascriptEnabledCallback(SimpleToadletServer ts){
+			this.ts = ts;
+		}
+		
+		public boolean get() {
+			return ts.isFProxyJavascriptEnabled();
+		}
+		
+		public void set(boolean val) throws InvalidConfigValueException {
+			if(val == get()) return;
+				ts.enableFProxyJavascript(val);
+		}
+	}
+	
 	/**
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
 	 */
 	public SimpleToadletServer(SubConfig fproxyConfig, NodeClientCore core) throws IOException, InvalidConfigValueException {
+
+		int configItemOrder = 0;
 		
-		fproxyConfig.register("enabled", true, 1, true, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
+		fproxyConfig.register("enabled", true, configItemOrder++, true, true, "Enable FProxy?", "Whether to enable FProxy and related HTTP services",
 				new FProxyEnabledCallback());
 		
 		boolean enabled = fproxyConfig.getBoolean("enabled");
@@ -212,17 +233,19 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 		}
 		
-		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, 2, true, false, "FProxy port number", "FProxy port number",
+		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, configItemOrder++, true, false, "FProxy port number", "FProxy port number",
 				new FProxyPortCallback());
-		fproxyConfig.register("bindTo", "127.0.0.1", 2, true, false, "IP address to bind to", "IP address to bind to",
+		fproxyConfig.register("bindTo", "127.0.0.1", configItemOrder++, true, false, "IP address to bind to", "IP address to bind to",
 				new FProxyBindtoCallback());
-		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", 2, true, false, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to FProxy. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
+		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, false, "Allowed hosts", "Hostnames or IP addresses that are allowed to connect to FProxy. May be a comma-separated list of hostnames, single IPs and even CIDR masked IPs like 192.168.0.0/24",
 				new FProxyAllowedHostsCallback());
-		fproxyConfig.register("css", "clean", 1, false, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
+		fproxyConfig.register("css", "clean", configItemOrder++, false, false, "CSS Name", "Name of the CSS FProxy should use "+themes.toString(),
 				new FProxyCSSNameCallback());
-		fproxyConfig.register("advancedDarknetEnabled", false, 1, false, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
+		fproxyConfig.register("advancedDarknetEnabled", false, configItemOrder++, false, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
 				new FProxyAdvancedDarknetEnabledCallback(this));
-		fproxyConfig.register("showPanicButton", false, 1, true, true, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
+		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, false, false, "Enable FProxy use of Javascript?", "Whether or not FProxy should use Javascript \"helpers\". This setting should be turned to false in most cases.",
+				new FProxyJavascriptEnabledCallback(this));
+		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
 				new BooleanCallback(){
 				public boolean get(){
 					return SimpleToadletServer.isPanicButtonToBeShown;
@@ -385,5 +408,13 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	public synchronized void enableAdvancedDarknet(boolean b){
 		advancedDarknetEnabled = b;
+	}
+
+	public synchronized boolean isFProxyJavascriptEnabled() {
+		return this.fProxyJavascriptEnabled;
+	}
+	
+	public synchronized void enableFProxyJavascript(boolean b){
+		fProxyJavascriptEnabled = b;
 	}
 }

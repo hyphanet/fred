@@ -757,6 +757,11 @@ public class NodeClientCore {
 			getToadletContainer().isAdvancedDarknetEnabled();
 	}
 
+	public boolean isFProxyJavascriptEnabled() {
+		return (getToadletContainer() != null) &&
+			getToadletContainer().isFProxyJavascriptEnabled();
+	}
+
 	public String getMyName() {
 		return node.getMyName();
 	}
