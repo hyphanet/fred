@@ -97,6 +97,7 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -1553,13 +1554,13 @@ public class Node {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
-					return ">MAX_PING_TIME ("+pingTime+")";
+					return ">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+")";
 				}
 			} else if(pingTime > SUB_MAX_PING_TIME) {
 				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
 				if(random.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
-					return ">SUB_MAX_PING_TIME ("+pingTime+")";
+					return ">SUB_MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+")";
 				}
 			}
 		
@@ -1569,13 +1570,13 @@ public class Node {
 					if(logMINOR) Logger.minor(this, "Accepting request anyway (take one every 10 secs to keep bwlimitDelayTime updated)");
 				} else {
 					pInstantRejectIncoming.report(1.0);
-					return ">MAX_THROTTLE_DELAY ("+bwlimitDelayTime+")";
+					return ">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+")";
 				}
 			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
 				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 				if(random.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
-					return ">SUB_MAX_THROTTLE_DELAY ("+bwlimitDelayTime+")";
+					return ">SUB_MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+")";
 				}
 			}
 			
@@ -1867,7 +1868,7 @@ public class Node {
 		fs.put("storeHits", Long.toString(storeHits));
 		fs.put("storeMisses", Long.toString(storeMisses));
 		fs.put("storeAccesses", Long.toString(storeAccesses));
-		fs.put("percentCachedStoreHitsOfAccesses", Double.toString(percentCachedStoreHitsOfAccesses));
+		fs.put("percentStoreHitsOfAccesses", Double.toString(percentStoreHitsOfAccesses));
 		fs.put("overallAccesses", Long.toString(overallAccesses));
 		fs.put("avgStoreAccessRate", Double.toString(avgStoreAccessRate));
 

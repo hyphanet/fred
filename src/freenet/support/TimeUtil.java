@@ -18,58 +18,79 @@
 
 package freenet.support;
 
+import java.text.DecimalFormat;
+
 /**
  * Time formatting utility.
- * Formats milliseconds into a week/day/hour/second string (without milliseconds).
+ * Formats milliseconds into a week/day/hour/second/milliseconds string.
  */
 public class TimeUtil {
-	public static String formatTime(long timeInterval, int maxTerms) {
+	public static String formatTime(long timeInterval, int maxTerms, boolean withSecondFractions) {
 		StringBuffer sb = new StringBuffer(64);
-		long l = timeInterval / 1000;  // ms -> s
+		long l = timeInterval;
 		int termCount = 0;
 		//
-		int weeks = (int)(l / (7*24*60*60));
+		int weeks = (int)(l / ((long)7*24*60*60*1000));
 		if (weeks > 0) {
 		  sb.append(weeks + "w");
 		  termCount++;
-		  l = l - (weeks * (7*24*60*60));
+		  l = l - ((long)weeks * ((long)7*24*60*60*1000));
 		}
 		//
-		int days = (int)(l / (24*60*60));
+		int days = (int)(l / ((long)24*60*60*1000));
 		if (days > 0) {
 		  sb.append(days + "d");
 		  termCount++;
-		  l = l - (days * (24*60*60));
+		  l = l - ((long)days * ((long)24*60*60*1000));
 		}
 		if(termCount >= maxTerms) {
 		  return sb.toString();
 		}
 		//
-		int hours = (int)(l / (60*60));
+		int hours = (int)(l / ((long)60*60*1000));
 		if (hours > 0) {
 		  sb.append(hours + "h");
 		  termCount++;
-		  l = l - (hours * (60*60));
+		  l = l - ((long)hours * ((long)60*60*1000));
 		}
 		if(termCount >= maxTerms) {
 		  return sb.toString();
 		}
 		//
-		int minutes = (int)(l / 60);
+		int minutes = (int)(l / ((long)60*1000));
 		if (minutes > 0) {
 		  sb.append(minutes + "m");
 		  termCount++;
-		  l = l - (minutes * 60);
+		  l = l - ((long)minutes * ((long)60*1000));
 		}
 		if(termCount >= maxTerms) {
 		  return sb.toString();
 		}
+		if(withSecondFractions && ((maxTerms - termCount) >= 2)) {
+			if (l > 0) {
+				double fractionalSeconds = ((double) l) / ((double) 1000.0);
+				DecimalFormat fix4 = new DecimalFormat("0.0000");
+				sb.append(fix4.format(fractionalSeconds) + "s");
+				termCount++;
+				l = l - ((long)fractionalSeconds * (long)1000);
+			}
+		} else {
+			int seconds = (int)(l / (long)1000);
+			if (seconds > 0) {
+				sb.append(seconds + "s");
+				termCount++;
+				l = l - ((long)seconds * (long)1000);
+			}
+		}
 		//
-		sb.append(l + "s");
 		return sb.toString();
 	}
 	
 	public static String formatTime(long timeInterval) {
-		return formatTime(timeInterval, 2);
+		return formatTime(timeInterval, 2, false);
+	}
+	
+	public static String formatTime(long timeInterval, int maxTerms) {
+		return formatTime(timeInterval, maxTerms, false);
 	}
 }

@@ -35,6 +35,7 @@ import freenet.node.PeerNode;
 import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 
 /**
  * @author ian
@@ -248,7 +249,7 @@ public class BlockTransmitter {
 						_sendComplete = true;
 						_senderThread.notifyAll();
 					}
-					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+(now - timeAllSent)+"ms.");
+					Logger.error(this, "Terminating send "+_uid+" to "+_destination+" from "+_usm.getPortNumber()+" as we haven't heard from receiver in "+TimeUtil.formatTime((now - timeAllSent), 2, true)+".");
 					return false;
 				} else {
 					if(logMINOR) Logger.minor(this, "Ignoring timeout: timeAllSent="+timeAllSent+" ("+(System.currentTimeMillis() - timeAllSent)+"), getNumSent="+getNumSent()+"/"+_prb.getNumPackets());

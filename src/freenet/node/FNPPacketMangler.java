@@ -20,6 +20,7 @@ import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 
 /**
@@ -215,7 +216,7 @@ public class FNPPacketMangler implements LowLevelFilter {
         int packetType = payload[2];
         int version = payload[0];
     	
-        if(logMINOR) Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (pt="+packetType+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) from "+replyTo+"");
+        if(logMINOR) Logger.minor(this, "Received auth packet for "+pn.getPeer()+" (pt="+packetType+", v="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) from "+replyTo+"");
         
         /* Format:
          * 1 byte - version number (1)
@@ -435,13 +436,13 @@ public class FNPPacketMangler implements LowLevelFilter {
      */
     private void sendAuthPacket(int version, int negType, int phase, byte[] data, PeerNode pn, Peer replyTo) {
         long now = System.currentTimeMillis();
-        int delta = (int) (now - pn.lastSentPacketTime());
+        long delta = now - pn.lastSentPacketTime();
         byte[] output = new byte[data.length+3];
         output[0] = (byte) version;
         output[1] = (byte) negType;
         output[2] = (byte) phase;
         System.arraycopy(data, 0, output, 3, data.length);
-        if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (ph="+phase+", v="+version+", nt="+negType+") (last packet sent "+delta+"ms ago) to "+replyTo+" data.length="+data.length);
+        if(logMINOR) Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (ph="+phase+", v="+version+", nt="+negType+") (last packet sent "+TimeUtil.formatTime(delta, 2, true)+" ago) to "+replyTo+" data.length="+data.length);
         sendAuthPacket(output, pn, replyTo);
     }
 
@@ -849,7 +850,7 @@ public class FNPPacketMangler implements LowLevelFilter {
 
         if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
             tracker.queueAck(seqNumber);
-            Logger.error(this, "Received packet twice ("+seqNumber+") from "+tracker.pn.getPeer()+": "+seqNumber+" ("+(int) tracker.pn.pingAverage.currentValue()+"ms ping avg)");
+            Logger.error(this, "Received packet twice ("+seqNumber+") from "+tracker.pn.getPeer()+": "+seqNumber+" ("+TimeUtil.formatTime((long) tracker.pn.pingAverage.currentValue(), 2, true)+" ping avg)");
             return;
         }
         

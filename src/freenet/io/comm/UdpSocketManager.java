@@ -31,6 +31,7 @@ import freenet.node.Node;
 import freenet.node.PeerNode;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
+import freenet.support.TimeUtil;
 
 public class UdpSocketManager extends Thread {
 
@@ -400,9 +401,9 @@ public class UdpSocketManager extends Thread {
 				        Message removed = (Message)_unclaimed.removeFirst();
 				        long messageLifeTime = System.currentTimeMillis() - removed.localInstantiationTime;
 				        if ((removed.getSource()) instanceof PeerNode) {
-				            Logger.normal(this, "Dropping unclaimed from "+removed.getSource().getPeer()+", lived "+messageLifeTime+"ms : "+removed);
+				            Logger.normal(this, "Dropping unclaimed from "+removed.getSource().getPeer()+", lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" : "+removed);
 				        } else {
-				            Logger.normal(this, "Dropping unclaimed, lived "+messageLifeTime+"ms : "+removed);
+				            Logger.normal(this, "Dropping unclaimed, lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" : "+removed);
 				        }
 				    }
 				    _unclaimed.addLast(m);
