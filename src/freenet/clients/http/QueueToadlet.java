@@ -67,11 +67,6 @@ public class QueueToadlet extends Toadlet {
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		HTTPRequest request = new HTTPRequest(uri, data, ctx);
 		try {
-			if ((data.size() > 1024 * 1024) && (request.getPartAsString("insert", 128).length() == 0)) {
-				this.writeReply(ctx, 400, "text/plain", "Too big", "Data exceeds 1MB limit");
-				return;
-			}
-			
 			// Browse... button
 			if (request.getPartAsString("insert-local", 128).length() > 0) {
 				MultiValueTable responseHeaders = new MultiValueTable();
