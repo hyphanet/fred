@@ -243,7 +243,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("advancedDarknetEnabled", false, configItemOrder++, false, false, "Enable Advanced Darknet?", "Whether to show or not informations meant for advanced users/devs. This setting should be turned to false in most cases.",
 				new FProxyAdvancedDarknetEnabledCallback(this));
-		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, false, false, "Enable FProxy use of Javascript?", "Whether or not FProxy should use Javascript \"helpers\". This setting should be turned to false in most cases.",
+		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, false, false, "Enable FProxy use of Javascript?", "Whether or not FProxy should use Javascript \"helpers\". This setting should be turned to false in most cases. Note that freesites may not use javascript even if this is enabled.",
 				new FProxyJavascriptEnabledCallback(this));
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "Show the panic button?", "Whether to show or not the panic button on the /queue/ page.",
 				new BooleanCallback(){
