@@ -1,5 +1,5 @@
 /* -*- Mode: java; c-basic-indent: 4; tab-width: 4 -*- */
-package freenet.transport;
+package freenet.support.transport.ip;
 
 import java.net.DatagramSocket;
 import java.net.InetAddress;

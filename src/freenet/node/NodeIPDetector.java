@@ -20,8 +20,8 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.support.Logger;
-import freenet.transport.IPAddressDetector;
-import freenet.transport.IPUtil;
+import freenet.support.transport.ip.IPAddressDetector;
+import freenet.support.transport.ip.IPUtil;
 
 public class NodeIPDetector {
 

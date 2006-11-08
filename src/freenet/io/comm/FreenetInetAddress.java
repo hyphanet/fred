@@ -11,7 +11,7 @@ import java.net.UnknownHostException;
 
 import freenet.io.AddressIdentifier;
 import freenet.support.Logger;
-import freenet.transport.IPUtil;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * Long-term InetAddress. If created with an IP address, then the IP address is primary.

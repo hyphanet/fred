@@ -11,7 +11,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.support.Logger;
-import freenet.transport.IPUtil;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * Tracks all known IP address detection plugins, and runs them when appropriate.

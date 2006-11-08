@@ -23,7 +23,7 @@ import java.io.*;
 import java.net.*;
 
 import freenet.io.WritableToDataOutputStream;
-import freenet.transport.IPUtil;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * @author ian
