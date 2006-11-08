@@ -2135,13 +2135,6 @@ public class Node {
 		try {
 			if(deep) {
 				chkDatastore.put(block);
-				long sz = Math.max(maxCacheKeys, maxTotalKeys - chkDatastore.keyCount());
-				try {
-					chkDatacache.setMaxKeys(sz, false);
-				} catch (DatabaseException e) {
-					// Impossible
-					Logger.error(this, "Caught "+e, e);
-				}
 			}
 			chkDatacache.put(block);
 		} catch (IOException e) {
@@ -2164,13 +2157,6 @@ public class Node {
 		try {
 			if(deep) {
 				sskDatastore.put(block, false);
-				long sz = Math.max(maxCacheKeys, maxTotalKeys - sskDatastore.keyCount());
-				try {
-					chkDatacache.setMaxKeys(sz, false);
-				} catch (DatabaseException e) {
-					// Impossible
-					Logger.error(this, "Caught "+e, e);
-				}
 			}
 			sskDatacache.put(block, false);
 			cacheKey(((NodeSSK)block.getKey()).getPubKeyHash(), ((NodeSSK)block.getKey()).getPubKey(), deep);
