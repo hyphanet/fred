@@ -315,7 +315,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	System.err.println("Shrinking from "+chkBlocksInStore+" to "+maxChkBlocks+" (from db "+countCHKBlocksFromDatabase()+" from file "+countCHKBlocksFromFile()+")");
     	
     	try {
-			t = environment.beginTransaction(null,null);
 			c = chkDB_accessTime.openCursor(null,null);
 			
 			DatabaseEntry keyDBE = new DatabaseEntry();
@@ -327,8 +326,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Database is empty.");
 				c.close();
 				c = null;
-				t.abort();
-				t = null;
 				return;
 			}
 
@@ -387,8 +384,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
     	} finally {
     		if(c != null)
     			c.close();
-    		if(t != null)
-    			t.abort();
     	}
     	
     	Integer[] wantedKeepNums = (Integer[]) wantedKeep.toArray(new Integer[wantedKeep.size()]);
