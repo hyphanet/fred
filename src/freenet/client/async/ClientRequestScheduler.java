@@ -293,7 +293,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(req == null) {
 					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+rga.getNumber()+" ("+rga+")");
 					break;
-				}else if(req.getPriorityClass() > choosenPriorityClass) {
+				} else if(req.getPriorityClass() != choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
 					// maybe we should ask people to report that error if seen
 					if(logMINOR) Logger.minor(this, "In wrong priority class: "+req);
