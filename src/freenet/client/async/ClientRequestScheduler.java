@@ -240,7 +240,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
-	private SortedVectorByNumber removeFirstAccordingToPriorities(int priority){
+	private int removeFirstAccordingToPriorities(int priority){
 		SortedVectorByNumber result = null;
 		
 		short fuzz = -1, iteration = 0;
@@ -259,7 +259,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			result = priorities[priority];
 			if((result != null) && !result.isEmpty()) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
-				return result;
+				return priority;
 			}
 			
 			if(logMINOR) Logger.debug(this, "Priority "+priority+" is null (fuzz = "+fuzz+")");
@@ -267,14 +267,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		
 		//FIXME: implement NONE
-		return null;
+		return -1;
 	}
 	
 	public SendableRequest removeFirst() {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		int choosenPriorityClass = Integer.MAX_VALUE;
-		SortedVectorByNumber s = removeFirstAccordingToPriorities(choosenPriorityClass);
+		choosenPriorityClass = removeFirstAccordingToPriorities(choosenPriorityClass);
+		if(choosenPriorityClass == -1) return null;
+		SortedVectorByNumber s = priorities[choosenPriorityClass];
 		if(s != null){
 			while(true) {
 				SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst();
@@ -296,7 +298,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				} else if(req.getPriorityClass() != choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
 					// maybe we should ask people to report that error if seen
-					if(logMINOR) Logger.minor(this, "In wrong priority class: "+req);
+					if(logMINOR) Logger.minor(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+")");
 					innerRegister(req);
 					continue;
 				}
