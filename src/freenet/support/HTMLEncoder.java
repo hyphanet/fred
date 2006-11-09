@@ -32,6 +32,7 @@ public class HTMLEncoder {
 	
 	static {
 		HashMap temp = new HashMap();
+		temp.put(new Character((char)0), "#0");
 		temp.put(new Character((char)34), "quot");
 		temp.put(new Character((char)38), "amp");
 		temp.put(new Character((char)39), "#39");
@@ -331,6 +332,7 @@ public class HTMLEncoder {
 				chars[keyIndex] = character.charValue();
 				strings[keyIndex] = (String) map.get(character);
 			}
+			if (chars[0] == 0 && strings[0] != null) chars[0] = 1;
 		}
 		
 		public boolean containsKey(char key){
