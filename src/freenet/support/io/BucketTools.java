@@ -40,7 +40,8 @@ public class BucketTools {
 		ByteBuffer buffer = ByteBuffer.allocateDirect(BLOCK_SIZE);
 		while (readChannel.read(buffer) != -1) {
 			buffer.flip();
-			writeChannel.write(buffer);
+			while(buffer.hasRemaining())
+				writeChannel.write(buffer);
 			buffer.clear();
 		}
 

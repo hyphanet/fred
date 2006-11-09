@@ -1,5 +1,6 @@
 package freenet.client;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -143,9 +144,10 @@ public class Metadata implements Cloneable {
 	 */
 	public static Metadata construct(Bucket data) throws MetadataParseException, IOException {
 		InputStream is = data.getInputStream();
+		BufferedInputStream bis = new BufferedInputStream(is, 4096);
 		Metadata m;
 		try {
-			DataInputStream dis = new DataInputStream(is);
+			DataInputStream dis = new DataInputStream(bis);
 			m = new Metadata(dis, data.size());
 		} finally {
 			is.close();

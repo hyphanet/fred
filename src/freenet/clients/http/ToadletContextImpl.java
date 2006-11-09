@@ -37,6 +37,7 @@ public class ToadletContextImpl implements ToadletContext {
 	 * may be later requests.
 	 */
 	private boolean closed;
+	private boolean shouldDisconnect;
 	
 	public ToadletContextImpl(Socket sock, MultiValueTable headers, String CSSName, BucketFactory bf, PageMaker pageMaker) throws IOException {
 		this.headers = headers;
@@ -63,10 +64,8 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	private static void sendError(OutputStream os, int code, String message, String htmlMessage, boolean disconnect, MultiValueTable mvt) throws IOException {
 		if(mvt == null) mvt = new MultiValueTable();
-		if(disconnect)
-			mvt.put("Connection", "close");
 		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
-		sendReplyHeaders(os, code, message, mvt, "text/html; charset=UTF-8", messageBytes.length);
+		sendReplyHeaders(os, code, message, mvt, "text/html; charset=UTF-8", messageBytes.length, disconnect);
 		os.write(messageBytes);
 	}
 	
@@ -81,7 +80,7 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
-		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength);
+		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, shouldDisconnect);
 	}
 	
 	public PageMaker getPageMaker() {
@@ -92,7 +91,7 @@ public class ToadletContextImpl implements ToadletContext {
 		return headers;
 	}
 	
-	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws IOException {
+	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength, boolean disconnect) throws IOException {
 		// Construct headers
 		if(mvt == null)
 			mvt = new MultiValueTable();
@@ -112,6 +111,10 @@ public class ToadletContextImpl implements ToadletContext {
 		mvt.put("last-modified", makeHTTPDate(System.currentTimeMillis()-1000));
 		mvt.put("pragma", "no-cache");
 		mvt.put("cache-control", "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0");
+		if(disconnect)
+			mvt.put("connection", "close");
+		else
+			mvt.put("connection", "keep-alive");
 		StringBuffer buf = new StringBuffer(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);
@@ -230,6 +233,7 @@ public class ToadletContextImpl implements ToadletContext {
 				boolean shouldDisconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
 				
 				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, container.getCSSName(), bf, pageMaker);
+				ctx.shouldDisconnect = shouldDisconnect;
 				
 				/*
 				 * if we're handling a POST, copy the data into a bucket now,

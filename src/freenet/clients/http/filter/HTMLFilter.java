@@ -2,6 +2,8 @@
 
 package freenet.clients.http.filter;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -41,13 +43,15 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
 		InputStream strm = bucket.getInputStream();
+		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
 		Bucket temp = bf.makeBucket(bucket.size());
 		OutputStream os = temp.getOutputStream();
+		BufferedOutputStream bos = new BufferedOutputStream(os, 4096);
 		Reader r;
 		Writer w;
 		try {
-			r = new BufferedReader(new InputStreamReader(strm, charset), 32768);
-			w = new BufferedWriter(new OutputStreamWriter(os, charset), 32768);
+			r = new BufferedReader(new InputStreamReader(bis, charset), 4096);
+			w = new BufferedWriter(new OutputStreamWriter(bos, charset), 4096);
 		} catch (UnsupportedEncodingException e) {
 			os.close();
 			strm.close();
@@ -73,9 +77,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);		
 		if(logMINOR) Logger.minor(this, "getCharset(): default="+parseCharset);
 		InputStream strm = bucket.getInputStream();
+		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
 		Writer w = new NullWriter();
 		Reader r;
-		r = new BufferedReader(new InputStreamReader(strm, parseCharset), 32768);
+		r = new BufferedReader(new InputStreamReader(bis, parseCharset), 4096);
 		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback());
 		try {
 			pc.run(null);
