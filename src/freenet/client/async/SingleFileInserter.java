@@ -13,7 +13,6 @@ import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
-import freenet.keys.ClientCHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;

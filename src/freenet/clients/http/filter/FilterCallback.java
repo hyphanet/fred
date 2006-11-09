@@ -1,6 +1,5 @@
 package freenet.clients.http.filter;
 
-import java.net.MalformedURLException;
 
 /**
  * Callback to be provided to a content filter.

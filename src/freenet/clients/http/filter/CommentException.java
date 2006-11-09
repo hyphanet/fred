@@ -12,6 +12,8 @@ package freenet.clients.http.filter;
  */
 public class CommentException extends Exception {
 	
+	private static final long serialVersionUID = 1L;
+
 	public CommentException(String msg) {
 		super(msg);
 	}
