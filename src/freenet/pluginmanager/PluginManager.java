@@ -92,7 +92,7 @@ public class PluginManager {
 			if (it.hasNext())
 				out.append(StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
 			while (it.hasNext())
-				out.append(StringArrOption.delimiter + StringArrOption.encode(((PluginInfoWrapper)it.next()).getFilename()));
+                out.append(StringArrOption.delimiter).append(StringArrOption.encode(((PluginInfoWrapper) it.next()).getFilename()));
 		}catch (NullPointerException e){
 			Logger.error(this, "error while loading plugins: disabling them:"+e);
 			return "";

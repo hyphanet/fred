@@ -129,7 +129,7 @@ public class TextModeClientInterface implements Runnable {
     	
         sb.append("Trivial Text Mode Client Interface\r\n");
         sb.append("---------------------------------------\r\n");
-        sb.append("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision+"\r\n");
+        sb.append("Freenet 0.7 Build #").append(Version.buildNumber()).append(" r" + Version.cvsRevision + "\r\n");
         sb.append("Enter one of the following commands:\r\n");
         sb.append("GET:<Freenet key> - Fetch a key\r\n");
         sb.append("PUT:\\r\\n<text, until a . on a line by itself> - Insert the document and return the key.\r\n");
@@ -192,7 +192,7 @@ public class TextModeClientInterface implements Runnable {
         try {
             line = reader.readLine();
         } catch (IOException e) {
-            outsb.append("Bye... ("+e+")");
+            outsb.append("Bye... (").append(e).append(")");
             System.err.println("Bye... ("+e+")");
             return true;
         }
@@ -214,18 +214,18 @@ public class TextModeClientInterface implements Runnable {
                 uri = new FreenetURI(key);
                 Logger.normal(this, "Key: "+uri);
             } catch (MalformedURLException e2) {
-                outsb.append("Malformed URI: "+key+" : "+e2);
+                outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
                 return false;
             }
             try {
 				FetchResult result = client.fetch(uri);
 				ClientMetadata cm = result.getMetadata();
-				outsb.append("Content MIME type: "+cm.getMIMEType());
+                outsb.append("Content MIME type: ").append(cm.getMIMEType());
 				Bucket data = result.asBucket();
 				// FIXME limit it above
 				if(data.size() > 32*1024) {
 					System.err.println("Data is more than 32K: "+data.size());
-					outsb.append("Data is more than 32K: "+data.size());
+                    outsb.append("Data is more than 32K: ").append(data.size());
 					return false;
 				}
 				byte[] dataBytes = BucketTools.toByteArray(data);
@@ -244,12 +244,12 @@ public class TextModeClientInterface implements Runnable {
 				outsb.append("Data:\r\n");
 				outsb.append(new String(dataBytes));
 			} catch (FetchException e) {
-				outsb.append("Error: "+e.getMessage()+"\r\n");
+                outsb.append("Error: ").append(e.getMessage()).append("\r\n");
             	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
-            		outsb.append("Permanent redirect: "+e.newURI+"\r\n");
+                    outsb.append("Permanent redirect: ").append(e.newURI).append("\r\n");
 			}
         } else if(uline.startsWith("GETFILE:")) {
             // Should have a key next
@@ -263,14 +263,14 @@ public class TextModeClientInterface implements Runnable {
             try {
                 uri = new FreenetURI(key);
             } catch (MalformedURLException e2) {
-                outsb.append("Malformed URI: "+key+" : "+e2);
+                outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
                 return false;
             }
             try {
             	long startTime = System.currentTimeMillis();
 				FetchResult result = client.fetch(uri);
 				ClientMetadata cm = result.getMetadata();
-				outsb.append("Content MIME type: "+cm.getMIMEType());
+                outsb.append("Content MIME type: ").append(cm.getMIMEType());
 				Bucket data = result.asBucket();
                 // Now calculate filename
                 String fnam = uri.getDocName();
@@ -283,7 +283,7 @@ public class TextModeClientInterface implements Runnable {
                 }
                 File f = new File(downloadsDir, fnam);
                 if(f.exists()) {
-                    outsb.append("File exists already: "+fnam);
+                    outsb.append("File exists already: ").append(fnam);
                     fnam = "freenet-"+System.currentTimeMillis()+"-"+fnam;
                 }
                 FileOutputStream fos = null;
@@ -291,9 +291,9 @@ public class TextModeClientInterface implements Runnable {
                     fos = new FileOutputStream(f);
                     BucketTools.copyTo(data, fos, Long.MAX_VALUE);
                     fos.close();
-                    outsb.append("Written to "+fnam);
+                    outsb.append("Written to ").append(fnam);
                 } catch (IOException e) {
-                    outsb.append("Could not write file: caught "+e);
+                    outsb.append("Could not write file: caught ").append(e);
                     e.printStackTrace();
                 } finally {
                     if(fos != null) try {
@@ -305,14 +305,14 @@ public class TextModeClientInterface implements Runnable {
                 long endTime = System.currentTimeMillis();
                 long sz = data.size();
                 double rate = 1000.0 * sz / (endTime-startTime);
-                outsb.append("Download rate: "+rate+" bytes / second");
+                outsb.append("Download rate: ").append(rate).append(" bytes / second");
 			} catch (FetchException e) {
-				outsb.append("Error: "+e.getMessage());
+                outsb.append("Error: ").append(e.getMessage());
             	if((e.getMode() == FetchException.SPLITFILE_ERROR) && (e.errorCodes != null)) {
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             	if(e.newURI != null)
-            		outsb.append("Permanent redirect: "+e.newURI+"\r\n");
+                    outsb.append("Permanent redirect: ").append(e.newURI).append("\r\n");
 			}
     } else if(uline.startsWith("UPDATE")) {
     		outsb.append("starting the update process");
@@ -379,17 +379,17 @@ public class TextModeClientInterface implements Runnable {
             try {
             	uri = client.insert(block, getCHKOnly, null);
             } catch (InserterException e) {
-            	outsb.append("Error: "+e.getMessage());
+                outsb.append("Error: ").append(e.getMessage());
             	if(e.uri != null)
-            		outsb.append("URI would have been: "+e.uri);
+                    outsb.append("URI would have been: ").append(e.uri);
             	int mode = e.getMode();
             	if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
-            		outsb.append("Splitfile-specific error:\n"+e.errorCodes.toVerboseString());
+                    outsb.append("Splitfile-specific error:\n").append(e.errorCodes.toVerboseString());
             	}
             	return false;
             }
-            
-            outsb.append("URI: "+uri);
+
+            outsb.append("URI: ").append(uri);
             ////////////////////////////////////////////////////////////////////////////////
         } else if(uline.startsWith("PUTDIR:") || (uline.startsWith("PUTSSKDIR")) || (getCHKOnly = uline.startsWith("GETCHKDIR:"))) {
         	// TODO: Check for errors?
@@ -450,14 +450,14 @@ public class TextModeClientInterface implements Runnable {
 				uri = client.insertManifest(insertURI, bucketsByName, defaultFile);
 				uri = uri.addMetaStrings(new String[] { "" });
 	        	outsb.append("=======================================================");
-	            outsb.append("URI: "+uri);
+                outsb.append("URI: ").append(uri);
 	        	outsb.append("=======================================================");
 			} catch (InserterException e) {
-            	outsb.append("Finished insert but: "+e.getMessage());
+                outsb.append("Finished insert but: ").append(e.getMessage());
             	if(e.uri != null) {
             		uri = e.uri;
     				uri = uri.addMetaStrings(new String[] { "" });
-            		outsb.append("URI would have been: "+uri);
+                    outsb.append("URI would have been: ").append(uri);
             	}
             	if(e.errorCodes != null) {
             		outsb.append("Splitfile errors breakdown:");
@@ -484,7 +484,7 @@ public class TextModeClientInterface implements Runnable {
             	mimeType = splittedLine[1];
             }
             File f = new File(line);
-            outsb.append("Attempting to read file "+line);
+            outsb.append("Attempting to read file ").append(line);
             long startTime = System.currentTimeMillis();
             try {
             	if(!(f.exists() && f.canRead())) {
@@ -492,7 +492,7 @@ public class TextModeClientInterface implements Runnable {
             	}
             	
             	// Guess MIME type
-            	outsb.append("Using MIME type: "+mimeType + "\r\n");
+                outsb.append("Using MIME type: ").append(mimeType).append("\r\n");
             	if(mimeType.equals(DefaultMIMETypes.DEFAULT_MIME_TYPE))
             		mimeType = ""; // don't need to override it
             	
@@ -504,40 +504,40 @@ public class TextModeClientInterface implements Runnable {
             	
             	// FIXME depends on CHK's still being renamable
                 //uri = uri.setDocName(f.getName());
-            	
-                outsb.append("URI: "+uri+"\r\n");
+
+                outsb.append("URI: ").append(uri).append("\r\n");
             	long endTime = System.currentTimeMillis();
                 long sz = f.length();
                 double rate = 1000.0 * sz / (endTime-startTime);
-                outsb.append("Upload rate: "+rate+" bytes / second\r\n");
+                outsb.append("Upload rate: ").append(rate).append(" bytes / second\r\n");
             } catch (FileNotFoundException e1) {
                 outsb.append("File not found");
             } catch (InserterException e) {
-            	outsb.append("Finished insert but: "+e.getMessage());
+                outsb.append("Finished insert but: ").append(e.getMessage());
             	if(e.uri != null) {
-            		outsb.append("URI would have been: "+e.uri);
+                    outsb.append("URI would have been: ").append(e.uri);
                 	long endTime = System.currentTimeMillis();
                     long sz = f.length();
                     double rate = 1000.0 * sz / (endTime-startTime);
-                    outsb.append("Upload rate: "+rate+" bytes / second");
+                    outsb.append("Upload rate: ").append(rate).append(" bytes / second");
             	}
             	if(e.errorCodes != null) {
             		outsb.append("Splitfile errors breakdown:");
             		outsb.append(e.errorCodes.toVerboseString());
             	}
             } catch (Throwable t) {
-                outsb.append("Insert threw: "+t);
+                outsb.append("Insert threw: ").append(t);
                 t.printStackTrace();
             }
         } else if(uline.startsWith("MAKESSK")) {
         	InsertableClientSSK key = InsertableClientSSK.createRandom(r, "");
-        	outsb.append("Insert URI: "+key.getInsertURI().toString(false)+"\r\n");
-        	outsb.append("Request URI: "+key.getURI().toString(false)+"\r\n");
+            outsb.append("Insert URI: ").append(key.getInsertURI().toString(false)).append("\r\n");
+            outsb.append("Request URI: ").append(key.getURI().toString(false)).append("\r\n");
         	FreenetURI insertURI = key.getInsertURI().setDocName("testsite");
         	String fixedInsertURI = insertURI.toString(false);
-        	outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\r\n"+fixedInsertURI+"\r\n");
-        	outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\r\nPUTSSKDIR:"+fixedInsertURI+"#directoryToUpload/"+"\r\n");
-        	outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\r\n"+key.getURI().toString(false)+"testsite/");
+            outsb.append("Note that you MUST add a filename to the end of the above URLs e.g.:\r\n").append(fixedInsertURI).append("\r\n");
+            outsb.append("Normally you will then do PUTSSKDIR:<insert URI>#<directory to upload>, for example:\r\nPUTSSKDIR:").append(fixedInsertURI).append("#directoryToUpload/" + "\r\n");
+            outsb.append("This will then produce a manifest site containing all the files, the default document can be accessed at\r\n").append(key.getURI().toString(false)).append("testsite/");
         } else if(uline.startsWith("PUTSSK:")) {
         	String cmd = line.substring("PUTSSK:".length());
         	cmd = cmd.trim();
@@ -549,18 +549,18 @@ public class TextModeClientInterface implements Runnable {
         	String[] split = cmd.split(";");
         	String insertURI = split[0];
         	String targetURI = split[1];
-        	outsb.append("Insert URI: "+insertURI);
-        	outsb.append("Target URI: "+targetURI);
+            outsb.append("Insert URI: ").append(insertURI);
+            outsb.append("Target URI: ").append(targetURI);
         	FreenetURI insert = new FreenetURI(insertURI);
         	FreenetURI target = new FreenetURI(targetURI);
         	try {
 				FreenetURI result = client.insertRedirect(insert, target);
-				outsb.append("Successfully inserted to fetch URI: "+result);
+                outsb.append("Successfully inserted to fetch URI: ").append(result);
 			} catch (InserterException e) {
-            	outsb.append("Finished insert but: "+e.getMessage());
+                outsb.append("Finished insert but: ").append(e.getMessage());
             	Logger.normal(this, "Error: "+e, e);
             	if(e.uri != null) {
-            		outsb.append("URI would have been: "+e.uri);
+                    outsb.append("URI would have been: ").append(e.uri);
             	}
 			}
         	
@@ -569,7 +569,7 @@ public class TextModeClientInterface implements Runnable {
             outsb.append(fs.toString());
             outsb.append(n.getStatus());
             if(Version.buildNumber()<Version.highestSeenBuild){
-                outsb.append("The latest version is : "+Version.highestSeenBuild);
+                outsb.append("The latest version is : ").append(Version.highestSeenBuild);
             }
         } else if(uline.startsWith("ADDPEER:") || uline.startsWith("CONNECT:")) {
             String key = null;
@@ -587,7 +587,7 @@ public class TextModeClientInterface implements Runnable {
             if(key.length() > 0) {
                 // Filename
             	BufferedReader in;
-                outsb.append("Trying to add peer to node by noderef in "+key+"\r\n");
+                outsb.append("Trying to add peer to node by noderef in ").append(key).append("\r\n");
                 File f = new File(key);
                 if (f.isFile()) {
                 	outsb.append("Given string seems to be a file, loading...\r\n");
@@ -609,13 +609,13 @@ public class TextModeClientInterface implements Runnable {
             addPeer(content);
         
         } else if(uline.startsWith("NAME:")) {
-            outsb.append("Node name currently: "+n.getName());
+            outsb.append("Node name currently: ").append(n.getName());
             String key = line.substring("NAME:".length());
             while((key.length() > 0) && (key.charAt(0) == ' '))
                 key = key.substring(1);
             while((key.length() > 0) && (key.charAt(key.length()-1) == ' '))
                 key = key.substring(0, key.length()-2);
-            outsb.append("New name: "+key);
+            outsb.append("New name: ").append(key);
             
             try{
             	n.setName(key);
@@ -633,9 +633,9 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
         	if(disablePeer(nodeIdentifier)) {
-        		outsb.append("disable succeeded for "+nodeIdentifier);
+                outsb.append("disable succeeded for ").append(nodeIdentifier);
         	} else {
-        		outsb.append("disable failed for "+nodeIdentifier);
+                outsb.append("disable failed for ").append(nodeIdentifier);
         	}
         	outsb.append("\r\n");
         } else if(uline.startsWith("ENABLEPEER:")) {
@@ -646,9 +646,9 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
         	if(enablePeer(nodeIdentifier)) {
-        		outsb.append("enable succeeded for "+nodeIdentifier);
+                outsb.append("enable succeeded for ").append(nodeIdentifier);
         	} else {
-        		outsb.append("enable failed for "+nodeIdentifier);
+                outsb.append("enable failed for ").append(nodeIdentifier);
         	}
         	outsb.append("\r\n");
 		} else if(uline.startsWith("SETPEERLISTENONLY:")) {
@@ -665,7 +665,7 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
 			pn.setListenOnly(true);
-			outsb.append("set ListenOnly suceeded for "+nodeIdentifier+"\r\n");
+            outsb.append("set ListenOnly suceeded for ").append(nodeIdentifier).append("\r\n");
 		} else if(uline.startsWith("UNSETPEERLISTENONLY:")) {
 			String nodeIdentifier = (line.substring("UNSETPEERLISTENONLY:".length())).trim();
         	if(!havePeer(nodeIdentifier)) {
@@ -680,13 +680,13 @@ public class TextModeClientInterface implements Runnable {
         		return false;
         	}
 			pn.setListenOnly(false);
-			outsb.append("unset ListenOnly suceeded for "+nodeIdentifier+"\r\n");
+            outsb.append("unset ListenOnly suceeded for ").append(nodeIdentifier).append("\r\n");
         } else if(uline.startsWith("HAVEPEER:")) {
         	String nodeIdentifier = (line.substring("HAVEPEER:".length())).trim();
         	if(havePeer(nodeIdentifier)) {
-        		outsb.append("true for "+nodeIdentifier);
+                outsb.append("true for ").append(nodeIdentifier);
         	} else {
-        		outsb.append("false for "+nodeIdentifier);
+                outsb.append("false for ").append(nodeIdentifier);
         	}
         	outsb.append("\r\n");
         } else if(uline.startsWith("REMOVEPEER:") || uline.startsWith("DISCONNECT:")) {
@@ -697,9 +697,9 @@ public class TextModeClientInterface implements Runnable {
         		nodeIdentifier = line.substring("REMOVEPEER:".length());
         	}
         	if(removePeer(nodeIdentifier)) {
-        		outsb.append("peer removed for "+nodeIdentifier);
+                outsb.append("peer removed for ").append(nodeIdentifier);
         	} else {
-        		outsb.append("peer removal failed for "+nodeIdentifier);
+                outsb.append("peer removal failed for ").append(nodeIdentifier);
         	}
         	outsb.append("\r\n");
         } else if(uline.startsWith("PEER:")) {

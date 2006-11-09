@@ -113,7 +113,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 			return "Buffer {"+this._length+"}";
 		} else {
 			StringBuffer b = new StringBuffer(this._length*3);
-			b.append("{"+this._length+":");
+            b.append("{").append(this._length).append(":");
 			for (int x=0; x<this._length; x++) {
 				b.append(byteAt(x));
 				b.append(' ');

@@ -241,8 +241,7 @@ public class SHA256 implements Digest {
      * @param offset index of first of the n elements
      **/
     public void extract(int [] digest, int offset) {
-        for( int i=0; i<context.length; i++ )
-	    digest[i+offset]=context[i];
+        System.arraycopy(context, 0, digest, offset, context.length);
     }
 
      /**

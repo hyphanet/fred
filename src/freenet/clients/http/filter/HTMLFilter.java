@@ -309,7 +309,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		boolean killText = false; // has to be set on or off explicitly by tags
 		boolean killStyle = false;
 		int styleScriptRecurseCount = 0;
-		String currentStyleScriptChunk = new String();
+		String currentStyleScriptChunk = "";
 		StringBuffer writeAfterTag = new StringBuffer(1024);
 	}
 
@@ -1938,7 +1938,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		try {
 			return sanitizeURI(suri, overrideType, overrideCharset, cb);
 		} catch (CommentException e) {
-			pc.writeAfterTag.append("<!-- "+HTMLEncoder.encode(e.toString())+" -->");
+            pc.writeAfterTag.append("<!-- ").append(HTMLEncoder.encode(e.toString())).append(" -->");
 			return null;
 		}
 	}

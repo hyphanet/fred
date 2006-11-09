@@ -152,7 +152,7 @@ public class HTMLNode {
 		}
 		if (children.size() == 0) {
 			if (name.equals("textarea") || name.equals("div") || name.equals("a")) {
-				tagBuffer.append("></" + name + ">");
+                tagBuffer.append("></").append(name).append(">");
 			} else {
 				tagBuffer.append(" />");
 			}

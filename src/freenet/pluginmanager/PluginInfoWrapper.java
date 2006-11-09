@@ -47,7 +47,7 @@ public class PluginInfoWrapper {
 	}
 	
 	public String getPluginClassName(){
-		return plug.getClass().getName().toString();
+		return plug.getClass().getName();
 	}
 	
 	public String[] getPluginToadletSymlinks(){

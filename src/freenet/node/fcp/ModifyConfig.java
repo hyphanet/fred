@@ -36,7 +36,7 @@ public class ModifyConfig extends FCPMessage {
 		
 		for(int i=0; i<sc.length ; i++){
 			Option[] o = sc[i].getOptions();
-			String prefix = new String(sc[i].getPrefix());
+			String prefix = sc[i].getPrefix();
 			String configName;
 			
 			for(int j=0; j<o.length; j++){

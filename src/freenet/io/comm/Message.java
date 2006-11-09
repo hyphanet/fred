@@ -183,11 +183,11 @@ public class Message {
 	public String toString() {
 		StringBuffer ret = new StringBuffer(1000);
 		String comma = "";
-		ret.append(_spec.getName() + " {");
+        ret.append(_spec.getName()).append(" {");
 		for (Iterator i = _spec.getFields().keySet().iterator(); i.hasNext();) {
 			ret.append(comma);
 			String name = (String) i.next();
-			ret.append(name + "=" + _payload.get(name) );
+            ret.append(name).append("=").append(_payload.get(name));
 			comma = ", ";
 		}
 		ret.append("}");

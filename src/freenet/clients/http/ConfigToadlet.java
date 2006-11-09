@@ -49,7 +49,7 @@ public class ConfigToadlet extends Toadlet {
 		
 		for(int i=0; i<sc.length ; i++){
 			Option[] o = sc[i].getOptions();
-			String prefix = new String(sc[i].getPrefix());
+			String prefix = sc[i].getPrefix();
 			String configName;
 			
 			for(int j=0; j<o.length; j++){
@@ -64,7 +64,7 @@ public class ConfigToadlet extends Toadlet {
 						try{
 							o[j].setValue(value);
 						}catch(Exception e){
-							errbuf.append(o[j].getName()+" "+e+"\n");
+                            errbuf.append(o[j].getName()).append(" ").append(e).append("\n");
 							Logger.error(this, "Caught "+e, e);
 						}
 					}

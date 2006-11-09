@@ -2846,7 +2846,7 @@ public class Node {
 	 * Handle a node to node text message SimpleFieldSet
 	 */
 	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) {
-	  int type = new Integer(fs.get("type")).intValue();
+	  int type = Integer.parseInt(fs.get("type"));
 	  if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
 		String source_nodename = null;
 		String target_nodename = null;

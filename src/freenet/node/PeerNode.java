@@ -414,7 +414,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
     				boolean failed = false;
     				if(signature == null || peerCryptoGroup == null || peerPubKey == null || 
     						(failed = !DSA.verify(peerPubKey, new DSASignature(signature), new BigInteger(md.digest(fs.toOrderedString().getBytes("UTF-8")))))){
-    					String errCause = new String();
+    					String errCause = "";
     					if(signature == null) errCause += " (No signature)";
     					if(peerCryptoGroup == null) errCause += " (No peer crypto group)";
     					if(peerPubKey == null) errCause += " (No peer public key)";
@@ -613,7 +613,7 @@ public class PeerNode implements PeerContext, USKRetrieverCallback {
         setPeerNodeStatus(now);
         
 		// Setup the private darknet comment note
-        privateDarknetComment = new String();
+        privateDarknetComment = "";
         privateDarknetCommentFileNumber = -1;
 
 		// Setup the extraPeerDataFileNumbers
