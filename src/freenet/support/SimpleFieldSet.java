@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import freenet.node.FSParseException;
 import freenet.support.io.LineReader;
 
 /**
@@ -509,6 +510,16 @@ public class SimpleFieldSet {
 			return Integer.parseInt(s);
 		} catch (NumberFormatException e) {
 			return def;
+		}
+	}
+
+	public int getInt(String key) throws FSParseException {
+		String s = get(key);
+		if(s == null) throw new FSParseException("No key "+key);
+		try {
+			return Integer.parseInt(s);
+		} catch (NumberFormatException e) {
+			throw new FSParseException("Cannot parse "+s+" for integer "+key);
 		}
 	}
 

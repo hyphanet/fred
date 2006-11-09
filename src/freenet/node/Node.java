@@ -2836,7 +2836,12 @@ public class Node {
 			Logger.error( this, "Failed to write N2NTM to extra peer data file for peer "+source.getPeer());
 		}
 		// Keep track of the fileNumber so we can potentially delete the extra peer data file later, the file is authoritative
-		handleNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
+		try {
+			handleNodeToNodeTextMessageSimpleFieldSet(fs, source, fileNumber);
+		} catch (FSParseException e) {
+			// Shouldn't happen
+			throw new Error(e);
+		}
 	  } else {
 		Logger.error(this, "Received unknown node to node message type '"+type+"' from "+source.getPeer());
 	  }
@@ -2844,9 +2849,10 @@ public class Node {
 
 	/**
 	 * Handle a node to node text message SimpleFieldSet
+	 * @throws FSParseException 
 	 */
-	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) {
-	  int type = Integer.parseInt(fs.get("type"));
+	public void handleNodeToNodeTextMessageSimpleFieldSet(SimpleFieldSet fs, PeerNode source, int fileNumber) throws FSParseException {
+	  int type = fs.getInt("type");
 	  if(type == Node.N2N_TEXT_MESSAGE_TYPE_USERALERT) {
 		String source_nodename = null;
 		String target_nodename = null;
