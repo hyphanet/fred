@@ -301,7 +301,7 @@ public class HTMLEncoder {
 			for(Iterator it = map.keySet().iterator();it.hasNext(); keyIndex++){
 				int val = (int) ((Character)it.next()).charValue();
 				keys[keyIndex] = val;
-				if(max > val) max = val;
+				if(val > max) max = val;
 			}
 			
 			modulo = map.size();
