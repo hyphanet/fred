@@ -370,6 +370,7 @@ public class WelcomeToadlet extends Toadlet {
 					bookmark.addChild("input", new String[] { "type", "name", "value", "style" }, new String[] { "submit", "edit_" + b.hashCode(), "Edit", "float: right;" });
 					bookmark.addChild("a", "href", "/" + b.getKey(), b.getDesc());
 				}
+				manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 				manageForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
 			}
 			contentNode.addChild(createBookmarkEditForm(ctx.getPageMaker(), MODE_ADD, null, "", ""));
@@ -514,6 +515,7 @@ public class WelcomeToadlet extends Toadlet {
 		}
 		editForm.addChild("input", new String[] { "type", "value", "class" }, new String[] { "submit", "Cancel", "cancel" });
 		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "managebookmarks", "yes" });
+		editForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 		return infobox;
 	}
 	
