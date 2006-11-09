@@ -297,11 +297,15 @@ public class HTMLEncoder {
 			int[] keys = new int[map.size()]; 
 			int keyIndex = 0;
 			
+			int max = 0;
 			for(Iterator it = map.keySet().iterator();it.hasNext(); keyIndex++){
-				keys[keyIndex] = (int) ((Character)it.next()).charValue();
+				int val = (int) ((Character)it.next()).charValue();
+				keys[keyIndex] = val;
+				if(max > val) max = val;
 			}
-				
-			int[] collisionTable = new int[Character.MAX_VALUE]; //using integers instead of booleans (no cleanup)
+			
+			modulo = map.size();
+			int[] collisionTable = new int[max+1]; //using integers instead of booleans (no cleanup)
 			boolean ok=false;
 			while (!ok) {
 			    ++modulo; //try a higher modulo
