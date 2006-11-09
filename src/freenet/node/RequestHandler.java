@@ -119,8 +119,9 @@ public class RequestHandler implements Runnable, ByteCounter {
                 PartiallyReceivedBlock prb = rs.getPRB();
             	BlockTransmitter bt =
             	    new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, this);
-            	if(!bt.send());
+            	if(!bt.send()){
             		finalTransferFailed = true;
+            	}
         	    return;
             }
             
