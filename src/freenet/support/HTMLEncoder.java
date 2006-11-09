@@ -5,7 +5,7 @@ import java.util.HashMap;
 /**
  * Originally from com.websiteasp.ox pasckage.
  * 
- * Author: Yves Lempereur
+ * @author avian (Yves Lempereur)
  */
 public class HTMLEncoder {
 	public final static HashMap charTable;
@@ -15,8 +15,10 @@ public class HTMLEncoder {
 		StringBuffer sb = new StringBuffer(n);
 		for (int i = 0; i < n; i++) {
 			char c = s.charAt(i);
-			if(charTable.containsKey(new Character(c))){
-				sb.append('&'+(String)charTable.get(new Character(c))+';');
+			if(Character.isLetterOrDigit(c)){ //only special characters need checking
+				sb.append(c);
+			} else if(charTable.containsKey(new Character(c))){
+				sb.append('&').append((String) charTable.get(new Character(c))).append(';');
 			}else
 				sb.append(c);
 		}
