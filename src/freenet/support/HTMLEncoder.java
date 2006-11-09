@@ -27,7 +27,7 @@ public class HTMLEncoder {
 		charTable = new HashMap();
 		charTable.put(new Character((char)34), "quot");
 		charTable.put(new Character((char)38), "amp");
-		charTable.put(new Character((char)39), "apos");
+		charTable.put(new Character((char)39), "#39");
 		charTable.put(new Character((char)60), "lt");
 		charTable.put(new Character((char)62), "gt");
 		charTable.put(new Character((char)160), "nbsp");
