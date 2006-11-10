@@ -187,31 +187,32 @@ public class WelcomeToadlet extends Toadlet {
 			// innitialindex
 			// sender
 			// subject
+			String boardName = request.getPartAsString("boardname",FrostBoard.MAX_NAME_LENGTH);
+			String boardPrivateKey = request.getPartAsString("boardprivatekey",78);
+			String boardPublicKey = request.getPartAsString("boardpublickey",78);
+			String sender = request.getPartAsString("sender",64);
+			String subject = request.getPartAsString("subject",128);
+			String filename = request.getPartAsString("filename",1024);
+			
+			int innitialIndex = 0;
+			if(request.isPartSet("innitialindex"))
+			{
+				try {
+					innitialIndex = Integer.parseInt(request.getPartAsString("innitialindex",3));
+				}
+				catch(NumberFormatException e)
+				{
+					innitialIndex = 0;
+				}
+			}
+			
 				FrostBoard board = null;
-				if(request.isPartSet("boardprivatekey")&&request.isPartSet("boardpublickey")) // keyed board
-				{
-					board = new FrostBoard(
-							request.getPartAsString("boardname",FrostBoard.MAX_NAME_LENGTH),
-							request.getPartAsString("boardprivatekey",78),
-							request.getPartAsString("boardpublickey",78));
+				if(boardPrivateKey.length()>0 && boardPublicKey.length()>0) { // keyed board
+					board = new FrostBoard(boardName, boardPrivateKey, boardPublicKey);
+				} else { // unkeyed or public board
+					board = new FrostBoard(boardName);
 				}
-				else // unkeyed or public board
-				{
-					board = new FrostBoard(request.getPartAsString("boardname",FrostBoard.MAX_NAME_LENGTH));
-				}
-				FrostMessage fin = new FrostMessage("news", board, request.getPartAsString("sender",64), request.getPartAsString("subject",128), request.getPartAsString("filename",1024));
-				
-				int innitialIndex = 0;
-				if(request.isPartSet("innitialindex"))
-				{
-					try {
-						innitialIndex = Integer.parseInt(request.getPartAsString("innitialindex",3));
-					}
-					catch(NumberFormatException e)
-					{
-						innitialIndex = 0;
-					}
-				}
+				FrostMessage fin = new FrostMessage("news", board, sender, subject, filename);
 				
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
