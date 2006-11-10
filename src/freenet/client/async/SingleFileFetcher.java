@@ -35,8 +35,13 @@ import freenet.support.io.BucketTools;
 public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
 
 	private static boolean logMINOR;
-	//final FreenetURI uri;
+	/** Original URI */
+	final FreenetURI uri;
+	/** Meta-strings. (Path elements that aren't part of a key type) */
 	final LinkedList metaStrings;
+	/** Number of metaStrings which were added by redirects etc. They are added to the start, so this is decremented
+	 * when we consume one. */
+	private int addedMetaStrings;
 	final GetCompletionCallback rcb;
 	final ClientMetadata clientMetadata;
 	private Metadata metadata;
@@ -51,20 +56,22 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	private final boolean dontTellClientGet;
 	private Object token;
 	private final Bucket returnBucket;
+	/** If true, success/failure is immediately reported to the client, and therefore we can check TOO_MANY_PATH_COMPONENTS. */
+	private final boolean isFinal;
 
 	/** Create a new SingleFileFetcher and register self.
 	 * Called when following a redirect, or direct from ClientGet.
-	 * @param token
-	 * @param dontTellClientGet
+	 * FIXME: Many times where this is called internally we might be better off using a copy constructor? 
 	 */
 	public SingleFileFetcher(BaseClientGetter get, GetCompletionCallback cb, ClientMetadata metadata,
-			ClientKey key, LinkedList metaStrings, FetcherContext ctx,
+			ClientKey key, LinkedList metaStrings, FreenetURI origURI, int addedMetaStrings, FetcherContext ctx,
 			ArchiveContext actx, int maxRetries, int recursionLevel,
 			boolean dontTellClientGet, Object token, boolean isEssential,
-			Bucket returnBucket) throws FetchException {
+			Bucket returnBucket, boolean isFinal) throws FetchException {
 		super(key, maxRetries, ctx, get);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key);
+		this.isFinal = isFinal;
 		this.cancelled = false;
 		this.returnBucket = returnBucket;
 		this.dontTellClientGet = dontTellClientGet;
@@ -73,9 +80,11 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		//this.key = ClientKey.getBaseKey(uri);
 		//metaStrings = uri.listMetaStrings();
 		this.metaStrings = metaStrings;
+		this.addedMetaStrings = addedMetaStrings;
 		this.rcb = cb;
 		this.clientMetadata = metadata;
 		thisKey = key.getURI();
+		this.uri = origURI;
 		this.actx = actx;
 		this.recursionLevel = recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
@@ -94,18 +103,22 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key);
 		this.token = fetcher.token;
 		this.returnBucket = null;
+		// We expect significant further processing in the parent
+		this.isFinal = false;
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
 		this.ah = fetcher.ah;
 		this.clientMetadata = (ClientMetadata) fetcher.clientMetadata.clone();
 		this.metadata = newMeta;
 		this.metaStrings = fetcher.metaStrings;
+		this.addedMetaStrings = fetcher.addedMetaStrings;
 		this.rcb = callback;
 		this.recursionLevel = fetcher.recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
 		this.thisKey = fetcher.thisKey;
 		this.decompressors = fetcher.decompressors;
+		this.uri = fetcher.uri;
 	}
 
 	// Process the completed data. May result in us going to a
@@ -184,8 +197,26 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			}
 			result = new FetchResult(result, data);
 		}
-		if(result.size() > ctx.maxOutputLength) {
+		if(!metaStrings.isEmpty()) {
+			// Some meta-strings left
+			if(addedMetaStrings > 0) {
+				// Should this be an error?
+				// It would be useful to be able to fetch the data ...
+				// On the other hand such inserts could cause unpredictable results?
+				// Would be useful to make a redirect to the key we actually fetched.
+				rcb.onFailure(new FetchException(FetchException.INVALID_METADATA, "Invalid metadata: too many path components in redirects", thisKey), this);
+			} else {
+				// TOO_MANY_PATH_COMPONENTS
+				// report to user
+				FreenetURI tryURI = uri;
+				tryURI = tryURI.dropLastMetaStrings(metaStrings.size());
+				rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, result.size(), (rcb == parent), result.getMimeType(), tryURI), this);
+			}
+			result.asBucket().free();
+			return;
+		} else if(result.size() > ctx.maxOutputLength) {
 			rcb.onFailure(new FetchException(FetchException.TOO_BIG, result.size(), (rcb == parent), result.getMimeType()), this);
+			result.asBucket().free();
 		} else {
 			rcb.onSuccess(result, this);
 		}
@@ -198,8 +229,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				String name;
 				if(metaStrings.isEmpty())
 					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS);
-				else
-					name = (String) metaStrings.removeFirst();
+				else name = removeMetaString();
 				// Since metadata is a document, we just replace metadata here
 				if(logMINOR) Logger.minor(this, "Next meta-string: "+name);
 				if(name == null) {
@@ -295,11 +325,11 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				// Just create a new SingleFileFetcher
 				// Which will then fetch the target URI, and call the rcd.success
 				// Hopefully!
-				FreenetURI uri = metadata.getSingleTarget();
-				if(logMINOR) Logger.minor(this, "Redirecting to "+uri);
+				FreenetURI newURI = metadata.getSingleTarget();
+				if(logMINOR) Logger.minor(this, "Redirecting to "+newURI);
 				ClientKey key;
 				try {
-					BaseClientKey k = BaseClientKey.getBaseKey(uri);
+					BaseClientKey k = BaseClientKey.getBaseKey(newURI);
 					if(k instanceof ClientKey)
 						key = (ClientKey) k;
 					else
@@ -310,16 +340,17 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				} catch (MalformedURLException e) {
 					throw new FetchException(FetchException.INVALID_URI, e);
 				}
-				LinkedList newMetaStrings = uri.listMetaStrings();
+				LinkedList newMetaStrings = newURI.listMetaStrings();
 				
 				// Move any new meta strings to beginning of our list of remaining meta strings
 				while(!newMetaStrings.isEmpty()) {
 					Object o = newMetaStrings.removeLast();
 					metaStrings.addFirst(o);
+					addedMetaStrings++;
 				}
 
 				// **FIXME** Is key in the call to SingleFileFetcher here supposed to be this.key or the same key used in the try block above?  MultiLevelMetadataCallback.onSuccess() below uses this.key, thus the question
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, false, token, true, returnBucket);
+				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, this.uri, addedMetaStrings, ctx, actx, maxRetries, recursionLevel, false, token, true, returnBucket, true);
 				if((key instanceof ClientCHK) && !((ClientCHK)key).isMetadata())
 					rcb.onBlockSetFinished(this);
 				if(metadata.isCompressed()) {
@@ -343,6 +374,27 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					addDecompressor(codec);
 				}
 				
+				if(isFinal) {
+					if(!metaStrings.isEmpty()) {
+						// Some meta-strings left
+						if(addedMetaStrings > 0) {
+							// Should this be an error?
+							// It would be useful to be able to fetch the data ...
+							// On the other hand such inserts could cause unpredictable results?
+							// Would be useful to make a redirect to the key we actually fetched.
+							rcb.onFailure(new FetchException(FetchException.INVALID_METADATA, "Invalid metadata: too many path components in redirects", thisKey), this);
+						} else {
+							// TOO_MANY_PATH_COMPONENTS
+							// report to user
+							FreenetURI tryURI = uri;
+							tryURI = tryURI.dropLastMetaStrings(metaStrings.size());
+							rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, metadata.uncompressedDataLength(), (rcb == parent), clientMetadata.getMIMEType(), tryURI), this);
+						}
+						return;
+					}
+				} else
+					if(logMINOR) Logger.minor(this, "Not finished: rcb="+rcb+" for "+this); 
+				
 				long len = metadata.dataLength();
 				if(metadata.uncompressedDataLength() > len)
 					len = metadata.uncompressedDataLength();
@@ -350,9 +402,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				if((len > ctx.maxOutputLength) ||
 						(len > ctx.maxTempLength)) {
 					
-					boolean finished = (rcb == parent);
-					
-					onFailure(new FetchException(FetchException.TOO_BIG, len, finished, clientMetadata.getMIMEType()));
+					onFailure(new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.isEmpty(), clientMetadata.getMIMEType()));
 					return;
 				}
 				
@@ -370,6 +420,12 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				throw new FetchException(FetchException.UNKNOWN_METADATA);
 			}
 		}
+	}
+
+	private String removeMetaString() {
+		String name = (String) metaStrings.removeFirst();
+		if(addedMetaStrings > 0) addedMetaStrings--;
+		return name;
 	}
 
 	private void addDecompressor(Compressor codec) {
@@ -444,9 +500,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		public void onSuccess(FetchResult result, ClientGetState state) {
 			try {
 				metadata = Metadata.construct(result.asBucket());
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, true, returnBucket);
-				f.metadata = metadata;
-				f.handleMetadata();
+				handleMetadata();
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
 				return;
@@ -552,7 +606,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 	public static ClientGetState create(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
 		BaseClientKey key = BaseClientKey.getBaseKey(uri);
 		if(key instanceof ClientKey)
-			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
+			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket, true);
 		else {
 			return uskCreate(parent, cb, clientMetadata, (USK)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
 		}
@@ -569,8 +623,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				// Want to update the latest known good iff the fetch succeeds.
 				SingleFileFetcher sf = 
 					new SingleFileFetcher(parent, myCB, clientMetadata, usk.getSSK(usk.suggestedEdition),
-							metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet,
-							token, false, returnBucket);
+							metaStrings, usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet,
+							token, false, returnBucket, true);
 				// Background fetch
 				ctx.uskManager.startTemporaryBackgroundFetcher(usk);
 				return sf;
@@ -623,9 +677,8 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == usk.suggestedEdition) {
-					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, clientMetadata, key, metaStrings,
-							ctx, actx, maxRetries, recursionLevel+1, dontTellClientGet,
-							token, false, returnBucket);
+					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, clientMetadata, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
+							0, ctx, actx, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true);
 					sf.schedule();
 				} else {
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null);

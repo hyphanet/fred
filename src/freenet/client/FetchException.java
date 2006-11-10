@@ -63,6 +63,19 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
 	}
 	
+	public FetchException(int m, long expectedSize, boolean finalizedSize, String expectedMimeType, FreenetURI uri) {
+		super(getMessage(m));
+		extraMessage = null;
+		this.finalizedSizeAndMimeType = finalizedSize;
+		mode = m;
+		errorCodes = null;
+		newURI = uri;
+		this.expectedSize = expectedSize;
+		this.expectedMimeType = expectedMimeType;
+		if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "FetchException("+getMessage(mode)+")", this);
+	}
+	
 	public FetchException(MetadataParseException e) {
 		super(getMessage(INVALID_METADATA)+": "+e.getMessage());
 		extraMessage = e.getMessage();
@@ -143,6 +156,17 @@ public class FetchException extends Exception {
 			Logger.minor(this, "FetchException("+getMessage(mode)+") -> "+newURI, this);
 	}
 	
+	public FetchException(int mode, String msg, FreenetURI uri) {
+		super(getMessage(mode)+": "+msg);
+		extraMessage = msg;
+		errorCodes = null;
+		this.mode = mode;
+		newURI = uri;
+		expectedSize = -1;
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "FetchException("+getMessage(mode)+"): "+msg,this);
+	}
+
 	public static String getShortMessage(int mode) {
 		switch(mode) {
 		case TOO_DEEP_ARCHIVE_RECURSION:

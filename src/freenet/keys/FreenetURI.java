@@ -412,6 +412,16 @@ public class FreenetURI implements Cloneable{
 		return setMetaString(newMetaStr);
 	}
 
+	public FreenetURI dropLastMetaStrings(int i) {
+		String[] newMetaStr = null;
+		if ((metaStr != null) && (metaStr.length > 1)) {
+			if(i > metaStr.length) i = metaStr.length;
+			newMetaStr = new String[metaStr.length - i];
+			System.arraycopy(metaStr, 0, newMetaStr, 0, newMetaStr.length);
+		}
+		return setMetaString(newMetaStr);
+	}
+
 	/**
 	 * Returns a copy of this URI with the given string added as a new meta string.
 	 */
