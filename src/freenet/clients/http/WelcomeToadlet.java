@@ -46,6 +46,13 @@ public class WelcomeToadlet extends Toadlet {
 		this.bookmarks = core.bookmarkManager;
 	}
 
+	void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		MultiValueTable headers = new MultiValueTable();
+		headers.put("Location", "/");
+		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+		return;
+	}
+	
 	public void handlePost(URI uri, Bucket data, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(data.size() > 1024*1024) {
@@ -56,15 +63,16 @@ public class WelcomeToadlet extends Toadlet {
 		HTTPRequest request = new HTTPRequest(uri,data,ctx);
 
 		String passwd = request.getPartAsString("formPassword", 32);
-		if((passwd == null) || !passwd.equals(core.formPassword)) {
-			MultiValueTable headers = new MultiValueTable();
-			headers.put("Location", "/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
+		if(noPassword) {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "No password ("+passwd+" should be "+core.formPassword+")");
-			return;
 		}
 		
 		if(request.getPartAsString("updateconfirm", 32).length() > 0){
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			// false for no navigation bars, because that would be very silly
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node updating");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -78,6 +86,10 @@ public class WelcomeToadlet extends Toadlet {
 				public void run() { node.getNodeUpdater().Update(); }}, 0);
 			return;
 		}else if (request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH).length()>0){
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			MultiValueTable headers = new MultiValueTable();
 			String url = null;
 			if((request.getPartAsString("Go", 32).length() > 0))
@@ -86,6 +98,10 @@ public class WelcomeToadlet extends Toadlet {
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}else if (request.getPartAsString("update", 32).length() > 0) {
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Update");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Node Update"));
@@ -98,6 +114,10 @@ public class WelcomeToadlet extends Toadlet {
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if(request.isPartSet("getThreadDump")) {
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Get a Thread Dump");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			if(node.isUsingWrapper()){
@@ -112,6 +132,10 @@ public class WelcomeToadlet extends Toadlet {
 			this.writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			return;
 		}else if (request.isPartSet("addbookmark")) {
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			String key = request.getPartAsString("key", MAX_KEY_LENGTH);
 			String name = request.getPartAsString("name", MAX_NAME_LENGTH);
 			try {
@@ -127,6 +151,10 @@ public class WelcomeToadlet extends Toadlet {
 				
 			}
 		} else if (request.isPartSet("managebookmarks")) {
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			Enumeration e = bookmarks.getBookmarks();
 			while (e.hasMoreElements()) {
 				Bookmark b = (Bookmark)e.nextElement();
@@ -161,6 +189,10 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 		}else if(request.isPartSet("disable")){
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			UserAlert[] alerts=core.alerts.getAlerts();
 			for(int i=0;i<alerts.length;i++){
 				if(request.getIntPart("disable",-1)==alerts[i].hashCode()){
@@ -179,6 +211,10 @@ public class WelcomeToadlet extends Toadlet {
 				}
 			}
 		} else if(request.isPartSet("boardname")&&request.isPartSet("filename")) {
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			// Inserting into a frost board FIN
 			// boardname
 			// filename
@@ -240,6 +276,10 @@ public class WelcomeToadlet extends Toadlet {
 			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
 			request.freeParts();
 		}else if(request.isPartSet("key")&&request.isPartSet("filename")){
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 
 				FreenetURI key = new FreenetURI(request.getPartAsString("key",128));
 				String type = request.getPartAsString("content-type",128);
@@ -288,6 +328,10 @@ public class WelcomeToadlet extends Toadlet {
 				request.freeParts();
 				bucket.free();
 		}else if (request.isPartSet("shutdownconfirm")) {
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			// Tell the user that the node is shutting down
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Shutdown", false);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -298,6 +342,10 @@ public class WelcomeToadlet extends Toadlet {
 			this.node.exit("Shutdown from fproxy");
 			return;
 		}else if(request.isPartSet("restartconfirm")){
+			if(noPassword) {
+				redirectToRoot(ctx);
+				return;
+			}
 			// Tell the user that the node is restarting
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Node Restart", false);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -309,7 +357,7 @@ public class WelcomeToadlet extends Toadlet {
 			node.getNodeStarter().restart();
 			return;
 		}else {
-			this.handleGet(uri, ctx);
+			redirectToRoot(ctx);
 		}
 	}
 	
