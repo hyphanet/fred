@@ -206,44 +206,42 @@ public class WelcomeToadlet extends Toadlet {
 				}
 			}
 			
-				FrostBoard board = null;
-				if(boardPrivateKey.length()>0 && boardPublicKey.length()>0) { // keyed board
-					board = new FrostBoard(boardName, boardPrivateKey, boardPublicKey);
-				} else { // unkeyed or public board
-					board = new FrostBoard(boardName);
-				}
-				FrostMessage fin = new FrostMessage("news", board, sender, subject, filename);
-				
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
-				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				HTMLNode content;
-				try {
-					FreenetURI finalKey = fin.insertMessage(this.getClientImpl(), innitialIndex);
-					HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
-					content = ctx.getPageMaker().getContentNode(infobox);
-					content.addChild("#", "The message ");
-					content.addChild("#", " has been inserted successfully into "+finalKey.toString());
-				}
-				catch(InserterException e)
-				{
-					HTMLNode infobox = ctx.getPageMaker().getInfobox("infobox-error", "Insert Failed");
-					content = ctx.getPageMaker().getContentNode(infobox);
-					content.addChild("#", "The insert failed with the message: " + e.getMessage());
-					content.addChild("br");
-					if (e.uri != null) {
-						content.addChild("#", "The URI would have been: " + e.uri);
-					}
-					int mode = e.getMode();
-					if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
-						content.addChild("br"); /* TODO */
-						content.addChild("#", "Splitfile-specific error: " + e.errorCodes.toVerboseString());
-					}
-				}
+			FrostBoard board = null;
+			if(boardPrivateKey.length()>0 && boardPublicKey.length()>0) { // keyed board
+				board = new FrostBoard(boardName, boardPrivateKey, boardPublicKey);
+			} else { // unkeyed or public board
+				board = new FrostBoard(boardName);
+			}
+			FrostMessage fin = new FrostMessage("news", board, sender, subject, filename);
+			
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode content;
+			try {
+				FreenetURI finalKey = fin.insertMessage(this.getClientImpl(), innitialIndex);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
+				content = ctx.getPageMaker().getContentNode(infobox);
+				content.addChild("#", "The message ");
+				content.addChild("#", " has been inserted successfully into "+finalKey.toString());
+			} catch (InserterException e) {
+				HTMLNode infobox = ctx.getPageMaker().getInfobox("infobox-error", "Insert Failed");
+				content = ctx.getPageMaker().getContentNode(infobox);
+				content.addChild("#", "The insert failed with the message: " + e.getMessage());
 				content.addChild("br");
-				content.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node Homepage" }, "Homepage");
-				
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-				request.freeParts();
+				if (e.uri != null) {
+					content.addChild("#", "The URI would have been: " + e.uri);
+				}
+				int mode = e.getMode();
+				if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+					content.addChild("br"); /* TODO */
+					content.addChild("#", "Splitfile-specific error: " + e.errorCodes.toVerboseString());
+				}
+			}
+			content.addChild("br");
+			content.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node Homepage" }, "Homepage");
+			
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			request.freeParts();
 		}else if(request.isPartSet("key")&&request.isPartSet("filename")){
 
 				FreenetURI key = new FreenetURI(request.getPartAsString("key",128));
