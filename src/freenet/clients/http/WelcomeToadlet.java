@@ -61,7 +61,7 @@ public class WelcomeToadlet extends Toadlet {
 		}
 		
 		HTTPRequest request = new HTTPRequest(uri,data,ctx);
-
+		
 		String passwd = request.getPartAsString("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
 		if(noPassword) {
@@ -210,11 +210,7 @@ public class WelcomeToadlet extends Toadlet {
 					writePermanentRedirect(ctx, "Configuration applied", "/");
 				}
 			}
-		} else if(request.isPartSet("boardname")&&request.isPartSet("filename")) {
-			if(noPassword) {
-				redirectToRoot(ctx);
-				return;
-			}
+		} else if(request.isPartSet("boardname")&&(request.isPartSet("filename")||request.isPartSet("message"))) {
 			// Inserting into a frost board FIN
 			// boardname
 			// filename
@@ -228,15 +224,54 @@ public class WelcomeToadlet extends Toadlet {
 			String boardPublicKey = request.getPartAsString("boardpublickey",78);
 			String sender = request.getPartAsString("sender",64);
 			String subject = request.getPartAsString("subject",128);
-			String filename = request.getPartAsString("filename",1024);
+			String message = request.getPartAsString("message",1024);
+			if(message.length() == 0) // back compatibility; should use message
+				message = request.getPartAsString("filename", 1024);
 			
 			int innitialIndex = 0;
-			if(request.isPartSet("innitialindex")) {
+			if(request.isPartSet("initialindex")) {
 				try {
-					innitialIndex = Integer.parseInt(request.getPartAsString("innitialindex",3));
+					innitialIndex = Integer.parseInt(request.getPartAsString("initialindex",10));
 				} catch(NumberFormatException e) {
 					innitialIndex = 0;
 				}
+			} else if(request.isPartSet("innitialindex")) {
+				try {
+					innitialIndex = Integer.parseInt(request.getPartAsString("innitialindex",10));
+				} catch(NumberFormatException e) {
+					innitialIndex = 0;
+				}
+			}
+			
+			if(noPassword) {
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Frost Instant Note insert");
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-query", "Frost Instant Note insert"));
+				HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+				content.addChild("p").addChild("#", "Do you want to insert the following Frost message?");
+				HTMLNode postForm = content.addChild("p").addChild("form", new String[] { "action", "method", "enctype", "encoding" }, new String[] { "/", "post", "UTF-8", "multipart/form-data" });
+				postForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+				HTMLNode table = postForm.addChild("table", "align", "center");
+				
+				finInputRow(table, "boardname", "Target Board", boardName);
+				finInputRow(table, "boardprivatekey", "Private Key", boardPrivateKey);
+				finInputRow(table, "boardpublickey", "Public Key", boardPublicKey);
+				finInputRow(table, "initialindex", "Index to start with", Integer.toString(innitialIndex));
+				finInputRow(table, "sender", "From", sender);
+				finInputRow(table, "subject", "Subject", subject);
+				finInputBoxRow(table, "message", "Message", message);
+				
+				postForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", "Cancel" });
+				postForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "finconfirm", "Post" });
+				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+				return;
+			}
+			
+			String confirm = request.getPartAsString("finconfirm", 32);
+			
+			if(!confirm.equals("Post")) {
+				redirectToRoot(ctx);
+				return;
 			}
 			
 			FrostBoard board = null;
@@ -245,7 +280,7 @@ public class WelcomeToadlet extends Toadlet {
 			} else { // unkeyed or public board
 				board = new FrostBoard(boardName);
 			}
-			FrostMessage fin = new FrostMessage("news", board, sender, subject, filename);
+			FrostMessage fin = new FrostMessage("news", board, sender, subject, message);
 			
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -361,6 +396,32 @@ public class WelcomeToadlet extends Toadlet {
 		}
 	}
 	
+	private void finInputBoxRow(HTMLNode table, String name, String label, String message) {
+		HTMLNode row = table.addChild("tr");
+		HTMLNode cell = row.addChild("td");
+		// FIXME this should be in the CSS, not the generated code
+		HTMLNode right = cell.addChild("div", "align", "right");
+		HTMLNode bold = right.addChild("b");
+		HTMLNode font = bold.addChild("font", "size", "-1");
+		font.addChild("#", label);
+		cell = row.addChild("td");
+		cell.addChild("textarea", new String[] { "name", "rows", "cols" },
+				new String[] { name, "12", "80" }).addChild("#", message);
+	}
+
+	private void finInputRow(HTMLNode table, String name, String label, String message) {
+		HTMLNode row = table.addChild("tr");
+		HTMLNode cell = row.addChild("td");
+		// FIXME this should be in the CSS, not the generated code
+		HTMLNode right = cell.addChild("div", "align", "right");
+		HTMLNode bold = right.addChild("b");
+		HTMLNode font = bold.addChild("font", "size", "-1");
+		font.addChild("#", label);
+		cell = row.addChild("td");
+		cell.addChild("input", new String[] { "type", "name", "size", "value" }, 
+				new String[] { "text", name, "30", message });
+	}
+
 	public void handleGet(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		boolean advancedDarknetOutputEnabled = core.getToadletContainer().isAdvancedDarknetEnabled();
 		
