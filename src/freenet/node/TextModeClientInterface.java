@@ -215,6 +215,9 @@ public class TextModeClientInterface implements Runnable {
                 Logger.normal(this, "Key: "+uri);
             } catch (MalformedURLException e2) {
                 outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
+		outsb.append("\r\n");
+		out.write(outsb.toString().getBytes());
+		out.flush();
                 return false;
             }
             try {
@@ -225,7 +228,10 @@ public class TextModeClientInterface implements Runnable {
 				// FIXME limit it above
 				if(data.size() > 32*1024) {
 					System.err.println("Data is more than 32K: "+data.size());
-                    outsb.append("Data is more than 32K: ").append(data.size());
+					outsb.append("Data is more than 32K: ").append(data.size());
+					outsb.append("\r\n");
+					out.write(outsb.toString().getBytes());
+					out.flush();
 					return false;
 				}
 				byte[] dataBytes = BucketTools.toByteArray(data);
@@ -239,7 +245,10 @@ public class TextModeClientInterface implements Runnable {
 				if(evil) {
 					System.err.println("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
 					outsb.append("Data may contain escape codes which could cause the terminal to run arbitrary commands! Save it to a file if you must with GETFILE:");
-						return false;
+					outsb.append("\r\n");
+					out.write(outsb.toString().getBytes());
+					out.flush();
+					return false;
 				}
 				outsb.append("Data:\r\n");
 				outsb.append(new String(dataBytes));
@@ -264,6 +273,9 @@ public class TextModeClientInterface implements Runnable {
                 uri = new FreenetURI(key);
             } catch (MalformedURLException e2) {
                 outsb.append("Malformed URI: ").append(key).append(" : ").append(e2);
+		outsb.append("\r\n");
+		out.write(outsb.toString().getBytes());
+		out.flush();
                 return false;
             }
             try {
@@ -322,9 +334,15 @@ public class TextModeClientInterface implements Runnable {
     				n.getNodeUpdater().Update();
     			}
     		}, 0);
+		outsb.append("\r\n");
+		out.write(outsb.toString().getBytes());
+		out.flush();
     		return false;
     }else if(uline.startsWith("BLOW")) {
     			n.getNodeUpdater().blow("caught an  IOException : (Incompetent Operator) :p");
+			outsb.append("\r\n");
+			out.write(outsb.toString().getBytes());
+			out.flush();
     			return false;
 	} else if(uline.startsWith("SHUTDOWN")) {
 		StringBuffer sb = new StringBuffer();
@@ -352,6 +370,9 @@ public class TextModeClientInterface implements Runnable {
 		return true;
 	} else if(uline.startsWith("HELP")) {
 		printHeader(out);
+		outsb.append("\r\n");
+		out.write(outsb.toString().getBytes());
+		out.flush();
 		return false;
         } else if(uline.startsWith("PUT:") || (getCHKOnly = uline.startsWith("GETCHK:"))) {
         	if(getCHKOnly)
@@ -386,6 +407,9 @@ public class TextModeClientInterface implements Runnable {
             	if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
                     outsb.append("Splitfile-specific error:\n").append(e.errorCodes.toVerboseString());
             	}
+		outsb.append("\r\n");
+		out.write(outsb.toString().getBytes());
+		out.flush();
             	return false;
             }
 
@@ -410,6 +434,9 @@ public class TextModeClientInterface implements Runnable {
         	
         	if(line.length() < 1) {
         		printHeader(out);
+			outsb.append("\r\n");
+			out.write(outsb.toString().getBytes());
+			out.flush();
         		return false;
         	}
         	
@@ -544,6 +571,9 @@ public class TextModeClientInterface implements Runnable {
         	if(cmd.indexOf(';') <= 0) {
         		outsb.append("No target URI provided.");
         		outsb.append("PUTSSK:<insert uri>;<url to redirect to>");
+			outsb.append("\r\n");
+			out.write(outsb.toString().getBytes());
+			out.flush();
         		return false;
         	}
         	String[] split = cmd.split(";");
