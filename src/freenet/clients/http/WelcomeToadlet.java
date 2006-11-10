@@ -281,52 +281,52 @@ public class WelcomeToadlet extends Toadlet {
 				return;
 			}
 
-				FreenetURI key = new FreenetURI(request.getPartAsString("key",128));
-				String type = request.getPartAsString("content-type",128);
-				if(type==null) type = "text/plain";
-				ClientMetadata contentType = new ClientMetadata(type);
-				
-				Bucket bucket = request.getPart("filename");
-				
-				HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
-				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-				HTMLNode content;
-				String filenameHint = null;
-				if(key.getKeyType().equals("CHK")) {
-					String[] metas = key.getAllMetaStrings();
-					if(metas != null && metas.length > 1) {
-						filenameHint = metas[0];
-					}
+			FreenetURI key = new FreenetURI(request.getPartAsString("key",128));
+			String type = request.getPartAsString("content-type",128);
+			if(type==null) type = "text/plain";
+			ClientMetadata contentType = new ClientMetadata(type);
+			
+			Bucket bucket = request.getPart("filename");
+			
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode("Insertion");
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			HTMLNode content;
+			String filenameHint = null;
+			if(key.getKeyType().equals("CHK")) {
+				String[] metas = key.getAllMetaStrings();
+				if(metas != null && metas.length > 1) {
+					filenameHint = metas[0];
 				}
-				InsertBlock block = new InsertBlock(bucket, contentType, key);
-				try {
-					key = this.insert(block, filenameHint, false);
-					HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
-					content = ctx.getPageMaker().getContentNode(infobox);
-					content.addChild("#", "The key ");
-					content.addChild("a", "href", "/" + key.getKeyType() + "@" + key.getGuessableKey(), key.getKeyType() + "@" + key.getGuessableKey());
-					content.addChild("#", " has been inserted successfully.");
-				} catch (InserterException e) {
-					HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", "Insert Failed"));
-					content = ctx.getPageMaker().getContentNode(infobox);
-					content.addChild("#", "The insert failed with the message: " + e.getMessage());
-					content.addChild("br");
-					if (e.uri != null) {
-						content.addChild("#", "The URI would have been: " + e.uri);
-					}
-					int mode = e.getMode();
-					if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
-						content.addChild("br"); /* TODO */
-						content.addChild("#", "Splitfile-specific error: " + e.errorCodes.toVerboseString());
-					}
-				}
-
+			}
+			InsertBlock block = new InsertBlock(bucket, contentType, key);
+			try {
+				key = this.insert(block, filenameHint, false);
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
+				content = ctx.getPageMaker().getContentNode(infobox);
+				content.addChild("#", "The key ");
+				content.addChild("a", "href", "/" + key.getKeyType() + "@" + key.getGuessableKey(), key.getKeyType() + "@" + key.getGuessableKey());
+				content.addChild("#", " has been inserted successfully.");
+			} catch (InserterException e) {
+				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", "Insert Failed"));
+				content = ctx.getPageMaker().getContentNode(infobox);
+				content.addChild("#", "The insert failed with the message: " + e.getMessage());
 				content.addChild("br");
-				content.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node Homepage" }, "Homepage");
-				
-				writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
-				request.freeParts();
-				bucket.free();
+				if (e.uri != null) {
+					content.addChild("#", "The URI would have been: " + e.uri);
+				}
+				int mode = e.getMode();
+				if((mode == InserterException.FATAL_ERRORS_IN_BLOCKS) || (mode == InserterException.TOO_MANY_RETRIES_IN_BLOCKS)) {
+					content.addChild("br"); /* TODO */
+					content.addChild("#", "Splitfile-specific error: " + e.errorCodes.toVerboseString());
+				}
+			}
+			
+			content.addChild("br");
+			content.addChild("a", new String[] { "href", "title" }, new String[] { "/", "Node Homepage" }, "Homepage");
+			
+			writeReply(ctx, 200, "text/html", "OK", pageNode.generate());
+			request.freeParts();
+			bucket.free();
 		}else if (request.isPartSet("shutdownconfirm")) {
 			if(noPassword) {
 				redirectToRoot(ctx);
