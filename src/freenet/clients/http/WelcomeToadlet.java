@@ -228,18 +228,18 @@ public class WelcomeToadlet extends Toadlet {
 			if(message.length() == 0) // back compatibility; should use message
 				message = request.getPartAsString("filename", 1024);
 			
-			int innitialIndex = 0;
+			int initialIndex = 0;
 			if(request.isPartSet("initialindex")) {
 				try {
-					innitialIndex = Integer.parseInt(request.getPartAsString("initialindex",10));
+					initialIndex = Integer.parseInt(request.getPartAsString("initialindex",10));
 				} catch(NumberFormatException e) {
-					innitialIndex = 0;
+					initialIndex = 0;
 				}
 			} else if(request.isPartSet("innitialindex")) {
 				try {
-					innitialIndex = Integer.parseInt(request.getPartAsString("innitialindex",10));
+					initialIndex = Integer.parseInt(request.getPartAsString("innitialindex",10));
 				} catch(NumberFormatException e) {
-					innitialIndex = 0;
+					initialIndex = 0;
 				}
 			}
 			
@@ -256,7 +256,7 @@ public class WelcomeToadlet extends Toadlet {
 				finInputRow(table, "boardname", "Target Board", boardName);
 				finInputRow(table, "boardprivatekey", "Private Key", boardPrivateKey);
 				finInputRow(table, "boardpublickey", "Public Key", boardPublicKey);
-				finInputRow(table, "initialindex", "Index to start with", Integer.toString(innitialIndex));
+				finInputRow(table, "initialindex", "Index to start with", Integer.toString(initialIndex));
 				finInputRow(table, "sender", "From", sender);
 				finInputRow(table, "subject", "Subject", subject);
 				finInputBoxRow(table, "message", "Message", message);
@@ -286,7 +286,7 @@ public class WelcomeToadlet extends Toadlet {
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			HTMLNode content;
 			try {
-				FreenetURI finalKey = fin.insertMessage(this.getClientImpl(), innitialIndex);
+				FreenetURI finalKey = fin.insertMessage(this.getClientImpl(), initialIndex);
 				HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", "Insert Succeeded"));
 				content = ctx.getPageMaker().getContentNode(infobox);
 				content.addChild("#", "The message ");
