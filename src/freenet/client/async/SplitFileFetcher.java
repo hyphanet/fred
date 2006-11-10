@@ -81,9 +81,9 @@ public class SplitFileFetcher implements ClientGetState {
 		splitfileDataBlocks = metadata.getSplitfileDataKeys();
 		splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
 		for(int i=0;i<splitfileDataBlocks.length;i++)
-			if(splitfileDataBlocks[i] == null) throw new NullPointerException("Null: data block "+i);
+			if(splitfileDataBlocks[i] == null) throw new NullPointerException("Null: data block "+i+" of "+splitfileDataBlocks.length);
 		for(int i=0;i<splitfileCheckBlocks.length;i++)
-			if(splitfileCheckBlocks[i] == null) throw new NullPointerException("Null: check block "+i);
+			if(splitfileCheckBlocks[i] == null) throw new NullPointerException("Null: check block "+i+" of "+splitfileCheckBlocks.length);
 		long finalLength = splitfileDataBlocks.length * CHKBlock.DATA_LENGTH;
 		if(finalLength > overrideLength) {
 			if(finalLength - overrideLength > CHKBlock.DATA_LENGTH)
@@ -116,7 +116,15 @@ public class SplitFileFetcher implements ClientGetState {
 			Logger.minor(this, "Algorithm: "+splitfileType+", blocks per segment: "+blocksPerSegment+", check blocks per segment: "+checkBlocksPerSegment+", segments: "+segmentCount);
 		segments = new SplitFileFetcherSegment[segmentCount]; // initially null on all entries
 		if(segmentCount == 1) {
-			segments[0] = new SplitFileFetcherSegment(splitfileType, splitfileDataBlocks, splitfileCheckBlocks, this, archiveContext, fetchContext, maxTempLength, splitUseLengths, recursionLevel);
+			// splitfile* will be overwritten, this is bad
+			// so copy them
+			FreenetURI[] newSplitfileDataBlocks = new FreenetURI[splitfileDataBlocks.length];
+			FreenetURI[] newSplitfileCheckBlocks = new FreenetURI[splitfileCheckBlocks.length];
+			System.arraycopy(splitfileDataBlocks, 0, newSplitfileDataBlocks, 0, splitfileDataBlocks.length);
+			if(splitfileCheckBlocks.length > 0)
+				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
+			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks, 
+					this, archiveContext, fetchContext, maxTempLength, splitUseLengths, recursionLevel);
 		} else {
 			int dataBlocksPtr = 0;
 			int checkBlocksPtr = 0;
@@ -240,6 +248,8 @@ public class SplitFileFetcher implements ClientGetState {
 			cb.onSuccess(new FetchResult(clientMetadata, data), this);
 		} catch (FetchException e) {
 			cb.onFailure(e, this);
+		} catch (Throwable t) {
+			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), this);
 		}
 	}
 

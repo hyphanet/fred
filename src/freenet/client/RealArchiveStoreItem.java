@@ -14,10 +14,10 @@ import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 class RealArchiveStoreItem extends ArchiveStoreItem {
 
 	private final ArchiveManager manager;
-	boolean finalized;
-	File myFilename;
-	PaddedEphemerallyEncryptedBucket bucket;
-	FileBucket underBucket;
+	private boolean finalized;
+	private final File myFilename;
+	private final PaddedEphemerallyEncryptedBucket bucket;
+	private final FileBucket underBucket;
 	
 	/**
 	 * Create an ArchiveStoreElement from a TempStoreElement.

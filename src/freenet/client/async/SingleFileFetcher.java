@@ -300,7 +300,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					onSuccess(new FetchResult(this.clientMetadata, out));
 					return;
 				} else {
-					if(logMINOR) Logger.minor(this, "Fetching archive");
+					if(logMINOR) Logger.minor(this, "Fetching archive (thisKey="+thisKey+")");
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
@@ -402,7 +402,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				if((len > ctx.maxOutputLength) ||
 						(len > ctx.maxTempLength)) {
 					
-					onFailure(new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.isEmpty(), clientMetadata.getMIMEType()));
+					onFailure(new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.size() <= (metadata.isCompressed() ? 1 : 0), clientMetadata.getMIMEType()));
 					return;
 				}
 				
@@ -459,7 +459,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		
 		public void onSuccess(FetchResult result, ClientGetState state) {
 			try {
-				ctx.archiveManager.extractToCache(thisKey, ah.getArchiveType(), result.asBucket(), actx, ah);
+				ah.extractToCache(result.asBucket(), actx);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e));
 			} catch (ArchiveRestartException e) {

@@ -128,4 +128,11 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		return archiveType;
 	}
 	
+	public FreenetURI getKey() {
+		return key;
+	}
+
+	public void extractToCache(Bucket bucket, ArchiveContext actx) throws ArchiveFailureException, ArchiveRestartException {
+		manager.extractToCache(key, archiveType, bucket, actx, this);
+	}
 }
