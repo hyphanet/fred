@@ -350,7 +350,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				}
 
 				// **FIXME** Is key in the call to SingleFileFetcher here supposed to be this.key or the same key used in the try block above?  MultiLevelMetadataCallback.onSuccess() below uses this.key, thus the question
-				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, this.uri, addedMetaStrings, ctx, actx, maxRetries, recursionLevel, false, token, true, returnBucket, true);
+				SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, key, metaStrings, this.uri, addedMetaStrings, ctx, actx, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
 				if((key instanceof ClientCHK) && !((ClientCHK)key).isMetadata())
 					rcb.onBlockSetFinished(this);
 				if(metadata.isCompressed()) {
@@ -603,16 +603,16 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 		return ctx.ignoreStore;
 	}
 
-	public static ClientGetState create(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws MalformedURLException, FetchException {
+	public static ClientGetState create(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, FreenetURI uri, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket, boolean isFinal) throws MalformedURLException, FetchException {
 		BaseClientKey key = BaseClientKey.getBaseKey(uri);
 		if(key instanceof ClientKey)
-			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket, true);
+			return new SingleFileFetcher(parent, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket, isFinal);
 		else {
-			return uskCreate(parent, cb, clientMetadata, (USK)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket);
+			return uskCreate(parent, cb, clientMetadata, (USK)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, token, isEssential, returnBucket, isFinal);
 		}
 	}
 
-	private static ClientGetState uskCreate(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket) throws FetchException {
+	private static ClientGetState uskCreate(BaseClientGetter parent, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetcherContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, Object token, boolean isEssential, Bucket returnBucket, boolean isFinal) throws FetchException {
 		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = ctx.uskManager.lookup(usk);
@@ -624,7 +624,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				SingleFileFetcher sf = 
 					new SingleFileFetcher(parent, myCB, clientMetadata, usk.getSSK(usk.suggestedEdition),
 							metaStrings, usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, maxRetries, recursionLevel, dontTellClientGet,
-							token, false, returnBucket, true);
+							token, false, returnBucket, isFinal);
 				// Background fetch
 				ctx.uskManager.startTemporaryBackgroundFetcher(usk);
 				return sf;

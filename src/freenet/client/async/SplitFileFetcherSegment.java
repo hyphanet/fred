@@ -376,7 +376,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 				if(dataBlockStatus[i] != null) {
 					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+dataBlockStatus[i]);
 				} else dataBlockStatus[i] =
-					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(i), true, null);
+					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, dataBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(i), true, null, false);
 			}
 			for(int i=0;i<checkBlocks.length;i++) {
 				if(checkBlocks[i] == null) {
@@ -389,7 +389,7 @@ public class SplitFileFetcherSegment implements GetCompletionCallback {
 				if(checkBlockStatus[i] != null) {
 					Logger.error(this, "Scheduling twice? dataBlockStatus["+i+"] = "+checkBlockStatus[i]);
 				} else checkBlockStatus[i] =
-					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null);
+					(SingleFileFetcher) SingleFileFetcher.create(parentFetcher.parent, this, null, checkBlocks[i], blockFetchContext, archiveContext, blockFetchContext.maxNonSplitfileRetries, recursionLevel, true, new Integer(dataBlocks.length+i), false, null, false);
 			}
 			synchronized(this) {
 				createdFetchers = true;

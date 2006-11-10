@@ -38,7 +38,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		try {
 			SingleFileFetcher getter =
 				(SingleFileFetcher) SingleFileFetcher.create(this, this, new ClientMetadata(), uri, ctx, new ArchiveContext(ctx.maxArchiveLevels), 
-						ctx.maxNonSplitfileRetries, 0, true, key.copy(l), true, null);
+						ctx.maxNonSplitfileRetries, 0, true, key.copy(l), true, null, false);
 			getter.schedule();
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Impossible: "+e, e);
