@@ -233,7 +233,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 		}
 		
-		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, configItemOrder++, true, false, "FProxy port number", "FProxy port number",
+		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, configItemOrder++, true, true, "FProxy port number", "FProxy port number",
 				new FProxyPortCallback());
 		fproxyConfig.register("bindTo", "127.0.0.1", configItemOrder++, true, false, "IP address to bind to", "IP address to bind to",
 				new FProxyBindtoCallback());
