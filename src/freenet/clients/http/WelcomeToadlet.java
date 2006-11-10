@@ -178,7 +178,7 @@ public class WelcomeToadlet extends Toadlet {
 					writePermanentRedirect(ctx, "Configuration applied", "/");
 				}
 			}
-		}else if(request.isPartSet("boardname")&&request.isPartSet("filename")){
+		} else if(request.isPartSet("boardname")&&request.isPartSet("filename")) {
 			// Inserting into a frost board FIN
 			// boardname
 			// filename
@@ -195,13 +195,10 @@ public class WelcomeToadlet extends Toadlet {
 			String filename = request.getPartAsString("filename",1024);
 			
 			int innitialIndex = 0;
-			if(request.isPartSet("innitialindex"))
-			{
+			if(request.isPartSet("innitialindex")) {
 				try {
 					innitialIndex = Integer.parseInt(request.getPartAsString("innitialindex",3));
-				}
-				catch(NumberFormatException e)
-				{
+				} catch(NumberFormatException e) {
 					innitialIndex = 0;
 				}
 			}
