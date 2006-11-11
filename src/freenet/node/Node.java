@@ -1093,39 +1093,6 @@ public class Node {
 			throw new NodeInitException(EXIT_STORE_OTHER, msg);
 		}
 
-		
-		String chkStorePath = storeDir.getPath()+File.separator+"store-"+portNumber;
-		String chkCachePath = storeDir.getPath()+File.separator+"cache-"+portNumber;
-		String pkStorePath  = storeDir.getPath()+File.separator+"pubkeystore-"+portNumber;
-		String pkCachePath  = storeDir.getPath()+File.separator+"pubkeycache-"+portNumber;
-		String sskStorePath = storeDir.getPath()+File.separator+"sskstore-"+portNumber;
-		String sskCachePath = storeDir.getPath()+File.separator+"sskcache-"+portNumber;
-		File chkStoreFile = new File(chkStorePath);
-		File chkCacheFile = new File(chkCachePath);
-		File pkStoreFile = new File(pkStorePath);
-		File pkCacheFile = new File(pkCachePath);
-		File sskStoreFile = new File(sskStorePath);
-		File sskCacheFile = new File(sskCachePath);
-		
-		// Upgrade
-		if(this.lastVersion < 927) {
-			if(chkStoreFile.exists() && !chkCacheFile.exists()) {
-				System.err.println("Renaming CHK store to CHK cache.");
-				if(!chkStoreFile.renameTo(chkCacheFile))
-					throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+chkStoreFile+" to "+chkCacheFile);
-			}
-			if(pkStoreFile.exists() && !pkCacheFile.exists()) {
-				System.err.println("Renaming PK store to PK cache.");
-				if(!pkStoreFile.renameTo(pkCacheFile))
-					throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+pkStoreFile+" to "+pkCacheFile);
-			}
-			if(sskStoreFile.exists() && !sskCacheFile.exists()) {
-				System.err.println("Renaming SSK store to SSK cache.");
-				if(!sskStoreFile.renameTo(sskCacheFile))
-					throw new NodeInitException(EXIT_STORE_OTHER, "Could not migrate to two level cache: Could not rename "+sskStoreFile+" to "+sskCacheFile);
-			}
-		}
-
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
@@ -1171,26 +1138,34 @@ public class Node {
 		
 		envMutableConfig.setCacheSize(nodeConfig.getLong("databaseMaxMemory"));
 		
+		String suffix = "-" + portNumber;
+		
 		try {
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
-			chkDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", chkStorePath, maxStoreKeys, CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK);
+			chkDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, true, suffix, maxStoreKeys, 
+					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK);
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+":"+maxCacheKeys+" keys)");
-			chkDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", chkCachePath, maxCacheKeys, CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK);
+			chkDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, false, suffix, maxCacheKeys, 
+					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK);
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
-			pubKeyDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", pkStorePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY);
+			pubKeyDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, true, suffix, maxStoreKeys, 
+					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY);
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
-			pubKeyDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", pkCachePath, maxCacheKeys, DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY);
+			pubKeyDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, false, suffix, maxCacheKeys, 
+					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY);
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
-			sskDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", sskStorePath, maxStoreKeys, SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK);
+			sskDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, true, suffix, maxStoreKeys, 
+					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
-			sskDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", sskCachePath, maxStoreKeys, SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK);
+			sskDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, true, suffix, maxStoreKeys, 
+					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);

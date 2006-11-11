@@ -83,9 +83,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private boolean closed;
 	private final static byte[] dummy = new byte[0];
 
-	public static BerkeleyDBFreenetStore construct(int lastVersion, String prefix, String storeDir, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys, short type) throws Exception {
+	public static BerkeleyDBFreenetStore construct(int lastVersion, String prefix, File baseStoreDir, boolean isStore, 
+			String suffix, long maxStoreKeys, int blockSize, int headerSize, boolean throwOnTooFewKeys, short type) throws Exception {
 
-		File dir = new File(storeDir);
+		File dir = new File(baseStoreDir, 
+				typeName(type) + (isStore ? "store" : "cache") + suffix); 
+		
 		if(!dir.exists())
 			dir.mkdir();
 		
@@ -157,9 +160,19 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 			env = new Environment(dbDir, envConfig);
 			
-			tmp = new BerkeleyDBFreenetStore(env, dir, dbDir, storeDir, maxStoreKeys, blockSize, headerSize, type);
+			tmp = new BerkeleyDBFreenetStore(env, dir, dbDir, maxStoreKeys, blockSize, headerSize, type);
 		}
 		return tmp;
+	}
+
+	private static String typeName(short type) {
+		if(type == TYPE_CHK)
+			return "";
+		else if(type == TYPE_SSK)
+			return "ssk";
+		else if(type == TYPE_PUBKEY)
+			return "pubkey";
+		else throw new Error("No such type "+type);
 	}
 
 	public static BerkeleyDBFreenetStore construct(String prefix, String storeDir, long maxChkBlocks, int blockSize, int headerSize, boolean throwOnTooFewKeys) throws IOException, DatabaseException {
@@ -629,7 +642,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
      * @param the directory where the store is located
      * @throws FileNotFoundException if the dir does not exist and could not be created
      */
-	public BerkeleyDBFreenetStore(Environment env, File dir, File dbDir, String storeDir, long maxChkBlocks, int blockSize, int headerSize, short type) throws Exception {
+	public BerkeleyDBFreenetStore(Environment env, File dir, File dbDir, long maxChkBlocks, int blockSize, int headerSize, short type) throws Exception {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
@@ -643,7 +656,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		dbConfig.setTransactional(true);
 		chkDB = environment.openDatabase(null,"CHK",dbConfig);
 		
-		fixSecondaryFile = new File(storeDir, "recreate_secondary_db");
+		fixSecondaryFile = new File(dir, "recreate_secondary_db");
 		fixSecondaryFile.delete();
 		
 		// Initialize secondary CHK database sorted on accesstime
