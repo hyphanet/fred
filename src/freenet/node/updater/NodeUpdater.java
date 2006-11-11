@@ -95,12 +95,12 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		alert.isValid(false);
 		core.alerts.register(alert);
 		
-		FetcherContext tempContext = core.makeClient((short)0).getFetcherContext();		
+		FetcherContext tempContext = core.makeClient((short)0, true).getFetcherContext();		
 		tempContext.allowSplitfiles = true;
 		tempContext.dontEnterImplicitArchives = false;
 		this.ctx = tempContext;
 		
-		ctxRevocation = core.makeClient((short)0).getFetcherContext();
+		ctxRevocation = core.makeClient((short)0, true).getFetcherContext();
 		ctxRevocation.allowSplitfiles = false;
 		ctxRevocation.cacheLocalRequests = false;
 		ctxRevocation.maxArchiveLevels = 1;

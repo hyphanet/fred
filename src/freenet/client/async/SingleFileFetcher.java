@@ -197,7 +197,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			}
 			result = new FetchResult(result, data);
 		}
-		if(!metaStrings.isEmpty()) {
+		if((!ctx.ignoreTooManyPathComponents) && (!metaStrings.isEmpty())) {
 			// Some meta-strings left
 			if(addedMetaStrings > 0) {
 				// Should this be an error?
@@ -374,7 +374,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 					addDecompressor(codec);
 				}
 				
-				if(isFinal) {
+				if(isFinal && !ctx.ignoreTooManyPathComponents) {
 					if(!metaStrings.isEmpty()) {
 						// Some meta-strings left
 						if(addedMetaStrings > 0) {

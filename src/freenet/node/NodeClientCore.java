@@ -15,6 +15,7 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.clients.http.BookmarkManager;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.config.BooleanCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.StringCallback;
@@ -81,6 +82,8 @@ public class NodeClientCore {
 	// FIXME why isn't this just in fproxy?
 	public BookmarkManager bookmarkManager;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
+	/** If true, allow extra path components at the end of URIs */
+	public boolean ignoreTooManyPathComponents;
 	
 	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
@@ -191,6 +194,21 @@ public class NodeClientCore {
 				new InserterContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
 						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
 						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+		
+		nodeConfig.register("ignoreTooManyPathComponents", true, sortOrder++, true, false, "Ignore too many path components", 
+				"If true, the node won't generate TOO_MANY_PATH_COMPONENTS errors when a URI is fed to it which has extra, meaningless subdirs (/blah/blah) on the end beyond what is needed to fetch the key (for example, old CHKs will often have filenames stuck on the end which weren't part of the original insert; this is obsolete because we can now include the filename, and it is confusing to be able to add arbitrary strings to a URI, and it makes them hard to compare). Only enable this option if you need it for compatibility with older apps; it will be removed soon.", new BooleanCallback() {
+
+					public boolean get() {
+						return ignoreTooManyPathComponents;
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						ignoreTooManyPathComponents = val;
+					}
+			
+		});
+		
+		ignoreTooManyPathComponents = nodeConfig.getBoolean("ignoreTooManyPathComponents");
 		
 	}
 	
@@ -681,7 +699,11 @@ public class NodeClientCore {
 	}
 
 	public HighLevelSimpleClient makeClient(short prioClass) {
-		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass);
+		return makeClient(prioClass, false);
+	}
+	
+	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
+		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass, forceDontIgnoreTooManyPathComponents);
 	}
 	
 	public FCPServer getFCPServer() {

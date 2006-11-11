@@ -358,7 +358,7 @@ public class FProxyToadlet extends Toadlet {
 			
 			SimpleToadletServer server = new SimpleToadletServer(fproxyConfig, core);
 			
-			HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
+			HighLevelSimpleClient client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
 			
 			core.setToadletContainer(server);
 			random = new byte[32];

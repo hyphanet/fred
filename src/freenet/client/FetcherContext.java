@@ -45,6 +45,7 @@ public class FetcherContext implements Cloneable {
 	 * return the manifest contents as data. */
 	public boolean returnZIPManifests;
 	public final HealingQueue healingQueue;
+	public final boolean ignoreTooManyPathComponents;
 	
 	public FetcherContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -53,7 +54,7 @@ public class FetcherContext implements Cloneable {
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
-			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, HealingQueue hq) {
+			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, HealingQueue hq, boolean ignoreTooManyPathComponents) {
 		this.maxOutputLength = curMaxLength;
 		this.uskManager = uskManager;
 		this.maxTempLength = curMaxTempLength;
@@ -77,6 +78,7 @@ public class FetcherContext implements Cloneable {
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.healingQueue = hq;
+		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 	}
 
 	public FetcherContext(FetcherContext ctx, int maskID, boolean keepProducer) {
@@ -86,6 +88,7 @@ public class FetcherContext implements Cloneable {
 		else
 			this.eventProducer = new SimpleEventProducer();
 		this.uskManager = ctx.uskManager;
+		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
 		if(maskID == IDENTICAL_MASK) {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
