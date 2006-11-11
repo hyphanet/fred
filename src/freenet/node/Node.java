@@ -1172,77 +1172,25 @@ public class Node {
 		envMutableConfig.setCacheSize(nodeConfig.getLong("databaseMaxMemory"));
 		
 		try {
-			BerkeleyDBFreenetStore tmp;
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
-			try {
-				if((lastVersion > 0) && (lastVersion < 852)) {
-					throw new DatabaseException("Reconstructing store because started from old version");
-				}
-				tmp = new BerkeleyDBFreenetStore(chkStorePath, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
-			} catch (DatabaseException e) {
-				System.err.println("Could not open store: "+e);
-				e.printStackTrace();
-				System.err.println("Attempting to reconstruct...");
-				WrapperManager.signalStarting(5*60*60*1000);
-				tmp = new BerkeleyDBFreenetStore(chkStorePath, maxStoreKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
-			}
-			chkDatastore = tmp;
+			chkDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", chkStorePath, maxStoreKeys, CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK);
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+":"+maxCacheKeys+" keys)");
-			try {
-				if((lastVersion > 0) && (lastVersion < 852)) {
-					throw new DatabaseException("Reconstructing store because started from old version");
-				}
-				tmp = new BerkeleyDBFreenetStore(chkCachePath, maxCacheKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, true);
-			} catch (DatabaseException e) {
-				System.err.println("Could not open store: "+e);
-				e.printStackTrace();
-				System.err.println("Attempting to reconstruct...");
-				WrapperManager.signalStarting(5*60*60*1000);
-				tmp = new BerkeleyDBFreenetStore(chkCachePath, maxCacheKeys, 32768, CHKBlock.TOTAL_HEADERS_LENGTH, BerkeleyDBFreenetStore.TYPE_CHK);
-			}
-			chkDatacache = tmp;
-			chkDatacache.setMaxKeys(maxCacheKeys, false);
-			// Shrink pubkey store immediately; it's tiny anyway.
+			chkDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", chkCachePath, maxCacheKeys, CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK);
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
-			try {
-				if((lastVersion > 0) && (lastVersion < 852)) {
-					throw new DatabaseException("Reconstructing store because started from old version");
-				}
-				tmp = new BerkeleyDBFreenetStore(pkStorePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, true);
-			} catch (DatabaseException e) {
-				System.err.println("Could not open store: "+e);
-				e.printStackTrace();
-				System.err.println("Attempting to reconstruct...");
-				WrapperManager.signalStarting(5*60*60*1000);
-				tmp = new BerkeleyDBFreenetStore(pkStorePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
-			}
-			this.pubKeyDatastore = tmp;
+			pubKeyDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", pkStorePath, maxStoreKeys, DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY);
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
-			try {
-				if((lastVersion > 0) && (lastVersion < 852)) {
-					throw new DatabaseException("Reconstructing store because started from old version");
-				}
-				tmp = new BerkeleyDBFreenetStore(pkCachePath, maxCacheKeys, DSAPublicKey.PADDED_SIZE, 0, true);
-			} catch (DatabaseException e) {
-				System.err.println("Could not open store: "+e);
-				e.printStackTrace();
-				System.err.println("Attempting to reconstruct...");
-				WrapperManager.signalStarting(5*60*60*1000);
-				tmp = new BerkeleyDBFreenetStore(pkCachePath, maxCacheKeys, DSAPublicKey.PADDED_SIZE, 0, BerkeleyDBFreenetStore.TYPE_PUBKEY);
-			}
-			this.pubKeyDatacache = tmp;
+			pubKeyDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", pkCachePath, maxCacheKeys, DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY);
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
-			sskDatastore = new BerkeleyDBFreenetStore(sskStorePath, maxStoreKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
+			sskDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", sskStorePath, maxStoreKeys, SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
-			sskDatacache = new BerkeleyDBFreenetStore(sskCachePath, maxCacheKeys, 1024, SSKBlock.TOTAL_HEADERS_LENGTH, false);
-			sskDatacache.setMaxKeys(maxCacheKeys, false);
+			sskDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", sskCachePath, maxStoreKeys, SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
