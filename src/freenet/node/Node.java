@@ -32,6 +32,9 @@ import java.util.zip.DeflaterOutputStream;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.EnvironmentMutableConfig;
 
 import freenet.client.FetcherContext;
 import freenet.config.FreenetFilePersistentConfig;
@@ -265,6 +268,8 @@ public class Node {
 	private long maxStoreKeys;
 	
 	/* These are private because must be protected by synchronized(this) */
+	private final Environment storeEnvironment;
+	private final EnvironmentMutableConfig envMutableConfig;
 	/** The CHK datastore. Long term storage; data should only be inserted here if
 	 * this node is the closest location on the chain so far, and it is on an 
 	 * insert (because inserts will always reach the most specialized node; if we
@@ -1123,6 +1128,48 @@ public class Node {
 
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
+		
+		// Setup datastores
+		
+		// First, global settings
+		
+		// Percentage of the database that must contain usefull data
+		// decrease to increase performance, increase to save disk space
+		System.setProperty("je.cleaner.minUtilization","90");
+		// Delete empty log files
+		System.setProperty("je.cleaner.expunge","true");
+		EnvironmentConfig envConfig = new EnvironmentConfig();
+		envConfig.setAllowCreate(true);
+		envConfig.setTransactional(true);
+		envConfig.setTxnWriteNoSync(true);
+		
+		File dbDir = new File(storeDir, "database-"+portNumber);
+		dbDir.mkdirs();
+
+		try {
+			storeEnvironment = new Environment(dbDir, envConfig);
+			envMutableConfig = storeEnvironment.getMutableConfig();
+		} catch (DatabaseException e) {
+			System.err.println("Could not open store: "+e);
+			e.printStackTrace();
+			throw new NodeInitException(EXIT_STORE_OTHER, e.getMessage());			
+		}
+		
+		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Datastore maximum memory usage", "Maximum memory usage of the database backing the datastore indexes", new LongCallback() {
+
+			public long get() {
+				return envMutableConfig.getCacheSize();
+			}
+
+			public void set(long val) throws InvalidConfigValueException {
+				if(val < 0)
+					throw new InvalidConfigValueException("Negative values not supported");
+				envMutableConfig.setCacheSize(val);
+			}
+			
+		});
+		
+		envMutableConfig.setCacheSize(nodeConfig.getLong("databaseMaxMemory"));
 		
 		try {
 			BerkeleyDBFreenetStore tmp;

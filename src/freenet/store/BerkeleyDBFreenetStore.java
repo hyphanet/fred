@@ -95,15 +95,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.dataBlockSize = blockSize;
 		this.headerBlockSize = headerSize;
 		this.freeBlocks = new SortedLongSet();
-		// Percentage of the database that must contain usefull data
-		// decrease to increase performance, increase to save disk space
-		System.setProperty("je.cleaner.minUtilization","98");
-		
-		// Delete empty log files
-		System.setProperty("je.cleaner.expunge","true");
-		
-		// Percentage of the maximum heap size used as a cache
-		System.setProperty("je.maxMemoryPercent","30");
 		
 		this.maxChkBlocks=maxChkBlocks;
 		
