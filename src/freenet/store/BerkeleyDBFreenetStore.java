@@ -253,7 +253,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				} else {
 					throw new Error("Unknown OperationStatus: "+opStat);
 				}
-				opStat = c.getNext(keyDBE, blockDBE, LockMode.RMW);
+				opStat = c.getNext(keyDBE, blockDBE, LockMode.DEFAULT);
 				x++;
 				if(x % 512 == 0) {
 					t.commit();
