@@ -136,16 +136,21 @@ public class StandardOnionFECCodec extends FECCodec {
 		// Best performance, doesn't crash
 		//encoder = FECCodeFactory.getDefault().createFECCode(k,n);
 		FECCode fec;
-		try {
-			fec = new Native8Code(k,n);
-		} catch (Throwable t) {
-			if(!noNative) {
-				System.err.println("Failed to load native FEC: "+t);
-				t.printStackTrace();
+		if(!noNative) {
+			try {
+				fec = new Native8Code(k,n);
+			} catch (Throwable t) {
+				if(!noNative) {
+					System.err.println("Failed to load native FEC: "+t);
+					t.printStackTrace();
+				}
+				Logger.error(this, "Failed to load native FEC: "+t+" (k="+k+" n="+n+")", t);
+				fec = new PureCode(k,n);
+				if(t instanceof UnsatisfiedLinkError)
+					noNative = true;
 			}
-			Logger.error(this, "Failed to load native FEC: "+t, t);
+		} else {
 			fec = new PureCode(k,n);
-			noNative = true;
 		}
 		encoder = fec;
 		// revert to below if above causes JVM crashes
