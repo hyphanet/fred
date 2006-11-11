@@ -1112,7 +1112,7 @@ public class Node {
 		
 		File dbDir = new File(storeDir, "database-"+portNumber);
 		dbDir.mkdirs();
-
+		
 		try {
 			storeEnvironment = new Environment(dbDir, envConfig);
 			envMutableConfig = storeEnvironment.getMutableConfig();
@@ -1143,29 +1143,29 @@ public class Node {
 		try {
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
-			chkDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, true, suffix, maxStoreKeys, 
-					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK);
+			chkDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
+					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random);
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+":"+maxCacheKeys+" keys)");
-			chkDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, false, suffix, maxCacheKeys, 
-					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK);
+			chkDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxCacheKeys, 
+					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random);
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
-			pubKeyDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, true, suffix, maxStoreKeys, 
-					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY);
+			pubKeyDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
+					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random);
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
-			pubKeyDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, false, suffix, maxCacheKeys, 
-					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY);
+			pubKeyDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxCacheKeys, 
+					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random);
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
-			sskDatastore = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, true, suffix, maxStoreKeys, 
-					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK);
+			sskDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
+					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
-			sskDatacache = BerkeleyDBFreenetStore.construct(lastVersion, "", storeDir, true, suffix, maxStoreKeys, 
-					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK);
+			sskDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxStoreKeys, 
+					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
