@@ -270,6 +270,7 @@ public class Node {
 	/* These are private because must be protected by synchronized(this) */
 	private final Environment storeEnvironment;
 	private final EnvironmentMutableConfig envMutableConfig;
+	private final SemiOrderedShutdownHook storeShutdownHook;
 	/** The CHK datastore. Long term storage; data should only be inserted here if
 	 * this node is the closest location on the chain so far, and it is on an 
 	 * insert (because inserts will always reach the most specialized node; if we
@@ -1121,6 +1122,21 @@ public class Node {
 			e.printStackTrace();
 			throw new NodeInitException(EXIT_STORE_OTHER, e.getMessage());			
 		}
+
+		storeShutdownHook = new SemiOrderedShutdownHook();
+		Runtime.getRuntime().addShutdownHook(storeShutdownHook);
+		
+		storeShutdownHook.addLateJob(new Thread() {
+			public void run() {
+				try {
+					storeEnvironment.close();
+					System.err.println("Successfully closed all datastores.");
+				} catch (Throwable t) {
+					System.err.println("Caught "+t+" closing environment");
+					t.printStackTrace();
+				}
+			}
+		});
 		
 		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Datastore maximum memory usage", "Maximum memory usage of the database backing the datastore indexes", new LongCallback() {
 
@@ -1144,28 +1160,28 @@ public class Node {
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
 			chkDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random);
+					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook);
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+":"+maxCacheKeys+" keys)");
 			chkDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxCacheKeys, 
-					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random);
+					CHKBlock.DATA_LENGTH, CHKBlock.TOTAL_HEADERS_LENGTH, true, BerkeleyDBFreenetStore.TYPE_CHK, storeEnvironment, random, storeShutdownHook);
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			pubKeyDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random);
+					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook);
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
 			pubKeyDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxCacheKeys, 
-					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random);
+					DSAPublicKey.PADDED_SIZE, 0, true, BerkeleyDBFreenetStore.TYPE_PUBKEY, storeEnvironment, random, storeShutdownHook);
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, true, suffix, maxStoreKeys, 
-					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random);
+					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
 			sskDatacache = BerkeleyDBFreenetStore.construct(lastVersion, storeDir, false, suffix, maxStoreKeys, 
-					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random);
+					SSKBlock.DATA_LENGTH, SSKBlock.TOTAL_HEADERS_LENGTH, false, BerkeleyDBFreenetStore.TYPE_SSK, storeEnvironment, random, storeShutdownHook);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
@@ -1184,7 +1200,7 @@ public class Node {
 			e1.printStackTrace();
 			throw new NodeInitException(EXIT_STORE_OTHER, msg);
 		}
-		
+
 		nodeConfig.register("throttleFile", "throttle.dat", sortOrder++, true, false, "File to store the persistent throttle data to", "File to store the persistent throttle data to", new StringCallback() {
 
 			public String get() {
