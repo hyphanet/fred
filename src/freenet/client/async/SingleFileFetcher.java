@@ -70,7 +70,7 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 			Bucket returnBucket, boolean isFinal) throws FetchException {
 		super(key, maxRetries, ctx, get);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key+" meta="+metaStrings.toString(), new Exception("debug"));
+		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key+" from "+origURI+" meta="+metaStrings.toString(), new Exception("debug"));
 		this.isFinal = isFinal;
 		this.cancelled = false;
 		this.returnBucket = returnBucket;
@@ -625,15 +625,21 @@ public class SingleFileFetcher extends BaseSingleFileFetcher implements ClientGe
 				// Background fetch - start background fetch first so can pick up updates in the datastore during registration.
 				ctx.uskManager.startTemporaryBackgroundFetcher(usk);
 				edition = ctx.uskManager.lookup(usk);
-				// Transition to SingleFileFetcher
-				GetCompletionCallback myCB =
-					new USKProxyCompletionCallback(usk, ctx.uskManager, cb);
-				// Want to update the latest known good iff the fetch succeeds.
-				SingleFileFetcher sf = 
-					new SingleFileFetcher(parent, myCB, clientMetadata, usk.getSSK(edition), metaStrings, 
-							usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, maxRetries, recursionLevel, 
-							dontTellClientGet, token, false, returnBucket, isFinal);
-				return sf;
+				if(edition > usk.suggestedEdition) {
+					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
+					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null);
+					return null;
+				} else {
+					// Transition to SingleFileFetcher
+					GetCompletionCallback myCB =
+						new USKProxyCompletionCallback(usk, ctx.uskManager, cb);
+					// Want to update the latest known good iff the fetch succeeds.
+					SingleFileFetcher sf = 
+						new SingleFileFetcher(parent, myCB, clientMetadata, usk.getSSK(), metaStrings, 
+								usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, maxRetries, recursionLevel, 
+								dontTellClientGet, token, false, returnBucket, isFinal);
+					return sf;
+				}
 			} else {
 				cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null);
 				return null;

@@ -87,6 +87,10 @@ public class USK extends BaseClientKey {
 		}
 	}
 
+	public ClientKey getSSK() {
+		return getSSK(suggestedEdition);
+	}
+	
 	public USK copy(long edition) {
 		if(suggestedEdition == edition) return this;
 		return new USK(pubKeyHash, cryptoKey, siteName, edition);
